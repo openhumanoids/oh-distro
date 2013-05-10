@@ -7,6 +7,7 @@ import math
 import numpy  as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+import datetime
 
 from threading import Thread
 
@@ -19,6 +20,45 @@ from drc.bandwidth_stats_t import bandwidth_stats_t
 ########################################################################################
 
 def timestamp_now (): return int (time.time () * 1000000)
+
+class Data:
+  def __init__(self):
+    self.total_sent_KB = 0.0
+    self.total_received_KB = 0.0
+    self.last_utime=0
+    self.totalbudget_sent_KB = 112.5 # total KB we can sent at lowest rate
+    self.totalbudget_received_KB = 57600.0 # total KB we can receive at lowest rate
+  def getSecAsHHMMSS(self, sec):
+    return str(datetime.timedelta(seconds= round(sec)  ) )
+  def getTimeToLiveString (self):
+    time_sec = d.last_utime /1000000.0
+
+    if (d.total_sent_KB == 0):
+      ttl_string_sent= "Nothing Sent"
+    else:
+      expected_duration_sent = time_sec  *  d.totalbudget_sent_KB / d.total_sent_KB
+      ttl_sent_seconds = expected_duration_sent - time_sec
+      sent_precent_left_str = '%.2f' % float(100* d.total_sent_KB/ d.totalbudget_sent_KB   )
+      ttl_string_sent = str( str(d.total_sent_KB) + ' of '+ str(d.totalbudget_sent_KB) + 'kB in ' \
+                 + d.getSecAsHHMMSS(time_sec) + ' [' + sent_precent_left_str + '%] ttl: ' \
+                 +  d.getSecAsHHMMSS(ttl_sent_seconds) )
+    #print 'total kb sent: %f' % (d.total_sent_KB)
+    #print 'total kb budget %f' % (d.totalbudget_sent_KB)
+    #print 'elapsed time %f' %(time_sec)
+    #print 'time to live %f' %(d.ttl_sent_seconds )
+    if (d.total_received_KB == 0):
+      ttl_string_received= "Nothing Received"
+    else:
+      expected_duration_received = time_sec  *  d.totalbudget_received_KB / d.total_received_KB
+      ttl_received_seconds = expected_duration_received - time_sec
+      received_precent_left_str = '%.2f' % float(100* d.total_received_KB/ d.totalbudget_received_KB   )
+      ttl_string_received = str( str(d.total_received_KB) + ' of '+ str(d.totalbudget_received_KB) + 'kB in ' \
+                 + d.getSecAsHHMMSS(time_sec) + ' [' + received_precent_left_str + '%] ttl: ' \
+                 +  d.getSecAsHHMMSS(ttl_received_seconds) )
+    
+    return ttl_string_sent, ttl_string_received
+                 
+
 
 class SensorData(object):
     def __init__(self, nfields):
@@ -43,11 +83,14 @@ def reset_all():
 
   
 def plot_data():
-  global last_utime
   global sent_channels, got_rate
   front_block =0 # offset into the future (to ensure no recent data not viewed)
   #print "len of sent_channels: %d" %  len(sent_channels)
+  
   cols = 'bgrcykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmyk'
+  
+  ttl_string_sent, ttl_string_received = d.getTimeToLiveString()
+  
   if ( len(msgs.times) >1):
     plt.figure(1)
     ############################################################
@@ -66,9 +109,11 @@ def plot_data():
           j=j+1
     
     ax1.set_ylabel('Cum KB Sent [' + msg_channel +']');  ax1.grid(True)
-    ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax1.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
     ax1.set_ylim( bottom=0)
-    ax1.legend(loc=2,prop={'size':10})
+    if (j>0):
+      ax1.legend(loc=2,prop={'size':10})
+    ax1.set_title(ttl_string_sent)
     
     ############################################################
     ax2.cla()
@@ -92,7 +137,7 @@ def plot_data():
     ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 0.0625 ),'g:',linewidth=2 )
 
     ax2.set_ylabel('Cum KB Sent [' + msg_channel +']');  ax2.grid(True)
-    ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax2.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
     ax2.set_ylim( bottom=0)
     ax2.set_title('TO THE ROBOT')
 
@@ -119,9 +164,9 @@ def plot_data():
       ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,0.0625),'g:',linewidth=2 )
 
       ax3.set_ylabel('Rate KB Sent [' + msg_channel +']');  ax3.grid(True)
-      ax3.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+      ax3.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
       ax3.set_ylim( bottom=0)
-      ax3.legend(loc=2,prop={'size':10})    
+      #ax3.legend(loc=2,prop={'size':10})    
     ############################################################
     ax4.cla()
     j=0
@@ -138,9 +183,11 @@ def plot_data():
           j=j+1
 
     ax4.set_ylabel('Cum KB Received [' + msg_channel +']');  ax4.grid(True)
-    ax4.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax4.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
     ax4.set_ylim( bottom=0)
-    ax4.legend(loc=2,prop={'size':10})
+    if (j>0):
+      ax4.legend(loc=2,prop={'size':10}) # add me back in!!!
+    ax4.set_title(ttl_string_received)
 
     ############################################################
     ax5.cla()
@@ -164,7 +211,7 @@ def plot_data():
     ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 32 ),'g:',linewidth=2 )
 
     ax5.set_ylabel('Cum KB Received [' + msg_channel +']');  ax5.grid(True)
-    ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax5.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
     ax5.set_ylim( bottom=0)
     ax5.set_title('FROM THE ROBOT')
 
@@ -191,7 +238,7 @@ def plot_data():
       ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,32),'g:',linewidth=2 )
 
       ax6.set_ylabel('Rate KB Received [' + msg_channel +']');  ax6.grid(True)
-      ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+      ax6.set_xlim( (d.last_utime - plot_window - first_utime)/1000000 , (d.last_utime + front_block - first_utime)/1000000 )
       ax6.set_ylim( bottom=0)
 
   plt.plot()
@@ -228,6 +275,10 @@ def on_bw(channel, data):
   this_sent_KB=tuple([x/1024.0 for x in m.sent_bytes]) 
   #sent_KB.append(which_utime,this_sent_KB)
   cumsent_KB.append(which_utime,np.cumsum(this_sent_KB))
+
+  d.total_sent_KB = np.sum(m.sent_bytes) / 1024
+  
+  
 
   this_received_KB=tuple([x/1024.0 for x in m.received_bytes]) 
   #received_KB.append(which_utime,this_received_KB)
@@ -270,12 +321,10 @@ def on_bw(channel, data):
       last_rate_utime = which_utime
       msg_last_rate = m
       
-
-  global last_utime
-  if (which_utime < last_utime):
-    print "out of order data, resetting now %s | last %s"   %(which_utime,last_utime)
+  if (which_utime < d.last_utime):
+    print "out of order data, resetting now %s | last %s"   %(which_utime,d.last_utime)
     reset_all()
-  last_utime = which_utime
+  d.last_utime = which_utime
 
   
 #################################################################################
@@ -285,7 +334,8 @@ msg_channel=''
 
 lc = lcm.LCM()
 print "started"
-last_utime=0
+d = Data();
+
 first_utime=0
 plot_window=30*1000000
 
@@ -294,6 +344,8 @@ last_rate_utime=0
 msg_last_rate = bandwidth_stats_t()
 msg_last_rate.utime =0
 got_rate = False
+
+
 
 msgs = SensorData(17); queued_KB = SensorData(17);
 cumqueued_KB = SensorData(17); cumsent_KB = SensorData(17); cumreceived_KB = SensorData(17);
