@@ -9,9 +9,11 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 load('data/atlas_fp.mat');
 load('data/aa_step_in.mat');
 t_qs_breaks = t_qs_breaks*scale_t;
+
 if size(foot_support_qs,1) == 35
   foot_support_qs(1:5,:) = [];
 end
+
 l_foot_ind = r.findLinkInd('l_foot');
 r_foot_ind = r.findLinkInd('r_foot');
 not_feet_ind = (1:r.getNumBodies ~= l_foot_ind) &...
@@ -35,27 +37,36 @@ q_nom = xstar(1:nq);
 q0_nom = q_qs_plan(1:nq,1);
 x0_nom = [q0,zeros(size(q0))];
 
-r_foot_body = r.findLink('r_foot');
+ref_link = r.findLink(ref_link_str);
 
-kinsol = doKinematics(r,q0_nom);
-r_foot_xyz_nom = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
-fprintf(['Nominal right foot position:\n\t' ...
-            'x: %5.3f\n\t' ...
-            'y: %5.3f\n\t'], r_foot_xyz_nom(1:2))
-kinsol = doKinematics(r,q0);
-r_foot_xyz = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
-fprintf(['Actual right foot position:\n\t' ...
-            'x: %5.3f\n\t' ...
-            'y: %5.3f\n\t'], r_foot_xyz(1:2))
+%kinsol = doKinematics(r,q0_nom);
+%r_foot_xyz_nom = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
+%fprintf(['Nominal right foot position:\n\t' ...
+            %'x: %5.3f\n\t' ...
+            %'y: %5.3f\n'], r_foot_xyz_nom(1:2))
+kinsol = doKinematics(r,q0,false,false);
+wTf = ref_link.T;
 
-xy_offset = r_foot_xyz(1:2) - r_foot_xyz_nom(1:2);
+com_qs_plan = homogTransMult(wTf,com_qs_plan);
+for i = 1:nt
+  fTr_i = [ [rpy2rotmat(q_qs_plan(4:6,i)); zeros(1,3)], [q_qs_plan(1:3,i); 1] ];
+  wTr_i = wTf*fTr_i;
+  q_qs_plan(1:6,i) = [wTr_i(1:3,4); rotmat2rpy(wTr_i(1:3,1:3))];
+end
 
-fprintf(['Adjusting trajectories in x and y:\n\t' ...
-            'x offset: %5.3f\n\t' ...
-            'y offset: %5.3f\n'], xy_offset);
+%r_foot_xyz = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
+%fprintf(['Actual right foot position:\n\t' ...
+            %'x: %5.3f\n\t' ...
+            %'y: %5.3f\n'], r_foot_xyz(1:2))
 
-q_qs_plan(1:2,:) = q_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
-com_qs_plan(1:2,:) = com_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
+%xy_offset = r_foot_xyz(1:2) - r_foot_xyz_nom(1:2);
+
+%fprintf(['Adjusting trajectories in x and y:\n\t' ...
+            %'x offset: %5.3f\n\t' ...
+            %'y offset: %5.3f\n'], xy_offset);
+
+%q_qs_plan(1:2,:) = q_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
+%com_qs_plan(1:2,:) = com_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
 % com = getCOM(r,kinsol);
 
 % create desired joint trajectory
@@ -134,11 +145,19 @@ warning(S);
 % Simple PD parameters
 Kp = [];
 data = struct('qtraj',qtraj,'comtraj',comtraj,...
+      'zmptraj',[],...
       'supptraj',foot_support,'htraj',[],'hddtraj',[],...
       'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[]);
 
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
-pub.publish(0,data);
+still_going = true;
+while still_going
+  pub.publish(0,data);
+  in = input('Re-publish? (y/N): ')
+  if isempty(in) || strcmpi(in,'n')
+    still_going = false;
+  end
+end
 
 % [x,t] = getNextMessage(state_frame,10);
 % q_test = x(1:r.getNumDOF());
