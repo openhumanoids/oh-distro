@@ -77,6 +77,9 @@ void App::handleJointCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::strin
 
 void App::handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg)  {
   latency_->add_to(msg->utime_sim, _timestamp_now(), message_ );
+  // TODO: switch to use these this timing to use the time calculated within matlab:
+  // NOT TESTED
+  //latency_->add_to(msg->utime_sim, msg->utime_wall, message_ );
 }
 
 int main (int argc, char ** argv){
