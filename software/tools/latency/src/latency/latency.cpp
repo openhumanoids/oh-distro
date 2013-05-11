@@ -36,6 +36,15 @@ void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message 
 
   if (verbose_){
     for (size_t i =0; i <js_utime_.size() ; i++){
+      std::cout << i << ": "<< js_utime_[i] << "\n";
+    }
+    for (size_t i =0; i <js_walltime_.size() ; i++){
+      std::cout << i << ": "<< js_walltime_[i] << " wall\n";
+    }
+    std::cout << js_utime_.size() << " utimes|walltimes " << js_walltime_.size() <<  "\n";
+
+    
+    for (size_t i =0; i <js_utime_.size() ; i++){
       std::cout << i << ": "<< js_utime_[i] << " and " << js_walltime_[i] << "\n";
     }
     std::cout << elapsed_walltime << " elapsed_walltime " << step_latency << " step_latency\n\n";
@@ -50,8 +59,8 @@ void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message 
   
   if (latency_count_ % period_  == 0 ){
     std::cout << message << ": " << jc_utime 
-              << " | " << ( latency_step_cumsum_ / period_f_ ) 
-              << " newer msgs | " << ( latency_cumsum_ *1E-6/ period_f_)
+              << " | " << ( float(latency_step_cumsum_) / float(latency_count_) ) 
+              << " newer msgs | " << ( float(latency_cumsum_) *1E-6/ float(latency_count_))
               << " sec delay [" << latency_count_  << "]\n";
     
     latency_count_ =0;
