@@ -23,8 +23,8 @@ pods_install_executables(ros2lcm)
 pods_use_pkg_config_packages(ros2lcm lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
 
 
-rosbuild_add_executable(roslatency src/roslatency.cpp)
-target_link_libraries(roslatency boost_signals)
-pods_install_executables(roslatency)
-pods_use_pkg_config_packages(roslatency latency) 
+rosbuild_add_executable(latency src/latency.cpp)
+target_link_libraries(latency boost_signals)
+pods_install_executables(latency)
+pods_use_pkg_config_packages(latency latency) 
 
