@@ -280,8 +280,8 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "robot";
     }
-    cmd "gz_mit_manip_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
+    cmd "gz_mit_manip_nohands" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_nohands.world";
         host = "robot";
     }
     cmd "gz_mit_ingress" {
@@ -553,19 +553,21 @@ script "dev.mit_walking_vo" {
     start cmd "lcm-logger-no-vis";
 }
 
-script "dev.mit_manip_slow" {
+script "dev.mit_manip_nohands" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
     wait ms 18000;
-    start cmd "gz_mit_manip_slow";
+    start cmd "gz_mit_manip_nohands";
 }
 
 script "dev.mit_manip" {
     start group "0.development";
     start group "a.1.core";
-    wait ms 500;
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 18000;
     start cmd "gz_mit_manip";
 }
 
