@@ -25,6 +25,8 @@
 
 #include <latency/latency.hpp>
 
+#include <ConciseArgs>
+
 
 #define VERBOSE false
 using namespace std;
@@ -47,8 +49,8 @@ App::App(ros::NodeHandle node_){
   ROS_INFO("Initializing Latency");
   latency_ = new Latency();  
 
-  joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this);
-  joint_commands_sub_ = node_.subscribe(string("/atlas/joint_commands"), 1000, &App::joint_commands_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  joint_commands_sub_ = node_.subscribe(string("/atlas/joint_commands"), 1000, &App::joint_commands_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   message_ = "ROS ";
 
 };
@@ -64,6 +66,9 @@ int64_t _timestamp_now(){
 }
 
 void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  //std::cout << msg->header.stamp << " x\n";
+  //std::cout << (int64_t) floor(msg->header.stamp.toNSec()/1000) << " y\n\n";
+  
   latency_->add_from( (int64_t) floor(msg->header.stamp.toNSec()/1000)   , _timestamp_now() );
 }
 
@@ -73,14 +78,21 @@ void App::joint_commands_cb(const osrf_msgs::JointCommandsConstPtr& msg){
 
 
 int main(int argc, char **argv){
-  ros::init(argc, argv, "latency");
+  ConciseArgs parser(argc, argv, "lidar-passthrough");
+  string name="roslatency";
+  parser.add(name, "n", "name", "Name of ros process");
+  parser.parse();
+  cout << "name is: " << name << "\n"; 
+  
+  
+  ros::init(argc, argv, name);
   
   ros::CallbackQueue local_callback_queue;
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
   App *app = new App(nh );
-  std::cout << "ros latency ready\n";
+  std::cout << "launching roslatency as " << name <<"\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
   }  
