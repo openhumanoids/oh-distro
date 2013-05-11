@@ -6,7 +6,7 @@ classdef StandingController < DRCController
   
   methods
   
-    function obj = StandingController(name,r)
+    function obj = StandingController(name,r,options)
       typecheck(r,'Atlas');
 
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
@@ -25,7 +25,8 @@ classdef StandingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      options.use_mex = true;
+      if(~isfield(options,'use_mex')) options.use_mex = true; end
+
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 

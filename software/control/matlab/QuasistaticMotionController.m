@@ -8,7 +8,7 @@ classdef QuasistaticMotionController < DRCController
   
   methods
   
-    function obj = QuasistaticMotionController(name,r)
+    function obj = QuasistaticMotionController(name,r,options)
       typecheck(r,'Atlas');
 
       Q = eye(4);
@@ -17,14 +17,14 @@ classdef QuasistaticMotionController < DRCController
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[zeros(2),eye(2); zeros(2,4)],'D',...
         [zeros(2); eye(2)],'R',R,'Qy',zeros(4),'S',[],'s1',[],...
-        'x0',[],'u0',0,'y0',[],'qtraj',[],'supptraj',[]));
+        'x0',zeros(4,1),'u0',zeros(2,1),'y0',[],'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 1e-1;
       options.R = 1e-50*eye(getNumInputs(r));
-      options.debug = true;
-      options.lcm_foot_contacts = false;
+      %options.debug = true;
+      %options.lcm_foot_contacts = false;
 
 %       input_names = r.getInputFrame.coordinates;
 %       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
