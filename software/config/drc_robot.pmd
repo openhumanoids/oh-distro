@@ -450,10 +450,8 @@ script "comp.qual_1" {
     start group "b.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_quals_1"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 script "comp.qual_2" {
@@ -471,10 +469,8 @@ script "comp.qual_3" {
     start group "b.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_quals_3"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 script "comp.vrc_driving" {
@@ -491,10 +487,8 @@ script "comp.ingress" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.6.ingress";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_mit_ingress"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 ######################################
@@ -504,10 +498,8 @@ script "dev.qual_1" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_quals_1"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 script "dev.qual_2" { 
     start group "0.development";
@@ -525,10 +517,8 @@ script "dev.qual_3" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_quals_3"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 script "dev.vrc_driving" { 
     start group "0.development";
@@ -545,10 +535,8 @@ script "dev.mit_walking" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_mit_walking";
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 script "dev.mit_walking_vo" {
@@ -565,16 +553,13 @@ script "dev.mit_walking_vo" {
     start cmd "lcm-logger-no-vis";
 }
 
-
 script "dev.mit_manip_slow" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_mit_manip_slow";
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 script "dev.mit_manip" {
@@ -588,10 +573,8 @@ script "dev.ingress" {
     start group "0.development";
     start group "a.1.core";
     start group "a.6.ingress";
-    wait ms 12000;
+    wait ms 18000;
     start cmd "gz_mit_ingress"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 
