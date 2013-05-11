@@ -97,8 +97,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.joint_position[i];
-            if (fdata.val[index] > Math.PI)
-              fdata.val[index] -= 2*Math.PI;
+//             if (fdata.val[index] > Math.PI)
+//               fdata.val[index] -= 2*Math.PI;
             fdata.val[index+m_num_joints+m_num_floating_joints] = msg.joint_velocity[i];
           }
         }
@@ -141,8 +141,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
         if (j!=null) {
           index = j.intValue();
           fdata.val[index] = rpy[0];
-          if (fdata.val[index] > Math.PI)
-            fdata.val[index] -= 2*Math.PI;
+//           if (fdata.val[index] > Math.PI)
+//             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[0];
         }
 
@@ -150,8 +150,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
         if (j!=null) {
           index = j.intValue();
           fdata.val[index] = rpy[1];
-          if (fdata.val[index] > Math.PI)
-            fdata.val[index] -= 2*Math.PI;
+//           if (fdata.val[index] > Math.PI)
+//             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[1];
         }
 
@@ -159,8 +159,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
         if (j!=null) {
           index = j.intValue();
           fdata.val[index] = rpy[2];
-          if (fdata.val[index] > Math.PI)
-            fdata.val[index] -= 2*Math.PI;
+//           if (fdata.val[index] > Math.PI)
+//             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[2];
         }
 
