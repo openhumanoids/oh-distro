@@ -45,6 +45,9 @@ class Affordance {
   bool GetSegmentJacobianExpressedInWorld(const std::string& segmentName, 
 					  const StateVector& state, 
 					  KDL::Jacobian& jacobian);
+  bool GetSegmentJacobianExpressedInWorld2(const std::string& segmentName, 
+					   const StateVector& state, 
+					   KDL::Jacobian& jacobian);
   bool DecodeState(const StateVector& state, KDL::Frame& root_expressedIn_world, KDL::JntArray& joints);
   void DecodeState(const StateVector& state, KDL::JntArray& joints);
   void PrintKdlTree() { PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0); }

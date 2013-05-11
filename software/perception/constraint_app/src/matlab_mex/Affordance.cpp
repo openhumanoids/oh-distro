@@ -3,6 +3,7 @@
 #include "ConstraintApp.h"
 #include <kdl/treefksolverpos_recursive.hpp>
 #include <kdl/treejnttojacsolver.hpp>
+#include "MyTreeJntToJacSolver.hpp"
 
 Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::cout*/) : m_log(log) 
 {
@@ -307,6 +308,35 @@ bool Affordance::GetSegmentJacobianExpressedInWorld(const std::string& segmentNa
 
   jacobian.resize(state.size());
   KDL::TreeJntToJacSolver jntjac(m_tree);
+  int result = jntjac.JntToJac(joints, jacobian, segmentName);
+  if ( result < 0 ) {
+    m_log << "ERROR: Affordance::GetSegmentJacobianExpressedInWorld: JntToJac returned " 
+	  << result << std::endl
+	  << "   segmentName=" << segmentName << std::endl
+	  << "   joints=" << joints.data << std::endl;
+    m_log << "   state=";
+    for ( int i = 0; i < state.size(); i++ ) m_log << state[i] << ", ";
+    m_log << std::endl;
+    return false;
+  }
+
+  //swap the wpr back to rpw
+  Eigen::MatrixXd temp(jacobian.data.col(3));
+  jacobian.data.col(3) = jacobian.data.col(5);
+  jacobian.data.col(5) = temp;
+
+  return true;
+}
+
+bool Affordance::GetSegmentJacobianExpressedInWorld2(const std::string& segmentName, 
+						     const StateVector& state, 
+						     KDL::Jacobian& jacobian)
+{
+  KDL::JntArray joints;
+  DecodeState(state, joints);
+
+  jacobian.resize(state.size());
+  MyTreeJntToJacSolver jntjac(m_tree);
   int result = jntjac.JntToJac(joints, jacobian, segmentName);
   if ( result < 0 ) {
     m_log << "ERROR: Affordance::GetSegmentJacobianExpressedInWorld: JntToJac returned " 
