@@ -35,7 +35,7 @@ while true
     footsteps = planFootsteps(r, x0, navgoal, struct('plotting', true, 'interactive', false));
   else
     footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
-    msg ='Walking Planner: Listening for plans'; disp(msg); send_status(3,0,0,msg);
+    msg ='Walk Plan : Listening for plans'; disp(msg); send_status(6,0,0,msg);
     waiting = true;
     foottraj = [];
 
@@ -47,7 +47,7 @@ while true
        
       footsteps = footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
-        msg ='Walking Planner: plan received'; disp(msg); send_status(3,0,0,msg);
+        msg ='Walk Plan : plan received'; disp(msg); send_status(6,0,0,msg);
         waiting = false;
       end
     end
@@ -55,7 +55,7 @@ while true
   [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
-  msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
+  msg ='Walk Plan : Publishing robot plan...'; disp(msg); send_status(6,0,0,msg);
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
@@ -80,7 +80,7 @@ while true
     plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
   end  
 
-  msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
+  msg ='Walk Plan : Waiting for confirmation...'; disp(msg); send_status(6,0,0,msg);
   plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
   reject_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
   waiting = true;
@@ -89,13 +89,13 @@ while true
     rplan = plan_listener.getNextMessage(100);
     if (~isempty(rplan))
       % for now don't do anything with it, just use it as a flag
-      msg ='Walking Planner: Confirmed. Executing...'; disp(msg); send_status(3,0,0,msg);
+      msg ='Walk Plan : Confirmed. Executing...'; disp(msg); send_status(6,0,0,msg);
       waiting = false;
     end
     rplan = reject_listener.getNextMessage(100);
     if (~isempty(rplan))
       % for now don't do anything with it, just use it as a flag
-      disp('Plan rejected.');
+      disp('Walk Plan : Plan rejected.');
       waiting = false;
       execute = false;
     else 

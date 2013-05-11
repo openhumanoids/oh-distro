@@ -14,7 +14,9 @@ classdef DRCRawTerrainMap < RigidBodyTerrain
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe('MAP_DEPTH',map_mon);
       
-      fprintf(1,'waiting for a non-empty terrain map message...');
+      msg = ['????????? : Waiting for a non-empty terrain map message... [DRCRawTerrainMap.m]'];
+      send_status(3, 0, 0, msg );
+      fprintf(1,msg);
       obj.minval=[];
       while isempty(obj.minval)
         d=[];

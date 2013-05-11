@@ -51,7 +51,7 @@ options.q_nom = qstar;
 rfoot_body = biped.findLink(biped.r_foot_name);
 lfoot_body = biped.findLink(biped.l_foot_name);
 
-msg ='Walking Planner: Computing robot plan...'; disp(msg); send_status(3,0,0,msg);
+msg ='Walk Plan : Computing robot plan...'; disp(msg); send_status(6,0,0,msg);
 % v = r.constructVisualizer;
 % v.display_dt = 0.05;
 htraj = [];
