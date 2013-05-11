@@ -171,9 +171,6 @@ classdef QPController < MIMODrakeSystem
     
 %   debugging for the rpy velocities
     nq = getNumDOF(obj.robot); qd = x(nq+(1:nq)); 
-    scope('atlas','rolldot',t,qd(4),struct('scope_id',1));
-    scope('atlas','pitchdot',t,qd(5),struct('scope_id',2));
-    scope('atlas','yawdot',t,qd(6),struct('scope_id',3));
     
     % get foot contact state
     if obj.lcm_foot_contacts
