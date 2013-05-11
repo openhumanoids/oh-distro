@@ -136,7 +136,8 @@ void LegOdometry_Handler::setupLCM() {
 void LegOdometry_Handler::InitializeFilters(const int num_filters) {
 	
 	for (int i=0;i<num_filters;i++) {
-		joint_lpfilters.push_back(LowPassFilter());
+		
+		//joint_lpfilters.push_back(LowPassFilter());
 	}
 }
 			
@@ -719,7 +720,9 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     }
     
     for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+      //jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+            
     }
    
     if (!stillbusy) // not really required, as LCM only allows a single event, but doesn't hurt to leave it here. Maybe we see something of this in the future

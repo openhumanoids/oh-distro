@@ -119,11 +119,13 @@ private:
 	double spare_time;
 	timespec before, quater,mid, threequat, after, spare;
 	
+	
+	// These filters were added separately from the joint filters
 	LowPassFilter lpfilter[FILTER_ARR];
 	Filter* _filter[FILTER_ARR];
 	
 	std::vector<LowPassFilter> joint_lpfilters;
-	//std::vector<Filter*> _joint_filters;
+	std::vector<Filter*> _joint_filters;
 	
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
