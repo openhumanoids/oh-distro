@@ -29,10 +29,11 @@ using namespace std;
 const char* PARAM_STATUS_0 = "Network";
 const char* PARAM_STATUS_1 = "Motion Estimation";
 const char* PARAM_STATUS_2 = "Tracking";
-const char* PARAM_STATUS_3 = "Planning & Control";
+const char* PARAM_STATUS_3 = "Control";
 const char* PARAM_STATUS_4 = "Grasping";
 const char* PARAM_STATUS_5 = "Driving";
-#define NUMBER_OF_SYSTEMS 6
+const char* PARAM_STATUS_6 = "Planning";
+#define NUMBER_OF_SYSTEMS 7
 #define MAXIMUM_N_OF_LINES 80
 
 const char* PARAM_IMPORTANT = "Important";
@@ -43,8 +44,21 @@ const bool PARAM_STATUS_1_DEFAULT = false;
 const bool PARAM_STATUS_2_DEFAULT = false;
 const bool PARAM_STATUS_3_DEFAULT = false;
 const bool PARAM_STATUS_4_DEFAULT = false;
-const bool PARAM_STATUS_5_DEFAULT = true;
+const bool PARAM_STATUS_5_DEFAULT = false;
+const bool PARAM_STATUS_6_DEFAULT = false;
 const bool PARAM_IMPORTANT_DEFAULT = false;
+
+
+float colors[NUMBER_OF_SYSTEMS][3] = {
+        { 1.0, 0.0, 0.0 }, // red
+        { 0.7, 0.7, 0.0 }, // yellow
+        { 0.0, 1.0, 0.5 }, // green
+        { 0.0, 0.7, 0.7 }, // cyan
+        { 0.0, 0.0, 1.0 }, // blue
+        { 0.0, 0.4, 0.3 }, // dark green
+        { 1.0, 0.5, 0.0 },  // orange
+};
+
 
 const char* PARAM_SHADING = "Shading";
 const bool PARAM_SHADING_DEFAULT = true;
@@ -208,17 +222,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     //void *font = GLUT_BITMAP_8_BY_13;
     void *font = GLUT_BITMAP_9_BY_15;
     int line_height = 14;
-
-    float colors[6][3] = {
-        { 1.0, 0.0, 0.0 }, // red
-        { 0.7, 0.7, 0.0 }, // yellow
-        { 0.0, 1.0, 0.5 }, // green
-        { 0.0, 0.7, 0.7 }, // ??
-        { 0.0, 0.0, 1.0 }, // blue
-        { 0.0, 0.4, 0.3 },
-    };
-    //{ 0.6, 0.6, 0.6 }, // gray        
-
+ 
+    
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
 
     sprintf(line1, "n affs %d",self->naffs);
@@ -466,6 +471,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_status[3] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_3);
   self->param_status[4] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_4);
   self->param_status[5] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
+  self->param_status[6] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_6);
   //fprintf(stderr, "Param Status : %d\n", self->param_status[5]);
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
   self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
@@ -535,6 +541,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->param_status[3] = PARAM_STATUS_3_DEFAULT;    
     self->param_status[4] = PARAM_STATUS_4_DEFAULT;    
     self->param_status[5] = PARAM_STATUS_5_DEFAULT;    
+    self->param_status[6] = PARAM_STATUS_6_DEFAULT;    
     self->param_important = PARAM_IMPORTANT_DEFAULT;
     
   if (viewer) {
@@ -563,6 +570,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_STATUS_4, PARAM_STATUS_4_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_STATUS_5, PARAM_STATUS_5_DEFAULT, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_STATUS_6, PARAM_STATUS_6_DEFAULT, NULL);
     
 
     bot_gtk_param_widget_add_enum (self->pw, PARAM_MODE, (BotGtkParamWidgetUIHint)0, MODE_FADE, 
