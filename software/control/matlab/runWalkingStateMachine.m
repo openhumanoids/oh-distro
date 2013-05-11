@@ -1,4 +1,4 @@
-function runQual1StateMachine()
+function runWalkingStateMachine()
 
 addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
