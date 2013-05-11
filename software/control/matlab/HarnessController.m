@@ -42,8 +42,8 @@ classdef HarnessController < DRCController
       obj.floating = float;
       
       if nargin < 3
-        % controller timeout must match the harness time set in VRCPlugin.cpp
-        obj = setTimedTransition(obj,5,'standing',true);
+        % controller timeout must match the harness time set in mit.launch
+        obj = setTimedTransition(obj,10,'standing',true);
       else
         obj = setTimedTransition(obj,timeout,'standing',true);
       end
@@ -59,7 +59,7 @@ classdef HarnessController < DRCController
     function trigger_active = standingRequestTrigger(obj,input_data,times)
       trigger_active = true;
       t=max(times);
-      if ~isinf(getDuration(obj)) && t>3.0
+      if ~isinf(getDuration(obj)) && t>4.0
         x = input_data{1};
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         q_nom = d.xstar(1:getNumDOF(obj.robot));
@@ -106,8 +106,7 @@ classdef HarnessController < DRCController
           q_nom = d.xstar(1:getNumDOF(obj.robot));
         end
         q0 = zeros(getNumDOF(obj.robot),1);
-%         qtraj = PPTrajectory(spline([0 2.5],[q0 q_nom]));
-        qtraj = PPTrajectory(spline([0 2.5],[q0 q0]));
+        qtraj = PPTrajectory(spline([5 9],[q0 q_nom]));
       end
       
       obj.controller_data.setField('qtraj',qtraj);
