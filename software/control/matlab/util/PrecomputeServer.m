@@ -63,15 +63,13 @@ classdef PrecomputeServer
     end
     
     function run(obj)
-      tic;
       while true
-        if (toc > 0.05)
-          checkPrecomputeRequests(obj);
-          hb = drc.utime_t();
-          hb.utime = 0; % put something useful here?
-          obj.lc.publish('PRECOMP_SERVER_HEARTBEAT',hb);
-          tic;
-        end
+        checkPrecomputeRequests(obj);
+        hb = drc.utime_t();
+        hb.utime = 0; % put something useful here?
+        obj.lc.publish('PRECOMP_SERVER_HEARTBEAT',hb);
+        
+        pause(0.025);
       end
     end
   end
