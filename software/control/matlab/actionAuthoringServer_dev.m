@@ -1,4 +1,4 @@
-function actionAuthoringServer(IK)
+function actionAuthoringServer(IK,action_options)
 % IK = 1 means we only require an IK solution
 % IK = 2 meas that the we also do ZMP planning
 if(nargin<1)
@@ -18,6 +18,11 @@ elseif(IK == 3)
     action_options.ZMP = false;
     action_options.QS = true;
 end
+
+% Parse options structure
+if(~isfield(action_options,'drake_vis')) action_options.drake_vis = false; end
+if(~isfield(action_options,'use_mex')) action_options.use_mex = false; end
+
 % listens for drc_action_sequence_t messages and, upon receipt, computes the
 % IK and publishes the robot_state_t
 
@@ -38,39 +43,84 @@ end
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-%r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating',true));
 r = RigidBodyManipulator('');
 r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_polaris_ranger_ev/model_no_rollcage.urdf',[0;0;0],[0;0;-pi/2]);
+%r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_simple_vehicle/model.urdf',[0;0;0],[0;0;-pi/2]);
+r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model.urdf',[0;0;0],[0;0;-pi/2]);
 warning(s);
+
+nq = r.getNumDOF();
+% load the "zero position"
+load('data/atlas_fp.mat');
+q = xstar(1:nq);
+options.q_traj_nom = ConstantTrajectory(q);
+
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
 robot_plan_publisher =  RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 %%
 
-% load the "zero position"
-load('data/aa_atlas_fp.mat');
-nq = r.getNumDOF();
-q = xstar(1:nq);
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
 cost.base_y = 0;
 cost.base_z = 0;
-cost.base_roll = 1000;
-cost.base_pitch = 1000;
+arm_cost = 1e2;
+cost.l_arm_usy = arm_cost;
+cost.l_arm_shx = arm_cost;
+cost.l_arm_ely = arm_cost;
+cost.l_arm_elx = arm_cost;
+cost.l_arm_uwy = arm_cost;
+cost.r_arm_usy = arm_cost;
+cost.r_arm_shx = arm_cost;
+cost.r_arm_ely = arm_cost;
+cost.r_arm_elx = arm_cost;
+cost.r_arm_uwy = arm_cost;
+cost.base_roll = 1e3;
+cost.base_pitch = 1e3;
 cost.base_yaw = 0;
 cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);
 options = struct();
 options.Q = diag(cost(1:r.getNumDOF));
-options.q_nom = q;
+[jointLimitMin, jointLimitMax] = r.getJointLimits();
+joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
+knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
+elbow_ind = find(~cellfun(@isempty,strfind(joint_names,'elx')));
+back_ind = find(~cellfun(@isempty,strfind(joint_names,'ubx')) | ~cellfun(@isempty,strfind(joint_names,'mby')));
+hip_ind = find( ...
+                ~cellfun(@isempty,strfind(joint_names,'l_leg_uhz')) ...
+              );
+                %| ~cellfun(@isempty,strfind(joint_names,'mhx')) ...
+                %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...
+
+jointLimitShrink = ones(size(jointLimitMin));
+jointLimitShrink(back_ind) = 0.4;
+%jointLimitShrink(hip_ind) = 0.6;
+jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
+jointLimitMid = (jointLimitMax + jointLimitMin)/2;
+
+options.jointLimitMin = jointLimitMid - jointLimitHalfLength;
+options.jointLimitMin(isnan(options.jointLimitMin)) = -Inf;
+options.jointLimitMax = jointLimitMid + jointLimitHalfLength;
+options.jointLimitMax(isnan(options.jointLimitMax)) = Inf;
+
+options.jointLimitMin(knee_ind) = 0.6;
+options.jointLimitMin(hip_ind) = 0.0;
+
+[options.jointLimitMin(hip_ind), options.jointLimitMax(hip_ind)]
+
+options.use_mex = action_options.use_mex;
 
 contact_tol = 1e-4;
-v = r.constructVisualizer();
+
+if(action_options.drake_vis)
+  v = r.constructVisualizer();
+  v.draw(0,q);
+end
 
 timeout=10;
 display('Listening ...');
@@ -92,6 +142,26 @@ while (1)
         kc = getConstraintFromGoal(r,goal);
         action_sequence = action_sequence.addKinematicConstraint(kc);
       end
+      for i=1:length(action_sequence.kincons)
+        if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
+          contact_state0 = action_sequence.kincons{i}.contact_state0 ;
+          contact_statei = action_sequence.kincons{i}.contact_statei ;
+          for j = 1:length(contact_state0)
+            ind_make = contact_state0{j}==ActionKinematicConstraint.MAKE_CONTACT;
+            contact_state0{j}(ind_make) = contact_statei{j}(ind_make);
+          end
+          action_sequence.kincons{i}.contact_state0 = contact_state0;
+        end
+        if(action_sequence.kincons{i}.tspan(2) == action_sequence.tspan(2))
+          contact_statef = action_sequence.kincons{i}.contact_statef ;
+          contact_statei = action_sequence.kincons{i}.contact_statei ;
+          for j = 1:length(contact_statef)
+            ind_break = contact_statef{j}==ActionKinematicConstraint.BREAK_CONTACT;
+            contact_statef{j}(ind_break) = contact_statei{j}(ind_break);
+          end
+          action_sequence.kincons{i}.contact_statef = contact_statef;
+        end
+      end
 
       % Above ground constraints
       %tspan = action_sequence.tspan;
@@ -111,14 +181,15 @@ while (1)
       for i = 1:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
           if(isempty(ikargs))
-              q_key_time_samples(:,i) = options.q_nom;
+              q_key_time_samples(:,i) = ...
+                options.q_traj_nom.eval(action_sequence.key_time_samples(i));
           else
               [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
-              %if(info>10)
-                %warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
-              %else
-                %fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
-              %end
+              if(info>10)
+                warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+              else
+                fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
+              end
               %if(i<num_key_time_samples)
                 %action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
               %end
@@ -126,115 +197,170 @@ while (1)
           kinsol = doKinematics(r,q_key_time_samples(:,i));
           com_key_time_samples(:,i) = getCOM(r,kinsol);
       end
+      if(action_options.drake_vis)
+        v.draw(0,q_key_time_samples(:,1));
+      end
 
       if(action_options.QS)
-        dt = 0.5;
+        %dt = 0.5;
         stillGoing = true;
         q_qs_plan = q_key_time_samples;
         t_qs_breaks = action_sequence.key_time_samples;
+        q0 = q;
+        %q0 = q_qs_plan(:,1);
+        qdot0 = zeros(size(q));
+        options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
+        %options.qtraj0 = PPTrajectory(foh(t_qs_breaks,q_qs_plan));
+        options.quasiStaticFlag = true;
+        %options.Qv = eye(length(q0));
+        options.Qa = 1e0*eye(length(q0));
+        options.shrinkFactor = 0.5;
+        %window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
+        %%t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+        %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
+        %t_qs_breaks(end) = action_sequence.tspan(end);
+        options.nSample = length(t_qs_breaks)-1;
+        options.considerStaticContacts = false;
+        [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
+        if(info>10)
+          warning(['IK sequence was not successful! ',num2str(t_qs_breaks(i)),' is not successful']);
+        else
+          fprintf('IK sequence successful!\n',t_qs_breaks(i));
+        end
+        for i = 1:numel(t_qs_breaks)
+          kinsol = doKinematics(r,q_qs_plan(:,i));
+          [com_qs_plan(:,i),J] = getCOM(r,kinsol);
+          comdot_qs_plan(:,i) = J*qdot_qs_plan(:,i);
+        end
+        %keyboard
+        q_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,q_qs_plan,qdot_qs_plan));
+        %q_qs_traj = PPTrajectory(pchip(t_qs_breaks,q_qs_plan));
+        %q_qs_traj = PPTrajectory(foh(t_qs_breaks,q_qs_plan));
+        com_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,com_qs_plan,comdot_qs_plan));
+        %com_qs_traj = PPTrajectory(foh(t_qs_breaks,com_qs_plan));
+
+        %options.Q = 1e2*eye(length(q0));
+
+
+        % Refine?
         while stillGoing
-          %q0 = q;
-          q0 = q_qs_plan(:,1);
-          qdot0 = zeros(size(q));
-          options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
-          options.quasiStaticFlag = true;
-          %options.Qv = eye(length(q0));
-          %options.Qa = 1e1*eye(length(q0));
-          window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
-          %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
-          t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
-          t_qs_breaks(end) = action_sequence.tspan(end);
-          options.nSample = length(t_qs_breaks)-1;
-          options.use_mex = true;
-          [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
-
           % Drake gui playback
-          xtraj = PPTrajectory(pchipDeriv(t_qs_breaks,[q_qs_plan;qdot_qs_plan],[qdot_qs_plan;0*qdot_qs_plan]));
-          xtraj = xtraj.setOutputFrame(r.getStateFrame());
-          v.playback(xtraj,struct('slider',true));
+          if(action_options.drake_vis)
+            xtraj = PPTrajectory(pchip(t_qs_breaks,[q_qs_plan;0*q_qs_plan]));
+            xtraj = xtraj.setOutputFrame(r.getStateFrame());
+            v.playback(xtraj,struct('slider',true));
+          end
 
-          % Refine?
-          dt = input(sprintf('Planning finished with dt = %4.2f.\n New dt:',dt));
+          dt = 0.05;
+          dt = input('dt for interpolation?: ');
           if(isempty(dt))
             stillGoing = false;
+          else
+            com_kc = ActionKinematicConstraint(r,0,[0;0;0], ...
+              com_qs_traj,action_sequence.tspan);
+            action_sequence = action_sequence.addKinematicConstraint(com_kc);
+            window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
+            %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+            t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
+            t_qs_breaks(end) = action_sequence.tspan(end);
+            q_qs_plan = zeros(size(q_qs_plan,1),numel(t_qs_breaks));
+            options.Q = 1e0*eye(length(q0));
+            options.quasiStaticFlag = false;
+            foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
+            for i = 1:numel(t_qs_breaks)
+              ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
+              if(isempty(ikargs))
+                q_qs_plan(:,i) = q_qs_traj.eval(t_qs_breaks(i));
+              else
+                [q_qs_plan(:,i),info] = ...
+                  inverseKin(r,q_qs_traj.eval(t_qs_breaks(i)),ikargs{:},options);
+                if(info>10)
+                  warning(['IK at time ',num2str(t_qs_breaks(i)),' is not successful']);
+                elseif(mod(t_qs_breaks(i),1) < dt-eps)
+                  fprintf('IK successful upto time %5.3f \n',t_qs_breaks(i));
+                end
+              end
+              j = 1;
+              n = 1;
+              while j<length(ikargs)
+                if(isa(ikargs{j},'RigidBody'))
+                  ikargs{j} = find(r.body==ikargs{j},1);
+                end
+                body_ind{i}(n) = ikargs{j};
+                if(body_ind{i}(n) == 0)
+                  j = j+5;
+                else
+                  body_pos{i}{n} = ikargs{j+1};
+                  if(ischar(body_pos{i}{n})||numel(body_pos{i}{n})==1)
+                    body_pos{i}{n} = getContactPoints(r.body(body_ind{i}(n)),body_pos{i}{n});
+                  end
+                  support_polygon_flags{i}{n} = ...
+                    any(cell2mat(ikargs{j+3}') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+                    any(cell2mat(ikargs{j+3}') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1);
+                  contact_states{i}{n} = ikargs{j+3};
+                  j = j+6;
+                  [rows,mi] = size(body_pos{i}{n});
+                  if(rows~=3) error('bodypos must be 3xmi');end
+                  num_sequence_support_vertices{i}(n) = sum(support_polygon_flags{i}{n});
+                  foot_support_qs(body_ind{i}(n),i) = any(support_polygon_flags{i}{n});
+                end
+                n = n+1;
+              end
+              num_sample_support_vertices(i) = sum(num_sequence_support_vertices{i});
+              kinsol = doKinematics(r,q_qs_plan(:,i));
+              total_body_support_vert = 0;
+              com_qs_plan(:,i) = getCOM(r,kinsol);
+              support_vert_pos{i} = zeros(2,num_sample_support_vertices(i));
+              for j = 1:length(body_ind{i})
+                if(body_ind{i}(j) ~= 0)
+                  [x,J] = forwardKin(r,kinsol,body_ind{i}(j),body_pos{i}{j},0); 
+                  support_vert_pos{i}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j)))...
+                    = x(1:2,support_polygon_flags{i}{j});
+                  total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
+                end
+              end
+            end
           end
+          %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 
           % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
           constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
             size(q_qs_plan,2));
 
           publish(robot_plan_publisher, t_qs_breaks, ...
-            [q_qs_plan; qdot_qs_plan], ...
+            [q_qs_plan; 0*q_qs_plan], ...
             constraints_satisfied);
         end
+
+        % Shift trajectories to be in the body frame of the link specified by
+        % action_options.ref_link_str
+        if(isfield(action_options,'ref_link_str'))
+          typecheck(action_options.ref_link_str,'char');
+          ref_link = r.findLink(options.ref_link_str);
+          pelvis = r.findLink('pelvis');
+          for i = 1:length(t_qs_breaks)
+            kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
+            com_i = getCOM(r,kinsol);
+            if i == 1
+              wTf = ref_link.T;
+              fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
+            end
+            com_qs_plan(:,i) = homogTransMult(fTw,com_i);
+            wTr_i = pelvis.T;
+            fTr_i = fTw*wTr_i;
+            q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
+          end
+        end
+
+        uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
+          'foot_support_qs','ref_link_str'},'data/aa_step_in.mat');
       end
 
       % If the action sequence is specified, we need to solve the ZMP
       % planning and IK for the whole sequence.
       if(action_options.ZMP)
           action_sequence_ZMP = action_sequence;
-%           num_key_time_samples = length(action_sequence.key_time_samples);
-%           com_key_time_samples = zeros(3,num_key_time_samples);
-%           q_key_time_samples = zeros(nq,num_key_time_samples);
-%           for i = 1:length(action_sequence.key_time_samples)
-%               % Solve the IK here to for each key time point (the starting of
-%               % ending of each constraint). We agree that the constraint is
-%               % active in the time interval [start_time,
-%               % end_time) (Half closed half open)
-%               ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
-%               if isempty(ikargs)
-%                 q_key_time_samples(:,i)=options.q_nom;
-%               else
-%                 % call IK
-%                 [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
-%                 if(info>10)
-%                     warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
-%                 end
-%               end
-%               % if the q_start_time is in contact, then replace the inequality contact constraint with the equality
-%               % contact constraint
-%               kinsol = doKinematics(r,q_key_time_samples(:,i));
-%               com_key_time_samples(:,i) = getCOM(r,kinsol);
-%               j = 1;
-%               while(j<length(ikargs))
-%                   body_ind = ikargs{j};
-%                   if(~isnumeric(body_ind))
-%                       error('action sequence should only return numeric body_ind');
-%                   end
-%                   if(body_ind == 0)
-%                       body_pos_lb_time = ikargs{j+1};
-%                       action_constraint_ZMP = actionKinematicConstraint(r,body_ind,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
-%                       j = j+2;
-%                   else
-%                       collision_group_pt = ikargs{j+1};
-%                       pos_start_time = forwardKin(r,kinsol,body_ind,collision_group_pt,false);
-%                       
-%                       contact_pos_ind = pos_start_time(3,:)<contact_tol;
-%                       if(~isempty(contact_pos_ind)&&i<length(action_sequence.key_time_samples))
-%                           tspan = action_sequence.key_time_samples(i:i+1);
-%                           pos_start_time_con = struct();
-%                           pos_start_time_con.max = pos_start_time(:,contact_pos_ind);
-%                           pos_start_time_con.min = pos_start_time(:,contact_pos_ind);
-%                           action_constraint_ZMP_grd_contact = ActionKinematicConstraint(r,body_ind,collision_group_pt(:,contact_pos_ind),pos_start_time_con,tspan,[r.body(body_ind).linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
-%                           action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP_grd_contact);
-%                       end
-%                       
-%                       action_constraint_ZMP = ActionKinematicConstraint(r,body_ind,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[r.body(body_ind).linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
-%                       
-%                       j = j+3;
-%                   end
-%                   action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
-%               end
-%           end
         
-%         tspan = action_sequence.tspan;
-%         for body_ind = 1:length(r.body)
-%           body_contact_pts = r.body(body_ind).getContactPoints();
-%           if(~isempty(body_contact_pts))
-%             above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
-%             action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(above_ground_constraint);
-%           end 
-%         end
         
           dt = 0.02;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
@@ -249,7 +375,6 @@ while (1)
                   if(ikargs{j} == 0)
                     j = j+2;
                   else
-                      %contact_pos_ind = (ikargs{j+2}.max(3,:)<contact_tol)&(all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
                       contact_pos_ind = (all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
                       contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_ind)];
                       j = j+3;
@@ -317,15 +442,15 @@ while (1)
         end
 
       catch ex
-        warning( ...
+        warning(ex.identifier, ...
           [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
           regexprep(ex.getReport,'\n','\n\t'));
         q=q_bk;
         continue;
       end
+      display('Listening ...');
     end
-end
-
+  end
 end 
 
 function kc = getConstraintFromGoal(r,goal)
@@ -411,6 +536,6 @@ end
       contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
       contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
 
-      %contact_distance{1}.max = ConstantTrajectory(inf(1,size(obj.body_pts,2)));
+      %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
       kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,{ContactAffordance()},contact_distance,goal.object_1_contact_grp);
 end
