@@ -443,8 +443,20 @@ group "m.4.base" {
     }
 }
 
+####################################################
+# drc102 - gazebo
+# pal-02 - robot
+# drc005 - base
+############# drc102, pal-02, drc005 ######################
+script "triple.qual_1" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+}
 
-######################################
+############# pal-02 and drc005 #################
 script "comp.qual_1" {
     start group "a.1.core";
     start group "b.1.core";
