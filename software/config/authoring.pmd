@@ -1,0 +1,24 @@
+group "authoring" {
+    cmd "MotionPlanServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
+       host = "localhost";
+    }
+
+    cmd "AuthoringGUI" {
+       exec = "qt4-widget-authoring-lcm-interface-test";
+       host = "localhost";
+    }
+}
+
+group "dev_tools" {
+    cmd "DemoAffordanceServer" {
+       exec = "demo_populate_aff_server";
+       host = "localhost";
+    }
+
+}
+
+script "dev.authoring" { 
+    start cmd "DemoAffordanceServer";
+    start group "authoring";
+}
