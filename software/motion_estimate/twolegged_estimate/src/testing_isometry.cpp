@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include "QuaternionLib.h"
 #include "SignalTap.hpp"
+#include "Filter.hpp"
 
 using namespace std;
 using namespace InertialOdometry;
@@ -91,6 +92,13 @@ int main() {
 			cout << "Trigger is true at: " << i << ", Value is: " << trigger.getCurrentValue() << endl;
 		}
 	}
-		
+
+
+	LowPassFilter _filter;
+
+	for (int i =0;i<10;i++) {
+		_filter.processSample(50.0);
+	}
+
 	return 0;
 }

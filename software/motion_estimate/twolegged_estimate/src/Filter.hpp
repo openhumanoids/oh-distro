@@ -7,6 +7,7 @@
 //#include "fdacoefs_30Hz_10Hzcutoff.h"
 #include "filter_coefficients/fdacoefs_1000_10_100_-20dB.h"
 
+/*
 class Filter {
 protected:
 	boost::circular_buffer<double> samples_buf;
@@ -23,17 +24,27 @@ public:
 	
 	void terminate();
 };
+*/
 
-class LowPassFilter : public Filter { 
+class LowPassFilter {
 private:
+	boost::circular_buffer<double> samples_buf;
+	int tap_size;
 	
-	
-	
+	void initSamples();
+
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
 	LowPassFilter();
+	~LowPassFilter();
 	
+	LowPassFilter(const LowPassFilter &original);
+
+	void Init();
+
+	LowPassFilter& operator=(LowPassFilter org);
+
 	double processSample(double sample);
 	
 };

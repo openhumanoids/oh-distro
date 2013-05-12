@@ -55,14 +55,14 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	// This variable is to be depreciated -- TODO
 	//both_feet_in_contact = true;
 	
-	for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
-	for (int i=0;i<3;i++) {_pos_filter[i] = &pos_lpfilter[i];}
+	//for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
+	//for (int i=0;i<3;i++) {_pos_filter[i] = &pos_lpfilter[i];}
 	
 	
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
-	// the idea at this point is that if the accleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
+	// the idea at this point is that if the acceleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
 	_vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY); 
 	_vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
 	_vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
@@ -282,7 +282,8 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 			
 	}
 	
-#if defined( LOG_DATA_FILES )
+//#if defined( LOG_DATA_FILES )
+	// log blocking is handled by the object itself
 	ss << leftforces.z << ", " << rightforces.z << ", ";
 	
 	ss << standing_timer << ", " << standing_delay << ", ";
@@ -291,7 +292,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	
 	ss << std::endl;
 	string datastr = ss.str();
-	datafile.log(datastr);
+	datafile << datastr;
 	
 	cnct_est << leftforces.z << ", " << rightforces.z << ", ";
 	
@@ -299,11 +300,8 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	cnct_est << (rightContactStatus() > 0.5 ? "1" : "0");
 	cnct_est << "\n";
 	
-	datastr = "";
-	datastr = cnct_est.str();
-	
-	footcontactfile.log(datastr);
-#endif
+	footcontactfile << cnct_est.str();
+//#endif
 	
 	
 	return newstep;

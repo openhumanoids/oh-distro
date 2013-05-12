@@ -27,7 +27,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	std::cout << "Switches value for listen to LCM trues is: " << _switches->lcm_read_trues << std::endl;
 	
-	for (int i=0;i<FILTER_ARR;i++) {_filter[i] = &lpfilter[i];}
+	//for (int i=0;i<FILTER_ARR;i++) {_filter[i] = &lpfilter[i];}
 	
 	
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -136,12 +136,12 @@ void LegOdometry_Handler::setupLCM() {
 void LegOdometry_Handler::InitializeFilters(const int num_filters) {
 	
 	for (int i=0;i<num_filters;i++) {
-		
-		//joint_lpfilters.push_back(LowPassFilter());
+		LowPassFilter member;
+		joint_lpfilters.push_back(member);
 	}
 }
 			
-
+// obsolete
 void LegOdometry_Handler::run(bool testingmode) {
 	
 	// TODO
@@ -157,7 +157,6 @@ void LegOdometry_Handler::run(bool testingmode) {
 			
 		}
 		
-		
 	}
 	else
 	{
@@ -165,7 +164,7 @@ void LegOdometry_Handler::run(bool testingmode) {
 		
 		try
 		{
-			// This is the highest referrence point for the 
+			// This is the highest reference point for the
 			//This is in main now...
 			//while(0 == lcm_->handle());
 		    
@@ -191,8 +190,31 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
 void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
 	// TODO -- This must be updated to use naming and not numerical 0 and 1 for left to right foot isolation
 	
+#ifdef TRY_FOOT_FORCE_MAP_FIND
+
+	// using a map to find the forces each time is not the most efficient way, but its flexible and useful for when we need to change to using forces from the hands when climbing ladders
+	// can optimize here if required, but the overhead for this is expected to be reasonable
+	map<string, double> foot_forces;
+	for (int i=0;i<msg->contacts.num_contacts;i++) {
+		foot_forces.insert(make_pair(msg->contacts.id[i], msg->contact_force[i]));
+	}
+
+	map<string, double >::iterator contact_lf;
+	map<string, double >::iterator contact_rf;
+
+	contact_lf=cartpos_out.find("l_foot");
+	contact_rf=cartpos_out.find("r_foot");
+
+	left_force = lpfilter[0].processSample(contact_lf->second);
+	right_force = lpfilter[1].processSample(contact_rf->second);
+
+#else
+
 	left_force = lpfilter[0].processSample(msg->contacts.contact_force[0].z);
 	right_force = lpfilter[1].processSample(msg->contacts.contact_force[1].z);
+
+#endif
+
 }
 
 
@@ -387,7 +409,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     }
     
     //lcm_->publish("POSE_KIN",&pose);
-      lcm_->publish("POSE_BODY" + _channel_extension,&pose);
+      lcm_->publish("POSE_BODY_TRUE",&pose);// + _channel_extension,&pose);
         
     //Below is copied from Maurice's VO -- publishing of true and estimated robot states
   
@@ -401,50 +423,57 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   pose_msg.orientation[1] = msg->origin_position.rotation.x;
   pose_msg.orientation[2] = msg->origin_position.rotation.y;
   pose_msg.orientation[3] = msg->origin_position.rotation.z;
-  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
+//  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
   
   drc::position_3d_t origin;
-  origin.translation.x = currentPelvis.translation().x();
-  origin.translation.y = currentPelvis.translation().y();
-  origin.translation.z = currentPelvis.translation().z();
   
-  origin.rotation.w = output_q.w();
-  origin.rotation.x = output_q.x();
-  origin.rotation.y = output_q.y();
-  origin.rotation.z = output_q.z();  
+  // True or estimated position
+  if (false) {
+	  origin.translation.x = msg->origin_position.translation.x;
+	  origin.translation.y = msg->origin_position.translation.y;
+	  origin.translation.z = msg->origin_position.translation.z;
+  } else {
+	  origin.translation.x = currentPelvis.translation().x();
+	  origin.translation.y = currentPelvis.translation().y();
+	  origin.translation.z = currentPelvis.translation().z();
+  }
+
+  // true or estimated IMU
+  if (false) {
+	origin.rotation.w = msg->origin_position.rotation.w;
+	origin.rotation.x = msg->origin_position.rotation.x;
+	origin.rotation.y = msg->origin_position.rotation.y;
+	origin.rotation.z = msg->origin_position.rotation.z;
+  } else {
+	origin.rotation.w = output_q.w();
+	origin.rotation.x = output_q.x();
+	origin.rotation.y = output_q.y();
+	origin.rotation.z = output_q.z();
+  }
   
   drc::twist_t twist;
   
-  twist.linear_velocity.x = velocity_states(0);
-  twist.linear_velocity.y = velocity_states(1);
-  twist.linear_velocity.z = velocity_states(2);
-//  twist.linear_velocity.x = TRUE_state_msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
-//  twist.linear_velocity.y = TRUE_state_msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
-//  twist.linear_velocity.z = TRUE_state_msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
-
-  
-  
-  twist.angular_velocity.x = local_rates(0);
-  twist.angular_velocity.y = local_rates(1);
-  twist.angular_velocity.z = local_rates(2);
-  
-  /*
-  if (_switches->use_true_z) {
-	  twist.angular_velocity.x = msg->origin_twist.linear_velocity.x;
-	  twist.angular_velocity.y = msg->origin_twist.linear_velocity.y;
-	  twist.angular_velocity.z = msg->origin_twist.linear_velocity.z;
+  // True or estimated linear velocities
+  if (true) {
+	  twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
+	  twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
+	  twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+  } else {
+	twist.linear_velocity.x = velocity_states(0);
+	twist.linear_velocity.y = velocity_states(1);
+	twist.linear_velocity.z = velocity_states(2);
   }
-  */
   
-  /*
-   * not the part of the shaking problem
-  if (_switches->use_true_z) {
+  // true or estimated rotation rates
+  if (false) {
     twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
     twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
     twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
+  } else {
+	twist.angular_velocity.x = local_rates(0);
+	twist.angular_velocity.y = local_rates(1);
+	twist.angular_velocity.z = local_rates(2);
   }
-  */
-  
   
   // EST is TRUE with sensor estimated position
   drc::robot_state_t msgout;
@@ -468,9 +497,26 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   
   // Where is the head at
   Eigen::Isometry3d local_to_head;
-  local_to_head = currentPelvis*body_to_head;
   
-  // now we need the linear and rotational velocity states -- velocity and acclerations are computed wiht the first order differential
+  std::cout << body_to_head.translation().transpose() << " is b2h\n";
+
+  // TODO -- remember this flag
+  if (false) {
+	  Eigen::Isometry3d truebody;
+	  truebody.setIdentity();
+	  truebody.translation().x() = msg->origin_position.translation.x;
+	  truebody.translation().y() = msg->origin_position.translation.y;
+	  truebody.translation().z() = msg->origin_position.translation.z;
+	  truebody.rotate(Eigen::Quaterniond(msg->origin_position.rotation.w,msg->origin_position.rotation.x,msg->origin_position.rotation.y,msg->origin_position.rotation.z));
+
+	  std::cout << truebody.translation().transpose() << " is tb\n";
+
+	  local_to_head = truebody * body_to_head;
+	  std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
+  } else {
+	  local_to_head = currentPelvis*body_to_head;
+  }
+  // now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
     
   Eigen::Vector3d local_to_head_vel;
   // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
@@ -559,7 +605,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     // Active foot is
     ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
     
-    // The single foot contact states are also writen to file for reference -- even though its published by a separate processing using this same class.
+    // The single foot contact states are also written to file for reference -- even though its published by a separate processing using this same class.
     ss << _leg_odo->leftContactStatus() << ", ";
     ss << _leg_odo->rightContactStatus() << ", ";
     
@@ -720,8 +766,8 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     }
     
     for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-      //jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
-      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+      jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+      //jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
             
     }
    
@@ -750,20 +796,25 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     //T_body_head = KDL::Frame::Identity();
 	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
 		// This gives us the translation from body to left foot
+		  /*
 #ifdef VERBOSE_DEBUG
 	    std::cout << " LEFT: " << transform_it_lf->second.translation.x << ", " << transform_it_lf->second.translation.y << ", " << transform_it_lf->second.translation.z << std::endl;
 #endif
 	    
 	    //std::cout << "ROTATION.x: " << transform_it->second.rotation.x << ", " << transform_it->second.rotation.y << std::endl;
+	     *
+	     */
 	  }else{
 	    std::cout<< "fk position does not exist" <<std::endl;
 	  }
 	  
 	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+/*
 #ifdef VERBOSE_DEBUG
   	    std::cout << "RIGHT: " << transform_it_rf->second.translation.x << ", " << transform_it_rf->second.translation.y << ", " << transform_it_rf->second.translation.z << std::endl;
 #endif
   	    transform_it_rf->second.rotation;
+  	    */
 	  }else{
         std::cout<< "fk position does not exist" << std::endl;
   	  }

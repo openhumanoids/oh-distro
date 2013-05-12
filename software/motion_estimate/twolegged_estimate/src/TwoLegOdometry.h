@@ -54,10 +54,10 @@ class TwoLegOdometry {
 		NumericalDiff accel;
 		
 		LowPassFilter lpfilter[3];
-		Filter* _filter[3];
+		//Filter* _filter[3];
 		
 		LowPassFilter pos_lpfilter[3];
-		Filter* _pos_filter[3];
+		//Filter* _pos_filter[3];
 		
 		double temp_max_testing[3];
 		
