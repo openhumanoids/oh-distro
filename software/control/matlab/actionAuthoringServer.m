@@ -62,6 +62,8 @@ robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',J
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
+robot_plan_publisher_viewer =  RobotPlanPublisher('atlas',joint_names,true, ...  
+  'CANDIDATE_ROBOT_PLAN');
 %%
 
 
@@ -329,6 +331,8 @@ while (1)
             %[q_qs_plan; 0*q_qs_plan], ...
             %constraints_satisfied);
           publish(robot_plan_publisher, t_qs_breaks, ...
+            [q_qs_plan; 0*q_qs_plan]);
+          publish(robot_plan_publisher_viewer, t_qs_breaks, ...
             [q_qs_plan; 0*q_qs_plan]);
 
         % Shift trajectories to be in the body frame of the link specified by
