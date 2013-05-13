@@ -89,6 +89,16 @@ struct StereoHandler {
     mLatestImage = *iMessage;
   }
 
+  bool cropPoint(const Eigen::Vector3f& iPoint,
+                 const std::vector<Eigen::Vector4f>& iBoundPlanes) {
+    for (size_t k = 0; k < iBoundPlanes.size(); ++k) {
+      const Eigen::Vector4f& plane = iBoundPlanes[k];
+      float dist = plane[0]*iPoint[0] + plane[1]*iPoint[1] + plane[2]*iPoint[2];
+      if (dist < -plane[3]) return false;
+    }
+    return true;
+  }
+
   DepthImageView::Ptr
   getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
     DepthImageView::Ptr view;
@@ -132,9 +142,18 @@ struct StereoHandler {
     maxPt[0] = std::min(w-1, maxPt[0]);
     maxPt[1] = std::min(h-1, maxPt[1]);
 
-    // crop and copy
-    // TODO: set to 0 points that are outside clip polyhedron
+    // form output depth image
+    DepthImage depthImage;
     Eigen::Vector2i newSize = maxPt - minPt + Eigen::Vector2i(1,1);
+    depthImage.setSize(newSize[0], newSize[1]);
+    depthImage.setOrthographic(false);
+    depthImage.setPose(localToCamera.inverse());
+    Eigen::Matrix3f calib = mCalibMatrix;
+    calib(0,2) -= minPt[0];
+    calib(1,2) -= minPt[1];
+    depthImage.setCalib(calib);
+
+    // crop and copy disparity data
     cv::Rect bounds(minPt[0], minPt[1], newSize[0], newSize[1]);
     cv::Mat disparitySub = disparityMat(bounds);
     std::vector<float> dispData(newSize[0]*newSize[1]);
@@ -142,21 +161,22 @@ struct StereoHandler {
     for (int i = 0; i < newSize[1]; ++i) {
       float* inPtr = disparitySub.ptr<float>(i);
       for (int j = 0; j < newSize[0]; ++j, ++inPtr, ++outPtr) {
-        float val = *inPtr;
-        *outPtr = (val > 4000) ? 0 : val*mDisparityFactor;
+        float dispVal = *inPtr;
+        if (dispVal > 4000) {
+          *outPtr = 0;
+        }
+        else {
+          Eigen::Vector3f pt(j,i,dispVal*mDisparityFactor);
+          Eigen::Vector3f ptLocal =
+            depthImage.unproject(pt, DepthImage::TypeDisparity);
+          if (!cropPoint(ptLocal, iBoundPlanes)) *outPtr = 0;
+          else *outPtr = pt[2];
+        }
       }
     }
-    Eigen::Matrix3f calib = mCalibMatrix;
-    calib(0,2) -= minPt[0];
-    calib(1,2) -= minPt[1];
-
-    // form output image and view
-    DepthImage depthImage;
-    depthImage.setSize(newSize[0], newSize[1]);
-    depthImage.setOrthographic(false);
-    depthImage.setPose(localToCamera.inverse());
-    depthImage.setCalib(calib);
     depthImage.setData(dispData, DepthImage::TypeDisparity);
+
+    // wrap in view and return
     view->set(depthImage);
     return view;
   }
