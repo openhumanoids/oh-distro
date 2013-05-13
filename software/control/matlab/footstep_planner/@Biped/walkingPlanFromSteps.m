@@ -61,7 +61,9 @@ for i=1:length(ts)
     try
       q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
     catch err
-      q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+      q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],[],[],[],...
+        rfoot_body,[0;0;0],foottraj.right.orig.eval(t),[],[],[],...
+        lfoot_body,[0;0;0],foottraj.left.orig.eval(t),[],[],[],options);
     end
   else
     q = q0;
