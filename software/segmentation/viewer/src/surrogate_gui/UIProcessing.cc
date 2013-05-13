@@ -1063,23 +1063,23 @@ namespace surrogate_gui
             std::cout << "No affordance selected - not pushing anything" << std::endl;
             return;
           }
-          std::vector<AffConstPtr> affordances;
-          _affordance_wrapper->getAllAffordances(affordances);
-          drc::affordance_collection_t msg;
+          std::vector<affordance::AffPlusPtr> affordances;
+          _affordance_wrapper->getAllAffordancesPlus(affordances);
+          drc::affordance_plus_collection_t msg;
           msg.name = "updateFromSegmentationViewer";
           msg.utime = drc::Clock::instance()->getCurrentTime();
           msg.map_id = -1;
           msg.naffs = affordances.size();
           for (int i = 0; i < msg.naffs; ++i) {
-            drc::affordance_t aff;
+            drc::affordance_plus_t aff;
             affordances[i]->toMsg(&aff);
-            if (affordances[i]->_uid == selectedAff->aff.uid) {
-              aff.aff_store_control = drc::affordance_t::NEW;
+            if (affordances[i]->aff->_uid == selectedAff->aff.uid) {
+              aff.aff.aff_store_control = drc::affordance_t::NEW;
             }
             else {
-              aff.aff_store_control = drc::affordance_t::UPDATE;
+              aff.aff.aff_store_control = drc::affordance_t::UPDATE;
             }
-            msg.affs.push_back(aff);
+            msg.affs_plus.push_back(aff);
           }
           _lcmCpp->publish(AffordanceServer::
                            AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
