@@ -1188,7 +1188,7 @@ classdef ManipulationPlanner < handle
             xtraj(2:getNumDOF(obj.r)+1,:) = q;
             
             
-            v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+            v_desired = 0.3; % 10cm/sec seconds, hard coded for now
             ts = s.*(s_total/v_desired); % plan timesteps
             obj.time_2_index_scale = (v_desired/s_total);
             obj.plan_pub.publish(ts,xtraj);
