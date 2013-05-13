@@ -26,7 +26,6 @@ namespace authoring {
     virtual void set_color( Eigen::Vector3f color );
 
   protected:
-    affordance::AffordanceState _affordance_state;
     opengl::OpenGL_Object_Box _opengl_object_box;
     opengl::OpenGL_Object_Cylinder _opengl_object_cylinder;
     opengl::OpenGL_Object_Sphere _opengl_object_sphere;

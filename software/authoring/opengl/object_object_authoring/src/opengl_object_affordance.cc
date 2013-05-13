@@ -8,7 +8,6 @@ using namespace authoring;
 
 OpenGL_Object_Affordance::
 OpenGL_Object_Affordance() : OpenGL_Object(),
-                              _affordance_state(),
                               _opengl_object_box(),
                               _opengl_object_cylinder(),
                               _opengl_object_sphere(){
@@ -22,31 +21,43 @@ OpenGL_Object_Affordance::
 
 OpenGL_Object_Affordance::
 OpenGL_Object_Affordance( const OpenGL_Object_Affordance& other ) : OpenGL_Object( other ),
-                                                                    _affordance_state( other._affordance_state ){
+                                                                    _opengl_object_box( other._opengl_object_box ),
+                                                                    _opengl_object_cylinder( other._opengl_object_cylinder ),
+                                                                    _opengl_object_sphere( other._opengl_object_sphere ){
 
 }
 
 OpenGL_Object_Affordance&
 OpenGL_Object_Affordance::
 operator=( const OpenGL_Object_Affordance& other ) {
-
+  _opengl_object_box = other._opengl_object_box;
+  _opengl_object_sphere = other._opengl_object_sphere;
+  _opengl_object_cylinder = other._opengl_object_cylinder;
   return (*this);
 }
 
 void
 OpenGL_Object_Affordance::
 set( AffordanceState& affordanceState ){
-  _affordance_state = affordanceState;
-  if( _affordance_state.getType() == AffordanceState::CYLINDER ){
+  if( affordanceState.getType() == AffordanceState::CYLINDER ){
+    _opengl_object_cylinder.set_visible( true );
+    _opengl_object_sphere.set_visible( false );
+    _opengl_object_box.set_visible( false );
     _opengl_object_cylinder.set( affordanceState.getFrame(),
                                   Vector2f( affordanceState._params[ AffordanceState::RADIUS_NAME ],
                                             affordanceState._params[ AffordanceState::LENGTH_NAME ] ) );
-  } else if ( _affordance_state.getType() == AffordanceState::LEVER ){
+  } else if ( affordanceState.getType() == AffordanceState::LEVER ){
 
-  } else if ( _affordance_state.getType() == AffordanceState::SPHERE ){
+  } else if ( affordanceState.getType() == AffordanceState::SPHERE ){
+    _opengl_object_cylinder.set_visible( false );
+    _opengl_object_sphere.set_visible( true );
+    _opengl_object_box.set_visible( false );
     _opengl_object_sphere.set( affordanceState.getFrame(),
                                 affordanceState._params[ AffordanceState::RADIUS_NAME ] );
-  } else if ( _affordance_state.getType() == AffordanceState::BOX ){
+  } else if ( affordanceState.getType() == AffordanceState::BOX ){
+    _opengl_object_cylinder.set_visible( false );
+    _opengl_object_sphere.set_visible( false );
+    _opengl_object_box.set_visible( true );
     _opengl_object_box.set( affordanceState.getFrame(),
                             Vector3f( affordanceState._params[ AffordanceState::LENGTH_NAME ],
                                       affordanceState._params[ AffordanceState::WIDTH_NAME ],
@@ -68,14 +79,9 @@ void
 OpenGL_Object_Affordance::
 draw( void ){
   if( visible() ){
-    if( _affordance_state.getType() == AffordanceState::CYLINDER ){
-      _opengl_object_cylinder.draw();
-    } else if ( _affordance_state.getType() == AffordanceState::LEVER ){
-    } else if ( _affordance_state.getType() == AffordanceState::SPHERE ){
-      _opengl_object_sphere.draw();
-    } else if ( _affordance_state.getType() == AffordanceState::BOX ){
-      _opengl_object_box.draw();
-    }
+    _opengl_object_cylinder.draw();
+    _opengl_object_sphere.draw();
+    _opengl_object_box.draw();
   }
   return;
 }
