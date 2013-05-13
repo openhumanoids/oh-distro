@@ -50,28 +50,28 @@ classdef FootstepPlanner < DRCPlanner
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
         new_X.pos(3) = new_X.pos(3) + 0.003; % add back the 3mm we subtracted before publishing
         matching_ndx = find([X.id] == new_X.id);
-        old_x = X(matching_ndx);
-        X(matching_ndx) = new_X;
-        X(matching_ndx).is_in_contact = old_x.is_in_contact;
-        if obj.options.ignore_terrain
-          X(matching_ndx).pos(3) = old_x.pos(3);
-        end
-        if X(matching_ndx).is_in_contact 
-          if ~any(X(matching_ndx - 1).pos_fixed(1:3))
-            if matching_ndx > 3
-              n = matching_ndx - 3;
-              if matching_ndx > 5
-                n = matching_ndx - 4;
+        if ~isempty(matching_ndx)
+          old_x = X(matching_ndx);
+          X(matching_ndx) = new_X;
+          X(matching_ndx).is_in_contact = old_x.is_in_contact;
+          if obj.options.ignore_terrain
+            X(matching_ndx).pos(3) = old_x.pos(3);
+          end
+          if X(matching_ndx).is_in_contact 
+            if ~any(X(matching_ndx - 1).pos_fixed(1:3))
+              if matching_ndx > 3
+                n = matching_ndx - 3;
+                if matching_ndx > 5
+                  n = matching_ndx - 4;
+                end
+                X(matching_ndx-1).pos = obj.biped.get_apex_pos(X(n).pos, X(matching_ndx).pos);
               end
-              X(matching_ndx-1).pos = obj.biped.get_apex_pos(X(n).pos, X(matching_ndx).pos);
+            end
+            if (matching_ndx < length(X) - 4) && ~any(X(matching_ndx + 3).pos_fixed(1:3))
+                X(matching_ndx+3).pos = obj.biped.get_apex_pos(X(matching_ndx).pos, X(matching_ndx+4).pos);
             end
           end
-          % if (matching_ndx < length(X) - 2) && ~any(X(matching_ndx + 1).pos_fixed(1:3))
-          %     X(matching_ndx+1).pos = obj.biped.get_apex_pos(X(matching_ndx+1).pos, X(matching_ndx).pos);
-          % end
         end
-        % t = num2cell(obj.biped.getStepTimes([X.pos]));
-        % [X.time] = t{:};
       end
 
       for j = 3:size(X, 2)
