@@ -448,63 +448,35 @@ group "m.4.base" {
 # pal-02 - robot
 # drc005 - base
 ############# drc102, pal-02, drc005 ######################
-script "triple.qual_1" {
-    start group "0.development";
+script "comp.vrc_walking" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
 }
 
-############# pal-02 and drc005 #################
-script "comp.qual_1" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 20000;
-    start cmd "gz_quals_1"; 
-}
-
-script "comp.qual_2" {
+script "comp.vrc_manip" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.3.grasping";
     start group "b.3.grasping";
-    wait ms 12000;
-    start cmd "gz_quals_2";    
-    wait ms 5000;
-}
-
-script "comp.qual_3" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 20000;
-    start cmd "gz_quals_3"; 
 }
 
 script "comp.vrc_driving" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.4.driving";
-    wait ms 500;
-    start cmd "gz_mit_driving";
-    wait ms 6000;
     start group "b.4.driving";
 }
 
-script "comp.ingress" {
+script "comp.vrc_ingress" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.6.ingress";
-    wait ms 20000;
-    start cmd "gz_mit_ingress"; 
 }
 
 ######################################
-# with deputies:
+# testing on a single machine - with deputies:
 script "dev.qual_1" { 
     start group "0.development";
     start group "a.1.core";
