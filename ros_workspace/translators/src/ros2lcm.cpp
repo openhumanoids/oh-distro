@@ -317,12 +317,12 @@ void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
 
 void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"TORSO_IMU");
-  send_imu_as_pose(msg,"POSE_BODY_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
+  //send_imu_as_pose(msg,"POSE_BODY_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
 }
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"HEAD_IMU");
-  send_imu_as_pose(msg,"POSE_HEAD_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
+  //send_imu_as_pose(msg,"POSE_HEAD_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
 }
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
