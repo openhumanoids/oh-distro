@@ -629,9 +629,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
-    fprintf(stderr, "Sending WALKING_GOAL\n");
-    drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
-    bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+    if (self->has_walking_msg) {
+      fprintf(stderr, "Sending WALKING_GOAL\n");
+      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
+      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+    }
   } else if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
