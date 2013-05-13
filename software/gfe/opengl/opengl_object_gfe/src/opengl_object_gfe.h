@@ -22,7 +22,8 @@ namespace opengl {
     
     void set( const drc::robot_state_t& robotState );
     void set( state::State_GFE& stateGFE );
-  
+    virtual void set_transparency( double transparency ); 
+ 
     virtual void draw( void );
 
     kinematics::Kinematics_Model_GFE& kinematics_model( void );

@@ -111,6 +111,15 @@ set( State_GFE& stateGFE ){
   return;
 }
 
+void
+OpenGL_Object_GFE::
+set_transparency( double transparency ){
+  for( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
+    _opengl_objects[ i ]->set_transparency( transparency );
+  }
+  return;
+}
+
 /**
  * draw
  * draws the opengl object representing the GFE

@@ -1,10 +1,12 @@
 # Create a shared library libhello.so with a single source file
 add_library(opengl_object_gfe SHARED
-            opengl_object_gfe.cc)
+            opengl_object_gfe.cc
+            opengl_object_trajectory_gfe.cc)
 
 # make the header public
 # install it to include/hello
 pods_install_headers(opengl_object_gfe.h 
+                      opengl_object_trajectory_gfe.h
                       DESTINATION opengl)
 
 # make the library public
