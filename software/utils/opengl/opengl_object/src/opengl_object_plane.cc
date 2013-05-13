@@ -64,7 +64,7 @@ OpenGL_Object_Plane::
 set( Vector2f dimensions ){
   _dimensions = dimensions;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -81,7 +81,7 @@ set( Frame transform,
   _transform = transform;
   _dimensions = dimensions;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -92,7 +92,7 @@ OpenGL_Object_Plane::
 set_color( Vector3f color ){
   _color = color;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -106,7 +106,7 @@ set_color( Vector4f color ){
   _color(2) = color(2);
   _transparency = color(3);
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -166,7 +166,7 @@ bool
 OpenGL_Object_Plane::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   _dl = glGenLists( 1 );

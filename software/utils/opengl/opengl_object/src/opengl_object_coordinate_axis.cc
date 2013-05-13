@@ -53,7 +53,7 @@ OpenGL_Object_Coordinate_Axis::
 set_scale( double scale ){
   _scale = scale;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -79,7 +79,7 @@ bool
 OpenGL_Object_Coordinate_Axis::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   if( _quadric == NULL ){

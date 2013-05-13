@@ -26,8 +26,8 @@ OpenGL_Object_Sphere( string id,
  */
 OpenGL_Object_Sphere::
 ~OpenGL_Object_Sphere() {
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   if( _quadric == NULL ){
@@ -70,8 +70,8 @@ void
 OpenGL_Object_Sphere::
 set( double radius ){
   _radius = radius;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -87,8 +87,8 @@ set( Frame transform,
       double radius ){
   _transform = transform;
   _radius = radius;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -98,8 +98,8 @@ void
 OpenGL_Object_Sphere::
 set_color( Vector3f color ){
   _color = color;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -112,8 +112,8 @@ set_color( Vector4f color ){
   _color(1) = color(1);
   _color(2) = color(2);
   _transparency = color(3);
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -123,8 +123,8 @@ void
 OpenGL_Object_Sphere::
 set_transparency( double transparency ){
   _transparency = transparency;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -188,7 +188,7 @@ bool
 OpenGL_Object_Sphere::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   _dl = glGenLists( 1 );

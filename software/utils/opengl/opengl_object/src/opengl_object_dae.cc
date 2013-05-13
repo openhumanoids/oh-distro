@@ -28,7 +28,7 @@ OpenGL_Object_DAE::
 ~OpenGL_Object_DAE() 
 {
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   for( map< string, vector< Vector2f* > >::iterator it1 = _v2_data.begin(); it1 != _v2_data.end(); it1++ ){
@@ -115,7 +115,7 @@ set_color( Vector3f color ){
     }
   }
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -256,7 +256,7 @@ bool
 OpenGL_Object_DAE::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   _dl = glGenLists( 1 );

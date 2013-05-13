@@ -21,11 +21,11 @@ OpenGL_Object_Torus( string id,
 OpenGL_Object_Torus::
 ~OpenGL_Object_Torus() {
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   if( _quadric != NULL ){
-    delete _quadric;
+    gluDeleteQuadric( _quadric );
     _quadric = NULL;
   }
 }
@@ -62,7 +62,7 @@ set_dimensions( double majorRadius,
   _major_radius = majorRadius;
   _minor_radius = minorRadius;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -131,7 +131,7 @@ bool
 OpenGL_Object_Torus::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   if( _quadric == NULL ){

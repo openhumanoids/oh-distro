@@ -27,8 +27,8 @@ OpenGL_Object_Box( string id,
  */
 OpenGL_Object_Box::
 ~OpenGL_Object_Box() {
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
 }
@@ -66,8 +66,8 @@ void
 OpenGL_Object_Box::
 set( Vector3f dimensions ){
   _dimensions = dimensions;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -83,8 +83,8 @@ set( Frame transform,
       Vector3f dimensions ){
   _transform = transform;
   _dimensions = dimensions;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -94,8 +94,8 @@ void
 OpenGL_Object_Box::
 set_color( Vector3f color ){
   _color = color;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -108,8 +108,8 @@ set_color( Vector4f color ){
   _color(1) = color(1);
   _color(2) = color(2);
   _transparency = color(3);
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -119,8 +119,8 @@ void
 OpenGL_Object_Box::
 set_transparency( double transparency ){
   _transparency = transparency;
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+  if( ( _dl != 0 ) && ( glIsList( _dl ) == GL_TRUE ) ){
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   return;
@@ -180,7 +180,7 @@ bool
 OpenGL_Object_Box::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
-    glDeleteLists( _dl, 0 );
+    glDeleteLists( _dl, 1 );
     _dl = 0;
   }
   _dl = glGenLists( 1 );
