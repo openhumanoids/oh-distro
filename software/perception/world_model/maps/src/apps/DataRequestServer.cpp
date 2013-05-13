@@ -139,52 +139,22 @@ struct Worker {
   }
 
   void sendHeightMapSceneRequest() {
-    drc::map_request_t msg = prepareRequestMessage();
+    const Eigen::Vector3f minPt(-2, -5, -3);
+    const Eigen::Vector3f maxPt(5, 5, 0.3);
+    drc::map_request_t msg =
+      prepareHeightRequestMessage(minPt, maxPt, 0.05, 0.05);
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
-    msg.resolution = 0.05;
-    msg.width = 140;
-    msg.height = 200;
-    msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.time_min = -8*1e6;
-    msg.clip_planes[0][3] = 2;
-    msg.clip_planes[4][3] = 3;
-    msg.clip_planes[5][3] = 0.3;
-    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-    pose.translation() = Eigen::Vector3f(0,0,10);
-    pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
-    Eigen::Affine3f calib = Eigen::Affine3f::Identity();
-    calib(0,0) = msg.width/(msg.clip_planes[0][3] + msg.clip_planes[1][3]);
-    calib(1,1) = msg.height/(msg.clip_planes[2][3] + msg.clip_planes[3][3]);
-    calib(0,3) = msg.clip_planes[0][3]*calib(0,0);
-    calib(1,3) = msg.clip_planes[2][3]*calib(1,1);
-    Eigen::Projective3f projector = calib*pose.inverse();
-    setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
   void sendHeightMapCorridorRequest() {
-    drc::map_request_t msg = prepareRequestMessage();
+    const Eigen::Vector3f minPt(0, -1, -3);
+    const Eigen::Vector3f maxPt(10, 1, 0.3);
+    drc::map_request_t msg =
+      prepareHeightRequestMessage(minPt, maxPt, 0.05, 0.05);
     msg.view_id = drc::data_request_t::HEIGHT_MAP_CORRIDOR;
-    msg.resolution = 0.02;
-    msg.width = msg.height = 100;
-    msg.type = drc::map_request_t::DEPTH_IMAGE;
-    msg.time_min = -5*1e6;
-    msg.clip_planes[0][3] = 0;
-    msg.clip_planes[1][3] = 10;
-    msg.clip_planes[2][3] = 1;
-    msg.clip_planes[3][3] = 1;
-    msg.clip_planes[4][3] = 3;
-    msg.clip_planes[5][3] = 0.3;
-    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-    pose.translation() = Eigen::Vector3f(0,0,10);
-    pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
-    Eigen::Affine3f calib = Eigen::Affine3f::Identity();
-    calib(0,0) = msg.width/(msg.clip_planes[0][3] + msg.clip_planes[1][3]);
-    calib(1,1) = msg.height/(msg.clip_planes[2][3] + msg.clip_planes[3][3]);
-    calib(0,3) = msg.clip_planes[0][3]*calib(0,0);
-    calib(1,3) = msg.clip_planes[2][3]*calib(1,1);
-    Eigen::Projective3f projector = calib*pose.inverse();
-    setTransform(projector, msg);
+    msg.time_min = -10*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
