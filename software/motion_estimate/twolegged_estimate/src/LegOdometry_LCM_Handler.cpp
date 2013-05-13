@@ -83,7 +83,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	_obj_leg_poses = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
 	_link = new LinkCollection(2, std::string("Links"));
 	
-	firstpass = true;
+	firstpass = LowPassFilter::getTapSize();//true;
 	
 	time_avg_counter = 0;
 	elapsed_us = 0.;
@@ -95,14 +95,16 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   }
 	//#endif
     state_estimate_error_log.Open(_switches->log_data_files,"true_estimated_states.csv");
-	
+	joint_data_log.Open(_switches->log_data_files,"joint_data.csv");
 	return;
 }
 
 LegOdometry_Handler::~LegOdometry_Handler() {
 	
 	  state_estimate_error_log.Close();
-	
+	  joint_data_log.Close();
+
+
 	//delete model_;
 	delete _leg_odo;
 	delete _obj;
@@ -262,9 +264,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	if (_switches->do_estimation){
 		// TODO -- how to trigger the initial state reset?
-		if (firstpass)
+		if (firstpass>0)
 		{
-			firstpass = false;
+			firstpass--;// = false;
 			// We need to reset the initial condition of the odometry estimate here..
 			// TODO -- going to have to remove this before the VRC..
 			
@@ -367,14 +369,13 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	// estimated orientation 
     Eigen::Quaterniond output_q(currentPelvis.linear());
     
-    Eigen::Quaterniond dummy_var;
-    dummy_var.w() = msg->origin_position.rotation.w;
-    dummy_var.x() = msg->origin_position.rotation.x;
-    dummy_var.y() = msg->origin_position.rotation.y;
-    dummy_var.z() = msg->origin_position.rotation.z;
+    Eigen::Quaterniond true_q;
+    true_q.w() = msg->origin_position.rotation.w;
+    true_q.x() = msg->origin_position.rotation.x;
+    true_q.y() = msg->origin_position.rotation.y;
+    true_q.z() = msg->origin_position.rotation.z;
     // This is to use the true yaw angle
-    Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(dummy_var);
-    //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
+    Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(true_q);
     Eigen::Vector3d E_est = InertialOdometry::QuaternionLib::q2e(output_q);
 	
 	if (_switches->use_true_z) {
@@ -384,24 +385,34 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	
     bot_core::pose_t pose;
     pose.utime  =msg->utime;
-    pose.pos[0] =currentPelvis.translation().x();
-    pose.pos[1] =currentPelvis.translation().y();
-    pose.pos[2] =currentPelvis.translation().z();
+    
+    if (false)
+    {
+      //std::cout << "Using the true position for the estimated state\n";
+      pose.pos[0] = msg->origin_position.translation.x;
+      pose.pos[1] = msg->origin_position.translation.y;
+      pose.pos[2] = msg->origin_position.translation.z;
+    
+
+      pose.orientation[0] =true_q.w();
+      pose.orientation[1] =true_q.x();
+      pose.orientation[2] =true_q.y();
+      pose.orientation[3] =true_q.z();
+
+    } else {
+
+    	pose.pos[0] =currentPelvis.translation().x();
+		pose.pos[1] =currentPelvis.translation().y();
+		pose.pos[2] =currentPelvis.translation().z();
+
+        pose.orientation[0] =output_q.w();
+        pose.orientation[1] =output_q.x();
+        pose.orientation[2] =output_q.y();
+        pose.orientation[3] =output_q.z();
+
+    }
     
     
-    // Used this to view the angle estimates, decoupled from the position state estimation
-#ifdef PUBLISH_AT_TRUE_POSITION
-    std::cout << "Using the true position for the estimated state\n";
-    pose.pos[0] = msg->origin_position.translation.x;
-    pose.pos[1] = msg->origin_position.translation.y;
-    pose.pos[2] = msg->origin_position.translation.z;
-#endif
-    
-    
-    pose.orientation[0] =output_q.w();
-    pose.orientation[1] =output_q.x();
-    pose.orientation[2] =output_q.y();
-    pose.orientation[3] =output_q.z();
     
     for (int i=0; i<3; i++) {
       pose.vel[i] =velocity_states(i);
@@ -409,7 +420,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     }
     
     //lcm_->publish("POSE_KIN",&pose);
-      lcm_->publish("POSE_BODY_TRUE",&pose);// + _channel_extension,&pose);
+  lcm_->publish("POSE_BODY",&pose);// + _channel_extension,&pose);
         
     //Below is copied from Maurice's VO -- publishing of true and estimated robot states
   
@@ -423,12 +434,12 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   pose_msg.orientation[1] = msg->origin_position.rotation.x;
   pose_msg.orientation[2] = msg->origin_position.rotation.y;
   pose_msg.orientation[3] = msg->origin_position.rotation.z;
-//  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
+  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
   
   drc::position_3d_t origin;
   
   // True or estimated position
-  if (false) {
+  if (true) {
 	  origin.translation.x = msg->origin_position.translation.x;
 	  origin.translation.y = msg->origin_position.translation.y;
 	  origin.translation.z = msg->origin_position.translation.z;
@@ -439,7 +450,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }
 
   // true or estimated IMU
-  if (false) {
+  if (true) {
 	origin.rotation.w = msg->origin_position.rotation.w;
 	origin.rotation.x = msg->origin_position.rotation.x;
 	origin.rotation.y = msg->origin_position.rotation.y;
@@ -465,7 +476,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }
   
   // true or estimated rotation rates
-  if (false) {
+  if (true) {
     twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
     twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
     twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
@@ -498,7 +509,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   // Where is the head at
   Eigen::Isometry3d local_to_head;
   
-  std::cout << body_to_head.translation().transpose() << " is b2h\n";
+  //std::cout << body_to_head.translation().transpose() << " is b2h\n";
 
   // TODO -- remember this flag
   if (false) {
@@ -507,33 +518,33 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	  truebody.translation().x() = msg->origin_position.translation.x;
 	  truebody.translation().y() = msg->origin_position.translation.y;
 	  truebody.translation().z() = msg->origin_position.translation.z;
-	  truebody.rotate(Eigen::Quaterniond(msg->origin_position.rotation.w,msg->origin_position.rotation.x,msg->origin_position.rotation.y,msg->origin_position.rotation.z));
+	  truebody.rotate(true_q);
 
-	  std::cout << truebody.translation().transpose() << " is tb\n";
+	  //std::cout << truebody.translation().transpose() << " is tb\n";
 
 	  local_to_head = truebody * body_to_head;
-	  std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
+	  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
   } else {
 	  local_to_head = currentPelvis*body_to_head;
   }
   // now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
-    
+
   Eigen::Vector3d local_to_head_vel;
   // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
-  if (false) {
+  /*if (false) {
 	  // Will do this later -- no one is consuming POSE_HEAD velocity at the moment
 	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), body_to_head.translation());
 	  local_to_head_vel = velocity_states + body_to_head_vel;
 	  
-  } else {
+  } else {*/
 	  local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());
-  }
+  //}
   
   Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff((double)msg->utime*(1E-6), local_to_head_vel);
   Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff((double)msg->utime*(1E-6), InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
   
   // estimate the rotational velocity of the head
-    Eigen::Quaterniond l2head_rot(local_to_head.linear()); // this may need that transpose again -- to test TODO
+    Eigen::Quaterniond l2head_rot(local_to_head.linear());
     bot_core::pose_t l2head_msg;
     l2head_msg.utime = msg->utime;
     
@@ -549,7 +560,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     l2head_msg.vel[1]=local_to_head_vel(1);
     l2head_msg.vel[2]=local_to_head_vel(2);
     l2head_msg.rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
-    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round..
+    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. ypr
     l2head_msg.rotation_rate[2]=local_to_head_rate(2);
     l2head_msg.accel[0]=local_to_head_acc(0);
     l2head_msg.accel[1]=local_to_head_acc(1);
@@ -764,13 +775,23 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     	first_get_transforms = false;
     	InitializeFilters((int)msg->num_joints);
     }
+    stringstream ss (stringstream::in | stringstream::out);
     
     for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
-      //jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
-            
+
+      ss << msg->joint_position[i] <<  ", ";
+
+      if (false) {
+        jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+      } else {
+    	// not using filters on the joint position measurements
+        jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));//skipping the filters
+      }
     }
-   
+
+    ss << "\n";
+    joint_data_log << ss.str();
+
     if (!stillbusy) // not really required, as LCM only allows a single event, but doesn't hurt to leave it here. Maybe we see something of this in the future
     {
     	//std::cout << "Trying to solve for Joints to Cartesian\n";
@@ -780,7 +801,7 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     }
     else
     {
-    	std::cout << "JntToCart is still busy -- overrunning computational window" << std::endl;
+    	std::cout << "JntToCart is still busy -- over-running computational window" << std::endl;
     	// This should generate some type of error or serious warning
     }
     

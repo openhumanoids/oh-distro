@@ -105,7 +105,7 @@ private:
 	volatile bool first_get_transforms;
 	int poseplotcounter;
 	int collectionindex;
-	bool firstpass;
+	int firstpass;//was bool
 	std::string _channel_extension;
 	
 	NumericalDiff local_to_head_vel_diff;
@@ -113,6 +113,7 @@ private:
 	NumericalDiff local_to_head_rate_diff;
 	
 	DataFileLogger state_estimate_error_log;
+	DataFileLogger joint_data_log;
 	
 	int time_avg_counter;
 	double elapsed_us, spare_us;

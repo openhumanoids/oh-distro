@@ -84,3 +84,6 @@ LowPassFilter::~LowPassFilter() {
 	//std::cout << "Closing out LowPassFilter object\n";
 }
 
+int LowPassFilter::getTapSize() {
+	return FILTER_TAP_SIZE;
+}

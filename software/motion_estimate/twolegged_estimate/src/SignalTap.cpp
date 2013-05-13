@@ -8,8 +8,12 @@
 
 // creates a new_logging file
 DataFileLogger::DataFileLogger() {
-	
-	
+  suppress_logger = false;
+}
+
+DataFileLogger::DataFileLogger(std::string filename) {
+	suppress_logger = false;
+	fs.open(filename.c_str());
 }
 
 void DataFileLogger::Open(bool not_suppress, std::string filename) {

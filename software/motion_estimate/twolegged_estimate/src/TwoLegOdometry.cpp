@@ -116,7 +116,8 @@ int TwoLegOdometry::secondary_foot() {
 		return RIGHTFOOT;
 	if (standing_foot == RIGHTFOOT)
 		return LEFTFOOT;
-	
+	std::cout << "TwoLegOdometry::secondary_foot(): THIS SHOULD NOT HAPPEND THE FOOT NUMBERS ARE INCONSISTENT\n";
+	return -99;
 }
 
 bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float left_force, const float right_force) {

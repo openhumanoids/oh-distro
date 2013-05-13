@@ -16,6 +16,7 @@ private:
 	
 public:
 	DataFileLogger();
+	DataFileLogger(std::string filename);
 	
 	void Open(bool not_suppress, std::string filename);
 	void Close();

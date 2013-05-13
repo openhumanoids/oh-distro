@@ -47,6 +47,8 @@ public:
 
 	double processSample(double sample);
 	
+	static int getTapSize();
+
 };
 
 
