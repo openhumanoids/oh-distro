@@ -38,7 +38,7 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, max_forward_s
         c(2, j) = c(2, j) * 10;
       end
     end
-    phi = angleDiff(pf(6, j), p0(6, j))
+    phi = angleDiff(pf(6, j), p0(6, j));
     % phi = pf(6, j) - p0(6, j);
     c(3, j) = abs(phi) - biped.max_step_rot;
     % c(3, j) = abs(phi) - interp1([0, 1], [0, biped.max_step_rot], x_feas_frac);
