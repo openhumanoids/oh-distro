@@ -18,6 +18,7 @@
 #include <maps/PointCloudView.hpp>
 #include <maps/OctreeView.hpp>
 #include <maps/DepthImageView.hpp>
+#include <maps/DepthImage.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/DataBlob.hpp>
@@ -31,10 +32,135 @@
 #include <ConciseArgs>
 #include <octomap/octomap.h>
 
+#include <stereo-bm/stereo-bm.hpp>
+#include <bot_param/param_util.h>
+
 using namespace std;
 using namespace maps;
 
 class State;
+
+struct StereoHandler {
+  BotWrapper::Ptr mBotWrapper;
+  bot_core::image_t mLatestImage;
+  boost::shared_ptr<StereoB> mStereoMatcher;
+  BotCamTrans* mCamTrans;
+  Eigen::Matrix3f mCalibMatrix;
+  std::string mCameraFrame;
+  float mDisparityFactor;
+
+  StereoHandler(const BotWrapper::Ptr& iBotWrapper) {
+    mBotWrapper = iBotWrapper;
+    auto theLcm = mBotWrapper->getLcm();
+    mStereoMatcher.reset(new StereoB(theLcm));
+    mStereoMatcher->setScale(1.0);
+    mLatestImage.size = 0;
+
+    std::string cameraName = "CAMERALEFT";
+    mCamTrans = bot_param_get_new_camtrans
+      (mBotWrapper->getBotParam(), cameraName.c_str());
+    double k00 = bot_camtrans_get_focal_length_x(mCamTrans);
+    double k11 = bot_camtrans_get_focal_length_y(mCamTrans);
+    double k01 = bot_camtrans_get_skew(mCamTrans);
+    double k02 = bot_camtrans_get_principal_x(mCamTrans);
+    double k12 = bot_camtrans_get_principal_y(mCamTrans);
+    mCalibMatrix << k00,k01,k02, 0,k11,k12, 0,0,1;
+    std::string key("cameras.");
+    key += (cameraName + ".coord_frame");
+    char* val = NULL;
+    if (bot_param_get_str(mBotWrapper->getBotParam(),key.c_str(),&val) == 0) {
+      mCameraFrame = val;
+      free(val);
+    }
+
+    // TODO: can derive the 7cm baseline from camera config
+    double baseline = 0.07;
+    mDisparityFactor = 1/k00/baseline;
+
+    theLcm->subscribe("CAMERA", &StereoHandler::onImage, this);
+  }
+
+  ~StereoHandler() {
+    bot_camtrans_destroy(mCamTrans);
+  }
+
+  void onImage(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
+               const bot_core::image_t* iMessage) {
+    mLatestImage = *iMessage;
+  }
+
+  DepthImageView::Ptr
+  getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
+    DepthImageView::Ptr view;
+    if (mLatestImage.size == 0) {
+      return view;
+    }
+    view.reset(new DepthImageView());
+
+    // split images
+    int w(mLatestImage.width), h(mLatestImage.height/2);
+    cv::Mat img(2*h, w, CV_8UC1, mLatestImage.data.data());
+    cv::Mat leftImage = img.rowRange(0, h).clone();
+    cv::Mat rightImage = img.rowRange(h, 2*h).clone();
+
+    // compute disparity
+    mStereoMatcher->doStereoB(leftImage, rightImage);
+    cv::Mat disparityMat;
+    cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
+      convertTo(disparityMat, CV_32F, 1.0f/16);
+
+    // project bound polyhedron onto camera
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<std::vector<int> > faces;
+    Utils::polyhedronFromPlanes(iBoundPlanes, vertices, faces);
+    Eigen::Isometry3f localToCamera;
+    mBotWrapper->getTransform("local", mCameraFrame, localToCamera,
+                              mLatestImage.utime);
+    Eigen::Vector2i minPt(1000000,1000000), maxPt(-1000000,-1000000);
+    for (size_t i = 0; i < vertices.size(); ++i) {
+      Eigen::Vector3f pt = localToCamera*vertices[i];
+      double inPt[] = { pt[0], pt[1], pt[2] };
+      double proj[3];
+      bot_camtrans_project_point(mCamTrans, inPt, proj);
+      minPt[0] = std::min(minPt[0], (int)floor(proj[0]));
+      minPt[1] = std::min(minPt[1], (int)floor(proj[1]));
+      maxPt[0] = std::max(maxPt[0], (int)ceil(proj[0]));
+      maxPt[1] = std::max(maxPt[1], (int)ceil(proj[1]));
+    }
+    minPt[0] = std::max(0, minPt[0]);
+    minPt[1] = std::max(0, minPt[1]);
+    maxPt[0] = std::min(w-1, maxPt[0]);
+    maxPt[1] = std::min(h-1, maxPt[1]);
+
+    // crop and copy
+    // TODO: set to 0 points that are outside clip polyhedron
+    Eigen::Vector2i newSize = maxPt - minPt + Eigen::Vector2i(1,1);
+    cv::Rect bounds(minPt[0], minPt[1], newSize[0], newSize[1]);
+    cv::Mat disparitySub = disparityMat(bounds);
+    std::vector<float> dispData(newSize[0]*newSize[1]);
+    float* outPtr = &dispData[0];
+    for (int i = 0; i < newSize[1]; ++i) {
+      float* inPtr = disparitySub.ptr<float>(i);
+      for (int j = 0; j < newSize[0]; ++j, ++inPtr, ++outPtr) {
+        float val = *inPtr;
+        *outPtr = (val > 4000) ? 0 : val*mDisparityFactor;
+      }
+    }
+    Eigen::Matrix3f calib = mCalibMatrix;
+    calib(0,2) -= minPt[0];
+    calib(1,2) -= minPt[1];
+
+    // form output image and view
+    DepthImage depthImage;
+    depthImage.setSize(newSize[0], newSize[1]);
+    depthImage.setOrthographic(false);
+    depthImage.setPose(localToCamera.inverse());
+    depthImage.setCalib(calib);
+    depthImage.setData(dispData, DepthImage::TypeDisparity);
+    view->set(depthImage);
+    return view;
+  }
+};
 
 struct ViewWorker {
   typedef boost::shared_ptr<ViewWorker> Ptr;
@@ -43,6 +169,7 @@ struct ViewWorker {
   bool mActive;
   drc::map_request_t mRequest;
   boost::shared_ptr<Collector> mCollector;
+  boost::shared_ptr<StereoHandler> mStereoHandler;
   boost::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
@@ -78,10 +205,31 @@ struct ViewWorker {
       else {
         localMap = manager->getMap(mRequest.map_id);
       }
-      if (localMap != NULL) {
 
-        ViewBase::Spec spec;
-        LcmTranslator::fromLcm(mRequest, spec);
+      ViewBase::Spec spec;
+      LcmTranslator::fromLcm(mRequest, spec);
+
+      // TODO: HACK for stereo data; need to think about cleaner approach
+      if (mRequest.map_id == 1111) {
+        DepthImageView::Ptr view =
+          mStereoHandler->getDepthImageView(spec.mClipPlanes);
+        if (view != NULL) {
+          view->setId(mRequest.view_id);
+          drc::map_image_t msg;
+          LcmTranslator::toLcm(*view, msg);
+          msg.utime = drc::Clock::instance()->getCurrentTime();
+          msg.map_id = mRequest.map_id;
+          msg.blob.utime = msg.utime;
+          std::string chan =
+            mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
+          lcm->publish(chan, &msg);
+          std::cout << "Sent stereo image on " << chan << " at " <<
+            msg.blob.num_bytes << " bytes (view " << view->getId() <<
+            ")" << std::endl;
+        }
+      }
+
+      if (localMap != NULL) {
 
         // get bounds
         LocalMap::SpaceTimeBounds bounds;
@@ -175,12 +323,12 @@ struct ViewWorker {
             msgImg.blob.num_bytes << " bytes (view " << image->getId() <<
             ")" << std::endl;
         }
+      }
 
-        // one-shot request has 0 frequency
-        if (fabs(mRequest.frequency) < 1e-6) {
-          mActive = false;
-          break;
-        }
+      // one-shot request has 0 frequency
+      if (fabs(mRequest.frequency) < 1e-6) {
+        mActive = false;
+        break;
       }
 
       // wait for timer expiry
@@ -200,6 +348,7 @@ public:
   BotWrapper::Ptr mBotWrapper;
   boost::shared_ptr<Collector> mCollector;
   ViewWorkerMap mViewWorkers;
+  boost::shared_ptr<StereoHandler> mStereoHandler;
 
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
@@ -215,6 +364,7 @@ public:
     drc::Clock::instance()->setVerbose(false);
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
+    mStereoHandler.reset(new StereoHandler(mBotWrapper));
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
@@ -369,6 +519,7 @@ public:
       worker->mBotWrapper = mBotWrapper;
       worker->mActive = false;
       worker->mCollector = mCollector;
+      worker->mStereoHandler = mStereoHandler;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
       mBotWrapper->getTransform("head", "local", worker->mInitialPose,

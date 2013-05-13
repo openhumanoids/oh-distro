@@ -238,8 +238,8 @@ public:
         addCombo("Input Mode", mInputMode, labels, ids, requestBox);
 
       ids = { ViewBase::TypeOctree, ViewBase::TypePointCloud,
-              ViewBase::TypeDepthImage };
-      labels = { "Octree", "Cloud", "Depth" };
+              ViewBase::TypeDepthImage, ViewBase::TypeDepthImage+1 };
+      labels = { "Octree", "Cloud", "Depth", "Stereo" };
       mRequestType = ViewBase::TypeOctree;
       addCombo("Request Type", mRequestType, labels, ids, requestBox);
 
@@ -328,7 +328,14 @@ public:
     if (!mBoxValid) return;
     ViewBase::Spec spec;
     spec.mActive = true;
-    spec.mType = ViewBase::Type(mRequestType);
+    // TODO: HACK for stereo depth
+    if (mRequestType == ViewBase::TypeDepthImage+1) {
+      spec.mType = ViewBase::TypeDepthImage;
+      spec.mMapId = 1111;
+    }
+    else {
+      spec.mType = ViewBase::Type(mRequestType);
+    }
     spec.mResolution = mRequestResolution;
     spec.mFrequency = mRequestFrequency;
     spec.mRelativeTime = false;
