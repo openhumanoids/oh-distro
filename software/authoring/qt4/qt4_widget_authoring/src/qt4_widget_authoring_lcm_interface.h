@@ -27,6 +27,7 @@ namespace authoring {
   signals:
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
     void state_gfe_update( state::State_GFE& stateGFE );
+    void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
 
   public slots:
     void publish_drc_action_sequence_t( const drc::action_sequence_t& msg );

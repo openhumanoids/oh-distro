@@ -6,6 +6,7 @@
 #include <QtGui/QTextEdit>
 #include <QtGui/QPushButton>
 #include <QtGui/QDoubleSpinBox>
+#include <QtGui/QCheckBox>
 
 #include <qt4/qt4_widget_opengl.h>
 
@@ -33,12 +34,14 @@ namespace authoring {
     void time_min_update( double timeMin );
     void time_max_update( double timeMax );
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
     void state_gfe_update( state::State_GFE& stateGFE );
     void drc_action_sequence_t_publish( const drc::action_sequence_t& msg );
 
   public slots:
     void update_info( const QString& info );
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_state_gfe( state::State_GFE& stateGFE );
 
   protected slots:
@@ -60,10 +63,15 @@ namespace authoring {
     QPushButton * _push_button_publish;
     QDoubleSpinBox * _double_spin_box_end_time;
     QTextEdit * _text_edit_affordance_collection;
+    QSlider * _slider_plan_current_index;
+    QCheckBox * _check_box_visible_current_index;
+    QCheckBox * _check_box_visible_trajectory;
+    QCheckBox * _check_box_visible_trajectory_wrist;
 
     urdf::Model _robot_model;
     std::vector< affordance::AffordanceState > _affordance_collection;
     std::vector< affordance::AffordanceState > _affordance_collection_ghost;
+    std::vector< state::State_GFE > _robot_plan;
     state::State_GFE _state_gfe;
     state::State_GFE _state_gfe_ghost;
     std::vector< Constraint* > _constraints;

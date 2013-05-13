@@ -19,6 +19,10 @@ Qt4_Widget_Authoring_LCM_Interface( QWidget * parent ) : QMainWindow( parent ),
             _qt4_widget_authoring, SLOT( update_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& ) ) );
+  connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
+            _qt4_widget_authoring, SLOT( update_robot_plan( std::vector< state::State_GFE >& ) ) );
+  connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
+            _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_robot_plan( std::vector< state::State_GFE >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring, SLOT( update_state_gfe( state::State_GFE& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_gfe_ghost( state::State_GFE& ) ) ); 
 
@@ -104,7 +108,15 @@ Qt4_Widget_Authoring_LCM_Interface::
 _handle_candidate_robot_plan_msg( const ReceiveBuffer * rbuf,
                                   const string& channel,
                                   const robot_plan_t* msg ){
-  cout << "in _handle_candidate_robot_plan_msg" << endl;
+  if( msg != NULL ){
+    vector< State_GFE > robot_plan;
+    for( unsigned int i = 0; i < msg->num_states; i++ ){
+      State_GFE state;
+      state.from_lcm( msg->plan[ i ] );
+      robot_plan.push_back( state );
+    }
+    emit robot_plan_update( robot_plan );
+  }
   return;
 }
 

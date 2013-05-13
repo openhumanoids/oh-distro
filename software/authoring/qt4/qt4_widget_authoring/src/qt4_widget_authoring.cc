@@ -27,9 +27,16 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _push_button_publish( new QPushButton( QString( "publish" ), this ) ),
                                             _double_spin_box_end_time( new QDoubleSpinBox( this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
+                                            _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
+                                            _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
+                                            _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
+                                            _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
                                             _robot_model(),
                                             _affordance_collection(),
-                                            _affordance_collection_ghost(){
+                                            _affordance_collection_ghost(),
+                                            _robot_plan(),
+                                            _state_gfe(),
+                                            _state_gfe_ghost(){
   _robot_model.initString( Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + urdfFilename ) );
 
   _constraints.resize( numConstraints );
@@ -40,6 +47,10 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
 
   _text_edit_info->setFixedHeight( 75 );
   _double_spin_box_end_time->setSuffix( QString( " seconds" ) );
+
+  _check_box_visible_current_index->setCheckState( Qt::Checked );
+  _check_box_visible_trajectory->setCheckState( Qt::Checked );
+  _check_box_visible_trajectory_wrist->setCheckState( Qt::Unchecked );
 
   QGroupBox * controls_group_box = new QGroupBox( QString( "controls" ) );
   QHBoxLayout * controls_layout = new QHBoxLayout();
@@ -68,6 +79,14 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   
   QScrollArea * plan_scroll_area = new QScrollArea( this );
   plan_scroll_area->setFrameStyle( QFrame::NoFrame );
+  QWidget * plan_widget = new QWidget( this );
+  QGridLayout * plan_layout =  new QGridLayout();
+  plan_layout->addWidget( _check_box_visible_current_index, 0, 0 );
+  plan_layout->addWidget( _check_box_visible_trajectory, 0, 1 );
+  plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 2 );
+  plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 3 );
+  plan_widget->setLayout( plan_layout );
+  plan_scroll_area->setWidget( plan_widget );
 
   QTabWidget * tab_widget = new QTabWidget( this );
   tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
@@ -83,6 +102,10 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
 
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
               _widget_opengl_authoring, SLOT( update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
+  connect( _slider_plan_current_index, SIGNAL( valueChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_current_index( int ) ) );
+  connect( _check_box_visible_current_index, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_current_index( int ) ) );
+  connect( _check_box_visible_trajectory, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory( int ) ) );
+  connect( _check_box_visible_trajectory_wrist, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory_wrist( int ) ) );
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
@@ -127,6 +150,14 @@ void
 Qt4_Widget_Authoring::
 update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
   _affordance_collection_ghost = affordanceCollection;
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+update_robot_plan( vector< State_GFE >& robotPlan ){
+  _robot_plan = robotPlan;
+  _slider_plan_current_index->setRange( 0, ( robotPlan.size() - 1 ) );
   return;
 }
 

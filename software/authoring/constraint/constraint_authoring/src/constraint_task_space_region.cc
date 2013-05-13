@@ -91,7 +91,9 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = contact_goal_t::ON_GROUND_PLANE;
-  actionSequence.contact_goals.back().target_pt;
+  actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
+  actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
+  actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
   actionSequence.contact_goals.back().x_offset = _ranges[ 0 ].first;
   actionSequence.contact_goals.back().y_offset = _ranges[ 1 ].first;
   actionSequence.contact_goals.back().z_offset = _ranges[ 2 ].first;
@@ -115,7 +117,9 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = contact_goal_t::ON_GROUND_PLANE;
-  actionSequence.contact_goals.back().target_pt;
+  actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
+  actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
+  actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
   actionSequence.contact_goals.back().x_offset = _ranges[ 0 ].second;
   actionSequence.contact_goals.back().y_offset = _ranges[ 1 ].second;
   actionSequence.contact_goals.back().z_offset = _ranges[ 2 ].second;

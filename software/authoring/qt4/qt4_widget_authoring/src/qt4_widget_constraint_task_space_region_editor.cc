@@ -196,9 +196,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   QGridLayout * range_layout = new QGridLayout();
   range_layout->addWidget( _push_button_x_min, 0, 0 );
   range_layout->addWidget( _double_spin_box_x_min, 0, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 0, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 0, 2 );
   range_layout->addWidget( new QLabel( QString( "x" ), this ), 0, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 0, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 0, 4 );
   range_layout->itemAtPosition( 0, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 0, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 0, 4 )->setAlignment( Qt::AlignCenter );
@@ -206,9 +206,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   range_layout->addWidget( _push_button_x_max, 0, 6 );
   range_layout->addWidget( _push_button_y_min, 1, 0 );
   range_layout->addWidget( _double_spin_box_y_min, 1, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 1, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 1, 2 );
   range_layout->addWidget( new QLabel( QString( "y" ), this ), 1, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 1, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 1, 4 );
   range_layout->itemAtPosition( 1, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 1, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 1, 4 )->setAlignment( Qt::AlignCenter );
@@ -216,9 +216,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   range_layout->addWidget( _push_button_y_max, 1, 6 );
   range_layout->addWidget( _push_button_z_min, 2, 0 );
   range_layout->addWidget( _double_spin_box_z_min, 2, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 2, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 2, 2 );
   range_layout->addWidget( new QLabel( QString( "z" ), this ), 2, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 2, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 2, 4 );
   range_layout->itemAtPosition( 2, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 2, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 2, 4 )->setAlignment( Qt::AlignCenter );
@@ -226,9 +226,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   range_layout->addWidget( _push_button_z_max, 2, 6 );
   range_layout->addWidget( _push_button_roll_min, 3, 0 );
   range_layout->addWidget( _double_spin_box_roll_min, 3, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 3, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 3, 2 );
   range_layout->addWidget( new QLabel( QString( "roll" ), this ), 3, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 3, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 3, 4 );
   range_layout->itemAtPosition( 3, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 3, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 3, 4 )->setAlignment( Qt::AlignCenter );
@@ -236,9 +236,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   range_layout->addWidget( _push_button_roll_max, 3, 6 );
   range_layout->addWidget( _push_button_pitch_min, 4, 0 );
   range_layout->addWidget( _double_spin_box_pitch_min, 4, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 4, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 4, 2 );
   range_layout->addWidget( new QLabel( QString( "pitch" ), this ), 4, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 4, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 4, 4 );
   range_layout->itemAtPosition( 4, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 4, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 4, 4 )->setAlignment( Qt::AlignCenter );
@@ -246,9 +246,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   range_layout->addWidget( _push_button_pitch_max, 4, 6 );
   range_layout->addWidget( _push_button_yaw_min, 5, 0 );
   range_layout->addWidget( _double_spin_box_yaw_min, 5, 1 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 5, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 5, 2 );
   range_layout->addWidget( new QLabel( QString( "yaw" ), this ), 5, 3 );
-  range_layout->addWidget( new QLabel( QString( "<" ), this ), 5, 4 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 5, 4 );
   range_layout->itemAtPosition( 5, 2 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 5, 3 )->setAlignment( Qt::AlignCenter );
   range_layout->itemAtPosition( 5, 4 )->setAlignment( Qt::AlignCenter );
@@ -373,8 +373,12 @@ _constraint_changed( double value ){
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( int index ){
-  _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
-  _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
+  if( _combo_box_parent->currentIndex() < _robot_affordances.size() ){
+    _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
+  }
+  if( _combo_box_child->currentIndex() < _object_affordances.size() ){
+    _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
+  }
   _constraint->set_contact_type( (contact_type_t) _combo_box_type->currentIndex() );
   return;
 }

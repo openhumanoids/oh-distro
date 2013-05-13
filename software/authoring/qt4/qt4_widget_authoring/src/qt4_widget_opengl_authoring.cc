@@ -9,16 +9,20 @@ using namespace authoring;
 Qt4_Widget_OpenGL_Authoring::
 Qt4_Widget_OpenGL_Authoring( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                                   _opengl_object_affordance_collection(),
-                                                  _opengl_object_affordance_collection_ghost() {
+                                                  _opengl_object_affordance_collection_ghost(),
+                                                  _opengl_object_robot_plan() {
   _opengl_object_affordance_collection.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_transparency( 0.1 );
+  _opengl_object_robot_plan.set_visible( false );
+  _opengl_object_robot_plan.set_transparency( 0.1 );
   _opengl_object_gfe.set_visible( false );
   _opengl_object_gfe_ghost.set_visible( false );
   _opengl_object_gfe_ghost.set_transparency( 0.1 );
   opengl_scene().add_object( _opengl_object_affordance_collection );
-  opengl_scene().add_object( _opengl_object_gfe );
   opengl_scene().add_object( _opengl_object_affordance_collection_ghost );
+  opengl_scene().add_object( _opengl_object_robot_plan );
+  opengl_scene().add_object( _opengl_object_gfe );
   opengl_scene().add_object( _opengl_object_gfe_ghost );
 }
 
@@ -59,6 +63,15 @@ update_opengl_object_affordance_collection_ghost( vector< affordance::Affordance
 
 void
 Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan( vector< State_GFE >& robotPlan ){
+  _opengl_object_robot_plan.set_visible( true );
+  _opengl_object_robot_plan.set( robotPlan );
+  update();
+  return;
+}
+
+void
+Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_gfe( State_GFE& stateGFE ){
   _opengl_object_gfe.set_visible( true );
   _opengl_object_gfe.set( stateGFE );
@@ -71,6 +84,50 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_gfe_ghost( State_GFE& stateGFE ){
   _opengl_object_gfe_ghost.set_visible( true );
   _opengl_object_gfe_ghost.set( stateGFE );
+  update();
+  return;
+}
+
+void
+Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan_current_index( int currentIndex ){
+  _opengl_object_robot_plan.set_current_index( currentIndex );
+  update();
+  return;
+}
+
+void 
+Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan_visible_current_index( int visibleCurrentIndex ){
+  if( visibleCurrentIndex == Qt::Checked ){
+    _opengl_object_robot_plan.set_visible_current_index( true );
+  } else {
+    _opengl_object_robot_plan.set_visible_current_index( false );
+  }
+  update();
+  return;
+} 
+
+void 
+Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory ){
+  if( visibleTrajectory == Qt::Checked ){
+    _opengl_object_robot_plan.set_visible_trajectory( true );
+  } else {
+    _opengl_object_robot_plan.set_visible_trajectory( false );
+  }
+  update();
+  return;
+}
+
+void 
+Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist ){
+  if( visibleTrajectoryWrist == Qt::Checked ){
+    _opengl_object_robot_plan.set_visible_trajectory_wrist( true );
+  } else {
+    _opengl_object_robot_plan.set_visible_trajectory_wrist( false );
+  }
   update();
   return;
 }
