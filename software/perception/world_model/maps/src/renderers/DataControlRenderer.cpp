@@ -174,9 +174,12 @@ public:
     }
     {
       std::lock_guard<std::mutex> lock(mTimeKeepersMutex);
-      mTimeKeepers[key].mLastUpdateTime =
-        drc::Clock::instance()->getCurrentWallTime();
-      mTimeKeepers[key].mLabel->set_text("");
+      auto item = mTimeKeepers.find(key);
+      if (item != mTimeKeepers.end()) {
+        item->second.mLastUpdateTime =
+          drc::Clock::instance()->getCurrentWallTime();
+        item->second.mLabel->set_text("");
+      }
     }
   }
 
