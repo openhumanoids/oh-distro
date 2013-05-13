@@ -15,16 +15,15 @@ lidar-passthrough
 # library to creat depth masks:
 rgbd_simulation 
 
+# sudeep:
+opencv-utils
+stereo-bm
+
 # core lidar tools (antone) and affordance store (fleder)
 world_model
 
 # and module to apply object masks:
 image-passthrough
-
-
-# sudeep:
-opencv-utils
-stereo-bm
 
 # particle-filter based tracking
 particle_filter
