@@ -171,7 +171,7 @@ App::App(const std::string & stereo_in,
 
     // Robot State:
     //rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  //  rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
+    //rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
     joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
     head_joint_states_sub_ = node_.subscribe(string("/multisense_sl/joint_states"), 1000, &App::head_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
     l_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/l_hand/joint_states"), 1000, &App::l_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
@@ -212,63 +212,68 @@ App::App(const std::string & stereo_in,
     //scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
     //scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
   
-    // Stereo Image:
-    std::string lim_string ,lin_string,rim_string,rin_string;
-    int which_image = 0;
-    if (which_image==0){ // Grey:
-      lim_string = stereo_in_ + "/left/image_rect";
-      lin_string = stereo_in_ + "/left/camera_info";
-      rim_string = stereo_in_ + "/right/image_rect";
-      rin_string = stereo_in_ + "/right/camera_info";
-    }else if(which_image==1){ // Color:
-      lim_string = stereo_in_ + "/left/image_rect_color";
-      lin_string = stereo_in_ + "/left/camera_info";
-      rim_string = stereo_in_ + "/right/image_rect_color";
-      rin_string = stereo_in_ + "/right/camera_info";
-    }else if(which_image==2){ // Raw:
-      lim_string = stereo_in_ + "/left/image_raw";
-      lin_string = stereo_in_ + "/left/camera_info";
-      rim_string = stereo_in_ + "/right/image_raw";
-      rin_string = stereo_in_ + "/right/camera_info";
-    }else if(which_image==4){ // Raw on GFE: (is RGB)
-      lim_string = stereo_in_ + "/left/image_raw";
-      lin_string = stereo_in_ + "/left/camera_info";
-      rim_string = stereo_in_ + "/right/image_raw";
-      rin_string = stereo_in_ + "/right/camera_info";
-    }else{
-      cout << "Image choice not supported!\n";
-      exit(-1); 
-    }
-    cout << lim_string << " is the left stereo image subscription [for stereo]\n";
-    l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
-    l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
-    r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
-    r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
-    sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
-    sync_.registerCallback( boost::bind(&App::head_stereo_cb, this, _1, _2, _3, _4) );
+    bool send_cameras =true;
+    if (send_cameras){
+      
+      // Stereo Image:
+      std::string lim_string ,lin_string,rim_string,rin_string;
+      int which_image = 0;
+      if (which_image==0){ // Grey:
+	lim_string = stereo_in_ + "/left/image_rect";
+	lin_string = stereo_in_ + "/left/camera_info";
+	rim_string = stereo_in_ + "/right/image_rect";
+	rin_string = stereo_in_ + "/right/camera_info";
+      }else if(which_image==1){ // Color:
+	lim_string = stereo_in_ + "/left/image_rect_color";
+	lin_string = stereo_in_ + "/left/camera_info";
+	rim_string = stereo_in_ + "/right/image_rect_color";
+	rin_string = stereo_in_ + "/right/camera_info";
+      }else if(which_image==2){ // Raw:
+	lim_string = stereo_in_ + "/left/image_raw";
+	lin_string = stereo_in_ + "/left/camera_info";
+	rim_string = stereo_in_ + "/right/image_raw";
+	rin_string = stereo_in_ + "/right/camera_info";
+      }else if(which_image==4){ // Raw on GFE: (is RGB)
+	lim_string = stereo_in_ + "/left/image_raw";
+	lin_string = stereo_in_ + "/left/camera_info";
+	rim_string = stereo_in_ + "/right/image_raw";
+	rin_string = stereo_in_ + "/right/camera_info";
+      }else{
+	cout << "Image choice not supported!\n";
+	exit(-1); 
+      }
+      cout << lim_string << " is the left stereo image subscription [for stereo]\n";
+      l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
+      l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
+      r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
+      r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
+      sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
+      sync_.registerCallback( boost::bind(&App::head_stereo_cb, this, _1, _2, _3, _4) );
 
-    // Mono-Cameras:
-    left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
-    if (1==0){
-      left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
-      right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
-    }
+      // Mono-Cameras:
+      left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
+      if (1==0){
+	left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
+	right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
+      }
 
-    /////////////////////////////// Hand Cameras /////////////////////////////////////
-    if (send_hand_cameras_){
-      l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 3);
-      l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 3);
-      l_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/image_raw" ), 3);
-      l_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/camera_info"  ), 3);
-      l_hand_sync_.connectInput(l_hand_l_image_sub_, l_hand_l_info_sub_, l_hand_r_image_sub_, l_hand_r_info_sub_);
-      l_hand_sync_.registerCallback( boost::bind(&App::l_hand__stereo_cb, this, _1, _2, _3, _4) );        
+      /////////////////////////////// Hand Cameras /////////////////////////////////////
+      if (send_hand_cameras_){
+	l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 3);
+	l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 3);
+	l_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/image_raw" ), 3);
+	l_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/camera_info"  ), 3);
+	l_hand_sync_.connectInput(l_hand_l_image_sub_, l_hand_l_info_sub_, l_hand_r_image_sub_, l_hand_r_info_sub_);
+	l_hand_sync_.registerCallback( boost::bind(&App::l_hand__stereo_cb, this, _1, _2, _3, _4) );        
 
-      r_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/image_raw" ), 3);
-      r_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/camera_info" ), 3);
-      r_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/image_raw" ), 3);
-      r_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/camera_info"  ), 3);
-      r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
-      r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
+	r_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/image_raw" ), 3);
+	r_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/camera_info" ), 3);
+	r_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/image_raw" ), 3);
+	r_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/camera_info"  ), 3);
+	r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
+	r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
+      }
+    
     }
   }
 };
@@ -433,10 +438,10 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
 // channels: rgb u v
 int l_counter =0;
 void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
-  l_counter++;
   if (l_counter%30 ==0){
     std::cout << l_counter << " left image\n";
   }  
+  l_counter++;
   send_image(msg, "CAMERALEFT");
 }
 int r_counter =0;
@@ -444,10 +449,10 @@ void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
   std::cout << "got r image\n";
   std::cout << msg->encoding << " is r encdoing\n";
   
-  r_counter++;
   if (r_counter%30 ==0){
     std::cout << r_counter << " right image\n";
   }  
+  r_counter++;
   send_image(msg, "CAMERARIGHT");
 }
 
@@ -572,16 +577,29 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 void App::end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& msg){
   end_effector_sensors_ = *msg;
 }
+
+int gt_counter =0;
 void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
+  if (gt_counter%200 ==0){
+    std::cout << gt_counter << " ground truth\n";
+  }  
+  gt_counter++;
+
   ground_truth_odom_ = *msg;
-  
   init_recd_[0] =true;
 }
+
 /// Locally cache the joint states:
+int js_counter=0;
 void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  if (js_counter%500 ==0){
+    std::cout << js_counter << " joint states\n";
+  }  
+  js_counter++;
+  
+  
   robot_joint_states_ = *msg; 
   init_recd_[1] =true; 
-  
   int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   publishRobotState(joint_utime);
 }
@@ -775,10 +793,10 @@ void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
 
 int scan_counter=0;
 void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
-  scan_counter++;
   if (scan_counter%80 ==0){
     std::cout << scan_counter << " /multisense_sl/laser/scan -> SCAN\n";
   }  
+  scan_counter++;
   send_lidar(msg, "SCAN");
 }
 void App::scan_left_cb(const sensor_msgs::LaserScanConstPtr& msg){
