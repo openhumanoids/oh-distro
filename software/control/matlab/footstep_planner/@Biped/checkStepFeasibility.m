@@ -29,16 +29,17 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, max_forward_s
     % c(1, j) = abs(u(1) - x_mean) - (x_max - x_min) / 2;
     % x_feas_frac = max(0, 1 - abs(u(1) - x_mean) / ((x_max - x_min) / 2));
     if u(2) >= biped.nom_step_width
-      c(2, j) = u(2) - interp1([0, 1], [biped.nom_step_width, biped.max_step_width], x_feas_frac);
-      % c(2, j) = u(2) - max_step_width;
+      % c(2, j) = u(2) - interp1([0, 1], [biped.nom_step_width, biped.max_step_width], x_feas_frac);
+      c(2, j) = u(2) - biped.max_step_width;
     else
-      % c(2, j) = min_step_width - u(2);
-      c(2, j) = interp1([0, 1], [biped.nom_step_width, biped.min_step_width], x_feas_frac) - u(2);
+      c(2, j) = biped.min_step_width - u(2);
+      % c(2, j) = interp1([0, 1], [biped.nom_step_width, biped.min_step_width], x_feas_frac) - u(2);
       if c(2, j) > 0
         c(2, j) = c(2, j) * 10;
       end
     end
-    phi = pf(6, j) - p0(6, j);
+    phi = angleDiff(pf(6, j), p0(6, j))
+    % phi = pf(6, j) - p0(6, j);
     c(3, j) = abs(phi) - biped.max_step_rot;
     % c(3, j) = abs(phi) - interp1([0, 1], [0, biped.max_step_rot], x_feas_frac);
 
