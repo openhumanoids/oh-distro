@@ -57,6 +57,8 @@ foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1),...
 infeasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:)),...
    'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
 
+plot_lcm_points([reshape(X, [], 1), reshape(Y, [], 1), reshape(Z, [], 1)], [reshape(F, [], 1), reshape(1-F, [], 1), reshape(zeros(size(F)), [], 1)], 71, 'Terrain Feasibility', 1, 1);
+ 
 % figure(1)
 % mesh(X, Y, Z)
 % axis equal
