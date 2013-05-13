@@ -373,7 +373,7 @@ namespace renderer_affordances_gui_utils
    if(doFK)
    {
       //doBatchFK given DOF Desired Ranges
-      int num_of_increments = 5; // determines no of intermediate holds between dof_min and dof_max;
+      int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
       self->dofRangeFkQueryHandler->doBatchFK(dof_names,dof_min,dof_max,num_of_increments);
    } 
 
