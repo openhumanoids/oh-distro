@@ -88,10 +88,13 @@ KDL::Frame ConstraintApp::VectorToFrame(const std::vector<double>& state)
 {
   KDL::Frame res;
   
+  assert(state.size() == 6);
+  /*
   if ( state.size() != 6 ) {
     m_log << "ERROR: improper number of elements while setting state" << std::endl;
     return KDL::Frame();
   }
+  */
 
   res.p[0] = state[0];
   res.p[1] = state[1];

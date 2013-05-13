@@ -54,12 +54,12 @@ class ConstraintApp
   typedef boost::optional<KDL::Frame> OptionalKDLFrame;
   static OptionalKDLFrame GetFrameFromParams(const drc::affordance_t *msg);
   static std::vector<double> FrameToVector(const KDL::Frame& frame);
+  static KDL::Frame VectorToFrame(const std::vector<double>& state);  
 
  protected :
   bool shouldStop();
   void stopThreads();
   void main();
-  KDL::Frame VectorToFrame(const std::vector<double>& state);  
   int lcm_handle_timeout(lcm_t* lcm, int ms);
 
  protected :
