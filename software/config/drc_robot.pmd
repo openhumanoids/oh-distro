@@ -104,12 +104,8 @@ group "a.1.core" {
         exec = "drc-init-laser";
         host = "robot";
     }
-    cmd "tracker-1" {
-        exec = "object-tracker -t 1";
-        host = "robot";
-    }
-    cmd "tracker-2" {
-        exec = "object-tracker -t 2";
+    cmd "logger-robot-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
         host = "robot";
     }
 }
@@ -237,6 +233,10 @@ group "b.1.core" {
     }
     cmd "est_rsp_base" {
         exec = "est_robot_state_publisher -g";
+        host = "base";
+    }
+    cmd "lcm-logger-base-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
         host = "base";
     }
 }
@@ -406,6 +406,10 @@ group "m.3.dev_tools" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "robot";
     }
+    cmd "set-sim-rate-quicker" {
+        exec = "drc-set-sim-rate 0.5";
+        host = "robot";
+    }
     cmd "set-sim-rate" {
         exec = "drc-set-sim-rate 0.25";
         host = "robot";
@@ -416,14 +420,10 @@ group "m.3.dev_tools" {
     }
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
-        host = "robot";
+        host = "base";
     }
     cmd "exit_car" {
         exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
-        host = "robot";
-    }
-    cmd "lcm-logger-no-vis" {
-        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_log.lcm";
         host = "robot";
     }
     cmd "lcm-logger" {
@@ -534,7 +534,7 @@ script "dev.mit_walking_vo" {
     start cmd "gz_mit_walking";
     wait ms 3000;
     start cmd "set-sim-rate-slower";
-    start cmd "lcm-logger-no-vis";
+    start cmd "logger-no-vis";
 }
 
 script "dev.mit_manip_nohands" {
@@ -564,40 +564,10 @@ script "dev.ingress" {
 }
 
 
-############ Misc incl System Tests ############
-script "systest-core-stop" {
-    stop cmd "lcm-logger-no-vis";
-    stop cmd "systemwide-test";
-    stop group "0.development";
-    stop group "a.1.core";
-    stop cmd "WalkingStateMachine";
-    stop cmd "FootstepPlanner";
-    stop cmd "ZMPWalkingPlanner";
-    stop cmd "gz_quals_1_unpaused";
-    stop cmd "set-sim-rate";
-}
-
+############ System Tests ############
 script "systest-main" {
-    start cmd "lcm-logger-no-vis";
+    run_script "dev.mit_walking";
     start cmd "systemwide-test";
-    wait ms 100;
-    run_script "qual_1";
-    wait ms 1200000;
-    run_script "core-stop";
-    wait ms 10000;
-}
-
-script "systest-vo-start" {
-    start group "0.development";
-    start group "a.1.core";
-    stop cmd "estpub";
-    start group "a.5.a.motion_vo";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 12000;
-    start cmd "gz_mit_walking";
-    wait ms 3000;
-    start cmd "set-sim-rate-slower";
-    start cmd "systemwide-test";
-    start cmd "lcm-logger";
+    wait ms 4000;
+    start cmd "set-sim-rate-quicker";
 }
