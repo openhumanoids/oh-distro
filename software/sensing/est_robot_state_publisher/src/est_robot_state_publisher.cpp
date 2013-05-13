@@ -114,6 +114,8 @@ void StatePub::sendPose(KDL::Frame pose, int64_t utime, std::string channel){
 
 void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
   KDL::Frame  T_body_head){
+  
+  
   drc::robot_state_t msgout;
   msgout= *TRUE_state_msg;
   _lcm->publish("EST_ROBOT_STATE", &msgout);
@@ -208,6 +210,14 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
 
 void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   const std::string& chan, const drc::robot_state_t * TRUE_state_msg){
+  
+  // This line rate limits the entire system to 200Hz:
+  if ( TRUE_state_msg->utime - _last_est_state.utime < 4500 ){
+    //std::cout << "skip TRS\n";
+    return;
+  }
+  //std::cout << "send TRS\n";
+    
   
   /* This prints out the joint ordering - so they can be copied to drc_robot.cfg and kept in sync:
   cout << "[";
