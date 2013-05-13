@@ -23,31 +23,30 @@
 #include "opengl/opengl_object_gfe.h"
 
 namespace opengl {
-  typedef enum {
-    OPENGL_OBJECT_TRAJECTORY_GFE_RENDER_LINK_PATHS,
-    OPENGL_OBJECT_TRAJECTORY_GFE_RENDER_WRIST_PATHS,
-    NUM_OPENGL_OBJECT_TRAJECTORY_GFE_RENDER_MODES
-  } opengl_object_trajectory_gfe_render_mode_t;
-
   class OpenGL_Object_Trajectory_GFE: public OpenGL_Object {
   public:
-    OpenGL_Object_Trajectory_GFE( opengl_object_trajectory_gfe_render_mode_t renderMode = OPENGL_OBJECT_TRAJECTORY_GFE_RENDER_LINK_PATHS );
-    OpenGL_Object_Trajectory_GFE( std::string urdfFilename, opengl_object_trajectory_gfe_render_mode_t renderMode = OPENGL_OBJECT_TRAJECTORY_GFE_RENDER_LINK_PATHS );
+    OpenGL_Object_Trajectory_GFE( void );
+    OpenGL_Object_Trajectory_GFE( std::string urdfFilename );
     ~OpenGL_Object_Trajectory_GFE();
     OpenGL_Object_Trajectory_GFE( const OpenGL_Object_Trajectory_GFE& other );
     OpenGL_Object_Trajectory_GFE& operator=( const OpenGL_Object_Trajectory_GFE& other );
 
     void set( const std::vector< state::State_GFE >& trajectory );
-    void set_current_index( unsigned int currentIndex );
+    inline void set_current_index( unsigned int currentIndex ){ _current_index = currentIndex; return; };
+    inline void set_visible_current_index( bool visibleCurrentIndex ){ _visible_current_index = visibleCurrentIndex; return; };      
+    inline void set_visible_trajectory( bool visibleTrajectory ){ _visible_trajectory = visibleTrajectory; return; };      
+    inline void set_visible_trajectory_wrist( bool visibleTrajectoryWrist ){ _visible_trajectory_wrist = visibleTrajectoryWrist; return; };      
 
     virtual void draw( void );
 
   protected:
-    opengl_object_trajectory_gfe_render_mode_t _render_mode;
     std::vector< state::State_GFE > _trajectory;
     OpenGL_Object_GFE _opengl_object_gfe;
     OpenGL_Object_GFE _opengl_object_gfe_ghost;
     unsigned int _current_index;
+    bool _visible_current_index;
+    bool _visible_trajectory;
+    bool _visible_trajectory_wrist;
 
   private:
 
