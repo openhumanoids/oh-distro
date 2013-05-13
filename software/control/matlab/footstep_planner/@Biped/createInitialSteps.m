@@ -106,7 +106,7 @@ aborted = false;
       end
     end
     % biped.checkTerrain(foot_centers.(m_foot)(:,next_ndx), is_right_foot);
-    pos_n = foot_centers.(m_foot)(:, next_ndx);
+    pos_n = biped.checkTerrain(foot_centers.(m_foot)(:, next_ndx));
     last_ndx.(m_foot) = next_ndx;
     
 
