@@ -52,6 +52,7 @@ namespace authoring {
     QLabel * _label_id;
     QComboBox * _combo_box_parent;
     QComboBox * _combo_box_child;
+    QComboBox * _combo_box_type;
     QDoubleSpinBox * _double_spin_box_x_min;
     QDoubleSpinBox * _double_spin_box_x_max;
     QDoubleSpinBox * _double_spin_box_y_min;

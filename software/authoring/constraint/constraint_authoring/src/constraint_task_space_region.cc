@@ -47,6 +47,28 @@ operator=( const Constraint_Task_Space_Region& other ) {
   return (*this);
 }
 
+string
+Constraint_Task_Space_Region::
+contact_type_t_to_std_string( contact_type_t contactType ){
+  switch( contactType ){
+  case ( ON_GROUND_PLANE ):
+      return "ON_GROUND_PLANE";
+      break;
+  case ( POINT_CONTACT ):
+      return "POINT_CONTACT";
+      break;
+  case ( FORCE_CLOSURE ):
+      return "FORCE_CLOSURE";
+      break;
+  case ( NOT_IN_CONTACT ):
+      return "NOT_IN_CONTACT";
+      break;
+  default:
+    return "UNKNOWN";
+    break;
+  }
+}
+
 void 
 Constraint_Task_Space_Region::
 add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){

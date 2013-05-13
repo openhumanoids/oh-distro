@@ -21,6 +21,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
                                                                     _label_id( new QLabel( "N/A", this ) ),
                                                                     _combo_box_parent( new QComboBox( this ) ),
                                                                     _combo_box_child( new QComboBox( this ) ),
+                                                                    _combo_box_type( new QComboBox( this ) ),
                                                                     _double_spin_box_x_min( new QDoubleSpinBox( this ) ),
                                                                     _double_spin_box_x_max( new QDoubleSpinBox( this ) ),
                                                                     _double_spin_box_y_min( new QDoubleSpinBox( this ) ),
@@ -67,6 +68,10 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
   for( vector< AffordanceState >::const_iterator it = _object_affordances.begin(); it != _object_affordances.end(); it++ ){
     _combo_box_child->addItem( QString::fromStdString( it->getName() ) );
+  }
+
+  for ( uint i = 0; i < NUM_CONTACT_TYPES; i++ ) {
+      _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
   }
 
   _double_spin_box_x_min->setSuffix( " m" );
@@ -125,6 +130,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _double_spin_box_child_to_constraint_z->setRange( -1000.0, 1000.0 );
 
   if( _constraint != NULL ){
+    _combo_box_type->setCurrentIndex( _constraint->contact_type() );
     _label_id->setText( QString::fromStdString( _constraint->id() ) );
     if( _constraint->parent().first != shared_ptr< Link >() ){
       for( unsigned int i = 0; i < _robot_affordances.size(); i++ ){
@@ -180,6 +186,11 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   QGridLayout * child_layout = new QGridLayout();
   child_layout->addWidget( _combo_box_child );
   child_group_box->setLayout( child_layout );
+
+  QGroupBox * type_group_box = new QGroupBox( "type" );
+  QGridLayout * type_layout = new QGridLayout();
+  type_layout->addWidget( _combo_box_type );
+  type_group_box->setLayout( type_layout );
 
   QGroupBox * range_group_box = new QGroupBox( "range" );
   QGridLayout * range_layout = new QGridLayout();
@@ -263,13 +274,15 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   widget_layout->addWidget( _label_id, 0, 0, 1, 2 );
   widget_layout->addWidget( parent_group_box, 1, 0, 1, 2 );
   widget_layout->addWidget( child_group_box, 2, 0, 1, 2 );
-  widget_layout->addWidget( range_group_box, 3, 0, 1, 2 );
-  widget_layout->addWidget( parent_to_constraint_group_box, 4, 0 );
-  widget_layout->addWidget( child_to_constraint_group_box, 4, 1 );
+  widget_layout->addWidget( type_group_box, 3, 0, 1, 2 );
+  widget_layout->addWidget( range_group_box, 4, 0, 1, 2 );
+  widget_layout->addWidget( parent_to_constraint_group_box, 5, 0 );
+  widget_layout->addWidget( child_to_constraint_group_box, 5, 1 );
   setLayout( widget_layout );
 
   connect( _combo_box_parent, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
   connect( _combo_box_child, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
+  connect( _combo_box_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
 
   connect( _push_button_x_min, SIGNAL( clicked() ), this, SLOT( _range_x_minimize() ) );
   connect( _push_button_x_max, SIGNAL( clicked() ), this, SLOT( _range_x_maximize() ) );
@@ -362,6 +375,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( int index ){
   _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
   _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
+  _constraint->set_contact_type( (contact_type_t) _combo_box_type->currentIndex() );
   return;
 }
 
