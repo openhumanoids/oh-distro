@@ -14,7 +14,7 @@
 #include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
-#include <lcmtypes/drc/twist_timed_t.hpp>
+#include <lcmtypes/drc/sensor_rateset_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 
@@ -56,6 +56,7 @@ protected:
   Gtk::VBox* mPushControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
+  int mCameraFrameRate;
   int mHeadPitchAngle;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
@@ -252,12 +253,22 @@ public:
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
     mSpinRate = 15;
     addSpin("Spin Rate (rpm)", mSpinRate, 0, 60, 1, sensorControlBox);
-    button = Gtk::manage(new Gtk::Button("Submit Rate"));
+    button = Gtk::manage(new Gtk::Button("Submit Spin Rate"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onRateControlButton));
+      (sigc::mem_fun(*this, &DataControlRenderer::onSpinRateControlButton));
     sensorControlBox->pack_start(*button, false, false);
     Gtk::HSeparator* separator = Gtk::manage(new Gtk::HSeparator());
     sensorControlBox->pack_start(*separator, false, false);
+
+    mCameraFrameRate = 10;
+    addSpin("Camera Rate (fps)", mCameraFrameRate, 0, 60, 1, sensorControlBox);
+    button = Gtk::manage(new Gtk::Button("Submit Camera Rate"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onCameraRateControlButton));
+    sensorControlBox->pack_start(*button, false, false);
+    separator = Gtk::manage(new Gtk::HSeparator());
+    sensorControlBox->pack_start(*separator, false, false);
+
     mHeadPitchAngle = 45;
     addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
     button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
@@ -347,18 +358,20 @@ public:
     std::cout << "Sent affordance list" << std::endl;
   }
 
-  void onRateControlButton() {
-    const double kPi = 4*atan(1);
-    double radiansPerSecond = (double)mSpinRate/60*2*kPi;
-    drc::twist_timed_t rate;
-    rate.utime = drc::Clock::instance()->getCurrentTime();
-    rate.angular_velocity.x = radiansPerSecond;
-    rate.angular_velocity.y = 0.0;
-    rate.angular_velocity.z = 0.0;
-    rate.linear_velocity.x = 0.0;
-    rate.linear_velocity.y = 0.0;
-    rate.linear_velocity.z = 0.0;
-    getLcm()->publish("SCAN_RATE_CMD", &rate);
+  void onSpinRateControlButton() {
+    drc::sensor_rateset_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.spindle_rpm = mSpinRate;
+    msg.multisense_fps = -1;
+    getLcm()->publish("SENSOR_REQUEST", &msg);
+  }
+
+  void onCameraRateControlButton() {
+    drc::sensor_rateset_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.spindle_rpm = -1;
+    msg.multisense_fps = mCameraFrameRate;
+    getLcm()->publish("SENSOR_REQUEST", &msg);
   }
 
   void onHeadPitchControlButton() {
