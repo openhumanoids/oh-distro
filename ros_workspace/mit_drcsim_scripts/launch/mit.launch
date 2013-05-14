@@ -1,14 +1,15 @@
 <launch>
 
-<!-- what launch script to run: either "run_gazebo" or "run_gazebo_paused" -->
-  <arg name="gzname" default="run_gazebo"/>
+<!-- what launch script to run: 
+  run_gzserver", "run_gazebo" or "run_gazebo_paused" -->
+  <arg name="gzname" default="run_gzserver"/>
 
 <!-- Read world file -->
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/mit_manip.world" />
 
   <param name="/use_sim_time" type="bool" value="true"/>
   <param name="/atlas/startup_mode" value="pinned" />
-  <param name="/atlas/time_to_unpin" value="10" />
+  <param name="/atlas/time_to_unpin" value="5" />
 
   <!-- start gazebo with the Atlas -->
 <!--  <node name="gazebo" pkg="atlas_utils" type="$(arg gzname)" args="$(arg gzworld)" output="screen" />-->
