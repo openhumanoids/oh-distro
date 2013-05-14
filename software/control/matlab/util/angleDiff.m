@@ -1,6 +1,8 @@
 function d = angleDiff(phi1, phi2)
-
-% compute the angular difference between two angles, paying careful attention to wraparound
+% 
+% Compute the angular difference between two angles, paying careful attention to wraparound. Note that for scalar phi1 and phi2, the result should be the same as diff(unwrap([phi1, phi2])). 
+%
+% Test case provided in ../unitTests/angleDiffTest.m
 
 phi2 = mod(phi2, 2*pi);
 phi1 = mod(phi1, 2*pi);
