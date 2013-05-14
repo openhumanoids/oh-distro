@@ -16,6 +16,7 @@
 #include <state/state_gfe.h>
 
 #include <authoring/constraint.h>
+#include <authoring/constraint_sequence.h>
 #include <authoring/qt4_widget_constraint_editor.h>
 #include <authoring/qt4_widget_opengl_authoring.h>
 
@@ -31,8 +32,6 @@ namespace authoring {
 
   signals:
     void info_update( const QString& info );
-    void time_min_update( double timeMin );
-    void time_max_update( double timeMax );
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
     void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
     void state_gfe_update( state::State_GFE& stateGFE );
@@ -49,19 +48,15 @@ namespace authoring {
     void _push_button_import_pressed( void );
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
-    void _double_spin_box_end_time_changed( double endTime );
     
 
   protected:
-    void _create_drc_action_sequence_t( drc::action_sequence_t& msg );
-  
     Qt4_Widget_OpenGL_Authoring * _widget_opengl_authoring;
     QTextEdit * _text_edit_info;
     QPushButton * _push_button_grab;
     QPushButton * _push_button_import;
     QPushButton * _push_button_export;
     QPushButton * _push_button_publish;
-    QDoubleSpinBox * _double_spin_box_end_time;
     QTextEdit * _text_edit_affordance_collection;
     QSlider * _slider_plan_current_index;
     QCheckBox * _check_box_visible_current_index;
@@ -74,7 +69,7 @@ namespace authoring {
     std::vector< state::State_GFE > _robot_plan;
     state::State_GFE _state_gfe;
     state::State_GFE _state_gfe_ghost;
-    std::vector< Constraint* > _constraints;
+    Constraint_Sequence _constraint_sequence;
     std::vector< Qt4_Widget_Constraint_Editor* > _constraint_editors;
 
   private:

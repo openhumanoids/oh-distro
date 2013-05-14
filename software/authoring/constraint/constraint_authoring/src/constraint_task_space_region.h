@@ -22,22 +22,22 @@ namespace authoring {
 
   class Constraint_Task_Space_Region: public Constraint {
   public:
-    Constraint_Task_Space_Region( const std::string& id = "N/A", double start = 0.0, double end = 0.0, const std::pair< boost::shared_ptr< urdf::Link >, std::string >& parent = std::pair< boost::shared_ptr< urdf::Link >, std::string >(), affordance::AffordanceState* child = NULL );
+    Constraint_Task_Space_Region( const std::string& id = "N/A", bool active = true, double start = 0.0, double end = 0.0, const std::pair< std::string, std::string >& parent = std::pair< std::string, std::string >( "N/A", "N/A" ), affordance::AffordanceState* child = NULL );
     ~Constraint_Task_Space_Region();
     Constraint_Task_Space_Region( const Constraint_Task_Space_Region& other );
     Constraint_Task_Space_Region& operator=( const Constraint_Task_Space_Region& other );
 
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );    
 
-    inline contact_type_t contact_type() { return _contact_type; }
-    inline void set_contact_type( contact_type_t contactType ) { _contact_type = contactType; }
+    inline contact_type_t& contact_type( void ) { return _contact_type; }
+    inline const contact_type_t& contact_type( void )const{ return _contact_type; };
     static std::string contact_type_t_to_std_string( contact_type_t contactType );
 
     virtual inline constraint_type_t type( void ){ return CONSTRAINT_TASK_SPACE_REGION_TYPE; };
     inline std::vector< std::pair< double, double > >& ranges( void ){ return _ranges; };
     inline const std::vector< std::pair< double, double > >& ranges( void )const{ return _ranges; };
-    inline std::pair< boost::shared_ptr< urdf::Link >, std::string >& parent( void ){ return _parent; };
-    inline const std::pair< boost::shared_ptr< urdf::Link >, std::string >& parent( void )const{ return _parent; };
+    inline std::pair< std::string, std::string >& parent( void ){ return _parent; };
+    inline const std::pair< std::string, std::string >& parent( void )const{ return _parent; };
     inline affordance::AffordanceState*& child( void ){ return _child; };
     inline const affordance::AffordanceState* child( void )const{ return _child; };
     inline KDL::Frame& parent_to_constraint( void ){ return _parent_to_constraint; };
@@ -48,7 +48,7 @@ namespace authoring {
   protected:
     contact_type_t _contact_type;
     std::vector< std::pair< double, double > > _ranges;
-    std::pair< boost::shared_ptr< urdf::Link >, std::string > _parent;
+    std::pair< std::string, std::string > _parent;
     affordance::AffordanceState* _child;
     KDL::Frame _parent_to_constraint;
     KDL::Frame _child_to_constraint;

@@ -57,13 +57,12 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _robot_model.getLinks( links );
   for( vector< shared_ptr< Link > >::iterator it1 = links.begin(); it1 != links.end(); it1++ ){
     for( map< string, shared_ptr< vector< shared_ptr< Collision > > > >::iterator it2 = (*it1)->collision_groups.begin(); it2 != (*it1)->collision_groups.end(); it2++ ){
-      cout << (*it1)->name << "-" << it2->first << endl;        
-      _robot_affordances.push_back( pair< shared_ptr< Link >, std::string >( (*it1), it2->first ) );
+      _robot_affordances.push_back( pair< string, string >( (*it1)->name, it2->first ) );
     }
   }
 
-  for( vector< pair< shared_ptr< Link >, string > >::iterator it = _robot_affordances.begin(); it != _robot_affordances.end(); it++ ){
-    _combo_box_parent->addItem( QString( "%1-%2" ).arg( QString::fromStdString( it->first->name ) ).arg( QString::fromStdString( it->second ) ) );
+  for( vector< pair< string, string > >::iterator it = _robot_affordances.begin(); it != _robot_affordances.end(); it++ ){
+    _combo_box_parent->addItem( QString( "%1-%2" ).arg( QString::fromStdString( it->first ) ).arg( QString::fromStdString( it->second ) ) );
   }
 
   for( vector< AffordanceState >::const_iterator it = _object_affordances.begin(); it != _object_affordances.end(); it++ ){
@@ -132,9 +131,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   if( _constraint != NULL ){
     _combo_box_type->setCurrentIndex( _constraint->contact_type() );
     _label_id->setText( QString::fromStdString( _constraint->id() ) );
-    if( _constraint->parent().first != shared_ptr< Link >() ){
+    if( _constraint->parent().first != "N/A" ){
       for( unsigned int i = 0; i < _robot_affordances.size(); i++ ){
-        if( _robot_affordances[ i ].first->name == _constraint->parent().first->name ){
+        if( _robot_affordances[ i ].first == _constraint->parent().first ){
           if( _robot_affordances[ i ].second == _constraint->parent().second ){
             _combo_box_parent->setCurrentIndex( i );
           }
@@ -321,7 +320,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 ~Qt4_Widget_Constraint_Task_Space_Region_Editor() {
-  cout << "in Qt4_Widget_Constraint_Task_Space_Region_Editor destructor" << endl;
+
 }
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
@@ -354,7 +353,7 @@ _constraint_changed( double value ){
   _constraint->child_to_constraint().p[0] = _double_spin_box_child_to_constraint_x->value();
   _constraint->child_to_constraint().p[1] = _double_spin_box_child_to_constraint_y->value();
   _constraint->child_to_constraint().p[2] = _double_spin_box_child_to_constraint_z->value();
-  
+ 
   _constraint->ranges()[0].first = _double_spin_box_x_min->value();
   _constraint->ranges()[0].second = _double_spin_box_x_max->value();
   _constraint->ranges()[1].first = _double_spin_box_y_min->value();
@@ -379,7 +378,7 @@ _constraint_changed( int index ){
   if( _combo_box_child->currentIndex() < _object_affordances.size() ){
     _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
   }
-  _constraint->set_contact_type( (contact_type_t) _combo_box_type->currentIndex() );
+  _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
   return;
 }
 

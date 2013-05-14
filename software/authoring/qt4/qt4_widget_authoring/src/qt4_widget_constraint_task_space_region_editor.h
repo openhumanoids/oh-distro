@@ -46,7 +46,7 @@ namespace authoring {
   protected:
     Constraint_Task_Space_Region * _constraint;
     urdf::Model& _robot_model;
-    std::vector< std::pair< boost::shared_ptr< urdf::Link >, std::string > > _robot_affordances;
+    std::vector< std::pair< std::string, std::string > > _robot_affordances;
     std::vector< affordance::AffordanceState >& _object_affordances;
 
     QLabel * _label_id;

@@ -9,10 +9,11 @@ using namespace authoring;
 
 Constraint_Task_Space_Region::
 Constraint_Task_Space_Region( const string& id,
+                              bool active,
                               double start,
                               double end,
-                              const pair< shared_ptr< Link >, string >& parent,
-                              AffordanceState* child ) : Constraint( id, start, end ),
+                              const pair< string, string >& parent,
+                              AffordanceState* child ) : Constraint( id, active, start, end ),
                                                           _contact_type( ON_GROUND_PLANE ), 
                                                           _ranges( 6 ),
                                                           _parent( parent ),
@@ -79,11 +80,7 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   contact_goal_t contact_goal;
   actionSequence.contact_goals.push_back( contact_goal );  
   actionSequence.contact_goals.back().utime = 0;
-  if( _parent.first != shared_ptr< Link >() ){
-    actionSequence.contact_goals.back().object_1_name = _parent.first->name;
-  } else {
-    actionSequence.contact_goals.back().object_1_name = "N/A";
-  }
+  actionSequence.contact_goals.back().object_1_name = _parent.first;
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
   if( _child != NULL ){
     actionSequence.contact_goals.back().object_2_name = _child->getName();
@@ -94,9 +91,15 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = _contact_type;
-  actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
-  actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
-  actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
+  if( _child != NULL ){
+    actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
+    actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
+    actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
+  } else {
+    actionSequence.contact_goals.back().target_pt.x = 0.0;
+    actionSequence.contact_goals.back().target_pt.y = 0.0;
+    actionSequence.contact_goals.back().target_pt.z = 0.0;
+  }
   actionSequence.contact_goals.back().x_offset = _ranges[ 0 ].first;
   actionSequence.contact_goals.back().y_offset = _ranges[ 1 ].first;
   actionSequence.contact_goals.back().z_offset = _ranges[ 2 ].first;
@@ -105,11 +108,7 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_GREATER_THAN;
   actionSequence.contact_goals.push_back( contact_goal ); 
   actionSequence.contact_goals.back().utime = 0;
-  if( _parent.first != shared_ptr< Link >() ){
-    actionSequence.contact_goals.back().object_1_name = _parent.first->name;
-  } else {
-    actionSequence.contact_goals.back().object_1_name = "N/A";
-  }
+  actionSequence.contact_goals.back().object_1_name = _parent.first;
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
   if( _child != NULL ){
     actionSequence.contact_goals.back().object_2_name = _child->getName();
@@ -120,15 +119,21 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = _contact_type;
-  actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
-  actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
-  actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
+  if( _child != NULL ){
+    actionSequence.contact_goals.back().target_pt.x = _child->getXYZ().x();
+    actionSequence.contact_goals.back().target_pt.y = _child->getXYZ().y();
+    actionSequence.contact_goals.back().target_pt.z = _child->getXYZ().z();
+  } else {
+    actionSequence.contact_goals.back().target_pt.x = 0.0;
+    actionSequence.contact_goals.back().target_pt.y = 0.0;
+    actionSequence.contact_goals.back().target_pt.z = 0.0;
+  }
   actionSequence.contact_goals.back().x_offset = _ranges[ 0 ].second;
   actionSequence.contact_goals.back().y_offset = _ranges[ 1 ].second;
   actionSequence.contact_goals.back().z_offset = _ranges[ 2 ].second;
   actionSequence.contact_goals.back().x_relation = contact_goal_t::REL_LESS_THAN;
   actionSequence.contact_goals.back().y_relation = contact_goal_t::REL_LESS_THAN;
-  actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_LESS_THAN;  
+  actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_LESS_THAN; 
   return;
 }
 

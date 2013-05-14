@@ -25,7 +25,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _push_button_import( new QPushButton( QString( "import" ), this ) ),
                                             _push_button_export( new QPushButton( QString( "export" ), this ) ),
                                             _push_button_publish( new QPushButton( QString( "publish" ), this ) ),
-                                            _double_spin_box_end_time( new QDoubleSpinBox( this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
                                             _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
@@ -39,14 +38,13 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _state_gfe_ghost(){
   _robot_model.initString( Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + urdfFilename ) );
 
-  _constraints.resize( numConstraints );
+  _constraint_sequence.constraints().resize( numConstraints );
   for( unsigned int i = 0; i < numConstraints; i++ ){
-    _constraints[ i ] = NULL;
-    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraints[ i ], _robot_model, _affordance_collection, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
+    _constraint_sequence.constraints()[ i ] = NULL;
+    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
   }
 
   _text_edit_info->setFixedHeight( 75 );
-  _double_spin_box_end_time->setSuffix( QString( " seconds" ) );
 
   _check_box_visible_current_index->setCheckState( Qt::Checked );
   _check_box_visible_trajectory->setCheckState( Qt::Checked );
@@ -58,7 +56,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   controls_layout->addWidget( _push_button_import );
   controls_layout->addWidget( _push_button_export );
   controls_layout->addWidget( _push_button_publish );
-  controls_layout->addWidget( _double_spin_box_end_time );
   controls_group_box->setLayout( controls_layout );
  
   QWidget * affordances_widget = new QWidget( this );
@@ -75,7 +72,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   }
   constraints_widget->setLayout( constraints_layout );
   constraints_scroll_area->setWidget( constraints_widget ); 
-  constraints_scroll_area->setFixedHeight( 160 );
+//  constraints_scroll_area->setFixedHeight( 80 );
   
   QScrollArea * plan_scroll_area = new QScrollArea( this );
   plan_scroll_area->setFrameStyle( QFrame::NoFrame );
@@ -87,6 +84,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 3 );
   plan_widget->setLayout( plan_layout );
   plan_scroll_area->setWidget( plan_widget );
+//  plan_scroll_area->setFixedHeight( 80 );
 
   QTabWidget * tab_widget = new QTabWidget( this );
   tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
@@ -109,14 +107,11 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
-    connect( this, SIGNAL( time_min_update( double ) ), *it, SLOT( update_time_min( double ) ) );
-    connect( this, SIGNAL( time_max_update( double ) ), *it, SLOT( update_time_max( double ) ) );
   }
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
   connect( _push_button_export, SIGNAL( clicked() ), this, SLOT( _push_button_export_pressed() ) );
   connect( _push_button_publish, SIGNAL( clicked() ), this, SLOT( _push_button_publish_pressed() ) );
-  connect( _double_spin_box_end_time, SIGNAL( valueChanged( double ) ), this, SLOT( _double_spin_box_end_time_changed( double ) ) );
 }
 
 Qt4_Widget_Authoring::
@@ -186,24 +181,20 @@ _push_button_grab_pressed( void ){
 void
 Qt4_Widget_Authoring::
 _push_button_import_pressed( void ){
-  emit info_update( QString( "[<b>OK</b>] import pressed" ) );
 
-  QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
+  QString filename = QFileDialog::getOpenFileName(this, tr("Load Constraint Sequence"),
                                                   "/home",
                                                   tr("ActioncSequence (*.bin)"));  
-  if (fileName.isEmpty())
+  if (filename.isEmpty()) {
+    emit info_update( QString( "[<b>ERROR</b>] failed to import (filename empty)" ) );
     return;
+  }
 
-  //---read from file
-  cout << "\n\n\n about to read file from disk" << endl;
-  lcm::LogFile lFileReader(fileName.toUtf8().constData(), "r"); //'read'
-  const lcm::LogEvent *eventFromFile = lFileReader.readNextEvent();
-  drc::action_sequence_t action_sequence;
-  action_sequence.decode(eventFromFile->data,0,eventFromFile->datalen);
-
-  //---todo: now do something w/ the msg
-  cout << "\nread file from disk." << endl;
-
+  _constraint_sequence.load( filename.toStdString(), _affordance_collection );
+  emit info_update( QString( "[<b>OK</b>] imported constraint sequence to file %1" ).arg( filename ) );
+  for( unsigned int i = 0; i < _constraint_editors.size(); i++ ){
+    _constraint_editors[ i ]->update_constraint();
+  } 
   return;
 }
 
@@ -211,46 +202,17 @@ void
 Qt4_Widget_Authoring::
 _push_button_export_pressed( void )
 {
-  emit info_update( QString( "[<b>OK</b>] export pressed" ) );
- 
-  //convert to lcm message
-  action_sequence_t msg;
-  _create_drc_action_sequence_t(msg);
-  cout << "\n constructed message\n" << endl;
-  cout << "\n\n encoded size = " << msg.getEncodedSize() << endl;
-
-  //ask user for save file name
-  QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+  QString filename = QFileDialog::getSaveFileName(this, tr("Save Constraint Sequence"),
                                                   "/home/untitled.bin",
                                                   tr("ActionSequence (*.bin)"));
-  cout << "\n\n going to write to file = " << fileName.toUtf8().constData() << endl;
   
-  if (fileName.isEmpty())
+  if ( filename.isEmpty() ){
+    emit info_update( QString( "[<b>ERROR</b>] failed to export (filename empty)" ) );
     return;
+  }
 
-  //write to disk
-  cout << "\n about to malloc w/ size = " << msg.getEncodedSize() << endl;
-  void *buffer = malloc(msg.getEncodedSize());
-
-  cout << "\n about to encode" << endl;
-  msg.encode(buffer,0,msg.getEncodedSize());
-
-  cout << "about to construct logEvent" << endl;
-
-  lcm::LogEvent logEvent;
-  logEvent.eventnum = 0;
-  logEvent.timestamp = 0;
-  logEvent.channel = "action_sequence_gui_io";
-  logEvent.datalen = msg.getEncodedSize();
-  logEvent.data = buffer;
-
-  cout << "\n\nabout to write" << endl;
-
-  lcm::LogFile lFileWriter(fileName.toUtf8().constData(), "w"); //'write'
-  lFileWriter.writeEvent(&logEvent);
-
-
-  cout << "\n wrote to file " << fileName.toUtf8().constData() << endl;
+  _constraint_sequence.save( filename.toStdString() );
+  emit info_update( QString( "[<b>OK</b>] exported constraint sequence to file %1" ).arg( filename ) );
 
   return;
 }
@@ -258,54 +220,11 @@ _push_button_export_pressed( void )
 void
 Qt4_Widget_Authoring::
 _push_button_publish_pressed( void ){
-  emit info_update( QString( "[<b>OK</b>] publish pressed" ) );
-  action_sequence_t msg;  
-  _create_drc_action_sequence_t( msg );
-  emit drc_action_sequence_t_publish( msg );      
+  action_sequence_t msg; 
+  _constraint_sequence.to_msg( msg ); 
+  emit drc_action_sequence_t_publish( msg );     
+  emit info_update( QString( "[<b>OK</b>] published constraint sequence as drc::action_sequence_t" ) ); 
   return;
-}
-
-void
-Qt4_Widget_Authoring::
-_double_spin_box_end_time_changed( double endTime ){
-  emit time_max_update( _double_spin_box_end_time->value() );
-  return;
-} 
-
-void
-Qt4_Widget_Authoring::
-_create_drc_action_sequence_t(action_sequence_t& msg)
-{
-  msg.num_contact_goals = 0;
-  msg.robot_name = "atlas";
-  //msg.q0.num_joints = 0;
-  _state_gfe.to_lcm(&msg.q0);
-
-  cout << "_constraints.size(): " << _constraints.size() << endl;
-  for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
-    if( (*it) != NULL ){
-      cout << "adding to drc action sequence" << endl;
-      (*it)->add_to_drc_action_sequence_t(msg );
-    }
-  }
-  cout << "utime: " << msg.utime << endl;
-  cout << "robot_name: " << msg.robot_name << endl;
-  cout << "num_contact_goals: " << msg.num_contact_goals << endl;
-  for( vector< contact_goal_t >::iterator it = msg.contact_goals.begin(); it != msg.contact_goals.end(); it++ ){
-    cout << "  object_1_name: " << it->object_1_name << endl;
-    cout << "  object_1_contact_grp: " << it->object_1_contact_grp << endl;
-    cout << "  object_2_name: " << it->object_2_name << endl;
-    cout << "  object_2_contact_grp: " << it->object_2_contact_grp << endl;
-    cout << "  lower_bound_completion_time: " << it->lower_bound_completion_time << endl;
-    cout << "  upper_bound_completion_time: " << it->upper_bound_completion_time << endl;
-    cout << "  contact_type: " << it->contact_type << endl;
-    cout << "  x_offset: " << it->x_offset << endl;
-    cout << "  y_offset: " << it->y_offset << endl;
-    cout << "  z_offset: " << it->z_offset << endl;
-    cout << "  x_relation: " << it->x_relation << endl;
-    cout << "  y_relation: " << it->y_relation << endl;
-    cout << "  z_relation: " << it->z_relation << endl;
-  }
 }
 
 namespace authoring {
