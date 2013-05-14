@@ -3,8 +3,9 @@
 
 #include <inttypes.h>
 #include <string>
-#include <lcm/lcm-cpp.hpp>
+#include <memory>
 #include <boost/shared_ptr.hpp>
+#include <lcm/lcm-cpp.hpp>
 #include <bot_core/timestamp.h>
 
 namespace drc {
@@ -17,6 +18,7 @@ protected:
 public:
   static Clock* instance();
 
+  virtual void setLcm(const std::shared_ptr<lcm::LCM>& iLcm);
   virtual void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
   virtual void setLcm(const lcm_t* iLcm);
 
@@ -36,7 +38,7 @@ protected:
   virtual void update() = 0;
 
 protected:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm;
   std::string mChannel;
   int mTimeoutInterval;
   bool mUseTimeMessages;

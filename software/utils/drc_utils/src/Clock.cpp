@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <lcmtypes/drc/utime_t.hpp>
+#include "PointerUtils.hpp"
 
 using namespace drc;
 
@@ -101,8 +102,14 @@ instance() {
 }
 
 void Clock::
-setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
+setLcm(const std::shared_ptr<lcm::LCM>& iLcm) {
   mLcm = iLcm;
+  update();
+}
+
+void Clock::
+setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
+  mLcm = PointerUtils::stdPtr(iLcm);
   update();
 }
 
