@@ -13,6 +13,7 @@ pods_install_headers(
   Clock.hpp
   LcmWrapper.hpp
   BotWrapper.hpp
+  PointerUtils.hpp
   PointConvert.h
   DESTINATION drc_utils)
 
