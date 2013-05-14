@@ -23,7 +23,7 @@ Qt4_Widget_OpenGL( QWidget * parent ) : QGLWidget( parent ),
                                         _opengl_object_collision_detector() {
   _opengl_object_collision_detector.set( _interface_handler.collision_detector() );
   opengl_scene().add_object( _opengl_object_collision_detector );
-  setMinimumSize( 800, 600 );
+  setMinimumSize( 400, 300 );
   setMouseTracking( true );
   
   connect( &_update_timer, SIGNAL( timeout() ), this, SLOT( _handle_update_timer() ) );
