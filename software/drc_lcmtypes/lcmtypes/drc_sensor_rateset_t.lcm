@@ -1,10 +1,10 @@
 package drc;
 
 struct sensor_rateset_t {
-  // high-level type of data requested (see enum)
+  // timestamp
   int64_t utime;
 
-  // using int8_t descrized to 0,1,2,3 ... 256
+  // using int8_t descrized to 0,1,2,3 ... (negative value means ignore)
   int8_t spindle_rpm;
   // camera fps:
   int8_t multisense_fps;
