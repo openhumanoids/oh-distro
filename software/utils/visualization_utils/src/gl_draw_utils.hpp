@@ -45,8 +45,8 @@ static void drawtri(GLfloat *a, GLfloat *b, GLfloat *c, int div, float r) {
  * Draws a sphere using subdivisions. TODO: add static sphere vertices
  */
 inline static void drawSphere(int ndiv, float radius) {
- double X = 0.525731112119133606;
- double Z = 0.850650808352039932;
+ float X = 0.525731112119133606f;
+ float Z = 0.850650808352039932f;
   GLfloat vdata[12][3] = {    
 		  {-X, 0.0, Z}, {X, 0.0, Z}, {-X, 0.0, -Z}, {X, 0.0, -Z},
 		  {0.0, Z, X}, {0.0, Z, -X}, {0.0, -Z, X}, {0.0, -Z, -X},
