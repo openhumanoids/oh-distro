@@ -5,8 +5,8 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if (~exist('mapWrapperFunc','var'))
           mapWrapperFunc = @mapAPIwrapper;
       end
-      obj.map_wrapper_func= mapWrapperFunc;
-      obj.map_ptr = SharedDataHandle(obj.map_wrapper_func());
+      
+      obj.map_handle = MapHandle(mapWrapperFunc);
 
       % wait for at least one map message to arrive before continuing
       
@@ -30,7 +30,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
         end
 
         % temporary hack because the robot is initialized without knowing the ground under it's feet
-        ptcloud = obj.map_wrapper_func(obj.map_ptr.getData(),[]);
+        ptcloud = obj.map_handle.getPointCloud();
         obj.minval = min(ptcloud(3,:));
         % end hack
       end
@@ -39,7 +39,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
     
     function [z,normal] = getHeight(obj,xy)
       z = ones(1,size(xy,2));  normal=repmat([0;0;1],1,size(xy,2));
-      [p,normal] = obj.map_wrapper_func(obj.map_ptr.getData(),[xy;0*xy(1,:)]);
+      [p,normal] = obj.map_handle.getClosest([xy;0*xy(1,:)]);
       z=p(3,:);
       if any(isnan(z))  % temporary hack because the robot is initialized without knowing the ground under it's feet
         nn=sum(isnan(z)); 
@@ -54,8 +54,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
   end
   
   properties
-    map_ptr = 0;
+    map_handle = [];
     minval = 0;  % only used for temporary hack
-    map_wrapper_func = [];
   end
 end
