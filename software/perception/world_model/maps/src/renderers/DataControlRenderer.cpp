@@ -14,7 +14,7 @@
 #include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
-#include <lcmtypes/drc/sensor_rateset_t.hpp>
+#include <lcmtypes/drc/sensor_request_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 
@@ -359,7 +359,7 @@ public:
   }
 
   void onSpinRateControlButton() {
-    drc::sensor_rateset_t msg;
+    drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.spindle_rpm = mSpinRate;
     msg.multisense_fps = -1;
@@ -367,7 +367,7 @@ public:
   }
 
   void onCameraRateControlButton() {
-    drc::sensor_rateset_t msg;
+    drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.spindle_rpm = -1;
     msg.multisense_fps = mCameraFrameRate;
