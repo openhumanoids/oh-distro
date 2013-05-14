@@ -104,11 +104,15 @@ group "a.1.core" {
         exec = "drc-init-laser";
         host = "robot";
     }
+    cmd "logger-robot-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
+        host = "robot";
+    }
 }
 
 group "a.2.walking" {
-    cmd "Qual1StateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
+    cmd "WalkingStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
     }
     cmd "PrecomputationServer" {
@@ -157,10 +161,6 @@ group "a.4.driving" {
         exec = "drc-driving-tracker";
         host = "robot";
     }
-    cmd "tld-segmenter" {
-        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
-        host = "robot";
-    }
     cmd "affordance_server -r robot" {
         exec = "affordance_server -r robot";
         host = "robot";
@@ -175,6 +175,21 @@ group "a.4.driving" {
     }
     cmd "drc-terrain-classifier" {
         exec = "drc-terrain-classifier";
+        host = "robot";
+    }
+}
+
+group "a.5.driving_utils" {
+    cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
         host = "robot";
     }
 }
@@ -201,6 +216,20 @@ group "a.6.ingress" {
     }
 }
 
+group "a.7.manipulation4driving" {
+    cmd "Qual2StateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "ManipMapStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
+        host = "robot";
+    }
+}
 
 group "b.1.core" {
     cmd "base_viewer" {
@@ -235,6 +264,10 @@ group "b.1.core" {
         exec = "est_robot_state_publisher -g";
         host = "base";
     }
+    cmd "lcm-logger-base-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
+        host = "base";
+    }
 }
 
 group "b.2.walking" {
@@ -264,7 +297,13 @@ group "b.4.driving" {
        exec = "drc-car-quick-vis";
        host = "base";
     }
+    cmd "tld-segmenter" {
+        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
+        host = "base";
+    }
 }
+
+
 
 
 group "g.0.gazebo" {
@@ -272,20 +311,16 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "robot";
     }
-    cmd "gz_mit_manip_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world  gzname:=run_gazebo_paused";
+    cmd "gz_mit_manip_nohands" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_nohands.world";
         host = "robot";
     }
-    cmd "gz_mit_ingress_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress_slow.world";
+    cmd "gz_mit_ingress" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
-    cmd "gz_mit_walking_slow" {
+    cmd "gz_mit_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
-        host = "robot";
-    }
-    cmd "gz_mit_walking_bdi" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
         host = "robot";
     }
     cmd "gz_mit_driving" {
@@ -293,10 +328,6 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_quals_1" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "robot";
-    }
-    cmd "gz_quals_1_unpaused" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "robot";
     }
@@ -386,7 +417,7 @@ group "m.2.simple-control" {
 
 group "m.3.dev_tools" {
     cmd "enable_gravity_when_pinned" {
-        exec = "rostopic pub atlas/mode std_msgs/String 'pinned_with_gravity'";
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
     }
 
@@ -406,6 +437,10 @@ group "m.3.dev_tools" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "robot";
     }
+    cmd "set-sim-rate-quicker" {
+        exec = "drc-set-sim-rate 0.5";
+        host = "robot";
+    }
     cmd "set-sim-rate" {
         exec = "drc-set-sim-rate 0.25";
         host = "robot";
@@ -416,14 +451,10 @@ group "m.3.dev_tools" {
     }
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
-        host = "robot";
+        host = "base";
     }
     cmd "exit_car" {
         exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
-        host = "robot";
-    }
-    cmd "lcm-logger-no-vis" {
-        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_log.lcm";
         host = "robot";
     }
     cmd "lcm-logger" {
@@ -443,71 +474,47 @@ group "m.4.base" {
     }
 }
 
-
-######################################
-script "comp.qual_1" {
+####################################################
+# drc102 - gazebo
+# pal-02 - robot
+# drc005 - base
+############# drc102, pal-02, drc005 ######################
+script "comp.vrc_walking" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_quals_1"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
-script "comp.qual_2" {
+script "comp.vrc_manip" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.3.grasping";
     start group "b.3.grasping";
-    wait ms 10000;
-    start cmd "gz_quals_2";    
-    wait ms 5000;
-}
-
-script "comp.qual_3" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_quals_3"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 script "comp.vrc_driving" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.4.driving";
-    wait ms 500;
-    start cmd "gz_mit_driving";
-    wait ms 6000;
     start group "b.4.driving";
 }
 
-script "comp.ingress" {
+script "comp.vrc_ingress" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.6.ingress";
-    wait ms 10000;
-    start cmd "gz_mit_ingress_slow"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 
 ######################################
-# with deputies:
+# testing on a single machine - with deputies:
 script "dev.qual_1" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
+    wait ms 20000;
     start cmd "gz_quals_1"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 script "dev.qual_2" { 
     start group "0.development";
@@ -515,7 +522,7 @@ script "dev.qual_2" {
     wait ms 1000;
     start group "a.3.grasping";
     start group "b.3.grasping";
-    wait ms 10000;
+    wait ms 12000;
     start cmd "gz_quals_2";    
     wait ms 5000;  
     start cmd "enable_gravity_when_pinned"; 
@@ -525,10 +532,8 @@ script "dev.qual_3" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
+    wait ms 20000;
     start cmd "gz_quals_3"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
 }
 script "dev.vrc_driving" { 
     start group "0.development";
@@ -539,50 +544,62 @@ script "dev.vrc_driving" {
     wait ms 6000;
     start group "b.4.driving";
 }
-
+script "dev.vrc_driving_with_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    #start group "a.4.driving";
+    wait ms 5000;
+    start cmd "gz_mit_driving";
+    wait ms 1000;
+    start cmd "enable_gravity_when_pinned";
+    start cmd "enter_car";
+    wait ms 1000;
+    start cmd "enter_car_pelvis_pinned";
+    start group "b.3.grasping";
+    start group "a.7.manipulation4driving";
+    start cmd "disengage_hand_brake";
+    #wait ms 6000;
+    #start group "b.4.driving";
+}
 
 script "dev.mit_walking" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_mit_walking_slow";
-    wait ms 3000;
-    start cmd "set-sim-rate";
+    wait ms 20000;
+    start cmd "gz_mit_walking";
 }
-
 
 script "dev.mit_walking_vo" {
     start group "0.development";
     start group "a.1.core";
-#    stop cmd "estpub";
-#    start group "a.5.a.motion_vo";
+    stop cmd "estpub";
+    start group "a.5.a.motion_vo";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_mit_walking_slow";
+    wait ms 12000;
+    start cmd "gz_mit_walking";
     wait ms 3000;
     start cmd "set-sim-rate-slower";
-    start cmd "lcm-logger-no-vis";
+    start cmd "logger-no-vis";
 }
 
-
-script "dev.mit_manip_slow" {
+script "dev.mit_manip_nohands" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_mit_manip_slow";
-    wait ms 3000;
-    start cmd "set-sim-rate";
+    wait ms 20000;
+    start cmd "gz_mit_manip_nohands";
 }
 
 script "dev.mit_manip" {
     start group "0.development";
     start group "a.1.core";
-    wait ms 500;
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 18000;
     start cmd "gz_mit_manip";
 }
 
@@ -590,47 +607,15 @@ script "dev.ingress" {
     start group "0.development";
     start group "a.1.core";
     start group "a.6.ingress";
-    wait ms 10000;
-    start cmd "gz_mit_ingress_slow"; 
-    wait ms 3000;
-    start cmd "set-sim-rate";
+    wait ms 20000;
+    start cmd "gz_mit_ingress"; 
 }
 
 
-############ Misc incl System Tests ############
-script "systest-core-stop" {
-    stop cmd "lcm-logger-no-vis";
-    stop cmd "systemwide-test";
-    stop group "0.development";
-    stop group "a.1.core";
-    stop cmd "Qual1StateMachine";
-    stop cmd "FootstepPlanner";
-    stop cmd "ZMPWalkingPlanner";
-    stop cmd "gz_quals_1_unpaused";
-    stop cmd "set-sim-rate";
-}
-
+############ System Tests ############
 script "systest-main" {
-    start cmd "lcm-logger-no-vis";
+    run_script "dev.mit_walking";
     start cmd "systemwide-test";
-    wait ms 100;
-    run_script "qual_1";
-    wait ms 1200000;
-    run_script "core-stop";
-    wait ms 10000;
-}
-
-script "systest-vo-start" {
-    start group "0.development";
-    start group "a.1.core";
-    stop cmd "estpub";
-    start group "a.5.a.motion_vo";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 10000;
-    start cmd "gz_mit_walking_slow";
-    wait ms 3000;
-    start cmd "set-sim-rate-slower";
-    start cmd "systemwide-test";
-    start cmd "lcm-logger";
+    wait ms 4000;
+    start cmd "set-sim-rate-quicker";
 }

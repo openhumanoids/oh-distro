@@ -179,6 +179,21 @@ group "a.4.driving" {
     }
 }
 
+group "a.5.driving_utils" {
+    cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
+    }
+}
+
 group "a.5.a.motion_vo"{
     cmd "vo_moest" {
         exec = "drc-fovision-odometry -i 3";
@@ -201,6 +216,20 @@ group "a.6.ingress" {
     }
 }
 
+group "a.7.manipulation4driving" {
+    cmd "Qual2StateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "ManipMapStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
+        host = "robot";
+    }
+}
 
 group "b.1.core" {
     cmd "base_viewer" {
@@ -273,6 +302,8 @@ group "b.4.driving" {
         host = "base";
     }
 }
+
+
 
 
 group "g.0.gazebo" {
@@ -386,7 +417,7 @@ group "m.2.simple-control" {
 
 group "m.3.dev_tools" {
     cmd "enable_gravity_when_pinned" {
-        exec = "rostopic pub atlas/mode std_msgs/String 'pinned_with_gravity'";
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
     }
 
@@ -512,6 +543,23 @@ script "dev.vrc_driving" {
     start cmd "gz_mit_driving";
     wait ms 6000;
     start group "b.4.driving";
+}
+script "dev.vrc_driving_with_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    #start group "a.4.driving";
+    wait ms 5000;
+    start cmd "gz_mit_driving";
+    wait ms 1000;
+    start cmd "enable_gravity_when_pinned";
+    start cmd "enter_car";
+    wait ms 1000;
+    start cmd "enter_car_pelvis_pinned";
+    start group "b.3.grasping";
+    start group "a.7.manipulation4driving";
+    start cmd "disengage_hand_brake";
+    #wait ms 6000;
+    #start group "b.4.driving";
 }
 
 script "dev.mit_walking" {
