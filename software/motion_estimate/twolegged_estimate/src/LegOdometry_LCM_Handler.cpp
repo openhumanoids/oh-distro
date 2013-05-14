@@ -439,7 +439,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   drc::position_3d_t origin;
   
   // True or estimated position
-  if (true) {
+  if (false) {
 	  origin.translation.x = msg->origin_position.translation.x;
 	  origin.translation.y = msg->origin_position.translation.y;
 	  origin.translation.z = msg->origin_position.translation.z;
@@ -450,7 +450,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }
 
   // true or estimated IMU
-  if (true) {
+  if (false) {
 	origin.rotation.w = msg->origin_position.rotation.w;
 	origin.rotation.x = msg->origin_position.rotation.x;
 	origin.rotation.y = msg->origin_position.rotation.y;
@@ -465,10 +465,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   drc::twist_t twist;
   
   // True or estimated linear velocities
-  if (true) {
-	  twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
-	  twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
-	  twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+  if (false) {
+	twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
+	twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
+	twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
   } else {
 	twist.linear_velocity.x = velocity_states(0);
 	twist.linear_velocity.y = velocity_states(1);
@@ -476,7 +476,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }
   
   // true or estimated rotation rates
-  if (true) {
+  if (false) {
     twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
     twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
     twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
