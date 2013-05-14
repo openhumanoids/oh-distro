@@ -32,7 +32,9 @@ end
 ts = [0, .5];
 zmp_ts = ts;
 
-foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
+% foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
+unwrapped = unwrap([foot0.left(6), foot0.right(6)]);
+foot0.right(6) = unwrapped(2);
 for j = 4:6
   for f = {'left', 'right'}
     foot = f{1};

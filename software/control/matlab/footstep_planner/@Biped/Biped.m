@@ -146,9 +146,11 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
     function apex_pos = get_apex_pos(obj, last_pos, next_pos)
       apex_pos = mean([last_pos, next_pos], 2);
-      for j = 4:6
-        apex_pos(j) = last_pos(j) + 0.5 * angleDiff(last_pos(j), next_pos(j));
-      end
+      apex_pos(4:6) = mean(unwrap([last_pos(4:6), next_pos(4:6)], [], 2), 2);
+      % for j = 4:6
+      %   apex_pos(j) = mean(unwrap
+      %   last_pos(j) + 0.5 * angleDiff(last_pos(j), next_pos(j));
+      % end
       apex_pos(3) = max([last_pos(3), next_pos(3)]) + obj.nom_step_clearance;
     end
 

@@ -21,7 +21,9 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   using_heightmap = false;
 
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
-  poses(6) = p0(6) + angleDiff(p0(6), poses(6));
+  % poses(6) = p0(6) + angleDiff(p0(6), poses(6));
+  unwrapped = unwrap([p0(6), poses(6)]);
+  poses(6) = unwrapped(2);
   poses(3,:) = p0(3);
   poses = biped.checkTerrain(poses);
   foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
