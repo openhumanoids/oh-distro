@@ -39,7 +39,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'min_step_width', 0.2,...%m
         'nom_step_width', 0.26,...%m (nominal step width)
         'nom_step_clearance', 0.05,...%m
-        'max_step_rot', pi/4,... % rad
+        'max_step_rot', pi/6,... % rad
         'r_foot_name', 'r_foot',...
         'terrain_step_threshold', 0.03,...%m
         'l_foot_name', 'l_foot');
