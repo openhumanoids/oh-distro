@@ -27,7 +27,18 @@
   <xsl:template match="sdf"> <xsl:apply-templates/> </xsl:template>
 
   <!--Tags that aren't supported-->
-  <xsl:template match="*[exists(geometry/mesh)]"/>
+  <!--<xsl:template match="*[exists(geometry/mesh)]"/>-->
+  <xsl:template match="geometry[mesh]">
+    <xsl:if test="../../@name='hand_brake'">
+      <xsl:copy>
+        <xsl:element name="box">
+          <xsl:attribute name="size">
+            <xsl:value-of select="'0.01 0.01 0.1'"/>
+          </xsl:attribute>
+        </xsl:element> 
+      </xsl:copy>
+    </xsl:if>
+  </xsl:template>
   <xsl:template match="material"/>
   <xsl:template match="surface"/>
   <xsl:template match="physics/ode"/>

@@ -1,0 +1,10 @@
+To use the xslt scripts in this directory you need to install
+
+libsaxonb-java
+
+Then run
+
+$ saxonb-xslt -ext:on \
+-xsl:$DRC_PATH/models/model_transformation/<xslt-script> \
+-s:<input-file>\
+-o:<output-file>
