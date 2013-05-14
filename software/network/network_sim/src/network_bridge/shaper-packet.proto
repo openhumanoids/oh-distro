@@ -5,7 +5,7 @@ package drc;
 message ShaperHeader
 {
   option (dccl.msg).max_bytes = 9;
-  option (dccl.msg).id = 124;
+  option (dccl.msg).id = 0xD4C0001;
   required int32 channel = 1 [(dccl.field).min = 0,
                               (dccl.field).max = 127];
   required int32 priority = 2 [(dccl.field).min = 0,

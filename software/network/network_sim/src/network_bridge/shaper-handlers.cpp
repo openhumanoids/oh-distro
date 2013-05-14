@@ -13,6 +13,8 @@
 #include "goby/acomms/dccl.h"
 
 #include "shaper-handlers.h"
+#include "procman-codecs.h"
+#include "robot-state-codecs.h"
 
 using namespace boost; 
 using namespace std;
@@ -109,6 +111,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
+    custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
 
     dccl_->validate<drc::ShaperHeader>();
     
@@ -119,11 +122,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         drc::PMDInfoDiff diff, diff_out;
         diff.set_reference_time(243);
         diff.set_utime(6000000);
-//        diff.set_cpu_load(0.56);
-//        diff.set_phys_mem_total_kbytes(1024);
-        // diff.set_phys_mem_free_kbytes(166542024);
-//        diff.set_swap_total_kbytes(5024);
-//        diff.set_swap_free_kbytes(67543);
         
         drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
         diff_cmd->set_name("FOO");
@@ -136,9 +134,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
         dccl_->decode(bytes, &diff_out);
-
-        // round to one decimal place
-//        diff.set_cpu_load(0.6);
 
         std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
         assert(diff.SerializeAsString() == diff_out.SerializeAsString());

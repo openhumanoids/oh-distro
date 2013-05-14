@@ -25,7 +25,7 @@ message ProcManWrapper
 message PMDOrdersDiff
 {
   option (dccl.msg).max_bytes = 100000;
-  option (dccl.msg).id = 126;
+  option (dccl.msg).id = 0xD4C0002;
 
   // absolute time of reference
   required int32 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
@@ -37,9 +37,6 @@ message PMDOrdersDiff
   optional string sheriff_name = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
   repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field).max_repeat = 255];  
   
-  //  repeated string varnames = 7;
-  // repeated string varvals = 8;
-
   message PMDSheriffCmdDiff
   {
     optional string name = 1 [(dccl.field) = { max_length: 255 codec: "presence_bit" } ];
@@ -56,17 +53,11 @@ message PMDOrdersDiff
 message PMDInfoDiff
 {
   option (dccl.msg).max_bytes = 100000;
-  option (dccl.msg).id = 125;
+  option (dccl.msg).id = 0xD4C0003;
 
   optional int64 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
 
   optional int64 utime = 2 [(dccl.field) = { min: 0 max: 604800000000 }];
-  // optional float cpu_load = 3 [(dccl.field) = {  min: 0 max: 10 precision: 1 codec: "presence_bit"}];
-  // optional int64 phys_mem_total_kbytes = 4 [(dccl.field) = {   min: 0 max: 0x8000000 }]; // 128 GB max
-  // optional int64 phys_mem_free_kbytes = 5 [(dccl.field) = {  min: 0 max: 0x8000000 }]; // 128 GB max
-  // optional int64 swap_total_kbytes = 6  [(dccl.field) = {  min: 0 max: 0x10000000 }]; // 256 GB max
-  // optional int64 swap_free_kbytes = 7 [(dccl.field) = {  min: 0 max: 0x10000000 }]; // 256 GB max
-
   
   repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field).max_repeat = 100];  
 
@@ -78,9 +69,6 @@ message PMDInfoDiff
     optional int32 pid = 4 [(dccl.field) = { min: 0 max: 32768 codec: "presence_bit" }]; // cat /proc/sys/kernel/pid_max
     optional int32 actual_runid = 5 [(dccl.field) = { min: 0 max: 2048 codec: "presence_bit"} ];
     optional int32 exit_code = 6 [(dccl.field) = { min: 0 max: 255 codec: "presence_bit"} ];;
-    // optional float cpu_usage = 7 [(dccl.field) = {  min: 0 max: 100 precision: 0 codec: "presence_bit"} ];
-    // optional int64 mem_vsize_kbytes = 8 [(dccl.field) = {  min: 0 max: 0x8000000 codec: "presence_bit"}]; // 128 GB max
-    // optional int64 mem_rss_kbytes = 9 [(dccl.field) = {  min: 0 max: 0x8000000 codec: "presence_bit"}]; // 128 GB max
     optional int32 sheriff_id = 10 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit"} ];
     optional bool auto_respawn = 11;
   }

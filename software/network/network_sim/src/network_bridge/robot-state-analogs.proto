@@ -1,0 +1,11 @@
+import "goby/acomms/protobuf/dccl_option_extensions.proto";
+
+package drc;
+
+message MinimalRobotState
+{
+  option (dccl.msg).max_bytes = 100000;
+  option (dccl.msg).id = 0xD4C0004;
+
+  
+}
