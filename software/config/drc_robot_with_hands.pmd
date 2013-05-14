@@ -144,6 +144,28 @@ group "a.3.grasping" {
     } 
 }
 
+group "a.3.unpinned_grasping" {
+    cmd "UnpinnedManipStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runUnpinnedManipStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "robot";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "robot";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "robot";
+    } 
+}
 group "a.4.driving" {
     cmd "vehicle-groundtruth-state" {
         exec = "rosrun driving_interface groundtruth_receiver";
@@ -292,6 +314,17 @@ group "b.3.grasping" {
     }
 }
 
+group "b.3.unpinned_grasping" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+}
+
 group "b.4.driving" {
     cmd "car-vis-local" {
        exec = "drc-car-quick-vis";
@@ -338,6 +371,10 @@ group "g.0.gazebo" {
     cmd "gz_quals_2" {
         exec = "roslaunch atlas_utils qual_task_2.launch";
         host = "robot";
+    }
+    cmd "gz_unpinned_manip" {
+	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+	host = "robot";
     }
     cmd "gz_quals_3" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
@@ -611,7 +648,14 @@ script "dev.ingress" {
     start cmd "gz_mit_ingress"; 
 }
 
-
+script "dev.unpinned_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.unpinned_grasping";
+    start group "b.3.unpinned_grasping";
+    wait ms 20000;
+    start cmd "gz_unpinned_manip";    
+}
 ############ System Tests ############
 script "systest-main" {
     run_script "dev.mit_walking";
