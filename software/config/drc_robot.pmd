@@ -304,8 +304,6 @@ group "b.4.driving" {
 }
 
 
-
-
 group "g.0.gazebo" {
     cmd "gz_mit_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
@@ -420,7 +418,6 @@ group "m.3.dev_tools" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
     }
-
     cmd "teleport_to_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
         host = "robot";
@@ -459,6 +456,10 @@ group "m.3.dev_tools" {
     }
     cmd "lcm-logger" {
         exec = "lcm-logger -f $HOME/drc/latest_log.lcm";
+        host = "robot";
+    }
+    cmd "gzclient" {
+        exec = "gzclient";
         host = "robot";
     }
 }
