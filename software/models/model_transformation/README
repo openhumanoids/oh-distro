@@ -8,3 +8,11 @@ $ saxonb-xslt -ext:on \
 -xsl:$DRC_PATH/models/model_transformation/<xslt-script> \
 -s:<input-file>\
 -o:<output-file>
+
+In particular, to convert the Polaris Ranger model from sdf to otdf, apply the
+following scripts (in order)
+
+sdf2otdf.xsl
+addPolarisSteeringWheel.xsl
+makeCollisionsVisual.xsl
+

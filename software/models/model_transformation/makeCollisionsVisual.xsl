@@ -1,5 +1,7 @@
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+  <xsl:output method="xml" indent="yes"/>
+
   <xsl:variable name="newline"><xsl:text>
   </xsl:text></xsl:variable>
 
@@ -8,11 +10,11 @@
       <xsl:apply-templates select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
-  <xsl:template match="collision">
+  <xsl:template match="link/collision">
     <xsl:copy-of select="current()"/>
     <xsl:value-of select="$newline"/>
     <xsl:element name="visual">
-      <xsl:apply-templates select="@*|node()"/>
+      <xsl:apply-templates select="@*|pose|origin|geometry"/>
     </xsl:element>
   </xsl:template>
 </xsl:stylesheet>
