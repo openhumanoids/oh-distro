@@ -1,6 +1,6 @@
 package drc;
 
-struct sensor_rateset_t {
+struct sensor_request_t {
   // timestamp
   int64_t utime;
 
