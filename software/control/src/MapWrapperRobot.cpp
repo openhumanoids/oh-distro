@@ -192,6 +192,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   } 
 
   maps::DepthImageView::Ptr view = state->getView();
+  if (view != NULL) {
+    view->setNormalRadius(2);
+    view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
+  }
   int n = mxGetN(prhs[1]);
 
   // called with null point array; return point cloud

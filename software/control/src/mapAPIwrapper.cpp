@@ -133,7 +133,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (vptr != NULL) {
     // 0 defaults to old behavior;
     // >0 sets radius (in pixels) for normal computation
-    vptr->setNormalRadius(0);
+    vptr->setNormalRadius(2);
 
     // options are LeastSquares, RobustKernel, and SampleConsensus
     // this is ignored if radius==0
