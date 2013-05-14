@@ -8,9 +8,6 @@
 #include <drc_utils/Clock.hpp>
 
 #include <maps/BotWrapper.hpp>
-#include <maps/Collector.hpp>
-#include <maps/LocalMap.hpp>
-#include <maps/MapManager.hpp>
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImageView.hpp>
 
@@ -63,138 +60,6 @@ public:
           break;
         }
       }
-    }
-  }
-};
-
-class MapGenerator {
-  std::shared_ptr<lcm::LCM> mLcm;
-  std::shared_ptr<maps::BotWrapper> mBotWrapper;
-  std::shared_ptr<maps::Collector> mCollector;
-  std::shared_ptr<maps::DepthImageView> mCurrentView;
-  int mMapId;
-  std::thread mThread;
-  bool mRunning;
-
-public:
-  MapGenerator(const std::shared_ptr<lcm::LCM>& iLcm) {
-    mLcm = iLcm;
-    mRunning = false;
-    mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
-    mCollector.reset(new maps::Collector());
-    mCollector->setBotWrapper(mBotWrapper);
-
-    // create new submap
-    maps::LocalMap::Spec mapSpec;
-    mapSpec.mId = 1;
-    mMapId = mCollector->getMapManager()->createMap(mapSpec);
-
-    // start running collector
-    std::string laserChannel("SCAN_FREE");
-    mCollector->getDataReceiver()->addChannel
-      (laserChannel, maps::SensorDataReceiver::SensorTypePlanarLidar,
-       laserChannel, "local");
-    mCollector->start();
-  }
-
-  ~MapGenerator() {
-    stop();
-  }
-
-  void start() {
-    if (mRunning) return;
-    mRunning = true;
-    mThread = std::thread(std::ref(*this));
-  }
-
-  void stop() {
-    mCollector->stop();
-    mRunning = false;
-    mThread.join();    
-  }
-
-  maps::DepthImageView::Ptr getView() const {
-    return mCurrentView;
-  }
-
-  void operator()() {
-    bool firstTime = true;
-    while (mRunning) {
-
-      // wait for timeout
-      if (!firstTime) {
-        const float mapPeriodSeconds = 1;
-        std::this_thread::sleep_for
-          (std::chrono::milliseconds(int(mapPeriodSeconds*1000)));
-      }
-      else {
-        firstTime = false;
-      }
-
-      // get local map object
-      auto manager = mCollector->getMapManager();
-      auto localMap = manager->getMap(mMapId);
-      if (localMap == NULL) {
-        continue;
-      }
-
-      // constants
-      const int64_t curTime = drc::Clock::instance()->getCurrentTime();
-      const float resolutionX = 0.05;
-      const float resolutionY = 0.05;
-      const Eigen::Vector3f minPt(-2, -5, -3);
-      const Eigen::Vector3f maxPt(5, 5, 0.3);
-      const float timeWindowSeconds = 5;
-      const int width = int((maxPt[0] - minPt[0]) / resolutionX);
-      const int height = int((maxPt[1] - minPt[1]) / resolutionY);
-
-      // transform for height map view
-      Eigen::Isometry3f localToHead = Eigen::Isometry3f::Identity();
-      if (!mBotWrapper->getTransform("local", "head", localToHead, curTime)) {
-        continue;
-      }
-      Eigen::Isometry3f mapToHead = Eigen::Isometry3f::Identity();
-      mapToHead.translation() = Eigen::Vector3f(0,0,100);
-      mapToHead.linear() << 1,0,0,  0,-1,0,  0,0,-1;
-      Eigen::Affine3f imageToMetric = Eigen::Affine3f::Identity();
-      imageToMetric(0,0) = resolutionX;
-      imageToMetric(1,1) = resolutionY;
-      imageToMetric(0,3) = minPt[0];
-      imageToMetric(1,3) = minPt[1];
-      Eigen::Projective3f projector =
-        imageToMetric.inverse() * mapToHead.inverse() * localToHead;
-
-      // set up space-time bounds
-      maps::LocalMap::SpaceTimeBounds bounds;
-      bounds.mTimeMax = curTime;
-      bounds.mTimeMin = curTime - timeWindowSeconds*1e6;
-      bounds.mPlanes.push_back(Eigen::Vector4f( 1, 0, 0, -minPt[0]));
-      bounds.mPlanes.push_back(Eigen::Vector4f(-1, 0, 0,  maxPt[0]));
-      bounds.mPlanes.push_back(Eigen::Vector4f( 0, 1, 0, -minPt[1]));
-      bounds.mPlanes.push_back(Eigen::Vector4f( 0,-1, 0,  maxPt[1]));
-      bounds.mPlanes.push_back(Eigen::Vector4f( 0, 0, 1, -minPt[2]));
-      bounds.mPlanes.push_back(Eigen::Vector4f( 0, 0,-1,  maxPt[2]));
-      Eigen::Matrix4f planeTransform = localToHead.matrix().transpose();
-      for (int k = 0; k < bounds.mPlanes.size(); ++k) {
-        bounds.mPlanes[k] = planeTransform*bounds.mPlanes[k];
-      }
-
-      // get view
-      mCurrentView =
-        localMap->getAsDepthImage(width, height, projector, bounds);
-      if (mCurrentView == NULL) {
-        continue;
-      }
-
-      // set some view properties
-      // 0 defaults to old behavior;
-      // >0 sets radius (in pixels) for normal computation
-      mCurrentView->setNormalRadius(0);
-
-      // options are LeastSquares, RobustKernel, and SampleConsensus
-      // this is ignored if radius==0
-      mCurrentView->setNormalMethod
-        (maps::DepthImageView::NormalMethodLeastSquares);
     }
   }
 };
@@ -267,7 +132,6 @@ public:
 struct State {
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<LcmLoop> mLcmLoop;
-  std::shared_ptr<MapGenerator> mMapGenerator;
   std::shared_ptr<ViewClientWrapper> mViewClientWrapper;
 
   State() {
@@ -275,23 +139,13 @@ struct State {
     mLcmLoop.reset(new LcmLoop(mLcm));
     drc::Clock::instance()->setLcm(mLcm);
     drc::Clock::instance()->setVerbose(false);
-
-    if (false) {
-      // TODO: not currently using this functionality
-      mMapGenerator.reset(new MapGenerator(mLcm));
-    }
-    else {
-      mViewClientWrapper.reset(new ViewClientWrapper(mLcm));
-    }
+    mViewClientWrapper.reset(new ViewClientWrapper(mLcm));
   }
 
   ~State() {
   }
 
   maps::DepthImageView::Ptr getView() const {
-    if (mMapGenerator != NULL) {
-      return mMapGenerator->getView();
-    }
     if (mViewClientWrapper != NULL) {
       return mViewClientWrapper->getView();
     }
@@ -309,9 +163,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     // create state
     state = new State();
-
-    // start map generator running
-    if (state->mMapGenerator != NULL) state->mMapGenerator->start();
 
     // start lcm running
     if (state->mLcmLoop != NULL) state->mLcmLoop->start();
