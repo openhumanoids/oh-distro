@@ -3,17 +3,16 @@ function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X)
 debug = true;
 
 Xpos = [X.pos];
-% step_times = [X.time];
 time_ndx = 2;
-Xright = Xpos(:, [X.is_right_foot] == 1);
-Xleft = Xpos(:, [X.is_right_foot] == 0);
+step_locations.right = Xpos(:, [X.is_right_foot] == 1);
+step_locations.left = Xpos(:, [X.is_right_foot] == 0);
+
 bRightStep = X(1).is_right_foot;
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
 
-step_locations = struct('right', Xright(1:6,:), 'left', Xleft(1:6,:));
 
 kinsol = doKinematics(biped,q0);
 
@@ -32,9 +31,20 @@ end
 
 ts = [0, .5];
 zmp_ts = ts;
+
+foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
+for j = 4:6
+  for f = {'left', 'right'}
+    foot = f{1};
+    step_locations.(foot)(j, 1) = foot0.(foot)(j) + angleDiff(foot0.(foot)(j), step_locations.(foot)(j,1));
+    for k = 1:(size(step_locations.(foot), 2) - 1)
+      step_locations.(foot)(j, k+1) = step_locations.(foot)(j, k) + angleDiff(step_locations.(foot)(j,k), step_locations.(foot)(j, k+1));
+    end
+  end
+end
 footpos = struct('right', struct(), 'left', struct());
-footpos.right.orig = [foot0.right, Xright(1:6,1)];
-footpos.left.orig = [foot0.left, Xleft(1:6,1)];
+footpos.right.orig = [foot0.right, step_locations.right(1:6,1)];
+footpos.left.orig = [foot0.left, step_locations.left(1:6,1)];
 
 % foottraj.right.orig = PPTrajectory(foh(ts, footpos.right.orig));
 % foottraj.left.orig = PPTrajectory(foh(ts, footpos.left.orig));
@@ -131,6 +141,15 @@ zmp_ts = [zmp_ts, zmp_ts(end)+1.5];
 
 for f = {'right', 'left'}
   foot = f{1};
+
+%   for j = 4:6
+%     if max(footpos.(foot).orig(j,:)) > pi
+%       footpos.(foot).orig(j,:) = footpos.(foot).orig(j,:) - 2*pi;
+%     elseif min(footpos.(foot).orig(j,:)) < -pi
+%       footpos.(foot).orig(j,:) = footpos.(foot).orig(j,:) + 2*pi;
+%     end
+%   end
+  
   % add a segment at the end to recover
   footpos.(foot).orig = [footpos.(foot).orig footpos.(foot).orig(:,end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));

@@ -6,8 +6,11 @@ Xleft = Xpos(:, [X.is_right_foot] == 0);
 nq = getNumDOF(biped);
 q0 = x0(1:nq);
 kinsol = doKinematics(biped,q0);
+old_rpos = forwardKin(biped, kinsol, biped.foot_bodies.right, [0;0;0], true);
+old_lpos = forwardKin(biped, kinsol, biped.foot_bodies.left, [0;0;0], true);
 
 [zmptraj,foottraj, supptraj] = planInitialZMPTraj(biped, q0, X);
+
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -58,13 +61,23 @@ htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
+    rpos = foottraj.right.orig.eval(t);
+    lpos = foottraj.left.orig.eval(t);
+    rpos(6) = old_rpos(6) + angleDiff(old_rpos(6), rpos(6));
+    lpos(6) = old_lpos(6) + angleDiff(old_lpos(6), lpos(6));
+
     try
-      q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+      q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],rpos,...
+        lfoot_body,[0;0;0],lpos,options);
     catch err
       q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],[],[],[],...
-        rfoot_body,[0;0;0],foottraj.right.orig.eval(t),[],[],[],...
-        lfoot_body,[0;0;0],foottraj.left.orig.eval(t),[],[],[],options);
+        rfoot_body,[0;0;0],rpos,[],[],[],...
+        lfoot_body,[0;0;0],lpos,[],[],[],options);
     end
+    kinsol = doKinematics(biped, q(:,i));
+    old_rpos = forwardKin(biped, kinsol, biped.foot_bodies.right, [0;0;0], true);
+    old_lpos = forwardKin(biped, kinsol, biped.foot_bodies.left, [0;0;0], true);
+
   else
     q = q0;
   end

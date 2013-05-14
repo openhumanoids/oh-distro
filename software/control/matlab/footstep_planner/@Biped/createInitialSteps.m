@@ -4,10 +4,10 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
+  sizecheck(poses, [6,1]);
 
-
-  poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
-  poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
+  % poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
+  % poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
     
   if options.right_foot_lead
     X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
@@ -21,6 +21,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   using_heightmap = false;
 
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
+  poses(6) = p0(6) + angleDiff(p0(6), poses(6));
   poses(3,:) = p0(3);
   poses = biped.checkTerrain(poses);
   foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
@@ -154,6 +155,9 @@ aborted = false;
       last_pos = X(end-1).pos;
     else
       last_pos = X(end-2).pos;
+    end
+    for j = 4:6
+      pos_n(j) = last_pos(j) + angleDiff(last_pos(j), pos_n(j));
     end
     apex_pos = biped.get_apex_pos(last_pos, pos_n);
     X(end+1) = struct('pos', apex_pos, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
