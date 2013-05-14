@@ -12,7 +12,9 @@ add_library(renderer_sticky_feet SHARED
   renderer_sticky_feet.cpp
   FootStepPlanListener.cpp
   )
-  
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
 set_target_properties(renderer_sticky_feet PROPERTIES SOVERSION 1)
 
 pods_install_libraries(renderer_sticky_feet)

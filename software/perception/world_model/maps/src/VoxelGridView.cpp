@@ -24,7 +24,7 @@ setResolution(const float iResX, const float iResY, const float iResZ) {
   // TODO
 }
 
-boost::shared_ptr<OccupancyGrid> VoxelGridView::
+std::shared_ptr<OccupancyGrid> VoxelGridView::
 getGrid() const {
   return mGrid;
 }

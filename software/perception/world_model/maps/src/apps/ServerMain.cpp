@@ -1,7 +1,7 @@
 #include <unordered_map>
 
-#include <boost/thread.hpp>
-#include <boost/asio.hpp>
+#include <thread>
+#include <chrono>
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
@@ -27,6 +27,7 @@
 #include <maps/Utils.hpp>
 #include <maps/Collector.hpp>
 
+#include <drc_utils/PointerUtils.hpp>
 #include <drc_utils/Clock.hpp>
 #include <pcl/common/transforms.h>
 #include <ConciseArgs>
@@ -43,7 +44,7 @@ class State;
 struct StereoHandler {
   BotWrapper::Ptr mBotWrapper;
   bot_core::image_t mLatestImage;
-  boost::shared_ptr<StereoB> mStereoMatcher;
+  std::shared_ptr<StereoB> mStereoMatcher;
   BotCamTrans* mCamTrans;
   Eigen::Matrix3f mCalibMatrix;
   std::string mCameraFrame;
@@ -51,8 +52,9 @@ struct StereoHandler {
 
   StereoHandler(const BotWrapper::Ptr& iBotWrapper) {
     mBotWrapper = iBotWrapper;
-    auto theLcm = mBotWrapper->getLcm();
-    mStereoMatcher.reset(new StereoB(theLcm));
+    auto lcm = mBotWrapper->getLcm();
+    auto boostLcm = drc::PointerUtils::boostPtr(lcm);
+    mStereoMatcher.reset(new StereoB(boostLcm));
     mStereoMatcher->setScale(1.0);
     mLatestImage.size = 0;
 
@@ -77,7 +79,7 @@ struct StereoHandler {
     double baseline = 0.07;
     mDisparityFactor = 1/k00/baseline;
 
-    theLcm->subscribe("CAMERA", &StereoHandler::onImage, this);
+    lcm->subscribe("CAMERA", &StereoHandler::onImage, this);
   }
 
   ~StereoHandler() {
@@ -183,14 +185,14 @@ struct StereoHandler {
 };
 
 struct ViewWorker {
-  typedef boost::shared_ptr<ViewWorker> Ptr;
+  typedef std::shared_ptr<ViewWorker> Ptr;
 
   BotWrapper::Ptr mBotWrapper;
   bool mActive;
   drc::map_request_t mRequest;
-  boost::shared_ptr<Collector> mCollector;
-  boost::shared_ptr<StereoHandler> mStereoHandler;
-  boost::thread mThread;
+  std::shared_ptr<Collector> mCollector;
+  std::shared_ptr<StereoHandler> mStereoHandler;
+  std::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
   ~ViewWorker() {
@@ -201,7 +203,7 @@ struct ViewWorker {
     if (mActive) return;
     if (mThread.joinable()) mThread.join();
     mActive = true;
-    mThread = boost::thread(boost::ref(*this));
+    mThread = std::thread(std::ref(*this));
   }
 
   void stop() {
@@ -352,11 +354,8 @@ struct ViewWorker {
       }
 
       // wait for timer expiry
-      boost::asio::io_service service;
-      boost::asio::deadline_timer timer(service);
-      timer.expires_from_now(boost::posix_time::
-                             milliseconds(1000/mRequest.frequency));
-      timer.wait();
+      std::this_thread::sleep_for
+        (std::chrono::milliseconds(int(1000/mRequest.frequency)));
     }
   }
 };
@@ -366,9 +365,9 @@ typedef std::unordered_map<int64_t,ViewWorker::Ptr> ViewWorkerMap;
 class State {
 public:
   BotWrapper::Ptr mBotWrapper;
-  boost::shared_ptr<Collector> mCollector;
+  std::shared_ptr<Collector> mCollector;
   ViewWorkerMap mViewWorkers;
-  boost::shared_ptr<StereoHandler> mStereoHandler;
+  std::shared_ptr<StereoHandler> mStereoHandler;
 
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
@@ -484,7 +483,7 @@ public:
             int64_t curTime = drc::Clock::instance()->getCurrentTime();
             double dt = double(curTime-baseTime)/1e6;
             if (dt > minTime) break;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
 
           std::cout << "Stopping accumulation..." << std::endl;
@@ -508,7 +507,7 @@ public:
     MacroWorker worker;
     worker.mMacro = *iMessage;
     worker.mState = this;
-    boost::thread thread(worker);
+    std::thread thread(worker);
   }
 
   void onCatalogTrigger(const lcm::ReceiveBuffer* iBuf,
@@ -588,11 +587,8 @@ public:
       mState->sendCatalog();
 
       // wait to send next catalog
-      boost::asio::io_service service;
-      boost::asio::deadline_timer timer(service);
       int milli = mState->mCatalogPublishPeriod*1000;
-      timer.expires_from_now(boost::posix_time::milliseconds(milli));
-      timer.wait();
+      std::this_thread::sleep_for(std::chrono::milliseconds(milli));
     }
   }
 
@@ -653,7 +649,7 @@ int main(const int iArgc, const char** iArgv) {
 
   // start sending catalog
   CatalogSender catalogSender(&state);
-  boost::thread catalogThread(catalogSender);
+  std::thread catalogThread(catalogSender);
 
   // start publishing data
   ViewBase::Spec viewSpec;

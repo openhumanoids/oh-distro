@@ -2,7 +2,7 @@
 #define _maps_DepthImage_hpp_
 
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Eigen/Geometry>
 #include "Types.hpp"
 
@@ -20,7 +20,7 @@ public:
     TypeRange,
   };
 
-  typedef boost::shared_ptr<DepthImage> Ptr;
+  typedef std::shared_ptr<DepthImage> Ptr;
 
   struct Helper;
 

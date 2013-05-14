@@ -2,7 +2,7 @@
 #define _maps_SensorDataReceiver_hpp_
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace maps {
 
@@ -17,7 +17,7 @@ public:
   };
 
   struct SensorData {
-    boost::shared_ptr<PointSet> mPointSet;
+    std::shared_ptr<PointSet> mPointSet;
     SensorType mSensorType;
     std::string mChannel;
   };
@@ -26,7 +26,7 @@ public:
   SensorDataReceiver();
   ~SensorDataReceiver();
 
-  void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
+  void setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper);
   bool addChannel(const std::string& iSensorChannel,
                   const SensorType iSensorType,
                   const std::string& iTransformFrom,
@@ -44,7 +44,7 @@ public:
 
 protected:
   struct Helper;
-  boost::shared_ptr<Helper> mHelper;
+  std::shared_ptr<Helper> mHelper;
 };
 
 }

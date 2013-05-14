@@ -8,6 +8,8 @@
 find_package(PkgConfig REQUIRED)
 
 add_library(renderer_walking SHARED renderer_walking.cpp )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
   
 set_target_properties(renderer_walking PROPERTIES SOVERSION 1)
 

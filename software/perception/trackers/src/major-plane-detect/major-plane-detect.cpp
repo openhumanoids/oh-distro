@@ -2,13 +2,14 @@
 #include <iostream>
 
 #include <pointcloud_tools/filter_planes.hpp>
+#include <drc_utils/PointerUtils.hpp>
 
 
 using namespace maps;
 using namespace std;
 
 MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm_(lcm_), verbose_lcm_(verbose_lcm_){
-  mBotWrapper.reset(new BotWrapper(lcm_));
+  mBotWrapper.reset(new BotWrapper(drc::PointerUtils::stdPtr(lcm_)));
   mCollector.reset(new Collector());
   mCollector->setBotWrapper(mBotWrapper);
   mActiveMapId = 0;

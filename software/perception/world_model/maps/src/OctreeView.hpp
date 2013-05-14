@@ -11,13 +11,13 @@ namespace maps {
 
 class OctreeView : public ViewBase {
 public:
-  typedef boost::shared_ptr<OctreeView> Ptr;
+  typedef std::shared_ptr<OctreeView> Ptr;
 public:
   OctreeView();
   ~OctreeView();
 
   void setResolution(const float iResolution);
-  boost::shared_ptr<octomap::OcTree> getOctree() const;
+  std::shared_ptr<octomap::OcTree> getOctree() const;
 
   const Type getType() const;
   ViewBase::Ptr clone() const;
@@ -25,7 +25,7 @@ public:
   maps::PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
 
 protected:
-  boost::shared_ptr<octomap::OcTree> mOctree;
+  std::shared_ptr<octomap::OcTree> mOctree;
 };
 
 }

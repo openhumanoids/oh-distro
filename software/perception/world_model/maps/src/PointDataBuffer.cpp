@@ -20,7 +20,7 @@ PointDataBuffer::
 
 void PointDataBuffer::
 setMaxLength(const int iLength) {
-  boost::mutex::scoped_lock lock(mMutex);
+  std::lock_guard<std::mutex> lock(mMutex);
   mMaxLength = iLength;
   if (mMaxLength >= 0) {
     while (mTimes.size() > mMaxLength) {
@@ -38,14 +38,14 @@ getMaxLength() const {
 
 void PointDataBuffer::
 clear() {
-  boost::mutex::scoped_lock lock(mMutex);
+  std::lock_guard<std::mutex> lock(mMutex);
   mData.clear();
   mTimes.clear();
 }
 
 void PointDataBuffer::
 add(const PointSet& iData) {
-  boost::mutex::scoped_lock lock(mMutex);
+  std::lock_guard<std::mutex> lock(mMutex);
   mData[iData.mTimestamp] = iData;
   mTimes.insert(iData.mTimestamp);
   if (mMaxLength >= 0) {
@@ -59,7 +59,7 @@ add(const PointSet& iData) {
 
 maps::PointSet PointDataBuffer::
 get(const int64_t iTimestamp) {
-  boost::mutex::scoped_lock lock(mMutex);
+  std::lock_guard<std::mutex> lock(mMutex);
   PointSetGroup::const_iterator item = mData.find(iTimestamp);
   maps::PointSet pointSet;
   if (item == mData.end()) {
@@ -72,7 +72,7 @@ get(const int64_t iTimestamp) {
 
 std::vector<maps::PointSet> PointDataBuffer::
 get(const int64_t iTimestamp1, const int64_t iTimestamp2) {
-  boost::mutex::scoped_lock lock(mMutex);
+  std::lock_guard<std::mutex> lock(mMutex);
   std::vector<maps::PointSet> pointSets;
   TimeGroup::const_iterator iter1 = (iTimestamp1 < 0) ? mTimes.begin() :
     mTimes.lower_bound(iTimestamp1);
@@ -132,8 +132,8 @@ getAsCloud(const int64_t iTimestamp1, const int64_t iTimestamp2) {
 
 PointDataBuffer::Ptr PointDataBuffer::
 clone() {
-  boost::mutex::scoped_lock lock(mMutex);
-  boost::shared_ptr<PointDataBuffer> buf(new PointDataBuffer());
+  std::lock_guard<std::mutex> lock(mMutex);
+  std::shared_ptr<PointDataBuffer> buf(new PointDataBuffer());
   buf->mMaxLength = mMaxLength;
   buf->mData = mData;
   buf->mTimes = mTimes;

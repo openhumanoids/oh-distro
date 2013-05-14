@@ -1,7 +1,7 @@
 #ifndef _maps_MeshRenderer_h_
 #define _maps_MeshRenderer_h_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 #include <Eigen/Geometry>
@@ -37,7 +37,7 @@ public:
   MeshRenderer();
   ~MeshRenderer();
 
-  void setBotObjects(const boost::shared_ptr<lcm::LCM> iLcm,
+  void setBotObjects(const std::shared_ptr<lcm::LCM> iLcm,
                      const BotParam* iParam, const BotFrames* iFrames);
   void setCameraChannel(const std::string& iChannel);
   void setColorMode(const ColorMode& iMode);
@@ -70,7 +70,7 @@ public:
 
 protected:
   struct InternalState;
-  boost::shared_ptr<InternalState> mState;
+  std::shared_ptr<InternalState> mState;
 };
 
 }

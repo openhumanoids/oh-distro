@@ -2,7 +2,7 @@
 #define _maps_MapManager_hpp_
 
 #include <unordered_map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Eigen/Geometry>
 
 #include "Types.hpp"
@@ -63,12 +63,12 @@ public:
   bool addData(const maps::PointSet& iPointSet);
 
   // get underlying point data
-  const boost::shared_ptr<PointDataBuffer> getPointData() const;
+  const std::shared_ptr<PointDataBuffer> getPointData() const;
 
 protected:
   MapCollection mMaps;
   int mNextMapId;
-  boost::shared_ptr<PointDataBuffer> mPointData;
+  std::shared_ptr<PointDataBuffer> mPointData;
 
   bool mVerbose;
 };

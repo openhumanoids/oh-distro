@@ -1,7 +1,7 @@
 #ifndef _maps_LocalMap_hpp_
 #define _maps_LocalMap_hpp_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Eigen/Geometry>
 
 #include "Types.hpp"
@@ -15,7 +15,7 @@ class DepthImageView;
 
 class LocalMap {
 public:
-  typedef boost::shared_ptr<LocalMap> Ptr;
+  typedef std::shared_ptr<LocalMap> Ptr;
 
   // structure for specifying map params
   struct Spec {
@@ -76,21 +76,21 @@ public:
   bool addData(const maps::PointSet& iPointSet);
 
   // get point data buffer
-  const boost::shared_ptr<PointDataBuffer> getPointData() const;
+  const std::shared_ptr<PointDataBuffer> getPointData() const;
 
   // export this entire representation as an ordinary point cloud
-  boost::shared_ptr<PointCloudView>
+  std::shared_ptr<PointCloudView>
   getAsPointCloud(const float iResolution=0,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   // export this entire representation as an octree
-  boost::shared_ptr<OctreeView>
+  std::shared_ptr<OctreeView>
   getAsOctree(const float iResolution, const bool iTraceRays=false,
               const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   // export this entire representation as a depth image
-  boost::shared_ptr<DepthImageView>
+  std::shared_ptr<DepthImageView>
   getAsDepthImage(const int iWidth, const int iHeight,
                   const Eigen::Projective3f& iProjector,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
@@ -99,7 +99,7 @@ protected:
   int64_t mStateId;
   Spec mSpec;
   bool mIsFrozen;
-  boost::shared_ptr<PointDataBuffer> mPointData;
+  std::shared_ptr<PointDataBuffer> mPointData;
 };
 
 }

@@ -27,7 +27,7 @@ set(const DepthImage& iImage) {
   setTransform(mImage->getProjector());
 }
 
-boost::shared_ptr<DepthImage> DepthImageView::
+std::shared_ptr<DepthImage> DepthImageView::
 getDepthImage() const {
   return mImage;
 }

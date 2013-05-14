@@ -69,7 +69,7 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
     Eigen::Vector3f queryPt(x,y,z);
     bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
 
-    if(insupport && (!isnan(z_surface)))
+    if(insupport && (!std::isnan(z_surface)))
     {
      double offset = 0;
      if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <memory>
-#include <boost/shared_ptr.hpp>
+#include <vector>
 
 // forward declarations
 typedef struct _BotViewer BotViewer;
@@ -44,7 +44,7 @@ public:
 protected:
   // convenience methods for data access to subclasses
   std::string getName() const;
-  boost::shared_ptr<lcm::LCM> getLcm() const;
+  std::shared_ptr<lcm::LCM> getLcm() const;
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
   BotViewer* getBotViewer() const;

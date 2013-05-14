@@ -137,7 +137,7 @@ snapshotMap(const int64_t iId,
   std::vector<maps::PointSet> pointSets =
     localMap->getPointData()->get(iStartTime, iEndTime);
   LocalMap::Ptr localMapNew = mMaps[idNew];
-  boost::shared_ptr<PointDataBuffer> pointData = localMapNew->getPointData();
+  std::shared_ptr<PointDataBuffer> pointData = localMapNew->getPointData();
   pointData->clear();
   for (int i = 0; i < pointSets.size(); ++i) {
     pointData->add(pointSets[i]);
@@ -164,7 +164,7 @@ addData(const maps::PointSet& iPointSet) {
   return true;
 }
 
-const boost::shared_ptr<PointDataBuffer> MapManager::
+const std::shared_ptr<PointDataBuffer> MapManager::
 getPointData() const {
   return mPointData;
 }

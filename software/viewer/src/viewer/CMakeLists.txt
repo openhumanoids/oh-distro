@@ -1,3 +1,4 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 add_executable(drc-viewer main.cpp udp_util.c RendererGroupUtil.cpp)
 pods_use_pkg_config_packages(drc-viewer 
 	bot2-vis  

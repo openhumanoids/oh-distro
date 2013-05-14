@@ -722,7 +722,7 @@ namespace surrogate_gui
 	/**@p vertex to draw*/
 	void SurrogateRenderer::vertex3f(pcl::PointXYZ p)
 	{
-		if (isnan(p.x) || isnan(p.y) || isnan(p.z))
+		if (std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z))
 			return;
 		glVertex3f(p.x, p.y, p.z);
 	}
@@ -730,7 +730,7 @@ namespace surrogate_gui
 	/**@p vertex to draw with the given color*/
 	void SurrogateRenderer::vertex3fRgb(pcl::PointXYZRGB p)
 	{
-		if (isnan(p.x) || isnan(p.y) || isnan(p.z))
+		if (std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z))
 			return;
 
 		//extract color
@@ -787,13 +787,13 @@ namespace surrogate_gui
 		for (uint i = 0; i < msg->points.size(); i++)
 		{
 			x0 = msg->points[i].x, y0 = msg->points[i].y, z0 = msg->points[i].z;
-			if (isnan(x0) || isnan(y0) || isnan(z0))
+			if (std::isnan(x0) || std::isnan(y0) || std::isnan(z0))
 			{
 				uint8_t r = msg->points[i].r,
 					   g =msg->points[i].g,
 					   b = msg->points[i].b;
 
-				if (isnan(r) || isnan(g) || isnan(b))
+				if (std::isnan(r) || std::isnan(g) || std::isnan(b))
 					continue;
 
 				//if (r != 0 && g!=0 && b!= 0 && (r != 254 && g != 254 && b != 254))

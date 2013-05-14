@@ -1,8 +1,8 @@
 #include "SensorDataReceiver.hpp"
 
 #include <unordered_map>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <list>
+#include <thread>
 #include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
@@ -27,27 +27,27 @@ struct SensorDataReceiver::Helper {
     float mRangeMin;
     float mRangeMax;
     lcm::Subscription* mSubscription;
-    typedef boost::shared_ptr<SubscriptionInfo> Ptr;
+    typedef std::shared_ptr<SubscriptionInfo> Ptr;
   };
 
   struct PoseUpdater {
     Helper* mHelper;
-    boost::thread mThread;
-    boost::mutex mMutex;
+    std::thread mThread;
+    std::mutex mMutex;
     std::list<SensorData> mPendingData;
     void operator()() {
       SensorData data;
       while (mHelper->mIsRunning) {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         {
-          boost::mutex::scoped_lock lock(mMutex);
+          std::lock_guard<std::mutex> lock(mMutex);
           if (mPendingData.size() == 0) continue;
           std::list<SensorData>::iterator iter = mPendingData.begin();
           while (iter != mPendingData.end()) {
             SubscriptionMap::const_iterator item =
               mHelper->mSubscriptions.find(iter->mChannel);
             if (item != mHelper->mSubscriptions.end()) {
-              boost::shared_ptr<SubscriptionInfo> info = item->second;
+              std::shared_ptr<SubscriptionInfo> info = item->second;
               int64_t latestTime = mHelper->mBotWrapper->getLatestTime
                 (info->mTransformFrom, info->mTransformTo);
               int64_t dataTime = iter->mPointSet->mTimestamp;
@@ -70,19 +70,19 @@ struct SensorDataReceiver::Helper {
     }
   };
 
-  typedef std::unordered_map<std::string, boost::shared_ptr<SubscriptionInfo> >
+  typedef std::unordered_map<std::string, std::shared_ptr<SubscriptionInfo> >
   SubscriptionMap;
 
-  boost::shared_ptr<BotWrapper> mBotWrapper;
+  std::shared_ptr<BotWrapper> mBotWrapper;
   SubscriptionMap mSubscriptions;
   bool mIsRunning;
   ThreadSafeQueue<SensorData> mDataBuffer;
   ThreadSafeQueue<SensorData> mImmediateBuffer;
-  boost::mutex mBufferMutex;
-  boost::mutex mSubscriptionsMutex; // TODO: can probably get rid of this
+  std::mutex mBufferMutex;
+  std::mutex mSubscriptionsMutex; // TODO: can probably get rid of this
   PoseUpdater mPoseUpdater;
 
-  bool getPose(const boost::shared_ptr<SubscriptionInfo>& iInfo,
+  bool getPose(const std::shared_ptr<SubscriptionInfo>& iInfo,
                const int64_t iTimestamp,
                Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation) {
     Eigen::Vector3f translation;
@@ -124,7 +124,7 @@ struct SensorDataReceiver::Helper {
     data.mChannel = iChannel;
     mImmediateBuffer.push(data);
     {
-      boost::mutex::scoped_lock lock(mPoseUpdater.mMutex);
+      std::lock_guard<std::mutex> lock(mPoseUpdater.mMutex);
       mPoseUpdater.mPendingData.push_back(data);
     }
   }
@@ -134,9 +134,9 @@ struct SensorDataReceiver::Helper {
                const bot_core::planar_lidar_t* iMessage) {
     if (!mIsRunning) return;
 
-    boost::shared_ptr<SubscriptionInfo> info;
+    std::shared_ptr<SubscriptionInfo> info;
     {
-      boost::mutex::scoped_lock lock(mSubscriptionsMutex);
+      std::lock_guard<std::mutex> lock(mSubscriptionsMutex);
       SubscriptionMap::const_iterator item = mSubscriptions.find(iChannel);
       if (item == mSubscriptions.end()) return;
       info = item->second;
@@ -168,7 +168,7 @@ struct SensorDataReceiver::Helper {
     data.mChannel = iChannel;
     mImmediateBuffer.push(data);
     {
-      boost::mutex::scoped_lock lock(mPoseUpdater.mMutex);
+      std::lock_guard<std::mutex> lock(mPoseUpdater.mMutex);
       mPoseUpdater.mPendingData.push_back(data);
     }
   }
@@ -189,7 +189,7 @@ SensorDataReceiver::
 }
 
 void SensorDataReceiver::
-setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper) {
   mHelper->mBotWrapper = iWrapper;
   clearChannels();
 }
@@ -241,7 +241,7 @@ addChannel(const std::string& iSensorChannel,
   }
   info->mSubscription = sub;
   {
-    boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+    std::lock_guard<std::mutex> lock(mHelper->mSubscriptionsMutex);
     mHelper->mSubscriptions[info->mSensorChannel] = info;
   }
 
@@ -250,7 +250,7 @@ addChannel(const std::string& iSensorChannel,
 
 void SensorDataReceiver::
 clearChannels() {
-  boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+  std::lock_guard<std::mutex> lock(mHelper->mSubscriptionsMutex);
   Helper::SubscriptionMap::const_iterator iter;
   for (iter = mHelper->mSubscriptions.begin();
        iter != mHelper->mSubscriptions.end(); ++iter) {
@@ -261,7 +261,7 @@ clearChannels() {
 
 bool SensorDataReceiver::
 removeChannel(const std::string& iSensorChannel) {
-  boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+  std::lock_guard<std::mutex> lock(mHelper->mSubscriptionsMutex);
   Helper::SubscriptionMap::iterator item =
     mHelper->mSubscriptions.find(iSensorChannel);
   if (item == mHelper->mSubscriptions.end()) {
@@ -301,7 +301,7 @@ start() {
   if (mHelper->mIsRunning) return false;
   mHelper->mIsRunning = true;
   mHelper->mPoseUpdater.mThread =
-    boost::thread(boost::ref(mHelper->mPoseUpdater));
+    std::thread(std::ref(mHelper->mPoseUpdater));
   return true;
 }
 
@@ -309,7 +309,6 @@ bool SensorDataReceiver::
 stop() {
   if (!mHelper->mIsRunning) return false;
   mHelper->mIsRunning = false;
-  try { mHelper->mPoseUpdater.mThread.join(); }
-  catch (const boost::thread_interrupted&) {}
+  mHelper->mPoseUpdater.mThread.join();
   return true;
 }

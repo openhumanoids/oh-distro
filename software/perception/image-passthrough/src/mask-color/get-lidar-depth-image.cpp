@@ -35,6 +35,7 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/PointerUtils.hpp>
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
@@ -51,7 +52,7 @@ public:
   bot_lcmgl_t* mLcmGl;
   
   State( boost::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
-    mBotWrapper.reset(new BotWrapper(mLcm));
+    mBotWrapper.reset(new BotWrapper(drc::PointerUtils::stdPtr(mLcm)));
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;

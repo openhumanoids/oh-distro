@@ -589,8 +589,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
     
     instance_struc._collision_detector.reset();
      // Each object has its own collision detector for now.      
-    instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
-    instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
+    instance_struc._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());
+    instance_struc._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
     instance_struc._gl_object->set_state(instance_struc._otdf_instance);
 
     if(local_testing)

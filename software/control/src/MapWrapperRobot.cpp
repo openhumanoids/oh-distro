@@ -1,8 +1,8 @@
 #include <mex.h>
 
 #include <ctime>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <memory>
+#include <thread>
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/Clock.hpp>
@@ -18,12 +18,12 @@ static const std::string kHeightMapChannel("MAP_CONTROL_HEIGHT");
 static const int kHeightMapViewId = 1000;
 
 class LcmLoop {
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::thread mThread;
+  std::shared_ptr<lcm::LCM> mLcm;
+  std::thread mThread;
   bool mRunning;
 
 public:
-  LcmLoop(const boost::shared_ptr<lcm::LCM>& iLcm) {
+  LcmLoop(const std::shared_ptr<lcm::LCM>& iLcm) {
     mLcm = iLcm;
     mRunning = false;
   }
@@ -35,7 +35,7 @@ public:
   void start() {
     if (mRunning) return;
     mRunning = true;
-    mThread = boost::thread(boost::ref(*this));
+    mThread = std::thread(std::ref(*this));
   }
 
   void stop() {
@@ -68,16 +68,16 @@ public:
 };
 
 class MapGenerator {
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<maps::BotWrapper> mBotWrapper;
-  boost::shared_ptr<maps::Collector> mCollector;
-  boost::shared_ptr<maps::DepthImageView> mCurrentView;
+  std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<maps::BotWrapper> mBotWrapper;
+  std::shared_ptr<maps::Collector> mCollector;
+  std::shared_ptr<maps::DepthImageView> mCurrentView;
   int mMapId;
-  boost::thread mThread;
+  std::thread mThread;
   bool mRunning;
 
 public:
-  MapGenerator(const boost::shared_ptr<lcm::LCM>& iLcm) {
+  MapGenerator(const std::shared_ptr<lcm::LCM>& iLcm) {
     mLcm = iLcm;
     mRunning = false;
     mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
@@ -104,7 +104,7 @@ public:
   void start() {
     if (mRunning) return;
     mRunning = true;
-    mThread = boost::thread(boost::ref(*this));
+    mThread = std::thread(std::ref(*this));
   }
 
   void stop() {
@@ -124,8 +124,8 @@ public:
       // wait for timeout
       if (!firstTime) {
         const float mapPeriodSeconds = 1;
-        boost::this_thread::sleep
-          (boost::posix_time::milliseconds(mapPeriodSeconds*1000));
+        std::this_thread::sleep_for
+          (std::chrono::milliseconds(int(mapPeriodSeconds*1000)));
       }
       else {
         firstTime = false;
@@ -201,11 +201,11 @@ public:
 
 class ViewClientWrapper {
   maps::ViewClient mViewClient;
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<maps::BotWrapper> mBotWrapper;
+  std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<maps::BotWrapper> mBotWrapper;
 
 public:
-  ViewClientWrapper(const boost::shared_ptr<lcm::LCM>& iLcm) {
+  ViewClientWrapper(const std::shared_ptr<lcm::LCM>& iLcm) {
     mLcm = iLcm;
     mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
     mViewClient.setBotWrapper(mBotWrapper);
@@ -220,7 +220,7 @@ public:
 
   maps::DepthImageView::Ptr getView() const {
     maps::ViewBase::Ptr view = mViewClient.getView(kHeightMapViewId);
-    return boost::static_pointer_cast<maps::DepthImageView>(view);
+    return std::static_pointer_cast<maps::DepthImageView>(view);
   }
 
   void requestHeightMap() {
@@ -265,10 +265,10 @@ public:
 };
 
 struct State {
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<LcmLoop> mLcmLoop;
-  boost::shared_ptr<MapGenerator> mMapGenerator;
-  boost::shared_ptr<ViewClientWrapper> mViewClientWrapper;
+  std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<LcmLoop> mLcmLoop;
+  std::shared_ptr<MapGenerator> mMapGenerator;
+  std::shared_ptr<ViewClientWrapper> mViewClientWrapper;
 
   State() {
     mLcm.reset(new lcm::LCM());

@@ -40,8 +40,8 @@ namespace renderer_sticky_feet
     if(!load_foot_urdfs())
       return;
       
-      _base_gl_stickyfoot_left =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
-      _base_gl_stickyfoot_right =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_right_urdf_xml_string));
+      _base_gl_stickyfoot_left =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
+      _base_gl_stickyfoot_right =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_right_urdf_xml_string));
  
       std::map<std::string, double> jointpos_in;
       jointpos_in =  _base_gl_stickyfoot_left->_current_jointpos;
@@ -176,13 +176,13 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       info.is_in_contact=goal_msg.is_in_contact;
       if(!goal_msg.is_right_foot)
       {
-        shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
+        boost::shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::LEFT;
       }
       else
       {
-        shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
+        boost::shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::RIGHT;
        }

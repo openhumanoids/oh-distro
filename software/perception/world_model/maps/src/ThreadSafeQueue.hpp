@@ -2,8 +2,7 @@
 #define _maps_ThreadSafeQueue_hpp_
 
 #include <deque>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <thread>
 
 template <typename T>
 class ThreadSafeQueue {
@@ -21,7 +20,7 @@ public:
 
   void setMaxSize(const int iSize) {
     mMaxSize = iSize;
-    boost::mutex::scoped_lock lock(mMutex);
+    std::lock_guard<std::mutex> lock(mMutex);
     if (mMaxSize >= 0) {
       while (mData.size() > mMaxSize) {
         mData.pop_front();
@@ -34,7 +33,7 @@ public:
   }
 
   void push(const T& iData) {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     if (mMaxSize >= 0) {
       while (mData.size() >= mMaxSize) {
         mData.pop_front();
@@ -46,7 +45,7 @@ public:
   }    
 
   bool pop(T& oData) {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::lock_guard<std::mutex> lock(mMutex);
     if (mData.size() == 0) {
       return false;
     }
@@ -56,13 +55,13 @@ public:
   }
 
   void clear() {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::lock_guard<std::mutex> lock(mMutex);
     mData.clear();
     unblock();
   }
 
   bool waitForData(T& oData) {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     while (!mUnblock && mData.empty()) {
       mCondition.wait(lock);
     }
@@ -87,8 +86,8 @@ public:
 protected:
   int mMaxSize;
   std::deque<T> mData;
-  boost::mutex mMutex;
-  boost::condition_variable mCondition;
+  std::mutex mMutex;
+  std::condition_variable mCondition;
   bool mUnblock;
 };
 

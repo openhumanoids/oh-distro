@@ -6,9 +6,7 @@
 #include <lcmtypes/drc/map_cloud_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <thread>
 #include <drc_utils/Clock.hpp>
 
 #include "PointCloudView.hpp"
@@ -30,7 +28,7 @@ struct ViewClient::Worker {
   };
 
   struct Message {
-    typedef boost::shared_ptr<Message> Ptr;
+    typedef std::shared_ptr<Message> Ptr;
     std::vector<uint8_t> mBytes;
   };
   
@@ -40,19 +38,19 @@ struct ViewClient::Worker {
   std::vector<lcm::Subscription*> mViewSubscriptions;
   lcm::Subscription* mCatalogSubscription;
   ThreadSafeQueue<Message::Ptr> mMessageQueue;
-  boost::mutex mMutex;
-  boost::condition_variable mCondition;
-  boost::thread mThread;
+  std::mutex mMutex;
+  std::condition_variable mCondition;
+  std::thread mThread;
 
   Worker(ViewClient* iClient) {
     mClient = iClient;
     mCatalogSubscription = NULL;
     mState = StateIdle;
-    mThread = boost::thread(boost::ref(*this));
+    mThread = std::thread(std::ref(*this));
   }
 
   ~Worker() {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     if (mBotWrapper != NULL) {
       if (mBotWrapper->getLcm() != NULL) {
         for (int i = 0; i < mViewSubscriptions.size(); ++i) {
@@ -65,12 +63,11 @@ struct ViewClient::Worker {
     lock.unlock();
     mCondition.notify_one();
     mMessageQueue.unblock();
-    try { mThread.join(); }
-    catch (const boost::thread_interrupted&) {}
+    mThread.join();
   }
 
   bool start() {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     if (mState == StateRunning) {
       return false;
     }
@@ -91,7 +88,7 @@ struct ViewClient::Worker {
   }
 
   bool stop() {
-    boost::mutex::scoped_lock lock(mMutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     if (mState != StateRunning) {
       return false;
     }
@@ -121,7 +118,7 @@ struct ViewClient::Worker {
     while (mState != StateShutdown) {
 
       {
-        boost::mutex::scoped_lock lock(mMutex);
+        std::unique_lock<std::mutex> lock(mMutex);
         while (mState == StateIdle) {
           mCondition.wait(lock);
         }
@@ -252,7 +249,7 @@ ViewClient::
 }
 
 void ViewClient::
-setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
   mWorker->mBotWrapper = iWrapper;
 }

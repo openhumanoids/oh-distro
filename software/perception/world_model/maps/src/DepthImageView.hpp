@@ -9,7 +9,7 @@ class DepthImage;
 
 class DepthImageView : public ViewBase {
 public:
-  typedef boost::shared_ptr<DepthImageView> Ptr;
+  typedef std::shared_ptr<DepthImageView> Ptr;
 
   enum NormalMethod {
     NormalMethodLeastSquares,
@@ -23,7 +23,7 @@ public:
 
   void setSize(const int iWidth, const int iHeight);
   void set(const DepthImage& iImage);
-  boost::shared_ptr<DepthImage> getDepthImage() const;
+  std::shared_ptr<DepthImage> getDepthImage() const;
 
   void setNormalRadius(const int iRadiusPixels);
   void setNormalMethod(const NormalMethod iMethod);
@@ -60,7 +60,7 @@ protected:
                        Eigen::Vector4f& oPlane);
 
 protected:
-  boost::shared_ptr<DepthImage> mImage;
+  std::shared_ptr<DepthImage> mImage;
   int mNormalRadius;
   NormalMethod mNormalMethod;
 };

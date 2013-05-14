@@ -1,6 +1,6 @@
 #include "MeshRenderer.hpp"
 
-#include <boost/thread/mutex.hpp>
+#include <thread>
 
 // image related includes
 #include <lcm/lcm-cpp.hpp>
@@ -66,7 +66,7 @@ struct MeshRenderer::InternalState {
   float mMaxZ;
 
   bool mNeedsUpdate;
-  boost::mutex mMutex;
+  std::mutex mMutex;
 
 
   void onCameraImage(const lcm::ReceiveBuffer* iBuf,
@@ -203,7 +203,7 @@ MeshRenderer::
 }
 
 void MeshRenderer::
-setBotObjects(const boost::shared_ptr<lcm::LCM> iLcm,
+setBotObjects(const std::shared_ptr<lcm::LCM> iLcm,
               const BotParam* iParam, const BotFrames* iFrames) {
   mState->mBotWrapper.reset(new BotWrapper(iLcm, iParam, iFrames));
   setCameraChannel(mState->mCameraChannel);
@@ -296,7 +296,7 @@ setData(const std::vector<Eigen::Vector3f>& iVertices,
         const std::vector<Eigen::Vector3f>& iNormals,
         const std::vector<Eigen::Vector3i>& iFaces,
         const Eigen::Projective3f& iTransform) { 
-  boost::mutex::scoped_lock lock(mState->mMutex);
+  std::lock_guard<std::mutex> lock(mState->mMutex);
 
   // vertices
   mState->mVertexBuffer.resize(iVertices.size()*3);
@@ -356,7 +356,7 @@ setData(const std::vector<Eigen::Vector3f>& iVertices,
 
 void MeshRenderer::
 draw() {
-  boost::mutex::scoped_lock lock(mState->mMutex);
+  std::lock_guard<std::mutex> lock(mState->mMutex);
   if (mState->mNeedsUpdate) {
     // TODO: do updates, separate method?
     mState->mNeedsUpdate = false;

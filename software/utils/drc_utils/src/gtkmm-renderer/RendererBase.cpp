@@ -130,7 +130,7 @@ struct RendererBase::InternalHelper {
   BotViewer* mBotViewer;
   BotParam* mBotParam;
   BotFrames* mBotFrames;
-  boost::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm;
 
   // viewer-related internal variables
   BotRenderer mBotRenderer;
@@ -329,7 +329,7 @@ getName() const {
   return mHelper->mName;
 }
 
-boost::shared_ptr<lcm::LCM> RendererBase::
+std::shared_ptr<lcm::LCM> RendererBase::
 getLcm() const {
   return mHelper->mLcm;
 }

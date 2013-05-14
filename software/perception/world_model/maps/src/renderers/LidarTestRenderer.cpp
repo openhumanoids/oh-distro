@@ -1,8 +1,8 @@
 #include <iostream>
 #include <unordered_map>
+#include <thread>
 
 #include <boost/circular_buffer.hpp>
-#include <boost/thread/mutex.hpp>
 #include <Eigen/Geometry>
 #include <Eigen/SVD>
 #include <gtkmm.h>
@@ -25,14 +25,14 @@ struct LidarData {
   std::string mChannel;
   bool mActive;
   Eigen::Vector3f mColor;
-  typedef boost::shared_ptr<PointSet> ScanPtr;
+  typedef std::shared_ptr<PointSet> ScanPtr;
   typedef boost::circular_buffer<ScanPtr> ScanBuffer;
   ScanBuffer mScans;
   Surfelizer mSurfelizer;
   typedef boost::circular_buffer<std::vector<Surfelizer::Surfel> > SurfelList;
   SurfelList mSurfels;
 
-  typedef boost::shared_ptr<LidarData> Ptr;
+  typedef std::shared_ptr<LidarData> Ptr;
 
   LidarData() : mActive(false), mColor(0,0,0) {}
   ~LidarData() {}
@@ -72,9 +72,9 @@ protected:
   double mMinZ;
   double mMaxZ;
   int mScanHistory;
-  boost::shared_ptr<maps::MeshRenderer> mMeshRenderer;
+  std::shared_ptr<maps::MeshRenderer> mMeshRenderer;
   std::vector<Eigen::Vector3f> mPointBuffer;
-  boost::mutex mSurfelMutex;
+  std::mutex mSurfelMutex;
   
 public:
 
@@ -186,7 +186,7 @@ public:
     LidarDataMap::const_iterator item = mDataMap.find(iData.mChannel);
     if (item == mDataMap.end()) return;
     {
-      boost::mutex::scoped_lock lock(mSurfelMutex);
+      std::lock_guard<std::mutex> lock(mSurfelMutex);
       item->second->mScans.push_back(iData.mPointSet);
       item->second->mSurfels.
         push_back(item->second->mSurfelizer.addScan(*iData.mPointSet));
@@ -195,7 +195,7 @@ public:
   }
 
   void draw() {
-    boost::mutex::scoped_lock lock(mSurfelMutex);
+    std::lock_guard<std::mutex> lock(mSurfelMutex);
 
     mPointBuffer.clear();
 

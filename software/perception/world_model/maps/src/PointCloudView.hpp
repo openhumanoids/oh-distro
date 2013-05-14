@@ -7,7 +7,7 @@ namespace maps {
 
 class PointCloudView : public ViewBase {
 public:
-  typedef boost::shared_ptr<PointCloudView> Ptr;
+  typedef std::shared_ptr<PointCloudView> Ptr;
 public:
   PointCloudView();
   ~PointCloudView();

@@ -12,7 +12,7 @@ BotWrapper() {
 }
 
 BotWrapper::
-BotWrapper(const boost::shared_ptr<lcm::LCM>& iLcm,
+BotWrapper(const std::shared_ptr<lcm::LCM>& iLcm,
            const BotParam* iBotParam, const BotFrames* iBotFrames) {
   set(iLcm, iBotParam, iBotFrames);
 }
@@ -31,7 +31,7 @@ setDefaults() {
 }
 
 void BotWrapper::
-set(const boost::shared_ptr<lcm::LCM>& iLcm,
+set(const std::shared_ptr<lcm::LCM>& iLcm,
     const BotParam* iBotParam, const BotFrames* iBotFrames) {
   mLcm = iLcm;
   mBotParam = const_cast<BotParam*>(iBotParam);
@@ -58,7 +58,7 @@ set(const lcm_t* iLcm,
   }
 }
 
-boost::shared_ptr<lcm::LCM> BotWrapper::
+std::shared_ptr<lcm::LCM> BotWrapper::
 getLcm() const {
   return mLcm;
 }

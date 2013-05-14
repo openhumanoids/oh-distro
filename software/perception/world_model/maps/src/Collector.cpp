@@ -5,15 +5,15 @@
 #include "PointDataBuffer.hpp"
 
 #include <set>
-#include <boost/thread.hpp>
+#include <thread>
 
 using namespace maps;
 
 struct Collector::Helper {
-  boost::shared_ptr<BotWrapper> mBotWrapper;
-  boost::shared_ptr<SensorDataReceiver> mDataReceiver;
-  boost::shared_ptr<MapManager> mMapManager;
-  boost::thread mConsumerThread;
+  std::shared_ptr<BotWrapper> mBotWrapper;
+  std::shared_ptr<SensorDataReceiver> mDataReceiver;
+  std::shared_ptr<MapManager> mMapManager;
+  std::thread mConsumerThread;
   bool mRunning;
   std::set<DataListener*> mDataListeners;
 
@@ -61,7 +61,7 @@ Collector::
 }
 
 void Collector::
-setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper) {
   mHelper->mBotWrapper = iWrapper;
   mHelper->mDataReceiver->setBotWrapper(iWrapper);
 }  
@@ -71,8 +71,7 @@ start() {
   if (mHelper->mRunning) return false;
   mHelper->mRunning = true;
   mHelper->mDataReceiver->start();
-  mHelper->mConsumerThread =
-    boost::thread(Helper::DataConsumer(mHelper.get()));
+  mHelper->mConsumerThread = std::thread(Helper::DataConsumer(mHelper.get()));
   return true;
 }
 
@@ -82,8 +81,7 @@ stop() {
   mHelper->mRunning = false;
   mHelper->mDataReceiver->stop();
   mHelper->mDataReceiver->unblock();
-  try { mHelper->mConsumerThread.join(); }
-  catch (const boost::thread_interrupted&) {}
+  mHelper->mConsumerThread.join();
   return true;
 }
 
@@ -97,12 +95,12 @@ removeListener(const DataListener& iListener) {
   mHelper->mDataListeners.erase(const_cast<DataListener*>(&iListener));
 }
 
-boost::shared_ptr<SensorDataReceiver> Collector::
+std::shared_ptr<SensorDataReceiver> Collector::
 getDataReceiver() const {
   return mHelper->mDataReceiver;
 }
 
-boost::shared_ptr<MapManager> Collector::
+std::shared_ptr<MapManager> Collector::
 getMapManager() const {
   return mHelper->mMapManager;
 }

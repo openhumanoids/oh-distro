@@ -1,6 +1,4 @@
 #include <fstream>
-#include <boost/thread.hpp>
-#include <boost/asio.hpp>
 
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
@@ -24,7 +22,7 @@ using namespace std;
 class State {
 public:
   BotWrapper::Ptr mBotWrapper;
-  boost::shared_ptr<Collector> mCollector;
+  std::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
 

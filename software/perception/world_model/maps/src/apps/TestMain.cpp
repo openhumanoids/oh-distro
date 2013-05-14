@@ -1,7 +1,6 @@
 #include <fstream>
 #include <chrono>
-#include <boost/thread.hpp>
-#include <boost/asio.hpp>
+#include <thread>
 
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
@@ -32,7 +31,7 @@ using namespace std;
 class State {
 public:
   BotWrapper::Ptr mBotWrapper;
-  boost::shared_ptr<Collector> mCollector;
+  std::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
 
@@ -186,9 +185,9 @@ public:
 
 
 struct Helper {
-  boost::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm;
   maps::ViewClient* mViewClient;
-  boost::thread mThread;
+  std::thread mThread;
   bool mIsRunning;
 
   void operator()() {
@@ -215,7 +214,7 @@ struct Helper {
 
 
 int main() {
-  boost::shared_ptr<Helper> helper(new Helper());
+  std::shared_ptr<Helper> helper(new Helper());
   helper->mViewClient = new maps::ViewClient();
   helper->mLcm.reset(new lcm::LCM());
   if ((NULL == helper->mLcm) || !helper->mLcm->good()) {
@@ -230,7 +229,7 @@ int main() {
   }
 
   helper->mIsRunning = true;
-  helper->mThread = boost::thread(boost::ref(*helper));
+  helper->mThread = std::thread(std::ref(*helper));
 
 
   helper->mViewClient->setBotWrapper(botWrapper);
@@ -238,7 +237,7 @@ int main() {
 
   sleep(3);
 
-  DepthImageView::Ptr view = boost::dynamic_pointer_cast<DepthImageView>
+  DepthImageView::Ptr view = std::dynamic_pointer_cast<DepthImageView>
     (helper->mViewClient->getView(drc::data_request_t::HEIGHT_MAP_SCENE));
   view->setNormalRadius(2);
   view->setNormalMethod(DepthImageView::NormalMethodLeastSquares);

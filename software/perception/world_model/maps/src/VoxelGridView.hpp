@@ -9,13 +9,13 @@ class OccupancyGrid;
 
 class VoxelGridView : public ViewBase {
 public:
-  typedef boost::shared_ptr<VoxelGridView> Ptr;
+  typedef std::shared_ptr<VoxelGridView> Ptr;
 public:
   VoxelGridView();
   ~VoxelGridView();
 
   void setResolution(const float iResX, const float iResY, const float iResZ);
-  boost::shared_ptr<OccupancyGrid> getGrid() const;
+  std::shared_ptr<OccupancyGrid> getGrid() const;
 
   const Type getType() const;
   ViewBase::Ptr clone() const;
@@ -23,7 +23,7 @@ public:
   maps::PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
 
 protected:
-  boost::shared_ptr<OccupancyGrid> mGrid;
+  std::shared_ptr<OccupancyGrid> mGrid;
 };
 
 }

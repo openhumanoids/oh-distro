@@ -2,11 +2,12 @@
 
 #include <mex.h>
 #include <ctime>
+#include <memory>
+#include <thread>
 
 #include <Eigen/Dense>
 #include <lcm/lcm.h>
 //#include <lcm/lcm-cpp.hpp>
-#include <boost/thread/thread.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/BotWrapper.hpp>
@@ -21,7 +22,7 @@ struct ViewWrapperData {
   //  boost::shared_ptr<lcm::LCM> lcm;
   lcm_t* lcm;
   ViewClient* view_client;
-  boost::thread* lcm_thread;
+  std::thread* lcm_thread;
   bool b_interrupt_lcm;
 };
 
@@ -89,7 +90,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
     pdata->b_interrupt_lcm = false;
-    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
+    pdata->lcm_thread = new std::thread(lcmThreadMain,pdata);
 
     // return a pointer to the model
     mxClassID cid;
@@ -127,7 +128,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   } 
 
   ViewClient::ViewPtr temp_ptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
-  DepthImageView::Ptr vptr = boost::dynamic_pointer_cast<DepthImageView>(temp_ptr);
+  DepthImageView::Ptr vptr = std::dynamic_pointer_cast<DepthImageView>(temp_ptr);
 
   if (vptr != NULL) {
     // 0 defaults to old behavior;

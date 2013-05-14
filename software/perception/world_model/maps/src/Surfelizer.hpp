@@ -34,7 +34,7 @@ public:
 
 protected:
   struct Helper;
-  boost::shared_ptr<Helper> mHelper;
+  std::shared_ptr<Helper> mHelper;
 };
 
 }

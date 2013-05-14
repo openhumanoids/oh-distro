@@ -4,7 +4,7 @@
 #include <string>
 #include <set>
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "ViewBase.hpp"
 
 namespace maps {
@@ -13,7 +13,7 @@ class BotWrapper;
 
 class ViewClient {
 public:
-  typedef boost::shared_ptr<ViewBase> ViewPtr;
+  typedef std::shared_ptr<ViewBase> ViewPtr;
 
   class Listener {
   public:
@@ -31,7 +31,7 @@ public:
   ViewClient();
   virtual ~ViewClient();
 
-  void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
+  void setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper);
   void setRequestChannel(const std::string& iChannel);
   void setCatalogChannel(const std::string& iChannel);
   void addViewChannel(const std::string& iChannel);
@@ -64,9 +64,9 @@ protected:
   std::string mRequestChannel;
   std::string mCatalogChannel;
   std::vector<std::string> mViewChannels;
-  boost::shared_ptr<BotWrapper> mBotWrapper;
+  std::shared_ptr<BotWrapper> mBotWrapper;
 
-  boost::shared_ptr<Worker> mWorker;
+  std::shared_ptr<Worker> mWorker;
   ViewCollection mViews;
   SpecCollection mCatalog;
   std::set<Listener*> mListeners;

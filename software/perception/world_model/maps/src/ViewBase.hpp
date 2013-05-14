@@ -38,7 +38,7 @@ public:
     bool operator!=(const Spec& iSpec) const;
   };
 
-  typedef boost::shared_ptr<ViewBase> Ptr;
+  typedef std::shared_ptr<ViewBase> Ptr;
 
 public:
   ViewBase();

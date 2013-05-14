@@ -24,9 +24,9 @@ add_library(maps SHARED
 # make the header public
 # install it to include/maps
 pods_install_headers(
-  DataBlob.hpp
   Types.hpp
   ThreadSafeQueue.hpp
+  DataBlob.hpp
   Utils.hpp
   PointDataBuffer.hpp
   VoxelGrid.hpp
@@ -73,6 +73,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations 
 # software to use.
 pods_install_pkg_config_file(maps
     CFLAGS -std=c++0x -Wno-deprecated-declarations
-    LIBS -lmaps -lboost_thread -lboost_system
+    LIBS -lmaps
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)

@@ -19,6 +19,7 @@
 #include <maps/BotWrapper.hpp>
 #include <affordance/AffordanceUpWrapper.h>
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/PointerUtils.hpp>
 #include <drc_utils/PointConvert.h>
 
 #include <affordance/AffordanceUtils.hpp>
@@ -63,7 +64,7 @@ namespace surrogate_gui
 	{
 
 	       //--setup view client
-	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(lcm));
+	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(drc::PointerUtils::stdPtr(lcm)));
 	       _mViewClient->setBotWrapper(wrapper);
 	       _mViewClient->start();
 

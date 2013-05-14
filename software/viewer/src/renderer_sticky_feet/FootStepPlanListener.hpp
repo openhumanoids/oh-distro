@@ -91,7 +91,7 @@ namespace renderer_sticky_feet
     void commit_footstep_plan(int64_t utime,string &channel);
     void create_sticky_foot_local_copy(int index){
       _gl_in_motion_copy.reset();
-      _gl_in_motion_copy = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
+      _gl_in_motion_copy = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
       map<string,double> jointpos_in;
       jointpos_in = _gl_planned_stickyfeet_list[index]->_current_jointpos;    
       _gl_in_motion_copy->set_state(_gl_planned_stickyfeet_list[index]->_T_world_body,jointpos_in);

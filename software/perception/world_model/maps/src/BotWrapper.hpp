@@ -1,7 +1,7 @@
 #ifndef _maps_BotWrapper_hpp_
 #define _maps_BotWrapper_hpp_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <Eigen/Geometry>
 
 namespace lcm {
@@ -16,22 +16,22 @@ namespace maps {
 
 class BotWrapper {
 public:
-  typedef boost::shared_ptr<BotWrapper> Ptr;
+  typedef std::shared_ptr<BotWrapper> Ptr;
 
 public:
   BotWrapper();
-  BotWrapper(const boost::shared_ptr<lcm::LCM>& iLcm,
+  BotWrapper(const std::shared_ptr<lcm::LCM>& iLcm,
              const BotParam* iBotParam=NULL, const BotFrames* iBotFrames=NULL);
   BotWrapper(const lcm_t* iLcm,
              const BotParam* iBotParam=NULL, const BotFrames* iBotFrames=NULL);
 
   void setDefaults();
-  void set(const boost::shared_ptr<lcm::LCM>& iLcm,
+  void set(const std::shared_ptr<lcm::LCM>& iLcm,
            const BotParam* iBotParam=NULL, const BotFrames* iBotFrames=NULL);
   void set(const lcm_t* iLcm,
            const BotParam* iBotParam=NULL, const BotFrames* iBotFrames=NULL);
 
-  boost::shared_ptr<lcm::LCM> getLcm() const;
+  std::shared_ptr<lcm::LCM> getLcm() const;
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
 
@@ -45,7 +45,7 @@ public:
 
 
 protected:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm;
   BotParam* mBotParam;
   BotFrames* mBotFrames;
 };

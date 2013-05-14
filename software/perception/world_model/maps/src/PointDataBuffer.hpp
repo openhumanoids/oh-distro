@@ -3,9 +3,9 @@
 
 #include <unordered_map>
 #include <set>
+#include <thread>
+#include <memory>
 #include <Eigen/Geometry>
-#include <boost/thread/mutex.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "Types.hpp"
 
@@ -13,7 +13,7 @@ namespace maps {
 
 class PointDataBuffer {
 public:
-  typedef boost::shared_ptr<PointDataBuffer> Ptr;
+  typedef std::shared_ptr<PointDataBuffer> Ptr;
 
 protected:
   typedef std::unordered_map<int64_t, PointSet> PointSetGroup;
@@ -47,7 +47,7 @@ protected:
   PointSetGroup mData;
   TimeGroup mTimes;
 
-  boost::mutex mMutex;
+  std::mutex mMutex;
 };
 
 }

@@ -161,7 +161,7 @@ addData(const maps::PointSet& iPointSet) {
   return true;
 }
 
-const boost::shared_ptr<PointDataBuffer> LocalMap::
+const std::shared_ptr<PointDataBuffer> LocalMap::
 getPointData() const {
   return mPointData;
 }

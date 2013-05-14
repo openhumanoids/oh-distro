@@ -49,13 +49,13 @@ protected:
   };
 
   struct ViewMetaData {
-    typedef boost::shared_ptr<ViewMetaData> Ptr;
+    typedef std::shared_ptr<ViewMetaData> Ptr;
     MapsRenderer* mRenderer;
     int64_t mId;
     bool mVisible;
     Eigen::Vector3f mColor;
     std::string mLabel;
-    boost::shared_ptr<Gtk::HBox> mBox;
+    std::shared_ptr<Gtk::HBox> mBox;
     Gtk::ToggleButton* mToggleButton;
     Eigen::Isometry3f mLatestTransform;
 
@@ -117,7 +117,7 @@ protected:
   int mMacroCommand;
 
   // for pixel map rendering
-  boost::shared_ptr<occ_map::PixelMap<float> > mPixelMap;
+  std::shared_ptr<occ_map::PixelMap<float> > mPixelMap;
 
   MeshRenderer mMeshRenderer;
   ViewClient mViewClient;

@@ -8,6 +8,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/PointerUtils.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
 #include <affordance/AffordanceUpWrapper.h>
 
@@ -42,7 +43,8 @@ public:
     drc::Clock::instance()->setVerbose(false);
 
     // set up affordance wrapper
-    mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper(getLcm()));
+    mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper
+                             (drc::PointerUtils::boostPtr(getLcm())));
 
     // create and show ui widgets
     setupWidgets();

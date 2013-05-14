@@ -70,11 +70,11 @@ namespace surrogate_gui
 
     // in some cases, q is NaN.  Try to fix it. HACK //TODO do better fix
     // ususally caused by numbers near 0 and 1
-    if(isnan(q[0])){
+    if(std::isnan(q[0])){
       cout << "***** Warning quat is NaN, trying to fix.  Matrix:\n"<< mat << endl;
       for(int i=0;i<9;i++) mat3[i] = round(mat3[i]);
       bot_matrix_to_quat(mat3,q);
-      if(isnan(q[0])) cout << "Couldn't fix\n";
+      if(std::isnan(q[0])) cout << "Couldn't fix\n";
       else            cout << "Fix seemed to work.\n";
     }
 

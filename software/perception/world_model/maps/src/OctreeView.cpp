@@ -19,7 +19,7 @@ setResolution(const float iResolution) {
   mOctree->setResolution(iResolution);
 }
 
-boost::shared_ptr<octomap::OcTree> OctreeView::
+std::shared_ptr<octomap::OcTree> OctreeView::
 getOctree() const {
   return mOctree;
 }
