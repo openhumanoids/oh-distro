@@ -1402,5 +1402,126 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
 
 
 } 
+
 //----------------------------------------------------------------------------------------------------------------                                       
-     
+
+bool InteractableGlKinematicBody::draw_mesh(int linkType){
+  /////////////////////////////////////////////////////////
+  // draw mesh
+
+  //--get rotation in angle/axis form
+  KDL::Frame& nextTfframe = _T_world_body;
+  double theta;
+  double axis[3];
+  double x,y,z,w;
+  nextTfframe.M.GetQuaternion(x,y,z,w);
+  double quat[4] = {w,x,y,z};
+  bot_quat_to_angle_axis(quat, &theta, axis);
+
+  // if Show Mesh checked and object has mesh, set drawMesh to true
+  const std::vector<Eigen::Vector3i>& tri = triangles;
+  const std::vector<Eigen::Vector3f>& pts = points;
+
+  // decide whether of not to draw mesh in place of object
+  bool drawMesh=false;
+  if(isShowMeshSelected && pts.size()>0) drawMesh = true;
+  if(linkType == otdf::Geometry::DYNAMIC_MESH) drawMesh = true;
+
+
+  //cout << link->type << " " << isShowMeshSelected << " " << drawMesh << " " << pts.size() << " " << triangles.size() << endl;
+
+  // draw triangles if available
+  if(tri.size()>0 && drawMesh){
+    glPushMatrix();
+    //glColor4f(c[0],c[1],c[2],self->alpha);
+    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+    glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+    for(size_t i=0; i<tri.size(); i++){
+      glBegin(GL_POLYGON);
+      for(size_t j=0; j<3; j++) glVertex3fv(pts[tri[i][j]].data());
+      glEnd();
+    }
+    glPopMatrix();
+  }
+
+  // draw points if available and no triangles
+  if(pts.size()>0 && tri.size()==0 && drawMesh){
+    glPushMatrix();
+    //glColor4f(c[0],c[1],c[2],self->alpha);
+    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+    glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+    glEnable(GL_BLEND); //for dimming contrast
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPointSize(2.0);
+    glBegin(GL_POINTS);
+    for(size_t i=0; i<pts.size(); i++) glVertex3fv(pts[i].data());
+    glEnd();
+    glPopMatrix();
+  }
+
+  return drawMesh;
+}
+
+//----------------------------------------------------------------------------------------------------------------                                       
+
+
+void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
+{
+  glColor4f(c[0],c[1],c[2],alpha);
+  double t;
+  if(enable_blinking){
+    int64_t now=bot_timestamp_now();
+    t=bot_timestamp_useconds(now)*1e-6;//in sec
+    alpha=std::min(fabs(sin(M_PI*t)),1.0);
+    c[0]=0.7; c[1]=0.1; c[2]=0.1;
+  }
+ 
+  bool drawMesh = false;
+  if(!_otdf_link_shapes.empty()) {
+    drawMesh = draw_mesh(_otdf_link_shapes[0]->type);
+  }
+
+  for(uint i = 0; i < _link_geometry_tfs.size(); i++)
+  {
+    LinkFrameStruct nextTf=_link_geometry_tfs[i];
+    std::stringstream oss;
+    oss << _unique_name << "_"<< _link_geometry_tfs[i].name; 
+    if((link_selection_enabled)&&(selected_link == oss.str())) {
+//          if((bodypose_adjustment_enabled)&&(is_otdf_instance))
+//            draw_interactable_markers(_otdf_link_shapes[i],_link_geometry_tfs[i]); // draws shapes and adds them to _collision_detector 
+//          else if((bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
+//            draw_interactable_markers(_link_shapes[i],_link_geometry_tfs[i]);   
+        
+      glColor4f(0.7,0.1,0.1,alpha);         
+    }
+    else
+       glColor4f(c[0],c[1],c[2],alpha);
+
+    if((whole_body_selection_enabled)&&(selected_link == _unique_name)){
+      glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
+    } 
+    //int64_t tic = bot_timestamp_now();
+    GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);  
+    //int64_t toc = bot_timestamp_now();
+    //std::cout << _link_geometry_tfs[i].name << " usec: " << bot_timestamp_useconds(toc-tic) << std::endl;
+    
+  }
+  
+  //draw_whole_body_bbox();
+   if((_root_name!="world")&&(bodypose_adjustment_enabled)){
+    if(_floatingbase_markers_boxsize!=0){
+      draw_floatingbase_markers();
+    }
+   }
+   if(jointdof_adjustment_enabled){
+     draw_jointdof_markers();
+   }
+   
+
+};
+
+
+//----------------------------------------------------------------------------------------------------------------                                       
+ 
+
+
