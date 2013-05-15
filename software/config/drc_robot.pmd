@@ -618,5 +618,16 @@ script "systest-main" {
     run_script "dev.mit_walking";
     start cmd "systemwide-test";
     wait ms 4000;
+    start cmd "set-sim-rate";
+}
+
+
+script "systest-vo-start" {
+    run_script "dev.mit_walking";
+    stop cmd "estpub";
+    start group "a.5.a.motion_vo";
+    start cmd "systemwide-test";
+    wait ms 4000;
     start cmd "set-sim-rate-quicker";
 }
+
