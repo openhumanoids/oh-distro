@@ -100,6 +100,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
 
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
               _widget_opengl_authoring, SLOT( update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
+  connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _widget_opengl_authoring, SLOT( update_opengl_object_gfe( state::State_GFE& ) ) );
   connect( _slider_plan_current_index, SIGNAL( valueChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_current_index( int ) ) );
   connect( _check_box_visible_current_index, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_current_index( int ) ) );
   connect( _check_box_visible_trajectory, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory( int ) ) );
