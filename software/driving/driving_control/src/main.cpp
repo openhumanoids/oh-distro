@@ -61,6 +61,8 @@
 
 #define SAFE_DISTANCE 3.0
 
+#define MIN_SCAN_DIST 6.0
+
 #define DIST_POW 2
 
 #define TLD_TIMEOUT_SEC 1.0
@@ -79,6 +81,16 @@ typedef struct{
     double xy[2];
     double score;
 } pos_t;
+
+typedef struct{
+    double xy[2];
+} xy_t;
+
+typedef struct{
+    pos_t pos;
+    double steering_angle;
+    std::vector<xy_t> sample_points;
+} steering_goal_t;
 
 
 typedef struct _state_t {
@@ -152,10 +164,10 @@ void publish_system_state_values(state_t *self){
 void publish_status(state_t *self){
     
     /*drc_system_status_t s_msg;
-    s_msg.utime = self->utime;
-    s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
-    s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
-    s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
+      s_msg.utime = self->utime;
+      s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
+      s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
+      s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
     */
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
@@ -167,8 +179,8 @@ void publish_status(state_t *self){
     }
     /*
       IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY_CARROT, DRIVING_ROAD_ONLY_ARC, 
-    DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
-     */
+      DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
+    */
     char status[1024];
     switch(self->curr_state){
 
@@ -292,7 +304,7 @@ void draw_goal(state_t *self){
         lcmglColor3f (0.0, 0.0, 1.0);
         lcmglCircle (xyz_car_local, self->goal_distance);
         //fprintf (stdout, "Drawing circle at xyz = [%.2f %.2f %.2f] with goal_distance = %.2f\n",
-                 //        xyz_car_local[0], xyz_car_local[2], xyz_car_local[2], self->goal_distance);
+        //        xyz_car_local[0], xyz_car_local[2], xyz_car_local[2], self->goal_distance);
 
         bot_lcmgl_line_width(lcmgl, 5);
         lcmglColor3f(1.0, 0.0, 0.0);
@@ -304,6 +316,10 @@ void draw_goal(state_t *self){
 
 static bool score_compare(const std::pair<int, pos_t>& lhs, const std::pair<int, pos_t>& rhs) { 
     return lhs.second.score < rhs.second.score;
+}
+
+static bool steering_score_compare(const steering_goal_t &lhs, const steering_goal_t& rhs) { 
+    return lhs.pos.score < rhs.pos.score;
 }
 
 
@@ -511,7 +527,7 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
     double x_arc, y_arc;
     double angle_deg;
 
-    double min_dist = fmin(6.0, self->goal_distance);
+    double min_dist = fmin(MIN_SCAN_DIST, self->goal_distance);
     double max_dist = self->goal_distance;
 
     //we should actually ckeck 
@@ -615,13 +631,13 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
         //lcmglColor3f (colors[0], colors[1], colors[2]);
         
         /*if(collision){
-            bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-            bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
-        }
-        else{
-            bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-            bot_lcmgl_vertex3f(lcmgl, xy_arc_max[0], xy_arc_max[1], 0);
-            }*/
+          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+          bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
+          }
+          else{
+          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+          bot_lcmgl_vertex3f(lcmgl, xy_arc_max[0], xy_arc_max[1], 0);
+          }*/
 
         //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
         pos_t pos;
@@ -689,9 +705,11 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
 }
 
 static int
-find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
+find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self, double *best_steering_angle)
 {
     occ_map::FloatPixelMap *cost_map = new occ_map::FloatPixelMap (fmap);
+
+    int draw_arc = 1;
 
     //invert the values
     for(int i = 0; i < fmap->dimensions[0]; i++){
@@ -739,17 +757,43 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
     double x_arc, y_arc;
     double angle_deg;
 
-    double min_dist = fmin(6.0, self->goal_distance);
+    double min_dist = fmin(MIN_SCAN_DIST, self->goal_distance);
     double max_dist = self->goal_distance;
-
-    //we should actually ckeck 
-    bot_lcmgl_t *lcmgl = self->lcmgl_arc; 
-    lcmglColor3f (1.0, 0.0, 0.0);
-    bot_lcmgl_line_width(lcmgl, 5);
 
     int skip = 2;
 
-    int arc_size = 20;
+    for (int i=0; i<360; i+=skip) {
+        //get the rays (starting from some distance onwards - to skip too close obstacles 
+
+        angle_deg = i;
+        double xy_arc[2];
+        xy_arc[0] = xyz_car_local[0] + self->goal_distance * cos (bot_to_radians (angle_deg));
+        xy_arc[1] = xyz_car_local[1] + self->goal_distance * sin (bot_to_radians (angle_deg));
+
+        if (!cost_map->isInMap (xy_arc))
+            continue;
+
+        double val = cost_map->readValue (xy_arc);
+        if (val < min_cost) {
+            found_goal = 1;
+            xy_goal[0] = xy_arc[0];
+            xy_goal[1] = xy_arc[1];
+            min_cost = val;
+        }
+    }
+
+    //we should actually ckeck 
+    bot_lcmgl_t *lcmgl = self->lcmgl_arc; 
+    
+    double xyz_goal_local[3] = {xy_goal[0], xy_goal[1], 0};
+    lcmglColor3f (1.0, 0.0, 1.0);
+    lcmglCircle (xyz_goal_local, 0.6);
+
+    
+    lcmglColor3f (1.0, 0.0, 0.0);
+    bot_lcmgl_line_width(lcmgl, 5);
+
+    int arc_size = self->goal_distance;
     double max_steering_angle = bot_to_radians(90);
     double delta = max_steering_angle / arc_size;
 
@@ -758,15 +802,19 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
     
     lcmglColor3f (1.0,0.0,0.0);
     
+    std::vector<steering_goal_t> scores;
     
-    for(int i=-arc_size; i <= arc_size; i++){
-        double angle = delta * i * STEERING_RATIO;
+    fprintf(stderr, "\n\nChecking Arcs\n");
+
+    for(int j=-arc_size; j <= arc_size; j++){
+        double angle = delta * j * STEERING_RATIO;
+        double arc_point[2] = {0,0};
 
         if(fabs(angle) > 0.001){
             double rad = pow( pow(l/ tan(angle),2) + pow(l,2), 0.5);
-            double swept_angle = 10 / rad;
+            double swept_angle = self->goal_distance / rad;
 
-            double start_angle = 6 / rad;
+            double start_angle = MIN_SCAN_DIST / rad;
             
             int no_segments = 20;
 
@@ -776,7 +824,7 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
             
             //start_angle = start_angle;
             if(angle < 0){
-                fprintf(stderr, "Negative angle\n");
+                //fprintf(stderr, "Negative angle\n");
             }
             double start_s, start_c;
             bot_fasttrig_sincos(start_angle, &start_s, &start_c);
@@ -785,9 +833,14 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
             if(angle < 0){
                 last_xy[1] = - last_xy[1];
             }
+            
             bool estop_collision = false;
+            double arc_length = rad * s_angle;
+            
+            steering_goal_t c_goal;
 
-            bot_lcmgl_begin(lcmgl, GL_LINES);
+            
+            //bot_lcmgl_begin(lcmgl, GL_LINES);
             for(int i=1; i < no_segments; i++){
                 double theta = angle_d * i + s_angle;
                 double s, c;
@@ -811,7 +864,6 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
                 new_car_e_to_car.trans_vec[1] = y;
                 new_car_e_to_car.trans_vec[2] = 0;
                 bot_roll_pitch_yaw_to_quat(rpy, new_car_e_to_car.rot_quat);
-
                 
                 
                 BotTrans car_s_to_local; 
@@ -823,51 +875,429 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
                 double car_start[2] = {car_s_to_local.trans_vec[0], car_s_to_local.trans_vec[1]};
                 double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
                 
-                //
-                
-               
-                
                 double collision_point[2];
-
                  
                 estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
 
-
                 if (!cost_map->isInMap (car_stop)){
-                    fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
-                    fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
-                            x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+                    //fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+                    //fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+                    //         x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
                     break;
                 }
 
                 if(estop_collision){
-                    fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
-                    fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
-                            x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+                    //fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+                    //fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+                    //        x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
                     break;
                 }
 
-                bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
-                bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+                //bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+                //bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+
+                if(i==1){
+                    xy_t sp;
+                    sp.xy[0] = car_start[0];
+                    sp.xy[1] = car_start[1];
+                    c_goal.sample_points.push_back(sp);
+                }
 
                 last_xy[0] = x;
                 last_xy[1] = y;
-                        
-                
+                arc_length = rad * theta;
+                arc_point[0] = car_stop[0];
+                arc_point[1] = car_stop[1];
+                xy_t ap;
+                ap.xy[0] = car_stop[0];
+                ap.xy[1] = car_stop[1];
+                c_goal.sample_points.push_back(ap);
                 //this is the position in car frame 
-                //ideally we shoudl sweep through the line that connectes from start of this segment to the end 
-                
+                //ideally we shoudl sweep through the line that connectes from start of this segment to the end                 
             }
-            bot_lcmgl_end(lcmgl);
+            //bot_lcmgl_end(lcmgl);
+
+            c_goal.pos.xy[0] = arc_point[0];
+            c_goal.pos.xy[1] = arc_point[1];
+
+            double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (arc_point));
+
+            double dist_from_goal = hypot(xy_goal[0] - arc_point[0], xy_goal[1] - arc_point[1]);
+
+            double heading_delta = fabs(atan2(arc_point[1], arc_point[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+            double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+            double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+
+            c_goal.pos.score = score;
+            c_goal.steering_angle = delta * j;
+
+            scores.push_back(c_goal);
+
             if(!estop_collision){
-                fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, no_segments, rad * (angle_d *no_segments  + s_angle) );
+                //fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, no_segments, rad * (angle_d *no_segments  + s_angle) );
             }
         }
+        else{
+            
+            
 
+            /*double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
+              double dist_from_goal = hypot(xy_goal[0] - goal_pos[0], xy_goal[1] - goal_pos[1]);
+
+              double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+              double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+              double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+            */
+        }
+    }
+
+    //do one for stright 
+    //this should evaluvate the straight line path 
+    bool estop_collision = false;
+
+    BotTrans new_car_s_to_car;
+    new_car_s_to_car.trans_vec[0] = min_dist;
+    new_car_s_to_car.trans_vec[1] = 0;
+    new_car_s_to_car.trans_vec[2] = 0;
+    bot_roll_pitch_yaw_to_quat(rpy, new_car_s_to_car.rot_quat);
+
+    BotTrans new_car_e_to_car;
+    new_car_e_to_car.trans_vec[0] = max_dist;
+    new_car_e_to_car.trans_vec[1] = 0;
+    new_car_e_to_car.trans_vec[2] = 0;
+    bot_roll_pitch_yaw_to_quat(rpy, new_car_e_to_car.rot_quat);
+
+    BotTrans car_s_to_local; 
+    bot_trans_apply_trans_to(&new_car_s_to_car, &car_to_local, &car_s_to_local);
+
+    BotTrans car_e_to_local; 
+    bot_trans_apply_trans_to(&new_car_e_to_car, &car_to_local, &car_e_to_local);
+
+    double car_start[2] = {car_s_to_local.trans_vec[0], car_s_to_local.trans_vec[1]};
+    double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
+                
+    double arc_length = min_dist;
+
+    double collision_point[2];
+                 
+    estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
+
+    if (cost_map->isInMap (car_stop)){
+        steering_goal_t c_goal;
+
+        xy_t sp;
+        sp.xy[0] = car_start[0];
+        sp.xy[1] = car_start[1];
+        c_goal.sample_points.push_back(sp);
+
+        //bot_lcmgl_begin(lcmgl, GL_LINES);
+        if(estop_collision){
+            //fprintf(stderr, "R : (inf) => Trajectory Length : %f\n", hypot(collision_point[0] - xyz_car_local[0], collision_point[1] - xyz_car_local[1]));
+            //bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+            //bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
+            //bot_lcmgl_end(lcmgl);
+            arc_length = hypot(collision_point[0] - xyz_car_local[0], collision_point[1] - xyz_car_local[1]);
+
+
+            c_goal.pos.xy[0] = collision_point[0];
+            c_goal.pos.xy[1] = collision_point[1];
+
+            xy_t ap;
+            ap.xy[0] = collision_point[0];
+            ap.xy[1] = collision_point[1];
+            c_goal.sample_points.push_back(ap);
+
+            double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (collision_point));
+
+            double dist_from_goal = hypot(xy_goal[0] - collision_point[0], xy_goal[1] - collision_point[1]);
+
+            double heading_delta = fabs(atan2(collision_point[1], collision_point[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+            double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+            double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+            c_goal.pos.score = score;
+
+            c_goal.steering_angle = 0;
+
+            scores.push_back(c_goal);
+        }
+        else{
+            fprintf(stderr, "No collision straight\n");
+            //bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+            //bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+            //bot_lcmgl_end(lcmgl);
+            arc_length = hypot(car_stop[0] - xyz_car_local[0], car_stop[1] - xyz_car_local[1]);
+            c_goal.pos.xy[0] = car_stop[0];
+            c_goal.pos.xy[1] = car_stop[1];
+
+            xy_t ap;
+            ap.xy[0] = car_stop[0];
+            ap.xy[1] = car_stop[1];
+            c_goal.sample_points.push_back(ap);
+
+            double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (car_stop));
+
+            double dist_from_goal = hypot(xy_goal[0] - car_stop[0], xy_goal[1] - car_stop[1]);
+
+            double heading_delta = fabs(atan2(car_stop[1], car_stop[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+            double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+            double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+            c_goal.pos.score = score;
+            c_goal.steering_angle = 0;
+
+            scores.push_back(c_goal);
+        }
+    }
+
+    double max_score = 0;
+
+    std::vector<steering_goal_t>::iterator it = std::max_element(scores.begin(), scores.end(), steering_score_compare);
+    fprintf(stderr, "Steering angle : %f => Score : %f => Pos [%f,%f]\n", bot_to_degrees(it->steering_angle), it->pos.score, it->pos.xy[0], it->pos.xy[1]);
+
+    max_score = it->pos.score;
+    
+    fprintf(stderr, "Goal : %f,%f\n", xy_goal[0], xy_goal[1]);
+
+    //draw the arcs 
+    for(int i=0; i < scores.size(); i++){
+        steering_goal_t sg = scores[i];
+        if(sg.steering_angle == 0){
+            fprintf(stderr, "\n\nSteering Angle : %f => No points : %d\n", bot_to_degrees(sg.steering_angle), sg.sample_points.size());
+        }
+
+        float *colors = bot_color_util_jet( sg.pos.score / max_score);
+        lcmglColor3f (colors[0], colors[1], colors[2]);
+        if(sg.sample_points.size() < 2)
+            continue;
+        bot_lcmgl_begin(lcmgl, GL_LINES);
+        for(int j=1; j < sg.sample_points.size(); j++){
+            fprintf(stderr, "\tPos : %f,%f\n", sg.sample_points[j].xy[0], sg.sample_points[j].xy[1]);
+            bot_lcmgl_vertex3f(lcmgl, sg.sample_points[j-1].xy[0], sg.sample_points[j-1].xy[1], 0);
+            bot_lcmgl_vertex3f(lcmgl, sg.sample_points[j].xy[0], sg.sample_points[j].xy[1], 0);
+        }
+        bot_lcmgl_end(lcmgl);
     }
 
     bot_lcmgl_switch_buffer(lcmgl);
     /*for (int i=0; i<360; i+=skip) {
+    //get the rays (starting from some distance onwards - to skip too close obstacles 
+
+    angle_deg = i;
+    double xy_arc[2];
+    xy_arc[0] = xyz_car_local[0] + self->goal_distance * cos (bot_to_radians (angle_deg));
+    xy_arc[1] = xyz_car_local[1] + self->goal_distance * sin (bot_to_radians (angle_deg));
+
+    if (!cost_map->isInMap (xy_arc))
+    continue;
+
+    double val = cost_map->readValue (xy_arc);
+    if (val < min_cost) {
+    found_goal = 1;
+    xy_goal[0] = xy_arc[0];
+    xy_goal[1] = xy_arc[1];
+    min_cost = val;
+    }
+    }*/
+
+    
+    
+    /*int no_beams = 360.0 / skip + 1;
+
+      std::vector<std::pair<int, pos_t> > scores;
+
+      //std::map<int, pos_t> pos_map;
+
+      int count = 0;
+
+      for (int i=0; i<360; i+=skip) {
+      count++;
+      //get the rays (starting from some distance onwards - to skip too close obstacles 
+      angle_deg = i;
+      double xy_arc_min[2];
+      xy_arc_min[0] = xyz_car_local[0] + min_dist * cos (bot_to_radians (angle_deg));
+      xy_arc_min[1] = xyz_car_local[1] + min_dist * sin (bot_to_radians (angle_deg));
+      
+      double xy_arc_max[2];
+      xy_arc_max[0] = xyz_car_local[0] + max_dist * cos (bot_to_radians (angle_deg));
+      xy_arc_max[1] = xyz_car_local[1] + max_dist * sin (bot_to_radians (angle_deg));
+      
+      if (!cost_map->isInMap (xy_arc_min) || !cost_map->isInMap (xy_arc_max))
+      continue;
+      
+
+      // Find the first point along the ray for which the inverse distance value exceeds VEHICLE_THRESHOLD
+      // We will use this to measure the effective length of the ray.
+      double collision_point[2];
+      
+        
+      bool estop_collision = cost_map->collisionCheck (xy_arc_min, xy_arc_max, ESTOP_VEHICLE_THRESHOLD, collision_point);
+      if (estop_collision)
+      continue;
+
+
+      double threshold = VEHICLE_THRESHOLD;//1/2.0;
+
+      bool collision = cost_map->collisionCheck(xy_arc_min, xy_arc_max, threshold, collision_point); 
+      
+      double ray_dist = 0;
+
+      //bot_lcmgl_begin(lcmgl, GL_LINES);
+
+      double goal_pos[2];
+
+      if(collision){
+      goal_pos[0] = collision_point[0];
+      goal_pos[1] = collision_point[1];
+
+      ray_dist = hypot(collision_point[0] -  xyz_car_local[0], collision_point[1] - xyz_car_local[1]);
+      }
+      else{
+      goal_pos[0] = xy_arc_max[0];
+      goal_pos[1] = xy_arc_max[1];
+
+      ray_dist = hypot(xy_arc_max[0] -  xyz_car_local[0], xy_arc_max[1] - xyz_car_local[1]);
+      }
+
+      //calculate a score 
+      //double map_value = cost_map->readValue (goal_pos);
+      double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
+
+      double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+      double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+      double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+        
+      //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
+      pos_t pos;
+      pos.xy[0] = goal_pos[0];
+      pos.xy[1] = goal_pos[1];
+      pos.score = score;//dist_from_goal;
+
+      scores.push_back(std::make_pair<int, pos_t>(i,pos));
+
+      //bot_lcmgl_end(lcmgl);
+
+      //score each ray - to find the best one 
+             
+      
+      //fprintf(stderr, "[%d] Dist : %f\n", i, ray_dist); 
+      }
+
+      // Perform estop if there are no valid goals
+      if (scores.size() == 0) {
+      fprintf (stdout, "NO VALID GOAL FOUND\n");
+      delete cost_map;
+      return 0;
+      }
+
+      //std::vector<std::pair<int, double> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
+      std::vector<std::pair<int, pos_t> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
+      fprintf(stderr, "Max Ind : %d => Score : %f => Pos [%f,%f]\n", it->first, it->second.score, it->second.xy[0], it->second.xy[1]);
+
+      fprintf(stderr, "Goal : %f,%f\n", xy_goal[0], xy_goal[1]);
+
+      fprintf(stderr, "Count  %d No beams : %d\n", count, no_beams);
+
+      double max_score = it->second.score; 
+
+      for(int i=0; i < scores.size(); i++){
+      std::pair<int, pos_t> ele = scores[i];
+      float *colors = bot_color_util_jet(ele.second.score/ max_score);
+
+      bot_lcmgl_begin(lcmgl, GL_LINES);
+      lcmglColor3f (colors[0], colors[1], colors[2]);
+        
+      bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+      bot_lcmgl_vertex3f(lcmgl, ele.second.xy[0], ele.second.xy[1], 0);
+
+      bot_lcmgl_end(lcmgl);
+
+      }
+
+      bot_lcmgl_switch_buffer(lcmgl);
+
+
+      if (found_goal) {
+      self->cur_goal[0] = it->second.xy[0];
+      self->cur_goal[1] = it->second.xy[1];
+      self->cur_goal[2] = 0;
+      }
+    */
+    delete cost_map;
+
+    return found_goal;
+}
+
+static int
+find_goal_enhanced_arc_old (occ_map::FloatPixelMap *fmap, state_t *self, double *best_steering_angle)
+{
+    occ_map::FloatPixelMap *cost_map = new occ_map::FloatPixelMap (fmap);
+
+    int draw_arc = 1;
+
+    //invert the values
+    for(int i = 0; i < fmap->dimensions[0]; i++){
+        for(int j = 0; j < fmap->dimensions[1]; j++){
+            int ixy[2] = {i,j};
+            float val = fmax(0.1, fmap->readValue(ixy));
+            cost_map->writeValue(ixy, 1/val);
+        }
+    }
+    
+    // Find the best goal
+    int found_goal = 0;
+    //double max_reward = 10000;
+
+    double min_cost = 10000;
+    double xy_goal[2] = {0, 0};
+    double xyz_car_car[] = {0, 0, 0};
+    double xyz_car_local[3];
+
+    BotTrans car_to_body; 
+    car_to_body.trans_vec[0] = 0;
+    car_to_body.trans_vec[1] = -0.3;
+    car_to_body.trans_vec[2] = 0;
+    
+    double rpy[3] = {0};
+    bot_roll_pitch_yaw_to_quat(rpy, car_to_body.rot_quat);
+
+    BotTrans body_to_local;
+
+    bot_frames_get_trans(self->frames, "body", "local", 
+                         &body_to_local);
+
+    BotTrans car_to_local; 
+    bot_trans_apply_trans_to(&body_to_local, &car_to_body, &car_to_local);
+    
+    xyz_car_local[0] = car_to_local.trans_vec[0];
+    xyz_car_local[1] = car_to_local.trans_vec[1];
+
+    //fprintf(stderr, "Car Frame to Local : %f, %f\n", xyz_car_local[0], xyz_car_local[1]);
+
+    //bot_frames_transform_vec (self->frames, CAR_FRAME, "local", xyz_car_car, xyz_car_local);
+
+    //fprintf(stderr, "Car Frame to Local : %f, %f\n", xyz_car_local[0], xyz_car_local[1]);
+    
+    double x_arc, y_arc;
+    double angle_deg;
+
+    double min_dist = fmin(MIN_SCAN_DIST, self->goal_distance);
+    double max_dist = self->goal_distance;
+
+    int skip = 2;
+
+    for (int i=0; i<360; i+=skip) {
         //get the rays (starting from some distance onwards - to skip too close obstacles 
 
         angle_deg = i;
@@ -885,132 +1315,482 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
             xy_goal[1] = xy_arc[1];
             min_cost = val;
         }
-        }*/
+    }
+
+    //we should actually ckeck 
+    bot_lcmgl_t *lcmgl = self->lcmgl_arc; 
+    
+    double xyz_goal_local[3] = {xy_goal[0], xy_goal[1], 0};
+    lcmglColor3f (1.0, 0.0, 1.0);
+    lcmglCircle (xyz_goal_local, 0.6);
+
+    
+    lcmglColor3f (1.0, 0.0, 0.0);
+    bot_lcmgl_line_width(lcmgl, 5);
+
+    int arc_size = self->goal_distance;
+    double max_steering_angle = bot_to_radians(90);
+    double delta = max_steering_angle / arc_size;
+
+    double l = 1.8;
+    double w = 1.2; 
+    
+    lcmglColor3f (1.0,0.0,0.0);
+    
+    std::vector<steering_goal_t> scores;
+    
+    fprintf(stderr, "\n\nChecking Arcs\n");
+
+    for(int j=-arc_size; j <= arc_size; j++){
+        double angle = delta * j * STEERING_RATIO;
+        double arc_point[2] = {0,0};
+
+        if(fabs(angle) > 0.001){
+            double rad = pow( pow(l/ tan(angle),2) + pow(l,2), 0.5);
+            double swept_angle = self->goal_distance / rad;
+
+            double start_angle = MIN_SCAN_DIST / rad;
+            
+            int no_segments = 20;
+
+            double angle_d = (swept_angle - start_angle)/ no_segments;
+            
+            double s_angle = start_angle;
+            
+            //start_angle = start_angle;
+            if(angle < 0){
+                //fprintf(stderr, "Negative angle\n");
+            }
+            double start_s, start_c;
+            bot_fasttrig_sincos(start_angle, &start_s, &start_c);
+
+            double last_xy[2] = {rad * start_s, rad*(1-start_c)};
+            if(angle < 0){
+                last_xy[1] = - last_xy[1];
+            }
+            
+            bool estop_collision = false;
+            double arc_length = rad * s_angle;
+            
+            steering_goal_t c_goal;
+
+
+            //bot_lcmgl_begin(lcmgl, GL_LINES);
+            for(int i=1; i < no_segments; i++){
+                double theta = angle_d * i + s_angle;
+                double s, c;
+                bot_fasttrig_sincos(theta, &s, &c);
+                double x = rad * s;                              
+                double theta_act = theta;
+                double y = rad*(1-c);
+
+                if(angle < 0){
+                    y = -y;                    
+                }
+
+                BotTrans new_car_s_to_car;
+                new_car_s_to_car.trans_vec[0] = last_xy[0];
+                new_car_s_to_car.trans_vec[1] = last_xy[1];
+                new_car_s_to_car.trans_vec[2] = 0;
+                bot_roll_pitch_yaw_to_quat(rpy, new_car_s_to_car.rot_quat);
+
+                BotTrans new_car_e_to_car;
+                new_car_e_to_car.trans_vec[0] = x;
+                new_car_e_to_car.trans_vec[1] = y;
+                new_car_e_to_car.trans_vec[2] = 0;
+                bot_roll_pitch_yaw_to_quat(rpy, new_car_e_to_car.rot_quat);
+                
+                
+                BotTrans car_s_to_local; 
+                bot_trans_apply_trans_to(&new_car_s_to_car, &car_to_local, &car_s_to_local);
+
+                BotTrans car_e_to_local; 
+                bot_trans_apply_trans_to(&new_car_e_to_car, &car_to_local, &car_e_to_local);
+
+                double car_start[2] = {car_s_to_local.trans_vec[0], car_s_to_local.trans_vec[1]};
+                double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
+                
+                double collision_point[2];
+                 
+                estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
+
+                if (!cost_map->isInMap (car_stop)){
+                    fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+                    fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+                            x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+                    break;
+                }
+
+                if(estop_collision){
+                    fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+                    fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+                            x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+                    break;
+                }
+
+                //bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+                //bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+
+                last_xy[0] = x;
+                last_xy[1] = y;
+                arc_length = rad * theta;
+                arc_point[0] = car_stop[0];
+                arc_point[1] = car_stop[1];
+                //this is the position in car frame 
+                //ideally we shoudl sweep through the line that connectes from start of this segment to the end                 
+            }
+            //bot_lcmgl_end(lcmgl);
+
+            
+            
+
+
+            c_goal.pos.xy[0] = arc_point[0];
+            c_goal.pos.xy[1] = arc_point[1];
+
+            double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (arc_point));
+
+            double dist_from_goal = hypot(xy_goal[0] - arc_point[0], xy_goal[1] - arc_point[1]);
+
+            double heading_delta = fabs(atan2(arc_point[1], arc_point[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+            double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+            double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+
+            c_goal.pos.score = score;
+            c_goal.steering_angle = delta * j;
+
+            scores.push_back(c_goal);
+
+            if(!estop_collision){
+                fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, no_segments, rad * (angle_d *no_segments  + s_angle) );
+            }
+
+            /*if(draw_arc){
+              last_xy[0] = rad * start_s;
+              last_xy[1] = rad*(1-start_c);
+              if(angle < 0){
+              last_xy[1] = - last_xy[1];
+              }
+            
+              bot_lcmgl_begin(lcmgl, GL_LINES);
+              for(int i=1; i < no_segments; i++){
+              double theta = angle_d * i + s_angle;
+              double s, c;
+              bot_fasttrig_sincos(theta, &s, &c);
+              double x = rad * s;                              
+              double theta_act = theta;
+              double y = rad*(1-c);
+
+              if(angle < 0){
+              y = -y;                    
+              }
+
+              BotTrans new_car_s_to_car;
+              new_car_s_to_car.trans_vec[0] = last_xy[0];
+              new_car_s_to_car.trans_vec[1] = last_xy[1];
+              new_car_s_to_car.trans_vec[2] = 0;
+              bot_roll_pitch_yaw_to_quat(rpy, new_car_s_to_car.rot_quat);
+
+              BotTrans new_car_e_to_car;
+              new_car_e_to_car.trans_vec[0] = x;
+              new_car_e_to_car.trans_vec[1] = y;
+              new_car_e_to_car.trans_vec[2] = 0;
+              bot_roll_pitch_yaw_to_quat(rpy, new_car_e_to_car.rot_quat);
+                
+                
+              BotTrans car_s_to_local; 
+              bot_trans_apply_trans_to(&new_car_s_to_car, &car_to_local, &car_s_to_local);
+
+              BotTrans car_e_to_local; 
+              bot_trans_apply_trans_to(&new_car_e_to_car, &car_to_local, &car_e_to_local);
+
+              double car_start[2] = {car_s_to_local.trans_vec[0], car_s_to_local.trans_vec[1]};
+              double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
+                
+              double collision_point[2];
+                 
+              estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
+
+              if (!cost_map->isInMap (car_stop)){
+              fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+              fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+              x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+              break;
+              }
+
+              if(estop_collision){
+              fprintf(stderr, "R : %f => i : %d Arc Length : %f\n", rad, i, rad * (theta - angle_d) );
+              fprintf(stderr, "R : %f => Car frame : %f,%f => %f,%f => Local Frame %f,%f => %f,%f\n", rad, last_xy[0], last_xy[1], 
+              x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
+              break;
+              }
+
+              bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+              bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+
+              last_xy[0] = x;
+              last_xy[1] = y;
+              }
+              bot_lcmgl_end(lcmgl);
+              }*/
+        }
+        else{
+            //this should evaluvate the straight line path 
+            bool estop_collision = false;
+
+            BotTrans new_car_s_to_car;
+            new_car_s_to_car.trans_vec[0] = min_dist;
+            new_car_s_to_car.trans_vec[1] = 0;
+            new_car_s_to_car.trans_vec[2] = 0;
+            bot_roll_pitch_yaw_to_quat(rpy, new_car_s_to_car.rot_quat);
+
+            BotTrans new_car_e_to_car;
+            new_car_e_to_car.trans_vec[0] = max_dist;
+            new_car_e_to_car.trans_vec[1] = 0;
+            new_car_e_to_car.trans_vec[2] = 0;
+            bot_roll_pitch_yaw_to_quat(rpy, new_car_e_to_car.rot_quat);
+
+            BotTrans car_s_to_local; 
+            bot_trans_apply_trans_to(&new_car_s_to_car, &car_to_local, &car_s_to_local);
+
+            BotTrans car_e_to_local; 
+            bot_trans_apply_trans_to(&new_car_e_to_car, &car_to_local, &car_e_to_local);
+
+            double car_start[2] = {car_s_to_local.trans_vec[0], car_s_to_local.trans_vec[1]};
+            double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
+                
+            double arc_length = min_dist;
+
+            double collision_point[2];
+                 
+            estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
+
+            if (!cost_map->isInMap (car_stop)){
+                fprintf(stderr, "Outside the map\n");
+                break;
+            }
+            
+            bot_lcmgl_begin(lcmgl, GL_LINES);
+            if(estop_collision){
+                fprintf(stderr, "R : (inf) => Trajectory Length : %f\n", hypot(collision_point[0] - xyz_car_local[0], collision_point[1] - xyz_car_local[1]));
+                bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+                bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
+                bot_lcmgl_end(lcmgl);
+                arc_length = hypot(collision_point[0] - xyz_car_local[0], collision_point[1] - xyz_car_local[1]);
+                steering_goal_t c_goal;
+
+                c_goal.pos.xy[0] = collision_point[0];
+                c_goal.pos.xy[1] = collision_point[1];
+
+                double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (collision_point));
+
+                double dist_from_goal = hypot(xy_goal[0] - collision_point[0], xy_goal[1] - collision_point[1]);
+                
+                double heading_delta = fabs(atan2(collision_point[1], collision_point[0]) - atan2(xy_goal[1], xy_goal[0]));
+                
+                double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+                
+                double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+                c_goal.pos.score = score;
+
+                c_goal.steering_angle = 0;
+                
+                scores.push_back(c_goal);
+
+                break;
+            }
+            else{
+                fprintf(stderr, "No collision straight\n");
+                bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+                bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+                bot_lcmgl_end(lcmgl);
+                steering_goal_t c_goal;
+                arc_length = hypot(car_stop[0] - xyz_car_local[0], car_stop[1] - xyz_car_local[1]);
+                c_goal.pos.xy[0] = car_stop[0];
+                c_goal.pos.xy[1] = car_stop[1];
+
+                double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (car_stop));
+
+                double dist_from_goal = hypot(xy_goal[0] - car_stop[0], xy_goal[1] - car_stop[1]);
+                
+                double heading_delta = fabs(atan2(car_stop[1], car_stop[0]) - atan2(xy_goal[1], xy_goal[0]));
+                
+                double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+                
+                double score = pow(arc_length,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+
+                c_goal.pos.score = score;
+                c_goal.steering_angle = 0;
+                
+                scores.push_back(c_goal);
+            }
+
+            /*double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
+              double dist_from_goal = hypot(xy_goal[0] - goal_pos[0], xy_goal[1] - goal_pos[1]);
+
+              double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
+
+              double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+
+              double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+            */
+        }
+    }
+
+    std::vector<steering_goal_t>::iterator it = std::max_element(scores.begin(), scores.end(), steering_score_compare);
+    fprintf(stderr, "Steering angle : %f => Score : %f => Pos [%f,%f]\n", bot_to_degrees(it->steering_angle), it->pos.score, it->pos.xy[0], it->pos.xy[1]);
+
+    fprintf(stderr, "Goal : %f,%f\n", xy_goal[0], xy_goal[1]);
+
+    bot_lcmgl_switch_buffer(lcmgl);
+    /*for (int i=0; i<360; i+=skip) {
+    //get the rays (starting from some distance onwards - to skip too close obstacles 
+
+    angle_deg = i;
+    double xy_arc[2];
+    xy_arc[0] = xyz_car_local[0] + self->goal_distance * cos (bot_to_radians (angle_deg));
+    xy_arc[1] = xyz_car_local[1] + self->goal_distance * sin (bot_to_radians (angle_deg));
+
+    if (!cost_map->isInMap (xy_arc))
+    continue;
+
+    double val = cost_map->readValue (xy_arc);
+    if (val < min_cost) {
+    found_goal = 1;
+    xy_goal[0] = xy_arc[0];
+    xy_goal[1] = xy_arc[1];
+    min_cost = val;
+    }
+    }*/
 
     
     
     /*int no_beams = 360.0 / skip + 1;
 
-    std::vector<std::pair<int, pos_t> > scores;
+      std::vector<std::pair<int, pos_t> > scores;
 
-    //std::map<int, pos_t> pos_map;
+      //std::map<int, pos_t> pos_map;
 
-    int count = 0;
+      int count = 0;
 
-    for (int i=0; i<360; i+=skip) {
-        count++;
-        //get the rays (starting from some distance onwards - to skip too close obstacles 
-        angle_deg = i;
-        double xy_arc_min[2];
-        xy_arc_min[0] = xyz_car_local[0] + min_dist * cos (bot_to_radians (angle_deg));
-        xy_arc_min[1] = xyz_car_local[1] + min_dist * sin (bot_to_radians (angle_deg));
+      for (int i=0; i<360; i+=skip) {
+      count++;
+      //get the rays (starting from some distance onwards - to skip too close obstacles 
+      angle_deg = i;
+      double xy_arc_min[2];
+      xy_arc_min[0] = xyz_car_local[0] + min_dist * cos (bot_to_radians (angle_deg));
+      xy_arc_min[1] = xyz_car_local[1] + min_dist * sin (bot_to_radians (angle_deg));
       
-        double xy_arc_max[2];
-        xy_arc_max[0] = xyz_car_local[0] + max_dist * cos (bot_to_radians (angle_deg));
-        xy_arc_max[1] = xyz_car_local[1] + max_dist * sin (bot_to_radians (angle_deg));
+      double xy_arc_max[2];
+      xy_arc_max[0] = xyz_car_local[0] + max_dist * cos (bot_to_radians (angle_deg));
+      xy_arc_max[1] = xyz_car_local[1] + max_dist * sin (bot_to_radians (angle_deg));
       
-        if (!cost_map->isInMap (xy_arc_min) || !cost_map->isInMap (xy_arc_max))
-            continue;
+      if (!cost_map->isInMap (xy_arc_min) || !cost_map->isInMap (xy_arc_max))
+      continue;
       
 
-        // Find the first point along the ray for which the inverse distance value exceeds VEHICLE_THRESHOLD
-        // We will use this to measure the effective length of the ray.
-        double collision_point[2];
+      // Find the first point along the ray for which the inverse distance value exceeds VEHICLE_THRESHOLD
+      // We will use this to measure the effective length of the ray.
+      double collision_point[2];
       
         
-        bool estop_collision = cost_map->collisionCheck (xy_arc_min, xy_arc_max, ESTOP_VEHICLE_THRESHOLD, collision_point);
-        if (estop_collision)
-            continue;
+      bool estop_collision = cost_map->collisionCheck (xy_arc_min, xy_arc_max, ESTOP_VEHICLE_THRESHOLD, collision_point);
+      if (estop_collision)
+      continue;
 
 
-        double threshold = VEHICLE_THRESHOLD;//1/2.0;
+      double threshold = VEHICLE_THRESHOLD;//1/2.0;
 
-        bool collision = cost_map->collisionCheck(xy_arc_min, xy_arc_max, threshold, collision_point); 
+      bool collision = cost_map->collisionCheck(xy_arc_min, xy_arc_max, threshold, collision_point); 
       
-        double ray_dist = 0;
+      double ray_dist = 0;
 
-        //bot_lcmgl_begin(lcmgl, GL_LINES);
+      //bot_lcmgl_begin(lcmgl, GL_LINES);
 
-        double goal_pos[2];
+      double goal_pos[2];
 
-        if(collision){
-            goal_pos[0] = collision_point[0];
-            goal_pos[1] = collision_point[1];
+      if(collision){
+      goal_pos[0] = collision_point[0];
+      goal_pos[1] = collision_point[1];
 
-            ray_dist = hypot(collision_point[0] -  xyz_car_local[0], collision_point[1] - xyz_car_local[1]);
-        }
-        else{
-            goal_pos[0] = xy_arc_max[0];
-            goal_pos[1] = xy_arc_max[1];
+      ray_dist = hypot(collision_point[0] -  xyz_car_local[0], collision_point[1] - xyz_car_local[1]);
+      }
+      else{
+      goal_pos[0] = xy_arc_max[0];
+      goal_pos[1] = xy_arc_max[1];
 
-            ray_dist = hypot(xy_arc_max[0] -  xyz_car_local[0], xy_arc_max[1] - xyz_car_local[1]);
-        }
+      ray_dist = hypot(xy_arc_max[0] -  xyz_car_local[0], xy_arc_max[1] - xyz_car_local[1]);
+      }
 
-        //calculate a score 
-        //double map_value = cost_map->readValue (goal_pos);
-        double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
+      //calculate a score 
+      //double map_value = cost_map->readValue (goal_pos);
+      double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
 
-        double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
+      double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
 
-        double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
+      double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
 
-        double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
+      double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
         
-        //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
-        pos_t pos;
-        pos.xy[0] = goal_pos[0];
-        pos.xy[1] = goal_pos[1];
-        pos.score = score;//dist_from_goal;
+      //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
+      pos_t pos;
+      pos.xy[0] = goal_pos[0];
+      pos.xy[1] = goal_pos[1];
+      pos.score = score;//dist_from_goal;
 
-        scores.push_back(std::make_pair<int, pos_t>(i,pos));
+      scores.push_back(std::make_pair<int, pos_t>(i,pos));
 
-        //bot_lcmgl_end(lcmgl);
+      //bot_lcmgl_end(lcmgl);
 
-        //score each ray - to find the best one 
+      //score each ray - to find the best one 
              
       
-        //fprintf(stderr, "[%d] Dist : %f\n", i, ray_dist); 
-    }
+      //fprintf(stderr, "[%d] Dist : %f\n", i, ray_dist); 
+      }
 
-    // Perform estop if there are no valid goals
-    if (scores.size() == 0) {
-        fprintf (stdout, "NO VALID GOAL FOUND\n");
-        delete cost_map;
-        return 0;
-    }
+      // Perform estop if there are no valid goals
+      if (scores.size() == 0) {
+      fprintf (stdout, "NO VALID GOAL FOUND\n");
+      delete cost_map;
+      return 0;
+      }
 
-    //std::vector<std::pair<int, double> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
-    std::vector<std::pair<int, pos_t> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
-    fprintf(stderr, "Max Ind : %d => Score : %f => Pos [%f,%f]\n", it->first, it->second.score, it->second.xy[0], it->second.xy[1]);
+      //std::vector<std::pair<int, double> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
+      std::vector<std::pair<int, pos_t> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
+      fprintf(stderr, "Max Ind : %d => Score : %f => Pos [%f,%f]\n", it->first, it->second.score, it->second.xy[0], it->second.xy[1]);
 
-    fprintf(stderr, "Goal : %f,%f\n", xy_goal[0], xy_goal[1]);
+      fprintf(stderr, "Goal : %f,%f\n", xy_goal[0], xy_goal[1]);
 
-    fprintf(stderr, "Count  %d No beams : %d\n", count, no_beams);
+      fprintf(stderr, "Count  %d No beams : %d\n", count, no_beams);
 
-    double max_score = it->second.score; 
+      double max_score = it->second.score; 
 
-    for(int i=0; i < scores.size(); i++){
-        std::pair<int, pos_t> ele = scores[i];
-        float *colors = bot_color_util_jet(ele.second.score/ max_score);
+      for(int i=0; i < scores.size(); i++){
+      std::pair<int, pos_t> ele = scores[i];
+      float *colors = bot_color_util_jet(ele.second.score/ max_score);
 
-        bot_lcmgl_begin(lcmgl, GL_LINES);
-        lcmglColor3f (colors[0], colors[1], colors[2]);
+      bot_lcmgl_begin(lcmgl, GL_LINES);
+      lcmglColor3f (colors[0], colors[1], colors[2]);
         
-        bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-        bot_lcmgl_vertex3f(lcmgl, ele.second.xy[0], ele.second.xy[1], 0);
+      bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+      bot_lcmgl_vertex3f(lcmgl, ele.second.xy[0], ele.second.xy[1], 0);
 
-        bot_lcmgl_end(lcmgl);
+      bot_lcmgl_end(lcmgl);
 
-    }
+      }
 
-    bot_lcmgl_switch_buffer(lcmgl);
+      bot_lcmgl_switch_buffer(lcmgl);
 
 
-    if (found_goal) {
-        self->cur_goal[0] = it->second.xy[0];
-        self->cur_goal[1] = it->second.xy[1];
-        self->cur_goal[2] = 0;
-    }
+      if (found_goal) {
+      self->cur_goal[0] = it->second.xy[0];
+      self->cur_goal[1] = it->second.xy[1];
+      self->cur_goal[2] = 0;
+      }
     */
     delete cost_map;
 
@@ -1086,7 +1866,7 @@ find_goal_enhanced_with_tld_heading (occ_map::FloatPixelMap *fmap, state_t *self
     double x_arc, y_arc;
     double angle_deg;
 
-    double min_dist = fmin(6.0, self->goal_distance);
+    double min_dist = fmin(MIN_SCAN_DIST, self->goal_distance);
     double max_dist = self->goal_distance;
 
     //we should actually ckeck 
@@ -1179,13 +1959,13 @@ find_goal_enhanced_with_tld_heading (occ_map::FloatPixelMap *fmap, state_t *self
         //lcmglColor3f (colors[0], colors[1], colors[2]);
         
         /*if(collision){
-            bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-            bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
-        }
-        else{
-            bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-            bot_lcmgl_vertex3f(lcmgl, xy_arc_max[0], xy_arc_max[1], 0);
-            }*/
+          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+          bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
+          }
+          else{
+          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
+          bot_lcmgl_vertex3f(lcmgl, xy_arc_max[0], xy_arc_max[1], 0);
+          }*/
         //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
         pos_t pos;
         pos.xy[0] = goal_pos[0];
@@ -1297,7 +2077,7 @@ find_goal_with_only_tld_heading (state_t *self)
     double x_arc, y_arc;
     double angle_deg;
 
-    double min_dist = fmin(6.0, self->goal_distance);
+    double min_dist = fmin(MIN_SCAN_DIST, self->goal_distance);
     double max_dist = self->goal_distance;
 
     //we should actually ckeck 
@@ -1458,11 +2238,14 @@ on_controller_timer (gpointer data)
     //draw_goal_range (self);    
     double xyz_goal[3];
 
+    double steering_angle_arc = 0;
+
     if((use_road_carrot || use_road_arc) && !use_tld){
         int have_valid_goal = 0;
-        fprintf (stdout, "use_road_arc = %d\n");
+        //fprintf (stdout, "use_road_arc = %d\n");
         if(use_road_arc) {
-            if (find_goal_enhanced_arc (fmap, self)) {
+            
+            if (find_goal_enhanced_arc (fmap, self, &steering_angle_arc)) {
                 have_valid_goal = 1;
                 self->have_valid_goal = 1;
                 self->curr_state = DRIVING_ROAD_ONLY_ARC;
@@ -1709,21 +2492,21 @@ on_controller_timer (gpointer data)
 
 	drc_driving_control_cmd_t msg;
 	msg.utime = bot_timestamp_now();
-    if(self->use_differential_angle){
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
-        //if(fabs(steering_input) > bot_to_radians(5)){
-        msg.steering_angle =  steering_input;
-        /*}
-          else{
-          msg.steering_angle =  0;
-          }
+        if(self->use_differential_angle){
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
+            //if(fabs(steering_input) > bot_to_radians(5)){
+            msg.steering_angle =  steering_input;
+            /*}
+              else{
+              msg.steering_angle =  0;
+              }
           
-          fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
-    }
-    else{
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
-        msg.steering_angle =  steering_input;
-    }
+              fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
+        }
+        else{
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
+            msg.steering_angle =  steering_input;
+        }
     
 	msg.throttle_value = throttle_val;
 	msg.brake_value = brake_val;
