@@ -56,7 +56,9 @@ protected:
   Gtk::VBox* mPushControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
-  int mCameraFrameRate;
+  int mHeadCameraFrameRate;
+  int mHandCameraFrameRate;
+  int mCameraCompression;
   int mHeadPitchAngle;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
@@ -251,23 +253,36 @@ public:
 
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
-    mSpinRate = 15;
+    mSpinRate = 7;
     addSpin("Spin Rate (rpm)", mSpinRate, 0, 60, 1, sensorControlBox);
-    button = Gtk::manage(new Gtk::Button("Submit Spin Rate"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onSpinRateControlButton));
-    sensorControlBox->pack_start(*button, false, false);
-    Gtk::HSeparator* separator = Gtk::manage(new Gtk::HSeparator());
-    sensorControlBox->pack_start(*separator, false, false);
+    mHeadCameraFrameRate = 10;
+    addSpin("Head Camera Rate (fps)", mHeadCameraFrameRate, 0, 30, 1, sensorControlBox);
+    mHandCameraFrameRate = 10;
+    addSpin("Hands Camera Rate (fps)", mHandCameraFrameRate, 0, 30, 1, sensorControlBox);
+    mCameraCompression = 0;
+    addSpin("Camera Quality [0 bad]", mCameraCompression, 0, 2, 1, sensorControlBox);
 
-    mCameraFrameRate = 10;
-    addSpin("Camera Rate (fps)", mCameraFrameRate, 0, 60, 1, sensorControlBox);
+    button = Gtk::manage(new Gtk::Button("Send Rates"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
+    sensorControlBox->pack_start(*button, false, false);
+    //Gtk::HSeparator* separator = Gtk::manage(new Gtk::HSeparator());
+    //sensorControlBox->pack_start(*separator, false, false);
+
+    /*
     button = Gtk::manage(new Gtk::Button("Submit Camera Rate"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onCameraRateControlButton));
+      (sigc::mem_fun(*this, &DataControlRenderer::onHeadCameraRateControlButton));
     sensorControlBox->pack_start(*button, false, false);
     separator = Gtk::manage(new Gtk::HSeparator());
     sensorControlBox->pack_start(*separator, false, false);
+    
+    button = Gtk::manage(new Gtk::Button("Submit Camera Rate"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onHandsCameraRateControlButton));
+    sensorControlBox->pack_start(*button, false, false);
+    separator = Gtk::manage(new Gtk::HSeparator());
+    sensorControlBox->pack_start(*separator, false, false);    
 
     mHeadPitchAngle = 45;
     addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
@@ -275,6 +290,8 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
+    */
+    
     notebook->append_page(*sensorControlBox, "Sensor");
     
     container->add(*notebook);
@@ -358,22 +375,36 @@ public:
     std::cout << "Sent affordance list" << std::endl;
   }
 
-  void onSpinRateControlButton() {
+  void onSendRatesControlButton() {
     drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.spindle_rpm = mSpinRate;
-    msg.multisense_fps = -1;
+    msg.head_fps = mHeadCameraFrameRate;
+    msg.hand_fps = mHandCameraFrameRate;
+    msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
   }
 
-  void onCameraRateControlButton() {
+  /*
+  void onHeadCameraRateControlButton() {
     drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.spindle_rpm = -1;
-    msg.multisense_fps = mCameraFrameRate;
+    msg.multisense_fps = mHeadCameraFrameRate;
+    msg.hand_fps = -1;
     getLcm()->publish("SENSOR_REQUEST", &msg);
   }
 
+  void onHandsCameraRateControlButton() {
+    drc::sensor_request_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.spindle_rpm = -1;
+    msg.multisense_fps = -1;
+    msg.hand_fps = mHandCameraFrameRate;    
+    getLcm()->publish("SENSOR_REQUEST", &msg);
+  }  
+  */
+    
   void onHeadPitchControlButton() {
     const double kPi = 4*atan(1);
     double degreesToRadians = kPi/180;
@@ -382,6 +413,7 @@ public:
     msg.pitch = mHeadPitchAngle*degreesToRadians;
     getLcm()->publish("DESIRED_NECK_PITCH", &msg);
   }
+
 
   void draw() {
     // intentionally left blank

@@ -27,7 +27,7 @@ class LCM2ROS{
     void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     ros::Publisher joint_cmd_pub_;
        
-    ros::Publisher spindle_speed_pub_, multisense_fps_pub_;
+    ros::Publisher spindle_speed_pub_, head_fps_pub_, hand_fps_pub_;
     void sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg);
     
     void sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
@@ -66,7 +66,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   /// Spinning Laser control:
   lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
   spindle_speed_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
-  multisense_fps_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/fps",10);
+  head_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_head_fps",10);
+  hand_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_hand_fps",10);
   
   /// Sandia Hands joint command API
   lcm_->subscribe("L_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaLHandJointCommandHandler,this);  
@@ -149,18 +150,26 @@ void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::
       std::cout << "Ignoring negative spindle rate: "<< ((int) msg->spindle_rpm) <<"\n";
     }
     
-    if (msg->multisense_fps >=0){
-      std_msgs::Float64 multisense_fps_msg;
-      multisense_fps_msg.data = msg->multisense_fps;
-      multisense_fps_pub_.publish(multisense_fps_msg);    
-      std::cout << "Setting Multisense Camera FPS: "<< ((int) msg->multisense_fps) <<"\n";
+    if (msg->head_fps >=0){
+      std_msgs::Float64 head_fps_msg;
+      head_fps_msg.data = msg->head_fps;
+      head_fps_pub_.publish(head_fps_msg);    
+      std::cout << "   Setting Head Camera FPS: "<< ((int) msg->head_fps) <<"\n";
     }else {
-      std::cout << "Ignoring negative spindle rate: "<< ((int) msg->multisense_fps) <<"\n";
+      std::cout << "Ignoring Negative Head FPS: "<< ((int) msg->head_fps) <<"\n";
     }
+    
+    if (msg->hand_fps >=0){
+      std_msgs::Float64 hand_fps_msg;
+      hand_fps_msg.data = msg->hand_fps;
+      hand_fps_pub_.publish(hand_fps_msg);    
+      std::cout << "   Setting Hand Camera FPS: "<< ((int) msg->hand_fps) <<"\n";
+    }else {
+      std::cout << "Ignoring Negative Hand RPS: "<< ((int) msg->hand_fps) <<"\n";
+    }    
   }
   
   std::cout << "\n";
-  
 }
 
 

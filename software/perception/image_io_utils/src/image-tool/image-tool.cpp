@@ -37,6 +37,7 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::data_request_t* msg);   
+    void sensorRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sensor_request_t* msg);   
 
     void sendOutput();
 
@@ -63,6 +64,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
 
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   lcm_->subscribe("TRIGGER_CAMERA",&Pass::triggerHandler,this);
+  lcm_->subscribe("SENSOR_REQUEST",&Pass::sensorRequestHandler,this);
 
   width_ = 800;
   height_ = 800;
@@ -85,11 +87,41 @@ void Pass::sendOutput(){
     cv::resize(src, img, img.size());  // Resize src to img size
     imgutils_->jpegImageThenSend(img.data, last_img_.utime, 
                 resize_width, resize_height, jpeg_quality_, image_channel_);
+    
+  //  if (resize_ ==2){
+  //    std::cout << "Automatically setting image resize back to 4 from "<<resize_<<"\n";
+  //    resize_ =4; 
+  //  }
+    
   }else if(mode_==1){ // unzip and send
     uint8_t* buf = imgutils_->unzipImage( &(last_img_) );// , image_channel_);
     imgutils_->sendImage(buf, last_img_.utime, last_img_.width, 
                          last_img_.height, 1, string(image_channel_ + "_UNZIPPED")  );
   }
+}
+
+
+void Pass::sensorRequestHandler(const lcm::ReceiveBuffer* rbuf, 
+                        const std::string& channel, const  drc::sensor_request_t* msg){
+  
+  cout << "incoming sensor request: "<< ((int) msg->camera_compression) << "\n";
+  if (msg->camera_compression ==0){
+    jpeg_quality_ = 50;
+    resize_=4;
+  }else if(msg->camera_compression ==1){
+    jpeg_quality_ = 70;
+    resize_=4;
+  }else if(msg->camera_compression ==2){
+    jpeg_quality_ = 90;
+    resize_=4;
+//  }else if(msg->camera_compression ==3){
+//    jpeg_quality_ = 90;
+//    resize_=2; // temporarily set to size 2 for a highest quality image
+  }else if (msg->camera_compression <0){
+    std::cout << "ignoring compression request\n";
+  }
+  cout << "jpeg_quality: " << jpeg_quality_ << "\n";
+  
 }
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
