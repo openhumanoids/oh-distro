@@ -701,6 +701,44 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   return 1;
 }
 
+
+// =================================================================================
+// 
+
+static void popup_clear_from_affstore(BotGtkParamWidget *pw, void *user)
+{
+  RendererAffordances *self = (RendererAffordances*) user;
+
+  // create popup warning
+  GtkWidget *dialog, *label, *content_area;
+  dialog = gtk_dialog_new_with_buttons ("Message",
+                                       GTK_WINDOW(self->viewer->window),
+                                       GTK_DIALOG_MODAL,
+                                               GTK_STOCK_YES,
+                                               GTK_RESPONSE_YES,
+                                               GTK_STOCK_NO,
+                                               GTK_RESPONSE_NO,
+                                       NULL);
+  content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+  label = gtk_label_new ("Clear all affordance from affordance store?");
+  //g_signal_connect_swapped (dialog,"response",G_CALLBACK (gtk_widget_destroy),dialog);
+  gtk_container_add (GTK_CONTAINER (content_area), label);
+  gtk_widget_show_all (dialog);  
+
+  // popup warning
+  gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+  gtk_widget_destroy (dialog);
+
+  // handle response
+  if (result == GTK_RESPONSE_YES){
+    cout << "Sending message to clear all\n";
+    map<string, OtdfInstanceStruc>::iterator it;
+    for(it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++) {
+      delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid, self);
+    }
+  }
+}
+
 // =================================================================================
 // WIDGET MANAGEMENT AND RENDERER CONSTRUCTION
 
@@ -723,6 +761,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   else if(!strcmp(name, PARAM_CLEAR)) {
     fprintf(stderr,"\nClearing Instantiated Objects\n");
     
+    // popup for clear from aff store
+    popup_clear_from_affstore(pw,user);
+
      self->instantiated_objects.clear();
      self->sticky_hands.clear();
      self->sticky_feet.clear();
