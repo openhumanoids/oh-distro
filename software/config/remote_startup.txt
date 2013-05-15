@@ -5,5 +5,5 @@ bot-procman-deputy -n robot
 BASE:
 bot-procman-deputy -n base
 drc-network-shaper -t manipulation -r base -c drc_robot.cfg
-bot-procman-sheriff -l ~/drc/software/config/drc_robot.pmd
+bot-procman-sheriff ~/drc/software/config/drc_robot.pmd
 
