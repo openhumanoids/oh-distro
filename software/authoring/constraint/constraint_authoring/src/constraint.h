@@ -38,6 +38,7 @@ namespace authoring {
     bool _active;
     double _start;
     double _end;
+
   private:
 
   };

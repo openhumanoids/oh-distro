@@ -33,12 +33,17 @@ namespace authoring {
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
     void update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist );
 
+  protected slots:
+    void _timer_update_callback( void );
+
   protected:
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection;
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection_ghost;
     opengl::OpenGL_Object_Trajectory_GFE _opengl_object_robot_plan;
     opengl::OpenGL_Object_GFE _opengl_object_gfe;
     opengl::OpenGL_Object_GFE _opengl_object_gfe_ghost;
+
+    QTimer* _timer_update;
 
   private:
 

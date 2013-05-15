@@ -10,7 +10,10 @@ Qt4_Widget_OpenGL_Authoring::
 Qt4_Widget_OpenGL_Authoring( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                                   _opengl_object_affordance_collection(),
                                                   _opengl_object_affordance_collection_ghost(),
-                                                  _opengl_object_robot_plan() {
+                                                  _opengl_object_robot_plan(),
+                                                  _opengl_object_gfe(),
+                                                  _opengl_object_gfe_ghost(),
+                                                  _timer_update( new QTimer( this ) ) {
   _opengl_object_affordance_collection.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_transparency( 0.1 );
@@ -24,6 +27,10 @@ Qt4_Widget_OpenGL_Authoring( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
   opengl_scene().add_object( _opengl_object_robot_plan );
   opengl_scene().add_object( _opengl_object_gfe );
   opengl_scene().add_object( _opengl_object_gfe_ghost );
+
+  _timer_update->start( 100 );
+
+  connect( _timer_update, SIGNAL( timeout() ), this, SLOT( _timer_update_callback() ) );
 }
 
 Qt4_Widget_OpenGL_Authoring::
@@ -48,7 +55,6 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_affordance_collection( vector< affordance::AffordanceState >& affordanceCollection ){
   _opengl_object_affordance_collection.set_visible( true );
   _opengl_object_affordance_collection.set( affordanceCollection );
-  update();
   return;
 }
 
@@ -57,7 +63,6 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_affordance_collection_ghost( vector< affordance::AffordanceState >& affordanceCollection ){
   _opengl_object_affordance_collection_ghost.set_visible( true );
   _opengl_object_affordance_collection_ghost.set( affordanceCollection );
-  update();
   return;
 }
 
@@ -75,7 +80,6 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_gfe( State_GFE& stateGFE ){
   _opengl_object_gfe.set_visible( true );
   _opengl_object_gfe.set( stateGFE );
-  update();
   return;
 }
 
@@ -84,7 +88,6 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_gfe_ghost( State_GFE& stateGFE ){
   _opengl_object_gfe_ghost.set_visible( true );
   _opengl_object_gfe_ghost.set( stateGFE );
-  update();
   return;
 }
 
@@ -128,6 +131,13 @@ update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryW
   } else {
     _opengl_object_robot_plan.set_visible_trajectory_wrist( false );
   }
+  update();
+  return;
+}
+
+void
+Qt4_Widget_OpenGL_Authoring::
+_timer_update_callback( void ){
   update();
   return;
 }

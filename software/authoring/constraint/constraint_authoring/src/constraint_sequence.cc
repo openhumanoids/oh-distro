@@ -96,11 +96,11 @@ from_msg( const action_sequence_t& msg,
     sprintf( buffer, "C%03d", i );
     Constraint_Task_Space_Region* constraint = new Constraint_Task_Space_Region( buffer, true, msg.contact_goals[2*i].lower_bound_completion_time, msg.contact_goals[2*i].upper_bound_completion_time, pair< string, string >( msg.contact_goals[2*i].object_1_name, msg.contact_goals[2*i].object_1_contact_grp ) );
     if( msg.contact_goals[2*i].contact_type == contact_goal_t::ON_GROUND_PLANE ){
-      constraint->contact_type() = authoring::ON_GROUND_PLANE; 
+      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE; 
     } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::POINT_CONTACT ){
-      constraint->contact_type() = authoring::POINT_CONTACT;
+      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_POINT_CONTACT_CONTACT_TYPE;
     } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::FORCE_CLOSURE ){
-      constraint->contact_type() = authoring::FORCE_CLOSURE;
+      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_FORCE_CLOSURE_CONTACT_TYPE;
     }
     constraint->ranges()[0].first = msg.contact_goals[2*i].x_offset;
     constraint->ranges()[1].first = msg.contact_goals[2*i].y_offset;

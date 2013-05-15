@@ -14,7 +14,7 @@ Constraint_Task_Space_Region( const string& id,
                               double end,
                               const pair< string, string >& parent,
                               AffordanceState* child ) : Constraint( id, active, start, end ),
-                                                          _contact_type( ON_GROUND_PLANE ), 
+                                                          _contact_type( CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE ), 
                                                           _ranges( 6 ),
                                                           _parent( parent ),
                                                           _child( child ),
@@ -55,16 +55,16 @@ string
 Constraint_Task_Space_Region::
 contact_type_t_to_std_string( contact_type_t contactType ){
   switch( contactType ){
-  case ( ON_GROUND_PLANE ):
+  case ( CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE ):
       return "ON_GROUND_PLANE";
       break;
-  case ( POINT_CONTACT ):
+  case ( CONSTRAINT_TASK_SPACE_REGION_POINT_CONTACT_CONTACT_TYPE ):
       return "POINT_CONTACT";
       break;
-  case ( FORCE_CLOSURE ):
+  case ( CONSTRAINT_TASK_SPACE_REGION_FORCE_CLOSURE_CONTACT_TYPE ):
       return "FORCE_CLOSURE";
       break;
-  case ( NOT_IN_CONTACT ):
+  case ( CONSTRAINT_TASK_SPACE_REGION_NOT_IN_CONTACT_CONTACT_TYPE ):
       return "NOT_IN_CONTACT";
       break;
   default:

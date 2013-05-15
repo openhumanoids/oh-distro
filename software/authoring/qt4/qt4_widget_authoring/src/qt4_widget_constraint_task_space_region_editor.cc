@@ -69,7 +69,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
     _combo_box_child->addItem( QString::fromStdString( it->getName() ) );
   }
 
-  for ( uint i = 0; i < NUM_CONTACT_TYPES; i++ ) {
+  for ( uint i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES; i++ ) {
       _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
   }
 

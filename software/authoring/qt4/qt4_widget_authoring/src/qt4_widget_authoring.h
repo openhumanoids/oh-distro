@@ -67,7 +67,6 @@ namespace authoring {
     std::vector< affordance::AffordanceState > _affordance_collection;
     std::vector< affordance::AffordanceState > _affordance_collection_ghost;
     std::vector< state::State_GFE > _robot_plan;
-    state::State_GFE _state_gfe;
     state::State_GFE _state_gfe_ghost;
     Constraint_Sequence _constraint_sequence;
     std::vector< Qt4_Widget_Constraint_Editor* > _constraint_editors;

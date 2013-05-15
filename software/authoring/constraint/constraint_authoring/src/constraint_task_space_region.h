@@ -13,11 +13,11 @@
 namespace authoring {
 
   typedef enum {
-    ON_GROUND_PLANE,
-    POINT_CONTACT,
-    FORCE_CLOSURE,
-    NOT_IN_CONTACT,
-    NUM_CONTACT_TYPES
+    CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE,
+    CONSTRAINT_TASK_SPACE_REGION_POINT_CONTACT_CONTACT_TYPE,
+    CONSTRAINT_TASK_SPACE_REGION_FORCE_CLOSURE_CONTACT_TYPE,
+    CONSTRAINT_TASK_SPACE_REGION_NOT_IN_CONTACT_CONTACT_TYPE,
+    NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES
   } contact_type_t;
 
   class Constraint_Task_Space_Region: public Constraint {
@@ -28,12 +28,12 @@ namespace authoring {
     Constraint_Task_Space_Region& operator=( const Constraint_Task_Space_Region& other );
 
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );    
-
-    inline contact_type_t& contact_type( void ) { return _contact_type; }
-    inline const contact_type_t& contact_type( void )const{ return _contact_type; };
+    
     static std::string contact_type_t_to_std_string( contact_type_t contactType );
 
     virtual inline constraint_type_t type( void ){ return CONSTRAINT_TASK_SPACE_REGION_TYPE; };
+    inline contact_type_t& contact_type( void ) { return _contact_type; }
+    inline const contact_type_t& contact_type( void )const{ return _contact_type; };
     inline std::vector< std::pair< double, double > >& ranges( void ){ return _ranges; };
     inline const std::vector< std::pair< double, double > >& ranges( void )const{ return _ranges; };
     inline std::pair< std::string, std::string >& parent( void ){ return _parent; };

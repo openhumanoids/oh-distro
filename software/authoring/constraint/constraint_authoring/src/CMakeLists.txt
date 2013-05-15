@@ -2,13 +2,15 @@
 add_library(constraint_authoring SHARED
             constraint.cc
             constraint_sequence.cc
-            constraint_task_space_region.cc)
+            constraint_task_space_region.cc
+            constraint_configuration.cc)
 
 # make the header public
 # install it to include/constraint
 pods_install_headers(constraint.h
                       constraint_sequence.h
                       constraint_task_space_region.h 
+                      constraint_configuration.h
                       DESTINATION authoring)
 
 # make the library public

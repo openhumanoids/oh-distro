@@ -25,7 +25,7 @@ namespace authoring {
 
     inline std::vector< Constraint* >& constraints( void ){ return _constraints; };
     inline const std::vector< Constraint* >& constraints( void )const{ return _constraints; };
-    inline state::State_GFE& qo( void ){ return _q0; };
+    inline state::State_GFE& q0( void ){ return _q0; };
     inline const state::State_GFE& q0( void )const{ return _q0; };
 
   protected:

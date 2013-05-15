@@ -34,7 +34,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _affordance_collection(),
                                             _affordance_collection_ghost(),
                                             _robot_plan(),
-                                            _state_gfe(),
                                             _state_gfe_ghost(){
   _robot_model.initString( Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + urdfFilename ) );
 
@@ -72,7 +71,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   }
   constraints_widget->setLayout( constraints_layout );
   constraints_scroll_area->setWidget( constraints_widget ); 
-//  constraints_scroll_area->setFixedHeight( 80 );
   
   QScrollArea * plan_scroll_area = new QScrollArea( this );
   plan_scroll_area->setFrameStyle( QFrame::NoFrame );
@@ -84,7 +82,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 3 );
   plan_widget->setLayout( plan_layout );
   plan_scroll_area->setWidget( plan_widget );
-//  plan_scroll_area->setFixedHeight( 80 );
 
   QTabWidget * tab_widget = new QTabWidget( this );
   tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
@@ -152,6 +149,7 @@ update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
 void
 Qt4_Widget_Authoring::
 update_robot_plan( vector< State_GFE >& robotPlan ){
+  emit info_update( QString( "[<b>OK</b> recieved plan" ) );
   _robot_plan = robotPlan;
   _slider_plan_current_index->setRange( 0, ( robotPlan.size() - 1 ) );
   return;
@@ -173,16 +171,16 @@ _push_button_grab_pressed( void ){
   for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
     _text_edit_affordance_collection->append( QString( "name: %1 uid: <%2,%3> xyz: (%4,%5,%6) rpy: (%7,%8,%9)" ).arg( QString::fromStdString( it->getName() ) ).arg( it->getGlobalUniqueId().first ).arg( it->getGlobalUniqueId().second ).arg( QString::number( it->getXYZ().x() ) ).arg( QString::number( it->getXYZ().y() ) ).arg( QString::number( it->getXYZ().z() ) ).arg( QString::number( it->getRPY().x() ) ).arg( QString::number( it->getRPY().y() ) ).arg( QString::number( it->getRPY().z() ) ) );
   }
-  _state_gfe = _state_gfe_ghost;
+  _constraint_sequence.q0() = _state_gfe_ghost;
+  cout << "grabbed state" << endl << _state_gfe_ghost << endl;
   emit affordance_collection_update( _affordance_collection );
-  emit state_gfe_update( _state_gfe );
+  emit state_gfe_update( _constraint_sequence.q0() );
   return;
 }
 
 void
 Qt4_Widget_Authoring::
 _push_button_import_pressed( void ){
-
   QString filename = QFileDialog::getOpenFileName(this, tr("Load Constraint Sequence"),
                                                   "/home",
                                                   tr("ActioncSequence (*.bin)"));  
