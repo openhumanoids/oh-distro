@@ -25,6 +25,34 @@ using namespace renderer_affordances_gui_utils;
 // DRAWING
 
 
+static void draw_axis(double x, double y,double z, 
+                      double yaw, double pitch, double roll, 
+                      double size, bool mark)
+{
+   glPushMatrix();
+   glPushAttrib(GL_CURRENT_BIT);
+
+   glTranslatef(x, y, z);
+
+   glRotatef(bot_to_degrees(yaw),  0., 0., 1.);
+   glRotatef(bot_to_degrees(pitch),0., 1., 0.);
+   glRotatef(bot_to_degrees(roll), 1., 0., 0.);
+
+   glBegin(GL_LINES);
+     glColor3f(1.0,0.0,0.0); glVertex3f(0.0,0.0,0.0);glVertex3f(size*1.0,0.0,0.0);
+     glColor3f(0.0,1.0,0.0); glVertex3f(0.0,0.0,0.0);glVertex3f(0.0,size*1.0,0.0);
+     glColor3f(0.0,0.0,1.0); glVertex3f(0.0,0.0,0.0);glVertex3f(0.0,0.0,size*1.0);
+   glEnd();
+
+   if (mark) {
+//    glutWireSphere(size*1.5, 5, 5);
+   }
+
+   glPopAttrib();
+   // todo: reset color?
+   glPopMatrix();
+}
+
 // TODO: Super bloated need to break it up later.
 static void _draw (BotViewer *viewer, BotRenderer *renderer) 
 {
@@ -129,6 +157,14 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         glutWireCube(1.0);
       } 
       glPopMatrix();
+    }
+
+    if(self->showTriad){
+       double size = it->second.boundingBoxLWH.maxCoeff()*.55;  // make size proportional to bounding box
+       if(size==0) size=1;
+       double rpy[3];
+       bot_quat_to_roll_pitch_yaw(quat,rpy);
+       draw_axis(pos[0],pos[1],pos[2],rpy[2],rpy[1],rpy[0],size,false);
     }
   }
   
@@ -725,6 +761,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }else if(!strcmp(name, PARAM_SHOW_BOUNDING_BOX)) {
     self->showBoundingBox = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_BOUNDING_BOX);
     bot_viewer_request_redraw(self->viewer);  
+  }else if(!strcmp(name, PARAM_SHOW_TRIAD)) {
+    self->showTriad = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_TRIAD);
+    bot_viewer_request_redraw(self->viewer);  
   }
   else if(!strcmp(name, PARAM_REACHABILITY_FILTER)) {
     self->enableReachabilityFilter = bot_gtk_param_widget_get_bool(pw, PARAM_REACHABILITY_FILTER);
@@ -860,6 +899,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_MESH, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_BOUNDING_BOX, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_TRIAD, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,
   PARAM_REACHABILITY_FILTER, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,

@@ -59,6 +59,7 @@
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
 #define PARAM_SHOW_MESH "Show mesh"
 #define PARAM_SHOW_BOUNDING_BOX "Show bounding box"
+#define PARAM_SHOW_TRIAD "Show triads"
 #define PARAM_REACHABILITY_FILTER "Enable Reachability Filter"
 //#define PARAM_ADJUST_PARAM "Adjust Params"
 #define PARAM_OTDF_SELECT "Template"
@@ -232,6 +233,7 @@ struct RendererAffordances {
     
     showMesh = false;
     showBoundingBox = false;
+    showTriad = false;
     enableReachabilityFilter=false;
     debugMode=false;
     selection_hold_on = false;
@@ -346,6 +348,7 @@ struct RendererAffordances {
   // boolean flags
   bool showMesh;  // if false, draws otdf, if true, draws mesh instead
   bool showBoundingBox;
+  bool showTriad;
   bool enableReachabilityFilter;
   bool debugMode;
   bool selection_hold_on;
