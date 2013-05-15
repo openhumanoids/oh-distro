@@ -27,8 +27,8 @@ class LCM2ROS{
     void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     ros::Publisher joint_cmd_pub_;
        
-    ros::Publisher rot_scan_cmd_pub_;
-    void rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg);
+    ros::Publisher spindle_speed_pub_, multisense_fps_pub_;
+    void sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg);
     
     void sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     void sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
@@ -64,8 +64,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10, true);
 
   /// Spinning Laser control:
-  lcm_->subscribe("SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
-  rot_scan_cmd_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
+  lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
+  spindle_speed_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
+  multisense_fps_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/fps",10);
   
   /// Sandia Hands joint command API
   lcm_->subscribe("L_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaLHandJointCommandHandler,this);  
@@ -135,13 +136,39 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 //  ros::spinOnce();
 }  
 
-void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg){
-  std_msgs::Float64 rot_scan_cmd_msg;
-  rot_scan_cmd_msg.data = msg->angular_velocity.x;
+void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
+  std::cout << "Got SENSOR_REQUEST setting sensor rates\n";
   if(ros::ok()){
-    rot_scan_cmd_pub_.publish(rot_scan_cmd_msg);
+    if (msg->spindle_rpm >=0){
+      std_msgs::Float64 spindle_speed_msg;
+      spindle_speed_msg.data = msg->spindle_rpm * (2*M_PI)/60; // convert from RPM to rad/sec
+      spindle_speed_pub_.publish(spindle_speed_msg);    
+      std::cout << "Setting Spindle rate Rev/min : "<< ((int) msg->spindle_rpm) <<" | ";
+      std::cout << "Rad/sec : "<< spindle_speed_msg.data <<"\n";
+    }else {
+      std::cout << "Ignoring negative spindle rate: "<< ((int) msg->spindle_rpm) <<"\n";
+    }
+    
+    if (msg->multisense_fps >=0){
+      std_msgs::Float64 multisense_fps_msg;
+      multisense_fps_msg.data = msg->multisense_fps;
+      multisense_fps_pub_.publish(multisense_fps_msg);    
+      std::cout << "Setting Multisense Camera FPS: "<< ((int) msg->multisense_fps) <<"\n";
+    }else {
+      std::cout << "Ignoring negative spindle rate: "<< ((int) msg->multisense_fps) <<"\n";
+    }
   }
-}  
+  
+  std::cout << "\n";
+  
+}
+
+
+//void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg){
+//  std_msgs::Float64 rot_scan_cmd_msg;
+//  rot_scan_cmd_msg.data = msg->angular_velocity.x;
+//  }
+//}  
 
 // Sandia Hands joint command handlers
 void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
