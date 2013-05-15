@@ -30,6 +30,7 @@ class LowPassFilter {
 private:
 	boost::circular_buffer<double> samples_buf;
 	int tap_size;
+	bool firstsample;
 	
 	void initSamples();
 
@@ -50,6 +51,5 @@ public:
 	static int getTapSize();
 
 };
-
 
 #endif /*FILTER_HPP_*/

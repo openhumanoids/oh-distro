@@ -12,6 +12,7 @@
 #include "TwoLegsEstimate_types.h"
 #include "SignalTap.hpp"
 #include "Filter.hpp"
+#include "HeavyLowPassFilter.hpp"
 #include "LegOdo_Parameters.hpp"
 
 
@@ -52,8 +53,9 @@ class TwoLegOdometry {
 		// isolate and ignore velocity estimate spikes
 		BipolarSchmittTrigger* _vel_spike_isolation[3];
 		NumericalDiff accel;
+		NumericalDiff pelvis_vel_diff;
 		
-		LowPassFilter lpfilter[3];
+		HeavyFiltering::HeavyLowPassFilter lpfilter[3];
 		//Filter* _filter[3];
 		
 		LowPassFilter pos_lpfilter[3];

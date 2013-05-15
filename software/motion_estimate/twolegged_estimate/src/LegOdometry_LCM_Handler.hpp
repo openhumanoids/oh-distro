@@ -58,6 +58,9 @@
 #define FILTER_ARR                 8
 #define DISPLAY_FOOTSTEP_POSES
 
+#define LOG_28_JOINT_COMMANDS
+#define NUMBER_JOINTS             28
+
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
@@ -120,6 +123,11 @@ private:
 	double spare_time;
 	timespec before, quater,mid, threequat, after, spare;
 	
+#ifdef LOG_28_JOINT_COMMANDS
+	volatile double joint_commands[NUMBER_JOINTS];
+	volatile double joint_positions[16];
+	volatile double measured_joint_effort[16];
+#endif
 	
 	// These filters were added separately from the joint filters
 	LowPassFilter lpfilter[FILTER_ARR];
@@ -137,6 +145,7 @@ private:
 	//void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);	
 	void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
+	void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
 	
 	void getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
 	void setupSolver();

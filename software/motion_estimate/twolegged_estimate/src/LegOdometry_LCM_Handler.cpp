@@ -56,6 +56,9 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this);
 	lcm_->subscribe("TORSO_IMU",&LegOdometry_Handler::torso_imu_handler,this);
+#ifdef LOG_28_JOINT_COMMANDS
+	lcm_->subscribe("JOINT_COMMANDS", &LegOdometry_Handler::joint_commands_handler,this);
+#endif
 	
 	/*
 	if (_switches->lcm_read_trues) {
@@ -83,10 +86,16 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	_obj_leg_poses = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
 	_link = new LinkCollection(2, std::string("Links"));
 	
-	firstpass = LowPassFilter::getTapSize();//true;
+	firstpass = 1;//LowPassFilter::getTapSize(); the filter now initializes internally from the first sample -- only a single outside state from the user is required, i.e. transparent
 	
 	time_avg_counter = 0;
 	elapsed_us = 0.;
+
+#ifdef LOG_28_JOINT_COMMANDS
+	for (int i=0;i<NUMBER_JOINTS;i++) {
+	  joint_commands[i] = 0.;
+	}
+#endif
 
 	_leg_odo = new TwoLegOdometry(_switches->log_data_files);
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
@@ -350,6 +359,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 		time_avg_counter++;
    }
+
+#ifdef LOG_28_JOINT_COMMANDS
+   for (int i=0;i<16;i++) {
+	   measured_joint_effort[i] = msg->measured_effort[i];
+   }
+
+#endif
+
   clock_gettime(CLOCK_REALTIME, &spare);
 }
 
@@ -439,6 +456,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   drc::position_3d_t origin;
   
   // True or estimated position
+
   if (false) {
 	  origin.translation.x = msg->origin_position.translation.x;
 	  origin.translation.y = msg->origin_position.translation.y;
@@ -470,8 +488,8 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
 	twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
   } else {
-	twist.linear_velocity.x = velocity_states(0);
-	twist.linear_velocity.y = velocity_states(1);
+	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
+	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
 	twist.linear_velocity.z = velocity_states(2);
   }
   
@@ -573,10 +591,13 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     stringstream ss (stringstream::in | stringstream::out);
 	
     // The true states are
+
     ss << msg->origin_position.translation.x << ", ";
     ss << msg->origin_position.translation.y << ", ";
     ss << msg->origin_position.translation.z << ", ";
     
+    //std::cout << ss.str() << std::endl;
+
     ss << msg->origin_twist.linear_velocity.x << ", ";
     ss << msg->origin_twist.linear_velocity.y << ", ";
     ss << msg->origin_twist.linear_velocity.z << ", ";
@@ -622,9 +643,23 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     
     // We also looking at joint angles for this trouble shooting session
     
-    for (int i=0;i<16;i++) {
+    /*for (int i=0;i<16;i++) {
     	ss << msg->joint_velocity[i] << ", ";
-    }
+    }*/
+
+#ifdef LOG_28_JOINT_COMMANDS
+	for (int i=0;i<NUMBER_JOINTS;i++) {
+	  ss << joint_commands[i] << ", ";
+	}
+
+	for (int i=0;i<16;i++) {
+		ss << joint_positions[i] << ", ";
+	}
+
+   for (int i=0;i<16;i++) {
+	   ss << measured_joint_effort[i] << ", ";
+   }
+#endif
     
     ss <<std::endl;
     
@@ -657,6 +692,15 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	return;
 }
+
+#ifdef LOG_28_JOINT_COMMANDS
+void LegOdometry_Handler::joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg) {
+	// TODO -- 28 actuated joints are hard coded, this must be changed -- but subject to the LOG_28_JOINT_COMMANDS define for the time being
+	for (int i=0;i<NUMBER_JOINTS;i++) {
+	  joint_commands[i] = msg->effort[i];
+	}
+}
+#endif
 
 /*
 void LegOdometry_Handler::pose_head_true_handler(	const lcm::ReceiveBuffer* rbuf, 
@@ -779,7 +823,14 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     
     for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
 
-      ss << msg->joint_position[i] <<  ", ";
+      if (i<16) {
+    	  joint_positions[i] = msg->joint_position[i];
+
+      }
+
+      //ss << msg->joint_position[i] <<  ", ";
+
+
 
       if (false) {
         jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));

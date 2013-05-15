@@ -44,6 +44,7 @@ LowPassFilter::LowPassFilter(const LowPassFilter &original) {
 }
 
 void LowPassFilter::Init() {
+	firstsample = true;
 	samples_buf.set_capacity(FILTER_TAP_SIZE);
 
 	for (int i = 0; i<(FILTER_TAP_SIZE);i++)
@@ -64,7 +65,12 @@ LowPassFilter& LowPassFilter::operator=(LowPassFilter org) {
 }
 
 double LowPassFilter::processSample(double sample) {
-	
+	if (firstsample) {
+		firstsample = false;
+		for (int i=0;i<FILTER_TAP_SIZE;i++) {
+			samples_buf.push_back(sample); // we force the first sample into all state memory as an initial guess of there the filter should be initialized
+		}
+	}
 	// put a new element in the buffer for processing
 	samples_buf.push_back(sample);
 	// The new sample has been added to the buffer, now we must use the values in the buffer with the coefficients to achieve the IR filtering capabibliy

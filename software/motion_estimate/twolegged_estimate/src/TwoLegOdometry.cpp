@@ -35,6 +35,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	
 	local_velocities.setZero();
 	accel.setSize(3);
+	pelvis_vel_diff.setSize(3);
 	
 	leftforces.x = 0.f;
 	leftforces.y = 0.f;
@@ -132,14 +133,17 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	
 	double pos[3];
 	
-	pos[0] = pos_lpfilter[0].processSample(pelvis.translation().x());
-	pos[1] = pos_lpfilter[1].processSample(pelvis.translation().y());
-	pos[2] = pos_lpfilter[2].processSample(pelvis.translation().z());
-	
-	// Eigen is not robust to direct variable self assignemnt
-	pelvis.translation().x() = pos[0];
-	pelvis.translation().y() = pos[1];
-	pelvis.translation().z() = pos[2];
+	if (false) {
+
+		pos[0] = pos_lpfilter[0].processSample(pelvis.translation().x());
+		pos[1] = pos_lpfilter[1].processSample(pelvis.translation().y());
+		pos[2] = pos_lpfilter[2].processSample(pelvis.translation().z());
+
+		// Eigen is not robust to direct variable self assignemnt
+		pelvis.translation().x() = pos[0];
+		pelvis.translation().y() = pos[1];
+		pelvis.translation().z() = pos[2];
+	}
 	
 	setPelvisPosition(pelvis);
 	
@@ -392,6 +396,9 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
 		return right_to_pelvis;
 	if (footsteps.lastFoot() == RIGHTFOOT)
 		return left_to_pelvis;
+
+	// TODO -- This shou;ld be an exception
+	std::cout << "TwoLegOdometry::getSecondaryFootToPelvis() THIS SHOULD NEVER HAPPEND, FEET OUT OF SYNC\n";
 	return Eigen::Isometry3d();
 }
 
@@ -400,6 +407,9 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 		return left_to_pelvis;
 	if (footsteps.lastFoot() == RIGHTFOOT)
 		return right_to_pelvis;
+
+	// TODO -- This shou;ld be an exception
+	std::cout << "TwoLegOdometry::getPrimaryFootToPelvis() THIS SHOULD NEVER HAPPEND, FEET OUT OF SYNC\n";
 	return Eigen::Isometry3d();
 }
 
@@ -522,56 +532,32 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 }
 
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
-	// 
-	
-	local_to_pelvis = transform;
+
+  local_to_pelvis = transform;
 }
 
 
 Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
-	Eigen::Isometry3d add;
-	
-	/*
-	 * What we did previously
-	 * 
-	add.translation() = lhs.translation() + InertialOdometry::QuaternionLib::Cyaw_rotate(lhs.linear() ,InertialOdometry::QuaternionLib::Cyaw_rotate(rhs.linear(),rhs.translation()));
-	add.linear() = lhs.linear() * rhs.linear();
-	*/
-	
-	// Using the Isometry operator directly
-	add = lhs*rhs;
-	
-	return add;
+
+  Eigen::Isometry3d add;
+  add = lhs*rhs;
+  return add;
 }
 
 void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &init_states) {
-	// The left foot is used to initialise height of the pelvis.
 	
-	/* This will probably be depreciated soon
-	Eigen::Vector3d zero;
-	zero << 0.,0.,-left_.translation().z();
-	local_to_pelvis.translation() = zero;
-	local_to_pelvis.linear().setIdentity();
-	*/
+	// The left foot is used to initialize height of the pelvis.
 	
 	stepcount = 0;
 	local_to_pelvis = init_states;
-	
 	footsteps.reset();
 }
 
 void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_, const Eigen::Isometry3d &init_states) {
 	
 	ResetInitialConditions(left_, init_states);
-	
-	//std::cout << "Pelvis was set to: " << local_to_pelvis.translation().transpose() << std::endl;
-	//std::cout << "Last step location before add: " << footsteps.getLastStep().translation().transpose() << std::endl;
-	//std::cout << "PrimaryFoot to Pelvis: " << getPrimaryFootToPelvis().translation().transpose() << std::endl;
-	
 	footsteps.addFootstep(add(local_to_pelvis,left_),LEFTFOOT);
-	//std::cout << "Last step location after add: " << footsteps.getLastStep().translation().transpose() << std::endl;
-	//footsteps.addFootstep(pelvis_to_left,LEFTFOOT);
-	standing_foot = LEFTFOOT; // Not sure that double states should be used, this needs to change TODO
+	standing_foot = LEFTFOOT; // Not sure that double states should be used, this should probably change TODO
 }
 
 int TwoLegOdometry::getStepCount() {
@@ -633,19 +619,20 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	Eigen::Vector3d prev_velocities;
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
-	unfiltered_vel = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
-		
+
+	// not using this anymore -- to be depreciated
+	//unfiltered_vel = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
+
+	unfiltered_vel = pelvis_vel_diff.diff((1.E-6)*current_time, current_position);
+	//std::cout << "The diff is: " << unfiltered_vel.transpose() << std::endl;
+
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
-	// This is to ignore velocity spikes that occur on when the active foot state is transitioned from left to right
-	// This is probablydue to some uncompensated offset at the present time, but may be good enough for the present requirements
-	// if the velocity which is calculated here is high for a period, we need to consider that something has gone wrong.
-	// But there is a known issue with transitioins between feet, whic create a large velocity spike.
-	// Suggested cure is a delayed Schmitt trigger once more -- this is to pass or ignore spikes with a time delay.
 	local_accelerations = accel.diff((1.E-6)*current_time, local_velocities);
 	
 	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
+	/*
 	if (false) {
 		// this was used to isolate velocity spikes, while there was a bug in the foot to pelvis transforms -- 
 		
@@ -664,11 +651,19 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 			}
 		}
 	}
+	*/
 	
 	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
-	
-	for (int i=0;i<3;i++) {
-		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
+	//std::cout << "PRE filtered velocities are: " << local_velocities.transpose() << std::endl;
+
+	// with or wothout filtering
+	if (false) {
+		local_velocities = unfiltered_vel;
+	} else {
+		for (int i=0;i<3;i++) {
+			local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));
+		}
+		//std::cout << "The filtered velocities are: " << local_velocities.transpose() << std::endl;
 	}
 	
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
