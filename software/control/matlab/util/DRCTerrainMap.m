@@ -12,11 +12,11 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if is_robot
         lc.subscribe('MAP_CONTROL_HEIGHT',map_mon);
         desired_view_id = 1000;
-        mapWrapperFunc = @mapAPIwrapper;
+        mapWrapperFunc = @MapWrapperRobot;
       else
         lc.subscribe('MAP_DEPTH',map_mon);
         desired_view_id = 6;
-        mapWrapperFunc = @MapWrapperRobot;
+        mapWrapperFunc = @mapAPIwrapper;
       end
       
       if nargin < 2
@@ -48,7 +48,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       while isempty(obj.minval)
         d=[];
         while isempty(d)
-          d = getNextMessage(map_mon,100);  
+          d = getNextMessage(map_mon,100);
           if ~isempty(d)
             msg = drc.map_image_t(d);
             if (msg.view_id ~= desired_view_id), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
