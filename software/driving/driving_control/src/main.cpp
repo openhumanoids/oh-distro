@@ -56,6 +56,7 @@
 #define TIMEOUT_THRESHOLD 1.0
 #define MAX_THROTTLE 0.03
 #define ALPHA .2
+#define VEHICLE_THRESHOLD_ARC 1/2.0
 #define VEHICLE_THRESHOLD 1/1.5
 #define ESTOP_VEHICLE_THRESHOLD 1/1.2
 
@@ -884,7 +885,7 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self, double *bes
                 
                 double collision_point[2];
                  
-                estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD, collision_point);
+                estop_collision = cost_map->collisionCheck (car_start, car_stop, VEHICLE_THRESHOLD_ARC, collision_point);
 
                 if (!cost_map->isInMap (car_stop)){
                     break;
@@ -1055,12 +1056,8 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self, double *bes
             
             float *colors = bot_color_util_jet( sg.pos.score / max_score);
             lcmglColor3f (colors[0], colors[1], colors[2]);
-            if(sg.steering_angle == it->steering_angle == 0){
-                bot_lcmgl_line_width(lcmgl, 15);
-            }
-            else{
-                bot_lcmgl_line_width(lcmgl, 5);
-            }
+            
+            bot_lcmgl_line_width(lcmgl, 5);
             
             if(sg.sample_points.size() < 2)
                 continue;
@@ -1070,8 +1067,7 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self, double *bes
                 bot_lcmgl_vertex3f(lcmgl, sg.sample_points[j].xy[0], sg.sample_points[j].xy[1], 0);
             }
             bot_lcmgl_end(lcmgl);
-        }
-        
+        }        
         bot_lcmgl_switch_buffer(lcmgl);
     }
 
@@ -1810,280 +1806,6 @@ on_controller_timer (gpointer data)
     return TRUE;
 }
 
-
-static gboolean
-on_controller_timer_arc (gpointer data)
-{
-
-    state_t *self = (state_t *) data;
-
-    if (!self->cost_map_last) {
-        if (self->verbose)
-            //fprintf (stdout, "No valid terrain classification map\n");
-        
-            return TRUE;
-    }
-
-    //we should check if the map is stale - because of some issue with the controller   
-
-    if((self->utime - self->cost_map_last->utime)/1.0e6 > TIMEOUT_THRESHOLD){
-        fprintf(stderr, "Error - Costmap too old - asking for EStop\n");
-      
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
-        msg.brake_value = 1.0;
-        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
-
-        return TRUE;
-    }
-
-    if(self->drive_duration < 0){
-        //we are not required to drive - return TRUE
-      
-        return TRUE;
-    }
-
-    if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
-        return TRUE;
-    }
-
-    if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
-        msg.brake_value = 1.0;
-        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
-        self->drive_duration = -1;
-        return TRUE;
-    }
-
-    self->last_controller_utime = self->utime;
-
-    static int64_t last_utime = 0;
-    
-    fprintf(stderr, "Drive start time : %f\n", (self->utime - self->drive_start_time)/1.0e6);
-
-    occ_map::FloatPixelMap *fmap = new occ_map::FloatPixelMap (self->cost_map_last);
-
-    //draw_goal_range (self);    
-    double xyz_goal[3];
-    if (find_goal_enhanced (fmap, self)) {
-        draw_goal (self);
-        self->have_valid_goal = 1;
-    }
-    else {
-        if (self->verbose)
-            fprintf (stdout, "Unable to find goal in PixMap - Stopping\n");
-        
-        perform_emergency_stop(self);
-        self->drive_duration = -1;
-        return TRUE;
-    }
-    
-    // We should verify that current goal is valid
-    if (self->have_valid_goal) {
-        // This is where we check
-    }
-
-    if (self->have_valid_goal) {
-        // Compute the steering command
-        double xyz_goal_car[3];
-	bot_frames_transform_vec (self->frames, "local", "body", self->cur_goal, xyz_goal_car);
-
-        BotTrans body_to_local; 
-        bot_frames_get_trans(self->frames, "body", "local", 
-                             &body_to_local);
-
-	BotTrans goal_to_body;
-	goal_to_body.trans_vec[0] = xyz_goal_car[0];
-	goal_to_body.trans_vec[1] = xyz_goal_car[1];
-	goal_to_body.trans_vec[2] = 0;
-
-	double rpy[3] = {0};
-	bot_roll_pitch_yaw_to_quat(rpy, goal_to_body.rot_quat);
-	
-	BotTrans body_to_car; 
-	body_to_car.trans_vec[0] = 0;
-	body_to_car.trans_vec[1] = 0.3;
-	body_to_car.trans_vec[2] = 0;
-
-	bot_roll_pitch_yaw_to_quat(rpy, body_to_car.rot_quat);
-	
-	BotTrans goal_to_car; 
-	bot_trans_apply_trans_to(&body_to_car, &goal_to_body, &goal_to_car);
-
-        BotTrans car_to_body = body_to_car; 
-        bot_trans_invert(&car_to_body);
-        
-        BotTrans car_to_local;
-        bot_trans_apply_trans_to(&body_to_local, &car_to_body, &car_to_local);
-
-        double steering_angle = 0;
-
-        if(goal_to_car.trans_vec[1] != 0){
-            double R = (pow(goal_to_car.trans_vec[0],2) + pow(goal_to_car.trans_vec[1],2))/ (2 * goal_to_car.trans_vec[1]);
-
-            //lets draw lcmgl stuff??  - a circle
-            if(R < 50){
-                BotTrans center_to_car;
-                center_to_car.trans_vec[0] = 0;
-                center_to_car.trans_vec[1] = R;
-                center_to_car.trans_vec[3] = 0;
-
-                double rpy_zero[3] = {0};
-                bot_roll_pitch_yaw_to_quat(rpy_zero, center_to_car.rot_quat);
-                
-                BotTrans center_to_local; 
-                bot_trans_apply_trans_to(&car_to_local, &center_to_car, &center_to_local);
-                
-                double xyz_center[3] = {center_to_local.trans_vec[0], center_to_local.trans_vec[1], 0};
-                
-                bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-                lcmglColor3f (1.0, 0.0, 0.0);
-                bot_lcmgl_line_width(lcmgl, 5);
-                lcmglCircle (xyz_center, R);
-                bot_lcmgl_switch_buffer (self->lcmgl_arc);
-            }
-            else{
-                bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-                bot_lcmgl_line_width(lcmgl, 10);
-                lcmglColor3f (1.0, 0.0, 0.0);
-                bot_lcmgl_begin(lcmgl, GL_LINES);
-                bot_lcmgl_vertex3f(lcmgl, car_to_local.trans_vec[0], car_to_local.trans_vec[1], 0);
-                BotTrans infront_to_car;
-                infront_to_car.trans_vec[0] = 20.0;
-                infront_to_car.trans_vec[1] = 0.0;
-                infront_to_car.trans_vec[2] = 0.0;
-                double rpy_zero[3] = {0};
-                bot_roll_pitch_yaw_to_quat(rpy_zero, infront_to_car.rot_quat);
-
-                BotTrans infront_to_local; 
-                bot_trans_apply_trans_to(&car_to_local, &infront_to_car, &infront_to_local);
-        
-                bot_lcmgl_vertex3f(lcmgl, infront_to_local.trans_vec[0], infront_to_local.trans_vec[1], 0);
-                bot_lcmgl_end(lcmgl);
-                bot_lcmgl_switch_buffer (self->lcmgl_arc);
-            }
-
-
-            fprintf(stderr, "Turning Radius : %f\n", R);
-
-            double l = 1.88;
-            double w = 1.2; 
-        
-            double turn_theta = fabs(atan(pow( pow(l,2) / (pow(R,2) - pow(l,2)), 0.5)));
-        
-            fprintf(stderr, "Dx : %f Dy : %f\n", goal_to_car.trans_vec[0], goal_to_car.trans_vec[1]);
-
-            if(goal_to_car.trans_vec[1] >=0){
-                fprintf(stderr, "Left turn : %f\n", bot_to_degrees(turn_theta));
-            }
-            else{
-                fprintf(stderr, "Right turn : %f\n", bot_to_degrees(turn_theta));
-                turn_theta = -turn_theta;
-            }        
-
-            double steering_ratio = 0.063670;
-
-            steering_angle = turn_theta / steering_ratio;
-
-            fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_angle));
-        }
-        else{
-            fprintf(stderr, "Waypoint is straight ahead - driving straight\n");
-            bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-            bot_lcmgl_line_width(lcmgl, 10);
-            lcmglColor3f (1.0, 0.0, 0.0);
-            bot_lcmgl_begin(lcmgl, GL_LINES);
-            bot_lcmgl_vertex3f(lcmgl, car_to_local.trans_vec[0], car_to_local.trans_vec[1], 0);
-            BotTrans infront_to_car;
-            infront_to_car.trans_vec[0] = 20.0;
-            infront_to_car.trans_vec[1] = 0.0;
-            infront_to_car.trans_vec[2] = 0.0;
-            double rpy_zero[3] = {0};
-            bot_roll_pitch_yaw_to_quat(rpy_zero, infront_to_car.rot_quat);
-
-            BotTrans infront_to_local; 
-            bot_trans_apply_trans_to(&car_to_local, &infront_to_car, &infront_to_local);
-        
-            bot_lcmgl_vertex3f(lcmgl, infront_to_local.trans_vec[0], infront_to_local.trans_vec[1], 0);
-            bot_lcmgl_end(lcmgl);
-            bot_lcmgl_switch_buffer (self->lcmgl_arc);
-        }
-
-        double heading_error = bot_fasttrig_atan2 (goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);  // xyz_goal_car[1], xyz_goal_car[0]);
-        double steering_input = self->kp_steer * heading_error;
-
-	double steering_angle_delta = steering_angle;//steering_input;
-	
-	//angle at which accceleration should be down - this might be tough when actually controlling the car 
-	//using the robot 
-	double steering_no_angle;
-	if(steering_angle_delta >= 0){
-            steering_no_angle = bot_to_radians(4);
-	}
-	else{
-            steering_no_angle = bot_to_radians(-4);
-	}
-
-	//lets assume a driving for a given time model 
-	
-	double throttle_ratio = (steering_no_angle - steering_angle_delta) / steering_no_angle;
-	throttle_ratio = fmin(1.0, fmax(throttle_ratio, -2.0));
-	double throttle_val = 0;
-	double brake_val = 0;
-	
-	if((self->utime - self->drive_start_time)/1.0e6 < self->throttle_duration){
-            throttle_val = self->throttle_ratio;//MAX_THROTTLE;
-	}
-
-	/*if(throttle_ratio >=0){
-        //throttle_val = 0.04 + MAX_THROTTLE * throttle_ratio;
-        if(throttle_ratio >0 && last_utime > 0)
-        self->time_applied_to_accelerate += (self->utime - last_utime);
-	}
-	else{
-        brake_val = 0; //MAX_BRAKE * fabs(throttle_ratio);
-        if(last_utime > 0)
-        self->time_applied_to_brake += (self->utime - last_utime);
-        }*/
-        double max_angle = 180;
-        steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), steering_angle_delta));
-
-	fprintf (stdout, "Steering control: Error = %.2f deg, Signal = %.2f (deg) Throttle : %f Brake: %f\n",
-		 bot_to_degrees(heading_error), bot_to_degrees(steering_input), 
-		 throttle_val, brake_val);
-
-	if(self->time_applied_to_brake > 0 && self->time_applied_to_accelerate)
-            fprintf(stderr, "Time accelerating : %f, Time braking : %f\n", self->time_applied_to_accelerate / 1.0e6, 
-                    self->time_applied_to_brake / 1.0e6);
-
-	drc_driving_control_cmd_t msg;
-	msg.utime = bot_timestamp_now();
-        if(self->use_differential_angle)
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
-        else
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE;
-
-	msg.steering_angle =  steering_input;
-	msg.throttle_value = throttle_val;
-	msg.brake_value = brake_val;
-	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);	
-    }
-    else
-        perform_emergency_stop (self);
-
-    last_utime = self->utime;
-
-    delete fmap;
-
-    return TRUE;
-}
-
-
-
-
 static void
 driving_control_destroy (state_t *self)
 {
@@ -2205,13 +1927,8 @@ int main (int argc, char **argv) {
     }
 
     // Control timer
-    if(arc==0){        
-        self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer, self);
-    }
-    else{
-        self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer_arc, self);
-    }
-
+    self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer, self);
+    
     g_timeout_add (STATUS_TIMER_PERIOD_MSEC, status_timer, self);
 
     g_timeout_add (STATE_UPDATE_TIMER_PERIOD_MSEC, publish_state_timer, self);
