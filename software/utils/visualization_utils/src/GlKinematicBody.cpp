@@ -1493,56 +1493,12 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
-  /////////////////////////////////////////////////////////
-  // draw mesh
-
-  // if Show Mesh checked and object has mesh, set drawMesh to true
-  const vector<Eigen::Vector3i>& tri = triangles;
-  const vector<Eigen::Vector3f>& pts = points;
-
-  // decide whether of not to draw mesh in place of object
-  bool drawMesh=false;
-  if(isShowMeshSelected && pts.size()>0) drawMesh = true;
-  if(link->type == otdf::Geometry::DYNAMIC_MESH) drawMesh = true;
-
-
-  cout << link->type << " " << isShowMeshSelected << " " << drawMesh << " " << pts.size() << " " << triangles.size() << endl;
-
-  // draw triangles if available
-  if(tri.size()>0 && drawMesh){
-    glPushMatrix();
-    //glColor4f(c[0],c[1],c[2],self->alpha);
-    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
-    glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
-    for(size_t i=0; i<tri.size(); i++){
-      glBegin(GL_POLYGON);
-      for(size_t j=0; j<3; j++) glVertex3fv(pts[tri[i][j]].data());
-      glEnd();
-    }
-    glPopMatrix();
-  }
-
-  // draw points if available and no triangles
-  if(pts.size()>0 && tri.size()==0 && drawMesh){
-    glPushMatrix();
-    //glColor4f(c[0],c[1],c[2],self->alpha);
-    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
-    glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
-    glEnable(GL_BLEND); //for dimming contrast
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glPointSize(2.0);
-    glBegin(GL_POINTS);
-    for(size_t i=0; i<pts.size(); i++) glVertex3fv(pts[i].data());
-    glEnd();
-    glPopMatrix();
-  }
-
   ///////////////////////////////////////////////////////////////
   // draw object
 
  int type = link->type ;
  //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
-  if (type == otdf::Geometry::SPHERE && !drawMesh)
+  if (type == otdf::Geometry::SPHERE)
     {
       shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link));	
       double radius = sphere->radius;
@@ -1553,7 +1509,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
        glPopMatrix();
     
     }
-  else if  (type == otdf::Geometry::BOX && !drawMesh)
+  else if  (type == otdf::Geometry::BOX)
     {
     shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link));
     double xDim = box->dim.x;
@@ -1575,7 +1531,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     glPopMatrix();
   
 
-  }else if  (type == otdf::Geometry::CYLINDER && !drawMesh){
+  }else if  (type == otdf::Geometry::CYLINDER){
     shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link));
 
     glPushMatrix();
@@ -1640,7 +1596,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     //cout << "length : "<<  cyl->length << endl;
     // drawBox(radius,length, it->second -> visual->origin);
   }
-  else if  (type == otdf::Geometry::MESH && !drawMesh)
+  else if  (type == otdf::Geometry::MESH)
     {
     //cout << "MESH: " << nextTfname << endl;
     //shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(link));
@@ -1693,7 +1649,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
 
    // }// end if (found1!=std::string::npos)
   }
-  else if  (type == otdf::Geometry::DYNAMIC_MESH && !drawMesh)
+  else if  (type == otdf::Geometry::DYNAMIC_MESH)
   {
     //NOTE: this is now drawn by renderer_affordances.cpp
     
@@ -1710,7 +1666,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     glPopMatrix();
     */
   }
-  else if  (type == otdf::Geometry::TORUS && !drawMesh)
+  else if  (type == otdf::Geometry::TORUS)
   {
     boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
     double innerRadius = torus->tube_radius;

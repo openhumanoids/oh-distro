@@ -86,6 +86,65 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
    // double c[3] = {0.3,0.3,0.3};
    // double alpha = self->alpha;
+
+
+   bool draw_mesh(int linkType){
+      /////////////////////////////////////////////////////////
+      // draw mesh
+
+      //--get rotation in angle/axis form
+      KDL::Frame& nextTfframe = _T_world_body;
+      double theta;
+      double axis[3];
+      double x,y,z,w;
+      nextTfframe.M.GetQuaternion(x,y,z,w);
+      double quat[4] = {w,x,y,z};
+      bot_quat_to_angle_axis(quat, &theta, axis);
+
+      // if Show Mesh checked and object has mesh, set drawMesh to true
+      const std::vector<Eigen::Vector3i>& tri = triangles;
+      const std::vector<Eigen::Vector3f>& pts = points;
+
+      // decide whether of not to draw mesh in place of object
+      bool drawMesh=false;
+      if(isShowMeshSelected && pts.size()>0) drawMesh = true;
+      if(linkType == otdf::Geometry::DYNAMIC_MESH) drawMesh = true;
+
+
+      //cout << link->type << " " << isShowMeshSelected << " " << drawMesh << " " << pts.size() << " " << triangles.size() << endl;
+
+      // draw triangles if available
+      if(tri.size()>0 && drawMesh){
+        glPushMatrix();
+        //glColor4f(c[0],c[1],c[2],self->alpha);
+        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+        glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+        for(size_t i=0; i<tri.size(); i++){
+          glBegin(GL_POLYGON);
+          for(size_t j=0; j<3; j++) glVertex3fv(pts[tri[i][j]].data());
+          glEnd();
+        }
+        glPopMatrix();
+      }
+
+      // draw points if available and no triangles
+      if(pts.size()>0 && tri.size()==0 && drawMesh){
+        glPushMatrix();
+        //glColor4f(c[0],c[1],c[2],self->alpha);
+        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+        glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+        glEnable(GL_BLEND); //for dimming contrast
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glPointSize(2.0);
+        glBegin(GL_POINTS);
+        for(size_t i=0; i<pts.size(); i++) glVertex3fv(pts[i].data());
+        glEnd();
+        glPopMatrix();
+      }
+
+      return drawMesh;
+   }
+
    void draw_body (float (&c)[3], float alpha)
    {
       glColor4f(c[0],c[1],c[2],alpha);
@@ -98,6 +157,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
       }
      
       
+      bool drawMesh = draw_mesh(_otdf_link_shapes[0]->type);
+
       for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
         LinkFrameStruct nextTf=_link_geometry_tfs[i];
