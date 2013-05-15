@@ -12,8 +12,8 @@ main( int argc,
       char** argv )
 {
   cout << endl << "start of collision-object-point-cloud-test" << endl << endl;
-  // create a collision object class
-  Collision_Object_Point_Cloud collision_object_point_cloud( "pc1" );
+  // create a collision object class with 1000 spheres, each with a radius of 0.1 meters
+  Collision_Object_Point_Cloud collision_object_point_cloud( "pc1", 1000, 0.1 );
   
   vector< Vector3f > points;
   for( unsigned int i = 0; i < 100; i++ ){

@@ -17,11 +17,13 @@ using namespace collision;
  */
 Collision_Object_Point_Cloud::
 Collision_Object_Point_Cloud( string id,
-                              unsigned int maxPoints ) : Collision_Object( id ),
+                              unsigned int maxPoints,
+                              double pointRadius ) : Collision_Object( id ),
                                                           _max_points( maxPoints ),
+                                                          _point_radius( pointRadius ),
                                                           _points(),
                                                           _collision_objects() {
-  _load_collision_objects();
+  _load_collision_objects( pointRadius );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
       for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
@@ -30,18 +32,6 @@ Collision_Object_Point_Cloud( string id,
     }
   }
 }
-
-/**
- * Collision_Object_Point_Cloud
- * copy constructor
- */
-Collision_Object_Point_Cloud::
-Collision_Object_Point_Cloud( const Collision_Object_Point_Cloud& other ): Collision_Object( other ),
-                                                                            _max_points( other._max_points ),
-                                                                            _points( other._points ),
-                                                                            _collision_objects() {
-  _load_collision_objects();
-}   
 
 /**
  * ~Collision_Object_Point_Cloud
@@ -57,6 +47,19 @@ Collision_Object_Point_Cloud::
   }
   _collision_objects.clear();
 }
+
+/**
+ * Collision_Object_Point_Cloud
+ * copy constructor
+ */
+Collision_Object_Point_Cloud::
+Collision_Object_Point_Cloud( const Collision_Object_Point_Cloud& other ): Collision_Object( other ),
+                                                                            _max_points( other._max_points ),
+                                                                            _point_radius( other._point_radius ),
+                                                                            _points( other._points ),
+                                                                            _collision_objects() {
+  _load_collision_objects( _point_radius );
+}   
 
 /** 
  * set
@@ -123,11 +126,11 @@ matches_uid( unsigned int uid ){
  */
 void
 Collision_Object_Point_Cloud::
-_load_collision_objects( void ){
+_load_collision_objects( double pointRadius ){
   while( _collision_objects.size() != _max_points ){
     char buffer[ 80 ];
     sprintf( buffer, "%06d", ( int )( _collision_objects.size() ) );
-    _collision_objects.push_back( new Collision_Object_Sphere( string( buffer ), 0.04 ) ); // used by lidar filtering
+    _collision_objects.push_back( new Collision_Object_Sphere( string( buffer ), pointRadius ) ); // used by lidar filtering
   }
   return;
 }

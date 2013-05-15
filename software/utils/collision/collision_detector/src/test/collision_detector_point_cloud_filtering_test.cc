@@ -15,8 +15,8 @@ main( int argc,
 {
   cout << endl << "start of collision-detector-point-cloud-filtering-test" << endl << endl;
 
-  // create the point cloud collision object (args: id, max # points)
-  Collision_Object_Point_Cloud collision_object_point_cloud( "collision-object-point-cloud", 1000 );
+  // create the point cloud collision object (args: id, max # points, point "radius")
+  Collision_Object_Point_Cloud collision_object_point_cloud( "collision-object-point-cloud", 1000, 0.1 );
 
   // create the collision detector
   Collision_Detector collision_detector;
