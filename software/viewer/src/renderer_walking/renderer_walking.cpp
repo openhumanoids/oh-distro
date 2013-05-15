@@ -42,6 +42,8 @@
 #define PARAM_STEP_SPEED "Foot speed (m/s)"
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
+
+
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
 #define PARAM_NEW_MAP "New Map"
@@ -57,9 +59,6 @@ typedef enum _leading_foot_t {
   LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
 } leading_foot_t;
 
-// Controlling Spinning Lidar:
-#define PARAM_LIDAR_RATE "Lidar Rate [RPM]"
-#define PARAM_LIDAR_RATE_SEND "Send Rate"
 
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
@@ -167,8 +166,7 @@ typedef struct _RendererWalking {
   drc_walking_goal_t last_walking_msg;
   
   int dragging;
-  int active; //1 = relocalize, 2 = set person location
-  int last_active; //1 = relocalize, 2 = set person location
+  bool active;
   point2d_t drag_start_local;
   point2d_t drag_finish_local;
 
@@ -192,8 +190,6 @@ typedef struct _RendererWalking {
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
   
-  // Frequency of rotating lidar in hz:
-  double lidar_rate;
 
 }RendererWalking;
 
@@ -217,12 +213,9 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 
   glBegin(GL_LINE_STRIP);
   glVertex2f(0.0,0.0);
-
   glVertex2f(self->goal_std*cos(self->theta),self->goal_std*sin(self->theta));
   glEnd();
-
   glPopMatrix();
-
 }
 
 static void
@@ -255,7 +248,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
 
   self->dragging = 0;
 
-  if(self->active==0){
+  if(!self->active){
     //fprintf(stderr, "Not Active\n");
     return 0;
   }
@@ -283,7 +276,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
       POINT3D(ray_dir), zMean, &click_pt_local)) {
     bot_viewer_request_redraw(self->viewer);
-    self->active = 0;
+    self->active = false;
     return 0;
   }
 
@@ -327,85 +320,48 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
   if (self->dragging) {
     self->dragging = 0;
   }
-  if (self->active != 0) {
+  if (self->active) {
     // check drag points and publish
 
     printf("x,y,t: %f %f %f.    std: %f\n",self->click_pos.x
         ,self->click_pos.y,self->theta,self->goal_std);
 
-    fprintf(stderr,"Localizer Button Released => Activate Value : %d\n", self->active);
-    if(self->active == 1){
-      drc_localize_reinitialize_cmd_t msg;
-      msg.utime = self->robot_utime; //bot_timestamp_now();
-      msg.mean[0] = self->click_pos.x;
-      msg.mean[1] = self->click_pos.y;
-      msg.mean[2] = self->theta;
+    fprintf(stderr,"Walking Button Released => Activate Value : %d\n", self->active);
 
-      double v = self->goal_std * self->goal_std;
-      msg.variance[0] = v;
-      msg.variance[1] = v;
-      msg.variance[2] = VARIANCE_THETA;
-      fprintf(stderr, "Sending LOCALIZE_REINITIALIZE\n");
-      drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_REINITIALIZE", &msg);
-      bot_viewer_set_status_bar_message(self->viewer, "Sent LOCALIZE_REINITIALIZE");
+    drc_walking_goal_t msg;
+    msg.utime = self->robot_utime; //bot_timestamp_now();
+    msg.max_num_steps = (int32_t) self->max_num_steps;
+    msg.min_num_steps = (int32_t) self->min_num_steps;
+    msg.robot_name = "atlas"; // this should be set from robot state message
 
-      self->circle_color[0] = 1;
-      self->circle_color[1] = 0;
-      self->circle_color[2] = 0;
-    }else if (self->active ==2){
-      drc_walking_goal_t msg;
-      msg.utime = self->robot_utime; //bot_timestamp_now();
-      msg.max_num_steps = (int32_t) self->max_num_steps;
-      msg.min_num_steps = (int32_t) self->min_num_steps;
-      msg.robot_name = "atlas"; // this should be set from robot state message
-
-      msg.goal_pos.translation.x = self->click_pos.x;
-      msg.goal_pos.translation.y = self->click_pos.y;
-      msg.goal_pos.translation.z = 0;
-      double rpy[] = {0,0,self->theta};
-      double quat_out[4];
-      bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
-      msg.goal_pos.rotation.w = quat_out[0];
-      msg.goal_pos.rotation.x = quat_out[1];
-      msg.goal_pos.rotation.y = quat_out[2];
-      msg.goal_pos.rotation.z = quat_out[3];
-      msg.is_new_goal = true;
-      msg.allow_optimization = self->allow_optimization;
-      // msg.time_per_step = self->time_per_step_ns;
-      msg.step_speed = self->step_speed;
-      msg.follow_spline = self->follow_spline;
-      msg.ignore_terrain = self->ignore_terrain;
-      if (self->leading_foot == LEADING_FOOT_RIGHT) {
-        msg.right_foot_lead = true;
-      } else {
-        msg.right_foot_lead = false;
-      }
-      self->has_walking_msg = true;
-      self->last_walking_msg = msg;
-      fprintf(stderr, "Sending WALKING_GOAL\n");
-      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &msg);
-      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
-    }else if (self->active ==3){
-      drc_nav_goal_t msg;
-      msg.utime = self->robot_utime; // bot_timestamp_now();
-      msg.robot_name = "atlas"; // this should be set from robot state message
-
-      msg.goal_pos.translation.x = self->click_pos.x;
-      msg.goal_pos.translation.y = self->click_pos.y;
-      msg.goal_pos.translation.z = 2; // hard coded for now
-      double rpy[] = {0,0,self->theta};
-      double quat_out[4];
-      bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
-      msg.goal_pos.rotation.w = quat_out[0];
-      msg.goal_pos.rotation.x = quat_out[1];
-      msg.goal_pos.rotation.y = quat_out[2];
-      msg.goal_pos.rotation.z = quat_out[3];
-      fprintf(stderr, "Sending NAV_GOAL_LEFT_HAND\n");
-      drc_nav_goal_t_publish(self->lc, "NAV_GOAL_LEFT_HAND", &msg);
-      bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL_LEFT_HAND");
+    msg.goal_pos.translation.x = self->click_pos.x;
+    msg.goal_pos.translation.y = self->click_pos.y;
+    msg.goal_pos.translation.z = 0;
+    double rpy[] = {0,0,self->theta};
+    double quat_out[4];
+    bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
+    msg.goal_pos.rotation.w = quat_out[0];
+    msg.goal_pos.rotation.x = quat_out[1];
+    msg.goal_pos.rotation.y = quat_out[2];
+    msg.goal_pos.rotation.z = quat_out[3];
+    msg.is_new_goal = true;
+    msg.allow_optimization = self->allow_optimization;
+    // msg.time_per_step = self->time_per_step_ns;
+    msg.step_speed = self->step_speed;
+    msg.follow_spline = self->follow_spline;
+    msg.ignore_terrain = self->ignore_terrain;
+    if (self->leading_foot == LEADING_FOOT_RIGHT) {
+      msg.right_foot_lead = true;
+    } else {
+      msg.right_foot_lead = false;
     }
-    self->last_active = self->active;
-    self->active = 0;
+    self->has_walking_msg = true;
+    self->last_walking_msg = msg;
+    fprintf(stderr, "Sending WALKING_GOAL\n");
+    drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &msg);
+    bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+    
+    self->active = false;
 
     return 0;
   }
@@ -420,7 +376,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
 {
   RendererWalking *self = (RendererWalking*) ehandler->user;
 
-  if(!self->dragging || self->active==0)
+  if(!self->dragging || !self->active)
     return 0;
 
   point2d_t drag_pt_local;
@@ -435,24 +391,10 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
   return 1;
 }
 
-void activate(RendererWalking *self, int type)
+void activate(RendererWalking *self)
 {
-  self->active = type;
-
+  self->active = true;
   self->goal_std=0;
-  if (self->active ==1){
-    self->circle_color[0] = 1;
-    self->circle_color[1] = 0;
-    self->circle_color[2] = 0;
-  }else if (self->active ==2){
-    self->circle_color[0] = 0;
-    self->circle_color[1] = 1;
-    self->circle_color[2] = 0;
-  }else if (self->active ==3){
-    self->circle_color[0] = 0;
-    self->circle_color[1] = 0;
-    self->circle_color[2] = 1;
-  }
 }
 
 static int key_press (BotViewer *viewer, BotEventHandler *ehandler, 
@@ -460,105 +402,8 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 {
   RendererWalking *self = (RendererWalking*) ehandler->user;
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
-
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
-
-  // self->time_per_step_ns = (int)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
-
-  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
-
-  if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
-    printf("\n[R]einit key registered\n");
-    activate(self,1);
-   // bot_viewer_request_pick (viewer, ehandler);
-  }else if ((event->keyval == 'g' || event->keyval == 'G') && self->active==0) {
-    printf("\nWalking Goal key registered\n");
-    activate(self,2);
-    //bot_viewer_request_pick (viewer, ehandler);
-  }else if ((event->keyval == 'l' || event->keyval == 'L') && self->active==0) {
-    printf("\n[L]eft arm key registered\n");
-    activate(self,3);
-    //bot_viewer_request_pick (viewer, ehandler);
-  } else if(event->keyval == GDK_Escape) {
-    //self->active = 0;
-    //ehandler->picking = 0;
-    //bot_viewer_set_status_bar_message(self->viewer, "");
-  }
-
   return 0;
-}
-
-
-// Send a message to start a new map
-// this is really lasy as it reuses the reinitialse message
-// i did this to avoid inventing another
-static void send_new_map (RendererWalking *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-
-  drc_localize_reinitialize_cmd_t msg;
-  msg.utime = self->robot_utime;//bot_timestamp_now();
-  msg.mean[0] = -99999;
-  msg.mean[1] = -99999;
-  msg.mean[2] = -99999;
-  msg.variance[0] = -99999;
-  msg.variance[1] = -99999;
-  msg.variance[2] = -99999;
-  fprintf(stderr,"\nSending LOCALIZE_NEW_MAP message\n");//, self->active);
-  drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_NEW_MAP", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent LOCALIZE_NEW_MAP");
-}
-
-
-static void send_new_lidar_rate (RendererWalking *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-  // This is a direct command of the rotation rate... 
-
-  drc_twist_timed_t msg;
-  msg.utime = self->robot_utime;//bot_timestamp_now();
-  msg.angular_velocity.x = self->lidar_rate * (2*M_PI)/60; // convert from RPM to rad/sec
-  msg.angular_velocity.y = 0.0;
-  msg.angular_velocity.z = 0.0;
-  msg.linear_velocity.x = 0.0;
-  msg.linear_velocity.y = 0.0;
-  msg.linear_velocity.z = 0.0;
-
-  fprintf(stderr,"\nSending SCAN_RATE_CMD message %f\n",self->lidar_rate);//, self->active);
-  drc_twist_timed_t_publish(self->lc, "SCAN_RATE_CMD", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent SCAN_RATE_CMD [%f Hz]",self->lidar_rate);
-}
-
-
-// Send a message to start a new OctoMap 
-static void send_new_octomap (RendererWalking *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-
-  drc_map_params_t msgout;
-  msgout.utime = self->robot_utime;
-  msgout.map_id = -1;
-  msgout.resolution = 0.02;
-  msgout.buffer_size = 1000;
-  float size = 40;//10;
-  for (int i = 0; i < 3; ++i) {
-    msgout.bound_min[i] = self->robot_pos[i] - size/2;
-    msgout.bound_max[i] = self->robot_pos[i] + size/2;
-  }
-  drc_map_params_t_publish(self->lc,"MAP_CREATE",&msgout);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent MAP_CREATE");
-}
-
-static void update_heightmap (RendererWalking *self) {
-  drc_heightmap_params_t msg;
-  msg.utime = self->robot_utime;
-  switch (self->heightmap_res) {
-  case HEIGHTMAP_RES_HIGH:
-    msg.resolution = 0.1; break;
-  case HEIGHTMAP_RES_LOW:
-    msg.resolution = 0.5; break;
-  default:
-    msg.resolution = 0.1; break;
-  }
-  drc_heightmap_params_t_publish(self->lc,"HEIGHTMAP_PARAMS", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent HEIGHTMAP_PARAMS");
 }
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
@@ -567,46 +412,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
-  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
-
-
-  // if (bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS) != self->max_num_steps) {
-  //   msg_changed = true;
-  //   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
-  // }
-  // if (bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS) != self->min_num_steps) {
-  //   msg_changed = true;
-  //   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
-  // }
-
-  // self->last_walking_msg.step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
-  // self->step_speed = self->last_walking_msg.step_speed;
-  // // int64_t new_step_time = (int64_t)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
-  // // if (new_step_time != self->time_per_step_ns) {
-  // //   msg_changed = true;
-  // //   self->time_per_step_ns = new_step_time;
-  // // }
-
-  // self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
-  // self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
-  // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE) != self->follow_spline) {
-  //   msg_changed = true;
-  //   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
-  // }
-
-  // // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
-  // //   msg_changed = true;
-  // //   self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
-  // // }
-
-  // if (self->leading_foot != (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT)) {
-  //   msg_changed = true;
-  //   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
-  // }
 
   // if (msg_changed) {
     if (self->has_walking_msg) {
@@ -634,28 +443,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
       bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
     }
-  } else if(!strcmp(name, PARAM_REINITIALIZE)) {
-    fprintf(stderr,"\nClicked REINIT\n");
-    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    activate(self, 1);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked WALKING_GOAL\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    activate(self, 2);
-  }else if(!strcmp(name, PARAM_GOAL_SEND_LEFT_HAND)) {
-    fprintf(stderr,"\nClicked NAV_GOAL_LEFT_HAND\n");
-   //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    activate(self, 3);
-  }else if(!strcmp(name, PARAM_LIDAR_RATE_SEND)) {
-    fprintf(stderr,"\nClicked LIDAR_RATE_SEND\n");
-    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    send_new_lidar_rate(self);
-  }else if (! strcmp (name, PARAM_NEW_MAP)) {
-    send_new_map(self);
-  }else if (! strcmp (name, PARAM_NEW_OCTOMAP)) {
-    send_new_octomap(self);
-  }else if (! strcmp (name, PARAM_UPDATE_HEIGHTMAP)) {
-    update_heightmap(self);
+    activate(self);
   }
 }
 
@@ -704,6 +495,11 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 
+  self->circle_color[0] = 0;
+  self->circle_color[1] = 1;
+  self->circle_color[2] = 0;
+  
+  
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
 
   self->has_walking_msg = false;
@@ -734,22 +530,10 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_IGNORE_TERRAIN, self->ignore_terrain);
   
-  bot_gtk_param_widget_add_separator(self->pw, "Other goals and requests");
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
-
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHTMAP_RES, BOT_GTK_PARAM_WIDGET_MENU, HEIGHTMAP_RES_LOW, "High", HEIGHTMAP_RES_HIGH, "Low", HEIGHTMAP_RES_LOW, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_HEIGHTMAP, NULL);
-
-  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 60.0, 0.2, 7.0);  
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);
-  
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
 
-  self->active = 0;
+  self->active = false;
 
   return &self->renderer;
 }
