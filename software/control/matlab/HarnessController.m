@@ -9,7 +9,7 @@ classdef HarnessController < DRCController
     function obj = HarnessController(name,r,timeout)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('qtraj',[]));
+      ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));
       
       % instantiate QP controller
       options = struct();
@@ -34,6 +34,20 @@ classdef HarnessController < DRCController
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
+      
+      % cascade neck pitch control block
+      neck = NeckControlBlock(r,ctrl_data);
+      ins(1).system = 1;
+      ins(1).input = 1;
+      ins(2).system = 1;
+      ins(2).input = 2;
+      ins(3).system = 2;
+      ins(3).input = 2;
+      outs(1).system = 2;
+      outs(1).output = 1;
+      connection.from_output = 1;
+      connection.to_input = 1;
+      sys = mimoCascade(neck,sys,connection,ins,outs);
 
       obj = obj@DRCController(name,sys);
 
@@ -60,7 +74,7 @@ classdef HarnessController < DRCController
       trigger_active = true;
       t=max(times);
       if ~isinf(getDuration(obj)) && t>4.0
-        x = input_data{1};
+        x = input_data{2};
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         q_nom = d.xstar(1:getNumDOF(obj.robot));
         q_nom([1,2,6]) = x([1,2,6]); % copy over pelvix x,y,yaw

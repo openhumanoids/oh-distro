@@ -64,9 +64,11 @@ classdef WalkingPDController < DrakeSystem
         typecheck(options.q_nom,'double');
         sizecheck(options.q_nom,[obj.nq 1]);
         q_nom = options.q_nom;
+        obj.controller_data.setField('qtraj',q_nom);
       else
         d = load('data/atlas_fp.mat');
         q_nom = d.xstar(1:obj.nq);
+        obj.controller_data.setField('qtraj',q_nom);
       end
       
       % setup IK parameters
@@ -99,10 +101,22 @@ classdef WalkingPDController < DrakeSystem
       qd = x(obj.nq+1:end);
 
       cdata = obj.controller_data.getData();
-      
-      q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...
-        obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t), ...
-        obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
+      if typecheck(cdata.qtraj,'double')
+        obj.ikoptions.q_nom = cdata.qtraj;
+      else
+        obj.ikoptions.q_nom = cdata.qtraj.eval(t);
+      end
+
+      try
+        q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...
+          obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t), ...
+          obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
+      catch err
+        % backup plan---do full IK
+        q_des = inverseKin(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...
+          obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t), ...
+          obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
+      end
 
       err_q = q_des - q;
       nrmerr = norm(err_q,1);

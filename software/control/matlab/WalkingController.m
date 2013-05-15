@@ -7,7 +7,7 @@ classdef WalkingController < DRCController
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Qy',eye(2),...
         'S',[],'s1',[],'x0',zeros(4,1),'u0',zeros(2,1),'comtraj',[],'lfoottraj',[],...
-        'rfoottraj',[],'supptraj',[]));
+        'rfoottraj',[],'supptraj',[],'qtraj',zeros(getNumDOF(r),1)));
 
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -33,17 +33,31 @@ classdef WalkingController < DRCController
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
       
-%       % cascade footstep replanner 
-%       fs = FootstepReplanner(r,ctrl_data);
-%       ins(1).system = 1;
-%       ins(1).input = 1;
-%       ins(2).system = 2;
-%       ins(2).input = 2;
-%       outs(1).system = 2;
-%       outs(1).output = 1;
-%       connection.from_output = 1;
-%       connection.to_input = 1;
-%       sys = mimoCascade(fs,sys,connection,ins,outs);
+      % cascade footstep replanner 
+      fs = FootstepReplanner(r,ctrl_data);
+      ins(1).system = 1;
+      ins(1).input = 1;
+      ins(2).system = 2;
+      ins(2).input = 2;
+      outs(1).system = 2;
+      outs(1).output = 1;
+      connection.from_output = 1;
+      connection.to_input = 1;
+      sys = mimoCascade(fs,sys,connection,ins,outs);
+      
+      % cascade neck pitch control block
+      neck = NeckControlBlock(r,ctrl_data);
+      ins(1).system = 1;
+      ins(1).input = 1;
+      ins(2).system = 1;
+      ins(2).input = 2;
+      ins(3).system = 2;
+      ins(3).input = 2;
+      outs(1).system = 2;
+      outs(1).output = 1;
+      connection.from_output = 1;
+      connection.to_input = 1;
+      sys = mimoCascade(neck,sys,connection,ins,outs);
       
       obj = obj@DRCController(name,sys);
 

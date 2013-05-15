@@ -1,10 +1,24 @@
 classdef DRCTerrainMap < RigidBodyTerrain
 
   methods
-    function obj = DRCTerrainMap(mapWrapperFunc,options)
-      if (~exist('mapWrapperFunc','var'))
-          mapWrapperFunc = @mapAPIwrapper;
+    function obj = DRCTerrainMap(is_robot,options)
+      map_mon = drake.util.MessageMonitor(drc.map_image_t,'utime');
+      lc = lcm.lcm.LCM.getSingleton();
+     
+      if nargin < 1
+        is_robot = false;
       end
+      
+      if is_robot
+        lc.subscribe('MAP_CONTROL_HEIGHT',map_mon);
+        desired_view_id = 1000;
+        mapWrapperFunc = @mapAPIwrapper;
+      else
+        lc.subscribe('MAP_DEPTH',map_mon);
+        desired_view_id = 6;
+        mapWrapperFunc = @MapWrapperRobot;
+      end
+      
       if nargin < 2
         options = struct();
       else
@@ -27,11 +41,6 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle = MapHandle(mapWrapperFunc);
 
       % wait for at least one map message to arrive before continuing
-      
-      map_mon = drake.util.MessageMonitor(drc.map_image_t,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe('MAP_DEPTH',map_mon);
-      
       msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
       send_status(3, 0, 0, msg );
       fprintf(1,msg);
@@ -42,7 +51,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
           d = getNextMessage(map_mon,100);  
           if ~isempty(d)
             msg = drc.map_image_t(d);
-            if (msg.view_id ~= 6), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
+            if (msg.view_id ~= desired_view_id), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
           end
           drawnow;  % allow matlab gui interaction
         end
