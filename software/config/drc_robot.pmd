@@ -61,7 +61,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "l2r" {
-        exec = "rosrun translators lcm2ros -p -l";
+        exec = "rosrun translators lcm2ros -p";
         host = "robot";
     }
     cmd "j2f" {
