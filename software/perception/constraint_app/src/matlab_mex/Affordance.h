@@ -62,7 +62,7 @@ class Affordance {
  public:
   static KDL::Frame GetFrameFromVector(const StateVector& state);
 
- private:
+ public:
   std::ostream& m_log;
   KDL::Tree m_tree;
 
