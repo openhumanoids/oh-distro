@@ -6,6 +6,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#include <lcm/lcm-cpp.hpp>
+
 #include <drc_utils/Clock.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
 
