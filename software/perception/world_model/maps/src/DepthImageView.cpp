@@ -68,7 +68,7 @@ getAsPointCloud(const bool iTransform) const {
     DepthImage::Type depthType = DepthImage::TypeDisparity;
     cloud->reserve(mImage->getWidth()*mImage->getHeight());
     cloud->is_dense = false;
-    const std::vector<float>& depths = mImage->getData(depthType);
+    const std::vector<float>& depths = getInnerData(depthType);
     const float invalidValue = mImage->getInvalidValue(depthType);
     for (int i = 0, idx = 0; i < mImage->getHeight(); ++i) {
       for (int j = 0; j < mImage->getWidth(); ++j, ++idx) {
@@ -90,7 +90,7 @@ getAsMesh(const bool iTransform) const {
   int width(mImage->getWidth()), height(mImage->getHeight());
   int numDepths = width*height;
   DepthImage::Type depthType = DepthImage::TypeDisparity;
-  std::vector<float> depths = mImage->getData(depthType);
+  std::vector<float> depths = getInnerData(depthType);
   maps::TriangleMesh::Ptr mesh(new maps::TriangleMesh());
 
   // vertices
@@ -150,10 +150,19 @@ getAsMesh(const bool iTransform) const {
   return mesh;
 }
 
+const std::vector<float>& DepthImageView::
+getInnerData(const int iType) const {
+  DepthImage::Type type = DepthImage::Type(iType);
+  std::vector<float>& depths =
+    const_cast<std::vector<float>&>(mImage->getData(type));
+  return depths;
+}
+
+
 bool DepthImageView::
 interpolate(const float iX, const float iY, float& oDepth) const {
   const DepthImage::Type depthType = DepthImage::TypeDepth;
-  const std::vector<float>& depths = mImage->getData(depthType);
+  const std::vector<float>& depths = getInnerData(depthType);
   int width(mImage->getWidth()), height(mImage->getHeight());
   int xInt(iX), yInt(iY);
   if ((xInt < 0) || (xInt >= width-1) || (yInt < 0) || (yInt >= height-1)) {
@@ -197,7 +206,7 @@ getClosest(const Eigen::Vector3f& iPoint,
   // do neighborhood plane fit to find normal
   else {
     // gather points in neighborhood
-    const std::vector<float>& depths = mImage->getData(depthType);
+    const std::vector<float>& depths = getInnerData(depthType);
     const int width = mImage->getWidth();
     const int height = mImage->getHeight();
     const int xInt(proj[0]), yInt(proj[1]);
@@ -266,7 +275,7 @@ unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
   int xInt(iPoint[0]), yInt(iPoint[1]);
   int width = mImage->getWidth();
   int idx = width*yInt + xInt;
-  const std::vector<float>& depths = mImage->getData(depthType);
+  const std::vector<float>& depths = getInnerData(depthType);
   Vec3f p00 = mImage->unproject(Vec3f(xInt, yInt, depths[idx]), depthType);
   Vec3f p11 = mImage->unproject(Vec3f(xInt+1, yInt+1, depths[idx+1+width]),
                                       depthType);

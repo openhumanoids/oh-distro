@@ -81,7 +81,7 @@ stop() {
   mHelper->mRunning = false;
   mHelper->mDataReceiver->stop();
   mHelper->mDataReceiver->unblock();
-  mHelper->mConsumerThread.join();
+  if (mHelper->mConsumerThread.joinable()) mHelper->mConsumerThread.join();
   return true;
 }
 

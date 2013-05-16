@@ -63,7 +63,7 @@ struct ViewClient::Worker {
     lock.unlock();
     mCondition.notify_one();
     mMessageQueue.unblock();
-    mThread.join();
+    if (mThread.joinable()) mThread.join();
   }
 
   bool start() {

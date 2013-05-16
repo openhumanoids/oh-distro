@@ -208,7 +208,7 @@ struct ViewWorker {
 
   void stop() {
     mActive = false;
-    mThread.join();
+    if (mThread.joinable()) mThread.join();
   }
 
   void operator()() {
@@ -681,7 +681,7 @@ int main(const int iArgc, const char** iArgv) {
   while (0 == lcm->handle());
 
   // join pending threads
-  catalogThread.join();
+  if (catalogThread.joinable()) catalogThread.join();
 
   return 0;
 }

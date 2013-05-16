@@ -309,6 +309,8 @@ bool SensorDataReceiver::
 stop() {
   if (!mHelper->mIsRunning) return false;
   mHelper->mIsRunning = false;
-  mHelper->mPoseUpdater.mThread.join();
+  if (mHelper->mPoseUpdater.mThread.joinable()) {
+    mHelper->mPoseUpdater.mThread.join();
+  }
   return true;
 }

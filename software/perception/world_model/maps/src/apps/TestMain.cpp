@@ -24,6 +24,7 @@
 
 // TODO TEMP
 #include <bot_core/timestamp.h>
+#include <drc_utils/Clock.hpp>
 
 using namespace maps;
 using namespace std;
@@ -214,6 +215,17 @@ struct Helper {
 
 
 int main() {
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
+  drc::Clock::instance()->setLcm(lcm);
+  drc::Clock::instance()->setVerbose(true);
+  std::cout << drc::Clock::instance()->getCurrentTime() << std::endl;
+  sleep(3);
+  std::cout << drc::Clock::instance()->getCurrentTime() << std::endl;
+  lcm.reset();
+
+  return 0;
+
+
   std::shared_ptr<Helper> helper(new Helper());
   helper->mViewClient = new maps::ViewClient();
   helper->mLcm.reset(new lcm::LCM());
@@ -290,7 +302,7 @@ int main() {
   delete helper->mViewClient;
 
   helper->mIsRunning = false;
-  helper->mThread.join();
+  if (helper->mThread.joinable()) helper->mThread.join();
   helper.reset();
 
   return 0;

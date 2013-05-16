@@ -39,7 +39,7 @@ struct Worker {
 
   void stop() {
     mActive = false;
-    mThread.join();
+    if (mThread.joinable()) mThread.join();
   }
 
   void operator()() {

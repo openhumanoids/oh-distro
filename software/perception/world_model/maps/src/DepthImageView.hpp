@@ -40,6 +40,7 @@ public:
                     Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const;
 
 protected:
+  const std::vector<float>& getInnerData(const int iType) const;
   bool interpolate(const float iX, const float iY, float& oDepth) const;
   bool unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
                  Eigen::Vector3f& oNormal) const;
