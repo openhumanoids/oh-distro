@@ -107,11 +107,12 @@ box_lr = [2*left+width, bottom, width, height]
 
 
 
-fig1 = plt.figure(num=1, figsize=(14, 10), dpi=80, facecolor='w', edgecolor='k')
-ax1 = fig1.add_axes(box_ul)
-ax2 = fig1.add_axes(box_ur)
-ax3 = fig1.add_axes(box_ll)
-ax4 = fig1.add_axes(box_lr)
+fig1 = plt.figure(num=1, figsize=(7, 5), dpi=80, facecolor='w', edgecolor='k')
+ax1 = fig1.add_subplot(111)
+#ax1 = fig1.add_axes(box_ul)
+#ax2 = fig1.add_axes(box_ur)
+#ax3 = fig1.add_axes(box_ll)
+#ax4 = fig1.add_axes(box_lr)
 
 plt.interactive(True)
 plt.plot()
