@@ -15,12 +15,17 @@ enum { RESEND_SECONDS = 5 };
 template<typename LCMType, typename DiffType>
 struct State
 {
-    State() : need_to_send_ack_(false)
+State() : need_to_send_ack_(false),
+        has_last_full_(false),
+        has_last_diff_(false)
         { }
     
-    LCMType state_;
+    LCMType last_full_;
+    bool has_last_full_;
+    
     bool need_to_send_ack_;
-    DiffType diff_state_;    
+    DiffType last_diff_;    
+    bool has_last_diff_;
     DiffType diff_waiting_ack_;
 };
 
@@ -61,70 +66,74 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             }            
 
             wrapper.set_host(host);
-
-
-            if(Codec::host_info_.count(lcm_object.host) && Codec::host_info_[lcm_object.host].need_to_send_ack_)
+            
+            State<LCMType, DiffType>& host_info = Codec::host_info_[lcm_object.host];
+            
+            // send an ACK
+            if(host_info.need_to_send_ack_)
             {
                 wrapper.set_type(drc::ProcManWrapper::ACK);
-                Codec::host_info_[lcm_object.host].need_to_send_ack_ = false;
+                host_info.need_to_send_ack_ = false;
             }
             // if we have nothing to compare to, or we need to signal the other side to
             // send a full message
-            else if(!Codec::host_info_.count(lcm_object.host) || !OtherCodec::host_info_.count(lcm_object.host))
+            // send a FULL
+            else if(!host_info.has_last_full_ || !OtherCodec::host_info_[lcm_object.host].has_last_full_)
             {
-                if(!OtherCodec::host_info_.count(lcm_object.host))
+                if(!OtherCodec::host_info_[lcm_object.host].has_last_full_)
                     wrapper.set_request_full(true);
                     
-                Codec::host_info_[lcm_object.host].state_ = lcm_object;
+                host_info.last_full_ = lcm_object;
+                host_info.has_last_full_ = true;
+                
                 wrapper.set_type(drc::ProcManWrapper::FULL);
                 
                 wrapper.mutable_data()->resize(lcm_object.getEncodedSize());
                 lcm_object.encode(&(*wrapper.mutable_data())[0], 0, wrapper.data().size());
 
             }
+            // send a DIFF
             else
             {
-                glog.is(VERBOSE) && glog <<  "Checking if diff_waiting_ack_ is cleared" << std::endl;
-                if(Codec::host_info_.count(lcm_object.host) && Codec::host_info_[lcm_object.host].diff_waiting_ack_.IsInitialized())
+                if(host_info.diff_waiting_ack_.IsInitialized())
                 {
-                    if(lcm_object.utime < Codec::host_info_[lcm_object.host].diff_waiting_ack_.utime() + Codec::host_info_[lcm_object.host].state_.utime + RESEND_SECONDS*1e6)
+                    if(lcm_object.utime < host_info.diff_waiting_ack_.utime() + host_info.last_full_.utime + RESEND_SECONDS*1e6)
                     {
                         glog.is(VERBOSE) && glog << "Waiting for ACK for " << RESEND_SECONDS << " after last diff" << std::endl;                        
                         return false;
                     }
                     else
                     {
-                        Codec::host_info_[lcm_object.host].diff_waiting_ack_.Clear();
+                        host_info.diff_waiting_ack_.Clear();
                     }
                 }
-                       
+                
                 wrapper.set_type(drc::ProcManWrapper::DIFF);
-                if(!make_diff(lcm_object, Codec::host_info_[lcm_object.host].state_, &Codec::host_info_[lcm_object.host].diff_waiting_ack_))
+                if(!make_diff(lcm_object, host_info.last_full_, &host_info.diff_waiting_ack_))
                     return false;
-
-                if(Codec::host_info_.count(lcm_object.host) && Codec::host_info_[lcm_object.host].diff_state_.IsInitialized())
-                {
-                    
-                    DiffType& diff_acked = Codec::host_info_[lcm_object.host].diff_state_;
+                
+                if(host_info.has_last_diff_)
+                {                    
+                    DiffType& diff_acked = host_info.last_diff_;
 
                     // update time, since this is the only thing that is allowed to change without
                     // needing to send a new diff.
-                    diff_acked.set_utime(Codec::host_info_[lcm_object.host].diff_waiting_ack_.utime());
+                    diff_acked.set_utime(host_info.diff_waiting_ack_.utime());
 
-                    glog.is(VERBOSE) && glog << "diff_waiting_ack: " << Codec::host_info_[lcm_object.host].diff_waiting_ack_.ShortDebugString() << std::endl;
+                    glog.is(VERBOSE) && glog << "diff_waiting_ack: " << host_info.diff_waiting_ack_.ShortDebugString() << std::endl;
                     glog.is(VERBOSE) && glog << "diff_acked: " << diff_acked.ShortDebugString() << std::endl;
-
-                    if(diff_acked.SerializeAsString() == Codec::host_info_[lcm_object.host].diff_waiting_ack_.SerializeAsString())
+                    
+                    if(diff_acked.SerializeAsString() == host_info.diff_waiting_ack_.SerializeAsString())
                     {
                         glog.is(VERBOSE) && glog << "Diff is identical, so not sending" << std::endl;
-                        Codec::host_info_[lcm_object.host].diff_waiting_ack_.Clear();
+                        host_info.diff_waiting_ack_.Clear();
                         return false;
                     }
                     
                 }
                 
                 //diff.SerializeToString(wrapper.mutable_data());
-                dccl_->encode(wrapper.mutable_data(), Codec::host_info_[lcm_object.host].diff_waiting_ack_);
+                dccl_->encode(wrapper.mutable_data(), host_info.diff_waiting_ack_);
             }
 
             glog.is(VERBOSE) && glog << "ProcMan Message type is: "
@@ -145,8 +154,14 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
 
             drc::ProcManWrapper wrapper;
             wrapper.ParseFromArray(&transmit_data[0], transmit_data.size());
-    
+
+            glog.is(VERBOSE) && glog << "Decoding message: " << wrapper.ShortDebugString() << std::endl;
+            
             LCMType lcm_object;
+
+            std::string host = drc::ProcManWrapper::Host_Name(wrapper.host());
+            boost::to_lower(host);
+            State<LCMType, DiffType>& host_info = Codec::host_info_[host];
 
             if(wrapper.type() == drc::ProcManWrapper::FULL)
             {    
@@ -159,15 +174,14 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     glog.is(VERBOSE) && glog << "Other side requested FULL message, resetting state" << std::endl;
                     OtherCodec::host_info_.erase(lcm_object.host);
                 }
-                
-                Codec::host_info_[lcm_object.host].state_ = lcm_object;
 
+                host_info.last_full_ = lcm_object;
+                host_info.has_last_full_ = true;
+                
             }
             else if(wrapper.type() == drc::ProcManWrapper::DIFF)
             {
-                std::string host = drc::ProcManWrapper::Host_Name(wrapper.host());
-                boost::to_lower(host);
-                if(!Codec::host_info_.count(host))
+                if(!host_info.has_last_full_)
                     return false;
                 
                 DiffType diff;
@@ -175,7 +189,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                 DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
                 dccl_->decode(wrapper.data(), &diff);
 
-                if(!reverse_diff(&lcm_object, Codec::host_info_[host].state_, diff))
+                if(!reverse_diff(&lcm_object, host_info.last_full_, diff))
                 {
                     // assume our reference is no good, so delete it and force the other side to send a new one
                     Codec::host_info_.erase(host);
@@ -185,11 +199,17 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             }
             else if(wrapper.type() == drc::ProcManWrapper::ACK)
             {
-                std::string host = drc::ProcManWrapper::Host_Name(wrapper.host());
-                boost::to_lower(host);
-                OtherCodec::host_info_[host].diff_state_ = OtherCodec::host_info_[host].diff_waiting_ack_;
-                OtherCodec::host_info_[host].diff_waiting_ack_.Clear();
-                glog.is(VERBOSE) && glog << "Received ACK for last DIFF" << std::endl;
+                glog.is(VERBOSE) && glog << "Received ACK for last DIFF: " <<  OtherCodec::host_info_[host].diff_waiting_ack_.ShortDebugString() << std::endl;
+                if(OtherCodec::host_info_[host].diff_waiting_ack_.IsInitialized())
+                {
+                    OtherCodec::host_info_[host].last_diff_ = OtherCodec::host_info_[host].diff_waiting_ack_;
+                    OtherCodec::host_info_[host].has_last_diff_ = true;
+                    OtherCodec::host_info_[host].diff_waiting_ack_.Clear();
+                }
+                else
+                {
+                    glog.is(VERBOSE) && glog << "... we weren't expecting an ACK." << std::endl;
+                }                
                 return false;
             }
             
