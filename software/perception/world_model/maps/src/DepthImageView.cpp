@@ -152,10 +152,7 @@ getAsMesh(const bool iTransform) const {
 
 const std::vector<float>& DepthImageView::
 getInnerData(const int iType) const {
-  DepthImage::Type type = DepthImage::Type(iType);
-  std::vector<float>& depths =
-    const_cast<std::vector<float>&>(mImage->getData(type));
-  return depths;
+  return mImage->getData(DepthImage::Type(iType));
 }
 
 

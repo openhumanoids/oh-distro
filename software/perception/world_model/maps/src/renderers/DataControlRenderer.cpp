@@ -196,7 +196,7 @@ public:
     // for data requests
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     typedef drc::data_request_t dr;
-    addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image",
+    addControl(drc::data_request_t::CAMERA_IMAGE_HEAD, "Camera Head",
                "CAMERALEFT_COMPRESSED", ChannelTypeAnonymous);
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
                "EST_ROBOT_STATE", ChannelTypeAnonymous);

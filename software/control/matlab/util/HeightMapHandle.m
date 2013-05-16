@@ -1,4 +1,4 @@
-classdef MapHandle < handle
+classdef HeightMapHandle < handle
     properties(Hidden=true, SetAccess=private, GetAccess=private)
         mMexFunc;  % which map wrapper mex object to create
         mHandle;   % pointer to the c++ object
@@ -6,25 +6,28 @@ classdef MapHandle < handle
     
     methods
         % constructor
-        function this = MapHandle(mexFunc)
+        function this = HeightMapHandle(mexFunc,privateChannel)
             if (~exist('mexFunc','var'))
-                mexFunc = @mapAPIwrapper;
+                mexFunc = @HeightMapWrapper;
+            end
+            if (~exist('privateChannel','var'))
+                privateChannel = 'false';
             end
             this.mMexFunc = mexFunc;
-            this.mHandle = mexFunc();
+            this.mHandle = mexFunc('create','privatechannel',privateChannel);
         end
 
         % destructor
         function delete(this)
-            this.mMexFunc(this.mHandle);
+            this.mMexFunc('destroy',this.mHandle);
         end
 
         function pts = getPointCloud(this)
-            pts = this.mMexFunc(this.mHandle,[]);
+            pts = this.mMexFunc('pointcloud',this.mHandle);
         end
         
         function [pts,normals] = getClosest(this,pts)
-            [pts,normals] = this.mMexFunc(this.mHandle,pts);
+            [pts,normals] = this.mMexFunc('closest',this.mHandle,pts);
         end
     end
 end

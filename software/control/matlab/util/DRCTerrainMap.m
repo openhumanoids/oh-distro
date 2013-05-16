@@ -2,21 +2,15 @@ classdef DRCTerrainMap < RigidBodyTerrain
 
   methods
     function obj = DRCTerrainMap(is_robot,options)
-      map_mon = drake.util.MessageMonitor(drc.map_image_t,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
      
       if nargin < 1
         is_robot = false;
       end
       
       if is_robot
-        lc.subscribe('MAP_CONTROL_HEIGHT',map_mon);
-        desired_view_id = 1000;
-        mapWrapperFunc = @MapWrapperRobot;
+        private_channel = 'true';
       else
-        lc.subscribe('MAP_DEPTH',map_mon);
-        desired_view_id = 6;
-        mapWrapperFunc = @mapAPIwrapper;
+        private_channel = 'false';
       end
       
       if nargin < 2
@@ -38,7 +32,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       end
       obj.raw = options.raw;
       
-      obj.map_handle = MapHandle(mapWrapperFunc);
+      obj.map_handle = HeightMapHandle(@HeightMapWrapper,private_channel);
 
       % wait for at least one map message to arrive before continuing
       msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
@@ -46,20 +40,13 @@ classdef DRCTerrainMap < RigidBodyTerrain
       fprintf(1,msg);
       obj.minval=[];
       while isempty(obj.minval)
-        d=[];
-        while isempty(d)
-          d = getNextMessage(map_mon,100);
-          if ~isempty(d)
-            msg = drc.map_image_t(d);
-            if (msg.view_id ~= desired_view_id), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
-          end
-          drawnow;  % allow matlab gui interaction
+        ptcloud=[];
+        while isempty(ptcloud)
+            % temporary hack because the robot is initialized without knowing the ground under it's feet
+            ptcloud = obj.map_handle.getPointCloud();
+            % end hack
         end
-
-        % temporary hack because the robot is initialized without knowing the ground under it's feet
-        ptcloud = obj.map_handle.getPointCloud();
         obj.minval = min(ptcloud(3,:));
-        % end hack
       end
       fprintf(1,'received!\n');
     end

@@ -66,15 +66,10 @@ if isunix && ~ismac % build maps
   [~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
   incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
   
-  [~,libs]=system('pkg-config --libs maps eigen3 lcm');
+  [~,libs]=system('pkg-config --libs maps eigen3 lcm opencv');
   libs = strrep(libs,'-pthread','');%-lpthread');
   
-  cmdstr = ['mex -v src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-  %cmdstr = ['mex -v src/mapAPIwrapper.cpp LDFLAGS=''\$LDFLAGS -static-libstdc++'' -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-  disp(cmdstr);
-  eval(cmdstr);
-  
-  cmdstr = ['mex -v src/MapWrapperRobot.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  cmdstr = ['mex -v src/HeightMapWrapper.cpp -g -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
   disp(cmdstr);
   eval(cmdstr);
   
