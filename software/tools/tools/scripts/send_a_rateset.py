@@ -7,7 +7,7 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 import lcm
 from bot_core.pose_t import pose_t
-
+import time
 #print 'Argument List:', str(sys.argv)
 if len(sys.argv)>1:
   times = float(sys.argv[1])
@@ -31,6 +31,9 @@ msg.pos = ( val, 0, 0)
 msg.orientation = (1, 0, 0, 0)
 
 lc = lcm.LCM()
-lc.publish("GAZEBO_RATESET", msg.encode())
-print "Commanding simulator to run at %f times real time (tops)" % times
+while (1):
+  lc.publish("GAZEBO_RATESET", msg.encode())
+  print "Commanding simulator to run at %f times real time (tops)" % times
+  time.sleep(0.25)
+  
 

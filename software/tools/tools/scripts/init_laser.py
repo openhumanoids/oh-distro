@@ -30,8 +30,8 @@ def on_utime(channel, data):
     o = sensor_request_t()
     o.utime = t
     o.spindle_rpm = 7 # 0.733038 rad/sec
-    o.head_fps = 5
-    o.hand_fps = 5
+    o.head_fps = 1
+    o.hand_fps = 1
     o.camera_compression = -1 
     lc.publish("SENSOR_REQUEST", o.encode())    
     
