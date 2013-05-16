@@ -58,10 +58,22 @@ classdef NeckControlBlock < MIMODrakeSystem
       
       cdata = obj.controller_data.getData();
    
-      kinsol = doKinematics(obj.robot,q,false,true);
-      [headpos,J] = forwardKin(obj.robot,kinsol,obj.head_idx,[0;0;0],1); 
-      K = 1/J(5,obj.neck_idx); % just need the sign, really
-      delta = min(0.1,max(-0.1,K*(neckpitch-headpos(5)))); % threshold to prevent jumps
+      %kinsol = doKinematics(obj.robot,q,false,true);
+      %[headpos,J] = forwardKin(obj.robot,kinsol,obj.head_idx,[0;0;0],1); 
+      %K = 1/J(5,obj.neck_idx); % just need the sign, really
+
+      K = 1;
+      neck_max_delta = 0.05;
+
+      qtraj = cdata.qtraj;
+      if typecheck(qtraj,'double')
+        neck_des = qtraj(obj.neck_idx);
+      else
+        % pp trajectory
+        qdes = qtraj.eval(t);
+        neck_des = qdes(obj.neck_idx);
+      end
+      delta = min(neck_max_delta,max(-neck_max_delta,K*(neckpitch-neck_des))); % threshold to prevent jumps
       neck_des = q(obj.neck_idx) + delta;
 
       qtraj = cdata.qtraj;
