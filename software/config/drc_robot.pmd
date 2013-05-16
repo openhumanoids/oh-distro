@@ -3,110 +3,93 @@ group "0.development" {
         exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
+    cmd "extra_deputy" {
+        exec = "bot-procman-deputy -n extra";
+        host = "localhost";
+    }
     cmd "base_deputy" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
-    }
-}
-
-group "0.init_robot" {
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
-        host = "robot";
-    }
-    cmd "robot_deputy" {
-        exec = "bot-procman-deputy -n robot";
-        host = "localhost";
-    }
-}
-
-group "0.init_base" {
-    cmd "base_deputy" {
-        exec = "bot-procman-deputy -n base";
-        host = "localhost";
-    }
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
-        host = "base";
-    }
-}
-
-group "a.1.core" {
-    cmd "pserver" {
-        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
-        host = "robot";
     }
     cmd "roscore" {
         exec = "roscore";
         host = "robot";
     }
+}
+
+
+group "a.1.core" {
     cmd "viewer" {
         exec = "drc-viewer";
-        host = "robot";
-    }
-    cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
-        host = "robot";
-    }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher -g";
-        host = "robot";
-    }
-    cmd "estpub2minimal" {
-        exec = "est_robot_state_to_minimal -g";
         host = "robot";
     }
     cmd "r2l_control" {
         exec = "rosrun translators ros2lcm -c -g";
         host = "robot";
     }
+    cmd "foot-state" {
+       exec = "drc-foot-state";
+        host = "extra";
+    }
     cmd "l2r" {
         exec = "rosrun translators lcm2ros -p";
         host = "robot";
     }
-    cmd "j2f" {
-        exec = "drc-joints2frames -g";
+    cmd "r2l_perception" {
+        exec = "rosrun translators ros2lcm -p -l";
         host = "robot";
     }
-    cmd "r2l_perception" {
-        exec = "rosrun translators ros2lcm -p";
-        host = "robot";
+    cmd "pserver" {
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
+        host = "extra";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
+        host = "extra";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher -g";
+        host = "extra";
+    }
+    cmd "estpub2minimal" {
+        exec = "est_robot_state_to_minimal -g";
+        host = "extra";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -g";
+        host = "extra";
     }
     cmd "maps-server" {
         exec = "maps-server";
-        host = "robot";
+        host = "extra";
     }
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "robot";
+        host = "extra";
     }
     cmd "affordance-gaze" {
         exec = "affordance-gaze";
-        host = "robot";
+        host = "extra";
     }
     cmd "lidarfilt" {
         exec = "drc-lidar-passthrough";
-        host = "robot";
+        host = "extra";
     }
     cmd "icompress" {
         exec = "drc-image-tool";
-        host = "robot";
-    }
-    cmd "foot-state" {
-       exec = "drc-foot-state";
-        host = "robot";
+        host = "extra";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
-        host = "robot";
+        host = "extra";
     }
     cmd "init-laser" {
         exec = "drc-init-laser";
-        host = "robot";
+        host = "extra";
     }
     cmd "logger-robot-nocams" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
-        host = "robot";
+        host = "extra";
     }
 }
 
@@ -117,7 +100,7 @@ group "a.2.walking" {
     }
     cmd "PrecomputationServer" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "robot";
+        host = "extra";
     }
 }
 
@@ -132,15 +115,15 @@ group "a.3.grasping" {
     } 
     cmd "imagemask" {
         exec = "drc-image-passthrough";
-        host = "robot";
+        host = "extra";
     }
     cmd "tracker" {
         exec = "object-tracker -s -a 1";
-        host = "robot";
+        host = "extra";
     } 
     cmd "affordance_init" {
         exec = "affordance_init -e 2";
-        host = "robot";
+        host = "extra";
     } 
 }
 
@@ -175,32 +158,6 @@ group "a.4.driving" {
     }
     cmd "drc-terrain-classifier" {
         exec = "drc-terrain-classifier";
-        host = "robot";
-    }
-}
-
-group "a.5.driving_utils" {
-    cmd "enter_car_pelvis_pinned" {
-        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
-        host = "robot";
-    }
-    cmd "disengage_hand_brake" {
-        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
-        host = "robot";
-    }
-    cmd "ignition" {
-        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
-        host = "robot";
-    }
-}
-
-group "a.5.a.motion_vo"{
-    cmd "vo_moest" {
-        exec = "drc-fovision-odometry -i 3";
-        host = "robot";
-    }
-    cmd "estpub_moest" {
-        exec = "est_robot_state_publisher";
         host = "robot";
     }
 }
@@ -472,6 +429,32 @@ group "m.4.base" {
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
         host = "base";
+    }
+}
+
+group "m.5.motion_vo"{
+    cmd "vo_moest" {
+        exec = "drc-fovision-odometry -i 3";
+        host = "robot";
+    }
+    cmd "estpub_moest" {
+        exec = "est_robot_state_publisher";
+        host = "robot";
+    }
+}
+
+group "m.6.driving_utils" {
+    cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
     }
 }
 
