@@ -1,16 +1,21 @@
 #ifndef _Clock_hpp_
 #define _Clock_hpp_
 
-#include <inttypes.h>
 #include <string>
 #include <memory>
 #include <boost/shared_ptr.hpp>
-#include <lcm/lcm-cpp.hpp>
-#include <bot_core/timestamp.h>
+
+namespace lcm {
+  class LCM;
+}
+typedef struct _lcm_t lcm_t;
 
 namespace drc {
  
 class Clock {
+protected:
+  struct Impl;
+
 protected:
   Clock();
   virtual ~Clock();
@@ -18,11 +23,11 @@ protected:
 public:
   static Clock* instance();
 
-  virtual void setLcm(const std::shared_ptr<lcm::LCM>& iLcm);
-  virtual void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
-  virtual void setLcm(const lcm_t* iLcm);
+  void setLcm(const std::shared_ptr<lcm::LCM>& iLcm);
+  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  void setLcm(const lcm_t* iLcm);
 
-  virtual void setChannel(const std::string& iChannelName);
+  void setChannel(const std::string& iChannelName);
   std::string getChannel() const;
 
   void setTimeoutInterval(const int iMilliseconds);
@@ -30,20 +35,11 @@ public:
   void useRealTimeWhenInvalid(const bool iVal);
   void setVerbose(const bool iVal);
 
-  virtual int64_t getCurrentTime() const = 0;
-
-  virtual int64_t getCurrentWallTime() const = 0;
-
-protected:
-  virtual void update() = 0;
+  int64_t getCurrentTime() const;
+  int64_t getCurrentWallTime() const;
 
 protected:
-  std::shared_ptr<lcm::LCM> mLcm;
-  std::string mChannel;
-  int mTimeoutInterval;
-  bool mUseTimeMessages;
-  bool mUseRealTimeWhenInvalid;
-  bool mVerbose;
+  std::shared_ptr<Impl> mImpl;
 };
  
 }

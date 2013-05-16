@@ -1,52 +1,61 @@
 #include "Clock.hpp"
 
 #include <iostream>
+#include <lcm/lcm-cpp.hpp>
+#include <bot_core/timestamp.h>
 #include <lcmtypes/drc/utime_t.hpp>
 #include "PointerUtils.hpp"
 
 using namespace drc;
 
-namespace drc {
+struct Clock::Impl {
+  std::shared_ptr<lcm::LCM> mLcm;
+  std::string mChannel;
+  int mTimeoutInterval;
+  bool mUseTimeMessages;
+  bool mUseRealTimeWhenInvalid;
+  bool mVerbose;
 
-// helper class; concrete implementation
-class ClockImpl : public Clock {
-public:
-  ClockImpl() {
+  int64_t mCurrentTime;
+  lcm::Subscription* mTimeSubscription;
+  int64_t mLastMessageReceivedTime;
+
+  Impl() {
+    mTimeoutInterval = 2000;
+    mChannel = "ROBOT_UTIME";  
+    mLcm.reset(new lcm::LCM());
+    mUseTimeMessages = true;
+    mUseRealTimeWhenInvalid = true;
     mCurrentTime = 0;
     mTimeSubscription = NULL;
     mLastMessageReceivedTime = 0;
     mVerbose = true;
-    update();
+
+    subscribe();
   }
 
-  ~ClockImpl() {
-    if (mTimeSubscription != NULL) {
+  ~Impl() {
+    unsubscribe();
+  }
+
+  void subscribe() {
+    unsubscribe();
+    if ((mLcm != NULL) && mUseTimeMessages) {
+      mTimeSubscription = mLcm->subscribe(mChannel, &Impl::onTime, this);
+    }
+  }
+
+  void unsubscribe() {
+    if ((mLcm != NULL) && (mTimeSubscription != NULL)) {
       mLcm->unsubscribe(mTimeSubscription);
+      mTimeSubscription = NULL;
     }
   }
 
-  int64_t getCurrentTime() const {
-    int64_t curRealTime = bot_timestamp_now();
-    if (!mUseTimeMessages) {
-      return curRealTime;
-    }
-    if (mCurrentTime > 0) {
-      int64_t dt = curRealTime - mLastMessageReceivedTime;
-      if (dt > mTimeoutInterval*1000) {
-        if (mVerbose) {
-          std::cout << "drc::Clock: WARNING: last timestamp message " <<
-            "received " << (dt/1e6) << " seconds ago" << std::endl;
-        }
-      }
-      return mCurrentTime;
-    }
-    else {
-      return mUseRealTimeWhenInvalid ? curRealTime : -1;
-    }
-  }
-
-  int64_t getCurrentWallTime() const {
-    return bot_timestamp_now();
+  void setLcm(const std::shared_ptr<lcm::LCM>& iLcm) {
+    unsubscribe();
+    mLcm = iLcm;
+    subscribe();
   }
 
   void onTime(const lcm::ReceiveBuffer* iBuf,
@@ -63,32 +72,12 @@ public:
     }
     mLastMessageReceivedTime = curRealTime;
   }
-
-protected:
-  void update() {
-    if (mTimeSubscription != NULL) {
-      mLcm->unsubscribe(mTimeSubscription);
-    }
-    if (mUseTimeMessages) {
-      mTimeSubscription = mLcm->subscribe(mChannel, &ClockImpl::onTime, this);
-    }
-  }
-
-protected:
-  int64_t mCurrentTime;
-  lcm::Subscription* mTimeSubscription;
-  int64_t mLastMessageReceivedTime;
 };
 
-}
 
 Clock::
 Clock() {
-  mTimeoutInterval = 2000;
-  mChannel = "ROBOT_UTIME";  
-  mLcm.reset(new lcm::LCM());
-  mUseTimeMessages = true;
-  mUseRealTimeWhenInvalid = true;
+  mImpl.reset(new Impl());
 }
 
 Clock::
@@ -97,56 +86,79 @@ Clock::
 
 Clock* Clock::
 instance() {
-  static ClockImpl theClock;
+  static Clock theClock;
   return &theClock;
 }
 
 void Clock::
 setLcm(const std::shared_ptr<lcm::LCM>& iLcm) {
-  mLcm = iLcm;
-  update();
+  mImpl->setLcm(iLcm);
 }
 
 void Clock::
 setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
-  mLcm = PointerUtils::stdPtr(iLcm);
-  update();
+  mImpl->setLcm(PointerUtils::stdPtr(iLcm));
 }
 
 void Clock::
 setLcm(const lcm_t* iLcm) {
-  mLcm.reset(new lcm::LCM((lcm_t*)iLcm));
-  update();
+  mImpl->setLcm(std::shared_ptr<lcm::LCM>(new lcm::LCM((lcm_t*)iLcm)));
 }
 
 void Clock::
 setChannel(const std::string& iChannelName) {
-  mChannel = iChannelName;
-  update();
+  mImpl->mChannel = iChannelName;
+  mImpl->subscribe();
 }
 
 std::string Clock::
 getChannel() const {
-  return mChannel;
+  return mImpl->mChannel;
 }
 
 void Clock::
 setTimeoutInterval(const int iMilliseconds) {
-  mTimeoutInterval = iMilliseconds;
+  mImpl->mTimeoutInterval = iMilliseconds;
 }
 
 void Clock::
 useTimeMessages(const bool iVal) {
-  mUseTimeMessages = iVal;
-  update();
+  mImpl->mUseTimeMessages = iVal;
+  mImpl->subscribe();
 }
 
 void Clock::
 useRealTimeWhenInvalid(const bool iVal) {
-  mUseRealTimeWhenInvalid = iVal;
+  mImpl->mUseRealTimeWhenInvalid = iVal;
 }
 
 void Clock::
 setVerbose(const bool iVal) {
-  mVerbose = iVal;
+  mImpl->mVerbose = iVal;
+}
+
+int64_t Clock::
+getCurrentTime() const {
+  int64_t curRealTime = bot_timestamp_now();
+  if (!mImpl->mUseTimeMessages) {
+    return curRealTime;
+  }
+  if (mImpl->mCurrentTime > 0) {
+    int64_t dt = curRealTime - mImpl->mLastMessageReceivedTime;
+    if (dt > mImpl->mTimeoutInterval*1000) {
+      if (mImpl->mVerbose) {
+        std::cout << "drc::Clock: WARNING: last timestamp message " <<
+          "received " << (dt/1e6) << " seconds ago" << std::endl;
+      }
+    }
+    return mImpl->mCurrentTime;
+  }
+  else {
+    return mImpl->mUseRealTimeWhenInvalid ? curRealTime : -1;
+  }
+}
+
+int64_t Clock::
+getCurrentWallTime() const {
+  return bot_timestamp_now();
 }
