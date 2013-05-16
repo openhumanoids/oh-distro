@@ -97,9 +97,44 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
                                                                    const drc::affordance_plus_collection_t* msg)						 
   {
     // call handleAffordancePlusMsg for each affordance in collection
+    set<pair<string,int> > currentAffs;
     for (size_t i=0; i< (size_t)msg->naffs; i++) {
       const drc::affordance_plus_t& aff = msg->affs_plus[i];
       handleAffordancePlusMsg(rbuf, chan, &aff);
+      currentAffs.insert(make_pair(aff.aff.otdf_type, aff.aff.uid));
+    }
+
+    // delete any affordance not in message
+    if(!_parent_affordance_renderer->debugMode){
+      std::map<std::string, OtdfInstanceStruc>::iterator it;
+      std::map<std::string, OtdfInstanceStruc>& objs = _parent_affordance_renderer->instantiated_objects;
+      for(it = objs.begin(); it!=objs.end(); ){
+        // if not in collection, erase
+        if(currentAffs.find(make_pair(it->second.otdf_type, it->second.uid)) == currentAffs.end()) {
+          // clear selection if selected
+          const char *instance_name;
+          instance_name = bot_gtk_param_widget_get_enum_str( _parent_affordance_renderer->pw, PARAM_OTDF_INSTANCE_SELECT );
+          if(instance_name && _parent_affordance_renderer->object_selection==string(instance_name)){
+            _parent_affordance_renderer->link_selection = " ";
+            _parent_affordance_renderer->object_selection = " ";
+          }  
+          // clear sticky hands if selected  
+          typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+          sticky_hands_map_type_::iterator hand_it = _parent_affordance_renderer->sticky_hands.begin();
+          while (hand_it!=_parent_affordance_renderer->sticky_hands.end()) {
+            string hand_name = string(hand_it->second.object_name);
+            if (hand_name == string(instance_name)) {
+              if(_parent_affordance_renderer->stickyhand_selection==hand_it->first)
+                 _parent_affordance_renderer->stickyhand_selection = " ";
+              _parent_affordance_renderer->sticky_hands.erase(hand_it++);
+            } else hand_it++;
+          } 
+          // erase object
+          objs.erase(it++);
+          // trigger redraw
+          bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
+        } else ++it;   // otherwise go to next object
+      }
     }
   }
 

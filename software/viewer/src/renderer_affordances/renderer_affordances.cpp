@@ -762,7 +762,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     fprintf(stderr,"\nClearing Instantiated Objects\n");
     
     // popup for clear from aff store
-    popup_clear_from_affstore(pw,user);
+    if(!self->debugMode) popup_clear_from_affstore(pw,user);
 
      self->instantiated_objects.clear();
      self->sticky_hands.clear();
