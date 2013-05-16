@@ -15,6 +15,9 @@ class RobotStateCodec : public CustomChannelCodec
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       
     bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
+
+    static std::map<std::string, int> joint_names_to_order_;
+    static std::vector<std::string> joint_names_;
     
   private:
     goby::acomms::DCCLCodec* dccl_;

@@ -1,15 +1,8 @@
 #include "procman-codecs.h"
 
 
-std::map<std::string, bot_procman::orders_t> PMDOrdersCodec::state_;
-std::map<std::string, bot_procman::info_t> PMDInfoCodec::state_;
-bool PMDOrdersCodec::need_to_send_ack_ = false;
-bool PMDInfoCodec::need_to_send_ack_ = false;
-
-std::map<std::string, drc::PMDOrdersDiff> PMDOrdersCodec::diff_state_;    
-drc::PMDOrdersDiff PMDOrdersCodec::diff_waiting_ack_;
-std::map<std::string, drc::PMDInfoDiff> PMDInfoCodec::diff_state_;    
-drc::PMDInfoDiff PMDInfoCodec::diff_waiting_ack_;
+std::map<std::string, State<bot_procman::orders_t, drc::PMDOrdersDiff> > PMDOrdersCodec::host_info_;
+std::map<std::string, State<bot_procman::info_t, drc::PMDInfoDiff> > PMDInfoCodec::host_info_;
 
 using goby::glog;
 using namespace goby::common::logger;

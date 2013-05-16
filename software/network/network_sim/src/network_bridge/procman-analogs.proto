@@ -16,6 +16,7 @@ message ProcManWrapper
   {
     BASE = 0;
     ROBOT = 1;
+    EXTRA = 2;
   }
   required Host host = 2;
   optional bool request_full = 3 [default = false];

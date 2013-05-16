@@ -563,6 +563,7 @@ void DRCShaper::post_bw_stats()
             stats.queued_msgs.push_back(it->second.queued_msgs);
             stats.queued_bytes.push_back(it->second.queued_bytes);
             stats.sent_bytes.push_back(it->second.sent_bytes);
+            
         }
         
         for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
