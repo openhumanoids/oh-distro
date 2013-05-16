@@ -316,6 +316,8 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   footstep newstep;
   newstep = DetectFootTransistion(utime, leftz, rightz);
   
+  //std::cout << "Foot at this point is: " << newstep.foot << std::endl;
+
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
@@ -376,11 +378,9 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	//Eigen::Vector3d local_rpy_rate = local_to_body_.linear() * ( temp_body_rpy_rate );
 	
 	Eigen::Quaterniond yaw_q;
-	//yaw_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear()); // This may be the problem child right here
-	//std::cout << "Yaw is being set to: " << InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().linear())(2) << std::endl;
+
 	yaw_q = InertialOdometry::QuaternionLib::e2q(InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().linear()));
-	//std::cout << "Quat is: " << yaw_q.w() << ", " << yaw_q.x() << ", " << yaw_q.y() << ", " << yaw_q.z() << std::endl;
-	//std::cout << "Yaw is being set to:\n" << getPelvisFromStep().linear() << "\n";
+
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
 	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
@@ -398,7 +398,7 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
 		return left_to_pelvis;
 
 	// TODO -- This shou;ld be an exception
-	std::cout << "TwoLegOdometry::getSecondaryFootToPelvis() THIS SHOULD NEVER HAPPEND, FEET OUT OF SYNC\n";
+	std::cout << "TwoLegOdometry::getSecondaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC\n";
 	return Eigen::Isometry3d();
 }
 
@@ -408,8 +408,8 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 	if (footsteps.lastFoot() == RIGHTFOOT)
 		return right_to_pelvis;
 
-	// TODO -- This shou;ld be an exception
-	std::cout << "TwoLegOdometry::getPrimaryFootToPelvis() THIS SHOULD NEVER HAPPEND, FEET OUT OF SYNC\n";
+	// TODO -- This should be an exception
+	std::cout << "TwoLegOdometry::getPrimaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC -- foot here: " << footsteps.lastFoot() << "\n";
 	return Eigen::Isometry3d();
 }
 
@@ -481,6 +481,8 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	
 	Eigen::Isometry3d returnval;
 	returnval = add(footsteps.getLastStep(),getPrimaryFootToPelvis());
+
+
 	//std::cout << "Returning yaw:\n" << InertialOdometry::QuaternionLib::C2e(returnval.linear())(2) << std::endl;
 	//std::cout << "Returning linear:\n" << returnval.linear() << "\n";
 	
@@ -656,8 +658,8 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	//std::cout << "PRE filtered velocities are: " << local_velocities.transpose() << std::endl;
 
-	// with or wothout filtering
-	if (false) {
+	// with or without filtering
+	if (true) {
 		local_velocities = unfiltered_vel;
 	} else {
 		for (int i=0;i<3;i++) {

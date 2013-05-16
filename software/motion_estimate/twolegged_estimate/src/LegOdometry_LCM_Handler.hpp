@@ -61,6 +61,8 @@
 #define LOG_28_JOINT_COMMANDS
 #define NUMBER_JOINTS             28
 
+#define LOG_LEG_TRANSFORMS
+
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
@@ -128,6 +130,11 @@ private:
 	volatile double joint_positions[16];
 	volatile double measured_joint_effort[16];
 #endif
+#ifdef LOG_LEG_TRANSFORMS
+	NumericalDiff pelvis_to_feet_speed[4]; // left vel, right vel, left rate, right rate
+	volatile double pelvis_to_feet_transform[12]; // left vel, right vel, left rate, right rate
+#endif
+
 	
 	// These filters were added separately from the joint filters
 	LowPassFilter lpfilter[FILTER_ARR];
