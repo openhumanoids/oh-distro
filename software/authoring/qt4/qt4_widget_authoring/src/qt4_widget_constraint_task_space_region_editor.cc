@@ -79,13 +79,24 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _double_spin_box_y_max->setSuffix( " m" );
   _double_spin_box_z_min->setSuffix( " m" );
   _double_spin_box_z_max->setSuffix( " m" );
+  _double_spin_box_x_min->setDecimals( 3 );
+  _double_spin_box_x_max->setDecimals( 3 );
+  _double_spin_box_y_min->setDecimals( 3 );
+  _double_spin_box_y_max->setDecimals( 3 );
+  _double_spin_box_z_min->setDecimals( 3 );
+  _double_spin_box_z_max->setDecimals( 3 );
+  _double_spin_box_roll_min->setDecimals( 3 );
+  _double_spin_box_roll_max->setDecimals( 3 );
+  _double_spin_box_pitch_min->setDecimals( 3 );
+  _double_spin_box_pitch_max->setDecimals( 3 );
+  _double_spin_box_yaw_min->setDecimals( 3 );
+  _double_spin_box_yaw_max->setDecimals( 3 );
   _double_spin_box_roll_min->setSuffix( " deg" );
   _double_spin_box_roll_max->setSuffix( " deg" );
   _double_spin_box_pitch_min->setSuffix( " deg" );
   _double_spin_box_pitch_max->setSuffix( " deg" );
   _double_spin_box_yaw_min->setSuffix( " deg" );
   _double_spin_box_yaw_max->setSuffix( " deg" );
-
   _double_spin_box_x_min->setSingleStep( 0.1 );
   _double_spin_box_x_max->setSingleStep( 0.1 );
   _double_spin_box_y_min->setSingleStep( 0.1 );
@@ -115,7 +126,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _double_spin_box_parent_to_constraint_x->setSuffix( " m" );
   _double_spin_box_parent_to_constraint_y->setSuffix( " m" );
   _double_spin_box_parent_to_constraint_z->setSuffix( " m" );
-
+  _double_spin_box_parent_to_constraint_x->setDecimals( 3 );
+  _double_spin_box_parent_to_constraint_y->setDecimals( 3 );
+  _double_spin_box_parent_to_constraint_z->setDecimals( 3 );
   _double_spin_box_parent_to_constraint_x->setRange( -1000.0, 1000.0 );
   _double_spin_box_parent_to_constraint_y->setRange( -1000.0, 1000.0 );
   _double_spin_box_parent_to_constraint_z->setRange( -1000.0, 1000.0 );
@@ -123,7 +136,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _double_spin_box_child_to_constraint_x->setSuffix( " m" );
   _double_spin_box_child_to_constraint_y->setSuffix( " m" );
   _double_spin_box_child_to_constraint_z->setSuffix( " m" );
-
+  _double_spin_box_child_to_constraint_x->setDecimals( 3 );
+  _double_spin_box_child_to_constraint_y->setDecimals( 3 );
+  _double_spin_box_child_to_constraint_z->setDecimals( 3 );
   _double_spin_box_child_to_constraint_x->setRange( -1000.0, 1000.0 );
   _double_spin_box_child_to_constraint_y->setRange( -1000.0, 1000.0 );
   _double_spin_box_child_to_constraint_z->setRange( -1000.0, 1000.0 );
