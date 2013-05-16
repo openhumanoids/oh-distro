@@ -22,10 +22,10 @@ target_link_libraries(ros2lcm boost_signals)
 pods_install_executables(ros2lcm)
 pods_use_pkg_config_packages(ros2lcm lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
 
-rosbuild_add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
-target_link_libraries(ros2lcm_camera boost_signals)
-pods_install_executables(ros2lcm_camera)
-pods_use_pkg_config_packages(ros2lcm_camera lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
+#rosbuild_add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
+#target_link_libraries(ros2lcm_camera boost_signals)
+#pods_install_executables(ros2lcm_camera)
+#pods_use_pkg_config_packages(ros2lcm_camera lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
 
 
 rosbuild_add_executable(latency src/latency.cpp)
