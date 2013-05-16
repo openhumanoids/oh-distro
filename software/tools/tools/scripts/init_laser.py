@@ -17,6 +17,7 @@ from drc.data_request_t import data_request_t
 from drc.data_request_list_t import data_request_list_t
 
 from drc.sensor_request_t import sensor_request_t
+from drc.neck_pitch_t import neck_pitch_t
 
 ########################################################################################
 
@@ -25,7 +26,7 @@ def on_utime(channel, data):
   m = utime_t.decode(data)
   t = m.utime
   #print t
-  if ( abs(t - 300000) < 5000): # after .3secs send a spin rate
+  if ( abs(t - 300000) < 5000): # after 3secs send a spin rate
     print "Set lidar spinning at 7 RPM and Cameras to 5 FPS and Compression to -1 | %d" %(t)
     o = sensor_request_t()
     o.utime = t
@@ -34,13 +35,13 @@ def on_utime(channel, data):
     o.hand_fps = 1
     o.camera_compression = -1 
     lc.publish("SENSOR_REQUEST", o.encode())    
-    
-    #o = twist_timed_t()
-    #l = vector_3d_t()
-    #a = vector_3d_t()
-    #a.x = 0.733038
-    #o.linear_velocity =l
-    #o.angular_velocity =a
+
+  if ( abs(t - 9000000) < 5000): # after 3secs send a spin rate
+    print "Set pitch of neck to 35degees %d" %(t)
+    p = neck_pitch_t()
+    p.utime = t
+    p.pitch = 0.61 # 35 degrees seems about right
+    lc.publish("DESIRED_NECK_PITCH", p.encode())    
 
   #if (abs(t - 3000000) < 5000): # after 4secs send the data request
   #  print "gimmie the data or else - %d" %(t)

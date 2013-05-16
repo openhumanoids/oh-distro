@@ -34,9 +34,15 @@ class Pass{
     void candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_t* msg);    
     void controllerStatusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::controller_status_t* msg);    
     
+    void sendDataRequests(int64_t this_utime);
+    
     Eigen::Isometry3d getRandomGoal();
     int stage_;
     int mode_;
+    std::vector<std::string> mode_names_;
+    int test_counter_;
+    
+    
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_): 
@@ -48,6 +54,12 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_):
   lcm_->subscribe("CANDIDATE_ROBOT_PLAN",&Pass::candidateRobotPlanHandler,this);   
   lcm_->subscribe("CONTROLLER_STATUS",&Pass::controllerStatusHandler,this);   
   srand (time(NULL)); // random seed  
+  test_counter_=0;
+  
+  mode_names_.push_back("straight");
+  mode_names_.push_back("left");
+  mode_names_.push_back("right");
+  
 }
 
 
@@ -91,7 +103,11 @@ Eigen::Isometry3d Pass::getRandomGoal(){
 
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::robot_state_t* msg){
+  if (msg->utime < 5*1E6){
+    sendDataRequests(msg->utime);
+  }
   if (stage_==0){
+    sendDataRequests(msg->utime);
 
     Eigen::Isometry3d current_pose;
     current_pose.setIdentity();
@@ -133,13 +149,24 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     sleep(5); // added to make sure that the footstep plane is new before accepting it, could be smaller?
     stage_=1;
     std::cout << "Stage 0: got EST_ROBOT_STATE, publishing WALKING_GOAL. Moving to Stage 1\n";
+    std::cout << "         Mode: " << mode_names_[mode_]  <<"\n";
     
+    // Walk 5 steps per mode:
+    test_counter_ ++;
+    if (test_counter_ >= 5){
+      test_counter_=0;
+      mode_++;
+      if (mode_>2){ mode_=0; }      
+        std::cout << "         Next time the mode will be: " << mode_names_[mode_]  <<"\n";
+    }
+      
   }
 }
 
 void Pass::candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::footstep_plan_t* msg){
   if (stage_==1){
+    sendDataRequests(msg->utime);
     sleep(1); 
     lcm_->publish("COMMITTED_FOOTSTEP_PLAN", msg );
     stage_ =2;
@@ -150,6 +177,7 @@ void Pass::candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf,
 void Pass::candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_plan_t* msg){
   if (stage_==2){
+    sendDataRequests(msg->utime);
     sleep(1); // this was required as matlab was too slow to receive it immediately
     lcm_->publish("COMMITTED_ROBOT_PLAN", msg );
     stage_ =3;
@@ -158,10 +186,12 @@ void Pass::candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
+
 void Pass::controllerStatusHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::controller_status_t* msg){
   if (stage_==3){
     if (msg->state== drc::controller_status_t::STANDING){
+      sendDataRequests(msg->utime);
       stage_ =0;
       std::cout << "Stage 3: controller=STANDING, restarting. Moving to Stage 0\n"
                 << "===========================================================\n";
@@ -170,6 +200,22 @@ void Pass::controllerStatusHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
+// Send this to make sure what we need is being published for the planner:
+void Pass::sendDataRequests(int64_t this_utime){
+  drc::data_request_list_t reqs;
+  reqs.utime = this_utime;
+  drc::data_request_t req1; //EST_ROBOT_STATE
+  req1.period = 10;
+  req1.type =2;
+  drc::data_request_t req2; // Planning Height Map
+  req2.period = 10;
+  req2.type =6;
+  reqs.requests.push_back(req1); 
+  reqs.requests.push_back(req2);
+  reqs.num_requests = reqs.requests.size();
+  lcm_->publish("DATA_REQUEST", &reqs);
+}
+
 int main(int argc, char ** argv) {
   int verbose = 0;
   int stage = 3;
@@ -177,11 +223,11 @@ int main(int argc, char ** argv) {
   ConciseArgs opt(argc, (char**)argv);
   opt.add(verbose, "v", "verbosity","0 none, 1 little, 2 debug");
   opt.add(stage, "s", "stage","Starting Stage");
-  opt.add(mode, "m", "mode","Mode 0forward 1left 2right 3random");
+  opt.add(mode, "m", "mode","Mode 0forward 1left 2right");// 3random");
   opt.parse();
   std::cout << "verbose: " << verbose << "\n";    
   std::cout << "stage: " << stage << "\n";    
-  std::cout << "mode: " << mode << " [where 0forward 1left 2right 3random]\n";    
+  std::cout << "mode: " << mode << " [where 0forward 1left 2right\n";//3random]\n";    
   
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
