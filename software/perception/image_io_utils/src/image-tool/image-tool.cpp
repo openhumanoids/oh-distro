@@ -1,3 +1,21 @@
+/*
+CAMERALEFT - rgb left
+CAMERA - stereo grey
+CAMERA_RHAND/CAMERA_LHAND - stereo grey
+
+image tool: (on request)
+CAMERA_RHANDLEFT_TX - grey jpeg compressed and different resolutions  (snip the top image)
+CAMERA_LHANDLEFT_TX - grey jpeg compressed and different resolutions  (snip the top image)
+CAMERALEFT_TX - rgb jpeg compressed and different resolutions (don't snip the image tool)
+
+on base:
+CAMERA_RHANDLEFT_RX - original resolution
+CAMERA_LHANDLEFT_RX - original resolution
+CAMERALEFT_RX - original resolution
+*/
+
+
+
 // 1024x544 from Gazebo
 // reduced by 4 to 256x136 - 5KB per image @ 50% quality 
 // (1024x544 per image @ 50% quality is 40KB for same image)

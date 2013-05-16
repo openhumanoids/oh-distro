@@ -254,35 +254,18 @@ public:
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
     mSpinRate = 7;
-    addSpin("Spin Rate (rpm)", mSpinRate, 0, 60, 1, sensorControlBox);
-    mHeadCameraFrameRate = 10;
-    addSpin("Head Camera Rate (fps)", mHeadCameraFrameRate, 0, 30, 1, sensorControlBox);
-    mHandCameraFrameRate = 10;
-    addSpin("Hands Camera Rate (fps)", mHandCameraFrameRate, 0, 30, 1, sensorControlBox);
+    mHeadCameraFrameRate = 5;
+    mHandCameraFrameRate = 5;
     mCameraCompression = 0;
+    addSpin("Spin Rate (rpm)", mSpinRate, 0, 60, 1, sensorControlBox);
+    addSpin("Head Camera Rate (fps)", mHeadCameraFrameRate, 0, 30, 1, sensorControlBox);
+    addSpin("Hands Camera Rate (fps)", mHandCameraFrameRate, 0, 30, 1, sensorControlBox);
     addSpin("Camera Quality [0 bad]", mCameraCompression, 0, 2, 1, sensorControlBox);
 
-    button = Gtk::manage(new Gtk::Button("Send Rates"));
+    button = Gtk::manage(new Gtk::Button("Submit Sensor Config"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
     sensorControlBox->pack_start(*button, false, false);
-    //Gtk::HSeparator* separator = Gtk::manage(new Gtk::HSeparator());
-    //sensorControlBox->pack_start(*separator, false, false);
-
-    /*
-    button = Gtk::manage(new Gtk::Button("Submit Camera Rate"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onHeadCameraRateControlButton));
-    sensorControlBox->pack_start(*button, false, false);
-    separator = Gtk::manage(new Gtk::HSeparator());
-    sensorControlBox->pack_start(*separator, false, false);
-    
-    button = Gtk::manage(new Gtk::Button("Submit Camera Rate"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onHandsCameraRateControlButton));
-    sensorControlBox->pack_start(*button, false, false);
-    separator = Gtk::manage(new Gtk::HSeparator());
-    sensorControlBox->pack_start(*separator, false, false);    
 
     mHeadPitchAngle = 45;
     addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
@@ -290,7 +273,7 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
-    */
+    
     
     notebook->append_page(*sensorControlBox, "Sensor");
     
@@ -384,26 +367,6 @@ public:
     msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
   }
-
-  /*
-  void onHeadCameraRateControlButton() {
-    drc::sensor_request_t msg;
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = -1;
-    msg.multisense_fps = mHeadCameraFrameRate;
-    msg.hand_fps = -1;
-    getLcm()->publish("SENSOR_REQUEST", &msg);
-  }
-
-  void onHandsCameraRateControlButton() {
-    drc::sensor_request_t msg;
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = -1;
-    msg.multisense_fps = -1;
-    msg.hand_fps = mHandCameraFrameRate;    
-    getLcm()->publish("SENSOR_REQUEST", &msg);
-  }  
-  */
     
   void onHeadPitchControlButton() {
     const double kPi = 4*atan(1);

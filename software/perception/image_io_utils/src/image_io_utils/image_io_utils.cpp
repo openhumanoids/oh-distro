@@ -13,11 +13,12 @@
 using namespace std;
 
 
-image_io_utils::image_io_utils (lcm_t* publish_lcm_, int width_, int height_):
-        publish_lcm_(publish_lcm_), width_(width_), height_(height_){
+image_io_utils::image_io_utils (lcm_t* publish_lcm_):
+        publish_lcm_(publish_lcm_){
 
+  // Maximum size of reserved buffer. This will support and images smaller than this also:
   img_buffer_size_ = 800 * 800 * sizeof(int16_t) * 4;
-  img_buffer_= new uint8_t[800 * 800 * 4];  // x4 was used for zlib in kinect_lcm
+  img_buffer_= new uint8_t[img_buffer_size_];  // x4 was used for zlib in kinect_lcm
   // is x10 necessary for  jpeg? thats waht kinect_lcm assumed
 }
 
