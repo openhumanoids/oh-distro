@@ -57,7 +57,7 @@ uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale im
 class App{
 public:
   App(ros::NodeHandle node_, string mode_, 
-      bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_hand_cameras_);
+      bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_head_cameras_, bool send_hand_cameras_);
   ~App();
 
 private:
@@ -65,7 +65,8 @@ private:
   bool control_output_; // publish control msgs to LCM
   bool perception_output_; // publish control msgs to LCM
   bool send_ground_truth_; // listen for and publish ground truth inside TRUE_ROBOT_STATE 
-  bool send_hand_cameras_; // listen for and publish the hand cameras
+  bool send_head_cameras_;  // listen for and publish the cameras
+  bool send_hand_cameras_; // listen for and publish the hand cameras (the above must be true also!)
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
@@ -157,11 +158,12 @@ private:
 };
 
 App::App(ros::NodeHandle node_, string mode_, 
-    bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_hand_cameras_) :
+    bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_head_cameras_, bool send_hand_cameras_) :
     node_(node_), it_(node_), mode_(mode_),
     sync_(10), l_hand_sync_(10), r_hand_sync_(10),
     control_output_(control_output_), 
-    perception_output_(perception_output_), send_ground_truth_(send_ground_truth_), send_hand_cameras_(send_hand_cameras_){
+    perception_output_(perception_output_), send_ground_truth_(send_ground_truth_), 
+    send_head_cameras_(send_head_cameras_), send_hand_cameras_(send_hand_cameras_){
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
@@ -219,12 +221,9 @@ App::App(ros::NodeHandle node_, string mode_,
     //scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
     //scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
   
-    bool send_cameras =true;
-    if (send_cameras){
-      hand_stereo_publish_fps_ = 5.0;
-      head_stereo_publish_fps_ = 5.0;
+    if (send_head_cameras_){
+      head_stereo_publish_fps_ = 1.0;
       head_fps_sub_ = node_.subscribe("/mit/set_head_fps", 10, &App::head_fps_cb,this);
-      hand_fps_sub_ = node_.subscribe("/mit/set_hand_fps", 10, &App::hand_fps_cb,this);
       
       // Stereo Image:
       std::string lim_string ,lin_string,rim_string,rin_string;
@@ -263,29 +262,31 @@ App::App(ros::NodeHandle node_, string mode_,
       sync_.registerCallback( boost::bind(&App::head_stereo_cb, this, _1, _2, _3, _4) );
       head_stereo_last_utime_=0;
 
-      // Left Mono-Camera:
+      // Left Camera:
       left_image_sub_ = node_.subscribe( string(head_stereo_root + "/left/image_raw"), 10, &App::left_image_cb,this);
       head_left_last_utime_ =0;
-      
-      /////////////////////////////// Hand Cameras /////////////////////////////////////
-      if (send_hand_cameras_){
-	l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 10);
-	l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 10);
-	l_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/image_raw" ), 10);
-	l_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/camera_info"  ), 10);
-	l_hand_sync_.connectInput(l_hand_l_image_sub_, l_hand_l_info_sub_, l_hand_r_image_sub_, l_hand_r_info_sub_);
-	l_hand_sync_.registerCallback( boost::bind(&App::l_hand_stereo_cb, this, _1, _2, _3, _4) );        
-	l_hand_stereo_last_utime_=0;
-
-	r_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/image_raw" ), 10);
-	r_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/camera_info" ), 10);
-	r_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/image_raw" ), 10);
-	r_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/camera_info"  ), 10);
-	r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
-	r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
-	r_hand_stereo_last_utime_=0;
-      }
+    }
     
+    /////////////////////////////// Hand Cameras /////////////////////////////////////
+    if (send_hand_cameras_){
+      hand_stereo_publish_fps_ = 1.0;
+      hand_fps_sub_ = node_.subscribe("/mit/set_hand_fps", 10, &App::hand_fps_cb,this);
+
+      l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 10);
+      l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 10);
+      l_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/image_raw" ), 10);
+      l_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/camera_info"  ), 10);
+      l_hand_sync_.connectInput(l_hand_l_image_sub_, l_hand_l_info_sub_, l_hand_r_image_sub_, l_hand_r_info_sub_);
+      l_hand_sync_.registerCallback( boost::bind(&App::l_hand_stereo_cb, this, _1, _2, _3, _4) );        
+      l_hand_stereo_last_utime_=0;
+
+      r_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/image_raw" ), 10);
+      r_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/camera_info" ), 10);
+      r_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/image_raw" ), 10);
+      r_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/camera_info"  ), 10);
+      r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
+      r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
+      r_hand_stereo_last_utime_=0;
     }
   }
 };
@@ -791,11 +792,13 @@ int main(int argc, char **argv){
   bool control_output = false;
   bool perception_output = false;  
   bool send_ground_truth = false;  
+  bool send_head_cameras = false;
   bool send_hand_cameras = false;
   parser.add(mode, "m", "mode", "Mode: robot, hands");
   parser.add(control_output, "c", "control_output", "Publish control message");
   parser.add(perception_output, "p", "perception_output", "Publish perception messages");
   parser.add(send_ground_truth, "g", "send_ground_truth", "Listen for and include GT odom");
+  parser.add(send_head_cameras, "s", "send_head_cameras", "Send cameras in head/stereohead");
   parser.add(send_hand_cameras, "l", "send_hand_cameras", "Send cameras in hand/limbs");
   parser.parse();
   cout << "Publish Mode: " << mode << "\n";   
@@ -820,7 +823,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App(nh, mode, control_output, perception_output, send_ground_truth, send_hand_cameras);
+  App *app = new App(nh, mode, control_output, perception_output, send_ground_truth, send_head_cameras, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));

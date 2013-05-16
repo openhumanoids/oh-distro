@@ -15,6 +15,10 @@ group "0.development" {
         exec = "roscore";
         host = "robot";
     }
+    cmd "set-sim-rate" {
+        exec = "drc-set-sim-rate 0.3";
+        host = "robot";
+    }
 }
 
 
@@ -36,7 +40,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "r2l_perception" {
-        exec = "rosrun translators ros2lcm -p -l";
+        exec = "rosrun translators ros2lcm -p -l -s";
         host = "robot";
     }
     cmd "pserver" {
@@ -391,18 +395,6 @@ group "m.3.dev_tools" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "robot";
     }
-    cmd "set-sim-rate-quicker" {
-        exec = "drc-set-sim-rate 0.5";
-        host = "robot";
-    }
-    cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.25";
-        host = "robot";
-    }
-    cmd "set-sim-rate-slower" {
-        exec = "drc-set-sim-rate 0.05";
-        host = "robot";
-    }
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
         host = "base";
@@ -497,7 +489,7 @@ script "dev.qual_1" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_quals_1"; 
 }
 script "dev.qual_2" { 
@@ -516,7 +508,7 @@ script "dev.qual_3" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_quals_3"; 
 }
 script "dev.vrc_driving" { 
@@ -551,7 +543,7 @@ script "dev.mit_walking" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_walking";
 }
 
@@ -562,11 +554,8 @@ script "dev.mit_walking_vo" {
     start group "a.5.a.motion_vo";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 25000;
     start cmd "gz_mit_walking";
-    wait ms 3000;
-    start cmd "set-sim-rate-slower";
-    start cmd "logger-no-vis";
 }
 
 script "dev.mit_manip_nohands" {
@@ -574,7 +563,7 @@ script "dev.mit_manip_nohands" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_manip_nohands";
 }
 
@@ -583,7 +572,7 @@ script "dev.mit_manip" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 18000;
+    wait ms 25000;
     start cmd "gz_mit_manip";
 }
 
@@ -591,7 +580,7 @@ script "dev.ingress" {
     start group "0.development";
     start group "a.1.core";
     start group "a.6.ingress";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_ingress"; 
 }
 
@@ -600,8 +589,6 @@ script "dev.ingress" {
 script "systest-main" {
     run_script "dev.mit_walking";
     start cmd "systemwide-test";
-    wait ms 4000;
-    start cmd "set-sim-rate";
 }
 
 
@@ -610,7 +597,5 @@ script "systest-vo-start" {
     stop cmd "estpub";
     start group "a.5.a.motion_vo";
     start cmd "systemwide-test";
-    wait ms 4000;
-    start cmd "set-sim-rate-quicker";
 }
 
