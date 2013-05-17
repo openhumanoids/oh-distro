@@ -92,7 +92,7 @@ int main() {
   ImageReceive obj;
   // TODO: don't hard-code these, read from config
   obj.addChannel("CAMERA", 800, 800);
-  obj.addChannel("CAMERA_LHAND", 800, 800);
-  obj.addChannel("CAMERA_RHAND", 800, 800);
+  obj.addChannel("CAMERA_LHAND", 752, 480);
+  obj.addChannel("CAMERA_RHAND", 752, 480);
   obj.start();
 }
