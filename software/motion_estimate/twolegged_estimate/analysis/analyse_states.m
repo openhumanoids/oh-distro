@@ -103,7 +103,7 @@ me_r_lax = data(:,(offset+15));
 % 	  ss << joint_commands[i] << ", "; //31-58
 % 		ss << joint_positions[i] << ", "; //59-74
 % 	   ss << measured_joint_effort[i] << ", ";//75-90
-%%
+
 % if (legkinvels)
     %foot velocities are available 
 
@@ -211,7 +211,7 @@ plot(t,tvel,'--','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
-legend({'est vel x', 'est vel y', 'est vel z', 'left c','righ c'})
+legend({'est vel x', 'est vel y', 'est vel z', 'true vel x', 'true vel y', 'true vel z', 'left c','righ c'})
 title('States')
 
 subplot(spa,spb,2),
@@ -321,25 +321,25 @@ if (legkinvels)
     plot(t,[jv_l_mhx, jv_l_lhy, jv_l_uhz])
     grid on
     legend({'jv l mhx', 'jv l lhy', 'jv l uhz'})
-    title('Left Hip')
+    title('Left Hip Joint Velocities')
 
     subplot(spa,spb,2),
     plot(t,[jv_r_mhx, jv_r_lhy, jv_r_uhz])
     grid on
     legend({'jv r mhx', 'jv r lhy', 'jv r uhz'})
-    title('Right Hip')
+    title('Right Hip Joint Velocities')
 
     subplot(spa,spb,3),
     plot(t,[jv_l_kny, jv_l_uay, jv_l_lax])
     grid on
-    legend({'jv_l_kny', 'jv_l_uay', 'jv_l_lax'})
-    title('Left knee and ankle')
+    legend({'jv l kny', 'jv l uay', 'jv l lax'})
+    title('Left knee and ankle Joint Velocities')
 
     subplot(spa,spb,4)
     plot(t,[jv_r_kny, jv_r_uay, jv_r_lax])
     grid on
-    legend({'jv_r_kny', 'jv_r_uay', 'jv_r_lax'})
-    title('Left knee and ankle')
+    legend({'jv r kny', 'jv r uay', 'jv r lax'})
+    title('Right knee and ankle Joint Velocities')
     
 end
 

@@ -154,6 +154,7 @@ float BipolarSchmittTrigger::getState() {
 }
 
 NumericalDiff::NumericalDiff() {
+  first_pass = true;
   prev_time = 0;
   setSize(1);
 }
@@ -163,13 +164,145 @@ void NumericalDiff::setSize(int len) {
   size = len;
 }
 
-Eigen::VectorXd NumericalDiff::diff(double time, const Eigen::VectorXd &sample) {
+/*
+Eigen::VectorXd NumericalDiff::diff(const double &time, const Eigen::VectorXd &sample) {
+
+
+	std::cout << "NumericalDiff::diff(double , Eigen::VectorXd ) - DONT use this function -- to be depreciated ASAP\n";
+
+	return Eigen::VectorXd();
+}*/
+
+
+Eigen::VectorXd NumericalDiff::diff(const unsigned long long &ts, const Eigen::VectorXd &sample) {
+	if (first_pass && sample.size() != size) {
+		setSize(sample.size());
+		first_pass = false;
+
+		std::cout << "NumericalDiff::diff -- Size of the vector to be used automatically adjusted on the first pass.\n";
+	}
+
   Eigen::VectorXd returnval(size);
   
-  returnval = (sample - prev_sample)/(time - prev_time);
+  returnval = (sample - prev_sample)/(ts - prev_time)*1E-6;
   
-  prev_time = time;
+  prev_time = ts;
   prev_sample = sample;
   
   return returnval;
+}
+
+void NumericalDiff::diff(const unsigned long long &ts, int count, double sample[]) {
+
+	Eigen::VectorXd data(count);
+	Eigen::VectorXd returndata(count);
+
+
+	for (int i=0;i<count;i++) {
+		data(i) = sample[i];
+	}
+
+	returndata = diff(ts,data);
+
+	for (int i=0;i<count;i++) {
+		sample[i] = returndata(i);
+	}
+}
+
+
+TrapezoidalInt::TrapezoidalInt() {
+	setSize(1);
+	u_stime = 0;
+	Init();
+}
+
+
+void TrapezoidalInt::Init() {
+	first_pass = true;
+	size_set = false;
+}
+
+/*
+TrapezoidalInt::~TrapezoidalInt() {
+
+}
+*/
+
+void TrapezoidalInt::setSize(const int &s) {
+	assert(s>-1);
+	size_set = true;
+	size = s;
+	int_dx.resize(s);
+	prev_dx.resize(s);
+
+	prev_dx.setZero();
+	reset_in_time();
+
+}
+
+void TrapezoidalInt::reset_in_time() {
+	int_dx.setZero();
+}
+
+Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &u_ts, const Eigen::VectorXd &dx) {
+	// TODO -- This function should use the u_time stamp from zero. Then it can also be used as an integral time counter and makes best possible use of the available time variable dynamic range
+
+	if (u_ts < u_stime) {
+		std::cout << "TrapezoidalInt::integrate is jumping back in time. This is not supposed to happen -- behavior will be unpredictable.\n";
+		u_stime = u_ts;
+	}
+
+	// Eigen does not ensure self assigned computations x = x + 1
+	Eigen::VectorXd newval(size);
+	newval = int_dx + 0.5*(dx + prev_dx)*(u_ts-u_stime)*1E-6;
+	int_dx = newval;
+
+	u_stime = u_ts;
+	prev_dx = dx;
+
+	return int_dx;
+}
+
+Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &ts, const int &num_joints, const double samples[]) {
+	if (first_pass && !size_set) {
+		setSize(num_joints);
+		first_pass = false;
+
+		std::cout << "Size of TrapezoidalInt was not set, but automatically adjusted to the first received vector size of: " << num_joints << "\n";
+	}
+
+	Eigen::VectorXd to_int(num_joints);
+
+	for (int i=0;i<num_joints;i++) {
+		to_int(i) = samples[i];
+	}
+
+	return integrate(ts, to_int);
+}
+
+
+RateChange::RateChange() {
+	std::cout << "RateChange -- assuming rate of 1Hz\n";
+	setDesiredPeriod_us(0,(unsigned long)1E6);
+}
+
+RateChange::RateChange(const unsigned long &period_us) {
+	setDesiredPeriod_us(0, period_us);
+}
+
+void RateChange::setDesiredPeriod_us(const unsigned long long &start_u_time, const unsigned long &period_us) {
+	desired_period_us = period_us;
+	prev_u_time = start_u_time;
+}
+
+bool RateChange::checkNewRateTrigger(const unsigned long long &cur_u_time) {
+
+	if ((cur_u_time - prev_u_time) >= desired_period_us) {
+		// This is a rate transition trigger event
+		prev_u_time = cur_u_time;
+
+		return true;
+	}
+
+	return false;
 }

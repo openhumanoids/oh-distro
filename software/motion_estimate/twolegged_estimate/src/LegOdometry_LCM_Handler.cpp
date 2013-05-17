@@ -39,6 +39,9 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
 	
+	rate_changer.setDesiredPeriod_us(0,4500);
+
+
 #ifdef LOG_LEG_TRANSFORMS
 	for (int i=0;i<4;i++) {
 		// left vel, right vel, left rate, right rate
@@ -102,6 +105,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	firstpass = 1;//LowPassFilter::getTapSize(); the filter now initializes internally from the first sample -- only a single outside state from the user is required, i.e. transparent
 	
+	pulse_counter = 0;
+
 	time_avg_counter = 0;
 	elapsed_us = 0.;
 
@@ -509,6 +514,23 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
 	twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
 	twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+
+	/*
+	// TODO -- remove this pulse train, only for testing
+	// now add a 40Hz pulse train to the true robot state
+	if (msg->utime*1.E-3 - pulse_time_ >= 2000) {
+		pulse_time_ = msg->utime*1.E-3;
+		pulse_counter = 16;
+	}
+	if (pulse_counter>0) {
+		origin.translation.x = origin.translation.x + 0.003;
+		origin.translation.y = origin.translation.y + 0.003;
+
+		twist.linear_velocity.x = twist.linear_velocity.x + 0.03;
+		twist.linear_velocity.y = twist.linear_velocity.y + 0.1;
+		pulse_counter--;
+	}*/
+
   } else {
 	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
 	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
@@ -573,15 +595,15 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
   /*if (false) {
 	  // Will do this later -- no one is consuming POSE_HEAD velocity at the moment
-	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), body_to_head.translation());
+	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff(msg->utime, body_to_head.translation());
 	  local_to_head_vel = velocity_states + body_to_head_vel;
 	  
   } else {*/
-	  local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());
+	  local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
   //}
   
-  Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff((double)msg->utime*(1E-6), local_to_head_vel);
-  Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff((double)msg->utime*(1E-6), InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
+  Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
+  Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
   
   // estimate the rotational velocity of the head
     Eigen::Quaterniond l2head_rot(local_to_head.linear());
@@ -637,9 +659,16 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     ss << currentPelvis.translation().y() << ", ";
     ss << currentPelvis.translation().z() << ", ";
     
-    ss << velocity_states(0) << ", ";
-    ss << velocity_states(1) << ", ";
-    ss << velocity_states(2) << ", ";
+    // temp switch
+    if (true) {
+    	ss << twist.linear_velocity.x << ", ";
+    	ss << twist.linear_velocity.y << ", ";
+    	ss << twist.linear_velocity.z << ", ";
+    } else {
+		ss << velocity_states(0) << ", ";
+		ss << velocity_states(1) << ", ";
+		ss << velocity_states(2) << ", ";
+    }
     
     ss << E_est(0) << ", ";
     ss << E_est(1) << ", ";
@@ -849,18 +878,36 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     }
     stringstream ss (stringstream::in | stringstream::out);
     
-    for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
+    double alljoints[msg->num_joints];
 
+    for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
+      // Keep joint positions in local memory
+      alljoints[i] = msg->joint_position[i];
+
+      // TODO -- This is to be generalized
       if (i<16) {
     	  joint_positions[i] = msg->joint_position[i];
-
       }
 
-      if (false) {
+      // want to filter the joint position measurements here
+      // The idea is to use the integral and derivative trick here
+      // a new function is to be created for this
+
+      filterJointPositions(msg->utime, msg->num_joints, alljoints);
+      // The filtered joint positions have been placed back in all joints variable
+
+
+      switch (2) {
+      case 1:
         jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
-      } else {
+        break;
+      case 2:
     	// not using filters on the joint position measurements
         jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));//skipping the filters
+        break;
+      case 3:
+    	  jointpos_in.insert(make_pair(msg->joint_name[i], alljoints[i])); // The rate has been reduced to sample periods greater than 4500us and filtered with integral/rate/diff
+    	  break;
       }
     }
 
@@ -956,22 +1003,22 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  Eigen::Vector3d tempvar;
 	  int i;
 
-	  tempvar = pelvis_to_feet_speed[0].diff(msg->utime*1.E-6,left.translation());
+	  tempvar = pelvis_to_feet_speed[0].diff(msg->utime,left.translation());
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[1].diff(msg->utime*1.E-6,right.translation());
+	  tempvar = pelvis_to_feet_speed[1].diff(msg->utime,right.translation());
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[3+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[2].diff(msg->utime*1.E-6,InertialOdometry::QuaternionLib::C2e(left.rotation()));
+	  tempvar = pelvis_to_feet_speed[2].diff(msg->utime,InertialOdometry::QuaternionLib::C2e(left.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[6+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[3].diff(msg->utime*1.E-6,InertialOdometry::QuaternionLib::C2e(right.rotation()));
+	  tempvar = pelvis_to_feet_speed[3].diff(msg->utime,InertialOdometry::QuaternionLib::C2e(right.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[9+i] = tempvar(i); // left vel, right vel, left rate, right rate
@@ -982,9 +1029,30 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  // Matt says
 	  // try sysprof (apt-get install sysprof) system profiler
 	  // valgrind (memory leaks, memory bounds checking)
-	  //   valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt
+	  // valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt
 	  
 }
+
+
+void LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]) {
+	// we also need to consider the rate change. This will have to happen in or around this function
+
+	std::cout << "Joint[4]: " << alljoints[4];
+
+	Eigen::VectorXd int_vals(num_joints);
+
+	// Integrate to lose noise, but keep information
+	int_vals = joint_integrator.integrate(ts, num_joints, alljoints);
+
+	// we are looking for a 200Hz process -- 5ms
+	if (rate_changer.checkNewRateTrigger(ts)) {
+		joint_pos_filter.diff(ts, int_vals);
+	}
+
+	std::cout << ", after: " << alljoints[4] << "\n";
+}
+
+
 
 void LegOdometry_Handler::terminate() {
 	std::cout << "Closing and cleaning out LegOdometry_Handler object\n";

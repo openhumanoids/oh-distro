@@ -622,15 +622,11 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
 
-	// not using this anymore -- to be depreciated
-	//unfiltered_vel = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
-
-	unfiltered_vel = pelvis_vel_diff.diff((1.E-6)*current_time, current_position);
-	//std::cout << "The diff is: " << unfiltered_vel.transpose() << std::endl;
+	unfiltered_vel = pelvis_vel_diff.diff(current_time, current_position);
 
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
-	local_accelerations = accel.diff((1.E-6)*current_time, local_velocities);
+	local_accelerations = accel.diff(current_time, local_velocities);
 	
 	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
