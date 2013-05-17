@@ -5,6 +5,7 @@ set(POD_NAME blah)
 include(cmake/pods.cmake)
 
 add_subdirectory(src/latency)
+add_subdirectory(src/frequency)
 
 
 # require python
