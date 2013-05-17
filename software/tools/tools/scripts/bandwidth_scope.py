@@ -86,6 +86,7 @@ def plot_data():
   global sent_channels, got_rate
   front_block =0 # offset into the future (to ensure no recent data not viewed)
   #print "len of sent_channels: %d" %  len(sent_channels)
+  #print "draw"
   
   cols = 'bgrcykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmyk'
   
@@ -245,13 +246,11 @@ def plot_data():
   plt.draw()
   
 
-# Microstrain INS/IMU Sensor:
 def on_bw(channel, data):
   m = bandwidth_stats_t.decode(data)
 
   global rate_window, msg_last_rate, last_rate_utime, got_rate, msg_channel, sent_channels, received_channels
   #print len(sent_channels)
-  #print len(m.sent_channels)
   if ( len(sent_channels) != len(m.sent_channels) ):
     print "number of messages has changed resetting [main]"
     got_rate=False
@@ -316,7 +315,8 @@ def on_bw(channel, data):
       #print this_ratesent_KB
       #print this_ratereceived_KB
       #
-      print "got rate"
+      
+      #print "got rate"
       got_rate=True
       last_rate_utime = which_utime
       msg_last_rate = m
