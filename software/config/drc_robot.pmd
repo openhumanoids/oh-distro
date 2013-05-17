@@ -79,8 +79,8 @@ group "a.1.core" {
         exec = "drc-lidar-passthrough";
         host = "extra";
     }
-    cmd "icompress" {
-        exec = "drc-image-tool";
+    cmd "image-tx" {
+        exec = "drc-image-transmit";
         host = "extra";
     }
     cmd "aff_server" {
@@ -224,6 +224,10 @@ group "b.1.core" {
     cmd "est_rsp_base" {
         exec = "est_robot_state_publisher -g";
         host = "base";
+    }
+    cmd "image-rx" {
+        exec = "drc-image-receive";
+        host = "extra";
     }
     cmd "lcm-logger-base-nocams" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
