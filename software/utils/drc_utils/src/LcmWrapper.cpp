@@ -1,5 +1,7 @@
 #include "LcmWrapper.hpp"
 
+#include "PointerUtils.hpp"
+
 #include <iostream>
 #include <thread>
 #include <lcm/lcm-cpp.hpp>
@@ -53,7 +55,7 @@ LcmWrapper(const std::shared_ptr<lcm::LCM>& iLcm) {
 LcmWrapper::
 LcmWrapper(const boost::shared_ptr<lcm::LCM>& iLcm) {
   mHelper.reset(new Helper());
-  mHelper->mLcm.reset(new lcm::LCM(iLcm->getUnderlyingLCM()));
+  mHelper->mLcm = PointerUtils::stdPtr(iLcm);
 }
 
 LcmWrapper::
@@ -75,7 +77,7 @@ bool LcmWrapper::
 stopHandleThread() {
   if (!mHelper->mIsRunning) return false;
   mHelper->mIsRunning = false;
-  mHelper->mHandleThread.join();
+  if (mHelper->mHandleThread.joinable()) mHelper->mHandleThread.join();
   return true;
 }
 
@@ -91,8 +93,7 @@ get() const {
 
 boost::shared_ptr<lcm::LCM> LcmWrapper::
 getBoost() const {
-  return boost::shared_ptr<lcm::LCM>
-    (new lcm::LCM(mHelper->mLcm->getUnderlyingLCM()));
+  return PointerUtils::boostPtr(mHelper->mLcm);
 }
 
 lcm_t* LcmWrapper::

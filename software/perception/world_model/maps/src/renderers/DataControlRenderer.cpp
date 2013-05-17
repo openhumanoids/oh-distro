@@ -197,7 +197,11 @@ public:
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD, "Camera Head",
-               "CAMERALEFT_COMPRESSED", ChannelTypeAnonymous);
+               "CAMERALEFT_RX", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
+               "CAMERA_LHANDLEFT_RX", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
+               "CAMERA_RHANDLEFT_RX", ChannelTypeAnonymous);
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
                "EST_ROBOT_STATE", ChannelTypeAnonymous);
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
@@ -254,13 +258,19 @@ public:
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
     mSpinRate = 7;
+    addSpin("Spin Rate (rpm)", mSpinRate, -1, 60, 1, sensorControlBox);
     mHeadCameraFrameRate = 5;
+    addSpin("Head Cam fps", mHeadCameraFrameRate, -1, 30, 1, sensorControlBox);
     mHandCameraFrameRate = 5;
+    addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 30, 1, sensorControlBox);
     mCameraCompression = 0;
-    addSpin("Spin Rate (rpm)", mSpinRate, 0, 60, 1, sensorControlBox);
-    addSpin("Head Camera Rate (fps)", mHeadCameraFrameRate, 0, 30, 1, sensorControlBox);
-    addSpin("Hands Camera Rate (fps)", mHandCameraFrameRate, 0, 30, 1, sensorControlBox);
-    addSpin("Camera Quality [0 bad]", mCameraCompression, 0, 2, 1, sensorControlBox);
+    std::vector<std::string> labels = { "-", "Low", "Med", "High" };
+    std::vector<int> ids =
+      { -1, drc::sensor_request_t::QUALITY_LOW,
+        drc::sensor_request_t::QUALITY_MED,
+        drc::sensor_request_t::QUALITY_HIGH};
+    addCombo("Camera Quality", mCameraCompression, labels,
+             ids, sensorControlBox);
 
     button = Gtk::manage(new Gtk::Button("Submit Sensor Config"));
     button->signal_clicked().connect
@@ -273,7 +283,6 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
-    
     
     notebook->append_page(*sensorControlBox, "Sensor");
     
@@ -366,6 +375,7 @@ public:
     msg.hand_fps = mHandCameraFrameRate;
     msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
+    // TODO: set all to -1
   }
     
   void onHeadPitchControlButton() {

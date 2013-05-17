@@ -24,7 +24,6 @@ public:
   LcmWrapper(const std::shared_ptr<lcm::LCM>& iLcm);
 
   // uses existing boost pointer
-  // TODO: reference counting is not preserved
   LcmWrapper(const boost::shared_ptr<lcm::LCM>& iLcm);
 
   ~LcmWrapper();
@@ -38,7 +37,6 @@ public:
   std::shared_ptr<lcm::LCM> get() const;
 
   // get boost shared pointer to c++ object
-  // TODO: reference counting is not preserved
   boost::shared_ptr<lcm::LCM> getBoost() const;
 
   // get native c structure

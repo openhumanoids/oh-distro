@@ -44,6 +44,14 @@ CAMERALEFT_RX - original resolution
 using namespace cv;
 using namespace std;
 
+/*
+  have list of channels to subscribe
+  CAMERA, CAMERA_LHAND, CAMERA_RHAND; map from channel name to struct
+  on receipt of image, copy/store the image in the map
+  on trigger, do chopping, downsampling, and compression
+  probably have to use camera config infrastructure for this
+ */
+
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,

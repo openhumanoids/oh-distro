@@ -144,7 +144,7 @@ public:
     mDragging = false;
     mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
     mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
-    mMeshRenderer.setCameraChannel("CAMERALEFT_COMPRESSED");
+    mMeshRenderer.setCameraChannel("CAMERALEFT_RX");
     mViewClient.setBotWrapper(mBotWrapper);
     mViewClient.addListener(this);
     mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
