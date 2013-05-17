@@ -62,6 +62,8 @@ float colors[NUMBER_OF_SYSTEMS][3] = {
 
 const char* PARAM_SHADING = "Shading";
 const bool PARAM_SHADING_DEFAULT = true;
+const char* PARAM_SENSOR_RATES = "Sensor Rates";
+const bool PARAM_SENSOR_RATES_DEFAULT= true;
 
 #define ERR(fmt, ...) do { \
     fprintf(stderr, "["__FILE__":%d Error: ", __LINE__); \
@@ -99,6 +101,11 @@ typedef struct
     // for custom checkboxes
     GtkWidget* vbox;     
         
+    int64_t frequency_utime;
+    std::vector<int> frequency_list;
+    std::vector< std::string> channel_list;
+    
+    
 } RendererSystemStatus;
 
 enum {
@@ -190,6 +197,18 @@ on_robot_state(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_
     self->last_utime = msg->utime;
 }
 
+static void
+on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequency_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+  self->frequency_utime =  msg->utime;
+  self->frequency_list.clear();
+  self->channel_list.clear(); 
+  for (size_t i=0;i <msg->num; i++){
+    self->frequency_list.push_back( (uint8_t) msg->frequency[i] );
+    self->channel_list.push_back( msg->channel[i] );
+  }
+    //std::cout << "freqs recevied\n";
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
@@ -222,7 +241,34 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     //void *font = GLUT_BITMAP_8_BY_13;
     void *font = GLUT_BITMAP_9_BY_15;
     int line_height = 14;
- 
+    
+    // Printf the frequency_list:
+    if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SENSOR_RATES)){
+      if (self->frequency_list.size()>0){
+	double x=0;
+	double y=0;
+	for (size_t i=0; i <self->frequency_list.size() ; i++) {
+	  char line[80];
+	  ///std::cout <<  self->frequency_list[i] << "\n";
+	  sprintf(line, "%d %s", self->frequency_list[i], self->channel_list[i].c_str() );
+	  x = 0 ;// hind * 150 + 120;
+	  y = 10 + i*line_height;//gl_height - 8 * line_height;
+	
+	  glColor3f(  1.0, 0.0, 0.0 );
+	  glRasterPos2f(x, y);
+	  glutBitmapString(font, (unsigned char*) line);
+	}
+	
+	char lineX[80];
+	float elapsed_time =  (self->last_utime - self->frequency_utime)*1E-6;
+	//std::cout << elapsed_time << " el\n";
+	y = 10 + self->frequency_list.size()*line_height;//gl_height - 8 * line_height;
+	sprintf(lineX, "%.1f AGE", elapsed_time);
+	glColor3f(  1.0, 0.0, 0.0 );
+	glRasterPos2f(x, y);
+	glutBitmapString(font, (unsigned char*) lineX);
+      }
+    }
     
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
 
@@ -530,6 +576,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
     drc_affordance_collection_t_subscribe(self->lcm,"AFFORDANCE_COLLECTION",on_affordance_collection,self);
     drc_robot_state_t_subscribe(self->lcm,"EST_ROBOT_STATE",on_robot_state,self);
+    drc_frequency_t_subscribe(self->lcm,"FREQUENCY_LCM",on_frequency,self);
     
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);
 
@@ -581,6 +628,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_IMPORTANT, PARAM_IMPORTANT_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_SHADING, PARAM_SHADING_DEFAULT, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_SENSOR_RATES, PARAM_SENSOR_RATES_DEFAULT, NULL);
     
     
     gtk_widget_show (GTK_WIDGET (self->pw));
