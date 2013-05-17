@@ -33,3 +33,10 @@ target_link_libraries(latency boost_signals)
 pods_install_executables(latency)
 pods_use_pkg_config_packages(latency latency) 
 
+
+rosbuild_add_executable(frequency src/frequency.cpp)
+target_link_libraries(frequency boost_signals)
+pods_install_executables(frequency)
+pods_use_pkg_config_packages(frequency frequency lcm
+             bot2-param-client path-util) 
+
