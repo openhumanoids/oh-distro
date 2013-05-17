@@ -216,11 +216,11 @@ classdef DRCController
         end
 
         input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
-        checked_frames = {};
+        checked_frames = inf*ones(obj.n_input_frames,1); % no name_hash can be inf
         % for each input subframe, get next message
         for i=1:obj.n_input_frames
           fr = obj.controller_input_frames{i};
-          if any(strcmp(fr.name,checked_frames))
+          if any(fr.name_hash==checked_frames)
             continue;
           end
           [x,tsim] = getNextMessage(fr,0);
@@ -237,9 +237,9 @@ classdef DRCController
             input_frame_data{i} = x;
             input_frame_time(i) = t;
             % copy data to other subframes
-            checked_frames{length(checked_frames)+1} = fr.name;
+            checked_frames(i) = fr.name_hash;
             for j=1:obj.n_input_frames
-              if strcmp(obj.controller_input_frames{j}.name,fr.name)
+              if (obj.controller_input_frames{j}.name_hash==fr.name_hash)
                 input_frame_data{j} = x;
                 input_frame_time(j) = t;
               end
