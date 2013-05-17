@@ -104,6 +104,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
             GLuint dl;
             dl = glGenLists (1);
             glNewList (dl, GL_COMPILE);
+            glScalef(mesh->scale.x,mesh->scale.y,mesh->scale.z);
             //glEnable(GL_LIGHTING);
             bot_wavefront_model_gl_draw(wavefront_model);
             //glDisable(GL_LIGHTING);
@@ -113,12 +114,12 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
             double maxv[3];
             bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
             mesh_struct.displaylist = dl;            
-            mesh_struct.span_x = maxv[0] - minv[0];
-            mesh_struct.span_y = maxv[1] - minv[1];
-            mesh_struct.span_z = maxv[2] - minv[2];
-            mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
-            mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
-            mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
+            mesh_struct.span_x =mesh->scale.x*(maxv[0] - minv[0]);
+            mesh_struct.span_y =mesh->scale.y*(maxv[1] - minv[1]);
+            mesh_struct.span_z =mesh->scale.z*(maxv[2] - minv[2]);
+            mesh_struct.offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
+            mesh_struct.offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
+            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
             bot_wavefront_model_destroy(wavefront_model);
             // remember store in memory
             _mesh_model_map.insert(make_pair(file_path, mesh_struct));
@@ -287,6 +288,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
             GLuint dl = glGenLists (1);
             glNewList (dl, GL_COMPILE);
             //glEnable(GL_LIGHTING);
+            glScalef(mesh->scale.x,mesh->scale.y,mesh->scale.z);
             bot_wavefront_model_gl_draw(wavefront_model);
             //glDisable(GL_LIGHTING);
             glEndList ();
@@ -294,13 +296,13 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
             double maxv[3];
             bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
             mesh_struct.displaylist = dl;
-            mesh_struct.span_x = maxv[0] - minv[0];
-            mesh_struct.span_y = maxv[1] - minv[1];
-            mesh_struct.span_z = maxv[2] - minv[2];
+            mesh_struct.span_x =mesh->scale.x*(maxv[0] - minv[0]);
+            mesh_struct.span_y =mesh->scale.y*(maxv[1] - minv[1]);
+            mesh_struct.span_z =mesh->scale.z*(maxv[2] - minv[2]);
             // offset with respect to geometric center.
-            mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
-            mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
-            mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
+            mesh_struct.offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
+            mesh_struct.offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
+            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
             bot_wavefront_model_destroy(wavefront_model);
             // remember store in memory
             _mesh_model_map.insert(make_pair(file_path, mesh_struct));
