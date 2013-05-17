@@ -95,6 +95,10 @@ group "a.1.core" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
         host = "extra";
     }
+    cmd "drc-frequency" {
+        exec = "drc-frequency";
+        host = "extra";
+    }
 }
 
 group "a.2.walking" {
