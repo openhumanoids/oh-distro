@@ -99,7 +99,7 @@ while true
       waiting = false;
       execute = false;
     else 
-      plan_pub.publish(ts,xtraj);
+    %   plan_pub.publish(ts,xtraj);
       pause(0.5);
     end
   end
