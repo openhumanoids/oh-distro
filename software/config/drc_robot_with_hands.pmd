@@ -206,6 +206,10 @@ group "a.5.driving_utils" {
         exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
         host = "robot";
     }
+    cmd "engage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0.5 }'";
+        host = "robot";
+    }
     cmd "disengage_hand_brake" {
         exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
         host = "robot";
@@ -594,6 +598,9 @@ script "dev.vrc_driving_with_manip" {
     start cmd "enter_car_pelvis_pinned";
     start group "b.3.grasping";
     start group "a.7.manipulation4driving";
+    wait ms 1000;
+    start cmd "engage_hand_brake";
+    wait ms 500;
     start cmd "disengage_hand_brake";
     #wait ms 6000;
     #start group "b.4.driving";
