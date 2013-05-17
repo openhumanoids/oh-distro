@@ -45,17 +45,31 @@ classdef DRCManipMapStateMachine< handle
         
         for brk =1:length(obj.mapindices),
             kinsol_tmp = doKinematics(obj.robot,obj.qbreaks(:,brk));
-            pelvis_pose= forwardKin(obj.robot,kinsol_tmp,pelvis_body,[0;0;0],2);
-            obj.l_hand_breaks(:,brk)= forwardKin(obj.robot,kinsol_tmp,l_hand_body,[0;0;0],2);
-            obj.r_hand_breaks(:,brk)= forwardKin(obj.robot,kinsol_tmp,r_hand_body,[0;0;0],2);
-            obj.l_foot_breaks(:,brk)= forwardKin(obj.robot,kinsol_tmp,l_foot_body,[0;0;0],2);
-            obj.r_foot_breaks(:,brk)= forwardKin(obj.robot,kinsol_tmp,r_foot_body,[0;0;0],2);
+            pelvis_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,pelvis_body,[0;0;0],2);
+            l_hand_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,l_hand_body,[0;0;0],2);
+            r_hand_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,r_hand_body,[0;0;0],2);
+            l_foot_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,l_foot_body,[0;0;0],2);
+            r_foot_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,r_foot_body,[0;0;0],2);
             
+            
+           rpy=quat2rpy(pelvis_pose_worldframe(4:7));
+           % only take yaw into account. Ignore pelvis roll and pitch (to reflect affordance frame(car))
+           T_world_body = obj.HT(pelvis_pose_worldframe(1:3),0*rpy(1),0*rpy(2),rpy(3));
+           T_body_world = obj.inv_HT(T_world_body);
+           % store ee break points in body frame (they should be stored in affordance frame)
+            obj.l_hand_breaks(:,brk)= obj.applyHT(T_body_world,l_hand_pose_worldframe);
+            obj.r_hand_breaks(:,brk)= obj.applyHT(T_body_world,r_hand_pose_worldframe);
+            obj.l_foot_breaks(:,brk)= obj.applyHT(T_body_world,l_foot_pose_worldframe);
+            obj.r_foot_breaks(:,brk)= obj.applyHT(T_body_world,r_foot_pose_worldframe);
+            obj.l_hand_breaks(4:7,brk)=[1;0;0;0];
+            obj.r_hand_breaks(4:7,brk)=[1;0;0;0];
+            obj.l_foot_breaks(4:7,brk)=[1;0;0;0];
+            obj.r_foot_breaks(4:7,brk)=[1;0;0;0];
             % poses are relative to pelvis
-            obj.l_hand_breaks(1:3,brk)=obj.l_hand_breaks(1:3,brk)-pelvis_pose(1:3);
-            obj.r_hand_breaks(1:3,brk)=obj.r_hand_breaks(1:3,brk)-pelvis_pose(1:3);
-            obj.l_foot_breaks(1:3,brk)=obj.l_foot_breaks(1:3,brk)-pelvis_pose(1:3);
-            obj.r_foot_breaks(1:3,brk)=obj.r_foot_breaks(1:3,brk)-pelvis_pose(1:3);
+            %obj.l_hand_breaks(1:3,brk)=obj.l_hand_breaks(1:3,brk)-pelvis_pose(1:3);
+            %obj.r_hand_breaks(1:3,brk)=obj.r_hand_breaks(1:3,brk)-pelvis_pose(1:3);
+            %obj.l_foot_breaks(1:3,brk)=obj.l_foot_breaks(1:3,brk)-pelvis_pose(1:3);
+            %obj.r_foot_breaks(1:3,brk)=obj.r_foot_breaks(1:3,brk)-pelvis_pose(1:3);
         end
         
         obj.qmap = PPTrajectory(spline(obj.mapindices,obj.qbreaks));
@@ -114,17 +128,26 @@ classdef DRCManipMapStateMachine< handle
           r_foot_body = findLink(obj.robot,'r_foot');
           pelvis_body = findLink(obj.robot,'pelvis');
           
-          current_l_hand_pose= forwardKin(obj.robot,kinsol,l_hand_body,[0;0;0],2);
-          current_r_hand_pose= forwardKin(obj.robot,kinsol,r_hand_body,[0;0;0],2);
-          current_l_foot_pose= forwardKin(obj.robot,kinsol,l_foot_body,[0;0;0],2);
-          current_r_foot_pose= forwardKin(obj.robot,kinsol,r_foot_body,[0;0;0],2);
-          current_pelvis_pose= forwardKin(obj.robot,kinsol,pelvis_body,[0;0;0],2);
+          current_l_hand_pose_worldframe= forwardKin(obj.robot,kinsol,l_hand_body,[0;0;0],2);
+          current_r_hand_pose_worldframe= forwardKin(obj.robot,kinsol,r_hand_body,[0;0;0],2);
+          current_l_foot_pose_worldframe= forwardKin(obj.robot,kinsol,l_foot_body,[0;0;0],2);
+          current_r_foot_pose_worldframe= forwardKin(obj.robot,kinsol,r_foot_body,[0;0;0],2);
+          current_pelvis_pose_worldframe= forwardKin(obj.robot,kinsol,pelvis_body,[0;0;0],2);
           
-           % poses are relative to pelvis
-          current_l_hand_pose(1:3)=current_l_hand_pose(1:3)-current_pelvis_pose(1:3);
-          current_r_hand_pose(1:3)=current_r_hand_pose(1:3)-current_pelvis_pose(1:3);
-          current_l_foot_pose(1:3)=current_l_foot_pose(1:3)-current_pelvis_pose(1:3);
-          current_r_foot_pose(1:3)=current_r_foot_pose(1:3)-current_pelvis_pose(1:3);
+           % poses are relative to pelvis in body frame
+           
+          rpy=quat2rpy(current_pelvis_pose_worldframe(4:7));
+          T_world_body = obj.HT(current_pelvis_pose_worldframe(1:3),0*rpy(1),0*rpy(2),rpy(3));
+          T_body_world = obj.inv_HT(T_world_body);
+          current_l_hand_pose_bodyframe = obj.applyHT(T_body_world,current_l_hand_pose_worldframe);
+          current_r_hand_pose_bodyframe = obj.applyHT(T_body_world,current_r_hand_pose_worldframe);
+          current_l_foot_pose_bodyframe = obj.applyHT(T_body_world,current_l_foot_pose_worldframe);
+          current_r_foot_pose_bodyframe = obj.applyHT(T_body_world,current_r_foot_pose_worldframe);
+          
+          %current_l_hand_pose_bodyframe(1:3)=current_l_hand_pose_worldframe(1:3)-current_pelvis_pose_worldframe(1:3);
+          %current_r_hand_pose_bodyframe(1:3)=current_r_hand_pose_worldframe(1:3)-current_pelvis_pose_worldframe(1:3);
+          %current_l_foot_pose_bodyframe(1:3)=current_l_foot_pose_worldframe(1:3)-current_pelvis_pose_worldframe(1:3);
+          %current_r_foot_pose_bodyframe(1:3)=current_r_foot_pose_worldframe(1:3)-current_pelvis_pose_worldframe(1:3);
           
         % this loop is slow.        
          tic; 
@@ -139,16 +162,16 @@ classdef DRCManipMapStateMachine< handle
          
           
           % TODO: take into account orientation error.
-          r_hand_err(i)=sum((r_hand_pose_at_ind(1:3)-current_r_hand_pose(1:3)).^2);
-          l_hand_err(i)=sum((l_hand_pose_at_ind(1:3)-current_l_hand_pose(1:3)).^2);
-          r_foot_err(i)=sum((r_foot_pose_at_ind(1:3)-current_r_foot_pose(1:3)).^2);
-          l_foot_err(i)=sum((l_foot_pose_at_ind(1:3)-current_l_foot_pose(1:3)).^2);
+          r_hand_err(i)=sum((r_hand_pose_at_ind(1:3)-current_r_hand_pose_bodyframe(1:3)).^2);
+          l_hand_err(i)=sum((l_hand_pose_at_ind(1:3)-current_l_hand_pose_bodyframe(1:3)).^2);
+          r_foot_err(i)=sum((r_foot_pose_at_ind(1:3)-current_r_foot_pose_bodyframe(1:3)).^2);
+          l_foot_err(i)=sum((l_foot_pose_at_ind(1:3)-current_l_foot_pose_bodyframe(1:3)).^2);
         end
         toc;
 
 
         % get mapindices from current robot state
-        [~,torso_index] = min(l_hand_err); 
+        [~,torso_index] = min(l_hand_err);
         if((obj.r_hand_chain.active)&&(~obj.l_hand_chain.active)) %  if right only, overide with rhand index
          [~,torso_index] = min(r_hand_err); 
         end
@@ -262,5 +285,32 @@ classdef DRCManipMapStateMachine< handle
     end  %end function 
   
   end % end methods
+  
+  methods (Static=true)
+     function T= HT(p,roll,pitch,yaw)
+        T = zeros(4);
+        M = rotz(yaw)*roty(pitch)*rotx(roll);
+
+        T(1:3,1:3) = M;
+        T(1:4,4) = [p(:); 1];
+      end
+      function T_out=inv_HT(T)
+          M = T(1:3,1:3);
+          p = T(1:3,4);
+          T_out = zeros(4);
+          T_out(1:3,1:3) = M';
+          p= -M'*p;
+          T_out(1:4,4) = [p(:); 1];
+      end
+      function out_pose = applyHT(Frame_out_in,in_pose)
+        rpy=quat2rpy(in_pose(4:7));
+        Frame_in = DRCManipMapStateMachine.HT(in_pose(1:3),rpy(1),rpy(2),rpy(3));
+        Frame_out = Frame_out_in*Frame_in;
+        out_pose=0.*in_pose;
+        out_pose(1:3) = Frame_out(1:3,4);
+        out_pose(4:7) = rpy2quat(rotmat2rpy(Frame_out(1:3,1:3)));
+      end
+
+  end
   
 end

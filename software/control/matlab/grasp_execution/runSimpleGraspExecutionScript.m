@@ -22,17 +22,19 @@ floating =false;
 l_jointNames = r_left.getStateFrame.coordinates(1:nq_l);
 r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 
-Kp = 10*[15  10  10   15  10  10    15  10  10 15  10  10]';
-Kd = 0.5*[1.5 0.9 0.6 1.5 0.9 0.6   1.5 0.9 0.6 1.5 0.9 0.6]';
+Kp = 5*[15  10  10   15  10  10    15  10  10 15  10  10]';
+Kd = 0.1*[0.75 0.45 0.45 0.75 0.45 0.45   0.75 0.45 0.45 0.75 0.45 0.45]';
 
 l_coder = JLCMCoder(SandiaJointCommandCoder('atlas',floating,'left', l_jointNames,Kp,Kd));
 l_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_left',4*nq_l,'q',l_coder);
 r_coder = JLCMCoder(SandiaJointCommandCoder('atlas',floating,'right', r_jointNames,Kp,Kd));
 r_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_right',4*nq_r,'q',r_coder);
 
-Kp2 = [ 15  0 0    15  0 0    15 0 0    15  10  10]';
-Kd2 = [1.5 0 0    1.5 0 0   1.5 0 0   1.5 0.9 0.6]';
+
+Kp2 = [15  0 0    15  0 0    15 0 0    15 0 0]';
+Kd2 = [1.5 0 0    1.5 0 0   1.5 0 0    1.5 0 0]';
 pos_control_flag = [1.0 0 0    1.0 1.0 1.0   1.0 0 0   1.0 1.0 1.0]';
+%pos_control_flag = [1.0 0 0    1.0 0.0 0.0   1.0 0 0   1.0 1.0 1.0]'; % where ever there is zero we are doing mixed control
 %Kd(find(pos_control_flag==0))= 0;
 %Kp(find(pos_control_flag==0))= 10;
 while(1)
@@ -65,19 +67,18 @@ while(1)
         e_r =q_r*0;
         e_l(find(pos_control_flag>0)) = 0;
         e_r(find(pos_control_flag>0)) = 0;
-        torque =5*0.2;
+        torque =2;
         if(sum(msg.l_joint_position)>0)
            e_l(find(pos_control_flag==0)) = torque;   
-%            K_pos(find(pos_control_flag==0))= 0;
-%            K_vel(find(pos_control_flag==0))= 0;
-        elseif(sum(msg.r_joint_position)>0) 
-%            torque =1.0;
-%            e_r(find(pos_control_flag==0)) = torque;
-%             K_pos(find(pos_control_flag==0))= 0;
-%             K_vel(find(pos_control_flag==0))= 0;
-      
-           
-           e_r(find(pos_control_flag==0)) = torque;            
+           %K_pos(find(pos_control_flag==0))= 0;
+           %K_vel(find(pos_control_flag==0))= 0;
+        elseif(sum(msg.r_joint_position)>0)
+           %K_pos(find(pos_control_flag==0))= 0;
+           %K_vel(find(pos_control_flag==0))= 0;
+           e_r(find(pos_control_flag==0)) = torque;   
+%         else
+%            e_l(find(pos_control_flag==0)) = -torque;   
+%            e_r(find(pos_control_flag==0)) = -torque;    
         end
         
         if(msg.grasp_type==msg.SANDIA_LEFT)
