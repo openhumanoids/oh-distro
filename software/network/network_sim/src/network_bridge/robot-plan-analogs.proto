@@ -1,0 +1,15 @@
+import "goby/acomms/protobuf/dccl_option_extensions.proto";
+
+package drc;
+
+message MinimalRobotPlan
+{
+  option (dccl.msg).max_bytes = 1000;
+  option (dccl.msg).id = 0xD4C0006;
+  
+  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+//  required MinimalRobotGoal first_goal = 2;
+//  required MinimalRobotGoalDiff goal_diff = 3;
+//  required bool is_new_plan = 4;
+}
+

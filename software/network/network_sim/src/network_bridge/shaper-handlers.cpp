@@ -15,6 +15,8 @@
 #include "shaper-handlers.h"
 #include "procman-codecs.h"
 #include "robot-state-codecs.h"
+#include "footstep-plan-codecs.h"
+#include "manip-plan-codecs.h"
 
 using namespace boost; 
 using namespace std;
@@ -112,6 +114,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
     custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
+    custom_codecs_.insert(std::make_pair("CANDIDATE_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec)));
+    custom_codecs_.insert(std::make_pair("CANDIDATE_MANIP_PLAN", boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec)));
 
     dccl_->validate<drc::ShaperHeader>();
     
