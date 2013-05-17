@@ -16,28 +16,7 @@
     </visual>
   </link>
 
-  <gazebo reference="r_foot">
-    <!-- contact sensor -->
-    <sensor type="contact" name="r_foot_contact_sensor">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>r_foot_collision</collision>
-        <topic>/r_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
-  <gazebo reference="l_foot">
-    <!-- contact sensor -->
-    <sensor type="contact" name="l_foot_contact_sensor">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>l_foot_collision</collision>
-        <topic>/l_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
+
 
   <gazebo>
     <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin"/>

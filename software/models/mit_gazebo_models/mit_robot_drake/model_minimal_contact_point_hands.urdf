@@ -11,7 +11,7 @@
       <inertia ixx="0.004" ixy="0.001" ixz="0" iyy="0.006" iyz="0" izz="0.007"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="1.04719755 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl" scale="1 1 1"/>
       </geometry>
@@ -24,7 +24,7 @@
       <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="0 -0 0" xyz="0 -0.06 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl" scale="1 1 1"/>
       </geometry>
@@ -121,7 +121,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
     <collision>
@@ -138,7 +138,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.013"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_scap.wrl" scale="1 1 1"/>
       </geometry>
@@ -192,7 +192,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -232,7 +232,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -243,7 +243,7 @@
       <inertia ixx="0.004" ixy="-0.001" ixz="0" iyy="0.006" iyz="0" izz="0.007"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="-1.04719755 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl" scale="1 1 1"/>
       </geometry>
@@ -256,7 +256,7 @@
       <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="0 -0 0" xyz="0 0.06 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl" scale="1 1 1"/>
       </geometry>
@@ -327,7 +327,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_larm.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_larm.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -340,7 +340,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -353,7 +353,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
     <collision>
@@ -398,7 +398,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -411,7 +411,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -424,7 +424,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="100. 100. 100."/>
       </geometry>
     </visual>
   </link>
@@ -473,7 +473,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_uarm"/>
     <child link="l_larm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="0" upper="2.35619" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3562"/>
   </joint>
@@ -482,7 +482,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_scap"/>
     <child link="l_uarm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
@@ -491,7 +491,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_farm"/>
     <child link="l_hand"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="60" lower="-0.436" upper="1.571" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="11.571"/>
   </joint>
@@ -500,7 +500,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_clav"/>
     <child link="l_scap"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="170" lower="-1.39626" upper="1.74533" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.3963" soft_upper_limit="11.7453"/>
   </joint>
@@ -509,7 +509,7 @@
     <axis xyz="0 0.5 0.866025"/>
     <parent link="utorso"/>
     <child link="l_clav"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="212" lower="-1.9635" upper="1.9635" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.9635" soft_upper_limit="11.9635"/>
   </joint>
@@ -518,7 +518,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_larm"/>
     <child link="l_farm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="-1.571" upper="1.571" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="11.571"/>
   </joint>
@@ -527,7 +527,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_uleg"/>
     <child link="l_lleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="220" lower="0" upper="2.45" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
   </joint>
@@ -536,7 +536,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_talus"/>
     <child link="l_foot"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="90" lower="-0.436" upper="0.436" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436"/>
   </joint>
@@ -545,7 +545,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_lglut"/>
     <child link="l_uleg"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="260" lower="-1.75" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.75" soft_upper_limit="10.524"/>
   </joint>
@@ -554,7 +554,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_uglut"/>
     <child link="l_lglut"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="180" lower="-0.47" upper="0.495" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.47" soft_upper_limit="10.495"/>
   </joint>
@@ -563,7 +563,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_lleg"/>
     <child link="l_talus"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="220" lower="-0.698" upper="0.698" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
   </joint>
@@ -572,17 +572,17 @@
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="l_uglut"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="110" lower="-0.32" upper="1.14" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14"/>
   </joint>
   <joint name="neck_ay" type="revolute">
-    <!-- per slides on sensor head kinematics 2012-12-14 -->
-    <origin rpy="0 -0 0" xyz="0.16555 0 0.50823"/>
+    <!-- per slides on sensor head kinematics 2013-02-13 -->
+    <origin rpy="0 -0 0" xyz="0.21672 0 0.53796"/>
     <axis xyz="0 1 0"/>
     <parent link="utorso"/>
     <child link="head"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <!-- per slides on sensor head kinematics 2012-12-14 -->
     <limit effort="5" lower="-0.610865238" upper="1.13446401" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.610865238" soft_upper_limit="11.13446401"/>
@@ -592,7 +592,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_uarm"/>
     <child link="r_larm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="-2.35619" upper="0" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-12.3562" soft_upper_limit="10"/>
   </joint>
@@ -601,7 +601,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_scap"/>
     <child link="r_uarm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
@@ -610,7 +610,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_farm"/>
     <child link="r_hand"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="60" lower="-1.571" upper="0.436" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="10.436"/>
   </joint>
@@ -619,7 +619,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_clav"/>
     <child link="r_scap"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="170" lower="-1.74533" upper="1.39626" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7453" soft_upper_limit="11.3963"/>
   </joint>
@@ -628,7 +628,7 @@
     <axis xyz="0 0.5 -0.866025"/>
     <parent link="utorso"/>
     <child link="r_clav"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="212" lower="-1.9635" upper="1.9635" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.9635" soft_upper_limit="11.9635"/>
   </joint>
@@ -637,7 +637,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_larm"/>
     <child link="r_farm"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="114" lower="-1.571" upper="1.571" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="11.571"/>
   </joint>
@@ -646,7 +646,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_uleg"/>
     <child link="r_lleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="220" lower="0" upper="2.45" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
   </joint>
@@ -655,7 +655,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_talus"/>
     <child link="r_foot"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="90" lower="-0.436" upper="0.436" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436"/>
   </joint>
@@ -664,7 +664,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_lglut"/>
     <child link="r_uleg"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="260" lower="-1.745" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.745" soft_upper_limit="10.524"/>
   </joint>
@@ -673,7 +673,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_uglut"/>
     <child link="r_lglut"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="180" lower="-0.495" upper="0.47" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.495" soft_upper_limit="10.47"/>
   </joint>
@@ -682,7 +682,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_lleg"/>
     <child link="r_talus"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="220" lower="-0.698" upper="0.698" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
   </joint>
@@ -691,7 +691,7 @@
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="r_uglut"/>
-    <dynamics damping="10" friction="0"/>
+    <dynamics damping="1.0" friction="0"/>
     <limit effort="260" lower="-1.14" upper="0.32" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32"/>
   </joint>
@@ -901,28 +901,6 @@
       </material>
     </visual>
   </link>
-  <gazebo reference="r_foot">
-    <!-- contact sensor -->
-    <sensor name="r_foot_contact_sensor" type="contact">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>r_foot_collision</collision>
-        <topic>/r_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
-  <gazebo reference="l_foot">
-    <!-- contact sensor -->
-    <sensor name="l_foot_contact_sensor" type="contact">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>l_foot_collision</collision>
-        <topic>/l_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
   <gazebo>
     <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin"/>
   </gazebo>

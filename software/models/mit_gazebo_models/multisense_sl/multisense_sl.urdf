@@ -8,9 +8,9 @@
       <inertia iyy="0.002080106" ixy="-1.5797E-06" iyz="-6.8415E-07" ixx="0.0036053766" ixz="-0.00089293" izz="0.001782985" />
     </inertial>
     <visual>
-      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.stl" />
+        <mesh filename="package://multisense_sl_description/meshes/head.dae" />
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1" />
@@ -39,9 +39,11 @@
       <inertia iyy="0.002080106" ixy="4.9927E-08" iyz="-9.8165E-09" ixx="0.0004005974" ixz="1.1015E-05" izz="0.001782985" />
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <!--origin xyz="0.065774 -0.001163 -0.08809" rpy="0 0 0" /-->
+      <!--origin xyz="0.045 -0.001163 -0.08809" rpy="-0.314 0 0" /-->
+      <origin xyz="0.045 -0.0261018277 -0.08342369" rpy="-0.314 0 0" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.stl" />
+        <mesh filename="package://multisense_sl_description/meshes/head_camera.dae" />
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1" />
@@ -71,7 +73,7 @@
     <visual>
       <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
+        <mesh filename="package://multisense_sl_description/meshes/base_link.STL" />
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1" />
@@ -80,7 +82,7 @@
     <collision group="default">
       <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
+        <mesh filename="package://multisense_sl_description/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -93,7 +95,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+        <mesh filename="package://multisense_sl_description/meshes/hokuyo_link.STL" />
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1" />
@@ -102,7 +104,7 @@
     <collision group="default">
       <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+        <mesh filename="package://multisense_sl_description/meshes/hokuyo_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -132,7 +134,7 @@
     </inertial>
   </link>
   <gazebo reference="head_hokuyo_frame">
-    <sensor type="ray" name="head_hokuyo_sensor">
+    <sensor type="gpu_ray" name="head_hokuyo_sensor">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>40</update_rate>
@@ -160,7 +162,7 @@
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
         <topicName>/multisense_sl/laser/scan</topicName>
         <frameName>head_hokuyo_frame</frameName>
       </plugin>

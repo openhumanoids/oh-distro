@@ -60,4 +60,4 @@ set (files
   r_uleg.stl
   utorso.stl
 )
-install(FILES ${files} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}-${DRC_SIM_VERSION}/models/${MODEL_NAME}/meshes/)
+install(FILES ${files} DESTINATION ${GAZEBO_INSTALL_PATH}/atlas/meshes/)
