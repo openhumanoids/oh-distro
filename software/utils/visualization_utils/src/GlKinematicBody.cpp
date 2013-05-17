@@ -1427,7 +1427,6 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
         glPushMatrix();
         
         glTranslatef(nextTfframe.p[0],nextTfframe.p[1],nextTfframe.p[2]);
-        
         glRotatef(theta * 180/3.141592654, 
         axis[0], axis[1], axis[2]); 
 
@@ -1454,12 +1453,16 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
             double zc = mesh_map_it->second.offset_z;
             
             glCallList (mesh_map_it->second.displaylist);
-             
+            glPopMatrix(); 
             // (27th Nov- Steven and Sisir)
             // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
             // The visual origin itself is set to 0,0,0
             // So if you are drawing a simple geometry you need to get the visual origin from the average of the extrema vertices
             //============================================
+            glPushMatrix();
+            glTranslatef(nextTfframe.p[0],nextTfframe.p[1],nextTfframe.p[2]);
+            glRotatef(theta * 180/3.141592654, 
+            axis[0], axis[1], axis[2]); 
             glTranslatef(xc, yc, zc);
             glScalef(xDim,yDim,zDim);
             bot_gl_draw_cube_frame();
