@@ -32,7 +32,14 @@ classdef DRCTerrainMap < RigidBodyTerrain
       end
       obj.raw = options.raw;
       
+      if isfield(options,'fill')
+          typecheck(options.fill,'char');
+      else
+          options.fill= 'false';
+      end
+      
       obj.map_handle = HeightMapHandle(@HeightMapWrapper,private_channel);
+      obj.map_handle.setFillMissing(options.fill);
 
       % wait for at least one map message to arrive before continuing
       msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]\n'];

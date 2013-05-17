@@ -162,7 +162,7 @@ struct State {
   std::shared_ptr<ViewClientWrapper> mViewClientWrapper;
 
   int mNormalRadius;
-  bool mSmoothing;
+  bool mShouldFill;
   int64_t mLastUpdateTime;
 
   State(const int iId, const std::shared_ptr<lcm::LCM>& iLcm) {
@@ -170,7 +170,7 @@ struct State {
     mLcm = iLcm;
     mNormalRadius = 0;
     mLastUpdateTime = 0;
-    mSmoothing = false;
+    mShouldFill = false;
     mViewClientWrapper.reset(new ViewClientWrapper(mLcm));
     mexPrintf("created state object\n"); mexEvalString("drawnow");
   }
@@ -188,28 +188,53 @@ struct State {
     mViewClientWrapper->stop();
   }
 
-  void smoothView(maps::DepthImageView::Ptr& iView) {
+  void fillView(maps::DepthImageView::Ptr& iView) {
     maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
     maps::DepthImage::Ptr img = iView->getDepthImage();
     std::vector<float>& depths =
       const_cast<std::vector<float>&>(img->getData(type));
 
-    // find connected components based on elevation change
-    // TODO
+    // compute max z change
+    Eigen::Projective3f mapToWorld = iView->getTransform().inverse();
+    Eigen::Vector4f p0 = mapToWorld*Eigen::Vector4f(0,0,0,1);
+    Eigen::Vector4f px = mapToWorld*Eigen::Vector4f(1,0,0,1);
+    float dx = (px-p0).norm();
+    const float kPi = std::acos(-1.0);
+    float maxDiffZ = tan(45*kPi/180)*dx;
 
     // build invalid sample list
     const float invalidValue = img->getInvalidValue(type);
     std::vector<int> invalidMap(depths.size());
+    std::vector<bool> pixelsToUpdate(depths.size());
     std::vector<int> invalidList;
     invalidList.reserve(depths.size());
     std::fill(invalidMap.begin(), invalidMap.end(), -1);
-    int counter = 0;
-    for (size_t i = 0; i < depths.size(); ++i) {
-      float z = depths[i];
-      if (z == invalidValue) {
-        invalidMap[i] = counter;
-        invalidList.push_back(i);
-        ++counter;
+    std::fill(pixelsToUpdate.begin(), pixelsToUpdate.end(), false);
+    int w(img->getWidth()), h(img->getHeight());
+    for (int i = 0, idx = 0; i < h; ++i) {
+      for (int j = 0; j < w; ++j, ++idx) {
+        bool shouldUpdatePixel = false;
+        bool invalidPixel = false;
+        float z = depths[idx];
+        if (z == invalidValue) shouldUpdatePixel = invalidPixel = true;
+        else {
+          if ((i == h-1) || (j == w-1)) invalidPixel = true;
+          else {
+            float zx(depths[idx+1]), zy(depths[idx+w]);
+            if ((zx == invalidValue) || (zy == invalidValue)) {
+              invalidPixel = true;
+            }
+            else {
+              float gx(fabs(zx-z)), gy(fabs(zy-z));
+              if ((gx > maxDiffZ) || (gy > maxDiffZ)) invalidPixel = true;
+            }
+          }
+        }
+        if (invalidPixel) { 
+          invalidMap[idx] = invalidList.size();
+          invalidList.push_back(idx);
+          if (shouldUpdatePixel) pixelsToUpdate[idx] = true;
+        }
       }
     }
     if (invalidList.size() == 0) return;
@@ -219,7 +244,6 @@ struct State {
     triplets.reserve(invalidList.size()*5);
     Eigen::VectorXf rhs(invalidList.size());
     rhs.setZero();
-    int w(img->getWidth()), h(img->getHeight());
     int xMax(w-1), yMax(h-1);
     for (size_t i = 0; i < invalidList.size(); ++i) {
       int index = invalidList[i];
@@ -256,13 +280,80 @@ struct State {
 
       // fill in values
       for (size_t i = 0; i < invalidList.size(); ++i) {
-        depths[invalidList[i]] = solution[i];
+        if (pixelsToUpdate[invalidList[i]]) {
+          depths[invalidList[i]] = solution[i];
+        }
       }
       img->setData(depths, type);
     }
     else {
       std::cout << "Error: cannot solve sparse system" << std::endl;
     }
+  }
+
+  void fillViewPlanar(maps::DepthImageView::Ptr& iView) {
+    maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
+    maps::DepthImage::Ptr img = iView->getDepthImage();
+    std::vector<float>& depths =
+      const_cast<std::vector<float>&>(img->getData(type));
+
+    // gather valid points
+    std::vector<Eigen::Vector3f> points;
+    points.reserve(depths.size());
+    const float invalidValue = img->getInvalidValue(type);
+    int w(img->getWidth()), h(img->getHeight());
+    for (int i = 0, idx = 0; i < h; ++i) {
+      for (int j = 0; j < w; ++j, ++idx) {
+        float z = depths[idx];
+        if (z == invalidValue) continue;
+        points.push_back(Eigen::Vector3f(j,i,z));
+      }
+    }
+    int n = points.size();
+
+    // set up equations
+    Eigen::VectorXf rhs(n);
+    Eigen::MatrixXf lhs(n,3);
+    for (int i = 0; i < n; ++i) {
+      rhs[i] = -points[i][2];
+      lhs(i,0) = points[i][0];
+      lhs(i,1) = points[i][1];
+      lhs(i,2) = 1;
+    }
+
+    // plane fit
+    Eigen::Vector3f sol;
+    Eigen::VectorXf weights = Eigen::VectorXf::Ones(n);
+    Eigen::VectorXf weightsPrev = weights;
+    const float sigma2 = 0.1*0.1;
+    const float weightThresh = 1e-3f * 1e-3f * n;
+    for (int iter = 0; iter < 10; ++iter) {
+      // solve
+      Eigen::MatrixXf a = weights.asDiagonal()*lhs;
+      Eigen::VectorXf b = weights.asDiagonal()*rhs;
+      sol = a.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(b);
+
+      // re-compute weights
+      Eigen::VectorXf e2 = lhs*sol - rhs;
+      e2 = e2.array()*e2.array();
+      weights = 1-e2.array()/sigma2;
+      weights = (weights.array() < 0).select(0.0f, weights);
+
+      // check for convergence
+      Eigen::VectorXf weightDiff = weightsPrev-weights;
+      if (weightDiff.dot(weightDiff) < weightThresh) break;
+      weightsPrev = weights;
+    }
+
+    // fill in values
+    for (int i = 0, idx = 0; i < h; ++i) {
+      for (int j = 0; j < w; ++j, ++idx) {
+        float z = depths[idx];
+        if (z != invalidValue) continue;
+        depths[idx] = -(sol[0]*j + sol[1]*i + sol[2]);
+      }
+    }
+    img->setData(depths, type);
   }
 
   maps::DepthImageView::Ptr getView() {
@@ -273,10 +364,11 @@ struct State {
     if (view != NULL) {
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
       view->setNormalRadius(mNormalRadius);
-      if (mSmoothing && (mLastUpdateTime != view->getUpdateTime())) {
-        smoothView(view);
+      if (mShouldFill && (mLastUpdateTime != view->getUpdateTime())) {
+        //fillView(view);
+        fillViewPlanar(view);
+        mLastUpdateTime = view->getUpdateTime();
       }
-      mLastUpdateTime = view->getUpdateTime();
     }
     return view;
   }
@@ -513,9 +605,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else mxDestroyArray(pmxNormal);
   }
 
-  else if (command == "rawdepth") {
+  else if (command == "getrawdepth") {
     if (nrhs != 2) {
-      mexErrMsgTxt("MapWrapper: too many arguments to rawdepth");
+      mexErrMsgTxt("MapWrapper: too many arguments to getrawdepth");
     }
     auto view = state->getView();
     if (view == NULL) {
@@ -532,6 +624,45 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         outPtr[j*h+i] = *inPtr;
       }
     }
+  }
+
+  else if (command == "setrawdepth") {
+    if (nrhs != 3) {
+      mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
+    }
+    auto view = state->getView();
+    if (view == NULL) {
+      mexErrMsgTxt("MapWrapper: no view object, so not setting depths\n");
+    }
+    auto img = view->getDepthImage();
+    int w(img->getWidth()), h(img->getHeight());
+    if ((mxGetM(prhs[2]) != h) || (mxGetN(prhs[2]) != w)) {
+      mexErrMsgTxt("MapWrapper: depth image sizes do not match");
+    }
+
+    std::vector<float> data(w*h);
+    double* inPtr = mxGetPr(prhs[2]);
+    for (int j = 0; j < w; ++j) {
+      for (int i = 0; i < h; ++i, ++inPtr) {
+        data[i*w+j] = (float)(*inPtr);
+      }
+    }
+    img->setData(data, maps::DepthImage::TypeDepth);
+  }
+
+  else if (command == "transform") {
+    if (nrhs != 2) {
+      mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
+    }
+    auto view = state->getView();
+    plhs[0] = mxCreateDoubleMatrix(4,4,mxREAL);
+    double* matx = mxGetPr(plhs[0]);
+    if (view == NULL) {
+      for (int i = 0; i < 16; ++i) matx[i] = 0;
+      return;
+    }
+    Eigen::Projective3f transform = view->getTransform();
+    for (int i = 0; i < 16; ++i) matx[i] = transform.data()[i];
   }
 
   else if (command == "property") {
@@ -552,8 +683,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (key == "normalradius") {
       std::istringstream(value) >> state->mNormalRadius;
     }
-    else if (key == "smoothing") {
-      state->mSmoothing = Utils::getBool(value);
+    else if (key == "fill") {
+      state->mShouldFill = Utils::getBool(value);
+    }
+    else {
+      mexErrMsgTxt("MapWrapper: invalid property");
     }
   }
 

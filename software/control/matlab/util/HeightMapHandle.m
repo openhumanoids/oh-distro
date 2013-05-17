@@ -21,7 +21,11 @@ classdef HeightMapHandle < handle
         function delete(this)
             this.mMexFunc('destroy',this.mHandle);
         end
-
+        
+        function this = setFillMissing(this,val)
+            this.mMexFunc('property',this.mHandle,'fill',val);
+        end
+        
         function pts = getPointCloud(this)
             pts = this.mMexFunc('pointcloud',this.mHandle);
         end
