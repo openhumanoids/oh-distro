@@ -16,7 +16,7 @@
 <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
 
 <!-- Size of the outer most bounding volume -->
-<param name="radius" default_value="0.05" inc="0.01" min="0" max="100"/> 
+<param name="radius" default_value="0.05" inc="0.0025" min="0" max="100"/> 
 <param name="length" default_value="0.5" inc="0.01" min="0" max="100"/>
 <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
 <param name="mass" default_value="1.0" inc="0.01" min="0" max="100"/>
