@@ -131,6 +131,28 @@ group "a.3.grasping" {
     } 
 }
 
+group "a.3.unpinned_grasping" {
+    cmd "UnpinnedManipStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runUnpinnedManipStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "robot";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "robot";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "robot";
+    } 
+}
 group "a.4.driving" {
     cmd "vehicle-groundtruth-state" {
         exec = "rosrun driving_interface groundtruth_receiver";
@@ -165,6 +187,26 @@ group "a.4.driving" {
         host = "robot";
     }
 }
+
+group "a.5.driving_utils" {
+    cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }
+    cmd "engage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0.5 }'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
+    }
+}
+
 
 group "a.6.ingress" {
     cmd "IngressStateMachine" {
@@ -257,6 +299,17 @@ group "b.3.grasping" {
     }
 }
 
+group "b.3.unpinned_grasping" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+}
+
 group "b.4.driving" {
     cmd "car-vis-local" {
        exec = "drc-car-quick-vis";
@@ -301,6 +354,10 @@ group "g.0.gazebo" {
     cmd "gz_quals_2" {
         exec = "roslaunch atlas_utils qual_task_2.launch";
         host = "robot";
+    }
+    cmd "gz_unpinned_manip" {
+	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+	host = "robot";
     }
     cmd "gz_quals_3" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
@@ -537,6 +594,9 @@ script "dev.vrc_driving_with_manip" {
     start cmd "enter_car_pelvis_pinned";
     start group "b.3.grasping";
     start group "a.7.manipulation4driving";
+    wait ms 1000;
+    start cmd "engage_hand_brake";
+    wait ms 500;
     start cmd "disengage_hand_brake";
     #wait ms 6000;
     #start group "b.4.driving";
@@ -560,6 +620,9 @@ script "dev.mit_walking_vo" {
     start group "b.2.walking";
     wait ms 25000;
     start cmd "gz_mit_walking";
+    wait ms 3000;
+    start cmd "set-sim-rate-slower";
+    start cmd "logger-no-vis";
 }
 
 script "dev.mit_manip_nohands" {
@@ -588,7 +651,14 @@ script "dev.ingress" {
     start cmd "gz_mit_ingress"; 
 }
 
-
+script "dev.unpinned_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.unpinned_grasping";
+    start group "b.3.unpinned_grasping";
+    wait ms 20000;
+    start cmd "gz_unpinned_manip";    
+}
 ############ System Tests ############
 script "systest-main" {
     run_script "dev.mit_walking";

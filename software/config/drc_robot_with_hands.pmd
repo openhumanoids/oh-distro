@@ -3,110 +3,97 @@ group "0.development" {
         exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
+    cmd "extra_deputy" {
+        exec = "bot-procman-deputy -n extra";
+        host = "localhost";
+    }
     cmd "base_deputy" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
-    }
-}
-
-group "0.init_robot" {
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
-        host = "robot";
-    }
-    cmd "robot_deputy" {
-        exec = "bot-procman-deputy -n robot";
-        host = "localhost";
-    }
-}
-
-group "0.init_base" {
-    cmd "base_deputy" {
-        exec = "bot-procman-deputy -n base";
-        host = "localhost";
-    }
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
-        host = "base";
-    }
-}
-
-group "a.1.core" {
-    cmd "pserver" {
-        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
-        host = "robot";
     }
     cmd "roscore" {
         exec = "roscore";
         host = "robot";
     }
+    cmd "set-sim-rate" {
+        exec = "drc-set-sim-rate 0.3";
+        host = "robot";
+    }
+}
+
+
+group "a.1.core" {
     cmd "viewer" {
         exec = "drc-viewer";
-        host = "robot";
-    }
-    cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
-        host = "robot";
-    }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher -g";
-        host = "robot";
-    }
-    cmd "estpub2minimal" {
-        exec = "est_robot_state_to_minimal -g";
         host = "robot";
     }
     cmd "r2l_control" {
         exec = "rosrun translators ros2lcm -c -g";
         host = "robot";
     }
+    cmd "foot-state" {
+       exec = "drc-foot-state";
+        host = "extra";
+    }
     cmd "l2r" {
         exec = "rosrun translators lcm2ros -p";
         host = "robot";
     }
-    cmd "j2f" {
-        exec = "drc-joints2frames -g";
+    cmd "r2l_perception" {
+        exec = "rosrun translators ros2lcm -p -l -s";
         host = "robot";
     }
-    cmd "r2l_perception" {
-        exec = "rosrun translators ros2lcm -p";
-        host = "robot";
+    cmd "pserver" {
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
+        host = "extra";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        host = "extra";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher -g";
+        host = "extra";
+    }
+    cmd "estpub2minimal" {
+        exec = "est_robot_state_to_minimal -g";
+        host = "extra";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -g";
+        host = "extra";
     }
     cmd "maps-server" {
         exec = "maps-server";
-        host = "robot";
+        host = "extra";
     }
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "robot";
+        host = "extra";
     }
     cmd "affordance-gaze" {
         exec = "affordance-gaze";
-        host = "robot";
+        host = "extra";
     }
     cmd "lidarfilt" {
         exec = "drc-lidar-passthrough";
-        host = "robot";
+        host = "extra";
     }
-    cmd "icompress" {
-        exec = "drc-image-tool";
-        host = "robot";
-    }
-    cmd "foot-state" {
-       exec = "drc-foot-state";
-        host = "robot";
+    cmd "image-tx" {
+        exec = "drc-image-transmit";
+        host = "extra";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
-        host = "robot";
+        host = "extra";
     }
     cmd "init-laser" {
         exec = "drc-init-laser";
-        host = "robot";
+        host = "extra";
     }
     cmd "logger-robot-nocams" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
-        host = "robot";
+        host = "extra";
     }
 }
 
@@ -117,7 +104,7 @@ group "a.2.walking" {
     }
     cmd "PrecomputationServer" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "robot";
+        host = "extra";
     }
 }
 
@@ -132,15 +119,15 @@ group "a.3.grasping" {
     } 
     cmd "imagemask" {
         exec = "drc-image-passthrough";
-        host = "robot";
+        host = "extra";
     }
     cmd "tracker" {
         exec = "object-tracker -s -a 1";
-        host = "robot";
+        host = "extra";
     } 
     cmd "affordance_init" {
         exec = "affordance_init -e 2";
-        host = "robot";
+        host = "extra";
     } 
 }
 
@@ -220,16 +207,6 @@ group "a.5.driving_utils" {
     }
 }
 
-group "a.5.a.motion_vo"{
-    cmd "vo_moest" {
-        exec = "drc-fovision-odometry -i 3";
-        host = "robot";
-    }
-    cmd "estpub_moest" {
-        exec = "est_robot_state_publisher";
-        host = "robot";
-    }
-}
 
 group "a.6.ingress" {
     cmd "IngressStateMachine" {
@@ -290,6 +267,10 @@ group "b.1.core" {
         exec = "est_robot_state_publisher -g";
         host = "base";
     }
+    cmd "image-rx" {
+        exec = "drc-image-receive";
+        host = "extra";
+    }
     cmd "lcm-logger-base-nocams" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
         host = "base";
@@ -339,8 +320,6 @@ group "b.4.driving" {
         host = "base";
     }
 }
-
-
 
 
 group "g.0.gazebo" {
@@ -461,7 +440,6 @@ group "m.3.dev_tools" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
     }
-
     cmd "teleport_to_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
         host = "robot";
@@ -478,18 +456,6 @@ group "m.3.dev_tools" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "robot";
     }
-    cmd "set-sim-rate-quicker" {
-        exec = "drc-set-sim-rate 0.5";
-        host = "robot";
-    }
-    cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.25";
-        host = "robot";
-    }
-    cmd "set-sim-rate-slower" {
-        exec = "drc-set-sim-rate 0.05";
-        host = "robot";
-    }
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
         host = "base";
@@ -502,6 +468,10 @@ group "m.3.dev_tools" {
         exec = "lcm-logger -f $HOME/drc/latest_log.lcm";
         host = "robot";
     }
+    cmd "gzclient" {
+        exec = "gzclient";
+        host = "robot";
+    }
 }
 
 group "m.4.base" {
@@ -512,6 +482,32 @@ group "m.4.base" {
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
         host = "base";
+    }
+}
+
+group "m.5.motion_vo"{
+    cmd "vo_moest" {
+        exec = "drc-fovision-odometry -i 3";
+        host = "robot";
+    }
+    cmd "estpub_moest" {
+        exec = "est_robot_state_publisher";
+        host = "robot";
+    }
+}
+
+group "m.6.driving_utils" {
+    cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.14}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
     }
 }
 
@@ -554,7 +550,7 @@ script "dev.qual_1" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_quals_1"; 
 }
 script "dev.qual_2" { 
@@ -573,7 +569,7 @@ script "dev.qual_3" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_quals_3"; 
 }
 script "dev.vrc_driving" { 
@@ -611,7 +607,7 @@ script "dev.mit_walking" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_walking";
 }
 
@@ -622,7 +618,7 @@ script "dev.mit_walking_vo" {
     start group "a.5.a.motion_vo";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 12000;
+    wait ms 25000;
     start cmd "gz_mit_walking";
     wait ms 3000;
     start cmd "set-sim-rate-slower";
@@ -634,7 +630,7 @@ script "dev.mit_manip_nohands" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_manip_nohands";
 }
 
@@ -643,7 +639,7 @@ script "dev.mit_manip" {
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-    wait ms 18000;
+    wait ms 25000;
     start cmd "gz_mit_manip";
 }
 
@@ -651,7 +647,7 @@ script "dev.ingress" {
     start group "0.development";
     start group "a.1.core";
     start group "a.6.ingress";
-    wait ms 20000;
+    wait ms 25000;
     start cmd "gz_mit_ingress"; 
 }
 
@@ -667,6 +663,13 @@ script "dev.unpinned_manip" {
 script "systest-main" {
     run_script "dev.mit_walking";
     start cmd "systemwide-test";
-    wait ms 4000;
-    start cmd "set-sim-rate-quicker";
 }
+
+
+script "systest-vo-start" {
+    run_script "dev.mit_walking";
+    stop cmd "estpub";
+    start group "a.5.a.motion_vo";
+    start cmd "systemwide-test";
+}
+
