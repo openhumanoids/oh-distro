@@ -2,6 +2,9 @@ ROBOT:
 drc-network-shaper -t manipulation -r robot -c drc_robot.cfg
 bot-procman-deputy -n robot
 
+EXTRA:
+bot-procman-deputy -n extra
+
 BASE:
 bot-procman-deputy -n base
 drc-network-shaper -t manipulation -r base -c drc_robot.cfg
