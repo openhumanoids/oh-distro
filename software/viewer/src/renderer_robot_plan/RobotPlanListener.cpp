@@ -72,55 +72,57 @@ namespace renderer_robot_plan
   //=============message callbacks
 
 void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
-						 const string& chan, 
-						 const drc::robot_plan_t* msg)						 
+	const string& chan, const drc::robot_plan_t* msg)
   {
-    cout << "\n received robot plan message\n";
+    //cout << "\n received robot plan message\n";
 
-    if (!_urdf_parsed)
-    {
+    if (!_urdf_parsed){
       cout << "\n handleRobotPlanMsg: Waiting for urdf to be parsed" << endl;
       return;
     }
-    if(_urdf_subscription_on)
-    {
+    if(_urdf_subscription_on){
       cout << "\n handleRobotPlanMsg: unsubscribing from _urdf_subscription" << endl;
       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
       _urdf_subscription_on =  false; 	
     }
     _is_manip_plan =false;
     _is_manip_map =false;
-    
-   // 0. Make Local copy to later output
+
+    // 0. Make Local copy to later output
     revieved_plan_ = *msg;
 
-  	int max_num_states = 20;
-  	int num_states = 0;
-   	int inc = 1;
- 	if (msg->num_states > max_num_states) {
-		inc = ceil(msg->num_states/max_num_states);	
-		inc = min(max(inc,1),max_num_states);	
-		num_states = max_num_states;   
-	}   
-	else 
-		num_states = msg->num_states;   
+    int num_states = 0;
+    int inc = 1;
+    
+    /*
+    int max_num_states = 20;
+    if (msg->num_states > max_num_states) {
+      inc = ceil(msg->num_states/max_num_states);	
+      inc = min(max(inc,1),max_num_states);	
+      num_states = max_num_states;   
+    }else{
+      num_states = msg->num_states;   
+      }
+    */
+      num_states = msg->num_states;   
 
     //clear stored data
     _gl_robot_list.clear();
 
-    int count=msg->num_states-1; 	   	// always display the last state in the plan
-    for (uint i = 0; i <(uint)num_states; i++)
-    {
+    //cout << "a\n";
+    int count=msg->num_states-1; // always display the last state in the plan
+    for (uint i = 0; i <(uint)num_states; i++){
       drc::robot_state_t state_msg  = msg->plan[count];
-    	std::stringstream oss;
-    	oss << _robot_name << "_"<< count; 
-    	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-			_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
-			_gl_robot_list[0]->set_state(state_msg);
-			count-=inc;
+      std::stringstream oss;
+      oss << _robot_name << "_"<< count; 
+      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
+      _gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
+      _gl_robot_list[0]->set_state(state_msg);
+      count-=inc;
     }//end for num of states in robot_plan msg;
-   	
-		_last_plan_msg_timestamp = bot_timestamp_now(); //initialize
+    //	cout << "b\n";
+
+    _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage
   
@@ -129,10 +131,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_plan_w_keyframes_t* msg)						 
   {
-    cout << "\n received robot manipulation plan message\n";
+    //cout << "\n received robot manipulation plan message\n";
 
-    if (!_urdf_parsed)
-    {
+    if (!_urdf_parsed){
       cout << "\n handleManipPlanMsg: Waiting for urdf to be parsed" << endl;
       return;
     }

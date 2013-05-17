@@ -16,6 +16,7 @@
 #define PARAM_SEND_COMMITTED_PLAN "Send Plan"
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 #define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
+#define PARAM_SHOW_FULLPLAN "Show Full Plan"	
 
 using namespace std;
 using namespace boost;
@@ -161,25 +162,29 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     }
   }      
   
-  double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
-  
-  if (plan_part==1){
-    for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-    { 
+  if (self->show_fullplan){
+    int max_num_states = 20;
+    int inc =1;
+    int totol_states = self->robotPlanListener->_gl_robot_list.size();
+    if ( totol_states > max_num_states) {
+      inc = ceil( totol_states/max_num_states);
+      inc = min(max(inc,1),max_num_states);	
+    }    
+    //std::cout << "totol_states is " << totol_states << "\n";    
+    //std::cout << "inc is " << inc << "\n";    
+    
+    for(uint i = 0; i < totol_states; i=i+inc){//_gl_robot_list.size(); i++){ 
       draw_state(viewer,super,i);
     }
     self->displayed_plan_index = -1;    
   }else{
+    double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
     uint w_plan = (uint) round(plan_part* (plan_size -1));
     //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
-     
     self->displayed_plan_index = w_plan;
     draw_state(viewer,super,w_plan);
   }
 
-
-
-  
  if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
       spawn_plan_execution_dock(self);
 
@@ -439,43 +444,21 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
   if (! strcmp(name, PARAM_SELECTION)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION)) {
-      //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-      self->selection_enabled = 1;
-    }
-    else{
-      self->selection_enabled = 0;
-    }
-  }
-  else if(! strcmp(name, PARAM_WIRE)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
-      self->visualize_bbox= true;  
-    }
-    else{
-      self->visualize_bbox = false;
-    }
-  }
-  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
-      if (bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP)){
-      self->use_colormap= true;  
-    }
-    else{
-      self->use_colormap = false;
-      
-    }
-  }
-  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE)){
-      self->adjust_endstate= true;  
-    }
-    else{
-      self->adjust_endstate = false;
-    }
-  }
-  else if(!strcmp(name,PARAM_START_PLAN)){
-   publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
+    self->selection_enabled = bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION);
+  }  else if(! strcmp(name, PARAM_WIRE)) {
+    self->visualize_bbox = bot_gtk_param_widget_get_bool(pw, PARAM_WIRE);
+  }  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
+    self->use_colormap	= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
+  }  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
+    self->use_colormap= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
+  }  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
+    self->adjust_endstate = bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE);
+  }  else if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
+    self->show_fullplan = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FULLPLAN);
+  }  else if(!strcmp(name,PARAM_START_PLAN)){
+    publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
-   self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
+    self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
   }else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
     msg.utime = self->robot_utime;//bot_timestamp_now();
@@ -484,7 +467,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.sample_period = self->vicon_sample_period;
     self->lcm->publish("VICON_GET_PLAN", &msg);
     bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec] @ %lld",msg.n_plan_samples, msg.sample_period, msg.utime);    
-    
   }
 
   bot_viewer_request_redraw(self->viewer);
@@ -531,9 +513,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     self->adjust_endstate = false;
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER,
-                                   0, 1, 0.01, 1);    
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
    
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
@@ -549,8 +531,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     self->visualize_bbox = false;
     
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
+    self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
     double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
-    if ((plan_part==1)||(plan_size==0)){
+    if ((self->show_fullplan)||(plan_size==0)){
       self->displayed_plan_index = -1;
     }else{
       uint w_plan = (uint) round(plan_part* (plan_size -1));

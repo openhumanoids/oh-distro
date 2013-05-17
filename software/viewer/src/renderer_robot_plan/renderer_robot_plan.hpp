@@ -45,6 +45,7 @@ namespace renderer_robot_plan
     bool visualize_bbox;
     bool use_colormap;
     bool adjust_endstate;
+    bool show_fullplan;
     Eigen::Vector3f ray_start;
     Eigen::Vector3f ray_end;
     Eigen::Vector3f ray_hit;
