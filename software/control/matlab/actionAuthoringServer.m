@@ -47,7 +47,9 @@ end
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
-r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
+%r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
+r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf', [],[],struct('floating',true));
+r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model.urdf',[0;0;0],[0;0;0]);
 warning(s);
 
 nq = r.getNumDOF();
@@ -103,7 +105,7 @@ hip_ind = find( ...
                 %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...
 
 jointLimitShrink = ones(size(jointLimitMin));
-jointLimitShrink(back_ind) = 0.4;
+%jointLimitShrink(back_ind) = 0.4;
 %jointLimitShrink(hip_ind) = 0.6;
 jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
 jointLimitMid = (jointLimitMax + jointLimitMin)/2;
@@ -138,7 +140,7 @@ while (1)
     % Get initial conditions from msg.q0
     msg.q0.robot_name = 'atlas'; % To match robot_state_coder.lcmcoder
     x0 = robot_state_coder.lcmcoder.jcoder.decode(msg.q0).val;
-    if any(x0)
+    if any(x0 > eps)
       q = x0(1:getNumDOF(r));
       fprintfVerb(action_options,'Taking initial state from action sequence message\n');
     else
@@ -183,10 +185,17 @@ while (1)
       
       % Solve the IK sequentially in time for each key time, add the
       % additional static contact constraint if necessary
+      if action_sequence.key_time_samples(1) > eps
+        action_sequence.tspan(1) = 0;
+        action_sequence.key_time_samples = [0, action_sequence.key_time_samples];
+      end
       num_key_time_samples = length(action_sequence.key_time_samples);
       com_key_time_samples = zeros(3,num_key_time_samples);
       q_key_time_samples = zeros(nq,num_key_time_samples);
-      for i = 1:num_key_time_samples
+      q_key_time_samples(:,1) = q;
+      kinsol = doKinematics(r,q_key_time_samples(:,1));
+      com_key_time_samples(:,1) = getCOM(r,kinsol);
+      for i = 2:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
           if(isempty(ikargs))
               q_key_time_samples(:,i) = ...
@@ -212,9 +221,18 @@ while (1)
       if(action_options.QS)
         warning on
         %dt = 0.5;
-        q_qs_plan = q_key_time_samples;
-        t_qs_breaks = action_sequence.key_time_samples;
         q0 = q;
+        %if action_sequence.key_time_samples(1) > 0
+          %action_sequence.tspan(1) = 0;
+          %action_sequence.key_time_samples = [0, action_sequence.key_time_samples];
+          %q_qs_plan = [q0, q_key_time_samples];
+        %else
+          %t_qs_breaks = action_sequence.key_time_samples;
+          %q_qs_plan = q_key_time_samples;
+          %q_qs_plan(:,1) = q0;
+        %end
+        t_qs_breaks = action_sequence.key_time_samples;
+        q_qs_plan = q_key_time_samples;
         %q0 = q_qs_plan(:,1);
         qdot0 = zeros(size(q));
         options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
@@ -227,10 +245,12 @@ while (1)
         %%t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
         %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
         %t_qs_breaks(end) = action_sequence.tspan(end);
-        options.nSample = length(t_qs_breaks)-1;
+        %options.nSample = length(t_qs_breaks)-1;
+        options.nSample = 1;
         [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
-        if(info>10)
-          warning(['IK sequence was not successful! ',num2str(t_qs_breaks(i)),' is not successful']);
+        inverse_kin_sequence_info
+        if(inverse_kin_sequence_info>10)
+          error(['IK sequence was not successful! ',num2str(t_qs_breaks(i)),' is not successful']);
         else
           fprintf('IK sequence successful!\n',t_qs_breaks(i));
         end
@@ -245,7 +265,7 @@ while (1)
           end
         end
         q_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,q_qs_plan,qdot_qs_plan));
-        com_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,com_qs_plan,comdot_qs_plan));
+        com_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,com_qs_plan,zeros(size(com_qs_plan))));
 
         % Refine
         if(action_options.verbose)
@@ -335,35 +355,39 @@ while (1)
           publish(robot_plan_publisher_viewer, t_qs_breaks, ...
             [q_qs_plan; 0*q_qs_plan]);
 
-        % Shift trajectories to be in the body frame of the link specified by
-        % action_options.ref_link_str, if present.
-        if(isfield(action_options,'ref_link_str'))
-          typecheck(action_options.ref_link_str,'char');
-          ref_link = r.findLink(action_options.ref_link_str);
-          pelvis = r.findLink('pelvis');
-          for i = 1:length(t_qs_breaks)
-            kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
-            com_i = getCOM(r,kinsol);
-            if i == 1
-              wTf = ref_link.T;
-              fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
-            end
-            com_qs_plan(:,i) = homogTransMult(fTw,com_i);
-            wTr_i = pelvis.T;
-            fTr_i = fTw*wTr_i;
-            q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
-          end
-        end
-
         % Drake gui playback
         if(action_options.drake_vis)
           xtraj = PPTrajectory(pchip(t_qs_breaks,[q_qs_plan;0*q_qs_plan]));
           xtraj = xtraj.setOutputFrame(r.getStateFrame());
           v.playback(xtraj,struct('slider',true));
-          %if(action_options.debug)
-            %display('Press any key to continue ...');
-            %pause;
-          %end
+          if(action_options.debug)
+            key = input('Press ''s'' to save and continue, or any other key to continue without saving...','s');
+            if strcmp(key,'s')
+              % Shift trajectories to be in the body frame of the link specified by
+              % action_options.ref_link_str, if present.
+              if(isfield(action_options,'ref_link_str'))
+                typecheck(action_options.ref_link_str,'char');
+                ref_link = r.findLink(action_options.ref_link_str);
+                pelvis = r.findLink('pelvis');
+                for i = 1:length(t_qs_breaks)
+                  kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
+                  com_i = getCOM(r,kinsol);
+                  if i == 1
+                    wTf = ref_link.T;
+                    fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
+                  end
+                  com_qs_plan(:,i) = homogTransMult(fTw,com_i);
+                  wTr_i = pelvis.T;
+                  fTr_i = fTw*wTr_i;
+                  q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
+                end
+                ref_link_str = action_options.ref_link_str;
+              end
+
+              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
+                'foot_support_qs','ref_link_str'},'data/aa_step_in.mat');
+            end
+          end
         end
       end
 
@@ -454,8 +478,8 @@ while (1)
         end
 
       catch ex
-       warning(ex.identifier, ...
-          [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
+        warning on
+        warning( [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
           regexprep(ex.getReport,'\n','\n\t'));
         q=q_bk;
         continue;
