@@ -1,9 +1,8 @@
 #!/bin/bash
-GAZEBO_REV=7503
-GAZEBO_VERSION=1.7
-SIM_REV=2006
-MODELS_REV=212
-
+GAZEBO_REV=7828
+GAZEBO_VERSION=1.8
+SIM_REV=2499
+MODELS_REV=284
 cd ~/
 mkdir ~/gazebo_versions
 mkdir ~/gazebo_versions/gazebo_$GAZEBO_REV
