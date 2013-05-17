@@ -35,7 +35,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle = HeightMapHandle(@HeightMapWrapper,private_channel);
 
       % wait for at least one map message to arrive before continuing
-      msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
+      msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]\n'];
       send_status(3, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];
@@ -48,7 +48,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
         end
         obj.minval = min(ptcloud(3,:));
       end
-      fprintf(1,'received!\n');
+      fprintf(1,'Received terrain map!\n');
     end
     
     function [z,normal] = getHeight(obj,xy)

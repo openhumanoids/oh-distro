@@ -20,7 +20,7 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
-      obj.hmap_ptr = MapHandle();
+      obj.hmap_ptr = HeightMapHandle();
       % mapAPIwrapper(obj.hmap_ptr);
     end
 
