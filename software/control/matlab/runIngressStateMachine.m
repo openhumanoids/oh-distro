@@ -4,8 +4,8 @@ addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 robot_options.floating = true;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),robot_options);
-r = setTerrain(r,DRCTerrainMap(false,struct('name','IngressStateMachine'))); % should be true
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),robot_options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','IngressStateMachine'))); % should be true
 r = compile(r);
 
 if(nargin<1) options = struct(); end
