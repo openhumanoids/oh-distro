@@ -1,0 +1,12 @@
+package drc;
+
+// Frequency list of messages
+struct frequency_t
+{
+   int64_t utime;
+   int8_t num;
+   // integer frequency of messageing
+   // published by drc-frequency
+   int8_t frequency[num];
+   string channel[num];
+}
