@@ -17,7 +17,7 @@ namespace authoring {
 
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );
 
-    virtual inline constraint_type_t type( void ){ return CONSTRAINT_CONFIGURATION_TYPE; };
+    virtual inline constraint_type_t type( void )const{ return CONSTRAINT_CONFIGURATION_TYPE; };
 
   protected:
     state::State_GFE _q;

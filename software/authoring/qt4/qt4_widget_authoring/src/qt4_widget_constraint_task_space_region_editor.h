@@ -23,7 +23,8 @@ namespace authoring {
     Qt4_Widget_Constraint_Task_Space_Region_Editor& operator=( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other );
 
   signals:
-  
+    void description_update( const QString& description ); 
+ 
   public slots: 
     void _constraint_changed( void );
     void _constraint_changed( double value );

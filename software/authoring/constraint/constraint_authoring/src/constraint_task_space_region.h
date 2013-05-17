@@ -31,7 +31,8 @@ namespace authoring {
     
     static std::string contact_type_t_to_std_string( contact_type_t contactType );
 
-    virtual inline constraint_type_t type( void ){ return CONSTRAINT_TASK_SPACE_REGION_TYPE; };
+    virtual inline constraint_type_t type( void )const{ return CONSTRAINT_TASK_SPACE_REGION_TYPE; };
+    virtual std::string description( void )const;
     inline contact_type_t& contact_type( void ) { return _contact_type; }
     inline const contact_type_t& contact_type( void )const{ return _contact_type; };
     inline std::vector< std::pair< double, double > >& ranges( void ){ return _ranges; };

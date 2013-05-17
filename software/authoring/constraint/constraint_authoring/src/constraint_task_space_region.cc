@@ -14,7 +14,7 @@ Constraint_Task_Space_Region( const string& id,
                               double end,
                               const pair< string, string >& parent,
                               AffordanceState* child ) : Constraint( id, active, start, end ),
-                                                          _contact_type( CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE ), 
+                                                          _contact_type( CONSTRAINT_TASK_SPACE_REGION_NOT_IN_CONTACT_CONTACT_TYPE ), 
                                                           _ranges( 6 ),
                                                           _parent( parent ),
                                                           _child( child ),
@@ -135,6 +135,20 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().y_relation = contact_goal_t::REL_LESS_THAN;
   actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_LESS_THAN; 
   return;
+}
+
+string
+Constraint_Task_Space_Region::
+description( void )const{
+  string description;
+  description.append( "P:\"" + _parent.first + "-" + _parent.second + "\" " );
+  if( _child != NULL ){
+    description.append( "C:\"" + _child->getName() + "\" " );
+  } else {
+    description.append( "C:\"N/A\" " );
+  }
+  description.append( "CT:\"" + contact_type_t_to_std_string( _contact_type ) + "\" " );
+  return description;
 }
 
 namespace authoring {

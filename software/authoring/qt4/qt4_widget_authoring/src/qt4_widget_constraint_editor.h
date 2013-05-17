@@ -7,6 +7,7 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QDoubleSpinBox>
+#include <QtGui/QLineEdit>
 
 #include <authoring/constraint.h>
 #include <authoring/qt4_widget_constraint_task_space_region_editor.h>
@@ -21,11 +22,14 @@ namespace authoring {
     Qt4_Widget_Constraint_Editor( const Qt4_Widget_Constraint_Editor& other );
     Qt4_Widget_Constraint_Editor& operator=( const Qt4_Widget_Constraint_Editor& other );
 
+  static QString description_from_constraint( const Constraint* constraint );
+
   signals:
     void info_update( const QString& info );
 
   public slots:
     void update_constraint( void );
+    void update_description( const QString& description );
 
   protected slots:
     void _double_spin_box_time_start_value_changed( double start );
@@ -46,6 +50,7 @@ namespace authoring {
     QPushButton * _push_button_edit;
     QDoubleSpinBox * _double_spin_box_time_start;
     QDoubleSpinBox * _double_spin_box_time_end;
+    QLineEdit * _line_edit_description;
     QWidget * _constraint_editor_popup;
   private:
 

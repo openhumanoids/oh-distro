@@ -70,7 +70,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   }
 
   for ( uint i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES; i++ ) {
-      _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
+    _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
   }
 
   _double_spin_box_x_min->setSuffix( " m" );
@@ -361,39 +361,49 @@ _constraint_changed( void ){
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( double value ){
-  _constraint->parent_to_constraint().p[0] = _double_spin_box_parent_to_constraint_x->value();
-  _constraint->parent_to_constraint().p[1] = _double_spin_box_parent_to_constraint_y->value();
-  _constraint->parent_to_constraint().p[2] = _double_spin_box_parent_to_constraint_z->value();
+  if( _constraint != NULL ){
+    _constraint->parent_to_constraint().p[0] = _double_spin_box_parent_to_constraint_x->value();
+    _constraint->parent_to_constraint().p[1] = _double_spin_box_parent_to_constraint_y->value();
+    _constraint->parent_to_constraint().p[2] = _double_spin_box_parent_to_constraint_z->value();
 
-  _constraint->child_to_constraint().p[0] = _double_spin_box_child_to_constraint_x->value();
-  _constraint->child_to_constraint().p[1] = _double_spin_box_child_to_constraint_y->value();
-  _constraint->child_to_constraint().p[2] = _double_spin_box_child_to_constraint_z->value();
+    _constraint->child_to_constraint().p[0] = _double_spin_box_child_to_constraint_x->value();
+    _constraint->child_to_constraint().p[1] = _double_spin_box_child_to_constraint_y->value();
+    _constraint->child_to_constraint().p[2] = _double_spin_box_child_to_constraint_z->value();
  
-  _constraint->ranges()[0].first = _double_spin_box_x_min->value();
-  _constraint->ranges()[0].second = _double_spin_box_x_max->value();
-  _constraint->ranges()[1].first = _double_spin_box_y_min->value();
-  _constraint->ranges()[1].second = _double_spin_box_y_max->value();
-  _constraint->ranges()[2].first = _double_spin_box_z_min->value();
-  _constraint->ranges()[2].second = _double_spin_box_z_max->value();
-  _constraint->ranges()[3].first = _double_spin_box_roll_min->value();
-  _constraint->ranges()[3].second = _double_spin_box_roll_max->value();
-  _constraint->ranges()[4].first = _double_spin_box_pitch_min->value();
-  _constraint->ranges()[4].second = _double_spin_box_pitch_max->value();
-  _constraint->ranges()[5].first = _double_spin_box_yaw_min->value();
-  _constraint->ranges()[5].second = _double_spin_box_yaw_max->value();
+    _constraint->ranges()[0].first = _double_spin_box_x_min->value();
+    _constraint->ranges()[0].second = _double_spin_box_x_max->value();
+    _constraint->ranges()[1].first = _double_spin_box_y_min->value();
+    _constraint->ranges()[1].second = _double_spin_box_y_max->value();
+    _constraint->ranges()[2].first = _double_spin_box_z_min->value();
+    _constraint->ranges()[2].second = _double_spin_box_z_max->value();
+    _constraint->ranges()[3].first = _double_spin_box_roll_min->value();
+    _constraint->ranges()[3].second = _double_spin_box_roll_max->value();
+    _constraint->ranges()[4].first = _double_spin_box_pitch_min->value();
+    _constraint->ranges()[4].second = _double_spin_box_pitch_max->value();
+    _constraint->ranges()[5].first = _double_spin_box_yaw_min->value();
+    _constraint->ranges()[5].second = _double_spin_box_yaw_max->value();
+    emit description_update( QString::fromStdString( _constraint->description() ) );
+  } else {
+    emit description_update( QString( "N/A" ) );
+  }
   return;
 }
 
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( int index ){
-  if( _combo_box_parent->currentIndex() < _robot_affordances.size() ){
-    _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
+  if( _constraint != NULL ){
+    if( _combo_box_parent->currentIndex() < _robot_affordances.size() ){
+      _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
+    }
+    if( _combo_box_child->currentIndex() < _object_affordances.size() ){
+      _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
+    }
+    _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
+    emit description_update( QString::fromStdString( _constraint->description() ) );
+  } else {
+    emit description_update( QString( "N/A" ) );
   }
-  if( _combo_box_child->currentIndex() < _object_affordances.size() ){
-    _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
-  }
-  _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
   return;
 }
 

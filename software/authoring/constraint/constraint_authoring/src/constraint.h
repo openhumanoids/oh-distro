@@ -23,7 +23,8 @@ namespace authoring {
 
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );
 
-    virtual inline constraint_type_t type( void ){ return CONSTRAINT_UNKNOWN_TYPE; };
+    virtual inline constraint_type_t type( void )const{ return CONSTRAINT_UNKNOWN_TYPE; };
+    virtual inline std::string description( void )const{ return "N/A"; };
     inline std::string& id( void ){ return _id; };
     inline const std::string& id( void )const{ return _id; };
     inline bool& active( void ){ return _active; };

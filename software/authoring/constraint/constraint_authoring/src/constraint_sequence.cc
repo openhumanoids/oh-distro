@@ -90,8 +90,12 @@ Constraint_Sequence::
 from_msg( const action_sequence_t& msg,
           vector< AffordanceState >& affordanceCollection ){
   _q0.from_lcm( &msg.q0 );
-  unsigned int numConstraints = _constraints.size();
-  _constraints.clear();
+  for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    if( (*it) != NULL ){
+      delete (*it);
+      (*it) = NULL;
+    } 
+  }
   for( unsigned int i = 0; i < ( msg.num_contact_goals/2 ); i++ ){
     char buffer[ 80 ];
     sprintf( buffer, "C%03d", i );
@@ -114,9 +118,8 @@ from_msg( const action_sequence_t& msg,
         constraint->child() = &(*it);
       }
     }
-    _constraints.push_back( constraint );
+    _constraints[ i ] = constraint;
   }
-  _constraints.resize( numConstraints );
   return;
 }
 

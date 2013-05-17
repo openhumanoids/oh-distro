@@ -14,7 +14,7 @@ Qt4_Widget_OpenGL_Authoring( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                                   _opengl_object_gfe(),
                                                   _opengl_object_gfe_ghost(),
                                                   _timer_update( new QTimer( this ) ) {
-  setMinimumSize( 600, 450 );
+  setMinimumSize( 800, 400 );
 
   _opengl_object_affordance_collection.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_visible( false );
