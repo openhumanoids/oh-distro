@@ -90,6 +90,7 @@ Constraint_Sequence::
 from_msg( const action_sequence_t& msg,
           vector< AffordanceState >& affordanceCollection ){
   _q0.from_lcm( &msg.q0 );
+  unsigned int numConstraints = _constraints.size();
   _constraints.clear();
   for( unsigned int i = 0; i < ( msg.num_contact_goals/2 ); i++ ){
     char buffer[ 80 ];
@@ -115,6 +116,7 @@ from_msg( const action_sequence_t& msg,
     }
     _constraints.push_back( constraint );
   }
+  _constraints.resize( numConstraints );
   return;
 }
 
