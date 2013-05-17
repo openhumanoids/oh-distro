@@ -81,23 +81,48 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
 // Parse the message channels to be sent in a particular direction:
 std::string KMCLApp::parse_direction(string task, string direction, bool direction_bool){
     string subscription_string ="";
-  
-    char channels_key[512];  
-    char frequency_list[512];  
-    sprintf(channels_key, "network.%s.%s.channels",task.c_str() , direction.c_str() );
-    sprintf(frequency_list, "network.%s.%s.frequency",task.c_str() , direction.c_str() );
-    std::cout << channels_key << "\n";
-  
-    // Read the keys:  
-    char **fnames = bot_param_get_str_array_alloc(bot_param, channels_key);
     std::vector <string> channels;
-    for (int j = 0; fnames && fnames[j]!=NULL; j++) {
-        channels.push_back(fnames[j]);
+    std::vector<double> frequencys;
+    
+    
+    //////////////////// Frequency A ///////////////////    
+    char channels_a_key[512], frequency_a_key[512];
+    sprintf(channels_a_key, "network.%s.%s.channels_a",task.c_str() , direction.c_str() );
+    sprintf(frequency_a_key, "network.%s.%s.frequency_a",task.c_str() , direction.c_str() );
+    //std::cout << channels_a_key << " ===========================\n";
+    std::vector <string> channels_a;
+    char **names_a = bot_param_get_str_array_alloc(bot_param, channels_a_key);
+    for (int j = 0; names_a && names_a[j]!=NULL; j++) {
+        channels_a.push_back(names_a[j]);
     } 
-    int n_channels = channels.size();
-    double frequencys[n_channels];
-    bot_param_get_double_array_or_fail(bot_param,frequency_list,frequencys,channels.size());
-    for (size_t j = 0; j < n_channels ; j++) {
+    std::vector<double> frequencys_a;
+    double frequency_value_a= bot_param_get_double_or_fail(bot_param, frequency_a_key);
+    frequencys_a.assign (channels_a.size(),frequency_value_a);
+    //std::cout << frequency_value_a << " A===================================\n";
+    channels.insert(channels.end(), channels_a.begin(), channels_a.end());
+    frequencys.insert(frequencys.end(), frequencys_a.begin(), frequencys_a.end());
+    
+    
+    //////////////////// Frequency B ///////////////////    
+    char channels_b_key[512], frequency_b_key[512];
+    sprintf(channels_b_key, "network.%s.%s.channels_b",task.c_str() , direction.c_str() );
+    sprintf(frequency_b_key, "network.%s.%s.frequency_b",task.c_str() , direction.c_str() );
+    //std::cout << channels_b_key << " ===========================\n";
+    std::vector <string> channels_b;
+    char **names_b = bot_param_get_str_array_alloc(bot_param, channels_b_key);
+    for (int j = 0; names_b && names_b[j]!=NULL; j++) {
+        channels_b.push_back(names_b[j]);
+    } 
+    std::vector<double> frequencys_b;
+    double frequency_value_b= bot_param_get_double_or_fail(bot_param, frequency_b_key);
+    frequencys_b.assign (channels_b.size(),frequency_value_b);
+    //std::cout << frequency_value_b << " B===================================\n";
+    channels.insert(channels.end(), channels_b.begin(), channels_b.end());
+    frequencys.insert(frequencys.end(), frequencys_b.begin(), frequencys_b.end());
+    
+    
+    // Form Subscription String //////////////
+    for (size_t j = 0; j <  channels.size() ; j++) {
         std::cout << j << ": " <<channels[j] << " at " << frequencys[j] << " Hz\n";
         addResend( Resend(channels[j], frequencys[j],   direction_bool, 0) );
         if (j==0){
