@@ -13,7 +13,7 @@ public class CandidateGraspPublisher
 	    msg.object_name=  object_name; 
 	    msg.geometry_name =  geometry_name; 
 	    msg.unique_id = unique_id; 
-	    
+	    msg.power_grasp = false;
       msg.grasp_type = grasp_type; //msg.SANDIA_LEFT
       
       if ((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.SANDIA_BOTH)||(msg.grasp_type == msg.IROBOT_LEFT)||(msg.grasp_type == msg.IROBOT_BOTH)) {
