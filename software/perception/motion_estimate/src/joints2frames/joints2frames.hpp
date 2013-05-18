@@ -49,8 +49,11 @@ class joints2frames{
 
     bool standalone_head_;
     
-    void PublishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime);
+    void publishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime);
+    void publishRigidTransform(Eigen::Isometry3d pose, int64_t utime, std::string channel);
+    
     double last_ground_height_;
+    int64_t last_ground_publish_utime_;
     
     Eigen::Quaterniond  euler_to_quat(double yaw, double pitch, double roll);
 };    

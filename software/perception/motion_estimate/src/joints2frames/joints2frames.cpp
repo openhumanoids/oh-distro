@@ -39,7 +39,7 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
   
-  last_ground_height_=std::numeric_limits<double>::min();
+  last_ground_publish_utime_ =0;
 }
 
 // same as bot_timestamp_now():
@@ -59,19 +59,41 @@ Eigen::Isometry3d DRCTransformToEigen(drc::transform_t tf){
   return tf_out;
 }
 
-void joints2frames::PublishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime){
-  bot_core::pose_t pose_msg;
-  pose_msg.utime =   utime;
-  pose_msg.pos[0] = pose.translation().x();
-  pose_msg.pos[1] = pose.translation().y();
-  pose_msg.pos[2] = pose.translation().z();  
-  Eigen::Quaterniond r_x(pose.rotation());
-  pose_msg.orientation[0] =  r_x.w();  
-  pose_msg.orientation[1] =  r_x.x();  
-  pose_msg.orientation[2] =  r_x.y();  
-  pose_msg.orientation[3] =  r_x.z();  
-  lcm_->publish( "POSE_GROUND", &pose_msg);
+void joints2frames::publishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime){
+  if (utime - last_ground_publish_utime_  > 5E5){ // every 0.5sec
+    last_ground_publish_utime_ =utime;
+    bot_core::pose_t pose_msg;
+    pose_msg.utime =   utime;
+    pose_msg.pos[0] = pose.translation().x();
+    pose_msg.pos[1] = pose.translation().y();
+    pose_msg.pos[2] = pose.translation().z();  
+    Eigen::Quaterniond r_x(pose.rotation());
+    pose_msg.orientation[0] =  r_x.w();  
+    pose_msg.orientation[1] =  r_x.x();  
+    pose_msg.orientation[2] =  r_x.y();  
+    pose_msg.orientation[3] =  r_x.z();  
+    lcm_->publish( "POSE_GROUND", &pose_msg);
+    //std::cout << "will sending ground height\n"; 
+  }else{
+    //std::cout << "not sending ground height\n"; 
+  }
 }
+
+
+void joints2frames::publishRigidTransform(Eigen::Isometry3d pose, int64_t utime, std::string channel){
+  bot_core::rigid_transform_t tf;
+  tf.utime = utime;
+  tf.trans[0] = pose.translation().x();
+  tf.trans[1] = pose.translation().y();
+  tf.trans[2] = pose.translation().z();
+  Eigen::Quaterniond quat(pose.rotation());
+  tf.quat[0] = quat.w();
+  tf.quat[1] = quat.x();
+  tf.quat[2] = quat.y();
+  tf.quat[3] = quat.z();
+  lcm_->publish(channel, &tf);    
+}
+
 
 void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
@@ -150,6 +172,10 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = DRCTransformToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
+    }else if(  (*ii).first.compare( "right_palm_left_camera_frame" ) == 0 ){
+      publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND" );
+    }else if(  (*ii).first.compare( "left_palm_left_camera_frame" ) == 0 ){
+      publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND" );
     }
   }  
 
@@ -236,15 +262,9 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
               */
     // Publish lower of the soles at the ground when it changes by 1cm
     if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
-      if ( fabs( last_ground_height_ - world_to_l_sole.translation().z()) > 0.01 ){
-        last_ground_height_ = world_to_l_sole.translation().z();
-        PublishGroundHeightPose(world_to_l_sole, msg->utime);
-      }
+      publishGroundHeightPose(world_to_l_sole, msg->utime);
     }else{
-      if ( fabs( last_ground_height_ - world_to_r_sole.translation().z()) > 0.01 ){
-        last_ground_height_ = world_to_r_sole.translation().z();
-        PublishGroundHeightPose(world_to_r_sole, msg->utime);
-      }
+      publishGroundHeightPose(world_to_r_sole, msg->utime);
     }
   }
     
