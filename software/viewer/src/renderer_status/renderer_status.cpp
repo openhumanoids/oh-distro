@@ -204,7 +204,7 @@ on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequenc
   self->frequency_list.clear();
   self->channel_list.clear(); 
   for (size_t i=0;i <msg->num; i++){
-    self->frequency_list.push_back( (uint8_t) msg->frequency[i] );
+    self->frequency_list.push_back( (int16_t) msg->frequency[i] );
     self->channel_list.push_back( msg->channel[i] );
   }
     //std::cout << "freqs recevied\n";
@@ -247,13 +247,15 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       if (self->frequency_list.size()>0){
 	double x=0;
 	double y=0;
+	
 	for (size_t i=0; i <self->frequency_list.size() ; i++) {
 	  char line[80];
 	  ///std::cout <<  self->frequency_list[i] << "\n";
-	  sprintf(line, "%d %s", self->frequency_list[i], self->channel_list[i].c_str() );
+	  sprintf(line, "%03d %s", self->frequency_list[i], self->channel_list[i].c_str() );
 	  x = 0 ;// hind * 150 + 120;
-	  y = 10 + i*line_height;//gl_height - 8 * line_height;
-	
+   	  y = gl_height + (-i - 10) * line_height;
+	  // top left:
+	  //y = 10 + i*line_height;//gl_height - 8 * line_height;
 	  glColor3f(  1.0, 0.0, 0.0 );
 	  glRasterPos2f(x, y);
 	  glutBitmapString(font, (unsigned char*) line);
@@ -262,8 +264,10 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	char lineX[80];
 	float elapsed_time =  (self->last_utime - self->frequency_utime)*1E-6;
 	//std::cout << elapsed_time << " el\n";
-	y = 10 + self->frequency_list.size()*line_height;//gl_height - 8 * line_height;
-	sprintf(lineX, "%.1f AGE", elapsed_time);
+	y = gl_height - 9 * line_height;
+	// top left:
+	//y = 10 + self->frequency_list.size()*line_height;//gl_height - 8 * line_height;
+	sprintf(lineX, "%.1f AGE OF FREQS", elapsed_time);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineX);

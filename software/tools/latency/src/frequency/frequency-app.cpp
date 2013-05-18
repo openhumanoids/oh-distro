@@ -53,7 +53,7 @@ void App::handleUtime(const lcm::ReceiveBuffer* rbuf, const std::string& chan, c
     drc::frequency_t out;
     out.utime = msg->utime;
     for (size_t i=0;i < freqs.size() ;i++){
-      out.frequency.push_back( (int8_t) round( freqs[i]) );
+      out.frequency.push_back( (int16_t) round( freqs[i]) );
     }
     out.num = out.frequency.size();
     std::vector< std::string> chans = frequency_->getChannels();

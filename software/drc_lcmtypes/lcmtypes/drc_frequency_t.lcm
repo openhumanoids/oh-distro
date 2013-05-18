@@ -7,6 +7,6 @@ struct frequency_t
    int8_t num;
    // integer frequency of messageing
    // published by drc-frequency
-   int8_t frequency[num];
+   int16_t frequency[num];
    string channel[num];
 }
