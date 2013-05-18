@@ -198,6 +198,12 @@ on_robot_state(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_
 }
 
 static void
+on_utime(const lcm_recv_buf_t * buf, const char *channel, const drc_utime_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    self->last_utime = msg->utime;
+}
+
+static void
 on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequency_t *msg, void *user_data){
     RendererSystemStatus *self = (RendererSystemStatus*) user_data;
   self->frequency_utime =  msg->utime;
@@ -580,6 +586,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
     drc_affordance_collection_t_subscribe(self->lcm,"AFFORDANCE_COLLECTION",on_affordance_collection,self);
     drc_robot_state_t_subscribe(self->lcm,"EST_ROBOT_STATE",on_robot_state,self);
+    drc_utime_t_subscribe(self->lcm,"ROBOT_UTIME",on_utime,self);
     drc_frequency_t_subscribe(self->lcm,"FREQUENCY_LCM",on_frequency,self);
     
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);

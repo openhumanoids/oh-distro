@@ -83,6 +83,10 @@ group "a.1.core" {
         exec = "drc-image-transmit";
         host = "extra";
     }
+    cmd "image-tx" {
+        exec = "drc-image-split";
+        host = "extra";
+    }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
         host = "extra";
