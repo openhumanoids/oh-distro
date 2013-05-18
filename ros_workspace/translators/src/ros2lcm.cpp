@@ -33,6 +33,7 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Wrench.h>
 #include <atlas_msgs/ForceTorqueSensors.h>
+#include <atlas_msgs/VRCScore.h>
 #include <std_msgs/Float64.h>
 
 
@@ -73,6 +74,9 @@ private:
   // Clock:
   ros::Subscriber clock_sub_;
   void clock_cb(const rosgraph_msgs::ClockConstPtr& msg);
+  // VRC Score:
+  ros::Subscriber vrc_score_sub_;
+  void vrc_score_cb(const atlas_msgs::VRCScoreConstPtr& msg);
   
   // All of this data is mashed down into one LCM message - Robot State ////
   sensor_msgs::JointState l_hand_joint_states_, r_hand_joint_states_, robot_joint_states_, head_joint_states_;  
@@ -175,6 +179,9 @@ App::App(ros::NodeHandle node_, string mode_,
   // Clock:  
   if (control_output_){
     clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
+    
+    vrc_score_sub_ = node_.subscribe(string("/vrc_score"), 10, &App::vrc_score_cb,this);
+    
 
     // IMU:
     torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 10, &App::torso_imu_cb,this);
@@ -293,6 +300,42 @@ App::App(ros::NodeHandle node_, string mode_,
 
 App::~App()  {
 }
+
+void App::vrc_score_cb(const atlas_msgs::VRCScoreConstPtr& msg){
+  //std::cout << "got vrc score\n";  
+  drc::score_t score;
+  score.wall_time=(int64_t) floor(msg->wall_time.toNSec()/1000);  
+  score.sim_time=(int64_t) floor(msg->sim_time.toNSec()/1000);  
+  score.wall_time_elapsed=(int64_t) floor(msg->wall_time_elapsed.toNSec()/1000);  
+  score.sim_time_elapsed=(int64_t) floor(msg->sim_time_elapsed.toNSec()/1000);  
+  score.completion_score = msg->completion_score;
+  score.falls = msg->falls;
+  lcm_publish_.publish("VRC_SCORE", &score);
+
+  if (!msg->message.empty() ){
+    // any messages from gazebo come as occasional strings:
+    drc::system_status_t m;
+    m.utime = (int64_t) floor(msg->sim_time.toNSec()/1000);
+    m.system = drc::system_status_t::MESSAGING;
+    m.importance = drc::system_status_t::VERY_IMPORTANT;
+    m.frequency = drc::system_status_t::LOW_FREQUENCY;
+
+    std::stringstream ss;
+    ss << "VRC Score: " 
+       <<  msg->wall_time_elapsed.toSec() << " Seconds Elapsed | "
+       <<  msg->completion_score << " Completion | "
+       <<  msg->falls << " Falls";
+    m.value = ss.str();
+    std::cout << ss.str() << " \n";  
+    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+    
+    m.value = string( "VRC Score: " ) + msg->message;
+    lcm_publish_.publish("SYSTEM_STATUS", &m);
+    lcm_publish_.publish("VRC_SCORE_MESSAGE", &m); // for conevenince
+  }
+}
+
+
 
 void App::head_fps_cb(const std_msgs::Float64ConstPtr& msg){
   head_stereo_publish_fps_ = double( msg->data);
