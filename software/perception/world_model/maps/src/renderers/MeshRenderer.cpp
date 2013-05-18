@@ -88,6 +88,11 @@ struct MeshRenderer::InternalState {
     if (mCamTrans == NULL) {
       mCamTrans = bot_param_get_new_camtrans
         (mBotWrapper->getBotParam(), mCameraChannel.c_str());
+      if (mCamTrans == NULL) {
+        std::cout << "Error: cannot get camtrans for " <<
+          mCameraChannel << std::endl;
+        return;
+      }
       double K00 = bot_camtrans_get_focal_length_x(mCamTrans);
       double K11 = bot_camtrans_get_focal_length_y(mCamTrans);
       double K01 = bot_camtrans_get_skew(mCamTrans);
