@@ -166,7 +166,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/l_lleg.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/l_lleg.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -285,7 +285,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/l_uleg.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/l_uleg.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -386,7 +386,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -532,7 +532,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_larm.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_larm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -557,7 +557,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_lglut.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_lglut.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -582,7 +582,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_lleg.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_lleg.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -651,7 +651,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_uarm.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_uarm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -676,7 +676,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_uglut.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_uglut.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -701,7 +701,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_robot/meshes/r_uleg.dae" scale="100. 100. 100."/>
+        <mesh filename="package://mit_robot/meshes/r_uleg.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="default">
@@ -1614,8 +1614,8 @@
     <!-- kp and kd for rubber -->
     <kp>1000000.0</kp>
     <kd>100.0</kd>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu1>1.5</mu1>
+    <mu2>1.5</mu2>
     <fdir1>1 0 0</fdir1>
     <maxVel>1.0</maxVel>
     <minDepth>0.00</minDepth>
@@ -1623,8 +1623,8 @@
   <gazebo reference="l_foot">
     <kp>1000000.0</kp>
     <kd>100.0</kd>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu1>1.5</mu1>
+    <mu2>1.5</mu2>
     <fdir1>1 0 0</fdir1>
     <maxVel>1.0</maxVel>
     <minDepth>0.00</minDepth>
