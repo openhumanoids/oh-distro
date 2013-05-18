@@ -121,7 +121,7 @@ public:
     const float timeWindowSeconds = 5;
 
     maps::ViewBase::Spec spec;
-    spec.mResolution = 0.05
+    spec.mResolution = 0.05;
     spec.mWidth = int((maxPt[0] - minPt[0]) / spec.mResolution);
     spec.mHeight = int((maxPt[1] - minPt[1]) / spec.mResolution);
     spec.mTimeMin = -5*1e6;
