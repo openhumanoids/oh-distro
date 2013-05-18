@@ -14,6 +14,7 @@ struct desired_grasp_state_t  // usually published on CANDIDATE_GRASP_SEED and C
     
     int16_t grasp_type; // see constants below 
     const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
+    boolean power_grasp; // boolean to manually indicate to the controller that torque needs to set to maximum.
     
     // end effector position that realizes the grasp.  
     position_3d_t l_hand_pose; 
