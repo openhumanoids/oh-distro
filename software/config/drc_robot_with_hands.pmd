@@ -364,11 +364,11 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.6/worlds/vrc_task_1.world";
         host = "robot";
     }
     cmd "gz_vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.6/worlds/vrc_task_2.world";
         host = "robot";
     }
     cmd "gz_vrc_walking_rubble" {
@@ -376,7 +376,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_3.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.6/worlds/vrc_task_3.world";
         host = "robot";
     }
 }
