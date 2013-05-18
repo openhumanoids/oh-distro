@@ -67,13 +67,13 @@ struct ImageSplit {
     if (img.size == 0) return;
 
     std::vector<uint8_t> buf(&img.data[0],
-                             &img.data[0] + img.height*img.row_stride);
+                             &img.data[0] + img.height/2*img.row_stride);
     
     // transmit
     bot_core::image_t msg;
     msg.utime = img.utime;
     msg.width = img.width;
-    msg.height = img.height;
+    msg.height = img.height/2;
     msg.row_stride = img.row_stride;
     msg.pixelformat = img.pixelformat;
     msg.size = buf.size();
