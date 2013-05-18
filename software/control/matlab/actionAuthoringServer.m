@@ -48,7 +48,7 @@ s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
 %r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf', [],[],struct('floating',true));
+r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf', [],[],struct('floating',true));
 r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake.urdf',[0;0;0],[0;0;0]);
 warning(s);
 
