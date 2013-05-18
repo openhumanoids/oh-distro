@@ -13,6 +13,7 @@
 #define PARAM_TOUCH "Touch"   // publishes pre-grasp pose as ee_goal for reaching controller
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
+#define PARAM_POWER_GRASP     "PowerGrasp"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
 
@@ -812,7 +813,8 @@ namespace renderer_affordances_gui_utils
           publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
         }
     }
-    else if (!strcmp(name, PARAM_GRASP_UNGRASP)) {
+    
+    else if ((!strcmp(name, PARAM_GRASP_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
       
@@ -827,13 +829,18 @@ namespace renderer_affordances_gui_utils
       else { 
         drc::desired_grasp_state_t msg; // just to access types
         int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        
+        bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
+        if(power_flag)
+         val=true;
+  
 
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,self);
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,power_flag,self);
           
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
@@ -910,7 +917,7 @@ namespace renderer_affordances_gui_utils
     //bot_gtk_param_widget_add_buttons(pw,PARAM_GRASP_UNGRASP, NULL);
     bool val = (hand_it->second.grasp_status==0);
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
-
+    bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
 

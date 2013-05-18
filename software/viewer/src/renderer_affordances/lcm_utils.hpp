@@ -240,7 +240,7 @@ namespace renderer_affordances_lcm_utils
   }
   
  //----------------------------------------------------------------------------------------------------
-  static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag, void *user)
+  static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
     drc::desired_grasp_state_t msg;
@@ -251,7 +251,7 @@ namespace renderer_affordances_lcm_utils
     msg.geometry_name = string(sticky_hand_struc.geometry_name);
     msg.unique_id = sticky_hand_struc.uid;
     msg.grasp_type = sticky_hand_struc.hand_type;
-
+    msg.power_grasp = power_flag;
     // desired ee position in world frame
     KDL::Frame T_world_ee,T_body_ee;
     
