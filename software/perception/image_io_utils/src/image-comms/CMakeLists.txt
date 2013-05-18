@@ -6,6 +6,13 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
   -Wreturn-type -Wuninitialized -Wunused-variable
   -std=c++0x)
 
+
+# image split
+add_executable(drc-image-split ImageSplit.cpp)
+pods_use_pkg_config_packages(drc-image-split drc-utils opencv)
+target_link_libraries(drc-image-split)
+pods_install_executables(drc-image-split)
+
 # image transmit
 add_executable(drc-image-transmit ImageTransmit.cpp)
 pods_use_pkg_config_packages(drc-image-transmit drc-utils opencv)

@@ -74,8 +74,8 @@ struct ImageReceive {
                   const int iWidth, const int iHeight) {
     ChannelData::Ptr data(new ChannelData());
     data->mChannelBase = iChannel;
-    data->mChannelReceive = iChannel + "LEFT_TX";
-    data->mChannelTransmit = iChannel + "LEFT_RX";
+    data->mChannelReceive = iChannel + "LEFT";
+    data->mChannelTransmit = iChannel + "LEFT";
     data->mWidth = iWidth;
     data->mHeight = iHeight;
     data->mLcm = mLcm;
