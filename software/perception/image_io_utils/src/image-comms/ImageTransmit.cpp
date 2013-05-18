@@ -14,7 +14,7 @@
 
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
-  std::string mChannelBase;
+  std::string mChannelReceive;
   std::string mChannelTransmit;
   bot_core::image_t mLatestImage;
   int mRequestType;
@@ -50,10 +50,10 @@ struct ImageTransmit {
 
   void addChannel(const std::string& iChannel, const int iRequestType) {
     ChannelData::Ptr data(new ChannelData());
-    data->mChannelBase = iChannel;
+    data->mChannelReceive = iChannel + "LEFT";
     data->mChannelTransmit = iChannel + "LEFT_TX";
     data->mRequestType = iRequestType;
-    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
+    mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
     mChannels[iRequestType] = data;
   }
 
@@ -117,12 +117,6 @@ struct ImageTransmit {
 
     void* bytes = const_cast<void*>(static_cast<const void*>(img.data.data()));
     cv::Mat imgOrig(img.height, img.width, imgType, bytes, img.row_stride);
-
-    // determine whether to chop the image in half
-    // TODO: this should be detected from the config somehow
-    if (img.height > img.width) {
-      imgOrig = imgOrig.rowRange(0, img.height/2);
-    }
 
     // downsample
     cv::Mat outImage;
