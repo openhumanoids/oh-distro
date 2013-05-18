@@ -273,7 +273,7 @@ group "b.1.core" {
     }
     cmd "image-rx" {
         exec = "drc-image-receive";
-        host = "extra";
+        host = "base";
     }
     cmd "lcm-logger-base-nocams" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
