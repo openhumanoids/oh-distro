@@ -57,6 +57,7 @@ classdef ManipulationPlanner < handle
             kinsol = doKinematics(obj.r,q0);
             rfoot_body = obj.r.findLink('r_foot');
             lfoot_body = obj.r.findLink('l_foot');
+            head_body = obj.r.findLink('head');
             
             % r_foot_pose0 = forwardKin(obj.r,kinsol,rfoot_body,...
             %    rfoot_body.contact_pts(:,[rfoot_body.collision_group{1}]),2);
@@ -66,7 +67,9 @@ classdef ManipulationPlanner < handle
             % l_foot_pose0 = mean(l_foot_pose0,2);
             r_foot_pose0 = forwardKin(obj.r,kinsol,rfoot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,lfoot_body,[0;0;0],2);
-            
+            head_pose0 = forwardKin(obj.r,kinsol,head_body,[0;0;0],2);
+            head_pose0_relaxed.min=head_pose0-[1e-2*ones(3,1);1e-2*ones(4,1)];
+            head_pose0_relaxed.max=head_pose0+[1e-2*ones(3,1);1e-2*ones(4,1)];
             % compute fixed COM goal
             gc = contactPositions(obj.r,q0);
             k = convhull(gc(1:2,:)');
@@ -214,6 +217,7 @@ classdef ManipulationPlanner < handle
                 [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
                     pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
                     utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
+                    head_body,[0;0;0],head_pose0_relaxed,{},{},{},...
                     rfoot_body,[0;0;0],rfoot_const,{},{},{}, ...
                     lfoot_body,[0;0;0],lfoot_const,{},{},{}, ...
                     r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
