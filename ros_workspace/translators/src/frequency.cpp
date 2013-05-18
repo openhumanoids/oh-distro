@@ -96,7 +96,8 @@ int64_t _timestamp_now(){
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
   int64_t utime = (int64_t) floor(msg->clock.toNSec()/1000);
-  frequency_->setUtime( utime );
+  std::vector < float > freqs;
+  frequency_->setUtime( utime , freqs);
 }
 
 
