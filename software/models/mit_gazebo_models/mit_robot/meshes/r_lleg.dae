@@ -12,7 +12,7 @@
     <revision></revision>
     <subject></subject>
     <title></title>
-    <unit meter="1.0000" name="centimeter"></unit>
+    <unit meter="1.0000" name="meter"></unit>
     <up_axis>Z_UP</up_axis>
   </asset>
   <library_images>
@@ -6612,7 +6612,7 @@
   <library_visual_scenes>
     <visual_scene id="test" name="">
       <node name="g27" id="g27" sid="g27">
-        <matrix sid="matrix">0.010000 0.000000 0.000000 0.000000 0.000000 0.010000 0.000000 0.000000 0.000000 0.000000 0.010000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
+        <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
         <extra>
           <technique profile="FCOLLADA">
             <visibility>1.000000</visibility>
