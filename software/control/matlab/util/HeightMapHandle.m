@@ -23,7 +23,11 @@ classdef HeightMapHandle < handle
         end
         
         function this = setFillMissing(this,val)
-            this.mMexFunc('property',this.mHandle,'fill',val);
+            if (val)
+                this.mMexFunc('property',this.mHandle,'fill','true');
+            else
+                this.mMexFunc('property',this.mHandle,'fill','false');
+            end
         end
         
         function pts = getPointCloud(this)

@@ -8,9 +8,9 @@ classdef DRCTerrainMap < RigidBodyTerrain
       end
       
       if is_robot
-        private_channel = 'true';
+        private_channel = true;
       else
-        private_channel = 'false';
+        private_channel = false;
       end
       
       if nargin < 2
@@ -35,10 +35,15 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if isfield(options,'fill')
           typecheck(options.fill,'char');
       else
-          options.fill= 'false';
+          options.fill= false;
+      end
+
+      if (private_channel)
+          obj.map_handle = HeightMapHandle(@HeightMapWrapper,'true');
+      else
+          obj.map_handle = HeightMapHandle(@HeightMapWrapper,'false');
       end
       
-      obj.map_handle = HeightMapHandle(@HeightMapWrapper,private_channel);
       obj.map_handle.setFillMissing(options.fill);
 
       % wait for at least one map message to arrive before continuing
