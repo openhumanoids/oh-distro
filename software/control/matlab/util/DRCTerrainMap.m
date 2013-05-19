@@ -33,7 +33,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.raw = options.raw;
       
       if isfield(options,'fill')
-          typecheck(options.fill,'char');
+          typecheck(options.fill,'logical');
       else
           options.fill= false;
       end
