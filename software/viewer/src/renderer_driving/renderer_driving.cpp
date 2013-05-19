@@ -540,10 +540,16 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         }
     }
     else {
-        sprintf (line2, "Throttle: ???\n");
-        sprintf (line3, "   Brake: ???\n");
-        sprintf (line4, "   Steer: ???\n");
-
+       if (self->ground_truth_status) {
+            sprintf (line2, "Throttle: ??? [%.2f]\n", self->ground_truth_status->gas_pedal);
+            sprintf (line3, "   Brake: ??? [%.2f]\n", self->ground_truth_status->brake_pedal);
+            sprintf (line4, "   Steer: ??? [%.2f]\n", self->ground_truth_status->hand_wheel);
+        }
+        else {
+            sprintf (line2, "Throttle: ??? [???]\n");
+            sprintf (line3, "   Brake: ??? [???]\n");
+            sprintf (line4, "   Steer: ??? [???]\n");
+        }
     }
 
     if (self->ground_truth_status) {
