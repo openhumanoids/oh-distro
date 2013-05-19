@@ -2,20 +2,20 @@
 
 <!-- what launch script to run: 
   run_gzserver", "run_gazebo" or "run_gazebo_paused" -->
-  <arg name="gzname" default="run_gzserver"/>
+  <arg name="gzname" default="run_gazebo"/>
 
 <!-- Read world file -->
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/mit_manip.world" />
 
   <param name="/use_sim_time" type="bool" value="true"/>
   <param name="/atlas/startup_mode" value="pinned" />
-  <param name="/atlas/time_to_unpin" value="10" />
+  <param name="/atlas/time_to_unpin" value="0" />
   
   <!-- to trigger synchronization delay, set
      atlas_msgs::AtlasCommand::desired_controller_period_ms to non-zero -->
   <param name="/atlas/delay_window_size" type="double" value="5.0"/>
   <param name="/atlas/delay_max_per_window" type="double" value="0.25"/>
-  <param name="/atlas/delay_max_per_step" type="double" value="0.025"/>  
+  <param name="/atlas/delay_max_per_step" type="double" value="0.025"/>
 
   <!-- start gazebo with the Atlas -->
 <!--  <node name="gazebo" pkg="atlas_utils" type="$(arg gzname)" args="$(arg gzworld)" output="screen" />-->
@@ -33,19 +33,19 @@
 
   <!-- additional nodes to publish joint states for the hands -->
   <node pkg="robot_state_publisher" type="state_publisher" name="sandia_hands_l_hand_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" /> <!-- changed from 50 to 200 -sk -->
     <remap from="joint_states" to="/sandia_hands/l_hand/joint_states" />
   </node>
   <node pkg="robot_state_publisher" type="state_publisher" name="sandia_hands_r_hand_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" /> <!-- changed from 50 to 200 -sk -->
     <remap from="joint_states" to="/sandia_hands/r_hand/joint_states" />
   </node>
   <node pkg="robot_state_publisher" type="state_publisher" name="atlas_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" /> <!-- changed from 50 to 200 -sk -->
     <remap from="joint_states" to="/atlas/joint_states" />
   </node>
   <node pkg="robot_state_publisher" type="state_publisher" name="multisense_sl_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" /> <!-- changed from 50 to 200 -sk -->
     <remap from="joint_states" to="/multisense_sl/joint_states" />
   </node>
 
