@@ -10,8 +10,8 @@ ${DRC_BIN}/drc-viewer\
 ${DRC_BIN}/drc-image-passthrough\
 ${DRC_BIN}/drc-lidar-passthrough\
 ${DRC_BIN}/stereo-bm\
-/usr/local/bin/gzserver\
-/usr/local/bin/gzclient
+/usr/bin/gzserver\
+/usr/bin/gzclient
 
 BARE_BINS=$(notdir ${FULL_BINS})
 SHELL_CMDS=$(addprefix ${DEST_DIR}/, ${BARE_BINS})
