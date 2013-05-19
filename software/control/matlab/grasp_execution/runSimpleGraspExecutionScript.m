@@ -45,7 +45,7 @@ while(1)
         
         msg = grasp_state_listener.lcmcoder.encode(ts,x);
         if(msg.power_grasp==1.0)
-         pos_control_flag = [1.0 0 0    1.0 0.0 0.0   1.0 0 0   1.0 0 0]';
+         pos_control_flag = [1.0 0 0    1.0 0.0 0.0   1.0 0 0   1.0 1.0 1.0]';
         end
 
 %         rpy = quat2rpy([x(9);x(6:8)]);   
