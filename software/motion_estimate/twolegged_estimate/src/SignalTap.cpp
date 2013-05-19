@@ -184,7 +184,7 @@ Eigen::VectorXd NumericalDiff::diff(const unsigned long long &ts, const Eigen::V
 
   Eigen::VectorXd returnval(size);
   
-  returnval = (sample - prev_sample)/(ts - prev_time)*1E-6;
+  returnval = (sample - prev_sample)/(ts - prev_time)*1E6;
   
   prev_time = ts;
   prev_sample = sample;
@@ -242,6 +242,7 @@ void TrapezoidalInt::setSize(const int &s) {
 
 void TrapezoidalInt::reset_in_time() {
 	int_dx.setZero();
+	//std::cout << "zeroed";
 }
 
 Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &u_ts, const Eigen::VectorXd &dx) {
@@ -296,6 +297,8 @@ void RateChange::setDesiredPeriod_us(const unsigned long long &start_u_time, con
 }
 
 bool RateChange::checkNewRateTrigger(const unsigned long long &cur_u_time) {
+
+	//std::cout << " t: " << (cur_u_time - prev_u_time);
 
 	if ((cur_u_time - prev_u_time) >= desired_period_us) {
 		// This is a rate transition trigger event

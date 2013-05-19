@@ -1,6 +1,5 @@
 %%
 
-legkinvels = size(data,2)>91;
 
 
 
@@ -20,6 +19,8 @@ clear erate
 
 
 data= dlmread('true_estimated_states.csv');
+
+legkinvels = size(data,2)>91;
 
 % check if kinematic foot velocities are available
 legkinvels = size(data,2)>91;
@@ -140,6 +141,22 @@ me_r_lax = data(:,(offset+15));
     jv_r_lax = [0;diff(jp_r_lax)*1E3];
     
     
+    offset = 103;
+
+    fjp_l_uhz = data(:,(offset+4));
+    fjp_l_mhx = data(:,(offset+5));
+    fjp_l_lhy = data(:,(offset+6));
+    fjp_l_kny = data(:,(offset+7));
+    fjp_l_uay = data(:,(offset+8));
+    fjp_l_lax = data(:,(offset+9));
+    fjp_r_uhz = data(:,(offset+10));
+    fjp_r_mhx = data(:,(offset+11));
+    fjp_r_lhy = data(:,(offset+12));
+    fjp_r_kny = data(:,(offset+13));
+    fjp_r_uay = data(:,(offset+14));
+    fjp_r_lax = data(:,(offset+15));
+    
+    
 % end
 
 
@@ -217,24 +234,24 @@ title('States')
 subplot(spa,spb,2),
 plot(t,[ce_l_lax, ce_r_lax],'--')
 hold on
-plot(t,[me_l_lax, me_r_lax, jp_l_lax*scale, jp_r_lax*scale])
+plot(t,[me_l_lax, me_r_lax, jp_l_lax*scale, jp_r_lax*scale, 0.5+fjp_l_lax*scale, 0.5+fjp_r_lax*scale ])
 grid on
-legend({'ce l lax', 'ce r lax', 'me l lax', 'me r lax', 'jp l lax', 'jp r lax'})
+legend({'ce l lax', 'ce r lax', 'me l lax', 'me r lax', 'jp l lax', 'jp r lax', 'fjp l lax', 'fjp r lax'})
 title('Ankle X')
 
 subplot(spa,spb,3),
 plot(t,[ce_l_uay, ce_r_uay],'--')
 hold on
-plot(t,[me_l_uay, me_r_uay, jp_l_uay*scale, jp_r_uay*scale])
-legend({'ce l uay', 'ce r uay', 'me l uay', 'me r uay', 'jp l uay', 'jp r uay'})
+plot(t,[me_l_uay, me_r_uay, jp_l_uay*scale, jp_r_uay*scale, 0.5+fjp_l_uay*scale, 0.5+fjp_r_uay*scale])
+legend({'ce l uay', 'ce r uay', 'me l uay', 'me r uay', 'jp l uay', 'jp r uay', 'fjp l uay', 'fjp r uay'})
 grid on
 title('Ankle Y')
 
 subplot(spa,spb,4)
 plot(t,[ce_l_kny, ce_r_kny],'--')
 hold on
-plot(t,[me_l_kny, me_r_kny, jp_l_kny*scale, jp_r_kny*scale])
-legend({'ce l kny', 'ce r kny', 'me l kny', 'me r kny', 'jp l kny', 'jp r kny'})
+plot(t,[me_l_kny, me_r_kny, jp_l_kny*scale, jp_r_kny*scale, 0.5+fjp_l_kny*scale, 0.5+fjp_r_kny*scale])
+legend({'ce l kny', 'ce r kny', 'me l kny', 'me r kny', 'jp l kny', 'jp r kny', 'fjp l kny', 'fjp r kny'})
 grid on
 title('Knee Y')
 

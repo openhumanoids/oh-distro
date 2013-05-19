@@ -55,6 +55,8 @@
 
 //#include "urdf/model.h"
 
+#define TRUE_ROBOT_STATE_MSG_AVAILABLE
+
 #define FILTER_ARR                 8
 #define DISPLAY_FOOTSTEP_POSES
 
@@ -79,6 +81,7 @@ struct command_switches {
   bool print_computation_time;
 };
 
+
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
@@ -101,6 +104,8 @@ private:
 	boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 	std::vector<drc::link_transform_t> _link_tfs;
 	
+	std::vector<double> filtered_joints;
+
 	// Drawing stuff
 	ObjectCollection* _obj;
 	ObjectCollection* _obj_leg_poses;
@@ -108,6 +113,7 @@ private:
 	
 	volatile bool stillbusy;
 	volatile bool first_get_transforms;
+	volatile bool filter_joints_vector_size_set;
 	int poseplotcounter;
 	int collectionindex;
 	int firstpass;//was bool
@@ -164,7 +170,8 @@ private:
 	void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
 	void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
 	
-	void getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
+	int getJoints(const drc::robot_state_t * msg, std::map<std::string, double> *jointpos_in);
+	void getTransforms_FK(const unsigned long long &u_ts, const std::map<std::string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
 	void setupSolver();
 	
 	//void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
@@ -180,17 +187,30 @@ private:
 	void drawLeftFootPose();
 	void drawRightFootPose();
 	
-	void DrawLegPoses(const Eigen::Isometry3d target[4], const Eigen::Isometry3d &true_pelvis);
+	void DrawLegPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right , const Eigen::Isometry3d &true_pelvis);
 
 	void PublishFootContactEst(int64_t utime);
-	void PublishEstimatedStates(const drc::robot_state_t * msg);
+	void PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, int do_publish);
 	
 	void ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force);
 	// This function may move to a new class in the future. This is just the starting location for testing of the functionality
 	void DetermineLegContactStates(long utime, float left_z, float right_z);
 	void InitializeFilters(const int num_filters);
 	
-	void filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]);
+	int filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]);
+
+	bool UpdateOdometryEstimates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, const double &left_force, const double &right_force, int &joints_were_updated);
+	void UpdateHeadStates(const drc::robot_state_t * msg, bot_core::pose_t * l2head_msg);
+
+	void LogAllStateData(const drc::robot_state_t * msg, const drc::robot_state_t * est_msgout);
+	void stateMessage_to_stream(const drc::robot_state_t *msg, std::stringstream &ss);
+
+	// Publishing of all the required LCM messages
+	void PublishEstimatedMessages(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, bot_core::pose_t * head_msg, int do_publish);
+	void PublishHeadStateMsgs(const bot_core::pose_t * msg);
+	void PublishPoseBodyTrue(const drc::robot_state_t * msg);
+
+	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -200,7 +220,7 @@ public:
 	
 	void finish() { _finish = true; }
 	
-	// Run the estimator, assuming the LCM connections have been set up correctly
+	// Run the estimator, assuming the LCM connections have been set up correctly -- not used yet
 	void run(bool testingmode);
 	
 	void terminate();

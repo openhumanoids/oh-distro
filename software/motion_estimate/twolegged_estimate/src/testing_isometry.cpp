@@ -100,5 +100,40 @@ int main() {
 		_filter.processSample(50.0);
 	}
 
+	cout << "Testing the integral\n";
+
+
+	TrapezoidalInt integrator;
+	NumericalDiff differ;
+	integrator.setSize(1);
+	differ.setSize(1);
+
+	double dx[1];
+	double val[1];
+
+	dx[0] = 0.12;
+
+	for (int i=0;i<50;i++) {
+		dx[0] = rand();
+		dx[0] = (dx[0]/1E8);
+		dx[0] = 2.*((dx[0]-(int)dx[0])-0.5) + 10;
+
+		//cout << "val: " << dx[0] <<endl;
+
+
+		val[0] = integrator.integrate((unsigned long long)1E3*i, 1,dx)(0);
+		cout << " | " << fixed << dx[0];
+		if ((i+1)%5==0) {
+			cout << " diff: ";
+			differ.diff((unsigned long long)1E3*i,1,val);
+			cout << val[0] << endl;
+		}
+
+	}
+
+
+	cout << endl;
+
+
 	return 0;
 }

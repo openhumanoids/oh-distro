@@ -24,6 +24,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	
 	_switches = commands;
+	filter_joints_vector_size_set = false;
 	
 	std::cout << "Switches value for listen to LCM trues is: " << _switches->lcm_read_trues << std::endl;
 	
@@ -250,114 +251,62 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
-												const  drc::robot_state_t* msg) {
+												const  drc::robot_state_t* _msg) {
+
 	clock_gettime(CLOCK_REALTIME, &before);
 	//std::cout << before.tv_nsec << ", " << spare.tv_nsec << std::endl;
 	spare_time = (double)(static_cast<long long>(before.tv_nsec) - static_cast<long long>(spare.tv_nsec));
-	
-	ratecounter++;
-	//if (ratecounter < 1)// this may cause the filters to not work correctly -- filters were designed for 1kHz -- so be prepared if you are going to change this
-		//return;
-	//std::cout << "Timestamp: " << msg->utime << std::endl;
-	//ratecounter = 0;
+
+
+	// The intention is to build up the information inside these messages and pass them out on LCM to who ever needs to consume them
+	// The estimated state message variables are created here for two main reasons:
+	// 1. Timing of the messaging sending is slaved to the reception of joint angle measurements
+	// 2. After an estimation iteration these state variables go out of scope, preventing stale data to be carried over to the next iteration of this code (short of memory errors -- which must NEVER happen)
+	// This is the main core memory of the state estimation process. These values are the single point of interface with the LCM cloud -- method of odometry will have their own state memory,
+	// and should always be managed as such.
+	drc::robot_state_t est_msgout;
+	bot_core::pose_t est_headmsg;
+
+	// TODO -- for now we overwrite the estimated state with a complete copy of the true robot state --
+	// This will have to change a bit for when the true robot state message is no longer available
+	est_msgout = *_msg;
 	
 	bool legchangeflag;
 
-	Eigen::Isometry3d left;
-	Eigen::Isometry3d right;
-	
-	
-	double left_force, right_force;
-	ParseFootForces(msg, left_force, right_force);
-	//left_force = msg->contacts.contact_force[0].z;
-	//right_force = msg->contacts.contact_force[1].z;
+	int joints_were_updated=0;
 
-	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process	
+	double left_force, right_force;
+	ParseFootForces(_msg, left_force, right_force);
+
+	DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	if (_switches->publish_footcontact_states) {
-	  PublishFootContactEst(msg->utime);
+	  PublishFootContactEst(_msg->utime);
 	}
 	
-	// maintain a true pelvis position for drawing of the foot 
-	Eigen::Quaterniond true_pelvis_q;
-	true_pelvis_q.w() = msg->origin_position.rotation.w;
-	true_pelvis_q.x() = msg->origin_position.rotation.x;
-	true_pelvis_q.y() = msg->origin_position.rotation.y;
-	true_pelvis_q.z() = msg->origin_position.rotation.z;
-    
-	Eigen::Isometry3d true_pelvis(true_pelvis_q);
-	true_pelvis.translation().x() = msg->origin_position.translation.x;
-	true_pelvis.translation().y() = msg->origin_position.translation.y;
-	true_pelvis.translation().z() = msg->origin_position.translation.z;
-	
 	if (_switches->do_estimation){
-
-		// forward kinematics
-		getTransforms(msg,left,right);
-
-		// TODO -- how to trigger the initial state reset?
-		if (firstpass>0)
-		{
-			firstpass--;// = false;
-			// We need to reset the initial condition of the odometry estimate here..
-			// TODO -- going to have to remove this before the VRC..
-			
-			_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
-		}
-		
-		legchangeflag = _leg_odo->UpdateStates(msg->utime, left, right, left_force, right_force);
-		
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		
-		if (_switches->draw_footsteps) {
-		
-#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
-			// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
-			
-			//drawLeftFootPose();
-			//drawRightFootPose();
-			//drawSumPose();
-			{
-				Eigen::Isometry3d leg_isometries[4];
-				
-				leg_isometries[0] = left;
-				leg_isometries[1] = right;
-				leg_isometries[2] = left.inverse();
-				leg_isometries[3] = right.inverse();
-				
-				DrawLegPoses(leg_isometries, true_pelvis);
-			}
-			
-			// This sendCollection call will be overwritten by the one below -- moved here after testing of the forward kinematics
-			_viewer->sendCollection(*_obj_leg_poses, true);
-#endif
-		
-		
-			if (legchangeflag)
-			{
-				//std::cout << "LEGCHANGE\n";
-				addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
-				collectionindex++;
-				addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
-				collectionindex++;
-				_viewer->sendCollection(*_obj, true);
-			}
-			
-			_viewer->sendCollection(*_obj_leg_poses, true);
-		
-		}//draw footsteps
-		
-		//clock_gettime(CLOCK_REALTIME, &threequat);
-		if (ratecounter >= 1) {
-		  PublishEstimatedStates(msg);
-		  ratecounter=0;
-		}
+		// TODO -- This is a hack during the code cleanup, abstraction to be improved
+		int joints_were_updated;
+		UpdateOdometryEstimates(_msg, &est_msgout, left_force, right_force, joints_were_updated);
 
-		#ifdef LOG_28_JOINT_COMMANDS
-		   for (int i=0;i<16;i++) {
-			   measured_joint_effort[i] = msg->measured_effort[i];
-		   }
-		#endif
+		// The head state is built on the estimated state of the pelvis
+		UpdateHeadStates(&est_msgout, &est_headmsg);
+
+		//clock_gettime(CLOCK_REALTIME, &threequat);
+		
+		PublishEstimatedMessages(_msg, &est_msgout, &est_headmsg, joints_were_updated);
+
+
+#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
+		// True state messages will ont be available during the VRC and must be removed accordingly
+		PublishPoseBodyTrue(_msg);
+#endif
+
+		if (_switches->log_data_files) {
+			LogAllStateData(_msg, &est_msgout);
+		}
     }//do estimation
 	
  
@@ -391,7 +340,88 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
   clock_gettime(CLOCK_REALTIME, &spare);
 }
 
-void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg) {
+// This function is still a bit messy -- still being cleaned up
+bool LegOdometry_Handler::UpdateOdometryEstimates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, const double &left_force, const double &right_force, int &joints_were_updated) {
+
+	 bool legchangeflag;
+
+	Eigen::Isometry3d left;
+	Eigen::Isometry3d right;
+
+	// maintain a true pelvis position for drawing of the foot
+	Eigen::Quaterniond true_pelvis_q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+
+	Eigen::Isometry3d true_pelvis(true_pelvis_q);
+	true_pelvis.translation().x() = msg->origin_position.translation.x;
+	true_pelvis.translation().y() = msg->origin_position.translation.y;
+	true_pelvis.translation().z() = msg->origin_position.translation.z;
+
+
+	map<string, double> jointpos_in;
+
+	joints_were_updated = getJoints(msg, &jointpos_in);
+
+	// forward kinematics
+	getTransforms_FK(msg->utime, jointpos_in, left,right);
+
+	// TODO -- how to trigger the initial state reset?
+	if (firstpass>0)
+	{
+		firstpass--;// = false;
+		// We need to reset the initial condition of the odometry estimate here..
+		// TODO -- going to have to remove this before the VRC..
+
+		_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+	}
+
+	legchangeflag = _leg_odo->UpdateStates(msg->utime, left, right, left_force, right_force);
+
+
+	#ifdef LOG_28_JOINT_COMMANDS
+	   for (int i=0;i<16;i++) {
+		   measured_joint_effort[i] = msg->measured_effort[i];
+	   }
+	#endif
+
+	if (_switches->draw_footsteps) {
+		DrawDebugPoses(left, right, true_pelvis, legchangeflag);
+	}
+
+	return legchangeflag;
+}
+
+void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag) {
+
+#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
+	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
+
+	DrawLegPoses(left, right, true_pelvis);
+	// This sendCollection call will be overwritten by the one below -- moved here after testing of the forward kinematics
+	_viewer->sendCollection(*_obj_leg_poses, true);
+#endif
+
+	if (legchangeflag)
+	{
+		//std::cout << "LEGCHANGE\n";
+		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+		collectionindex++;
+		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+		collectionindex++;
+		_viewer->sendCollection(*_obj, true);
+	}
+
+	_viewer->sendCollection(*_obj_leg_poses, true);
+
+}
+
+void LegOdometry_Handler::PublishEstimatedMessages(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, bot_core::pose_t * head_msg, int do_publish) {
+
+	// TODO -- msg variable must be removed from this member function
+	PublishEstimatedStates(msg, est_msgout, do_publish);
+	PublishHeadStateMsgs(head_msg);
+}
+
+void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, int do_publish) {
 	
 	/*
 		if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
@@ -399,121 +429,97 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	    return;
 	  }
 	  */
+
+	drc::position_3d_t origin;
+	drc::twist_t twist;
+    Eigen::Quaterniond true_q;
+    Eigen::Vector3d E_true;
+    Eigen::Vector3d E_est;
+    bot_core::pose_t pose;
 	
 	Eigen::Isometry3d currentPelvis = _leg_odo->getPelvisState();
-	Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
-	Eigen::Vector3d local_rates     = _leg_odo->getLocalFrameRates();
+	Eigen::Vector3d   velocity_states = _leg_odo->getPelvisVelocityStates();
+	Eigen::Vector3d   local_rates     = _leg_odo->getLocalFrameRates();
 	
 	// estimated orientation 
-    Eigen::Quaterniond output_q(currentPelvis.linear());
+    Eigen::Quaterniond output_q(currentPelvis.linear()); // This is worth checking again
     
-    Eigen::Quaterniond true_q;
     true_q.w() = msg->origin_position.rotation.w;
     true_q.x() = msg->origin_position.rotation.x;
     true_q.y() = msg->origin_position.rotation.y;
     true_q.z() = msg->origin_position.rotation.z;
-    // This is to use the true yaw angle
-    Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(true_q);
-    Eigen::Vector3d E_est = InertialOdometry::QuaternionLib::q2e(output_q);
-	
-    bool usetruestate = false;
 
-	if (_switches->use_true_z) {
-		//std::cout << "Z drift hack is in affect\n";
-		currentPelvis.translation().z() = msg->origin_position.translation.z;
 
-		usetruestate = true;
-	}
-	
-    bot_core::pose_t pose;
     pose.utime  =msg->utime;
-    
-
-
-    if (usetruestate)
-    {
-      //std::cout << "Using the true position for the estimated state\n";
-      pose.pos[0] = msg->origin_position.translation.x;
-      pose.pos[1] = msg->origin_position.translation.y;
-      pose.pos[2] = msg->origin_position.translation.z;
-    
-
-      pose.orientation[0] =true_q.w();
-      pose.orientation[1] =true_q.x();
-      pose.orientation[2] =true_q.y();
-      pose.orientation[3] =true_q.z();
-
-    } else {
-
-    	pose.pos[0] =currentPelvis.translation().x();
-		pose.pos[1] =currentPelvis.translation().y();
-		pose.pos[2] =currentPelvis.translation().z();
-
-        pose.orientation[0] =output_q.w();
-        pose.orientation[1] =output_q.x();
-        pose.orientation[2] =output_q.y();
-        pose.orientation[3] =output_q.z();
-
-    }
-    
-    
     
     for (int i=0; i<3; i++) {
       pose.vel[i] =velocity_states(i);
       pose.rotation_rate[i] = local_rates(i);
     }
-    
-    //lcm_->publish("POSE_KIN",&pose);
-  lcm_->publish("POSE_BODY",&pose);// + _channel_extension,&pose);
-        
-    //Below is copied from Maurice's VO -- publishing of true and estimated robot states
-  
-  // Infer the Robot's head position from the ground truth root world pose
-  bot_core::pose_t pose_msg;
-  pose_msg.utime = msg->utime;
-  pose_msg.pos[0] = msg->origin_position.translation.x;
-  pose_msg.pos[1] = msg->origin_position.translation.y;
-  pose_msg.pos[2] = msg->origin_position.translation.z;
-  pose_msg.orientation[0] = msg->origin_position.rotation.w;
-  pose_msg.orientation[1] = msg->origin_position.rotation.x;
-  pose_msg.orientation[2] = msg->origin_position.rotation.y;
-  pose_msg.orientation[3] = msg->origin_position.rotation.z;
-  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
-  
-  drc::position_3d_t origin;
   
   // True or estimated position
+  if (_switches->use_true_z) {
+	pose.pos[0] = msg->origin_position.translation.x;
+	pose.pos[1] = msg->origin_position.translation.y;
+	pose.pos[2] = msg->origin_position.translation.z;
 
-  if (usetruestate) {
-	  origin.translation.x = msg->origin_position.translation.x;
-	  origin.translation.y = msg->origin_position.translation.y;
-	  origin.translation.z = msg->origin_position.translation.z;
-  } else {
-	  origin.translation.x = currentPelvis.translation().x();
-	  origin.translation.y = currentPelvis.translation().y();
-	  origin.translation.z = currentPelvis.translation().z();
-  }
+	pose.orientation[0] =true_q.w();
+	pose.orientation[1] =true_q.x();
+	pose.orientation[2] =true_q.y();
+	pose.orientation[3] =true_q.z();
 
-  // true or estimated IMU
-  if (usetruestate) {
+	origin.translation.x = msg->origin_position.translation.x;
+	origin.translation.y = msg->origin_position.translation.y;
+	origin.translation.z = msg->origin_position.translation.z;
+
 	origin.rotation.w = msg->origin_position.rotation.w;
 	origin.rotation.x = msg->origin_position.rotation.x;
 	origin.rotation.y = msg->origin_position.rotation.y;
 	origin.rotation.z = msg->origin_position.rotation.z;
+
+	twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
+	twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
+	twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+
+	twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
+	twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
+	twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
   } else {
+	pose.pos[0] =currentPelvis.translation().x();
+	pose.pos[1] =currentPelvis.translation().y();
+	pose.pos[2] =currentPelvis.translation().z();
+
+	pose.orientation[0] =output_q.w();
+	pose.orientation[1] =output_q.x();
+	pose.orientation[2] =output_q.y();
+	pose.orientation[3] =output_q.z();
+
+	origin.translation.x = currentPelvis.translation().x();
+	origin.translation.y = currentPelvis.translation().y();
+	origin.translation.z = currentPelvis.translation().z();
+
 	origin.rotation.w = output_q.w();
 	origin.rotation.x = output_q.x();
 	origin.rotation.y = output_q.y();
 	origin.rotation.z = output_q.z();
+
+	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
+	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
+	twist.linear_velocity.z = velocity_states(2);
+
+	twist.angular_velocity.x = local_rates(0);
+	twist.angular_velocity.y = local_rates(1);
+	twist.angular_velocity.z = local_rates(2);
   }
+
+  // EST is TRUE with sensor estimated position
   
-  drc::twist_t twist;
-  
-  // True or estimated linear velocities
-  if (usetruestate) {
-	twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
-	twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
-	twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+  //msgout = *msg;
+  est_msgout->origin_position = origin;
+  est_msgout->origin_twist = twist;
+
+  lcm_->publish("EST_ROBOT_STATE" + _channel_extension, est_msgout);
+  lcm_->publish("POSE_BODY",&pose);// + _channel_extension,&pose);
 
 	/*
 	// TODO -- remove this pulse train, only for testing
@@ -530,199 +536,177 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 		twist.linear_velocity.y = twist.linear_velocity.y + 0.1;
 		pulse_counter--;
 	}*/
+}
 
-  } else {
-	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
-	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
-	twist.linear_velocity.z = velocity_states(2);
-  }
-  
-  // true or estimated rotation rates
-  if (usetruestate) {
-    twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
-    twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
-    twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
-  } else {
-	twist.angular_velocity.x = local_rates(0);
-	twist.angular_velocity.y = local_rates(1);
-	twist.angular_velocity.z = local_rates(2);
-  }
-  
-  // EST is TRUE with sensor estimated position
-  drc::robot_state_t msgout;
-  msgout = *msg;
-  msgout.origin_position = origin;
-  msgout.origin_twist = twist;
-  
-  lcm_->publish("EST_ROBOT_STATE" + _channel_extension, &msgout);
-  
-  // publish local to head pose
-  
-  int status;
-  double matx[16];
-  Eigen::Isometry3d body_to_head;
-  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "head", "body", msg->utime, matx);
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      body_to_head(i,j) = matx[i*4+j];
-    }
-  }  
-  
-  // Where is the head at
-  Eigen::Isometry3d local_to_head;
-  
-  //std::cout << body_to_head.translation().transpose() << " is b2h\n";
+// TODO -- remember that this is to be depreciated
+// This function will not be available during the VRC, as the true robot state will not be known
+void LegOdometry_Handler::PublishPoseBodyTrue(const drc::robot_state_t * msg) {
 
-  // TODO -- remember this flag
-  if (usetruestate) {
-	  Eigen::Isometry3d truebody;
-	  truebody.setIdentity();
-	  truebody.translation().x() = msg->origin_position.translation.x;
-	  truebody.translation().y() = msg->origin_position.translation.y;
-	  truebody.translation().z() = msg->origin_position.translation.z;
-	  truebody.rotate(true_q);
+	// Infer the Robot's head position from the ground truth root world pose
+	bot_core::pose_t pose_msg;
+	pose_msg.utime = msg->utime;
+	pose_msg.pos[0] = msg->origin_position.translation.x;
+	pose_msg.pos[1] = msg->origin_position.translation.y;
+	pose_msg.pos[2] = msg->origin_position.translation.z;
+	pose_msg.orientation[0] = msg->origin_position.rotation.w;
+	pose_msg.orientation[1] = msg->origin_position.rotation.x;
+	pose_msg.orientation[2] = msg->origin_position.rotation.y;
+	pose_msg.orientation[3] = msg->origin_position.rotation.z;
 
-	  //std::cout << truebody.translation().transpose() << " is tb\n";
+	lcm_->publish("POSE_BODY_TRUE", &pose_msg);
+}
 
-	  local_to_head = truebody * body_to_head;
-	  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
-  } else {
-	  local_to_head = currentPelvis*body_to_head;
-  }
-  // now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
+void LegOdometry_Handler::PublishHeadStateMsgs(const bot_core::pose_t * msg) {
 
-  Eigen::Vector3d local_to_head_vel;
-  // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
-  /*if (false) {
-	  // Will do this later -- no one is consuming POSE_HEAD velocity at the moment
-	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff(msg->utime, body_to_head.translation());
-	  local_to_head_vel = velocity_states + body_to_head_vel;
-	  
-  } else {*/
+  lcm_->publish("POSE_HEAD" + _channel_extension, msg);
+
+  return;
+}
+
+void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_core::pose_t * l2head_msg) {
+
+	Eigen::Vector3d local_to_head_vel;
+	Eigen::Vector3d local_to_head_acc;
+	Eigen::Vector3d local_to_head_rate;
+
+	Eigen::Isometry3d local_to_head;
+
+	int status;
+	  double matx[16];
+	  Eigen::Isometry3d body_to_head;
+	  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "head", "body", msg->utime, matx);
+	  for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+		  body_to_head(i,j) = matx[i*4+j];
+		}
+	  }
+
+	  //std::cout << body_to_head.translation().transpose() << " is b2h\n";
+	  Eigen::Isometry3d pelvis;
+	  Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+	  // TODO -- remember this flag
+
+	  pelvis.setIdentity();
+	  pelvis.translation().x() = msg->origin_position.translation.x;
+	  pelvis.translation().y() = msg->origin_position.translation.y;
+	  pelvis.translation().z() = msg->origin_position.translation.z;
+	  pelvis.rotate(q);
+
+		  //std::cout << truebody.translation().transpose() << " is tb\n";
+
+	  local_to_head = pelvis * body_to_head;
+		  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
+
+	  // now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
+
 	  local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
-  //}
-  
-  Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
-  Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
-  
-  // estimate the rotational velocity of the head
-    Eigen::Quaterniond l2head_rot(local_to_head.linear());
-    bot_core::pose_t l2head_msg;
-    l2head_msg.utime = msg->utime;
-    
-    l2head_msg.pos[0] = local_to_head.translation().x();
-    l2head_msg.pos[1] = local_to_head.translation().y();
-    l2head_msg.pos[2] = local_to_head.translation().z();
-    
-    l2head_msg.orientation[0] = l2head_rot.w();
-    l2head_msg.orientation[1] = l2head_rot.x();
-    l2head_msg.orientation[2] = l2head_rot.y();
-    l2head_msg.orientation[3] = l2head_rot.z();
-    l2head_msg.vel[0]=local_to_head_vel(0);
-    l2head_msg.vel[1]=local_to_head_vel(1);
-    l2head_msg.vel[2]=local_to_head_vel(2);
-    l2head_msg.rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
-    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. ypr
-    l2head_msg.rotation_rate[2]=local_to_head_rate(2);
-    l2head_msg.accel[0]=local_to_head_acc(0);
-    l2head_msg.accel[1]=local_to_head_acc(1);
-    l2head_msg.accel[2]=local_to_head_acc(2);
-    lcm_->publish("POSE_HEAD" + _channel_extension, &l2head_msg);  
-  
-    
+	  local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
+	  local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
+
+	// estimate the rotational velocity of the head
+	Eigen::Quaterniond l2head_rot(local_to_head.linear());
+
+	l2head_msg->utime = msg->utime;
+
+	l2head_msg->pos[0] = local_to_head.translation().x();
+	l2head_msg->pos[1] = local_to_head.translation().y();
+	l2head_msg->pos[2] = local_to_head.translation().z();
+
+	l2head_msg->orientation[0] = l2head_rot.w();
+	l2head_msg->orientation[1] = l2head_rot.x();
+	l2head_msg->orientation[2] = l2head_rot.y();
+	l2head_msg->orientation[3] = l2head_rot.z();
+	l2head_msg->vel[0]=local_to_head_vel(0);
+	l2head_msg->vel[1]=local_to_head_vel(1);
+	l2head_msg->vel[2]=local_to_head_vel(2);
+	l2head_msg->rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
+	l2head_msg->rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. ypr
+	l2head_msg->rotation_rate[2]=local_to_head_rate(2);
+	l2head_msg->accel[0]=local_to_head_acc(0);
+	l2head_msg->accel[1]=local_to_head_acc(1);
+	l2head_msg->accel[2]=local_to_head_acc(2);
+
+	return;
+}
+
+void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const drc::robot_state_t * est_msgout) {
+
   // Logging csv file with true and estimated states
-  if (_switches->log_data_files) {
-    stringstream ss (stringstream::in | stringstream::out);
-	
-    // The true states are
+  stringstream ss (stringstream::in | stringstream::out);
 
-    ss << msg->origin_position.translation.x << ", ";
-    ss << msg->origin_position.translation.y << ", ";
-    ss << msg->origin_position.translation.z << ", ";
-    
-    //std::cout << ss.str() << std::endl;
+  // The true states are
+  stateMessage_to_stream(msg, ss);
+  stateMessage_to_stream(est_msgout, ss);
 
-    ss << msg->origin_twist.linear_velocity.x << ", ";
-    ss << msg->origin_twist.linear_velocity.y << ", ";
-    ss << msg->origin_twist.linear_velocity.z << ", ";
-    
-    ss << E_true(0) << ", ";
-    ss << E_true(1) << ", ";
-    ss << E_true(2) << ", ";
-    
-    ss << msg->origin_twist.angular_velocity.x << ", ";
-    ss << msg->origin_twist.angular_velocity.y << ", ";
-    ss << msg->origin_twist.angular_velocity.z << ", ";
-    
-    // The estimated states are 
-    ss << currentPelvis.translation().x() << ", ";
-    ss << currentPelvis.translation().y() << ", ";
-    ss << currentPelvis.translation().z() << ", ";
-    
-    // temp switch
-    if (true) {
-    	ss << twist.linear_velocity.x << ", ";
-    	ss << twist.linear_velocity.y << ", ";
-    	ss << twist.linear_velocity.z << ", ";
-    } else {
-		ss << velocity_states(0) << ", ";
-		ss << velocity_states(1) << ", ";
-		ss << velocity_states(2) << ", ";
-    }
-    
-    ss << E_est(0) << ", ";
-    ss << E_est(1) << ", ";
-    ss << E_est(2) << ", ";
-    
-    ss << local_rates(0) << ", ";
-    ss << local_rates(1) << ", ";
-    ss << local_rates(2) << ", ";
-    
-    // adding timestamp a bit late, sorry
-    ss << msg->utime << ", ";
-    
-    // Adding the foot contact forces 
-    ss << msg->contacts.contact_force[0].z << ", "; // left
-    ss << msg->contacts.contact_force[1].z << ", "; // right
-    
-    // Active foot is
-    ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
-    
-    // The single foot contact states are also written to file for reference -- even though its published by a separate processing using this same class.
-    ss << _leg_odo->leftContactStatus() << ", ";
-    ss << _leg_odo->rightContactStatus() << ", "; // 30
-    
-    // We also looking at joint angles for this trouble shooting session
-    
-    /*for (int i=0;i<16;i++) {
-    	ss << msg->joint_velocity[i] << ", ";
-    }*/
+  // adding timestamp a bit late, sorry
+  ss << msg->utime << ", ";
 
-#ifdef LOG_28_JOINT_COMMANDS
-	for (int i=0;i<NUMBER_JOINTS;i++) {
-	  ss << joint_commands[i] << ", "; //31-58
-	}
+  // Adding the foot contact forces
+  ss << msg->contacts.contact_force[0].z << ", "; // left
+  ss << msg->contacts.contact_force[1].z << ", "; // right
 
-	for (int i=0;i<16;i++) {
-		ss << joint_positions[i] << ", "; //59-74
-	}
+  // Active foot is
+  ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
+
+  // The single foot contact states are also written to file for reference -- even though its published by a separate processing using this same class.
+  ss << _leg_odo->leftContactStatus() << ", ";
+  ss << _leg_odo->rightContactStatus() << ", "; // 30
+
+	#ifdef LOG_28_JOINT_COMMANDS
+		for (int i=0;i<NUMBER_JOINTS;i++) {
+		  ss << joint_commands[i] << ", "; //31-58
+		}
+
+		for (int i=0;i<16;i++) {
+			ss << joint_positions[i] << ", "; //59-74
+		}
+
+	   for (int i=0;i<16;i++) {
+		   ss << measured_joint_effort[i] << ", ";//75-90
+	   }
+	#endif
+	#ifdef LOG_LEG_TRANSFORMS
+	   // left vel, right vel, left rate, right rate
+	   for (int i=0;i<12;i++) {
+		   ss << pelvis_to_feet_transform[i] << ", ";//91-102
+	   }
+	#endif
 
    for (int i=0;i<16;i++) {
-	   ss << measured_joint_effort[i] << ", ";//75-90
-   }
-#endif
-#ifdef LOG_LEG_TRANSFORMS
-   // left vel, right vel, left rate, right rate
-   for (int i=0;i<12;i++) {
-	   ss << pelvis_to_feet_transform[i] << ", ";
-   }
-#endif
-    
-    ss <<std::endl;
-    
+		ss << filtered_joints[i] << ", "; //103-118
+	}
+
+	ss <<std::endl;
+
 	state_estimate_error_log << ss.str();
-	  
-  }
+
+}
+
+// Push the state values in a drc::robot_state_t message type to the given stringstream
+void LegOdometry_Handler::stateMessage_to_stream(const drc::robot_state_t *msg, stringstream &ss) {
+
+	Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+	Eigen::Vector3d E;
+
+	E = InertialOdometry::QuaternionLib::q2e(q);
+
+	ss << msg->origin_position.translation.x << ", ";
+	ss << msg->origin_position.translation.y << ", ";
+	ss << msg->origin_position.translation.z << ", ";
+
+	ss << msg->origin_twist.linear_velocity.x << ", ";
+	ss << msg->origin_twist.linear_velocity.y << ", ";
+	ss << msg->origin_twist.linear_velocity.z << ", ";
+
+	ss << E(0) << ", ";
+	ss << E(1) << ", ";
+	ss << E(2) << ", ";
+
+	ss << msg->origin_twist.angular_velocity.x << ", ";
+	ss << msg->origin_twist.angular_velocity.y << ", ";
+	ss << msg->origin_twist.angular_velocity.z << ", ";
+
+	return;
 }
 
 void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 
@@ -832,8 +816,15 @@ void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d
 }
 
 // Four Isometries must be passed -- representing pelvisto foot and and foot to pelvis transforms
-void LegOdometry_Handler::DrawLegPoses(const Eigen::Isometry3d target[4], const Eigen::Isometry3d &true_pelvis) {
+void LegOdometry_Handler::DrawLegPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis) {
   
+	Eigen::Isometry3d target[4];
+
+	target[0] = left;
+	target[1] = right;
+	target[2] = left.inverse();
+	target[3] = right.inverse();
+
   Eigen::Vector3d E;
   Eigen::Isometry3d added_vals[2];
   
@@ -861,71 +852,82 @@ void LegOdometry_Handler::addFootstepPose_draw() {
 	collectionindex = collectionindex + 1;
 }
 
-void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
-  bool kinematics_status;
-  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, double> *_jointpos_in) {
   
+  if (filtered_joints.capacity() != msg->num_joints || !filter_joints_vector_size_set) {
+	  filter_joints_vector_size_set = true;
+	  filtered_joints.resize(msg->num_joints);
+	  std::cout << "Automatically changing the capacity of the filtered joints\n";
+  }
+
   // 1. Solve for Forward Kinematics:
-    _link_tfs.clear();
-    
-    // call a routine that calculates the transforms the joint_state_t* msg.
-    map<string, double> jointpos_in;
-    map<string, drc::transform_t > cartpos_out;
-    
-    if (first_get_transforms) {
-    	first_get_transforms = false;
-    	InitializeFilters((int)msg->num_joints);
-    }
-    stringstream ss (stringstream::in | stringstream::out);
-    
-    double alljoints[msg->num_joints];
+	_link_tfs.clear();
 
-    for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-      // Keep joint positions in local memory
-      alljoints[i] = msg->joint_position[i];
-
-      // TODO -- This is to be generalized
-      if (i<16) {
-    	  joint_positions[i] = msg->joint_position[i];
-      }
-
-      // want to filter the joint position measurements here
-      // The idea is to use the integral and derivative trick here
-      // a new function is to be created for this
-
-      filterJointPositions(msg->utime, msg->num_joints, alljoints);
-      // The filtered joint positions have been placed back in all joints variable
+	// call a routine that calculates the transforms the joint_state_t* msg.
 
 
-      switch (2) {
-      case 1:
-        jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
-        break;
-      case 2:
-    	// not using filters on the joint position measurements
-        jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));//skipping the filters
-        break;
-      case 3:
-    	  jointpos_in.insert(make_pair(msg->joint_name[i], alljoints[i])); // The rate has been reduced to sample periods greater than 4500us and filtered with integral/rate/diff
-    	  break;
-      }
-    }
+	if (first_get_transforms) {
+		first_get_transforms = false;
+		InitializeFilters((int)msg->num_joints);
+	}
+	stringstream ss (stringstream::in | stringstream::out);
 
-    ss << "\n";
-    joint_data_log << ss.str();
+	double alljoints[msg->num_joints];
 
-    if (!stillbusy) // not really required, as LCM only allows a single event, but doesn't hurt to leave it here. Maybe we see something of this in the future
-    {
-    	//std::cout << "Trying to solve for Joints to Cartesian\n";
-    	stillbusy = true;
-    	kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-    	stillbusy = false;
-    }
-    else
-    {
-    	std::cout << "JntToCart is still busy -- over-running computational window" << std::endl;
-    	// This should generate some type of error or serious warning
-    }
+
+	for (uint i=0; i< (uint) msg->num_joints; i++) {
+		// Keep joint positions in local memory
+		alljoints[i] = msg->joint_position[i];
+	}
+
+	int updatedjoints;
+
+	updatedjoints = filterJointPositions(msg->utime, msg->num_joints, alljoints);
+	// The filtered joint positions have been placed back in all joints variable
+
+	/*
+	for (int i=0;i<msg->num_joints;i++) {
+		filtered_joints[i] = alljoints[i];
+	}
+	*/
+
+	for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
+
+	  // TODO -- This is to be generalized
+	  if (i<16) {
+		  joint_positions[i] = msg->joint_position[i];
+	  }
+
+	  // want to filter the joint position measurements here
+	  // The idea is to use the integral and derivative trick here
+	  // a new function is to be created for this
+
+	  switch (3) {
+		  case 1:
+			_jointpos_in->insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+			break;
+		  case 2:
+			// not using filters on the joint position measurements
+			_jointpos_in->insert(make_pair(msg->joint_name[i], msg->joint_position[i]));//skipping the filters
+			break;
+		  case 3:
+			_jointpos_in->insert(make_pair(msg->joint_name[i], filtered_joints[i])); // The rate has been reduced to sample periods greater than 4500us and filtered with integral/rate/diff
+			break;
+	  }
+	}
+
+	  return updatedjoints;
+
+}
+
+void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const map<string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
+
+	bool kinematics_status;
+	bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+
+	map<string, drc::transform_t > cartpos_out;
+
+	kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
     
     //bot_core::rigid_transform_t tf;
     //KDL::Frame T_body_head;
@@ -1003,22 +1005,22 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  Eigen::Vector3d tempvar;
 	  int i;
 
-	  tempvar = pelvis_to_feet_speed[0].diff(msg->utime,left.translation());
+	  tempvar = pelvis_to_feet_speed[0].diff(u_ts,left.translation());
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[1].diff(msg->utime,right.translation());
+	  tempvar = pelvis_to_feet_speed[1].diff(u_ts,right.translation());
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[3+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[2].diff(msg->utime,InertialOdometry::QuaternionLib::C2e(left.rotation()));
+	  tempvar = pelvis_to_feet_speed[2].diff(u_ts,InertialOdometry::QuaternionLib::C2e(left.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[6+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[3].diff(msg->utime,InertialOdometry::QuaternionLib::C2e(right.rotation()));
+	  tempvar = pelvis_to_feet_speed[3].diff(u_ts,InertialOdometry::QuaternionLib::C2e(right.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[9+i] = tempvar(i); // left vel, right vel, left rate, right rate
@@ -1026,33 +1028,42 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 
 #endif
 
+
 	  // Matt says
 	  // try sysprof (apt-get install sysprof) system profiler
 	  // valgrind (memory leaks, memory bounds checking)
 	  // valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt
 	  
+
 }
 
-
-void LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]) {
+int LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]) {
 	// we also need to consider the rate change. This will have to happen in or around this function
-
-	std::cout << "Joint[4]: " << alljoints[4];
-
+	int returnval=0;
 	Eigen::VectorXd int_vals(num_joints);
+	Eigen::VectorXd diff_vals(num_joints);
 
+	std::cout << " | " << std::fixed << alljoints[5];
 	// Integrate to lose noise, but keep information
 	int_vals = joint_integrator.integrate(ts, num_joints, alljoints);
+	std::cout << " i: " << int_vals(5);
+
 
 	// we are looking for a 200Hz process -- 5ms
 	if (rate_changer.checkNewRateTrigger(ts)) {
-		joint_pos_filter.diff(ts, int_vals);
+		diff_vals = joint_pos_filter.diff(ts, int_vals);
+		//joint_integrator.reset_in_time();
+
+		for (int i=0;i<num_joints;i++) {
+			filtered_joints[i] = diff_vals(i);
+		}
+
+		std::cout << ", after: " << filtered_joints[5] << "\n";
+		returnval  = 1;
 	}
 
-	std::cout << ", after: " << alljoints[4] << "\n";
+	return returnval;
 }
-
-
 
 void LegOdometry_Handler::terminate() {
 	std::cout << "Closing and cleaning out LegOdometry_Handler object\n";
