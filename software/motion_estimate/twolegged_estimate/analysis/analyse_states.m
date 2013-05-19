@@ -27,7 +27,7 @@ legkinvels = size(data,2)>91;
 
 t = data(:,25);
 
-Ts = mean(diff(t))*1E-9;
+Ts = mean(diff(t))*1E-9/5;
 
 t = linspace(0,(t(end)-t(1))*Ts,length(t));
 
@@ -368,7 +368,7 @@ figure(1)
 %% adjust all plots
 
 %plot at so many sigma
-sigma_plot = 4;
+sigma_plot = 3;
 
 figs = findobj('Type','figure');
 

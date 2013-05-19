@@ -73,7 +73,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 		lcm_->subscribe("TORSO_IMU",&LegOdometry_Handler::torso_imu_handler,this);
 	}
 
-	// TODO -- the loggin gof joint commands was added quickly and is therefore added as a define based inclusion. if this is to stay, then proper dynamic size coding must be done
+	// TODO -- the logging of joint commands was added quickly and is therefore added as a define based inclusion. if this is to stay, then proper dynamic size coding must be done
 #ifdef LOG_28_JOINT_COMMANDS
 	lcm_->subscribe("JOINT_COMMANDS", &LegOdometry_Handler::joint_commands_handler,this);
 #endif
@@ -266,13 +266,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	// and should always be managed as such.
 	drc::robot_state_t est_msgout;
 	bot_core::pose_t est_headmsg;
-
-	// TODO -- for now we overwrite the estimated state with a complete copy of the true robot state --
-	// This will have to change a bit for when the true robot state message is no longer available
-	est_msgout = *_msg;
-	
+	Eigen::Isometry3d left;
+	Eigen::Isometry3d right;
 	bool legchangeflag;
-
+	
 	int joints_were_updated=0;
 
 	double left_force, right_force;
@@ -283,32 +280,66 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	  PublishFootContactEst(_msg->utime);
 	}
 	
+#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
+	// maintain a true pelvis position for drawing of the foot
+	Eigen::Quaterniond true_pelvis_q(_msg->origin_position.rotation.w, _msg->origin_position.rotation.x, _msg->origin_position.rotation.y, _msg->origin_position.rotation.z);
+	Eigen::Isometry3d true_pelvis(true_pelvis_q);
+	true_pelvis.translation().x() = _msg->origin_position.translation.x;
+	true_pelvis.translation().y() = _msg->origin_position.translation.y;
+	true_pelvis.translation().z() = _msg->origin_position.translation.z;
+#endif
+
+	// Here we start populating the estimated robot state data
+	est_msgout = *_msg;
+
 	if (_switches->do_estimation){
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		
-		// TODO -- This is a hack during the code cleanup, abstraction to be improved
 		int joints_were_updated;
-		UpdateOdometryEstimates(_msg, &est_msgout, left_force, right_force, joints_were_updated);
+		map<string, double> jointpos_in;
+		joints_were_updated = getJoints(_msg, &jointpos_in);
 
-		// The head state is built on the estimated state of the pelvis
-		UpdateHeadStates(&est_msgout, &est_headmsg);
+		// Here the rate change is propagated into the rest of the system
+		if (joints_were_updated==1) {
+			getTransforms_FK(_msg->utime, jointpos_in, left,right);
 
-		//clock_gettime(CLOCK_REALTIME, &threequat);
-		
-		PublishEstimatedMessages(_msg, &est_msgout, &est_headmsg, joints_were_updated);
+			// TODO -- Initialization before the VRC..
+			if (firstpass>0)
+			{
+				firstpass--;// = false;
+				_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+			}
 
+			legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
+			UpdateHeadStates(&est_msgout, &est_headmsg);
 
-#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
-		// True state messages will ont be available during the VRC and must be removed accordingly
-		PublishPoseBodyTrue(_msg);
-#endif
+			//clock_gettime(CLOCK_REALTIME, &threequat);
 
-		if (_switches->log_data_files) {
-			LogAllStateData(_msg, &est_msgout);
-		}
+			PublishEstimatedStates(_msg, &est_msgout);
+			PublishHeadStateMsgs(&est_headmsg);
+
+	#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
+			// True state messages will ont be available during the VRC and must be removed accordingly
+			PublishPoseBodyTrue(_msg);
+	#endif
+	#ifdef LOG_28_JOINT_COMMANDS
+		   for (int i=0;i<16;i++) {
+			   measured_joint_effort[i] = _msg->measured_effort[i];
+		   }
+	#endif
+
+			if (_switches->log_data_files) {
+				LogAllStateData(_msg, &est_msgout);
+			}
+		}// end of the reduced rate portion
+
     }//do estimation
-	
+
+	if (_switches->draw_footsteps) {
+		DrawDebugPoses(left, right, _leg_odo->getPelvisState(), legchangeflag);
+	}
+
  
    clock_gettime(CLOCK_REALTIME, &after);
    double elapsed;
@@ -340,56 +371,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
   clock_gettime(CLOCK_REALTIME, &spare);
 }
 
-// This function is still a bit messy -- still being cleaned up
-bool LegOdometry_Handler::UpdateOdometryEstimates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, const double &left_force, const double &right_force, int &joints_were_updated) {
-
-	 bool legchangeflag;
-
-	Eigen::Isometry3d left;
-	Eigen::Isometry3d right;
-
-	// maintain a true pelvis position for drawing of the foot
-	Eigen::Quaterniond true_pelvis_q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
-
-	Eigen::Isometry3d true_pelvis(true_pelvis_q);
-	true_pelvis.translation().x() = msg->origin_position.translation.x;
-	true_pelvis.translation().y() = msg->origin_position.translation.y;
-	true_pelvis.translation().z() = msg->origin_position.translation.z;
-
-
-	map<string, double> jointpos_in;
-
-	joints_were_updated = getJoints(msg, &jointpos_in);
-
-	// forward kinematics
-	getTransforms_FK(msg->utime, jointpos_in, left,right);
-
-	// TODO -- how to trigger the initial state reset?
-	if (firstpass>0)
-	{
-		firstpass--;// = false;
-		// We need to reset the initial condition of the odometry estimate here..
-		// TODO -- going to have to remove this before the VRC..
-
-		_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
-	}
-
-	legchangeflag = _leg_odo->UpdateStates(msg->utime, left, right, left_force, right_force);
-
-
-	#ifdef LOG_28_JOINT_COMMANDS
-	   for (int i=0;i<16;i++) {
-		   measured_joint_effort[i] = msg->measured_effort[i];
-	   }
-	#endif
-
-	if (_switches->draw_footsteps) {
-		DrawDebugPoses(left, right, true_pelvis, legchangeflag);
-	}
-
-	return legchangeflag;
-}
-
 void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag) {
 
 #ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
@@ -414,14 +395,7 @@ void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Ei
 
 }
 
-void LegOdometry_Handler::PublishEstimatedMessages(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, bot_core::pose_t * head_msg, int do_publish) {
-
-	// TODO -- msg variable must be removed from this member function
-	PublishEstimatedStates(msg, est_msgout, do_publish);
-	PublishHeadStateMsgs(head_msg);
-}
-
-void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout, int do_publish) {
+void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout) {
 	
 	/*
 		if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
@@ -437,7 +411,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
     Eigen::Vector3d E_est;
     bot_core::pose_t pose;
 	
-	Eigen::Isometry3d currentPelvis = _leg_odo->getPelvisState();
+	Eigen::Isometry3d currentPelvis   = _leg_odo->getPelvisState();
 	Eigen::Vector3d   velocity_states = _leg_odo->getPelvisVelocityStates();
 	Eigen::Vector3d   local_rates     = _leg_odo->getLocalFrameRates();
 	
@@ -519,7 +493,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
   est_msgout->origin_twist = twist;
 
   lcm_->publish("EST_ROBOT_STATE" + _channel_extension, est_msgout);
-  lcm_->publish("POSE_BODY",&pose);// + _channel_extension,&pose);
+  lcm_->publish("POSE_BODY" + _channel_extension,&pose);
 
 	/*
 	// TODO -- remove this pulse train, only for testing
@@ -870,7 +844,7 @@ int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, d
 		first_get_transforms = false;
 		InitializeFilters((int)msg->num_joints);
 	}
-	stringstream ss (stringstream::in | stringstream::out);
+	//stringstream ss (stringstream::in | stringstream::out);
 
 	double alljoints[msg->num_joints];
 
@@ -892,7 +866,6 @@ int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, d
 	*/
 
 	for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-
 	  // TODO -- This is to be generalized
 	  if (i<16) {
 		  joint_positions[i] = msg->joint_position[i];
@@ -916,8 +889,7 @@ int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, d
 	  }
 	}
 
-	  return updatedjoints;
-
+	return updatedjoints;
 }
 
 void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const map<string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
