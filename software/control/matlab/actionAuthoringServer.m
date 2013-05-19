@@ -498,88 +498,103 @@ function fprintfVerb(options,varargin)
 end
 
 function kc = getConstraintFromGoal(r,goal)
-if(goal.contact_type ~= goal.ON_GROUND_PLANE) && (goal.contact_type ~= goal.NOT_IN_CONTACT)
+  if(goal.contact_type ~= goal.ON_GROUND_PLANE) && (goal.contact_type ~= goal.NOT_IN_CONTACT) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
     error('The contact type is not supported yet');
-end
-    body_ind=findLink(r,char(goal.object_1_name));
-      collision_group = find(strcmpi(char(goal.object_1_contact_grp),body_ind.collision_group_name));
-      if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
-      p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
-      offset = [goal.x_offset; goal.y_offset; goal.z_offset];
-      pos = struct();
-      pos.max = inf(3,1);
-      pos.min = -inf(3,1);
-      p = p + offset;
-      if(goal.x_relation == 0)
-          pos.min(1) = p(1);
-          pos.max(1) = p(1);
-      elseif(goal.x_relation == 1)
-          pos.max(1) = p(1);
-          pos.min(1) = -inf;
-      elseif(goal.x_relation == 2)
-          pos.min(1) = p(1);
-          pos.max(1) = inf;
-      elseif(goal.x_relation == 3)
-          pos.min(1) = -inf;
-          pos.max(1) = inf;
+  end
+  body_ind = findLink(r,char(goal.object_1_name));
+  tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
+  kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
+  if(goal.contact_type == goal.COLLISION_AVOIDANCE)
+    collision_group_pts = [0;0;0];
+    pos = struct();
+    pos.max = inf(3,1);
+    pos.min = -inf(3,1);
+    contact_aff = findLink(r,char(goal.object_2_name));
+    if isempty(contact_aff) error('couldn''t find body %s in manipulator',char(goal.object_2_name)); end
+    contact_state0 = {ActionKinematicConstraint.UNDEFINED_CONTACT*ones(1,size(collision_group_pts,2))};
+    contact_statei = {ActionKinematicConstraint.COLLISION_AVOIDANCE*ones(1,size(collision_group_pts,2))};
+    contact_statef = {ActionKinematicConstraint.UNDEFINED_CONTACT*ones(1,size(collision_group_pts,2))};
+    collision_group_name = 'N/A'
+  else
+    contact_aff = {ContactAffordance()}
+    collision_group_name = char(goal.object_1_contact_grp);
+    collision_group = find(strcmpi(collision_group_name,body_ind.collision_group_name));
+    if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
+    p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
+    offset = [goal.x_offset; goal.y_offset; goal.z_offset];
+    pos = struct();
+    pos.max = inf(3,1);
+    pos.min = -inf(3,1);
+    p = p + offset;
+    if(goal.x_relation == 0)
+      pos.min(1) = p(1);
+      pos.max(1) = p(1);
+    elseif(goal.x_relation == 1)
+      pos.max(1) = p(1);
+      pos.min(1) = -inf;
+    elseif(goal.x_relation == 2)
+      pos.min(1) = p(1);
+      pos.max(1) = inf;
+    elseif(goal.x_relation == 3)
+      pos.min(1) = -inf;
+      pos.max(1) = inf;
+    end
+    if(goal.y_relation == 0)
+      pos.min(2) = p(2);
+      pos.max(2) = p(2);
+    elseif(goal.y_relation == 1)
+      pos.max(2) = p(2);
+      pos.min(2) = -inf;
+    elseif(goal.y_relation == 2)
+      pos.min(2) = p(2);
+      pos.max(2) = inf;
+    elseif(goal.y_relation == 3)
+      pos.min(2) = -inf;
+      pos.max(2) = inf;
+    end
+    if(goal.z_relation == 0)
+      pos.min(3) = p(3);
+      pos.max(3) = p(3);
+    elseif(goal.z_relation == 1)
+      pos.max(3) = p(3);
+      pos.min(3) = -inf;
+    elseif(goal.z_relation == 2)
+      pos.min(3) = p(3);
+      pos.max(3) = inf;
+    elseif(goal.z_relation == 3)
+      pos.min(3) = -inf;
+      pos.max(3) = inf;
+    end
+    collision_group_pts = body_ind.getContactPoints(collision_group);
+    % If we have multiple contact points in the contact group, we
+    % would also constrain that all those contact points are in
+    % contact
+    num_pts = size(collision_group_pts,2);
+    if(num_pts>1)
+      collision_group_pts = [mean(collision_group_pts,2) collision_group_pts];
+      pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
+      pos.max(1:2,2:end) = inf(2,num_pts);
+      pos.min = bsxfun(@times,pos.min,ones(1,num_pts+1));
+      pos.min(1:2,2:end) = -inf(2,num_pts);
+      if(size(pos.max,2) == 6)
+        pos.max(4:6,2:end) = inf(3,num_pts);
+        pos.min(4:6,2:end) = -inf(3,num_pts);
       end
-      if(goal.y_relation == 0)
-          pos.min(2) = p(2);
-          pos.max(2) = p(2);
-      elseif(goal.y_relation == 1)
-          pos.max(2) = p(2);
-          pos.min(2) = -inf;
-      elseif(goal.y_relation == 2)
-          pos.min(2) = p(2);
-          pos.max(2) = inf;
-      elseif(goal.y_relation == 3)
-          pos.min(2) = -inf;
-          pos.max(2) = inf;
-      end
-      if(goal.z_relation == 0)
-          pos.min(3) = p(3);
-          pos.max(3) = p(3);
-      elseif(goal.z_relation == 1)
-          pos.max(3) = p(3);
-          pos.min(3) = -inf;
-      elseif(goal.z_relation == 2)
-          pos.min(3) = p(3);
-          pos.max(3) = inf;
-      elseif(goal.z_relation == 3)
-          pos.min(3) = -inf;
-          pos.max(3) = inf;
-      end
-      tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
-      collision_group_pts = body_ind.getContactPoints(collision_group);
-      % If we have multiple contact points in the contact group, we
-      % would also constrain that all those contact points are in
-      % contact
-      num_pts = size(collision_group_pts,2);
-      if(num_pts>1)
-          collision_group_pts = [mean(collision_group_pts,2) collision_group_pts];
-          pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
-          pos.max(1:2,2:end) = inf(2,num_pts);
-          pos.min = bsxfun(@times,pos.min,ones(1,num_pts+1));
-          pos.min(1:2,2:end) = -inf(2,num_pts);
-          if(size(pos.max,2) == 6)
-              pos.max(4:6,2:end) = inf(3,num_pts);
-              pos.min(4:6,2:end) = -inf(3,num_pts);
-          end
-      end
-      if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
-          contact_state0 = {ones(1,size(collision_group_pts,2))};
-          contact_statei = {3*ones(1,size(collision_group_pts,2))};
-          contact_statef = {2*ones(1,size(collision_group_pts,2))};
-      elseif(goal.contact_type == goal.NOT_IN_CONTACT)
-          contact_state0 = {zeros(1,size(collision_group_pts,2))};
-          contact_statei = {zeros(1,size(collision_group_pts,2))};
-          contact_statef = {zeros(1,size(collision_group_pts,2))};
-      end
-      kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
+    end
+    if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
+      contact_state0 = {ActionKinematicConstraint.MAKE_CONTACT*ones(1,size(collision_group_pts,2))};
+      contact_statei = {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,size(collision_group_pts,2))};
+      contact_statef = {ActionKinematicConstraint.BREAK_CONTACT*ones(1,size(collision_group_pts,2))};
+    elseif(goal.contact_type == goal.NOT_IN_CONTACT)
+      contact_state0 = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
+      contact_statei = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
+      contact_statef = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
+    end
+  end
 
-      contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
-      contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+  contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+  contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
 
-      %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
-      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,{ContactAffordance()},contact_distance,goal.object_1_contact_grp);
+  %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
+  kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
 end
