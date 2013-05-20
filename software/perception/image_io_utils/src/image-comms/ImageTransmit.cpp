@@ -12,9 +12,12 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <ConciseArgs>
+
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
-  std::string mChannelReceive;
+  std::string mChannelBase;
+  std::string mChannelLeft;
   std::string mChannelTransmit;
   bot_core::image_t mLatestImage;
   int mRequestType;
@@ -39,6 +42,7 @@ struct ImageTransmit {
 
   int mJpegQuality;
   int mDownSampleFactor;
+  bool mShouldPublishLeft;
 
   ImageTransmit() {
     mLcmWrapper.reset(new drc::LcmWrapper());
@@ -50,10 +54,11 @@ struct ImageTransmit {
 
   void addChannel(const std::string& iChannel, const int iRequestType) {
     ChannelData::Ptr data(new ChannelData());
-    data->mChannelReceive = iChannel + "LEFT";
-    data->mChannelTransmit = iChannel + "LEFT_TX";
+    data->mChannelBase = iChannel;
+    data->mChannelLeft = iChannel + "LEFT";
+    data->mChannelTransmit = data->mChannelLeft + "_TX";
     data->mRequestType = iRequestType;
-    mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
+    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
     mChannels[iRequestType] = data;
   }
 
@@ -94,7 +99,7 @@ struct ImageTransmit {
     if (item == mChannels.end()) return;
     const ChannelData::Ptr data = item->second;
     std::lock_guard<std::mutex> lock(data->mMutex);
-    const bot_core::image_t& img = data->mLatestImage;
+    bot_core::image_t& img = data->mLatestImage;
     if (img.size == 0) return;
 
     // determine parameters from pixel format
@@ -115,6 +120,18 @@ struct ImageTransmit {
       return;
     }
 
+    // chop off top half
+    if (img.height > img.width) {
+      img.data.resize(img.data.size()/2);
+      img.size = img.data.size();
+      img.height /= 2;
+    }
+
+    // publish top half (left image) if necessary
+    if (mShouldPublishLeft) {
+      mLcm->publish(data->mChannelLeft, &img);
+    }
+
     void* bytes = const_cast<void*>(static_cast<const void*>(img.data.data()));
     cv::Mat imgOrig(img.height, img.width, imgType, bytes, img.row_stride);
 
@@ -123,23 +140,23 @@ struct ImageTransmit {
     cv::Size newSize(img.width/mDownSampleFactor, img.height/mDownSampleFactor);
     cv::resize(imgOrig, outImage, newSize, 0, 0, cv::INTER_AREA);
 
-    // jpeg compress
-    std::vector<uint8_t> buf;
-    std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
-    if (!cv::imencode(".jpg", outImage, buf, params)) {
-      std::cout << "Error encoding jpeg image!" << std::endl;
-    }
-    
-    // transmit
+    // form new image message
     bot_core::image_t msg;
     msg.utime = img.utime;
     msg.width = newSize.width;
     msg.height = newSize.height;
     msg.row_stride = numChannels*newSize.width;
     msg.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
-    msg.size = buf.size();
-    msg.data = buf;
     msg.nmetadata = 0;
+
+    // jpeg compress
+    std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
+    if (!cv::imencode(".jpg", outImage, msg.data, params)) {
+      std::cout << "Error encoding jpeg image!" << std::endl;
+    }
+    msg.size = msg.data.size();
+    
+    // transmit
     mLcm->publish(data->mChannelTransmit, &msg);
     std::cout << "sent image (" << msg.size << " bytes) on " <<
       data->mChannelTransmit << " with quality=" << mJpegQuality <<
@@ -148,8 +165,15 @@ struct ImageTransmit {
 
 };
 
-int main() {
+int main(const int iArgc, const char** iArgv) {
+  bool shouldPublishLeft = false;
+  ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(shouldPublishLeft, "l", "left_publish",
+          "whether to publish left images");
+  opt.parse();
+
   ImageTransmit obj;
+  obj.mShouldPublishLeft = shouldPublishLeft;
   obj.addChannel("CAMERA", drc::data_request_t::CAMERA_IMAGE_HEAD);
   obj.addChannel("CAMERA_LHAND", drc::data_request_t::CAMERA_IMAGE_LHAND);
   obj.addChannel("CAMERA_RHAND", drc::data_request_t::CAMERA_IMAGE_RHAND);
