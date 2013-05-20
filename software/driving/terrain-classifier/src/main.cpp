@@ -39,9 +39,10 @@ struct RoadDetectorOptions {
     std::string vCAMERACHANNEL;
     std::string vLIDARCHANNEL;
     bool vVERBOSE;
+    bool vUSE_STATIC_MASK;
     bool vLIDAR;
     RoadDetectorOptions () : 
-        vCAMERACHANNEL(std::string("CAMERALEFT")), vLIDARCHANNEL(std::string("SCAN")), vDEBUG(false), vVERBOSE(false), vLIDAR(false){}
+        vCAMERACHANNEL(std::string("CAMERALEFT")), vLIDARCHANNEL(std::string("SCAN")), vDEBUG(false), vVERBOSE(false), vLIDAR(false), vUSE_STATIC_MASK(false){}
 };
 
 typedef struct _ImageVertex ImageVertex;
@@ -985,9 +986,11 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel,
         if (state->vehicle_mask.empty()) { 
             cv::Size size(msg->width, msg->height);
             state->vehicle_mask = cv::Mat::zeros(size, CV_8U);
-            const int vm_count = (int)state->vehicle_mask_points.size();
-            const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
-            cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
+            if(state->options.vUSE_STATIC_MASK){
+                const int vm_count = (int)state->vehicle_mask_points.size();
+                const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
+                cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
+            }
             if(state->options.vDEBUG)
                 cv::imshow("Vehicle Mask", state->vehicle_mask);
         }
@@ -1072,6 +1075,8 @@ int main(int argc, char **argv)
     opt.add(state->options.vLIDAR, "L", "Lidar", "Use LIDAR to detect non-road");
     opt.add(state->options.vDEBUG, "d", "debug","Debug mode");
     opt.add(state->options.vVERBOSE, "v", "verbose","Verbose");
+    opt.add(state->options.vUSE_STATIC_MASK, "m", "static_mask","Use static mask");
+
     opt.parse();
 
     state->lcmgl_basic = bot_lcmgl_init(state->lcm, "Terrain-detection-Basic");
