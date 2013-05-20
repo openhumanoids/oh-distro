@@ -37,9 +37,11 @@ rf_ee = EndEffector(r,'atlas','r_foot',[0;0;0],'R_FOOT_GOAL');
 rf_ee.frame.subscribe('R_FOOT_GOAL');
 lf_ee = EndEffector(r,'atlas','l_foot',[0;0;0],'L_FOOT_GOAL');
 lf_ee.frame.subscribe('L_FOOT_GOAL');
+h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
+h_ee.frame.subscribe('HEAD_GOAL');
 
 
-% individual end effecto subscribers
+% individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
 
@@ -76,10 +78,12 @@ rh_ee_goal = [];
 lh_ee_goal = [];
 rf_ee_goal = [];
 lf_ee_goal = [];
+h_ee_goal = [];
 lh_ee_constraint = [];
 rh_ee_constraint = [];
 lf_ee_constraint = [];
 rf_ee_constraint = [];
+h_ee_constraint = [];
 
 % get initial state and end effector goals
 disp('Listening for goals...');
@@ -120,7 +124,17 @@ while(1)
     %    q=lep(5:8);rpy = quat2rpy(q);
     lf_ee_goal=[p(:);rpy(:)];
     lf_goal_received = true;
-  end  
+  end
+  
+  hep = getNextMessage(h_ee.frame,0);
+  if (~isempty(hep))
+    disp('head goal received.');
+    p = hep(2:4);   
+    rpy = hep(5:7);
+    %    q=lep(5:8);rpy = quat2rpy(q);
+    h_ee_goal = [p(:); rpy(:)];
+    h_goal_received = true;
+  end
   
   
   [x,ts] = getNextMessage(state_frame,0);
@@ -137,7 +151,6 @@ while(1)
      num_links = length(x.time);
      if((num_links==1)&&(strcmp(x.name,'left_palm')))
        disp('received keyframe constraint for left hand');
-
        lh_ee_constraint = x;
      elseif((num_links==1)&&(strcmp(x.name,'right_palm')))
        disp('received keyframe constraint for right hand');
@@ -148,10 +161,13 @@ while(1)
      elseif((num_links==1)&&(strcmp(x.name,'r_foot')))
        disp('received keyframe constraint for right foot');
        rf_ee_constraint = x;       
+     elseif((num_links==1)&&(strcmp(x.name,'head')))
+       disp('received keyframe constraint for head');
+       h_ee_constraint = x;       
      else
-      disp('Manip planner currently expects one constraint at a time') ; 
+         disp('Manip planner currently expects one constraint at a time') ; 
      end     
-      manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint);
+     manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint);
        
   end
   
@@ -179,7 +195,7 @@ while(1)
   end
   
   if(((~isempty(rep))|| (~isempty(lep))) ||((~isempty(rfep))|| (~isempty(lfep))||(~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))))
-     manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal); 
+      manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal); 
   end
 
 %   if((~isempty(rep))|| (~isempty(lep)))
@@ -251,6 +267,8 @@ while(1)
        rh_ee_constraint = [];
        lf_ee_constraint = [];
        rf_ee_constraint = [];
+       h_ee_goal = [];
+       h_ee_constraint = [];
   end
   
   p = rejected_plan_listener.getNextMessage(0);
@@ -266,6 +284,8 @@ while(1)
     rh_ee_constraint = [];
     lf_ee_constraint = [];
     rf_ee_constraint = [];
+    h_ee_goal = [];
+    h_ee_constraint = [];
   end
 
 end

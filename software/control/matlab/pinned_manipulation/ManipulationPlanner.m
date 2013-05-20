@@ -12,6 +12,7 @@ classdef ManipulationPlanner < handle
         rhandT
         lfootT % cache goals
         rfootT
+        headT
         qtraj_guess % old coarse keyframe sequence search
         qtraj_guess_fine % fine manip plan with individual IK fill ins
         time_2_index_scale
@@ -29,15 +30,15 @@ classdef ManipulationPlanner < handle
             restrict_feet=true;
         end
         
-        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint)
+        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint)
             is_keyframe_constraint = true;
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,is_keyframe_constraint);
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,is_keyframe_constraint);
         end
         
-        function generateAndPublishManipulationPlan(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal)
+        function generateAndPublishManipulationPlan(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal)
             is_keyframe_constraint = false;
             %rf_ee_goal=[];lf_ee_goal=[];
-            runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,is_keyframe_constraint);
+            runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint);
             %runOptimization_old(obj,x0,rh_ee_goal,lh_ee_goal,is_keyframe_constraint);
         end
         
@@ -239,7 +240,7 @@ classdef ManipulationPlanner < handle
             obj.map_pub.publish(xtraj,plan_affIndices,utime);
         end
        
-        function runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,is_keyframe_constraint)
+        function runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint)
             disp('Generating plan...');
             send_status(3,0,0,'Generating manip plan...');
             
@@ -267,6 +268,7 @@ classdef ManipulationPlanner < handle
             %   comgoal = [mean(gc(1:2,k),2);com0(3)];
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
             
+            % get hand positions
             r_hand_body = findLink(obj.r,'r_hand');
             l_hand_body = findLink(obj.r,'l_hand');
             
@@ -282,6 +284,11 @@ classdef ManipulationPlanner < handle
             T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
             T_palm_hand_r = inv_HT(T_hand_palm_r);
             
+            
+            % Get head position
+            head_body = findLink (obj.r, 'head');
+            
+            head_pose0 = forwardKin(obj.r,kinsol,head_body,[0;0;0],2);
             
             %======================================================================================================
             
@@ -323,7 +330,7 @@ classdef ManipulationPlanner < handle
                 else
                     obj.restrict_feet=false;
                     rfootT = zeros(6,1);
-                    % Desired position of palm in world frame
+                    % Desired position of right foot in world frame
                     T_world_foot_r = HT(rf_ee_goal(1:3),rf_ee_goal(4),rf_ee_goal(5),rf_ee_goal(6));
                     rfootT(1:3) = T_world_foot_r(1:3,4);
                     rfootT(4:6) =rotmat2rpy(T_world_foot_r(1:3,1:3));
@@ -336,30 +343,45 @@ classdef ManipulationPlanner < handle
                 else
                     obj.restrict_feet=false;
                     lfootT = zeros(6,1);
-                    % Desired position of palm in world frame
+                    % Desired position of left foot in world frame
                     T_world_foot_l = HT(lf_ee_goal(1:3),lf_ee_goal(4),lf_ee_goal(5),lf_ee_goal(6));
                     lfootT(1:3) = T_world_foot_l(1:3,4);
                     lfootT(4:6) =rotmat2rpy(T_world_foot_l(1:3,1:3));
+                end
+                
+                if(isempty(h_ee_goal))
+                    h_ee_goal = forwardKin(obj.r,kinsol,head_body,[0;0;0],1);
+                    headT  = h_ee_goal(1:6);
+                else
+                    headT = zeros(6,1);
+                    % Desired position of head in world frame
+                    T_world_head = HT(h_ee_goal(1:3),h_ee_goal(4),h_ee_goal(5),h_ee_goal(6));
+                    headT(1:3) = T_world_head(1:3, 4);
+                    headT(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
                 end
                 
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
                 r_foot_poseT = [rfootT(1:3); rpy2quat(rfootT(4:6))];
                 l_foot_poseT = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
                 obj.rhandT = rhandT;
                 obj.lhandT = lhandT;
                 obj.rfootT = rfootT;
                 obj.lfootT = lfootT;
+                obj.headT = headT;
             else
                 
                 rhandT =  obj.rhandT;
                 lhandT =  obj.lhandT;
                 rfootT =  obj.rfootT;
                 lfootT =  obj.lfootT;
+                headT  =  obj.headT;
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
                 r_foot_poseT = [rfootT(1:3); rpy2quat(rfootT(4:6))];
                 l_foot_poseT = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
                 
                 if(isempty(rh_ee_goal))
                     s_int_rh= nan;
@@ -435,12 +457,12 @@ classdef ManipulationPlanner < handle
                 else
                     lfoot_int_constraint = zeros(6,1);
                     s_int_lf = lf_ee_goal.time*obj.time_2_index_scale;
-                    % Desired position of palm in world frame
+                    % Desired position of left foot in world frame
                     rpy = quat2rpy(lf_ee_goal.desired_pose(4:7));
                     T_world_foot_l = HT(lf_ee_goal.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
                     lfoot_int_constraint(1:3) = T_world_foot_l(1:3,4);
                     lfoot_int_constraint(4:6) =rotmat2rpy(T_world_foot_l(1:3,1:3));
-           
+                    
                     if(abs(1-s_int_lf)<1e-3)
                       disp('lf end state is modified')
                       l_foot_poseT(1:3) = lfoot_int_constraint(1:3);
@@ -451,10 +473,44 @@ classdef ManipulationPlanner < handle
                     end 
                 end
                 
+                if(isempty(h_ee_goal))
+                    s_int_head= nan;
+                    head_int_constraint = [nan;nan;nan;nan;nan;nan];
+                else
+                    head_int_constraint = zeros(6,1);
+                    s_int_head = h_ee_goal.time*obj.time_2_index_scale;
+                    % Desired position of palm in world frame
+                    rpy = quat2rpy(h_ee_goal.desired_pose(4:7));
+                    T_world_head = HT(h_ee_goal.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
+                    head_int_constraint(1:3) = T_world_head(1:3,4);
+                    head_int_constraint(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
+                    
+                    fprintf (1, 'HEAD: Going from POS: (%f,%f,%f) --> (%f,%f,%f) and RPY: (%f,%f,%f) --> (%f,%f,%f)', ...
+                             h_ee_goal.desired_pos(1), ...
+                             h_ee_goal.desired_pos(2),h_ee_goal.desired_pos(3), ...
+                             head_int_constraint(1), ...
+                             head_int_constraint(2), ...
+                             head_int_constraint(3), rpy(1), rpy(2), ...
+                             rpy(3), head_int_constraint(4), ...
+                             head_int_constraint(5), head_int_constraint(6));
+                    
+                    
+                    if(abs(1-s_int_lf)<1e-3)
+                      disp('lf end state is modified')
+                      head_poseT(1:3) = head_int_constraint(1:3);
+                      head_poseT(4:7) = rpy2quat(head_int_constraint(4:6));
+                      obj.headT = head_int_constraint;    
+                      head_int_constraint = [nan;nan;nan;nan;nan;nan];
+                      h_ee_goal=[];             
+                    end 
+                end
+                
                 r_hand_pose_int = [rhand_int_constraint(1:3); rpy2quat(rhand_int_constraint(4:6))];
                 l_hand_pose_int = [lhand_int_constraint(1:3); rpy2quat(lhand_int_constraint(4:6))];
                 r_foot_pose_int = [rfoot_int_constraint(1:3); rpy2quat(rfoot_int_constraint(4:6))];
                 l_foot_pose_int = [lfoot_int_constraint(1:3); rpy2quat(lfoot_int_constraint(4:6))];
+                l_foot_pose_int = [lfoot_int_constraint(1:3); rpy2quat(lfoot_int_constraint(4:6))];
+                head_pose_int   = [head_int_constraint(1:3); rpy2quat(head_int_constraint(4:6))];
             end
             
             %======================================================================================================
@@ -504,7 +560,7 @@ classdef ManipulationPlanner < handle
 
             
         
-
+            % Constraints for feet
             r_foot_poseT_relaxed.min=r_foot_poseT-1e-3;
             r_foot_poseT_relaxed.max=r_foot_poseT+1e-3;
             l_foot_poseT_relaxed.min=l_foot_poseT-1e-3;
@@ -530,7 +586,7 @@ classdef ManipulationPlanner < handle
             
             
             
-            
+            % Constraints for hands
             kc_rhand0 = ActionKinematicConstraint(obj.r,r_hand_body,[0;0;0],r_hand_pose0,[s(1),s(1)],'rhand0');
             ks = ks.addKinematicConstraint(kc_rhand0);
             
@@ -545,6 +601,17 @@ classdef ManipulationPlanner < handle
             ks = ks.addKinematicConstraint(kc_lhand0); 
             kc_lhandT = ActionKinematicConstraint(obj.r,l_hand_body,[0;0;0],l_hand_poseT_relaxed,[s(end),s(end)],'lhandT');
             ks = ks.addKinematicConstraint(kc_lhandT); 
+            
+
+            % Constraints for head
+            kc_head0 = ActionKinematicConstraint(obj.r,head_body,[0;0;0],head_pose0,[s(1),s(1)],'head0');
+            ks = ks.addKinematicConstraint(kc_head0);
+            
+            head_poseT_relaxed.min = head_poseT-1e-3;
+            head_poseT_relaxed.max = head_poseT+1e-3;
+            
+            kc_headT = ActionKinematicConstraint(obj.r, head_body,[0;0;0],head_poseT_relaxed,[s(end),s(end)],'headT');
+            ks = ks.addKinematicConstraint(kc_headT); 
             
             kc_pelvis = ActionKinematicConstraint(obj.r,pelvis_body,[0;0;0],pelvis_pose0,[s(1),s(end)],'pelvis');
             ks = ks.addKinematicConstraint(kc_pelvis);
@@ -562,6 +629,8 @@ classdef ManipulationPlanner < handle
                 r_foot_pose_int_relaxed.max= r_foot_pose_int+1e-3;
                 l_foot_pose_int_relaxed.min= l_foot_pose_int-1e-3;
                 l_foot_pose_int_relaxed.max= l_foot_pose_int+1e-3;
+                head_pose_int_relaxed.min= head_pose_int-1e-3;
+                head_pose_int_relaxed.max= head_pose_int+1e-3;
                 
                 %if((~isempty(rh_ee_goal))&&(abs(1-s_int_rh)>1e-3))
                 if(~isempty(rh_ee_goal))
@@ -591,6 +660,12 @@ classdef ManipulationPlanner < handle
                     kc_lfoot_intermediate = ActionKinematicConstraint(obj.r,l_foot_body,[0;0;0],l_foot_pose_int,[s_int_lf,s_int_lf],'lfoot_int');
                     ks = ks.addKinematicConstraint(kc_lfoot_intermediate);
                 end
+                if(~isempty(h_ee_goal))
+                    [~,ind] = min(abs(obj.s_breaks-s_int_head));
+                    s_int_head=obj.s_breaks(ind);
+                    kc_head_intermediate = ActionKinematicConstraint(obj.r,head_body,[0;0;0],head_pose_int,[s_int_head,s_int_head],'head_int');
+                    ks = ks.addKinematicConstraint(kc_head_intermediate);
+                end
                 
             end
             
@@ -605,6 +680,9 @@ classdef ManipulationPlanner < handle
                 rfoot_const.max = r_foot_poseT+1e-3;
                 lfoot_const.min = l_foot_poseT-1e-3;
                 lfoot_const.max = l_foot_poseT+1e-3;
+                head_const.min = head_poseT-1e-3;
+                head_const.max = head_poseT+1e-3;
+
                 %============================
                 %       0,comgoal,...
                 %   [q_final_guess,snopt_info] = inverseKin(obj.r,q0,...
@@ -623,6 +701,7 @@ classdef ManipulationPlanner < handle
                      l_foot_body,[0;0;0],l_foot_pose0,{},{},{}, ...
                      r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
                      l_hand_body,[0;0;0],lhand_const,{},{},{},...
+                     head_body,[0;0;0],head_const,{},{},{},...
                      ikoptions);
                 else
                 [q_final_guess,snopt_info] = inverseKin(obj.r,q0,...
@@ -632,6 +711,7 @@ classdef ManipulationPlanner < handle
                     l_foot_body,[0;0;0],lfoot_const,{},{},{}, ...
                     r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
                     l_hand_body,[0;0;0],lhand_const,{},{},{},...
+                    head_body,[0;0;0],head_const,{},{},{},...
                     ikoptions);
                 end
                 %============================
@@ -688,7 +768,9 @@ classdef ManipulationPlanner < handle
                 rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,r_hand_body,[0;0;0],2);
                 lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,l_hand_body,[0;0;0],2);
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,r_foot_body,[0;0;0],2);
-                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,l_foot_body,[0;0;0],2);
+                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp, ...
+                                                l_foot_body,[0;0;0],2);
+                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,head_body,[0;0;0],2);
             end
             
             q = q_breaks(:,1);
@@ -698,7 +780,8 @@ classdef ManipulationPlanner < handle
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
             s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf));
+            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
             
             res = 0.1; % 10cm res
             s= linspace(0,1,round(s_total/res));
@@ -712,7 +795,9 @@ classdef ManipulationPlanner < handle
                 r_hand_pose_at_t=pose_spline(s_breaks,rhand_breaks,si);  %#ok<*PROP> % evaluate in quaternions
                 l_hand_pose_at_t=pose_spline(s_breaks,lhand_breaks,si); % evaluate in quaternions
                 r_foot_pose_at_t=pose_spline(s_breaks,rfoot_breaks,si);  %#ok<*PROP> % evaluate in quaternions
-                l_foot_pose_at_t=pose_spline(s_breaks,lfoot_breaks,si); % evaluate in quaternions
+                l_foot_pose_at_t=pose_spline(s_breaks,lfoot_breaks,si); ...
+                % evaluate in quaternions
+                head_pose_at_t=pose_spline(s_breaks,head_breaks,si); % evaluate in quaternions
                 % r_hand_pose_at_t=pose_foh(s_breaks,rhand_breaks,si); % evaluate in quaternions
                 % l_hand_pose_at_t=pose_foh(s_breaks,lhand_breaks,si); % evaluate in quaternions
                 
@@ -725,7 +810,10 @@ classdef ManipulationPlanner < handle
                     rfoot_const.min = r_foot_pose_at_t-1e-2*[ones(3,1);2*ones(4,1)];
                     rfoot_const.max = r_foot_pose_at_t+1e-2*[ones(3,1);2*ones(4,1)];
                     lfoot_const.min = l_foot_pose_at_t-1e-2*[ones(3,1);2*ones(4,1)];
-                    lfoot_const.max = l_foot_pose_at_t+1e-2*[ones(3,1);2*ones(4,1)];
+                    lfoot_const.max = l_foot_pose_at_t+1e-2* ...
+                        [ones(3,1);2*ones(4,1)];
+                    head_const.min = head_pose_at_t-1e-2*[ones(3,1);2*ones(4,1)];
+                    head_const.max = head_pose_at_t+1e-2*[ones(3,1);2*ones(4,1)];
                 else
                     rhand_const.min = r_hand_pose_at_t-1e-4*[ones(3,1);ones(4,1)];
                     rhand_const.max = r_hand_pose_at_t+1e-4*[ones(3,1);ones(4,1)];
@@ -734,7 +822,10 @@ classdef ManipulationPlanner < handle
                     rfoot_const.min = r_foot_pose_at_t-1e-4*[ones(3,1);2*ones(4,1)];
                     rfoot_const.max = r_foot_pose_at_t+1e-4*[ones(3,1);2*ones(4,1)];
                     lfoot_const.min = l_foot_pose_at_t-1e-4*[ones(3,1);2*ones(4,1)];
-                    lfoot_const.max = l_foot_pose_at_t+1e-4*[ones(3,1);2*ones(4,1)];
+                    lfoot_const.max = l_foot_pose_at_t+1e-4* ...
+                        [ones(3,1);2*ones(4,1)];
+                    head_const.min = head_pose_at_t-1e-4*[ones(3,1);2*ones(4,1)];
+                    head_const.max = head_pose_at_t+1e-4*[ones(3,1);2*ones(4,1)];
                 end
                 %l_pose_constraint=[nan;nan;nan;quat2rpy(l_hand_pose_at_t(4:7))];
                 %l_pose_constraint=[nan;nan;nan;lhandT(4);lhandT(5);lhandT(6)];
@@ -760,6 +851,7 @@ classdef ManipulationPlanner < handle
                        l_foot_body,[0;0;0],l_foot_pose0,{},{},{}, ...
                        r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
                        l_hand_body,[0;0;0],lhand_const,{},{},{},...
+                       head_body,[0;0;0],head_const,{},{},{},...
                        ikoptions);
                  else
                     [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
@@ -769,6 +861,7 @@ classdef ManipulationPlanner < handle
                         l_foot_body,[0;0;0],lfoot_const,{},{},{}, ...
                         r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
                         l_hand_body,[0;0;0],lhand_const,{},{},{},...
+                        head_body,[0;0;0],head_const,{},{},{},...
                         ikoptions);
                  end
                 %============================
