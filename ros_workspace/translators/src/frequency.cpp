@@ -72,7 +72,7 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, ros::NodeHandle node_, bool verbose)
   //frequency_->readChannels("lcm");
 
   joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this);
-  frequency_->addCounter("/atlas/joint_states", "JSTA");
+  frequency_->addCounter("/atlas/joint_states", "J ST");
   joint_commands_sub_ = node_.subscribe(string("/atlas/joint_commands"), 1000, &App::joint_commands_cb,this);
   frequency_->addCounter("/atlas/joint_commands", "JCOM");
   left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);

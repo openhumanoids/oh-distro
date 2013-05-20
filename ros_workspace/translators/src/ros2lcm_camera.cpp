@@ -90,9 +90,8 @@ App::App(const std::string & stereo_in,
   
   if (1==1){
     // Mono-Cameras:
-    left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);
-    //left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
-    //right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
+    left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 1, &App::left_image_cb,this);
+    //left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);
   }
   
   std::cout << "only getting left\n";
@@ -146,6 +145,10 @@ void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
   }  
   l_counter++;
   
+  drc::utime_t utime_msg;
+  utime_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
+  lcm_publish_.publish("ROBOT_UTIME", &utime_msg);  
+  
   send_image(msg, "CAMERALEFT");
 }
 int r_counter =0;
@@ -164,6 +167,13 @@ void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
 //       look into openni_utils/openni_ros2rgb for code
 // TODO: pre-allocate image_data and retain for speed - when size is known
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
+  
+  #if DO_TIMING_PROFILE
+    std::vector<int64_t> tic_toc;
+    tic_toc.push_back(_timestamp_now());
+  #endif  
+  
+  
   int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   /*cout << msg->width << " " << msg->height << " | "
        << msg->encoding << " is encoding | "
@@ -180,10 +190,27 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   lcm_img.row_stride=n_colors*msg->width;
   lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
   lcm_img.size =n_colors*isize;
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+      
   copy(msg->data.begin(), msg->data.end(), singleimage_data);
+  
   lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*isize));
 
+      #if DO_TIMING_PROFILE
+      tic_toc.push_back(_timestamp_now());
+    #endif
+  
   lcm_publish_.publish(channel.c_str(), &lcm_img);
+  
+
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+    display_tic_toc(tic_toc,"stereo");
+  #endif     
+  
 }
 
 
