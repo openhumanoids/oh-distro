@@ -35,8 +35,8 @@ OpenGL_Object_GFE() : OpenGL_Object(),
  * class constructor with urdf filename argument
  */
 OpenGL_Object_GFE::
-OpenGL_Object_GFE( std::string urdfFilename ) : OpenGL_Object(),
-                                                _kinematics_model( urdfFilename ),
+OpenGL_Object_GFE( const string& xmlString ) : OpenGL_Object(),
+                                                _kinematics_model( xmlString ),
                                                 _opengl_objects(),
                                                 _opengl_object_coordinate_axis() {
   _load_opengl_objects();

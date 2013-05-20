@@ -16,7 +16,7 @@ namespace kinematics {
   class Kinematics_Model_GFE {
   public:
     Kinematics_Model_GFE( double eps = 0.001, unsigned int maxIterations = 500 );
-    Kinematics_Model_GFE( std::string xmlString, double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( const std::string& xmlString, double eps = 0.001, unsigned int maxIterations = 500 );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
     

@@ -20,10 +20,11 @@ using namespace collision;
  * class constructor
  */
 Collision_Object_GFE::
-Collision_Object_GFE( string id ) : Collision_Object( id ),
-                                    _collision_objects(),
-                                    _kinematics_model() {
-  _load_collision_objects();
+Collision_Object_GFE( string id,
+                      collision_object_gfe_collision_object_type_t collisionObjectType ) : Collision_Object( id ),
+                                                                                            _collision_objects(),
+                                                                                            _kinematics_model() {
+  _load_collision_objects( collisionObjectType );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
       for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
@@ -41,10 +42,11 @@ Collision_Object_GFE( string id ) : Collision_Object( id ),
  */
 Collision_Object_GFE::
 Collision_Object_GFE( string id,
-                      string xmlString ) : Collision_Object( id ),
-                                              _collision_objects(),
-                                              _kinematics_model( xmlString ){
-  _load_collision_objects();
+                      string xmlString,
+                      collision_object_gfe_collision_object_type_t collisionObjectType ) : Collision_Object( id ),
+                                                                                          _collision_objects(),
+                                                                                          _kinematics_model( xmlString ){
+  _load_collision_objects( collisionObjectType );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
       for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
@@ -55,28 +57,6 @@ Collision_Object_GFE( string id,
   State_GFE state_gfe;
   set( state_gfe );
 } 
-
-/**
- * Collision_Object_GFE
- * class constructor with id, dimension, position, and orientation arguments
- */
-Collision_Object_GFE::
-Collision_Object_GFE( string id,
-                      string xmlString,
-                      robot_state_t& robotState ) : Collision_Object( id ),
-                                                    _collision_objects(),
-                                                    _kinematics_model( xmlString ) {
-  _load_collision_objects();
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      }
-    }
-  }
-  State_GFE state_gfe;
-  set( state_gfe );
-}
 
 /**
  * Collision_Object_GFE
@@ -178,51 +158,95 @@ kinematics_model( void )const{
  */
 void
 Collision_Object_GFE::
-_load_collision_objects( void ){
+_load_collision_objects( collision_object_gfe_collision_object_type_t collisionObjectType ){
   vector< shared_ptr< Link > > links;
   _kinematics_model.model().getLinks( links );
   string models_path = getModelsPath();
-  for( unsigned int i = 0; i < links.size(); i++ ){
-    for( std::map< std::string, boost::shared_ptr<std::vector<boost::shared_ptr<Collision> > > >::iterator it = links[i]->collision_groups.begin(); it != links[i]->collision_groups.end(); it++ ){
-      for( unsigned int j = 0; j < it->second->size(); j++ ){
-        if( (*it->second)[ j ] != NULL ){
-          if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
-            shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[ j ]->geometry );
-            _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
-            cout << *_collision_objects.back() << endl; 
-          } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
-            shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[ j ]->geometry );
-            _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
-            cout << *_collision_objects.back() << endl; 
-          } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
-            shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[ j ]->geometry );
-            _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
-            cout << *_collision_objects.back() << endl; 
+
+  if( collisionObjectType == COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION ){
+    for( unsigned int i = 0; i < links.size(); i++ ){
+      for( std::map< std::string, boost::shared_ptr<std::vector<boost::shared_ptr<Collision> > > >::iterator it = links[i]->collision_groups.begin(); it != links[i]->collision_groups.end(); it++ ){
+        for( unsigned int j = 0; j < it->second->size(); j++ ){
+          if( (*it->second)[ j ] != NULL ){
+            if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
+              shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[ j ]->geometry );
+              _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+              cout << *_collision_objects.back() << endl; 
+            } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
+              shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[ j ]->geometry );
+              _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+              cout << *_collision_objects.back() << endl; 
+            } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
+              shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[ j ]->geometry );
+              _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+              cout << *_collision_objects.back() << endl; 
+            } else if ( (*it->second)[ j ]->geometry->type == Geometry::MESH ) {
+              shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( (*it->second)[ j ]->geometry );
+              std::string model_filename = mesh->filename;
+              model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
+              model_filename.erase( model_filename.end() - 4, model_filename.end() );
+              model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+              _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );
+              cout << *_collision_objects.back() << endl;
+            }
           }
         }
       }
-    }
 
-    if( links[ i ]->collision != NULL ){
-      if( links[ i ]->collision->geometry->type == Geometry::SPHERE ){
-        shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
-      } else if ( links[ i ]->collision->geometry->type == Geometry::BOX ){
-        shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
-      } else if ( links[ i ]->collision->geometry->type == Geometry::CYLINDER ){
-        shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
-      } else if ( links[ i ]->collision->geometry->type == Geometry::MESH ){
-        shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->collision->geometry );
-        std::string model_filename = mesh->filename;
-        model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
-        model_filename.erase( model_filename.end() - 4, model_filename.end() );
-        model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
-        _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );       
-      } 
+      if( links[ i ]->collision != NULL ){
+        if( links[ i ]->collision->geometry->type == Geometry::SPHERE ){
+          shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->collision->geometry );
+          _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->collision->geometry->type == Geometry::BOX ){
+          shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->collision->geometry );
+          _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->collision->geometry->type == Geometry::CYLINDER ){
+          shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->collision->geometry );
+          _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->collision->geometry->type == Geometry::MESH ){
+          shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->collision->geometry );
+          std::string model_filename = mesh->filename;
+          model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
+          model_filename.erase( model_filename.end() - 4, model_filename.end() );
+          model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+          _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );      
+          cout << *_collision_objects.back() << endl; 
+        } 
+      }
     }
-  }
+  } else if ( collisionObjectType == COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL ){
+    for( unsigned int i = 0; i < links.size(); i++ ){
+      if( links[ i ]->visual != NULL ){
+        if( links[ i ]->visual->geometry->type == Geometry::SPHERE ){
+          shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->visual->geometry );
+          _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x, links[ i ]->visual->origin.rotation.y, links[ i ]->visual->origin.rotation.z, links[ i ]->visual->origin.rotation.w ), KDL::Vector( links[ i ]->visual->origin.position.x, links[ i ]->visual->origin.position.y, links[ i ]->visual->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
+          shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
+          _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x, links[ i ]->visual->origin.rotation.y, links[ i ]->visual->origin.rotation.z, links[ i ]->visual->origin.rotation.w ), KDL::Vector( links[ i ]->visual->origin.position.x, links[ i ]->visual->origin.position.y, links[ i ]->visual->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
+          shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
+          _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x, links[ i ]->visual->origin.rotation.y, links[ i ]->visual->origin.rotation.z, links[ i ]->visual->origin.rotation.w ), KDL::Vector( links[ i ]->visual->origin.position.x, links[ i ]->visual->origin.position.y, links[ i ]->visual->origin.position.z ) ) ) );
+          cout << *_collision_objects.back() << endl;
+        } else if ( links[ i ]->visual->geometry->type == Geometry::MESH ){
+          shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
+          std::string model_filename = mesh->filename;
+          model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
+          model_filename.erase( model_filename.end() - 4, model_filename.end() );
+          model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+          _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );
+          _collision_objects.back()->set_offset( Frame( KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x, links[ i ]->visual->origin.rotation.y, links[ i ]->visual->origin.rotation.z, links[ i ]->visual->origin.rotation.w ), KDL::Vector( links[ i ]->visual->origin.position.x, links[ i ]->visual->origin.position.y, links[ i ]->visual->origin.position.z ) ) );
+          cout << *_collision_objects.back() << endl;
+        }
+      }
+    }
+  } else {
+    cout << "could not interpret collision object type" << endl;
+  } 
   return;
 }
 

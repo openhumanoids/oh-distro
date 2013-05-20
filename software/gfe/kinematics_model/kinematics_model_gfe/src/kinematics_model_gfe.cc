@@ -48,7 +48,7 @@ Kinematics_Model_GFE( double eps,
                           _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _max_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ){
-  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot/model.urdf" ), eps, maxIterations ) ){
+  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf" ), eps, maxIterations ) ){
     cout << "could not load urdf" << endl;
   }
 }
@@ -58,7 +58,9 @@ Kinematics_Model_GFE( double eps,
  * class constructor that loads from an xml file
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE( string xmlString, double eps, unsigned int maxIterations ) : _model(),
+Kinematics_Model_GFE( const string& xmlString, 
+                      double eps, 
+                      unsigned int maxIterations ) : _model(),
                                             _tree(),
                                             _fk_solver( NULL ),
                                             _iksolverpos_left_arm( NULL ),
@@ -300,9 +302,11 @@ load_xml_string( string xmlString,
                   double eps,
                   unsigned int maxIterations ){
   if( !_model.initString( xmlString ) ){
+    cout << "failed to initialize string" << endl;
     return false;
   }
   if( !treeFromString( xmlString, _tree ) ){
+    cout << "failed to load from string" << endl;
     return false;
   }
 

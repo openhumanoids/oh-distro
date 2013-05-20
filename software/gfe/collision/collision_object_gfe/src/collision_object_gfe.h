@@ -24,11 +24,16 @@
 #include <collision/collision_object.h>
 
 namespace collision {
+  typedef enum {
+    COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION,
+    COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL,
+    NUM_COLLISION_OBJECT_GFE_COLLISION_OBJECT_TYPES
+  } collision_object_gfe_collision_object_type_t; 
+
   class Collision_Object_GFE : public Collision_Object {
   public:
-    Collision_Object_GFE( std::string id );
-    Collision_Object_GFE( std::string id, std::string xmlString );
-    Collision_Object_GFE( std::string id, std::string xmlString, drc::robot_state_t& robotState );
+    Collision_Object_GFE( std::string id = "N/A", collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
+    Collision_Object_GFE( std::string id, std::string xmlString, collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
     Collision_Object_GFE( const Collision_Object_GFE& other );
     ~Collision_Object_GFE();
 
@@ -41,9 +46,12 @@ namespace collision {
 
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
     virtual void set_transform( const KDL::Frame& transform );
+    
+    inline std::vector< Collision_Object* >& collision_objects( void ){ return _collision_objects; };
+    inline const std::vector< Collision_Object* >& collision_objects( void )const{ return _collision_objects; };
 
   protected:
-    void _load_collision_objects( void );
+    void _load_collision_objects( collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
   
     std::vector< Collision_Object* > _collision_objects;
     kinematics::Kinematics_Model_GFE _kinematics_model;

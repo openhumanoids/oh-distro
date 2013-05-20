@@ -5,6 +5,7 @@
 
 #include <qt4/qt4_widget_opengl.h>
 #include <state/state_gfe.h>
+#include <collision/collision_object_gfe.h>
 #include <opengl/opengl_object_gfe.h>
 
 namespace qt4 {
@@ -12,6 +13,7 @@ namespace qt4 {
     Q_OBJECT
   public:
     Qt4_Widget_GFE_Object( QWidget * parent = 0 );
+    Qt4_Widget_GFE_Object( const std::string& xmlString, QWidget * parent = 0 );
     ~Qt4_Widget_GFE_Object();
     Qt4_Widget_GFE_Object( const Qt4_Widget_GFE_Object& other );
     Qt4_Widget_GFE_Object& operator=( const Qt4_Widget_GFE_Object& other );
@@ -21,7 +23,8 @@ namespace qt4 {
 
   protected:
     opengl::OpenGL_Object_GFE _opengl_object_gfe;
-
+    collision::Collision_Object_GFE _collision_object_gfe;
+    
   private:
 
   };

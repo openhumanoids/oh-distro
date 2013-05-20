@@ -3,8 +3,9 @@
 
 # mypod1
 state
+trajectory
 kinematics_model
 collision
+plan
 opengl
 qt4
-#plan

@@ -15,7 +15,7 @@ namespace opengl {
   class OpenGL_Object_GFE: public OpenGL_Object {
   public:
     OpenGL_Object_GFE();
-    OpenGL_Object_GFE( std::string urdfFilename );
+    OpenGL_Object_GFE( const std::string& xmlString );
     ~OpenGL_Object_GFE();
     OpenGL_Object_GFE( const OpenGL_Object_GFE& other );
     OpenGL_Object_GFE& operator=( const OpenGL_Object_GFE& other );

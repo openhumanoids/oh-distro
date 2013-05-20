@@ -1,27 +1,45 @@
+find_package(LibXml2)
+include_directories(${LIBXML2_INCLUDE_DIR})
+
+find_package(Bullet)
+include_directories(${BULLET_INCLUDE_DIRS})
+
+find_package(tmh_math)
+include_directories(${TMH_MATH_INCLUDE_DIR})
+
+find_package(tmh_types)
+include_directories(${TMH_TYPES_INCLUDE_DIR})
+
+find_package(tmh_plan)
+include_directories(${TMH_PLAN_INCLUDE_DIR})
+
 find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 include(${QT_USE_FILE})
 
 qt_wrap_cpp(qt4_widget_gfe MOC_SRCS 
             qt4_widget_gfe_control.h
-            qt4_widget_gfe_object.h)
+            qt4_widget_gfe_object.h
+            qt4_widget_gfe_plan.h)
 
 # Create a shared library libqt4_widget_gfe.so with a single source file
 add_library(qt4_widget_gfe SHARED
             qt4_widget_gfe_control.cc
             qt4_widget_gfe_object.cc
+            qt4_widget_gfe_plan.cc
             ${MOC_SRCS})
 
 # make the header public
 # install it to include/qt4_widget_gfe
 pods_install_headers(qt4_widget_gfe_control.h 
                       qt4_widget_gfe_object.h
+                      qt4_widget_gfe_plan.h
                       DESTINATION qt4)
 
 # make the library public
 pods_install_libraries(qt4_widget_gfe)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES opengl_object_gfe kinematics_model_gfe state_gfe qt4_widget opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl)
+set(REQUIRED_PACKAGES opengl_object_gfe collision_object_gfe kinematics_model_gfe model_robot_gfe state_gfe qt4_widget opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl)
 pods_use_pkg_config_packages(qt4_widget_gfe ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
