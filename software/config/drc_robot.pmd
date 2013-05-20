@@ -275,8 +275,8 @@ group "b.1.core" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "base";
     }
-    cmd "surrogate_viewer" {
-        exec = "surrogate_viewer -r base";
+    cmd "segmentation_viewer" {
+        exec = "segmentation_viewer -r base";
         host = "base";
     }
     cmd "modelpub" {
