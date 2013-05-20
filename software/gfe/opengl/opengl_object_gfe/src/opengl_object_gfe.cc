@@ -208,6 +208,9 @@ _load_opengl_objects( void ){
                                           links[ i ]->visual->origin.rotation.z,
                                           links[ i ]->visual->origin.rotation.w );
         _opengl_objects.back()->set_offset( offset );
+        if( links[ i ]->visual->material != NULL ){
+          _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
+        }
       } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
         shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
@@ -220,6 +223,9 @@ _load_opengl_objects( void ){
                                           links[ i ]->visual->origin.rotation.z,
                                           links[ i ]->visual->origin.rotation.w );
         _opengl_objects.back()->set_offset( offset );
+        if( links[ i ]->visual->material != NULL ){
+          _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
+        }
       } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
         shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector2f( cylinder->radius, cylinder->length ) ) );
@@ -232,6 +238,9 @@ _load_opengl_objects( void ){
                                           links[ i ]->visual->origin.rotation.z,
                                           links[ i ]->visual->origin.rotation.w );
         _opengl_objects.back()->set_offset( offset );
+        if( links[ i ]->visual->material != NULL ){
+          _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
+        }
       } else if ( links[ i ]->visual->geometry->type == Geometry::MESH ){
         shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
         std::string model_filename = mesh->filename;
@@ -250,6 +259,9 @@ _load_opengl_objects( void ){
                                           links[ i ]->visual->origin.rotation.z,
                                           links[ i ]->visual->origin.rotation.w );
         _opengl_objects.back()->set_offset( offset );
+        if( links[ i ]->visual->material != NULL ){
+          _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
+        }
       }
     }
   }
