@@ -12,5 +12,6 @@ struct score_t
     // the string field is ignored here as it is commonly empty.
     // it will be published seperately
     // string message; 
+    int32_t task_type;
 }
 

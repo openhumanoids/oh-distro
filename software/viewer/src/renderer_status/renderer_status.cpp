@@ -105,6 +105,10 @@ typedef struct
     std::vector<int> frequency_list;
     std::vector< std::string> channel_list;
     
+    float left_contact;
+    float right_contact;
+    
+    drc_score_t *score;
     
 } RendererSystemStatus;
 
@@ -216,6 +220,22 @@ on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequenc
     //std::cout << "freqs recevied\n";
 }
 
+static void
+on_foot_contact(const lcm_recv_buf_t * buf, const char *channel, const drc_foot_contact_estimate_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    self->left_contact = msg->left_contact;
+    self->right_contact = msg->right_contact;
+}
+
+static void
+on_score(const lcm_recv_buf_t * buf, const char *channel, const drc_score_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    if(self->score){
+        drc_score_t_destroy(self->score);
+    }
+    self->score = drc_score_t_copy(msg);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
 ////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +273,6 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       if (self->frequency_list.size()>0){
 	double x=0;
 	double y=0;
-	
 	for (size_t i=0; i <self->frequency_list.size() ; i++) {
 	  char line[80];
 	  ///std::cout <<  self->frequency_list[i] << "\n";
@@ -269,10 +288,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	
 	char lineX[80];
 	float elapsed_time =  (self->last_utime - self->frequency_utime)*1E-6;
-	//std::cout << elapsed_time << " el\n";
 	y = gl_height - 9 * line_height;
-	// top left:
-	//y = 10 + self->frequency_list.size()*line_height;//gl_height - 8 * line_height;
 	sprintf(lineX, "%.1f AGE OF FREQS", elapsed_time);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
@@ -280,24 +296,57 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       }
     }
     
-    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
+    
+    if (self->score != NULL){
+      char line[80];
+      sprintf(line, "%d FALLS %d TASK %d SCORE",self->score->falls, self->score->task_type, self->score->completion_score );
+      double x = 0 ;// hind * 150 + 120;
+      double y = gl_height + ( - self->frequency_list.size() - 10) * line_height;
+      glColor3f(  0.0, 0.0, 1.0 );
+      glRasterPos2f(x, y);
+      glutBitmapString(font, (unsigned char*) line);
 
+      
+      float elapsed_sec = (float) (self->score->sim_time_elapsed /1E6) ;
+      float remaining_sec = 30.0*60.0 - elapsed_sec;
+      
+      sprintf(line, "%.1f LEFT %.1f", remaining_sec, remaining_sec/60 );
+      y = gl_height + (-1 - self->frequency_list.size() - 10) * line_height;
+      glRasterPos2f(x, y);
+      glutBitmapString(font, (unsigned char*) line);
+      sprintf(line, "%.1f ELAPSED", elapsed_sec );
+      y = gl_height + (-2 - self->frequency_list.size() - 10) * line_height;
+      glRasterPos2f(x, y);
+      glutBitmapString(font, (unsigned char*) line);
+      
+//    "X ELAPSED"
+ //   "X LEFT"
+   // "X FALLS X SCORE X TASK"
+      
+      
+    
+    }
+    
+    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
     sprintf(line1, "n affs %d",self->naffs);
     sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
     sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
-    sprintf(line8, "%f", ((double)self->last_utime/1E6) );
+    sprintf(line8, "%.4f SIM", ((double)self->last_utime/1E6) );
     
-    // @@@@@@@@@@@@@ sachi: PUT THIS IN THE DRIVING RENDERER ON THE TOP LEFT
-    //if(self->driving_status){
-        //sprintf(line7, "veh k[%d] dir[%d] hb[%.1f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
-        //sprintf(line8, "hw[%.0f] bp[%.1f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
-    //}
-
-    //double x = hind * 110 + 120;
-    double x = 0 ;// hind * 150 + 120;
+    if ((self->left_contact==1)&& (self->right_contact==1) ){
+      sprintf(line7, "  feet <--BOTH-->");
+    }else if(self->left_contact==1){
+      sprintf(line7, "  feet <-LEFT");
+    }else if(self->right_contact==1){
+      sprintf(line7, "  feet     RIGHT->");
+    }else{
+      sprintf(line7, "  feet  **NONE**");
+    }      
+      
+    double x = 0;
     double y = gl_height - 8 * line_height;
 
     int x_pos = 189; // text lines x_position
@@ -306,18 +355,15 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       glBegin(GL_QUADS);
       glVertex2f(x, y - line_height);
       glVertex2f(x + 21*9, y - line_height); // 21 is the number of chars in the box
-
       glVertex2f(x + 21*9, y + 8 * line_height); // 21 is the number of chars in the box
       glVertex2f(x       , y + 8 * line_height);
       glEnd();
 
       // scrolling text background://////////////////////////////
-      
       glColor4f(0, 0, 0, 0.7);
       glBegin(GL_QUADS);
       glVertex2f(x_pos, y - line_height);
       glVertex2f(gl_width, y - line_height); // 21 is the number of chars in the box
-
       glVertex2f(gl_width, y + 8 * line_height); // 21 is the number of chars in the box
       glVertex2f(x_pos, y + 8 * line_height);
       glEnd();    
@@ -326,39 +372,33 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glColor3fv(colors[0]);
     glRasterPos2f(x, y);
     glutBitmapString(font, (unsigned char*) line1);
-
     glColor3fv(colors[1]);
     glRasterPos2f(x, y + 1 * line_height);
     glutBitmapString(font, (unsigned char*) line2);
-
     glColor3fv(colors[2]);
     glRasterPos2f(x, y + 2 * line_height);
     glutBitmapString(font, (unsigned char*) line3);
-
     glColor3fv(colors[0]);
     glRasterPos2f(x, y + 3 * line_height);
     glutBitmapString(font, (unsigned char*) line4);
-
     glColor3fv(colors[1]);
     glRasterPos2f(x, y + 4 * line_height);
     glutBitmapString(font, (unsigned char*) line5);
-
     glColor3fv(colors[2]);
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
-
-    //glColor3fv(colors[2]);
-    //glRasterPos2f(x, y + 6 * line_height);
-    //glutBitmapString(font, (unsigned char*) line7);
-        
-    glColor3fv(colors[2]);
+    glColor3fv(colors[0]);
+    glRasterPos2f(x, y + 6 * line_height);
+    glutBitmapString(font, (unsigned char*) line7);
+    glColor3fv(colors[1]);
     glRasterPos2f(x, y + 7 * line_height);
     glutBitmapString(font, (unsigned char*) line8);
     
-    // scrolling text://////////////////////////////
+    
+    
+    /// scrolling text://////////////////////////////
     int y_pos=0;
     char scroll_line[100];
-    
     int W_to_show=0;
     if (!self->param_status[0]){
       W_to_show=1;
@@ -573,6 +613,10 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->pitch = self->head_pitch = self->roll = self->head_roll = 0;
     self->height = self->head_height = self->speed = self->cmd_speed = 0;
 
+    self->left_contact = 0.0;
+    self->right_contact = 0.0;
+    
+    
     std::string channel_name ="SAM";
     self->msgchannels.push_back(channel_name);
     channel_name ="CONTROL";
@@ -588,10 +632,13 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     drc_robot_state_t_subscribe(self->lcm,"EST_ROBOT_STATE",on_robot_state,self);
     drc_utime_t_subscribe(self->lcm,"ROBOT_UTIME",on_utime,self);
     drc_frequency_t_subscribe(self->lcm,"FREQUENCY_LCM",on_frequency,self);
-    
+    drc_foot_contact_estimate_t_subscribe(self->lcm,"FOOT_CONTACT_ESTIMATE",on_foot_contact,self);
+    drc_score_t_subscribe(self->lcm,"VRC_SCORE",on_score,self);
+
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);
 
     self->driving_status = NULL; 
+    self->score = NULL;
     
     self->param_status[0] = PARAM_STATUS_0_DEFAULT;    
     self->param_status[1] = PARAM_STATUS_1_DEFAULT;    
