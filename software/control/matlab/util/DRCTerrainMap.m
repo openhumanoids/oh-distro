@@ -53,10 +53,14 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.minval=[];
       while isempty(obj.minval)
         ptcloud=[];
-        while isempty(ptcloud)
+        while true
             % temporary hack because the robot is initialized without knowing the ground under it's feet
             ptcloud = obj.map_handle.getPointCloud();
+            if (~isempty(ptcloud))
+                break;
+            end
             % end hack
+            pause(1.0);
         end
         obj.minval = min(ptcloud(3,:));
       end
