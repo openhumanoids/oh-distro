@@ -280,7 +280,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "segmentation_viewer" {
-        exec = "segmentation_viewer -r base";
+        exec = "segmentation-viewer -r base";
         host = "base";
     }
     cmd "modelpub" {
