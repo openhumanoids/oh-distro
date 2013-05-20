@@ -24,6 +24,7 @@
 #include <bot_core/bot_core.h>
 #include <lcmtypes/drc_driving_control_cmd_t.h>
 #include <lcmtypes/drc_driving_status_t.h>
+#include <lcmtypes/drc_affordance_goal_t.h>
 //#include <common/globals.h>
 //#include <lcmtypes/mrtypes.h>
 
@@ -77,6 +78,14 @@ typedef struct  {
     double hand_brake;
     double gas_pedal;
     double brake_pedal;
+
+    // DBW flags
+    int dbw_hand_wheel;
+    int dbw_hand_brake;
+    int dbw_gas_pedal;
+    int dbw_brake_pedal;
+    int dbw_key;
+    int dbw_transmission;
 
     int verbose;
     int direction;
@@ -230,11 +239,25 @@ static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
     if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
     if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
 
-    std_msgs::Float64 msg;
-  
-    msg.data = s->hand_wheel;
-    hand_wheel_pub.publish(msg);
-    
+    if (s->dbw_hand_wheel) {
+        std_msgs::Float64 msg;
+        
+        msg.data = s->hand_wheel;
+        hand_wheel_pub.publish(msg);
+    }
+    else {
+        string dof_name_local[] = {"steering_joint"};
+        drc_affordance_goal_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.aff_type = (char *) "car";
+        msg.aff_uid = 1;
+        msg.num_dofs = 1;
+        msg.dof_name = (char **) dof_name_local;
+        msg.dof_value[0] = s->hand_wheel;
+
+        drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+    }
+
     if(s->verbose)
         fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);    
 
@@ -246,10 +269,24 @@ static int update_and_publish_hand_wheel(double new_val, state_t *s){
     s->hand_wheel = new_val;
     if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
     if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
-    std_msgs::Float64 msg;
-    msg.data = s->hand_wheel;
-    hand_wheel_pub.publish(msg);
     
+    if (s->dbw_hand_wheel) {
+        std_msgs::Float64 msg;
+        msg.data = s->hand_wheel;
+        hand_wheel_pub.publish(msg);
+    }
+    else {
+        string dof_name_local[] = {"steering_joint"};
+        drc_affordance_goal_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.aff_type = (char *) "car";
+        msg.aff_uid = 1;
+        msg.num_dofs = 1;
+        msg.dof_name = (char **) dof_name_local;
+        msg.dof_value[0] = s->hand_wheel;
+
+        drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+    }
     if(s->verbose)
         fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
 
@@ -449,6 +486,25 @@ on_timer (void * user)
     return TRUE;
 }
 
+static void usage (int argc, char **argv)
+{
+    fprintf (stdout, "Usage: %s [options]\n"
+             "\n"
+             " -D, --DBW                 Control all actuation using drive-by-wire\n"
+             " -s, --steer_dbw           Control steering using drive-by-wire\n"
+             " -b, --brake_dbw           Control brake pedal using drive-by-wire\n"
+             " -g, --gas_dbw             Control gas pedal using drive-by-wire\n"
+             " -p, --handbrake_dbw       Control handbrake using drive-by-wire\n"
+             " -t, --transmission_dbw    Control transmission using drive-by-wire\n"
+             " -k, --key_dbw             Control key using drive-by-wire\n"
+             " -v, --verbose             Verbose output\n"
+             " -h, --help                Print this help and exit\n"
+             "\n",
+             argv[0]);
+}
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -456,10 +512,17 @@ int main(int argc, char *argv[])
     state->lcm= lcm_create(NULL);
 
     char c;
-    char *optstring = "vh";
+    char *optstring = "vhDsbgpkt";
     struct option long_opts[] = {
+        { "DBW", no_argument, 0, 'D'},
+        { "steer_dbw", no_argument, 0, 's'},
+        { "brake_dbw", no_argument, 0, 'b'},
+        { "gas_dbw", no_argument, 0, 'g'},
+        { "handbrake_dbw", no_argument, 0, 'p'},
+        { "key_dbw", no_argument, 0, 'k'},
+        { "transmission_dbw", no_argument, 0, 't'},
         { "verbose", no_argument, 0, 'v'},
-	{ "help", no_argument, 0, 'h'},
+        { "help", no_argument, 0, 'h'},
         { 0, 0, 0, 0 }
     };
 
@@ -467,16 +530,55 @@ int main(int argc, char *argv[])
     
     while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0){
         switch (c) {
+        case 'D':
+            state->dbw_hand_wheel = 1;
+            state->dbw_hand_brake = 1;
+            state->dbw_gas_pedal = 1;
+            state->dbw_brake_pedal = 1;
+            state->dbw_key = 1;
+            state->dbw_transmission = 1;
+            break;
+        case 's':
+            state->dbw_hand_wheel = 1;
+            break;
+        case 'b':
+            state->dbw_brake_pedal = 1;
+            break;
+        case 'g':
+            state->dbw_gas_pedal = 1;
+            break;
+        case 'p':
+            state->dbw_hand_brake = 1;
+            break;
+        case 'k':
+            state->dbw_key = 1;
+            break;
+        case 't':
+            state->dbw_transmission = 1;
+            break;
         case 'v':
             fprintf(stderr, "Verbose\n");
             state->verbose = 1;
             break;
+        default:
         case 'h':
-            
-            break;
+            usage (argc, argv);
+            return 1;
         }
     }
 
+    if (state->dbw_hand_wheel)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL STEERING\n");
+    if (state->dbw_hand_brake)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL HAND BRAKE\n");
+    if (state->dbw_brake_pedal)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL BRAKE PEDAL\n");
+    if (state->dbw_gas_pedal)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL GAS PEDAL\n");
+    if (state->dbw_key)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL KEY\n");
+    if (state->dbw_transmission)
+        fprintf (stdout, "USING DRIVE-BY-WIRE TO CONTROL TRANSMISSION\n");
 
     state->robot_name = "drc_vehicle";
     ros::init(argc, argv, "keyboard_driving");
