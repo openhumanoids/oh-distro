@@ -194,6 +194,48 @@ namespace renderer_affordances_lcm_utils
 
     _lcm->publish(channel, &goalmsg);
   }  
+
+    //----------------------------------------------------------------------------------------------------
+  static void publish_ee_goal_to_gaze(boost::shared_ptr<lcm::LCM> &_lcm, string ee_name, string channel,BotTrans &ee_to_local)
+  {
+    drc::ee_goal_t goalmsg;
+    goalmsg.robot_name = "atlas";
+    goalmsg.root_name = "pelvis";
+    goalmsg.ee_name = ee_name;
+
+    goalmsg.ee_goal_pos.translation.x = ee_to_local.trans_vec[0];
+    goalmsg.ee_goal_pos.translation.y = ee_to_local.trans_vec[1];
+    goalmsg.ee_goal_pos.translation.z = ee_to_local.trans_vec[2];
+
+    //note ***** - if he is using KDL Quaternions - then the convention is different than bottrans 
+    goalmsg.ee_goal_pos.rotation.x = ee_to_local.rot_quat[0];
+    goalmsg.ee_goal_pos.rotation.y = ee_to_local.rot_quat[1];
+    goalmsg.ee_goal_pos.rotation.z = ee_to_local.rot_quat[2];
+    goalmsg.ee_goal_pos.rotation.w = ee_to_local.rot_quat[3];
+
+    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
+
+    goalmsg.num_chain_joints  = 0; //sticky_hand_struc.joint_name.size();
+    // No specified posture bias
+    goalmsg.use_posture_bias  = false;
+    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
+    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
+    /*for(int i = 0; i < goalmsg.num_chain_joints; i++){
+        goalmsg.joint_posture_bias[i]=0;//sticky_hand_struc.joint_position[i];
+        goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
+        }*/
+
+    // Publish the message
+    goalmsg.halt_ee_controller = false;
+
+    _lcm->publish(channel, &goalmsg);
+  }
+
  //----------------------------------------------------------------------------------------------------   
   static void publish_desired_hand_motion(StickyHandStruc &sticky_hand_struc, string ee_name, string channel,  void *user)
   {

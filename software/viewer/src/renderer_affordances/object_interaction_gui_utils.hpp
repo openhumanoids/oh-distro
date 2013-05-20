@@ -17,6 +17,7 @@
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
 
+#define PARAM_SET_GAZE "Set EE Gaze"
 
 #define PARAM_RESEED "Re-seed"
 #define PARAM_HALT_OPT "Halt Opt"
@@ -623,6 +624,9 @@ namespace renderer_affordances_gui_utils
       //cout << "publishes ee motion constraints for all associated sticky hands and feet \n";
       get_manip_plan(self);
     }
+    else if(!strcmp(name,PARAM_SET_GAZE)) {
+        spawn_get_ee_constraint_popup(self);
+    }
     else if(!strcmp(name,PARAM_GET_MANIP_MAP)) {
       self->instance_selection  = std::string(self->object_selection);  
       spawn_set_dof_range_popup(self);
@@ -716,6 +720,8 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
+
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SET_GAZE, NULL);    
       
     }
 
@@ -736,6 +742,8 @@ namespace renderer_affordances_gui_utils
       
       bot_gtk_param_widget_add_separator (pw,"Set desired state");
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+
+     
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
       bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);

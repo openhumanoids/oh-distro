@@ -827,12 +827,16 @@ _free (BotRenderer *renderer)
   //free (renderer);
 }
 
-BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm)
+BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
 {
 
   //RendererAffordances *self = (RendererAffordances*) calloc (1, sizeof (RendererAffordances)); // Calloc is bad as it prevents having string as members as strings can change size
   RendererAffordances *self = new RendererAffordances;
   self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
+
+  self->frames = frames;
+
+  fprintf(stdout , "Bot Frames : %p\n", (void *) self->frames);
 
   self->otdf_dir_name = string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/models/
 
@@ -978,7 +982,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   return &self->renderer;
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
 {
-  bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames), render_priority, 0); // 0= add on left hand side
 }

@@ -225,6 +225,7 @@ struct RendererAffordances {
   // initializing variables to prevent memory issues due to uninitialized vars.
     viewer = NULL;
     pw = NULL;
+    frames = NULL;
     otdf_names = NULL;
     otdf_nums = NULL;
     dblclk_popup= NULL;
@@ -270,7 +271,8 @@ struct RendererAffordances {
   GtkWidget *dblclk_popup;
   GtkWidget *second_stage_popup;
   boost::shared_ptr<lcm::LCM> lcm;
-
+    
+  BotFrames *frames;
  
   // Member Classes
   // -----------------
@@ -1650,7 +1652,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
   
 }//end_namespace
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames);
 
 
 #endif //RENDERER_AFFORDANCES_HPP

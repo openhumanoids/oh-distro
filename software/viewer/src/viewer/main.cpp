@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
-  setup_renderer_affordances(viewer, 0, lcm);
+  setup_renderer_affordances(viewer, 0, lcm, bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames);
   //setup_renderer_end_effector_goal(viewer, 0, lcm); // this is not needed any more
 
