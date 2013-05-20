@@ -9,6 +9,7 @@ message ProcManWrapper
     FULL = 0;
     DIFF = 1;
     ACK = 2;
+    NO_CHANGE = 3;
   }
   required MessageType type = 1;
   

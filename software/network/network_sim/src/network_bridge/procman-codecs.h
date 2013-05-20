@@ -9,7 +9,8 @@
 #include "procman-analogs.pb.h"
 
 enum { RESEND_SECONDS = 5 };
-
+enum { NO_CHANGE_PERIOD = 5 }; // seconds between no-change messages
+    
 
 
 template<typename LCMType, typename DiffType>
@@ -17,16 +18,18 @@ struct State
 {
 State() : need_to_send_ack_(false),
         has_last_full_(false),
-        has_last_diff_(false)
+        has_last_diff_(false),
+        last_no_change_time_(0)
         { }
     
     LCMType last_full_;
     bool has_last_full_;
     
     bool need_to_send_ack_;
-    DiffType last_diff_;    
+    DiffType last_diff_;
     bool has_last_diff_;
     DiffType diff_waiting_ack_;
+    double last_no_change_time_;
 };
 
 
@@ -125,15 +128,24 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     
                     if(diff_acked.SerializeAsString() == host_info.diff_waiting_ack_.SerializeAsString())
                     {
-                        glog.is(VERBOSE) && glog << "Diff is identical, so not sending" << std::endl;
+                        double now = goby::common::goby_time<double>();
                         host_info.diff_waiting_ack_.Clear();
-                        return false;
+                        if(now > NO_CHANGE_PERIOD + host_info.last_no_change_time_)
+                        {
+                            glog.is(VERBOSE) && glog << "Diff is identical, so sending NO_CHANGE message" << std::endl;
+                            wrapper.set_type(drc::ProcManWrapper::NO_CHANGE);
+                            host_info.last_no_change_time_ = now;
+                        }
+                        else
+                        {
+                            glog.is(VERBOSE) && glog << "Diff is identical, but sent NO_CHANGE message within the last " << NO_CHANGE_PERIOD << " seconds, so not sending" << std::endl;
+                            return false;
+                        }
                     }
-                    
                 }
                 
-                //diff.SerializeToString(wrapper.mutable_data());
-                dccl_->encode(wrapper.mutable_data(), host_info.diff_waiting_ack_);
+                if(wrapper.type() == drc::ProcManWrapper::DIFF)
+                    dccl_->encode(wrapper.mutable_data(), host_info.diff_waiting_ack_);
             }
 
             glog.is(VERBOSE) && glog << "ProcMan Message type is: "
@@ -179,15 +191,23 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                 host_info.has_last_full_ = true;
                 
             }
-            else if(wrapper.type() == drc::ProcManWrapper::DIFF)
+            else if(wrapper.type() == drc::ProcManWrapper::DIFF || wrapper.type() == drc::ProcManWrapper::NO_CHANGE)
             {
                 if(!host_info.has_last_full_)
                     return false;
                 
                 DiffType diff;
-                //diff.ParseFromString(wrapper.data());
-                DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
-                dccl_->decode(wrapper.data(), &diff);
+                if(wrapper.type() == drc::ProcManWrapper::DIFF)
+                {
+                    //diff.ParseFromString(wrapper.data());
+                    DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
+                    dccl_->decode(wrapper.data(), &diff);
+                    host_info.last_diff_ = diff;
+                }
+                else if(wrapper.type() == drc::ProcManWrapper::NO_CHANGE)
+                {
+                    diff = host_info.last_diff_;
+                }
 
                 if(!reverse_diff(&lcm_object, host_info.last_full_, diff))
                 {
@@ -195,7 +215,9 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     Codec::host_info_.erase(host);
                     return false;
                 }
-                OtherCodec::host_info_[host].need_to_send_ack_ = true;
+                
+                if(wrapper.type() == drc::ProcManWrapper::DIFF)
+                    OtherCodec::host_info_[host].need_to_send_ack_ = true;
             }
             else if(wrapper.type() == drc::ProcManWrapper::ACK)
             {
