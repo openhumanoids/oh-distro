@@ -280,6 +280,50 @@ typedef struct _RendererDriving {
   
 }RendererDriving;
 
+static void draw_arc(double radius){
+    glColor3f(0,1,1);
+
+    double R = fabs(radius);
+
+    
+        
+    double x = 0;
+    double y = 0;
+            
+    //draw car footprints for given angle
+    double swept_angle = 20 / R;
+        
+    int no_segments = 20;
+    double angle_d = swept_angle/ no_segments;
+    for(int i=0; i < no_segments; i++){
+        double theta = angle_d * i;
+        double s, c;
+        bot_fasttrig_sincos(theta, &s, &c);
+        x = R * s;
+                
+
+        double theta_act = theta;
+        y = R*(1-c);
+        if(radius <0){
+            y = -y;
+            theta = -theta;
+        }
+                
+        //this is the position 
+        glPushMatrix();
+        glTranslatef(x , y , 0);
+        glRotatef(theta*180/M_PI , 0, 0, 1.0);
+
+        glBegin(GL_QUADS);
+        glVertex2f(H_LENGTH, -H_WIDTH);
+        glVertex2f(H_LENGTH, H_WIDTH);
+        glVertex2f(-H_LENGTH, H_WIDTH);
+        glVertex2f(-H_LENGTH, -H_WIDTH);
+        glEnd();
+        glPopMatrix();
+    }
+}
+
 static void
 _draw (BotViewer *viewer, BotRenderer *renderer)
 {
@@ -303,7 +347,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         
         bot_quat_to_roll_pitch_yaw(car_to_local.rot_quat, rpy_car);
 
-        double l = 1.88;
+        double l = 1.8;
         double w = 1.2; 
         int draw_line  = 0;
 
@@ -341,7 +385,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         glPopMatrix();
         
         
-        glColor3f(0,1,1);
+        /* glColor3f(0,1,1);
 
         
         double x = 0;
@@ -378,6 +422,36 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
             glVertex2f(-H_LENGTH, -H_WIDTH);
             glEnd();
             glPopMatrix();
+            }*/
+
+        if(wheel_angle < 0){
+            draw_arc(-R);
+        }
+        else{
+            draw_arc(R);
+        }
+
+        //draw a set of arcs         
+        if(0){
+            glColor3f(0,0.3,0.4);
+            double max_steering_angle = bot_to_radians(90);
+            
+            int no_arcs = 10;
+            
+            double delta = max_steering_angle / no_arcs;
+            
+            for(int i=-10; i <= 10; i++){
+                double angle = delta * i * STEERING_RATIO;
+                double rad = 0;
+                if(fabs(angle) < 0.01){
+                    rad = 1000;
+                }
+                rad = pow( pow(l/ tan(angle),2) + pow(l,2), 0.5);
+                if(i < 0)
+                    rad = -rad;
+                
+                draw_arc(rad);
+            }
         }
 
             
