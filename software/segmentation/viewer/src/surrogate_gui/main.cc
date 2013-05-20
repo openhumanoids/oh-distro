@@ -110,13 +110,19 @@ int main(int argc, char *argv[])
     BotViewer *viewer = bot_viewer_new("Segmentation");
     app.viewer = viewer;
     app.lcm = lcm_create( lcm_url.c_str() );
+    BotParam* bot_param = bot_param_new_from_server(app.lcm, 0);
+    if (bot_param == NULL) {
+      fprintf(stderr, "Couldn't get bot param from server.\n");
+      return 1;
+    }
+    BotFrames* bot_frames = bot_frames_new(app.lcm, bot_param);
     boost::shared_ptr<lcm::LCM> lcmCpp = boost::shared_ptr<lcm::LCM>(new lcm::LCM(app.lcm));
     
     bot_glib_mainloop_attach_lcm(app.lcm);
 
     //otdf
     // older: setup_renderer_otdf(viewer, 0, lcmCpp);
-    setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM());
+    setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames);
 
     // setup renderers
     bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
