@@ -604,20 +604,20 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
                      self->ground_truth_status->gas_pedal);
             sprintf (line3, "   Brake: %.2f [%.2f]\n", self->controller_values->brake_value,
                      self->ground_truth_status->brake_pedal);
-            sprintf (line4, "   Steer: %.2f [%.2f]\n", self->controller_values->hand_steer,
-                     self->ground_truth_status->hand_wheel);
+            sprintf (line4, "Steer(d): %3.0f [%3.0f]\n", bot_to_degrees(self->controller_values->hand_steer),
+                     bot_to_degrees(self->ground_truth_status->hand_wheel));
         }
         else {
             sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value);
             sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value);
-            sprintf (line4, "   Steer: %.2f\n", self->controller_values->hand_steer);
+            sprintf (line4, "Steer(d): %3.0f\n", bot_to_degrees(self->controller_values->hand_steer));
         }
     }
     else {
        if (self->ground_truth_status) {
             sprintf (line2, "Throttle: ??? [%.2f]\n", self->ground_truth_status->gas_pedal);
             sprintf (line3, "   Brake: ??? [%.2f]\n", self->ground_truth_status->brake_pedal);
-            sprintf (line4, "   Steer: ??? [%.2f]\n", self->ground_truth_status->hand_wheel);
+            sprintf (line4, "Steer(d): ??? [%3.0f]\n", bot_to_degrees(self->ground_truth_status->hand_wheel));
         }
         else {
             sprintf (line2, "Throttle: ??? [???]\n");
