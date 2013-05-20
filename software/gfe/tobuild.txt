@@ -5,6 +5,5 @@
 state
 kinematics_model
 collision
-plan
 opengl
 qt4
