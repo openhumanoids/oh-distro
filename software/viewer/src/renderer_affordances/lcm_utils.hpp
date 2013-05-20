@@ -208,10 +208,10 @@ namespace renderer_affordances_lcm_utils
     goalmsg.ee_goal_pos.translation.z = ee_to_local.trans_vec[2];
 
     //note ***** - if he is using KDL Quaternions - then the convention is different than bottrans 
-    goalmsg.ee_goal_pos.rotation.x = ee_to_local.rot_quat[0];
-    goalmsg.ee_goal_pos.rotation.y = ee_to_local.rot_quat[1];
-    goalmsg.ee_goal_pos.rotation.z = ee_to_local.rot_quat[2];
-    goalmsg.ee_goal_pos.rotation.w = ee_to_local.rot_quat[3];
+    goalmsg.ee_goal_pos.rotation.x = ee_to_local.rot_quat[1];
+    goalmsg.ee_goal_pos.rotation.y = ee_to_local.rot_quat[2];
+    goalmsg.ee_goal_pos.rotation.z = ee_to_local.rot_quat[3];
+    goalmsg.ee_goal_pos.rotation.w = ee_to_local.rot_quat[0];
 
     goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
     goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
