@@ -462,6 +462,14 @@ group "m.2.simple-control" {
         exec = "rosrun tutorial_atlas_control traj_gui.py";
         host = "robot";
     }
+    cmd "simple_right_grasp" {
+        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
+    cmd "simple_left_grasp" {
+        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
 }
 
 group "m.3.dev_tools" {
