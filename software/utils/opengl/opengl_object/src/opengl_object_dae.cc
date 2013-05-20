@@ -20,6 +20,7 @@ OpenGL_Object_DAE( string id,
                                         _v4_data(),
                                         _index_data(),
                                         _geometry_data(),
+                                        _dae_offset( KDL::Frame::Identity() ),
                                         _dl( 0 ) {
   _load_opengl_object( filename );
 }
@@ -84,6 +85,19 @@ operator=( const OpenGL_Object_DAE& other ) {
   _geometry_data = other._geometry_data;
   _dl = 0;
   return (*this);
+}
+
+void
+OpenGL_Object_DAE::
+apply_transform( void ){    
+  Frame origin = _transform * _offset * _dae_offset;
+
+  GLdouble m[] = { origin( 0, 0 ), origin( 1, 0 ), origin( 2, 0 ), origin( 3, 0 ),
+                        origin( 0, 1 ), origin( 1, 1 ), origin( 2, 1 ), origin( 3, 1 ),
+                        origin( 0, 2 ), origin( 1, 2 ), origin( 2, 2 ), origin( 3, 2 ),
+                        origin( 0, 3 ), origin( 1, 3 ), origin( 2, 3 ), origin( 3, 3 ) };
+  glMultMatrixd( m );
+  return;
 }
 
 void 
@@ -535,6 +549,104 @@ _load_opengl_object( string filename ){
                   }
                 } // L3
               }
+            }
+          } // L2
+        } else if( xmlStrcmp( l1->name, ( const xmlChar * )( "library_visual_scenes" ) ) == 0 ){
+          xmlNodePtr l2 = NULL;
+          for( l2 = l1->children; l2; l2 = l2->next ){
+            if( l2->type == XML_ELEMENT_NODE ){
+              if( xmlStrcmp( l2->name, ( const xmlChar * )( "visual_scene" ) ) == 0 ){
+                xmlNodePtr l3 = NULL;
+                for( l3 = l2->children; l3; l3 = l3->next ){
+                  if( l3->type == XML_ELEMENT_NODE ){
+                    if( xmlStrcmp( l3->name, ( const xmlChar * )( "node" ) ) == 0 ){
+                      xmlNodePtr l4 = NULL;
+                      for( l4 = l3->children; l4; l4 = l4->next ){
+                        if( l4->type == XML_ELEMENT_NODE ){
+                          if( xmlStrcmp( l4->name, ( const xmlChar * )( "matrix" ) ) == 0 ){
+                            xmlChar* l4_content = xmlNodeGetContent( l4 );
+                            string l4_content_string = ( char* )( l4_content );
+                            xmlFree( l4_content );
+                            vector< string > tv;
+                            boost::split( tv, l4_content_string, boost::is_any_of("\n "));
+                            for( unsigned int i = 0; i < tv.size(); i++ ){
+                              if( tv[ i ] == "" ){
+                                tv.erase( tv.begin() + i );
+                                i--;
+                              }
+                            }
+                            Frame tmp( Rotation( strtof( tv[0].c_str(), NULL ), strtof( tv[1].c_str(), NULL ), strtof( tv[2].c_str(), NULL ), strtof( tv[4].c_str(), NULL ), strtof( tv[5].c_str(), NULL ), strtof( tv[6].c_str(), NULL ), strtof( tv[8].c_str(), NULL ), strtof( tv[9].c_str(), NULL ), strtof( tv[10].c_str(), NULL ) ), Vector( strtof( tv[3].c_str(), NULL ), strtof( tv[7].c_str(), NULL ), strtof( tv[11].c_str(), NULL ) ) );
+                            _dae_offset = _dae_offset * tmp;
+                          } else if ( xmlStrcmp( l4->name, ( const xmlChar* )( "node" ) ) == 0 ){
+                            xmlNodePtr l5 = NULL;
+                            for( l5 = l4->children; l5; l5 = l5->next ){
+                              if( l5->type == XML_ELEMENT_NODE ){
+                                if( xmlStrcmp( l5->name, ( const xmlChar * )( "matrix" ) ) == 0 ){
+                                  xmlChar* l5_content = xmlNodeGetContent( l5 );
+                                  string l5_content_string = ( char* )( l5_content );
+                                  xmlFree( l5_content );
+                                  vector< string > tv;
+                                  boost::split( tv, l5_content_string, boost::is_any_of("\n "));
+                                  for( unsigned int i = 0; i < tv.size(); i++ ){
+                                    if( tv[ i ] == "" ){
+                                      tv.erase( tv.begin() + i );
+                                      i--;
+                                    }
+                                  }
+                                  Frame tmp( Rotation( strtof( tv[0].c_str(), NULL ), strtof( tv[1].c_str(), NULL ), strtof( tv[2].c_str(), NULL ), strtof( tv[4].c_str(), NULL ), strtof( tv[5].c_str(), NULL ), strtof( tv[6].c_str(), NULL ), strtof( tv[8].c_str(), NULL ), strtof( tv[9].c_str(), NULL ), strtof( tv[10].c_str(), NULL ) ), Vector( strtof( tv[3].c_str(), NULL ), strtof( tv[7].c_str(), NULL ), strtof( tv[11].c_str(), NULL ) ) );
+                                  _dae_offset = _dae_offset * tmp;
+                                } else if ( xmlStrcmp( l5->name, ( const xmlChar* )( "node" ) ) == 0 ){
+                                  xmlNodePtr l6 = NULL;
+                                  for( l6 = l5->children; l6; l6 = l6->next ){
+                                    if( l6->type == XML_ELEMENT_NODE ){
+                                      if( xmlStrcmp( l6->name, ( const xmlChar * )( "matrix" ) ) == 0 ){
+                                        xmlChar* l6_content = xmlNodeGetContent( l6 );
+                                        string l6_content_string = ( char* )( l6_content );
+                                        xmlFree( l6_content );
+                                        vector< string > tv;
+                                        boost::split( tv, l6_content_string, boost::is_any_of("\n "));
+                                        for( unsigned int i = 0; i < tv.size(); i++ ){
+                                          if( tv[ i ] == "" ){
+                                            tv.erase( tv.begin() + i );
+                                            i--;
+                                          }
+                                        }
+                                        Frame tmp( Rotation( strtof( tv[0].c_str(), NULL ), strtof( tv[1].c_str(), NULL ), strtof( tv[2].c_str(), NULL ), strtof( tv[4].c_str(), NULL ), strtof( tv[5].c_str(), NULL ), strtof( tv[6].c_str(), NULL ), strtof( tv[8].c_str(), NULL ), strtof( tv[9].c_str(), NULL ), strtof( tv[10].c_str(), NULL ) ), Vector( strtof( tv[3].c_str(), NULL ), strtof( tv[7].c_str(), NULL ), strtof( tv[11].c_str(), NULL ) ) );
+                                        _dae_offset = _dae_offset * tmp;
+                                      } else if ( xmlStrcmp( l6->name, ( const xmlChar* )( "node" ) ) == 0 ){
+                                        xmlNodePtr l7 = NULL;
+                                        for( l7 = l6->children; l7; l7 = l7->next ){
+                                          if( l7->type == XML_ELEMENT_NODE ){
+                                            if( xmlStrcmp( l7->name, ( const xmlChar * )( "matrix" ) ) == 0 ){
+                                              xmlChar* l7_content = xmlNodeGetContent( l7 );
+                                              string l7_content_string = ( char* )( l7_content );
+                                              xmlFree( l7_content );
+                                              vector< string > tv;
+                                              boost::split( tv, l7_content_string, boost::is_any_of("\n "));
+                                              for( unsigned int i = 0; i < tv.size(); i++ ){
+                                                if( tv[ i ] == "" ){
+                                                  tv.erase( tv.begin() + i );
+                                                  i--;
+                                                }
+                                              }
+                                              Frame tmp( Rotation( strtof( tv[0].c_str(), NULL ), strtof( tv[1].c_str(), NULL ), strtof( tv[2].c_str(), NULL ), strtof( tv[4].c_str(), NULL ), strtof( tv[5].c_str(), NULL ), strtof( tv[6].c_str(), NULL ), strtof( tv[8].c_str(), NULL ), strtof( tv[9].c_str(), NULL ), strtof( tv[10].c_str(), NULL ) ), Vector( strtof( tv[3].c_str(), NULL ), strtof( tv[7].c_str(), NULL ), strtof( tv[11].c_str(), NULL ) ) );
+                                              _dae_offset = _dae_offset * tmp;
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  } // L6
+                                }
+                              }
+                            } // L5
+                          }
+                        }
+                      } // L4
+                    }
+                  }
+                } // L3
+              } 
             }
           } // L2
         }

@@ -18,6 +18,7 @@ namespace opengl {
     OpenGL_Object_DAE( const OpenGL_Object_DAE& other );
     OpenGL_Object_DAE& operator=( const OpenGL_Object_DAE& other );
 
+    virtual void apply_transform( void );
     virtual void set_color( Eigen::Vector3f color );
     virtual void set_color( Eigen::Vector4f color );
     void set( KDL::Frame transform );
@@ -36,6 +37,7 @@ namespace opengl {
     std::map< std::string, std::vector< Eigen::Vector4f* > > _v4_data;
     std::map< std::string, std::vector< unsigned int > > _index_data;
     std::map< std::string, std::map< std::string, std::string > > _geometry_data;
+    KDL::Frame _dae_offset;
     GLuint _dl;
 
   private:

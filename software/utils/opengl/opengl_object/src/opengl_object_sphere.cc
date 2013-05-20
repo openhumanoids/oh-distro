@@ -139,10 +139,10 @@ OpenGL_Object_Sphere::
 draw( void ){
   if( visible() ){
     if( glIsList( _dl ) == GL_TRUE ){
-    glPushMatrix();
-    apply_transform();
-    glCallList( _dl );
-    glPopMatrix();
+      glPushMatrix();
+      apply_transform();
+      glCallList( _dl );
+      glPopMatrix();
     } else if( _generate_dl() ){
       draw();
     } 

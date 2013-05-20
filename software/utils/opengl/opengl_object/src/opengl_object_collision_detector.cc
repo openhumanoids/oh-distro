@@ -11,7 +11,7 @@ OpenGL_Object_Collision_Detector::
 OpenGL_Object_Collision_Detector() : _collision_detector( NULL ),
                                       _opengl_object_cylinder(),
                                       _opengl_object_sphere(){
-
+  _opengl_object_sphere.set_color( Eigen::Vector4f( 1.0, 1.0, 0.0, 1.0 ) );
 }
 
 OpenGL_Object_Collision_Detector::
@@ -55,7 +55,7 @@ draw( void ){
     glPolygonMode(GL_FRONT, GL_LINE);
     glPolygonMode(GL_BACK, GL_LINE);
     glDisable( GL_LIGHTING );
-
+    glDisable( GL_COLOR_MATERIAL );
     if( _collision_detector != NULL ){
       btCollisionObjectArray& collision_object_array = _collision_detector->bt_collision_world().getCollisionObjectArray();
       for( unsigned int i = 0; i < collision_object_array.size(); i++ ){
@@ -71,6 +71,7 @@ draw( void ){
       }
     }
     glEnable( GL_LIGHTING );
+    glEnable( GL_COLOR_MATERIAL );
     glPolygonMode(GL_FRONT, GL_FILL);
     glPolygonMode(GL_BACK, GL_FILL);
   }
@@ -81,10 +82,27 @@ void
 OpenGL_Object_Collision_Detector::
 _draw_collision_shape( btCollisionShape* collisionShape ){
   btVector3 edge_a, edge_b;
+  btBoxShape * bt_box_shape = NULL;
   btConvexHullShape * bt_convex_hull_shape = NULL;
   btCompoundShape * bt_compound_shape = NULL;
   switch( collisionShape->getShapeType() ){
   case ( BOX_SHAPE_PROXYTYPE ):
+    bt_box_shape = dynamic_cast< btBoxShape* >( collisionShape );
+    glBegin( GL_LINES );
+    for( unsigned int j = 0; j < bt_box_shape->getNumEdges(); j++ ){
+      bt_box_shape->getEdge( j, edge_a, edge_b );
+      glVertex3f( edge_a.x(), edge_a.y(), edge_a.z() );
+      glVertex3f( edge_b.x(), edge_b.y(), edge_b.z() );
+    }
+    glEnd();
+    glPointSize(5.0);
+    glBegin(GL_LINES);
+    for( unsigned int j = 0; j < bt_box_shape->getNumVertices(); j++ ){
+      bt_box_shape->getVertex( j, edge_a );
+      glVertex3f( edge_a.x(), edge_a.y(), edge_a.z() );
+    }
+    glEnd();
+    glPointSize(1.0);
     break;
   case ( CONVEX_HULL_SHAPE_PROXYTYPE ):
     bt_convex_hull_shape = dynamic_cast< btConvexHullShape* >( collisionShape );
@@ -131,6 +149,7 @@ _draw_collision_shape( btCollisionShape* collisionShape ){
     glPopMatrix();
     break;
   case ( CONE_SHAPE_PROXYTYPE ):
+    cout << "not drawing cone" << endl;
     break;  
   case ( COMPOUND_SHAPE_PROXYTYPE ):
     bt_compound_shape = dynamic_cast< btCompoundShape* >( collisionShape );
@@ -146,6 +165,7 @@ _draw_collision_shape( btCollisionShape* collisionShape ){
     }
     break;
   default:
+    cout << "could not draw collision shape" << endl;
     break;
   }
   return;
