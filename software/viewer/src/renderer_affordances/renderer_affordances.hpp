@@ -1654,5 +1654,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 
 void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames);
 
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm);
+
 
 #endif //RENDERER_AFFORDANCES_HPP

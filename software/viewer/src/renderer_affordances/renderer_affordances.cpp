@@ -836,8 +836,6 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 
   self->frames = frames;
 
-  fprintf(stdout , "Bot Frames : %p\n", (void *) self->frames);
-
   self->otdf_dir_name = string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/models/
 
   cout << "searching for otdf files in: "<< self->otdf_dir_name << endl;
@@ -977,12 +975,16 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
   bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
   
-
-  
+ 
   return &self->renderer;
 }
 
 void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
 {
     bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames), render_priority, 0); // 0= add on left hand side
+}
+
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm)
+{
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL), render_priority, 0); // 0= add on left hand side
 }

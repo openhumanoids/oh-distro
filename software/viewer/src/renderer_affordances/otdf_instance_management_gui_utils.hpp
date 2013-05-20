@@ -411,13 +411,18 @@ namespace renderer_affordances_gui_utils
       int use_current =  bot_gtk_param_widget_get_bool(pw, PARAM_USE_CURRENT_POSE);
       fprintf(stderr, "Enum : %d - Use current : %d\n", ee_type, use_current);
 
-      BotTrans ee_to_local;
-      
-      bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
-      
-      fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
-
-      publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
+      if(self->frames){
+          BotTrans ee_to_local;
+          
+          bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
+          
+          fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
+          
+          publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
+      }
+      else{
+          fprintf(stderr, "BotFrames is null - Unable to find ee pose\n");
+      }
 
       //send over the correct message
 
