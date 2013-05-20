@@ -101,7 +101,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   
   // TODO: get the urdf model from LCM:
-  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString() );
+  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL );
   n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
   collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
   // create the collision detector
