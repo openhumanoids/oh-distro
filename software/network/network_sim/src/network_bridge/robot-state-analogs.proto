@@ -21,15 +21,15 @@ message Position3D
 
 message TranslationVector
 {
-  required double x = 1 [(dccl.field) = { min: -10000 max: 10000 precision: 3}];
-  required double y = 2 [(dccl.field) = { min: -10000 max: 10000 precision: 3}];
-  required double z = 3 [(dccl.field) = { min: -100 max: 10000 precision: 3}];
+  required double x = 1 [(dccl.field) = { min: -1000 max: 1000 precision: 3}];
+  required double y = 2 [(dccl.field) = { min: -1000 max: 1000 precision: 3}];
+  required double z = 3 [(dccl.field) = { min: -10 max: 10 precision: 3}];
 }
 
 message RotationQuaternion
 {
-  optional double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 8 codec: "presence_bit"}];
-  optional double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 8 codec: "presence_bit"}];
-  optional double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 8 codec: "presence_bit"}];
-  optional double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 8 codec: "presence_bit"}];
+  optional double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
+  optional double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
+  optional double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
+  optional double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
 }

@@ -138,7 +138,8 @@ template<typename WireType, typename FieldType = WireType>
 class CustomChannelCodec
 {
   public:
-    CustomChannelCodec()
+    CustomChannelCodec(const std::string loopback_channel = "")
+        : loopback_channel_(loopback_channel)
     {
         static bool loaded_codecs = false;
         if(!loaded_codecs)
@@ -161,6 +162,16 @@ class CustomChannelCodec
     virtual bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data) = 0;
     // undo encode. Returns false if this message cannot be decoded, true otherwise.
     virtual bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data) = 0;
+
+    const std::string& loopback_channel()
+    { return loopback_channel_; }
+    
+    bool has_loopback_channel()
+    { return !loopback_channel_.empty(); }
+    
+  private:
+    std::string loopback_channel_;
+    
 };
 
 #endif

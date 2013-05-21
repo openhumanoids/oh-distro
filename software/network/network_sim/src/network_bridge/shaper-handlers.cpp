@@ -114,7 +114,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
     custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
-    custom_codecs_.insert(std::make_pair("CANDIDATE_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec)));
+    const std::string& footstep_plan_channel = "CANDIDATE_FOOTSTEP_PLAN";
+    custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
+    custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
+
     custom_codecs_.insert(std::make_pair("CANDIDATE_MANIP_PLAN", boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec)));
 
     dccl_->validate<drc::ShaperHeader>();
@@ -274,7 +277,14 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
             {
                 glog.is(VERBOSE) && glog << group("ch-push") << "custom encoder returns false, discarding message." << std::endl;
                 return;
-            }    
+            }
+
+            // for debugging
+            if(custom_codecs_[channel]->has_loopback_channel())
+            {
+                std::vector<unsigned char> loopback_data = data;
+                publish_receive(custom_codecs_[channel]->loopback_channel(), 0, loopback_data);
+            }
         }
         
         std::map<std::string, MessageQueue>::iterator q_it = queues_.find(channel);
@@ -289,7 +299,7 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         {
             // add it to the end of the buffer
             q_it->second.messages.push_back(data);
-        }    
+        }
 
         
         glog.is(VERBOSE) && glog << group("ch-push") << "queueing: " << app_.get_current_utime()

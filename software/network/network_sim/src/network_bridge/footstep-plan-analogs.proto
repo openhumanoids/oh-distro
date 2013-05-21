@@ -15,11 +15,11 @@ message MinimalFootStepPlan
 
 message MinimalFootStepGoal
 {
-  required uint64 time = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
-  required double translation_x = 2 [(dccl.field) = { min: -2 max: 2 precision: 3 codec: "presence_bit"}];
-  required double translation_y = 3 [(dccl.field) = { min: -2 max: 2 precision: 3 codec: "presence_bit"}];
-  required double translation_z = 4 [(dccl.field) = { min: -2 max: 2 precision: 3 codec: "presence_bit"}];
-  //  required int64 step_time = 5;
+  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+  required double translation_x = 2 [(dccl.field) = { min: -200 max: 200 precision: 3}];
+  required double translation_y = 3 [(dccl.field) = { min: -200 max: 200 precision: 3}];
+  required double translation_z = 4 [(dccl.field) = { min: -200 max: 200 precision: 3}];
+  //required double step_speed = 5 [(dccl.field) = { min: -10 max: 10 precision: 1}];
   required int32 id = 6 [(dccl.field) = { min: 0 max: 0xFFFF }];
   required bool is_right_foot = 7;
   required bool is_in_contact = 8;
@@ -33,19 +33,19 @@ message MinimalFootStepGoal
 
 message MinimalFootStepGoalDiff
 {
-  repeated uint64 time_diff = 1 [(dccl.field) = { min: 0 max: 60000000 max_repeat: 127 codec: "presence_bit"}];
-  repeated double translation_x_diff = 2 [(dccl.field) = { min: -2 max: 2 precision: 3 max_repeat: 127 codec: "presence_bit"}];
-  repeated double translation_y_diff = 3 [(dccl.field) = { min: -2 max: 2 precision: 3 max_repeat: 127 codec: "presence_bit"}];
-  repeated double translation_z_diff = 4 [(dccl.field) = { min: -2 max: 2 precision: 3 max_repeat: 127 codec: "presence_bit"}];
-  //  repeated int64 step_time_diff = 5 [(dccl.field) = { min: 0 max: 60000000 max_repeat: 127 codec: "presence_bit"}];
-  //  repeated int32 id_diff = 6 [(dccl.field) = { min: 0 max: 1 max_repeat: 127 codec: "presence_bit"}];
+  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 60000000 max_repeat: 100 codec: "presence_bit"}];
+  repeated double translation_x_diff = 2 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double translation_y_diff = 3 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double translation_z_diff = 4 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  //  repeated int64 step_speed_diff = 5 [(dccl.field) = { min: -10 max: 10 max_repeat: 100 codec: "presence_bit"}];
+  //  repeated int32 id_diff = 6 [(dccl.field) = { min: 0 max: 1 max_repeat: 100 codec: "presence_bit"}];
   
-  repeated bool is_right_foot = 10 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool is_in_contact = 11 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_x = 12 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_y = 13 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_z = 14 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_roll = 15 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_pitch = 16 [(dccl.field) = { max_repeat: 127 }];
-  repeated bool fixed_yaw = 17 [(dccl.field) = { max_repeat: 127 }];
+  repeated bool is_right_foot = 10 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool is_in_contact = 11 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_x = 12 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_y = 13 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_z = 14 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_roll = 15 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_pitch = 16 [(dccl.field) = { max_repeat: 100 }];
+  repeated bool fixed_yaw = 17 [(dccl.field) = { max_repeat: 100 }];
 }

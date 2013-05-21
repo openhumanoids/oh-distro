@@ -7,10 +7,13 @@
 
 #include "footstep-plan-analogs.pb.h"
 
+enum { TRANSLATION_PRECISION = 3 };
+    
+
 class FootStepPlanCodec : public CustomChannelCodec
 {
   public:
-    FootStepPlanCodec();
+    FootStepPlanCodec(const std::string loopback_channel = "");
         
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       
