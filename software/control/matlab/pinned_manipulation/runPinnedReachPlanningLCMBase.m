@@ -39,7 +39,9 @@ lf_ee = EndEffector(r,'atlas','l_foot',[0;0;0],'L_FOOT_GOAL');
 lf_ee.frame.subscribe('L_FOOT_GOAL');
 h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
 h_ee.frame.subscribe('HEAD_GOAL');
-
+% TODO: Incorporate constraints from these channels into the planner.
+h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
+h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
 
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');

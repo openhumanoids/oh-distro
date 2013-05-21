@@ -300,7 +300,7 @@ classdef ManipulationPlanner < handle
                 if(isempty(rh_ee_goal))
                     rh_ee_goal = forwardKin(obj.r,kinsol,r_hand_body,[0;0;0],1);
                     rhandT  = rh_ee_goal(1:6);
-                    rhandT = [nan;nan;nan;nan;nan;nan];
+                    %rhandT = [nan;nan;nan;nan;nan;nan];
                 else
                     rhandT = zeros(6,1);
                     % Desired position of palm in world frame
@@ -313,7 +313,7 @@ classdef ManipulationPlanner < handle
                 if(isempty(lh_ee_goal))
                     lh_ee_goal = forwardKin(obj.r,kinsol,l_hand_body,[0;0;0],1);
                     lhandT  = lh_ee_goal(1:6);
-                    lhandT = [nan;nan;nan;nan;nan;nan];
+                    %lhandT = [nan;nan;nan;nan;nan;nan];
                 else
                     lhandT = zeros(6,1);
                     % Desired position of palm in world frame
@@ -508,8 +508,7 @@ classdef ManipulationPlanner < handle
                 r_hand_pose_int = [rhand_int_constraint(1:3); rpy2quat(rhand_int_constraint(4:6))];
                 l_hand_pose_int = [lhand_int_constraint(1:3); rpy2quat(lhand_int_constraint(4:6))];
                 r_foot_pose_int = [rfoot_int_constraint(1:3); rpy2quat(rfoot_int_constraint(4:6))];
-                l_foot_pose_int = [lfoot_int_constraint(1:3); rpy2quat(lfoot_int_constraint(4:6))];
-                l_foot_pose_int = [lfoot_int_constraint(1:3); rpy2quat(lfoot_int_constraint(4:6))];
+                l_foot_pose_int = [lfoot_int_constraint(1:3); rpy2quat(lfoot_int_constraint(4:6))];                
                 head_pose_int   = [head_int_constraint(1:3); rpy2quat(head_int_constraint(4:6))];
             end
             
