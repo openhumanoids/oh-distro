@@ -29,6 +29,7 @@ protected:
 
   Gtk::ComboBox* mAffordanceCombo;
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
+  std::unordered_map<int,std::string> mAffordanceNames;
 
 public:
 
@@ -70,22 +71,39 @@ public:
     // populate new list
     std::vector<affordance::AffConstPtr> affordances;
     mAffordanceWrapper->getAllAffordances(affordances);
-    mAffordanceTreeModel->clear();
-    mAffordanceCombo->clear();
+
+    bool affordancesChanged = false;
+    std::unordered_map<int,std::string> newNames;
     for (size_t i = 0; i < affordances.size(); ++i) {
-      Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
-      const Gtk::TreeModel::Row& row = *localIter;
-      row[columns.mId] = affordances[i]->_uid;
       char name[256];
       sprintf(name, "%d - %s", affordances[i]->_uid,
               affordances[i]->getName().c_str());
-      row[columns.mLabel] = name;
-      if (affordances[i]->_uid == id) iter = localIter;
+      newNames[affordances[i]->_uid] = name;
+      if ((mAffordanceNames.find(affordances[i]->_uid) ==
+           mAffordanceNames.end()) ||
+          (mAffordanceNames[affordances[i]->_uid] != name)) {
+        affordancesChanged = true;
+      }
     }
-    mAffordanceCombo->pack_start(columns.mLabel);
+    if (!affordancesChanged && (mAffordanceNames.size() != newNames.size())) {
+      affordancesChanged = true;
+    }
 
-    // set to previously active
-    if (iter) mAffordanceCombo->set_active(iter);
+    if (affordancesChanged) {
+      mAffordanceTreeModel->clear();
+      for (size_t i = 0; i < affordances.size(); ++i) {
+        Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
+        const Gtk::TreeModel::Row& row = *localIter;
+        row[columns.mId] = affordances[i]->_uid;
+        row[columns.mLabel] = newNames[affordances[i]->_uid];
+        if (affordances[i]->_uid == id) iter = localIter;
+      }
+
+      // set to previously active
+      if (iter) mAffordanceCombo->set_active(iter);
+
+      mAffordanceNames = newNames;
+    }
 
     return true;
   }
@@ -102,6 +120,7 @@ public:
     mAffordanceTreeModel = Gtk::ListStore::create(ComboColumns());
     mAffordanceCombo = Gtk::manage(new Gtk::ComboBox());
     mAffordanceCombo->set_model(mAffordanceTreeModel);
+    mAffordanceCombo->pack_start(columns.mLabel);
     vbox->add(*mAffordanceCombo);
     container->add(*vbox);
 
