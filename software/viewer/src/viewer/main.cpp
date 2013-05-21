@@ -177,7 +177,8 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                          
       default:
-         cout << "Unknown preset. Not found in lcmtype";
+       std::cout << "Unknown preset. Not found in lcmtype";
+       break;
     }// end switch case
     
   }// end if else
