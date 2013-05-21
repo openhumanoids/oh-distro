@@ -4,7 +4,7 @@ addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 % load atlas model
-options.floating = false; 
+options.floating = false;  %turn this to true to do the muddy seat driving
 % NOTE: floating = true does not work with harness controller, 
 % something wierd with the neck and torso.
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);

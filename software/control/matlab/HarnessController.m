@@ -36,18 +36,20 @@ classdef HarnessController < DRCController
             sys = mimoCascade(pd,qp,[],ins,outs);
             
             % cascade neck pitch control block
-            neck = NeckControlBlock(r,ctrl_data);
-            ins(1).system = 1;
-            ins(1).input = 1;
-            ins(2).system = 1;
-            ins(2).input = 2;
-            ins(3).system = 2;
-            ins(3).input = 2;
-            outs(1).system = 2;
-            outs(1).output = 1;
-            connection.from_output = 1;
-            connection.to_input = 1;
-            sys = mimoCascade(neck,sys,connection,ins,outs);
+            if(~strcmp(name,'seated_driving'))
+                neck = NeckControlBlock(r,ctrl_data);
+                ins(1).system = 1;
+                ins(1).input = 1;
+                ins(2).system = 1;
+                ins(2).input = 2;
+                ins(3).system = 2;
+                ins(3).input = 2;
+                outs(1).system = 2;
+                outs(1).output = 1;
+                connection.from_output = 1;
+                connection.to_input = 1;
+                sys = mimoCascade(neck,sys,connection,ins,outs);
+            end
             
             obj = obj@DRCController(name,sys);
             
@@ -81,8 +83,8 @@ classdef HarnessController < DRCController
             if ~isinf(getDuration(obj)) && t>4.0
                 x = input_data{2};
                 if(strcmp(obj.name,'seated_driving'))
-                    %d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands up
-                    d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands down
+                    d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
+                    %d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands up
                 else
                     d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
                 end
@@ -124,8 +126,8 @@ classdef HarnessController < DRCController
             else
                 % use saved nominal pose
                 if(strcmp(obj.name,'seated_driving'))
-                    %d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands up
-                    d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands down
+		  d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
+                  %d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands up
                else
                     d = load('data/atlas_fp.mat');
                 end
