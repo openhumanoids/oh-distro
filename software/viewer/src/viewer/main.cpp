@@ -42,6 +42,7 @@
 
 #include "udp_util.h"
 #include "RendererGroupUtil.hpp"
+#include <lcmtypes/drc_lcmtypes.h>
 
 using namespace std;
 
@@ -132,6 +133,56 @@ static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
   start_spy_counter++;
 }
 
+int current_active_posture_preset=0;
+static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
+{
+  BotViewer *self = (BotViewer*) user_data;
+  gint active;
+  active = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+  current_active_posture_preset = (int)active;
+ // std::cout << "posture presets combo_box changed to " << (int)active << "\n";
+}
+
+static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  lcm_t * lcm = (lcm_t *) user_data;
+  std::cout << "Active posture preset: " << current_active_posture_preset << "\n";
+   drc_robot_posture_preset_t msg;
+   msg.utime = bot_timestamp_now();
+   
+  if(current_active_posture_preset==0)
+  {
+    msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT;
+    std::cout << "Sending a lcm msg to update nominal posture in P&C to current state." << "\n";
+    drc_robot_posture_preset_t_publish(lcm, "UPDATE_NOMINAL_POSTURE", &msg);
+  }
+  else{
+    //CURRENT=0, STANDING_HNDS_UP=1, STANDING_HNDS_DWN=2,SITTING_HNDS_UP=3, SITTING_HNDS_DWN=4;
+    switch (current_active_posture_preset)                                      
+    {
+      case 1:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_DWN;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break;   
+      case 2:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_UP;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break; 
+      case 3:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_DWN;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break; 
+      case 4:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_UP;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break;                          
+      default:
+         cout << "Unknown preset. Not found in lcmtype";
+    }// end switch case
+    
+  }// end if else
+
+}
 
 static void
 destroy_renderers (BotViewer *viewer)
@@ -243,8 +294,7 @@ int main(int argc, char *argv[])
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames);
-  //setup_renderer_end_effector_goal(viewer, 0, lcm); // this is not needed any more
-
+  
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
@@ -260,7 +310,9 @@ int main(int argc, char *argv[])
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
 
   tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-
+  
+  
+  //--------------    Toolbar Additions
   // add custom TOP VIEW button
   GtkWidget *top_view_button;
   top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);
@@ -272,7 +324,7 @@ int main(int argc, char *argv[])
   on_top_view_clicked(NULL, (void *) viewer);  
 
   
-  // add custom TOP VIEW button
+  // add custom START SPY button
   GtkWidget *start_spy_button;
   start_spy_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_FIND);
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(start_spy_button), "Bot Spy");
@@ -292,6 +344,38 @@ int main(int argc, char *argv[])
   gtk_widget_show (GTK_WIDGET (item));
   g_signal_connect (G_OBJECT (item), "clicked", 
                     G_CALLBACK (on_collapse_all_clicked), viewer);
+                 
+  // add a posture_presets_button (if current broadcasts to all planners and controllers to reset their nominal posture, otherwise sends a preset posture goal for planners.)
+  GtkWidget *posture_presets_button;
+  posture_presets_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ORIENTATION_PORTRAIT);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(posture_presets_button), "Posture Presets");
+  //gtk_tool_item_set_is_important (GTK_TOOL_ITEM (posture_presets_button), TRUE);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(posture_presets_button), viewer->tips, "Update nominal posture(q_nom) across P&C to current posture (or) send a resetting posture goal for pre-determined fixed points", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(posture_presets_button), -1);
+  gtk_widget_show(posture_presets_button);
+  g_signal_connect(G_OBJECT(posture_presets_button), "clicked", G_CALLBACK(on_posture_presets_clicked), lcm);
+ // on_posture_presets_clicked(NULL, (void *) viewer);           
+  
+  GtkWidget * hbox = gtk_hbox_new (FALSE, 5);
+  GtkWidget* vseparator = gtk_vseparator_new ();
+  GtkWidget* posture_presets_combo_box=gtk_combo_box_new_text();
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsDn" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsUp" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsDn" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsUp" );
+  gtk_combo_box_set_active(GTK_COMBO_BOX( posture_presets_combo_box ),(gint) 0);
+  gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(posture_presets_combo_box), (gint) 1) ;
+  g_signal_connect( G_OBJECT( posture_presets_combo_box ), "changed", G_CALLBACK(on_posture_presets_combo_box_changed ), viewer);
+  
+  gtk_box_pack_start (GTK_BOX (hbox), vseparator, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (hbox), posture_presets_combo_box, FALSE, FALSE, 0);
+  GtkToolItem * toolitem = gtk_tool_item_new ();
+  gtk_container_add (GTK_CONTAINER (toolitem), hbox);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem), viewer->tips, "Posture Presets", NULL);
+  gtk_widget_show_all (GTK_WIDGET (toolitem));
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem, -1);
+  //--------------             
 
 
   // add custom renderer groups menu
