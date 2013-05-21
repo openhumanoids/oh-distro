@@ -23,9 +23,12 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
   planviz_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
   affgoal_listener = AffGoalListener('DRIVING_MANIP_CMD');
-
+  driving_aff_status_pub = DrivingAffordanceStatusPublisher();%'DRIVING_STEERING_AFFORDANCE_STATUS');
+  
   t0=clock;
   elapsed_ms=0;
+  ts0 = clock;
+  elapsed_ms2 = 0;
   while(1)
     if(elapsed_ms>100) %10Hz state update should be sufficient
       %disp(elapsed_ms);
@@ -37,6 +40,11 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
       end
       t0=clock;
     end
+    
+    % Publish driving manipulation affordance status
+    if (elapsed_ms2>1000 && state_machine.manip_map_received)
+        publishDrivingActuationStatus (state_machine,driving_aff_status_pub);
+    end;
   
     [xmap,affinds] = map_listener.getNextMessage(0);
     if (~isempty(xmap))
@@ -47,18 +55,21 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
    
     goal = affgoal_listener.getNextMessage(0);
     if (~isempty(goal))
-      disp('candidate manipulation plan was rejected');
-       q_breaks = state_machine.getPlanGivenAffGoal(goal);
-       qdot_breaks = 0*q_breaks;
-       s_breaks=linspace(0,1,size(q_breaks,2));
-       t_breaks=s_breaks.*(length(s_breaks)*0.001);
-       planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
-       plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+        disp('candidate manipulation plan was rejected');
+        q_breaks = state_machine.getPlanGivenAffGoal(goal);
+        qdot_breaks = 0*q_breaks;
+        s_breaks=linspace(0,1,size(q_breaks,2));
+        t_breaks=s_breaks.*(length(s_breaks)*0.001);
+        planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+        plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
     end
     elapsed_ms = etime(clock,t0)*1000;
+    elapsed_ms2 = etime(clock,ts0)*1000;
   end
 
 end
+
+
 
 %
 %
