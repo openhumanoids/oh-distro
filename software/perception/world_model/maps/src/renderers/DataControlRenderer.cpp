@@ -142,8 +142,6 @@ public:
     std::vector<affordance::AffConstPtr> affordances;
     mAffordanceWrapper->getAllAffordances(affordances);
     mAffordanceTreeModel->clear();
-    mAffordanceListBox->remove_all_columns();
-    mAffordanceListBox->append_column("name",columns.mLabel);
     for (size_t i = 0; i < affordances.size(); ++i) {
       Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
       const Gtk::TreeModel::Row& row = *localIter;
@@ -245,6 +243,7 @@ public:
     mAffordanceTreeModel = Gtk::ListStore::create(AffordanceColumns());
     mAffordanceListBox = Gtk::manage(new Gtk::TreeView());
     mAffordanceListBox->set_model(mAffordanceTreeModel);
+    mAffordanceListBox->append_column("name",columns.mLabel);
     mAffordanceListBox->get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
     scroll->add(*mAffordanceListBox);
     vbox->pack_start(*scroll, false, false);
