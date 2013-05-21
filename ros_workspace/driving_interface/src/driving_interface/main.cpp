@@ -98,7 +98,7 @@ typedef struct  {
 static int publish_gas_pedal(void *user_data){
     state_t* s = static_cast<state_t*>(user_data);
 
-    if (s->gas_pedal >=0.09) {    s->gas_pedal = 0.09; }
+    //if (s->gas_pedal >=0.09) {    s->gas_pedal = 0.09; }
     if (s->gas_pedal <=0.0) {    s->gas_pedal = 0.0; }
 
     std_msgs::Float64 msg;
