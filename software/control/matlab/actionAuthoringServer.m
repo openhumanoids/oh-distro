@@ -25,6 +25,13 @@ if(~isfield(action_options,'use_mex')) action_options.use_mex = false; end
 if(~isfield(action_options,'debug')) action_options.debug = false; end
 if(~isfield(action_options,'verbose')) action_options.verbose = false; end
 if(~isfield(action_options,'run_once')) action_options.run_once = false; end
+if(~isfield(action_options,'channel_in')) 
+  if(action_options.IK)
+    action_options.channel_in = 'REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE'; 
+  else
+    action_options.channel_in = 'REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE'; 
+  end
+end
 
 % listens for drc_action_sequence_t messages and, upon receipt, computes the
 % IK and publishes the robot_state_t
@@ -34,11 +41,11 @@ lc = lcm.lcm.LCM.getSingleton(); %('udpm://239.255.76.67:7667?ttl=1');
 % construct lcm input monitor
 monitor = drake.util.MessageMonitor(drc.action_sequence_t(),'utime');
 if (IK==1)
-  lc.subscribe('REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE',monitor);
+  lc.subscribe(action_options.channel_in,monitor);
 elseif (IK==2)
-  lc.subscribe('REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE',monitor);
+  lc.subscribe(action_options.channel_in,monitor);
 elseif (IK==3)
-  lc.subscribe('REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE',monitor);
+  lc.subscribe(action_options.channel_in,monitor);
 end
 
 % construct lcm state publisher
@@ -48,7 +55,7 @@ s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
 %r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf', [],[],struct('floating',true));
+r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf', [],[],struct('floating',true));
 r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake.urdf',[0;0;0],[0;0;0]);
 warning(s);
 
@@ -183,8 +190,7 @@ while (1)
         %end 
       %end
       
-      % Solve the IK sequentially in time for each key time, add the
-      % additional static contact constraint if necessary
+      % Solve the IK sequentially in time for each key time
       if action_sequence.key_time_samples(1) > eps
         action_sequence.tspan(1) = 0;
         action_sequence.key_time_samples = [0, action_sequence.key_time_samples];
@@ -195,6 +201,8 @@ while (1)
       q_key_time_samples(:,1) = q;
       kinsol = doKinematics(r,q_key_time_samples(:,1));
       com_key_time_samples(:,1) = getCOM(r,kinsol);
+      options.quasiStaticFlag = true;
+      options.shrinkFactor = 0.5;
       for i = 2:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
           if(isempty(ikargs))
@@ -240,21 +248,21 @@ while (1)
         options.quasiStaticFlag = true;
         %options.Qv = eye(length(q0));
         options.Qa = 1e0*eye(length(q0));
-        options.shrinkFactor = 0.5;
         %window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
         %%t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
         %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
         %t_qs_breaks(end) = action_sequence.tspan(end);
         %options.nSample = length(t_qs_breaks)-1;
         options.nSample = 1;
-        [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
-        inverse_kin_sequence_info
-        if(inverse_kin_sequence_info>10)
-          error(['IK sequence was not successful! ',num2str(t_qs_breaks(i)),' is not successful']);
-        else
-          fprintf('IK sequence successful!\n',t_qs_breaks(i));
-        end
+        %[t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
+        %inverse_kin_sequence_info
+        %if(inverse_kin_sequence_info>10)
+          %error(['IK sequence was not successful! ',num2str(t_qs_breaks(i)),' is not successful']);
+        %else
+          %fprintf('IK sequence successful!\n',t_qs_breaks(i));
+        %end
         com_qs_plan = zeros(3,numel(t_qs_breaks));
+        qdot_qs_plan = zeros(size(q_qs_plan));
         for i = 1:numel(t_qs_breaks)
           kinsol = doKinematics(r,q_qs_plan(:,i));
           [com_qs_plan(:,i),J] = getCOM(r,kinsol);
@@ -281,9 +289,10 @@ while (1)
         t_qs_breaks(end) = action_sequence.tspan(end);
         q_qs_plan = zeros(size(q_qs_plan,1),numel(t_qs_breaks));
         options.Q = 1e0*eye(length(q0));
-        options.quasiStaticFlag = false;
+        options.quasiStaticFlag = true;
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
-        for i = 1:numel(t_qs_breaks)
+        q_qs_plan(:,1) = q0;
+        for i = 2:numel(t_qs_breaks)
           ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
           if(isempty(ikargs))
             q_qs_plan(:,i) = q_qs_traj.eval(t_qs_breaks(i));
@@ -509,14 +518,11 @@ function kc = getConstraintFromGoal(r,goal)
     pos = struct();
     pos.max = inf(3,1);
     pos.min = -inf(3,1);
-    contact_aff = findLink(r,char(goal.object_2_name));
-    if isempty(contact_aff) error('couldn''t find body %s in manipulator',char(goal.object_2_name)); end
-    contact_state0 = {ActionKinematicConstraint.UNDEFINED_CONTACT*ones(1,size(collision_group_pts,2))};
-    contact_statei = {ActionKinematicConstraint.COLLISION_AVOIDANCE*ones(1,size(collision_group_pts,2))};
-    contact_statef = {ActionKinematicConstraint.UNDEFINED_CONTACT*ones(1,size(collision_group_pts,2))};
-    collision_group_name = 'N/A'
+    obstacle = findLink(r,char(goal.object_2_name));
+    if isempty(obstacle) error('couldn''t find body %s in manipulator',char(goal.object_2_name)); end
+    kc = CollisionAvoidanceConstraint(r,body_ind,tspan,kc_name,obstacle);
   else
-    contact_aff = {ContactAffordance()}
+    contact_aff = {ContactAffordance()};
     collision_group_name = char(goal.object_1_contact_grp);
     collision_group = find(strcmpi(collision_group_name,body_ind.collision_group_name));
     if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
@@ -590,11 +596,11 @@ function kc = getConstraintFromGoal(r,goal)
       contact_statei = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
       contact_statef = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
     end
+    contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+    contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+
+    %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
+    kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
   end
 
-  contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
-  contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
-
-  %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
-  kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
 end

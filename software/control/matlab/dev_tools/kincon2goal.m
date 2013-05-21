@@ -89,6 +89,8 @@ function goal = kincon2goal(kincon)
   % contact_state = 4 in static gripping contact
   if(all(kincon.contact_statei{1} == kincon.NOT_IN_CONTACT))
     goal.contact_type = goal.NOT_IN_CONTACT;
+  elseif(all(kincon.contact_statei{1} == kincon.COLLISION_AVOIDANCE))
+    goal.contact_type = goal.COLLISION_AVOIDANCE;
   else
     goal.contact_type = goal.ON_GROUND_PLANE;
   end
