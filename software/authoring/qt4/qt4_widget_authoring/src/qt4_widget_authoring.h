@@ -48,7 +48,7 @@ namespace authoring {
     void _push_button_import_pressed( void );
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
-    
+    void _slider_updated( int currentIndex );
 
   protected:
     Qt4_Widget_OpenGL_Authoring * _widget_opengl_authoring;

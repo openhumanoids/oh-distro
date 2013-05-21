@@ -31,7 +31,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
                                             _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
                                             _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
-                                            _slider_current_time( new QLabel("00:00 sec") ),
+                                            _slider_current_time( new QLabel("frame 0") ),
                                             _robot_model(),
                                             _affordance_collection(),
                                             _affordance_collection_ghost(),
@@ -113,6 +113,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
               _widget_opengl_authoring, SLOT( update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _widget_opengl_authoring, SLOT( update_opengl_object_gfe( state::State_GFE& ) ) );
   connect( _slider_plan_current_index, SIGNAL( valueChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_current_index( int ) ) );
+  connect( _slider_plan_current_index, SIGNAL( valueChanged( int ) ), this, SLOT( _slider_updated( int ) ) );
   connect( _check_box_visible_current_index, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_current_index( int ) ) );
   connect( _check_box_visible_trajectory, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory( int ) ) );
   connect( _check_box_visible_trajectory_wrist, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory_wrist( int ) ) );
@@ -238,6 +239,12 @@ _push_button_publish_pressed( void ){
   emit drc_action_sequence_t_publish( msg );     
   emit info_update( QString( "[<b>OK</b>] published constraint sequence as drc::action_sequence_t" ) ); 
   return;
+}
+
+void
+Qt4_Widget_Authoring::
+_slider_updated( int currentIndex ){
+  _slider_current_time->setText( QString( "frame %1" ).arg( currentIndex ) );
 }
 
 namespace authoring {
