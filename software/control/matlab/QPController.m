@@ -169,7 +169,8 @@ classdef QPController < MIMODrakeSystem
     x = varargin{2};
     ctrl_data = getData(obj.controller_data);
     
-%   debugging for the rpy velocities
+    r = obj.robot;
+    %   debugging for the rpy velocities
     nq = getNumDOF(obj.robot); qd = x(nq+(1:nq)); 
     
     % get foot contact state
@@ -184,7 +185,6 @@ classdef QPController < MIMODrakeSystem
         rfoot_contact_state = msg.right_contact;
       end
     else
-      r = obj.robot;
       nq = getNumDOF(r);
       contact_threshold = 0.002; % m
       q = x(1:nq); 
@@ -450,7 +450,7 @@ classdef QPController < MIMODrakeSystem
         fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
 
         % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.1*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
@@ -511,9 +511,9 @@ classdef QPController < MIMODrakeSystem
         y = alpha(nq+(1:nu));
       end
       
-      if (obj.use_mex==2)
-        des.y = y;
-      end
+%       if (obj.use_mex==2)
+%         des.y = y;
+%       end
     end
   
     if (obj.use_mex==1)
@@ -533,7 +533,7 @@ classdef QPController < MIMODrakeSystem
     end
     
     
-    if obj.debug && nc > 0
+    if obj.debug && (obj.use_mex==0 || obj.use_mex==2) && nc > 0
       if nq_free > 0
         xcomdd = Jdot * qd + J * qdd;
       else
@@ -560,53 +560,53 @@ classdef QPController < MIMODrakeSystem
         end
       end
       
-      % plot body coordinate frames
-      m=vs.obj_collection_t();
-      m.objs = javaArray('vs.obj_t', size(1, 1));
-      m.id=13300;
-      m.type=5; % rgb triad
-      m.name='Drake Body Coords';
-      m.reset=true;
-      m.nobjs=5; 
-      
-      pelvis = findLinkInd(r,'pelvis');
-      xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
-      msg=vs.obj_t();
-      msg.id=1;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-      m.objs(msg.id) = msg;
-
-      head = findLinkInd(r,'head');
-      xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
-      msg=vs.obj_t();
-      msg.id=2;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-      m.objs(msg.id) = msg;
-
-      xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
-      msg=vs.obj_t();
-      msg.id=3;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-      m.objs(msg.id) = msg;
-
-      xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
-      msg=vs.obj_t();
-      msg.id=4;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-      m.objs(msg.id) = msg;
-
-      xzyrpy = x(1:6); 
-      msg=vs.obj_t();
-      msg.id=5;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-      m.objs(msg.id) = msg;
-      
-      obj.lc.publish('OBJ_COLLECTION', m);
+%       % plot body coordinate frames
+%       m=vs.obj_collection_t();
+%       m.objs = javaArray('vs.obj_t', size(1, 1));
+%       m.id=13300;
+%       m.type=5; % rgb triad
+%       m.name='Drake Body Coords';
+%       m.reset=true;
+%       m.nobjs=5; 
+%       
+%       pelvis = findLinkInd(r,'pelvis');
+%       xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
+%       msg=vs.obj_t();
+%       msg.id=1;
+%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+%       m.objs(msg.id) = msg;
+% 
+%       head = findLinkInd(r,'head');
+%       xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
+%       msg=vs.obj_t();
+%       msg.id=2;
+%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+%       m.objs(msg.id) = msg;
+% 
+%       xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
+%       msg=vs.obj_t();
+%       msg.id=3;
+%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+%       m.objs(msg.id) = msg;
+% 
+%       xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
+%       msg=vs.obj_t();
+%       msg.id=4;
+%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+%       m.objs(msg.id) = msg;
+% 
+%       xzyrpy = x(1:6); 
+%       msg=vs.obj_t();
+%       msg.id=5;
+%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+%       m.objs(msg.id) = msg;
+%       
+%       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
     if (0)     % simple timekeeping for performance optimization

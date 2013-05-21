@@ -33,7 +33,7 @@ classdef SimplePDController < DrakeSystem
         obj.Kp = options.Kp;
       else
         obj.Kp = 170.0*eye(obj.nq);
-        obj.Kp([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
+%        obj.Kp([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
       end        
         
       if isfield(options,'Kd')
@@ -42,7 +42,7 @@ classdef SimplePDController < DrakeSystem
         obj.Kd = options.Kd;
       else
         obj.Kd = 19.0*eye(obj.nq);
-        obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
+ %       obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
       end        
         
       if isfield(options,'dt')

@@ -523,7 +523,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
       double cost = 1;
       for (i=nparams-neps; i<nparams; i++) {
-        error = GRBaddqpterms(model,1,&i,&i,&cost);
+        error = GRBaddqpterms(model,.1,&i,&i,&cost);
       }
     } else {
       // Q(1:nq_con,1:nq_con) = eye(nq_con)

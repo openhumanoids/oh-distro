@@ -58,11 +58,11 @@ classdef NeckControlBlock < MIMODrakeSystem
       
       cdata = obj.controller_data.getData();
    
-      %kinsol = doKinematics(obj.robot,q,false,true);
-      %[headpos,J] = forwardKin(obj.robot,kinsol,obj.head_idx,[0;0;0],1); 
-      %K = 1/J(5,obj.neck_idx); % just need the sign, really
+      kinsol = doKinematics(obj.robot,q,false,true);
+      [~,J] = forwardKin(obj.robot,kinsol,obj.head_idx,[0;0;0],1); 
+      K = 1/J(5,obj.neck_idx); % just need the sign, really
 
-      K = 1;
+%       K = 1;
       neck_max_delta = 0.05;
 
       qtraj = cdata.qtraj;
@@ -77,7 +77,7 @@ classdef NeckControlBlock < MIMODrakeSystem
       neck_des = q(obj.neck_idx) + delta;
 
       qtraj = cdata.qtraj;
-      qtraj(obj.neck_idx) = neck_des; 
+      qtraj(obj.neck_idx) = neck_des; % THIS IS RIDICULOUSLY SLOW >>> FIX
       
       obj.controller_data.setField('qtraj',qtraj);
 
