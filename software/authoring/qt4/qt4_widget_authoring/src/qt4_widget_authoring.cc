@@ -20,7 +20,7 @@ Qt4_Widget_Authoring::
 Qt4_Widget_Authoring( const std::string& urdfFilename, 
                       unsigned int numConstraints,
                       QWidget * parent ) : QWidget( parent ),
-                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( this ) ),
+                                           _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( Kinematics_Model_GFE::urdf_filename_to_xml_string(urdfFilename), this ) ),
                                             _text_edit_info( new QTextEdit( "[<b>OK</b>] authoring widget started", this ) ),
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
                                             _push_button_import( new QPushButton( QString( "import" ), this ) ),
@@ -134,7 +134,7 @@ Qt4_Widget_Authoring::
 
 Qt4_Widget_Authoring::
 Qt4_Widget_Authoring( const Qt4_Widget_Authoring& other ) : QWidget(),
-                                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( this ) ) {
+                                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( "n/a", this ) ) {
 
 }
 

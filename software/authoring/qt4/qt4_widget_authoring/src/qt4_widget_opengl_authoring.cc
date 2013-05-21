@@ -7,12 +7,12 @@ using namespace opengl;
 using namespace authoring;
 
 Qt4_Widget_OpenGL_Authoring::
-Qt4_Widget_OpenGL_Authoring( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
+Qt4_Widget_OpenGL_Authoring( const std::string& urdfXmlString, QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                                   _opengl_object_affordance_collection(),
                                                   _opengl_object_affordance_collection_ghost(),
                                                   _opengl_object_robot_plan(),
-                                                  _opengl_object_gfe(),
-                                                  _opengl_object_gfe_ghost(),
+                                                  _opengl_object_gfe( urdfXmlString ),
+                                                  _opengl_object_gfe_ghost( urdfXmlString ),
                                                   _timer_update( new QTimer( this ) ) {
   setMinimumSize( 800, 400 );
 
