@@ -54,6 +54,7 @@ class TwoLegOdometry {
 		BipolarSchmittTrigger* _vel_spike_isolation[3];
 		NumericalDiff accel;
 		NumericalDiff pelvis_vel_diff;
+		DistributedDiff d_pelvis_vel_diff;
 		
 		HeavyFiltering::HeavyLowPassFilter lpfilter[3];
 		//Filter* _filter[3];

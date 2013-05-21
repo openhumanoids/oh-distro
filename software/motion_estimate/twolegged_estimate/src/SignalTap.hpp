@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <vector>
+#include <boost/circular_buffer.hpp>
 
 // objects and functions for generic operations on data
 
@@ -77,6 +79,46 @@ public:
 	Eigen::VectorXd diff(const unsigned long long &ts, const Eigen::VectorXd &sample);
 	void diff(const unsigned long long &ts, int count, double sample[]);
 	
+};
+
+class DistributedDiff {
+private:
+	Eigen::VectorXd timespans;
+	Eigen::VectorXd weights;
+	int individual_diffs;
+	int size;
+	int hist_len;
+	bool sizeset;
+	bool hist_len_set;
+	unsigned long max_hist_utime;
+	unsigned long period;
+
+	Eigen::VectorXd cum_sum;
+	Eigen::VectorXd cum_sum_buf;
+
+	Eigen::VectorXd alldiffs;
+
+	// This could be built into a single struct if you bored
+	boost::circular_buffer<Eigen::VectorXd*> _state_hist;
+	boost::circular_buffer<unsigned long long> utimes;
+
+	void addDataToBuffer(const unsigned long long &u_ts, const Eigen::VectorXd &samples);
+	Eigen::VectorXd searchHistElement(const unsigned long &delta_u_ts, unsigned long *actual_delta_u_ts);
+	Eigen::VectorXd findDifferentialFromLatest(const unsigned long &desired_hist_ut);
+	Eigen::VectorXd FindDifferentials();
+
+public:
+	DistributedDiff();
+	~DistributedDiff();
+
+	bool ready();
+
+	void setSize(int s);
+
+	void InitializeTaps(int hist_length, const long &per, const Eigen::VectorXd &w, const Eigen::VectorXd &t);
+
+	Eigen::VectorXd diff(const unsigned long long &u_ts, const Eigen::VectorXd &samples);
+
 };
 
 class TrapezoidalInt {

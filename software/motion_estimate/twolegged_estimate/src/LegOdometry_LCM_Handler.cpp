@@ -1015,10 +1015,10 @@ int LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, cons
 	Eigen::VectorXd int_vals(num_joints);
 	Eigen::VectorXd diff_vals(num_joints);
 
-	std::cout << " | " << std::fixed << alljoints[5];
+	//std::cout << " | " << std::fixed << alljoints[5];
 	// Integrate to lose noise, but keep information
 	int_vals = joint_integrator.integrate(ts, num_joints, alljoints);
-	std::cout << " i: " << int_vals(5);
+	//std::cout << " i: " << int_vals(5);
 
 
 	// we are looking for a 200Hz process -- 5ms

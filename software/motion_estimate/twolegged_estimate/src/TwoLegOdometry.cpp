@@ -36,6 +36,12 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	local_velocities.setZero();
 	accel.setSize(3);
 	pelvis_vel_diff.setSize(3);
+	d_pelvis_vel_diff.setSize(3);
+	Eigen::VectorXd w(5);
+	Eigen::VectorXd ut(5);
+	w << .25,.15,.25,.2,.15;
+	ut << 5000, 10000, 20000, 30000, 50000;
+	d_pelvis_vel_diff.InitializeTaps(10, 5000, w,ut);
 	
 	leftforces.x = 0.f;
 	leftforces.y = 0.f;
@@ -622,13 +628,15 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
 
-	unfiltered_vel = pelvis_vel_diff.diff(current_time, current_position);
+	//unfiltered_vel = pelvis_vel_diff.diff(current_time, current_position);
+	unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
 
-	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
+
+	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
 	local_accelerations = accel.diff(current_time, local_velocities);
 	
-	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
+	//accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
 	/*
 	if (false) {
@@ -664,10 +672,10 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 		//std::cout << "The filtered velocities are: " << local_velocities.transpose() << std::endl;
 	}
 	
-	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
+	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
 	
-	accel_data_ss << std::endl;
-	accel_spike_isolation_log << accel_data_ss.str();
+	//accel_data_ss << std::endl;
+	//accel_spike_isolation_log << accel_data_ss.str();
 	
 	previous_isometry = getPelvisState();
 	previous_isometry_time = current_time;

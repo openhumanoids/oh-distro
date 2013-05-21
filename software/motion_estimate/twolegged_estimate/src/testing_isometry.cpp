@@ -134,6 +134,46 @@ int main() {
 
 	cout << endl;
 
+	cout << "============TESTING DistributedDiff+++++++++++++\n";
+
+	DistributedDiff diffs;
+	diffs.setSize(1);
+	Eigen::VectorXd w(3);
+	Eigen::VectorXd ut(3);
+
+	Eigen::VectorXd sample(1);
+
+	w << .5,0.25,0.25;
+	ut << 1000,4000,5000;
+
+
+	diffs.InitializeTaps(5, 1000, w,ut);
+
+	assert(diffs.ready());
+
+	sample << 1;
+	cout << " | " << diffs.diff(1000,sample) << "\n";
+	sample << 3;
+	cout  <<  " | " << diffs.diff(2000,sample) << "\n";
+	sample << 6;
+	cout << " | " << diffs.diff(3000,sample) << "\n";
+	sample << 10;
+	cout << " | " << diffs.diff(4000,sample) << "\n";
+	sample << 15;
+	cout << " | " << diffs.diff(5000,sample) << "\n";
+
+	sample << 15;
+	cout << " | " << diffs.diff(6000,sample) << "\n";
+	sample << 10;
+	cout  <<  " | " << diffs.diff(7000,sample) << "\n";
+	sample << 6;
+	cout << " | " << diffs.diff(8000,sample) << "\n";
+	sample << 3;
+	cout << " | " << diffs.diff(9000,sample) << "\n";
+	sample << 1;
+	cout << " | " << diffs.diff(10000,sample) << "\n";
+
+	cout << endl;
 
 	return 0;
 }

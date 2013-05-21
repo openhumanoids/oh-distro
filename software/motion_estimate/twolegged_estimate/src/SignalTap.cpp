@@ -209,6 +209,194 @@ void NumericalDiff::diff(const unsigned long long &ts, int count, double sample[
 	}
 }
 
+DistributedDiff::DistributedDiff() {
+	hist_len = 0;
+	size = 0;
+	period = 0;
+	max_hist_utime = 0;
+	individual_diffs = 0;
+	sizeset = false;
+	hist_len_set = false;
+}
+
+DistributedDiff::~DistributedDiff() {
+
+	if (hist_len_set && sizeset) {
+		for (int i=0;i<hist_len;i++) {
+			delete _state_hist[i];
+		}
+	}
+
+	std::cout << "DistributedDiff object was destroyed.\n";
+}
+
+void DistributedDiff::setSize(int s) {
+	size = s;
+	sizeset = true;
+
+	cum_sum.resize(size);
+	cum_sum_buf.resize(size);
+}
+
+void DistributedDiff::InitializeTaps(int hist_length, const long &per, const Eigen::VectorXd &w, const Eigen::VectorXd &t) {
+
+	assert(sizeset);
+	assert(hist_length>0);
+	assert(per > 0);
+
+	// we need to allocate one more memory location for the current sample. History is stored in the elements beyond that
+
+	hist_len = hist_length+1;
+	_state_hist.resize(hist_len, NULL);
+	utimes.resize(hist_len, 0);
+	for (int i=0;i<hist_len;i++) {
+		_state_hist[i] = new Eigen::VectorXd(size);
+		_state_hist[i]->setZero();
+	}
+
+	//std::cout << "init value of 2 is: " <<  *_state_hist[2] << std::endl;
+
+	hist_len_set = true;
+
+	weights = w;
+	timespans = t;
+	period = per;
+	max_hist_utime = hist_len*period;
+
+	individual_diffs = timespans.size();
+}
+
+void DistributedDiff::addDataToBuffer(const unsigned long long &u_ts, const Eigen::VectorXd &samples) {
+	utimes.push_back(u_ts);
+
+	Eigen::VectorXd *_temp;
+	_temp = _state_hist.front();
+	_state_hist.push_back(_temp);
+
+	*(_state_hist.back()) = (samples);
+}
+
+// find Differential between the latest sample and the desired point back in history
+Eigen::VectorXd DistributedDiff::findDifferentialFromLatest(const unsigned long &desired_hist_ut) {
+	assert(desired_hist_ut>0);
+
+	unsigned long actual_delta_ut;
+
+	// now we need to find where this sample is back in the stored history state
+	Eigen::VectorXd prev_sample;
+	prev_sample = searchHistElement(desired_hist_ut, &actual_delta_ut);
+
+	double firstval = (*_state_hist.back())(0);
+	double secondval = (prev_sample)(0);
+
+
+	//std::cout << "Actual Time period used: " << actual_delta_ut << " taking the diff between: " << firstval << " - " << prev_sample << std::endl;
+
+	return (*_state_hist.back() - prev_sample) / ((double) actual_delta_ut*1.E-6);
+}
+
+bool DistributedDiff::ready() {
+	return (sizeset && hist_len_set);
+}
+
+Eigen::VectorXd DistributedDiff::FindDifferentials() {
+
+	// Eigen does not ensure x = x + a
+	cum_sum.setZero();
+
+	Eigen::VectorXd temp(size);
+
+	for (int i=0;i<individual_diffs;i++) {
+		temp = findDifferentialFromLatest(timespans(i));
+		//std::cout << "i=" << i << " -- " << temp.transpose() << std::endl;
+		cum_sum_buf = cum_sum + weights(i)*temp;
+		cum_sum = cum_sum_buf;
+	}
+
+	return cum_sum;
+}
+
+Eigen::VectorXd DistributedDiff::searchHistElement(const unsigned long &delta_u_ts, unsigned long *actual_delta_u_ts) {
+
+	if (delta_u_ts<=0) {
+		std::cout << "DistributedDiff::searchHistElement -- Can not differentiate into the future, we do not know what those values are going to be yet\n";
+		return Eigen::VectorXd::Zero(size);
+	}
+
+	int searchingflag = hist_len;
+
+	int predicted_index = hist_len - (int)(delta_u_ts/period) - 2;
+	if (predicted_index>= hist_len) {
+		predicted_index = hist_len - 2;
+	}
+	if (predicted_index <=0) {
+		predicted_index = 0;
+	}
+
+	/*std::cout << "BUF is: ";
+	for (int i=0;i<hist_len;i++) {
+		std::cout << (*_state_hist[i])<< " | ";
+	}*/
+
+	//std::cout <<std::endl;
+
+	// may have to search up or down
+	while (searchingflag>-1) {
+		searchingflag--;
+
+		// what is the termination condition
+		if (abs((utimes.back() - utimes[predicted_index]) - delta_u_ts) <= (0.5*period)) {
+			// we have found it
+			*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes[predicted_index]);
+			return *_state_hist[predicted_index];
+		} else {
+			// first we can be too far back into history
+			if (delta_u_ts < (utimes.back() - utimes[predicted_index])) {
+				// reduce history search depth
+				predicted_index++; // move towards the back of the circular buffer (.back() is the newest value)
+				//std::cout << "Searching one newer\n";
+				if ((predicted_index+1)>=hist_len) {
+					// We are right at the newest data -- have to return a single period differential
+					*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes[hist_len-2]);
+					return *_state_hist[hist_len-2];
+				}
+			} else {
+				// we may be to shallow in history
+				if ((utimes.back() - utimes[predicted_index]) < delta_u_ts ) {
+					// not deep enough into the history -- increase depth
+					predicted_index--; // move closer to the front of the circular buffer
+					//std::cout << "Searching one older\n";
+					if (predicted_index <= 0) {
+						// there is no greater history to give, so give the max depth
+						*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes.front());
+						return *_state_hist.front();
+					}
+				}
+			}
+		}
+	}
+
+	std::cout << "DistributedDiff::searchHistElement - -something has gone wrong while trying to find an index\n";
+	*actual_delta_u_ts = period; // the function higher up may want to divide with this delta time -- we already going to return a zero numerator
+	return Eigen::VectorXd::Zero(size);
+}
+
+Eigen::VectorXd DistributedDiff::diff(const unsigned long long &u_ts, const Eigen::VectorXd &samples) {
+
+	addDataToBuffer(u_ts, samples);
+
+	// Next we want to calculate all the differentials
+	Eigen::VectorXd diff(size);
+	diff = FindDifferentials();
+
+	return diff;
+}
+
+
+
+
+
+
 
 TrapezoidalInt::TrapezoidalInt() {
 	setSize(1);
