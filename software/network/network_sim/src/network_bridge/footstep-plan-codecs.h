@@ -7,9 +7,6 @@
 
 #include "footstep-plan-analogs.pb.h"
 
-enum { TRANSLATION_PRECISION = 3 };
-    
-
 class FootStepPlanCodec : public CustomChannelCodec
 {
   public:

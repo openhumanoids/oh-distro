@@ -48,12 +48,19 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
             const drc::footstep_goal_t& previous_lcm_goal = lcm_object.footstep_goals[i-1];
             const drc::footstep_goal_t& later_lcm_goal = lcm_object.footstep_goals[i];
             goal_diff->add_utime_diff(later_lcm_goal.utime-previous_lcm_goal.utime);
+
+            // pre-round the values to avoid cumulative rounding errors
+            const int TRANSLATION_X_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_x")->options().GetExtension(dccl::field).precision();
+            const int TRANSLATION_Y_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_y")->options().GetExtension(dccl::field).precision();
+            const int TRANSLATION_Z_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_z")->options().GetExtension(dccl::field).precision();
+            
+           
             goal_diff->add_translation_x_diff(later_lcm_goal.pos.translation.x-
-                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.x, TRANSLATION_PRECISION));
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.x, TRANSLATION_X_PRECISION));
             goal_diff->add_translation_y_diff(later_lcm_goal.pos.translation.y-
-                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.y, TRANSLATION_PRECISION));
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.y, TRANSLATION_Y_PRECISION));
             goal_diff->add_translation_z_diff(later_lcm_goal.pos.translation.z-
-                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.z, TRANSLATION_PRECISION));
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.translation.z, TRANSLATION_Z_PRECISION));
             //goal_diff->add_step_speed_diff(later_lcm_goal.step_speed-previous_lcm_goal.step_speed);
             // id should just increment
             
