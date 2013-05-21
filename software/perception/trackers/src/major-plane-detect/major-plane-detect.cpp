@@ -27,7 +27,7 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   mapSpec.mResolution = 0.01;
   mActiveMapId = mCollector->getMapManager()->createMap(mapSpec);
   // start running wrapper
-  std::string laserChannel("SCAN");
+  std::string laserChannel("SCAN_FREE");
   mCollector->getDataReceiver()->addChannel(laserChannel, SensorDataReceiver::SensorTypePlanarLidar, laserChannel, "local");
   mCollector->start();  
 

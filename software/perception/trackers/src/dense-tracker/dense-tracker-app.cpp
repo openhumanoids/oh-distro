@@ -294,7 +294,7 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 int main(int argc, char ** argv) {
-  string lidar_channel = "SCAN";
+  string lidar_channel = "SCAN_FREE";
   int affordance_id=0;
   bool use_plane_tracker =false;  
   int plane_affordance_id=0;

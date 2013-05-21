@@ -218,7 +218,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 int main(int argc, char ** argv) {
-  string lidar_channel = "SCAN";
+  string lidar_channel = "SCAN_FREE";
   int plane_affordance_id=-1; // by default dont track anything
   int tracker_instance_id=0; // id of this tracker instance. Plane Tracker==0, otherwise above that
   int verbose=0;
