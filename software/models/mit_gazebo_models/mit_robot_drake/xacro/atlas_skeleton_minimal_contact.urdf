@@ -229,6 +229,18 @@
                 <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1. 1. 1." />
             </geometry>
         </visual>
+        <collision group="butt">
+          <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
+        <collision group="butt">
+          <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
     </link>
     <link name="r_clav">
         <inertial>
