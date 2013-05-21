@@ -1,0 +1,207 @@
+<?xml version="1.0"?>
+<!-- Changes from sandia_hand_simple_shapes.urdf.xacro in  /usr/share/sandia-hand-5.1/ros/sandia_hand_description package -->
+<!-- 
+ 1) Copied unchanged finger macro to a new thumb macro
+ 2) Commented out all existing mesh collision elements
+ 5) Added custom collision elements to links "${side}_f${idx}_2_accel" in thumb macro 
+ 6) Added custom collision elements to links "${side}_f${idx}_fixed_accel, and ${side}_f${idx}_2_accel" in finger macro
+ 7) Commented out finger base Joint "${side}_f${idx}_j0" in finger macro and readded custom Joints for f0,f1 and f2 in the hand macro.
+ 8) Added a dummy knuckle link and also dummy accel_2 links and associated joints to finger macro.
+ 9) Added a  dummy accel_2 links and associated joints to finger macro.
+-->
+
+<robot name="sandia_hand"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
+
+  <xacro:property name="M_pi" value="3.1415926535897931" />
+
+  <xacro:macro name="sandia_hand" params="side parent reflect *origin">
+    <link name="${side}_palm">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.3"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of palm -->
+      <collision group="default">
+        <origin xyz="0.069 ${0.016 * reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9 * reflect}"/>
+        <geometry>
+          <cylinder radius="0.013" length="0.100" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.064 ${0.008 * reflect} 0.021" rpy="0.41 0 ${-0.9 * reflect}"/>
+        <geometry>
+          <box size="0.09 .035 .05" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.038" length="0.05" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision>
+      <collision group="knuckle">
+        <origin xyz="0.155 0 -0.01" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>
+      <collision group="knuckle">
+        <origin xyz="0.155 0 0.01" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>
+      <collision group="knuckle">
+        <origin xyz="0.15 0.01 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>
+      <visual group="knuckle">
+        <origin xyz="0.155 0 -0.01" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.005"/>
+        </geometry>
+      </visual>
+      <visual group="knuckle">
+        <origin xyz="0.155 0 0.01" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.005"/>
+        </geometry>
+      </visual>
+      <visual group="knuckle">
+        <origin xyz="0.15 0.01 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.005"/>
+        </geometry>
+      </visual>
+      <collision group="other">
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision>
+      <!--   end simple shape approximation of palm -->
+      <!-- begin visual shape approximation of palm -->
+      <visual>
+        <origin xyz="0.069 ${0.016*reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9*reflect}"/>
+        <geometry>
+          <cylinder radius="0.013" length="0.100" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.064 ${0.008*reflect} 0.021" rpy="0.41 0 ${-0.9*reflect}"/>
+        <geometry>
+          <box size="0.09 .035 .05" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.038" length="0.05" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of palm -->
+      <!-- begin collision mesh of f2 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f2 -->
+    </link>
+
+    <joint name="${side}_sandia_hand_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${side}_palm"/>
+      <insert_block name="origin" />
+    </joint>
+
+    <!-- not needed unless simulating the hand by itself
+    <xacro:sandia_hand_gazebo side="${side}" />
+    -->
+
+  </xacro:macro>
+</robot>
+
