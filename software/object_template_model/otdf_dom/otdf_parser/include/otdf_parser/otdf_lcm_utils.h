@@ -36,8 +36,14 @@ namespace otdf{
       return false; // file extraction failed
     }
         
+ 
     boost::shared_ptr<ModelInterface> otdf_instance = parseOTDF(otdf_xml_string); 
-       
+    otdf_instance->setParam("x",msg.origin_xyz[0]);   
+    otdf_instance->setParam("y",msg.origin_xyz[1]);  
+    otdf_instance->setParam("z",msg.origin_xyz[2]); 
+    otdf_instance->setParam("roll",msg.origin_rpy[0]);   
+    otdf_instance->setParam("pitch",msg.origin_rpy[1]);  
+    otdf_instance->setParam("yaw",msg.origin_rpy[2]); 
     for(int i=0;i<msg.nparams;i++){
       otdf_instance->setParam(msg.param_names[i],msg.params[i]); 
     }
