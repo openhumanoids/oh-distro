@@ -206,6 +206,20 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   type_layout->addWidget( _combo_box_type );
   type_group_box->setLayout( type_layout );
 
+  _push_button_x_min->setCheckable(true);
+  _push_button_x_min->setCheckable(true);
+  _push_button_x_max->setCheckable(true);
+  _push_button_y_min->setCheckable(true);
+  _push_button_y_max->setCheckable(true);
+  _push_button_z_min->setCheckable(true);
+  _push_button_z_max->setCheckable(true);
+  _push_button_roll_min->setCheckable(true);
+  _push_button_roll_max->setCheckable(true);
+  _push_button_pitch_min->setCheckable(true);
+  _push_button_pitch_max->setCheckable(true);
+  _push_button_yaw_min->setCheckable(true);
+  _push_button_yaw_max->setCheckable(true);
+  
   QGroupBox * range_group_box = new QGroupBox( "range" );
   QGridLayout * range_layout = new QGridLayout();
   range_layout->addWidget( _push_button_x_min, 0, 0 );
@@ -406,6 +420,193 @@ _constraint_changed( int index ){
   }
   return;
 }
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_x_minimize( void )
+{
+    if (_push_button_x_min->isChecked()) {
+        _double_spin_box_x_min_cached = _double_spin_box_x_min->value(); 
+        _double_spin_box_x_min->setValue( _double_spin_box_x_min->minimum() );
+    } else {
+        _double_spin_box_x_min->setValue( _double_spin_box_x_min_cached );
+    }
+    _double_spin_box_x_min->setEnabled( !( _push_button_x_min->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_y_minimize( void )
+{
+    if (_push_button_y_min->isChecked()) {
+        _double_spin_box_y_min_cached = _double_spin_box_y_min->value(); 
+        _double_spin_box_y_min->setValue( _double_spin_box_y_min->minimum() );
+    } else {
+        _double_spin_box_y_min->setValue( _double_spin_box_y_min_cached );
+    }
+    _double_spin_box_y_min->setEnabled( !( _push_button_y_min->isChecked() ) );
+
+    return; 
+};
+
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_z_minimize( void )
+{
+    if (_push_button_z_min->isChecked()) {
+        _double_spin_box_z_min_cached = _double_spin_box_z_min->value(); 
+        _double_spin_box_z_min->setValue( _double_spin_box_z_min->minimum() );
+    } else {
+        _double_spin_box_z_min->setValue( _double_spin_box_z_min_cached );
+    }
+    _double_spin_box_z_min->setEnabled( !( _push_button_z_min->isChecked() ) );
+
+    return; 
+};
+
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_x_maximize( void )
+{
+    if (_push_button_x_max->isChecked()) {
+        _double_spin_box_x_max_cached = _double_spin_box_x_max->value(); 
+        _double_spin_box_x_max->setValue( _double_spin_box_x_max->maximum() );
+    } else {
+        _double_spin_box_x_max->setValue( _double_spin_box_x_max_cached );
+    }
+    _double_spin_box_x_max->setEnabled( !( _push_button_x_max->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_y_maximize( void )
+{
+    if (_push_button_y_max->isChecked()) {
+        _double_spin_box_y_max_cached = _double_spin_box_y_max->value(); 
+        _double_spin_box_y_max->setValue( _double_spin_box_y_max->maximum() );
+    } else {
+        _double_spin_box_y_max->setValue( _double_spin_box_y_max_cached );
+    }
+    _double_spin_box_y_max->setEnabled( !( _push_button_y_max->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_z_maximize( void )
+{
+    if (_push_button_z_max->isChecked()) {
+        _double_spin_box_z_max_cached = _double_spin_box_z_max->value(); 
+        _double_spin_box_z_max->setValue( _double_spin_box_z_max->maximum() );
+    } else {
+        _double_spin_box_z_max->setValue( _double_spin_box_z_max_cached );
+    }
+    _double_spin_box_z_max->setEnabled( !( _push_button_z_max->isChecked() ) );
+
+    return; 
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_roll_minimize( void )
+{
+    if (_push_button_roll_min->isChecked()) {
+        _double_spin_box_roll_min_cached = _double_spin_box_roll_min->value(); 
+        _double_spin_box_roll_min->setValue( _double_spin_box_roll_min->minimum() );
+    } else {
+        _double_spin_box_roll_min->setValue( _double_spin_box_roll_min_cached );
+    }
+    _double_spin_box_roll_min->setEnabled( !( _push_button_roll_min->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_pitch_minimize( void )
+{
+    if (_push_button_pitch_min->isChecked()) {
+        _double_spin_box_pitch_min_cached = _double_spin_box_pitch_min->value(); 
+        _double_spin_box_pitch_min->setValue( _double_spin_box_pitch_min->minimum() );
+    } else {
+        _double_spin_box_pitch_min->setValue( _double_spin_box_pitch_min_cached );
+    }
+    _double_spin_box_pitch_min->setEnabled( !( _push_button_pitch_min->isChecked() ) );
+
+    return; 
+};
+
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_yaw_minimize( void )
+{
+    if (_push_button_yaw_min->isChecked()) {
+        _double_spin_box_yaw_min_cached = _double_spin_box_yaw_min->value(); 
+        _double_spin_box_yaw_min->setValue( _double_spin_box_yaw_min->minimum() );
+    } else {
+        _double_spin_box_yaw_min->setValue( _double_spin_box_yaw_min_cached );
+    }
+    _double_spin_box_yaw_min->setEnabled( !( _push_button_yaw_min->isChecked() ) );
+
+    return; 
+};
+
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_roll_maximize( void )
+{
+    if (_push_button_roll_max->isChecked()) {
+        _double_spin_box_roll_max_cached = _double_spin_box_roll_max->value(); 
+        _double_spin_box_roll_max->setValue( _double_spin_box_roll_max->maximum() );
+    } else {
+        _double_spin_box_roll_max->setValue( _double_spin_box_roll_max_cached );
+    }
+    _double_spin_box_roll_max->setEnabled( !( _push_button_roll_max->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_pitch_maximize( void )
+{
+    if (_push_button_pitch_max->isChecked()) {
+        _double_spin_box_pitch_max_cached = _double_spin_box_pitch_max->value(); 
+        _double_spin_box_pitch_max->setValue( _double_spin_box_pitch_max->maximum() );
+    } else {
+        _double_spin_box_pitch_max->setValue( _double_spin_box_pitch_max_cached );
+    }
+    _double_spin_box_pitch_max->setEnabled( !( _push_button_pitch_max->isChecked() ) );
+
+    return; 
+};
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
+_range_yaw_maximize( void )
+{
+    if (_push_button_yaw_max->isChecked()) {
+        _double_spin_box_yaw_max_cached = _double_spin_box_yaw_max->value(); 
+        _double_spin_box_yaw_max->setValue( _double_spin_box_yaw_max->maximum() );
+    } else {
+        _double_spin_box_yaw_max->setValue( _double_spin_box_yaw_max_cached );
+    }
+    _double_spin_box_yaw_max->setEnabled( !( _push_button_yaw_max->isChecked() ) );
+
+    return; 
+};
 
 namespace authoring {
   ostream&

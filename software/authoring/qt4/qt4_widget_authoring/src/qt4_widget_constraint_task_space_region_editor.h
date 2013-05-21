@@ -31,18 +31,19 @@ namespace authoring {
     void _constraint_changed( int index );
 
   protected slots:
-    inline void _range_x_minimize( void ){ _double_spin_box_x_min->setValue( _double_spin_box_x_min->minimum() ); return; };
-    inline void _range_x_maximize( void ){ _double_spin_box_x_max->setValue( _double_spin_box_x_max->maximum() ); return; };
-    inline void _range_y_minimize( void ){ _double_spin_box_y_min->setValue( _double_spin_box_y_min->minimum() ); return; };
-    inline void _range_y_maximize( void ){ _double_spin_box_y_max->setValue( _double_spin_box_y_max->maximum() ); return; };
-    inline void _range_z_minimize( void ){ _double_spin_box_z_min->setValue( _double_spin_box_z_min->minimum() ); return; };
-    inline void _range_z_maximize( void ){ _double_spin_box_z_max->setValue( _double_spin_box_z_max->maximum() ); return; };
-    inline void _range_roll_minimize( void ){ _double_spin_box_roll_min->setValue( _double_spin_box_roll_min->minimum() ); return; };
-    inline void _range_roll_maximize( void ){ _double_spin_box_roll_max->setValue( _double_spin_box_roll_max->maximum() ); return; };
-    inline void _range_pitch_minimize( void ){ _double_spin_box_pitch_min->setValue( _double_spin_box_pitch_min->minimum() ); return; };
-    inline void _range_pitch_maximize( void ){ _double_spin_box_pitch_max->setValue( _double_spin_box_pitch_max->maximum() ); return; };
-    inline void _range_yaw_minimize( void ){ _double_spin_box_yaw_min->setValue( _double_spin_box_yaw_min->minimum() ); return; };
-    inline void _range_yaw_maximize( void ){ _double_spin_box_yaw_max->setValue( _double_spin_box_yaw_max->maximum() ); return; };
+  protected slots:
+    void _range_x_minimize( void );
+    void _range_x_maximize( void );
+    void _range_y_minimize( void );
+    void _range_y_maximize( void );
+    void _range_z_minimize( void );
+    void _range_z_maximize( void );
+    void _range_roll_minimize( void );
+    void _range_roll_maximize( void );
+    void _range_pitch_minimize( void );
+    void _range_pitch_maximize( void );
+    void _range_yaw_minimize( void );
+    void _range_yaw_maximize( void );
 
   protected:
     Constraint_Task_Space_Region * _constraint;
@@ -84,6 +85,19 @@ namespace authoring {
     QDoubleSpinBox * _double_spin_box_child_to_constraint_x;
     QDoubleSpinBox * _double_spin_box_child_to_constraint_y;
     QDoubleSpinBox * _double_spin_box_child_to_constraint_z;
+
+    double _double_spin_box_x_min_cached;
+    double _double_spin_box_x_max_cached;
+    double _double_spin_box_y_min_cached;
+    double _double_spin_box_y_max_cached;
+    double _double_spin_box_z_min_cached;
+    double _double_spin_box_z_max_cached;
+    double _double_spin_box_roll_min_cached;
+    double _double_spin_box_roll_max_cached;
+    double _double_spin_box_pitch_min_cached;
+    double _double_spin_box_pitch_max_cached;
+    double _double_spin_box_yaw_min_cached;
+    double _double_spin_box_yaw_max_cached;
 
   private:
 

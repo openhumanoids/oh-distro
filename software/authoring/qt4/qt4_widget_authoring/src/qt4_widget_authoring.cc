@@ -1,6 +1,7 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QGroupBox>
+#include <QtGui/QSplitter>
 #include <QFileDialog>
 #include <kinematics/kinematics_model_gfe.h>
 
@@ -88,11 +89,22 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   tab_widget->addTab( constraints_scroll_area, QString( "constraints" ) ); 
   tab_widget->addTab( plan_scroll_area, QString( "plan" ) ); 
 
+  QVBoxLayout * widget_layout_lower = new QVBoxLayout();
+  widget_layout_lower->addWidget( _text_edit_info );
+  widget_layout_lower->addWidget( controls_group_box );
+  widget_layout_lower->addWidget( tab_widget );
+  QWidget * widget_lower = new QWidget();
+  widget_lower->setLayout( widget_layout_lower );
+
+  QSplitter *splitter = new QSplitter();
+  splitter->addWidget( _widget_opengl_authoring );
+  splitter->addWidget( widget_lower );
+  splitter->setOrientation( Qt::Vertical );
+  splitter->setStretchFactor( 0, 1 ); // give the top as much space as possible
+  splitter->setStretchFactor( 1, 0 ); // give the bottom a stretch factor of 0
+
   QGridLayout * widget_layout = new QGridLayout();
-  widget_layout->addWidget( _widget_opengl_authoring );
-  widget_layout->addWidget( _text_edit_info );
-  widget_layout->addWidget( controls_group_box );
-  widget_layout->addWidget( tab_widget );
+  widget_layout->addWidget(splitter);
   setLayout( widget_layout );
 
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
