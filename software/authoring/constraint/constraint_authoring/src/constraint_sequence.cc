@@ -78,7 +78,7 @@ to_msg( action_sequence_t& msg ){
   msg.robot_name = "atlas";
   _q0.to_lcm( &msg.q0 );
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
-    if( (*it) != NULL ){
+    if( (*it) != NULL && (*it)->active() ) {
       (*it)->add_to_drc_action_sequence_t( msg );
     }
   }
