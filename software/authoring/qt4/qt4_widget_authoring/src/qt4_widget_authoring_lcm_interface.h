@@ -19,7 +19,7 @@ namespace authoring {
   class Qt4_Widget_Authoring_LCM_Interface : public QMainWindow {
     Q_OBJECT
   public:
-    Qt4_Widget_Authoring_LCM_Interface( QWidget * parent = 0 );
+    Qt4_Widget_Authoring_LCM_Interface( const std::string& urdfFilename, QWidget * parent = 0 );
     ~Qt4_Widget_Authoring_LCM_Interface();
     Qt4_Widget_Authoring_LCM_Interface( const Qt4_Widget_Authoring_LCM_Interface& other );
     Qt4_Widget_Authoring_LCM_Interface& operator=( const Qt4_Widget_Authoring_LCM_Interface& other );

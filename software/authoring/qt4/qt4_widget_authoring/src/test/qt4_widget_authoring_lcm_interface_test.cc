@@ -14,7 +14,14 @@ main( int argc,
   
   QApplication app( argc, argv );
 
-  Qt4_Widget_Authoring_LCM_Interface qt4_widget_authoring_lcm_interface;
+  std::string defaultUrdf = "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf";
+  std::string urdfFilename = defaultUrdf;
+  if ( argc >= 2 ) {
+      urdfFilename = argv[1];
+      std::cout << "using non-default urdf from : " << urdfFilename << std::endl;
+  }
+
+  Qt4_Widget_Authoring_LCM_Interface qt4_widget_authoring_lcm_interface(urdfFilename);
   qt4_widget_authoring_lcm_interface.show();
 
   return app.exec();

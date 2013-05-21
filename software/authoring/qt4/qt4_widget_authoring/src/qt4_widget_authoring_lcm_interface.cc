@@ -8,10 +8,10 @@ using namespace state;
 using namespace authoring;
 
 Qt4_Widget_Authoring_LCM_Interface::
-Qt4_Widget_Authoring_LCM_Interface( QWidget * parent ) : QMainWindow( parent ),
+Qt4_Widget_Authoring_LCM_Interface( const std::string& urdfFilename, QWidget * parent ) : QMainWindow( parent ),
                                                           _lcm( new LCM() ),
                                                           _lcm_timer( new QTimer( this ) ),
-                                                          _qt4_widget_authoring( new Qt4_Widget_Authoring( "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf", 128, this ) ) {
+                                                          _qt4_widget_authoring( new Qt4_Widget_Authoring( urdfFilename, 128, this ) ) {
   setCentralWidget( _qt4_widget_authoring );
 
   connect( _lcm_timer, SIGNAL( timeout() ), this, SLOT( _handle_lcm_timer_timeout() ) ); 

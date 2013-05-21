@@ -31,6 +31,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
                                             _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
                                             _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
+                                            _slider_current_time( new QLabel("00:00 sec") ),
                                             _robot_model(),
                                             _affordance_collection(),
                                             _affordance_collection_ghost(),
@@ -81,6 +82,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   plan_layout->addWidget( _check_box_visible_trajectory, 0, 1 );
   plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 2 );
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 3 );
+  plan_layout->addWidget( _slider_current_time, 2, 0, 1, 3 );
   plan_widget->setLayout( plan_layout );
   plan_scroll_area->setWidget( plan_widget );
 

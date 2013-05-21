@@ -62,6 +62,7 @@ namespace authoring {
     QCheckBox * _check_box_visible_current_index;
     QCheckBox * _check_box_visible_trajectory;
     QCheckBox * _check_box_visible_trajectory_wrist;
+    QLabel * _slider_current_time;
 
     urdf::Model _robot_model;
     std::vector< affordance::AffordanceState > _affordance_collection;
