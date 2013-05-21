@@ -39,6 +39,19 @@ namespace renderer_robot_plan_gui_utils
  //   self->plan_execution_dock= NULL;
     return TRUE;
   }
+  
+  static  gboolean on_compliant_execute_button_clicked (GtkButton* button, void *user)
+  {
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+    cout <<"A compliant robot plan approved" << endl;
+    cout <<"Publishing on COMMITTED_COMPLIANT_ROBOT_PLAN" << endl;
+    string channel = "COMMITTED_COMPLIANT_ROBOT_PLAN";
+    self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
+ //   gtk_widget_destroy(self->plan_execution_dock);
+ //   self->plan_execution_dock= NULL;
+    return TRUE;
+  }
+   
    
   static void spawn_plan_execution_dock  (void *user)
   {
@@ -75,12 +88,14 @@ namespace renderer_robot_plan_gui_utils
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 */
     
-    GtkWidget  *execute_button, *pause_button, *cancel_button;
+    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button;
     execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY);
+    compliant_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CONNECT);
     pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
         
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
+    gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
     gtk_widget_set_tooltip_text (pause_button, "Pause (To Be Implemented)");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Plan");
     
@@ -106,6 +121,11 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_execute_button_clicked),
                   self);
+     g_signal_connect (G_OBJECT (compliant_execute_button),
+                  "clicked",
+                  G_CALLBACK (on_compliant_execute_button_clicked),
+                  self);
+                     
      
     GtkWidget *hbox;
  hbox = gtk_hbox_new (FALSE, 0);
@@ -115,6 +135,7 @@ namespace renderer_robot_plan_gui_utils
     GtkWidget * label = gtk_label_new ("RobotPlan:");
     gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);
     gtk_box_pack_start (GTK_BOX (hbox), execute_button, FALSE, FALSE, 3);
+    gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
     gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
     gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     
