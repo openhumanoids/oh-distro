@@ -1,8 +1,8 @@
 package drc;
 
-struct robot_posture_preset_t // published on UPDATE_NOMINAL_POSTURE if CURRENT (or) ROBOT_POSTURE_GOAL if its one of the other precomputed fixed points.
+struct robot_posture_preset_t // published on UPDATE_NOMINAL_POSTURE if CURRENT (or) PRESET_POSTURE_GOAL if its one of the other precomputed fixed points.
 {
   int64_t utime;
   int16_t preset;
-  const int16_t CURRENT=0, STANDING_HNDS_UP=1, STANDING_HNDS_DWN=2,SITTING_HNDS_UP=3, SITTING_HNDS_DWN=4; 
+  const int16_t CURRENT=0,  STANDING_HNDS_DWN=1,STANDING_HNDS_UP=2, SITTING_HNDS_DWN=3,SITTING_HNDS_UP=4; 
 }
