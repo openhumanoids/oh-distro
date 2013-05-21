@@ -46,6 +46,7 @@ while(1)
         msg = grasp_state_listener.lcmcoder.encode(ts,x);
         if(msg.power_grasp==1.0)
          pos_control_flag = [1.0 0 0    1.0 0.0 0.0   1.0 0 0   1.0 1.0 1.0]';
+         %pos_control_flag = [1.0 0 1.0    1.0 0.0 1.0   1.0 0 1.0   1.0 0.0 1.0]';
         end
 
 %         rpy = quat2rpy([x(9);x(6:8)]);   
@@ -71,7 +72,7 @@ while(1)
         e_l(find(pos_control_flag>0)) = 0;
         e_r(find(pos_control_flag>0)) = 0;
         if(msg.power_grasp==1.0)
-          torque = 20;
+          torque = 10;
           K_pos(find(pos_control_flag==0))= 0;
           K_vel(find(pos_control_flag==0))= 0;
         else
