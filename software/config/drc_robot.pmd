@@ -48,7 +48,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "extra";
     }
     cmd "estpub" {
