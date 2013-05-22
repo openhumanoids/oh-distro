@@ -23,7 +23,7 @@
 #include <vector>
 #include <algorithm> 
 
-#define TIMER_PERIOD_MSEC 50
+#define TIMER_PERIOD_MSEC 100
 
 typedef struct _state_t {
     lcm_t *lcm;
@@ -36,10 +36,13 @@ typedef struct _state_t {
   
 } state_t;
 
+void publish_frame_update(state_t *self);
+
 static gboolean
 status_timer (gpointer data)
 {
     state_t *self = (state_t *) data;
+    publish_frame_update(self);
     return TRUE;
 }
 
@@ -65,9 +68,14 @@ int has_affordance_position_updated(drc_affordance_t *c_aff, drc_affordance_t *n
 }
 
 void publish_frame_update(state_t *self){
+  if(self->car_affordance == NULL)
+    return;
   BotTrans local_to_body;
   bot_frames_get_trans_with_utime(self->frames, bot_frames_get_root_name(self->frames), "body",
 				  self->car_affordance->utime, &local_to_body);
+
+  //fprintf(stderr, "Local to Body : %f,%f,%f\n", local_to_body.trans_vec[0], local_to_body.trans_vec[1], 
+  //local_to_body.trans_vec[2]);
 
   BotTrans car_to_local; 
   car_to_local.trans_vec[0] = self->car_affordance->origin_xyz[0];
