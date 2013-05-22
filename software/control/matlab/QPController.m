@@ -165,6 +165,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
+%    out_tic = tic;
     q_ddot_des = varargin{1};
     x = varargin{2};
     ctrl_data = getData(obj.controller_data);
@@ -248,11 +249,13 @@ classdef QPController < MIMODrakeSystem
         % or current height above height map
       end
       if typecheck(ctrl_data.S,'double')
-        % ti-lqr case
         S = ctrl_data.S;
-        s1= zeros(4,1); % ctrl_data.s1;
       else
         S = ctrl_data.S.eval(t);
+      end
+      if typecheck(ctrl_data.s1,'double')
+        s1= zeros(4,1); % ctrl_data.s1;
+      else
         s1= ctrl_data.s1.eval(t);
       end
       if typecheck(ctrl_data.x0,'double')
@@ -278,7 +281,6 @@ classdef QPController < MIMODrakeSystem
     
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
-%    out_tic = tic;
 
     if (obj.use_mex==0 || obj.use_mex==2)
       r = obj.robot;
