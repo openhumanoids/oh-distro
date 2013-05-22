@@ -74,6 +74,10 @@
 #define PARAM_D_GAIN "D Gain"
 #define PARAM_I_GAIN "I Gain"
 
+#define PARAM_STEERING_DELTA 1.0
+#define PARAM_THROTTLE_DELTA 0.01
+#define PARAM_BRAKE_DELTA 0.05
+
 #define STEERING_RATIO 0.063670
 
 #define MAX_ACCELERATION_TIME 6
@@ -274,8 +278,18 @@ typedef struct _RendererDriving {
     drc_driving_controller_status_t *controller_status;
     drc_driving_status_t *ground_truth_status;
 
+    // Actuation limits imposed by manipulation
+    int steer_have_manip_map;
+    double steer_min_rad;
+    double steer_max_rad;
+    int gas_pedal_have_manip_map;
+    double gas_pedal_min;
+    double gas_pedal_max;
+    double brake_pedal_have_manip_map;
+    double brake_pedal_min;
+    double brake_pedal_max;
+
     drc_affordance_t *car_affordance;
-  
   
     visual_goal_type_t visual_goal_type;
     // Local [use when visual navigation works]
@@ -1155,11 +1169,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
 
     if (goal_type_temp == USE_USER_GOAL) {
-        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 1);
+        if (self->steer_have_manip_map)
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 1);
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_LOOKAHEAD, 0);
     }
     else {
-        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
+        if (self->steer_have_manip_map)
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_LOOKAHEAD, 1);
     }
 
@@ -1447,6 +1463,75 @@ static void on_controller_values(const lcm_recv_buf_t * buf, const char *channel
     bot_viewer_request_redraw(self->viewer);
 }
 
+static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char *channel, 
+                                         const drc_driving_affordance_status_t *msg, void *user){
+    RendererDriving *self = (RendererDriving*) user;
+
+    if (!strcmp (channel, "DRIVING_STEERING_ACTUATION_STATUS")) {
+        double new_min = min(msg->dof_value_0, msg->dof_value_1);
+        double new_max = max(msg->dof_value_0, msg->dof_value_1);
+        if (msg->have_manip_map) {
+            if ( (fabs (new_min - self->steer_min_rad) > 0.01) || (fabs (new_max - self->steer_max_rad) > 0.01) ) {
+                double value = bot_gtk_param_widget_get_double (self->pw, PARAM_STEERING_ANGLE);
+                fprintf (stdout, "changing range to [%f, %f] and setting value %f\n", bot_to_degrees(new_min), bot_to_degrees(new_max), value);
+                bot_gtk_param_widget_modify_double (self->pw, PARAM_STEERING_ANGLE, bot_to_degrees(new_min),
+                                                    bot_to_degrees(new_max), PARAM_STEERING_DELTA, value);
+                bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 1);
+            }
+        }
+        else {
+            fprintf (stdout, "DISABLING STEERING\n");
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
+        }       
+
+        self->steer_have_manip_map = msg->have_manip_map;
+        self->steer_min_rad = new_min;
+        self->steer_max_rad = new_max;
+
+       
+    } else if (!strcmp (channel, "DRIVING_GAS_ACTUATION_STATUS")) {
+
+        double new_min = min(msg->dof_value_0, msg->dof_value_1);
+        double new_max = max(msg->dof_value_0, msg->dof_value_1);
+        if (msg->have_manip_map) {
+            if ( (fabs (new_min - self->gas_pedal_min) > 0.01) || (fabs (new_max - self->gas_pedal_max) > 0.01) ) {
+                double value = bot_gtk_param_widget_get_double (self->pw, PARAM_THROTTLE);
+                bot_gtk_param_widget_modify_double (self->pw, PARAM_THROTTLE, new_min, new_max,
+                                                    PARAM_THROTTLE_DELTA, value);
+            }
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 1);
+        }
+        else
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 0);
+
+        self->gas_pedal_have_manip_map = msg->have_manip_map;
+        self->gas_pedal_min = new_min;
+        self->gas_pedal_max = new_max;
+        
+
+    } else if (!strcmp (channel, "DRIVING_BRAKE_PEDAL_ACTUATION_STATUS")) {
+        double new_min = min(msg->dof_value_0, msg->dof_value_1);
+        double new_max = max(msg->dof_value_0, msg->dof_value_1);
+        if (msg->have_manip_map) {
+            if ( (fabs (new_min - self->brake_pedal_min) > 0.01) || (fabs (new_max - self->brake_pedal_max) > 0.01) ) {
+                double value = bot_gtk_param_widget_get_double (self->pw, PARAM_BRAKE);
+                bot_gtk_param_widget_modify_double (self->pw, PARAM_BRAKE, new_min, new_max,
+                                                    PARAM_BRAKE_DELTA, value);
+            }
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_BRAKE, 1);
+        }
+        else
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 0);
+
+        self->brake_pedal_have_manip_map = msg->have_manip_map;
+        self->brake_pedal_min = new_min;
+        self->brake_pedal_max = new_max;
+    }
+
+    return;
+}
+
+
 static void on_driving_controller_status(const lcm_recv_buf_t * buf, const char *channel, 
                                          const drc_driving_controller_status_t *msg, void *user){
     RendererDriving *self = (RendererDriving*) user;
@@ -1608,6 +1693,11 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     drc_driving_status_t_subscribe (self->lc, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_driving_ground_truth_status, self);
     drc_driving_controller_status_t_subscribe (self->lc, "DRC_DRIVING_CONTROLLER_STATUS", on_driving_controller_status, self);
 
+    // Actuation manipulation status messages
+    drc_driving_affordance_status_t_subscribe (self->lc, "DRIVING_STEERING_ACTUATION_STATUS", on_driving_affordance_status, self);
+    drc_driving_affordance_status_t_subscribe (self->lc, "DRIVING_GAS_ACTUATION_STATUS", on_driving_affordance_status, self);
+    drc_driving_affordance_status_t_subscribe (self->lc, "DRIVING_BRAKE_ACTUATION_STATUS", on_driving_affordance_status, self);
+
     // heartbeat for system status monitoring (every 1sec)
     g_timeout_add (1000, heartbeat_cb, self);
   
@@ -1634,7 +1724,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
 
     
     bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, 1, 0);
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, PARAM_STEERING_DELTA, 0);
     bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
 
     //bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE, NULL);
@@ -1648,7 +1738,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, MAX_ACCELERATION_TIME, 0.1, DEFAULT_ACCELERATION_TIME);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_RATIO, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0.04);
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, PARAM_THROTTLE_DELTA, 0.04);
 
     bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, USE_ROAD_CARROT, "Use Road (Carrot)", USE_ROAD_CARROT, "Use Road (Arc)", USE_ROAD_ARC, "Use TLD (Road)", USE_TLD_WITH_ROAD,  "Use TLD (No Road)", USE_TLD_IGNORE_ROAD, "Use User Goal", USE_USER_GOAL, NULL);
 
@@ -1668,7 +1758,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.05, 0);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_BRAKE, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.05, 0);
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, PARAM_BRAKE_DELTA, 0);
 						
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HANDBRAKE, 0, NULL);
 

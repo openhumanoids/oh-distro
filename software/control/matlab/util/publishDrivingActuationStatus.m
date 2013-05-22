@@ -1,7 +1,7 @@
 function publishDrivingActuationStatus(state_machine, driving_aff_status_pub)
 
 driving_dof_names = {'steering_joint','gas_joint'};
-status_channels = {'DRIVING_STEEERING_ACTUATION_STATUS','DRIVING_GAS_ACTUATION_STATUS'};
+status_channels = {'DRIVING_STEERING_ACTUATION_STATUS','DRIVING_GAS_ACTUATION_STATUS'};
 dof_names = cellstr(char(state_machine.affinds(1).dof_name));
 ee_names = cellstr(char(state_machine.affinds(1).ee_name));
 aff_types = cellstr(char(state_machine.affinds(1).aff_type));
@@ -11,7 +11,7 @@ for didx = 1:length(driving_dof_names)
     
     idx = find(strcmp(char(driving_dof_names(didx)), dof_names));
     if (~isempty(idx))
-        aff_type = aff_types(idx);
+        aff_type = aff_types(1);
         aff_uid = state_machine.affinds(1).aff_uid;
         ee_name = ee_names(idx);
         
