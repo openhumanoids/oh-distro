@@ -37,5 +37,9 @@ classdef HeightMapHandle < handle
         function [pts,normals] = getClosest(this,pts)
             [pts,normals] = this.mMexFunc('closest',this.mHandle,pts);
         end
+        
+        function ptr = getPointerForMex(this)
+            ptr = this.mMexFunc('wrapper',this.mHandle);
+        end
     end
 end

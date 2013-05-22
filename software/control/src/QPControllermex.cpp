@@ -23,7 +23,7 @@
 #include <gurobi_c++.h>
 
 #include "mexmaps/MapLib.hpp"
-//#include <maps/DepthImageView.hpp>
+// TODO: uncomment this #include <maps/ViewBase.hpp>
 
 #include "RigidBodyManipulator.h"
 
@@ -121,8 +121,8 @@ int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<
 void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d &normal)
 {
   if (map_ptr) {
-    /*
-    state = xxx;
+    /* TODO: uncomment this block
+    auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
     if (state != NULL) {
       auto view = state->getView();
       if (view != NULL) {

@@ -318,9 +318,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 2) {
       mexErrMsgTxt("MapWrapper: too many arguments to wrapper");
     }
-    auto ptr = &(wrapper->mHandle);
+    auto ptr = wrapper->mHandle.get();
     mxClassID classId = (sizeof(ptr)==4) ? mxUINT32_CLASS : mxUINT64_CLASS;
     plhs[0] = mxCreateNumericMatrix(1,1,classId,mxREAL);
+    memcpy(mxGetPr(plhs[0]), ptr, sizeof(ptr));
   }
 
   else if (command == "property") {
