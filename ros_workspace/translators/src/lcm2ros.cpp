@@ -19,6 +19,8 @@ class LCM2ROS{
     LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_,bool synchronized_, bool pause_physics_before_reconfig_);
     ~LCM2ROS() {}
 
+    void setInitialMultisenseRate(float fps);
+    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
@@ -53,12 +55,14 @@ class LCM2ROS{
     void estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg);   
     
     ros::NodeHandle* rosnode;
+    bool have_set_multisense_rate_; // have you set the initial multisesne rate
 };
 
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool synchronized_, bool pause_physics_before_reconfig_): 
            lcm_(lcm_),nh_(nh_), synchronized_(synchronized_), pause_physics_before_reconfig_(pause_physics_before_reconfig_) {
-
+  have_set_multisense_rate_= false;
+	     
   /// DRCSIM 2.0 joint command API
   lcm_->subscribe("JOINT_COMMANDS",&LCM2ROS::jointCommandHandler,this);  
   joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10, true);
@@ -96,8 +100,21 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   rosnode = new ros::NodeHandle();
 }
 
+void LCM2ROS::setInitialMultisenseRate(float fps){
+  if (!have_set_multisense_rate_){
+    std_msgs::Float64 head_fps_msg;
+    head_fps_msg.data = fps;
+    multisense_sl_fps_pub_.publish(head_fps_msg);
+  
+    ROS_ERROR("LCM2ROS Setting Multisense FPS [%f]", fps);
+    have_set_multisense_rate_=true;
+  }
+}
+
 
 void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+  setInitialMultisenseRate(5.0);
+  
 
   if(synchronized_ && ros::ok()) {
     std_srvs::Empty srv;
@@ -411,9 +428,12 @@ int main(int argc,char** argv) {
   LCM2ROS handlerObject(lcm, nh, synced, pause_physics_before_reconfig);
   cout << "\nlcm2ros translator ready\n";
   
+  
   ROS_ERROR("LCM2ROS Translator Sleeping");
+  //handlerObject.setInitialMultisenseRate(5.0);
   sleep(4);
   ROS_ERROR("LCM2ROS Translator Ready");
+  //handlerObject.setInitialMultisenseRate(5.0);  
   
   while(0 == lcm->handle());
   return 0;
