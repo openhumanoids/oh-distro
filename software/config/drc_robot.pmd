@@ -112,6 +112,33 @@ group "a.3.grasping" {
     } 
 }
 
+group "a.3.hose" {
+    cmd "Task3StateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runTask3StateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "robot";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "robot";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "robot";
+    } 
+    cmd "PrecomputationServer" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "robot";
+    }
+}
+
 group "a.3.grasping4qual2" {
     cmd "HarnessedController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
@@ -156,6 +183,37 @@ group "a.3.unpinned_grasping" {
         exec = "affordance_init -e 2";
         host = "robot";
     } 
+    cmd "PrecomputationServer" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "robot";
+    }
+}
+
+group "a.3.walking_manip" {
+    cmd "WalkingManipStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "robot";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "robot";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "robot";
+    } 
+    cmd "PrecomputationServer" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "robot";
+    }
 }
 group "a.4.driving" {
     cmd "vehicle-groundtruth-state" {
@@ -323,6 +381,35 @@ group "b.3.grasping" {
     }
 }
 
+group "b.3.unpinned_grasping" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+}
+
+group "b.3.walking_manip" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
+    }
+    cmd "ZMPWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+       host = "base";
+    }
+}
 group "b.4.driving" {
     cmd "car-vis-local" {
        exec = "drc-car-quick-vis";
@@ -369,6 +456,10 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_unpinned_manip" {
+	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+	host = "robot";
+    }
+    cmd "gz_walking_manip" {
 	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
 	host = "robot";
     }
@@ -655,12 +746,12 @@ script "dev.vrc_driving_with_manip" {
 script "dev.vrc_hose_task" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.3.grasping";
+    start group "a.3.hose";
     start group "b.3.grasping";
     wait ms 25000;
     start cmd "gz_vrc_hose";
-    wait ms 5000; 
-    start cmd "enable_gravity_when_pinned";
+    #wait ms 5000; 
+    #start cmd "enable_gravity_when_pinned";
     wait ms 5000; 
     start cmd "enable_user_mode";
 }
@@ -722,6 +813,16 @@ script "dev.unpinned_manip" {
     wait ms 20000;
     start cmd "gz_unpinned_manip";    
 }
+
+script "dev.walking_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.walking_manip";
+    start group "b.3.walking_manip";
+    wait ms 20000;
+    start cmd "gz_walking_manip";    
+}
+
 ############ System Tests ############
 script "systest-main" {
     run_script "dev.mit_walking";
