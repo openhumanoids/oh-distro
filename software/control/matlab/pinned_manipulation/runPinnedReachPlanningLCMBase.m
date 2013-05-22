@@ -43,6 +43,8 @@ h_ee.frame.subscribe('HEAD_GOAL');
 h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
 h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
 
+posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
+
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -252,7 +254,22 @@ while(1)
   end
   
 
-  
+  posture_goal =posture_goal_listener.getNextMessage(0);  
+  if(~isempty(posture_goal))
+      disp('Preset Posture goal received .');
+      if(posture_goal.preset==1)
+       d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));%standing hands down
+      elseif(posture_goal.preset==2)
+       d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
+      elseif(posture_goal.preset==3)
+        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
+      elseif(posture_goal.preset==4) 
+        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
+      end
+      q_desired = d.xstar(1:getNumDOF(r));
+      q_desired(1:6) = x0(1:6); % fix pelvis pose to current
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired);
+  end
 
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
