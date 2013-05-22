@@ -42,6 +42,8 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <ros/callback_queue.h>
 
+#include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
+
 #include <ConciseArgs>
 
 #define DO_TIMING_PROFILE true
@@ -54,6 +56,8 @@ int width =800;//1024; // hardcoded
 int height =800;//544; // hardcoded
 uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
 uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
+int jpeg_quality=90;
+
 
 class App{
 public:
@@ -68,16 +72,22 @@ private:
   // Left and Right Images Seperately:
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void right_image_cb(const sensor_msgs::ImageConstPtr& msg);
-  ros::Subscriber left_image_sub_,right_image_sub_;
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
     
+  image_transport::Subscriber left_image_sub_;
+  
+  image_transport::ImageTransport it_;
+  
   const std::string stereo_in_,stereo_out_;
+  
+  // Image Compression
+  image_io_utils*  imgutils_;  
 };
 
 App::App(const std::string & stereo_in,
     const std::string & stereo_out,
     ros::NodeHandle node_, bool send_hand_cameras_) :
-    stereo_in_(stereo_in), stereo_out_(stereo_out),
+    stereo_in_(stereo_in), stereo_out_(stereo_out), it_(node_),
     node_(node_), send_hand_cameras_(send_hand_cameras_){
       
       // sync_(10), l_hand_sync_(10), r_hand_sync_(10), it_(node_), 
@@ -90,8 +100,11 @@ App::App(const std::string & stereo_in,
   
   if (1==1){
     // Mono-Cameras:
-    left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 1, &App::left_image_cb,this);
+    left_image_sub_ = it_.subscribe("/multisense_sl/camera/left/image_rect_color", 1, &App::left_image_cb,this);
     //left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);
+    
+    imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );
+    
   }
   
   std::cout << "only getting left\n";
@@ -138,42 +151,25 @@ void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name){
 // channels: rgb u v
 int l_counter =0;
 void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
-  std::cout << l_counter << " left image\n";
+  //std::cout << l_counter << " left image\n";
   
   if (l_counter%30 ==0){
-    std::cout << l_counter << " left image\n";
+    ROS_ERROR("LEFTC [%d]", l_counter );
+    ///std::cout << l_counter << " left image\n";
   }  
   l_counter++;
   
   drc::utime_t utime_msg;
   utime_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
-  lcm_publish_.publish("ROBOT_UTIME", &utime_msg);  
+  lcm_publish_.publish("TICKER", &utime_msg);  
   
   send_image(msg, "CAMERALEFT");
-}
-int r_counter =0;
-void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
-  std::cout << "got r image\n";
-  std::cout << msg->encoding << " is r encdoing\n";
-  
-  if (r_counter%30 ==0){
-    std::cout << r_counter << " right image\n";
-  }  
-  r_counter++;
-  send_image(msg, "CAMERARIGHT");
 }
 
 // TODO: jpeg compression:
 //       look into openni_utils/openni_ros2rgb for code
 // TODO: pre-allocate image_data and retain for speed - when size is known
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
-  
-  #if DO_TIMING_PROFILE
-    std::vector<int64_t> tic_toc;
-    tic_toc.push_back(_timestamp_now());
-  #endif  
-  
-  
   int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   /*cout << msg->width << " " << msg->height << " | "
        << msg->encoding << " is encoding | "
@@ -182,47 +178,31 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   int n_colors=3;
   int isize = msg->width*msg->height;
 
-  bot_core::image_t lcm_img;
-  lcm_img.utime =current_utime;
-  lcm_img.width =msg->width;
-  lcm_img.height =msg->height;
-  lcm_img.nmetadata =0;
-  lcm_img.row_stride=n_colors*msg->width;
-  lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-  lcm_img.size =n_colors*isize;
+  //ROS_ERROR("Received size [%d]", msg->data.size() );
   
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-      
   copy(msg->data.begin(), msg->data.end(), singleimage_data);
-  
-  lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*isize));
-
-      #if DO_TIMING_PROFILE
-      tic_toc.push_back(_timestamp_now());
-    #endif
-  
-  lcm_publish_.publish(channel.c_str(), &lcm_img);
-  
-
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"stereo");
-  #endif     
-  
+  if (1==1){
+    imgutils_->jpegImageThenSend(singleimage_data, current_utime, 
+                msg->width, msg->height, jpeg_quality, channel, n_colors );
+  }else{
+    bot_core::image_t lcm_img;
+    lcm_img.utime =current_utime;
+    lcm_img.width =msg->width;
+    lcm_img.height =msg->height;
+    lcm_img.nmetadata =0;
+    lcm_img.row_stride=n_colors*msg->width;
+    lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    lcm_img.size =n_colors*isize;
+    lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*isize));
+    lcm_publish_.publish(channel.c_str(), &lcm_img);
+  }
 }
 
 
 int main(int argc, char **argv){
-  ConciseArgs parser(argc, argv, "ros2lcm");
-  bool send_hand_cameras = false;
-  parser.add(send_hand_cameras, "l", "send_hand_cameras", "Send cameras in hand/limbs");
-  parser.parse();
-  cout << "Publish Hand Camera Messages: " << send_hand_cameras << "\n";   
+  bool send_hand_cameras = true;
   
   ros::init(argc, argv, "ros2lcm_camera");
-  
   ros::NodeHandle nh;
   
   App *app = new App( "multisense_sl/camera", "CAMERA", nh, send_hand_cameras);

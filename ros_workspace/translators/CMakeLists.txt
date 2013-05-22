@@ -20,12 +20,16 @@ pods_use_pkg_config_packages(lcm2ros lcm lcmtypes_drc_lcmtypes bot2-core)
 rosbuild_add_executable(ros2lcm src/ros2lcm.cpp)
 target_link_libraries(ros2lcm boost_signals)
 pods_install_executables(ros2lcm)
-pods_use_pkg_config_packages(ros2lcm lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
+pods_use_pkg_config_packages(ros2lcm lcm lcmtypes_drc_lcmtypes 
+      bot2-core lcmtypes_multisense
+      image_io_utils) 
 
 rosbuild_add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
 target_link_libraries(ros2lcm_camera boost_signals)
 pods_install_executables(ros2lcm_camera)
-pods_use_pkg_config_packages(ros2lcm_camera lcm lcmtypes_drc_lcmtypes bot2-core lcmtypes_multisense) 
+pods_use_pkg_config_packages(ros2lcm_camera lcm lcmtypes_drc_lcmtypes 
+      bot2-core lcmtypes_multisense
+      image_io_utils) 
 
 
 rosbuild_add_executable(latency src/latency.cpp)
@@ -40,3 +44,22 @@ pods_install_executables(frequency)
 pods_use_pkg_config_packages(frequency frequency lcm
              bot2-param-client path-util) 
 
+
+
+#rosbuild_add_executable(my_subscriber src/my_subscriber.cpp)
+#target_link_libraries(my_subscriber boost_signals)
+#pods_install_executables(my_subscriber)
+#pods_use_pkg_config_packages(my_subscriber lcm lcmtypes_drc_lcmtypes 
+#      bot2-core lcmtypes_multisense
+#      image_io_utils) 
+
+      
+      
+      
+      
+rosbuild_add_executable(ros2lcm_stereo src/ros2lcm_stereo.cpp)
+target_link_libraries(ros2lcm_stereo boost_signals)
+pods_install_executables(ros2lcm_stereo)
+pods_use_pkg_config_packages(ros2lcm_stereo lcm lcmtypes_drc_lcmtypes 
+      bot2-core lcmtypes_multisense
+      image_io_utils) 

@@ -18,6 +18,7 @@
   <depend package="osrf_msgs"/>
   <!-- Required for stereo transmission -->
   <depend package="image_transport"/>
+  <depend package="compressed_image_transport"/>
   <depend package="image_geometry"/> 
   <depend package="cv_bridge"/>  
   <depend package="opencv2"/>    
