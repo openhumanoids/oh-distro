@@ -141,6 +141,10 @@ static int publish_brake_pedal(void *user_data){
     if (s->brake_pedal >=1.0) {    s->brake_pedal = 1.0; }
     if (s->brake_pedal <=0.0) {    s->brake_pedal = 0.0; }
 
+    if(s->brake_pedal > 0){
+      fprintf(stderr, "Stopping Car\n");
+    }
+
     std_msgs::Float64 msg;
     msg.data = s->brake_pedal;
     brake_pedal_pub.publish(msg);
@@ -391,7 +395,7 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
         
         first = 0;*/
 
-    fprintf(stderr, "Command => Utime : %f\n", msg->utime/1.0e6);
+    //fprintf(stderr, "Command => Utime : %f\n", msg->utime/1.0e6);
     if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_CAR){
         fprintf(stderr, "Starting vehicle - this should be ignored - vehicle always on\n");
         //self->key = 1;
