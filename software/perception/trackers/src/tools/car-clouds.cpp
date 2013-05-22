@@ -112,7 +112,7 @@ void StatePub::boxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
 
   pass.setInputCloud (cloud);
   pass.setFilterFieldName ("y");
-  pass.setFilterLimits (-1.5, 1.5); //pass.setFilterLimitsNegative (true);
+  pass.setFilterLimits (-1.30, 1.3); //pass.setFilterLimitsNegative (true);
   pass.filter (*cloud);
   
 //  pass.setInputCloud (cloud);

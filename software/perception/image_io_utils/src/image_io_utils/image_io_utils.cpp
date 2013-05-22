@@ -25,7 +25,7 @@ image_io_utils::image_io_utils (lcm_t* publish_lcm_, int width_, int height_):
 
 
 
-void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel){
+void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel, int n_colors){
 
   /*
   /// factor of 4: 800x800 --> 200x200
@@ -37,21 +37,30 @@ void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width
   cv::resize(src, img, img.size());  // Resize src to img size
   */
   
-  int compressed_size =  width*height*3;//image_buf_size;
-  int compression_status = jpeg_compress_8u_rgb (buffer, width, height, width*3,
+  int compressed_size =  width*height*n_colors;//image_buf_size;
+  int compression_status  = -1;
+  if (n_colors == 1){
+    int compression_status = jpeg_compress_8u_gray(buffer, width, height, width*n_colors,
                                                      img_buffer_, &compressed_size, jpeg_quality);
-  
+  }else if( n_colors ==3) {
+    int compression_status = jpeg_compress_8u_rgb  (buffer, width, height, width*n_colors,
+                                                     img_buffer_, &compressed_size, jpeg_quality);
+  }else {
+    std::cout << "number if colors is no correct " << n_colors << "\n";
+    
+    exit(-1);
+  }
   bot_core_image_t msgout_small;
   msgout_small.utime = utime;
   msgout_small.width = width;
   msgout_small.height = height;
-  msgout_small.row_stride = 3*width;
+  msgout_small.row_stride = n_colors*width;
   msgout_small.size = compressed_size;
   msgout_small.pixelformat = BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG;
   msgout_small.data = img_buffer_;
   msgout_small.nmetadata =0;
   msgout_small.metadata = NULL;
-  string channel_out_small = string(channel) + "_COMPRESSED";
+  string channel_out_small = string(channel);// dont appent channel  // + "_COMPRESSED";
   bot_core_image_t_publish(publish_lcm_, channel_out_small.c_str(), &msgout_small);
   
 }

@@ -19,7 +19,8 @@ class image_io_utils {
     uint8_t* unzipImage(const bot_core_image_t *msg);
     uint8_t* unzipImage(const bot_core::image_t *msg);
     
-    void jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel);
+    void jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, 
+			   int jpeg_quality, std::string channel, int n_colors);
 
     
     void sendImageZipped(uint8_t* buffer, int64_t utime, 

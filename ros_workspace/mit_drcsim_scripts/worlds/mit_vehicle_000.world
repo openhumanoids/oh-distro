@@ -76,7 +76,7 @@
     <include><uri>model://mit_robot_nohands</uri><pose>-2.0 0.0 0.93 0 0 0</pose></include> 
 
 <!-- static at 0,0,0-->
-    <include><uri>model://mit_vehicle</uri><static>true</static><pose>0.0 0.0 0 0 0 0.0</pose></include>
+    <include><uri>model://drc_vehicle</uri><static>true</static><pose>0.0 0.0 0 0 0 0.0</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>

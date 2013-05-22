@@ -39,12 +39,8 @@ group "a.1.core" {
         exec = "rosrun translators lcm2ros -p";
         host = "robot";
     }
-    cmd "r2l_head_cams" {
-        exec = "rosrun translators ros2lcm -s";
-        host = "robot";
-    }
-    cmd "r2l_hand_cams" {
-        exec = "rosrun translators ros2lcm -l";
+    cmd "r2l_perception" {
+        exec = "roslaunch translators perception.launch";
         host = "robot";
     }
     cmd "pserver" {
