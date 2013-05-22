@@ -22,6 +22,9 @@
 //#include <Eigen/Sparse>
 #include <gurobi_c++.h>
 
+#include "mexmaps/MapLib.hpp"
+//#include <maps/DepthImageView.hpp>
+
 #include "RigidBodyManipulator.h"
 
 const int m_surface_tangents = 2;  // number of faces in the friction cone approx
@@ -118,7 +121,18 @@ int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<
 void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d &normal)
 {
   if (map_ptr) {
-    mexErrMsgTxt("Will have to connect to map api soon, but haven't done it yet");
+    /*
+    state = xxx;
+    if (state != NULL) {
+      auto view = state->getView();
+      if (view != NULL) {
+        if (view->getClosest(contact_pos,pos,normal)) {
+          return;
+        }
+      }
+    }
+    */
+    mexErrMsgTxt("What to do if there is no data?");
   } else {
     pos << contact_pos.topRows(2), 0;
     normal << 0,0,1;
