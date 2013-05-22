@@ -60,6 +60,9 @@
 
 #define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
+
+#define PARAM_FULL_ACCELERATION "Vehicle Full Acceleration"
+
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
 #define PARAM_GOAL_TYPE "Goal Type"
 
@@ -1131,6 +1134,14 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
     // Disable certain sliders depending upon goal mode
     goal_type_t goal_type_temp  = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
+
+    if(bot_gtk_param_widget_get_bool (self->pw, PARAM_FULL_ACCELERATION)){
+      bot_gtk_param_widget_set_enabled(pw, PARAM_THROTTLE_DURATION, 0);
+    }
+    else{
+      bot_gtk_param_widget_set_enabled(pw, PARAM_THROTTLE_DURATION, 1);
+    }
+
     if (goal_type_temp == USE_ROAD_CARROT) {
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_P_GAIN, 1);
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_D_GAIN, 1);
@@ -1176,6 +1187,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.drive_duration = 0;
         msg.throttle_ratio = 0;
         msg.throttle_duration = 0;
+	if(bot_gtk_param_widget_get_bool (self->pw, PARAM_FULL_ACCELERATION)){
+	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE;
+	}
+	else{
+	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE;
+	}
         msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
         msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
         msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
@@ -1217,7 +1234,18 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.utime = bot_timestamp_now();
         msg.drive_duration = bot_gtk_param_widget_get_double(self->pw, PARAM_DRIVE_TIME);
         msg.throttle_ratio = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_RATIO);
-        msg.throttle_duration = fmin(bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_DURATION), msg.drive_duration);
+
+	if(bot_gtk_param_widget_get_bool (self->pw, PARAM_FULL_ACCELERATION)){
+	  msg.throttle_duration = msg.drive_duration;
+	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE;
+	}
+	else{
+	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE;
+	  msg.throttle_duration = fmin(bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_DURATION), msg.drive_duration);
+	}
+
+	fprintf(stderr, "Drive duration : %f Acceleration duration : %f\n",msg.drive_duration, msg.throttle_duration);
+
         msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
         msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
         msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
@@ -1570,6 +1598,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_double(self->pw, PARAM_DRIVE_TIME, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, MAX_DRIVE_TIME, 0.1, DEFAULT_DRIVE_TIME);
 
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FULL_ACCELERATION, 1, NULL);
+
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_DURATION, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, MAX_ACCELERATION_TIME, 0.1, DEFAULT_ACCELERATION_TIME);
 
@@ -1603,6 +1633,10 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);
 
+    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
+    
+    bot_gtk_param_widget_set_enabled(self->pw, PARAM_THROTTLE_DURATION, 0);
+    
     self->active = 0;
 
     return &self->renderer;
