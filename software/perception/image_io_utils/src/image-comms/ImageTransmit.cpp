@@ -116,7 +116,7 @@ struct ImageTransmit {
         img.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY;
       }
       else if (uncomp.channels() == 3) {
-        // TODO cv::cvtColor(uncompressed, uncompressed, CV_BGR2RGB);
+        cv::cvtColor(uncomp, uncomp, CV_BGR2RGB);
         img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
       }
       else {
@@ -179,6 +179,7 @@ struct ImageTransmit {
 
     // jpeg compress
     std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
+    if (numChannels == 3) cv::cvtColor(outImage, outImage, CV_RGB2BGR);
     if (!cv::imencode(".jpg", outImage, msg.data, params)) {
       std::cout << "Error encoding jpeg image!" << std::endl;
     }

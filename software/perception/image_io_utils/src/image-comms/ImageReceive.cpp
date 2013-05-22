@@ -22,6 +22,7 @@ struct ChannelData {
                const bot_core::image_t* iMessage) {
     // uncompress
     cv::Mat raw = cv::imdecode(cv::Mat(iMessage->data), -1);
+    if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_RGB2BGR);
 
     // resize to normal
     cv::Mat img;
