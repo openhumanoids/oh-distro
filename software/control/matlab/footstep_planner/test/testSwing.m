@@ -7,7 +7,7 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 % r = setTerrain(r,DRCTerrainMap());
 biped = compile(r);
-biped = biped.setTerrain(SampleTerrain())
+biped = biped.setTerrain(ExampleTerrain())
 
 last_pos = [0;1.2;0;0;0;0];
 next_pos = [.5;2.1;0;0;0;0];

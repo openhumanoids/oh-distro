@@ -7,13 +7,13 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 % r = setTerrain(r,DRCTerrainMap());
 biped = compile(r);
-biped = biped.setTerrain(SampleTerrain());
+biped = biped.setTerrain(ExampleTerrain());
 
 
 p0 = [0;0;0;0;0;0];
 poses = [.5;0;0;0;0;0];
 traj = BezierTraj([p0, poses]);
 
-[lambdas, feasibility] = scanWalkingTerrain(biped, traj);
+[lambdas, feasibility] = scanWalkingTerrain(biped, traj,p0);
 
 end
