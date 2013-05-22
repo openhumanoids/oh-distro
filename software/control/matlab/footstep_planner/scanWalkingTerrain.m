@@ -1,4 +1,12 @@
 function [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, current_pos)
+% Scan out a grid of terrain along the robot's planned walking trajectory, then filter that terrain by its acceptability for stepping on. 
+% @param traj either a BezierTraj or a DirectTraj
+% @param current_pos where the center of the robot's feet currently is
+% @retval lambdas linearly spaced points between 0 and 1 representing positions along the trajectory
+% @retval infeasibility a struct with 'right' and 'left' fields. If infeasibility.right(n) == 0, then the right foot can be safely placed at the location along the trajectory given by lambdas(n)
+% @retval foot_centers the center position of each foot at each lambda 
+
+debug = false;
 
 foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2));
 
@@ -27,11 +35,12 @@ Z(isnan(Z)) = current_pos(3);
 X = reshape(X, length(sample_y), length(sample_x));
 Y = reshape(Y, length(sample_y), length(sample_x));
 Z = reshape(Z, length(sample_y), length(sample_x));
+Z = medfilt2(Z);
 normals = reshape(normals, length(sample_y), length(sample_x), []);
 
 Q = zeros(size(Z));
-Q = bsxfun(@max, Q, abs(imfilter(Z, [1, -1])) - 0.01);
-Q = bsxfun(@max, Q, abs(imfilter(Z, [1; -1])) - 0.01);
+Q = bsxfun(@max, Q, abs(imfilter(Z, [1, -1])) - 0.03);
+Q = bsxfun(@max, Q, abs(imfilter(Z, [1; -1])) - 0.03);
 Q(isnan(Z)) = 1;
 Q(Q > 0) = 1;
 
@@ -58,18 +67,20 @@ infeasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_
    'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
 
 
-% plot_lcm_points([reshape(X, [], 1), reshape(Y, [], 1), reshape(Z, [], 1)], [reshape(F, [], 1), reshape(1-F, [], 1), reshape(zeros(size(F)), [], 1)], 71, 'Terrain Feasibility', 1, 1);
+plot_lcm_points([reshape(X, [], 1), reshape(Y, [], 1), reshape(Z, [], 1)], [reshape(F, [], 1), reshape(1-F, [], 1), reshape(zeros(size(F)), [], 1)], 71, 'Terrain Feasibility', 1, 1);
  
-% figure(1)
-% mesh(X, Y, Z)
-% axis equal
+if debug
+  figure(1)
+  mesh(X, Y, Z)
+  axis equal
 
-% figure(2)
-% clf
-% mesh(X, Y, F)
-% hold on
-% plot3(foot_centers.right(1,:), foot_centers.right(2,:), infeasibility.right, 'g')
-% plot3(foot_centers.left(1,:), foot_centers.left(2,:), infeasibility.left, 'b')
-% axis equal
+  figure(2)
+  clf
+  mesh(X, Y, F)
+  hold on
+  plot3(foot_centers.right(1,:), foot_centers.right(2,:), infeasibility.right, 'g')
+  plot3(foot_centers.left(1,:), foot_centers.left(2,:), infeasibility.left, 'b')
+  axis equal
+end
 
 end
