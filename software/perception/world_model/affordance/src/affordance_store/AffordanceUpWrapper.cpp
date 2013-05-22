@@ -52,8 +52,7 @@ void AffordanceUpWrapper::getAllAffordancesPlus(std::vector<AffPlusPtr> &affs_pl
 
 //=============mutators
 /**Add a newly fitted affordance to the server.
-   @param aff affordance to add to the server store.  or, if this affordance already
- * exists, then we are replacing the existing affordance.
+   @param aff affordance to add to the server store.  
  * Note that changes will only be refelcted in getAllAffordances once
  * the server accepts the addition/replacement and then pushes
  * the resulting affordance collection to this object.*/
@@ -71,6 +70,27 @@ void AffordanceUpWrapper::getAllAffordancesPlus(std::vector<AffPlusPtr> &affs_pl
 	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msgPlus);
 	_accessMutex.unlock(); //========unlock
 }
+
+
+/**Add a newly fitted affordance to the server.
+   @param aff affordance to add to the server store.  
+ * Note that changes will only be refelcted in getAllAffordances once
+ * the server accepts the addition/replacement and then pushes
+ * the resulting affordance collection to this object.*/
+  void AffordanceUpWrapper::addNewlyFittedAffordance(const AffordancePlusState &affPlus)
+{
+	_accessMutex.lock(); //=========lock
+
+	drc::affordance_plus_t msgPlus;
+	affPlus.toMsg(&msgPlus);
+
+    msgPlus.aff.aff_store_control = drc::affordance_t::NEW;
+
+	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msgPlus);
+	_accessMutex.unlock(); //========unlock
+}
+  
+
 
   /**delete the given affordance from the store
    @aff affordance to delete from the store*/
