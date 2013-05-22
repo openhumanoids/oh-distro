@@ -547,7 +547,6 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::image_t* msg){
 
-  fprintf(stderr, "Called\n");
   counter_++;
   if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
   if (width_ != msg->width){
