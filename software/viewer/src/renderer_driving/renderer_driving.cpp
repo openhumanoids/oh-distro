@@ -1479,10 +1479,8 @@ static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char 
                 bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 1);
             }
         }
-        else {
-            fprintf (stdout, "DISABLING STEERING\n");
+        else 
             bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
-        }       
 
         self->steer_have_manip_map = msg->have_manip_map;
         self->steer_min_rad = new_min;
@@ -1509,7 +1507,7 @@ static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char 
         self->gas_pedal_max = new_max;
         
 
-    } else if (!strcmp (channel, "DRIVING_BRAKE_PEDAL_ACTUATION_STATUS")) {
+    } else if (!strcmp (channel, "DRIVING_BRAKE_ACTUATION_STATUS")) {
         double new_min = min(msg->dof_value_0, msg->dof_value_1);
         double new_max = max(msg->dof_value_0, msg->dof_value_1);
         if (msg->have_manip_map) {
@@ -1521,7 +1519,7 @@ static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char 
             bot_gtk_param_widget_set_enabled (self->pw, PARAM_BRAKE, 1);
         }
         else
-            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 0);
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_BRAKE, 0);
 
         self->brake_pedal_have_manip_map = msg->have_manip_map;
         self->brake_pedal_min = new_min;

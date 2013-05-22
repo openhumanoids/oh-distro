@@ -29,44 +29,46 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
   elapsed_ms=0;
   ts0 = clock;
   elapsed_ms2 = 0;
+  ts = tic;
+  ts0 = tic;
   while(1)
-    if(elapsed_ms>100) %10Hz state update should be sufficient
-      %disp(elapsed_ms);
-      [x,ts] = getNextMessage(state_frame,0);
-      if (~isempty(x))
-        float_offset=6;
-        qcurrent=x(1:getNumDOF(r));
-        state_machine.setActiveState(qcurrent);
+      elapsed_ms = toc(ts)*1000;
+      elapsed_ms2 = toc(ts0)*1000;
+      if(elapsed_ms>100) %10Hz state update should be sufficient
+          [x,ts] = getNextMessage(state_frame,0);
+          if (~isempty(x))
+              float_offset=6;
+              qcurrent=x(1:getNumDOF(r));
+              state_machine.setActiveState(qcurrent);
+          end
+          ts = tic;
       end
-      t0=clock;
-    end
-    
-    % Publish driving manipulation affordance status
-    if (elapsed_ms2>1000 && state_machine.manip_map_received)
-        publishDrivingActuationStatus (state_machine,driving_aff_status_pub);
-    end;
-  
-    [xmap,affinds] = map_listener.getNextMessage(0);
-    if (~isempty(xmap))
-      disp('candidate manipulation plan was committed');
-      state_machine.setMap(xmap,affinds);
-      % or setGraph
-    end
-   
-    goal = affgoal_listener.getNextMessage(0);
-    if (~isempty(goal))
-        disp('candidate manipulation plan was rejected');
-        q_breaks = state_machine.getPlanGivenAffGoal(goal);
-        qdot_breaks = 0*q_breaks;
-        s_breaks=linspace(0,1,size(q_breaks,2));
-        t_breaks=s_breaks.*(length(s_breaks)*0.001);
-        planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
-        plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
-    end
-    elapsed_ms = etime(clock,t0)*1000;
-    elapsed_ms2 = etime(clock,ts0)*1000;
+      
+      % Publish driving manipulation affordance status
+      if (elapsed_ms2>1000)% && state_machine.manip_map_received)
+          publishDrivingActuationStatus (state_machine,driving_aff_status_pub);
+          ts0 = tic;
+      end;
+      
+      [xmap,affinds] = map_listener.getNextMessage(0);
+      if (~isempty(xmap))
+          disp('candidate manipulation plan was committed');
+          state_machine.setMap(xmap,affinds);
+          % or setGraph
+      end
+      
+      goal = affgoal_listener.getNextMessage(0);
+      if (~isempty(goal))
+          disp('candidate manipulation plan was rejected');
+          q_breaks = state_machine.getPlanGivenAffGoal(goal);
+          qdot_breaks = 0*q_breaks;
+          s_breaks=linspace(0,1,size(q_breaks,2));
+          t_breaks=s_breaks.*(length(s_breaks)*0.001);
+          planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+          plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+      end
   end
-
+  
 end
 
 
