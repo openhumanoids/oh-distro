@@ -1,5 +1,6 @@
 <robot name="atlas" >
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
+  <include filename="$(find atlas_description)/urdf/atlas.gazebo" />
   <include filename="$(find atlas_description)/urdf/atlas.transmission" />
   <include filename="$(find multisense_sl_description)/multisense_sl_description.urdf" />
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
