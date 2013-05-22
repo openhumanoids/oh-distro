@@ -22,6 +22,8 @@ struct walking_goal_t
 	// speed at which the foot should move while swinging (m/s)
 	double step_speed; 
 
+	double step_height;
+
 	boolean follow_spline;
 
 	boolean ignore_terrain;

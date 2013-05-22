@@ -161,6 +161,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glPopMatrix();
   }
 
+  float label_num = 0;
+  bool has_apex = false;
   for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
   { 
     //cout << "i:"<<i<< endl;
@@ -171,7 +173,18 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
     if (i > 1) { // don't label the two steps where the robot's feet already are
       std::stringstream oss;
-      float label_num = (i - 1.0) / 2.0;
+      if (!self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_in_contact) {
+        label_num += 0.5;
+        has_apex = true;
+      } else {
+        if (has_apex) {
+          label_num += 0.5;
+        } else {
+          label_num += 1;
+        }
+        has_apex = false;
+      }
+      // float label_num = (i - 1.0) / 2.0;
       oss << label_num; 
       glColor4f(0,0,0,1);
       bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);

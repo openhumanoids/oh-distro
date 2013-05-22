@@ -143,7 +143,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _gl_planned_stickyfeet_list.clear();
     _planned_stickyfeet_info_list.clear();
     // _gl_planned_stickyfeet_timestamps.clear();
-    _gl_planned_stickyfeet_speeds.clear();
+    // _gl_planned_stickyfeet_speeds.clear();
     _gl_planned_stickyfeet_ids.clear();
     
     
@@ -156,7 +156,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
      
     
       drc::footstep_goal_t goal_msg  = msg->footstep_goals[i]; 
-      _gl_planned_stickyfeet_speeds.push_back(goal_msg.step_speed);
+      // _gl_planned_stickyfeet_speeds.push_back(goal_msg.step_speed);
       _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
       
       
@@ -174,6 +174,8 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       StickyFeetInfoStruct info;
       info.is_fixed=is_constrained;
       info.is_in_contact=goal_msg.is_in_contact;
+      info.step_speed=goal_msg.step_speed;
+      info.step_height=goal_msg.step_height;
       if(!goal_msg.is_right_foot)
       {
         boost::shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));

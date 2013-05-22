@@ -20,7 +20,7 @@ classdef WalkingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      options.use_mex = true;
+      options.use_mex = false;
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 

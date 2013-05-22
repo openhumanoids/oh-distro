@@ -1,8 +1,8 @@
-function [step_traj, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
+function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
 % Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
 
 if ~isfield(options, 'foot_speed')
-  options.foot_speed = 0.5 % m/s
+  options.foot_speed = 0.5; % m/s
 end
 if ~isfield(options, 'step_height')
   options.step_height = biped.nom_step_clearance; %m
@@ -15,7 +15,7 @@ debug = false;
 planar_clearance = 0.05;
 nom_z_clearance = 0.02;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
-ramp_distance = 0.03; % m
+% ramp_distance = 0.03; % m
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 1; % rad/s
 
@@ -31,11 +31,11 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
+effective_height = (max([effective_length, effective_width])/2) / sqrt(2) + nom_z_clearance;
 
 contact_length = effective_length / 2 + planar_clearance;
 contact_width = effective_width / 2 + planar_clearance;
 
-% Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos. 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
 if step_dist_xy > 0.01
@@ -45,15 +45,18 @@ if step_dist_xy > 0.01
   % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
   % contact_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2)) + planar_clearance;
   
+  % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
   lambdas = linspace(0, step_dist_xy);
   lambda2xy = PPTrajectory(foh([0, step_dist_xy], [last_pos(1:2), next_pos(1:2)]));
   terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, 25, 10);
+  terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
+  terrain_pts(2,end) = max([terrain_pts(2,end), next_pos(3)]);
   
   expanded_terrain_pts = [terrain_pts(:,1)];
   for j = 1:length(terrain_pts(1,:))
     if terrain_pts(2, j) > (min([last_pos(3), next_pos(3)]) + options.step_height / 2)
-      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; nom_z_clearance];
-      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; nom_z_clearance];
+      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; effective_height];
+      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; effective_height];
     end
   end
   expanded_terrain_pts = [expanded_terrain_pts, terrain_pts(:,end), apex_pos_l];
@@ -82,11 +85,17 @@ traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for
 landing_time = traj_ts(end-1);
 takeoff_time = traj_ts(2);
 
-rpy_pts = [last_pos(4:6), next_pos(4:6)];
-rpy_traj = PPTrajectory(foh(traj_ts([1, end]), rpy_pts));
+% rpy_pts = [last_pos(4:6), next_pos(4:6)];
+rpy_pts = [last_pos(4:6), interp1(traj_ts([2,end-1]), [last_pos(4:6), next_pos(4:6)]', traj_ts(2:end-1))', next_pos(4:6)];
+% rpy_pts(:,3:end-2) = nan;
+% rpy_traj = PPTrajectory(foh(traj_ts, rpy_pts));
 
 
-step_traj = PPTrajectory(foh(traj_ts, [traj_pts_xyz; rpy_traj.eval(traj_ts)]));
+% step_traj = PPTrajectory(foh(traj_ts, [traj_pts_xyz; rpy_traj.eval(traj_ts)]));
+% step_traj = PPTrajectory(foh(traj_ts, [traj_pts_xyz; rpy_pts]));
+swing_poses = [traj_pts_xyz; rpy_pts];
+swing_ts = traj_ts;
+
 
 if debug
   figure(1)

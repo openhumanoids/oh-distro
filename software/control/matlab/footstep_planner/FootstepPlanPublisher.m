@@ -43,8 +43,8 @@ classdef FootstepPlanPublisher
 
 			msg.pos.translation = trans;
 			msg.pos.rotation = rot;
-			% msg.step_time = int64((X.time + t) * 1000000);
 			msg.step_speed = X.step_speed;
+			msg.step_height = X.step_height;
 			msg.id = int32(X.id);
 			msg.fixed_x = X.pos_fixed(1);
 			msg.fixed_y = X.pos_fixed(2);

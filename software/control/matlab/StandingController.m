@@ -25,7 +25,7 @@ classdef StandingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      if(~isfield(options,'use_mex')) options.use_mex = true; end
+      if(~isfield(options,'use_mex')) options.use_mex = false; end
 
       qp = QPController(r,ctrl_data,options);
 

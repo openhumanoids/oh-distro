@@ -1,7 +1,5 @@
 classdef Biped < TimeSteppingRigidBodyManipulator
   properties
-    short_step_time
-    long_step_time
     max_forward_step
     nom_forward_step
     max_backward_step
@@ -16,6 +14,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     r_foot_name
     l_foot_name
     foot_bodies
+    next_step_id
     lc
   end
   
@@ -29,9 +28,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         dt = 0.002;
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
-      defaults = struct('short_step_time', 1.4,... % s
-        'long_step_time', 2,...
-        'nom_forward_step', 0.25,... %m
+      defaults = struct('nom_forward_step', 0.25,... %m
         'max_forward_step', 0.4,...%m
         'max_backward_step', 0.20,...%m
         'max_step_width', 0.35,...%m
@@ -51,7 +48,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
           obj.(fields{i}) = options.(fields{i});
         end
       end
-
+      obj.next_step_id = 0;
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.foot_contact_offsets = obj.findContactOffsets();
       obj.foot_bodies = struct('right', findLink(obj, obj.r_foot_name),...
@@ -62,15 +59,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       planner = FootstepPlanner(obj);
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
-%     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, X, options)
-%       Xpos = [X.pos];
-%       Xright = Xpos(:, [X.is_right_foot] == 1);
-%       Xleft = Xpos(:, [X.is_right_foot] == 0);
-%       q0 = x0(1:end/2);
-%       [zmptraj, foottraj] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
-%       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-%       xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, ts);
-%     end
+
     function [xtraj, qtraj, htraj, V, ts] = walkingPlan(obj, x0, qstar, navgoal, options)
       if nargin < 5
         options = struct();
@@ -78,24 +67,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       X = obj.planFootsteps(x0, navgoal, options);
       [xtraj, qtraj, htraj, V, ts] = obj.walkingPlanFromSteps(x0, qstar, X);
     end
-
-%     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
-%       if nargin < 4
-%         options = struct();
-%       end
-%       defaults = struct('flat_foot', true, 'interactive', true, 'plotting', true);
-%       fields = fieldnames(defaults);
-%       for i = 1:length(fields)
-%         if ~isfield(options, fields{i})
-%           options.(fields{i}) = defaults.(fields{i});
-%         end
-%       end
-%       if ~options.flat_foot
-%         obj.max_step_length = 0.6;
-%       end
-%       X = planFootsteps(obj, x0, poses, options);
-%       [xtraj, ts] = walkingPlanFromSteps(obj, x0, X, options);
-%     end
 
     function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
       if is_right_foot
@@ -129,11 +100,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       sizecheck(q0,[obj.getNumDOF,1]);
 
       kinsol = doKinematics(obj,q0);
-      rfoot_body = findLink(obj,obj.r_foot_name);
-      lfoot_body = findLink(obj,obj.l_foot_name);
 
-      rfoot0 = forwardKin(obj,kinsol,rfoot_body,[0;0;0],true);
-      lfoot0 = forwardKin(obj,kinsol,lfoot_body,[0;0;0],true);
+      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies.right,[0;0;0],true);
+      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies.left,[0;0;0],true);
 
       foot_orig = struct('right', rfoot0, 'left', lfoot0);
     end
@@ -144,52 +113,25 @@ classdef Biped < TimeSteppingRigidBodyManipulator
                    'left', int32([1:2:(total_steps-1), total_steps]));
     end
 
-    function apex_pos = get_apex_pos(obj, last_pos, next_pos)
+    function apex_pos = findApexPos(obj, last_pos, next_pos, apex_height)
       apex_pos = mean([last_pos, next_pos], 2);
       apex_pos(4:6) = mean(unwrap([last_pos(4:6), next_pos(4:6)], [], 2), 2);
-      % for j = 4:6
-      %   apex_pos(j) = mean(unwrap
-      %   last_pos(j) + 0.5 * angleDiff(last_pos(j), next_pos(j));
-      % end
-      apex_pos(3) = max([last_pos(3), next_pos(3)]) + obj.nom_step_clearance;
+      if nargin < 4
+        apex_height = obj.nom_step_clearance;
+      end
+      apex_pos(3) = max([last_pos(3), next_pos(3)]) + apex_height;
     end
 
-    function t = getStepTimes(obj, X, time_per_step)
-      % Assume the columns of X are already in order by time
-      nsteps = length(X(1,:));
-      if nargin < 3 || time_per_step == 0
-        time_per_step = obj.short_step_time;
+    function id = getNextStepID(obj, reset)
+      persistent next_id
+      if (nargin < 2)
+        reset = false;
       end
-      t = zeros(1, nsteps);
-      % j = 3;
-      % if abs(X(3, j-2) - X(3, j+1)) > 0.01
-      %   t(j) = t(j-1) + obj.long_step_time / 2;
-      %   t(j+1) = t(j) + obj.long_step_time / 2;
-      % else
-      %   t(j) = t(j-1) + obj.short_step_time / 2;
-      %   t(j+1) = t(j) + obj.short_step_time / 2;
-      % end
-      % for j = 5:2:nsteps
-      %   if abs(X(3, j-3) - X(3, j+1)) > 0.01
-      %     t(j) = t(j-1) + obj.long_step_time / 2;
-      %     t(j+1) = t(j) + obj.long_step_time / 2;
-      %   else
-      %     t(j) = t(j-1) + obj.short_step_time / 2;
-      %     t(j+1) = t(j) + obj.short_step_time / 2;
-      %   end
-      % end
-          
-        
-      t(3:end) = (1:nsteps-2) * (time_per_step/2);
-    end
-
-    function id = getNextStepID(obj)
-      persistent counter
-      if isempty(counter)
-        counter = 0;
+      if (isempty(next_id) || reset)
+        next_id = 0;
       end
-      counter = counter + 1;
-      id = counter;
+      id = next_id;
+      next_id = next_id + 1;
     end
 
     function publish_footstep_plan(obj, X, t, isnew)

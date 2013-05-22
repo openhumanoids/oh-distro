@@ -40,6 +40,7 @@
 // #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
 // #define PARAM_STEP_TIME "Time per step (s)"
 #define PARAM_STEP_SPEED "Foot speed (m/s)"
+#define PARAM_STEP_HEIGHT "Step apex height (m)"
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
 
@@ -187,6 +188,7 @@ typedef struct _RendererWalking {
   int64_t robot_utime;
   // int64_t time_per_step_ns;
   double step_speed;
+  double step_height;
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
   
@@ -348,6 +350,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     msg.allow_optimization = self->allow_optimization;
     // msg.time_per_step = self->time_per_step_ns;
     msg.step_speed = self->step_speed;
+    msg.step_height = self->step_height;
     msg.follow_spline = self->follow_spline;
     msg.ignore_terrain = self->ignore_terrain;
     if (self->leading_foot == LEADING_FOOT_RIGHT) {
@@ -412,6 +415,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
+  self->step_height = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_HEIGHT);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
@@ -426,6 +430,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->last_walking_msg.follow_spline = self->follow_spline;
       self->last_walking_msg.ignore_terrain = self->ignore_terrain;
       self->last_walking_msg.step_speed = self->step_speed;
+      self->last_walking_msg.step_height = self->step_height;
       self->last_walking_msg.allow_optimization = self->allow_optimization;
       // self->last_walking_msg.time_per_step = self->time_per_step_ns;
       if (self->leading_foot == LEADING_FOOT_RIGHT) {
@@ -508,6 +513,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
   self->step_speed = 0.5; // m/s
+  self->step_height = 0.05; // m
   self->leading_foot = LEADING_FOOT_RIGHT;
   
   self->perceptionData = new PerceptionData();
@@ -525,6 +531,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 0.0);  
   // bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 1.0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.5, 0.05, self->step_speed);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);

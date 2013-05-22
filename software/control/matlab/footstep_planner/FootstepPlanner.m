@@ -20,14 +20,14 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
-      obj.hmap_ptr = HeightMapHandle();
+      % obj.hmap_ptr = HeightMapHandle();
       % mapAPIwrapper(obj.hmap_ptr);
     end
 
     function X = updatePlan(obj, X, data, changed, changelist)
       if changelist.goal || isempty(X)
         msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
         % obj.options.time_per_step = obj.options.time_per_step / 1e9;
@@ -45,6 +45,7 @@ classdef FootstepPlanner < DRCPlanner
         [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, obj.options);
       end
       if changelist.plan_con
+        % apply changes from user adjustment of footsteps in viewer
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
@@ -56,20 +57,6 @@ classdef FootstepPlanner < DRCPlanner
           X(matching_ndx).is_in_contact = old_x.is_in_contact;
           if obj.options.ignore_terrain
             X(matching_ndx).pos(3) = old_x.pos(3);
-          end
-          if X(matching_ndx).is_in_contact 
-            if ~any(X(matching_ndx - 1).pos_fixed(1:3))
-              if matching_ndx > 3
-                n = matching_ndx - 3;
-                if matching_ndx > 5
-                  n = matching_ndx - 4;
-                end
-                X(matching_ndx-1).pos = obj.biped.get_apex_pos(X(n).pos, X(matching_ndx).pos);
-              end
-            end
-            if (matching_ndx < length(X) - 4) && ~any(X(matching_ndx + 3).pos_fixed(1:3))
-                X(matching_ndx+3).pos = obj.biped.get_apex_pos(X(matching_ndx).pos, X(matching_ndx+4).pos);
-            end
           end
         end
       end
@@ -106,6 +93,7 @@ classdef FootstepPlanner < DRCPlanner
           msg ='Foot Plan : Committed'; disp(msg); send_status(6,0,0,msg);
         end
         if planning
+          % profile on
           X = obj.updatePlan(X_old, data, changed, changelist);
           if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
             modified = false;
@@ -127,7 +115,7 @@ classdef FootstepPlanner < DRCPlanner
             Xout(j).pos(3) = Xout(j).pos(3) - 0.003;
           end
           publish(Xout);
-          % last_publish_time = now();
+          % profile viewer
         else
           pause(1)
         end
@@ -135,7 +123,22 @@ classdef FootstepPlanner < DRCPlanner
 
 
       function publish(X)
+        if length(X) > 2
+          [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X);
+          pts.right = foottraj.right.orig.eval(linspace(foottraj.right.orig.tspan(1),...
+                                                         foottraj.right.orig.tspan(end)));
+          pts.left = foottraj.left.orig.eval(linspace(foottraj.left.orig.tspan(1),...
+                                                         foottraj.left.orig.tspan(end)));
+%           pts.right = obj.biped.footOrig2Contact(pts.right, 'center', 1);
+%           pts.left = obj.biped.footOrig2Contact(pts.left, 'center', 0);
+          plot_lcm_points(pts.right', repmat([224/255, 116/255, 27/255], size(pts.right, 2), 1), 30, 'Right Foot Trajectory', 2, 1);
+          plot_lcm_points(pts.left', repmat([27/255, 148/255, 224/255], size(pts.left, 2), 1), 31, 'Left Foot Trajectory', 2, 1);
+        else
+          plot_lcm_points([nan nan nan], [0 0 0], 30, 'Right Foot Trajectory', 2, 1);
+          plot_lcm_points([nan nan nan], [0 0 0], 31, 'Left Foot Trajectory', 2, 1);
+        end
         obj.biped.publish_footstep_plan(X, data.utime, isnew);
+        msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
       end
 
 
