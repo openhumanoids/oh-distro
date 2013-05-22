@@ -39,7 +39,7 @@ void ICPTracker::setBoundingBox( Eigen::Vector3f  boundbox_lower_left_in, Eigen:
 
 
 //std::vector<float> ICPTracker::ICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts, uint8_t* img_data,
-void ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
+bool ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
                               pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud, Eigen::Isometry3d previous_pose){
 
   // Apply a bounding box relative to the previous pose:
@@ -54,7 +54,8 @@ void ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_c
   // First remove the offset of the affordance pose so that the TF will be relative to that pose:
   removePoseOffset( previous_cloud, new_cloud, previous_pose.inverse().cast<float>() );
   Eigen::Matrix4f tf_previous_to_new;
-  doICP(previous_cloud, new_cloud, tf_previous_to_new);
+  double score = 100;
+  bool converged = doICP(previous_cloud, new_cloud, tf_previous_to_new, &score);
   new_pose_=  previous_pose * tf_previous_to_new.cast<double>() ;
 
   if(verbose_lcm_>=1){
@@ -63,6 +64,7 @@ void ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_c
     Isometry3dTime new_poseT = Isometry3dTime(0, new_pose_); 
     pc_vis_->pose_to_lcm_from_list(771010, new_poseT);
   }
+  return converged;
 }
 
 
@@ -80,27 +82,42 @@ void ICPTracker::removePoseOffset(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previo
     pc_vis_->ptcld_to_lcm_from_list(771002, *previous_cloud, null_poseT_.utime, null_poseT_.utime);
     pc_vis_->ptcld_to_lcm_from_list(771003, *new_cloud, null_poseT_.utime, null_poseT_.utime);
   }
-
 }
 
 
 bool ICPTracker::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud, 
-                        Eigen::Matrix4f & tf_previous_to_new){
+                        Eigen::Matrix4f & tf_previous_to_new, double *score){
   IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
   icp.setInputTarget( previous_cloud );
   icp.setInputCloud( new_cloud );
   //params:
   // default is 10
   // for car 50 worked well
-  icp.setMaximumIterations (20);
-  //icp.setMaxCorrespondenceDistance(0.05);
+  icp.setMaximumIterations (50);
+  //try with a crappy max distance and then try with a smaller one to get a better alignment 
+  icp.setMaxCorrespondenceDistance(0.05);
+  //icp.setTransformationEpsilon (1e-8);
+  // Set the euclidean distance difference epsilon (criterion 3)
+  //icp.setEuclideanFitnessEpsilon (1);
 
   PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
   icp.align(*downsampled_output);
 
+  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+  icp.getFitnessScore() << std::endl;
+
+  *score = icp.getFitnessScore();
+
+  if(icp.getFitnessScore() > 0.01){
+    fprintf(stderr, "No convergence\n");
+  }
+  //smaller the score the better 
+
   // Apply inverted transform to transform original cloud onto the new pose:
   tf_previous_to_new = icp.getFinalTransformation().inverse();
   pcl::transformPointCloud(*previous_cloud, *previous_cloud, icp.getFinalTransformation());
+
+  return icp.hasConverged();
 }
 
 

@@ -31,9 +31,9 @@ class ICPTracker
 			Eigen::Isometry3f previous_pose );
 
     bool doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud,
-			Eigen::Matrix4f & tf_previous_to_new);
+		Eigen::Matrix4f & tf_previous_to_new, double *score);
 
-    void doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
+    bool doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud, Eigen::Isometry3d previous_pose);
     
     Eigen::Isometry3d getUpdatedPose(){

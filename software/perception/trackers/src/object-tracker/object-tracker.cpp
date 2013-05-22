@@ -546,6 +546,8 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::image_t* msg){
+
+  fprintf(stderr, "Called\n");
   counter_++;
   if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
   if (width_ != msg->width){
@@ -599,7 +601,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
       pcl::PointCloud<pcl::PointXYZRGB> object_cloud_copy_deep;
       object_cloud_copy_deep = *object_cloud_;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> (object_cloud_copy_deep));
-      icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
+      bool converged = icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
       object_pose_ = icp_tracker_->getUpdatedPose();
       //std::cout << object_pose_.translation().transpose() << " new xyz\n";
       //std::cout << object_pose_.rotation() << " new rot\n";
@@ -785,8 +787,10 @@ void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use
   tracker_initiated_ = true;
   got_initial_affordance_ = false;
   plane_pose_set_ = false;
-  
+
+ 
   if( verbose_ >=1 ){
+    cout << "Initiating tracker ++++ \n";
     stringstream ss2;
     ss2 << "Tracker | Pose of Aff " << affordance_id_;
     affordance_vis_ = 4451006 +  affordance_id_*10;

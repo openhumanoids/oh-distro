@@ -87,6 +87,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
     lcm_(lcm_), lidar_channel_(lidar_channel_), affordance_id_(affordance_id_),
     null_poseT_(0, Eigen::Isometry3d::Identity()){
 
+  cout <<  "Creating ICP Tracker\n";
+
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
@@ -138,6 +140,7 @@ void Pass::init_tracking(bool use_plane_tracker, int plane_affordance_id){
 
 void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::planar_lidar_t* msg){
+  cout << "L" <<endl;
   counter_++;
   if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
 
