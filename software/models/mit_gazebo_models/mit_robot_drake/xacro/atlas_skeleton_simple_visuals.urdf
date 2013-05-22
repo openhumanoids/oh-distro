@@ -1,20 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot name="drc_skeleton" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:macro name="collision_point" params="group xyz visualize">
-    <collision group="${group}"> 
-      <origin rpy="0 0 0" xyz="${xyz}"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual> 
-      <origin rpy="0 0 0" xyz="${xyz}"/>
-      <geometry>
-        <sphere radius="${visualize*0.01}"/>
-      </geometry>
-    </visual>
-  </xacro:macro>
   <xacro:macro name="collision_box" params="group xyz rpy size visualize">
     <collision group="${group}"> 
       <origin rpy="${rpy}" xyz="${xyz}"/>
@@ -47,6 +33,20 @@
       <material name="vis">
         <color rgba="1 1 1 ${visualize}"/>
       </material>
+    </visual>
+  </xacro:macro>
+  <xacro:macro name="collision_point" params="group xyz visualize">
+    <collision group="${group}"> 
+      <origin rpy="0 0 0" xyz="${xyz}"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual> 
+      <origin rpy="0 0 0" xyz="${xyz}"/>
+      <geometry>
+        <sphere radius="${visualize*0.01}"/>
+      </geometry>
     </visual>
   </xacro:macro>
 
@@ -556,6 +556,7 @@
       <origin xyz="0 -0.093 0" rpy="0 -0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.01"/>
     </inertial>
+    <xacro:collision_point group="palm" xyz="0.0 -0.115 0.0" visualize="1"/>
 
     <visual group="default">
       <origin rpy="1.5707963267949 0 0" xyz="0.001 -0.1 0.01"/>
@@ -685,6 +686,7 @@
         <sphere radius="0"/>
       </geometry>
     </collision>
+    <xacro:collision_point group="knee" xyz="0.1096 0.0029 0.012" visualize="1"/>
   </link>
   <link name="r_scap">
     <inertial>
@@ -828,25 +830,9 @@
       <origin xyz="0 0 -0.21" rpy="0 -0 0"/>
       <inertia ixx="0.0453457" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.0071591"/>
     </inertial>
+    <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.18" visualize="1"/>    
+    <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.08" visualize="1"/>    
 
-    <collision group="hamstring">
-      <origin rpy="0 0 0" xyz="-0.1179 0.02085 -0.18"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision group="hamstring">
-      <origin rpy="0 0 0" xyz="-0.1179 0.02085 -0.08"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision group="quad">
-      <origin rpy="0 0 0" xyz="0.0821 0.02085 -0.18"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
     <visual group="default">
       <origin rpy="0 0 0" xyz="-0.0179 -0.02085 -0.13"/>
       <geometry>
@@ -902,19 +888,15 @@
       <origin xyz="0.02 -0.001 0.211" rpy="0 -0 0"/>
       <inertia ixx="0.395" ixy="0" ixz="0.083" iyy="0.544742" iyz="-0.003" izz="0.10973"/>
     </inertial>
+    <xacro:collision_point group="front" xyz="0.2040 0.12 0.3471" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.2040 -0.12 0.3471" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.2040 0.12 0.0309" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.2040 -0.12 0.0309" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.1148 0.12 0.3471" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.1148 -0.12 0.3471" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.1148 0.12 0.0309" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.1148 -0.12 0.0309" visualize="1"/>
 
-    <collision group="sternum">
-      <origin rpy="0 0 0" xyz="0.2040 0 0.3471"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision group="navel">
-      <origin rpy="0 0 0" xyz="-0.1148 0 0.0309"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
     <visual group="default">
       <origin rpy="0 -0 0" xyz="0.0446 0 0.1869"/>
       <geometry>
