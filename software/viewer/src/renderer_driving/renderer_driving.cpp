@@ -66,6 +66,8 @@
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
 #define PARAM_GOAL_TYPE "Goal Type"
 
+#define PARAM_UPDATE_CAR_MODEL "Change Car Affordance model"
+
 #define PARAM_LOOKAHEAD "Lookahead Distance"
 #define PARAM_P_GAIN "P Gain"
 #define PARAM_D_GAIN "D Gain"
@@ -271,6 +273,7 @@ typedef struct _RendererDriving {
     drc_driving_controller_status_t *controller_status;
     drc_driving_status_t *ground_truth_status;
 
+    drc_affordance_t *car_affordance;
   
   
     visual_goal_type_t visual_goal_type;
@@ -1099,7 +1102,6 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
                       const GdkEventKey *event)
 {
     RendererDriving *self = (RendererDriving*) ehandler->user;
-    self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
 
     return 0;
 }
@@ -1129,8 +1131,6 @@ static void send_seek_goal_visual (RendererDriving *self) {
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
     RendererDriving *self = (RendererDriving*) user;
-    self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
-    self->visual_goal_type =(visual_goal_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_VISUAL_GOAL_TYPE);
 
     // Disable certain sliders depending upon goal mode
     goal_type_t goal_type_temp  = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
@@ -1169,6 +1169,19 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
         //bot_viewer_request_pick (self->viewer, &(self->ehandler));
         activate(self, 2);
+    }
+    else if(!strcmp(name, PARAM_UPDATE_CAR_MODEL)) {
+        fprintf(stderr,"\nUpdating car affordance\n");	
+	if(self->car_affordance){
+	  free(self->car_affordance->modelfile);
+	  //self->car_affordance->utime = 0;
+	  self->car_affordance->aff_store_control = 1;
+	  self->car_affordance->modelfile = strdup("car_cabin_2cm.pcd");
+	  drc_affordance_t_publish(self->lc, "AFFORDANCE_TRACK", self->car_affordance);
+	}
+	else{
+	  fprintf(stderr, "No car affordance message\n");	  
+	}	
     }
     else if(!strcmp(name, PARAM_STOP)){
         bot_viewer_set_status_bar_message(self->viewer, "Sent ESTOP");
@@ -1374,6 +1387,20 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     bot_viewer_request_redraw(self->viewer);
 }
 
+static void on_affordance_collection(const lcm_recv_buf_t * buf, const char *channel, 
+                                const drc_affordance_collection_t *msg, void *user){
+  RendererDriving *self = (RendererDriving*) user;
+  drc_affordance_t *car_affordance = NULL;
+  for(int i = 0; i < msg->naffs; i++){
+    if(!strcmp("car", msg->affs[i].otdf_type)){
+      if(self->car_affordance != NULL){
+	drc_affordance_t_destroy(self->car_affordance);
+      }
+      self->car_affordance = drc_affordance_t_copy(&msg->affs[i]);      
+    }
+  }
+}
+
 static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel, 
                                 const drc_robot_state_t *msg, void *user){
     RendererDriving *self = (RendererDriving*) user;
@@ -1499,6 +1526,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
 {
     RendererDriving *self = new RendererDriving();
     //  RendererDriving *self = (RendererDriving*) calloc (1, sizeof (RendererDriving));
+    self->car_affordance = NULL;
+    
     self->viewer = viewer;
     self->renderer.draw = _draw;
     self->renderer.destroy = _free;
@@ -1557,6 +1586,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   
     drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
     perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
+    
+    drc_affordance_collection_t_subscribe(self->lc, "AFFORDANCE_COLLECTION", on_affordance_collection, self);
 
     // Status messages
     drc_driving_controller_values_t_subscribe(self->lc, "DRIVING_CONTROLLER_COMMAND_VALUES", on_controller_values, self);
@@ -1568,11 +1599,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   
     self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE, 0, NULL);
-    bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
-  
-    bot_gtk_param_widget_add_enum(self->pw, PARAM_VISUAL_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, VISUAL_GOAL_GLOBAL, "Global", VISUAL_GOAL_GLOBAL, "Relative", VISUAL_GOAL_RELATIVE, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_VISUAL_GOAL, NULL);
+    
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_CAR_MODEL, NULL);
  
     bot_gtk_param_widget_add_separator (self->pw, "Driving controller Params");
 
