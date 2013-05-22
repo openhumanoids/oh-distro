@@ -226,7 +226,7 @@ classdef QPController < MIMODrakeSystem
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
     if ~isempty(active_supports)
-      %       A_ls = ctrl_data.A; % always TI
+      A_ls = ctrl_data.A; % always TI
       B_ls = ctrl_data.B; % always TI
       Qy = ctrl_data.Qy;
       if isfield(ctrl_data,'R')
@@ -265,11 +265,17 @@ classdef QPController < MIMODrakeSystem
       else
         u0 = ctrl_data.u0.eval(t); 
       end
+      if typecheck(ctrl_data.y0,'double')
+        y0 = ctrl_data.y0;
+      else
+        y0 = ctrl_data.y0.eval(t); 
+      end
     else
       % allocate these for passing into mex
       B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);D_ls=zeros(2);
-      S=zeros(4);s1=zeros(4,1);x0=zeros(4,1);u0=zeros(2,1);
+      S=zeros(4);s1=zeros(4,1);x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
     end
+    
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
 %    out_tic = tic;
@@ -349,6 +355,7 @@ classdef QPController < MIMODrakeSystem
         x_bar = xlimp - x0;      
       end
       
+      
       %----------------------------------------------------------------------
       % Free DOF cost function ----------------------------------------------
 
@@ -358,11 +365,11 @@ classdef QPController < MIMODrakeSystem
           Hqp = J(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
           Hqp = Hqp + obj.w*eye(nq_free);
 
-          fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
+          fqp = xlimp'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
           fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
-          fqp = fqp + x_bar'*S*B_ls*J(:,obj.free_dof);
-          fqp = fqp + 0.5*s1'*B_ls*J(:,obj.free_dof);
-          fqp = fqp - u0'*R_DQyD_ls*J(:,obj.free_dof);
+          fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J(:,obj.free_dof);
+          fqp = fqp - u0'*R_ls*J(:,obj.free_dof);
+          fqp = fqp - y0'*Qy*D_ls*J(:,obj.free_dof);
           fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
         else
           Hqp = eye(nq_free);
@@ -442,11 +449,11 @@ classdef QPController < MIMODrakeSystem
         Hqp = Iqdd'*J(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
         Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
 
-        fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = xlimp'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + x_bar'*S*B_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + 0.5*s1'*B_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp - u0'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp - u0'*R_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp - y0'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
 
         % quadratic slack var cost 
@@ -517,7 +524,7 @@ classdef QPController < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-       y = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0);
+       y = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
     end
     
     if (obj.use_mex==2)
@@ -532,6 +539,14 @@ classdef QPController < MIMODrakeSystem
 %      valuecheck(y,des.y);  % they are close, but not *quite* the same.
     end
     
+%     V = x_bar'*S*x_bar + s1'*x_bar;
+%     Vdot = (x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot(:,obj.con_dof)*qd(obj.con_dof) + J(:,obj.con_dof)*Iqdd*alpha));
+%     
+%     fprintf('V: %2.5f\n',V);
+%     fprintf('Vdot: %2.5f\n',Vdot);
+%     
+%     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
+%     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
     
     if obj.debug && (obj.use_mex==0 || obj.use_mex==2) && nc > 0
       if nq_free > 0

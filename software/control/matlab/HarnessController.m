@@ -125,8 +125,8 @@ classdef HarnessController < DRCController
                 obj = setDuration(obj,inf,false); % set the controller timeout
             else
                 % use saved nominal pose
-                if(strcmp(obj.name,'seated_driving'))
-		  d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
+               if(strcmp(obj.name,'seated_driving'))
+                  d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
                   %d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands up
                else
                     d = load('data/atlas_fp.mat');

@@ -194,6 +194,10 @@ classdef DRCController
           end
       end
       
+%       missed_frames = 0;
+%       max_state_delay = 0;
+%       ttprev = [];
+      
       t_offset = -1;
       lcm_check_tic = tic;
       while (1)
@@ -256,6 +260,10 @@ classdef DRCController
         end
      
         tt = max(input_frame_time);
+%         if isempty(ttprev)
+%           ttprev=tt;
+%         end
+        
         if any(tt >= obj.t_final)
           % on timeout events, we pass back the latest input data unless
           % there is precomputed stuff available
@@ -280,10 +288,19 @@ classdef DRCController
           break;
         end
         
+%         if all(input_frame_time == -1)
+%           missed_frames = missed_frames +1;
+%         end
+        
         if any(input_frame_time >=0) % could also do 'all' here
+%           max_state_delay = max(max_state_delay,tt-ttprev);
+%           ttprev=tt;
+
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
           obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
         end
+%         fprintf('Num missed frames: %d \n',missed_frames);
+%         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);
 %         toc
       end
     end

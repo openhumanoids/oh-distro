@@ -9,14 +9,24 @@ classdef StandingController < DRCController
     function obj = StandingController(name,r,options)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
-        'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
-        'R',zeros(2),'Qy',eye(2),'S',[],'s1',zeros(4,1),'x0',zeros(4,1),'u0',zeros(2,1),...
-        'qtraj',zeros(getNumDOF(r),1),'supptraj',[]));
+      ctrl_data = SharedDataHandle(struct(...
+        'A',[zeros(2),eye(2); zeros(2,4)],...
+        'B',[zeros(2); eye(2)],...
+        'C',[eye(2),zeros(2)],...
+        'D',[],...
+        'R',zeros(2),...
+        'Qy',eye(2),...
+        'S',[],...
+        's1',zeros(4,1),...
+        'x0',zeros(4,1),...
+        'u0',zeros(2,1),...
+        'y0',zeros(2,1),...
+        'qtraj',zeros(getNumDOF(r),1),...
+        'supptraj',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
-      options.w = 0.1;
+      options.w = 0.01;
       options.lcm_foot_contacts = true;
       options.full_body_opt = false; % if false, doesn't include arms/neck in QP solve (faster)
       nu=getNumInputs(r);
@@ -25,7 +35,7 @@ classdef StandingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      if(~isfield(options,'use_mex')) options.use_mex = false; end
+      if(~isfield(options,'use_mex')) options.use_mex = true; end
 
       qp = QPController(r,ctrl_data,options);
 
@@ -78,6 +88,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('D',-cdata.h/9.81*eye(2));
         obj.controller_data.setField('qtraj',cdata.q_nom);
         obj.controller_data.setField('x0',cdata.x0);
+        obj.controller_data.setField('y0',cdata.y0);
         obj.controller_data.setField('supptraj',cdata.support);
         
       elseif isfield(data,'AtlasState')
@@ -105,6 +116,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
+        obj.controller_data.setField('y0',comgoal);
         obj.controller_data.setField('supptraj',foot_support);
 
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
@@ -136,6 +148,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
+        obj.controller_data.setField('y0',comgoal);
         obj.controller_data.setField('supptraj',foot_support);
       end
      

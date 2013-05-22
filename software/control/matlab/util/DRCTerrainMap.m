@@ -47,7 +47,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle.setFillMissing(options.fill);
 
       % wait for at least one map message to arrive before continuing
-      msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]\n'];
+      msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
       send_status(3, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];

@@ -85,5 +85,6 @@ function controller_data = precomputeNodeTIZMP(r,req)
   controller_data.q_nom=q_nom;
   controller_data.support=foot_support;
   controller_data.x0=[comgoal;0;0];
+  controller_data.y0=comgoal;
        
 end
