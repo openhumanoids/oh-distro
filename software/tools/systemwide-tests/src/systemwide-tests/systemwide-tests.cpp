@@ -139,6 +139,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     goal.min_num_steps = 0;
     goal.timeout = 0;
     goal.step_speed = 0.5;
+    goal.step_height = 0.05;
     goal.follow_spline = true;
     goal.ignore_terrain = false;
     goal.allow_optimization = false;
