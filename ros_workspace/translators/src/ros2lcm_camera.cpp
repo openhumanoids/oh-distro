@@ -207,6 +207,11 @@ int main(int argc, char **argv){
   
   App *app = new App( "multisense_sl/camera", "CAMERA", nh, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
+  
+  ROS_ERROR("Mono Camera Translator Sleeping");
+  sleep(4);
+  ROS_ERROR("Mono Camera Translator Ready");
+  
   ros::spin();
   return 0;
 }

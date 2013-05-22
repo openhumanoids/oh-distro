@@ -639,7 +639,9 @@ int main(int argc, char **argv){
   }
   
   
-  ROS_ERROR("Stereo Camera Translator: [%s] [%s]", which_camera.c_str() , transport.c_str());
+  ROS_ERROR("Stereo Camera Translator Sleeping: [%s] [%s]", which_camera.c_str() , transport.c_str());
+  sleep(4);
+  ROS_ERROR("Stereo Camera Translator Ready: [%s] [%s]", which_camera.c_str() , transport.c_str());
   
   App *app = new App(nh, mode, control_output, send_ground_truth, send_head_cameras, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";

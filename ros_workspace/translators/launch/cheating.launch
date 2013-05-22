@@ -1,4 +1,8 @@
 <launch>
+  <node name="lcm2ros" pkg="translators" type="lcm2ros" /> 
+
+  <node name="ros2lcm" pkg="translators" type="ros2lcm" args="vrc_cheats_enabled" /> 
+
   <param name="/ros2lcm_hand/image_transport" value="compressed" />
   <node name="ros2lcm_hand" pkg="translators" type="ros2lcm_stereo" args="hand" /> 
 

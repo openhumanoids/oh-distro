@@ -391,15 +391,15 @@ void LCM2ROS::estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &cha
 
 
 int main(int argc,char** argv) {
-  ConciseArgs parser(argc, argv, "lcm2ros");
   bool synced = false;
   bool pause_physics_before_reconfig = true; // do we need physics to be paused to reconfig the robot
+  /*ConciseArgs parser(argc, argv, "lcm2ros");
   parser.add(synced, "s", "synced", "Synchronized joint commands.");
   parser.add(pause_physics_before_reconfig, "p", "pause_physics_before_reconfig", "Pause physics before setting robot config.");
   parser.parse();
   cout << "Synchronized: " << synced << "\n"; 
   cout << "Pause physics before setting robot config: " << pause_physics_before_reconfig << "\n";   
-  
+  */
   ros::init(argc,argv,"lcm2ros",ros::init_options::NoSigintHandler);
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -410,6 +410,11 @@ int main(int argc,char** argv) {
   
   LCM2ROS handlerObject(lcm, nh, synced, pause_physics_before_reconfig);
   cout << "\nlcm2ros translator ready\n";
+  
+  ROS_ERROR("LCM2ROS Translator Sleeping");
+  sleep(4);
+  ROS_ERROR("LCM2ROS Translator Ready");
+  
   while(0 == lcm->handle());
   return 0;
 }

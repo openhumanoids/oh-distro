@@ -743,12 +743,13 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 }
 
 int main(int argc, char **argv){
-  ConciseArgs parser(argc, argv, "ros2lcm");
   string mode = "robot";
-  bool control_output = false;
+  bool control_output = true;// by default
   bool send_ground_truth = false;  
   bool send_head_cameras = false;
   bool send_hand_cameras = false;
+
+  /*  ConciseArgs parser(argc, argv, "ros2lcm");
   parser.add(mode, "m", "mode", "Mode: robot, hands");
   parser.add(control_output, "c", "control_output", "Publish control message");
   parser.add(send_ground_truth, "g", "send_ground_truth", "Listen for and include GT odom");
@@ -759,9 +760,30 @@ int main(int argc, char **argv){
   cout << "Publish Control Messages: " << control_output << "\n";   
   cout << "Listen for and publish ground_truth_odom: " << send_ground_truth << " [control mode only]\n";   
   cout << "Publish Hand Camera Messages: " << send_hand_cameras << "\n";   
+*/
   
+  std::string mode_argument;
+  if (argc >= 2){
+     mode_argument = argv[1];
+  }else {
+    ROS_ERROR("Need to have another arguement in the launch file");
+  }
+
+  if (mode_argument.compare("vrc_cheats_enabled") == 0){
+    send_ground_truth = true;
+  }else if (mode_argument.compare("vrc_cheats_disabled") == 0){
+    send_ground_truth = false;    
+  }else {
+    ROS_ERROR("mode_argument not understood");
+    std::cout << mode_argument << " is not understood\n";
+    exit(-1);
+  }
+
+  
+  
+  ros::init(argc, argv, "ros2lcm");
+/*
   if(control_output){
-    ros::init(argc, argv, "ros2lcm_control");
   }else if(send_head_cameras){
     ros::init(argc, argv, "ros2lcm_head_cams");
   }else if(send_hand_cameras){
@@ -769,7 +791,7 @@ int main(int argc, char **argv){
   }else{
     cout << "Please choose a mode: control_output, send_head_cameras or send_hand_cameras\n";
     return -1;
-  }
+  } */
   
   ros::CallbackQueue local_callback_queue;
   ros::NodeHandle nh;
@@ -777,6 +799,7 @@ int main(int argc, char **argv){
   
   App *app = new App(nh, mode, control_output, send_ground_truth, send_head_cameras, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
+  ROS_ERROR("Control Translator: [%s]",  mode_argument.c_str());
   
   ros::spin();
 //  while (ros::ok()){

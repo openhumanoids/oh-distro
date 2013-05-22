@@ -1,0 +1,14 @@
+<launch>
+  <node name="ros2lcm" pkg="translators" type="ros2lcm" args="vrc_cheats_disabled" /> 
+
+  <param name="/ros2lcm_hand/image_transport" value="compressed" />
+  <node name="ros2lcm_hand" pkg="translators" type="ros2lcm_stereo" args="hand" /> 
+
+  <param name="/ros2lcm_head/image_transport" value="compressed" />
+  <node name="ros2lcm_head" pkg="translators" type="ros2lcm_stereo" args="head"  /> 
+
+  <param name="/ros2lcm_camera/image_transport" value="compressed" />
+  <node name="ros2lcm_camera" pkg="translators" type="ros2lcm_camera"  /> 
+</launch>
+  
+
