@@ -64,6 +64,7 @@ protected:
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
+  std::unordered_map<int,std::string> mAffordanceNames;
 
   std::unordered_map<std::string, ChannelType> mChannels;
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
@@ -138,22 +139,40 @@ public:
     activeRows->selected_foreach_iter
       (sigc::mem_fun(functor, &Functor::callback) );
 
-    // populate new list
+    // check whether affordances have changed
     std::vector<affordance::AffConstPtr> affordances;
     mAffordanceWrapper->getAllAffordances(affordances);
-    mAffordanceTreeModel->clear();
+    bool affordancesChanged = false;
+    std::unordered_map<int,std::string> newNames;
     for (size_t i = 0; i < affordances.size(); ++i) {
-      Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
-      const Gtk::TreeModel::Row& row = *localIter;
-      row[columns.mId] = affordances[i]->_uid;
       char name[256];
       sprintf(name, "%d - %s", affordances[i]->_uid,
               affordances[i]->getName().c_str());
-      row[columns.mLabel] = name;
-      if (std::find(functor.mIds.begin(), functor.mIds.end(),
-                    affordances[i]->_uid) != functor.mIds.end()) {
-        activeRows->select(localIter);
+      newNames[affordances[i]->_uid] = name;
+      if ((mAffordanceNames.find(affordances[i]->_uid) ==
+           mAffordanceNames.end()) ||
+          (mAffordanceNames[affordances[i]->_uid] != name)) {
+        affordancesChanged = true;
       }
+    }
+    if (!affordancesChanged && (mAffordanceNames.size() != newNames.size())) {
+      affordancesChanged = true;
+    }
+
+    // populate new list
+    if (affordancesChanged) {
+      mAffordanceTreeModel->clear();
+      for (size_t i = 0; i < affordances.size(); ++i) {
+        Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
+        const Gtk::TreeModel::Row& row = *localIter;
+        row[columns.mId] = affordances[i]->_uid;
+        row[columns.mLabel] = newNames[affordances[i]->_uid];
+        if (std::find(functor.mIds.begin(), functor.mIds.end(),
+                      affordances[i]->_uid) != functor.mIds.end()) {
+          activeRows->select(localIter);
+        }
+      }
+      mAffordanceNames = newNames;
     }
 
     return true;
