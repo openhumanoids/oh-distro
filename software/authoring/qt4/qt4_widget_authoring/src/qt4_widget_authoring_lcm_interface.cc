@@ -95,9 +95,22 @@ _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
                                     const affordance_collection_t* msg ){
   if( msg != NULL ){
     vector< AffordanceState > affordance_collection;
-    for( unsigned int i = 0; i < msg->naffs; i++ ){
-      AffordanceState affordance( &msg->affs[i] );
-      affordance_collection.push_back( affordance );
+    for( unsigned int i = 0; i < msg->naffs; i++ )
+      {
+        AffordanceState affordance( &msg->affs[i] );
+        
+        if (affordance.getOTDFType() != AffordanceState::CAR)
+          affordance_collection.push_back( affordance );
+        else
+          {
+            cout << "\n\n\n ================ going to try and split car============\n\n\n" << endl;
+            vector<AffPtr> split;
+            if (!affordance.toBoxesCylindersSpheres(split))
+              throw runtime_error("to boxes cylinders sphere failed for car");
+            for(uint i = 0; i < split.size();i++)
+              affordance_collection.push_back(*split[i]);
+            cout << "\n spilt car into " << split.size() << " pieces " << endl; 
+          }
     }
     emit affordance_collection_update( affordance_collection );
   }
