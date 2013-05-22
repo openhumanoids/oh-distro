@@ -1,5 +1,9 @@
 %%
 
+addpath('~/drc/software/motion_estimate/twolegged_estimate/analysis')
+
+%%
+
 vars = csv_to_mat('true_estimated_states.csv','');
 field_names = fieldnames(vars);
 for i = 1:numel(field_names)
@@ -39,23 +43,7 @@ plot(t,trate*r2d), hold on, grid on,title('rates [deg/s]')
 plot(t,erate*r2d,'--')
 
 
-if (true)
-    figure
 
-    subplot(spa,spb,1)
-
-    plot(t,tpos-epos), grid on, xlabel('Sim time [s]'), title('position errors')
-
-    subplot(spa,spb,2)
-    plot(t,tvel-evel), grid on, title('velocity errors')
-
-    subplot(spa,spb,3)
-    plot(t,(tE-eE)*r2d), grid on, title('Euler angle errors [deg]')
-
-    subplot(spa,spb,4)
-    plot(t,(trate-erate)*r2d), grid on,title('rate errors [deg/s]')
-
-end
 
 
 
@@ -206,9 +194,25 @@ if (legkinvels)
     title('Right knee and ankle Joint Velocities')
     
 end
+%%
 
+if (true)
+    figure(6)
 
+    subplot(spa,spb,1)
 
+    plot(t,tpos-epos), grid on, xlabel('Sim time [s]'), title('position errors')
+
+    subplot(spa,spb,2)
+    plot(t,tvel-evel), grid on, title('velocity errors')
+
+    subplot(spa,spb,3)
+    plot(t,(tE-eE)*r2d), grid on, title('Euler angle errors [deg]')
+
+    subplot(spa,spb,4)
+    plot(t,(trate-erate)*r2d), grid on,title('rate errors [deg/s]')
+
+end
 
 figure(1)
 

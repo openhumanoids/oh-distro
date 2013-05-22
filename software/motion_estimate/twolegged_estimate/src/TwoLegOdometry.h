@@ -112,7 +112,7 @@ class TwoLegOdometry {
 	    Eigen::Isometry3d right_to_pelvis;
 	    Eigen::Isometry3d local_to_pelvis;
 		
-		TwoLegOdometry(bool _log_data_files);
+		TwoLegOdometry(bool _log_data_files, bool dont_init_hack);
 		~TwoLegOdometry();
 		
 		// Testing function not dependent on LCM messages
@@ -120,7 +120,7 @@ class TwoLegOdometry {
 		void CalculateBodyStates_Testing(int counter);
 		
 		// 
-		bool UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float left_force, const float right_force);
+		bool UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float &left_force, const float &right_force);
 		
 		// Return which foot is which - these are based on the RIGHTFOOT and LEFTFOOT defines in TwoLegsEstiamte_types.h
 		int secondary_foot();
@@ -156,7 +156,9 @@ class TwoLegOdometry {
 		
 		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 		
-		void calculateUpdateVelocityStates(int64_t current_time);
+		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis);
+		void overwritePelvisVelocity(const Eigen::Vector3d &set_velocity);
+
 };
 
 

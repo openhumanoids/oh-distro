@@ -42,6 +42,10 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	rate_changer.setDesiredPeriod_us(0,4500);
 
+	for (int i=0;i<3;i++) {
+		median_filter[i].setLength(9);
+	}
+
 
 #ifdef LOG_LEG_TRANSFORMS
 	for (int i=0;i<4;i++) {
@@ -117,7 +121,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	}
 #endif
 
-	_leg_odo = new TwoLegOdometry(_switches->log_data_files);
+	_leg_odo = new TwoLegOdometry(_switches->log_data_files, _switches->publish_footcontact_states);
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
   if (_switches->draw_footsteps) {
 	_viewer = new Viewer(lcm_viewer);
@@ -130,9 +134,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 LegOdometry_Handler::~LegOdometry_Handler() {
 	
-	  state_estimate_error_log.Close();
-	  joint_data_log.Close();
-
+	state_estimate_error_log.Close();
+	joint_data_log.Close();
 
 	//delete model_;
 	delete _leg_odo;
@@ -292,26 +295,125 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	// Here we start populating the estimated robot state data
 	est_msgout = *_msg;
 
+	int ratechangeiter=0;
+
 	if (_switches->do_estimation){
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		
-		int joints_were_updated;
-		map<string, double> jointpos_in;
-		joints_were_updated = getJoints(_msg, &jointpos_in);
+		double alljoints[_msg->num_joints];
+		std::string jointnames[_msg->num_joints];
+		map<std::string, double> jointpos_in;
+		Eigen::Isometry3d current_pelvis;
+		Eigen::VectorXd pelvis_velocity(3);
 
-		// Here the rate change is propagated into the rest of the system
-		if (joints_were_updated==1) {
-			getTransforms_FK(_msg->utime, jointpos_in, left,right);
+		getJoints(_msg, alljoints, jointnames);
+		joints_to_map(alljoints,jointnames, _msg->num_joints, &jointpos_in);
+		getTransforms_FK(_msg->utime, jointpos_in, left,right);
 
-			// TODO -- Initialization before the VRC..
-			if (firstpass>0)
-			{
-				firstpass--;// = false;
-				_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+		// TODO -- Initialization before the VRC..
+		if (firstpass>0)
+		{
+			firstpass--;// = false;
+			_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+		}
+
+		// This must be broken into separate position and velocity states
+		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here
+		current_pelvis = _leg_odo->getPelvisState();
+
+		double pos[3];
+		double vel[3];
+
+		if (_switches->OPTION_A) {
+
+			// median filter
+			pos[0] = median_filter[0].processSample(current_pelvis.translation().x());
+			pos[1] = median_filter[1].processSample(current_pelvis.translation().y());
+			pos[2] = median_filter[2].processSample(current_pelvis.translation().z());
+
+			current_pelvis.translation().x() = pos[0];
+			current_pelvis.translation().y() = pos[1];
+			current_pelvis.translation().z() = pos[2];
+
+			stageA[0] = pos[0];
+			stageA[1] = pos[1];
+			stageA[2] = pos[2];
+
+			// DD
+			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis);
+
+			stageB[0] = _leg_odo->getPelvisVelocityStates()(0);
+			stageB[1] = _leg_odo->getPelvisVelocityStates()(1);
+			stageB[2] = _leg_odo->getPelvisVelocityStates()(2);
+
+			// Rate change
+			ratechangeiter = rate_changer.genericRateChange(_msg->utime, _leg_odo->getPelvisVelocityStates(), pelvis_velocity);
+			if (ratechangeiter==1) {
+				_leg_odo->overwritePelvisVelocity(pelvis_velocity);
 			}
 
-			legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
+			stageC[0] = pelvis_velocity(0);
+			stageC[1] = pelvis_velocity(1);
+			stageC[2] = pelvis_velocity(2);
+		}
+
+		if (_switches->OPTION_B) {
+
+			// Dist Diff
+			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis);
+
+			stageA[0] = _leg_odo->getPelvisVelocityStates()(0);
+			stageA[1] = _leg_odo->getPelvisVelocityStates()(1);
+			stageA[2] = _leg_odo->getPelvisVelocityStates()(2);
+
+			// Median
+			pelvis_velocity(0) = median_filter[0].processSample(_leg_odo->getPelvisVelocityStates()(0));
+			pelvis_velocity(1) = median_filter[1].processSample(_leg_odo->getPelvisVelocityStates()(1));
+			pelvis_velocity(2) = median_filter[2].processSample(_leg_odo->getPelvisVelocityStates()(2));
+
+			_leg_odo->overwritePelvisVelocity(pelvis_velocity);
+
+			stageB[0] = pelvis_velocity(0);
+			stageB[1] = pelvis_velocity(1);
+			stageB[2] = pelvis_velocity(2);
+
+
+			// Rate change
+			ratechangeiter = rate_changer.genericRateChange(_msg->utime, _leg_odo->getPelvisVelocityStates(), pelvis_velocity);
+			if (ratechangeiter==1) {
+				_leg_odo->overwritePelvisVelocity(pelvis_velocity);
+			}
+		}
+
+		if (_switches->OPTION_C) {
+
+			Eigen::VectorXd filtered_pelvis_vel(3);
+
+			// DD
+			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis);
+
+			// Rate change
+			ratechangeiter = rate_changer.genericRateChange(_msg->utime,_leg_odo->getPelvisVelocityStates(),filtered_pelvis_vel);
+
+			if (ratechangeiter==1) {
+
+				// Median Filter
+				vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
+				vel[1] = median_filter[1].processSample(filtered_pelvis_vel(1));
+				vel[2] = median_filter[2].processSample(filtered_pelvis_vel(2));
+
+				for (int i=0;i<3;i++) {	filtered_pelvis_vel(i) = vel[i]; }
+				_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
+
+			}
+		}
+
+
+		// Here the rate change is propagated into the rest of the system
+		if (ratechangeiter==1) {
+
+			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 			UpdateHeadStates(&est_msgout, &est_headmsg);
 
 			//clock_gettime(CLOCK_REALTIME, &threequat);
@@ -423,7 +525,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
     true_q.y() = msg->origin_position.rotation.y;
     true_q.z() = msg->origin_position.rotation.z;
 
-
     pose.utime  =msg->utime;
     
     for (int i=0; i<3; i++) {
@@ -480,6 +581,9 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
 	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
 	twist.linear_velocity.z = velocity_states(2);
+
+	//Eigen::Vector3d wrates;
+	//wrates = InertialOdometry::QuaternionLib::q2C(output_q).transpose()*local_rates;
 
 	twist.angular_velocity.x = local_rates(0);
 	twist.angular_velocity.y = local_rates(1);
@@ -647,8 +751,18 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 	#endif
 
    for (int i=0;i<16;i++) {
-		ss << filtered_joints[i] << ", "; //103-118
-	}
+	 ss << filtered_joints[i] << ", "; //103-118
+   }
+
+   for (int i=0;i<3;i++) {
+	 ss << stageA[i] << ", "; //119-121
+   }
+   for (int i=0;i<3;i++) {
+	 ss << stageB[i] << ", "; //122-124
+   }
+   for (int i=0;i<3;i++) {
+	 ss << stageC[i] << ", "; //125-127
+   }
 
 	ss <<std::endl;
 
@@ -702,6 +816,9 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	//Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
 	q = InertialOdometry::QuaternionLib::e2q(E);
+
+	//Eigen::Vector3d rates_w;
+	//rates_w = InertialOdometry::QuaternionLib::q2C(q).transpose()*rates_b;
 			
 	_leg_odo->setOrientationTransform(q, rates_b);
 	
@@ -826,7 +943,7 @@ void LegOdometry_Handler::addFootstepPose_draw() {
 	collectionindex = collectionindex + 1;
 }
 
-int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, double> *_jointpos_in) {
+void LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]) {
   
   if (filtered_joints.capacity() != msg->num_joints || !filter_joints_vector_size_set) {
 	  filter_joints_vector_size_set = true;
@@ -839,57 +956,42 @@ int LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, map<string, d
 
 	// call a routine that calculates the transforms the joint_state_t* msg.
 
-
 	if (first_get_transforms) {
 		first_get_transforms = false;
 		InitializeFilters((int)msg->num_joints);
 	}
-	//stringstream ss (stringstream::in | stringstream::out);
-
-	double alljoints[msg->num_joints];
-
 
 	for (uint i=0; i< (uint) msg->num_joints; i++) {
 		// Keep joint positions in local memory
 		alljoints[i] = msg->joint_position[i];
-	}
+		joint_name[i] = msg->joint_name[i];
 
-	int updatedjoints;
-
-	updatedjoints = filterJointPositions(msg->utime, msg->num_joints, alljoints);
-	// The filtered joint positions have been placed back in all joints variable
-
-	/*
-	for (int i=0;i<msg->num_joints;i++) {
-		filtered_joints[i] = alljoints[i];
-	}
-	*/
-
-	for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
-	  // TODO -- This is to be generalized
-	  if (i<16) {
+		if (i<16) {
 		  joint_positions[i] = msg->joint_position[i];
-	  }
+		}
 
-	  // want to filter the joint position measurements here
-	  // The idea is to use the integral and derivative trick here
-	  // a new function is to be created for this
+	}
 
-	  switch (3) {
+	//filterJointPositions(msg->utime, msg->num_joints, alljoints);
+}
+
+void LegOdometry_Handler::joints_to_map(const double joints[], const std::string joint_name[], const int &num_joints, std::map<string, double> *_jointpos_in) {
+
+	for (uint i=0; i< num_joints; i++) { //cast to uint to suppress compiler warning
+
+	  switch (2) {
 		  case 1:
-			_jointpos_in->insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+			_jointpos_in->insert(make_pair(joint_name[i], joint_lpfilters.at(i).processSample(joints[i])));
 			break;
 		  case 2:
 			// not using filters on the joint position measurements
-			_jointpos_in->insert(make_pair(msg->joint_name[i], msg->joint_position[i]));//skipping the filters
+			_jointpos_in->insert(make_pair(joint_name[i], joints[i]));//skipping the filters
 			break;
-		  case 3:
-			_jointpos_in->insert(make_pair(msg->joint_name[i], filtered_joints[i])); // The rate has been reduced to sample periods greater than 4500us and filtered with integral/rate/diff
-			break;
+		  //case 3:
+			//_jointpos_in->insert(make_pair(msg->joint_name[i], filtered_joints[i])); // The rate has been reduced to sample periods greater than 4500us and filtered with integral/rate/diff
+			//break;
 	  }
 	}
-
-	return updatedjoints;
 }
 
 void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const map<string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
@@ -1009,10 +1111,12 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 }
 
+// This member function is no longer in use
 int LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]) {
-	// we also need to consider the rate change. This will have to happen in or around this function
+
+
 	int returnval=0;
-	Eigen::VectorXd int_vals(num_joints);
+	/*Eigen::VectorXd int_vals(num_joints);
 	Eigen::VectorXd diff_vals(num_joints);
 
 	//std::cout << " | " << std::fixed << alljoints[5];
@@ -1031,9 +1135,9 @@ int LegOdometry_Handler::filterJointPositions(const unsigned long long &ts, cons
 		}
 
 		std::cout << ", after: " << filtered_joints[5] << "\n";
-		returnval  = 1;
+		returnval = 1;
 	}
-
+	*/
 	return returnval;
 }
 

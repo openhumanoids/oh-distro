@@ -136,6 +136,13 @@ fjp_r_kny = data(:,(offset+13));
 fjp_r_uay = data(:,(offset+14));
 fjp_r_lax = data(:,(offset+15));
 
+offset = 119;
+stageA = data(:,(offset:(offset+2)));
+offset = 122;
+stageB = data(:,(offset:(offset+2)));
+offset = 125;
+stageC = data(:,(offset:(offset+2)));
+
 
 % end
 

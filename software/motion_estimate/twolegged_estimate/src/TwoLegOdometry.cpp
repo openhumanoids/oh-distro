@@ -14,7 +14,7 @@
 using namespace TwoLegs;
 using namespace std;
 
-TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
+TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 {
 	cout << "A new TwoLegOdometry object was created" << endl;
 	
@@ -41,8 +41,11 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	Eigen::VectorXd ut(5);
 	w << .25,.15,.25,.2,.15;
 	ut << 5000, 10000, 20000, 30000, 50000;
-	d_pelvis_vel_diff.InitializeTaps(10, 5000, w,ut);
-	
+	//d_pelvis_vel_diff.InitializeTaps(10, 5000, w,ut);
+	if (!dont_init_hack) {
+		d_pelvis_vel_diff.ParameterFileInit();
+	}
+
 	leftforces.x = 0.f;
 	leftforces.y = 0.f;
 	leftforces.z = 0.f;
@@ -127,7 +130,7 @@ int TwoLegOdometry::secondary_foot() {
 	return -99;
 }
 
-bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float left_force, const float right_force) {
+bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float &left_force, const float &right_force) {
 	
 	bool foot_transition = false;
 	
@@ -137,9 +140,8 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	Eigen::Isometry3d pelvis;
 	pelvis = getPelvisFromStep();
 	
-	double pos[3];
-	
 	if (false) {
+		double pos[3];
 
 		pos[0] = pos_lpfilter[0].processSample(pelvis.translation().x());
 		pos[1] = pos_lpfilter[1].processSample(pelvis.translation().y());
@@ -152,11 +154,6 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	}
 	
 	setPelvisPosition(pelvis);
-	
-	calculateUpdateVelocityStates(utime);
-	
-	// now we compute the head position and velocity states
-	// presently part of the publish methods -- not repeated for internal state representation yet
 	
 	return foot_transition;
 }
@@ -389,7 +386,7 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
-	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
+	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation).transpose() * body_rates;
 }
 
 Eigen::Vector3d const TwoLegOdometry::getLocalFrameRates() {
@@ -615,22 +612,21 @@ void TwoLegOdometry::terminate() {
 	accel_spike_isolation_log.Close();
 }
 
-void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
+void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis) {
 	//std::cout << "Not implemented yet\n";
 	stringstream accel_data_ss (stringstream::in | stringstream::out);
 		
 	Eigen::Vector3d current_position;
 	//Eigen::Vector3d velocity_estimate;
 	
-	current_position = getPelvisState().translation();
+	current_position = current_pelvis.translation();
 	
 	Eigen::Vector3d prev_velocities;
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
 
-	//unfiltered_vel = pelvis_vel_diff.diff(current_time, current_position);
-	unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-
+	unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+	//unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
 
 	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
@@ -677,6 +673,10 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	//accel_data_ss << std::endl;
 	//accel_spike_isolation_log << accel_data_ss.str();
 	
-	previous_isometry = getPelvisState();
-	previous_isometry_time = current_time;
+	//previous_isometry = getPelvisState();
+	//previous_isometry_time = current_time;
+}
+
+void TwoLegOdometry::overwritePelvisVelocity(const Eigen::Vector3d &set_velocity) {
+	local_velocities = set_velocity;
 }

@@ -8,6 +8,8 @@
 #include <string.h>
 #include <vector>
 #include <boost/circular_buffer.hpp>
+#include <algorithm>
+#include <stdio.h>
 
 // objects and functions for generic operations on data
 
@@ -71,6 +73,8 @@ private:
 
 	bool first_pass;
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 	NumericalDiff();
 	void setSize(int size);
 	
@@ -108,6 +112,8 @@ private:
 	Eigen::VectorXd FindDifferentials();
 
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 	DistributedDiff();
 	~DistributedDiff();
 
@@ -116,6 +122,7 @@ public:
 	void setSize(int s);
 
 	void InitializeTaps(int hist_length, const long &per, const Eigen::VectorXd &w, const Eigen::VectorXd &t);
+	void ParameterFileInit();
 
 	Eigen::VectorXd diff(const unsigned long long &u_ts, const Eigen::VectorXd &samples);
 
@@ -152,11 +159,17 @@ public:
 
 class RateChange {
 private:
-	//int rate_ratio;
-	//int stage_counter;
 	unsigned long long prev_u_time;
-
 	unsigned long desired_period_us;
+	int size;
+
+	Eigen::VectorXd state;
+	Eigen::VectorXd int_vals;
+	TrapezoidalInt generic_integrator;
+	NumericalDiff generic_diff;
+
+	bool checkNewRateTrigger(const unsigned long long &cur_u_time);
+
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -164,10 +177,27 @@ public:
 	RateChange();
 	RateChange(const unsigned long &period_us);
 
-	void setDesiredPeriod_us(const unsigned long long &start_u_time, const unsigned long &period_us);
+	void setSize(const int &s);
 
-	bool checkNewRateTrigger(const unsigned long long &cur_u_time);
+	void setDesiredPeriod_us(const unsigned long long &start_u_time, const unsigned long &period_us);
+	bool genericRateChange(const unsigned long long &uts, const Eigen::VectorXd &samples, Eigen::VectorXd &returnval);
 
 };
+
+class MedianFilter {
+private:
+	boost::circular_buffer<double> data;
+
+	int len;
+	bool lengthset;
+
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	MedianFilter();
+	void setLength(const int &length);
+	double processSample(const double &sample);
+};
+
 
 #endif /*SIGNALTAP_HPP_*/

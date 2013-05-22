@@ -266,6 +266,49 @@ void DistributedDiff::InitializeTaps(int hist_length, const long &per, const Eig
 	individual_diffs = timespans.size();
 }
 
+void DistributedDiff::ParameterFileInit() {
+	long period_;
+
+	char item[255], status;
+
+	FILE *fp;
+
+	if( (fp = fopen("weights.txt", "r+")) == NULL)
+	{
+		std::cout << "No such file\n";
+		exit(1);
+	}
+
+	int test1,test2;
+	fscanf(fp,"%ld\n",&period_,&status);
+	std::cout << "Period was set to: " << period_ << std::endl;
+
+	int t[30];
+	float w[30];
+
+	int i=0;
+
+    while (fscanf(fp, "%d, %f\n", t+i, w+i) != EOF) {i++;}
+
+    //w[i] = atof(item);
+
+    Eigen::VectorXd timespans(30);
+    Eigen::VectorXd weights(30);
+
+    for (i=0;i<30;i++) {
+    	timespans(i) = t[i];
+    	weights(i) = w[i];
+
+    	std::cout << "Read values are: " << timespans(i) << ", " << weights(i) << std::endl;
+    }
+
+    // TODO
+    std::cout << "InitializeTaps is assumed to take 30 weights at this point.\n";
+    InitializeTaps((int)((int)w[29]/period_+0.5), period_, weights, timespans);
+
+
+}
+
 void DistributedDiff::addDataToBuffer(const unsigned long long &u_ts, const Eigen::VectorXd &samples) {
 	utimes.push_back(u_ts);
 
@@ -497,3 +540,57 @@ bool RateChange::checkNewRateTrigger(const unsigned long long &cur_u_time) {
 
 	return false;
 }
+
+bool RateChange::genericRateChange(const unsigned long long &uts, const Eigen::VectorXd &samples, Eigen::VectorXd &returnval) {
+
+	bool flag = false;
+	int_vals = generic_integrator.integrate(uts, samples);
+
+	if (checkNewRateTrigger(uts)) {
+		state = generic_diff.diff(uts, int_vals);
+		flag = true;
+	}
+	returnval = state;
+	return flag;
+}
+
+void RateChange::setSize(const int &s) {
+	size = s;
+
+	generic_integrator.setSize(size);
+	state.resize(size);
+	int_vals.resize(size);
+	generic_diff.setSize(size);
+}
+
+MedianFilter::MedianFilter() {
+	len = 0;
+	lengthset = false;
+}
+
+void MedianFilter::setLength(const int &length) {
+	len = length;
+	data.resize(len, 0.);
+	std::cout << "MedianFilter with window size " << data.size() << " was set.\n";
+	lengthset = true;
+}
+
+double MedianFilter::processSample(const double &sample) {
+
+	double buffer[len];
+
+	data.push_back(sample);
+
+	for (int i=0;i<len;i++) {
+		buffer[i] = data[i];
+	}
+
+	std::sort(buffer, buffer+len); // sort the data in the given memory location
+
+	return buffer[(int)(len/2)];
+}
+
+
+
+
+

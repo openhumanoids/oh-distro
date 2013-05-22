@@ -79,6 +79,9 @@ struct command_switches {
   bool lcm_read_trues;
   bool use_true_z;
   bool print_computation_time;
+  bool OPTION_A;
+  bool OPTION_B;
+  bool OPTION_C;
 };
 
 
@@ -130,6 +133,8 @@ private:
 	TrapezoidalInt joint_integrator;
 	NumericalDiff joint_pos_filter;
 
+	MedianFilter median_filter[3];
+
 	DataFileLogger state_estimate_error_log;
 	DataFileLogger joint_data_log;
 	
@@ -147,7 +152,9 @@ private:
 	NumericalDiff pelvis_to_feet_speed[4]; // left vel, right vel, left rate, right rate
 	volatile double pelvis_to_feet_transform[12]; // left vel, right vel, left rate, right rate
 #endif
-
+	volatile double stageA[3];
+	volatile double stageB[3];
+	volatile double stageC[3];
 	
 	// These filters were added separately from the joint filters
 	LowPassFilter lpfilter[FILTER_ARR];
@@ -170,7 +177,8 @@ private:
 	void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
 	void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
 	
-	int getJoints(const drc::robot_state_t * msg, std::map<std::string, double> *jointpos_in);
+	void getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]);
+	void joints_to_map(const double joints[], const std::string joint_name[], const int &num_joints, std::map<std::string, double> *_jointpos_in);
 	void getTransforms_FK(const unsigned long long &u_ts, const std::map<std::string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
 	void setupSolver();
 	

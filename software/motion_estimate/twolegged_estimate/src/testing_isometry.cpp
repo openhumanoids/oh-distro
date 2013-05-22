@@ -175,5 +175,40 @@ int main() {
 
 	cout << endl;
 
+	diffs.ParameterFileInit();
+
+	cout << "================ Testing Median Filtering =====================\n";
+
+	MedianFilter mf;
+	mf.setLength(7);
+
+	double noiseval[20] = {0.0975,
+		    0.2785,
+		    0.5469,
+		    0.9575,
+		    0.9649,
+		    0.1576,
+		    0.9706,
+		    0.9572,
+		    0.4854,
+		    0.8003,
+		    0.1419,
+		    0.4218,
+		    0.9157,
+		    0.7922,
+		    0.9595,
+		    0.6557,
+		    0.0357,
+		    0.8491,
+		    0.9340,
+		    0.6787};
+
+	for (int i=0;i<20;i++) {
+		cout << mf.processSample(noiseval[i]) << ", ";
+	}
+	cout << endl;
+
+
+
 	return 0;
 }
