@@ -81,6 +81,8 @@ namespace affordance
     static void getBoxesCylindersSpheres(const std::string &urdf_filename,
                                          std::vector<boost::shared_ptr<AffordanceState> > &affs);
 
+    bool toBoxesCylindersSpheres(std::vector<boost::shared_ptr<AffordanceState> > &affs);
+
   private:
     void initHelper(const drc::affordance_t *msg);
 
@@ -127,12 +129,15 @@ namespace affordance
     virtual GlobalUID getGlobalUniqueId() const;
     OTDF_TYPE getOTDFType() const;
     std::string getFriendlyName() const;
+    KDL::Frame getOriginFrame() const;
+    
+
     virtual std::string getName() const;
 
     virtual Eigen::Vector3f getColor() const;
     virtual Eigen::Vector3f getXYZ() const;    
     virtual Eigen::Vector3f getRPY() const;    
-
+    
     virtual bool isAffordance() const;
     virtual bool isManipulator() const;
     virtual bool hasChildren() const; //any

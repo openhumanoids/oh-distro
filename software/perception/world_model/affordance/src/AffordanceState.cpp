@@ -8,6 +8,7 @@
 #include "AffordanceState.h"
 #include <urdf/model.h>
 #include <kinematics/kinematics_model_gfe.h>
+#include <visualization_utils/GlKinematicBody.hpp>
 #include "boost/assign.hpp"
 #include <iostream>
 
@@ -106,19 +107,18 @@ static KDL::Frame poseToKDL(const Pose &p)
                            p.position.z));
 }
 
-static AffPtr urdfCollToAffBoxCylSphere(const shared_ptr<Collision> urdfColl,
-                                        const string &friendly_name)
+static AffPtr geometryToAff(shared_ptr<Geometry> g, 
+                            const KDL::Frame &frame,
+                            const string &friendly_name)
 {
-  shared_ptr<Geometry> g = urdfColl->geometry;
   Eigen::Vector3f color(1,0,0); //todo
-
   if(g->type == Geometry::SPHERE )
     {                  
       shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >(g);
       AffPtr s (new AffordanceState());
       s->setToSphere(sphere->radius,
                      0,0, //uid, mapid
-                     poseToKDL(urdfColl->origin),
+                     frame,
                      color,
                      friendly_name);             
       return s;
@@ -131,7 +131,7 @@ static AffPtr urdfCollToAffBoxCylSphere(const shared_ptr<Collision> urdfColl,
                   box->dim.y, //width
                   box->dim.z, //height
                   0,0, //uid, mapid
-                  poseToKDL(urdfColl->origin),
+                  frame,
                   color,
                   friendly_name);
       return b;
@@ -143,13 +143,86 @@ static AffPtr urdfCollToAffBoxCylSphere(const shared_ptr<Collision> urdfColl,
       c->setToCylinder(cylinder->length,
                        cylinder->radius, 
                        0,0,  //uid, mapid
-                       poseToKDL(urdfColl->origin),
+                       frame,
                        color,
                        friendly_name);
       return c;
     }          
   return AffPtr();
 }
+
+
+static AffPtr urdfCollToAffBoxCylSphere(const shared_ptr<Collision> urdfColl,
+                                        const string &friendly_name)
+{
+  return geometryToAff(urdfColl->geometry,
+                       poseToKDL(urdfColl->origin),
+                       friendly_name);  
+}
+
+
+/**split this into primitive types
+@return true if succeeds. false otherwise*/
+bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<AffordanceState> > &affs)
+{
+  affs.clear();
+
+  //--get urdf string for this thing
+  drc::affordance_t msg;
+  toMsg(&msg);
+  string urdf_xml_string;
+  if(!otdf::AffordanceLcmMsgToUrdfString(msg, urdf_xml_string))
+    {
+      cout << "\n couldn't convert to boxes/cylinders/spheres: " 
+           << msg.otdf_type << endl;
+      return false;
+    }
+  
+  //get the geometries + transforms
+  visualization_utils::GlKinematicBody asGLKBody(urdf_xml_string);
+  
+  
+  //need to set the state w/ joint positions, which we assume are in the states
+  unordered_map<string,double>::const_iterator iter;
+  std::map<string, double> jointpos;
+  for(iter = _states.begin(); iter != _states.end(); ++iter)
+    {
+      jointpos[iter->first] = iter->second;
+    }
+
+  asGLKBody.set_state(getOriginFrame(), jointpos);
+
+
+  vector<visualization_utils::LinkFrameStruct> linkGeometryTfs = asGLKBody.get_link_geometry_tfs();
+
+  cout << "\n linkGeometryTfs.size() = " << linkGeometryTfs.size() << endl; 
+
+  //vector<string> linkGeometryNames = asGLKBody.get_link_geometry_names();
+  for(uint i = 0; i < linkGeometryTfs.size(); i++)
+    {
+      visualization_utils::LinkFrameStruct nextLgTf = linkGeometryTfs[i];
+
+      //---get the geometry
+      shared_ptr<Geometry> nextGeom;
+      if (!asGLKBody.get_link_geometry(nextLgTf.name, nextGeom))
+        throw runtime_error("get link geometry failed");
+      
+      //---get the link name,
+      string nextLinkName;
+      if (!asGLKBody.get_associated_link_name(nextLgTf.name, nextLinkName))
+        throw runtime_error("get_associated_link_name failed");
+      
+      //-compute the world pose 
+      KDL::Frame inWorldFrame = getOriginFrame()*nextLgTf.frame;
+
+      //add
+      affs.push_back(geometryToAff(nextGeom, inWorldFrame, nextLinkName));
+    }
+  return true;
+}
+
+
+
 
 /**@param urdf_filename urdf to parse
 @param affs affordances of boxes, cylinders, spheres that 
@@ -239,6 +312,17 @@ void AffordanceState::setFrame(const KDL::Frame &frame)
   _origin_rpy[1] = pitch;
   _origin_rpy[2] = yaw;
 }
+
+KDL::Frame AffordanceState::getOriginFrame() const
+{
+  return KDL::Frame(KDL::Rotation::RPY(_origin_rpy[0],
+                                       _origin_rpy[1],
+                                       _origin_rpy[2]),
+                    KDL::Vector(_origin_xyz[0],
+                                _origin_xyz[1],
+                                _origin_xyz[2]));
+}
+
 
 void AffordanceState::setColor(const Eigen::Vector3f &color)
 {
@@ -573,8 +657,9 @@ namespace affordance
     out << "time = " << other._utime << endl;
     out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
         << other._uid << ", " << other.getType() << ")\n";
-    out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
+    out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;
     out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
+    out << "-----Frame:\n" << ToString::toStr(other.getOriginFrame()) << endl; 
     return out;
   }
 
