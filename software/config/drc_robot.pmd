@@ -397,7 +397,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.6/worlds/vrc_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
     cmd "gz_vrc_walking_rubble" {
@@ -608,6 +608,7 @@ script "comp.vrc_ingress" {
 # testing on a single machine - with deputies:
 script "dev.qual_1" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -616,6 +617,7 @@ script "dev.qual_1" {
 }
 script "dev.qual_2" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     wait ms 1000;
     start group "a.3.grasping4qual2";
@@ -627,14 +629,26 @@ script "dev.qual_2" {
 }
 script "dev.qual_3" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
     wait ms 25000;
     start cmd "gz_quals_3"; 
 }
+script "dev.vrc_walking" { 
+    start group "0.development";
+    wait ms 5000;
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 25000;
+    start cmd "gz_vrc_walking"; 
+    start cmd "set-sim-rate";
+}
 script "dev.vrc_driving" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.4.driving";
     wait ms 500;
@@ -644,6 +658,7 @@ script "dev.vrc_driving" {
 }
 script "dev.vrc_driving_with_manip" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     #start group "a.4.driving";
     start group "b.3.grasping";
@@ -661,6 +676,7 @@ script "dev.vrc_driving_with_manip" {
 
 script "dev.vrc_hose_task" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.3.grasping";
     start group "b.3.grasping";
@@ -674,6 +690,7 @@ script "dev.vrc_hose_task" {
 
 script "dev.mit_walking" {
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -683,6 +700,7 @@ script "dev.mit_walking" {
 
 script "dev.mit_walking_vo" {
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     stop cmd "estpub";
     start group "a.5.a.motion_vo";
@@ -697,6 +715,7 @@ script "dev.mit_walking_vo" {
 
 script "dev.mit_manip_nohands" {
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -706,6 +725,7 @@ script "dev.mit_manip_nohands" {
 
 script "dev.mit_manip" {
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -715,6 +735,7 @@ script "dev.mit_manip" {
 
 script "dev.ingress" { 
     start group "0.development";
+    wait ms 5000;
     start group "a.1.core";
     start group "a.6.ingress";
     wait ms 25000;
