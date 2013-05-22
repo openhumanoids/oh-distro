@@ -582,9 +582,9 @@
 <!--			middle of mud-->
 <!--      <pose>0 -19 0.8 0 0 1.57</pose>-->
 <!--			rough terrain-->
-      <pose>0 -11 0.95 0 0 1.57</pose>
+<!--      <pose>0 -11 0.95 0 0 1.57</pose>-->
 <!--			rubble pile-->
-<!--      <pose>5.5 6.75 0.95 0 0 1.57</pose>-->
+      <pose>5.5 6.75 0.95 0 0 1.57</pose>
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>

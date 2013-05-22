@@ -92,7 +92,7 @@
     </plugin>
 
     <include>
-      <uri>model://mit_robot_nohands</uri>
+      <uri>model://mit_robot</uri>
       <pose>6 6 0.93 0 0 1.572</pose>
     </include>
 

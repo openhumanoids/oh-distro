@@ -298,7 +298,7 @@
 
 
     <include>
-      <uri>model://mit_robot_nohands</uri>
+      <uri>model://mit_robot</uri>
       <!-- stepping stones -->
 <!--      <pose>16.8 8.0 1.93 0 0 0</pose>-->
       <!-- starting gate --> 

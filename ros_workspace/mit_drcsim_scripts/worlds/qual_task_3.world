@@ -765,7 +765,7 @@
       </link>
     </model>
     <include>
-	    <uri>model://mit_robot_nohands</uri>
+	    <uri>model://mit_robot</uri>
 <!--      <uri>model://atlas_sandia_hands</uri>-->
 			<!-- starting gate -->
 <!--      <pose>-0.5 0 0.93 0 0 0</pose>-->
