@@ -799,8 +799,13 @@ int main(int argc, char **argv){
   
   App *app = new App(nh, mode, control_output, send_ground_truth, send_head_cameras, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
-  ROS_ERROR("Control Translator: [%s]",  mode_argument.c_str());
-  
+  ROS_ERROR("ROS2LCM Control Translator Sleeping: [%s]",  mode_argument.c_str());
+  //handlerObject.setInitialMultisenseRate(5.0);
+  sleep(4);
+  ROS_ERROR("ROS2LCM Control Translator Ready: [%s]",  mode_argument.c_str());
+  //handlerObject.setInitialMultisenseRate(5.0);  
+ 
+ 
   ros::spin();
 //  while (ros::ok()){
 //    local_callback_queue.callAvailable(ros::WallDuration(0.01));
