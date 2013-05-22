@@ -35,6 +35,7 @@ string AffordanceState::B_COLOR_NAME  	= "b_color";
 
 AffordanceState::OTDF_TYPE AffordanceState::CYLINDER  = "cylinder";
 AffordanceState::OTDF_TYPE AffordanceState::LEVER  	  = "lever";
+AffordanceState::OTDF_TYPE AffordanceState::CAR  	  = "car";
 AffordanceState::OTDF_TYPE AffordanceState::SPHERE    = "sphere";
 AffordanceState::OTDF_TYPE AffordanceState::BOX  	  = "box";
 AffordanceState::OTDF_TYPE AffordanceState::UNKNOWN   = "unknown";

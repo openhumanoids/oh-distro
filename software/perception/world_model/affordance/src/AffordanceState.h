@@ -29,6 +29,7 @@ namespace affordance
     static OTDF_TYPE BOX; //todo: read these in from the right directory
     static OTDF_TYPE SPHERE;
     static OTDF_TYPE LEVER;
+    static OTDF_TYPE CAR;
     static OTDF_TYPE UNKNOWN;
     
     static const boost::unordered_set<OTDF_TYPE> supportedOtdfTypes;
