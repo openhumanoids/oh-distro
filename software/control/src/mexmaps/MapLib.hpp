@@ -10,12 +10,14 @@ namespace maps {
 
 namespace mexmaps {
 
-static const std::string kHeightMapChannel;
-static const int kHeightMapViewId = 1000;
-
 struct ViewClientWrapper;
 
 class MapHandle {
+
+public:
+  static const std::string kHeightMapChannel;
+  static const int kHeightMapViewId;
+
 public:
   MapHandle(ViewClientWrapper* iWrapper);
   std::shared_ptr<maps::ViewBase> getView() const;

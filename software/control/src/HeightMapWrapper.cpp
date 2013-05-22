@@ -147,7 +147,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if (key == "privatechannel") {
           bool isPrivate = Utils::getBool(value);
           if (isPrivate) {
-            wrapper->setHeightMapChannel(kHeightMapChannel, kHeightMapViewId);
+            wrapper->setHeightMapChannel(MapHandle::kHeightMapChannel,
+                                         MapHandle::kHeightMapViewId);
           }
           else {
             wrapper->setHeightMapChannel

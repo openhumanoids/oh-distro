@@ -44,7 +44,8 @@ ViewClientWrapper(const int iId, const std::shared_ptr<lcm::LCM>& iLcm) {
   mViewClient->setBotWrapper(mBotWrapper);
   mListener.reset(new Listener(this));
   mViewClient->addListener(mListener.get());
-  setHeightMapChannel(kHeightMapChannel, kHeightMapViewId);
+  setHeightMapChannel(MapHandle::kHeightMapChannel,
+                      MapHandle::kHeightMapViewId);
   mHandle.reset(new MapHandle(this));
 }
 
@@ -93,7 +94,7 @@ getView() {
 
 void ViewClientWrapper::
 requestHeightMap() {
-  if (mHeightMapViewId != kHeightMapViewId) {
+  if (mHeightMapViewId != MapHandle::kHeightMapViewId) {
     return;
   }
   const Eigen::Vector3f minPt(-2, -5, -3);
@@ -113,9 +114,9 @@ requestHeightMap() {
   spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0,-1,  maxPt[2]));
 
   spec.mMapId = 1;
-  spec.mViewId = kHeightMapViewId;
+  spec.mViewId = MapHandle::kHeightMapViewId;
   spec.mType = maps::ViewBase::TypeDepthImage;
-  spec.mChannel = kHeightMapChannel;
+  spec.mChannel = MapHandle::kHeightMapChannel;
   spec.mFrequency = 1;
   spec.mTimeMax = 0;
   spec.mRelativeTime = true;

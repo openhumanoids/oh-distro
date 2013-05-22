@@ -3,8 +3,8 @@
 
 using namespace mexmaps;
 
-const std::string kHeightMapChannel = "MAP_CONTROL_HEIGHT";
-const int kHeightMapViewId = 1000;
+const std::string MapHandle::kHeightMapChannel = "MAP_CONTROL_HEIGHT";
+const int MapHandle::kHeightMapViewId = 1000;
 
 MapHandle::
 MapHandle(ViewClientWrapper* iWrapper) : mWrapper(iWrapper) {}
