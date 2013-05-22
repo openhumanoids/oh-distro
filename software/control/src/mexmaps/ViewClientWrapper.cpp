@@ -19,13 +19,14 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
   void notifyData(const int64_t iViewId) {
     if (iViewId != mWrapper->mHeightMapViewId) return;
     auto view = std::static_pointer_cast<maps::DepthImageView>
-      (mWrapper->mViewClient->getView(mWrapper->mHeightMapViewId));
+      (mWrapper->mViewClient->getView(iViewId));
     if (view != NULL) {
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
       view->setNormalRadius(mWrapper->mNormalRadius);
       if (mWrapper->mShouldFill) {
         //mWrapper->fillView(view);
-        mWrapper->fillViewPlanar(view);
+        //mWrapper->fillViewPlanar(view);
+        mWrapper->fillUnderRobot(view);
       }
     }
   }
@@ -81,14 +82,6 @@ getView() {
 
   auto view = std::static_pointer_cast<maps::DepthImageView>
     (mViewClient->getView(mHeightMapViewId));
-  if (view != NULL) {
-    view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
-    view->setNormalRadius(mNormalRadius);
-    if (mShouldFill) {
-      //fillView(view);
-      fillViewPlanar(view);
-    }
-  }
   return view;
 }
 
@@ -258,29 +251,52 @@ fillViewPlanar(maps::DepthImageView::Ptr& iView) {
       points.push_back(Eigen::Vector3f(j,i,z));
     }
   }
-  int n = points.size();
+
+  Eigen::Vector3f sol = fitHorizontalPlaneRobust(points);
+
+  // fill in values
+  for (int i = 0, idx = 0; i < h; ++i) {
+    for (int j = 0; j < w; ++j, ++idx) {
+      float z = depths[idx];
+      if (z != invalidValue) continue;
+      depths[idx] = -(sol[0]*j + sol[1]*i + sol[2]);
+    }
+  }
+  img->setData(depths, type);
+}
+
+Eigen::Vector3f ViewClientWrapper::
+fitHorizontalPlaneRobust(const std::vector<Eigen::Vector3f>& iPoints,
+                         const Eigen::Vector4f& iInitPlane) {
 
   // set up equations
+  int n = iPoints.size();
   Eigen::VectorXf rhs(n);
   Eigen::MatrixXf lhs(n,3);
   for (int i = 0; i < n; ++i) {
-    rhs[i] = -points[i][2];
-    lhs(i,0) = points[i][0];
-    lhs(i,1) = points[i][1];
+    rhs[i] = -iPoints[i][2];
+    lhs(i,0) = iPoints[i][0];
+    lhs(i,1) = iPoints[i][1];
     lhs(i,2) = 1;
   }
 
-  // plane fit
+  // use input plane if it is valid
   Eigen::Vector3f sol;
+  float planeC = iInitPlane[2];
+  if (fabs(planeC) < 1e-8) {
+    sol = lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(rhs);
+  }
+  else {
+    sol = Eigen::Vector3f(iInitPlane[0], iInitPlane[1], iInitPlane[3]);
+    sol /= planeC;
+  }
+
+  // iterative plane fit
   Eigen::VectorXf weights = Eigen::VectorXf::Ones(n);
   Eigen::VectorXf weightsPrev = weights;
   const float sigma2 = 0.1*0.1;
   const float weightThresh = 1e-3f * 1e-3f * n;
   for (int iter = 0; iter < 10; ++iter) {
-    // solve
-    Eigen::MatrixXf a = weights.asDiagonal()*lhs;
-    Eigen::VectorXf b = weights.asDiagonal()*rhs;
-    sol = a.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(b);
 
     // re-compute weights
     Eigen::VectorXf e2 = lhs*sol - rhs;
@@ -292,11 +308,65 @@ fillViewPlanar(maps::DepthImageView::Ptr& iView) {
     Eigen::VectorXf weightDiff = weightsPrev-weights;
     if (weightDiff.dot(weightDiff) < weightThresh) break;
     weightsPrev = weights;
+
+    // solve
+    Eigen::MatrixXf a = weights.asDiagonal()*lhs;
+    Eigen::VectorXf b = weights.asDiagonal()*rhs;
+    sol = a.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(b);
   }
 
-  // fill in values
-  for (int i = 0, idx = 0; i < h; ++i) {
-    for (int j = 0; j < w; ++j, ++idx) {
+  return sol;
+}
+
+
+
+void ViewClientWrapper::
+fillUnderRobot(maps::DepthImageView::Ptr& iView) {
+  const float radiusMeters = 0.5;
+
+  // get view data
+  maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
+  maps::DepthImage::Ptr img = iView->getDepthImage();
+  std::vector<float>& depths =
+    const_cast<std::vector<float>&>(img->getData(type));
+  const float invalidValue = img->getInvalidValue(type);
+
+  // get robot position and project into map
+  Eigen::Isometry3f robotPose;
+  if (!mBotWrapper->getTransform("head", "local", robotPose)) return;
+  Eigen::Vector3f robotPosition = robotPose.translation();
+  Eigen::Vector3f mapPos = img->project(robotPosition, type);
+  Eigen::Vector3f radiusPosition = robotPosition +
+    Eigen::Vector3f(1,0,0)*radiusMeters;
+  Eigen::Vector3f mapRadiusPos = img->project(radiusPosition, type);
+  float radiusPixels = (mapRadiusPos - mapPos).norm();
+
+  // gather nearby points within radius
+  int cx(mapPos[0] + 0.5f), cy(mapPos[1] + 0.5f), r(ceil(radiusPixels));
+  int w(img->getWidth()), h(img->getHeight());
+  std::vector<Eigen::Vector3f> points;
+  points.reserve((2*r+1) * (2*r+1));
+  for (int i = cy-r; i <= cy+r; ++i) {
+    if ((i < 0) || (i >= h)) continue;
+    for (int j = cx-r; j <= cx+r; ++j) {
+      if ((j < 0) || (j >= w)) continue;
+      int idx = i*w + j;
+      float z = depths[idx];
+      if (z == invalidValue) continue;
+      points.push_back(Eigen::Vector3f(j,i,z));
+    }
+  }
+  if (points.size() < 10) return;
+
+  // solve for plane
+  Eigen::Vector3f sol = fitHorizontalPlaneRobust(points);
+
+  // fill in invalid values
+  for (int i = cy-r; i <= cy+r; ++i) {
+    if ((i < 0) || (i >= h)) continue;
+    for (int j = cx-r; j <= cx+r; ++j) {
+      if ((j < 0) || (j >= w)) continue;
+      int idx = i*w + j;
       float z = depths[idx];
       if (z != invalidValue) continue;
       depths[idx] = -(sol[0]*j + sol[1]*i + sol[2]);
