@@ -11,10 +11,6 @@ group "0.development" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
     }
-    cmd "roscore" {
-        exec = "roscore";
-        host = "robot";
-    }
     cmd "set-sim-rate" {
         exec = "drc-set-sim-rate 0.3";
         host = "robot";
@@ -23,25 +19,17 @@ group "0.development" {
 
 
 group "a.1.core" {
-    cmd "viewer" {
-        exec = "drc-viewer";
+    cmd "aa-translators" {
+        exec = "roslaunch translators cheating.launch";
         host = "robot";
     }
-    cmd "r2l_control" {
-        exec = "rosrun translators ros2lcm -c -g";
+    cmd "viewer" {
+        exec = "drc-viewer";
         host = "robot";
     }
     cmd "foot-state" {
        exec = "drc-foot-state";
         host = "extra";
-    }
-    cmd "l2r" {
-        exec = "rosrun translators lcm2ros -p";
-        host = "robot";
-    }
-    cmd "r2l_perception" {
-        exec = "roslaunch translators perception.launch";
-        host = "robot";
     }
     cmd "pserver" {
         exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
@@ -400,10 +388,6 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
-    cmd "gz_vrc_walking_rubble" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2_stones.world";
-        host = "robot";
-    }
     cmd "gz_vrc_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.6/worlds/vrc_task_3.world";
         host = "robot";
@@ -608,7 +592,6 @@ script "comp.vrc_ingress" {
 # testing on a single machine - with deputies:
 script "dev.qual_1" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -617,7 +600,6 @@ script "dev.qual_1" {
 }
 script "dev.qual_2" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     wait ms 1000;
     start group "a.3.grasping4qual2";
@@ -629,7 +611,6 @@ script "dev.qual_2" {
 }
 script "dev.qual_3" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -638,7 +619,6 @@ script "dev.qual_3" {
 }
 script "dev.vrc_walking" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -648,7 +628,6 @@ script "dev.vrc_walking" {
 }
 script "dev.vrc_driving" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.4.driving";
     wait ms 500;
@@ -658,7 +637,6 @@ script "dev.vrc_driving" {
 }
 script "dev.vrc_driving_with_manip" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     #start group "a.4.driving";
     start group "b.3.grasping";
@@ -676,7 +654,6 @@ script "dev.vrc_driving_with_manip" {
 
 script "dev.vrc_hose_task" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.3.grasping";
     start group "b.3.grasping";
@@ -690,7 +667,6 @@ script "dev.vrc_hose_task" {
 
 script "dev.mit_walking" {
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -700,7 +676,6 @@ script "dev.mit_walking" {
 
 script "dev.mit_walking_vo" {
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     stop cmd "estpub";
     start group "a.5.a.motion_vo";
@@ -715,7 +690,6 @@ script "dev.mit_walking_vo" {
 
 script "dev.mit_manip_nohands" {
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -725,7 +699,6 @@ script "dev.mit_manip_nohands" {
 
 script "dev.mit_manip" {
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
@@ -735,7 +708,6 @@ script "dev.mit_manip" {
 
 script "dev.ingress" { 
     start group "0.development";
-    wait ms 5000;
     start group "a.1.core";
     start group "a.6.ingress";
     wait ms 25000;
