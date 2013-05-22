@@ -58,7 +58,14 @@ struct ImageTransmit {
     data->mChannelLeft = iChannel + "LEFT";
     data->mChannelTransmit = data->mChannelLeft + "_TX";
     data->mRequestType = iRequestType;
-    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
+
+    // TODO: hack to handle left color image as special case
+    std::string subscriptionChannel = data->mChannelBase;
+    if (iRequestType == drc::data_request_t::CAMERA_IMAGE_HEAD) {
+      subscriptionChannel = data->mChannelLeft;
+    }
+    mLcm->subscribe(subscriptionChannel, &ChannelData::onImage, data.get());
+
     mChannels[iRequestType] = data;
   }
 
@@ -102,6 +109,26 @@ struct ImageTransmit {
     bot_core::image_t& img = data->mLatestImage;
     if (img.size == 0) return;
 
+    // uncompress
+    if (img.pixelformat == bot_core::image_t::PIXEL_FORMAT_MJPEG) {
+      cv::Mat uncomp = cv::imdecode(cv::Mat(img.data), -1);
+      if (uncomp.channels() == 1) {
+        img.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY;
+      }
+      else if (uncomp.channels() == 3) {
+        // TODO cv::cvtColor(uncompressed, uncompressed, CV_BGR2RGB);
+        img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
+      }
+      else {
+        std::cout << "ImageTransmit: unrecognized compressed data" << std::endl;
+        return;
+      }
+      img.data.resize(uncomp.step*uncomp.rows);
+      std::copy(uncomp.data, uncomp.data + uncomp.step*uncomp.rows,
+                img.data.begin());
+      img.size = img.data.size();
+    }
+
     // determine parameters from pixel format
     int numChannels;
     int imgType;
@@ -121,6 +148,7 @@ struct ImageTransmit {
     }
 
     // chop off top half
+    // TODO: for now just assume that tall images are stereo
     if (img.height > img.width) {
       img.data.resize(img.data.size()/2);
       img.size = img.data.size();
