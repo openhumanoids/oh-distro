@@ -1,9 +1,11 @@
 #include <iostream>
 #include <QtGui/QApplication>
 
+#include "kinematics/kinematics_model_gfe.h"
 #include "authoring/qt4_widget_authoring_lcm_interface.h"
 
 using namespace std;
+using namespace kinematics;
 using namespace authoring;
 
 int
@@ -14,14 +16,14 @@ main( int argc,
   
   QApplication app( argc, argv );
 
-  std::string defaultUrdf = "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf";
-  std::string urdfFilename = defaultUrdf;
+  string xml_string = Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + string( "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf" ) );
+
   if ( argc >= 2 ) {
-      urdfFilename = argv[1];
-      std::cout << "using non-default urdf from : " << urdfFilename << std::endl;
+      xml_string = Kinematics_Model_GFE::urdf_filename_to_xml_string( argv[1] ); 
+      std::cout << "using non-default urdf from : " << argv[1] << std::endl;
   }
 
-  Qt4_Widget_Authoring_LCM_Interface qt4_widget_authoring_lcm_interface(urdfFilename);
+  Qt4_Widget_Authoring_LCM_Interface qt4_widget_authoring_lcm_interface( xml_string );
   qt4_widget_authoring_lcm_interface.show();
 
   return app.exec();

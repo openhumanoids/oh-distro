@@ -17,7 +17,7 @@ namespace authoring {
   class Qt4_Widget_OpenGL_Authoring : public qt4::Qt4_Widget_OpenGL {
     Q_OBJECT
   public:
-    Qt4_Widget_OpenGL_Authoring( const std::string& urdfXmlString = "n/a", QWidget * parent = 0 );
+    Qt4_Widget_OpenGL_Authoring( const std::string& xmlString, QWidget * parent = 0 );
     ~Qt4_Widget_OpenGL_Authoring();
     Qt4_Widget_OpenGL_Authoring( const Qt4_Widget_OpenGL_Authoring& other );
     Qt4_Widget_OpenGL_Authoring& operator=( const Qt4_Widget_OpenGL_Authoring& other );

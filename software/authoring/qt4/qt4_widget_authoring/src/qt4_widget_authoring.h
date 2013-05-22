@@ -24,7 +24,7 @@ namespace authoring {
   class Qt4_Widget_Authoring : public QWidget {
     Q_OBJECT
   public:
-    Qt4_Widget_Authoring( const std::string& urdfFilename = "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf", unsigned int numConstraints = 128, QWidget * parent = 0 );
+    Qt4_Widget_Authoring( const std::string& xmlString, unsigned int numConstraints = 128, QWidget * parent = 0 );
     ~Qt4_Widget_Authoring();
     Qt4_Widget_Authoring( const Qt4_Widget_Authoring& other );
     Qt4_Widget_Authoring& operator=( const Qt4_Widget_Authoring& other );

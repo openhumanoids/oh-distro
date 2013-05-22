@@ -17,10 +17,10 @@ using namespace affordance;
 using namespace authoring;
 
 Qt4_Widget_Authoring::
-Qt4_Widget_Authoring( const std::string& urdfFilename, 
+Qt4_Widget_Authoring( const std::string& xmlString, 
                       unsigned int numConstraints,
                       QWidget * parent ) : QWidget( parent ),
-                                           _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( Kinematics_Model_GFE::urdf_filename_to_xml_string(urdfFilename), this ) ),
+                                           _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( xmlString, this ) ),
                                             _text_edit_info( new QTextEdit( "[<b>OK</b>] authoring widget started", this ) ),
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
                                             _push_button_import( new QPushButton( QString( "import" ), this ) ),
@@ -37,7 +37,7 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
                                             _affordance_collection_ghost(),
                                             _robot_plan(),
                                             _state_gfe_ghost(){
-  _robot_model.initString( Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + urdfFilename ) );
+  _robot_model.initString( xmlString );
 
   _constraint_sequence.constraints().resize( numConstraints );
   for( unsigned int i = 0; i < numConstraints; i++ ){
