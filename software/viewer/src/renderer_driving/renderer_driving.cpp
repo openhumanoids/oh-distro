@@ -66,7 +66,8 @@
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
 #define PARAM_GOAL_TYPE "Goal Type"
 
-#define PARAM_UPDATE_CAR_MODEL "Change Car Affordance model"
+#define PARAM_UPDATE_CAR_MODEL_REDUCED "Use reduced car model"
+#define PARAM_UPDATE_CAR_MODEL_FULL "Use full car model"
 
 #define PARAM_LOOKAHEAD "Lookahead Distance"
 #define PARAM_P_GAIN "P Gain"
@@ -1170,13 +1171,26 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         //bot_viewer_request_pick (self->viewer, &(self->ehandler));
         activate(self, 2);
     }
-    else if(!strcmp(name, PARAM_UPDATE_CAR_MODEL)) {
+    else if(!strcmp(name, PARAM_UPDATE_CAR_MODEL_REDUCED)) {
         fprintf(stderr,"\nUpdating car affordance\n");	
 	if(self->car_affordance){
 	  free(self->car_affordance->modelfile);
 	  //self->car_affordance->utime = 0;
 	  self->car_affordance->aff_store_control = 1;
 	  self->car_affordance->modelfile = strdup("car_cabin_2cm.pcd");
+	  drc_affordance_t_publish(self->lc, "AFFORDANCE_TRACK", self->car_affordance);
+	}
+	else{
+	  fprintf(stderr, "No car affordance message\n");	  
+	}	
+    }
+    else if(!strcmp(name, PARAM_UPDATE_CAR_MODEL_FULL)) {
+        fprintf(stderr,"\nUpdating car affordance\n");	
+	if(self->car_affordance){
+	  free(self->car_affordance->modelfile);
+	  //self->car_affordance->utime = 0;
+	  self->car_affordance->aff_store_control = 1;
+	  self->car_affordance->modelfile = strdup("car.pcd");
 	  drc_affordance_t_publish(self->lc, "AFFORDANCE_TRACK", self->car_affordance);
 	}
 	else{
@@ -1600,7 +1614,9 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE, 0, NULL);
     
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_CAR_MODEL, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_CAR_MODEL_REDUCED, NULL);
+    
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_CAR_MODEL_FULL, NULL);
  
     bot_gtk_param_widget_add_separator (self->pw, "Driving controller Params");
 
