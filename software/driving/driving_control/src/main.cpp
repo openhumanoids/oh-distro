@@ -44,7 +44,7 @@
 //#define TIME_TO_TURN_PER_RADIAN 1.0
 
 //this is a hack for now - adding a fixed time to turn 
-#define TIME_TO_TURN 2.0
+#define TIME_TO_TURN 1.0
 #define TIME_TO_BRAKE 2.0
 
 #define MAX_BRAKE 0.5
@@ -116,6 +116,7 @@ typedef struct _state_t {
     int use_differential_angle; 
     double timer_period; 
 
+    int do_braking;
     int64_t time_applied_to_brake;
     
     int64_t time_applied_to_accelerate;
@@ -173,7 +174,12 @@ void publish_status(state_t *self){
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
+      if(self->do_braking){
         msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
+      }
+      else{
+	msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+      }
     }
     else{
         msg.time_to_drive = 0;
@@ -240,7 +246,12 @@ void publish_system_status(state_t *self){
     
     double time_to_drive = 0;
     if(self->drive_duration >=0){
-        time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+      if(self->do_braking){
+        time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
+      }
+      else{
+	time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+      }
     }
     char status[1024];
     switch(self->curr_state){
@@ -387,8 +398,20 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
     }
 
     self->last_driving_cmd = drc_driving_cmd_t_copy(msg);
+    
+    if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE){
+      self->do_braking = 0;
+    }
+    else if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE){
+      self->do_braking = 1;
+    }
 
-    self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
+    if(self->do_braking){
+      self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
+    }
+    else{
+      self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
+    }
     self->kp_steer = msg->kp_steer;
     self->kd_steer = msg->kd_steer;
     self->throttle_ratio = msg->throttle_ratio;
@@ -1389,12 +1412,19 @@ static void
 perform_emergency_stop (state_t *self)
 {
     self->throttle_val = 0;
-    self->brake_val = 1.0;
-    fprintf (stdout, "Performing emergency stop!!!!\n");
+    if(self->do_braking){
+      self->brake_val = 1.0;
+    }
+    else{
+      self->brake_val = 0;
+    }
+    if(self->brake_val > 0){
+      fprintf (stdout, "Performing emergency stop - brake : %f!!!!\n", self->brake_val);
+    }
     drc_driving_control_cmd_t msg;
     msg.utime = bot_timestamp_now();
     msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
-    msg.brake_value = 1.0;
+    msg.brake_value = self->brake_val;
     drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
 }
 
@@ -1428,11 +1458,6 @@ on_controller_timer (gpointer data)
 
     self->last_controller_utime = self->utime;
 
-   
-
- 
-
-    
     // Perform estop if driving duration has expired
     if(self->drive_duration < 0){
         self->curr_state = IDLE;
@@ -1610,23 +1635,29 @@ on_controller_timer (gpointer data)
         if(turn_only){
             throttle_val = 0;
             self->curr_state = DOING_INITIAL_TURN;
-            brake_val = 1.0;
+	    brake_val = 0;
+	    if(self->do_braking){
+	      brake_val = 1.0;
+	    }
+	    
         }
         else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
             throttle_val = self->throttle_ratio;
         }        
 
-        if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+	if(self->do_braking){
+	  if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
             double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
             throttle_val = 0;
             self->curr_state = DOING_BRAKING;
             if(TIME_TO_BRAKE > 0)
                 brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
             else
-                brake_val = MAX_BRAKE;
-
+	      brake_val = MAX_BRAKE;
+	    
             //time to brake - gracefully
-        }
+	  }
+	}	
 
         double max_angle = 90;
         double steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), user_steering_angle));
@@ -1675,6 +1706,7 @@ on_controller_timer (gpointer data)
         return TRUE;
     }
     
+
     if (self->have_valid_goal) {
         double steering_input = 0;
         // Compute the steering command
@@ -1742,24 +1774,28 @@ on_controller_timer (gpointer data)
         if(turn_only){
             throttle_val = 0;
             self->curr_state = DOING_INITIAL_TURN;
-            brake_val = 1.0;
+	    brake_val = 0;
+	    if(self->do_braking){
+	      brake_val = 1.0;
+	    }
         }
         else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
-            throttle_val = self->throttle_ratio;
-            
+            throttle_val = self->throttle_ratio;            
         }        
         
-        if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+	if(self->do_braking){
+	  if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
             double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
             throttle_val = 0;
             self->curr_state = DOING_BRAKING;
             if(TIME_TO_BRAKE > 0)
-                brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
+	      brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
             else
-                brake_val = MAX_BRAKE;
+	      brake_val = MAX_BRAKE;
             
             //time to brake - gracefully
-        }
+	  }
+	}	
         
         double max_angle = 90;
         steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), steering_input));
