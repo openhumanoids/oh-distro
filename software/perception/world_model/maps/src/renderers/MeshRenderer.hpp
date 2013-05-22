@@ -21,6 +21,7 @@ public:
     ColorModeFlat,     // single solid color
     ColorModeHeight,   // pseudocolor by z
     ColorModeRange,    // pseudocolor by range
+    ColorModeNormal,   // pseudocolor by normal vector
     ColorModeTexture,  // general texture image
     ColorModeCamera,   // bot_image_t from camera channel
     ColorModeMap       // pseudocolor via colormap
@@ -49,6 +50,7 @@ public:
   void setPointSize(const float iSize);
   void setLineWidth(const float iWidth);
   void setRangeOrigin(const Eigen::Vector3f& iOrigin);
+  void setNormalZero(const Eigen::Vector3f& iZero);
 
   void setTexture(const int iWidth, const int iHeight, const int iStrideBytes,
                   const int iFormat, const uint8_t* iData,

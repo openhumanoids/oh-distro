@@ -45,6 +45,7 @@ struct MeshRenderer::InternalState {
   float mPointSize;
   float mLineWidth;
   Eigen::Vector3f mRangeOrigin;
+  Eigen::Vector3f mNormalZero;
 
   // gl state
   GLuint mVertexBufferId;
@@ -193,6 +194,7 @@ MeshRenderer() {
   setPointSize(3);
   setLineWidth(1);
   setRangeOrigin(Eigen::Vector3f(0,0,0));
+  setNormalZero(Eigen::Vector3f(1,0,0));
 }
 
 MeshRenderer::
@@ -271,6 +273,11 @@ setLineWidth(const float iWidth) {
 void MeshRenderer::
 setRangeOrigin(const Eigen::Vector3f& iOrigin) {
   mState->mRangeOrigin = iOrigin;
+}
+
+void MeshRenderer::
+setNormalZero(const Eigen::Vector3f& iZero) {
+  mState->mNormalZero = iZero.normalized();
 }
 
 
@@ -415,6 +422,7 @@ draw() {
   glVertexPointer(3, GL_FLOAT, 0, 0);
 
   // create normal buffer
+  /* TODO
   if (mState->mNormalBuffer.size() > 0) {
     glBindBuffer(GL_ARRAY_BUFFER, mState->mNormalBufferId);
     glBufferData(GL_ARRAY_BUFFER, mState->mNormalBuffer.size()*sizeof(float),
@@ -422,6 +430,7 @@ draw() {
     glEnableClientState(GL_NORMAL_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, 0);
   }
+  */
 
   // create color buffer
   if (mState->mColorMode == ColorModeFlat) {
@@ -429,25 +438,46 @@ draw() {
               mState->mColorAlpha);
   }
   else if ((mState->mColorMode == ColorModeHeight) ||
-           (mState->mColorMode == ColorModeRange)) {
+           (mState->mColorMode == ColorModeRange) ||
+           (mState->mColorMode == ColorModeNormal)) {
     int numVertices = mState->mColorBuffer.size()/4;
     Eigen::Vector3f color = mState->mColor;
     float invDenom1 = 1/(mState->mMaxZ - mState->mMinZ);
     float invDenom2 = 1/(mState->mScaleMaxZ - mState->mScaleMinZ);
-    float rangeMin(1e10), rangeMax(-1e10), invRangeDenom(1);
-    std::vector<float> ranges;
+    float valueMin(1e10), valueMax(-1e10), invValueDenom(1);
+    std::vector<float> values;
+    bool modeNormals = (mState->mColorMode == ColorModeNormal) &&
+      (mState->mNormalBuffer.size() > 0);
     if (mState->mColorMode == ColorModeRange) {
-      ranges.resize(numVertices);
+      values.resize(numVertices);
       for (int i = 0; i < numVertices; ++i) {
         Eigen::Vector3f pt(mState->mVertexBuffer[3*i+0],
                            mState->mVertexBuffer[3*i+1],
                            mState->mVertexBuffer[3*i+2]);
         float range = (pt - mState->mRangeOrigin).norm();
-        rangeMin = std::min(rangeMin, range);
-        rangeMax = std::max(rangeMax, range);
-        ranges[i] = range;
+        if (range > 1e10) continue;
+        valueMin = std::min(valueMin, range);
+        valueMax = std::max(valueMax, range);
+        values[i] = range;
       }
-      invRangeDenom = 1/(rangeMax-rangeMin);
+      invValueDenom = 1/(valueMax-valueMin);
+    }
+    else if (modeNormals) {
+      values.resize(numVertices);
+      for (int i = 0; i < numVertices; ++i) {
+        Eigen::Vector3f normal(mState->mNormalBuffer[3*i+0],
+                               mState->mNormalBuffer[3*i+1],
+                               mState->mNormalBuffer[3*i+2]);
+        float len = normal.norm();
+        if (len < 0.01) continue;
+        float dot = normal.dot(mState->mNormalZero)/len;
+        if (dot < 0) dot = -dot;
+        float angle = acos(dot);
+        valueMin = std::min(valueMin, angle);
+        valueMax = std::max(valueMax, angle);
+        values[i] = angle;
+      }
+      invValueDenom = 1/(valueMax-valueMin);
     }
     for (int i = 0; i < numVertices; ++i) {
       if (mState->mColorMode == ColorModeHeight) {
@@ -456,8 +486,8 @@ draw() {
         float* col = bot_color_util_jet(w);
         color = Eigen::Vector3f(col[0], col[1], col[2]);
       }
-      if (mState->mColorMode == ColorModeRange) {
-        float z = (ranges[i] - rangeMin) * invRangeDenom;
+      if ((mState->mColorMode == ColorModeRange) || modeNormals) {
+        float z = (values[i] - valueMin) * invValueDenom;
         float w = (z - mState->mScaleMinZ) * invDenom2;
         float* col = bot_color_util_jet(w);
         color = Eigen::Vector3f(col[0], col[1], col[2]);

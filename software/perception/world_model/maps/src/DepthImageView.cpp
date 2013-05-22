@@ -94,19 +94,22 @@ getAsMesh(const bool iTransform) const {
   maps::TriangleMesh::Ptr mesh(new maps::TriangleMesh());
 
   // vertices
-  mesh->mVertices.reserve((width+1)*(height+1));
+  std::vector<Eigen::Vector3f>& vertices = mesh->mVertices;
+  vertices.reserve((width+1)*(height+1));
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
       Eigen::Vector3f pt(j,i,depths[i*width+j]);
       if (iTransform) pt = mImage->unproject(pt, depthType);
-      mesh->mVertices.push_back(pt);
+      vertices.push_back(pt);
     }
   }
 
   // faces
   std::vector<Eigen::Vector3i>& faces = mesh->mFaces;
   faces.reserve(2*numDepths);
+  std::vector<std::vector<int> > vertexMap(numDepths);
   float invalidValue = mImage->getInvalidValue(depthType);
+  int faceCount = 0;
   for (int i = 0; i < height-1; ++i) {
     for (int j = 0; j < width-1; ++j) {
       int idx = i*width + j;
@@ -127,23 +130,71 @@ getAsMesh(const bool iTransform) const {
       Eigen::Vector3f p11(j+1,i+1,z11);
 
       if (validSum == 4) {
-        faces.push_back(Eigen::Vector3i(idx, idx+1, idx+width));
+        faces.push_back(Eigen::Vector3i(idx, idx+width, idx+1));
+        vertexMap[idx].push_back(faceCount);
+        vertexMap[idx+width].push_back(faceCount);
+        vertexMap[idx+1].push_back(faceCount);
+        ++faceCount;
+
         faces.push_back(Eigen::Vector3i(idx+1+width, idx+1, idx+width));
+        vertexMap[idx+1+width].push_back(faceCount);
+        vertexMap[idx+1].push_back(faceCount);
+        vertexMap[idx+width].push_back(faceCount);
+        ++faceCount;
       }	  
       else {
         if (!valid00) {
           faces.push_back(Eigen::Vector3i(idx+1, idx+width, idx+1+width));
+          vertexMap[idx+1].push_back(faceCount);
+          vertexMap[idx+width].push_back(faceCount);
+          vertexMap[idx+1+width].push_back(faceCount);
+          ++faceCount;
         }
         else if (!valid10) {
           faces.push_back(Eigen::Vector3i(idx, idx+width, idx+1+width));
+          vertexMap[idx].push_back(faceCount);
+          vertexMap[idx+width].push_back(faceCount);
+          vertexMap[idx+1+width].push_back(faceCount);
+          ++faceCount;
         }
         else if (!valid01) {
           faces.push_back(Eigen::Vector3i(idx, idx+1+width, idx+1));
+          vertexMap[idx].push_back(faceCount);
+          vertexMap[idx+1+width].push_back(faceCount);
+          vertexMap[idx+1].push_back(faceCount);
+          ++faceCount;
         }
         else if (!valid11) {
           faces.push_back(Eigen::Vector3i(idx, idx+width, idx+1));
+          vertexMap[idx].push_back(faceCount);
+          vertexMap[idx+width].push_back(faceCount);
+          vertexMap[idx+1].push_back(faceCount);
+          ++faceCount;
         }
       }
+    }
+  }
+
+  // normals
+  std::vector<Eigen::Vector3f> perFaceNormals(faces.size());
+  for (int i = 0; i < faces.size(); ++i) {
+    Eigen::Vector3f p1(vertices[faces[i][0]]);
+    Eigen::Vector3f p2(vertices[faces[i][1]]);
+    Eigen::Vector3f p3(vertices[faces[i][2]]);
+    perFaceNormals[i] = (p3-p2).cross(p1-p2).normalized();
+  }
+  std::vector<Eigen::Vector3f>& normals = mesh->mNormals;
+  normals.reserve(numDepths);
+  for (int i = 0; i < vertexMap.size(); ++i) {
+    int num = vertexMap[i].size();
+    if (num == 0) normals.push_back(Eigen::Vector3f(0,0,0));
+    else {
+      Eigen::Vector3f avg(0,0,0);
+      for (int j = 0; j < num; ++j) {
+        avg += perFaceNormals[vertexMap[i][j]];
+      }
+      avg /= num;
+      normals.push_back(avg.normalized());
     }
   }
 

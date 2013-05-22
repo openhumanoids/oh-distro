@@ -196,9 +196,9 @@ public:
       notebook->append_page(*appearanceBox, "Appearance");
 
       ids = { MeshRenderer::ColorModeFlat, MeshRenderer::ColorModeHeight,
-              MeshRenderer::ColorModeRange, MeshRenderer::ColorModeCamera,
-              MeshRenderer::ColorModeMap };
-      labels = { "Flat", "Height", "Range", "Camera","Pixelmap"};
+              MeshRenderer::ColorModeRange, MeshRenderer::ColorModeNormal,
+              MeshRenderer::ColorModeCamera, MeshRenderer::ColorModeMap };
+      labels = { "Flat", "Height", "Range", "Normal", "Camera", "Pixelmap"};
       mColorMode = MeshRenderer::ColorModeHeight;
       addCombo("Color Mode", mColorMode, labels, ids, appearanceBox);
 
@@ -611,6 +611,13 @@ public:
     mMeshRenderer.setRangeOrigin(data->mLatestTransform.translation());
     mMeshRenderer.setScaleRange(mMinZ, mMaxZ);
     mMeshRenderer.setPointSize(mPointSize);
+    Eigen::Projective3f worldToMap = iView->getTransform();
+    Eigen::Projective3f mapToWorld = worldToMap.inverse();
+    Eigen::Matrix3f calib;
+    Eigen::Isometry3f pose;
+    bool ortho;
+    maps::Utils::factorViewMatrix(worldToMap, calib, pose, ortho);
+    mMeshRenderer.setNormalZero(-pose.linear().col(2));
 
     // draw frustum
     ViewBase::Spec viewSpec;
@@ -657,7 +664,7 @@ public:
       pts[1] = Eigen::Vector4f(mPixelMap->xy0[0], mPixelMap->xy1[1], z, 1);
       pts[2] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy1[1], z, 1);
       pts[3] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy0[1], z, 1);
-      Eigen::Projective3f transform = iView->getTransform();
+      Eigen::Projective3f transform = worldToMap;
       for (int k = 0; k < 4; ++k) {
         pts[k] = transform*pts[k];
         pts[k] /= pts[k][3];
@@ -673,8 +680,8 @@ public:
     mMeshRenderer.setColorMode((MeshRenderer::ColorMode)mColorMode);
     mMeshRenderer.setMeshMode((MeshRenderer::MeshMode)mMeshMode);
     if (usePoints) mMeshRenderer.setMeshMode(MeshRenderer::MeshModePoints);
-    mMeshRenderer.setData(mesh->mVertices, mesh->mFaces,
-                          iView->getTransform().inverse());
+    mMeshRenderer.setData(mesh->mVertices, mesh->mNormals,
+                          mesh->mFaces, mapToWorld);
 
     // draw this view's data
     mMeshRenderer.draw();

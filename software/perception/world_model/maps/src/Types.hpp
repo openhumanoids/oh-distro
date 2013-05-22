@@ -24,6 +24,7 @@ namespace maps {
   struct TriangleMesh {
     std::vector<Eigen::Vector3f> mVertices;
     std::vector<Eigen::Vector3i> mFaces;
+    std::vector<Eigen::Vector3f> mNormals;
     typedef std::shared_ptr<TriangleMesh> Ptr;    
   };
 }
