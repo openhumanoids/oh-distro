@@ -232,6 +232,14 @@ group "a.4.driving" {
         exec = "drc-driving-tracker";
         host = "robot";
     }
+    cmd "affordance-tracker" {
+        exec = "object-tracker -v 2";
+        host = "robot";
+    }
+    cmd "affordance-to-carframe" {
+    	exec = "affordance-to-frame";
+        host = "robot";
+    }
     cmd "affordance_server -r robot" {
         exec = "affordance_server -r robot";
         host = "robot";
@@ -261,6 +269,10 @@ group "a.5.driving_utils" {
     }  
     cmd "unpin" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'nominal'";
+        host = "robot";
+    }
+    cmd "pin" {
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned'";
         host = "robot";
     }
     cmd "disengage_hand_brake" {
