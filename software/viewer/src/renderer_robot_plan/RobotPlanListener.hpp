@@ -37,13 +37,15 @@ namespace renderer_robot_plan
     
     bool _urdf_parsed;
     bool _urdf_subscription_on;
-    
+    bool _aprvd_footstep_plan_in_cache;
 
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_robot;
     //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _base_gl_robot;
     //----------------constructor/destructor
     
     int _in_motion_keyframe_index;
+
+
   public:
     bool _is_manip_plan;
     bool _is_manip_map;
@@ -65,12 +67,15 @@ namespace renderer_robot_plan
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_right_foot;
     //-------------message callback
     
-    drc::robot_plan_t revieved_plan_;
-    drc::aff_indexed_robot_plan_t revieved_map_;
-    
+    drc::robot_plan_t _received_plan;
+    drc::aff_indexed_robot_plan_t _received_map;
+  	
+	  drc::footstep_plan_t _received_footstep_plan;
+  
     void commit_robot_plan(int64_t utime,std::string &channel);
     void commit_manip_map(int64_t utime,std::string &channel);
-    
+    void commit_footstep_plan(int64_t utime,std::string &channel);    
+
     void set_in_motion_hands_state(int index)
     {
  
@@ -226,6 +231,10 @@ namespace renderer_robot_plan
         return (index==_in_motion_keyframe_index);
     };
     
+		bool is_walking_plan()
+    {
+		    return _aprvd_footstep_plan_in_cache;
+		};
     
     int64_t get_keyframe_timestamp(int index) {
         return _keyframe_timestamps[index];
@@ -238,11 +247,13 @@ namespace renderer_robot_plan
 		void handleManipPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_plan_w_keyframes_t* msg);
-  void handleAffIndexedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
+   void handleAffIndexedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::aff_indexed_robot_plan_t* msg);		      
    void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-			    const  drc::robot_urdf_t* msg);    
+			    const  drc::robot_urdf_t* msg);
+   void handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
+						 const drc::footstep_plan_t* msg);    
 			    
 	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
    bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);

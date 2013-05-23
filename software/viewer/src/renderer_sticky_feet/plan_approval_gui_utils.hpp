@@ -27,8 +27,8 @@ namespace renderer_sticky_feet_gui_utils
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
     cout <<"Foot step plan approved" << endl;
-    cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
-    string channel = "COMMITTED_FOOTSTEP_PLAN";
+    cout <<"Publishing on APPROVED_FOOTSTEP_PLAN" << endl;
+    string channel = "APPROVED_FOOTSTEP_PLAN";
     self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);
     self->footStepPlanListener->_last_plan_approved = true;
     //gtk_widget_destroy (self->plan_approval_dock);

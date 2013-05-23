@@ -21,7 +21,8 @@ namespace renderer_robot_plan
     _robot_name("atlas"),
     _in_motion_keyframe_index(-1),
     _is_manip_plan(false),
-    _is_manip_map(false)
+    _is_manip_map(false),
+		_aprvd_footstep_plan_in_cache(false)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
@@ -39,7 +40,9 @@ namespace renderer_robot_plan
     lcm->subscribe("CANDIDATE_ROBOT_PLAN", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this); //&this ?
     lcm->subscribe("CANDIDATE_MANIP_PLAN", &renderer_robot_plan::RobotPlanListener::handleManipPlanMsg, this);
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
-    
+    lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
+
+
     // Pre-load hand URDFS
     std::string _left_hand_urdf_xml_string,_right_hand_urdf_xml_string;
     if(!load_hand_urdfs(_left_hand_urdf_xml_string,_right_hand_urdf_xml_string))
@@ -71,6 +74,9 @@ namespace renderer_robot_plan
 
   //=============message callbacks
 
+
+
+
 void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	const string& chan, const drc::robot_plan_t* msg)
   {
@@ -89,7 +95,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _is_manip_map =false;
 
     // 0. Make Local copy to later output
-    revieved_plan_ = *msg;
+    _received_plan = *msg;
 
     int num_states = 0;
     int inc = 1;
@@ -126,7 +132,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage
   
-  
+  //-------------------------------------------------------------------
   void RobotPlanListener::handleManipPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_plan_w_keyframes_t* msg)						 
@@ -149,12 +155,12 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
     // 0. Make Local copy as drc::robot_plan_t to later output
     drc::robot_plan_w_keyframes_t msgcopy =*msg;
-    revieved_plan_.utime = msgcopy.utime;
-    revieved_plan_.robot_name = msgcopy.robot_name;
-    revieved_plan_.num_states = msgcopy.num_states;
-    revieved_plan_.plan = msgcopy.plan;
-    revieved_plan_.num_bytes = msgcopy.num_bytes;
-    revieved_plan_.matlab_data = msgcopy.matlab_data;
+    _received_plan.utime = msgcopy.utime;
+    _received_plan.robot_name = msgcopy.robot_name;
+    _received_plan.num_states = msgcopy.num_states;
+    _received_plan.plan = msgcopy.plan;
+    _received_plan.num_bytes = msgcopy.num_bytes;
+    _received_plan.matlab_data = msgcopy.matlab_data;
     
     int max_num_states = 20;
     int num_states = 0;
@@ -229,7 +235,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _is_manip_plan =false;
     _is_manip_map =true;
    // 0. Make Local copy to later output
-    revieved_map_ = *msg;
+    _received_map = *msg;
 
   	int max_num_states = 20;
   	int num_states = 0;
@@ -286,18 +292,36 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     }//  if(_urdf_parsed ==false) 
 
   } 
-  
-  
+
+  //-------------------------------------------------------------------
+
+  void RobotPlanListener::handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::footstep_plan_t* msg)						 
+  {
+		_received_footstep_plan = *msg;
+    _aprvd_footstep_plan_in_cache = true;
+  }
+    //-------------------------------------------------------------------
+
+  void RobotPlanListener::commit_footstep_plan(int64_t utime,std::string &channel)
+  {
+    drc::footstep_plan_t msg = _received_footstep_plan;
+    msg.utime = utime;
+    _lcm->publish(channel, &msg);
+    _aprvd_footstep_plan_in_cache = false; //clear flag on commit
+  }
+
   void RobotPlanListener::commit_robot_plan(int64_t utime,std::string &channel)
   {
-    drc::robot_plan_t msg = revieved_plan_;
+    drc::robot_plan_t msg = _received_plan;
     msg.utime = utime;
     _lcm->publish(channel, &msg);
   }
   
   void RobotPlanListener::commit_manip_map(int64_t utime, std::string &channel)
   {
-    drc::aff_indexed_robot_plan_t msg = revieved_map_;
+    drc::aff_indexed_robot_plan_t msg = _received_map;
     msg.utime = utime;
     _lcm->publish(channel, &msg);
   }

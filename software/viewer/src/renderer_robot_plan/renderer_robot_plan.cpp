@@ -461,7 +461,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }else if(!strcmp(name,PARAM_START_PLAN)){
     publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
-    self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
+    self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
   }else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
     msg.utime = self->robot_utime;//bot_timestamp_now();

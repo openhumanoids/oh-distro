@@ -32,9 +32,20 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
-    cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
-    string channel = "COMMITTED_ROBOT_PLAN";
-    self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
+
+		if(!self->robotPlanListener->is_walking_plan())
+		{
+			cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
+			string channel = "COMMITTED_ROBOT_PLAN";
+			self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
+		}
+		else
+		{			
+			cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
+			string channel = "COMMITTED_FOOTSTEP_PLAN";
+			self->robotPlanListener->commit_footstep_plan(self->robot_utime,channel);
+		}
+
  //   gtk_widget_destroy(self->plan_execution_dock);
  //   self->plan_execution_dock= NULL;
     return TRUE;
