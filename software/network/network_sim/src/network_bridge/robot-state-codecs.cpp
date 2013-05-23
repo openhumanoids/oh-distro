@@ -65,9 +65,10 @@ RobotStateCodec::RobotStateCodec()
         joint_names_to_order_.insert(std::make_pair("right_f3_j1", i++));
         joint_names_to_order_.insert(std::make_pair("right_f3_j2", i++));;
 
+        joint_names_.resize(i);
         for(std::map<std::string, int>::const_iterator it = joint_names_to_order_.begin(),
                 end = joint_names_to_order_.end(); it != end; ++it)
-            joint_names_.push_back(it->first);
+            joint_names_[it->second] = it->first;
     }
 }
 
@@ -199,7 +200,6 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
     
     lcm_data->resize(lcm_object.getEncodedSize());
     lcm_object.encode(&(*lcm_data)[0], 0, lcm_data->size());
-
     
     return true;
           

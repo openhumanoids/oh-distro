@@ -98,7 +98,7 @@ class DRCShaper
   private:
     void outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
     void udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg);
-    void publish_receive(const std::string& channel,
+    void publish_receive(std::string channel,
                          int message_number,
                          std::vector<unsigned char>& lcm_data);
     void data_request_handler( goby::acomms::protobuf::ModemTransmission* msg);

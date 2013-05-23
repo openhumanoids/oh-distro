@@ -114,6 +114,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
     custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
+    
     const std::string& footstep_plan_channel = "CANDIDATE_FOOTSTEP_PLAN";
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
@@ -529,7 +530,7 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     }    
 }
 
-void DRCShaper::publish_receive(const std::string& channel,
+void DRCShaper::publish_receive(std::string channel,
                                 int message_number,
                                 std::vector<unsigned char>& lcm_data)
 {
@@ -545,6 +546,20 @@ void DRCShaper::publish_receive(const std::string& channel,
         }
     }
 
+    // non-standard publish for this
+    if(channel == "EST_ROBOT_STATE")
+    {
+        drc::robot_state_t robot_state;
+        if(robot_state.decode(&lcm_data[0], 0, lcm_data.size()) != -1)
+        {
+            drc::utime_t t;
+            t.utime = robot_state.utime;
+            lcm_->publish("ROBOT_UTIME", &t);
+        }
+        
+        channel = "EST_ROBOT_STATE_TX";
+    }
+    
     glog.is(VERBOSE) && glog << group("publish")
                              << "publishing: " << app_.get_current_utime()
                              << " | " << channel
