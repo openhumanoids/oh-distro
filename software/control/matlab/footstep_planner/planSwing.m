@@ -48,7 +48,7 @@ if step_dist_xy > 0.01
   % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
   lambdas = linspace(0, step_dist_xy);
   lambda2xy = PPTrajectory(foh([0, step_dist_xy], [last_pos(1:2), next_pos(1:2)]));
-  terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, ceil(step_dist_xy / 0.02), 10);
+  terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, max([ceil(step_dist_xy / 0.02),3]), 10);
   terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
   terrain_pts(2,end) = max([terrain_pts(2,end), next_pos(3)]);
   
@@ -124,7 +124,7 @@ function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, n
   [R, L] = meshgrid(rhos, lambdas);
   xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
   z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)));
-%   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
+  % plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
   terrain_pts(2, :) = max(z, [], 2);
   terrain_pts(1,:) = lambdas;
 end
