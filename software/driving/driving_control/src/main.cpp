@@ -31,6 +31,7 @@
 #include <lcmtypes/perception_pointing_vector_t.h>
 #include <lcmtypes/drc_system_status_t.h>
 #include <lcmtypes/drc_driving_controller_values_t.h>
+#include <lcmtypes/drc_driving_affordance_status_t.h>
 #include <vector>
 #include <algorithm> 
 
@@ -121,6 +122,12 @@ typedef struct _state_t {
     
     int64_t time_applied_to_accelerate;
 
+    double max_steering;
+    double min_steering; 
+
+    double max_throttle;
+    double min_throttle;
+  
     double throttle_duration;
     double throttle_ratio;
 
@@ -164,30 +171,20 @@ void publish_system_state_values(state_t *self){
 }
 
 void publish_status(state_t *self){
-    
-    /*drc_system_status_t s_msg;
-      s_msg.utime = self->utime;
-      s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
-      s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
-      s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
-    */
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
-      if(self->do_braking){
-        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
-      }
-      else{
-	msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
-      }
+        if(self->do_braking){
+            msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
+        }
+        else{
+            msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+        }
     }
     else{
         msg.time_to_drive = 0;
     }
-    /*
-      IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY_CARROT, DRIVING_ROAD_ONLY_ARC, 
-      DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
-    */
+
     char status[1024];
     switch(self->curr_state){
 
@@ -236,6 +233,29 @@ void publish_status(state_t *self){
     //drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
 }
 
+static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char *channel, 
+                                         const drc_driving_affordance_status_t *msg, void *user){
+    state_t *self = (state_t *) user;
+
+    if (!strcmp (channel, "DRIVING_STEERING_ACTUATION_STATUS")) {
+        double new_min = fmin(msg->dof_value_0, msg->dof_value_1);
+        double new_max = fmax(msg->dof_value_0, msg->dof_value_1);
+        if (msg->have_manip_map) {
+            self->max_steering = new_min;
+            self->min_steering = new_max;
+	}       
+    } else if (!strcmp (channel, "DRIVING_GAS_ACTUATION_STATUS")) {
+        double new_min = fmin(msg->dof_value_0, msg->dof_value_1);
+        double new_max = fmax(msg->dof_value_0, msg->dof_value_1);
+        if (msg->have_manip_map) {
+            self->max_throttle = new_min;
+            self->min_throttle = new_max;
+        }
+    }
+ 
+    return;
+}
+
 void publish_system_status(state_t *self){
     
     drc_system_status_t s_msg;
@@ -246,12 +266,12 @@ void publish_system_status(state_t *self){
     
     double time_to_drive = 0;
     if(self->drive_duration >=0){
-      if(self->do_braking){
-        time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
-      }
-      else{
-	time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
-      }
+        if(self->do_braking){
+            time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
+        }
+        else{
+            time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+        }
     }
     char status[1024];
     switch(self->curr_state){
@@ -315,8 +335,6 @@ void draw_goal(state_t *self){
 
         lcmglColor3f (0.0, 0.0, 1.0);
         lcmglCircle (xyz_car_local, self->goal_distance);
-        //fprintf (stdout, "Drawing circle at xyz = [%.2f %.2f %.2f] with goal_distance = %.2f\n",
-        //        xyz_car_local[0], xyz_car_local[2], xyz_car_local[2], self->goal_distance);
 
         bot_lcmgl_line_width(lcmgl, 5);
         lcmglColor3f(1.0, 0.0, 0.0);
@@ -370,20 +388,11 @@ on_bearing_vec (const lcm_recv_buf_t *rbuf, const char *channel,
     }
     self->tld_bearing =  perception_pointing_vector_t_copy(msg);
 
-    // access to bearing vec and utime
-
     //this is in body frame 
     float vx = self->tld_bearing->vec[0], vy = self->tld_bearing->vec[1]; // , vz = self->tld_bearing->vec[2];
     double utime = self->tld_bearing->utime; 
 
     printf("bearing vec: %3.2f %3.2f\n", vx, vy);
-    // double xyz_cam_car[] = {vx, vy, 1};
-    // double xyz_car_local[3];
-    
-    // bot_frames_transform_vec (self->frames, "CAMERALEFT", "local", xyz_car_car, xyz_car_local);
-    // xyz_car_local[2] = 0.0;
-
-
 }
 
 static void
@@ -400,17 +409,17 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
     self->last_driving_cmd = drc_driving_cmd_t_copy(msg);
     
     if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE){
-      self->do_braking = 0;
+        self->do_braking = 0;
     }
     else if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE){
-      self->do_braking = 1;
+        self->do_braking = 1;
     }
 
     if(self->do_braking){
-      self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
+        self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
     }
     else{
-      self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
+        self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
     }
     self->kp_steer = msg->kp_steer;
     self->kd_steer = msg->kd_steer;
@@ -516,7 +525,6 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
     
     // Find the best goal
     int found_goal = 0;
-    //double max_reward = 10000;
 
     double min_cost = 10000;
     double xy_goal[2] = {0, 0};
@@ -541,12 +549,6 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
     
     xyz_car_local[0] = car_to_local.trans_vec[0];
     xyz_car_local[1] = car_to_local.trans_vec[1];
-
-    //fprintf(stderr, "Car Frame to Local : %f, %f\n", xyz_car_local[0], xyz_car_local[1]);
-
-    //bot_frames_transform_vec (self->frames, CAR_FRAME, "local", xyz_car_car, xyz_car_local);
-
-    //fprintf(stderr, "Car Frame to Local : %f, %f\n", xyz_car_local[0], xyz_car_local[1]);
     
     double x_arc, y_arc;
     double angle_deg;
@@ -644,39 +646,17 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
         //double map_value = cost_map->readValue (goal_pos);
         double map_value = fmax(1/SAFE_DISTANCE, cost_map->readValue (goal_pos));
         double dist_from_goal = hypot(xy_goal[0] - goal_pos[0], xy_goal[1] - goal_pos[1]);
-        /*double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * pow(dist_from_goal,2));  
-         */
         double heading_delta = fabs(atan2(goal_pos[1], goal_pos[0]) - atan2(xy_goal[1], xy_goal[0]));
 
         double distance_from_goal_value = ALPHA * pow(dist_from_goal,2);
 
         double score = pow(ray_dist,DIST_POW) / (1.0 + ALPHA * (heading_delta) / (M_PI/2)) * (1-map_value);  
-        //float *colors = bot_color_util_jet(fmin(pow(score,DIST_POW),self->goal_distance)/self->goal_distance);
-        //lcmglColor3f (colors[0], colors[1], colors[2]);
-        
-        /*if(collision){
-          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-          bot_lcmgl_vertex3f(lcmgl, collision_point[0], collision_point[1], 0);
-          }
-          else{
-          bot_lcmgl_vertex3f(lcmgl, xyz_car_local[0], xyz_car_local[1], 0);
-          bot_lcmgl_vertex3f(lcmgl, xy_arc_max[0], xy_arc_max[1], 0);
-          }*/
-
-        //scores.push_back(std::make_pair<int, double>(i,dist_from_goal));
         pos_t pos;
         pos.xy[0] = goal_pos[0];
         pos.xy[1] = goal_pos[1];
         pos.score = score;//dist_from_goal;
 
         scores.push_back(std::make_pair<int, pos_t>(i,pos));
-
-        //bot_lcmgl_end(lcmgl);
-
-        //score each ray - to find the best one 
-             
-      
-        //fprintf(stderr, "[%d] Dist : %f\n", i, ray_dist); 
     }
 
     // Perform estop if there are no valid goals
@@ -686,7 +666,6 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
         return 0;
     }
 
-    //std::vector<std::pair<int, double> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
     std::vector<std::pair<int, pos_t> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
     fprintf(stderr, "Max Ind : %d => Score : %f => Pos [%f,%f]\n", it->first, it->second.score, it->second.xy[0], it->second.xy[1]);
 
@@ -712,12 +691,7 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
 
     bot_lcmgl_switch_buffer(lcmgl);
 
-    /**/
-
     if (found_goal) {
-        /*self->cur_goal[0] = xy_goal[0];
-          self->cur_goal[1] = xy_goal[1];
-          self->cur_goal[2] = 0;*/
         self->cur_goal[0] = it->second.xy[0];
         self->cur_goal[1] = it->second.xy[1];
         self->cur_goal[2] = 0;
@@ -802,7 +776,7 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self, double *bes
         double xy_arc[2];
         xy_arc[0] = xyz_car_local[0] + self->goal_distance * cos (bot_to_radians (angle_deg));
         xy_arc[1] = xyz_car_local[1] + self->goal_distance * sin (bot_to_radians (angle_deg));
-
+ 
         if (!cost_map->isInMap (xy_arc))
             continue;
 
@@ -1413,13 +1387,13 @@ perform_emergency_stop (state_t *self)
 {
     self->throttle_val = 0;
     if(self->do_braking){
-      self->brake_val = 1.0;
+        self->brake_val = 1.0;
     }
     else{
-      self->brake_val = 0;
+        self->brake_val = 0;
     }
     if(self->brake_val > 0){
-      fprintf (stdout, "Performing emergency stop - brake : %f!!!!\n", self->brake_val);
+        fprintf (stdout, "Performing emergency stop - brake : %f!!!!\n", self->brake_val);
     }
     drc_driving_control_cmd_t msg;
     msg.utime = bot_timestamp_now();
@@ -1519,7 +1493,7 @@ on_controller_timer (gpointer data)
     if(use_road_arc || use_road_carrot){
         if (!self->cost_map_last) {
             //if (self->verbose)
-                fprintf (stdout, "No valid terrain classification map\n");
+            fprintf (stdout, "No valid terrain classification map\n");
             self->curr_state = ERROR_NO_MAP;
             perform_emergency_stop(self);
             publish_status(self);
@@ -1637,7 +1611,7 @@ on_controller_timer (gpointer data)
             self->curr_state = DOING_INITIAL_TURN;
 	    brake_val = 0;
 	    if(self->do_braking){
-	      brake_val = 1.0;
+                brake_val = 1.0;
 	    }
 	    
         }
@@ -1646,17 +1620,17 @@ on_controller_timer (gpointer data)
         }        
 
 	if(self->do_braking){
-	  if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
-            double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
-            throttle_val = 0;
-            self->curr_state = DOING_BRAKING;
-            if(TIME_TO_BRAKE > 0)
-                brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
-            else
-	      brake_val = MAX_BRAKE;
+            if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+                double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
+                throttle_val = 0;
+                self->curr_state = DOING_BRAKING;
+                if(TIME_TO_BRAKE > 0)
+                    brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
+                else
+                    brake_val = MAX_BRAKE;
 	    
-            //time to brake - gracefully
-	  }
+                //time to brake - gracefully
+            }
 	}	
 
         double max_angle = 90;
@@ -1776,7 +1750,7 @@ on_controller_timer (gpointer data)
             self->curr_state = DOING_INITIAL_TURN;
 	    brake_val = 0;
 	    if(self->do_braking){
-	      brake_val = 1.0;
+                brake_val = 1.0;
 	    }
         }
         else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
@@ -1784,17 +1758,17 @@ on_controller_timer (gpointer data)
         }        
         
 	if(self->do_braking){
-	  if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
-            double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
-            throttle_val = 0;
-            self->curr_state = DOING_BRAKING;
-            if(TIME_TO_BRAKE > 0)
-	      brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
-            else
-	      brake_val = MAX_BRAKE;
+            if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+                double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
+                throttle_val = 0;
+                self->curr_state = DOING_BRAKING;
+                if(TIME_TO_BRAKE > 0)
+                    brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
+                else
+                    brake_val = MAX_BRAKE;
             
-            //time to brake - gracefully
-	  }
+                //time to brake - gracefully
+            }
 	}	
         
         double max_angle = 90;
@@ -1952,6 +1926,10 @@ int main (int argc, char **argv) {
 
     occ_map_pixel_map_t_subscribe (self->lcm, "TERRAIN_DIST_MAP", on_terrain_dist_map, self);
     drc_driving_control_params_t_subscribe (self->lcm, "DRIVING_CONTROL_PARAMS_DESIRED", on_driving_control_params, self);
+
+    drc_driving_affordance_status_t_subscribe (self->lcm, "DRIVING_STEERING_ACTUATION_STATUS", on_driving_affordance_status, self);
+    drc_driving_affordance_status_t_subscribe (self->lcm, "DRIVING_GAS_ACTUATION_STATUS", on_driving_affordance_status, self);
+    drc_driving_affordance_status_t_subscribe (self->lcm, "DRIVING_BRAKE_ACTUATION_STATUS", on_driving_affordance_status, self);
     
     drc_driving_cmd_t_subscribe(self->lcm, "DRIVING_CONTROLLER_COMMAND", on_driving_command, self);
 
