@@ -23,7 +23,7 @@ r_r = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_r,dt);
 lcmcoder = JLCMCoder(GraspSeedOptCoder('atlas'));
 nx=22; 
 
-channel = ['INIT_GRASP_SEED_OPT' '_' num2str(matlabpool_id)];
+channel = ['INIT_GRASP_OPT' '_' num2str(matlabpool_id)];
 disp(channel);
 grasp_opt_listener=LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
 setDefaultChannel(grasp_opt_listener,channel);
@@ -73,7 +73,7 @@ while(1)
             ljoint_names = (char(r_l.getStateFrame.coordinates{7:size_q}));
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
-            candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,0,ljoint_names,[' '],'CANDIDATE_GRASP_SEED');
+            candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,0,ljoint_names,[' '],'CANDIDATE_GRASP');
             x0 = Point(r_l.getStateFrame);
             x0 =double(x0);% resolveConstraints(r_l,double(x0)); % resolve constraints is slow
    
@@ -99,7 +99,7 @@ while(1)
             rjoint_names = (char(r_r.getStateFrame.coordinates{7:size_q}));
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
-            candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,1,[' '],rjoint_names,'CANDIDATE_GRASP_SEED');
+            candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,1,[' '],rjoint_names,'CANDIDATE_GRASP');
             
             x0 = Point(r_r.getStateFrame);
             x0 =double(x0);%resolveConstraints(r_r,double(x0));
