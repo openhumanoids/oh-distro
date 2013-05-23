@@ -64,10 +64,12 @@ classdef ManipulationPlanner < handle
                     ee_names= varargin{2};
                     ee_loci = varargin{3};
                     timeIndices = varargin{4};
-                    % runs IK sequence but its too slow. Given N
-                    % constraitns, iksequence needs atleast N break points
+                    % runs IK sequence but its  slow. 
+                    % Given N constraitns, iksequence needs atleast N break points
                     % which is slow.
                     %runOptimization(obj,x0,ee_names,ee_loci,timeIndices);
+                    
+                    % Point wise IK, much faster, linear complexity.
                     is_manip_map =false;
                     runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,is_manip_map);            
                 otherwise
