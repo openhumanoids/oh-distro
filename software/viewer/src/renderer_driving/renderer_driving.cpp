@@ -58,6 +58,10 @@
 
 #define PARAM_STOP_CONTROLLER "Stop Controller"
 
+#define PARAM_MAX_STEERING "Max Steering"
+#define PARAM_MIN_STEERING "Min Steering"
+#define PARAM_UPDATE_MANIP_MAP "Update Manip Map"
+
 #define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
 
@@ -1178,11 +1182,48 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
             bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_LOOKAHEAD, 1);
     }
-
+    
 
     if(!strcmp(name, PARAM_VISUAL_GOAL)) {
         send_seek_goal_visual(self);
-    }else if(!strcmp(name, PARAM_GOAL_SEND)) {
+    }
+    else if(!strcmp(name, PARAM_MAX_STEERING)){
+      //make sure that the value is above or equal to the min 
+      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_STEERING);
+      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_STEERING);
+      if(max < min){
+	bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_STEERING, min);
+	bot_viewer_set_status_bar_message(self->viewer, "Max value is smaller than min");
+      }      
+    }
+    else if(!strcmp(name, PARAM_MIN_STEERING)){
+      //make sure that the value is above or equal to the min 
+      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_STEERING);
+      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_STEERING);
+      if(min > max){
+	bot_gtk_param_widget_set_double(self->pw, PARAM_MIN_STEERING, max);
+	bot_viewer_set_status_bar_message(self->viewer, "Min value is larger than max");
+      }      
+    }
+    else if(!strcmp(name, PARAM_UPDATE_MANIP_MAP)){      
+      //make sure that the value is above or equal to the min 
+      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_STEERING);
+      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_STEERING);
+      drc_driving_affordance_status_t msg;
+      msg.utime = bot_timestamp_now();
+      msg.aff_type = "car";
+      msg.aff_uid = 1;   // affordance uid
+      msg.dof_name = "steering";
+      msg.ee_name = "left_hand";
+      
+      msg.have_manip_map = 1; 
+      
+      msg.dof_value_0 = bot_to_radians(min); // initial dof value in the manip map
+      msg.dof_value_1 = bot_to_radians(max); // final dof value in the manip map
+      
+      drc_driving_affordance_status_t_publish(self->lc, "DRIVING_STEERING_ACTUATION_STATUS", &msg);
+    }
+    else if(!strcmp(name, PARAM_GOAL_SEND)) {
         fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
         //bot_viewer_request_pick (self->viewer, &(self->ehandler));
         activate(self, 2);
@@ -1212,17 +1253,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	else{
 	  fprintf(stderr, "No car affordance message\n");	  
 	}	
-    }
-    else if(!strcmp(name, PARAM_STOP)){
-        bot_viewer_set_status_bar_message(self->viewer, "Sent ESTOP");
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_E_STOP; 
-        msg.steering_angle = 0;
-        msg.throttle_value = 0;
-        msg.brake_value = 1.0; //not sure if we are going to use this value
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
+    }    
     else if(!strcmp(name, PARAM_STOP_CONTROLLER)){
         bot_viewer_set_status_bar_message(self->viewer, "Sent STOP to Controller");
         drc_driving_cmd_t msg;
@@ -1260,17 +1291,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         }       
         
         drc_driving_cmd_t_publish(self->lc, "DRIVING_CONTROLLER_COMMAND", &msg);        
-    }
-    
-    else if(!strcmp(name, PARAM_START_SEQUENCE)){
-        bot_viewer_set_status_bar_message(self->viewer, "Initialized startup sequence");
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_START_SEQUENCE; 
-        msg.steering_angle = 0;
-        msg.throttle_value = 0;
-        msg.brake_value = 0.0; //not sure if we are going to use this value
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
     }
     else if(!strcmp(name, PARAM_SEND_DRIVE_COMMAND)){
         drc_driving_cmd_t msg;
@@ -1314,106 +1334,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         
         drc_driving_cmd_t_publish(self->lc, "DRIVING_CONTROLLER_COMMAND", &msg);
     }
-    else if(!strcmp(name, PARAM_HANDBRAKE)){
-        bool handbreak_on = bot_gtk_param_widget_get_bool(self->pw, PARAM_HANDBRAKE);
-        bot_viewer_set_status_bar_message(self->viewer, "Sent ESTOP");
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        if(handbreak_on){
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_ON;
-        }
-        else{
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_OFF;
-        }
-        msg.steering_angle = 0;
-        msg.throttle_value = 0;
-        msg.brake_value = 0.0; //not sure if we are going to use this value
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
-    /*else if(!strcmp(name, PARAM_STEERING_ANGLE)){
-        double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
-        double throttle = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
     
-        bot_viewer_set_status_bar_message(self->viewer, "Sent Drive : Angle : %f Throttle : %f", angle, throttle);
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; 
-        msg.steering_angle = bot_to_radians(angle);
-        msg.throttle_value = throttle;
-        msg.brake_value = 0; //not sure if we are going to use this value
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-        }*/
-    else if(!strcmp(name, PARAM_BRAKE)){
-        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
-        double brake_val =  bot_gtk_param_widget_get_double(self->pw, PARAM_BRAKE);
-        bot_viewer_set_status_bar_message(self->viewer, "Sent Brake : %f", brake_val);
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; 
-        msg.steering_angle = bot_to_radians(angle);  //this will be ignored
-        msg.throttle_value = 0;
-        msg.brake_value = brake_val; 
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
-    else if(!strcmp(name, PARAM_THROTTLE)){
-        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
-        double throttle = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
-    
-        bot_viewer_set_status_bar_message(self->viewer, "Sent Drive : Angle : %f Throttle : %f", angle, throttle);
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; 
-        msg.steering_angle = bot_to_radians(angle);
-        msg.throttle_value = throttle;
-        msg.brake_value = 0; //not sure if we are going to use this value
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
-    else if(!strcmp(name, PARAM_GEAR_POSITION)){
-        gear_type_t gear_pos =(gear_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_GEAR_POSITION);
-        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
-        double throttle = 0;//bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
-    
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        if(gear_pos == GEAR_FORWARD){
-            bot_viewer_set_status_bar_message(self->viewer, "Putting gear forward");
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_FORWARD; 
-        }
-        else if(gear_pos == GEAR_NEUTRAL){
-            bot_viewer_set_status_bar_message(self->viewer, "Putting gear neutral");
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_NEUTRAL; 
-        }
-        else if(gear_pos == GEAR_REVERSE){
-            bot_viewer_set_status_bar_message(self->viewer, "Putting gear reverse");
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_REVERSE; 
-        }
-
-        msg.steering_angle = bot_to_radians(angle);
-        msg.throttle_value = throttle;
-        msg.brake_value = 0; //not sure if we should be brakeed 
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
-    else if(!strcmp(name, PARAM_TURN_IGNITION)){
-        bool engine_on = bot_gtk_param_widget_get_bool(self->pw, PARAM_TURN_IGNITION);
-        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
-
-        if(engine_on)
-            bot_viewer_set_status_bar_message(self->viewer, "Starting vehicle");
-        else
-            bot_viewer_set_status_bar_message(self->viewer, "Switching off engine");
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        if(engine_on)
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_START_CAR; 
-        else
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_SWITCH_OFF_ENGINE; 
-    
-        msg.steering_angle = bot_to_radians(angle);
-        msg.throttle_value = 0;
-        msg.brake_value = 0; //not sure if we should be brakeed 
-        drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
-
     bot_viewer_request_redraw(self->viewer);
 }
 
@@ -1493,14 +1414,14 @@ static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char 
         double new_max = max(msg->dof_value_0, msg->dof_value_1);
         if (msg->have_manip_map) {
             if ( (fabs (new_min - self->gas_pedal_min) > 0.01) || (fabs (new_max - self->gas_pedal_max) > 0.01) ) {
-                double value = bot_gtk_param_widget_get_double (self->pw, PARAM_THROTTLE);
-                bot_gtk_param_widget_modify_double (self->pw, PARAM_THROTTLE, new_min, new_max,
+                double value = bot_gtk_param_widget_get_double (self->pw, PARAM_THROTTLE_RATIO);
+                bot_gtk_param_widget_modify_double (self->pw, PARAM_THROTTLE_RATIO, new_min, new_max,
                                                     PARAM_THROTTLE_DELTA, value);
             }
-            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 1);
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE_RATIO, 1);
         }
         else
-            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE, 0);
+            bot_gtk_param_widget_set_enabled (self->pw, PARAM_THROTTLE_RATIO, 0);
 
         self->gas_pedal_have_manip_map = msg->have_manip_map;
         self->gas_pedal_min = new_min;
@@ -1738,29 +1659,25 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_RATIO, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, PARAM_THROTTLE_DELTA, 0.04);
 
+    bot_gtk_param_widget_add_double(self->pw, PARAM_BRAKE, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, PARAM_BRAKE_DELTA, 0.04);
+
     bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, USE_ROAD_CARROT, "Use Road (Carrot)", USE_ROAD_CARROT, "Use Road (Arc)", USE_ROAD_ARC, "Use TLD (Road)", USE_TLD_WITH_ROAD,  "Use TLD (No Road)", USE_TLD_IGNORE_ROAD, "Use User Goal", USE_USER_GOAL, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_DRIVE_COMMAND, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_STOP_CONTROLLER, NULL);
   
-    bot_gtk_param_widget_add_separator (self->pw, "Low Level Driving controller");
+    bot_gtk_param_widget_add_separator (self->pw, "Simulate Manip Map Threshold");
 
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_SEQUENCE, NULL);
+    bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_STEERING, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, -90, 90, 0.1, 35);
 
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_TURN_IGNITION , 0, NULL);
+    
+    bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_STEERING, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, -90, 90, 0.1, -35);
 
-    bot_gtk_param_widget_add_enum(self->pw, PARAM_GEAR_POSITION, BOT_GTK_PARAM_WIDGET_MENU, GEAR_NEUTRAL, "Forward", GEAR_FORWARD, "Neutral", GEAR_NEUTRAL,  "Reverse", GEAR_REVERSE, NULL);
-
-    bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.05, 0);
-
-    bot_gtk_param_widget_add_double(self->pw, PARAM_BRAKE, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, PARAM_BRAKE_DELTA, 0);
-						
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HANDBRAKE, 0, NULL);
-
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_STOP, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_MANIP_MAP, NULL);
 
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);
