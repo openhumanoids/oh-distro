@@ -173,19 +173,19 @@ group "a.3.unpinned_grasping" {
     } 
     cmd "imagemask" {
         exec = "drc-image-passthrough";
-        host = "robot";
+        host = "extra";
     }
     cmd "tracker" {
         exec = "object-tracker -s -a 1";
-        host = "robot";
+        host = "extra";
     } 
     cmd "affordance_init" {
         exec = "affordance_init -e 2";
-        host = "robot";
+        host = "extra";
     } 
     cmd "PrecomputationServer" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "robot";
+        host = "extra";
     }
 }
 
@@ -200,19 +200,19 @@ group "a.3.walking_manip" {
     } 
     cmd "imagemask" {
         exec = "drc-image-passthrough";
-        host = "robot";
+        host = "extra";
     }
     cmd "tracker" {
         exec = "object-tracker -s -a 1";
-        host = "robot";
+        host = "extra";
     } 
     cmd "affordance_init" {
         exec = "affordance_init -e 2";
-        host = "robot";
+        host = "extra";
     } 
     cmd "PrecomputationServer" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "robot";
+        host = "extra";
     }
 }
 group "a.4.driving" {
@@ -468,6 +468,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_unpinned_manip" {
+        #exec = "roslaunch atlas_utils qual_task_2.launch";
 	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
 	host = "robot";
     }
@@ -824,9 +825,10 @@ script "dev.ingress" {
 script "dev.unpinned_manip" { 
     start group "0.development";
     start group "a.1.core";
+    wait ms 1000;
     start group "a.3.unpinned_grasping";
     start group "b.3.grasping";
-    wait ms 20000;
+    wait ms 12000;
     start cmd "gz_unpinned_manip";    
 }
 
