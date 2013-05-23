@@ -14,6 +14,7 @@ Qt4_Widget_OpenGL_Authoring( const string& xmlString,
                                                   _opengl_object_robot_plan(),
                                                   _opengl_object_gfe( xmlString ),
                                                   _opengl_object_gfe_ghost( xmlString ),
+                                                  _opengl_object_constraint_visualizer(),
                                                   _timer_update( new QTimer( this ) ) {
   setMinimumSize( 800, 400 );
 
@@ -25,12 +26,19 @@ Qt4_Widget_OpenGL_Authoring( const string& xmlString,
   _opengl_object_gfe.set_visible( false );
   _opengl_object_gfe_ghost.set_visible( false );
   _opengl_object_gfe_ghost.set_transparency( 0.1 );
+
+  _opengl_object_constraint_visualizer.set_color( Eigen::Vector3f(1.0, 0.0, 0.0) );
+  _opengl_object_constraint_visualizer.set_transparency( 0.5 );
+  _opengl_object_constraint_visualizer.set_visible( false );
+
+//_opengl_object_constraint_visualizer.set_visible( false ) 
+
   opengl_scene().add_object( _opengl_object_affordance_collection );
   opengl_scene().add_object( _opengl_object_affordance_collection_ghost );
   opengl_scene().add_object( _opengl_object_robot_plan );
   opengl_scene().add_object( _opengl_object_gfe );
   opengl_scene().add_object( _opengl_object_gfe_ghost );
-
+  opengl_scene().add_object( _opengl_object_constraint_visualizer);
   _timer_update->start( 100 );
 
   connect( _timer_update, SIGNAL( timeout() ), this, SLOT( _timer_update_callback() ) );
@@ -136,6 +144,23 @@ update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryW
   }
   update();
   return;
+}
+
+void 
+Qt4_Widget_OpenGL_Authoring::
+update_constraint_visualizer( Constraint* constraint) {
+  // update the box from the constraint
+    if ( constraint->type() == CONSTRAINT_TASK_SPACE_REGION_TYPE ) {
+        Constraint_Task_Space_Region* _tsr_constraint = dynamic_cast <Constraint_Task_Space_Region*>(constraint);
+        double h = _tsr_constraint->ranges()[0].second - _tsr_constraint->ranges()[0].first;
+        double w = _tsr_constraint->ranges()[1].second - _tsr_constraint->ranges()[1].first;
+        double l = _tsr_constraint->ranges()[2].second - _tsr_constraint->ranges()[2].first;
+
+        _opengl_object_constraint_visualizer.set_visible( true );
+        _opengl_object_constraint_visualizer.set(Eigen::Vector3f(h, w, l));
+    }
+    update();
+    return;
 }
 
 void

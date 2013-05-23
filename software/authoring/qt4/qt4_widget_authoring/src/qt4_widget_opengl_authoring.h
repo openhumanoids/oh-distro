@@ -6,6 +6,8 @@
 
 #include <qt4/qt4_widget_opengl.h>
 
+#include <authoring/constraint.h>
+#include <authoring/constraint_task_space_region.h>
 #include <affordance/AffordanceState.h>
 #include <opengl/opengl_object_gfe.h>
 #include <opengl/opengl_object_trajectory_gfe.h>
@@ -32,6 +34,7 @@ namespace authoring {
     void update_opengl_object_robot_plan_visible_current_index( int visibleCurrentIndex );
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
     void update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist );
+    void update_constraint_visualizer( Constraint* constraint);
 
   protected slots:
     void _timer_update_callback( void );
@@ -42,6 +45,7 @@ namespace authoring {
     opengl::OpenGL_Object_Trajectory_GFE _opengl_object_robot_plan;
     opengl::OpenGL_Object_GFE _opengl_object_gfe;
     opengl::OpenGL_Object_GFE _opengl_object_gfe_ghost;
+    opengl::OpenGL_Object_Box _opengl_object_constraint_visualizer;
 
     QTimer* _timer_update;
 

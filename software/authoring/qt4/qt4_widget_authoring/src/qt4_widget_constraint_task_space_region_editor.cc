@@ -55,6 +55,8 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
   vector< shared_ptr< Link > > links;
 
+  this->installEventFilter(this);
+
   _robot_model.getLinks( links );
   for( vector< shared_ptr< Link > >::iterator it1 = links.begin(); it1 != links.end(); it1++ ){
     for( map< string, shared_ptr< vector< shared_ptr< Collision > > > >::iterator it2 = (*it1)->collision_groups.begin(); it2 != (*it1)->collision_groups.end(); it2++ ){
@@ -153,7 +155,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   if( _constraint != NULL ){
     _combo_box_type->setCurrentIndex( _constraint->contact_type() );
     _label_id->setTextFormat(Qt::RichText);
-    _label_id->setText( QString("A <i>task space region constraint</i> defines a constraint between a <i>parent</i> link, typically." ) );
+    _label_id->setText( QString("A <i>task space region constraint</i> defines a constraint between a <i>parent</i> link,<br/> typically a component of the robot, and <i>child</i> link, typically an affordance." ) );
     setWindowTitle( QString("[%1] - task space region constraint").arg( QString::fromStdString( _constraint->id() ) ) );
     
     if( _constraint->parent().first != "N/A" ){
@@ -403,6 +405,16 @@ operator=( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other ) {
   return (*this);
 }
 
+bool
+Qt4_Widget_Constraint_Task_Space_Region_Editor::
+eventFilter(QObject *object, QEvent *event)
+{
+    if (event->type() == QEvent::WindowActivate) {
+        emit widget_selected();
+    }
+    return false;
+}
+
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( void ){
@@ -435,8 +447,8 @@ _constraint_changed( double value ){
     _constraint->ranges()[5].second = _double_spin_box_yaw_max->value();
 
     mark_invalid_spin_boxes();
-
     emit description_update( QString::fromStdString( _constraint->description() ) );
+    emit widget_selected();
   } else {
     emit description_update( QString( "N/A" ) );
   }

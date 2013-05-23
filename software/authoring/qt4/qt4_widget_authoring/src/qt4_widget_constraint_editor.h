@@ -26,6 +26,7 @@ namespace authoring {
 
   signals:
     void info_update( const QString& info );
+    void constraint_selected( const QString& constraintID );
 
   public slots:
     void update_constraint( void );
@@ -38,6 +39,7 @@ namespace authoring {
     void _combo_box_type_changed( int index );
     void _push_button_edit_pressed( void );
     void check_valid_times( void );
+    void show_visualizer( void );
 
   protected:
     Constraint *& _constraint;

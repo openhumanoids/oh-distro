@@ -128,6 +128,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
+    connect( *it, SIGNAL( constraint_selected ( const QString& ) ), this, SLOT( _constraint_selected( const QString& ) ) );
   }
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
@@ -254,6 +255,17 @@ Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
   if ( currentIndex < _robot_plan.size() ) {
     _slider_current_time->setText( QString( "time: %1 sec" ).arg( _robot_plan[currentIndex].time() / 100000.0 ) );
+  }
+}
+
+void 
+Qt4_Widget_Authoring::
+_constraint_selected( const QString& id ){
+  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
+    if (_constraint_sequence.constraints()[ i ]->id() == id.toStdString()) {
+      _widget_opengl_authoring->update_constraint_visualizer(_constraint_sequence.constraints()[ i ]);
+      break;
+    }
   }
 }
 

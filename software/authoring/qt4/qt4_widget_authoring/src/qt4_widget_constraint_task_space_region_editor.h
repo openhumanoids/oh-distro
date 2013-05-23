@@ -7,6 +7,7 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QDoubleSpinBox>
 #include <QtGui/QPushButton>
+#include <QEvent>
 
 #include <urdf/model.h>
 #include <affordance/AffordanceState.h>
@@ -24,6 +25,7 @@ namespace authoring {
 
   signals:
     void description_update( const QString& description ); 
+    void widget_selected( void );
  
   public slots: 
     void _constraint_changed( void );
@@ -45,6 +47,7 @@ namespace authoring {
     void _range_yaw_minimize( void );
     void _range_yaw_maximize( void );
     void mark_invalid_spin_boxes( void );
+    bool eventFilter(QObject *object, QEvent *event);
 
   protected:
     Constraint_Task_Space_Region * _constraint;

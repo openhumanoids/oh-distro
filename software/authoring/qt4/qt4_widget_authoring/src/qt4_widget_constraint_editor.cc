@@ -294,6 +294,11 @@ _combo_box_type_changed( int index ){
   }
   return;
 }
+void
+Qt4_Widget_Constraint_Editor::
+show_visualizer( void ){
+    emit constraint_selected( QString::fromStdString( _constraint->id() ) );
+}
 
 void
 Qt4_Widget_Constraint_Editor::
@@ -303,6 +308,7 @@ _push_button_edit_pressed( void ){
     case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
       _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( dynamic_cast< Constraint_Task_Space_Region* >( _constraint ), _robot_model, _object_affordances, this );
       connect( _constraint_editor_popup, SIGNAL( description_update( const QString& ) ), this, SLOT( update_description( const QString& ) ) );
+      connect( _constraint_editor_popup, SIGNAL( widget_selected ( void ) ), this, SLOT( show_visualizer( void ) ) );
       _constraint_editor_popup->show();
       emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
