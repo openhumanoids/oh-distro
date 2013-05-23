@@ -37,14 +37,14 @@ def writeWeights(maxDuration, numSamples, profileType, fileName):
         f.write(str(times[i]*1000) + ', ' + str(weights[i]) + '\n')
 
 
-def doRun(logFile, maxDuration, profileType, prefix):
+def doRun(logFile, runOption, maxDuration, profileType, prefix):
     #prefixName = os.path.split(prefix)[1]
     logName = os.path.split(os.path.split(logFile)[0])[1];
-    runName = logName + '_' + str(maxDuration) + '_' + profileType
+    runName = logName + '_' + runOption + '_' + str(maxDuration) + '_' + profileType
     sys.stdout.write('starting run %s ...\n' % (runName))
     
     # write weights file
-    weightFile = '/home/antone/TODO_FILL_ME_IN.txt';
+    weightFile = '/tmp/weights.txt';
     writeWeights(maxDuration, 30, profileType, weightFile)
     sys.stdout.write('  wrote weights file %s\n' % weightFile)
     
@@ -64,7 +64,7 @@ def doRun(logFile, maxDuration, profileType, prefix):
 
     # start up motion estimator
     motionExe = 'drc-legged-odometry'
-    motionArgs = '-e -l'
+    motionArgs = '-e -l' + ' -' + runOption
     motionCmd = shlex.split(motionExe + ' ' + motionArgs)
     motionProc = subprocess.Popen(motionCmd, cwd='/tmp')
     sys.stdout.write('  spawned motion estimator\n')
@@ -99,9 +99,16 @@ def doAllRuns(logListFile,prefix):
         if exc.errno == errno.EEXIST and os.path.isdir(prefix): pass
         else: raise
     files = open(os.path.expandvars(logListFile),'r').readlines()
+    runOptions = ['A','B','C']
     windowDurations = [30, 60, 90]
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
+
+    # TODO: temporarily disabling sweep over weights
+    windowDurations = [30]
+    weightProfiles = ['uniform']
+    
     for filename in files:
-        for duration in windowDurations:
-            for profile in weightProfiles:
-                doRun(filename, duration, profile, prefix)
+        for runOption in runOptions:
+            for duration in windowDurations:
+                for profile in weightProfiles:
+                    doRun(filename, runOption, duration, profile, prefix)
