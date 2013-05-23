@@ -25,6 +25,7 @@ if(~isfield(action_options,'use_mex')) action_options.use_mex = false; end
 if(~isfield(action_options,'debug')) action_options.debug = false; end
 if(~isfield(action_options,'verbose')) action_options.verbose = false; end
 if(~isfield(action_options,'run_once')) action_options.run_once = false; end
+if(~isfield(action_options,'ignore_q0')) action_options.ignore_q0 = false; end
 if(~isfield(action_options,'channel_in')) 
   if(action_options.IK)
     action_options.channel_in = 'REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE'; 
@@ -203,7 +204,13 @@ while (1)
       com_key_time_samples(:,1) = getCOM(r,kinsol);
       options.quasiStaticFlag = true;
       options.shrinkFactor = 0.5;
-      for i = 2:num_key_time_samples
+      if(action_options.ignore_q0)
+        ind_first_time= 1;
+      else
+        ind_first_time = 2;
+      end
+
+      for i = ind_first_time:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
           if(isempty(ikargs))
               q_key_time_samples(:,i) = ...
@@ -292,7 +299,7 @@ while (1)
         options.quasiStaticFlag = true;
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
         q_qs_plan(:,1) = q0;
-        for i = 2:numel(t_qs_breaks)
+        for i = ind_first_time:numel(t_qs_breaks)
           ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
           if(isempty(ikargs))
             q_qs_plan(:,i) = q_qs_traj.eval(t_qs_breaks(i));
