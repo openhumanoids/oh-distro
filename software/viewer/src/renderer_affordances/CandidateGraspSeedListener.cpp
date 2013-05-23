@@ -45,8 +45,8 @@ namespace renderer_affordances
      }
     }
     if(urdf_found){
-    //Subscribe to CANDIDATE_GRASP_SEED 
-    _lcm->subscribe("CANDIDATE_GRASP_SEED", &CandidateGraspSeedListener::handleDesiredGraspStateMsg, this); 
+    //Subscribe to CANDIDATE_GRASP 
+    _lcm->subscribe("CANDIDATE_GRASP", &CandidateGraspSeedListener::handleDesiredGraspStateMsg, this); 
     }
     else{
      cerr << "##### ERROR: #####" <<  " sticky_hand urdfs not found in CandidateGraspSeedListener.cpp. Disabling candidate GraspSeedListener in renderer_affordances. Please update your models folder" << endl;    
@@ -69,7 +69,7 @@ namespace renderer_affordances
     object_instance_map_type_::iterator it = _parent_renderer->instantiated_objects.find(msg->object_name);
 
     if(it == _parent_renderer->instantiated_objects.end()) {
-       cerr << " object_name " <<msg->object_name << " specified in CANDIDATE_GRASP_SEED channel is not available in cache." << endl; 
+       cerr << " object_name " <<msg->object_name << " specified in CANDIDATE_GRASP channel is not available in cache." << endl; 
        return;
     }    
    

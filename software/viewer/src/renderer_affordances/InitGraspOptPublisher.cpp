@@ -37,8 +37,8 @@ namespace renderer_affordances
 //-------------------------------------------------------------------------------------      
 //=============message callbacks
 
-//std::string channel = "INIT_GRASP_SEED_OPT"+next_available_opt;
-//publishGraspOptControlMsg("INIT_GRASP_SEED_OPT",T_geom_approach,KDL::Frame::Identity(),0,0,0);
+//std::string channel = "INIT_GRASP_OPT"+next_available_opt;
+//publishGraspOptControlMsg("INIT_GRASP_OPT",T_geom_approach,KDL::Frame::Identity(),0,0,0);
 
   void InitGraspOptPublisher::publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,const int drake_control, const int uid)				 
   {

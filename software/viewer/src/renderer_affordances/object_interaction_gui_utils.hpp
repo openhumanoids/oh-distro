@@ -28,6 +28,7 @@
 #define PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT "Set Des JointDofs"
 #define PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS "Adjust (via Sliders)"
 #define PARAM_GET_MANIP_PLAN "Get Manip Plan"
+#define PARAM_GET_RETRACTABLE_MANIP_PLAN "Get Retractable Manip Plan"
 #define PARAM_GET_MANIP_MAP "Get Manip Map"
 #define PARAM_RESET_DESIRED_STATE "Reset"
 #define PARAM_CONTACT_MASK_SELECT "Mask"
@@ -399,7 +400,7 @@ namespace renderer_affordances_gui_utils
           {
            //int id =  1;
             std::stringstream oss;
-            oss << "INIT_GRASP_SEED_OPT_" << id; 
+            oss << "INIT_GRASP_OPT_" << id; 
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
             self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
@@ -432,7 +433,7 @@ namespace renderer_affordances_gui_utils
           {
            //int id =  1;
             std::stringstream oss;
-            oss << "INIT_GRASP_SEED_OPT_" << id; 
+            oss << "INIT_GRASP_OPT_" << id; 
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
             self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
@@ -605,7 +606,7 @@ namespace renderer_affordances_gui_utils
       for (unsigned int i=0;i<OptChannelIdList.size();i++)
       {
         std::stringstream oss;
-        oss << "INIT_GRASP_SEED_OPT_" << OptChannelIdList[i];
+        oss << "INIT_GRASP_OPT_" << OptChannelIdList[i];
         channel = oss.str();
         uid = OptChannelHandUidList[i];
         self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
@@ -622,7 +623,12 @@ namespace renderer_affordances_gui_utils
     }
     else if(!strcmp(name,PARAM_GET_MANIP_PLAN)) {
       //cout << "publishes ee motion constraints for all associated sticky hands and feet \n";
-      get_manip_plan(self);
+      bool is_retractable = false;
+      publish_EE_locii_and_get_manip_plan(self,is_retractable);
+    }
+    else if(!strcmp(name,PARAM_GET_RETRACTABLE_MANIP_PLAN)){
+      bool is_retractable = true;
+      publish_EE_locii_and_get_manip_plan(self,is_retractable);
     }
     else if(!strcmp(name,PARAM_SET_GAZE)) {
         spawn_get_ee_constraint_popup(self);
@@ -753,6 +759,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(via EE pt/motion/range goal)");     
       bot_gtk_param_widget_add_separator (pw,"(for approval)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP, NULL);
 
    }
@@ -846,9 +853,9 @@ namespace renderer_affordances_gui_utils
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
           
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }

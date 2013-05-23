@@ -492,7 +492,7 @@ namespace renderer_affordances_lcm_utils
   }
  //----------------------------------------------------------------------------------------------------------
  
- static void get_manip_plan (void *user)
+ static void publish_EE_locii_and_get_manip_plan (void *user, bool is_retractable)
  {
     RendererAffordances *self = (RendererAffordances*) user;
 
@@ -501,6 +501,7 @@ namespace renderer_affordances_lcm_utils
     
     map<string, vector<KDL::Frame> > ee_frames_map;
     map<string, vector<int64_t> > ee_frame_timestamps_map;
+
     // Publish time indexed ee motion constraints from associated sticky hands 
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
@@ -545,10 +546,32 @@ namespace renderer_affordances_lcm_utils
               int64_t timestamp=(int64_t)i*1000000;
               frame_timestamps.push_back(timestamp);   
             }
+            // append reverse motion with a small back up palm offset
+            if(is_retractable){
+              for(uint i = 0; i < (uint) num_frames; i++)
+              {
+                KDL::Frame T_object_hand = hand_it->second._gl_hand->_desired_body_motion_history[num_frames-1-i];                   
+                KDL::Frame T_world_hand = T_world_object*T_object_hand;
+                KDL::Frame T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame                             
+                KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
+                KDL::Vector handframe_offset;
+                handframe_offset[0]=0.05;handframe_offset[1]=0;handframe_offset[2]=0;
+                KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+                KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+                T_world_ee.p += worldframe_offset;   
+                T_world_ee_frames.push_back(T_world_ee);
+                int64_t timestamp=(int64_t)(2*num_frames-1-i)*1000000;
+                frame_timestamps.push_back(timestamp);   
+              } 
+            }
            //===================         
 
            ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
            ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));   
+           // hand_it->second.joint_name;  
+           // hand_it->second.joint_position;  
+
+           
          } // end if (host_name == (it->first))
       } // end for sticky hands
         
