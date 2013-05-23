@@ -172,7 +172,7 @@ update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
 void
 Qt4_Widget_Authoring::
 update_robot_plan( vector< State_GFE >& robotPlan ){
-  emit info_update( QString( "[<b>OK</b> recieved plan" ) );
+  emit info_update( QString( "[<b>OK</b>] received plan" ) );
   _robot_plan = robotPlan;
   _slider_plan_current_index->setRange( 0, ( robotPlan.size() - 1 ) );
   return;

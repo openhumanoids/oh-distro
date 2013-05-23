@@ -37,6 +37,7 @@ namespace authoring {
     void _check_box_active_changed( int state );
     void _combo_box_type_changed( int index );
     void _push_button_edit_pressed( void );
+    void check_valid_times( void );
 
   protected:
     Constraint *& _constraint;

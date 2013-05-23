@@ -154,6 +154,7 @@ Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_start_value_changed( double start ){
   if( _constraint != NULL ){
     _constraint->start() = _double_spin_box_time_start->value();
+    check_valid_times();
     update_description( QString::fromStdString( _constraint->description() ) );
   } else {
     update_description( "N/A" );
@@ -166,11 +167,21 @@ Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_end_value_changed( double end ){
   if( _constraint != NULL ){
     _constraint->end() = _double_spin_box_time_end->value();
+    check_valid_times();
     update_description( QString::fromStdString( _constraint->description() ) );
   } else {
     update_description( "N/A" );
   }
   return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+check_valid_times() {
+    QString invalid = "QDoubleSpinBox { background-color: #ff0000; color: white }";
+    QString valid = "";
+    _double_spin_box_time_start->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
+    _double_spin_box_time_end->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
 }
 
 void
