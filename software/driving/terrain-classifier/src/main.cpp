@@ -492,9 +492,20 @@ int detect_road_old(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img
     return 0;
 }
 
-void
+int 
 decode_image(const bot_core_image_t * msg, cv::Mat& img)
 {
+    int ch = msg->row_stride / (msg->width); 
+
+    if(ch == 1){
+        fprintf(stderr, "No color channels\n");
+        return 0;
+    }
+    if(msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY){
+        fprintf(stderr, "Image is gray\n");
+        return 0;
+    }
+    
     if (img.empty() || img.rows != msg->height || img.cols != msg->width)
         img.create(msg->height, msg->width, CV_8UC3);
 
@@ -505,23 +516,22 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
         cv::cvtColor(img, img, CV_RGB2BGR);
         break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
-        // for some reason msg->row_stride is 0, so we use msg->width instead.
-        //does this look ok? - this will loose the color?
-        jpeg_decompress_8u_gray(msg->data,
-                                msg->size,
-                                img.data,
-                                msg->width,
-                                msg->height,
-                                msg->width);
-        break;
-    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
-        memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
+        if (ch == 3) { 
+            jpeg_decompress_8u_rgb(msg->data,
+                                   msg->size,
+                                   img.data,
+                                   msg->width,
+                                   msg->height,
+                                   msg->width * ch);
+            cv::cvtColor(img, img, CV_RGB2BGR);
+        } 
         break;
     default:
         fprintf(stderr, "Unrecognized image format\n");
+        return 0;
         break;
     }
-    return;
+    return 1;
 }
 
 //set up the rays from the camera (applying corrections etc)
@@ -1005,8 +1015,11 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel,
             state->img.create(msg->height, msg->width, CV_8UC3);
         }
     }
-    decode_image(msg, state->img);    
-
+    int d_status = decode_image(msg, state->img);    
+    if(d_status == 0){
+        fprintf(stderr, "Error decoding image\n");
+        return;
+    }
     //This routine does most of the heavy lifting 
     int64_t s_utime = bot_timestamp_now();
     int status = detect_road(state, msg->utime, state->img, state->hsv_img);      
