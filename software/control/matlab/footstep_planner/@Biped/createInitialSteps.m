@@ -1,21 +1,17 @@
 function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 
   debug = false;
-  biped.getNextStepID(true);
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
   sizecheck(poses, [6,1]);
 
-  % poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
-  % poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
-    
   if options.right_foot_lead
-    X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
-    X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
+    X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
+    X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
   else
-    X(1) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
-    X(2) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
+    X(1) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
+    X(2) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
   end
   
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
@@ -119,17 +115,7 @@ aborted = false;
     else
       last_lambda.left = lambda_n;
     end
-    % if length(X) == 2
-    %   last_pos = X(end-1).pos;
-    % else
-    %   last_pos = X(end-2).pos;
-    % end
-    % for j = 4:6
-    %   pos_n(j) = last_pos(j) + angleDiff(last_pos(j), pos_n(j));
-    % end
-    % apex_pos = biped.get_apex_pos(last_pos, pos_n);
-    % X(end+1) = struct('pos', apex_pos, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
-    X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
+    X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
     if X(end).is_right_foot
       goal = foot_goals.right;
@@ -153,14 +139,16 @@ aborted = false;
       final_pos = biped.stepCenter2FootCenter(final_center, ~X(end).is_right_foot);
       is_right_foot = ~X(end).is_right_foot;
 
-      X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
+      X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
         break
       end
     end
   end
  
+  biped.getNextStepID(true); % reset the counter
   for j = 1:length(X)
+    X(j).id = biped.getNextStepID();
     X(j).step_speed = options.step_speed;
     X(j).step_height = options.step_height;
   end
