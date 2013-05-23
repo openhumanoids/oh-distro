@@ -38,6 +38,14 @@ classdef DRCTerrainMap < RigidBodyTerrain
           options.fill= false;
       end
 
+      if isfield(options,'normal_radius')
+        % Radius (in pixels) around each point to use for smoothing normals
+        typecheck(options.normal_radius, 'numeric');
+      else
+        options.normal_radius = 1;
+      end
+
+
       if (private_channel)
           obj.map_handle = HeightMapHandle(@HeightMapWrapper,'true');
       else
@@ -45,6 +53,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       end
       
       obj.map_handle.setFillMissing(options.fill);
+      obj.map_handle.setNormalRadius(options.normal_radius);
 
       % wait for at least one map message to arrive before continuing
       msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
