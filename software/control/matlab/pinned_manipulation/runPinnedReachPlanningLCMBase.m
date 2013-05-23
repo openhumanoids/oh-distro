@@ -48,6 +48,8 @@ posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
+rf_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_R_FOOT_MOTION');
+lf_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_L_FOOT_MOTION');
 
 % constraints for iterative adjustment of plans 
 constraint_listener = TrajOptConstraintListener('MANIP_PLAN_CONSTRAINT');
@@ -68,16 +70,8 @@ x0 = getInitialState(r);
 q0 = x0(1:getNumDOF(r));
 
 kinsol = doKinematics(r,q0);
-% r_hand_body = findLink(r,'right_palm');
-% l_hand_body = findLink(r,'left_palm');
-% r_hand_body = findLink(r,'r_hand');
-% l_hand_body = findLink(r,'l_hand');
-% rh_ee_goal = forwardKin(r,kinsol,r_hand_body,[0;0;0],1);
-% lh_ee_goal = forwardKin(r,kinsol,l_hand_body,[0;0;0],1);
 
-% logic variables
-rh_goal_received = false; % set when r ee goal is received. Cleared if plan is committed or terminated
-lh_goal_received = false; % set when l ee goal is received
+
 rh_ee_goal = [];
 lh_ee_goal = [];
 rf_ee_goal = [];
@@ -92,7 +86,6 @@ h_ee_constraint = [];
 % get initial state and end effector goals
 disp('Listening for goals...');
 send_status(3,0,0,'Manipulation Planner: Listening for goals...');
-waiting = true;
 while(1)
   rep = getNextMessage(rh_ee.frame,0); 
   if (~isempty(rep))
@@ -100,7 +93,6 @@ while(1)
     p=rep(2:4);   rpy=rep(5:7);
 %    q=rep(5:8);rpy = quat2rpy(q);
     rh_ee_goal=[p(:);rpy(:)];
-    rh_goal_received = true;
   end
   
   lep = getNextMessage(lh_ee.frame,0);
@@ -109,7 +101,6 @@ while(1)
     p=lep(2:4);   rpy=lep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     lh_ee_goal=[p(:);rpy(:)];
-    lh_goal_received = true;
   end
   
   rfep = getNextMessage(rf_ee.frame,0); 
@@ -118,7 +109,6 @@ while(1)
     p=rfep(2:4);   rpy=rfep(5:7);
 %    q=rep(5:8);rpy = quat2rpy(q);
     rf_ee_goal=[p(:);rpy(:)];
-    rf_goal_received = true;
   end
   
   lfep = getNextMessage(lf_ee.frame,0);
@@ -127,7 +117,6 @@ while(1)
     p=lfep(2:4);   rpy=lfep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     lf_ee_goal=[p(:);rpy(:)];
-    lf_goal_received = true;
   end
   
   hep = getNextMessage(h_ee.frame,0);
@@ -137,7 +126,6 @@ while(1)
     rpy = hep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     h_ee_goal = [p(:); rpy(:)];
-    h_goal_received = true;
   end
   
   
@@ -175,7 +163,6 @@ while(1)
        
   end
   
-  
   lh_ee_traj= lh_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(lh_ee_traj))
       disp('Left hand traj goal received.');
@@ -184,7 +171,6 @@ while(1)
       lep = [p(:);q(:)];
       rpy = quat2rpy(q);
       lh_ee_goal=[p(:);rpy(:)];
-      lh_goal_received = true;
   end
   
   rh_ee_traj= rh_ee_motion_command_listener.getNextMessage(0);
@@ -195,34 +181,41 @@ while(1)
       rep = [p(:);q(:)];
       rpy = quat2rpy(q);
       rh_ee_goal=[p(:);rpy(:)];
-      rh_goal_received = true;
   end
   
-  if(((~isempty(rep))|| (~isempty(lep))) ||((~isempty(rfep))|| (~isempty(lfep))||(~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))))
+  lf_ee_traj= lf_ee_motion_command_listener.getNextMessage(0);
+  if(~isempty(lf_ee_traj))
+      disp('Left foot traj goal received.');
+      p = lf_ee_traj(end).desired_pose(1:3);% for now just take the end state
+      q = lf_ee_traj(end).desired_pose(4:7);q=q/norm(q);
+      lep = [p(:);q(:)];
+      rpy = quat2rpy(q);
+      lf_ee_goal=[p(:);rpy(:)];
+  end
+  
+  rf_ee_traj= rf_ee_motion_command_listener.getNextMessage(0);
+  if(~isempty(rf_ee_traj))
+      disp('Right hand traj goal received.');
+      p = rf_ee_traj(end).desired_pose(1:3);% for now just take the end state
+      q = rf_ee_traj(end).desired_pose(4:7);q=q/norm(q);
+      rep = [p(:);q(:)];
+      rpy = quat2rpy(q);
+      rf_ee_goal=[p(:);rpy(:)];
+  end
+  
+  if( (~isempty(rep))|| (~isempty(lep)) ||(~isempty(rfep))||...
+      (~isempty(lfep))||(~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
+      (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
       manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal); 
   end
 
-%   if((~isempty(rep))|| (~isempty(lep)))
-%      manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal); 
-% %     if(rh_goal_received && lh_goal_received)
-% %        disp('Publishing candidate robot plan for left and right end effectors.');
-% %        manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal); 
-% %     elseif (rh_goal_received)
-% %        disp('Publishing candidate robot plan for right end effector.');
-% %        manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,[]);
-% %     elseif (lh_goal_received)
-% %        disp('Publishing candidate robot plan for left end effector.');
-% %        manip_planner.generateAndPublishManipulationPlan(x0,[],lh_ee_goal);
-% %     end
-%   end
-  
   trajoptconstraint= trajoptconstraint_listener.getNextMessage(0);
   if(~isempty(trajoptconstraint))
       disp('time indexed traj opt constraint for manip plan received .');
       
       % cache the a subset of fields as indices for aff_indexed_plans
-      timestamps =trajoptconstraint.time;
-      ee_names = {indexed_trajoptconstraint.name};
+      timestamps =[trajoptconstraint.time];
+      ee_names = {trajoptconstraint.name};
       ee_loci = zeros(6,length(ee_names));
       for i=1:length(ee_names),
           p = trajoptconstraint(i).desired_pose(1:3);% for now just take the end state
@@ -230,7 +223,7 @@ while(1)
           rpy = quat2rpy(q);
           ee_loci(:,i)=[p(:);rpy(:)];
       end
-     % manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps);
+      manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps);
   end    
   
   
@@ -276,8 +269,6 @@ while(1)
   p = committed_plan_listener.getNextMessage(0);
   if (~isempty(p))
     disp('candidate manipulation plan was committed');
-       lh_goal_received = false;
-       rh_goal_received = false;
        rh_ee_goal = [];
        lh_ee_goal = [];
        rf_ee_goal = [];
@@ -293,8 +284,6 @@ while(1)
   p = rejected_plan_listener.getNextMessage(0);
   if (~isempty(p))
     disp('candidate manipulation plan was rejected');
-    lh_goal_received = false;
-    rh_goal_received = false;
     rh_ee_goal = [];
     lh_ee_goal = [];
     rf_ee_goal = [];
