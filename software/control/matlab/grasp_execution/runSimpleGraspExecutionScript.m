@@ -10,7 +10,7 @@ r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 lcmcoder = JLCMCoder(GraspStateCoder('atlas',l_jointNames,r_jointNames));
 nx=19+nq_l+nq_r;
 
-channel = ['COMMITTED_GRASP_SEED'];
+channel = ['COMMITTED_GRASP'];
 disp(channel);
 grasp_state_listener=LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
 setDefaultChannel(grasp_state_listener,channel);
