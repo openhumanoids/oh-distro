@@ -17,6 +17,7 @@
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 #define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
 #define PARAM_SHOW_FULLPLAN "Show Full Plan"	
+#define PARAM_SHOW_KEYFRAMES "Show Keyframes"
 
 using namespace std;
 using namespace boost;
@@ -153,8 +154,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     return;
     
     
-   // ALways show keyframes
-  if((self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
+   // Show keyframes
+  if((self->show_keyframes)&&(self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
   {
     for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size(); i++) 
     { 
@@ -455,7 +456,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->adjust_endstate = bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE);
   }  else if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
     self->show_fullplan = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FULLPLAN);
-  }  else if(!strcmp(name,PARAM_START_PLAN)){
+  }  else if(! strcmp(name,PARAM_SHOW_KEYFRAMES)) {
+    self->show_keyframes = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_KEYFRAMES);
+  }else if(!strcmp(name,PARAM_START_PLAN)){
     publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
     self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
@@ -514,6 +517,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     self->adjust_endstate = false;
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_KEYFRAMES, 1, NULL);
+    
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
    
@@ -532,6 +537,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
+    self->show_keyframes = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_KEYFRAMES);
     double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
     if ((self->show_fullplan)||(plan_size==0)){
       self->displayed_plan_index = -1;

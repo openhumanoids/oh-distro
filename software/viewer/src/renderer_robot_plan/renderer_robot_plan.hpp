@@ -46,6 +46,7 @@ namespace renderer_robot_plan
     bool use_colormap;
     bool adjust_endstate;
     bool show_fullplan;
+    bool show_keyframes;
     Eigen::Vector3f ray_start;
     Eigen::Vector3f ray_end;
     Eigen::Vector3f ray_hit;

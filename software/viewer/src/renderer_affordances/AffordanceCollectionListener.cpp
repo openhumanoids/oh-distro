@@ -357,7 +357,7 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
 
 
 
-      //Request redraw
+    //Request redraw
     bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
  }
  
