@@ -3,6 +3,7 @@ package drc;
 struct neck_pitch_t 
 {
     int64_t utime;
-    double pitch; // desired neck pitch in world frame
+    double pitch; // desired neck pitch in joint range 
+    // was previously in  world frame
 }
 
