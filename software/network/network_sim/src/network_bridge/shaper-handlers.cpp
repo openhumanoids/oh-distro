@@ -93,17 +93,28 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     {
         using namespace boost::posix_time;
 
-        std::string file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
+        std::string goby_debug_file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
         
-        flog_.open(file_name.c_str());
+        flog_.open(goby_debug_file_name.c_str());
         if(!flog_.is_open())
         {
-            std::cerr << "Failed to open requested log file: " << file_name << ". Check value and permissions on --logpath" << std::endl;
+            std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
             exit(EXIT_FAILURE);
         }
         
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
                               &flog_);
+
+        
+        std::string data_usage_file_name = app.cl_cfg.log_path + "/drc-network-shaper-data-usage-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".csv";
+        
+        data_usage_log_.open(data_usage_file_name.c_str());
+        if(!data_usage_log_.is_open())
+        {
+            std::cerr << "Failed to open requested CSV data log file: " << data_usage_file_name << ". Check value and permissions on --logpath" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        
     }
 
     
@@ -176,12 +187,26 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
                     sent_data_usage_.insert(std::make_pair(current_id, DataUsage()));
             }
             
-            
             ++current_id;
         }
-
-
     }
+
+
+    if(data_usage_log_.is_open())
+    {
+        bool first = true;
+        for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
+        {
+            if(!first) data_usage_log_ << ",";
+            else first = false;
+            
+            bool robot2base = (node_ == ROBOT) ? sent_data_usage_.count(it->second) : received_data_usage_.count(it->second);
+            data_usage_log_ << it->first << (robot2base ? 0 : 1);
+        }
+        data_usage_log_ << std::endl;
+    }
+    
+    
     largest_id_ = current_id-1;
     
     
@@ -605,6 +630,20 @@ void DRCShaper::post_bw_stats()
         lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
         app_.bw_init_utime = stats.utime;
     }
+
+    if(data_usage_log_.is_open())
+    {
+        bool first = true;
+        for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
+        {
+            if(!first) data_usage_log_ << ",";
+            else first = false;
+            
+            int bytes = (sent_data_usage_.count(it->second)) ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
+            data_usage_log_ << bytes;
+        }
+        data_usage_log_ << std::endl;
+    }
 }
 
 
@@ -642,6 +681,7 @@ void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& messa
 
 void DRCShaper::run()
 {
+    double last_bw_stats_time = goby::common::goby_time<double>();
     while (1)
     {
         int lcm_fd = lcm_get_fileno(lcm_->getUnderlyingLCM());
@@ -660,7 +700,13 @@ void DRCShaper::run()
             // no messages
             udp_driver_->do_work(); 
             mac_.do_work();
-            post_bw_stats();
+
+            double now = goby::common::goby_time<double>();
+            if(now > last_bw_stats_time + 1)
+            {
+                post_bw_stats();
+                last_bw_stats_time += 1;
+            }
         } else if(FD_ISSET(lcm_fd, &fds)) {
             // LCM has events ready to be processed.
             lcm_handle(lcm_->getUnderlyingLCM());

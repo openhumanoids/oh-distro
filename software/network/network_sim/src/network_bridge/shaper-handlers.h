@@ -165,6 +165,7 @@ class DRCShaper
     std::map<std::string, boost::shared_ptr<CustomChannelCodec> > custom_codecs_;
 
     std::ofstream flog_;
+    std::ofstream data_usage_log_;
     
     class ReceiveMessageParts
     {
