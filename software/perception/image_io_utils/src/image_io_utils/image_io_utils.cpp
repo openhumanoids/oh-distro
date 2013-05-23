@@ -22,6 +22,52 @@ image_io_utils::image_io_utils (lcm_t* publish_lcm_, int width_, int height_):
   // is x10 necessary for  jpeg? thats waht kinect_lcm assumed
 }
 
+/// Added for RGB-to-Gray:
+int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
+        int height, const uint8_t *src, int sstride)
+{
+  int i, j;
+  for (i=0; i<height; i++) {
+    uint8_t *drow = dest + i * dstride;
+    const uint8_t *srow = src + i * sstride;
+    for (j=0; j<width; j++) {
+      drow[j] = 0.2125 * srow[j*3+0] +
+        0.7154 * srow[j*3+1] +
+        0.0721 * srow[j*3+2];
+    }
+  }
+  return 0;
+}
+
+void image_io_utils::decodeStereoImage(const  bot_core::image_t* msg, uint8_t* left_buf, uint8_t* right_buf){
+  int h = msg->height/2; /// stacked stereo
+  int w = msg->width;
+  
+  int buf_size = w*h;
+  
+  switch (msg->pixelformat) {
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+      memcpy(left_buf,  msg->data.data() , msg->size/2);
+      memcpy(right_buf,  msg->data.data() + msg->size/2 , msg->size/2);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+      pixel_convert_8u_rgb_to_8u_gray(  left_buf, w, w, h, msg->data.data(),  w*3);
+      pixel_convert_8u_rgb_to_8u_gray(  right_buf, w,  w, h, msg->data.data() + msg->size/2,  w*3);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      // This assumes Gray Scale MJPEG
+      jpeg_decompress_8u_gray(msg->data.data(), msg->size, img_buffer_,
+                              msg->width, msg->height, msg->width);
+      std::copy(img_buffer_          , img_buffer_+buf_size   , left_buf);
+      std::copy(img_buffer_+buf_size , img_buffer_+2*buf_size , right_buf);
+      break;
+    default:
+      std::cout << "Unrecognized image format\n";
+      exit(-1);
+      break;
+  }  
+}
+
 
 
 

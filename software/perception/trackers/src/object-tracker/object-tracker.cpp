@@ -224,7 +224,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   last_utime_=0;
 
   // Image Masking:
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_);
+  //imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_);
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, 2*height_); // extra space for stereo tasks
     
   // Color Tracking:
   color_tracker_ = new ColorTracker(lcm_, width_, height_, fx_, fy_, cx_, cy_);
@@ -440,8 +441,9 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
   if (right_img_.empty() || right_img_.rows != h || right_img_.cols != w)
       right_img_.create(h, w, CV_8UC1);
 
-  memcpy(left_img_.data,  msg->data.data() , msg->size/2);
-  memcpy(right_img_.data,  msg->data.data() + msg->size/2 , msg->size/2);
+  imgutils_->decodeStereoImage(msg, left_img_.data, right_img_.data);
+  //memcpy(left_img_.data,  msg->data.data() , msg->size/2);
+  //memcpy(right_img_.data,  msg->data.data() + msg->size/2 , msg->size/2);
 
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());

@@ -28,5 +28,6 @@ pods_install_executables(drc-stereo-bm-app )
 add_executable (drc-stereo-bm-cloud stereo-bm-cloud.cpp )
 pods_use_pkg_config_packages(drc-stereo-bm-cloud  stereo-bm
   bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} pointcloud_lcm
+  image_io_utils
   opencv)
 pods_install_executables(drc-stereo-bm-cloud )

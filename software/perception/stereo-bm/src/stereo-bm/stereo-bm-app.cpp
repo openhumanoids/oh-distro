@@ -28,6 +28,8 @@ class Pass{
 
     std::string image_channel_;
     StereoB*  stereob_;
+    
+    image_io_utils*  imgutils_;    
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float scale):
@@ -36,9 +38,12 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(scale);
+  
+  int w =800;
+  int h=800;
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), w, 2*h); // extra space for stereo tasks
+  
 }
-
-
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::image_t* msg){
@@ -52,39 +57,10 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (right_img.empty() || right_img.rows != h || right_img.cols != w)
         right_img.create(h, w, CV_8UC1);
 
-  memcpy(left_img.data,  msg->data.data() , msg->size/2);
-  memcpy(right_img.data,  msg->data.data() + msg->size/2 , msg->size/2);
-
+  imgutils_->decodeStereoImage(msg, left_img.data, right_img.data);
   stereob_->doStereoB(left_img, right_img);
   stereob_->sendRangeImage(msg->utime);
-/*
-  // extract image data
-  switch (msg->pixelformat) {
-//    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
-    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
-      ///  memcpy(img.data, msg->data, sizeof(uint8_t) * w * h * 3);
-      std::copy(msg->data             , msg->data+msg->size/2 , left_img.data);
-      std::copy(msg->data+msg->size/2 , msg->data+msg->size   , right_img.data);
-      break;
-    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
-      printf("jpegs not supported yet\n");
-      exit(-1);
-      // for some reason msg->row_stride is 0, so we use msg->width instead.
-      //jpeg_decompress_8u_gray(msg->data,
-      //                        msg->size,
-      //                        img.data,
-      //                        msg->width,
-      //                        msg->height,
-      //                        msg->width);
-      break;
-    default:
-      fprintf(stderr, "Unrecognized image format\n");
-      break;
-  }
-*/
 }
-
-
 
 int main(int argc, char ** argv) {
   string channel = "CAMERA";
