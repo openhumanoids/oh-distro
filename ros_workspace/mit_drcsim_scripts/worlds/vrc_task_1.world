@@ -1,19 +1,16 @@
 <?xml version="1.0" ?>
 <sdf version="1.4">
   <world name="vrc_task_1">
-
     <!-- place user camera -->
     <gui>
       <camera name="user_camera">
         <pose>-21.660200 -11.942800 12.053900 0.000000 0.443643 0.352194</pose>
       </camera>
     </gui>
-
     <scene>
       <ambient>0.2 0.2 0.2 1.0</ambient>
       <grid>false</grid>
     </scene>
-
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
       <ode>
@@ -32,7 +29,6 @@
       <real_time_update_rate>1000</real_time_update_rate>
       <max_step_size>0.001</max_step_size>
     </physics>
-
     <!-- Light Source -->
     <light type="directional" name="sun">
       <cast_shadows>false</cast_shadows>
@@ -47,14 +43,11 @@
       </attenuation>
       <direction>0.2 0.2 -0.9</direction>
     </light>
-
-
     <light type="point" name="light_bulb">
       <cast_shadows>false</cast_shadows>
       <pose>-14 0 5 0 0 0</pose>
       <diffuse>0.3 0.3 0.3 1</diffuse>
       <specular>0.0 0.0 0.0 1</specular>
-
       <attenuation>
         <range>80</range>
         <constant>0.9</constant>
@@ -62,15 +55,12 @@
         <quadratic>0.001</quadratic>
       </attenuation>
     </light>
-
     <include>
       <uri>model://vrc_heightmap_1</uri>
     </include>
-
     <include>
       <uri>model://grass_plane</uri>
     </include>
-
     <include>
       <uri>model://construction_barrel</uri>
       <name>barrel_1</name>
@@ -363,7 +353,6 @@
       <static>true</static>
       <pose>141 35.5 0 0 0 -2.35</pose>
     </include>
-
     <road name="main_street">
       <width>7.34</width>
       <point>0 0 0.01</point>
@@ -372,11 +361,9 @@
       <point>150 100 0.01</point>
       <point>200 100 0.01</point>
     </road>
-    
     <model name="road_boxes">
       <static>true</static>
       <link name="link">
-
         <collision name="collision_1">
           <pose>51 0 0 0 0 0</pose>
           <geometry>
@@ -393,7 +380,6 @@
             </friction>
           </surface>
         </collision>
-
         <collision name="collision_2">
           <pose>125 25 0 0 0 0.78539</pose>
           <geometry>
@@ -410,7 +396,6 @@
             </friction>
           </surface>
         </collision>
-
         <collision name="collision_3">
           <pose>150 75 0 0 0 0</pose>
           <geometry>
@@ -427,7 +412,6 @@
             </friction>
           </surface>
         </collision>
-
         <collision name="collision_4">
           <pose>173.5 100 0 0 0 0</pose>
           <geometry>
@@ -444,7 +428,6 @@
             </friction>
           </surface>
         </collision>
-
         <collision name="collision_5">
           <pose>198 106 0 0 0 0</pose>
           <geometry>
@@ -461,7 +444,6 @@
             </friction>
           </surface>
         </collision>
-
         <!--
         <visual name="visual_1">
           <pose>51 0 0 0 0 0</pose>
@@ -506,12 +488,10 @@
 -->
       </link>
     </model>
-
     <include>
       <uri>model://atlas_sandia_hands</uri>
       <pose>-3.0 1.0 1.0 0 0 -1.5707</pose>
     </include>
-
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
          <model_name>atlas</model_name>
@@ -532,10 +512,8 @@
         </coupling_relative_pose>
       </drc_fire_hose>
     </plugin>
-
     <plugin filename="libVRCScoringPlugin.so" name="vrc_scoring">
       <score_file>/tmp/vrc_task_1/score.log</score_file>
     </plugin>
-
   </world>
 </sdf>

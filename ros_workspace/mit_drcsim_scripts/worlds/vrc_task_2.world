@@ -41,13 +41,11 @@
       </attenuation>
       <direction>0.2 0.0 -1.0</direction>
     </light>
-
     <light type="point" name="light_bulb">
       <cast_shadows>false</cast_shadows>
       <pose>-7.5 -41 5 0 0 0</pose>
       <diffuse>0.3 0.3 0.3 1</diffuse>
       <specular>0.0 0.0 0.0 1</specular>
-
       <attenuation>
         <range>80</range>
         <constant>0.9</constant>
@@ -55,7 +53,6 @@
         <quadratic>0.001</quadratic>
       </attenuation>
     </light>
-
     <include>
       <uri>model://vrc_heightmap_2</uri>
     </include>
@@ -103,7 +100,7 @@
       <uri>model://construction_cone</uri>
       <name>cone_1</name>
       <static>true</static>
-      <pose>-4.82 7.6 2.75  0 0 0</pose>
+      <pose>-4.82 7.6 2.75 0 0 0</pose>
     </include>
     <include>
       <uri>model://construction_cone</uri>
@@ -213,7 +210,6 @@
       <name>mud_atlas</name>
       <pose>0.5 -16.6 -.38 0 0 0</pose>
     </include>
-
     <model name="mud_ground_plane">
       <static>true</static>
       <pose>0.0 0.0 -0.59 0 0 0</pose>
@@ -243,16 +239,15 @@
             </plane>
           </geometry>
           <material>
-          <script>
-            <uri>model://mud_box/materials/scripts</uri>
-            <uri>model://mud_box/materials/textures</uri>
-            <name>vrc/mud</name>
-          </script>
+            <script>
+              <uri>model://mud_box/materials/scripts</uri>
+              <uri>model://mud_box/materials/textures</uri>
+              <name>vrc/mud</name>
+            </script>
           </material>
         </visual>
       </link>
     </model>
-
     <!--
     <include>
       <uri>model://gate</uri>
@@ -266,7 +261,7 @@
       <pose>0 152 2.0 0 0 1.5707</pose>
     </include>
     -->
-<!--
+    <!--
     <model name="test_box">
       <static>false</static>
       <pose>5 -1 0.5 0 0 0</pose>
@@ -288,7 +283,6 @@
       </link>
     </model>
 -->
-
     <!--
     <model name="start_platform">
       <static>true</static>
@@ -311,7 +305,7 @@
       </link>
     </model>
 -->
-<!--    <plugin filename="libRubblePlugin.so" name="rubble">
+    <!--    <plugin filename="libRubblePlugin.so" name="rubble">
       <bottom_right>4 7.0 0.0</bottom_right>
       <top_left>10 17 0.4</top_left>
       <min_size>0.05 0.05 0.05</min_size>
@@ -320,7 +314,6 @@
       <max_mass>1.0</max_mass>
       <count>50</count>
     </plugin> -->
-
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block</name>
@@ -471,7 +464,7 @@
       <name>cinder_block_28</name>
       <pose>4.000000 10.000000 0.000000 0.000000 0.000000 1.200000</pose>
     </include>
-<!--
+    <!--
     <include>
       <uri>model://jersey_barrier</uri>
       <name>jersey_barrier8</name>
@@ -569,7 +562,6 @@
       <pose>6.0 -9.559 0.000000 0.000000 0.000000 0.72</pose>
     </include>
 -->
-
     <include>
       <uri>model://mit_robot</uri>
 <!--			flat part off of the course-->

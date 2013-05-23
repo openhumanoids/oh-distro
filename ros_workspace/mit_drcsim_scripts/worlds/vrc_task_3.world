@@ -7,12 +7,10 @@
         <pose>4.213420 -19.615100 13.466400 -0.000000 0.764000 2.140000</pose>
       </camera>
     </gui>
-
     <scene>
       <grid>false</grid>
       <ambient>0.2 0.2 0.2 1.0</ambient>
     </scene>
-
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
       <ode>
@@ -31,7 +29,6 @@
       <real_time_update_rate>1000</real_time_update_rate>
       <max_step_size>0.001</max_step_size>
     </physics>
-
     <!-- Light Source -->
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
@@ -46,24 +43,10 @@
       </attenuation>
       <direction>0.2 0.2 -0.9</direction>
     </light>
-
-    <!-- Point Light Source -->
-    <light type="point" name="light_bulb">
-      <cast_shadows>false</cast_shadows>
-      <pose>-14 0 5 0 0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.0 0.0 0.0 1</specular>
-      <attenuation>
-        <range>80</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-    </light>
     <!-- Point Light Source -->
     <light type="point" name="light_bulb_2">
       <cast_shadows>false</cast_shadows>
-      <pose>-2 -4 5 0 0 0</pose>
+      <pose>-10.6 -19.8 5 0 0 0</pose>
       <diffuse>0.5 0.5 0.5 1</diffuse>
       <specular>0.0 0.0 0.0 1</specular>
       <attenuation>
@@ -135,7 +118,7 @@
     </include>
     <include>
       <uri>model://vrc_valve</uri>
-      <pose>-3.0 -3.5 1.2 -1.5707 0 0</pose>
+      <pose>-3.0 -3.414 1.2 -1.5707 0 0</pose>
     </include>
     <include>
       <uri>model://mit_robot</uri>
@@ -144,8 +127,8 @@
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
-         <model_name>atlas</model_name>
-         <pin_link>pelvis</pin_link>
+        <model_name>atlas</model_name>
+        <pin_link>pelvis</pin_link>
       </atlas>
       <drc_vehicle>
         <model_name>golf_cart</model_name>
@@ -159,13 +142,11 @@
         <valve_model>valve</valve_model>
         <valve_joint>valve</valve_joint>
         <thread_pitch>-1000</thread_pitch>
-        <coupling_relative_pose>1.17038e-05 -0.125623 0.35 -0.0412152 -1.57078 1.61199</coupling_relative_pose>
+        <coupling_relative_pose>0.001784 -4.6e-05 0.023 1.56985 1.55991 -0.000936</coupling_relative_pose>
       </drc_fire_hose>
     </plugin>
-
     <plugin filename="libVRCScoringPlugin.so" name="vrc_scoring">
       <score_file>/tmp/vrc_task_3/score.log</score_file>
     </plugin>
-
   </world>
 </sdf>
