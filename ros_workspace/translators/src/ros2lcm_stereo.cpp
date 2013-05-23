@@ -73,6 +73,13 @@ int height =800;//544; // hardcoded
 uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
 uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
 int jpeg_quality=90;
+// Estimated Rates at 90% compression and 5Hz
+// CAMERA 200KB x5Hz
+// CAMERALEFT 114KB x5Hz
+// CAMERA_LHAND 150KB x5Hz
+// CAMERA_RHAND 150KB x5Hz
+// = 3MB/sec
+
 
 class App{
 public:
