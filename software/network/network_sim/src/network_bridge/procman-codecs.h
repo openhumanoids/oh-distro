@@ -207,6 +207,8 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                 else if(wrapper.type() == drc::ProcManWrapper::NO_CHANGE)
                 {
                     diff = host_info.last_diff_;
+                    // fudge the time forward even if no change has occurred.                    
+                    diff.set_utime(goby::common::goby_time<goby::uint64>() - host_info.last_full_.utime);
                 }
 
                 if(!reverse_diff(&lcm_object, host_info.last_full_, diff))
