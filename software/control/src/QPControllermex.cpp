@@ -541,9 +541,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       error = GRBsetdblattrarray(model,"Obj",0,nq_con,fqp_con.data());
       
       // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
-      double cost = 1;
+      double cost = .001;
       for (i=nparams-neps; i<nparams; i++) {
-        error = GRBaddqpterms(model,.1,&i,&i,&cost);
+        error = GRBaddqpterms(model,1,&i,&i,&cost);
       }
     } else {
       // Q(1:nq_con,1:nq_con) = eye(nq_con)

@@ -459,7 +459,7 @@ classdef QPController < MIMODrakeSystem
         fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
 
         % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.1*eye(neps); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
@@ -520,9 +520,9 @@ classdef QPController < MIMODrakeSystem
         y = alpha(nq+(1:nu));
       end
       
-%       if (obj.use_mex==2)
-%         des.y = y;
-%       end
+      if (obj.use_mex==2)
+        des.y = y;
+      end
     end
   
     if (obj.use_mex==1)
@@ -530,7 +530,7 @@ classdef QPController < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
-      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0);
+      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);
@@ -538,7 +538,9 @@ classdef QPController < MIMODrakeSystem
       valuecheck(sense',model.sense);
       valuecheck(lb,model.lb);
       valuecheck(ub,model.ub);
-%      valuecheck(y,des.y);  % they are close, but not *quite* the same.
+%       valuecheck(y,des.y,1e-4);  % they are close, but not *quite* the
+%       same. ---I don't like this, I'm seeing differences up to 5Nm in
+%       some dimensions.
     end
     
 %     V = x_bar'*S*x_bar + s1'*x_bar;
