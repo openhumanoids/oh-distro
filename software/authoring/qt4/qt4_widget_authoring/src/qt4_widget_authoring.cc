@@ -244,7 +244,9 @@ _push_button_publish_pressed( void ){
 void
 Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
-  _slider_current_time->setText( QString( "frame %1" ).arg( currentIndex ) );
+  if ( currentIndex < _robot_plan.size() ) {
+    _slider_current_time->setText( QString( "frame %1" ).arg(     _robot_plan[currentIndex].time() ) );
+  }
 }
 
 namespace authoring {
