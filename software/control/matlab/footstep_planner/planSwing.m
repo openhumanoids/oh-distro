@@ -31,7 +31,7 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) / sqrt(2) + nom_z_clearance;
+effective_height = (max([effective_length, effective_width])/2) / sqrt(2);
 
 contact_length = effective_length / 2 + planar_clearance;
 contact_width = effective_width / 2 + planar_clearance;
@@ -48,7 +48,7 @@ if step_dist_xy > 0.01
   % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
   lambdas = linspace(0, step_dist_xy);
   lambda2xy = PPTrajectory(foh([0, step_dist_xy], [last_pos(1:2), next_pos(1:2)]));
-  terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, 25, 10);
+  terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, ceil(step_dist_xy / 0.02), 10);
   terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
   terrain_pts(2,end) = max([terrain_pts(2,end), next_pos(3)]);
   
@@ -121,14 +121,10 @@ function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, n
   terrain_pts = zeros(2, nlambda);
   lambdas = linspace(0, step_dist_xy, nlambda);
   rhos = linspace(-contact_width, contact_width, nrho);
-  % figure(1)
-  % clf
-  % hold on
-  for j = 1:nlambda
-    terrain_pts(1,j) = lambdas(j);
-    xy = bsxfun(@plus, bsxfun(@times, rhos, rho_hat),lambdas(j) * lambda_hat + last_pos(1:2));
-  %   plot(xy(1,:), xy(2,:), 'bo')
-    terrain_pts(2,j) = max(medfilt1(biped.getTerrainHeight(xy)));
-%     plot_lcm_points([xy;biped.getTerrainHeight(xy)]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
-  end
+  [R, L] = meshgrid(rhos, lambdas);
+  xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
+  z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)));
+%   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
+  terrain_pts(2, :) = max(z, [], 2);
+  terrain_pts(1,:) = lambdas;
 end
