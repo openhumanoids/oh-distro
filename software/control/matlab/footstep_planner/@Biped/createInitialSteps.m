@@ -70,27 +70,43 @@ aborted = false;
       potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), nom_forward_step);
     reach = reshape(reach, [], size(potential_poses, 2));
     valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
-    if length(valid_pose_ndx) < 1
-      aborted = true;
-      break
+%     if length(valid_pose_ndx) < 1
+%       aborted = true;
+%       break
+%     end
+    if isempty(valid_pose_ndx)
+      novalid = true;
+    else
+      novalid = false;
+      next_ndx = valid_pose_ndx(end);
+      noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
     end
-    next_ndx = valid_pose_ndx(end);
-
-    if all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]) && stall.(s_foot)
+     
+    
+    if (novalid || noprogress) && stall.(s_foot)
+      % Try again with a longer maximum step
       reach = biped.checkStepFeasibility(repmat(X(end).pos, 1, size(potential_poses, 2)),...
       potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), biped.max_forward_step);
       reach = reshape(reach, [], size(potential_poses, 2));
       valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
-      next_ndx = valid_pose_ndx(end);
+      if isempty(valid_pose_ndx)
+        novalid = true;
+      else
+        novalid = false;
+        next_ndx = valid_pose_ndx(end);
+        noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
+      end      
     end
-
-    if all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1])
+    if (novalid || noprogress)
       stall.(m_foot) = stall.(m_foot) + 1;
       if stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)
         aborted = true;
         break
       end
+    else
+      stall.(m_foot) = 0;
     end
+    
     if options.ignore_terrain
       pos_n = foot_centers.(m_foot)(:, next_ndx);
     else
