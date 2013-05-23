@@ -436,11 +436,6 @@ Eigen::VectorXd DistributedDiff::diff(const unsigned long long &u_ts, const Eige
 }
 
 
-
-
-
-
-
 TrapezoidalInt::TrapezoidalInt() {
 	setSize(1);
 	u_stime = 0;

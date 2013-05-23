@@ -43,7 +43,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	rate_changer.setDesiredPeriod_us(0,4500);
 
 	for (int i=0;i<3;i++) {
-		median_filter[i].setLength(9);
+		median_filter[i].setLength(15);
 	}
 
 

@@ -138,44 +138,29 @@ int main() {
 
 	DistributedDiff diffs;
 	diffs.setSize(1);
-	Eigen::VectorXd w(3);
-	Eigen::VectorXd ut(3);
+	Eigen::VectorXd w(5);
+	Eigen::VectorXd ut(5);
 
 	Eigen::VectorXd sample(1);
 
-	w << .5,0.25,0.25;
-	ut << 1000,4000,5000;
+	w.setZero();
+	w(4) = 1.;
+	ut << 1E6,2E6,3E6, 4E6, 5E6;
 
 
-	diffs.InitializeTaps(5, 1000, w,ut);
+	diffs.InitializeTaps(5, 1E6, w,ut);
+	//diffs.ParameterFileInit();
 
 	assert(diffs.ready());
 
-	sample << 1;
-	cout << " | " << diffs.diff(1000,sample) << "\n";
-	sample << 3;
-	cout  <<  " | " << diffs.diff(2000,sample) << "\n";
-	sample << 6;
-	cout << " | " << diffs.diff(3000,sample) << "\n";
-	sample << 10;
-	cout << " | " << diffs.diff(4000,sample) << "\n";
-	sample << 15;
-	cout << " | " << diffs.diff(5000,sample) << "\n";
+	for (int i=1;i<7;i++) {
+		sample << i;
+		cout << " | " << diffs.diff(i*1E6,sample) << "\n";
+	}
 
-	sample << 15;
-	cout << " | " << diffs.diff(6000,sample) << "\n";
-	sample << 10;
-	cout  <<  " | " << diffs.diff(7000,sample) << "\n";
-	sample << 6;
-	cout << " | " << diffs.diff(8000,sample) << "\n";
-	sample << 3;
-	cout << " | " << diffs.diff(9000,sample) << "\n";
-	sample << 1;
-	cout << " | " << diffs.diff(10000,sample) << "\n";
 
 	cout << endl;
 
-	diffs.ParameterFileInit();
 
 	cout << "================ Testing Median Filtering =====================\n";
 
