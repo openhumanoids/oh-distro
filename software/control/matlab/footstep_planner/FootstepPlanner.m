@@ -4,6 +4,7 @@ classdef FootstepPlanner < DRCPlanner
     monitors
     hmap_ptr
     options
+    z_adjust
   end
   
   methods
@@ -22,6 +23,7 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
       % obj.hmap_ptr = HeightMapHandle();
       % mapAPIwrapper(obj.hmap_ptr);
+      obj.z_adjust = -0.003; % amount to adjust each foot position to compensate for heightmap and gazebo weirdness
     end
 
     function X = updatePlan(obj, X, data, changed, changelist)
@@ -54,7 +56,7 @@ classdef FootstepPlanner < DRCPlanner
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
-        new_X.pos(3) = new_X.pos(3) + 0.003; % add back the 3mm we subtracted before publishing
+        new_X.pos(3) = new_X.pos(3) - obj.z_adjust; % add back the 3mm we subtracted before publishing
         matching_ndx = find([X.id] == new_X.id);
         if ~isempty(matching_ndx)
           old_x = X(matching_ndx);
@@ -113,7 +115,7 @@ classdef FootstepPlanner < DRCPlanner
           for j = 1:length(X)
             Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
             % move the planned steps down by 3mm (helps with force classification and compensates for gazebo issues)
-            Xout(j).pos(3) = Xout(j).pos(3) - 0.003;
+            Xout(j).pos(3) = Xout(j).pos(3) + obj.z_adjust;
           end
           publish(Xout);
 %           profile viewer
