@@ -277,7 +277,7 @@ while(1)
        rh_ee_constraint = [];
        lf_ee_constraint = [];
        rf_ee_constraint = [];
-       h_ee_goal = [];
+       %h_ee_goal = [];
        h_ee_constraint = [];
   end
   
@@ -292,7 +292,7 @@ while(1)
     rh_ee_constraint = [];
     lf_ee_constraint = [];
     rf_ee_constraint = [];
-    h_ee_goal = [];
+    %h_ee_goal = [];
     h_ee_constraint = [];
   end
 
