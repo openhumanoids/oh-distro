@@ -43,6 +43,11 @@ classdef FootstepPlanner < DRCPlanner
                                           data.goal.goal_pos.rotation.y,...
                                           data.goal.goal_pos.rotation.z], 'XYZ');
         [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, obj.options);
+        for j = 3:size(X, 2)
+          if X(j).is_in_contact && ~obj.options.ignore_terrain
+            X(j).pos = obj.biped.checkTerrain(X(j).pos);
+          end
+        end
       end
       if changelist.plan_con
         % apply changes from user adjustment of footsteps in viewer
@@ -57,13 +62,9 @@ classdef FootstepPlanner < DRCPlanner
           X(matching_ndx).is_in_contact = old_x.is_in_contact;
           if obj.options.ignore_terrain
             X(matching_ndx).pos(3) = old_x.pos(3);
+          else
+            X(matching_ndx).pos = obj.biped.checkTerrain(X(matching_ndx).pos);
           end
-        end
-      end
-
-      for j = 3:size(X, 2)
-        if X(j).is_in_contact && ~obj.options.ignore_terrain
-          X(j).pos = obj.biped.checkTerrain(X(j).pos);
         end
       end
     end
@@ -93,7 +94,7 @@ classdef FootstepPlanner < DRCPlanner
           msg ='Foot Plan : Committed'; disp(msg); send_status(6,0,0,msg);
         end
         if planning
-          % profile on
+%           profile on
           X = obj.updatePlan(X_old, data, changed, changelist);
           if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
             modified = false;
@@ -115,7 +116,7 @@ classdef FootstepPlanner < DRCPlanner
             Xout(j).pos(3) = Xout(j).pos(3) - 0.003;
           end
           publish(Xout);
-          % profile viewer
+%           profile viewer
         else
           pause(1)
         end
