@@ -557,6 +557,10 @@ group "m.2.simple-control" {
         exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
         host = "robot";
     }
+    cmd "multisense_fps" {
+        exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
+        host = "robot";
+    }
 }
 
 group "m.3.dev_tools" {
