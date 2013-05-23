@@ -32,6 +32,10 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
                                                     _double_spin_box_time_end( new QDoubleSpinBox( this ) ),
                                                     _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
                                                     _constraint_editor_popup( NULL ) {
+
+  _double_spin_box_time_start->setToolTip("the absolute start time for this constraint, in seconds");
+  _double_spin_box_time_end->setToolTip("the absolute end time for this constraint, in seconds");
+
   _urdf_xml_string = urdf_xml_string;
   vector< shared_ptr< Link > > links;
   _robot_model.getLinks( links );

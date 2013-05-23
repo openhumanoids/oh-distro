@@ -44,6 +44,7 @@ namespace authoring {
     void _range_pitch_maximize( void );
     void _range_yaw_minimize( void );
     void _range_yaw_maximize( void );
+    void mark_invalid_spin_boxes( void );
 
   protected:
     Constraint_Task_Space_Region * _constraint;

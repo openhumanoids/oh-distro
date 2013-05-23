@@ -45,6 +45,11 @@ Qt4_Widget_Authoring( const std::string& xmlString,
     _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
   }
 
+  _push_button_publish->setToolTip("publish all constraints to a motion plan server over LCM");
+  _push_button_grab->setToolTip("make all affordances and the robot currently in the scene available as \"child\" links for constraints");
+  _push_button_import->setToolTip("import all constraints from a file");
+  _push_button_export->setToolTip("export all constraints to a file");
+
   _text_edit_info->setFixedHeight( 75 );
 
   _check_box_visible_current_index->setCheckState( Qt::Checked );
@@ -248,7 +253,7 @@ void
 Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
   if ( currentIndex < _robot_plan.size() ) {
-    _slider_current_time->setText( QString( "frame %1" ).arg( _robot_plan[currentIndex].time() ) );
+    _slider_current_time->setText( QString( "time: %1 sec" ).arg( _robot_plan[currentIndex].time() / 100000.0 ) );
   }
 }
 
