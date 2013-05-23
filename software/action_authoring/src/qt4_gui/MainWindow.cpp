@@ -745,7 +745,28 @@ MainWindow::
 affordanceUpdateCheck()
 {
     int origSize = _worldState.affordances.size();
-    _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
+
+    //---------grab latest from server
+    vector<AffConstPtr> affsFromServer;    
+    _worldState.affServerWrapper.getAllAffordances(affsFromServer);
+
+    //split up the car into pieces if it's their
+    vector<AffConstPtr> affsWithSplitCar;
+    for(uint i = 0; i < affsFromServer.size(); i++)
+      {
+        if (affsFromServer[i]->getOTDFType() != AffordanceState::CAR)
+          {
+            affsWithSplitCar.push_back(affsFromServer[i]);
+            continue;
+          }
+
+        //spilt up the car
+        //todo
+      }
+
+
+    //udpate our internal list
+    _worldState.affordances = affsWithSplitCar;
 
     if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordance if the sizes are equal )
     {
@@ -1069,7 +1090,7 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
     //_worldState.colorRobot.set(*new_robot_state);
     handleAffordancesChanged();
 
-    for (int i = 0; i < new_robot_state->num_constraints && i < _authoringState._all_gui_constraints.size(); i++)
+    for (uint i = 0; i < new_robot_state->num_constraints && i < _authoringState._all_gui_constraints.size(); i++)
     {
         TogglePanel::PlannerStatus status;
         int value  = new_robot_state->constraints_satisfied[i];
