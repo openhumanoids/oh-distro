@@ -50,7 +50,7 @@ classdef QuasistaticMotionController < DRCController
       obj.Q=Q;
       obj.R=R;
       
-      %obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
+      %obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
 
       % hijack the walking plan type for now
       obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),name); % for standing/reaching tasks

@@ -48,7 +48,7 @@ function playCannedPlan(biped, name, x0)
   msg.s1 = V.s1;
   msg.comtraj = comtraj;
 
-  walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
+  walking_pub = WalkingPlanPublisher('WALKING_PLAN');
   walking_pub.publish(0,msg);
 
 
