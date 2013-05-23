@@ -395,7 +395,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==1);
   Map< Vector2d > u0(mxGetPr(prhs[narg++]));
-  
+
+  assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==1);
+  Map< Vector2d > y0(mxGetPr(prhs[narg++]));
+
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
   pdata->r->doKinematics(q,false,qd);
@@ -433,10 +436,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot);
   int neps = nc*dim;
 
-  Vector4d x_bar;
+  Vector4d x_bar,xlimp;
   MatrixXd Jz_con(Jz.rows(),nq_con),Jp_con(Jp.rows(),nq_con),Jpdot_con(Jpdot.rows(),nq_con),D_con(nq_con,D.cols());
   if (nc>0) {
-    x_bar << xcom.topRows(2)-x0.topRows(2),J.topRows(2)*qdvec-x0.bottomRows(2);
+    xlimp << xcom.topRows(2),J.topRows(2)*qdvec;
+    x_bar << xlimp.topRows(2)-x0.topRows(2),xlimp.bottomRows(2)-x0.bottomRows(2);
     getCols(pdata->con_dof,Jz,Jz_con);
     getRows(pdata->con_dof,D,D_con);
     getCols(pdata->con_dof,Jp,Jp_con);
@@ -466,10 +470,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       Hqp = J_free.transpose()*R_DQyD_ls*J_free;
       Hqp += pdata->w*MatrixXd::Identity(nq_free,nq_free);
               
-      fqp = (C_ls*x_bar).transpose()*Qy*D_ls*J_free;
+      fqp = (C_ls*xlimp).transpose()*Qy*D_ls*J_free;
       fqp += (Jdot_free*qd_free).transpose()*R_DQyD_ls*J_free;
       fqp += (S*x_bar + 0.5*s1).transpose()*B_ls*J_free;
       fqp -= u0.transpose()*R_DQyD_ls*J_free;
+      fqp -= y0.transpose()*Qy*D_ls*J_free;
       fqp -= pdata->w*q_ddot_des_free.transpose();
       
       // solve for qdd_free unconstrained
@@ -518,10 +523,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       Hqp_con = J_con.transpose()*R_DQyD_ls*J_con;
       Hqp_con += pdata->w*MatrixXd::Identity(nq_con,nq_con);
               
-      fqp_con = (C_ls*x_bar).transpose()*Qy*D_ls*J_con;
+      fqp_con = (C_ls*xlimp).transpose()*Qy*D_ls*J_con;
       fqp_con += (Jdot_con*qd_con).transpose()*R_DQyD_ls*J_con;
       fqp_con += (S*x_bar + 0.5*s1).transpose()*B_ls*J_con;
       fqp_con -= u0.transpose()*R_DQyD_ls*J_con;
+      fqp_con -= y0.transpose()*Qy*D_ls*J_con;
       fqp_con -= pdata->w*q_ddot_des_con.transpose();
 
       // Q(1:nq_con,1:nq_con) = Hqp_con
