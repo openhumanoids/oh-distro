@@ -123,7 +123,7 @@
     <include>
       <uri>model://mit_robot</uri>
       <!--<pose>-7 -15 1.0 0 0 0</pose> -->
-      <pose>0.0 -5.5 1.0 0 0 -3.14</pose>
+      <pose>-0.2 -5.35 0.95 0 0 -3.142</pose>
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
