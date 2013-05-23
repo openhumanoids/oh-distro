@@ -52,6 +52,9 @@ Qt4_Widget_Authoring( const std::string& xmlString,
 
   _text_edit_info->setFixedHeight( 75 );
 
+  _text_edit_info->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  _text_edit_affordance_collection->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
   _check_box_visible_current_index->setCheckState( Qt::Checked );
   _check_box_visible_trajectory->setCheckState( Qt::Checked );
   _check_box_visible_trajectory_wrist->setCheckState( Qt::Unchecked );
