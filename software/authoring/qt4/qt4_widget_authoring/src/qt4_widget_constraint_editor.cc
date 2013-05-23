@@ -1,7 +1,10 @@
 #include <QtGui/QHBoxLayout>
 
 #include "authoring/qt4_widget_constraint_task_space_region_editor.h"
+#include "authoring/constraint_configuration.h" // TODO move to editor when defined for configuration space
+#include "qt4/qt4_widget_gfe_object.h" // TODO move to editor when defined for configuration space
 #include "authoring/qt4_widget_constraint_editor.h"
+#include <qt4/qt4_widget_gfe_control.h>
 
 using namespace std;
 using namespace boost;
@@ -13,6 +16,7 @@ Qt4_Widget_Constraint_Editor::
 Qt4_Widget_Constraint_Editor( Constraint *& constraint,
                               Model& robotModel,
                               vector< AffordanceState >& affordanceCollection,
+                              const string& urdf_xml_string,
                               const string& id,
                               QWidget * parent ) : QWidget( parent ),
                                                     _constraint( constraint ),
@@ -28,6 +32,7 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
                                                     _double_spin_box_time_end( new QDoubleSpinBox( this ) ),
                                                     _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
                                                     _constraint_editor_popup( NULL ) {
+  _urdf_xml_string = urdf_xml_string;
   vector< shared_ptr< Link > > links;
   _robot_model.getLinks( links );
   for( vector< shared_ptr< Link > >::iterator it1 = links.begin(); it1 != links.end(); it1++ ){
@@ -225,6 +230,8 @@ _combo_box_type_changed( int index ){
         emit info_update( QString( "[<b>OK</b>] instatiated new task space region constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
         break;
       case ( CONSTRAINT_CONFIGURATION_TYPE ):
+        _constraint = new Constraint_Configuration( _id );
+        emit info_update( QString( "[<b>OK</b>] instatiated new configuration constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
         break;
       case ( CONSTRAINT_UNKNOWN_TYPE ):
       default:
@@ -238,6 +245,8 @@ _combo_box_type_changed( int index ){
       emit info_update( QString( "[<b>OK</b>] instatiated new task space region constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
     case ( CONSTRAINT_CONFIGURATION_TYPE ):
+      _constraint = new Constraint_Configuration( _id );
+      emit info_update( QString( "[<b>OK</b>] instatiated new configuration constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
     case ( CONSTRAINT_UNKNOWN_TYPE ):
     default:
@@ -283,6 +292,12 @@ _push_button_edit_pressed( void ){
       emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
     case ( CONSTRAINT_CONFIGURATION_TYPE ):
+      _constraint_visualizer_popup = new qt4::Qt4_Widget_GFE_Object( _urdf_xml_string );
+      _constraint_visualizer_popup->show();
+      _constraint_editor_popup = new qt4::Qt4_Widget_GFE_Control();
+      _constraint_editor_popup->show();
+      QObject::connect( _constraint_editor_popup, SIGNAL( state_update( state::State_GFE& ) ), _constraint_visualizer_popup, SLOT( update_state( state::State_GFE& ) ) );
+      emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
     case ( CONSTRAINT_UNKNOWN_TYPE ):
     default:

@@ -23,9 +23,9 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( xmlString, this ) ),
                                             _text_edit_info( new QTextEdit( "[<b>OK</b>] authoring widget started", this ) ),
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
-                                            _push_button_import( new QPushButton( QString( "import" ), this ) ),
-                                            _push_button_export( new QPushButton( QString( "export" ), this ) ),
-                                            _push_button_publish( new QPushButton( QString( "publish" ), this ) ),
+                                            _push_button_import( new QPushButton( QString( "import..." ), this ) ),
+                                            _push_button_export( new QPushButton( QString( "export..." ), this ) ),
+                                            _push_button_publish( new QPushButton( QString( "publish constraints" ), this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
                                             _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
@@ -42,7 +42,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _constraint_sequence.constraints().resize( numConstraints );
   for( unsigned int i = 0; i < numConstraints; i++ ){
     _constraint_sequence.constraints()[ i ] = NULL;
-    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
+    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
   }
 
   _text_edit_info->setFixedHeight( 75 );
@@ -78,18 +78,21 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   plan_scroll_area->setFrameStyle( QFrame::NoFrame );
   QWidget * plan_widget = new QWidget( this );
   QGridLayout * plan_layout =  new QGridLayout();
-  plan_layout->addWidget( _check_box_visible_current_index, 0, 0 );
-  plan_layout->addWidget( _check_box_visible_trajectory, 0, 1 );
-  plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 2 );
-  plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 3 );
-  plan_layout->addWidget( _slider_current_time, 2, 0, 1, 3 );
+  plan_layout->addWidget( new QLabel( QString("visualize: ") ), 0, 0 );
+  plan_layout->addWidget( _check_box_visible_current_index, 0, 1 );
+  plan_layout->addWidget( _check_box_visible_trajectory, 0, 2 );
+  plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 3 );
+  plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 4 );
+  plan_layout->addWidget( _slider_current_time, 2, 0, 1, 4 );
   plan_widget->setLayout( plan_layout );
+
   plan_scroll_area->setWidget( plan_widget );
 
   QTabWidget * tab_widget = new QTabWidget( this );
-  tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
   tab_widget->addTab( constraints_scroll_area, QString( "constraints" ) ); 
   tab_widget->addTab( plan_scroll_area, QString( "plan" ) ); 
+  tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
+
 
   QVBoxLayout * widget_layout_lower = new QVBoxLayout();
   widget_layout_lower->addWidget( _text_edit_info );
@@ -198,7 +201,7 @@ Qt4_Widget_Authoring::
 _push_button_import_pressed( void ){
   QString filename = QFileDialog::getOpenFileName(this, tr("Load Constraint Sequence"),
                                                   "/home",
-                                                  tr("ActioncSequence (*.bin)"));  
+                                                  tr("ActionSequence (*.bin)"));  
   if (filename.isEmpty()) {
     emit info_update( QString( "[<b>ERROR</b>] failed to import (filename empty)" ) );
     return;
@@ -245,7 +248,7 @@ void
 Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
   if ( currentIndex < _robot_plan.size() ) {
-    _slider_current_time->setText( QString( "frame %1" ).arg(     _robot_plan[currentIndex].time() ) );
+    _slider_current_time->setText( QString( "frame %1" ).arg( _robot_plan[currentIndex].time() ) );
   }
 }
 

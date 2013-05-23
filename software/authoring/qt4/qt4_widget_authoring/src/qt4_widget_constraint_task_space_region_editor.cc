@@ -145,7 +145,10 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
   if( _constraint != NULL ){
     _combo_box_type->setCurrentIndex( _constraint->contact_type() );
-    _label_id->setText( QString::fromStdString( _constraint->id() ) );
+    _label_id->setTextFormat(Qt::RichText);
+    _label_id->setText( QString("A <i>task space region constraint</i> defines xyz." ) );
+    setWindowTitle( QString("[%1] - task space region constraint").arg( QString::fromStdString( _constraint->id() ) ) );
+    
     if( _constraint->parent().first != "N/A" ){
       for( unsigned int i = 0; i < _robot_affordances.size(); i++ ){
         if( _robot_affordances[ i ].first == _constraint->parent().first ){

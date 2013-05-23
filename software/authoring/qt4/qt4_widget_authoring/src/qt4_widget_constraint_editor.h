@@ -17,7 +17,7 @@ namespace authoring {
   class Qt4_Widget_Constraint_Editor : public QWidget {
     Q_OBJECT
   public:
-    Qt4_Widget_Constraint_Editor( Constraint *& constraint, urdf::Model& robotModel, std::vector< affordance::AffordanceState >& affordanceCollection, const std::string& id = "N/A", QWidget * parent = 0 );
+    Qt4_Widget_Constraint_Editor( Constraint *& constraint, urdf::Model& robotModel, std::vector< affordance::AffordanceState >& affordanceCollection, const std::string& urdf_xml_string = "N/A", const std::string& id = "N/A", QWidget * parent = 0 );
     ~Qt4_Widget_Constraint_Editor();
     Qt4_Widget_Constraint_Editor( const Qt4_Widget_Constraint_Editor& other );
     Qt4_Widget_Constraint_Editor& operator=( const Qt4_Widget_Constraint_Editor& other );
@@ -44,6 +44,7 @@ namespace authoring {
     std::vector< std::pair< std::string, std::string > > _robot_affordances;
     std::vector< affordance::AffordanceState >& _object_affordances;
     std::string _id;
+    std::string _urdf_xml_string;
     QLabel * _label_id;
     QCheckBox * _check_box_active;
     QComboBox * _combo_box_type;
@@ -52,6 +53,7 @@ namespace authoring {
     QDoubleSpinBox * _double_spin_box_time_end;
     QLineEdit * _line_edit_description;
     QWidget * _constraint_editor_popup;
+    QWidget * _constraint_visualizer_popup;
   private:
 
   };
