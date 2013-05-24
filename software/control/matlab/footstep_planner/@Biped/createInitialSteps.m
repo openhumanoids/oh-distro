@@ -95,7 +95,7 @@ aborted = false;
     end
     if (novalid || noprogress)
       stall.(m_foot) = stall.(m_foot) + 1;
-      if stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)
+      if novalid || stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)
         aborted = true;
         break
       end
