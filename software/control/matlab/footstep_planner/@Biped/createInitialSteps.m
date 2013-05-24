@@ -38,6 +38,13 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
     infeasibility.left = zeros(size(infeasibility.left));
     foot_centers.right(3,:) = p0(3);
     foot_centers.left(3,:) = p0(3);
+  else
+    for f = {'right', 'left'}
+      foot = f{1};
+      for j = 1:length(foot_centers.(foot))
+        foot_centers.(foot)(:,j) = biped.checkTerrain(foot_centers.(foot)(:,j));
+      end
+    end
   end
 
   if debug
@@ -48,14 +55,15 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   
 stall = struct('right', 0, 'left', 0);
 aborted = false;
+n = 0;
   
   while (1)
     is_right_foot = ~X(end).is_right_foot;
     if is_right_foot
-      m_foot = 'right';
+      m_foot = 'right'
       s_foot = 'left';
     else
-      m_foot = 'left';
+      m_foot = 'left'
       s_foot = 'right';
     end
     lambda_n = 1;
@@ -65,11 +73,7 @@ aborted = false;
     reach = biped.checkStepFeasibility(repmat(X(end).pos, 1, size(potential_poses, 2)),...
       potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), nom_forward_step);
     reach = reshape(reach, [], size(potential_poses, 2));
-    valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
-%     if length(valid_pose_ndx) < 1
-%       aborted = true;
-%       break
-%     end
+    valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + (last_ndx.(m_foot) - 1);
     if isempty(valid_pose_ndx)
       novalid = true;
     else
@@ -77,12 +81,14 @@ aborted = false;
       next_ndx = valid_pose_ndx(end);
       noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
     end
-     
-    
-    if (novalid || noprogress) && stall.(s_foot)
+    n = n + 1
+    novalid
+    noprogress
+
+    if (novalid || noprogress)
       % Try again with a longer maximum step
       reach = biped.checkStepFeasibility(repmat(X(end).pos, 1, size(potential_poses, 2)),...
-      potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), biped.max_forward_step);
+        potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), biped.max_forward_step);
       reach = reshape(reach, [], size(potential_poses, 2));
       valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
       if isempty(valid_pose_ndx)
@@ -93,6 +99,10 @@ aborted = false;
         noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
       end      
     end
+    disp('after extending')
+    novalid
+    noprogress
+    
     if (novalid || noprogress)
       stall.(m_foot) = stall.(m_foot) + 1;
       if novalid || stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)
@@ -102,12 +112,13 @@ aborted = false;
     else
       stall.(m_foot) = 0;
     end
-    
-    if options.ignore_terrain
-      pos_n = foot_centers.(m_foot)(:, next_ndx);
-    else
-      pos_n = biped.checkTerrain(foot_centers.(m_foot)(:, next_ndx));
-    end
+%     
+%     if options.ignore_terrain
+%       pos_n = foot_centers.(m_foot)(:, next_ndx);
+%     else
+%       pos_n = biped.checkTerrain(foot_centers.(m_foot)(:, next_ndx));
+%     end
+    pos_n = foot_centers.(m_foot)(:, next_ndx);
     last_ndx.(m_foot) = next_ndx;
 
     if is_right_foot
@@ -136,9 +147,9 @@ aborted = false;
   if length(X) > 2 || (length(X) - 2) < options.min_num_steps
     while (1)
       final_center = biped.footCenter2StepCenter(X(end).pos, X(end).is_right_foot);
-      final_pos = biped.stepCenter2FootCenter(final_center, ~X(end).is_right_foot);
-      is_right_foot = ~X(end).is_right_foot;
 
+      is_right_foot = ~X(end).is_right_foot;
+      final_pos = biped.stepCenter2FootCenter(final_center, is_right_foot);
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
         break
