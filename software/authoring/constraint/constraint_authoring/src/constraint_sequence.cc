@@ -100,12 +100,10 @@ from_msg( const action_sequence_t& msg,
     char buffer[ 80 ];
     sprintf( buffer, "C%03d", i );
     Constraint_Task_Space_Region* constraint = new Constraint_Task_Space_Region( buffer, true, msg.contact_goals[2*i].lower_bound_completion_time, msg.contact_goals[2*i].upper_bound_completion_time, pair< string, string >( msg.contact_goals[2*i].object_1_name, msg.contact_goals[2*i].object_1_contact_grp ) );
-    if( msg.contact_goals[2*i].contact_type == contact_goal_t::ON_GROUND_PLANE ){
-      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_ON_GROUND_PLANE_CONTACT_TYPE; 
-    } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::POINT_CONTACT ){
-      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_POINT_CONTACT_CONTACT_TYPE;
-    } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::FORCE_CLOSURE ){
-      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_FORCE_CLOSURE_CONTACT_TYPE;
+    if( msg.contact_goals[2*i].contact_type == contact_goal_t::WITHIN_REGION ){
+      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE; 
+    } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::SUPPORTED_WITHIN_REGION ){
+      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE;
     }
     constraint->ranges()[0].first = msg.contact_goals[2*i].x_offset;
     constraint->ranges()[1].first = msg.contact_goals[2*i].y_offset;
@@ -133,12 +131,12 @@ print_msg( const action_sequence_t& msg ){
     cout << "{(" << it->lower_bound_completion_time << "," << it->upper_bound_completion_time << "),";
     cout << "(" << it->object_1_name << "," << it->object_1_contact_grp << "),";
     cout << "(" << it->object_2_name << "," << it->object_2_contact_grp << "),";
-    if( it->contact_type == contact_goal_t::ON_GROUND_PLANE ){
-      cout << "(ON_GROUND_PLANE),";
-    } else if ( it->contact_type == contact_goal_t::POINT_CONTACT ){
-      cout << "(POINT_CONTACT),";
-    } else if ( it->contact_type == contact_goal_t::FORCE_CLOSURE ){
-      cout << "(FORCE_CLOSURE),";
+    if( it->contact_type == contact_goal_t::WITHIN_REGION ){
+      cout << "(WITHIN_REGION),";
+    } else if ( it->contact_type == contact_goal_t::SUPPORTED_WITHIN_REGION ){
+      cout << "(SUPPORTED_WITHIN_REGION),";
+    } else {
+      cout << "(UNKNOWN),";
     }
     if( it->x_relation == contact_goal_t::REL_EQUAL ){
       cout << "(x=" << it->x_offset << "),";
