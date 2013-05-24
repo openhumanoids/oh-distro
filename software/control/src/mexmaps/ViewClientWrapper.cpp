@@ -26,6 +26,7 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
         //mWrapper->fillViewPlanar(view);
         FillMethods fillMethods(mWrapper->mBotWrapper);
         fillMethods.fillUnderRobot(view);
+        fillMethods.fillIterative(view);
         //fillMethods.fillContours(view);
       }
     }
