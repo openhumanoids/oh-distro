@@ -28,12 +28,16 @@ classdef DRCController
     t_final = inf; % controller time limit
     timed_transition; % name of the controller to transition to when t>=t_final
     absolute_time; % bool: whether t_final is absolute or relative to start time
+
+    lc;
   end
 
   methods (Abstract)
-    initialize(obj,data) % controllers need to implement this
+    initialize(obj,data); % controllers need to implement this
     %  in the event of a lcm transition, data contains a struct that maps channel names to the 
     %  decoded lcm message data. for timed transitions, it maps input frame names to the latest data
+    send_status(obj,t_sim,t_ctrl); % each controller should populate a drc_controller_status_t message
+    %  and send it back to the base station
   end
 
   methods
@@ -58,6 +62,8 @@ classdef DRCController
       for i=1:obj.n_input_frames
         obj.controller_input_frames{i}.subscribe(defaultChannel(obj.controller_input_frames{i}));
       end
+      
+      obj.lc = lcm.lcm.LCM.getSingleton();
     end
     
     function obj = setTimedTransition(obj,t_final,transition_to_controller,absolute_time)
@@ -104,8 +110,7 @@ classdef DRCController
       end
       
       mon = drake.util.MessageMonitor(lcmtype,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe(channel,mon);
+      obj.lc.subscribe(channel,mon);
       
       obj.transition_channels{n} = channel;
       obj.transition_monitors{n} = mon;
@@ -118,8 +123,7 @@ classdef DRCController
 
       lcmtype = drc.precompute_request_t;
       mon = drake.util.MessageMonitor(lcmtype,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe(response_channel,mon);
+      obj.lc.subscribe(response_channel,mon);
       
       n = length(obj.precompute_response_monitors)+1;
       obj.precompute_response_channels{n} = response_channel;
@@ -170,18 +174,13 @@ classdef DRCController
       end
     end
     
-    function obj=addSafetyTransition(obj,transition_to_controller)
-      typecheck(transition_to_controller,'char');
-
-      % TO BE IMPLEMENTED... OR red states could just be sent over LCM
-    end
-        
     function data = run(obj)
       % runs the controller and, upon receiving a message on a termination
       % channel or if t >= t_final, halts and returns a struct mapping the
       % name of the controller to take over to lcm message data (or halting
       % time in the case of a timed transition)
 
+      % on startup, populate input frames with last received data
       data = struct();
       input_frame_data = cell(obj.n_input_frames,1);
       for i=1:obj.n_input_frames
@@ -200,6 +199,7 @@ classdef DRCController
       
       t_offset = -1;
       lcm_check_tic = tic;
+      status_tic = tic;
       while (1)
 %         tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
@@ -227,7 +227,11 @@ classdef DRCController
           if any(fr.name_hash==checked_frames)
             continue;
           end
-          [x,tsim] = getNextMessage(fr,0);
+%          [x,tsim] = getNextMessage(fr,0);
+          [x,tsim] = getNextMessage(fr,3); % in principle this should be 0 so we don't delay gets
+          % on other input frames, but in our case most controllers just
+          % have atlas state coming at high frequency, so we can use a
+          % small wait to reduce the # of function calls
           if (~isempty(x))
             if (t_offset == -1)
               if obj.absolute_time
@@ -298,6 +302,12 @@ classdef DRCController
 
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
           obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
+          
+          % publish controller status
+          if toc(status_tic)>0.2
+            send_status(obj,tt+t_offset,tt);
+            status_tic=tic;
+          end
         end
 %         fprintf('Num missed frames: %d \n',missed_frames);
 %         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);

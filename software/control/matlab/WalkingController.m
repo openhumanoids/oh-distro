@@ -19,7 +19,9 @@ classdef WalkingController < DRCController
         'lfoottraj',[],...
         'rfoottraj',[],...
         'supptraj',[],...
-        'qtraj',zeros(getNumDOF(r),1)));
+        'qtraj',zeros(getNumDOF(r),1),...
+        'V',0,... % cost to go used in controller status message
+        'Vdot',0)); % time derivative of cost to go used in controller status message
 
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -83,7 +85,17 @@ classdef WalkingController < DRCController
       obj.controller_data = ctrl_data;
       obj = setTimedTransition(obj,100,'standing',false); % default timeout
       
-   end
+    end
+    
+    function send_status(obj,t_sim,t_ctrl)
+        msg = drc.controller_status_t();
+        msg.utime = t_sim * 1000000;
+        msg.state = msg.WALKING;
+        msg.controller_utime = t_ctrl * 1000000;
+        msg.V = obj.controller_data.getField('V');
+        msg.Vdot = obj.controller_data.getField('Vdot');
+        obj.lc.publish('CONTROLLER_STATUS',msg);
+    end
     
     function obj = initialize(obj,data)
             

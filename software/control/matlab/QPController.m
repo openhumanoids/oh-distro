@@ -523,6 +523,25 @@ classdef QPController < MIMODrakeSystem
       if (obj.use_mex==2)
         des.y = y;
       end
+      
+      % compute V,Vdot for controller status updates
+      if (nc>0)
+        V = x_bar'*S*x_bar + s1'*x_bar;
+        qdd = zeros(nq,1);
+        qdd(obj.free_dof) = qdd_free;
+        qdd(obj.con_dof) = alpha(1:nq_con);
+        
+        Vdot = (x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
+        setField(obj.controller_data,'V',V);
+        setField(obj.controller_data,'Vdot',Vdot);
+      
+  %     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
+  %     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
+      else
+        setField(obj.controller_data,'V',0);
+        setField(obj.controller_data,'Vdot',0);
+      end
+      
     end
   
     if (obj.use_mex==1)
@@ -543,15 +562,7 @@ classdef QPController < MIMODrakeSystem
 %       some dimensions.
     end
     
-%     V = x_bar'*S*x_bar + s1'*x_bar;
-%     Vdot = (x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot(:,obj.con_dof)*qd(obj.con_dof) + J(:,obj.con_dof)*Iqdd*alpha));
-%     
-%     fprintf('V: %2.5f\n',V);
-%     fprintf('Vdot: %2.5f\n',Vdot);
-%     
-%     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
-%     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
-    
+   
     if obj.debug && (obj.use_mex==0 || obj.use_mex==2) && nc > 0
       if nq_free > 0
         xcomdd = Jdot * qd + J * qdd;
