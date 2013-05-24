@@ -82,10 +82,12 @@ fitHorizontalPlaneRobust(const std::vector<Eigen::Vector3f>& iPoints,
   return sol;
 }
 
-void FillMethods::
+int FillMethods::
 labelImage(cv::Mat& iMask, cv::Mat& oLabels) {
   uint8_t* mask = static_cast<uint8_t*>(iMask.data);
-  int curLabel = 0;
+  uint16_t* labels = reinterpret_cast<uint16_t*>(oLabels.data);
+  std::fill(labels, labels+iMask.rows*iMask.cols, 0);
+  int curLabel = 1;
   for (int i = 0; i < iMask.rows; ++i) {
     for (int j = 0; j < iMask.cols; ++j, ++mask) {
       if (*mask == 0) continue;
@@ -93,27 +95,52 @@ labelImage(cv::Mat& iMask, cv::Mat& oLabels) {
       ++curLabel;
     }
   }
+  return curLabel-1;
 }
 
 void FillMethods::
 labelRecurse(cv::Mat& iMask, const int iRow, const int iCol, const int iLabel,
              cv::Mat& oLabels) {
-  int idx = iRow*iMask.cols + iCol;
+  int w(iMask.cols), h(iMask.rows);
+  int idx = iRow*w + iCol;
   uint8_t* mask = static_cast<uint8_t*>(iMask.data);
   uint16_t* labels = reinterpret_cast<uint16_t*>(oLabels.data);
   labels[idx] = iLabel;
   mask[idx] = 0;
-  if ((iRow > 0) && (mask[idx-iMask.rows]>0)) {
+  if ((iRow > 0) && (mask[idx-w]>0)) {
     labelRecurse(iMask, iRow-1, iCol, iLabel, oLabels);
   }
-  if ((iRow < iMask.rows-1) && (mask[idx+iMask.rows]>0)) {
+  if ((iRow < h-1) && (mask[idx+w]>0)) {
     labelRecurse(iMask, iRow+1, iCol, iLabel, oLabels);
   }    
   if ((iCol > 0) && (mask[idx-1]>0)) {
     labelRecurse(iMask, iRow, iCol-1, iLabel, oLabels);
   }    
-  if ((iCol < iMask.cols-1) && (mask[idx+1]>0)) {
+  if ((iCol < w-1) && (mask[idx+1]>0)) {
     labelRecurse(iMask, iRow, iCol+1, iLabel, oLabels);
+  }
+}
+
+void FillMethods::
+extractComponentsAndOutlines(const cv::Mat& iLabels, const int iNumLabels,
+                             std::vector<std::vector<int> >& oIndices,
+                             std::vector<std::set<int> >& oOutlines) {
+  oIndices.resize(iNumLabels);
+  oOutlines.resize(iNumLabels);
+  int w(iLabels.cols), h(iLabels.rows);
+  const uint16_t* labels = reinterpret_cast<uint16_t*>(iLabels.data);
+  for (int i = 0; i < h; ++i) {
+    for (int j = 0; j < w; ++j) {
+      int idx = i*w + j;
+      int label = labels[idx];
+      if (label == 0) continue;
+      --label;
+      oIndices[label].push_back(idx);
+      if ((i > 0) && (labels[idx-w]==0)) oOutlines[label].insert(idx-w);
+      if ((i < h-1) && (labels[idx+w]==0)) oOutlines[label].insert(idx+w);
+      if ((j > 0) && (labels[idx-1]==0)) oOutlines[label].insert(idx-1);
+      if ((j < w-1) && (labels[idx+1]==0)) oOutlines[label].insert(idx+1);
+    }
   }
 }
 
@@ -417,6 +444,119 @@ fillContours(maps::DepthImageView::Ptr& iView) {
   // TODO
 }
 
+void FillMethods::
+fillConnected(maps::DepthImageView::Ptr& iView) {
+  // get view data
+  maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
+  maps::DepthImage::Ptr img = iView->getDepthImage();
+  std::vector<float>& depths =
+    const_cast<std::vector<float>&>(img->getData(type));
+  const float invalidValue = img->getInvalidValue(type);
+
+  // get robot position and bbox, and project into map
+  Eigen::Isometry3f robotPose;
+  if (!mBotWrapper->getTransform("body", "local", robotPose)) return;
+  Eigen::Vector3f p0 = robotPose.translation();
+  Eigen::Vector3f boundPoints[4];
+  boundPoints[0] = -0.5*Eigen::Vector3f::UnitX();
+  boundPoints[1] = +5.0*Eigen::Vector3f::UnitX();
+  boundPoints[2] = -3.0*Eigen::Vector3f::UnitY();
+  boundPoints[3] = +3.0*Eigen::Vector3f::UnitY();
+  Eigen::Vector3f mapPoints[4];
+  for (int i = 0; i < 4; ++i) {
+    mapPoints[i] = robotPose*boundPoints[i];
+    mapPoints[i] = img->project(mapPoints[i], type);
+  }
+  Eigen::Vector2i minPt(1000000,1000000), maxPt(-1000000,-1000000);
+  for (int i = 0; i < 4; ++i) {
+    minPt[0] = std::min(minPt[0], int(mapPoints[i][0]+0.5f));
+    minPt[1] = std::min(minPt[1], int(mapPoints[i][1]+0.5f));
+    maxPt[0] = std::max(maxPt[0], int(mapPoints[i][0]+0.5f));
+    maxPt[1] = std::max(maxPt[1], int(mapPoints[i][1]+0.5f));
+  }
+  int w(img->getWidth()), h(img->getHeight());
+  minPt[0] = std::max(0,minPt[0]);
+  minPt[1] = std::max(0,minPt[1]);
+  maxPt[0] = std::min(w-1,maxPt[0]);
+  maxPt[1] = std::min(h-1,maxPt[1]);
+
+  //
+  // form mask indicating where fills need to occur
+  //
+
+  // first put box around robot
+  cv::Mat validArea = cv::Mat::zeros(h,w,CV_8U);
+  for (int i = minPt[1]; i <= maxPt[1]; ++i) {
+    for (int j = minPt[0]; j <= maxPt[0]; ++j) {
+      validArea.at<uint8_t>(i,j) = 255;
+    }
+  }
+
+  // next find all inf values
+  cv::Mat depthImage(h,w,CV_32F,&depths[0]);
+  cv::Mat badMask;
+  cv::threshold(depthImage, badMask, 1e8, 255, cv::THRESH_BINARY);
+  badMask.convertTo(badMask, CV_8U);
+
+  // and the two together and dilate so that outer extrema are found
+  cv::bitwise_and(badMask, validArea, badMask);
+  {
+    std::ofstream ofs("/home/antone/badmask.txt");
+    for (int i = 0; i < badMask.rows; ++i) {
+      for (int j = 0; j < badMask.cols; ++j) {
+        ofs << int(badMask.at<uint8_t>(i,j)) << " ";
+      }
+      ofs << std::endl;
+    }
+  }
+  std::vector<uint8_t> maskData(w*h);
+  cv::Mat finalMask(h,w,CV_8U,maskData.data());
+  badMask.copyTo(finalMask);
+
+  // label 4-connected components
+  std::vector<uint16_t> labelData(w*h);
+  cv::Mat labels(h,w,CV_16U,labelData.data());
+  int numLabels = labelImage(finalMask, labels);
+  {
+    std::ofstream ofs("/home/antone/labels.txt");
+    for (int i = 0; i < labels.rows; ++i) {
+      for (int j = 0; j < labels.cols; ++j) {
+        ofs << labels.at<uint16_t>(i,j) << " ";
+      }
+      ofs << std::endl;
+    }
+  }
+
+  // extract components and outlines
+  std::vector<std::vector<int> > indices;
+  std::vector<std::set<int> > outlines;
+  extractComponentsAndOutlines(labels, numLabels, indices, outlines);
+
+  // fit planes and fill
+  for (int i = 0; i < numLabels; ++i) {
+    std::vector<Eigen::Vector3f> pts;
+    pts.reserve(outlines[i].size());
+    std::set<int>::const_iterator iter = outlines[i].begin();
+    for (; iter != outlines[i].end(); ++iter) {
+      int idx = *iter;
+      float z = depths[idx];
+      if (z == invalidValue) continue;
+      pts.push_back(Eigen::Vector3f(idx%w, idx/w, z));
+    }
+    if (pts.size() < 3) continue;
+    Eigen::Vector3f plane = fitHorizontalPlaneRobust(pts);
+
+    std::vector<int>::const_iterator it = indices[i].begin();
+    for (; it != indices[i].end(); ++it) {
+      int idx = *it;
+      float x(idx%w), y(idx/w);
+      depths[idx] = -(plane[0]*x + plane[1]*y + plane[2]);
+    }
+  }
+
+  img->setData(depths, type);
+}
+
 
 void FillMethods::
 fillIterative(std::shared_ptr<maps::DepthImageView>& iView,
@@ -459,7 +599,6 @@ fillIterative(std::shared_ptr<maps::DepthImageView>& iView,
       }
     }
 
-    fprintf(stderr, "Updated %d\n", updateCount);
     if (updateCount == 0) break;
     ++curPass;
     if ((iMaxPasses>0) && (curPass >= iMaxPasses)) break;

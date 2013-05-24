@@ -1,5 +1,7 @@
 #include "ViewClientWrapper.hpp"
 
+#include <chrono>
+
 #include <maps/BotWrapper.hpp>
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImageView.hpp>
@@ -22,12 +24,14 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
       view->setNormalRadius(mWrapper->mNormalRadius);
       if (mWrapper->mShouldFill) {
-        //mWrapper->fillView(view);
-        //mWrapper->fillViewPlanar(view);
+        auto startTime = std::chrono::high_resolution_clock::now();
         FillMethods fillMethods(mWrapper->mBotWrapper);
         fillMethods.fillUnderRobot(view);
         fillMethods.fillIterative(view);
-        //fillMethods.fillContours(view);
+        fillMethods.fillConnected(view);
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime-startTime);
+        //fprintf(stderr, " elapsed time: %d ms\n", duration.count());
       }
     }
   }
