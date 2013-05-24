@@ -47,12 +47,6 @@ struct ViewClientWrapper {
 
 protected:
   void requestHeightMap();
-  Eigen::Vector3f fitHorizontalPlaneRobust
-    (const std::vector<Eigen::Vector3f>& iPoints,
-     const Eigen::Vector4f& iInitPlane=Eigen::Vector4f::Zero());
-  void fillView(std::shared_ptr<maps::DepthImageView>& iView);
-  void fillViewPlanar(std::shared_ptr<maps::DepthImageView>& iView);
-  void fillUnderRobot(std::shared_ptr<maps::DepthImageView>& iView);
 };
 
 }

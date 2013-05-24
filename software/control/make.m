@@ -69,7 +69,7 @@ if isunix && ~ismac % build maps
   [~,libs]=system('pkg-config --libs maps eigen3 lcm opencv');
   libs = strrep(libs,'-pthread','');%-lpthread');
 
-  cmdstr = ['mex -v src/HeightMapWrapper.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/MapLib.cpp -g -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  cmdstr = ['mex -v src/HeightMapWrapper.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp -g -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
   disp(cmdstr);
   eval(cmdstr);
   
