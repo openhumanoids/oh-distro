@@ -120,6 +120,21 @@ set_transparency( double transparency ){
   return;
 }
 
+void
+OpenGL_Object_GFE::
+set_selected_link(const std::string& link_name, Vector3f color){
+  for ( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
+    if ( _opengl_objects[i] != NULL ){
+      if ( link_name.compare(_opengl_objects[i]->id()) == 0 && _opengl_objects[i]->color() != color ){
+        last_selected_link_color = _opengl_objects[i]->color();
+        _opengl_objects[i]->set_color(color);
+      } else {
+        _opengl_objects[i]->set_color(last_selected_link_color);
+      }
+    }
+  }
+}
+
 /**
  * draw
  * draws the opengl object representing the GFE

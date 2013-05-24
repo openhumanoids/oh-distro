@@ -43,6 +43,7 @@ namespace state {
     virtual void set_time( unsigned long long time );
     void set_pose( const KDL::Frame& pose );
 
+    unsigned long long time( void )const;
     KDL::Frame pose( void )const;
     std::map< std::string, State_GFE_Joint > joints( void )const;;
     std::map< std::string, double > joint_angles( void )const; 

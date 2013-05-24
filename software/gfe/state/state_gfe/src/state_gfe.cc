@@ -273,6 +273,12 @@ set_time( unsigned long long time ){
   return;
 }
 
+unsigned long long
+State_GFE::
+time( void ) const{
+    return _time;
+}
+
 /**
  * set_pose
  * sets the pose of the state
