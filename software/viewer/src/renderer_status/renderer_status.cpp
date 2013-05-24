@@ -236,6 +236,21 @@ on_score(const lcm_recv_buf_t * buf, const char *channel, const drc_score_t *msg
     self->score = drc_score_t_copy(msg);
 }
 
+
+static void format_time_str (int64_t lutime, char *line)
+{
+  int usecs = lutime % (int)1E3; lutime /= (int)1E3;
+  int msecs = lutime % (int)1E3; lutime /= (int)1E3;
+  int  secs = lutime % (int)60; lutime /= (int)60;
+  int  mins = lutime % (int)60; lutime /= (int)60;
+  int hours = lutime % (int)24; lutime /= (int)24;
+  int  days = lutime;
+
+//  sprintf (line, "SIM TIME: %1dd %2dh %2dm %2ds %3dms %3dus\n",
+//          days, hours, mins, secs, msecs, usecs );
+  sprintf (line, "%2dm %2ds %3dms\n",mins, secs, msecs);
+} 
+
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
 ////////////////////////////////////////////////////////////////////////////////
@@ -327,7 +342,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     
     }
     
-    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
+    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
     sprintf(line1, "n affs %d",self->naffs);
     sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
     sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
@@ -335,7 +350,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
     sprintf(line8, "%.4f SIM", ((double)self->last_utime/1E6) );
-    
+    format_time_str ( self->last_utime, line9 ); 
+  
     if ((self->left_contact==1)&& (self->right_contact==1) ){
       sprintf(line7, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
@@ -393,6 +409,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glColor3fv(colors[1]);
     glRasterPos2f(x, y + 7 * line_height);
     glutBitmapString(font, (unsigned char*) line8);
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 8 * line_height);
+    glutBitmapString(font, (unsigned char*) line9);
     
     
     
