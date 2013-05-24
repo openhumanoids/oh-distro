@@ -14,11 +14,10 @@ struct contact_goal_t
 	double lower_bound_completion_time;
 	double upper_bound_completion_time;
 
-	const int32_t ON_GROUND_PLANE=0, 
-                      POINT_CONTACT=1, 
+	const int32_t WITHIN_REGION=0, 
+                      SUPPORTED_WITHIN_REGION=1, 
                       FORCE_CLOSURE=2, 
-                      NOT_IN_CONTACT = 3,
-                      COLLISION_AVOIDANCE = 4;
+                      COLLISION_AVOIDANCE = 3;
 	int32_t contact_type;
 
 	vector_3d_t target_pt; // only used for ON_GROUND_PLANE
