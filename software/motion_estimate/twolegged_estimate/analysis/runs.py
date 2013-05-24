@@ -24,8 +24,8 @@ def doAllRuns(logListFile,prefix):
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
 
     # TODO: temporarily disabling sweep over weights
-    windowDurations = [30]
-    weightProfiles = ['uniform']
+    #windowDurations = [30]
+    #weightProfiles = ['uniform']
 
     # loop and run    
     for filename in files:
