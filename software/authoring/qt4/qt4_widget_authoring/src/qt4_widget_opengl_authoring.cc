@@ -150,17 +150,23 @@ void
 Qt4_Widget_OpenGL_Authoring::
 update_constraint_visualizer( Constraint* constraint) {
   // update the box from the constraint
-    if ( constraint->type() == CONSTRAINT_TASK_SPACE_REGION_TYPE ) {
-        Constraint_Task_Space_Region* _tsr_constraint = dynamic_cast <Constraint_Task_Space_Region*>(constraint);
+  if ( constraint->type() == CONSTRAINT_TASK_SPACE_REGION_TYPE ) {
+      Constraint_Task_Space_Region* _tsr_constraint = dynamic_cast <Constraint_Task_Space_Region*>(constraint);
+      if ( _tsr_constraint->child() != NULL) {
         double h = _tsr_constraint->ranges()[0].second - _tsr_constraint->ranges()[0].first;
         double w = _tsr_constraint->ranges()[1].second - _tsr_constraint->ranges()[1].first;
         double l = _tsr_constraint->ranges()[2].second - _tsr_constraint->ranges()[2].first;
 
         _opengl_object_constraint_visualizer.set_visible( true );
-        _opengl_object_constraint_visualizer.set(Eigen::Vector3f(h, w, l));
+        // Use the frame of the child link; also, add a small constant offset
+        // makes it easier to visualize the TSRs when they have very few
+        // constraints
+        _opengl_object_constraint_visualizer.set(_tsr_constraint->child()->getOriginFrame(), 
+                                                 Eigen::Vector3f(h + 0.01, w + 0.01, l + 0.01));
+      }
     }
-    update();
-    return;
+  update();
+  return;
 }
 
 void
