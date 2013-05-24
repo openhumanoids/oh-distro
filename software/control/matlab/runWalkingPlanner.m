@@ -1,8 +1,9 @@
-function runWalkingPlanner(lcm_plan, goal_x, goal_y, goal_yaw)
-if nargin < 4; goal_yaw = 0.0; end
-if nargin < 3; goal_y = 0.0; end
-if nargin < 2; goal_x = 2.0; end
-if nargin < 1; lcm_plan = true; end
+function runWalkingPlanner(location, lcm_plan, goal_x, goal_y, goal_yaw)
+if nargin < 5; goal_yaw = 0.0; end
+if nargin < 4; goal_y = 0.0; end
+if nargin < 3; goal_x = 2.0; end
+if nargin < 2; lcm_plan = true; end
+if nargin < 1; location = 'base'; end
 
 debug = true;
 
@@ -37,7 +38,7 @@ while true
   else
     approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
     committed_footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
-    msg ='Walk Plan : Listening for plans'; disp(msg); send_status(6,0,0,msg);
+    msg =['Walk Plan (', location, '): Listening for plans']; disp(msg); send_status(6,0,0,msg);
     waiting = true;
     committed = false;
     foottraj = [];
@@ -50,13 +51,13 @@ while true
        
       footsteps = committed_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
-        msg ='Walk Plan : committed plan received'; disp(msg); send_status(6,0,0,msg);
+        msg =['Walk Plan (', location, '): committed plan received']; disp(msg); send_status(6,0,0,msg);
         waiting = false;
         committed = true;
       else
         footsteps = approved_footstep_plan_listener.getNextMessage(10);
         if (~isempty(footsteps))
-          msg ='Walk Plan : plan received'; disp(msg); send_status(6,0,0,msg);
+          msg =['Walk Plan (', location, '): plan received']; disp(msg); send_status(6,0,0,msg);
           waiting = false;
           committed = false;
         end
@@ -65,20 +66,23 @@ while true
   end
   [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   hddot = fnder(htraj,2);
+  walking_plan = struct('S',V.S,'s1',V.s1,'htraj',htraj,'hddtraj', ...
+      hddot,'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
+      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj)
+  last_approved_footsteps = footsteps;
+
   
   % publish robot plan
-  msg ='Walk Plan : Publishing robot plan...'; disp(msg); send_status(6,0,0,msg);
+  msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(6,0,0,msg);
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
   plan_pub.publish(ts,xtraj);
 
   if committed
-    msg ='Walk Plan : Publishing committed plan...'; disp(msg); send_status(6,0,0,msg);
+    msg =['Walk Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(6,0,0,msg);
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
-    walking_pub.publish(0,struct('S',V.S,'s1',V.s1,'htraj',htraj,'hddtraj', ...
-      hddot,'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
-      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj));
+    walking_pub.publish(0,walking_plan);
   end
 
 
