@@ -103,7 +103,7 @@ group "a.2.walking" {
         host = "extra";
     }
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
 }
@@ -223,7 +223,7 @@ group "a.3.walking_manip" {
         host = "extra";
     }
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "robot";
     }
 }
@@ -345,7 +345,7 @@ group "b.2.walking" {
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
        host = "base";
     }
 }
@@ -386,7 +386,7 @@ group "b.3.walking_manip" {
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
        host = "base";
     }
 }
