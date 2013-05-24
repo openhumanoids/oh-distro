@@ -241,6 +241,11 @@ classdef ManipulationPlanner < handle
             N = length(timeIndices);
             plan_Indices=[];
             q_guess =q0;
+            %plan_
+            lhand_const_plan = [];
+            rhand_const_plan = [];
+            rhand_const_plan = [];
+            rhand_const_plan = [];
             for i=1:length(timeIndices),
                 tic;
                 
@@ -265,6 +270,8 @@ classdef ManipulationPlanner < handle
                     plan_Indices(i).ee_name=[];
                     plan_Indices(i).dof_name=[];
                     plan_Indices(i).dof_value=[];
+                    plan_Indices(i).dof_pose=[];
+                    plan_Indices(i).dof_reached = [];
                     ind=find([Indices.time]==timeIndices(i));                    
                 else
                     ind=find(Indices==timeIndices(i));
@@ -290,6 +297,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('l_hand')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_hand_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.lhandT = l_ee_goal;
@@ -314,6 +322,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('r_hand')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.rhandT = r_ee_goal;
@@ -333,6 +342,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('l_foot')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_foot_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.lfootT = lfootT;
@@ -352,6 +362,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('r_foot')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_foot_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.rfootT = rfootT;
@@ -390,8 +401,91 @@ classdef ManipulationPlanner < handle
             
             utime = now() * 24 * 60 * 60;
             if(is_manip_map)
+                
+                % Keep the largest consecutive portion of the plan for each
+                % dof such that the end-effector is close to desired
+                ee_temp = [];
+                for i=1:numel(plan_Indices)
+                    kinsol_tmp = doKinematics(obj.r,q(:,i));
+                    for j=1:numel(plan_Indices(i).ee_name)
+                        ee_name = plan_Indices(i).ee_name(j);
+                        map_pose = [];
+                        if (strcmp('l_hand',ee_name))
+                            map_pose = forwardKin(obj.r,kinsol_tmp,l_hand_body,[0;0;0],2);
+                        elseif (strcmp('r_hand',ee_name))
+                            map_pose = forwardKin(obj.r,kinsol_tmp,r_hand_body,[0;0;0],2);
+                        elseif (strcmp('l_foot',ee_name))
+                            map_pose = forwardKin(obj.r,kinsol_tmp,l_foot_body,[0;0;0],2);
+                        elseif (strcmp('r_foot',ee_name))
+                            map_pose = forwardKin(obj.r,kinsol_tmp,r_foot_body,[0;0;0],2);
+                        end;
+                        
+                        desired_pose = plan_Indices(i).dof_pose(:,j);
+                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
+                        
+                        if (numel(ee_temp) < j)
+                            ee_temp(j).map_pose = [];
+                            ee_temp(j).dof_reached = [];
+                            ee_temp(j).ee_name = ee_name;
+                        end;
+                        
+                        ee_temp(j).map_pose = [ee_temp(j).map_pose map_pose];
+                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < 0.01)];
+                                                    
+                        % Is the resulting pose sufficiently close to the
+                        % desired pose?
+                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < 0.01)];
+                    end;
+                end;
+                        
+                min_dof_idx = 1;
+                max_dof_idx = length(ee_temp(1).dof_reached);
+                for i=1:numel(ee_temp)
+                    if(~isempty(find(~ee_temp(i).dof_reached)))
+                        if (strcmp('l_hand',ee_temp(i).ee_name))
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(l_hand_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2));
+                        elseif (strcmp('r_hand',ee_temp(i).ee_name))
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_hand_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2));
+                        elseif (strcmp('l_foot',ee_temp(i).ee_name))
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(l_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2)); 
+                        elseif (strcmp('r_foot',ee_temp(i).ee_name))
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2)); 
+                        end;
+                        
+                        % find the min and max indices of the dof value
+                        jmax = jcur;
+                        jmin = jcur;
+                        while (jmax < size(ee_temp(i).dof_reached,2) && ee_temp(i).dof_reached(jmax+1) == 1)
+                            jmax = jmax + 1;
+                        end;
+                        while (jmin > 1 && ee_temp(i).dof_reached(jmin) == 1)
+                            jmin = jmin - 1;
+                        end;
+                        
+                        ee_temp(i).min_dof_reachable_idx = jmin;
+                        ee_temp(i).max_dof_reachable_idx = jmax;
+                        
+                        if (jmin > min_dof_idx)
+                            min_dof_idx = jmin;
+                        end;
+                        
+                        if (jmax < max_dof_idx)
+                            max_dof_idx = jmax;
+                        end;
+                    end;
+                end;
+
+                fprintf (1, 'Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                timeIndices = timeIndices(min_dof_idx:max_dof_idx);
+                plan_Indices = plan_Indices(min_dof_idx:max_dof_idx);
+                q = q(:,min_dof_idx:max_dof_idx);
+                
                 xtraj = zeros(getNumStates(obj.r),length(timeIndices));
                 xtraj(1:getNumDOF(obj.r),:) = q;
+                
+                % Keep the largest consequtive portion such that the
+                % end-effector is sufficiently close to desired
+                
                 obj.map_pub.publish(xtraj,plan_Indices,utime);
             else
                 xtraj = zeros(getNumStates(obj.r)+1,length(timeIndices));
