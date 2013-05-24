@@ -55,7 +55,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   
 stall = struct('right', 0, 'left', 0);
 aborted = false;
-n = 0;
+% n = 0;
   
   while (1)
     is_right_foot = ~X(end).is_right_foot;
@@ -81,9 +81,9 @@ n = 0;
       next_ndx = valid_pose_ndx(end);
       noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
     end
-    n = n + 1
-    novalid
-    noprogress
+    % n = n + 1
+    % novalid
+    % noprogress
 
     if (novalid || noprogress)
       % Try again with a longer maximum step
@@ -99,9 +99,9 @@ n = 0;
         noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
       end      
     end
-    disp('after extending')
-    novalid
-    noprogress
+    % disp('after extending')
+    % novalid
+    % noprogress
     
     if (novalid || noprogress)
       stall.(m_foot) = stall.(m_foot) + 1;
