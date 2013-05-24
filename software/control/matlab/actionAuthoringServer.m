@@ -521,7 +521,7 @@ function fprintfVerb(options,varargin)
 end
 
 function kc = getConstraintFromGoal(r,goal)
-  if(goal.contact_type ~= goal.ON_GROUND_PLANE) && (goal.contact_type ~= goal.NOT_IN_CONTACT) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
+  if(goal.contact_type ~= goal.SUPPORTED_WITHIN_REGION) && (goal.contact_type ~= goal.WITHIN_REGION) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
     error('The contact type is not supported yet');
   end
   body_ind = findLink(r,char(goal.object_1_name));
@@ -593,7 +593,7 @@ function kc = getConstraintFromGoal(r,goal)
     pseudo_Inf = 1e3;
     pos.min(abs(pos.min) > 0.9*pseudo_Inf) = -Inf;
     pos.max(abs(pos.max) > 0.9*pseudo_Inf) = Inf;
-    if(num_pts>1 && goal.contact_type~=goal.NOT_IN_CONTACT)
+    if(num_pts>1 && goal.contact_type~=goal.WITHIN_REGION)
       collision_group_pts = [mean(collision_group_pts,2) collision_group_pts];
       pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
       pos.max(1:2,2:end) = inf(2,num_pts);
@@ -607,11 +607,11 @@ function kc = getConstraintFromGoal(r,goal)
       pos.min = bsxfun(@times,pos.min,ones(1,num_pts));
       pos.max = bsxfun(@times,pos.max,ones(1,num_pts));
     end
-    if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
+    if(goal.contact_type == goal.SUPPORTED_WITHIN_REGION||goal.contact_type == goal.FORCE_CLOSURE)
       contact_state0 = {ActionKinematicConstraint.MAKE_CONTACT*ones(1,size(collision_group_pts,2))};
       contact_statei = {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,size(collision_group_pts,2))};
       contact_statef = {ActionKinematicConstraint.BREAK_CONTACT*ones(1,size(collision_group_pts,2))};
-    elseif(goal.contact_type == goal.NOT_IN_CONTACT)
+    elseif(goal.contact_type == goal.WITHIN_REGION)
       contact_state0 = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
       contact_statei = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
       contact_statef = {ActionKinematicConstraint.NOT_IN_CONTACT*ones(1,size(collision_group_pts,2))};
