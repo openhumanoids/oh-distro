@@ -113,7 +113,7 @@ hip_ind = find( ...
                 %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...
 
 jointLimitShrink = ones(size(jointLimitMin));
-%jointLimitShrink(back_ind) = 0.4;
+jointLimitShrink(back_ind) = 0.4;
 %jointLimitShrink(hip_ind) = 0.6;
 jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
 jointLimitMid = (jointLimitMax + jointLimitMin)/2;
@@ -216,7 +216,12 @@ while (1)
               q_key_time_samples(:,i) = ...
                 options.q_traj_nom.eval(action_sequence.key_time_samples(i));
           else
-              [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
+            if true || i==1
+              q0 = q;
+            else
+              q0 = q_key_time_samples(:,i-1);
+            end
+              [q_key_time_samples(:,i),info] = inverseKin(r,q0,ikargs{:},options);
               if(info>10)
                 warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
               else
@@ -376,32 +381,34 @@ while (1)
           xtraj = PPTrajectory(pchip(t_qs_breaks,[q_qs_plan;0*q_qs_plan]));
           xtraj = xtraj.setOutputFrame(r.getStateFrame());
           v.playback(xtraj,struct('slider',true));
-          if(action_options.debug)
-            key = input('Press ''s'' to save and continue, or any other key to continue without saving...','s');
-            if strcmp(key,'s')
-              % Shift trajectories to be in the body frame of the link specified by
-              % action_options.ref_link_str, if present.
-              if(isfield(action_options,'ref_link_str'))
-                typecheck(action_options.ref_link_str,'char');
-                ref_link = r.findLink(action_options.ref_link_str);
-                pelvis = r.findLink('pelvis');
-                for i = 1:length(t_qs_breaks)
-                  kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
-                  com_i = getCOM(r,kinsol);
-                  if i == 1
-                    wTf = ref_link.T;
-                    fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
-                  end
-                  com_qs_plan(:,i) = homogTransMult(fTw,com_i);
-                  wTr_i = pelvis.T;
-                  fTr_i = fTw*wTr_i;
-                  q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
+        end
+        if(action_options.debug)
+          key = input('Press ''s'' to save and continue, or any other key to continue without saving...','s');
+          if strcmp(key,'s')
+            % Shift trajectories to be in the body frame of the link specified by
+            % action_options.ref_link_str, if present.
+            if(isfield(action_options,'ref_link_str'))
+              typecheck(action_options.ref_link_str,'char');
+              ref_link = r.findLink(action_options.ref_link_str);
+              pelvis = r.findLink('pelvis');
+              for i = 1:length(t_qs_breaks)
+                kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
+                com_i = getCOM(r,kinsol);
+                if i == 1
+                  wTf = ref_link.T;
+                  fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
                 end
-                ref_link_str = action_options.ref_link_str;
+                com_qs_plan(:,i) = homogTransMult(fTw,com_i);
+                wTr_i = pelvis.T;
+                fTr_i = fTw*wTr_i;
+                q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
               end
-
+              ref_link_str = action_options.ref_link_str;
               uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
-                'foot_support_qs','ref_link_str'},'data/aa_step_in.mat');
+                'foot_support_qs','ref_link_str'},'data/aa_plan.mat');
+            else
+            uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
+              'foot_support_qs'},'data/aa_plan.mat');
             end
           end
         end
@@ -583,7 +590,10 @@ function kc = getConstraintFromGoal(r,goal)
     % would also constrain that all those contact points are in
     % contact
     num_pts = size(collision_group_pts,2);
-    if(num_pts>1)
+    pseudo_Inf = 1e3;
+    pos.min(abs(pos.min) > 0.9*pseudo_Inf) = -Inf;
+    pos.max(abs(pos.max) > 0.9*pseudo_Inf) = Inf;
+    if(num_pts>1 && goal.contact_type~=goal.NOT_IN_CONTACT)
       collision_group_pts = [mean(collision_group_pts,2) collision_group_pts];
       pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
       pos.max(1:2,2:end) = inf(2,num_pts);
@@ -593,6 +603,9 @@ function kc = getConstraintFromGoal(r,goal)
         pos.max(4:6,2:end) = inf(3,num_pts);
         pos.min(4:6,2:end) = -inf(3,num_pts);
       end
+    else
+      pos.min = bsxfun(@times,pos.min,ones(1,num_pts));
+      pos.max = bsxfun(@times,pos.max,ones(1,num_pts));
     end
     if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
       contact_state0 = {ActionKinematicConstraint.MAKE_CONTACT*ones(1,size(collision_group_pts,2))};
