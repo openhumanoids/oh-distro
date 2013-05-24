@@ -30,6 +30,7 @@ namespace authoring {
     void update_opengl_object_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_opengl_object_gfe( state::State_GFE& stateGFE );
     void update_opengl_object_gfe_ghost( state::State_GFE& stateGFE );
+    void update_opengl_object_gfe_selected_link( const QString& linkName );
     void update_opengl_object_robot_plan_current_index( int currentIndex );
     void update_opengl_object_robot_plan_visible_current_index( int visibleCurrentIndex );
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );

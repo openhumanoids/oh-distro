@@ -26,7 +26,9 @@ namespace authoring {
   signals:
     void description_update( const QString& description ); 
     void widget_selected( void );
- 
+    void constraint_selected( const QString& constraintID );
+    void highlight_parent_link_by_name( const QString& linkName );
+
   public slots: 
     void _constraint_changed( void );
     void _constraint_changed( double value );
@@ -48,6 +50,7 @@ namespace authoring {
     void _range_yaw_maximize( void );
     void mark_invalid_spin_boxes( void );
     bool eventFilter(QObject *object, QEvent *event);
+    void _map_highlighted_parent( int );
 
   protected:
     Constraint_Task_Space_Region * _constraint;

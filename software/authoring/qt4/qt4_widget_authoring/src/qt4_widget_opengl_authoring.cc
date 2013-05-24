@@ -96,6 +96,13 @@ update_opengl_object_gfe( State_GFE& stateGFE ){
 
 void
 Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_gfe_selected_link( const QString& linkName ){
+ _opengl_object_gfe.set_selected_link( linkName.toStdString(), Eigen::Vector3f( 1.0, 0.0, 0.0 ) );
+  return;
+}
+
+void
+Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_gfe_ghost( State_GFE& stateGFE ){
   _opengl_object_gfe_ghost.set_visible( true );
   _opengl_object_gfe_ghost.set( stateGFE );
@@ -161,7 +168,7 @@ update_constraint_visualizer( Constraint* constraint) {
         // Use the frame of the child link; also, add a small constant offset
         // makes it easier to visualize the TSRs when they have very few
         // constraints
-        _opengl_object_constraint_visualizer.set(_tsr_constraint->child()->getOriginFrame(), 
+        _opengl_object_constraint_visualizer.set(_tsr_constraint->child()->getOriginFrame(), // TODO: ASK MIKE HERE
                                                  Eigen::Vector3f(h + 0.01, w + 0.01, l + 0.01));
       }
     }

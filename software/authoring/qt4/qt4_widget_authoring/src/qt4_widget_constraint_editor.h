@@ -26,6 +26,7 @@ namespace authoring {
 
   signals:
     void info_update( const QString& info );
+    void highlight_link_by_name( const QString& linkName ); 
     void constraint_selected( const QString& constraintID );
 
   public slots:

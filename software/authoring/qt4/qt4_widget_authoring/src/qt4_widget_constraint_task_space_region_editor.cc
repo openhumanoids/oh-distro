@@ -2,6 +2,9 @@
 #include <QtGui/QGridLayout>
 
 #include <authoring/qt4_widget_constraint_task_space_region_editor.h>
+#include <vector>
+#include <string>
+#include <sstream>
 
 using namespace std;
 using namespace boost;
@@ -351,6 +354,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   connect( _combo_box_child, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
   connect( _combo_box_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
 
+  connect( _combo_box_parent, SIGNAL( highlighted( int ) ), this, SLOT( _map_highlighted_parent( int ) ) );
+  connect( _combo_box_parent, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _map_highlighted_parent( int ) ) );
+
   connect( _push_button_x_min, SIGNAL( clicked() ), this, SLOT( _range_x_minimize() ) );
   connect( _push_button_x_max, SIGNAL( clicked() ), this, SLOT( _range_x_maximize() ) );
   connect( _push_button_y_min, SIGNAL( clicked() ), this, SLOT( _range_y_minimize() ) );
@@ -679,6 +685,12 @@ _range_yaw_maximize( void )
 
     return; 
 };
+
+void 
+Qt4_Widget_Constraint_Task_Space_Region_Editor::
+_map_highlighted_parent( int index ) {
+  emit highlight_parent_link_by_name( QString::fromStdString( _robot_affordances[ index ].first ) );
+}
 
 namespace authoring {
   ostream&

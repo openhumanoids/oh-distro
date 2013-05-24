@@ -311,6 +311,7 @@ _push_button_edit_pressed( void ){
       _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( dynamic_cast< Constraint_Task_Space_Region* >( _constraint ), _robot_model, _object_affordances, this );
       connect( _constraint_editor_popup, SIGNAL( description_update( const QString& ) ), this, SLOT( update_description( const QString& ) ) );
       connect( _constraint_editor_popup, SIGNAL( widget_selected ( void ) ), this, SLOT( show_visualizer( void ) ) );
+      connect( _constraint_editor_popup, SIGNAL( highlight_parent_link_by_name ( const QString& ) ), this, SIGNAL( highlight_link_by_name( const QString& ) ) );
       _constraint_editor_popup->show();
       emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
