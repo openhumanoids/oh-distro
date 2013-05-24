@@ -26,29 +26,50 @@ classdef HarnessController < DRCController
             end
             
             options.Kd=0.12*options.Kp;
+            % cascade PD qtraj controller 
             pd = SimplePDController(r,ctrl_data,options);
             ins(1).system = 1;
             ins(1).input = 1;
-            ins(2).system = 2;
+            ins(2).system = 1;
             ins(2).input = 2;
+            ins(3).system = 2;
+            ins(3).input = 2;
             outs(1).system = 2;
             outs(1).output = 1;
             sys = mimoCascade(pd,qp,[],ins,outs);
+            clear ins outs;
             
-            % cascade neck pitch control block
-            if(~strcmp(name,'seated_driving'))
-                neck = NeckControlBlock(r,ctrl_data);
-                ins(1).system = 1;
-                ins(1).input = 1;
-                ins(2).system = 1;
-                ins(2).input = 2;
-                ins(3).system = 2;
-                ins(3).input = 2;
-                outs(1).system = 2;
-                outs(1).output = 1;
-                connection.from_output = 1;
-                connection.to_input = 1;
-                sys = mimoCascade(neck,sys,connection,ins,outs);
+            if strcmp(name,'seated_driving')
+              name
+              % cascade qtraj eval block
+              qt = QTrajEvalBlock(r,ctrl_data);
+              ins(1).system = 1;
+              ins(1).input = 1;
+              ins(2).system = 2;
+              ins(2).input = 3;
+              outs(1).system = 2;
+              outs(1).output = 1;
+              connection(1).from_output = 1;
+              connection(1).to_input = 1;
+              connection(2).from_output = 2;
+              connection(2).to_input = 2;
+              sys = mimoCascade(qt,sys,connection,ins,outs);
+            else
+              % cascade neck pitch control block
+              neck = NeckControlBlock(r,ctrl_data);
+              ins(1).system = 1;
+              ins(1).input = 1;
+              ins(2).system = 1;
+              ins(2).input = 2;
+              ins(3).system = 2;
+              ins(3).input = 3;
+              outs(1).system = 2;
+              outs(1).output = 1;
+              connection(1).from_output = 1;
+              connection(1).to_input = 1;
+              connection(2).from_output = 2;
+              connection(2).to_input = 2;
+              sys = mimoCascade(neck,sys,connection,ins,outs);
             end
             
             obj = obj@DRCController(name,sys);
@@ -90,7 +111,7 @@ classdef HarnessController < DRCController
                 end
                 q_nom = d.xstar(1:getNumDOF(obj.robot));
                 q_nom([1,2,6]) = x([1,2,6]); % copy over pelvix x,y,yaw
-                q_nom(3) = x(3)-0.02; % z is harness pelvis height, which is slightly higher than standing pelvis height
+                q_nom(3) = x(3)-0.03; % z is harness pelvis height, which is slightly higher than standing pelvis height
                 
                 disp('HarnessController:publishing standing precompute request.');
                 req_msg = drc.precompute_request_t();

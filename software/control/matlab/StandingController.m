@@ -43,8 +43,10 @@ classdef StandingController < DRCController
       pd = SimplePDController(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
-      ins(2).system = 2;
+      ins(2).system = 1;
       ins(2).input = 2;
+      ins(3).system = 2;
+      ins(3).input = 2;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -56,11 +58,13 @@ classdef StandingController < DRCController
       ins(2).system = 1;
       ins(2).input = 2;
       ins(3).system = 2;
-      ins(3).input = 2;
+      ins(3).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
-      connection.from_output = 1;
-      connection.to_input = 1;
+      connection(1).from_output = 1;
+      connection(1).to_input = 1;
+      connection(2).from_output = 2;
+      connection(2).to_input = 2;
       sys = mimoCascade(neck,sys,connection,ins,outs);
       
       obj = obj@DRCController(name,sys);

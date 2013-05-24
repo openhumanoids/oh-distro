@@ -1,4 +1,4 @@
-classdef WalkingPDController < DrakeSystem
+classdef WalkingPDController < MIMODrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -17,9 +17,9 @@ classdef WalkingPDController < DrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
             
-      input_frame = r.getStateFrame;
+      input_frame = MultiCoordinateFrame({AtlasCoordinates(r),r.getStateFrame});
       coords = AtlasCoordinates(r);
-      obj = obj@DrakeSystem(0,0,input_frame.dim,coords.dim,true,true);
+      obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,coords);
 
@@ -96,16 +96,14 @@ classdef WalkingPDController < DrakeSystem
       
     end
    
-  	function y=output(obj,t,~,x)
+    function y=mimoOutput(obj,t,~,varargin)
+      q_nom = varargin{1};
+      x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
 
+      obj.ikoptions.q_nom = varargin{1};
       cdata = obj.controller_data.getData();
-      if typecheck(cdata.qtraj,'double')
-        obj.ikoptions.q_nom = cdata.qtraj;
-      else
-        obj.ikoptions.q_nom = cdata.qtraj.eval(t);
-      end
 
       try
         q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...

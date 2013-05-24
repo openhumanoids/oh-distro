@@ -1,4 +1,4 @@
-classdef SimplePDController < DrakeSystem
+classdef SimplePDController < MIMODrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -14,9 +14,9 @@ classdef SimplePDController < DrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
       
-      input_frame = r.getStateFrame;
       coords = AtlasCoordinates(r);
-      obj = obj@DrakeSystem(0,0,input_frame.dim,coords.dim,true,true);
+      input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
+      obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,coords);
 
@@ -58,17 +58,11 @@ classdef SimplePDController < DrakeSystem
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
     end
    
-  	function y=output(obj,t,~,x)   
+    function y=mimoOutput(obj,t,~,varargin)
+      q_des = varargin{1};
+      x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
-
-      cdata = obj.controller_data.getData();
-
-      if typecheck(cdata.qtraj,'double')
-        q_des = cdata.qtraj;
-      else
-        q_des = cdata.qtraj.eval(t);
-      end
       
       err_q = q_des - q;
       y = obj.Kp*err_q - obj.Kd*qd;

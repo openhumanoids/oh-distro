@@ -52,12 +52,20 @@ classdef FootstepReplanner < DrakeSystem
     end
     
     function y=output(obj,t,~,x)
+      persistent lfoot_contact_state rfoot_contact_state;
+        
       if mod(t,obj.dt)==0 % manually enforce sample time here, not the correct way to do it because states do not arrive at a reliable interval
+        if isempty(lfoot_contact_state)
+          lfoot_contact_state = false;
+        end
+        if isempty(rfoot_contact_state)
+          rfoot_contact_state = false;
+        end
         contact_data = obj.contact_est_monitor.getNextMessage(0);
         if ~isempty(contact_data)
           msg = drc.foot_contact_estimate_t(contact_data);
 
-          if msg.left_contact>0.5 && ~obj.lfoot_contact_state
+          if msg.left_contact>0.5 && ~lfoot_contact_state
             % left foot coming into contact
             cdata = obj.controller_data.getData();
             q = x(1:obj.nq); 
@@ -68,9 +76,9 @@ classdef FootstepReplanner < DrakeSystem
             diffz = lfoot_act(3) - lfoot_des(3);
 
             fprintf('LF:Adjusting footsteps by %2.4f m \n',diffz);
-            cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz;
-            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz;
-          elseif msg.right_contact>0.5 && ~obj.rfoot_contact_state
+            cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz; %% VERY INEFFICIENT
+            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT
+          elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
             cdata = obj.controller_data.getData();
             q = x(1:obj.nq); 
@@ -81,12 +89,12 @@ classdef FootstepReplanner < DrakeSystem
             diffz = rfoot_act(3) - rfoot_des(3);
 
             fprintf('RF:Adjusting footsteps by %2.4f m \n',diffz);
-            cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz;
-            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz;
+            cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz; %% VERY INEFFICIENT
+            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT
           end
 
-          obj.lfoot_contact_state = msg.left_contact>0.5;
-          obj.rfoot_contact_state = msg.right_contact>0.5;
+          lfoot_contact_state = msg.left_contact>0.5;
+          rfoot_contact_state = msg.right_contact>0.5;
         end
       end
       y=x;
