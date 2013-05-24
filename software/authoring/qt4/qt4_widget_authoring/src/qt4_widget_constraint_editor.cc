@@ -56,11 +56,11 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
   _combo_box_type->setFixedWidth( 65 );
   _push_button_edit->setFixedWidth( 50 );
   _double_spin_box_time_start->setFixedWidth( 70 );
-  _double_spin_box_time_start->setRange( 0.0, 1000000.0 );
+  _double_spin_box_time_start->setRange( 0.1, 1000000.0 );
   _double_spin_box_time_start->setSingleStep( 0.1 );
   _double_spin_box_time_start->setSuffix( " s" );
   _double_spin_box_time_end->setFixedWidth( 70 );
-  _double_spin_box_time_end->setRange( 0.0, 1000000.0 );
+  _double_spin_box_time_end->setRange( 0.1, 1000000.0 );
   _double_spin_box_time_end->setSingleStep( 0.1 );
   _double_spin_box_time_end->setSuffix( " s" );
   _line_edit_description->setFixedWidth( 395 );

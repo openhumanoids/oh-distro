@@ -35,19 +35,20 @@ namespace authoring {
     void _constraint_changed( int index );
 
   protected slots:
-  protected slots:
     void _range_x_minimize( void );
     void _range_x_maximize( void );
     void _range_y_minimize( void );
     void _range_y_maximize( void );
     void _range_z_minimize( void );
     void _range_z_maximize( void );
+/*
     void _range_roll_minimize( void );
     void _range_roll_maximize( void );
     void _range_pitch_minimize( void );
     void _range_pitch_maximize( void );
     void _range_yaw_minimize( void );
     void _range_yaw_maximize( void );
+*/
     void mark_invalid_spin_boxes( void );
     bool eventFilter(QObject *object, QEvent *event);
     void _map_highlighted_parent( int );
@@ -68,18 +69,21 @@ namespace authoring {
     QDoubleSpinBox * _double_spin_box_y_max;
     QDoubleSpinBox * _double_spin_box_z_min;
     QDoubleSpinBox * _double_spin_box_z_max;
+/*
     QDoubleSpinBox * _double_spin_box_roll_min;
     QDoubleSpinBox * _double_spin_box_roll_max;
     QDoubleSpinBox * _double_spin_box_pitch_min;
     QDoubleSpinBox * _double_spin_box_pitch_max;
     QDoubleSpinBox * _double_spin_box_yaw_min;
     QDoubleSpinBox * _double_spin_box_yaw_max;
+*/
     QPushButton * _push_button_x_min;
     QPushButton * _push_button_x_max;
     QPushButton * _push_button_y_min;
     QPushButton * _push_button_y_max;
     QPushButton * _push_button_z_min;
     QPushButton * _push_button_z_max;
+/*
     QPushButton * _push_button_roll_min;
     QPushButton * _push_button_roll_max;
     QPushButton * _push_button_pitch_min;
@@ -92,20 +96,21 @@ namespace authoring {
     QDoubleSpinBox * _double_spin_box_child_to_constraint_x;
     QDoubleSpinBox * _double_spin_box_child_to_constraint_y;
     QDoubleSpinBox * _double_spin_box_child_to_constraint_z;
-
+*/
     double _double_spin_box_x_min_cached;
     double _double_spin_box_x_max_cached;
     double _double_spin_box_y_min_cached;
     double _double_spin_box_y_max_cached;
     double _double_spin_box_z_min_cached;
     double _double_spin_box_z_max_cached;
+/*
     double _double_spin_box_roll_min_cached;
     double _double_spin_box_roll_max_cached;
     double _double_spin_box_pitch_min_cached;
     double _double_spin_box_pitch_max_cached;
     double _double_spin_box_yaw_min_cached;
     double _double_spin_box_yaw_max_cached;
-
+*/
   private:
 
   };
