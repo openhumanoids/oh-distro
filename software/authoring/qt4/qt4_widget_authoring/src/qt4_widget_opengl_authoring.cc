@@ -164,11 +164,17 @@ update_constraint_visualizer( Constraint* constraint) {
         double w = _tsr_constraint->ranges()[1].second - _tsr_constraint->ranges()[1].first;
         double l = _tsr_constraint->ranges()[2].second - _tsr_constraint->ranges()[2].first;
 
+        double x = (_tsr_constraint->ranges()[0].second + _tsr_constraint->ranges()[0].first) / 2.0;
+        double y = (_tsr_constraint->ranges()[1].second + _tsr_constraint->ranges()[1].first) / 2.0;
+        double z = (_tsr_constraint->ranges()[2].second + _tsr_constraint->ranges()[2].first) / 2.0;
+
+        KDL::Frame tsr_frame = _tsr_constraint->child()->getOriginFrame() * KDL::Frame( KDL::Vector( x, y, z ) );
+
         _opengl_object_constraint_visualizer.set_visible( true );
         // Use the frame of the child link; also, add a small constant offset
         // makes it easier to visualize the TSRs when they have very few
         // constraints
-        _opengl_object_constraint_visualizer.set(_tsr_constraint->child()->getOriginFrame(), // TODO: ASK MIKE HERE
+        _opengl_object_constraint_visualizer.set(tsr_frame, // TODO: ASK MIKE HERE
                                                  Eigen::Vector3f(h + 0.01, w + 0.01, l + 0.01));
       }
     }
