@@ -526,12 +526,12 @@ classdef QPController < MIMODrakeSystem
       
       % compute V,Vdot for controller status updates
       if (nc>0)
-        V = x_bar'*S*x_bar + s1'*x_bar;
+        V = x_bar'*S*x_bar + s1'*x_bar;  % missing affine term here...
         qdd = zeros(nq,1);
         qdd(obj.free_dof) = qdd_free;
         qdd(obj.con_dof) = alpha(1:nq_con);
         
-        Vdot = (x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
+        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
         setField(obj.controller_data,'V',V);
         setField(obj.controller_data,'Vdot',Vdot);
       
