@@ -31,6 +31,14 @@ class StereoB
     uint8_t* getColor(){ // assumed to be grey
       return _left.data; 
     }
+    
+    cv::Mat getDisparityMat(){
+      return _disp;
+    };
+    
+    void setDisparityMat(cv::Mat &disp_in ){
+      _disp = disp_in;
+    };
 
     void setScale(float scale_in){
       vSCALE = scale_in;
