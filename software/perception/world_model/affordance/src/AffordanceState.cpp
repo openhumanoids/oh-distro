@@ -218,7 +218,9 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
 
   vector<visualization_utils::LinkFrameStruct> linkGeometryTfs = asGLKBody->get_link_geometry_tfs();
 
-  vector<string> linkGeomNames = asGLKBody->get_link_geometry_names();
+  //vector<string> linkGeomNames = asGLKBody->get_link_geometry_names();
+
+  std::map<string, shared_ptr<otdf::Link> > otdfLinksMap = asGLKBody->get_otdf_links_map();
 
   //vector<string> linkGeometryNames = asGLKBody.get_link_geometry_names();
       for(uint i = 0; i < linkGeometryTfs.size(); i++)
@@ -232,17 +234,45 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
           throw runtime_error("get link geometry failed");
         }
 
-      //---get the link name,
+      //---get the link name and collision group name
       string nextLinkName;
       if (!asGLKBody->get_associated_link_name(nextLgTf.name, nextLinkName))
         throw runtime_error("get_associated_link_name failed");
+      
+      shared_ptr<otdf::Link> link = otdfLinksMap[nextLinkName];     
+      
+      if (link == shared_ptr<otdf::Link>())
+        {
+          cout << "\n link was null" << endl;
+          continue;
+        }
+
+      string collisionGroupName;
+      if (link->collision != shared_ptr<otdf::Collision>())
+        {
+          cout << "\n first case " << endl;
+          collisionGroupName = link->collision->group_name; 
+          cout << "\n end first case" << endl;
+        }
+      else
+        {
+          
+          for(std::map<string, shared_ptr<vector<shared_ptr<otdf::Collision> > > >::iterator iter = link->collision_groups.begin();
+              iter != link->collision_groups.end();
+              ++iter)
+            {
+              collisionGroupName = (*(iter->second))[0]->group_name;
+              break;
+            }
+        }
       
 
       //-compute the world pose 
       KDL::Frame inWorldFrame = getOriginFrame()*nextLgTf.frame;
 
       //add
-      affs.push_back(geometryToAff(nextGeom, inWorldFrame, nextLinkName));
+      affs.push_back(geometryToAff(nextGeom, inWorldFrame, 
+                                   nextLinkName + collisionGroupName));
     }
   return true;
 }
