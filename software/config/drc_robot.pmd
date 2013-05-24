@@ -23,7 +23,7 @@ group "a.1.core" {
         exec = "roslaunch translators cheating.launch";
         host = "robot";
     }
-    cmd "viewer" {
+    cmd "viewer-REMOVEFORCOMP" {
         exec = "drc-viewer";
         host = "robot";
     }
@@ -86,6 +86,10 @@ group "a.1.core" {
     cmd "drc-frequency" {
         exec = "drc-frequency";
         host = "extra";
+    }
+    cmd "image-rx-REMOVEFORCOMP" {
+        exec = "drc-image-receive";
+        host = "robot";
     }
 }
 
