@@ -96,6 +96,7 @@ private:
 	bool hist_len_set;
 	unsigned long max_hist_utime;
 	unsigned long period;
+	int firstpasses;
 
 	Eigen::VectorXd cum_sum;
 	Eigen::VectorXd cum_sum_buf;

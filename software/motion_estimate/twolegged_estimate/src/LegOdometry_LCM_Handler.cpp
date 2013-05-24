@@ -40,12 +40,12 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
 	
+	rate_changer.setSize(3);
 	rate_changer.setDesiredPeriod_us(0,4500);
 
 	for (int i=0;i<3;i++) {
 		median_filter[i].setLength(15);
 	}
-
 
 #ifdef LOG_LEG_TRANSFORMS
 	for (int i=0;i<4;i++) {
@@ -244,8 +244,13 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 
 #else
 
-	left_force = lpfilter[0].processSample(msg->contacts.contact_force[0].z);
-	right_force = lpfilter[1].processSample(msg->contacts.contact_force[1].z);
+
+	//std::cout << "FOOT_CONTACT_FORCES: " << msg->contacts.contact_force[0].z << ", " << msg->contacts.contact_force[1].z << std::endl;
+
+	left_force  = (double)lpfilter[0].processSample(msg->contacts.contact_force[0].z);
+	right_force = (double)lpfilter[1].processSample(msg->contacts.contact_force[1].z);
+
+	//std::cout << "set as: " << left_force << ", " << right_force << std::endl;
 
 #endif
 
@@ -276,10 +281,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	int joints_were_updated=0;
 
 	double left_force, right_force;
+
 	ParseFootForces(_msg, left_force, right_force);
 
 	DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	if (_switches->publish_footcontact_states) {
+	  std::cout << "Foot forces are: " << left_force << ", " << right_force << std::endl;
 	  PublishFootContactEst(_msg->utime);
 	}
 	
@@ -805,17 +812,25 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	double angles[3];
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
 	
-	Eigen::Vector3d E;
-	E = InertialOdometry::QuaternionLib::q2e(q);
-	
-	for (int i=0;i<3;i++) {
-	  rates[i] = lpfilter[i+2].processSample(msg->angular_velocity[i]); // +2 since the foot force values use the first two filters
-	  angles[i] = lpfilter[i+5].processSample(E(i));
+	// To filter or not to filter the angular rates
+	if (false) {
+		Eigen::Vector3d E;
+		E = InertialOdometry::QuaternionLib::q2e(q);
+
+		for (int i=0;i<3;i++) {
+		  rates[i] = lpfilter[i+2].processSample(msg->angular_velocity[i]); // +2 since the foot force values use the first two filters
+		  angles[i] = lpfilter[i+5].processSample(E(i));
+		  q = InertialOdometry::QuaternionLib::e2q(E);
+		}
+	} else {
+		for (int i=0;i<3;i++) {
+			rates[i] = msg->angular_velocity[i]; // +2 since the foot force values use the first two filters
+		}
 	}
 	
 	//Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
-	q = InertialOdometry::QuaternionLib::e2q(E);
+
 
 	//Eigen::Vector3d rates_w;
 	//rates_w = InertialOdometry::QuaternionLib::q2C(q).transpose()*rates_b;

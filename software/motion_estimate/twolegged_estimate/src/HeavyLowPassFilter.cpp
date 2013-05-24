@@ -80,7 +80,7 @@ double HeavyLowPassFilter::processSample(double sample) {
 	
 	// accumulate the new composite value from all the filter coefficient and history values
 	for (int i=0;i<getTapSize();i++) {
-		accumulator += filter_coeffs_h[getTapSize()-i] * samples_buf.at(i);
+		accumulator += filter_coeffs_h[getTapSize()-i-1] * samples_buf.at(i);
 	}
 	
 	return accumulator;

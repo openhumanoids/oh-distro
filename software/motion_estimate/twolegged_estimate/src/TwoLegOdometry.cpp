@@ -37,12 +37,13 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	accel.setSize(3);
 	pelvis_vel_diff.setSize(3);
 	d_pelvis_vel_diff.setSize(3);
-	Eigen::VectorXd w(5);
-	Eigen::VectorXd ut(5);
-	w << .25,.15,.25,.2,.15;
-	ut << 5000, 10000, 20000, 30000, 50000;
+	//Eigen::VectorXd w(5);
+	//Eigen::VectorXd ut(5);
+	//w << .25,.15,.25,.2,.15;
+	//ut << 5000, 10000, 20000, 30000, 50000;
 	//d_pelvis_vel_diff.InitializeTaps(10, 5000, w,ut);
 	if (!dont_init_hack) {
+		std::cout << "Attempting to read parameters from file.\n";
 		d_pelvis_vel_diff.ParameterFileInit();
 	}
 
@@ -625,8 +626,10 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
 
-	unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-	//unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+	//unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+	unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+
+	//std::cout << "diff vals: " << unfiltered_vel.transpose() << std::endl;
 
 	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
@@ -660,7 +663,7 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
 
 	// with or without filtering
 	if (true) {
-		local_velocities = unfiltered_vel;
+		overwritePelvisVelocity(unfiltered_vel);
 	} else {
 		for (int i=0;i<3;i++) {
 			local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));

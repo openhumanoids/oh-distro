@@ -138,24 +138,34 @@ int main() {
 
 	DistributedDiff diffs;
 	diffs.setSize(1);
-	Eigen::VectorXd w(5);
-	Eigen::VectorXd ut(5);
+
+	int tapsize = 12;
+	Eigen::VectorXd w(tapsize);
+	Eigen::VectorXd ut(tapsize);
 
 	Eigen::VectorXd sample(1);
 
 	w.setZero();
-	w(4) = 1.;
-	ut << 1E6,2E6,3E6, 4E6, 5E6;
+	w(0) = .55;
+	w(3) = .25;
+	w(7) = .05;
+	w(8) = .05;
+	w(9) = .05;
+	w(11) = .05;
+
+	for (int i=1;i<tapsize+1;i++) {
+		ut(i-1) = i*1E6;
+	}
 
 
-	diffs.InitializeTaps(5, 1E6, w,ut);
+	diffs.InitializeTaps(tapsize, 1E6, w,ut);
 	//diffs.ParameterFileInit();
 
 	assert(diffs.ready());
 
-	for (int i=1;i<7;i++) {
-		sample << i;
-		cout << " | " << diffs.diff(i*1E6,sample) << "\n";
+	for (int i=1;i<20;i++) {
+		sample << 10/(double)i;
+		cout << "Returned diff: " << diffs.diff(i*1E6,sample) << "\n";
 	}
 
 

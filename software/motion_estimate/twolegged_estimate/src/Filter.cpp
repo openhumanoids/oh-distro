@@ -76,10 +76,11 @@ double LowPassFilter::processSample(double sample) {
 	// The new sample has been added to the buffer, now we must use the values in the buffer with the coefficients to achieve the IR filtering capabibliy
 	
 	double accumulator = 0.;
-	
+	//std::cout << "value in: " << sample << "\n";
 	// accumulate the new composite value from all the filter coefficient and history values
 	for (int i=0;i<FILTER_TAP_SIZE;i++) {
-		accumulator += filter_coeffs[FILTER_TAP_SIZE-i] * samples_buf.at(i);
+		//std::cout << filter_coeffs[FILTER_TAP_SIZE-i-1]* samples_buf.at(i) << " | ";
+		accumulator += filter_coeffs[FILTER_TAP_SIZE-i-1] * samples_buf.at(i);
 	}
 	
 	return accumulator;
