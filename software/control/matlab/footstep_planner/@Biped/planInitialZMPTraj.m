@@ -77,7 +77,7 @@ while 1
   step.(s_foot).orig = repmat(step_locations.(s_foot)(1:6, istep.(s_foot)), 1, length(tstep));
 
   % Release orientation constraints on the foot during the middle of the swing
-  % step.(m_foot).orig(4:6,3:end-3) = nan;
+  step.(m_foot).orig(4:5,3:end-3) = nan;
 
   step_duration = (tstep(end) - tstep(1));
   zmp_tstep = ts(end) + [takeoff_time, mean([takeoff_time, landing_time]),...
