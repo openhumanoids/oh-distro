@@ -111,9 +111,19 @@ public:
 	if (lastUpdateTime < 0) continue;
 	int dtSec = (currentTime - lastUpdateTime)/1000000;
 	if (dtSec > 0) {
-	  std::string text = static_cast<std::ostringstream*>
-	    (&(std::ostringstream() << dtSec) )->str();
-	  text = "(" + text + "s)";
+	  std::string text;
+          Gdk::Color color;
+          if (dtSec <= 60) {
+            text = static_cast<std::ostringstream*>
+              (&(std::ostringstream() << dtSec) )->str();
+            text = "(" + text + "s)";
+            color.set_rgb_p(0, 0, 0);
+          }
+          else {
+            text = "(>60s)";
+            color.set_rgb_p(0.7, 0, 0);
+          }
+          iter->second.mLabel->modify_fg(Gtk::STATE_NORMAL, color);
 	  iter->second.mLabel->set_text(text);
 	}
       }
@@ -219,12 +229,19 @@ public:
                "CAMERA_LHANDLEFT_RX", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
                "CAMERA_RHANDLEFT_RX", ChannelTypeAnonymous);
+    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    
+    /*
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
                "EST_ROBOT_STATE", ChannelTypeAnonymous);
+    */
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
                "AFFORDANCE_LIST", ChannelTypeAnonymous);
+    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    /*
     addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog",
                "MAP_CATALOG", ChannelTypeAnonymous);
+    */
     /*
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree",
                "MAP_OCTREE", ChannelTypeAnonymous);
@@ -241,6 +258,7 @@ public:
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     addControl(drc::data_request_t::TERRAIN_COST, "Terrain Cost",
                "TERRAIN_DIST_MAP", ChannelTypeAnonymous);
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
