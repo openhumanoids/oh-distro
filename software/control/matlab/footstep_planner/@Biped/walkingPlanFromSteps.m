@@ -12,10 +12,14 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 com = getCOM(biped,kinsol);
 zmap = getTerrainHeight(biped,com(1:2));
 limp = LinearInvertedPendulum(com(3)-zmap);
-% get COM traj from desired ZMP traj
-comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
-[~,V] = ZMPtracker(limp,zmptraj);
+% get COM traj from desired ZMP traj
+[c,V] = ZMPtracker(limp,zmptraj);
+comtraj = ZMPplanFromTracker(limp,com(1:2),[0;0],zmptraj,c);
+
+% comf = mean([footsteps(end).pos(1:2), footsteps(end-1).pos(1:2)], 2);
+% comtraj = ZMPplan(limp,com(1:2),comf,zmptraj);
+% V = struct('S', [], 's1', []);
 
 % time spacing of samples for IK
 ts = 0:0.08:zmptraj.tspan(end);
