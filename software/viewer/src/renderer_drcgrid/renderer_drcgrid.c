@@ -174,14 +174,20 @@ grid_draw (BotViewer *viewer, BotRenderer *renderer)
 
         glEnable (GL_POLYGON_OFFSET_FILL);
         glPolygonOffset (2.0, 2.0);
+    
+        glPushMatrix();
+        glScalef (1, 1, 1/box_size);
+	glTranslatef (0,0, -10.0);
+	
 
         glBegin(GL_QUADS);
         glVertex2d ( 1,  1);
         glVertex2d ( 1, -1);
         glVertex2d (-1, -1);
         glVertex2d (-1,  1);
-
         glEnd ();
+	glPopMatrix();	
+	
         glDisable (GL_POLYGON_OFFSET_FILL);
     }
 
