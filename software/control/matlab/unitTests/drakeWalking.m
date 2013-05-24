@@ -68,6 +68,7 @@ ctrl_data = SharedDataHandle(struct(...
   'R',zeros(2),...
   'S',V.S.eval(0),... % always a constant
   's1',V.s1,...
+  's2',V.s2,...
   'x0',[zmptraj.eval(T);0;0],...
   'u0',zeros(2,1),...
   'comtraj',comtraj,...
@@ -99,12 +100,18 @@ sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD trajectory controller 
-options.q_nom = q0;
-pd = WalkingPDController(r,ctrl_data,options);
+pd = WalkingPDController(r,ctrl_data);
+ins(1).system = 1;
+ins(1).input = 1;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],[],outs);
-clear outs;
+sys = mimoFeedback(pd,sys,[],[],ins,outs);
+clear ins outs;
+
+qt = QTrajEvalBlock(r,ctrl_data);
+outs(1).system = 2;
+outs(1).output = 1;
+sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
 output_select(1).system=1;
