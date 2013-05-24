@@ -194,14 +194,13 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
     if(data_usage_log_.is_open())
     {
-        bool first = true;
+//        data_usage_log_ << app_.get_current_utime();
+        data_usage_log_ << "UTIME";
+      
         for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
         {
-            if(!first) data_usage_log_ << ",";
-            else first = false;
-            
             bool robot2base = (node_ == ROBOT) ? sent_data_usage_.count(it->second) : received_data_usage_.count(it->second);
-            data_usage_log_ << it->first << (robot2base ? 0 : 1);
+            data_usage_log_ << "," << it->first << (robot2base ? 0 : 1);
         }
         data_usage_log_ << std::endl;
     }
@@ -633,14 +632,11 @@ void DRCShaper::post_bw_stats()
 
     if(data_usage_log_.is_open())
     {
-        bool first = true;
+        data_usage_log_ << app_.get_current_utime();
         for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
         {
-            if(!first) data_usage_log_ << ",";
-            else first = false;
-            
             int bytes = (sent_data_usage_.count(it->second)) ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
-            data_usage_log_ << bytes;
+            data_usage_log_ << "," << bytes;
         }
         data_usage_log_ << std::endl;
     }
