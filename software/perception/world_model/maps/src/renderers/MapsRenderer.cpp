@@ -729,27 +729,41 @@ public:
     data->mVisible = true;
     data->mLatestTransform = Eigen::Isometry3f::Identity();
     if (data->mId != 1) {
-      data->mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                     (double)rand()/RAND_MAX,
-                                     (double)rand()/RAND_MAX);
       switch(iId) {
       case drc::data_request_t::OCTREE_SCENE:
-        data->mLabel = "Octree Scene";  break;
+        data->mLabel = "Octree Scene";
+        data->mColor = Eigen::Vector3f(0,0,0);
+        break;
       case drc::data_request_t::HEIGHT_MAP_SCENE:
-        data->mLabel = "Heightmap Scene";  break;
+        data->mLabel = "Heightmap Scene";
+        data->mColor = Eigen::Vector3f(1,0,0);
+        break;
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
-        data->mLabel = "Heightmap Corridor";  break;
+        data->mLabel = "Heightmap Corridor";
+        data->mColor = Eigen::Vector3f(1,0,0);
+        break;
       case drc::data_request_t::HEIGHT_MAP_COARSE:
-        data->mLabel = "Heightmap Coarse";  break;
+        data->mLabel = "Heightmap Coarse";
+        data->mColor = Eigen::Vector3f(1,0.5,0);
+        break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
-        data->mLabel = "Depthmap Scene";  break;
+        data->mLabel = "Depthmap Scene";
+        data->mColor = Eigen::Vector3f(0.5,0,0.5);
+        break;
       case drc::data_request_t::DEPTH_MAP_WORKSPACE:
-        data->mLabel = "Depthmap Workspace";  break;
+        data->mLabel = "Depthmap Workspace";
+        data->mColor = Eigen::Vector3f(0,0,1);
+        break;
       case 1000:
-        data->mLabel = "Heightmap Controller"; break;
+        data->mLabel = "Heightmap Controller";
+        data->mColor = Eigen::Vector3f(0.5,0,0);
+        break;
       default:
         data->mLabel = static_cast<std::ostringstream*>
           (&(std::ostringstream() << data->mId) )->str();
+        data->mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
+                                       (double)rand()/RAND_MAX,
+                                       (double)rand()/RAND_MAX);
         break;
       }
     }
