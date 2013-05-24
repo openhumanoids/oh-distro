@@ -127,7 +127,7 @@ namespace InertialOdometry
 
   Eigen::Vector3d QuaternionLib::q2e(const Eigen::Quaterniond &q) {
 	  Eigen::Vector3d E;
-	  
+	  //std::cout << "quat is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
 	  q2e(q,E);
 	  /*
 	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
@@ -149,7 +149,7 @@ namespace InertialOdometry
   }
   
   //This function is specific to NED and forward right down coordinate frames
-  void QuaternionLib::q2e(const Eigen::Vector4d &q_, Eigen::Vector3d &E)
+  void QuaternionLib::q2e_(const Eigen::Vector4d &q_, Eigen::Vector3d &E)
   {
   	//Euler = [phi;theta;psi];
 
@@ -189,22 +189,22 @@ namespace InertialOdometry
   }
   
   
-  void QuaternionLib::q2e_(const Eigen::Vector4d &q, Eigen::Vector3d &E) 
+  void QuaternionLib::q2e(const Eigen::Vector4d &q, Eigen::Vector3d &E)
   {
 	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
-	  std::cout << "q2e received q: " << q.transpose() << "\n";
-	  double roll_a = 2 * (q(0)*q(1) + q(2)*q(3));
-	  double roll_b = 1 - 2 * (q(1)*q(1) + q(2)*q(2));
+	  //std::cout << "q2e received q: " << q.transpose() << "\n";
+	  double roll_a = 2. * (q(0)*q(1) + q(2)*q(3));
+	  double roll_b = 1. - 2. * (q(1)*q(1) + q(2)*q(2));
       E(0) = atan2 (roll_a, roll_b);
 
-      double pitch_sin = 2 * (q(0)*q(2) - q(3)*q(1));
+      double pitch_sin = 2. * (q(0)*q(2) - q(3)*q(1));
       E(1) = asin (pitch_sin);
 
-      double yaw_a = 2 * (q(0)*q(3) + q(1)*q(2));
-      double yaw_b = 1 - 2 * (q(2)*q(2) + q(3)*q(3));
+      double yaw_a = 2. * (q(0)*q(3) + q(1)*q(2));
+      double yaw_b = 1. - 2. * (q(2)*q(2) + q(3)*q(3));
       E(2) = atan2 (yaw_a, yaw_b);
       
-      std::cout << "Returning E angles: " << E.transpose() << std::endl;
+      //std::cout << "Returning E angles: " << E.transpose() << std::endl;
       
       /*
       
@@ -240,7 +240,10 @@ namespace InertialOdometry
 	  mat.setZero();
 	  q_pass.setZero();
 	  
-	  q_pass << q_.w(), q_.x(), q_.y(), q_.z();
+	  q_pass(0) = q_.w();
+	  q_pass(1) = q_.x();
+	  q_pass(2) = q_.y();
+	  q_pass(3) = q_.z();
 	  
 	  q2C(q_pass, mat);
 	  
@@ -258,20 +261,75 @@ namespace InertialOdometry
 	  const double y = q_(2);
 	  const double z = q_(3);
 	  
-	  C(0,0) = w*w + x*x - y*y - z*z;
-	  C(1,0) = 2.*(x*y - w*z);
-	  C(2,0) = 2.*(w*y + x*z);
-	  C(1,1) = w*w - x*x + y*y - z*z;
-	  C(0,1) = 2.*(x*y + w*z);
-	  C(2,1) = 2.*(y*z - w*x);
-	  C(2,2) = w*w - x*x - y*y + z*z;
-	  C(0,2) = 2.*(x*z - w*y);
-	  C(1,2) = 2.*(w*x + y*z);
-	  // confirm that this function generates a to b or b to a rotation, this function may need a transpose to generate the correct matrix
-	  //std::cout << "TODO: QuaternionLib::q2C(..) is UNTESTED" << std::endl;
 	  
-	  // TODO -- confirm that the rows and columns of the rotation matrix that is computed by this function maintains the DCM unity constraints
+	  if (false) {
+		  // something is not working with this transform
+		  // It seems the diagonal elements are specified first. Not following continuous numbering
+
+
+		  C(0,0) = w*w + x*x - y*y - z*z;
+		  C(0,1) = 2.*(x*y - w*z);
+		  C(0,2) = 2.*(w*y + x*z);
+		  C(1,0) = w*w - x*x + y*y - z*z;
+		  C(1,1) = 2.*(x*y + w*z);
+		  C(1,2) = 2.*(y*z - w*x);
+		  C(2,0) = w*w - x*x - y*y + z*z;
+		  C(2,1) = 2.*(x*z - w*y);
+		  C(2,2) = 2.*(w*x + y*z);
+
+		  // confirm that this function generates a to b or b to a rotation, this function may need a transpose to generate the correct matrix
+		  //std::cout << "TODO: QuaternionLib::q2C(..) is UNTESTED" << std::endl;
+
+		  // TODO -- confirm that the rows and columns of the rotation matrix that is computed by this function maintains the DCM unity constraints
+	  } else {
+
+		// DRC bot_frames
+
+		double quat[4];
+		double rot[9];
+
+		quat[0] = q_(0);
+		quat[1] = q_(1);
+		quat[2] = q_(2);
+		quat[3] = q_(3);
+
+
+		double norm = quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] + quat[3]*quat[3];
+		if (fabs(norm) < 1e-10) {
+			std::cerr << "QuaternionLib::q2C -- not a unit quaternion\n";
+
+		}
+
+		norm = 1/norm;
+		double x = quat[1]*norm;
+		double y = quat[2]*norm;
+		double z = quat[3]*norm;
+		double w = quat[0]*norm;
+
+		double x2 = x*x;
+		double y2 = y*y;
+		double z2 = z*z;
+		double w2 = w*w;
+		double xy = 2*x*y;
+		double xz = 2*x*z;
+		double yz = 2*y*z;
+		double wx = 2*w*x;
+		double wy = 2*w*y;
+		double wz = 2*w*z;
+
+		rot[0] = w2+x2-y2-z2;  rot[1] = xy-wz;  rot[2] = xz+wy;
+		rot[3] = xy+wz;  rot[4] = w2-x2+y2-z2;  rot[5] = yz-wx;
+		rot[6] = xz-wy;  rot[7] = yz+wx;  rot[8] = w2-x2-y2+z2;
+
+		for (int i=0;i<3;i++) {
+			for (int j=0;j<3;j++) {
+				C(i,j) = rot[3*i+j]; // Eigen is column major
+			}
+		}
+	  }
 	  
+	  //std::cout << C <<std::endl;
+
 	  return;
   }
   Eigen::Quaterniond QuaternionLib::C2q(const Eigen::Matrix<double, 3, 3> &C) {
@@ -419,8 +477,11 @@ namespace InertialOdometry
   }
   
   Eigen::Vector3d QuaternionLib::C2e(const Eigen::Matrix<double, 3, 3> &C) {
+
 	  Eigen::Quaterniond q(C);
 	  
+	  //std::cout << "Q at this point is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
+
 	  return q2e(q);
   }
       

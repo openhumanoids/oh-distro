@@ -23,7 +23,7 @@ void signalHandler( int signum ){
   try{
     _legs_motion_estimate->terminate();
   } catch (std::exception &e){
-    std::cout << "Exception occured during close out\n";
+    std::cout << "Exception occurred during close out\n";
   }
   // terminate program  
 

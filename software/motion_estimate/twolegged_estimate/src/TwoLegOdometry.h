@@ -65,6 +65,7 @@ class TwoLegOdometry {
 		double temp_max_testing[3];
 		
 		
+
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
 	    drc::transform_t pelvis_to_left;
@@ -159,6 +160,10 @@ class TwoLegOdometry {
 		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis);
 		void overwritePelvisVelocity(const Eigen::Vector3d &set_velocity);
 
+
+		// TODO -- remove this, only for testing
+		Eigen::Vector3d truth_E;
+		void setTruthE(const Eigen::Vector3d &tE);
 };
 
 

@@ -297,6 +297,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	true_pelvis.translation().x() = _msg->origin_position.translation.x;
 	true_pelvis.translation().y() = _msg->origin_position.translation.y;
 	true_pelvis.translation().z() = _msg->origin_position.translation.z;
+
+	// TODO -- This is to be removed, only using this for testing
+	_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(true_pelvis_q));
 #endif
 
 	// Here we start populating the estimated robot state data
@@ -527,6 +530,8 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	// estimated orientation 
     Eigen::Quaterniond output_q(currentPelvis.linear()); // This is worth checking again
     
+    std::cout << "CHECKING ROTATIONS: " << 57.29*(_leg_odo->truth_E-InertialOdometry::QuaternionLib::q2e(output_q)).norm() << std::endl;
+
     true_q.w() = msg->origin_position.rotation.w;
     true_q.x() = msg->origin_position.rotation.x;
     true_q.y() = msg->origin_position.rotation.y;
@@ -722,6 +727,14 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
   // The true states are
   stateMessage_to_stream(msg, ss);
   stateMessage_to_stream(est_msgout, ss);
+
+  {
+  Eigen::Vector3d elogged;
+  elogged = InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(est_msgout->origin_position.rotation.w, est_msgout->origin_position.rotation.x, est_msgout->origin_position.rotation.y, est_msgout->origin_position.rotation.z));
+
+  std::cout << "logged: " << (_leg_odo->truth_E - elogged).norm() << std::endl;
+
+  }
 
   // adding timestamp a bit late, sorry
   ss << msg->utime << ", ";
@@ -1063,8 +1076,10 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  //Eigen::Matrix<double,3,3> leftC, rightC;
 	  //tempq.setIdentity();
 	  
-	  if (false) {
+	  // TODO -- clear this if your are happy with it working
+	  if (true) {
 
+		  /*
 		  left.translation().x() = transform_it_lf->second.translation.x;
 		  left.translation().y() = transform_it_lf->second.translation.y;
 		  left.translation().z() = transform_it_lf->second.translation.z;
@@ -1072,6 +1087,13 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 		  right.translation().x() = transform_it_rf->second.translation.x;
 		  right.translation().y() = transform_it_rf->second.translation.y;
 		  right.translation().z() = transform_it_rf->second.translation.z;
+		  */
+
+		  left.setIdentity();
+		  right.setIdentity();
+
+		  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
+		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
 		  left.rotate(leftq); // with quaternion
 		  right.rotate(rightq);
@@ -1082,8 +1104,11 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
 		  // TODO -- confirm the use of transpose() convert the rotation matrix into the correct frae, as this may be in the q2C function..
-		  left.linear() = InertialOdometry::QuaternionLib::q2C(leftq).transpose(); // note Isometry3d.rotation() is still marked as "experimental"
-		  right.linear() = InertialOdometry::QuaternionLib::q2C(rightq).transpose();
+		  //left.linear() = InertialOdometry::QuaternionLib::q2C(leftq).transpose(); // note Isometry3d.rotation() is still marked as "experimental"
+		  //right.linear() = InertialOdometry::QuaternionLib::q2C(rightq).transpose();
+		  left.linear() = InertialOdometry::QuaternionLib::q2C(leftq); // note Isometry3d.rotation() is still marked as "experimental"
+		  right.linear() = InertialOdometry::QuaternionLib::q2C(rightq);
+
 	  }
 
 

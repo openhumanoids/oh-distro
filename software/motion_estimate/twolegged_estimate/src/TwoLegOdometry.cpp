@@ -141,6 +141,10 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	Eigen::Isometry3d pelvis;
 	pelvis = getPelvisFromStep();
 	
+	// Here we going to overwrite the pelvis rotation IMU angles
+	//std::cout << "Error would be: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::q2e(local_frame_orientation)).norm() << std::endl;
+
+
 	if (false) {
 		double pos[3];
 
@@ -165,6 +169,8 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 state TwoLegOdometry::getSecondaryFootState() {
 	state secondaryfoot_state;
 	
+	std::cerr << "TwoLegOdometry::getSecondaryFootState -- IS NOT READY TO BE USED\n";
+
 	//secondaryfoot_state = ??
 	
 	return secondaryfoot_state;
@@ -323,6 +329,8 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   //std::cout << "Foot at this point is: " << newstep.foot << std::endl;
 
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
+	  std::cout << "PELVIS AT STEP: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::C2e(newstep.footprintlocation.rotation())).transpose() << std::endl;
+
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
 	  // footsteps have the correct yaw angle when they go into the footstep list -- positive is CCW, positive around +Z
@@ -402,7 +410,7 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
 		return left_to_pelvis;
 
 	// TODO -- This shou;ld be an exception
-	std::cout << "TwoLegOdometry::getSecondaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC\n";
+	std::cerr << "TwoLegOdometry::getSecondaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC\n";
 	return Eigen::Isometry3d();
 }
 
@@ -412,11 +420,12 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 	if (footsteps.lastFoot() == RIGHTFOOT)
 		return right_to_pelvis;
 
-	// TODO -- This should be an exception
-	std::cout << "TwoLegOdometry::getPrimaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC -- foot here: " << footsteps.lastFoot() << "\n";
+	std::cerr << "TwoLegOdometry::getPrimaryFootToPelvis() THIS SHOULD NEVER HAPPEN, FEET OUT OF SYNC -- foot here: " << footsteps.lastFoot() << "\n";
 	return Eigen::Isometry3d();
 }
 
+
+// TODO -- Clean up this function
 Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q_RollPitch, const Eigen::Quaterniond &q_Yaw) {
 	Eigen::Vector3d E_rp;
 	Eigen::Vector3d E_y;
@@ -427,11 +436,14 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 	E_rp = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
 	E_y  = InertialOdometry::QuaternionLib::q2e(q_Yaw);
 	
-	
+	// Compare the conversions here to the truth message data
+	//if ((truth_E - E_rp).norm() > 0.02) {
+		//std::cout << "ROTATION ISSUE: " << (truth_E(2) - E_rp(2)) << std::endl;
+	//}
+
 	Eigen::Quaterniond return_q;
 	
 	//E_rp(1) = 1.;//its drawing what i expect, but requires a transpose on the .linear() from Eigen::Isometry3d testing higher up..
-	
 	//std::cout << "Roll and Pitch and yaw from ahrs: " << E_rp.transpose() << std::endl;
 	
 	// Only use the yaw angle from the leg kinematics
@@ -444,10 +456,13 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 	//std::cout << "Merge: " << (E_lk + E_imu).transpose() << std::endl;
 	
 	Eigen::Vector3d output_E;
-	output_E = (E_rp + E_y);
-	
-	//Eigen::Vector3d output_E( 0.,0.,0.);
-	
+	if (false) {
+		output_E = (E_rp + E_y);
+	} else {
+		// use only the IMU angles
+		output_E = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
+	}
+	//Eigen::Vector3d output_E(0., 0., 0.);
 	//std::cout << "Set E to: " << output_E.transpose() << std::endl;
 	//std::cout << output_E(2) << std::endl;
 	
@@ -484,12 +499,15 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	//std::cout << "Add: " << add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation().transpose() << "\n";
 	
 	Eigen::Isometry3d returnval;
-	returnval = add(footsteps.getLastStep(),getPrimaryFootToPelvis());
 
+	returnval.setIdentity();
 
-	//std::cout << "Returning yaw:\n" << InertialOdometry::QuaternionLib::C2e(returnval.linear())(2) << std::endl;
-	//std::cout << "Returning linear:\n" << returnval.linear() << "\n";
-	
+	returnval.translation() = add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation();
+
+	returnval.rotate(local_frame_orientation);
+
+	//std::cout << "computed orientation err: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::C2e(returnval.rotation())).transpose() << std::endl;
+
 	return returnval;
 }
 
@@ -506,7 +524,7 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
 		break;
 	default:
-		std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::AccumulateFootPosition()" << std::endl;
+		std::cerr << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::AccumulateFootPosition()" << std::endl;
 		break;
 	}
 	
@@ -538,6 +556,10 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 }
 
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
+
+
+  std::cout << "Setting the pelvis with error: " << 57.29*(InertialOdometry::QuaternionLib::C2e(transform.rotation()) - truth_E).transpose() << std::endl;
+
 
   local_to_pelvis = transform;
 }
@@ -682,4 +704,8 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
 
 void TwoLegOdometry::overwritePelvisVelocity(const Eigen::Vector3d &set_velocity) {
 	local_velocities = set_velocity;
+}
+
+void TwoLegOdometry::setTruthE(const Eigen::Vector3d &tE) {
+	truth_E = tE;
 }
