@@ -10,6 +10,7 @@
 #include <kinematics/kinematics_model_gfe.h>
 #include "boost/assign.hpp"
 #include <iostream>
+#include <visualization_utils/GlKinematicBody.hpp>
 
 using namespace affordance;
 using namespace Eigen;
@@ -39,10 +40,6 @@ AffordanceState::OTDF_TYPE AffordanceState::CAR  	  = "car";
 AffordanceState::OTDF_TYPE AffordanceState::SPHERE    = "sphere";
 AffordanceState::OTDF_TYPE AffordanceState::BOX  	  = "box";
 AffordanceState::OTDF_TYPE AffordanceState::UNKNOWN   = "unknown";
-
-boost::unordered_map<string,
-                     shared_ptr<visualization_utils::GlKinematicBody> >
-                     AffordanceState::_otdfTypeToBody;
 
 const unordered_set<AffordanceState::OTDF_TYPE> AffordanceState::supportedOtdfTypes = getSupportedOtdfTypes();
 
@@ -163,6 +160,14 @@ static AffPtr geometryToAff(shared_ptr<otdf::Geometry> g,
                        friendly_name);  
 }
 */
+
+
+
+boost::unordered_map<string,
+                     shared_ptr<visualization_utils::GlKinematicBody> >
+                     _otdfTypeToBody;
+
+
 
 /**split this into primitive types
 @return true if succeeds. false otherwise*/

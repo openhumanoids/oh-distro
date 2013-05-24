@@ -13,7 +13,6 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <otdf_lcm_utils/otdf_lcm_utils.h>
-#include <visualization_utils/GlKinematicBody.hpp>
 namespace affordance
 {
 
@@ -67,9 +66,6 @@ namespace affordance
     std::string _friendly_name;
     std::string _modelfile;
 
-    //this isn't used in a thread-safe manner
-    static boost::unordered_map<std::string, 
-      boost::shared_ptr<visualization_utils::GlKinematicBody> > _otdfTypeToBody;
 
     //-----------constructor/destructor
   public:
