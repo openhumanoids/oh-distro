@@ -194,6 +194,9 @@ if (legkinvels)
     title('Right knee and ankle Joint Velocities')
     
 end
+
+
+figure(1)
 %%
 
 if (true)
@@ -214,7 +217,6 @@ if (true)
 
 end
 
-figure(1)
 
 %% adjust all plots
 
