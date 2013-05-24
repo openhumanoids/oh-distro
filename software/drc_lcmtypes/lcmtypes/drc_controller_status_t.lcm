@@ -3,8 +3,11 @@ package drc;
 struct controller_status_t
 {
   int64_t utime;
-
   int8_t state;
+
+	int64_t controller_utime;
+	float V;
+	float Vdot;
 
   const int8_t UNKNOWN      = 0;
   const int8_t STANDING     = 1;
