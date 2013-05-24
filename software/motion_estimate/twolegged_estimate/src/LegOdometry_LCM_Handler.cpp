@@ -530,7 +530,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	// estimated orientation 
     Eigen::Quaterniond output_q(currentPelvis.linear()); // This is worth checking again
     
-    std::cout << "CHECKING ROTATIONS: " << 57.29*(_leg_odo->truth_E-InertialOdometry::QuaternionLib::q2e(output_q)).norm() << std::endl;
+    //std::cout << "CHECKING ROTATIONS: " << 57.29*(_leg_odo->truth_E-InertialOdometry::QuaternionLib::q2e(output_q)).norm() << std::endl;
 
     true_q.w() = msg->origin_position.rotation.w;
     true_q.x() = msg->origin_position.rotation.x;
@@ -732,7 +732,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
   Eigen::Vector3d elogged;
   elogged = InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(est_msgout->origin_position.rotation.w, est_msgout->origin_position.rotation.x, est_msgout->origin_position.rotation.y, est_msgout->origin_position.rotation.z));
 
-  std::cout << "logged: " << (_leg_odo->truth_E - elogged).norm() << std::endl;
+  //std::cout << "logged: " << (_leg_odo->truth_E - elogged).norm() << std::endl;
 
   }
 

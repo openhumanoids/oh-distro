@@ -558,7 +558,7 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 
 
-  std::cout << "Setting the pelvis with error: " << 57.29*(InertialOdometry::QuaternionLib::C2e(transform.rotation()) - truth_E).transpose() << std::endl;
+  //std::cout << "Setting the pelvis with error: " << 57.29*(InertialOdometry::QuaternionLib::C2e(transform.rotation()) - truth_E).transpose() << std::endl;
 
 
   local_to_pelvis = transform;
