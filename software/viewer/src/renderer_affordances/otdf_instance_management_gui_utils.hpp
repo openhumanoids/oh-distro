@@ -770,6 +770,21 @@ namespace renderer_affordances_gui_utils
         else if(!strcmp(name,PARAM_OTDF_ADJUST_DOF)) {
             spawn_adjust_dofs_popup(self);
         }
+        else if(!strcmp(name,PARAM_OTDF_FLIP_PITCH)) {
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator it = self->instantiated_objects.find(string(instance_name));
+          if(it!=self->instantiated_objects.end()){
+            double p = it->second._otdf_instance->getParam("pitch");
+            p = (p>0)?(p-M_PI):(p+M_PI); // flip 180
+            it->second._otdf_instance->setParam("pitch", p);
+            it->second._otdf_instance->update(); //update_OtdfInstanceStruc(it->second);
+            it->second._gl_object->set_state(it->second._otdf_instance);
+            publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(it->second.otdf_type),
+                it->second.uid,it->second._otdf_instance,self); 
+            bot_viewer_request_redraw(self->viewer);// gives realtime feedback of the geometry changing.
+          }else cout << "Can't find: " << name << endl;
+
+        }
         else if(!strcmp(name,PARAM_OTDF_INSTANCE_CLEAR)) {
             fprintf(stderr,"\nClearing Selected Instance\n");
         
@@ -884,6 +899,7 @@ namespace renderer_affordances_gui_utils
             {
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL);
+                bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_FLIP_PITCH, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR_ALL, NULL);
             }

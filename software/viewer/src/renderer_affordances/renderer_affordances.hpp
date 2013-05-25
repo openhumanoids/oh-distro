@@ -66,6 +66,7 @@
 #define PARAM_OTDF_INSTANCE_SELECT "Instance"
 #define PARAM_OTDF_ADJUST_PARAM "Adjust Params"
 #define PARAM_OTDF_ADJUST_DOF "Adjust DoFs"
+#define PARAM_OTDF_FLIP_PITCH "Flip pitch"
 #define PARAM_OTDF_INSTANCE_CLEAR "Clear Instance"
 #define PARAM_OTDF_INSTANCE_CLEAR_ALL "Clear All"
 #define PARAM_INSTANTIATE "Instantiate/Fit"
