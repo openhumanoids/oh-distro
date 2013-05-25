@@ -254,6 +254,34 @@ namespace renderer_robot_plan
 			    const  drc::robot_urdf_t* msg);
    void handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
 						 const drc::footstep_plan_t* msg);    
+						 
+						 
+	 void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
+	 {
+	  // Merge in grasp state transitions into the plan states.
+    if(msg->num_grasp_transitions>0)
+    {
+      size_t k_max = 0;
+      for(size_t k=0;k<msg->num_grasp_transitions;k++)
+      {
+        // get the relevant transition state time from msg->grasps[k].utime
+        if(state_msg->utime >= msg->grasps[k].utime)
+           k_max = std::max(k_max,k);
+      }
+      
+      for(size_t i=0;i< msg->grasps[k_max].num_joints;i++)
+      {
+         state_msg->num_joints++;
+         state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);      
+         state_msg->joint_position.push_back(msg->grasps[k_max].joint_position[i]);  
+         state_msg->joint_velocity.push_back(0);
+         state_msg->measured_effort.push_back(0);
+         drc::joint_covariance_t jcov;
+         jcov.variance = 0;
+         state_msg->joint_cov.push_back(jcov);
+       }// end for  
+    }// end if	 
+	 };
 			    
 	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
    bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);

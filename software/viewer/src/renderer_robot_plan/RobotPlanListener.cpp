@@ -161,6 +161,10 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _received_plan.plan = msgcopy.plan;
     _received_plan.num_bytes = msgcopy.num_bytes;
     _received_plan.matlab_data = msgcopy.matlab_data;
+    _received_plan.num_grasp_transitions = msgcopy.num_grasp_transitions;
+    if(msgcopy.num_grasp_transitions>0)
+      _received_plan.grasps = msgcopy.grasps;
+
     
     int max_num_states = 20;
     int num_states = 0;
@@ -185,6 +189,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
        if(msg->is_keyframe[i]) 
        {
         drc::robot_state_t state_msg  = msg->plan[i];
+        // Merge in grasp state transitions into the plan states.
+        // appendHandStatesToStateMsg(msg,&state_msg);
 	      std::stringstream oss;
 	      oss << _robot_name << "_" << "keyframe"<< "_"<< count; 
 	      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
@@ -201,6 +207,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     for (uint i = 0; i <(uint)num_states; i++)
     {
       drc::robot_state_t state_msg  = msg->plan[count];
+      // Merge in grasp state transitions into the plan states.
+      // appendHandStatesToStateMsg(msg,&state_msg);
     	std::stringstream oss;
     	oss << _robot_name << "_"<< count; 
     	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
