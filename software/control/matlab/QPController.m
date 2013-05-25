@@ -75,7 +75,6 @@ classdef QPController < MIMODrakeSystem
     else
       obj.debug = false;
     end
-    obj.debug = true;
 
     if isfield(options,'use_mex')
       % 0 - no mex
@@ -427,7 +426,7 @@ classdef QPController < MIMODrakeSystem
         
         % linear friction constraints
         % TEMP: hard code mu
-        mu = 1.0*ones(nc,1);
+        mu = 0.5*ones(nc,1);
         for i=1:nc
           Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
           bin_{i} = 0;
