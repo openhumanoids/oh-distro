@@ -27,6 +27,6 @@ class FallDetector:
 
 f = FallDetector()
 
-m.subscribe("ZMP_STATUS", f.handle)
+m.subscribe("CONTROLLER_ZMP_STATUS", f.handle)
 while True:
     m.handle()
