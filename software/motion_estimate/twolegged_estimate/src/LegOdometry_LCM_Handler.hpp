@@ -139,10 +139,13 @@ private:
 	DataFileLogger joint_data_log;
 	
 	int time_avg_counter;
-	double elapsed_us, spare_us;
-	double spare_time;
-	timespec before, quater,mid, threequat, after, spare;
+	volatile long long elapsed_us, spare_us;
+	volatile long long spare_time;
+	volatile long long maxtime;
+	struct timeval before, quater,mid, threequat, after, spare;
 	
+	volatile long long prev_frame_utime;
+
 #ifdef LOG_28_JOINT_COMMANDS
 	volatile double joint_commands[NUMBER_JOINTS];
 	volatile double joint_positions[16];

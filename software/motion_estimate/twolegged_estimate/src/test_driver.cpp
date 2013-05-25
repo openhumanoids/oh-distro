@@ -7,6 +7,7 @@
 #include <csignal>
 #include <exception>
 #include <ConciseArgs>
+#include <unistd.h>
 
 
 using namespace std;
@@ -70,6 +71,8 @@ int main(int argc, char ** argv) {
   signal(SIGINT, signalHandler);  
 
   cout << "Test driver main function for the twoleg motion estimate pod" << endl;
+
+  //nice(-20);
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good())

@@ -46,6 +46,7 @@ private:
 
 	Eigen::Quaterniond imu_orientation;
 	double max;
+	unsigned long long prev_msg_utime;
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -56,6 +57,7 @@ public:
 		_lcm->subscribe("TRUE_ROBOT_STATE",&HandleIMU::true_state_handler,this);
 		_lcm->subscribe("TORSO_IMU",&HandleIMU::torso_state_handler,this);
 
+		prev_msg_utime = 0;
 
 	}
 
@@ -67,6 +69,10 @@ public:
 								msg->origin_position.rotation.x,
 								msg->origin_position.rotation.y,
 								msg->origin_position.rotation.z);
+
+		cout << "" << (msg->utime - prev_msg_utime)/1000. << endl;
+
+		prev_msg_utime = msg->utime;
 
 		Eigen::Vector3d err_angles;
 
@@ -80,7 +86,7 @@ public:
 		}
 
 		if (err_angles.norm() > 1E-2) {
-			cout << fixed << max*57.29 << " | " << err_angles.norm()*57.29 << endl;
+			//cout << fixed << max*57.29 << " | " << err_angles.norm()*57.29 << endl;
 		}
 		//cout << "Receiving state\n";
 
@@ -104,7 +110,7 @@ public:
 		check_conv(3) = __q.z() - q.z();
 
 
-		cout << "Checking additive norm~: " << check_conv.norm() << endl;
+		//cout << "Checking additive norm~: " << check_conv.norm() << endl;
 
 		//cout << "Receiving IMU\n";
 

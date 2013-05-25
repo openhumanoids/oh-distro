@@ -113,7 +113,9 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	pulse_counter = 0;
 
 	time_avg_counter = 0;
-	elapsed_us = 0.;
+	elapsed_us = 0;
+	maxtime = 0;
+	prev_frame_utime = 0;
 
 #ifdef LOG_28_JOINT_COMMANDS
 	for (int i=0;i<NUMBER_JOINTS;i++) {
@@ -261,9 +263,19 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 												const std::string& channel, 
 												const  drc::robot_state_t* _msg) {
 
-	clock_gettime(CLOCK_REALTIME, &before);
+	//clock_gettime(CLOCK_REALTIME, &before);
+	gettimeofday(&before,NULL);
+
+	if (_msg->utime - prev_frame_utime > 1000) {
+		std::cout << (_msg->utime - prev_frame_utime)/1000 << " frames were missed\n";
+	}
+
+	if (_switches->print_computation_time) {
+		prev_frame_utime = _msg->utime;
+	}
+
 	//std::cout << before.tv_nsec << ", " << spare.tv_nsec << std::endl;
-	spare_time = (double)(static_cast<long long>(before.tv_nsec) - static_cast<long long>(spare.tv_nsec));
+	//spare_time = (before.tv_nsec) - (spare.tv_nsec);
 
 
 	// The intention is to build up the information inside these messages and pass them out on LCM to who ever needs to consume them
@@ -308,9 +320,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	int ratechangeiter=0;
 
 	if (_switches->do_estimation){
-		// Timing profile. This is the midway point
-		//clock_gettime(CLOCK_REALTIME, &mid);
 		
+
 		double alljoints[_msg->num_joints];
 		std::string jointnames[_msg->num_joints];
 		map<std::string, double> jointpos_in;
@@ -419,7 +430,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			}
 		}
 
-
+		// Timing profile. This is the midway point
+		//clock_gettime(CLOCK_REALTIME, &mid);
+		gettimeofday(&mid,NULL);
 		// Here the rate change is propagated into the rest of the system
 		if (ratechangeiter==1) {
 
@@ -453,34 +466,51 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 
  
-   clock_gettime(CLOCK_REALTIME, &after);
-   double elapsed;
-	/*elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
-	elapsed_us = elapsed/1000.;
-	std::cout << "0.50, " << elapsed_us << ", ";// << std::endl;
-	
-	elapsed = static_cast<long>(threequat.tv_nsec) - static_cast<long>(before.tv_nsec);
-	elapsed_us = elapsed/1000.;
-	std::cout << "0.75, " << elapsed_us << ", ";// << std::endl;
-	*/
-	
    if (_switches->print_computation_time) {
-		elapsed = (double)(static_cast<long long>(after.tv_nsec) - static_cast<long long>(before.tv_nsec));
-		elapsed_us += elapsed*1.E-3;
-		spare_us += spare_time*1.E-3;
-		int time_avg_wind = 1000;
+	   //clock_gettime(CLOCK_REALTIME, &after);
+	   	gettimeofday(&after,NULL);
+	    long long elapsed;
+	   	/*elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
+	   	elapsed_us = elapsed/1000.;
+	   	std::cout << "0.50, " << elapsed_us << ", ";// << std::endl;
+
+	   	elapsed = static_cast<long>(threequat.tv_nsec) - static_cast<long>(before.tv_nsec);
+	   	elapsed_us = elapsed/1000.;
+	   	std::cout << "0.75, " << elapsed_us << ", ";// << std::endl;
+	   	*/
+
+		//elapsed = (long long)(static_cast<long long>(spare.tv_usec) - static_cast<long long>(before.tv_usec));
+	   elapsed = (after.tv_usec) - (before.tv_usec);
+
+		if (elapsed<=0) {
+			std::cout << "Negative elapsed time\n";
+
+		}
+
+		if (elapsed > maxtime) {
+			maxtime = elapsed;
+		}
+
+		int time_avg_wind = 100;
+
+		elapsed_us += elapsed;
+		spare_us += spare_time;
+
+		time_avg_counter++;
 		if (time_avg_counter >= time_avg_wind) {
-			elapsed_us = elapsed_us/((double)time_avg_wind);
-			spare_us = spare_us/((double)time_avg_wind);
-			std::cout << "AVG computation time: [" << elapsed_us << " us]" << std::endl;//, with [" << spare_us << " us] spare" << std::endl;
+			elapsed_us = elapsed_us/time_avg_wind;
+			spare_us = spare_us/time_avg_wind;
+			std::cout << "MAX: " << maxtime << " | AVG computation time: [" << elapsed_us << " us]" << std::endl;//, with [" << spare_us << " us] spare" << std::endl;
 			spare_us = 0;
 			elapsed_us = 0.;
 			time_avg_counter = 0;
 		}
-		time_avg_counter++;
+
+		//clock_gettime(CLOCK_REALTIME, &spare);
+		gettimeofday(&spare,NULL);
    }
 
-  clock_gettime(CLOCK_REALTIME, &spare);
+
 }
 
 void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag) {

@@ -20,7 +20,8 @@ def doAllRuns(logListFile,prefix):
     # get all options lists
     files = open(os.path.expandvars(logListFile),'r').readlines()
     runOptions = ['A','B','C']
-    windowDurations = [30, 60, 90]
+    #windowDurations = [30, 60, 90]
+    windowDurations = [30, 60]
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
 
     # TODO: temporarily disabling sweep over weights
@@ -28,10 +29,10 @@ def doAllRuns(logListFile,prefix):
     #weightProfiles = ['uniform']
 
     # loop and run    
-    for filename in files:
-        for runOption in runOptions:
-            for duration in windowDurations:
-                for profile in weightProfiles:
+    for runOption in runOptions:
+	for duration in windowDurations:
+	    for profile in weightProfiles:
+		for filename in files:
                     doRun(filename, runOption, duration, profile, prefix)
 
 
@@ -55,7 +56,7 @@ def doRun(logFile, runOption, maxDuration, profileType, prefix):
     
     # start up logplayer
     playerExe = 'lcm-logplayer'
-    playerArgs = '-s 8 %s' % logFile
+    playerArgs = '-s 4 %s' % logFile
     playerCmd = shlex.split(playerExe + ' ' + playerArgs)
     playerProc = subprocess.Popen(playerCmd)
     sys.stdout.write('  playing log %s...' % logFile)

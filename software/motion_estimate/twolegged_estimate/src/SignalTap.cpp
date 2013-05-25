@@ -424,22 +424,31 @@ Eigen::VectorXd DistributedDiff::searchHistElement(const unsigned long &delta_u_
 
 	//std::cout <<std::endl;
 
+	long delta_time;
+
 	// may have to search up or down
  	while (searchingflag>-1) {
 		searchingflag--;
 
 		// what is the termination condition
-		long delta_time;
 
-		delta_time = (utimes.back() - utimes[predicted_index]) ;
-		if (abs(delta_time) - delta_u_ts <= (0.5*period)) {
+
+		delta_time = (utimes.back() - utimes[predicted_index]);
+		if (abs(delta_time - delta_u_ts) <= (0.5*period)) {
 			// we have found it
-			*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes[predicted_index]);
+			if (delta_time<=-((long)period)) {
+				std::cerr << "DistributedDiff::searchHistElement -- bad timing: " << delta_time << ", " << (delta_time - delta_u_ts) <<  "\n";
+				std::cout << "BUF is: ";
+				for (int i=0;i<hist_len;i++) {
+					std::cout << (utimes.back()-utimes[i]) << " | ";
+				}
+			}
+			*actual_delta_u_ts = (unsigned long)delta_time;
 			//std::cout << "A\n";
 			return *(_state_hist[predicted_index]);
 		} else {
 			// first we can be too far back into history
-			if (delta_u_ts < (utimes.back() - utimes[predicted_index])) {
+			if (delta_u_ts < delta_time) {
 				// reduce history search depth
 				predicted_index++; // move towards the back of the circular buffer (.back() is the newest value)
 				//std::cout << "Searching one newer\n";
@@ -451,7 +460,7 @@ Eigen::VectorXd DistributedDiff::searchHistElement(const unsigned long &delta_u_
 				}
 			} else {
 				// we may be to shallow in history
-				if ((utimes.back() - utimes[predicted_index]) < delta_u_ts ) {
+				if ((delta_time) < delta_u_ts ) {
 					// not deep enough into the history -- increase depth
 					predicted_index--; // move closer to the front of the circular buffer
 					//std::cout << "Searching one older\n";
@@ -466,13 +475,30 @@ Eigen::VectorXd DistributedDiff::searchHistElement(const unsigned long &delta_u_
 		}
 	}
 
-
+#ifdef VERBOSE_DEBUG
  	if (firstpasses <= 0) {
 
-		std::cout << "DistributedDiff::searchHistElement - -something has gone wrong while trying to find an index\n";
-		*actual_delta_u_ts = period; // the function higher up may want to divide with this delta time -- we already going to return a zero numerator
+		std::cerr << "DistributedDiff::searchHistElement -- expected data not in buffer, using nearby element -- probably dropping LCM frames due to computation or net bandwidth limitations." << std::endl;  /*something has gone wrong while trying to find delta: " << delta_u_ts << ", " << delta_time << std::endl;*/
+		/*std::cout << "BUF is: ";
+		for (int i=0;i<hist_len;i++) {
+			std::cout << (utimes.back()-utimes[i]) << " | ";
+		}
+		std::cout << std::endl;*/
+		//*actual_delta_u_ts = period; // the function higher up may want to divide with this delta time -- we already going to return a zero numerator
  	}
-	return Eigen::VectorXd::Zero(size);
+#endif
+
+ 	if ((predicted_index+1)>=hist_len) {
+ 		predicted_index--;
+ 		*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes[hist_len-2]);
+ 		return *(_state_hist[hist_len-2]);
+ 	}
+ 	if (predicted_index<=0) {
+ 		*actual_delta_u_ts = (unsigned long)(utimes.back() - utimes.front());
+ 		return *(_state_hist.front());
+ 	}
+ 	*actual_delta_u_ts = (unsigned long)delta_time;
+	return *(_state_hist[predicted_index]);
 }
 
 Eigen::VectorXd DistributedDiff::diff(const unsigned long long &u_ts, const Eigen::VectorXd &samples) {
