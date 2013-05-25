@@ -578,6 +578,11 @@ classdef QPController < MIMODrakeSystem
         color = [1 0 0];
       end
       plot_lcm_points([zmppos', mean(cpos(3,:))], color, 660, 'Commanded ZMP', 1, true);
+
+      m = drc.controller_zmp_status_t();
+      m.utime = t * 1e9;
+      m.zmp_ok = zmp_ok;
+      obj.lc.publish('CONTROLLER_ZMP_STATUS', m);
       
       [~,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);

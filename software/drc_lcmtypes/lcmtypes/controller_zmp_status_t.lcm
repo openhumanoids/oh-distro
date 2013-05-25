@@ -1,0 +1,7 @@
+package drc;
+
+struct controller_zmp_status_t
+{
+	int64_t utime;
+	boolean zmp_ok;
+}
