@@ -5,6 +5,14 @@ import sys
 sys.path.append(os.path.expanduser('~/drc/software/build/lib/python2.7/dist-packages'))
 import drc
 
+"""
+A very simple fall detector for the Atlas. Requires that the walking controller be running in matlab (use_mex=false) and that the QPController be running in debug mode (obj.debug=true). Listens to CONTROLLER_ZMP_STATUS and prints a warning if a fall is detected.
+
+Usage:
+    python fall_detector.py
+"""
+
+
 m = lcm.LCM()
 
 class FallDetector:
