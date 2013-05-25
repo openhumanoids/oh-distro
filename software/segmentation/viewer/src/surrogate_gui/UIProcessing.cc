@@ -1712,9 +1712,12 @@ namespace surrogate_gui
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
+          cout << "Map ID: " << views[v]->getId() << ": ";
           if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE  
-              || views[v]->getId() > 9999)  // some of the old messages have invalid view_id
+              || views[v]->getId() > 9999   // some of the old messages have invalid view_id
+              || views[v]->getId() == 10)   // this is the old number for DEPTH_MAP_WORKSPACE
           {
+          cout << "Used\n";
 					  maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
                                           /*
                                             Matrix4f transformation = Matrix4f::Identity();
@@ -1723,7 +1726,7 @@ namespace surrogate_gui
                                             transformPointCloud(*cloud, *cloud, transformation);
                                           */
 					  (*cloudFull) += *cloud;
-          }
+          }else cout << "Ignored\n";
 				}
 				getDisplayInfo()->cloud = cloudFull;
 				getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
