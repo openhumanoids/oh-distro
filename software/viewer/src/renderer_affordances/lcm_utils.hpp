@@ -60,7 +60,11 @@ namespace renderer_affordances_lcm_utils
   
   // one traj_opt_constraint
   // for N ee's and K timesteps.    
-  static void publish_traj_opt_constraint(const string& channel, map<string, vector<KDL::Frame> > &ee_frames_map, map<string, vector<int64_t> > &ee_frame_timestamps_map,  void *user)
+  
+    static void publish_traj_opt_constraint(const string& channel, map<string, vector<KDL::Frame> > &ee_frames_map,
+                                          map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                                          map<string, vector<double> > &joint_pos_map,
+                                          map<string, vector<int64_t> > &joint_pos_timestamps_map,  void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
     drc::traj_opt_constraint_t trajmsg;
@@ -101,8 +105,32 @@ namespace renderer_affordances_lcm_utils
            num_links++;  
       } // end for frames
     } // end for ee's
-   trajmsg.num_links =  num_links;   
-	 trajmsg.num_joints =0; 
+    
+   trajmsg.num_links =  num_links; 
+   int num_joints = 0;
+  // N joints's and K keyframes
+    for(map<string,vector<double> >::iterator it = joint_pos_map.begin(); it!=joint_pos_map.end(); it++)
+    { 
+       string joint_name = it->first;
+       vector<double> joint_pos  = it->second;
+       map<string, vector<int64_t> >::iterator ts_it = joint_pos_timestamps_map.find(it->first);
+       if(ts_it == joint_pos_timestamps_map.end()){
+         cerr << "ERROR: No Timestamp found for joint " << it->first << endl;      
+         return;
+       }
+ 
+      vector<int64_t> joint_pos_timestamps = ts_it->second; 
+      for(uint i = 0; i < (uint) joint_pos.size(); i++)
+      {   
+         trajmsg.joint_name.push_back(joint_name);
+         trajmsg.joint_position.push_back(joint_pos[i]);  
+         int64_t time_stamp = joint_pos_timestamps[i];
+         trajmsg.joint_timestamps.push_back(time_stamp);   
+         num_joints++;  
+      } // end for joint pos's
+    } // end for joints's    
+    
+	 trajmsg.num_joints =num_joints; 
    self->lcm->publish(channel, &trajmsg);
   }
  //----------------------------------------------------------------------------------------------------
@@ -501,7 +529,10 @@ namespace renderer_affordances_lcm_utils
     
     map<string, vector<KDL::Frame> > ee_frames_map;
     map<string, vector<int64_t> > ee_frame_timestamps_map;
-
+    
+    map<string, vector<double> > joint_pos_map;
+    map<string, vector<int64_t> > joint_pos_timestamps_map;    
+    
     // Publish time indexed ee motion constraints from associated sticky hands 
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
@@ -569,8 +600,34 @@ namespace renderer_affordances_lcm_utils
            ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
            ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));   
            // hand_it->second.joint_name;  
-           // hand_it->second.joint_position;  
-
+           // hand_it->second.joint_position; 
+           
+          for(uint k = 0; k< (uint) hand_it->second.joint_name.size(); k++)
+          {
+            std::string joint_name = hand_it->second.joint_name[k];
+            vector<double> joint_pos;
+            vector<int64_t> joint_pos_timestamps;
+             uint i=0;
+            //for(uint i = 0; i < (uint) num_frames; i++)
+            //{ 
+              joint_pos.push_back(hand_it->second.joint_position[k]);
+              int64_t timestamp=(int64_t)i*1000000;
+              joint_pos_timestamps.push_back(timestamp);
+            //}
+            // append reverse motion with a small back up palm offset
+            if(is_retractable){
+              //for(uint i = 0; i < (uint) num_frames; i++)
+              //{
+                //joint_pos.push_back(0.5*hand_it->second.joint_position[k]); % dont open fully, just loosen hold until half way
+                
+                joint_pos.push_back(0.0);
+                int64_t timestamp=(int64_t)(2*num_frames-1-i)*1000000;
+                joint_pos_timestamps.push_back(timestamp);   
+              //} 
+            }
+              joint_pos_map.insert(make_pair(joint_name,joint_pos));
+              joint_pos_timestamps_map.insert(make_pair(joint_name, frame_timestamps));  
+          }
            
          } // end if (host_name == (it->first))
       } // end for sticky hands
@@ -626,7 +683,7 @@ namespace renderer_affordances_lcm_utils
       } // end for sticky feet
       
    string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
-   publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map, self);
+   publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map, self);
 } 
   
 

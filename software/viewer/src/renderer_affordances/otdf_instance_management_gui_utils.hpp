@@ -620,7 +620,7 @@ namespace renderer_affordances_gui_utils
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
         object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
-        // Need tarcked joint positions of all objects.
+        // Need tracked joint positions of all objects.
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
         for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
             {     
