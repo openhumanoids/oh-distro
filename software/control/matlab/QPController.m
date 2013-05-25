@@ -570,8 +570,14 @@ classdef QPController < MIMODrakeSystem
         xcomdd = Jdot * qd + J * alpha(1:nq);
       end
       zmppos = xcom(1:2) + D_ls * xcomdd;
-      % Set zmp z-pos to 1m for DRC Quals 1
-      plot_lcm_points([zmppos', mean(cpos(3,:))], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
+      convh = convhull(cpos(1,:), cpos(2,:));
+      zmp_ok = inpolygon(zmppos(1), zmppos(2), cpos(1,convh), cpos(2,convh));
+      if zmp_ok
+        color = [0 1 0];
+      else
+        color = [1 0 0];
+      end
+      plot_lcm_points([zmppos', mean(cpos(3,:))], color, 660, 'Commanded ZMP', 1, true);
       
       [~,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
@@ -589,7 +595,7 @@ classdef QPController < MIMODrakeSystem
           plot_lcm_points(zeros(2,3), [1 0 0;1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
         end
       end
-      
+
 %       % plot body coordinate frames
 %       m=vs.obj_collection_t();
 %       m.objs = javaArray('vs.obj_t', size(1, 1));
