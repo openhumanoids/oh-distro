@@ -6,6 +6,7 @@
 #define PARAM_SEED_LF "Seed LFoot"
 #define PARAM_SEED_RF "Seed RFoot"
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
+#define PARAM_STORE "Store" 
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
@@ -36,6 +37,14 @@
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "lcm_utils.hpp"
+
+//#include "AffordanceCollectionListener.hpp"
+//#include "RobotStateListener.hpp"
+#include "InitGraspOptPublisher.hpp"
+#include "CandidateGraspSeedListener.hpp"
+#include "GraspOptStatusListener.hpp"
+#include "CandidateFootStepSeedManager.hpp"
+//#include "ReachabilityVerifier.hpp"
 
 using namespace renderer_affordances;
 using namespace renderer_affordances_lcm_utils;
@@ -787,7 +796,8 @@ namespace renderer_affordances_gui_utils
   }
   
  
-  
+  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user);
+
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
@@ -892,6 +902,9 @@ namespace renderer_affordances_gui_utils
     else if (! strcmp(name, PARAM_HALT_OPT)) {
        cout << "TODO" << endl;
     }
+    else if ((!strcmp(name, PARAM_STORE))) {
+      store_sticky_hand(pw,name,user);    
+    }
         
     bot_viewer_request_redraw(self->viewer);
     gtk_widget_destroy(self->dblclk_popup);
@@ -934,6 +947,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
 
     

@@ -26,6 +26,7 @@ add_library(renderer_affordances SHARED
   CandidateFootStepSeedManager.cpp
   ReachabilityVerifier.cpp
   BatchFKQueryHandler.cpp
+  object_interaction_gui_utils.cpp
   )
   
 set_target_properties(renderer_affordances  PROPERTIES SOVERSION 1)

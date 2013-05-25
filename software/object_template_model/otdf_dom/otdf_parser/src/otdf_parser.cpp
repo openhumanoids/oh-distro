@@ -40,6 +40,7 @@
 #include "otdf_interface/exceptions.h"
 #include "otdf_lcm_utils/otdf_lcm_utils.h"
 
+using namespace std;
 
 namespace otdf {
 // parse OTDF function effectively serves as a constructor
@@ -382,6 +383,37 @@ namespace otdf {
       }
     }
    
+    cout << "here1\n";
+
+    // read in grasp_seed
+    for (TiXmlElement* grasp_it = object_xml->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed"))
+    {
+      cout <<"here\n";
+
+      TiXmlElement* parent = grasp_it->FirstChildElement("parent");
+      if(parent) {
+        const char* name = parent->Attribute("name");
+      }else cout << "Error parsing grasp_seed parent\n";
+      
+      TiXmlElement* relative_pose = grasp_it->FirstChildElement("relative_pose");
+      if(relative_pose) {
+        const char* rpy_str = relative_pose->Attribute("rpy");
+        const char* xyz_str = relative_pose->Attribute("xyz");
+      }else cout << "Error parsing grasp_seed relative_pose\n";
+
+      TiXmlElement* grasp_type = grasp_it->FirstChildElement("grasp_type");
+      if(grasp_type) {
+        const char* grasp_type_str = grasp_type->Attribute("type");
+      }else cout << "Error parsing grasp_seed grasp_type\n";
+
+      TiXmlElement* state = grasp_it->FirstChildElement("state");
+      if(state) {
+        const char* joint_pos_str = state->Attribute("joint_positions");
+      }else cout << "Error parsing grasp_seed state\n";
+  
+      
+    }    
+
 
     // every link has children links and joints, but no parents, so we create a
     // local convenience data structure for keeping child->parent relations
