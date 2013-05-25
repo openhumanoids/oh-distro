@@ -89,10 +89,10 @@ classdef WalkingPDController < MIMODrakeSystem
       obj.ikoptions.q_nom = q_nom;
 
       % Prevent the knee from locking
-      [obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
-      joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
-      knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
-      obj.ikoptions.jointLimitMin(knee_ind) = 0.6;
+      % [obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
+      % joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
+      % knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
+      % obj.ikoptions.jointLimitMin(knee_ind) = 0.6;
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
