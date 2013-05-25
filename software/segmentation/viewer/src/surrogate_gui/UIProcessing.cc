@@ -1140,10 +1140,12 @@ namespace surrogate_gui
     convert3(Vector3f(radius*2,radius*2,length), affordanceMsg.aff.bounding_lwh); 
 
     // populate points and triangles
-    affordanceMsg.npoints = points.size();
-    affordanceMsg.ntriangles = triangles.size();
-    convertVec3(points, affordanceMsg.points);
-    convertVec3(triangles, affordanceMsg.triangles);
+    affordanceMsg.npoints = 0;
+    affordanceMsg.ntriangles = 0;
+    //affordanceMsg.npoints = points.size();
+    //affordanceMsg.ntriangles = triangles.size();
+    //convertVec3(points, affordanceMsg.points);
+    //convertVec3(triangles, affordanceMsg.triangles);
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
@@ -1212,8 +1214,9 @@ namespace surrogate_gui
     convert3(Vector3f(radius*2,radius*2,radius*2), affordanceMsg.aff.bounding_lwh); 
 
 	  //inliers
-          affordanceMsg.npoints = inliers.size();
-          affordanceMsg.points = inliers;
+          affordanceMsg.npoints = 0;
+          //affordanceMsg.npoints = inliers.size();
+          //affordanceMsg.points = inliers;
           affordanceMsg.ntriangles = 0;
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
@@ -1291,8 +1294,9 @@ namespace surrogate_gui
     convert3(Vector3f(radius*2,radius*2,0.01), affordanceMsg.aff.bounding_lwh); 
 
 	  //inliers
-          affordanceMsg.npoints = inliers.size();
-          affordanceMsg.points = inliers;
+          affordanceMsg.npoints = 0;
+          //affordanceMsg.npoints = inliers.size();
+          //affordanceMsg.points = inliers;
           affordanceMsg.ntriangles = 0;
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
