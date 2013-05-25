@@ -161,9 +161,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _received_plan.plan = msgcopy.plan;
     _received_plan.num_bytes = msgcopy.num_bytes;
     _received_plan.matlab_data = msgcopy.matlab_data;
-    _received_plan.num_grasp_transitions = msgcopy.num_grasp_transitions;
+   /* _received_plan.num_grasp_transitions = msgcopy.num_grasp_transitions;
     if(msgcopy.num_grasp_transitions>0)
-      _received_plan.grasps = msgcopy.grasps;
+      _received_plan.grasps = msgcopy.grasps;*/
 
     
     int max_num_states = 20;

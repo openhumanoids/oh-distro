@@ -256,7 +256,7 @@ namespace renderer_robot_plan
 						 const drc::footstep_plan_t* msg);    
 						 
 						 
-	 void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
+	 /*void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
 	 {
 	  // Merge in grasp state transitions into the plan states.
     if(msg->num_grasp_transitions>0)
@@ -281,7 +281,7 @@ namespace renderer_robot_plan
          state_msg->joint_cov.push_back(jcov);
        }// end for  
     }// end if	 
-	 };
+	 };*/
 			    
 	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
    bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
