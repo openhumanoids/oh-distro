@@ -383,13 +383,9 @@ namespace otdf {
       }
     }
    
-    cout << "here1\n";
-
     // read in grasp_seed
     for (TiXmlElement* grasp_it = object_xml->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed"))
     {
-      cout <<"here\n";
-
       TiXmlElement* parent = grasp_it->FirstChildElement("parent");
       if(parent) {
         const char* name = parent->Attribute("name");
@@ -411,7 +407,7 @@ namespace otdf {
         const char* joint_pos_str = state->Attribute("joint_positions");
       }else cout << "Error parsing grasp_seed state\n";
   
-      
+      //TODO: populate sticky hands
     }    
 
 
