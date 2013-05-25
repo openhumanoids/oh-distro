@@ -94,6 +94,7 @@ namespace surrogate_gui
                                               "3D Circle", CIRCLE_3D,
 					      "Plane", PLANE,
 					      "Car", CAR,
+                "Steering Cylinder", STEERING_CYL,
 					      "Line", LINE,
 					      "Torus", TORUS,
 					      "Cube", CUBE,
@@ -1017,9 +1018,10 @@ namespace surrogate_gui
       bool match=false;
       if(prim==CYLINDER  && otdf=="cylinder") match=true;
       if(prim==SPHERE    && otdf=="sphere")   match=true;
-      if(prim==CIRCLE_3D && otdf=="cylinder") match=true;
+      if(prim==CIRCLE_3D && otdf=="circle3d") match=true;
       if(prim==PLANE     && otdf=="plane")    match=true;
       if(prim==CAR       && otdf=="car")      match=true;
+      if(prim==STEERING_CYL && otdf=="steering_cyl") match=true;
       if(prim==LINE      && otdf=="TODO")     match=true;
       if(prim==TORUS     && otdf=="TODO")     match=true;
       if(prim==CUBE      && otdf=="TODO")     match=true;
@@ -1043,9 +1045,10 @@ namespace surrogate_gui
 	  switch(getGeometricPrimitive()){
 	  case CYLINDER: handleAffordancePubButtonCylinder(fp); break;
 	  case SPHERE:   handleAffordancePubButtonSphere(fp); break;
-	  case CIRCLE_3D:handleAffordancePubButtonCircle3d(fp); break;
+	  case CIRCLE_3D:handleAffordancePubButtonCircle3d(fp,CIRCLE_3D); break;
 	  case PLANE:    handleAffordancePubButtonPlane(fp); break;
 	  case CAR:      handleAffordancePubButtonPointCloud(fp); break;
+	  case STEERING_CYL: handleAffordancePubButtonCircle3d(fp,STEERING_CYL); break;
 	  case LINE:     handleAffordancePubButtonLine(fp); break;
 	  case TORUS:    handleAffordancePubButtonTorus(fp); break;
 	  case CUBE:     handleAffordancePubButtonCube(fp); break;
@@ -1242,7 +1245,7 @@ namespace surrogate_gui
 	  return;
 	}
 
-	void UIProcessing::handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp)
+	void UIProcessing::handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp, GeometricPrimitive primitive)
 	{
 
     // retrieve initial pos from selected object if available
@@ -1259,8 +1262,13 @@ namespace surrogate_gui
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  	  
-	  affordanceMsg.aff.map_id = 0; 	  
-	  affordanceMsg.aff.otdf_type = "cylinder";
+	  affordanceMsg.aff.map_id = 0;
+    if(primitive == CIRCLE_3D) affordanceMsg.aff.otdf_type = "circle3d";
+    else if(primitive == STEERING_CYL) affordanceMsg.aff.otdf_type = "steering_cyl";
+    else {
+      cout << "primitive not supported by handleAffordancePubButtonCircle3d: " << primitive << endl;
+      return;
+    }
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
@@ -1588,11 +1596,12 @@ namespace surrogate_gui
       if     (otdf_type == "cylinder") prim = CYLINDER;
       else if(otdf_type == "sphere")   prim = SPHERE;
       else if(otdf_type == "plane")    prim = PLANE;
+      else if(otdf_type == "circle3d") prim = CIRCLE_3D; 
+      else if(otdf_type == "steering_cyl") prim = STEERING_CYL; 
+      else if(otdf_type == "car")      prim = CAR;
       else if(otdf_type == "TODO")     prim = LINE;      // TODO
       else if(otdf_type == "TODO")     prim = TORUS;     // TODO
       else if(otdf_type == "TODO")     prim = CUBE;      // TODO
-      else if(otdf_type == "TODO")     prim = CIRCLE_3D; // TODO
-      else if(otdf_type == "car")      prim = CAR;
       if(prim>=0) bot_gtk_param_widget_set_enum(_surrogate_renderer._pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, prim);
 
     }
