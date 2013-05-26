@@ -12,6 +12,7 @@ classdef WalkingController < DRCController
         'Qy',eye(2),...
         'S',[],...
         's1',[],...
+        's2',[],...
         'x0',zeros(4,1),...
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
@@ -19,6 +20,7 @@ classdef WalkingController < DRCController
         'lfoottraj',[],...
         'rfoottraj',[],...
         'supptraj',[],...
+        'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0)); % time derivative of cost to go used in controller status message
 
@@ -82,9 +84,8 @@ classdef WalkingController < DRCController
       obj = obj@DRCController(name,sys);
 
       obj.controller_data = ctrl_data;
-      
       obj = setTimedTransition(obj,100,'standing',false); % default timeout
-
+      
     end
     
     function send_status(obj,t_sim,t_ctrl)
@@ -115,6 +116,12 @@ classdef WalkingController < DRCController
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('s1',matdata.s1);
 
+      fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('s2',matdata.s2);
+      
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.supptraj,'uint8'),'uint8');
       fclose(fid);

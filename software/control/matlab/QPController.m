@@ -166,7 +166,6 @@ classdef QPController < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      ['getting mex ptr...']
       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
 %       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
     end
@@ -270,6 +269,15 @@ classdef QPController < MIMODrakeSystem
       else
         s1= zeros(4,1); 
       end
+      if isfield(ctrl_data,'s2') && ~isempty(ctrl_data.s2)
+       if typecheck(ctrl_data.s2,'double')
+        s2 = ctrl_data.s2;
+       else
+        s2=ctrl_data.s2.eval(t);
+       end
+      else
+        s2=0; 
+      end
       if typecheck(ctrl_data.x0,'double')
         x0 = ctrl_data.x0;
       else
@@ -288,7 +296,7 @@ classdef QPController < MIMODrakeSystem
     else
       % allocate these for passing into mex
       B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);D_ls=zeros(2);
-      S=zeros(4);s1=zeros(4,1);x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
+      S=zeros(4);s1=zeros(4,1);s2=0;x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
     end
     
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
@@ -538,7 +546,7 @@ classdef QPController < MIMODrakeSystem
       
       % compute V,Vdot for controller status updates
       if (nc>0)
-        V = x_bar'*S*x_bar + s1'*x_bar;  % missing affine term here...
+        V = x_bar'*S*x_bar + s1'*x_bar + s2;
         qdd = zeros(nq,1);
         qdd(obj.free_dof) = qdd_free;
         qdd(obj.con_dof) = alpha(1:nq_con);
@@ -592,7 +600,7 @@ classdef QPController < MIMODrakeSystem
       plot_lcm_points([zmppos', mean(cpos(3,:))], color, 660, 'Commanded ZMP', 1, true);
 
       m = drc.controller_zmp_status_t();
-      m.utime = t * 1e9;
+      m.utime = t * 1e6;
       m.zmp_ok = zmp_ok;
       obj.lc.publish('CONTROLLER_ZMP_STATUS', m);
       

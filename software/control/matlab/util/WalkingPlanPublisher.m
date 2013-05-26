@@ -54,6 +54,13 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_s1_bytes = length(msg.s1); 
 
+      s2 = data.s2;
+      save('tmp_r.mat','s2');
+      fid = fopen('tmp_r.mat','r');
+      msg.s2 = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_s2_bytes = length(msg.s2); 
+      
       supptraj = data.supptraj;
       save('tmp_r.mat','supptraj');
       fid = fopen('tmp_r.mat','r');

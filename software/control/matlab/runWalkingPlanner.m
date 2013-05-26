@@ -23,7 +23,7 @@ qnom_mon = drake.util.MessageMonitor(drc.robot_posture_preset_t,'utime');
 lc.subscribe('UPDATE_NOMINAL_POSTURE',qnom_mon);
 qnom_state = '';
 while true 
-  
+
   d = load('data/atlas_fp.mat');
   xstar = d.xstar;
   r = r.setInitialState(xstar);
@@ -83,7 +83,7 @@ while true
   end
   [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   %hddot = fnder(htraj,2);
-  walking_plan = struct('S',V.S,'s1',V.s1,'htraj',htraj,...
+  walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'htraj',htraj,...
       'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
       'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj,'qnom',qstar)
   last_approved_footsteps = footsteps;

@@ -61,7 +61,13 @@ classdef WalkingPlanListener
         fclose(fid);
         matdata = load('tmp_w.mat');
         s1=matdata.s1;
- 
+
+        fid = fopen('tmp_w.mat','w');
+        fwrite(fid,typecast(msg.s2,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load('tmp_w.mat');
+        s2=matdata.s2;
+
         fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.supptraj,'uint8'),'uint8');
         fclose(fid);
@@ -100,7 +106,7 @@ classdef WalkingPlanListener
         
         walking_data = struct('qtraj',qtraj,...
           'comtraj',comtraj,'zmptraj',zmptraj,'lfoottraj',lfoottraj,...
-          'rfoottraj',rfoottraj,'S',S,'s1',s1,'supptraj',supptraj,'qnom',qnom);
+          'rfoottraj',rfoottraj,'S',S,'s1',s1,'s2',s2,'supptraj',supptraj,'qnom',qnom);
 
     end
   end
