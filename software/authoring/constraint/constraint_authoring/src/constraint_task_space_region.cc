@@ -67,6 +67,28 @@ contact_type_t_to_std_string( contact_type_t contactType ){
   }
 }
 
+//split affName by slashes.  should be of the form: linkName/groupName/objName
+//we lump groupName/objName into 1 string
+void getLinkGroupObjSplits(const string &affName, string &linkName, string &groupObjNames)
+{
+     vector<string> nameSplit = affordance::ToString::split(affName, '/');
+     linkName = nameSplit[0];
+     if (nameSplit.size() == 1)
+       {
+         cout << "\n\n\n name didn't have a slash\n\n" << endl;
+         groupObjNames = "N/A";
+         return;
+       }
+
+     groupObjNames = "";
+     for(uint i = 1; i < nameSplit.size(); i++)
+       {
+         groupObjNames += nameSplit[i];
+         if (i < nameSplit.size() - 1)
+           groupObjNames += "/";
+       }
+}
+
 void 
 Constraint_Task_Space_Region::
 add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
@@ -76,12 +98,23 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().utime = 0;
   actionSequence.contact_goals.back().object_1_name = _parent.first;
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
-  if( _child != NULL ){
-    actionSequence.contact_goals.back().object_2_name = _child->getName();
-  } else {
-    actionSequence.contact_goals.back().object_2_name = "N/A";
-  }
-  actionSequence.contact_goals.back().object_2_contact_grp = "N/A";
+
+
+  if( _child != NULL )
+    {
+      //see if the the child name has any slashes: link/group/item
+      string linkName,groupObjNames;
+      getLinkGroupObjSplits(_child->getName(), linkName, groupObjNames);
+      actionSequence.contact_goals.back().object_2_name = linkName;
+      actionSequence.contact_goals.back().object_2_contact_grp = groupObjNames;
+    } 
+  else 
+    {
+      cout << "\n\n child was null\n" << endl;
+      actionSequence.contact_goals.back().object_2_name = "N/A";
+      actionSequence.contact_goals.back().object_2_contact_grp = "N/A";
+    }
+
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = _contact_type;
@@ -104,12 +137,18 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().utime = 0;
   actionSequence.contact_goals.back().object_1_name = _parent.first;
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
-  if( _child != NULL ){
-    actionSequence.contact_goals.back().object_2_name = _child->getName();
-  } else {
-    actionSequence.contact_goals.back().object_2_name = "N/A";
-  }
-  actionSequence.contact_goals.back().object_2_contact_grp = "N/A";
+  if( _child != NULL )
+    {
+      string linkName,groupObjNames;
+      getLinkGroupObjSplits(_child->getName(), linkName, groupObjNames);
+      actionSequence.contact_goals.back().object_2_name = linkName;
+      actionSequence.contact_goals.back().object_2_contact_grp = groupObjNames;
+    } 
+  else 
+    {
+      actionSequence.contact_goals.back().object_2_name = "N/A";
+      actionSequence.contact_goals.back().object_2_contact_grp = "N/A";
+    }
   actionSequence.contact_goals.back().lower_bound_completion_time = _start;
   actionSequence.contact_goals.back().upper_bound_completion_time = _end;
   actionSequence.contact_goals.back().contact_type = _contact_type;
