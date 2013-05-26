@@ -69,8 +69,10 @@ namespace renderer_robot_plan
     
     drc::robot_plan_t _received_plan;
     drc::aff_indexed_robot_plan_t _received_map;
-  	
-	  drc::footstep_plan_t _received_footstep_plan;
+    drc::footstep_plan_t _received_footstep_plan;
+    
+    int64_t _controller_utime;
+    int8_t _controller_status;
   
     void commit_robot_plan(int64_t utime,std::string &channel);
     void commit_manip_map(int64_t utime,std::string &channel);
@@ -254,6 +256,10 @@ namespace renderer_robot_plan
 			    const  drc::robot_urdf_t* msg);
    void handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
 						 const drc::footstep_plan_t* msg);    
+   
+   void handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
+                                                 const string& chan, 
+                                                 const drc::controller_status_t* msg);
 						 
 						 
 	 /*void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 

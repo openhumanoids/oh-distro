@@ -42,6 +42,8 @@ namespace renderer_robot_plan
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
 
+    lcm->subscribe("CONTROLLER_STATUS", &renderer_robot_plan::RobotPlanListener::handleControllerStatusMsg, this);  
+
 
     // Pre-load hand URDFS
     std::string _left_hand_urdf_xml_string,_right_hand_urdf_xml_string;
@@ -310,6 +312,15 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		_received_footstep_plan = *msg;
     _aprvd_footstep_plan_in_cache = true;
   }
+  
+  void RobotPlanListener::handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
+                                                 const string& chan, 
+                                                 const drc::controller_status_t* msg)                                                
+  {
+     _controller_utime = msg->controller_utime;
+     _controller_status = msg->state;
+  }  
+  
     //-------------------------------------------------------------------
 
   void RobotPlanListener::commit_footstep_plan(int64_t utime,std::string &channel)

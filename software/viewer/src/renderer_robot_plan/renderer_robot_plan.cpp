@@ -55,16 +55,18 @@ static inline void jet_rgb(float value,float rgb[]){
 
 
 static void 
-draw_state(BotViewer *viewer, BotRenderer *super, uint i){
+draw_state(BotViewer *viewer, BotRenderer *super, uint i, float rgb[]){
 
   float c[3] = {0.3,0.3,0.6}; // light blue
   float alpha = 0.4;
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
  
   if((self->use_colormap)&&(self->displayed_plan_index==-1)&&(!self->robotPlanListener->_is_manip_plan)) {
-  // Each model Jet: blue to red
-  float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
-  jet_rgb(j,c);
+    // Each model Jet: blue to red
+    float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
+    jet_rgb(j,c);
+  }else{
+    c[0] = rgb[0]; c[1] = rgb[1]; c[2] = rgb[2];
   }
   
   glColor4f(c[0],c[1],c[2], alpha);
@@ -148,12 +150,16 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glEnd();
     glPopMatrix();
   }
+  
+  
 
   int plan_size =   self->robotPlanListener->_gl_robot_list.size();
   if (plan_size ==0) // nothing to renderer
     return;
     
-    
+
+  
+  
    // Show keyframes
   if((self->show_keyframes)&&(self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
   {
@@ -173,9 +179,10 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     }    
     //std::cout << "totol_states is " << totol_states << "\n";    
     //std::cout << "inc is " << inc << "\n";    
-    
+
+    float c[3] = {0.3,0.3,0.6}; // light blue (holder)
     for(uint i = 0; i < totol_states; i=i+inc){//_gl_robot_list.size(); i++){ 
-      draw_state(viewer,super,i);
+      draw_state(viewer,super,i,c);
     }
     self->displayed_plan_index = -1;    
   }else{
@@ -183,7 +190,33 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     uint w_plan = (uint) round(plan_part* (plan_size -1));
     //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
     self->displayed_plan_index = w_plan;
-    draw_state(viewer,super,w_plan);
+    
+    float c[3] = {0.3,0.3,0.6}; // light blue
+    draw_state(viewer,super,w_plan,c);
+  }
+  
+  
+  if(self->robotPlanListener->_controller_status == drc::controller_status_t::WALKING){ // walking 
+    int rx_plan_size = self->robotPlanListener->_received_plan.num_states;
+    int64_t last_plan_utime = self->robotPlanListener->_received_plan.plan[rx_plan_size-1].utime;
+    double current_plan_part = ((double) self->robotPlanListener->_controller_utime / last_plan_utime);
+    
+    //printf ("controller time: %lld \n", self->robotPlanListener->_controller_utime); 
+    //std::cout << self->robotPlanListener->_received_plan.num_states << " is rxd plan size\n";
+    //std::cout << plan_size << " is plan size\n";
+    //std::cout << last_plan_utime << " is last_plan_utime\n";
+    //std::cout << current_plan_part << " is current_plan_part\n";    
+    if((current_plan_part >0.0 )&&(current_plan_part <1.0)){
+      double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
+      uint w_plan = (uint) round(current_plan_part* (plan_size -1));
+      //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
+      self->displayed_plan_index = w_plan;
+      
+      float c[3] = {0.6,0.3,0.3}; // light red
+      draw_state(viewer,super,w_plan,c);
+    }
+  }else{
+   std::cout << "not walking\n"; 
   }
 
  if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
