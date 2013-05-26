@@ -42,7 +42,7 @@ classdef StandingController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      pd = SimplePDController(r,ctrl_data);
+      pd = SimplePDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -74,6 +74,8 @@ classdef StandingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       
+%       obj = setTimedTransition(obj,2,'bracing',false);
+
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
 
       % should make this a more specific channel name

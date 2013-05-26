@@ -27,7 +27,7 @@ classdef HarnessController < DRCController
             
             options.Kd=0.12*options.Kp;
             % cascade PD qtraj controller 
-            pd = SimplePDController(r,ctrl_data,options);
+            pd = SimplePDBlock(r,ctrl_data,options);
             ins(1).system = 1;
             ins(1).input = 1;
             ins(2).system = 1;

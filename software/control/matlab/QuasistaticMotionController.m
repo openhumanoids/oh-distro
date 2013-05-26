@@ -46,7 +46,7 @@ classdef QuasistaticMotionController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      pd = SimplePDController(r,ctrl_data);
+      pd = SimplePDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 2;

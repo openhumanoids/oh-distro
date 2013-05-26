@@ -37,7 +37,7 @@ classdef WalkingController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade walking PD controller 
-      pd = WalkingPDController(r,ctrl_data);
+      pd = WalkingPDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;

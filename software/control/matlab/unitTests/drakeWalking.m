@@ -99,8 +99,8 @@ outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
-% feedback PD trajectory controller 
-pd = WalkingPDController(r,ctrl_data);
+% feedback PD block 
+pd = WalkingPDBlock(r,ctrl_data);
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;

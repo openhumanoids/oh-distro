@@ -47,7 +47,7 @@ classdef StandingManipController < DRCController
         options.control = 'SimplePD';
       end
       if(strcmp(options.control,'SimplePD'))
-        pd = SimplePDController(r,ctrl_data);
+        pd = SimplePDBlock(r,ctrl_data);
       elseif(strcmp(options.control,'NaivePD'))
         pd = NaivePDController(r,ctrl_data);
       elseif(strcmp(options.control,'Impedance'))
