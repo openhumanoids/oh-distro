@@ -127,14 +127,14 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
       auto view = state->getView();
       if (view != NULL) {
         if (view->getClosest(contact_pos.cast<float>(),floatPos,floatNormal)) {
+          pos = floatPos.cast<double>();
+          normal = floatNormal.cast<double>();
           return;
         }
-        pos = floatPos.cast<double>();
-        normal = floatNormal.cast<double>();
       }
     }
-    mexErrMsgTxt("What to do if there is no data?");
   } else {
+    mexPrintf("Warning: using 0,0,1 as normal");
     pos << contact_pos.topRows(2), 0;
     normal << 0,0,1;
   }
