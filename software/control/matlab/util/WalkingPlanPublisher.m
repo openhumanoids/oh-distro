@@ -89,6 +89,13 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
       
+      qnom = data.qnom;
+      save('tmp_r.mat','qnom');
+      fid = fopen('tmp_r.mat','r');
+      msg.qnom = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_qnom_bytes = length(msg.qnom);
+      
       obj.lc.publish(obj.channel, msg);
 		end
 

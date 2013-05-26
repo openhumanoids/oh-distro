@@ -21,8 +21,10 @@ classdef StandingManipController < DRCController
         'x0',zeros(4,1),...
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
-        'qtraj',zeros(getNumDOF(r),1),...
         'supptraj',[],...
+        'qtraj',zeros(getNumDOF(r),1),...
+        'V',0,... % cost to go used in controller status message
+        'Vdot',0,...
         'ee_link_ind',[]));
       
       % instantiate QP controller
@@ -99,6 +101,16 @@ classdef StandingManipController < DRCController
   
     end
     
+    function send_status(obj,t_sim,t_ctrl)
+        msg = drc.controller_status_t();
+        msg.utime = t_sim * 1000000;
+        msg.state = msg.STANDING;
+        msg.controller_utime = t_ctrl * 1000000;
+        msg.V = obj.controller_data.getField('V');
+        msg.Vdot = obj.controller_data.getField('Vdot');
+        obj.lc.publish('CONTROLLER_STATUS',msg);
+    end
+    
     function obj = initialize(obj,data)
 
       if isfield(data,'precomp')
@@ -172,6 +184,7 @@ classdef StandingManipController < DRCController
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
         obj.controller_data.setField('supptraj',foot_support);
+%         obj.controller_data.setField('qnom',q0);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout

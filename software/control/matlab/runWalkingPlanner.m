@@ -18,8 +18,12 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = setTerrain(r,DRCTerrainMap(false,struct('name','Walk Plan','fill',true)));
 r = compile(r);
 
+lc = lcm.lcm.LCM.getSingleton();
+qnom_mon = drake.util.MessageMonitor(drc.robot_posture_preset_t,'utime');
+lc.subscribe('UPDATE_NOMINAL_POSTURE',qnom_mon);
+qnom_state = '';
 while true 
-
+  
   d = load('data/atlas_fp.mat');
   xstar = d.xstar;
   r = r.setInitialState(xstar);
@@ -62,13 +66,26 @@ while true
           committed = false;
         end
       end
+      
+      qnom_data = qnom_mon.getNextMessage(0);
+      
+      if(~isempty(qnom_data))
+        qnom_msg = drc.robot_posture_preset_t(qnom_data);
+        if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT)
+          qnom_state = 'current';
+        end
+      end
+      
+      if(strcmp(qnom_state,'current'))
+        qstar = x0(1:nq);
+      end
     end
   end
   [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   hddot = fnder(htraj,2);
   walking_plan = struct('S',V.S,'s1',V.s1,'htraj',htraj,'hddtraj', ...
       hddot,'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
-      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj)
+      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj,'qnom',qstar)
   last_approved_footsteps = footsteps;
 
   
