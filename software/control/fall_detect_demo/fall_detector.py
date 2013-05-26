@@ -23,7 +23,7 @@ class FallDetector:
 
     def handle(self, channel, data):
         msg = drc.controller_zmp_status_t.decode(data)
-        t = msg.utime / 1e9
+        t = msg.utime / 1e6
         if self.last_t is None or t - self.last_t > 1 or t < 0.001:
             self.last_t = t
             self.zmp_error = 0
