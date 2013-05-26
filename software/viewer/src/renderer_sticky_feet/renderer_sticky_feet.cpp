@@ -364,7 +364,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
 void 
 setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
-    BotFrames * frames)
+    BotFrames * frames, bool typical_mode)
 {
     RendererStickyFeet *self = (RendererStickyFeet*) calloc (1, sizeof (RendererStickyFeet));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
@@ -375,8 +375,12 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     self->perceptionData->mViewClient.start();
       
     
-   // self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self));
-    self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm,viewer));
+    if (typical_mode){
+      self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm,viewer,true));
+    }else{
+      // For compression testing
+      self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm,viewer,false));
+    }
     BotRenderer *renderer = &self->renderer;
 
     renderer->draw = _renderer_draw;
@@ -388,6 +392,10 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     renderer->enabled = 1;
 
     self->viewer = viewer;
+    
+    if (!typical_mode){
+      renderer->name =(char *) "Footstep Loopback";
+    }
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
     
@@ -419,6 +427,11 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     ehandler->mouse_release = mouse_release;
     ehandler->mouse_motion = mouse_motion;
     ehandler->user = self;
+    
+    if (!typical_mode){
+      ehandler->name =(char *) "ELoopback Sticky Feet";
+    }
+    
 
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
     

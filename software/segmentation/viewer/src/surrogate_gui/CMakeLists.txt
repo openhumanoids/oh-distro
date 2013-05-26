@@ -80,6 +80,7 @@ pods_use_pkg_config_packages(segmentation-viewer
     lcm
     surrogate
     renderer_affordances
+        renderer_drcgrid
     pointcloud_vis pointcloud_math)
 
 pods_install_executables(segmentation-viewer)

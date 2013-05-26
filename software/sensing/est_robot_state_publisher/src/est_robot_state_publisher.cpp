@@ -76,6 +76,11 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode, b
   _lcm->subscribe("POSE_HEAD",&StatePub::handlePoseHeadMsg,this);
   //_lcm->subscribe("TRIGGER_STATE",&StatePub::triggerHandler,this);
   
+  // EST_ROBOT_STATE as received on the base from the shaper:
+  _lcm->subscribe("EST_ROBOT_STATE_TX", &StatePub::handleRobotStateMsg, this); //
+  
+  
+  
   // Parse KDL tree
   KDL::Tree tree;
   if (!kdl_parser::treeFromString(  model_->getURDFString() ,tree)){

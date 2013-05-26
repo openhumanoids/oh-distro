@@ -21,6 +21,9 @@
 #include "perception/PclSurrogateUtils.h"
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
 
+// new grid renderer:
+#include <renderer_drc/renderer_drcgrid.h>
+
 //#include <otdf_renderer/renderer_otdf.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <ConciseArgs>
@@ -125,7 +128,8 @@ int main(int argc, char *argv[])
     setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames);
 
     // setup renderers
-    bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
+    drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM());
+    // bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
     //KinectRendererXYZRGB *krxyzrgb = kinect_add_renderer_xyzrgb_to_viewer(viewer, 0,NULL,NULL);
 
     // lcmgl

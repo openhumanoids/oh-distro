@@ -18,8 +18,6 @@ public:
   boost::shared_ptr<lcm::LCM> lcm_;
   
   void handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::minimal_robot_state_t * msg);
-  void handleImageMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::image_t* msg);
-  void sendPose(drc::position_3d_t &origin, int64_t utime, std::string channel);
 
 private:
   std::string output_channel_;
@@ -31,7 +29,6 @@ private:
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string output_channel_):
     lcm_(lcm_), output_channel_(output_channel_){
   lcm_->subscribe("EST_ROBOT_STATE_MINIMAL", &StatePub::handleMinimalRobotStateMsg, this);
-  lcm_->subscribe("CAMERALEFT_COMPRESSED", &StatePub::handleImageMsg, this);
   
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -51,25 +48,6 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string output_channel
   for (size_t j = 0; j < joint_names_.size(); j++) {
     cout << j << " " << joint_names_[j] <<"\n";
   } 
-}
-
-void StatePub::handleImageMsg(const lcm::ReceiveBuffer* rbuf,
-  const std::string& chan, const bot_core::image_t * msg){
-
-  lcm_->publish( "CAMERALEFT", msg);
-}
-
-void StatePub::sendPose(drc::position_3d_t &origin, int64_t utime, std::string channel){
-  bot_core::pose_t pose_msg;
-  pose_msg.utime = utime;
-  pose_msg.pos[0] = origin.translation.x;
-  pose_msg.pos[1] = origin.translation.y;
-  pose_msg.pos[2] = origin.translation.z;
-  pose_msg.orientation[0] = origin.rotation.w;
-  pose_msg.orientation[1] = origin.rotation.x;
-  pose_msg.orientation[2] = origin.rotation.y;
-  pose_msg.orientation[3] = origin.rotation.z;
-  lcm_->publish(channel, &pose_msg);
 }
 
 void StatePub::handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
@@ -114,7 +92,6 @@ void StatePub::handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   
   
   lcm_->publish( output_channel_, &msgout);        
-  sendPose(msgout.origin_position, msgout.utime, "POSE_BODY");
 
   drc::utime_t utime_out;
   utime_out.utime = msgout.utime;

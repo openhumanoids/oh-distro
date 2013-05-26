@@ -23,7 +23,7 @@ subplot(2,3,2)
 hold on
 area(d.sec, d.data_rx)
 grid on
-%legend( d.names_rx)
+legend( d.names_rx)
 set(gca,'Layer','top')
 title ('Cum. Rx [KB]')
 for i=1:size(bands_rx,2)
@@ -47,7 +47,7 @@ subplot(2,3,5)
 hold on
 area(d.sec, d.data_tx)
 grid on
-%legend( d.names_tx)
+legend( d.names_tx)
 set(gca,'Layer','top')
 title ('Cum. Tx [KB]')
 for i=1:size(bands_rx,2)

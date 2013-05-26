@@ -294,7 +294,9 @@ int main(int argc, char *argv[])
   setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
-  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames);
+  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,true);
+  // Renderers for Testing Loopback Quality:
+  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,false);
   
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
