@@ -191,7 +191,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
         glPopMatrix();
   }
  
- float c[3] = {0.1,0.1,0.1}; // was 0.3
+  float c[3] = {0.15,0.15,0.15}; // was 0.3
   //glColor3f(c[0],c[1],c[2]);
   glColor4f(c[0],c[1],c[2],self->alpha);
   
