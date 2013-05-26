@@ -26,6 +26,7 @@ if(~isfield(action_options,'debug')) action_options.debug = false; end
 if(~isfield(action_options,'verbose')) action_options.verbose = false; end
 if(~isfield(action_options,'run_once')) action_options.run_once = false; end
 if(~isfield(action_options,'ignore_q0')) action_options.ignore_q0 = false; end
+if(~isfield(action_options,'generate_implicit_constraints_from_q0')) action_options.generate_implicit_constraints_from_q0 = true; end
 if(~isfield(action_options,'channel_in')) 
   if(action_options.IK)
     action_options.channel_in = 'REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE'; 
@@ -157,6 +158,9 @@ while (1)
     try
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
+        if ~action_options.generate_implicit_constraints_from_q0 && goal.lower_bound_completion_time == 0.1
+          goal.lower_bound_completion_time = 0;
+        end
         kc = getConstraintFromGoal(r,goal);
         action_sequence = action_sequence.addKinematicConstraint(kc);
       end
@@ -179,6 +183,9 @@ while (1)
           end
           action_sequence.kincons{i}.contact_statef = contact_statef;
         end
+      end
+      if action_options.generate_implicit_constraints_from_q0
+        action_sequence = generateImplicitConstraints(r,action_sequence,q,action_options);
       end
 
       % Above ground constraints

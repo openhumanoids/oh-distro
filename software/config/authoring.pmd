@@ -22,7 +22,12 @@ group "a.1.core" {
 }
 
 group "authoring" {
-    cmd "MotionPlanServer" {
+    cmd "MotionPlanServer_offline" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'ignore_q0',true,'generate_implicit_constraints_from_q0',false));\"";
+       host = "localhost";
+    }
+
+    cmd "MotionPlanServer_online" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
        host = "localhost";
     }
@@ -41,8 +46,16 @@ group "dev_tools" {
 
 }
 
-script "dev.authoring" { 
+script "dev.authoring_offline" { 
     start group "a.1.core";
     start cmd "DemoAffordanceServer";
-    start group "authoring";
+    start cmd "AuthoringGUI";
+    start cmd "MotionPlanServer_offline";
+}
+
+script "dev.authoring_online" { 
+    start group "a.1.core";
+    start cmd "DemoAffordanceServer";
+    start cmd "AuthoringGUI";
+    start cmd "MotionPlanServer_online";
 }
