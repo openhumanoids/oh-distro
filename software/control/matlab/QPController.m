@@ -160,7 +160,15 @@ classdef QPController < MIMODrakeSystem
     end  
     
     if (obj.use_mex>0)
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
+      terrain = getTerrain(r);
+      if isa(terrain,'DRCTerrainMap') 
+        terrain_map_ptr = terrain.map_handle.getPointerForMex();
+      else
+        terrain_map_ptr = 0;
+      end
+      ['getting mex ptr...']
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
+%       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
     end
   end
     
@@ -253,10 +261,14 @@ classdef QPController < MIMODrakeSystem
       else
         S = ctrl_data.S.eval(t);
       end
-      if typecheck(ctrl_data.s1,'double')
-        s1= zeros(4,1); % ctrl_data.s1;
+      if isfield(ctrl_data,'s1') && ~isempty(ctrl_data.s1)
+       if typecheck(ctrl_data.s1,'double')
+        s1 = ctrl_data.s1;
+       else
+        s1 = ctrl_data.s1.eval(t);
+       end
       else
-        s1= ctrl_data.s1.eval(t);
+        s1= zeros(4,1); 
       end
       if typecheck(ctrl_data.x0,'double')
         x0 = ctrl_data.x0;

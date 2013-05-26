@@ -33,7 +33,7 @@ classdef WalkingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      options.use_mex = true;
+      options.use_mex = false;
       qp = QPController(r,ctrl_data,options);
 
       % cascade walking PD controller 
@@ -82,8 +82,9 @@ classdef WalkingController < DRCController
       obj = obj@DRCController(name,sys);
 
       obj.controller_data = ctrl_data;
-      obj = setTimedTransition(obj,100,'standing',false); % default timeout
       
+      obj = setTimedTransition(obj,100,'standing',false); % default timeout
+
     end
     
     function send_status(obj,t_sim,t_ctrl)

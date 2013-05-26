@@ -18,12 +18,12 @@
 #include <set>
 #include <vector>
 #include <Eigen/Dense>
-//#define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
+#define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 //#include <Eigen/Sparse>
 #include <gurobi_c++.h>
 
 #include "mexmaps/MapLib.hpp"
-// TODO: uncomment this #include <maps/ViewBase.hpp>
+#include <maps/ViewBase.hpp>
 
 #include "RigidBodyManipulator.h"
 
@@ -120,23 +120,34 @@ int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<
 
 void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d &normal)
 {
+  mexPrintf("Entered collisionDetect\n");
+
+  Vector3f floatPos, floatNormal;
   if (map_ptr) {
-    /* TODO: uncomment this block
+    mexPrintf("1\n");
     auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
+    mexPrintf("2\n");
     if (state != NULL) {
+      mexPrintf("3\n");
       auto view = state->getView();
       if (view != NULL) {
-        if (view->getClosest(contact_pos,pos,normal)) {
+        mexPrintf("4\n");
+        if (view->getClosest(contact_pos.cast<float>(),floatPos,floatNormal)) {
           return;
         }
+        mexPrintf("5\n");
+        pos = floatPos.cast<double>();
+        mexPrintf("6\n");
+        normal = floatNormal.cast<double>();
       }
     }
-    */
     mexErrMsgTxt("What to do if there is no data?");
   } else {
+    mexPrintf("7\n");
     pos << contact_pos.topRows(2), 0;
     normal << 0,0,1;
   }
+  mexPrintf("%f %f %f\n",normal[0],normal[1],normal[2]);
   // just assume mu = 1 for now
 }
 
@@ -315,7 +326,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             pdata->Rval[nnz++] = R_con(i,j);
           }
     }    
-    pdata->map_ptr = NULL;
+
+     // get the map ptr back from matlab
+     if (!mxIsNumeric(prhs[6]) || mxGetNumberOfElements(prhs[6])!=1)
+     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the seventh argument should be the map ptr");
+     memcpy(&pdata->map_ptr,mxGetData(prhs[6]),sizeof(pdata));
+    
+//    pdata->map_ptr = NULL;
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     

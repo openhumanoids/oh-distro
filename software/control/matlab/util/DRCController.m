@@ -54,7 +54,7 @@ classdef DRCController
         obj.controller_input_frames = sys.getInputFrame.frame;
         obj.n_input_frames = length(obj.controller_input_frames);
       else
-        obj.controller_input_frames = obj.controller.getInputFrame();
+        obj.controller_input_frames{1} = obj.controller.getInputFrame();
         obj.n_input_frames = 1; 
       end
       obj.controller_output_frame = obj.controller.getOutputFrame();

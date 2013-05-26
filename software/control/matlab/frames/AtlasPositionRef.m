@@ -1,13 +1,18 @@
 classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
   % atlas position reference input frame
   methods
-    function obj=AtlasPositionRef(r)
+    function obj=AtlasPositionRef(r,gains_id)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
       input_names = r.getInputFrame().coordinates;
       input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
       
-      [Kp,Kd] = getPDGains(r,'gazebo');
+      if nargin<2
+        [Kp,Kd] = getPDGains(r,'gazebo');
+      else
+        typecheck(gains_id,'char');
+        [Kp,Kd] = getPDGains(r,gains_id);
+      end
       
       coder = JointCommandCoder('atlas',input_names,diag(Kp),diag(Kd));
       
