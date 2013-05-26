@@ -296,9 +296,9 @@ public:
     mSpinRate = 7;
     addSpin("Spin Rate (rpm)", mSpinRate, -1, 60, 1, sensorControlBox);
     mHeadCameraFrameRate = 5;
-    addSpin("Head Cam fps", mHeadCameraFrameRate, -1, 30, 1, sensorControlBox);
+    addSpin("Head Cam fps", mHeadCameraFrameRate, -1, 10, 1, sensorControlBox); // maxing out at 10hz for safety
     mHandCameraFrameRate = 5;
-    addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 30, 1, sensorControlBox);
+    addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, sensorControlBox); // maxing out at 10hz for safety
     mCameraCompression = 0;
     std::vector<std::string> labels = { "-", "Low", "Med", "High" };
     std::vector<int> ids =
