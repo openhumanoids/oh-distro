@@ -96,7 +96,7 @@ AffordanceState::AffordanceState(const int &uid, const int &mapId,
 }
 
 
-static KDL::Frame poseToKDL(const urdf::Pose &p)
+static KDL::Frame poseToKDL(const otdf::Pose &p)
 {
   return KDL::Frame(KDL::Rotation::Quaternion(p.rotation.x, 
                                               p.rotation.y, 
@@ -199,12 +199,7 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
       cout << "\n read otdf xml from disk.  caching GLK body" << endl;
       _otdfTypeToBody[_otdf_type] = asGLKBody;
    }
-    
 
-    //get the geometries + transforms
-  
-  //  asGLKBody.set_state(instance);
-  
   //need to set the state w/ joint positions, which we assume are in the states
   unordered_map<string,double>::const_iterator iter;
   std::map<string, double> jointpos;
@@ -212,67 +207,47 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
     {
       jointpos[iter->first] = iter->second;
     }
-
+  
   asGLKBody->set_state(getOriginFrame(), jointpos);
-
-
-  vector<visualization_utils::LinkFrameStruct> linkGeometryTfs = asGLKBody->get_link_geometry_tfs();
-
-  //vector<string> linkGeomNames = asGLKBody->get_link_geometry_names();
-
+  
+  
   std::map<string, shared_ptr<otdf::Link> > otdfLinksMap = asGLKBody->get_otdf_links_map();
-
-  //vector<string> linkGeometryNames = asGLKBody.get_link_geometry_names();
-      for(uint i = 0; i < linkGeometryTfs.size(); i++)
+  vector<visualization_utils::LinkFrameStruct> linkFrames = asGLKBody->get_link_tfs();
+  for(uint i = 0; i < linkFrames.size();i++)
     {
-      visualization_utils::LinkFrameStruct nextLgTf = linkGeometryTfs[i];
-
-      //---get the geometry
-      shared_ptr<otdf::Geometry> nextGeom;
-      if (!asGLKBody->get_link_geometry(nextLgTf.name, nextGeom))
-        {
-          throw runtime_error("get link geometry failed");
-        }
-
-      //---get the link name and collision group name
-      string nextLinkName;
-      if (!asGLKBody->get_associated_link_name(nextLgTf.name, nextLinkName))
-        throw runtime_error("get_associated_link_name failed");
-      
+      //get the next link tf, name, and link
+      visualization_utils::LinkFrameStruct nextLinkTf = linkFrames[i];
+      string nextLinkName = nextLinkTf.name;
       shared_ptr<otdf::Link> link = otdfLinksMap[nextLinkName];     
-      
+
+      //defensive check
       if (link == shared_ptr<otdf::Link>())
         {
-          cout << "\n link was null" << endl;
+          cout << "\n\n link was null" << endl;
           continue;
         }
+      
+      //go thru the collision groups
+      for(std::map<string, shared_ptr<vector<shared_ptr<otdf::Collision> > > >::iterator iter = link->collision_groups.begin();
+          iter != link->collision_groups.end();
+          ++iter)
+        {
+          string nextCollisionGroupName = iter->first;
+          shared_ptr<vector<shared_ptr<otdf::Collision> > >nextCollGroup = iter->second;
 
-      string collisionGroupName;
-      if (link->collision != shared_ptr<otdf::Collision>())
-        {
-          cout << "\n first case " << endl;
-          collisionGroupName = link->collision->group_name; 
-          cout << "\n end first case" << endl;
-        }
-      else
-        {
-          
-          for(std::map<string, shared_ptr<vector<shared_ptr<otdf::Collision> > > >::iterator iter = link->collision_groups.begin();
-              iter != link->collision_groups.end();
-              ++iter)
+          //go thru the collision objects
+          for(uint n = 0; n < nextCollGroup->size(); n++)
             {
-              collisionGroupName = (*(iter->second))[0]->group_name;
-              break;
+              shared_ptr<otdf::Collision> cObj = nextCollGroup->at(n);
+
+              //-compute the world tf
+              KDL::Frame inWorldFrame = getOriginFrame()*nextLinkTf.frame*poseToKDL(cObj->origin);
+
+              //add as affordance
+              affs.push_back(geometryToAff(cObj->geometry, inWorldFrame, 
+                                           nextLinkName + "/" + nextCollisionGroupName));              
             }
         }
-      
-
-      //-compute the world pose 
-      KDL::Frame inWorldFrame = getOriginFrame()*nextLgTf.frame;
-
-      //add
-      affs.push_back(geometryToAff(nextGeom, inWorldFrame, 
-                                   nextLinkName + collisionGroupName));
     }
   return true;
 }
