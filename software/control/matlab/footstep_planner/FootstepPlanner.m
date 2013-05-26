@@ -45,11 +45,6 @@ classdef FootstepPlanner < DRCPlanner
                                           data.goal.goal_pos.rotation.y,...
                                           data.goal.goal_pos.rotation.z], 'XYZ');
         [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, obj.options);
-        % for j = 3:size(X, 2)
-        %   if X(j).is_in_contact && ~obj.options.ignore_terrain
-        %     X(j).pos = obj.biped.checkTerrain(X(j).pos);
-        %   end
-        % end
       end
       if changelist.plan_con
         % apply changes from user adjustment of footsteps in viewer
@@ -65,7 +60,7 @@ classdef FootstepPlanner < DRCPlanner
           if obj.options.ignore_terrain
             X(matching_ndx).pos(3) = old_x.pos(3);
           else
-            X(matching_ndx).pos = obj.biped.checkTerrain(X(matching_ndx).pos);
+            X(matching_ndx).pos = fitStepToTerrain(obj.biped, X(matching_ndx).pos);
           end
         end
       end

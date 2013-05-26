@@ -1,10 +1,10 @@
-function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
+function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
 
   debug = false;
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
-  sizecheck(poses, [6,1]);
+  sizecheck(goal_pos, [6,1]);
 
   if options.right_foot_lead
     X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
@@ -15,19 +15,19 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   end
   
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
-  % poses(6) = p0(6) + angleDiff(p0(6), poses(6));
-  unwrapped = unwrap([p0(6), poses(6)]);
-  poses(6) = unwrapped(2);
-  poses(3,:) = p0(3);
+  % goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
+  unwrapped = unwrap([p0(6), goal_pos(6)]);
+  goal_pos(6) = unwrapped(2);
+  goal_pos(3,:) = p0(3);
   if ~options.ignore_terrain
-    poses = biped.checkTerrain(poses);
+    goal_pos = fitStepToTerrain(biped, goal_pos);
   end
-  foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
+  foot_goals = struct('right', biped.stepCenter2FootCenter(goal_pos(1:6,end), 1), 'left', biped.stepCenter2FootCenter(goal_pos(1:6,end), 0));
 
   if options.follow_spline
-    traj = BezierTraj([p0, poses]);
+    traj = BezierTraj([p0, goal_pos]);
   else
-    traj = DirectTraj([p0, poses]);
+    traj = DirectTraj([p0, goal_pos]);
   end
   ls = linspace(0, 1);
   xy = traj.eval(ls);
@@ -42,7 +42,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
     for f = {'right', 'left'}
       foot = f{1};
       for j = 1:length(foot_centers.(foot))
-        foot_centers.(foot)(:,j) = biped.checkTerrain(foot_centers.(foot)(:,j));
+        foot_centers.(foot)(:,j) = fitStepToTerrain(biped, foot_centers.(foot)(:,j));
       end
     end
   end
@@ -112,12 +112,7 @@ aborted = false;
     else
       stall.(m_foot) = 0;
     end
-%     
-%     if options.ignore_terrain
-%       pos_n = foot_centers.(m_foot)(:, next_ndx);
-%     else
-%       pos_n = biped.checkTerrain(foot_centers.(m_foot)(:, next_ndx));
-%     end
+
     pos_n = foot_centers.(m_foot)(:, next_ndx);
     last_ndx.(m_foot) = next_ndx;
 
@@ -149,7 +144,7 @@ aborted = false;
       final_center = biped.footCenter2StepCenter(X(end).pos, X(end).is_right_foot);
 
       is_right_foot = ~X(end).is_right_foot;
-      final_pos = biped.checkTerrain(biped.stepCenter2FootCenter(final_center, is_right_foot));
+      final_pos = fitStepToTerrain(biped, biped.stepCenter2FootCenter(final_center, is_right_foot));
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
         break
