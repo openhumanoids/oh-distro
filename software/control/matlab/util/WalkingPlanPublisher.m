@@ -26,19 +26,19 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_qtraj_bytes = length(msg.qtraj); 
 
-      htraj = data.htraj;
-      save('tmp_r.mat','htraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.htraj = fread(fid,inf,'*uint8'); % note: this will be stored as an int8 in the lcmtype
-      fclose(fid);
-      msg.n_htraj_bytes = length(msg.htraj); 
-
-      hddtraj = data.hddtraj;
-      save('tmp_r.mat','hddtraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.hddtraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_hddtraj_bytes = length(msg.hddtraj); 
+%       htraj = data.htraj;
+%       save('tmp_r.mat','htraj');
+%       fid = fopen('tmp_r.mat','r');
+%       msg.htraj = fread(fid,inf,'*uint8'); % note: this will be stored as an int8 in the lcmtype
+%       fclose(fid);
+%       msg.n_htraj_bytes = length(msg.htraj); 
+% 
+%       hddtraj = data.hddtraj;
+%       save('tmp_r.mat','hddtraj');
+%       fid = fopen('tmp_r.mat','r');
+%       msg.hddtraj = fread(fid,inf,'*uint8');
+%       fclose(fid);
+%       msg.n_hddtraj_bytes = length(msg.hddtraj); 
 
       S = data.S;
       save('tmp_r.mat','S');

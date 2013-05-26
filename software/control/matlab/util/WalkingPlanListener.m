@@ -38,17 +38,17 @@ classdef WalkingPlanListener
         matdata = load('tmp_w.mat');
         qtraj=matdata.qtraj;
         
-        fid = fopen('tmp_w.mat','w');
-        fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load('tmp_w.mat');
-        htraj=matdata.htraj;
-
-        fid = fopen('tmp_w.mat','w');
-        fwrite(fid,typecast(msg.hddtraj,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load('tmp_w.mat');
-        hddtraj=matdata.hddtraj;
+%         fid = fopen('tmp_w.mat','w');
+%         fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
+%         fclose(fid);
+%         matdata = load('tmp_w.mat');
+%         htraj=matdata.htraj;
+% 
+%         fid = fopen('tmp_w.mat','w');
+%         fwrite(fid,typecast(msg.hddtraj,'uint8'),'uint8');
+%         fclose(fid);
+%         matdata = load('tmp_w.mat');
+%         hddtraj=matdata.hddtraj;
 
         fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.S,'uint8'),'uint8');
@@ -98,7 +98,7 @@ classdef WalkingPlanListener
         matdata = load('tmp_w.mat');
         qnom = matdata.qnom;
         
-        walking_data = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,...
+        walking_data = struct('qtraj',qtraj,...
           'comtraj',comtraj,'zmptraj',zmptraj,'lfoottraj',lfoottraj,...
           'rfoottraj',rfoottraj,'S',S,'s1',s1,'supptraj',supptraj,'qnom',qnom);
 

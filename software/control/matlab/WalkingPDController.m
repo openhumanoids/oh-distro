@@ -65,12 +65,10 @@ classdef WalkingPDController < MIMODrakeSystem
         sizecheck(options.q_nom,[obj.nq 1]);
         q_nom = options.q_nom;
         obj.controller_data.setField('qtraj',q_nom);
-        obj.controller_data.setField('qnom',q_nom);
       else
         d = load('data/atlas_fp.mat');
         q_nom = d.xstar(1:obj.nq);
         obj.controller_data.setField('qtraj',q_nom);
-        obj.controller_data.setField('qnom',q_nom);
       end
       
       % setup IK parameters
@@ -105,7 +103,6 @@ classdef WalkingPDController < MIMODrakeSystem
     end
    
     function y=mimoOutput(obj,t,~,varargin)
-      q_nom = varargin{1};
       x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);

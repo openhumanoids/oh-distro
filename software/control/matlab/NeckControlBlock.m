@@ -61,16 +61,12 @@ classdef NeckControlBlock < MIMODrakeSystem
       neck_max_delta = 0.075;
 
       cdata = obj.controller_data.getData();
-      if(isfield(cdata,'qnom'))
-        qdes = cdata.qnom;
+      qtraj = cdata.qtraj;
+      if typecheck(qtraj,'double')
+        qdes=qtraj;
       else
-        qtraj = cdata.qtraj;
-        if typecheck(qtraj,'double')
-          qdes=qtraj;
-        else
-          % pp trajectory
-          qdes = qtraj.eval(t);
-        end
+        % pp trajectory
+        qdes = qtraj.eval(t);
       end
       
       delta = Kp*(neckpitch-q(obj.neck_idx)) - Kd*qd(obj.neck_idx);

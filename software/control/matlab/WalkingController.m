@@ -19,10 +19,8 @@ classdef WalkingController < DRCController
         'lfoottraj',[],...
         'rfoottraj',[],...
         'supptraj',[],...
-        'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
-        'Vdot',0,... % time derivative of cost to go used in controller status message
-        'qnom',zeros(getNumDOF(r),1)));
+        'Vdot',0)); % time derivative of cost to go used in controller status message
 
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -38,7 +36,7 @@ classdef WalkingController < DRCController
       options.use_mex = true;
       qp = QPController(r,ctrl_data,options);
 
-      % cascade PD qtraj controller 
+      % cascade walking PD controller 
       pd = WalkingPDController(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -152,7 +150,7 @@ classdef WalkingController < DRCController
       fwrite(fid,typecast(msg_data.qnom,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
-      obj.controller_data.setField('qnom',matdata.qnom);
+      obj.controller_data.setField('qtraj',matdata.qnom);
 
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
     end
