@@ -215,8 +215,6 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       float c[3] = {0.6,0.3,0.3}; // light red
       draw_state(viewer,super,w_plan,c);
     }
-  }else{
-   std::cout << "not walking\n"; 
   }
 
  if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
