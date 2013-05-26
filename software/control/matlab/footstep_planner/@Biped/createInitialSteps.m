@@ -32,7 +32,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   ls = linspace(0, 1);
   xy = traj.eval(ls);
 
-  [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0);
+  [~, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0);
   if options.ignore_terrain
     infeasibility.right = zeros(size(infeasibility.right));
     infeasibility.left = zeros(size(infeasibility.left));
@@ -60,10 +60,10 @@ aborted = false;
   while (1)
     is_right_foot = ~X(end).is_right_foot;
     if is_right_foot
-      m_foot = 'right'
+      m_foot = 'right';
       s_foot = 'left';
     else
-      m_foot = 'left'
+      m_foot = 'left';
       s_foot = 'right';
     end
     lambda_n = 1;
@@ -149,7 +149,7 @@ aborted = false;
       final_center = biped.footCenter2StepCenter(X(end).pos, X(end).is_right_foot);
 
       is_right_foot = ~X(end).is_right_foot;
-      final_pos = biped.stepCenter2FootCenter(final_center, is_right_foot);
+      final_pos = biped.checkTerrain(biped.stepCenter2FootCenter(final_center, is_right_foot));
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
         break
