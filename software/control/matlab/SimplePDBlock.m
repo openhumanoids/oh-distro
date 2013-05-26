@@ -1,4 +1,4 @@
-classdef SimplePDController < MIMODrakeSystem
+classdef SimplePDBlock < MIMODrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -10,7 +10,7 @@ classdef SimplePDController < MIMODrakeSystem
   end
   
   methods
-    function obj = SimplePDController(r,controller_data,options)
+    function obj = SimplePDBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
       

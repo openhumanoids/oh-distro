@@ -1,4 +1,4 @@
-classdef WalkingPDController < MIMODrakeSystem
+classdef WalkingPDBlock < MIMODrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -13,7 +13,7 @@ classdef WalkingPDController < MIMODrakeSystem
   end
   
   methods
-    function obj = WalkingPDController(r,controller_data,options)
+    function obj = WalkingPDBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
             
