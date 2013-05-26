@@ -13,11 +13,11 @@ foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contac
 lambdas = linspace(0, 1);
 traj_poses = traj.eval(lambdas);
 
-traj_boundary_dist = biped.max_step_width + foot_radius;
-x_min = min(traj_poses(1,:)) - traj_boundary_dist;
-x_max = max(traj_poses(1,:)) + traj_boundary_dist;
-y_min = min(traj_poses(2,:)) - traj_boundary_dist;
-y_max = max(traj_poses(2,:)) + traj_boundary_dist;
+traj_boundary_dist = biped.max_step_width + foot_radius
+x_min = min(traj_poses(1,:)) - traj_boundary_dist
+x_max = max(traj_poses(1,:)) + traj_boundary_dist
+y_min = min(traj_poses(2,:)) - traj_boundary_dist
+y_max = max(traj_poses(2,:)) + traj_boundary_dist
 
 sample_x = linspace(x_min, x_max, (x_max - x_min) / foot_radius * 5);
 dx = sample_x(2) - sample_x(1);
