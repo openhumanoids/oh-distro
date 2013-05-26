@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <kdl/frames.hpp>
 #include <string>
+#include <vector>
 
 namespace affordance
 {
@@ -43,6 +44,16 @@ class ToString
     return std::string("Position = ") + toStr(frame.p)
       + std::string("\t Rotation = ") + toStr(frame.M);
   }
+
+  static std::vector<std::string> split(const std::string &input, char delim)
+  {
+    std::vector<std::string> result;
+    std::stringstream stream(input);
+    std::string nextWord;
+    while(getline(stream,nextWord,delim))
+      result.push_back(nextWord);
+    return result;
+  } 
 }; //class ToString
 
 /*
