@@ -10,7 +10,7 @@
 class RobotStateCodec : public CustomChannelCodec
 {
   public:
-    RobotStateCodec();
+    RobotStateCodec(const std::string loopback_channel = "");
         
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       

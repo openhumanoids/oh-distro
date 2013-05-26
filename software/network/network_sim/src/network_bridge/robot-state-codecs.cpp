@@ -3,8 +3,9 @@
 std::map<std::string, int> RobotStateCodec::joint_names_to_order_;
 std::vector<std::string> RobotStateCodec::joint_names_;
 
-RobotStateCodec::RobotStateCodec()
-    : dccl_(goby::acomms::DCCLCodec::get())
+RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
+    : CustomChannelCodec(loopback_channel),
+     dccl_(goby::acomms::DCCLCodec::get())
 {
     dccl_->validate<drc::MinimalRobotState>();
 
