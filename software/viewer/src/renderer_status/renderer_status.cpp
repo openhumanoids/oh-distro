@@ -79,6 +79,9 @@ typedef struct
     lcm_t *lcm;
     int64_t last_utime;
     
+    int64_t controller_utime;
+    int8_t controller_state;
+    
     drc_system_status_t_subscription_t *status_sub;
     
     // Information to be displayed:
@@ -202,6 +205,13 @@ on_robot_state(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_
 }
 
 static void
+on_controller_status(const lcm_recv_buf_t * buf, const char *channel, const drc_controller_status_t *msg, void *user_data){
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+  self->controller_state = msg->state;
+  self->controller_utime = msg->utime;
+}
+
+static void
 on_utime(const lcm_recv_buf_t * buf, const char *channel, const drc_utime_t *msg, void *user_data){
     RendererSystemStatus *self = (RendererSystemStatus*) user_data;
     self->last_utime = msg->utime;
@@ -248,7 +258,10 @@ static void format_time_str (int64_t lutime, char *line)
 
 //  sprintf (line, "SIM TIME: %1dd %2dh %2dm %2ds %3dms %3dus\n",
 //          days, hours, mins, secs, msecs, usecs );
-  sprintf (line, "%2dm %2ds %3dms\n",mins, secs, msecs);
+  //sprintf (line, "%2dm %2ds %3dms\n",mins, secs, msecs);
+  
+  sprintf(line, "%.4f SIM %2dm %2ds", ((double)lutime/1E6), mins, secs );
+  
 } 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -333,15 +346,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       y = gl_height + (-2 - self->frequency_list.size() - 10) * line_height;
       glRasterPos2f(x, y);
       glutBitmapString(font, (unsigned char*) line);
-      
-//    "X ELAPSED"
- //   "X LEFT"
-   // "X FALLS X SCORE X TASK"
-      
-      
-    
     }
     
+    // Status Block:    
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
     sprintf(line1, "n affs %d",self->naffs);
     sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
@@ -349,9 +356,6 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
-    sprintf(line8, "%.4f SIM", ((double)self->last_utime/1E6) );
-    format_time_str ( self->last_utime, line9 ); 
-  
     if ((self->left_contact==1)&& (self->right_contact==1) ){
       sprintf(line7, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
@@ -360,7 +364,21 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       sprintf(line7, "  feet     RIGHT->");
     }else{
       sprintf(line7, "  feet  **NONE**");
-    }      
+    }     
+    //format_time_str ( self->last_utime, line8 ); 
+    sprintf(line8, "%.4f SIM", ((double)self->last_utime/1E6) );
+
+    float elapsed_control_time =  (self->last_utime - self->controller_utime)*1E-6;
+    std::string status;
+    if (self->controller_state == DRC_CONTROLLER_STATUS_T_UNKNOWN){ status ="UNKNOWN"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_STANDING){ status ="STANDING";
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_WALKING){ status ="WALKING"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_HARNESSED){ status ="HARNESS"; 
+    }else{ status ="UNKNOWNX"; // shouldnt happen
+    }
+    sprintf(line9, "%s [AGE %.1f]", status.c_str() , elapsed_control_time);
+      
+     
       
     double x = 0;
     double y = gl_height - 8 * line_height;
@@ -635,6 +653,9 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->left_contact = 0.0;
     self->right_contact = 0.0;
     
+    self->controller_state= DRC_CONTROLLER_STATUS_T_UNKNOWN;
+    self->controller_utime= 0;
+    
     
     std::string channel_name ="SAM";
     self->msgchannels.push_back(channel_name);
@@ -653,6 +674,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     drc_frequency_t_subscribe(self->lcm,"FREQUENCY_LCM",on_frequency,self);
     drc_foot_contact_estimate_t_subscribe(self->lcm,"FOOT_CONTACT_ESTIMATE",on_foot_contact,self);
     drc_score_t_subscribe(self->lcm,"VRC_SCORE",on_score,self);
+    drc_controller_status_t_subscribe(self->lcm,"CONTROLLER_STATUS",on_controller_status,self);
 
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);
 
