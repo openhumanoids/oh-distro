@@ -39,6 +39,8 @@ lf_ee = EndEffector(r,'atlas','l_foot',[0;0;0],'L_FOOT_GOAL');
 lf_ee.frame.subscribe('L_FOOT_GOAL');
 h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
 h_ee.frame.subscribe('HEAD_GOAL');
+h_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL_CLEAR');
+h_ee_clear.frame.subscribe('HEAD_GOAL_CLEAR');
 % TODO: Incorporate constraints from these channels into the planner.
 h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
 h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
@@ -295,7 +297,13 @@ while(1)
     %h_ee_goal = [];
     h_ee_constraint = [];
   end
-
+  
+  p = getNextMessage (h_ee_clear.frame, 0);
+  if (~isempty(p))
+      disp ('Clearing head goal pose');
+      h_ee_goal = [];
+  end
+  
 end
 
 

@@ -654,10 +654,12 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     if (self->ground_truth_status) {
         sprintf (line5, "     Dir: %d\n", self->ground_truth_status->direction);
         sprintf (line6, "     Key: %d\n", self->ground_truth_status->key);
+        sprintf (line7, "      HB: %.2f\n", self->ground_truth_status->hand_brake);
     }
     else {
-        sprintf (line5, "    Dir.: ??? [GT]\n");
-        sprintf (line6, "     Key: ??? [GT]\n");
+        sprintf (line5, "    Dir.: ???\n");
+        sprintf (line6, "     Key: ???\n");
+        sprintf (line7, "      HB: ???\n");
     }
     
     double x = 0; //gl_width - line_length; // hind * 150 + 120;
@@ -670,8 +672,8 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
       glVertex2f(x, y);
       glVertex2f(x + line_length, y); // 21 is the number of chars in the box
 
-      glVertex2f(x + line_length, y + 7 * line_height); // 21 is the number of chars in the box
-      glVertex2f(x       , y + 7 * line_height);
+      glVertex2f(x + line_length, y + 8 * line_height); // 21 is the number of chars in the box
+      glVertex2f(x       , y + 8 * line_height);
       glEnd();
     }
 
@@ -698,6 +700,10 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     glColor3fv(colors[2]);
     glRasterPos2f(x, y + 6 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
+
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 7 * line_height);
+    glutBitmapString(font, (unsigned char*) line7);
     
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();

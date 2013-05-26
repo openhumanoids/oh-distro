@@ -9,9 +9,19 @@
 #define PARAM_EE_LEFT_HAND "Left hand"
 #define PARAM_USE_CURRENT_POSE "Use current pose"
 
+#define PARAM_EE_SPECIFY_GOAL "Select EE goal"
+#define PARAM_CURRENT_POSE "Use current pose"
+//#define PARAM_GAZE_SELECTION" "Gaze at selected point (NOT SUPPORTED)"
+//#define PARAM_GAZE_AFFORDANCE "Gaze at affordance (NOT SUPPORTED)"
+#define PARAM_CLEAR_CURRENT_GOAL "Clear current goal"
+
 typedef enum _ee_type_t {
     EE_HEAD, EE_RIGHT_HAND, EE_LEFT_HAND
 } ee_type_t;
+
+typedef enum _ee_goal_type_t {
+    CURRENT_POSE, CLEAR_CURRENT_GOAL 
+} ee_goal_type_t;
 
 using namespace std;
 using namespace boost;
@@ -383,7 +393,8 @@ namespace renderer_affordances_gui_utils
         if(doFK)
             {
                 //doBatchFK given DOF Desired Ranges
-                int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
+                //int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
+                int num_of_increments = 30; // determines no of intermediate holds between dof_min and dof_max;
                 self->dofRangeFkQueryHandler->doBatchFK(dof_names,dof_min,dof_max,num_of_increments);
             } 
 
@@ -408,26 +419,41 @@ namespace renderer_affordances_gui_utils
       
         ee_type_t ee_type = (ee_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SELECT_EE);
       
-        int use_current =  bot_gtk_param_widget_get_bool(pw, PARAM_USE_CURRENT_POSE);
-        fprintf(stderr, "Enum : %d - Use current : %d\n", ee_type, use_current);
+        ee_goal_type_t ee_goal_type = (ee_goal_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SPECIFY_GOAL);
 
-        if(self->frames){
-            BotTrans ee_to_local;
-          
-            bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
-          
-            fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
-          
-            publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
-        }
-        else{
-            fprintf(stderr, "BotFrames is null - Unable to find ee pose\n");
+
+        if (ee_type != EE_HEAD) {
+            fprintf (stdout, "Setting goal pose for %d is not supported\n", ee_type);
+            return;
         }
 
-        //send over the correct message
+        //int use_current =  bot_gtk_param_widget_get_bool(pw, PARAM_USE_CURRENT_POSE);
+        
 
+        if (ee_goal_type == CURRENT_POSE) {
+            fprintf(stderr, "Enum : %d - Use current : %d\n", ee_type, ee_goal_type);
+
+            if(self->frames){
+                BotTrans ee_to_local;
+                
+                bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
+                
+                fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
+                
+                publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
+            }
+            else{
+                fprintf(stderr, "BotFrames is null - Unable to find ee pose\n");
+            }
+        }
+        else if (ee_goal_type == CLEAR_CURRENT_GOAL) {
+            BotTrans temp;
+            temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
+            temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
+            publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL_CLEAR", temp);
+        }
     }    
-
+    
   
     //------------------------------------------------------------------
     static void spawn_adjust_params_popup (RendererAffordances *self)
@@ -622,62 +648,58 @@ namespace renderer_affordances_gui_utils
 
         // Need tracked joint positions of all objects.
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
-            {     
-                double current_dof_velocity = 0;
-                double current_dof_position = 0;
-                it->second._otdf_instance->getJointState(joint->first,current_dof_position,current_dof_velocity);
-                if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                    if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
-                        self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
-                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                        self->popup_widget_name_list.push_back(joint->first+"_MAX");   
-                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                        //bot_gtk_param_widget_add_separator (pw," ");
-                    }
-                    else
-                        {
-                            self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                            self->popup_widget_name_list.push_back(joint->first+"_MAX"); 
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                            // bot_gtk_param_widget_add_separator (pw," ");
-                        }   
+        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
+            double current_dof_velocity = 0;
+            double current_dof_position = 0;
+            it->second._otdf_instance->getJointState(joint->first,current_dof_position,current_dof_velocity);
+            if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+                if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
+                    self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                    self->popup_widget_name_list.push_back(joint->first+"_MAX");   
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                    //bot_gtk_param_widget_add_separator (pw," ");
                 }
+                else {
+                    self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                    self->popup_widget_name_list.push_back(joint->first+"_MAX"); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                    // bot_gtk_param_widget_add_separator (pw," ");
+                }   
             }
+        }
         //Have to handle joint_patterns separately   
         // DoF of all joints in joint patterns.
         typedef map<string,boost::shared_ptr<otdf::Joint_pattern> > jp_mapType;
-        for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++)
-            {
-                // for all joints in joint pattern.
-                for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
-                    {
-                        double current_dof_velocity = 0;
-                        double current_dof_position = 0;
-                        it->second._otdf_instance->getJointState(jp_it->second->joint_set[i]->name,current_dof_position,current_dof_velocity);
-                        if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                            if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) 
-                                {          
-                                    self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");
-                                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                                    self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX");  
-                                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                                    //bot_gtk_param_widget_add_separator (pw," ");
-                                }
-                            else
-                                {
-                                    self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");  
-                                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                                    jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                                    self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX"); 
-                                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                                    jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                                    //bot_gtk_param_widget_add_separator (pw," ");
-                                }   
-                        } // end if         
-                    } // end for all joints in jp
-            }// for all joint patterns
+        for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++) {
+            // for all joints in joint pattern.
+            for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++) {
+                double current_dof_velocity = 0;
+                double current_dof_position = 0;
+                it->second._otdf_instance->getJointState(jp_it->second->joint_set[i]->name,current_dof_position,current_dof_velocity);
+                if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+                    if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) 
+                        {          
+                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");
+                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX");  
+                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                            //bot_gtk_param_widget_add_separator (pw," ");
+                        }
+                    else
+                        {
+                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");  
+                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                            jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX"); 
+                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                            jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                            //bot_gtk_param_widget_add_separator (pw," ");
+                        }   
+                } // end if         
+            } // end for all joints in jp
+        }// for all joint patterns
     
     
         // store current object state (will be restored on popup close).
@@ -733,7 +755,10 @@ namespace renderer_affordances_gui_utils
         bot_gtk_param_widget_add_enum(pw, PARAM_EE_SELECT_EE, BOT_GTK_PARAM_WIDGET_MENU, EE_HEAD, PARAM_EE_HEAD, 
                                       EE_HEAD, PARAM_EE_RIGHT_HAND, EE_RIGHT_HAND, PARAM_EE_LEFT_HAND, EE_LEFT_HAND, NULL);
     
-        bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_CURRENT_POSE, 1, NULL);
+        bot_gtk_param_widget_add_enum(pw, PARAM_EE_SPECIFY_GOAL, BOT_GTK_PARAM_WIDGET_MENU, CURRENT_POSE, PARAM_CURRENT_POSE,
+                                      CURRENT_POSE, PARAM_CLEAR_CURRENT_GOAL, CLEAR_CURRENT_GOAL, NULL);
+
+        //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_CURRENT_POSE, 1, NULL);
 
         close_button = gtk_button_new_with_label ("Close");
 
