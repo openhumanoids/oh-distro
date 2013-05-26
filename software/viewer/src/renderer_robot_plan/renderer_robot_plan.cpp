@@ -11,6 +11,7 @@
 #define PARAM_HIDE "Hide Plan"  
 #define PARAM_USE_COLORMAP "Use Colormap"
 #define PARAM_PLAN_PART "Part of Plan"  
+#define PARAM_SHOW_DURING_CONTROL "During Control"  
 #define DRAW_PERSIST_SEC 4
 #define PARAM_START_PLAN "Start Planning"
 #define PARAM_SEND_COMMITTED_PLAN "Send Plan"
@@ -196,24 +197,26 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
   
   
-  if(self->robotPlanListener->_controller_status == drc::controller_status_t::WALKING){ // walking 
-    int rx_plan_size = self->robotPlanListener->_received_plan.num_states;
-    int64_t last_plan_utime = self->robotPlanListener->_received_plan.plan[rx_plan_size-1].utime;
-    double current_plan_part = ((double) self->robotPlanListener->_controller_utime / last_plan_utime);
-    
-    //printf ("controller time: %lld \n", self->robotPlanListener->_controller_utime); 
-    //std::cout << self->robotPlanListener->_received_plan.num_states << " is rxd plan size\n";
-    //std::cout << plan_size << " is plan size\n";
-    //std::cout << last_plan_utime << " is last_plan_utime\n";
-    //std::cout << current_plan_part << " is current_plan_part\n";    
-    if((current_plan_part >0.0 )&&(current_plan_part <1.0)){
-      double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
-      uint w_plan = (uint) round(current_plan_part* (plan_size -1));
-      //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
-      self->displayed_plan_index = w_plan;
+  if(bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_DURING_CONTROL) ){
+    if(self->robotPlanListener->_controller_status == drc::controller_status_t::WALKING){ // walking 
+      int rx_plan_size = self->robotPlanListener->_received_plan.num_states;
+      int64_t last_plan_utime = self->robotPlanListener->_received_plan.plan[rx_plan_size-1].utime;
+      double current_plan_part = ((double) self->robotPlanListener->_controller_utime / last_plan_utime);
       
-      float c[3] = {0.6,0.3,0.3}; // light red
-      draw_state(viewer,super,w_plan,c);
+      //printf ("controller time: %lld \n", self->robotPlanListener->_controller_utime); 
+      //std::cout << self->robotPlanListener->_received_plan.num_states << " is rxd plan size\n";
+      //std::cout << plan_size << " is plan size\n";
+      //std::cout << last_plan_utime << " is last_plan_utime\n";
+      //std::cout << current_plan_part << " is current_plan_part\n";    
+      if((current_plan_part >0.0 )&&(current_plan_part <1.0)){
+        double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
+        uint w_plan = (uint) round(current_plan_part* (plan_size -1));
+        //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
+        self->displayed_plan_index = w_plan;
+        
+        float c[3] = {0.6,0.3,0.3}; // light red
+        draw_state(viewer,super,w_plan,c);
+      }
     }
   }
 
@@ -552,6 +555,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
    
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
