@@ -208,12 +208,15 @@ int main(int argc, char *argv[])
   
   string config_file = ""; // leave this empty so force viewer to get it from the param server
   string role = "robot";
+  bool network_debug = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(role, "r", "role","Role - robot or base");
+  opt.add(network_debug, "n", "network_debug","Network Debug (for loopbacks)");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
   std::cout << "role: " << role << "\n";
+  std::cout << "network_debug: " << (int) network_debug << "\n";
   string viewer_title = "(" + role + ") MIT DRC Viewer";
   string vis_config_file = ".bot-plugin-"+ role +"-drc-viewer";
   
@@ -295,8 +298,11 @@ int main(int argc, char *argv[])
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,true);
-  // Renderers for Testing Loopback Quality:
-  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,false);
+  
+  if (network_debug){
+    // Renderers for Testing Loopback Quality:
+    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,false);
+  }
   
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);

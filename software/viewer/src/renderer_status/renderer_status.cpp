@@ -62,8 +62,8 @@ float colors[NUMBER_OF_SYSTEMS][3] = {
 
 const char* PARAM_SHADING = "Shading";
 const bool PARAM_SHADING_DEFAULT = true;
-const char* PARAM_SENSOR_RATES = "Sensor Rates";
-const bool PARAM_SENSOR_RATES_DEFAULT= true;
+const char* PARAM_SCORE_AND_RATES = "Score & Rates";
+const bool PARAM_SCORE_AND_RATES_DEFAULT= true;
 
 #define ERR(fmt, ...) do { \
     fprintf(stderr, "["__FILE__":%d Error: ", __LINE__); \
@@ -297,7 +297,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     int line_height = 14;
     
     // Printf the frequency_list:
-    if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SENSOR_RATES)){
+    if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SCORE_AND_RATES)){
       if (self->frequency_list.size()>0){
 	double x=0;
 	double y=0;
@@ -322,30 +322,30 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineX);
       }
-    }
-    
-    
-    if (self->score != NULL){
-      char line[80];
-      sprintf(line, "%d FALLS %d TASK %d SCORE",self->score->falls, self->score->task_type, self->score->completion_score );
-      double x = 0 ;// hind * 150 + 120;
-      double y = gl_height + ( - self->frequency_list.size() - 10) * line_height;
-      glColor3f(  0.0, 0.0, 1.0 );
-      glRasterPos2f(x, y);
-      glutBitmapString(font, (unsigned char*) line);
+      
+      if (self->score != NULL){
+	char line[80];
+	sprintf(line, "%d FALLS %d TASK %d SCORE",self->score->falls, self->score->task_type, self->score->completion_score );
+	double x = 0 ;// hind * 150 + 120;
+	double y = gl_height + ( - self->frequency_list.size() - 10) * line_height;
+	glColor3f(  0.0, 0.0, 1.0 );
+	glRasterPos2f(x, y);
+	glutBitmapString(font, (unsigned char*) line);
 
-      
-      float elapsed_sec = (float) (self->score->sim_time_elapsed /1E6) ;
-      float remaining_sec = 30.0*60.0 - elapsed_sec;
-      
-      sprintf(line, "%.1f LEFT %.1f", remaining_sec, remaining_sec/60 );
-      y = gl_height + (-1 - self->frequency_list.size() - 10) * line_height;
-      glRasterPos2f(x, y);
-      glutBitmapString(font, (unsigned char*) line);
-      sprintf(line, "%.1f ELAPSED", elapsed_sec );
-      y = gl_height + (-2 - self->frequency_list.size() - 10) * line_height;
-      glRasterPos2f(x, y);
-      glutBitmapString(font, (unsigned char*) line);
+	
+	float elapsed_sec = (float) (self->score->sim_time_elapsed /1E6) ;
+	float remaining_sec = 30.0*60.0 - elapsed_sec;
+	
+	sprintf(line, "%.1f LEFT %.1f", remaining_sec, remaining_sec/60 );
+	y = gl_height + (-1 - self->frequency_list.size() - 10) * line_height;
+	glRasterPos2f(x, y);
+	glutBitmapString(font, (unsigned char*) line);
+	sprintf(line, "%.1f ELAPSED", elapsed_sec );
+	y = gl_height + (-2 - self->frequency_list.size() - 10) * line_height;
+	glRasterPos2f(x, y);
+	glutBitmapString(font, (unsigned char*) line);
+      }
+    
     }
     
     // Status Block:    
@@ -728,7 +728,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_SHADING, PARAM_SHADING_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
-                                      PARAM_SENSOR_RATES, PARAM_SENSOR_RATES_DEFAULT, NULL);
+                                      PARAM_SCORE_AND_RATES, PARAM_SCORE_AND_RATES_DEFAULT, NULL);
     
     
     gtk_widget_show (GTK_WIDGET (self->pw));
