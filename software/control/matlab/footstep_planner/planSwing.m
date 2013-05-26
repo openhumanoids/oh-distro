@@ -13,6 +13,7 @@ apex_pos = biped.findApexPos(last_pos, next_pos, options.step_height);
 debug = false;
 
 planar_clearance = 0.05;
+ignore_height = 1; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
 nom_z_clearance = 0.02;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
 % ramp_distance = 0.03; % m
@@ -51,6 +52,7 @@ if step_dist_xy > 0.01
   terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, max([ceil(step_dist_xy / 0.02),3]), 10);
   terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
   terrain_pts(2,end) = max([terrain_pts(2,end), next_pos(3)]);
+  terrain_pts(2,(terrain_pts(2,:) > (max([last_pos(3), next_pos(3)]) + ignore_height))) = max([last_pos(3), next_pos(3)]);
   
   expanded_terrain_pts = [terrain_pts(:,1)];
   for j = 1:length(terrain_pts(1,:))
