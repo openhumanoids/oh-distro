@@ -80,7 +80,7 @@ struct ImageTransmit {
       mDownSampleFactor = 4;
       break;
     case drc::sensor_request_t::QUALITY_HIGH:
-      mJpegQuality = 90;
+      mJpegQuality = 50;
       mDownSampleFactor = 2;
       break;
     default:
