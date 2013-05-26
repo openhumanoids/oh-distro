@@ -13,5 +13,6 @@ struct controller_status_t
   const int8_t STANDING     = 1;
   const int8_t WALKING      = 2;
   const int8_t HARNESSED    = 3;
+  const int8_t QUASISTATIC  = 4;
 }
 
