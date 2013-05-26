@@ -13,7 +13,7 @@ apex_pos = biped.findApexPos(last_pos, next_pos, options.step_height);
 debug = false;
 
 planar_clearance = 0.05;
-ignore_height = 1; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
+ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
 nom_z_clearance = 0.02;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
 % ramp_distance = 0.03; % m
