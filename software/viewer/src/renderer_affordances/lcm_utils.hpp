@@ -591,7 +591,7 @@ namespace renderer_affordances_lcm_utils
                 KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
                 T_world_ee.p += worldframe_offset;   
                 T_world_ee_frames.push_back(T_world_ee);
-                int64_t timestamp=(int64_t)(2*num_frames-1-i)*1000000;
+                int64_t timestamp=(int64_t)(num_frames+i)*1000000;
                 frame_timestamps.push_back(timestamp);   
               } 
             }
@@ -619,14 +619,14 @@ namespace renderer_affordances_lcm_utils
               //for(uint i = 0; i < (uint) num_frames; i++)
               //{
                 //joint_pos.push_back(0.5*hand_it->second.joint_position[k]); % dont open fully, just loosen hold until half way
-                
                 joint_pos.push_back(0.0);
-                int64_t timestamp=(int64_t)(2*num_frames-1-i)*1000000;
+                
+                int64_t timestamp=(int64_t)(num_frames+i)*1000000;
                 joint_pos_timestamps.push_back(timestamp);   
               //} 
             }
               joint_pos_map.insert(make_pair(joint_name,joint_pos));
-              joint_pos_timestamps_map.insert(make_pair(joint_name, frame_timestamps));  
+              joint_pos_timestamps_map.insert(make_pair(joint_name, joint_pos_timestamps));  
           }
            
          } // end if (host_name == (it->first))
