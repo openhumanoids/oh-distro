@@ -24,14 +24,15 @@ class FallDetector:
     def handle(self, channel, data):
         msg = drc.controller_zmp_status_t.decode(data)
         t = msg.utime / 1e9
-        if self.last_t is None:
+        if self.last_t is None or t - self.last_t > 1 or t < 0.001:
             self.last_t = t
+            self.zmp_error = 0
         else:
             self.zmp_error = max(0, self.zmp_error + (t - self.last_t) * (int(not msg.zmp_ok) - self.decay_rate))
             self.last_t = t
         # print "{:.2f} {:b} {:.3f}".format(t, msg.zmp_ok, self.zmp_error)
         if self.zmp_error > 0.1:
-            print "WARNING: FALL DETECTED"
+            print "WARNING: POSSIBLE FALL at time: {:.3f}".format(t)
 
 f = FallDetector()
 
