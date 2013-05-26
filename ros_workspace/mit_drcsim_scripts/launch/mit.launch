@@ -5,7 +5,7 @@
   <arg name="gzname" default="run_gzserver"/>
 
 <!-- Read world file -->
-  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/mit_manip.world" />
+  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/mit_walking.world" />
 
   <param name="/use_sim_time" type="bool" value="true"/>
   <param name="/atlas/startup_mode" value="pinned" />
