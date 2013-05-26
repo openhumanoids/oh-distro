@@ -66,7 +66,7 @@ if step_dist_xy > 0.01
   end
   expanded_terrain_pts = [expanded_terrain_pts, terrain_pts(:,end), apex_pos_l];
 
-  expanded_terrain_pts(1,:) = bsxfun(@max, bsxfun(@min, expanded_terrain_pts(1,:), step_dist_xy), 0);
+  expanded_terrain_pts(1,:) = bsxfun(@max, bsxfun(@min, expanded_terrain_pts(1,:), step_dist_xy), min([last_pos(3), next_pos(3)]));
   expanded_terrain_pts = expanded_terrain_pts(:, convhull(expanded_terrain_pts(1,:), expanded_terrain_pts(2,:), 'simplify', true));
   expanded_terrain_pts = expanded_terrain_pts(:, end:-1:1); % convert counterclockwise to clockwise convex hull
 
@@ -128,8 +128,8 @@ function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, n
   rhos = linspace(-contact_width, contact_width, nrho);
   [R, L] = meshgrid(rhos, lambdas);
   xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
-  z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)));
-  % plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
+  z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)), 'symmetric');
+  plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
   terrain_pts(2, :) = max(z, [], 2);
   terrain_pts(1,:) = lambdas;
 end
