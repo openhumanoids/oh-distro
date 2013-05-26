@@ -804,7 +804,7 @@
     <parent link="l_uleg"/>
     <child link="l_lleg"/>
     <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="0" upper="2.45" velocity="12"/>
+    <limit effort="400" lower="0" upper="2.45" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
   </joint>
   <joint name="l_leg_lax" type="revolute">
@@ -840,7 +840,7 @@
     <parent link="l_lleg"/>
     <child link="l_talus"/>
     <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="-0.698" upper="0.698" velocity="12"/>
+    <limit effort="220" lower="-0.9" upper="0.698" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
   </joint>
   <joint name="l_leg_uhz" type="revolute">
@@ -923,7 +923,7 @@
     <parent link="r_uleg"/>
     <child link="r_lleg"/>
     <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="0" upper="2.45" velocity="12"/>
+    <limit effort="400" lower="0" upper="2.45" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
   </joint>
   <joint name="r_leg_lax" type="revolute">
@@ -959,7 +959,7 @@
     <parent link="r_lleg"/>
     <child link="r_talus"/>
     <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="-0.698" upper="0.698" velocity="12"/>
+    <limit effort="220" lower="-0.9" upper="0.698" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
   </joint>
   <joint name="r_leg_uhz" type="revolute">
@@ -979,7 +979,7 @@
       <!-- <mass value="2.312"/>-->
       <!--OLD value-->
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -996,7 +996,7 @@
       <!-- <mass value="2.312"/>-->
       <!--OLD value-->
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
