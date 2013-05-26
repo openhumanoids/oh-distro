@@ -102,12 +102,10 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
     channels.insert(channels.end(), channels_a.begin(), channels_a.end());
     frequencys.insert(frequencys.end(), frequencys_a.begin(), frequencys_a.end());
     
-    
     //////////////////// Frequency B ///////////////////    
     char channels_b_key[512], frequency_b_key[512];
     sprintf(channels_b_key, "network.%s.%s.channels_b",task.c_str() , direction.c_str() );
     sprintf(frequency_b_key, "network.%s.%s.frequency_b",task.c_str() , direction.c_str() );
-    //std::cout << channels_b_key << " ===========================\n";
     std::vector <string> channels_b;
     char **names_b = bot_param_get_str_array_alloc(bot_param, channels_b_key);
     for (int j = 0; names_b && names_b[j]!=NULL; j++) {
@@ -116,10 +114,23 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
     std::vector<double> frequencys_b;
     double frequency_value_b= bot_param_get_double_or_fail(bot_param, frequency_b_key);
     frequencys_b.assign (channels_b.size(),frequency_value_b);
-    //std::cout << frequency_value_b << " B===================================\n";
     channels.insert(channels.end(), channels_b.begin(), channels_b.end());
     frequencys.insert(frequencys.end(), frequencys_b.begin(), frequencys_b.end());
     
+    //////////////////// Frequency C ///////////////////    
+    char channels_c_key[512], frequency_c_key[512];
+    sprintf(channels_c_key, "network.%s.%s.channels_c",task.c_str() , direction.c_str() );
+    sprintf(frequency_c_key, "network.%s.%s.frequency_c",task.c_str() , direction.c_str() );
+    std::vector <string> channels_c;
+    char **names_c = bot_param_get_str_array_alloc(bot_param, channels_c_key);
+    for (int j = 0; names_c && names_c[j]!=NULL; j++) {
+        channels_c.push_back(names_c[j]);
+    } 
+    std::vector<double> frequencys_c;
+    double frequency_value_c= bot_param_get_double_or_fail(bot_param, frequency_c_key);
+    frequencys_c.assign (channels_c.size(),frequency_value_c);
+    channels.insert(channels.end(), channels_c.begin(), channels_c.end());
+    frequencys.insert(frequencys.end(), frequencys_c.begin(), frequencys_c.end());
     
     // Form Subscription String //////////////
     for (size_t j = 0; j <  channels.size() ; j++) {
