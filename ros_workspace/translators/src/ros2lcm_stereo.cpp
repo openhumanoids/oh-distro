@@ -130,6 +130,7 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     // Laser:
     rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
     
+    // This is done by directly requesting from Gazebo at lower rate:
     head_stereo_publish_fps_ = 1.0;
     //head_fps_sub_ = node_.subscribe("/mit/set_head_fps", 100, &App::head_fps_cb,this);
     
@@ -153,7 +154,8 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     
   /////////////////////////////// Hand Cameras /////////////////////////////////////
   if (send_hand_cameras_){
-    hand_stereo_publish_fps_ = 1.0;
+    // This is done by discarding whats coming from ros:
+    hand_stereo_publish_fps_ = 5.0;
     hand_fps_sub_ = node_.subscribe("/mit/set_hand_fps", 10, &App::hand_fps_cb,this);
 
     
@@ -181,7 +183,7 @@ App::~App()  {
 
 void App::hand_fps_cb(const std_msgs::Float64ConstPtr& msg){
   hand_stereo_publish_fps_ = double( msg->data);
-  std::cout << "set the hand stereo fps to : " << hand_stereo_publish_fps_ << "\n";  
+  ROS_ERROR("ROS2LCM Stereo: set output fps to : %f", hand_stereo_publish_fps_ );  
 }
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
@@ -256,39 +258,37 @@ int lhand_stereo_counter=0;
 void App::l_hand_stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
 {
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
-  //if ( float(current_utime -l_hand_stereo_last_utime_) > float(1E6/hand_stereo_publish_fps_ ) ){
+  if ( float(current_utime -l_hand_stereo_last_utime_) > float(1E6/hand_stereo_publish_fps_ ) ){
     //std::cout << "send l hand\n";
     l_hand_stereo_last_utime_ = current_utime;
     publishStereo(l_image,l_cam_info,r_image,r_cam_info,"CAMERA_LHAND");
     
     if (lhand_stereo_counter%30 ==0){
       ROS_ERROR("LHCAM [%d]", lhand_stereo_counter );
-      // std::cout << "LCAMS " << lhand_stereo_counter << "\n";
     }
     lhand_stereo_counter++;
 
-  //}else{
+  }else{
     //std::cout << "dont send hand l\n";
- // }
+  }
 }
 
 int rhand_stereo_counter=0;
 void App::r_hand_stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
 {
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
- // if ( float(current_utime - r_hand_stereo_last_utime_) > float(1E6/hand_stereo_publish_fps_ ) ){
+  if ( float(current_utime - r_hand_stereo_last_utime_) > float(1E6/hand_stereo_publish_fps_ ) ){
     //std::cout << "send r hand\n";
     r_hand_stereo_last_utime_ = current_utime;
     publishStereo(l_image,l_cam_info,r_image,r_cam_info,"CAMERA_RHAND");
     
     if (rhand_stereo_counter%30 ==0){
       ROS_ERROR("RHCAM [%d]", rhand_stereo_counter );
-      //std::cout << "RCAMS " << rhand_stereo_counter << "\n";
     }    
     rhand_stereo_counter++;
-  //}else{
+  }else{
     //std::cout << "dont send r hand\n";
-  //}
+  }
 }
 
 // same as bot_timestamp_now():
