@@ -102,14 +102,6 @@ while true
     walking_pub.publish(0,walking_plan);
   end
 
-
-  % if 0 % do proper time-varying linear system approach
-  %   disp('Computing ZMP controller...');
-  %   limp = LinearInvertedPendulum(htraj);
-  %   [~,V] = ZMPtracker(limp,zmptraj); 
-  % end
-
-
   if debug
     tt = 0:0.04:ts(end);
     compoints = zeros(3,length(tt));
