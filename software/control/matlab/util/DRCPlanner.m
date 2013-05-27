@@ -4,7 +4,7 @@ classdef DRCPlanner < handle
     monitors;  % array of MessageMonitors
     last_msg_utimes; % the most recent utime for each monitor which was handled in updateData
     coders;  % array of lcmCoders
-    constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
+    constructors={};  % array of lcm type constructors
     required=[];  % boolean array saying whether each message monitor is required
     updatable=[]; % boolean array saying whether each input should be updated during the plan
     can_trigger=[]; % boolean array saying whether each input can trigger a new plan
@@ -36,7 +36,7 @@ classdef DRCPlanner < handle
         lcmtype = obj.coders{n}.encode(0,zeros(obj.coders{n}.dim(),1));
       else
         obj.coders{n} = [];
-        [lcmtype,obj.constructors(n)]=DRCPlanner.parseLCMType(lcmtype_or_lcmcoder);
+        [lcmtype,obj.constructors{n}]=DRCPlanner.parseLCMType(lcmtype_or_lcmcoder);
       end
       mon = drake.util.MessageMonitor(lcmtype,'utime');
       % mon = lcm.lcm.MessageAggregator();
@@ -77,7 +77,7 @@ classdef DRCPlanner < handle
           if ~isempty(d)
             if isempty(obj.coders{i})
               % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
-              data = setfield(data,obj.name{i},obj.constructors(i).newInstance(d));
+              data = setfield(data,obj.name{i},obj.constructors{i}.newInstance(d));
             else
               data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
             end
