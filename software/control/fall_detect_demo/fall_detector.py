@@ -14,7 +14,7 @@ Usage:
 """
 
 vdot_threshold = 0.002
-vdot_count_threshold = 2
+vdot_count_threshold = 3
 vdot_memory = 10
 
 m = lcm.LCM()
@@ -41,6 +41,9 @@ class FallDetector:
             print self.vdot_history
             if self.vdot_errror_count > vdot_count_threshold:
                 print "WARNING: POSSIBLE FALL at time: {:.3f}".format(t)
+                brace_msg = drc.utime_t()
+                brace_msg.utime = 0
+                m.publish("BRACE_FOR_FALL", brace_msg.encode())
             self.last_t = t
 
 f = FallDetector()
