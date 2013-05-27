@@ -15,7 +15,7 @@ limp = LinearInvertedPendulum(com(3)-zmap);
 
 % get COM traj from desired ZMP traj
 [c,V] = ZMPtracker(limp,zmptraj);
-comtraj = COMplanFromTracker(limp,com(1:2),[0;0],zmptraj,c);
+comtraj = COMplanFromTracker(limp,com(1:2),[0;0],zmptraj.tspan,c);
 
 % comf = mean([footsteps(end).pos(1:2), footsteps(end-1).pos(1:2)], 2);
 % comtraj = ZMPplan(limp,com(1:2),comf,zmptraj);
