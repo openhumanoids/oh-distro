@@ -60,8 +60,7 @@ classdef NeckControlBlock < MIMODrakeSystem
       Kd = 5;
       neck_max_delta = 0.075;
 
-      cdata = obj.controller_data.getData();
-      qtraj = cdata.qtraj;
+      qtraj = obj.controller_data.getField('qtraj');
       if typecheck(qtraj,'double')
         qdes=qtraj;
       else

@@ -200,6 +200,7 @@ classdef DRCController
       t_offset = -1;
       lcm_check_tic = tic;
       status_tic = tic;
+      precompute_tic = tic;
       while (1)
 %         tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
@@ -228,7 +229,7 @@ classdef DRCController
             continue;
           end
 %          [x,tsim] = getNextMessage(fr,0);
-          [x,tsim] = getNextMessage(fr,3); % in principle this should be 0 so we don't delay gets
+          [x,tsim] = getNextMessage(fr,2); % in principle this should be 0 so we don't delay gets
           % on other input frames, but in our case most controllers just
           % have atlas state coming at high frequency, so we can use a
           % small wait to reduce the # of function calls
@@ -255,14 +256,16 @@ classdef DRCController
           end
         end
         
-        % do this every loop?
-        for i=1:length(obj.precompute_triggers)
-          if obj.precompute_active{i}
-            f=obj.precompute_triggers{i};
-            obj.precompute_active{i} = f(input_frame_data,input_frame_time);
+        if toc(precompute_tic)>0.1
+          for i=1:length(obj.precompute_triggers)
+            if obj.precompute_active{i}
+              f=obj.precompute_triggers{i};
+              obj.precompute_active{i} = f(input_frame_data,input_frame_time);
+            end
           end
+          precompute_tic=tic;
         end
-     
+        
         tt = max(input_frame_time);
 %         if isempty(ttprev)
 %           ttprev=tt;

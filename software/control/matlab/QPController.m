@@ -178,8 +178,9 @@ classdef QPController < MIMODrakeSystem
     ctrl_data = getData(obj.controller_data);
     
     r = obj.robot;
-    %   debugging for the rpy velocities
-    nq = getNumDOF(obj.robot); qd = x(nq+(1:nq)); 
+    nq = getNumDOF(r); 
+    q = x(1:nq); 
+    qd = x(nq+(1:nq)); 
     
     % get foot contact state
     if obj.lcm_foot_contacts
@@ -193,27 +194,43 @@ classdef QPController < MIMODrakeSystem
         rfoot_contact_state = msg.right_contact;
       end
     else
-      nq = getNumDOF(r);
-      contact_threshold = 0.002; % m
-      q = x(1:nq); 
-      kinsol = doKinematics(r,q,false,true);
-    
-      % get active contacts
-      phi = contactConstraints(r,kinsol,[obj.lfoot_idx,obj.rfoot_idx]);
-
-      % if any foot point is in contact, all contact points are active
-      if any(phi(1:4)<contact_threshold)
-        lfoot_contact_state = 1;
-      else
-        lfoot_contact_state = 0;
-      end
-
-      if any(phi(5:8)<contact_threshold)
-        rfoot_contact_state = 1;
-      else
-        rfoot_contact_state = 0;
-      end
+      lfoot_contact_state=1;
+      rfoot_contact_state=1;
     end
+    
+    % Change in logic here due to recent tests with heightmap noise
+    % for now, we will do a logical OR of the force-based sensor and the
+    % kinematic criterion
+    %
+    % another option would be to limit forces on the feet when kinematics
+    % says 'contact', but force sensors do not. when both agree, allow full
+    % forces on the feet
+    
+    % determine contact via kinematics.
+    % this is not optimized (we're repeating contact constraints call below
+    % and for the mex case, we should not be doing this in matlab
+    contact_threshold = 0.002; % m
+    kinsol = doKinematics(r,q,false,true);
+    
+    % get active contacts
+    phi = contactConstraints(r,kinsol,[obj.lfoot_idx,obj.rfoot_idx]);
+
+    % if any foot point is in contact, all contact points are active
+    if any(phi(1:4)<contact_threshold)
+      lfoot_contact_state_kin = 1;
+    else
+      lfoot_contact_state_kin = 0;
+    end
+
+    if any(phi(5:8)<contact_threshold)
+      rfoot_contact_state_kin = 1;
+    else
+      rfoot_contact_state_kin = 0;
+    end
+
+    lfoot_contact_state = lfoot_contact_state || lfoot_contact_state_kin;
+    rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
+    
     
     % use support trajectory to get desired foot contact state
     if typecheck(ctrl_data.supptraj,'double')
@@ -273,7 +290,8 @@ classdef QPController < MIMODrakeSystem
        if typecheck(ctrl_data.s2,'double')
         s2 = ctrl_data.s2;
        else
-        s2=ctrl_data.s2.eval(t);
+        s2=0;
+%         s2=ctrl_data.s2.eval(t); % this is expensive, do we really need it?
        end
       else
         s2=0; 
@@ -303,7 +321,7 @@ classdef QPController < MIMODrakeSystem
 
 
     if (obj.use_mex==0 || obj.use_mex==2)
-      r = obj.robot;
+
       nu = getNumInputs(r);
       nq = getNumDOF(r);
       dim = 3; % 3D
@@ -311,9 +329,7 @@ classdef QPController < MIMODrakeSystem
       nq_free = length(obj.free_dof);
       nq_con = length(obj.con_dof);
       nu_con = length(obj.con_inputs);
-      
-      q = x(1:nq);
-      qd = x(nq+(1:nq));
+
 
       kinsol = doKinematics(r,q,false,true,qd);
       

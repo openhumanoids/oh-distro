@@ -78,6 +78,9 @@ classdef FootstepReplanner < DrakeSystem
             fprintf('LF:Adjusting footsteps by %2.4f m \n',diffz);
             cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz; %% VERY INEFFICIENT
             cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT
+
+            obj.controller_data.setField('rfoottraj',cdata.rfoottraj)
+            obj.controller_data.setField('lfoottraj',cdata.lfoottraj)
           elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
             cdata = obj.controller_data.getData();
@@ -91,6 +94,9 @@ classdef FootstepReplanner < DrakeSystem
             fprintf('RF:Adjusting footsteps by %2.4f m \n',diffz);
             cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz; %% VERY INEFFICIENT
             cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT
+
+            obj.controller_data.setField('rfoottraj',cdata.rfoottraj)
+            obj.controller_data.setField('lfoottraj',cdata.lfoottraj)
           end
 
           lfoot_contact_state = msg.left_contact>0.5;
