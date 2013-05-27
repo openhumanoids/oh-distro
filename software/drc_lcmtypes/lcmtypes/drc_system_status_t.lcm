@@ -26,7 +26,9 @@ struct system_status_t
   const int8_t CONTROL= 3;
   const int8_t GRASPING= 4;
   const int8_t DRIVING= 5;       
-  const int8_t PLANNING= 6;       
+  const int8_t PLANNING_BASE= 6;       
+  const int8_t PLANNING_ROBOT= 7;       
+  const int8_t FALL_DETECTOR= 8;       
     
   // enum for importance
   const int8_t VERY_IMPORTANT= 0;
