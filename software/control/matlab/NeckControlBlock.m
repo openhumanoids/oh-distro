@@ -60,6 +60,7 @@ classdef NeckControlBlock < MIMODrakeSystem
       Kd = 5;
       neck_max_delta = 0.075;
 
+      % OPT: all of these interactions with PPTrajectories are expensive
       qtraj = obj.controller_data.getField('qtraj');
       if typecheck(qtraj,'double')
         qdes=qtraj;

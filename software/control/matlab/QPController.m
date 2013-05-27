@@ -236,7 +236,7 @@ classdef QPController < MIMODrakeSystem
     if typecheck(ctrl_data.supptraj,'double')
       supp = ctrl_data.supptraj;
     else
-      supp = ctrl_data.supptraj.eval(t);
+      supp = ctrl_data.supptraj.eval(t); % OPT: don't really need a PPTrajectory here
     end
     desired_supports = find(supp);
     

@@ -7,8 +7,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
     dt;
     controller_data; % pointer to shared data handle containing qtraj
     ikoptions;
-    rfoot_body;
-    lfoot_body;
+    rfoot_body_idx;
+    lfoot_body_idx;
     robot;
   end
   
@@ -96,8 +96,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
-      obj.rfoot_body = r.findLink(r.r_foot_name);
-      obj.lfoot_body = r.findLink(r.l_foot_name);
+      obj.rfoot_body_idx = r.findLinkInd(r.r_foot_name);
+      obj.lfoot_body_idx = r.findLinkInd(r.l_foot_name);
       obj.robot = r;
       
     end
@@ -112,13 +112,13 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       try
         q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...
-          obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t), ...
-          obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
+          obj.rfoot_body_idx,[0;0;0],cdata.rfoottraj.eval(t), ...
+          obj.lfoot_body_idx,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
       catch err
         % backup plan---do full IK
         q_des = inverseKin(obj.robot,q,0,[cdata.comtraj.eval(t);nan],{},{},{},...
-          obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t),{},{},{}, ...
-          obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),{},{},{},obj.ikoptions);
+          obj.rfoot_body_idx,[0;0;0],cdata.rfoottraj.eval(t),{},{},{}, ...
+          obj.lfoot_body_idx,[0;0;0],cdata.lfoottraj.eval(t),{},{},{},obj.ikoptions);
       end
 
       err_q = q_des - q;

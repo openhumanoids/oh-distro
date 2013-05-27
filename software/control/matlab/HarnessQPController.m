@@ -59,21 +59,19 @@ classdef HarnessQPController < MIMODrakeSystem
     q_ddot_des = varargin{1};
     x = varargin{2};
     r = obj.robot;
-
-    nu = obj.nu;
-    nq = obj.nq;
-    
-    q = x(1:nq); 
-    qd = x(nq+(1:nq));
+    q = x(1:obj.nq); 
+    qd = x(obj.nq+(1:obj.nq));
+   
+    % TODO: this whole thing could be easily mex'd
     
     [H,C,B] = manipulatorDynamics(r,q,qd);
     
-    nparams = nq+nu;
-    Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-    Iu = zeros(nu,nparams); Iu(:,nq+(1:nu)) = eye(nu);
+    nparams = obj.nq+obj.nu;
+    Iqdd = zeros(obj.nq,nparams); Iqdd(:,1:obj.nq) = eye(obj.nq);
+    Iu = zeros(obj.nu,nparams); Iu(:,obj.nq+(1:obj.nu)) = eye(obj.nu);
     
-    lb = [-1e3*ones(nq,1); r.umin]; 
-    ub = [ 1e3*ones(nq,1); r.umax];
+    lb = [-1e3*ones(obj.nq,1); r.umin]; 
+    ub = [ 1e3*ones(obj.nq,1); r.umax];
 
     Aeq = H*Iqdd - B*Iu; 
     beq = -C;
@@ -82,7 +80,7 @@ classdef HarnessQPController < MIMODrakeSystem
     fqp = -q_ddot_des'*Iqdd;
 
     % quadratic input cost
-    Hqp(nq+(1:nu),nq+(1:nu)) = obj.R;
+    Hqp(obj.nq+(1:obj.nu),obj.nq+(1:obj.nu)) = obj.R;
 
     if obj.solver==1
       alpha = cplexqp(Hqp,fqp,Ain,bin,[],[],lb,ub,[],obj.solver_options);
@@ -100,7 +98,7 @@ classdef HarnessQPController < MIMODrakeSystem
       alpha = result.x;
     end
     
-    y = alpha(nq+(1:nu));
+    y = alpha(obj.nq+(1:obj.nu));
 %     toc
    
   end
