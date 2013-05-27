@@ -5,6 +5,12 @@ if nargin < 3; goal_x = 2.0; end
 if nargin < 2; lcm_plan = true; end
 if nargin < 1; location = 'base'; end
 
+if strcmp(location, 'base')
+  status_code = 6;
+else
+  status_code = 7;
+end
+
 debug = true;
 
 addpath(fullfile(pwd,'frames'));
@@ -42,7 +48,7 @@ while true
   else
     approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
     committed_footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
-    msg =['Walk Plan (', location, '): Listening for plans']; disp(msg); send_status(6,0,0,msg);
+    msg =['Walk Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
     waiting = true;
     committed = false;
     foottraj = [];
@@ -53,15 +59,15 @@ while true
         x0=x;
       end
        
-      footsteps = committed_footstep_plan_listener.getNextMessage(10);
+      [footsteps, footstep_opts] = committed_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
-        msg =['Walk Plan (', location, '): committed plan received']; disp(msg); send_status(6,0,0,msg);
+        msg =['Walk Plan (', location, '): committed plan received']; disp(msg); send_status(status_code,0,0,msg);
         waiting = false;
         committed = true;
       else
-        footsteps = approved_footstep_plan_listener.getNextMessage(10);
+        [footsteps, footstep_opts] = approved_footstep_plan_listener.getNextMessage(10);
         if (~isempty(footsteps))
-          msg =['Walk Plan (', location, '): plan received']; disp(msg); send_status(6,0,0,msg);
+          msg =['Walk Plan (', location, '): plan received']; disp(msg); send_status(status_code,0,0,msg);
           waiting = false;
           committed = false;
         end
@@ -81,7 +87,7 @@ while true
       end
     end
   end
-  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
+  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts);
   %hddot = fnder(htraj,2);
   walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'htraj',htraj,...
       'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
@@ -90,14 +96,14 @@ while true
 
   
   % publish robot plan
-  msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(6,0,0,msg);
+  msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
   plan_pub.publish(ts,xtraj);
 
   if committed
-    msg =['Walk Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(6,0,0,msg);
+    msg =['Walk Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
     walking_pub.publish(0,walking_plan);
   end
@@ -112,7 +118,7 @@ while true
     plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
   end  
 
-  % msg ='Walk Plan : Waiting for confirmation...'; disp(msg); send_status(6,0,0,msg);
+  % msg ='Walk Plan : Waiting for confirmation...'; disp(msg); send_status(status_code,0,0,msg);
   % plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
   % reject_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
   % waiting = true;
@@ -121,7 +127,7 @@ while true
   %   rplan = plan_listener.getNextMessage(100);
   %   if (~isempty(rplan))
   %     % for now don't do anything with it, just use it as a flag
-  %     msg ='Walk Plan : Confirmed. Executing...'; disp(msg); send_status(6,0,0,msg);
+  %     msg ='Walk Plan : Confirmed. Executing...'; disp(msg); send_status(status_code,0,0,msg);
   %     waiting = false;
   %   end
   %   rplan = reject_listener.getNextMessage(100);
