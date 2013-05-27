@@ -714,3 +714,9 @@ void DRCShaper::run()
         }
     }
 }
+
+// changed to use wall time
+int64_t KMCLApp::get_current_utime()
+{
+    return goby::common::goby_time<goby::uint64>();
+}

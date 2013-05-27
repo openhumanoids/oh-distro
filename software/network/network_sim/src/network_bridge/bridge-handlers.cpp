@@ -71,3 +71,9 @@ void base2robot(KMCLApp& app) {
     lcm_handle(app.base_lcm->getUnderlyingLCM());
 }
 
+
+int64_t KMCLApp::get_current_utime()
+        {
+            boost::mutex::scoped_lock lock(guard);
+            return current_utime;
+        }

@@ -86,10 +86,7 @@ class KMCLApp{
         current_utime = current_utime_in;
     }    
     
-    int64_t get_current_utime(){
-      boost::mutex::scoped_lock lock(guard);
-      return current_utime;
-    }
+    int64_t get_current_utime();
     
     const std::vector<Resend>& resendlist() 
     { return resendlist_; }
