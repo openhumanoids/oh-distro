@@ -194,8 +194,8 @@ classdef QPController < MIMODrakeSystem
         rfoot_contact_state = msg.right_contact;
       end
     else
-      lfoot_contact_state=1;
-      rfoot_contact_state=1;
+      lfoot_contact_state=0;
+      rfoot_contact_state=0;
     end
     
     % Change in logic here due to recent tests with heightmap noise
@@ -209,20 +209,20 @@ classdef QPController < MIMODrakeSystem
     % determine contact via kinematics.
     % this is not optimized (we're repeating contact constraints call below
     % and for the mex case, we should not be doing this in matlab
-    contact_threshold = 0.000; % m
+    contact_threshold = 0.001; % m
     kinsol = doKinematics(r,q,false,true);
     
     % get active contacts
     phi = contactConstraints(r,kinsol,[obj.lfoot_idx,obj.rfoot_idx]);
 
     % if any foot point is in contact, all contact points are active
-    if any(phi(1:4)<contact_threshold)
+    if any(phi(1:4)<=contact_threshold)
       lfoot_contact_state_kin = 1;
     else
       lfoot_contact_state_kin = 0;
     end
 
-    if any(phi(5:8)<contact_threshold)
+    if any(phi(5:8)<=contact_threshold)
       rfoot_contact_state_kin = 1;
     else
       rfoot_contact_state_kin = 0;
