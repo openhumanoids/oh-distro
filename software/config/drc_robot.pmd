@@ -43,10 +43,6 @@ group "a.1.core" {
         exec = "est_robot_state_publisher -g";
         host = "extra";
     }
-    cmd "estpub2minimal" {
-        exec = "est_robot_state_to_minimal -g";
-        host = "extra";
-    }
     cmd "j2f" {
         exec = "drc-joints2frames -g";
         host = "extra";
