@@ -213,6 +213,8 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
   
   std::map<string, shared_ptr<otdf::Link> > otdfLinksMap = asGLKBody->get_otdf_links_map();
   vector<visualization_utils::LinkFrameStruct> linkFrames = asGLKBody->get_link_tfs();
+  boost::unordered_set<string> linksProcessed;
+
   for(uint i = 0; i < linkFrames.size();i++)
     {
       //get the next link tf, name, and link
@@ -220,6 +222,12 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
       string nextLinkName = nextLinkTf.name;
       shared_ptr<otdf::Link> link = otdfLinksMap[nextLinkName];     
 
+      //GLKinematic body has duplicates in the get_link_tfs() vector (regrettably),
+      //so we have to add this check
+      if (linksProcessed.find(nextLinkName) != linksProcessed.end())
+        continue; 
+      linksProcessed.insert(nextLinkName);
+      
       //defensive check
       if (link == shared_ptr<otdf::Link>())
         {
