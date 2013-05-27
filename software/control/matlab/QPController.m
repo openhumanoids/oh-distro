@@ -313,8 +313,8 @@ classdef QPController < MIMODrakeSystem
       end
     else
       % allocate these for passing into mex
-      B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);D_ls=zeros(2);
-      S=zeros(4);s1=zeros(4,1);s2=0;x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
+      A_ls=zeros(4);B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);
+      D_ls=zeros(2);S=zeros(4);s1=zeros(4,1);s2=0;x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
     end
     
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
@@ -568,24 +568,27 @@ classdef QPController < MIMODrakeSystem
         qdd(obj.con_dof) = alpha(1:nq_con);
         
         Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
-        setField(obj.controller_data,'V',V);
-        setField(obj.controller_data,'Vdot',Vdot);
-      
-  %     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
-  %     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
-      else
-        setField(obj.controller_data,'V',0);
-        setField(obj.controller_data,'Vdot',0);
       end
       
     end
   
     if (obj.use_mex==1)
-       y = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+       [y,Vdot] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+       V = 0; % don't compute V for mex yet (will we ever use this?)
+    end
+
+    if ~isempty(active_supports)
+      setField(obj.controller_data,'V',V);
+      setField(obj.controller_data,'Vdot',Vdot);
+%     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
+%     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
+    else
+      setField(obj.controller_data,'V',0);
+      setField(obj.controller_data,'Vdot',0);
     end
     
     if (obj.use_mex==2)
-      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+      [y,~,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);

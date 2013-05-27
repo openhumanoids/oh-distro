@@ -376,6 +376,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     active_supports.insert((int)pr[i] - 1);
   narg++;
   
+  assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==4);
+  Map< Matrix4d > A_ls(mxGetPr(prhs[narg++]));
+
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==2);
   Map< Matrix<double,4,2> > B_ls(mxGetPr(prhs[narg++]));
 
@@ -627,8 +630,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //----------------------------------------------------------------------
   // Solve for free inputs -----------------------------------------------
   VectorXd y(nu);
+  VectorXd qdd(nq);
   if (nq_free > 0) {
-    VectorXd qdd(nq);
     set<int>::iterator iter;
     i=0;
     for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++)
@@ -653,18 +656,30 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     y = tmp.min(pdata->umax).matrix();
   } else {
     y = alpha.block(nq,0,nu,1); 
+    qdd = alpha.block(0,0,nq,1);
   }
   
   if (nlhs>0) plhs[0] = eigenToMatlab(y);
+
+  
+  if (nlhs>1) {
+    double Vdot;
+    if (nc>0) 
+      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(Jdot*qdvec + J*qdd));
+    else
+      Vdot = 0;
+    plhs[1] = mxCreateDoubleScalar(Vdot);
+  }
     
-  if (nlhs>1) {  // return model.Q (for unit testing)
+  
+  if (nlhs>2) {  // return model.Q (for unit testing)
     int qnz;
     error = GRBgetintattr(model,"NumQNZs",&qnz);
     int *qrow = new int[qnz], *qcol = new int[qnz];
     double* qval = new double[qnz];
     error = GRBgetq(model,&qnz,qrow,qcol,qval);
-    plhs[1] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
-    double* pm = mxGetPr(plhs[1]);
+    plhs[2] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
+    double* pm = mxGetPr(plhs[2]);
     memset(pm,0,sizeof(double)*nparams*nparams);
     for (i=0; i<qnz; i++)
       pm[qrow[i]+nparams*qcol[i]] = qval[i];
@@ -672,34 +687,34 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     delete[] qcol;
     delete[] qval;
     
-    if (nlhs>2) {  // return model.obj (for unit testing)
-      plhs[2] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-      error = GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[2]));
+    if (nlhs>3) {  // return model.obj (for unit testing)
+      plhs[3] = mxCreateDoubleMatrix(1,nparams,mxREAL);
+      error = GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[3]));
 
-      if (nlhs>3) {  // return model.A (for unit testing)
+      if (nlhs>4) {  // return model.A (for unit testing)
         int numcon;
         error = GRBgetintattr(model,"NumConstrs",&numcon);
-        plhs[3] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
-        double *pm = mxGetPr(plhs[3]);
+        plhs[4] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
+        double *pm = mxGetPr(plhs[4]);
         for (i=0; i<numcon; i++)
           for (j=0; j<nparams; j++)
             error = GRBgetcoeff(model,i,j,&pm[i+j*numcon]);
         
-        if (nlhs>4) {  // return model.rhs (for unit testing)
-          plhs[4] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-          GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[4]));
+        if (nlhs>5) {  // return model.rhs (for unit testing)
+          plhs[5] = mxCreateDoubleMatrix(numcon,1,mxREAL);
+          GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[5]));
         } 
         
-        if (nlhs>5) { // return model.sense
+        if (nlhs>6) { // return model.sense
           char* sense = new char[numcon+1];
           GRBgetcharattrarray(model,"Sense",0,numcon,sense);
           sense[numcon]='\0';
-          plhs[5] = mxCreateString(sense);
+          plhs[6] = mxCreateString(sense);
           // delete[] sense;  // it seems that I'm not supposed to free this
         }
         
-        if (nlhs>6) plhs[6] = eigenToMatlab(lb);
-        if (nlhs>7) plhs[7] = eigenToMatlab(ub);
+        if (nlhs>7) plhs[7] = eigenToMatlab(lb);
+        if (nlhs>8) plhs[8] = eigenToMatlab(ub);
       }
     }
   }
