@@ -561,6 +561,10 @@ group "m.3.dev_tools" {
         exec = "drc-bandwidth-scope";
         host = "base";
     }
+    cmd "fall-detector-EXPERIMENTAL" {
+        exec = "python $HOME/drc/software/control/fall_detect_demo/fall_detector.py";
+        host = "robot";
+    }
 }
 
 group "m.5.motion_vo"{
