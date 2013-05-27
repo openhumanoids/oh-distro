@@ -30,7 +30,9 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         first_goal->set_translation_y(first_lcm_goal.pos.translation.y);
         first_goal->set_translation_z(first_lcm_goal.pos.translation.z);
 
-//        first_goal->set_step_speed(first_lcm_goal.step_speed);
+        first_goal->set_step_speed(first_lcm_goal.step_speed);
+        first_goal->set_step_height(first_lcm_goal.step_height);
+
         first_goal->set_id(first_lcm_goal.id);
 
         first_goal->set_is_right_foot(first_lcm_goal.is_right_foot);
@@ -61,8 +63,10 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
                                               goby::util::unbiased_round(previous_lcm_goal.pos.translation.y, TRANSLATION_Y_PRECISION));
             goal_diff->add_translation_z_diff(later_lcm_goal.pos.translation.z-
                                               goby::util::unbiased_round(previous_lcm_goal.pos.translation.z, TRANSLATION_Z_PRECISION));
-            //goal_diff->add_step_speed_diff(later_lcm_goal.step_speed-previous_lcm_goal.step_speed);
-            // id should just increment
+
+            goal_diff->add_id_diff(later_lcm_goal.id-previous_lcm_goal.id);
+
+
             
             goal_diff->add_is_right_foot(later_lcm_goal.is_right_foot);
             goal_diff->add_is_in_contact(later_lcm_goal.is_in_contact);
@@ -72,6 +76,9 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
             goal_diff->add_fixed_roll(later_lcm_goal.fixed_roll);
             goal_diff->add_fixed_pitch(later_lcm_goal.fixed_pitch);
             goal_diff->add_fixed_yaw(later_lcm_goal.fixed_yaw);
+
+            goal_diff->add_step_speed(later_lcm_goal.step_speed);
+            goal_diff->add_step_height(later_lcm_goal.step_height);
         }
     }
     else
@@ -148,6 +155,10 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
     first_lcm_goal.fixed_roll = first_goal.fixed_roll();
     first_lcm_goal.fixed_pitch = first_goal.fixed_pitch();
     first_lcm_goal.fixed_yaw = first_goal.fixed_yaw();
+
+    first_lcm_goal.step_speed = first_goal.step_speed();
+    first_lcm_goal.step_height = first_goal.step_height();
+
     
     lcm_object.footstep_goals.push_back(first_lcm_goal);
 
@@ -161,7 +172,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
         lcm_goal.pos.translation.x += goal_diff.translation_x_diff(i);
         lcm_goal.pos.translation.y += goal_diff.translation_y_diff(i);
         lcm_goal.pos.translation.z += goal_diff.translation_z_diff(i);
-        lcm_goal.id += 1;
+        lcm_goal.id += goal_diff.id_diff(i);
         
         lcm_goal.is_right_foot = goal_diff.is_right_foot(i);
         lcm_goal.is_in_contact = goal_diff.is_in_contact(i);
@@ -171,7 +182,10 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
         lcm_goal.fixed_roll = goal_diff.fixed_roll(i);
         lcm_goal.fixed_pitch = goal_diff.fixed_pitch(i);
         lcm_goal.fixed_yaw = goal_diff.fixed_yaw(i);
-                           
+
+        lcm_goal.step_speed = goal_diff.step_speed(i);
+        lcm_goal.step_height = goal_diff.step_height(i);
+        
         lcm_object.footstep_goals.push_back(lcm_goal);
     }    
     
