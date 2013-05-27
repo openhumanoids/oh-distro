@@ -115,7 +115,8 @@ requestHeightMap() {
   spec.mViewId = MapHandle::kHeightMapViewId;
   spec.mType = maps::ViewBase::TypeDepthImage;
   spec.mChannel = MapHandle::kHeightMapChannel;
-  spec.mFrequency = 1;
+  spec.mFrequency = 0.5;
+  spec.mQuantizationMax = 0;
   spec.mTimeMax = 0;
   spec.mRelativeTime = true;
   spec.mRelativeLocation = true;
