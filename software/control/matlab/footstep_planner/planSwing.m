@@ -32,7 +32,7 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) / sqrt(2);
+effective_height = (max([effective_length, effective_width])/2) * (sqrt(3)/2);
 
 contact_length = effective_length / 2 + planar_clearance;
 contact_width = effective_width / 2 + planar_clearance;
@@ -44,8 +44,7 @@ if step_dist_xy > 0.01
   apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
   
   % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
-  % contact_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2)) + planar_clearance;
-  
+ 
   % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
   lambdas = linspace(0, step_dist_xy);
   lambda2xy = PPTrajectory(foh([0, step_dist_xy], [last_pos(1:2), next_pos(1:2)]));
@@ -66,7 +65,7 @@ if step_dist_xy > 0.01
   end
   expanded_terrain_pts = [expanded_terrain_pts, terrain_pts(:,end), apex_pos_l];
 
-  expanded_terrain_pts(1,:) = bsxfun(@max, bsxfun(@min, expanded_terrain_pts(1,:), step_dist_xy), min([last_pos(3), next_pos(3)]));
+  expanded_terrain_pts(1,:) = bsxfun(@max, bsxfun(@min, expanded_terrain_pts(1,:), step_dist_xy), 0);
   expanded_terrain_pts = expanded_terrain_pts(:, convhull(expanded_terrain_pts(1,:), expanded_terrain_pts(2,:), 'simplify', true));
   expanded_terrain_pts = expanded_terrain_pts(:, end:-1:1); % convert counterclockwise to clockwise convex hull
 
@@ -90,14 +89,8 @@ traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for
 landing_time = traj_ts(end-1);
 takeoff_time = traj_ts(2);
 
-% rpy_pts = [last_pos(4:6), next_pos(4:6)];
 rpy_pts = [last_pos(4:6), interp1(traj_ts([2,end-1]), [last_pos(4:6), next_pos(4:6)]', traj_ts(2:end-1))', next_pos(4:6)];
-% rpy_pts(:,3:end-2) = nan;
-% rpy_traj = PPTrajectory(foh(traj_ts, rpy_pts));
 
-
-% step_traj = PPTrajectory(foh(traj_ts, [traj_pts_xyz; rpy_traj.eval(traj_ts)]));
-% step_traj = PPTrajectory(foh(traj_ts, [traj_pts_xyz; rpy_pts]));
 swing_poses = [traj_pts_xyz; rpy_pts];
 swing_ts = traj_ts;
 
