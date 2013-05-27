@@ -130,7 +130,13 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     {
                         double now = goby::common::goby_time<double>();
                         host_info.diff_waiting_ack_.Clear();
-                        if(now > NO_CHANGE_PERIOD + host_info.last_no_change_time_)
+
+                        if(!send_no_change())
+                        {
+                            glog.is(VERBOSE) && glog << "Diff is identical, but NO_CHANGE messages not requested." << std::endl;
+                            return false;
+                        }
+                        else if(now > NO_CHANGE_PERIOD + host_info.last_no_change_time_)
                         {
                             glog.is(VERBOSE) && glog << "Diff is identical, so sending NO_CHANGE message" << std::endl;
                             wrapper.set_type(drc::ProcManWrapper::NO_CHANGE);
@@ -252,6 +258,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
         virtual bool reverse_diff(LCMType* lcm_object, const LCMType& reference,
                                   const DiffType& diff) = 0;
 
+        virtual bool send_no_change() = 0;
       private:
         Node node_;        
         goby::acomms::DCCLCodec* dccl_;
@@ -276,7 +283,9 @@ class PMDOrdersCodec : public PMDWrapperCodec<bot_procman::orders_t, drc::PMDOrd
                    drc::PMDOrdersDiff* diff);
     bool reverse_diff(bot_procman::orders_t* orders, const bot_procman::orders_t& reference,
                       const drc::PMDOrdersDiff& diff);
-
+    bool send_no_change() { return false; }
+    
+    
     // maps host to latest state
     static std::map<std::string, State<bot_procman::orders_t, drc::PMDOrdersDiff> > host_info_;
 };
@@ -297,6 +306,8 @@ class PMDInfoCodec : public PMDWrapperCodec<bot_procman::info_t, drc::PMDInfoDif
                    drc::PMDInfoDiff* diff);
     bool reverse_diff(bot_procman::info_t* info, const bot_procman::info_t& reference,
                       const drc::PMDInfoDiff& diff);
+
+    bool send_no_change() { return true; }
 
     // maps host to latest info_t
     static std::map<std::string, State<bot_procman::info_t, drc::PMDInfoDiff> > host_info_;
