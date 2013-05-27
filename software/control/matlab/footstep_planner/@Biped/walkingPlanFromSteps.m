@@ -19,7 +19,7 @@ comtraj = ZMPplanFromTracker(limp,com(1:2),[0;0],zmptraj,c);
 
 % comf = mean([footsteps(end).pos(1:2), footsteps(end-1).pos(1:2)], 2);
 % comtraj = ZMPplan(limp,com(1:2),comf,zmptraj);
-% V = struct('S', [], 's1', []);
+% V = struct('S', [], 's1', [], 's2', []);
 
 % time spacing of samples for IK
 ts = 0:0.08:zmptraj.tspan(end);
