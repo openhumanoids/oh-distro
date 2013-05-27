@@ -65,6 +65,7 @@ toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
   }
   oMessage.resolution = iSpec.mResolution;
   oMessage.frequency = iSpec.mFrequency;
+  oMessage.quantization_max = iSpec.mQuantizationMax;
   oMessage.channel = iSpec.mChannel;
   oMessage.time_min = iSpec.mTimeMin;
   oMessage.time_max = iSpec.mTimeMax;
@@ -106,6 +107,7 @@ fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
   }
   oSpec.mResolution = iMessage.resolution;
   oSpec.mFrequency = iMessage.frequency;
+  oSpec.mQuantizationMax = iMessage.quantization_max;
   oSpec.mChannel = iMessage.channel;
   oSpec.mTimeMin = iMessage.time_min;
   oSpec.mTimeMax = iMessage.time_max;
@@ -200,7 +202,7 @@ fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob) {
 
 bool LcmTranslator::
 toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
-      const int iBits, const bool iCompress) {
+      const float iQuantMax, const bool iCompress) {
   oMessage.view_id = iView.getId();
 
   // find extrema of cloud and transform points
@@ -208,8 +210,18 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
   pcl::getMinMax3D(*(iView.getPointCloud()), minPoint, maxPoint);
   Eigen::Vector3f offset = minPoint.getVector3fMap();
   Eigen::Vector3f scale = maxPoint.getVector3fMap() - offset;
-  for (int k = 0; k < 3; ++k) {
-    scale[k] /= ((iBits <= 16) ? ((1 << iBits) - 1) : scale[k]);
+  int bits = 8;
+  if (iQuantMax == 0) {
+    bits = 32;
+    scale << 1,1,1;
+  }
+  else {
+    if (iQuantMax > 0) {
+      bits = ceil(std::log2(scale.maxCoeff()/iQuantMax));
+      bits = std::min(bits, 16);
+      bits = std::max(bits, 0);
+    }
+    scale /= ((1 << bits) - 1);
   }
   Eigen::Affine3f normalizerInv = Eigen::Affine3f::Identity();
   for (int i = 0; i < 3; ++i) {
@@ -244,8 +256,8 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
   DataBlob::CompressionType compressionType =
     iCompress ? DataBlob::CompressionTypeZlib : DataBlob::CompressionTypeNone;
   DataBlob::DataType dataType;
-  if (iBits <= 8) dataType = DataBlob::DataTypeUint8;
-  else if (iBits <= 16) dataType = DataBlob::DataTypeUint16;
+  if (bits <= 8) dataType = DataBlob::DataTypeUint8;
+  else if (bits <= 16) dataType = DataBlob::DataTypeUint16;
   else dataType = DataBlob::DataTypeFloat32;
   blob.convertTo(compressionType, dataType);
 
@@ -333,7 +345,7 @@ fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView) {
 
 bool LcmTranslator::
 toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
-      const int iBits, const bool iCompress) {
+      const float iQuantMax, const bool iCompress) {
   oMessage.view_id = iView.getId();
 
   // copy depth array
@@ -360,8 +372,20 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
     zMax = 1;
   }
   float zOffset(zMin), zScale(zMax-zMin);
-  zScale /= ((iBits <= 16) ? ((1 << iBits) - 1) : zScale);
-  // TODO: can change zscale if the range has too many bits
+  int bits = 11;
+  if (iQuantMax == 0) {
+    bits = 32;
+    zScale = 1;
+  }
+  else {
+    if (iQuantMax > 0) {
+      bits = ceil(std::log2(zScale/iQuantMax));
+      bits = std::min(bits, 16);
+      bits = std::max(bits, 0);
+    }
+    zScale /= ((1 << bits) - 1);
+  }
+  std::cout << "BITS " << bits << std::endl;
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
     if (val == invalidValue) continue;
@@ -383,8 +407,8 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   DataBlob::CompressionType compressionType =
     iCompress ? DataBlob::CompressionTypeZlib : DataBlob::CompressionTypeNone;
   DataBlob::DataType dataType;
-  if (iBits <= 8) dataType = DataBlob::DataTypeUint8;
-  else if (iBits <= 16) dataType = DataBlob::DataTypeUint16;
+  if (bits <= 8) dataType = DataBlob::DataTypeUint8;
+  else if (bits <= 16) dataType = DataBlob::DataTypeUint16;
   else dataType = DataBlob::DataTypeFloat32;
   blob.convertTo(compressionType, dataType);
   if (!toLcm(blob, oMessage.blob)) return false;

@@ -69,6 +69,7 @@ struct DepthImage::Helper {
   Eigen::Projective3f mProjector;
   Eigen::Projective3f mProjectorInv;
   bool mIsOrthographic;
+  AccumulationMethod mAccumulationMethod;
   std::vector<bool> mDataNeedsUpdate;
   std::vector<std::vector<float> > mDataCache;
 
@@ -79,6 +80,7 @@ struct DepthImage::Helper {
     mCalib = Eigen::Matrix3f::Identity();
     mProjector = Eigen::Projective3f::Identity();
     mIsOrthographic = true;
+    mAccumulationMethod = AccumulationMethodExtremal;
     mDataCache.resize(3);
     mDataNeedsUpdate.resize(mDataCache.size());
     updateMatrices();
@@ -247,9 +249,30 @@ getProjector() const {
 }
 
 void DepthImage::
+setAccumulationMethod(const AccumulationMethod iMethod) {
+  mHelper->mAccumulationMethod = iMethod;
+}
+
+
+void DepthImage::
 create(const maps::PointCloud::Ptr& iCloud) {
   std::fill(mHelper->mData.begin(), mHelper->mData.end(),
             getInvalidValue(TypeDisparity));
+  
+  std::vector<std::vector<float> > lists;
+  std::vector<float> sums;
+  std::vector<int> counts;
+  AccumulationMethod method = mHelper->mAccumulationMethod;
+  if (method == AccumulationMethodMedian) {
+    lists.resize(mHelper->mWidth * mHelper->mHeight);
+  }
+  else if (method == AccumulationMethodMean) {
+    sums.resize(mHelper->mWidth * mHelper->mHeight);
+    std::fill(sums.begin(), sums.end(), 0);
+    counts.resize(sums.size());
+    std::fill(counts.begin(), counts.end(), 0);
+  }
+
   for (int i = 0; i < iCloud->size(); ++i) {
     maps::PointCloud::PointType& ptCur = (*iCloud)[i];
     Eigen::Vector4f pt(ptCur.x, ptCur.y, ptCur.z, 1);
@@ -259,11 +282,40 @@ create(const maps::PointCloud::Ptr& iCloud) {
     if ((x < 0) || (x >= mHelper->mWidth) ||
         (y < 0) || (y >= mHelper->mHeight)) continue;
     int idx = y*mHelper->mWidth + x;
-    if ((mHelper->mIsOrthographic && (proj[2] < mHelper->mData[idx])) ||
-        (!mHelper->mIsOrthographic && (proj[2] > mHelper->mData[idx]))) {
-      mHelper->mData[idx] = proj[2];
+    switch (method) {
+    case AccumulationMethodExtremal:
+      if ((mHelper->mIsOrthographic && (proj[2] < mHelper->mData[idx])) ||
+          (!mHelper->mIsOrthographic && (proj[2] > mHelper->mData[idx]))) {
+        mHelper->mData[idx] = proj[2];
+      }
+      break;
+    case AccumulationMethodMedian:
+      lists[idx].push_back(proj[2]);
+      break;
+    case AccumulationMethodMean:
+      sums[idx] += proj[2];
+      ++counts[idx];
+      break;
+    default:
+      break;
     }
   }
+
+  if (method == AccumulationMethodMedian) {
+    for (int i = 0; i < lists.size(); ++i) {
+      int n = lists[i].size();
+      if (n == 0) continue;
+      std::sort(lists[i].begin(), lists[i].end());
+      mHelper->mData[i] = lists[i][n/2];
+    }
+  }
+  else if (method == AccumulationMethodMean) {
+    for (int i = 0; i < sums.size(); ++i) {
+      if (counts[i] == 0) continue;
+      mHelper->mData[i] = sums[i]/counts[i];
+    }
+  }
+
   mHelper->invalidateData();
 }
 

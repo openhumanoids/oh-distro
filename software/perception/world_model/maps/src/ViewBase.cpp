@@ -12,6 +12,7 @@ Spec() {
   mType = TypePointCloud;
   mResolution = 0;
   mFrequency = 0;
+  mQuantizationMax = -1;
   mTimeMin = mTimeMax = -1;
   mTransform = Eigen::Projective3f::Identity();
   mWidth = mHeight = 0;
@@ -27,6 +28,7 @@ operator==(const Spec& iSpec) const {
     (mType == iSpec.mType) &&
     (mResolution == iSpec.mResolution) &&
     (mFrequency == iSpec.mFrequency) &&
+    (mQuantizationMax == iSpec.mQuantizationMax) &&
     (mChannel == iSpec.mChannel) &&
     (mTimeMin == iSpec.mTimeMin) &&
     (mTimeMax == iSpec.mTimeMax) &&

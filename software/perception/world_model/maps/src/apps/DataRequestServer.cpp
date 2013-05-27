@@ -276,6 +276,7 @@ struct Worker {
     msg.type = drc::map_request_t::OCTREE;
     msg.resolution = 0.1;
     msg.frequency = 0;
+    msg.quantization_max = 0.01;
     msg.time_min = -20*1e6;
     msg.time_max = 0;
     msg.relative_time = true;

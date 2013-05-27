@@ -20,6 +20,12 @@ public:
     TypeRange,
   };
 
+  enum AccumulationMethod {
+    AccumulationMethodExtremal,
+    AccumulationMethodMean,
+    AccumulationMethodMedian
+  };
+
   typedef std::shared_ptr<DepthImage> Ptr;
 
   struct Helper;
@@ -48,6 +54,8 @@ public:
 
   void setProjector(const Eigen::Projective3f& iProjector);
   Eigen::Projective3f getProjector() const;
+
+  void setAccumulationMethod(const AccumulationMethod iMethod);
 
   void create(const maps::PointCloud::Ptr& iCloud);
 

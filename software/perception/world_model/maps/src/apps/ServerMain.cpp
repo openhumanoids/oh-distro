@@ -306,7 +306,7 @@ struct ViewWorker {
             localMap->getAsPointCloud(mRequest.resolution, bounds);
           cloud->setId(mRequest.view_id);
           drc::map_cloud_t msgCloud;
-          LcmTranslator::toLcm(*cloud, msgCloud);
+          LcmTranslator::toLcm(*cloud, msgCloud, mRequest.quantization_max);
           msgCloud.utime = drc::Clock::instance()->getCurrentTime();
           msgCloud.map_id = localMap->getId();
           msgCloud.blob.utime = msgCloud.utime;
@@ -334,7 +334,7 @@ struct ViewWorker {
                                       projector, bounds);
           image->setId(mRequest.view_id);
           drc::map_image_t msgImg;
-          LcmTranslator::toLcm(*image, msgImg);
+          LcmTranslator::toLcm(*image, msgImg, mRequest.quantization_max);
           msgImg.utime = drc::Clock::instance()->getCurrentTime();
           msgImg.map_id = localMap->getId();
           msgImg.blob.utime = msgImg.utime;

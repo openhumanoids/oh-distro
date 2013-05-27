@@ -38,7 +38,7 @@ public:
 
   // for point cloud
   static bool toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
-                    const int iBits=8, const bool iCompress=true);
+                    const float iQuantMax=-1, const bool iCompress=true);
   static bool fromLcm(const drc::map_cloud_t& iMessage, PointCloudView& oView);
 
   // for octree
@@ -47,7 +47,7 @@ public:
 
   // for depth image
   static bool toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
-                    const int iBits=11, const bool iCompress=true);
+                    const float iQuantMax=-1, const bool iCompress=true);
   static bool fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView);
 };
 
