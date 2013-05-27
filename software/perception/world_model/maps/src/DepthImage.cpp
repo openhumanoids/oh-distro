@@ -293,7 +293,7 @@ create(const maps::PointCloud::Ptr& iCloud) {
       lists[idx].push_back(proj[2]);
       break;
     case AccumulationMethodMean:
-      sums[idx] += proj[2];
+      sums[idx] += 1/proj[2];
       ++counts[idx];
       break;
     default:
@@ -312,7 +312,7 @@ create(const maps::PointCloud::Ptr& iCloud) {
   else if (method == AccumulationMethodMean) {
     for (int i = 0; i < sums.size(); ++i) {
       if (counts[i] == 0) continue;
-      mHelper->mData[i] = sums[i]/counts[i];
+      mHelper->mData[i] = counts[i]/sums[i];
     }
   }
 
