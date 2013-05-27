@@ -11,22 +11,24 @@ classdef FootstepPlanListener
 			obj.lc.subscribe(channel, obj.aggregator);
 		end
 
-		function X = getNextMessage(obj, t_ms)
+		function [X, options] = getNextMessage(obj, t_ms)
 			plan_msg = obj.aggregator.getNextMessage(t_ms);
 			if isempty(plan_msg)
-				X = [];
+				X = []; options = struct();
 			else
-				X = FootstepPlanListener.decodeFootstepPlan(drc.footstep_plan_t(plan_msg.data));
+				[X, options] = FootstepPlanListener.decodeFootstepPlan(drc.footstep_plan_t(plan_msg.data));
 			end
 		end
 
 	end
 
 	methods(Static)
-		function X = decodeFootstepPlan(plan_msg)
+		function [X, options] = decodeFootstepPlan(plan_msg)
 		  for j = 1:length(plan_msg.footstep_goals)
 		    X(j) = FootstepPlanListener.decodeFootstepGoal(plan_msg.footstep_goals(j));
 		  end
+		  options = struct('ignore_terrain', plan_msg.footstep_opts.ignore_terrain,...
+		  	               'mu', plan_msg.footstep_opts.mu);
 		end
 
 		function X = decodeFootstepGoal(goal_msg)

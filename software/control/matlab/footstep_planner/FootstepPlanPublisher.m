@@ -56,7 +56,7 @@ classdef FootstepPlanPublisher
 			msg.is_in_contact = X.is_in_contact;
     end
 
-    function msg = encodeFootstepPlan(X, t, isnew)
+    function msg = encodeFootstepPlan(X, t, isnew, options)
 			if nargin < 3
 				isnew = true;
 			end
@@ -76,6 +76,9 @@ classdef FootstepPlanPublisher
   		      goals(j) = new_goal;
   		    end
 		    msg.footstep_goals = goals;
+		    msg.footstep_opts = drc.footstep_opts_t();
+		    msg.footstep_opts.ignore_terrain = options.ignore_terrain;
+		    msg.footstep_opts.mu = options.mu;
 		end
 	end
 end

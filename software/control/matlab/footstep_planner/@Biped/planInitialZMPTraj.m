@@ -1,6 +1,8 @@
-function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X)
+function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X, options)
 
 debug = true;
+
+if ~isfield(options, 'ignore_terrain') options.ignore_terrain = false; end
 
 Xpos = [X.pos];
 % time_ndx = 2;

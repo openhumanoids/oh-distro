@@ -29,7 +29,7 @@ classdef FootstepPlanner < DRCPlanner
     function X = updatePlan(obj, X, data, changed, changelist)
       if changelist.goal || isempty(X)
         msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
         % obj.options.time_per_step = obj.options.time_per_step / 1e9;
@@ -104,7 +104,7 @@ classdef FootstepPlanner < DRCPlanner
         end
 
         % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
-        if modified
+        if modified || changelist.goal
           Xout = X;
           % Convert from foot center to foot origin
           for j = 1:length(X)
@@ -122,7 +122,7 @@ classdef FootstepPlanner < DRCPlanner
 
       function publish(X)
         if length(X) > 2
-          [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X);
+          [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
           pts.right = foottraj.right.orig.eval(linspace(foottraj.right.orig.tspan(1),...
                                                          foottraj.right.orig.tspan(end)));
           pts.left = foottraj.left.orig.eval(linspace(foottraj.left.orig.tspan(1),...
@@ -135,7 +135,7 @@ classdef FootstepPlanner < DRCPlanner
           plot_lcm_points([nan nan nan], [0 0 0], 30, 'Right Foot Trajectory', 2, 1);
           plot_lcm_points([nan nan nan], [0 0 0], 31, 'Left Foot Trajectory', 2, 1);
         end
-        obj.biped.publish_footstep_plan(X, data.utime, isnew);
+        obj.biped.publish_footstep_plan(X, data.utime, isnew, obj.options);
         msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
       end
 

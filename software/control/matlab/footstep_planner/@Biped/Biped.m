@@ -134,7 +134,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       next_id = next_id + 1;
     end
 
-    function publish_footstep_plan(obj, X, t, isnew)
+    function publish_footstep_plan(obj, X, t, isnew, options)
       if nargin < 4
         isnew = true;
       end
@@ -142,7 +142,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         t = now() * 24 * 60 * 60;
       end
 
-      msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew);
+      msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew, options);
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
   end

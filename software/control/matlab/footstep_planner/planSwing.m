@@ -7,6 +7,9 @@ end
 if ~isfield(options, 'step_height')
   options.step_height = biped.nom_step_clearance; %m
 end
+if ~isfield(options, 'ignore_terrain')
+  options.ignore_terrain = false;
+end
 
 apex_pos = biped.findApexPos(last_pos, next_pos, options.step_height);
 
@@ -14,7 +17,7 @@ debug = false;
 
 planar_clearance = 0.05;
 ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
-nom_z_clearance = 0.02;
+nom_z_clearance = options.step_height;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
 % ramp_distance = 0.03; % m
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
@@ -32,14 +35,15 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) * (sqrt(3)/2);
+effective_height = (max([effective_length, effective_width])/2) / sqrt(2);
 
 contact_length = effective_length / 2 + planar_clearance;
 contact_width = effective_width / 2 + planar_clearance;
+contact_height = effective_height + nom_z_clearance;
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
-if step_dist_xy > 0.01
+if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   % Create a single default apex pose to ensure that we at least rise by this much on flat ground
   apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
   
@@ -59,8 +63,8 @@ if step_dist_xy > 0.01
   expanded_terrain_pts = [terrain_pts(:,1)];
   for j = 1:length(terrain_pts(1,:))
     if terrain_pts(2, j) > (min([last_pos(3), next_pos(3)]) + options.step_height / 2)
-      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; effective_height];
-      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; effective_height];
+      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; contact_height];
+      expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; contact_height];
     end
   end
   expanded_terrain_pts = [expanded_terrain_pts, terrain_pts(:,end), apex_pos_l];
