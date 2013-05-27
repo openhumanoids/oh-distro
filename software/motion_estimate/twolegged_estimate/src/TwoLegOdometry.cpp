@@ -135,15 +135,17 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	
 	bool foot_transition = false;
 	
+
 	setLegTransforms(left, right);
 	foot_transition = FootLogic(utime, left_force, right_force);
 	
 	Eigen::Isometry3d pelvis;
 	pelvis = getPelvisFromStep();
 	
+
+
 	// Here we going to overwrite the pelvis rotation IMU angles
 	//std::cout << "Error would be: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::q2e(local_frame_orientation)).norm() << std::endl;
-
 
 	if (false) {
 		double pos[3];
@@ -152,12 +154,14 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 		pos[1] = pos_lpfilter[1].processSample(pelvis.translation().y());
 		pos[2] = pos_lpfilter[2].processSample(pelvis.translation().z());
 
-		// Eigen is not robust to direct variable self assignemnt
+		// Eigen is not robust to direct variable self assignment
 		pelvis.translation().x() = pos[0];
 		pelvis.translation().y() = pos[1];
 		pelvis.translation().z() = pos[2];
 	}
 	
+	//std::cout << "Setting pelvis: " << pelvis.translation().transpose() << std::endl;
+
 	setPelvisPosition(pelvis);
 	
 	return foot_transition;
@@ -334,6 +338,10 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
 	  // footsteps have the correct yaw angle when they go into the footstep list -- positive is CCW, positive around +Z
+
+	  //std::cout << "THIS HAPPENED\n";
+	  //newstep.footprintlocation.setIdentity();
+
 	  footsteps.newFootstep(newstep);
 	  return true;
   }
@@ -360,7 +368,7 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	pelvis_to_left = left;
 	pelvis_to_right = right;
 	
-	//std::cout << "Setting leg transforms\n";
+	//std::cout << "Setting leg transforms" << left.translation().transpose() << ", " << right.translation().transpose() << "\n";
 	if (true) {
 		left_to_pelvis = left.inverse();
 		right_to_pelvis = right.inverse();
@@ -374,6 +382,8 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 		right_to_pelvis.linear() = right.linear().transpose();
 	}
 	
+	//std::cout << "inverse: " << left_to_pelvis.translation().transpose() << std::endl;
+
 }
 
 void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates) {
@@ -391,11 +401,12 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	
 	Eigen::Quaterniond yaw_q;
 
-	yaw_q = InertialOdometry::QuaternionLib::e2q(InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().linear()));
+	yaw_q = InertialOdometry::QuaternionLib::e2q(InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().rotation()));
 
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
-	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation).transpose() * body_rates;
+	// TODO -- Maybe the .transpose() is required, but we changed to libbot q2C -- which seems transpose equivalent
+	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
 }
 
 Eigen::Vector3d const TwoLegOdometry::getLocalFrameRates() {
@@ -482,9 +493,11 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
 		output_state.translation() = getPelvisFromStep().translation();
 	}
 	
+	//std::cout << "state: " << local_to_pelvis.translation().transpose() << std::endl;
+
 	//return output_state;
 	return local_to_pelvis;
-}	
+}
 
 Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
 	
@@ -499,12 +512,14 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	//std::cout << "Add: " << add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation().transpose() << "\n";
 	
 	Eigen::Isometry3d returnval;
-
 	returnval.setIdentity();
 
-	returnval.translation() = add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation();
+	Eigen::Isometry3d lhs;// this is just to test
+	lhs = footsteps.getLastStep();
+	returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
+	returnval.linear() = InertialOdometry::QuaternionLib::q2C(local_frame_orientation);
 
-	returnval.rotate(local_frame_orientation);
+	//std::cout << "laststep: " << returnval.rotation() << std::endl;
 
 	//std::cout << "computed orientation err: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::C2e(returnval.rotation())).transpose() << std::endl;
 
@@ -513,14 +528,13 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 
 Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id) {
 	Eigen::Isometry3d returnval;
-	returnval.translation() << -99999999999., -99999999999.,-99999999999.;
+	returnval.translation() << -999999999., -999999999.,-999999999.;
 	
 	switch (foot_id) {
 	case LEFTFOOT:
 		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
-		//std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
 		break;
 	default:
@@ -538,20 +552,25 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	Eigen::Isometry3d returnval;
 	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
 	
+	//std::cout << "secondary in local" << returnval.translation().transpose() << "\n";
+
 	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
+	//std::cout << "Primary in local\n";
 	return footsteps.getLastStep();
 	
 }
 
 Eigen::Isometry3d TwoLegOdometry::getLeftInLocal() {
+
 	return add(getPelvisFromStep(), pelvis_to_left);
 }
 
 
 Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
+
 	return add(getPelvisFromStep(), pelvis_to_right);
 }
 
@@ -567,8 +586,24 @@ void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 
 Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
 
-  Eigen::Isometry3d add;
+  Eigen::Isometry3d add,_lhs;
+
+  _lhs.setIdentity();
+
   add = lhs*rhs;
+
+  /*
+  std::cout << "ADD\n";
+  std::cout << lhs.translation().transpose() << " | " << rhs.translation().transpose() << std::endl;
+
+  std::cout << lhs.rotation() << std::endl;
+  std::cout << rhs.rotation() << std::endl;
+
+  std::cout << add.translation().transpose()  << std::endl;
+  std::cout << add.rotation() << std::endl;
+*/
+
+
   return add;
 }
 
@@ -577,6 +612,10 @@ void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_, cons
 	// The left foot is used to initialize height of the pelvis.
 	
 	stepcount = 0;
+	//Eigen::Isometry3d umm;
+	//umm = init_states;
+	//umm.setIdentity();
+	// Tbhere is an issue with the initial state which are being passed to this function
 	local_to_pelvis = init_states;
 	footsteps.reset();
 }

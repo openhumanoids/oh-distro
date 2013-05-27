@@ -119,6 +119,7 @@ namespace InertialOdometry
 	  var(2) = q_.y();
 	  var(3) = q_.z();
 	  	  
+	  var.normalize();
 	  
 	  //std::cout << "q2e(Eigen::Q, Eigen::V3) convention not confirmed "<< var.transpose() << "\n";
 	  
@@ -129,21 +130,6 @@ namespace InertialOdometry
 	  Eigen::Vector3d E;
 	  //std::cout << "quat is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
 	  q2e(q,E);
-	  /*
-	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
-  	  std::cout << "New q2e is running\n";
-        double roll_a = 2. * (q.w()*q.x() + q.y()*q.z());
-        double roll_b = 1. - 2. * (q.x()*q.x() + q.y()*q.y());
-        E(0) = atan2 (roll_a, roll_b);
-
-        double pitch_sin = 2. * (q.w()*q.y() - q.z()*q.x());
-        E(1) = asin (pitch_sin);
-
-        double yaw_a = 2. * (q.w()*q.z() + q.x()*q.y());
-        double yaw_b = 1. - 2. * (q.y()*q.y() + q.z()*q.z());
-        E(2) = atan2 (yaw_a, yaw_b);
-	  */
-	  //std::cout << "Returned Euler is: " << E.transpose() << std::endl;
 	  
 	  return E;
   }
@@ -204,11 +190,6 @@ namespace InertialOdometry
       double yaw_b = 1. - 2. * (q(2)*q(2) + q(3)*q(3));
       E(2) = atan2 (yaw_a, yaw_b);
       
-      //std::cout << "Returning E angles: " << E.transpose() << std::endl;
-      
-      /*
-      
-      */
   }
   
   
@@ -334,11 +315,11 @@ namespace InertialOdometry
   }
   Eigen::Quaterniond QuaternionLib::C2q(const Eigen::Matrix<double, 3, 3> &C) {
 	  
-	  std::cout << "QuaternionLib::C2q -- Think there is something wrong with this function\n";
+	  //std::cout << "QuaternionLib::C2q -- Think there is something wrong with this function\n";
 	  
 	  Eigen::Quaterniond returnval;
 	  
-	  if (true) {
+	  if (false) {
 	  double scalar;
 	  
 	  returnval.setIdentity();
@@ -359,9 +340,10 @@ namespace InertialOdometry
 	  
 	  } else {
 	  
-	  double C_[9] = {C(0,0), C(1,0), C(2,0), C(0,1), C(1,1), C(2,1), C(0,2), C(1,2), C(2,2)};
+	  double C_[9] = {C(0,0), C(0,1), C(0,2), C(1,0), C(1,1), C(1,2), C(2,0), C(2,1), C(2,2)};
 	  double q[4];
 	  
+	  // This comes form libbot
 	  matrix_to_quat(C_, q);
 	  
 	  returnval.w() = q[0];
@@ -464,22 +446,26 @@ namespace InertialOdometry
 	  cps = cos(E(2));
 	  
 	  C(0,0) = cps*ct;
-	  C(1,0) = sps*ct;
-	  C(2,0) = -st;
+	  C(0,1) = sps*ct;
+	  C(0,2) = -st;
 	  
-	  C(0,1) = -sps*cp + cps*st*sp;
+	  C(1,0) = -sps*cp + cps*st*sp;
 	  C(1,1) = cps*cp + sps * st * sp;
-	  C(2,1) = ct*sp;
+	  C(1,2) = ct*sp;
 	  
-	  C(0,2) = sps * sp + cps * st * cp;
-	  C(1,2) = -cps*sp + sp * st * cp;
+	  C(2,0) = sps * sp + cps * st * cp;
+	  C(2,1) = -cps*sp + sp * st * cp;
 	  C(2,2) = ct * cp;
   }
   
   Eigen::Vector3d QuaternionLib::C2e(const Eigen::Matrix<double, 3, 3> &C) {
 
-	  Eigen::Quaterniond q(C);
+	  Eigen::Quaterniond q;
 	  
+	  q = C2q(C);
+
+	  q.normalize();
+
 	  //std::cout << "Q at this point is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
 
 	  return q2e(q);

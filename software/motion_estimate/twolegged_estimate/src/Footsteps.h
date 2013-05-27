@@ -22,7 +22,7 @@ class Footsteps {
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
 		Footsteps();
-		void addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot);
+		void addFootstep(const Eigen::Isometry3d &RelativeFrameLocation, const int &foot);
 		void newFootstep(footstep newstep);
 		
 		int getLastStepState(state const &RelativeFrameLocation);

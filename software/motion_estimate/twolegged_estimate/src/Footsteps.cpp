@@ -13,20 +13,21 @@ void Footsteps::newFootstep(footstep newstep) {
 	active_step = newstep;
 }
 
-void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot) 
+void Footsteps::addFootstep(const Eigen::Isometry3d &RelativeFrameLocation, const int &foot)
 {
 	// Presently this function is only called once, to be combined -- TODO
 	footstep new_footprint;
 	
 	new_footprint.foot = foot;
 	new_footprint.footprintlocation = RelativeFrameLocation;
-	
+
 	footstep_hist.push_back(new_footprint);
 	
 	active_step = new_footprint;
 }
 
 Eigen::Isometry3d Footsteps::getLastStep() {
+
 	return active_step.footprintlocation;
 }
 

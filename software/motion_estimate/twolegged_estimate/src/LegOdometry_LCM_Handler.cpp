@@ -264,15 +264,15 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 												const  drc::robot_state_t* _msg) {
 
 	//clock_gettime(CLOCK_REALTIME, &before);
-	gettimeofday(&before,NULL);
+	if (_switches->print_computation_time) {
+		gettimeofday(&before,NULL);
+	}
 
 	if (_msg->utime - prev_frame_utime > 1000) {
 		std::cout << (_msg->utime - prev_frame_utime)/1000 << " frames were missed\n";
 	}
 
-	if (_switches->print_computation_time) {
-		prev_frame_utime = _msg->utime;
-	}
+	prev_frame_utime = _msg->utime;
 
 	//std::cout << before.tv_nsec << ", " << spare.tv_nsec << std::endl;
 	//spare_time = (before.tv_nsec) - (spare.tv_nsec);
@@ -304,17 +304,20 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 #ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 	// maintain a true pelvis position for drawing of the foot
-	Eigen::Quaterniond true_pelvis_q(_msg->origin_position.rotation.w, _msg->origin_position.rotation.x, _msg->origin_position.rotation.y, _msg->origin_position.rotation.z);
-	Eigen::Isometry3d true_pelvis(true_pelvis_q);
-	true_pelvis.translation().x() = _msg->origin_position.translation.x;
-	true_pelvis.translation().y() = _msg->origin_position.translation.y;
-	true_pelvis.translation().z() = _msg->origin_position.translation.z;
+	true_pelvis.translation() << _msg->origin_position.translation.x, _msg->origin_position.translation.y, _msg->origin_position.translation.z;
+
+	Eigen::Quaterniond tq(_msg->origin_position.rotation.w, _msg->origin_position.rotation.x, _msg->origin_position.rotation.y, _msg->origin_position.rotation.z);
+
+	//true_pelvis.rotate(tq);
+	true_pelvis.linear() = InertialOdometry::QuaternionLib::q2C(tq);
+
 
 	// TODO -- This is to be removed, only using this for testing
-	_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(true_pelvis_q));
+	_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(tq));
 #endif
 
 	// Here we start populating the estimated robot state data
+	// TODO -- Measure the computation time required for this copy operation.
 	est_msgout = *_msg;
 
 	int ratechangeiter=0;
@@ -630,6 +633,12 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.angular_velocity.x = local_rates(0);
 	twist.angular_velocity.y = local_rates(1);
 	twist.angular_velocity.z = local_rates(2);
+
+	/*
+	twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
+	twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
+	twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
+  	*/
   }
 
   // EST is TRUE with sensor estimated position
@@ -707,10 +716,8 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 	  // TODO -- remember this flag
 
 	  pelvis.setIdentity();
-	  pelvis.translation().x() = msg->origin_position.translation.x;
-	  pelvis.translation().y() = msg->origin_position.translation.y;
-	  pelvis.translation().z() = msg->origin_position.translation.z;
-	  pelvis.rotate(q);
+	  pelvis.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+	  pelvis.linear() = InertialOdometry::QuaternionLib::q2C(q);
 
 		  //std::cout << truebody.translation().transpose() << " is tb\n";
 
@@ -724,7 +731,8 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 	  local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
 
 	// estimate the rotational velocity of the head
-	Eigen::Quaterniond l2head_rot(local_to_head.linear());
+	Eigen::Quaterniond l2head_rot;
+	l2head_rot = InertialOdometry::QuaternionLib::C2q(local_to_head.linear());
 
 	l2head_msg->utime = msg->utime;
 
@@ -1009,8 +1017,7 @@ void LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, double alljo
 	  std::cout << "Automatically changing the capacity of the filtered joints\n";
   }
 
-  // 1. Solve for Forward Kinematics:
-	_link_tfs.clear();
+
 
 	// call a routine that calculates the transforms the joint_state_t* msg.
 
@@ -1052,73 +1059,109 @@ void LegOdometry_Handler::joints_to_map(const double joints[], const std::string
 	}
 }
 
+
+// TODO -- make a transform to Eigen converter, since this function now has 4 similar conversions
 void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const map<string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
+
+
 
 	bool kinematics_status;
 	bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
 
+	// 1. Solve for Forward Kinematics:
+	_link_tfs.clear(); // TODO -- not sure why we have this, to investigate
+
 	map<string, drc::transform_t > cartpos_out;
 
-	kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-    
-    //bot_core::rigid_transform_t tf;
-    //KDL::Frame T_body_head;
-    
-    map<string, drc::transform_t >::iterator transform_it_lf;
-    map<string, drc::transform_t >::iterator transform_it_rf;
-    
-    transform_it_lf=cartpos_out.find("l_foot");
-    transform_it_rf=cartpos_out.find("r_foot");
-    
-    //T_body_head = KDL::Frame::Identity();
-	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
-		// This gives us the translation from body to left foot
-		  /*
-#ifdef VERBOSE_DEBUG
-	    std::cout << " LEFT: " << transform_it_lf->second.translation.x << ", " << transform_it_lf->second.translation.y << ", " << transform_it_lf->second.translation.z << std::endl;
-#endif
-	    
-	    //std::cout << "ROTATION.x: " << transform_it->second.rotation.x << ", " << transform_it->second.rotation.y << std::endl;
-	     *
-	     */
-	  }else{
-	    std::cout<< "fk position does not exist" <<std::endl;
-	  }
-	  
-	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
-/*
-#ifdef VERBOSE_DEBUG
-  	    std::cout << "RIGHT: " << transform_it_rf->second.translation.x << ", " << transform_it_rf->second.translation.y << ", " << transform_it_rf->second.translation.z << std::endl;
-#endif
-  	    transform_it_rf->second.rotation;
-  	    */
-	  }else{
-        std::cout<< "fk position does not exist" << std::endl;
-  	  }
+	/*
+	 * map<string, double> _jointpos_in;
+	_jointpos_in = jointpos_in;
+	for (map<string, double >::iterator it=_jointpos_in.begin();it!=_jointpos_in.end();it++) {
+		it->second=0;
+	}*/
 
-	  Eigen::Vector3d E_;
-	  
+	kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
+
+
+
+    map<string, drc::transform_t >::iterator transform_it_ll_l;
+    map<string, drc::transform_t >::iterator transform_it_ll_r;
+
+    transform_it_ll_l=cartpos_out.find("l_lleg");
+    transform_it_ll_r=cartpos_out.find("r_lleg");
+
+
+    //T_body_head = KDL::Frame::Identity();
+	  if(transform_it_ll_l!=cartpos_out.end()){// fk cart pos exists
+		// This gives us the translation from body to left foot
+
+	  }else{
+		std::cout<< "fk position does not exist" <<std::endl;
+	  }
+
+	  if(transform_it_ll_r!=cartpos_out.end()){// fk cart pos exists
+
+	  }else{
+		std::cout<< "fk position does not exist" << std::endl;
+	  }
+
+
+	  // Get lower leg quaternions
+	  Eigen::Quaterniond q_ll_l(transform_it_ll_l->second.rotation.w, transform_it_ll_l->second.rotation.x,transform_it_ll_l->second.rotation.y,transform_it_ll_l->second.rotation.z);
+	  Eigen::Quaterniond q_ll_r(transform_it_ll_r->second.rotation.w, transform_it_ll_r->second.rotation.x,transform_it_ll_r->second.rotation.y,transform_it_ll_r->second.rotation.z);
+
+	  Eigen::Isometry3d left_lleg;
+	  Eigen::Isometry3d right_lleg;
+
+	  left_lleg.translation() << transform_it_ll_l->second.translation.x, transform_it_ll_l->second.translation.y, transform_it_ll_l->second.translation.z;
+	  right_lleg.translation() << transform_it_ll_r->second.translation.x, transform_it_ll_r->second.translation.y, transform_it_ll_r->second.translation.z;
+
+	  left_lleg.rotate(q_ll_l);
+	  right_lleg.rotate(q_ll_r);
+
+	  left_lleg.linear() = InertialOdometry::QuaternionLib::q2C(q_ll_l);
+	  right_lleg.linear() = InertialOdometry::QuaternionLib::q2C(q_ll_r);
+
+
+	  // Now i need to imitate the ankle pitch and roll angles
+	  // this involves rotating the lower leg position with the IMU world angles. pay attention to the order in which these rotations are applied.
+
+	    //bot_core::rigid_transform_t tf;
+	    //KDL::Frame T_body_head;
+
+	    map<string, drc::transform_t >::iterator transform_it_lf;
+	    map<string, drc::transform_t >::iterator transform_it_rf;
+
+		transform_it_lf=cartpos_out.find("l_foot");
+		transform_it_rf=cartpos_out.find("r_foot");
+
+		//T_body_head = KDL::Frame::Identity();
+		  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+			// This gives us the translation from body to left foot
+
+		  }else{
+			std::cout<< "fk position does not exist" <<std::endl;
+		  }
+
+		  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+
+		  }else{
+			std::cout<< "fk position does not exist" << std::endl;
+		  }
+
+	  //Eigen::Vector3d E_;
 	  // quaternion scale and vector ordering seems to be correct
 	  Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
 	  Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
 	  
+
 	  //Eigen::Quaterniond tempq;
 	  //Eigen::Matrix<double,3,3> leftC, rightC;
 	  //tempq.setIdentity();
 	  
 	  // TODO -- clear this if your are happy with it working
-	  if (true) {
-
-		  /*
-		  left.translation().x() = transform_it_lf->second.translation.x;
-		  left.translation().y() = transform_it_lf->second.translation.y;
-		  left.translation().z() = transform_it_lf->second.translation.z;
-
-		  right.translation().x() = transform_it_rf->second.translation.x;
-		  right.translation().y() = transform_it_rf->second.translation.y;
-		  right.translation().z() = transform_it_rf->second.translation.z;
-		  */
-
+	  if (false) {
+		  // TODO -- Depreciate this soon -- lack of trust in Isometry3d::rotate(), many hours lost to this function -- may be a successive vs fixed frame rotation scheme
 		  left.setIdentity();
 		  right.setIdentity();
 
@@ -1130,6 +1173,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 		  //left.rotate(leftC); // with rotation matrix
 	  } else {
+
+
 		  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
 		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
@@ -1141,10 +1186,20 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 	  }
 
+	  if (true) {
+		  std::cout << "JOINTS:\t" << std::fixed << left.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left.rotation()).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
+				  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left_lleg.rotation()).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl;
+		  std::cout << std::endl;
+		  //std::cout << InertialOdometry::QuaternionLib::q2C(q_ll_l) <<std::endl << std::endl;
 
+	//	  std::cout << "JOINTS:\t" << std::fixed << left.translation().transpose() << " | " << InertialOdometry::QuaternionLib::q2e(leftq).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
+	//	  			  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::q2e(q_ll_l).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl << std::endl;
+	  }
+
+	  // Draw lleg
 
 #ifdef LOG_LEG_TRANSFORMS
-	  // The idea here is to push all the required data to a single array [pelvis_to_feet_transform], which is to be logged in publishstate method
+	  // The idea here is to push all the required data to a single array [pelvis_to_feet_transform], which is to be logged in publish state method
 
 	  Eigen::Vector3d tempvar;
 	  int i;
@@ -1172,8 +1227,7 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 #endif
 
-
-	  // Matt says
+	  // Matt A says
 	  // try sysprof (apt-get install sysprof) system profiler
 	  // valgrind (memory leaks, memory bounds checking)
 	  // valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt

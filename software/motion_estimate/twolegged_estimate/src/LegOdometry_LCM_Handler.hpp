@@ -92,6 +92,8 @@ private:
     BotParam* _botparam;
     BotFrames* _botframes;
 	
+    Eigen::Isometry3d true_pelvis;
+
 	int ratecounter;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
