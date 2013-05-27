@@ -144,7 +144,10 @@ aborted = false;
       final_center = biped.footCenter2StepCenter(X(end).pos, X(end).is_right_foot);
 
       is_right_foot = ~X(end).is_right_foot;
-      final_pos = fitStepToTerrain(biped, biped.stepCenter2FootCenter(final_center, is_right_foot));
+      final_pos = biped.stepCenter2FootCenter(final_center, is_right_foot);
+      if ~options.ignore_terrain
+        final_pos = fitStepToTerrain(biped, final_pos);
+      end
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
         break
