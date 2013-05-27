@@ -24,7 +24,7 @@ classdef DRCController
     precompute_response_monitors;
     precompute_response_targets; % struct that maps controller names to received messages
     
-    constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
+    constructors; % cell array of lcm type constructors (function handles)
     t_final = inf; % controller time limit
     timed_transition; % name of the controller to transition to when t>=t_final
     absolute_time; % bool: whether t_final is absolute or relative to start time
@@ -106,7 +106,7 @@ classdef DRCController
         lcmtype = obj.transition_coders{n}.encode(0,zeros(obj.transition_coders{n}.dim(),1));
       else
         obj.transition_coders{n} = [];
-        [lcmtype,obj.constructors(n)]=DRCController.parseLCMType(lcmtype_or_lcmcoder);
+        [lcmtype,obj.constructors{n}]=DRCController.parseLCMType(lcmtype_or_lcmcoder);
       end
       
       mon = drake.util.MessageMonitor(lcmtype,'utime');
@@ -146,7 +146,7 @@ classdef DRCController
         d = obj.transition_monitors{i}.getNextMessage(0);
         if ~isempty(d)
           if isempty(obj.transition_coders{i})
-            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors(i).newInstance(d)));
+            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors{i}.newInstance(d)));
           else
             data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.coders{i}.decode(d)));
           end
@@ -216,6 +216,12 @@ classdef DRCController
                 data = struct('precomp',d); % pass precomputation message to next controller
               end
             end
+ 
+            % append last input data
+            for i=1:obj.n_input_frames
+              data = setfield(data,obj.controller_input_frames{i}.name,input_frame_data{i});
+            end
+
             break;
           end
         end
@@ -283,12 +289,8 @@ classdef DRCController
             input_data = struct('precomp',d); % pass precomputation message to next controller
           else
             input_data = struct();
-            if obj.n_input_frames > 1
-              for i=1:obj.n_input_frames
-                input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
-              end
-            else
-              input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
+            for i=1:obj.n_input_frames
+              input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
             end
           end
           data = setfield(data,obj.timed_transition,input_data);
