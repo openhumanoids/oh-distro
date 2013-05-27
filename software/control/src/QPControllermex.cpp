@@ -134,7 +134,7 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
       }
     }
   } else {
-    mexPrintf("Warning: using 0,0,1 as normal");
+//    mexPrintf("Warning: using 0,0,1 as normal\n");
     pos << contact_pos.topRows(2), 0;
     normal << 0,0,1;
   }
