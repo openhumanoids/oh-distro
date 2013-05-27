@@ -51,7 +51,7 @@ class FallDetector:
                 status_msg = drc.system_status_t()
                 status_msg.utime = msg.utime
                 status_msg.system = 8
-                status_msg.importance = 1
+                status_msg.importance = 0
                 status_msg.frequency = 0
                 status_msg.value = 'Possible fall detected. Bracing now!'
                 m.publish('SYSTEM_STATUS', status_msg.encode())
