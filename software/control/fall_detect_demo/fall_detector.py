@@ -7,7 +7,7 @@ import drc
 from collections import deque
 
 """
-A very simple fall detector for the Atlas. Requires that the walking controller be running in matlab (use_mex=false). Listens to CONTROLLER_STATUS and prints a warning if a fall is detected.
+A very simple fall detector for the Atlas. Requires that the walking controller be running in matlab (use_mex=false). Listens to CONTROLLER_STATUS and attempts to set the robot to its brace position if a fall is detected.
 
 Usage:
     python fall_detector.py
@@ -36,18 +36,33 @@ class FallDetector:
         else:
             if len(self.vdot_history) >= vdot_memory:
                 self.vdot_errror_count -= int(self.vdot_history.popleft())
-            self.vdot_history.append(msg.Vdot > vdot_threshold)
-            self.vdot_errror_count += int(msg.Vdot > vdot_threshold)
-            print self.vdot_history
+            err = msg.Vdot > vdot_threshold
+            if err:
+                print "Positive Vdot at time: {:.3f}".format(t)
+            self.vdot_history.append(err)
+            self.vdot_errror_count += int(err)
+            # print self.vdot_history
             if self.vdot_errror_count > vdot_count_threshold:
                 print "WARNING: POSSIBLE FALL at time: {:.3f}".format(t)
                 brace_msg = drc.utime_t()
                 brace_msg.utime = 0
                 m.publish("BRACE_FOR_FALL", brace_msg.encode())
+                status_msg = drc.system_status_t()
+                status_msg.utime = msg.utime
+                status_msg.system = 8
+                status_msg.importance = 1
+                status_msg.frequency = 0
+                status_msg.value = 'Possible fall detected. Bracing now!'
+                m.publish('SYSTEM_STATUS', status_msg)
             self.last_t = t
 
-f = FallDetector()
+def main():
+    f = FallDetector()
 
-m.subscribe("CONTROLLER_STATUS", f.handle)
-while True:
-    m.handle()
+    m.subscribe("CONTROLLER_STATUS", f.handle)
+    print "Watching for falls..."
+    while True:
+        m.handle()
+
+if __name__ == '__main__':
+    main()
