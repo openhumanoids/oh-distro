@@ -321,10 +321,6 @@ group "b.1.core" {
         exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "base";
     }
-    cmd "mini2maxi" {
-        exec = "minimal_to_est_robot_state  -r base";
-        host = "base";
-    }
     cmd "est_rsp_base" {
         exec = "est_robot_state_publisher -g";
         host = "base";
