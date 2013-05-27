@@ -663,6 +663,9 @@ script "dev.qual_1" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_quals_1"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 script "dev.qual_2" { 
     start group "0.development";
@@ -683,6 +686,9 @@ script "dev.qual_3" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_quals_3"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 script "dev.vrc_walking" { 
     start group "0.development";
@@ -693,6 +699,9 @@ script "dev.vrc_walking" {
     wait ms 25000;
     start cmd "gz_vrc_walking"; 
     start cmd "set-sim-rate";
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 script "dev.vrc_driving" { 
     start group "0.development";
@@ -741,6 +750,9 @@ script "dev.mit_walking" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_mit_walking";
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 
 script "dev.mit_walking_vo" {
@@ -756,6 +768,8 @@ script "dev.mit_walking_vo" {
     wait ms 3000;
     start cmd "set-sim-rate-slower";
     start cmd "logger-no-vis";
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 
 script "dev.mit_manip_nohands" {
@@ -783,6 +797,9 @@ script "dev.ingress" {
     start group "a.6.ingress";
     wait ms 25000;
     start cmd "gz_mit_ingress"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
 }
 
 script "dev.unpinned_manip" { 
