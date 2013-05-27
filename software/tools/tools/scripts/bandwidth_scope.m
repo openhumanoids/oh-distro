@@ -7,13 +7,13 @@ end_of_init_time = 1.0
 close all
 d=getFile( end_of_init_time );
 
-if (1==0)
-    bands_rx =[256,128,64,32]
-    bands_tx =[4,1,0.25,0.0625]
-    color_list='kryg'
+if (0==1)
+    bands_tx =[2, 0.5, 0.125, 0.03125, 0.0078125]
+    bands_rx =[64,32,16,8,4]
+    color_list='ckryg'
 else
-    bands_rx =[128,64,32]
-    bands_tx =[1,0.25,0.0625]
+    bands_tx =[0.125, 0.03125, 0.0078125]
+    bands_rx =[16,8,4]
     color_list='ryg'   
 end
 
@@ -28,7 +28,7 @@ subplot(2,3,2)
 hold on
 area(d.sec, d.data_rx)
 grid on
-legend( d.names_rx)
+legend( d.names_rx,'Location','NorthWest'); 
 set(gca,'Layer','top')
 title ('Cum. Rx [KB]') ; axis([0 inf -inf inf])
 for i=1:size(bands_rx,2)
@@ -52,7 +52,7 @@ subplot(2,3,5)
 hold on
 area(d.sec, d.data_tx)
 grid on
-legend( d.names_tx)
+legend( d.names_tx,'Location','NorthWest'); 
 set(gca,'Layer','top')
 title ('Cum. Tx [KB]'); axis([0 inf -inf inf])
 for i=1:size(bands_rx,2)
@@ -68,7 +68,7 @@ title('Rate Tx [KB]'); axis([0 inf -inf inf])
 
 function d=getFile(end_of_init_time )
 path = '~/drc/software/config/'
-files = dir([path 'drc-network-shaper-data-usage-base-*']);
+files = dir([path 'drc-network-shaper-data-usage-base-*.csv']);
 filename = files(end).name 
 
 
