@@ -13,7 +13,7 @@ Usage:
     python fall_detector.py
 """
 
-vdot_threshold = 0.002
+vdot_threshold = 0.01
 vdot_count_threshold = 3
 vdot_memory = 10
 
@@ -37,6 +37,7 @@ class FallDetector:
             if len(self.vdot_history) >= vdot_memory:
                 self.vdot_errror_count -= int(self.vdot_history.popleft())
             err = msg.Vdot > vdot_threshold
+            print msg.Vdot
             if err:
                 print "Positive Vdot at time: {:.3f}".format(t)
             self.vdot_history.append(err)
@@ -53,7 +54,7 @@ class FallDetector:
                 status_msg.importance = 1
                 status_msg.frequency = 0
                 status_msg.value = 'Possible fall detected. Bracing now!'
-                m.publish('SYSTEM_STATUS', status_msg)
+                m.publish('SYSTEM_STATUS', status_msg.encode())
             self.last_t = t
 
 def main():
