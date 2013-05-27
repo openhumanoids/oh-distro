@@ -641,6 +641,7 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     return; 
   }  
   int64_t aff_utime =0 ;//TODO: replace this with a proper timestamp coming from the store
+  float bb_padding = 0.05;
 
   std::vector<int> uids;
   for (size_t i=0; i<msg->affs_plus.size(); i++){
@@ -659,8 +660,9 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     drc::affordance_plus_t a = msg->affs_plus[aff_iter];
     object_pose_ = affutils.getPose( a.aff.origin_xyz, a.aff.origin_rpy );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
-    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
-    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
+    
+    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]) - Eigen::Vector3f(bb_padding/2, bb_padding/2, bb_padding/2);
+    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]) + Eigen::Vector3f(bb_padding/2, bb_padding/2, bb_padding/2);
     Eigen::Isometry3d boundbox_pose = affutils.getPose( a.aff.bounding_xyz, a.aff.bounding_rpy );
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right, boundbox_pose.cast<float>() );
     
@@ -709,6 +711,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
       object_cloud_ =prim_->sampleMesh(mesh, 50000.0); ///
     }else if(otdf_type == "steering_cyl"){
       cout  << affordance_id_ << " is a steering_cyl\n";
+      std::cout << a.aff.origin_xyz[0] << " " << a.aff.origin_xyz[1] << " " << a.aff.origin_xyz[2] << "\n";
+      transform.setIdentity();
       mesh = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
       object_cloud_ =prim_->sampleMesh(mesh, 50000.0); ///
     }else{
@@ -723,7 +727,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     if( verbose_>=1 ){
       Isometry3dTime object_poseT = Isometry3dTime ( aff_utime, object_pose_ );
       pc_vis_->pose_to_lcm_from_list(affordance_vis_, object_poseT);
-      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, a.aff.bounding_lwh);
+      double bounding_lwh[] = {a.aff.bounding_lwh[0]+bb_padding , a.aff.bounding_lwh[1]+bb_padding , a.aff.bounding_lwh[2] + bb_padding };
+      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, bounding_lwh);
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
     }
