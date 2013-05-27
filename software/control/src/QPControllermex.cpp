@@ -28,7 +28,7 @@
 #include "RigidBodyManipulator.h"
 
 const int m_surface_tangents = 2;  // number of faces in the friction cone approx
-const double mu = .5;  // coefficient of friction
+const double mu = 1.0;  // coefficient of friction
 
 using namespace std;
 
