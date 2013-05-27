@@ -142,7 +142,8 @@ class TwoLegOdometry {
 		Eigen::Isometry3d getLeftInLocal();
 		Eigen::Isometry3d getRightInLocal();
 		
-		Eigen::Vector3d const getLocalFrameRates();
+		Eigen::Vector3d getLocalFrameRates();
+		Eigen::Quaterniond getLocalOrientation();
 		
 		Eigen::Isometry3d getPelvisState();
 		Eigen::Vector3d getPelvisVelocityStates();

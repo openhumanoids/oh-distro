@@ -409,7 +409,7 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
 }
 
-Eigen::Vector3d const TwoLegOdometry::getLocalFrameRates() {
+Eigen::Vector3d TwoLegOdometry::getLocalFrameRates() {
 	return local_frame_rates;
 }
 
@@ -489,7 +489,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
 		
 	if (false) {
 		// This is the old way of doing-- this changed with the use of the function CalculateBodyStates
-		Eigen::Isometry3d output_state(local_frame_orientation);
+		Eigen::Isometry3d output_state(local_frame_orientation);// DO NOT USE THE CONSTRUCTOR IN EIGEN while using libbot
 		output_state.translation() = getPelvisFromStep().translation();
 	}
 	
@@ -504,6 +504,10 @@ Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
 	//std::cout << "TwoLegOdometry::getPelvisVelocityStates() IS NOT READY TO BE USED\n";
 	
 	return local_velocities;
+}
+
+Eigen::Quaterniond TwoLegOdometry::getLocalOrientation() {
+	return local_frame_orientation;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {

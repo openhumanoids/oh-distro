@@ -1087,8 +1087,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
     map<string, drc::transform_t >::iterator transform_it_ll_l;
     map<string, drc::transform_t >::iterator transform_it_ll_r;
 
-    transform_it_ll_l=cartpos_out.find("l_lleg");
-    transform_it_ll_r=cartpos_out.find("r_lleg");
+    transform_it_ll_l=cartpos_out.find("l_talus");
+    transform_it_ll_r=cartpos_out.find("r_talus");
 
 
     //T_body_head = KDL::Frame::Identity();
@@ -1186,9 +1186,46 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 	  }
 
+	  // level out foot position from IMU
+	  	  Eigen::Isometry3d IMU_rp;
+	  	  IMU_rp.setIdentity();
+	  	  Eigen::Vector3d imu_E;
+	  	  imu_E = InertialOdometry::QuaternionLib::q2e(_leg_odo->getLocalOrientation());
+	  	  imu_E(2) = 0.;
+	  	  IMU_rp.linear() = InertialOdometry::QuaternionLib::e2C(imu_E);
+
+	  	  //Eigen::Isometry3d toprintleft;
+	  	  Eigen::Isometry3d temptransform;
+	  	  //toprintleft = IMU_rp.inverse()*left;
+
+
+	  	  temptransform = IMU_rp.inverse();
+	  	  IMU_rp = temptransform;
+	  	  temptransform = IMU_rp * left;
+	  	  left = temptransform;
+	  	  temptransform = IMU_rp * right;
+	  	  right = temptransform;
+
+	  	  /*
+	  	  // now we strip out the influence of the ankle joints.
+	  	  // We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
+	  	  Eigen::Vector3d stripRP;
+
+	  	  stripRP = InertialOdometry::QuaternionLib::C2e(left.linear());
+	  	  stripRP(0) = 0.;
+	  	  stripRP(1) = 0.;
+	  	  left.linear() = InertialOdometry::QuaternionLib::e2C(stripRP);
+
+	  	  stripRP = InertialOdometry::QuaternionLib::C2e(right.linear());
+		  stripRP(0) = 0.;
+		  stripRP(1) = 0.;
+		  right.linear() = InertialOdometry::QuaternionLib::e2C(stripRP);
+		*/
+
+
 	  if (true) {
-		  std::cout << "JOINTS:\t" << std::fixed << left.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left.rotation()).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
-				  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left_lleg.rotation()).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl;
+		  std::cout << "JOINTS:\t" << std::fixed << (left.inverse()).translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left.rotation()).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
+		  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left_lleg.rotation()).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl;
 		  std::cout << std::endl;
 		  //std::cout << InertialOdometry::QuaternionLib::q2C(q_ll_l) <<std::endl << std::endl;
 
