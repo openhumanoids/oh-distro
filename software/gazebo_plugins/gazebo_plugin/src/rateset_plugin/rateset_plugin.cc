@@ -38,6 +38,8 @@ class RateSetPlugin: public ModelPlugin{
     void QueueThread(); 
     void on_rate_set(const lcm::ReceiveBuffer* buf, const std::string& channel, const bot_core::pose_t* msg);
   
+    void on_pose_set(const lcm::ReceiveBuffer* buf, const std::string& channel, const bot_core::pose_t* msg);
+
   private: 
     physics::ModelPtr model; // Pointer to the model
     physics::WorldPtr world;
@@ -107,9 +109,127 @@ void RateSetPlugin::QueueThread(){
     }
   
     lcm_subscribe_.subscribe("GAZEBO_RATESET", &RateSetPlugin::on_rate_set, this);
+    lcm_subscribe_.subscribe("POSE_SET", &RateSetPlugin::on_pose_set, this);
+
     gzerr << "Launching RateSet LCM handler\n";
     while (0 == lcm_subscribe_.handle());
 }    
+
+void RateSetPlugin::on_pose_set(const lcm::ReceiveBuffer* buf,
+                    const std::string& channel,
+                    const bot_core::pose_t* msg){
+
+    Eigen::Isometry3d link_to_hose;
+    link_to_hose.setIdentity();
+    std::string rel_model = "atlas";
+    std::string rel_link = "right_f0_0";
+    if (msg->pos[0]==0){
+      link_to_hose.translation()  << -0.025,0.02,0.072;
+      double ypr[3]={1.571, 0,0};
+      Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+      link_to_hose.rotate(quat2);
+      gzerr << "will set AT HAND\n";
+    }else if(msg->pos[0] == 1){
+      link_to_hose.translation()  << -0.025,0.02,0.102;
+      double ypr[3]={1.571, 0,0};
+      Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+      link_to_hose.rotate(quat2);
+      gzerr << "will set near HAND\n";
+    }else if(msg->pos[0] == 2){
+      link_to_hose.translation()  << -0.025,0.02,0.272;
+      double ypr[3]={1.571, 0,0};
+      Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+      link_to_hose.rotate(quat2);
+      gzerr << "will set OFF HAND\n";
+    }else if(msg->pos[0] == 3){ 
+      rel_model = "standpipe";
+      rel_link = "standpipe";
+      link_to_hose.translation()  << 0.0,0.0,0.023;
+      double ypr[3]={1.571, 1.571,0};
+      // 0.001784 -4.6e-05 0.023 1.56985 1.55991 -0.000936
+      Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+      link_to_hose.rotate(quat2);
+      gzerr << "will set AT PIPE\n";
+    }else if(msg->pos[0] == 4){ 
+      rel_model = "standpipe";
+      rel_link = "standpipe";
+      link_to_hose.translation()  << 0.0,0.0,-0.035;
+      double ypr[3]={1.571, 1.571,0};
+      // 0.001784 -4.6e-05 0.023 1.56985 1.55991 -0.000936
+      Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+      link_to_hose.rotate(quat2);
+      gzerr << "will set OFF PIPE\n";
+    }else{
+      gzerr << "Command not understood\n";
+      return;	
+    }
+
+    std::vector<physics::ModelPtr> all_models = this->world->GetModels();
+
+    math::Pose pose_hand;
+    BOOST_FOREACH( physics::ModelPtr model, all_models ){
+      if (model){
+        //gzerr << "which model: "<< model->GetName() <<"\n";
+        if ( model->GetName() == rel_model ){
+          //gzerr << "got: "<< model->GetName() <<"\n"; 
+          physics::Link_V all_links = model->GetLinks();
+          BOOST_FOREACH( physics::LinkPtr link, all_links ){
+            //gzerr << "which link: "<< link->GetName() <<"\n";
+            if (link->GetName() == rel_link ){
+              //gzerr << "which link: "<< link->GetName() <<"\n";
+              
+              pose_hand=link->GetWorldPose();
+              //gzerr << model->GetName() << ", " << link->GetName() << "\n";
+              //gzerr << model->GetName() << ", " << link->GetName() << " | "
+              //      << pose_hand.pos.x << " " << pose_hand.pos.y << " " << pose_hand.pos.z << " | "
+              //      << pose_hand.rot.w << " " << pose_hand.rot.x << " " << pose_hand.rot.y << " " << pose_hand.rot.z << " hand\n";
+            }
+          }
+        }
+      }
+    }
+
+    BOOST_FOREACH( physics::ModelPtr model, all_models ){
+      if (model){
+        if ( model->GetName() == "vrc_firehose_long" ){
+          //gzerr << "got: "<< model->GetName() <<"\n"; 
+          physics::Link_V all_links = model->GetLinks();
+          BOOST_FOREACH( physics::LinkPtr link, all_links ){
+            if (link->GetName() == "coupling"){
+              //gzerr << "which link: "<< link->GetName() <<"\n";
+              
+              
+              Eigen::Isometry3d world_to_link;
+              world_to_link.setIdentity();
+              world_to_link.translation()  << pose_hand.pos.x, pose_hand.pos.y, pose_hand.pos.z;
+              Eigen::Quaterniond quat = Eigen::Quaterniond( pose_hand.rot.w, pose_hand.rot.x , pose_hand.rot.y , pose_hand.rot.z);
+              world_to_link.rotate(quat);   
+
+              Eigen::Isometry3d world_to_hose = world_to_link*link_to_hose;
+ 
+              math::Pose pose;
+              pose.pos.x =world_to_hose.translation().x() ; 
+              pose.pos.y =world_to_hose.translation().y() ; 
+              pose.pos.z =world_to_hose.translation().z() ; 
+              Eigen::Quaterniond r(world_to_hose.rotation());
+              pose.rot.w =r.w() ;
+              pose.rot.x =r.x() ;
+              pose.rot.y =r.y() ;
+              pose.rot.z =r.z() ;
+
+              link->SetWorldPose(pose);
+              //gzerr << model->GetName() << ", " << link->GetName() << " | "
+              //      << pose_hand.pos.x << " " << pose_hand.pos.y << " " << pose_hand.pos.z << " | "
+              //      << pose_hand.rot.w << " " << pose_hand.rot.x << " " << pose_hand.rot.y << " " << pose_hand.rot.z << " after\n";
+
+              link->SetLinearVel( gazebo::math::Vector3(0, 0, 0) );
+              link->SetAngularVel( gazebo::math::Vector3(0, 0, 0) );
+            }
+          }
+        }
+      }
+    }
+}
 
 
 void RateSetPlugin::on_rate_set(const lcm::ReceiveBuffer* buf,
@@ -120,6 +240,7 @@ void RateSetPlugin::on_rate_set(const lcm::ReceiveBuffer* buf,
     gzerr << "New rate. Will now aim for "<< 
         1/( msg->pos[0] +1)  << " times realtime\n";
     fraction_sleep_ = msg->pos[0]/this->update_rate_;
+
 } 
 
 
