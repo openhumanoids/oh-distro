@@ -52,6 +52,8 @@ using namespace std;
 #define COLOR_WARN  4
 #define STEP_TESTING 1
 
+#define TIMEOUT_COMMAND 20.0
+
 ros::Publisher hand_wheel_pub;
 ros::Publisher hand_brake_pub;
 ros::Publisher gas_pedal_pub;
@@ -75,9 +77,13 @@ typedef struct  {
 
     string robot_name;
     double hand_wheel;
+    int64_t hw_utime;
     double hand_brake;
+    int64_t hb_utime;
     double gas_pedal;
+    int64_t gp_utime;
     double brake_pedal;
+    int64_t bp_utime;
 
     // DBW flags
     int dbw_hand_wheel;
@@ -174,7 +180,9 @@ static int publish_direction(void *user_data){
 }
 
 static int update_and_publish_gas_pedal(double new_val, state_t *s){
-    if(new_val != s->gas_pedal){
+    int64_t utime = bot_timestamp_now();
+    if(new_val != s->gas_pedal || (utime - s->gp_utime) / 1.0e6 > TIMEOUT_COMMAND){
+        s->gp_utime = utime;
         s->gas_pedal = new_val;
         fprintf(stderr, "Updated Gas : %f\n", s->gas_pedal);
         return publish_gas_pedal(s);
@@ -183,8 +191,10 @@ static int update_and_publish_gas_pedal(double new_val, state_t *s){
 }
 
 static int update_and_publish_hand_brake(double new_val, state_t *s){
-    if(new_val != s->hand_brake){
+    int64_t utime = bot_timestamp_now();
+    if(new_val != s->hand_brake || (utime - s->hb_utime) / 1.0e6 > TIMEOUT_COMMAND){
         s->hand_brake = new_val;
+        s->hb_utime = utime;
         fprintf(stderr, "Updated Hand Brake : %f\n", s->hand_brake);
         return publish_hand_brake(s);
     }
@@ -271,9 +281,12 @@ static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
 }
 
 static int update_and_publish_hand_wheel(double new_val, state_t *s){
+    int64_t utime = bot_timestamp_now();
     double delta = new_val - s->hand_wheel;
-    if(fabs(delta) > 0){
+    if(fabs(delta) > 0 || (utime - s->hw_utime) / 1.0e6 > TIMEOUT_COMMAND){
         s->hand_wheel = new_val;
+        s->hw_utime = utime;
+
         if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
         if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
     
@@ -301,7 +314,9 @@ static int update_and_publish_hand_wheel(double new_val, state_t *s){
 }
 
 static int update_and_publish_brake_pedal(double new_val, state_t *s){
-    if(new_val != s->brake_pedal){
+    int64_t utime = bot_timestamp_now();
+    if(new_val != s->brake_pedal || (utime - s->bp_utime) / 1.0e6 > TIMEOUT_COMMAND ){
+        s->bp_utime = utime;
         s->brake_pedal = new_val;
         return publish_brake_pedal(s);
     }
@@ -368,6 +383,11 @@ void init_state(state_t *s){
     s->key = 1.0;
     s->direction = 0.0;
 
+    int64_t utime = bot_timestamp_now();
+    s->hw_utime = utime;
+    s->hb_utime = utime;
+    s->gp_utime = utime;
+    s->bp_utime = utime;
     //publish these values 
     publish_hand_brake(s);
     sleep(1.0);
