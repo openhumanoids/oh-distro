@@ -145,7 +145,7 @@ void RateSetPlugin::on_pose_set(const lcm::ReceiveBuffer* buf,
       rel_model = "standpipe";
       rel_link = "standpipe";
       link_to_hose.translation()  << 0.0,0.0,0.023;
-      double ypr[3]={1.571, 1.571,0};
+      double ypr[3]={1.2, 1.571,0};  //  ??  XXX  ??? 
       // 0.001784 -4.6e-05 0.023 1.56985 1.55991 -0.000936
       Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
       link_to_hose.rotate(quat2);
@@ -153,7 +153,7 @@ void RateSetPlugin::on_pose_set(const lcm::ReceiveBuffer* buf,
     }else if(msg->pos[0] == 4){ 
       rel_model = "standpipe";
       rel_link = "standpipe";
-      link_to_hose.translation()  << 0.0,0.0,-0.035;
+      link_to_hose.translation()  << 0.0,0.0,-0.135;
       double ypr[3]={1.571, 1.571,0};
       // 0.001784 -4.6e-05 0.023 1.56985 1.55991 -0.000936
       Eigen::Quaterniond quat2 = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
