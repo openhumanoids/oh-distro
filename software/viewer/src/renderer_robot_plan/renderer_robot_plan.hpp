@@ -68,6 +68,7 @@ namespace renderer_robot_plan
     int64_t robot_utime;
     GtkWidget *plan_execution_dock;
     GtkWidget *plan_approval_dock;
+    GtkWidget *breakpoint_entry;
     
     // Vicon seed planning collection settings:
     int vicon_n_plan_samples;

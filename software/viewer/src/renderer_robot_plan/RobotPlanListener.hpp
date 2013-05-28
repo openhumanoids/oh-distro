@@ -13,6 +13,8 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include <visualization_utils/file_access_utils.hpp>
+#include <sys/time.h>
+#include <time.h>
 
 namespace renderer_robot_plan 
 {
@@ -38,7 +40,8 @@ namespace renderer_robot_plan
     bool _urdf_parsed;
     bool _urdf_subscription_on;
     bool _aprvd_footstep_plan_in_cache;
-
+    bool _is_multi_approve_plan;
+    
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_robot;
     //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _base_gl_robot;
     //----------------constructor/destructor
@@ -59,6 +62,9 @@ namespace renderer_robot_plan
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_robot_list;
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_robot_keyframe_list;
     std::vector< int64_t >  _keyframe_timestamps;
+    std::vector< int >  _breakpoint_indices;
+    int _active_breakpoint;
+    int _num_breakpoints;
     
     //The following are local in-motion copies that appear on doubleclk of a keyframe and can be moved around via markers
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_left_hand;
@@ -75,9 +81,11 @@ namespace renderer_robot_plan
     int8_t _controller_status;
   
     void commit_robot_plan(int64_t utime,std::string &channel);
+    void commit_manip_plan(int64_t utime,std::string &channel);
+    void commit_compliant_manip_plan(int64_t utime,std::string &channel,int,int);
     void commit_manip_map(int64_t utime,std::string &channel);
     void commit_footstep_plan(int64_t utime,std::string &channel);    
-
+    void commit_desired_grasp_state(int64_t utime, std::string &channel,int received_plan_grasp_index);
     void set_in_motion_hands_state(int index)
     {
  
@@ -178,21 +186,25 @@ namespace renderer_robot_plan
       
       normal = acos(u_foot_to_body.dot(u_x));
       flipped = acos(u_foot_to_body.dot(-u_x));
-      if(flipped>normal+1e-1) {
+      if(flipped>normal+1e-1) 
+      {
         _gl_left_foot->flip_trans_marker_xdir(true);
-        }
-      else{
-       _gl_left_foot->flip_trans_marker_xdir(false);
-       }
+      }
+      else
+      {
+        _gl_left_foot->flip_trans_marker_xdir(false);
+      }
        
       normal = acos(u_foot_to_body.dot(u_y));
       flipped = acos(u_foot_to_body.dot(-u_y));
-      if(flipped>normal+1e-1){
+      if(flipped>normal+1e-1)
+      {
         _gl_left_foot->flip_trans_marker_ydir(true);
-        }
-      else{
-       _gl_left_foot->flip_trans_marker_ydir(false); 
-       }
+      }
+      else
+      {
+        _gl_left_foot->flip_trans_marker_ydir(false); 
+      }
       u_foot_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_foot_r.p[0],
                            _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_foot_r.p[1],
                            _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_foot_r.p[2]; 
@@ -208,12 +220,14 @@ namespace renderer_robot_plan
        }
       normal = acos(u_foot_to_body.dot(u_y));
       flipped = acos(u_foot_to_body.dot(-u_y));
-      if(flipped>normal+1e-1){
+      if(flipped>normal+1e-1)
+      {
         _gl_right_foot->flip_trans_marker_ydir(true);
-        }
-      else{
-       _gl_right_foot->flip_trans_marker_ydir(false);  
-       }
+      }
+      else
+      {
+        _gl_right_foot->flip_trans_marker_ydir(false);  
+      }
        
       std::map<std::string, double> jointpos_l;
       jointpos_l=_gl_left_foot->_current_jointpos;
@@ -235,18 +249,71 @@ namespace renderer_robot_plan
     
 		bool is_walking_plan()
     {
-		    return _aprvd_footstep_plan_in_cache;
+		    return (_aprvd_footstep_plan_in_cache&&(!_is_manip_map)&&(!_is_manip_plan));
 		};
+		
+		bool is_manip_plan()
+    {
+		    return _is_manip_plan;
+		};
+		
+		bool is_manip_map()
+    {
+		    return _is_manip_map;
+		};
+		
+		bool is_multi_approval_plan()
+    {
+		    return _is_multi_approve_plan;
+		};
+		
+		void activate_walking_plan()
+    {
+		  _is_manip_plan =false;
+      _is_manip_map =false; 
+      deactivate_multi_approval();  
+		};
+		
+		bool activate_manip_plan()
+    {
+      _is_manip_plan =true;
+      _is_manip_map =false;
+      if(_aprvd_footstep_plan_in_cache){
+       _aprvd_footstep_plan_in_cache=false;
+      }
+		};
+		
+		bool activate_manip_map()
+    {
+      _is_manip_plan =false;
+      _is_manip_map =true;
+      if(_aprvd_footstep_plan_in_cache)
+       _aprvd_footstep_plan_in_cache=false;
+      deactivate_multi_approval(); 
+		};
+		
+		bool activate_multi_approval()
+    {
+      _is_multi_approve_plan =true;
+      _active_breakpoint=0;
+		};
+		
+		bool deactivate_multi_approval()
+    {
+      _is_multi_approve_plan =false;
+      _active_breakpoint=0;
+		};
+    
     
     int64_t get_keyframe_timestamp(int index) {
         return _keyframe_timestamps[index];
     };
     
   private:
-    void handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
+   void handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_plan_t* msg);
-		void handleManipPlanMsg(const lcm::ReceiveBuffer* rbuf,
+	 void handleManipPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_plan_w_keyframes_t* msg);
    void handleAffIndexedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
@@ -261,10 +328,9 @@ namespace renderer_robot_plan
                                                  const string& chan, 
                                                  const drc::controller_status_t* msg);
 						 
-						 
-	 /*void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
-	 {
-	  // Merge in grasp state transitions into the plan states.
+  void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
+  {
+    // Merge in grasp state transitions into the plan states.
     if(msg->num_grasp_transitions>0)
     {
       size_t k_max = 0;
@@ -287,8 +353,8 @@ namespace renderer_robot_plan
          state_msg->joint_cov.push_back(jcov);
        }// end for  
     }// end if	 
-	 };*/
-			    
+  };
+			      
 	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
    bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
 
