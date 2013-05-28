@@ -387,32 +387,9 @@ namespace otdf {
     // TODO move to GraspSeed
     for (TiXmlElement* grasp_it = object_xml->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed"))
     {
-      TiXmlElement* parent = grasp_it->FirstChildElement("parent");
       GraspSeed grasp_seed;
-      if(parent) {
-        grasp_seed.parent_name = parent->Attribute("name");
-      }else cout << "Error parsing grasp_seed parent\n";
-      
-      TiXmlElement* relative_pose = grasp_it->FirstChildElement("relative_pose");
-      if(relative_pose) {
-        stringstream xyz(relative_pose->Attribute("xyz"));
-        xyz >> grasp_seed.xyz[0] >> grasp_seed.xyz[1] >> grasp_seed.xyz[2];
-        stringstream rpy(relative_pose->Attribute("rpy"));
-        rpy >> grasp_seed.rpy[0] >> grasp_seed.rpy[1] >> grasp_seed.rpy[2];
-      }else cout << "Error parsing grasp_seed relative_pose\n";
 
-      TiXmlElement* grasp_type = grasp_it->FirstChildElement("grasp_type");
-      if(grasp_type) {
-        grasp_seed.grasp_type = atoi(grasp_type->Attribute("type"));
-      }else cout << "Error parsing grasp_seed grasp_type\n";
-
-      TiXmlElement* state = grasp_it->FirstChildElement("state");
-      if(state) {
-        int numJoints = atoi(state->Attribute("num_joints"));
-        grasp_seed.joint_positions.resize(numJoints);    
-        stringstream joints(state->Attribute("joint_positions"));
-        for(int i=0;i<numJoints;i++) joints >> grasp_seed.joint_positions[i];
-      }else cout << "Error parsing grasp_seed state\n";
+      grasp_seed.setFromXml(grasp_it);
 
       model->graspSeedList_.push_back(grasp_seed);
     }    
