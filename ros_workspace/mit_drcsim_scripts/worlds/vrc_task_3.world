@@ -71,7 +71,7 @@
     <include>
       <uri>model://grey_wall</uri>
       <static>true</static>
-      <pose>-1.927 -2.947 0 0 0 0</pose>
+      <pose>-1.927 -2.861 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://construction_barrel</uri>
