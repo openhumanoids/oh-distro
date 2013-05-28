@@ -40,9 +40,9 @@ class FallDetector:
             if len(self.vdot_history) >= vdot_memory:
                 self.vdot_errror_count -= int(self.vdot_history.popleft())
             err = msg.Vdot > vdot_threshold
-            print msg.Vdot
+            # print msg.Vdot
             if err:
-                print "Positive Vdot at time: {:.3f}".format(t)
+                print "Positive Vdot ({:.5f}) at time: {:.3f}".format(msg.Vdot, t)
             self.vdot_history.append(err)
             self.vdot_errror_count += int(err)
             # print self.vdot_history
