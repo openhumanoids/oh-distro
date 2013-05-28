@@ -66,7 +66,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
         q_nom = options.q_nom;
         obj.controller_data.setField('qtraj',q_nom);
       else
-        d = load('data/atlas_fp.mat');
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         q_nom = d.xstar(1:obj.nq);
         obj.controller_data.setField('qtraj',q_nom);
       end

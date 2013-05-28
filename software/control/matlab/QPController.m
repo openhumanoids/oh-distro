@@ -169,6 +169,11 @@ classdef QPController < MIMODrakeSystem
       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
 %       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
     end
+
+    obj.num_body_contacts=zeros(getNumBodies(r),1);
+    for i=1:getNumBodies(r)
+      obj.num_body_contacts(i) = length(getBodyContacts(r,i));
+    end
   end
     
   function y=mimoOutput(obj,t,~,varargin)
@@ -182,8 +187,8 @@ classdef QPController < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
     
-    % get foot contact state
     if obj.lcm_foot_contacts
+      % get foot contact state over LCM
       contact_data = obj.contact_est_monitor.getMessage();
       if isempty(contact_data)
         lfoot_contact_state = 0;
@@ -198,9 +203,19 @@ classdef QPController < MIMODrakeSystem
       rfoot_contact_state=0;
     end
     
+    
+    % use support trajectory to get desired foot contact state
+    if typecheck(ctrl_data.supptraj,'double')
+      supp = ctrl_data.supptraj;
+    else
+      supp = ctrl_data.supptraj.eval(t); % OPT: don't really need a PPTrajectory here...
+    end
+    desired_supports = find(supp);    
+    
+    
     % Change in logic here due to recent tests with heightmap noise
     % for now, we will do a logical OR of the force-based sensor and the
-    % kinematic criterion
+    % kinematic criterion for foot contacts
     %
     % another option would be to limit forces on the feet when kinematics
     % says 'contact', but force sensors do not. when both agree, allow full
@@ -213,32 +228,30 @@ classdef QPController < MIMODrakeSystem
     kinsol = doKinematics(r,q,false,true);
     
     % get active contacts
-    phi = contactConstraints(r,kinsol,[obj.lfoot_idx,obj.rfoot_idx]);
+    phi = contactConstraints(r,kinsol,desired_supports);
 
-    % if any foot point is in contact, all contact points are active
-    if any(phi(1:4)<=contact_threshold)
-      lfoot_contact_state_kin = 1;
-    else
-      lfoot_contact_state_kin = 0;
+    num_desired_contacts = obj.num_body_contacts(desired_supports);
+    % check foot contacts via kinematics
+    lfoot_contact_state_kin = 0;
+    rfoot_contact_state_kin = 0;
+    if any(obj.lfoot_idx==desired_supports) 
+      foot_desired_idx = find(obj.lfoot_idx==desired_supports);
+      c_pre = sum(num_desired_contacts(1:foot_desired_idx-1));
+      if any(phi(c_pre+(1:num_desired_contacts(foot_desired_idx)))<=contact_threshold)
+        lfoot_contact_state_kin = 1;
+      end
     end
-
-    if any(phi(5:8)<=contact_threshold)
-      rfoot_contact_state_kin = 1;
-    else
-      rfoot_contact_state_kin = 0;
+    
+    if any(obj.rfoot_idx==desired_supports) 
+      foot_desired_idx = find(obj.rfoot_idx==desired_supports);
+      c_pre = sum(num_desired_contacts(1:foot_desired_idx-1));
+      if any(phi(c_pre+(1:num_desired_contacts(foot_desired_idx)))<=contact_threshold)
+        rfoot_contact_state_kin = 1;
+      end
     end
 
     lfoot_contact_state = lfoot_contact_state || lfoot_contact_state_kin;
     rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
-    
-    
-    % use support trajectory to get desired foot contact state
-    if typecheck(ctrl_data.supptraj,'double')
-      supp = ctrl_data.supptraj;
-    else
-      supp = ctrl_data.supptraj.eval(t); % OPT: don't really need a PPTrajectory here
-    end
-    desired_supports = find(supp);
     
     active_supports = [];
     if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
@@ -247,6 +260,19 @@ classdef QPController < MIMODrakeSystem
     if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
       active_supports = [active_supports; obj.rfoot_idx];
     end
+    
+    %----------------------------------------------------------------------
+    % END CODE THAT TREATS FEET DIFFERENTLY -------------------------------
+
+    for i=1:length(desired_supports)
+      if desired_supports(i)~=obj.lfoot_idx && desired_supports(i)~=obj.rfoot_idx
+        c_pre = sum(num_desired_contacts(1:i-1));
+        if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
+          active_supports = [active_supports; desired_supports(i)];
+        end
+      end
+    end
+    
     
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
@@ -563,10 +589,13 @@ classdef QPController < MIMODrakeSystem
       % compute V,Vdot for controller status updates
       if (nc>0)
         V = x_bar'*S*x_bar + s1'*x_bar + s2;
-        qdd = zeros(nq,1);
-        qdd(obj.free_dof) = qdd_free;
-        qdd(obj.con_dof) = alpha(1:nq_con);
-        
+        if nq_free > 0
+          qdd = zeros(nq,1);
+          qdd(obj.free_dof) = qdd_free;
+          qdd(obj.con_dof) = alpha(1:nq_con);
+        else
+          qdd = alpha(1:nq);
+        end
         Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
       end
       
@@ -729,5 +758,6 @@ classdef QPController < MIMODrakeSystem
     lcm_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
+    num_body_contacts; % vector of num contacts for each body
   end
 end
