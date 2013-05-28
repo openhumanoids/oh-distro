@@ -101,7 +101,10 @@ classdef AffIndexedRobotPlanPublisher
                 msg.plan(i).contacts = drc.contact_state_t();
                 msg.plan(i).contacts.num_contacts=0;
             end
-            msg.num_bytes=0;
+            msg.num_grasp_transitions = 0;
+            msg.num_bytes = 0;
+            msg.arms_control_type = 0;
+            msg.legs_control_type = 0;
             
         end
         
@@ -198,7 +201,10 @@ classdef AffIndexedRobotPlanPublisher
             end
             msg.aff_index=aff_index;
             msg.plan = plan;
+            msg.num_grasp_transitions = 0;
             msg.num_bytes = 0;
+            msg.arms_control_type = 0;
+            msg.legs_control_type = 0;
             %  msg.matlab_data=javaArray('java.lang.Byte',msg.num_bytes);
         end
     end
