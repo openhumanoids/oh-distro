@@ -37,11 +37,6 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	accel.setSize(3);
 	pelvis_vel_diff.setSize(3);
 	d_pelvis_vel_diff.setSize(3);
-	//Eigen::VectorXd w(5);
-	//Eigen::VectorXd ut(5);
-	//w << .25,.15,.25,.2,.15;
-	//ut << 5000, 10000, 20000, 30000, 50000;
-	//d_pelvis_vel_diff.InitializeTaps(10, 5000, w,ut);
 	if (!dont_init_hack) {
 		std::cout << "Attempting to read parameters from file.\n";
 		d_pelvis_vel_diff.ParameterFileInit();
@@ -63,12 +58,8 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	
 	stepcount = 0;
 	
-	// This variable is to be depreciated -- TODO
-	//both_feet_in_contact = true;
-	
 	//for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
 	//for (int i=0;i<3;i++) {_pos_filter[i] = &pos_lpfilter[i];}
-	
 	
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
@@ -108,19 +99,19 @@ void TwoLegOdometry::parseRobotInput() {
 
 /*
  * Updates the internal states of the odometry object and under the correct circumstances transistions the standing foot as the robot is walking
-*/
+
 void TwoLegOdometry::CalculateBodyStates_Testing(int counter) {
 	cout << "_leg_odo::CalculateBodyStates() NOT implemented yet" << endl;
 	
 	// calculate the new pelvis and head states
 	// create some data and pass it to this function
 	
-	/*data = ? */
+	/*data = ?
 	
-	//CalculateBodyStates(/*data*/);
+	//CalculateBodyStates(/*data);
 	
 	return;
-}
+}*/
 
 int TwoLegOdometry::secondary_foot() {
 	if (standing_foot == LEFTFOOT)
@@ -391,21 +382,16 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	Eigen::Matrix3d C;
 	
 	C = q2C(ahrs_orientation);
-	
-	//imu_orientation_estimate = C2q(C.transpose());// think there is a problem with this function
+
 	imu_orientation_estimate = ahrs_orientation;
-	
-	//ComputeLocalOrientation();
-	
-	//Eigen::Vector3d local_rpy_rate = local_to_body_.linear() * ( temp_body_rpy_rate );
-	
+
 	Eigen::Quaterniond yaw_q;
 
 	yaw_q = e2q(C2e(getPelvisFromStep().rotation()));
 
+	// Merging is no longer required
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
-	// TODO -- Maybe the .transpose() is required, but we changed to libbot q2C -- which seems transpose equivalent
 	local_frame_rates = q2C(local_frame_orientation) * body_rates;
 }
 
@@ -435,73 +421,47 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 	return Eigen::Isometry3d();
 }
 
-
-// TODO -- Clean up this function
 Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q_RollPitch, const Eigen::Quaterniond &q_Yaw) {
 	Eigen::Vector3d E_rp;
 	Eigen::Vector3d E_y;
+	Eigen::Vector3d output_E;
 		
 	// TODO -- Remove the dependence on gimbal lock, by not using the Euler angle representation when merging the attitude angle estimates from the different computations
-	
-	
+
 	E_rp = q2e_new(q_RollPitch);
 	E_y  = q2e_new(q_Yaw);
 	
-	// Compare the conversions here to the truth message data
-	//if ((truth_E - E_rp).norm() > 0.02) {
-		//std::cout << "ROTATION ISSUE: " << (truth_E(2) - E_rp(2)) << std::endl;
-	//}
 
 	Eigen::Quaterniond return_q;
-	
-	//E_rp(1) = 1.;//its drawing what i expect, but requires a transpose on the .linear() from Eigen::Isometry3d testing higher up..
-	//std::cout << "Roll and Pitch and yaw from ahrs: " << E_rp.transpose() << std::endl;
 	
 	// Only use the yaw angle from the leg kinematics
 	E_y(0) = 0.;
 	E_y(1) = 0.;
-	
-	//use pitch and roll form the IMU states which are read directly from the LCM TORSO_IMU message -- This is assumed to be a Kalman Filter based AHRS value
+
 	E_rp(2) = 0.;
 	
-	//std::cout << "Merge: " << (E_lk + E_imu).transpose() << std::endl;
 	
-	Eigen::Vector3d output_E;
 	if (false) {
+		// Merge option
 		output_E = (E_rp + E_y);
 	} else {
 		// use only the IMU angles
 		output_E = q2e_new(q_RollPitch);
 	}
-	//Eigen::Vector3d output_E(0., 0., 0.);
-	//std::cout << "Set E to: " << output_E.transpose() << std::endl;
-	//std::cout << output_E(2) << std::endl;
-	
+
 	return_q = e2q(output_E);
-	
 	return return_q;
 }
 
 
-// The intended user member call to get the pelvis state. The orientation is a mix of the leg kinematics yaw and the torso IMU AHRS pitch and roll angles
+// The intended user member call to get the pelvis state. The orientation from torso IMU
 // Translation is from the accumulated leg kinematics
 Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
-		
-	if (false) {
-		// This is the old way of doing-- this changed with the use of the function CalculateBodyStates
-		Eigen::Isometry3d output_state(local_frame_orientation);// DO NOT USE THE CONSTRUCTOR IN EIGEN while using libbot
-		output_state.translation() = getPelvisFromStep().translation();
-	}
 	
-	//std::cout << "state: " << local_to_pelvis.translation().transpose() << std::endl;
-
-	//return output_state;
 	return local_to_pelvis;
 }
 
 Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
-	
-	//std::cout << "TwoLegOdometry::getPelvisVelocityStates() IS NOT READY TO BE USED\n";
 	
 	return local_velocities;
 }
@@ -523,11 +483,6 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
 	returnval.linear() = q2C(local_frame_orientation);
 
-	//std::cout << "getPelvis: " << returnval.translation().transpose() << std::endl;
-	//std::cout << returnval.rotation() << std::endl;
-
-	//std::cout << "computed orientation err: " << 57.29*(truth_E - C2e(returnval.rotation())).transpose() << std::endl;
-
 	return returnval;
 }
 
@@ -537,14 +492,14 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 	
 	switch (foot_id) {
 	case LEFTFOOT:
-		std::cout << "LEFT Comp: " << from.translation().transpose() << " + " << left_to_pelvis.translation().transpose() << " + " << pelvis_to_right.translation().transpose() << std::endl
+		/*std::cout << "LEFT Comp: " << from.translation().transpose() << " + " << left_to_pelvis.translation().transpose() << " + " << pelvis_to_right.translation().transpose() << std::endl
 		<< "from E: " << C2e(from.linear()).transpose() << std::endl
 		<< "l2p  E: " << C2e(left_to_pelvis.linear()).transpose() <<std::endl
-		<< "p2r  E: " << C2e(pelvis_to_right.linear()).transpose() << std::endl;
+		<< "p2r  E: " << C2e(pelvis_to_right.linear()).transpose() << std::endl;*/
 		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
-		std::cout << "RIGHT Comp: " << from.translation().transpose() << " + " << right_to_pelvis.translation().transpose() << " + " << pelvis_to_left.translation().transpose() << std::endl;
+		//std::cout << "RIGHT Comp: " << from.translation().transpose() << " + " << right_to_pelvis.translation().transpose() << " + " << pelvis_to_left.translation().transpose() << std::endl;
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
 		break;
 	default:
@@ -557,18 +512,14 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 
 Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	
-	//std::cout << "pelvis to left: " << (pelvis_to_left*local_to_pelvis).translation().transpose() << std::endl;
-	//std::cout << (secondary_foot()==LEFTFOOT ? "LEFT" : "RIGHT") << " is secondary_foot()" << std::endl;
 	Eigen::Isometry3d returnval;
 	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
-	
-	//std::cout << "secondary in local" << returnval.translation().transpose() << "\n";
 
 	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
-	//std::cout << "Primary in local\n";
+
 	return footsteps.getLastStep();
 	
 }
@@ -586,33 +537,14 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 
-
-  //std::cout << "Setting the pelvis with error: " << 57.29*(C2e(transform.rotation()) - truth_E).transpose() << std::endl;
-	//std::cout << "Setting pelvis to: " << transform.translation().transpose() << std::endl;
-
   local_to_pelvis = transform;
 }
 
 
 Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
 
-  Eigen::Isometry3d add,_lhs;
-
-  _lhs.setIdentity();
-
+  Eigen::Isometry3d add;
   add = lhs*rhs;
-
-  /*
-  std::cout << "ADD\n";
-  std::cout << lhs.translation().transpose() << " | " << rhs.translation().transpose() << std::endl;
-
-  std::cout << lhs.rotation() << std::endl;
-  std::cout << rhs.rotation() << std::endl;
-
-  std::cout << add.translation().transpose()  << std::endl;
-  std::cout << add.rotation() << std::endl;
-*/
-
 
   return add;
 }
@@ -622,10 +554,6 @@ void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_, cons
 	// The left foot is used to initialize height of the pelvis.
 	
 	stepcount = 0;
-	//Eigen::Isometry3d umm;
-	//umm = init_states;
-	//umm.setIdentity();
-	// Tbhere is an issue with the initial state which are being passed to this function
 	local_to_pelvis = init_states;
 	footsteps.reset();
 }
@@ -653,27 +581,10 @@ void TwoLegOdometry::updateSingleFootContactStates(long utime, const double left
 
 float TwoLegOdometry::leftContactStatus() {
 	return _left_contact_state->getState();
-	
-	/*
-	 * This comes from when the contact state classification was done from the odometry classification
-	 * This has been changed since weight baring and contact states have developed to be a little different.
-	 * We therefore maintain two classifiers
-	 * 
-	if (getActiveFoot() == LEFTFOOT || both_feet_in_contact) {
-		return 1.0f;
-	}
-	return 0.0f;*/
 }
 
 float TwoLegOdometry::rightContactStatus() {
 	return _right_contact_state->getState();
-	
-	/*
-	if (getActiveFoot() == RIGHTFOOT || both_feet_in_contact) {
-		return 1.0f;
-	}
-	return 0.0f;
-	*/
 }
 
 void TwoLegOdometry::terminate() {
@@ -728,27 +639,17 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
 		}
 	}
 	*/
-	
-	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
-	//std::cout << "PRE filtered velocities are: " << local_velocities.transpose() << std::endl;
 
 	// with or without filtering
 	if (true) {
+		// no filtering on the joints
 		overwritePelvisVelocity(unfiltered_vel);
 	} else {
 		for (int i=0;i<3;i++) {
 			local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));
 		}
-		//std::cout << "The filtered velocities are: " << local_velocities.transpose() << std::endl;
 	}
 	
-	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
-	
-	//accel_data_ss << std::endl;
-	//accel_spike_isolation_log << accel_data_ss.str();
-	
-	//previous_isometry = getPelvisState();
-	//previous_isometry_time = current_time;
 }
 
 void TwoLegOdometry::overwritePelvisVelocity(const Eigen::Vector3d &set_velocity) {

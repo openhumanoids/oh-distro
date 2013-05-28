@@ -118,9 +118,7 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d getPrimaryFootToPelvis();
 
-		// Testing function not dependent on LCM messages
-		// not implemented yet
-		void CalculateBodyStates_Testing(int counter);
+		//void CalculateBodyStates_Testing(int counter);
 		
 		// 
 		bool UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float &left_force, const float &right_force);

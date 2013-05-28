@@ -179,7 +179,7 @@ private:
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
-	void setupLCM();
+	//void setupLCM();
 	
 	//void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);	
@@ -235,9 +235,6 @@ public:
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }
-	
-	// Run the estimator, assuming the LCM connections have been set up correctly -- not used yet
-	void run(bool testingmode);
 	
 	void terminate();
 };

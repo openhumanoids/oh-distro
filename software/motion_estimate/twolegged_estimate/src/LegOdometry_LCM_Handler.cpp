@@ -160,62 +160,12 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	return;
 }
 
-void LegOdometry_Handler::setupLCM() {
-	
-//	_lcm = lcm_create(NULL);
-	// TODO
-	// robot_pose_channel = "TRUE_ROBOT_STATE";
-	// drc_robot_state_t_subscribe(_lcm, robot_pose_channel, TwoLegOdometry::on_robot_state_aux, this);
-	
-	
-	return;
-}
-
 void LegOdometry_Handler::InitializeFilters(const int num_filters) {
 	
 	for (int i=0;i<num_filters;i++) {
 		LowPassFilter member;
 		joint_lpfilters.push_back(member);
 	}
-}
-			
-// obsolete
-void LegOdometry_Handler::run(bool testingmode) {
-	
-	// TODO
-	cout << "LegOdometry_Handler::run(bool) is NOT finished yet." << endl;
-	
-	if (testingmode)
-	{
-		cout << "LegOdometry_Handler::run(bool) in tesing mode." << endl;
-		
-		for (int i = 0 ; i<10 ; i++)
-		{
-			_leg_odo->CalculateBodyStates_Testing(i);
-			
-		}
-		
-	}
-	else
-	{
-		cout << "Attempting to start lcm_handle loop..." << endl;
-		
-		try
-		{
-			// This is the highest reference point for the
-			//This is in main now...
-			//while(0 == lcm_->handle());
-		    
-		}
-		catch (exception& e)
-		{
-			cout << "LegOdometry_Handler::run() - Oops something went wrong when we tried to listen and respond to a new lcm message:" << endl;
-			cout << e.what() << endl;
-			
-		}
-	}
-	
-	return;
 }
 
 // To be moved to a better abstraction location
@@ -249,12 +199,9 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 #else
 
 
-	//std::cout << "FOOT_CONTACT_FORCES: " << msg->contacts.contact_force[0].z << ", " << msg->contacts.contact_force[1].z << std::endl;
-
 	left_force  = (double)lpfilter[0].processSample(msg->contacts.contact_force[0].z);
 	right_force = (double)lpfilter[1].processSample(msg->contacts.contact_force[1].z);
 
-	//std::cout << "set as: " << left_force << ", " << right_force << std::endl;
 
 #endif
 
@@ -638,12 +585,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.angular_velocity.x = local_rates(0);
 	twist.angular_velocity.y = local_rates(1);
 	twist.angular_velocity.z = local_rates(2);
-
-	/*
-	twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
-	twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
-	twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
-  	*/
   }
 
   // EST is TRUE with sensor estimated position
@@ -838,7 +779,8 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 }
 
 // Push the state values in a drc::robot_state_t message type to the given stringstream
-void LegOdometry_Handler::stateMessage_to_stream(const drc::robot_state_t *msg, stringstream &ss) {
+void LegOdometry_Handler::stateMessage_to_stream(	const drc::robot_state_t *msg,
+													stringstream &ss) {
 
 	Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
 	Eigen::Vector3d E;
@@ -888,12 +830,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 	}
 	
-	//Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
-
-
-	//Eigen::Vector3d rates_w;
-	//rates_w = InertialOdometry::QuaternionLib::q2C(q).transpose()*rates_b;
 			
 	_leg_odo->setOrientationTransform(q, rates_b);
 	
@@ -1106,8 +1043,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	transform_it_ph=cartpos_out.find("head");
 
 	Eigen::Quaterniond b2head_q(transform_it_ph->second.rotation.w, transform_it_ph->second.rotation.x,transform_it_ph->second.rotation.y,transform_it_ph->second.rotation.z);
-	body_to_head.linear() = q2C(b2head_q);
 
+	body_to_head.linear() = q2C(b2head_q);
 	body_to_head.translation() << transform_it_ph->second.translation.x, transform_it_ph->second.translation.y, transform_it_ph->second.translation.z;
 
 
