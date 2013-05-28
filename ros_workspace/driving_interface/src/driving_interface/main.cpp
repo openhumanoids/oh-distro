@@ -176,17 +176,19 @@ static int publish_direction(void *user_data){
 static int update_and_publish_gas_pedal(double new_val, state_t *s){
     if(new_val != s->gas_pedal){
         s->gas_pedal = new_val;
+        fprintf(stderr, "Updated Gas : %f\n", s->gas_pedal);
         return publish_gas_pedal(s);
     }
     return 0;
 }
 
 static int update_and_publish_hand_brake(double new_val, state_t *s){
-    //if(new_val != s->hand_brake){
-    s->hand_brake = new_val;
-    return publish_hand_brake(s);
-    //}
-    //return 0;
+    if(new_val != s->hand_brake){
+        s->hand_brake = new_val;
+        fprintf(stderr, "Updated Hand Brake : %f\n", s->hand_brake);
+        return publish_hand_brake(s);
+    }
+    return 0;
 }
 
 /*
@@ -270,30 +272,31 @@ static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
 
 static int update_and_publish_hand_wheel(double new_val, state_t *s){
     double delta = new_val - s->hand_wheel;
-    s->hand_wheel = new_val;
-    if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
-    if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
+    if(fabs(delta) > 0){
+        s->hand_wheel = new_val;
+        if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
+        if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
     
-    if (s->dbw_hand_wheel) {
-        std_msgs::Float64 msg;
-        msg.data = s->hand_wheel;
-        hand_wheel_pub.publish(msg);
+        if (s->dbw_hand_wheel) {
+            std_msgs::Float64 msg;
+            msg.data = s->hand_wheel;
+            hand_wheel_pub.publish(msg);
+        }
+        else {
+            string dof_name_local[] = {"steering_joint"};
+            drc_affordance_goal_t msg;
+            msg.utime = bot_timestamp_now();
+            msg.aff_type = (char *) "car";
+            msg.aff_uid = 1;
+            msg.num_dofs = 1;
+            msg.dof_name = (char **) dof_name_local;
+            msg.dof_value[0] = s->hand_wheel;
+            fprintf(stderr, "Setting Hand Wheel : %f\n", bot_to_degrees(s->hand_wheel));
+            drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        }
+        if(s->verbose)
+            fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
     }
-    else {
-        string dof_name_local[] = {"steering_joint"};
-        drc_affordance_goal_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.aff_type = (char *) "car";
-        msg.aff_uid = 1;
-        msg.num_dofs = 1;
-        msg.dof_name = (char **) dof_name_local;
-        msg.dof_value[0] = s->hand_wheel;
-
-        drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
-    }
-    if(s->verbose)
-        fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
-
     return 0;
 }
 
