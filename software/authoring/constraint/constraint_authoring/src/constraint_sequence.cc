@@ -111,10 +111,15 @@ from_msg( const action_sequence_t& msg,
     constraint->ranges()[0].second = msg.contact_goals[2*i+1].x_offset;
     constraint->ranges()[1].second = msg.contact_goals[2*i+1].y_offset;
     constraint->ranges()[2].second = msg.contact_goals[2*i+1].z_offset;
-    for( vector< AffordanceState >::iterator it = affordanceCollection.begin(); it != affordanceCollection.end(); it++ ){
-      if( it->getName() == msg.contact_goals[2*i].object_2_name ){
-        constraint->child() = &(*it);
-      }
+    for( vector< AffordanceState >::iterator it = affordanceCollection.begin(); it != affordanceCollection.end(); it++ )
+      {
+        string linkName, groupObjName;
+        it->splitNameIntoLinkGroup(linkName,groupObjName);
+        if(linkName == msg.contact_goals[2*i].object_2_name &&
+           groupObjName == msg.contact_goals[2*i].object_2_contact_grp)
+          {
+            constraint->child() = &(*it);
+          }
     }
     _constraints[ i ] = constraint;
   }
