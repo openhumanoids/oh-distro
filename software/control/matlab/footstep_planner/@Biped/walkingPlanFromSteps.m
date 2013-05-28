@@ -22,9 +22,9 @@ comtraj = COMplanFromTracker(limp,com(1:2),[0;0],zmptraj.tspan,c);
 % V = struct('S', [], 's1', [], 's2', []);
 
 % time spacing of samples for IK
-ts = 0:0.08:zmptraj.tspan(end);
-if length(ts)>200 % limit number of IK samples to something reasonable
-  ts = linspace(0,zmptraj.tspan(end),200);
+ts = 0:0.05:zmptraj.tspan(end);
+if length(ts)>300 % limit number of IK samples to something reasonable
+  ts = linspace(0,zmptraj.tspan(end),300);
 end
 
 % create desired joint trajectory
