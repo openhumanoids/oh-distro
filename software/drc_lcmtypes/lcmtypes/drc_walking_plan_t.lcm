@@ -38,7 +38,9 @@ struct walking_plan_t
 	int32_t n_lfoottraj_bytes;
   byte lfoottraj[n_lfoottraj_bytes];
   
-  	int32_t n_qnom_bytes;
+  int32_t n_qnom_bytes;
   byte qnom[n_qnom_bytes];
+
+  float mu; // friction coef
 }
 
