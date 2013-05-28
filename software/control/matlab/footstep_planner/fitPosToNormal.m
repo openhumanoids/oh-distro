@@ -18,4 +18,6 @@ Mz = cross(xf, yf) / norm(cross(xf, yf));
 My = cross(Mz, xf) / norm(cross(Mz, xf));
 M = [Mx, My, Mz];
 new_rpy = rotmat2rpy(M);
-pos(4:5) = new_rpy(1:2);
+if ~any(isnan(new_rpy))
+  pos(4:5) = new_rpy(1:2);
+end
