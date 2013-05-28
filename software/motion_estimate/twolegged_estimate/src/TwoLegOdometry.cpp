@@ -333,7 +333,7 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   //std::cout << "Foot at this point is: " << newstep.foot << std::endl;
 
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
-	  std::cout << "PELVIS AT STEP: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::C2e(newstep.footprintlocation.rotation())).transpose() << std::endl;
+	  std::cout << "PELVIS AT STEP: " << 57.29*(truth_E - C2e(newstep.footprintlocation.rotation())).transpose() << std::endl;
 
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
@@ -390,9 +390,9 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	
 	Eigen::Matrix3d C;
 	
-	C = InertialOdometry::QuaternionLib::q2C(ahrs_orientation);
+	C = q2C(ahrs_orientation);
 	
-	//imu_orientation_estimate = InertialOdometry::QuaternionLib::C2q(C.transpose());// think there is a problem with this function 
+	//imu_orientation_estimate = C2q(C.transpose());// think there is a problem with this function
 	imu_orientation_estimate = ahrs_orientation;
 	
 	//ComputeLocalOrientation();
@@ -401,12 +401,12 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	
 	Eigen::Quaterniond yaw_q;
 
-	yaw_q = InertialOdometry::QuaternionLib::e2q(InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().rotation()));
+	yaw_q = e2q(C2e(getPelvisFromStep().rotation()));
 
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
 	// TODO -- Maybe the .transpose() is required, but we changed to libbot q2C -- which seems transpose equivalent
-	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
+	local_frame_rates = q2C(local_frame_orientation) * body_rates;
 }
 
 Eigen::Vector3d TwoLegOdometry::getLocalFrameRates() {
@@ -444,8 +444,8 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 	// TODO -- Remove the dependence on gimbal lock, by not using the Euler angle representation when merging the attitude angle estimates from the different computations
 	
 	
-	E_rp = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
-	E_y  = InertialOdometry::QuaternionLib::q2e(q_Yaw);
+	E_rp = q2e_new(q_RollPitch);
+	E_y  = q2e_new(q_Yaw);
 	
 	// Compare the conversions here to the truth message data
 	//if ((truth_E - E_rp).norm() > 0.02) {
@@ -471,13 +471,13 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 		output_E = (E_rp + E_y);
 	} else {
 		// use only the IMU angles
-		output_E = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
+		output_E = q2e_new(q_RollPitch);
 	}
 	//Eigen::Vector3d output_E(0., 0., 0.);
 	//std::cout << "Set E to: " << output_E.transpose() << std::endl;
 	//std::cout << output_E(2) << std::endl;
 	
-	return_q = InertialOdometry::QuaternionLib::e2q(output_E);
+	return_q = e2q(output_E);
 	
 	return return_q;
 }
@@ -521,11 +521,12 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	Eigen::Isometry3d lhs;// this is just to test
 	lhs = footsteps.getLastStep();
 	returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
-	returnval.linear() = InertialOdometry::QuaternionLib::q2C(local_frame_orientation);
+	returnval.linear() = q2C(local_frame_orientation);
 
-	//std::cout << "laststep: " << returnval.rotation() << std::endl;
+	//std::cout << "getPelvis: " << returnval.translation().transpose() << std::endl;
+	//std::cout << returnval.rotation() << std::endl;
 
-	//std::cout << "computed orientation err: " << 57.29*(truth_E - InertialOdometry::QuaternionLib::C2e(returnval.rotation())).transpose() << std::endl;
+	//std::cout << "computed orientation err: " << 57.29*(truth_E - C2e(returnval.rotation())).transpose() << std::endl;
 
 	return returnval;
 }
@@ -536,9 +537,14 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 	
 	switch (foot_id) {
 	case LEFTFOOT:
+		std::cout << "LEFT Comp: " << from.translation().transpose() << " + " << left_to_pelvis.translation().transpose() << " + " << pelvis_to_right.translation().transpose() << std::endl
+		<< "from E: " << C2e(from.linear()).transpose() << std::endl
+		<< "l2p  E: " << C2e(left_to_pelvis.linear()).transpose() <<std::endl
+		<< "p2r  E: " << C2e(pelvis_to_right.linear()).transpose() << std::endl;
 		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
+		std::cout << "RIGHT Comp: " << from.translation().transpose() << " + " << right_to_pelvis.translation().transpose() << " + " << pelvis_to_left.translation().transpose() << std::endl;
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
 		break;
 	default:
@@ -581,8 +587,8 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 
 
-  //std::cout << "Setting the pelvis with error: " << 57.29*(InertialOdometry::QuaternionLib::C2e(transform.rotation()) - truth_E).transpose() << std::endl;
-
+  //std::cout << "Setting the pelvis with error: " << 57.29*(C2e(transform.rotation()) - truth_E).transpose() << std::endl;
+	//std::cout << "Setting pelvis to: " << transform.translation().transpose() << std::endl;
 
   local_to_pelvis = transform;
 }

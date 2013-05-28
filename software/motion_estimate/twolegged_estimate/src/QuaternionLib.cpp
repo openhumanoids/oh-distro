@@ -1,8 +1,283 @@
 
 #include "QuaternionLib.h"
 
+
+
+Eigen::Vector3d q2e_new(const Eigen::Quaterniond q) {
+  Eigen::Vector3d E;
+
+  //std::cout << "new q2e\n";
+
+  double roll_a = 2. * (q.w()*q.x() + q.y()*q.z());
+  double roll_b = 1. - 2. * (q.x()*q.x() + q.y()*q.y());
+  E(0) = atan2 (roll_a, roll_b);
+
+  double pitch_sin = 2. * (q.w()*q.y() - q.z()*q.x());
+  E(1) = asin (pitch_sin);
+
+  double yaw_a = 2. * (q.w()*q.z() + q.x()*q.y());
+  double yaw_b = 1. - 2. * (q.y()*q.y() + q.z()*q.z());
+  E(2) = atan2 (yaw_a, yaw_b);
+
+
+  return E;
+}
+
+Eigen::Quaterniond C2q(const Eigen::Matrix3d C) {
+
+	//std::cout << "new C2q\n";
+
+	double rot[9];
+	double quat[4];
+
+	rot[0] = C(0,0);
+	rot[1] = C(0,1);
+	rot[2] = C(0,2);
+	rot[3] = C(1,0);
+	rot[4] = C(1,1);
+	rot[5] = C(1,2);
+	rot[6] = C(2,0);
+	rot[7] = C(2,1);
+	rot[8] = C(2,2);
+
+    quat[0] = 0.5*sqrt(rot[0]+rot[4]+rot[8]+1);
+
+    if (fabs(quat[0]) > 1e-8) {
+        double w4 = 1.0/(4.0*quat[0]);
+      quat[1] = (rot[7]-rot[5]) * w4;
+      quat[2] = (rot[2]-rot[6]) * w4;
+      quat[3] = (rot[3]-rot[1]) * w4;
+    }
+    else {
+      quat[1] = sqrt(fabs(-0.5*(rot[4]+rot[8])));
+      quat[2] = sqrt(fabs(-0.5*(rot[0]+rot[8])));
+      quat[3] = sqrt(fabs(-0.5*(rot[0]+rot[4])));
+    }
+
+    /*LSF: I may be missing something but this didn't work for me until I divided by the magnitude instead:
+      double norm = quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] +
+                       quat[3]*quat[3];
+    if (fabs(norm) < 1e-10)
+    return -1; */
+    double norm = sqrt(quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] +
+                       quat[3]*quat[3]);
+
+    norm = 1/norm;
+    quat[0] *= norm;
+    quat[1] *= norm;
+    quat[2] *= norm;
+    quat[3] *= norm;
+
+    Eigen::Quaterniond ret;
+    ret.w() = quat[0];
+    ret.x() = quat[1];
+    ret.y() = quat[2];
+    ret.z() = quat[3];
+
+    return ret;
+  }
+
+Eigen::Matrix3d q2C(const Eigen::Quaterniond q_) {
+	//std::cout << "new q2C\n";
+
+	Eigen::Matrix3d C;
+
+	  double w = q_.w();
+	  double x = q_.x();
+	  double y = q_.y();
+	  double z = q_.z();
+
+		// DRC bot_frames
+
+		double quat[4];
+		double rot[9];
+
+		/*quat[0] = q_.w();
+		quat[1] = q_.x();
+		quat[2] = q_.y();
+		quat[3] = q_.z();*/
+
+		double norm = w*w + x*x + y*y + z*z;
+		if (fabs(norm) < 1e-10) {
+			std::cerr << "QuaternionLib::q2C -- not a unit quaternion\n";
+
+		}
+
+		norm = 1./norm;
+		w = w*norm;
+		x = x*norm;
+		y = y*norm;
+		z = z*norm;
+
+		double x2 = x*x;
+		double y2 = y*y;
+		double z2 = z*z;
+		double w2 = w*w;
+		double xy = 2*x*y;
+		double xz = 2*x*z;
+		double yz = 2*y*z;
+		double wx = 2*w*x;
+		double wy = 2*w*y;
+		double wz = 2*w*z;
+
+		rot[0] = w2+x2-y2-z2;  rot[1] = xy-wz;  rot[2] = xz+wy;
+		rot[3] = xy+wz;  rot[4] = w2-x2+y2-z2;  rot[5] = yz-wx;
+		rot[6] = xz-wy;  rot[7] = yz+wx;  rot[8] = w2-x2-y2+z2;
+
+		for (int i=0;i<3;i++) {
+			for (int j=0;j<3;j++) {
+				C(i,j) = rot[3*i+j]; // Eigen is column major
+			}
+		}
+
+	  //std::cout << C <<std::endl;
+
+	  return C;
+}
+
+
+Eigen::Vector3d C2e(const Eigen::Matrix3d C) {
+
+	  Eigen::Quaterniond q;
+
+	  q = C2q(C);
+
+	  q.normalize();
+
+	  //std::cout << "Q at this point is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
+
+	  Eigen::Vector3d ret;
+	  ret = q2e_new(q);
+
+	  return ret;
+}
+
+Eigen::Quaterniond e2q(const Eigen::Vector3d &E) {
+	  //Eigen::Quaterniond q;
+
+	  //std::cout << "new e2q" << std::endl;
+
+	  //return C2q(e2C(E));
+
+	  Eigen::Quaterniond q_return;
+	  double roll = E(0), pitch = E(1), yaw = E(2);
+
+   double halfroll = roll / 2.;
+   double halfpitch = pitch / 2.;
+   double halfyaw = yaw / 2.;
+
+   double sin_r2 = sin (halfroll);
+   double sin_p2 = sin (halfpitch);
+   double sin_y2 = sin (halfyaw);
+
+   double cos_r2 = cos (halfroll);
+   double cos_p2 = cos (halfpitch);
+   double cos_y2 = cos (halfyaw);
+
+   q_return.w() = cos_r2 * cos_p2 * cos_y2 + sin_r2 * sin_p2 * sin_y2;
+   q_return.x() = sin_r2 * cos_p2 * cos_y2 - cos_r2 * sin_p2 * sin_y2;
+   q_return.y() = cos_r2 * sin_p2 * cos_y2 + sin_r2 * cos_p2 * sin_y2;
+   q_return.z() = cos_r2 * cos_p2 * sin_y2 - sin_r2 * sin_p2 * cos_y2;
+
+   return q_return;
+}
+
+Eigen::Matrix3d e2C(Eigen::Vector3d Ec) {
+
+
+	Eigen::Matrix3d C;
+
+	C = q2C(e2q(Ec));
+
+	return C;
+	/*
+
+	// untested
+
+	  double st, sp, sps;
+	  double ct, cp, cps;
+
+	  //std::cout << "e2C\n";
+
+	  sp = sin(Ec(0));
+	  st = sin(Ec(1));
+	  sps = sin(Ec(2));
+
+	  cp = cos(Ec(0));
+	  ct = cos(Ec(1));
+	  cps = cos(Ec(2));
+
+	  C(0,0) = cps*ct;
+	  C(0,1) = sps*ct;
+	  C(0,2) = -st;
+
+	  C(1,0) = -sps*cp + cps*st*sp;
+	  C(1,1) = cps*cp + sps * st * sp;
+	  C(1,2) = ct*sp;
+
+	  C(2,0) = sps * sp + cps * st * cp;
+	  C(2,1) = -cps*sp + sp * st * cp;
+	  C(2,2) = ct * cp;
+
+
+	  */
+  }
+
+
+
+
 namespace InertialOdometry 
 {
+
+
+class QuaternionLib {
+  public:
+	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // The result is pushed back into a2 (overwrites what was in there)
+    static void QuaternionProduct(double *a1, double *a2);
+	static Eigen::Quaterniond QuaternionProduct_(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs);
+
+    // Result is pushed back by overwritting the argument variable
+    static void QuaternionAdjoint(double *q);
+
+    // q is the rotation quaternion
+    // v is the vector to be rotated, assumed to be size 3
+    // Result is pushed back by overwriting the v variable
+    //static void VectorRotation(double *q, double *v);
+    static void VectorRotation(Eigen::Vector4d q, Eigen::Vector3d &v);
+
+    //This function is specific to NED and forward right down coordinate frames
+    static Eigen::Quaterniond e2q(const Eigen::Vector3d &E);
+    static void q2e(const Eigen::Vector4d &q_, Eigen::Vector3d &E);
+    static void q2e(const Eigen::Quaterniond &q_, Eigen::Vector3d &E);
+    static void q2e_(const Eigen::Vector4d &q_, Eigen::Vector3d &E);
+
+    static Eigen::Vector3d q2e(const Eigen::Quaterniond &q_);
+    static void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
+
+    //get the direction cosine matrix equivalent to quaternion (scalar, vector)
+    static void q2C(Eigen::Vector4d const &q_, Eigen::Matrix<double,3,3> &C);
+    static Eigen::Matrix<double,3,3> q2C(Eigen::Quaterniond const &q_);
+    static Eigen::Quaterniond C2q(const Eigen::Matrix<double, 3, 3> &C);
+    static int matrix_to_quat(const double rot[9], double quat[4]);
+    static Eigen::Quaterniond bot_matrix_to_quat(const Eigen::Matrix3d &C); // Think this one may finally be the correct one
+
+    // Places the 3x3 skew symmetric matrix of 3x1 vector v in skew
+    static void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew);
+
+    static void e2C(Eigen::Vector3d const &Ec, Eigen::Matrix<double, 3, 3> &C);
+    static Eigen::Matrix<double, 3, 3> e2C(const Eigen::Vector3d &E);
+
+    static Eigen::Vector3d C2e(const Eigen::Matrix<double, 3, 3> &C__);
+
+    //Rotate a 3 vector around only te yaw axis
+    static Eigen::Vector3d Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v);
+
+    static void printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom);
+    static void printQuaternion(std::string preamble, const Eigen::Quaterniond &q);
+  };
+
+
   
   // The result is pushed back into a2 (overwrites what was in there)
   void QuaternionLib::QuaternionProduct(double *a1, double *a2)
@@ -128,6 +403,9 @@ namespace InertialOdometry
 
   Eigen::Vector3d QuaternionLib::q2e(const Eigen::Quaterniond &q) {
 	  Eigen::Vector3d E;
+
+	  std::cout << "q2e\n";
+
 	  //std::cout << "quat is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
 	  q2e(q,E);
 	  
@@ -177,6 +455,7 @@ namespace InertialOdometry
   
   void QuaternionLib::q2e(const Eigen::Vector4d &q, Eigen::Vector3d &E)
   {
+	  std::cout << "q2e\n";
 	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
 	  //std::cout << "q2e received q: " << q.transpose() << "\n";
 	  double roll_a = 2. * (q(0)*q(1) + q(2)*q(3));
@@ -234,6 +513,8 @@ namespace InertialOdometry
   // Calculate the left hand rotation matrix
   void QuaternionLib::q2C(Eigen::Vector4d const &q_, Eigen::Matrix<double,3,3> &C)
   {
+	  std::cout << "old q2C\n";
+
 	  // scalar vector format
 	  //http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 	  // 3/10/2013
@@ -423,7 +704,7 @@ namespace InertialOdometry
   Eigen::Matrix<double, 3, 3> QuaternionLib::e2C(const Eigen::Vector3d &E) {
 	  Eigen::Matrix<double, 3, 3> returnval;
 	  
-	  returnval.setZero();
+	  returnval.setIdentity();
 	  
 	  e2C(E,returnval);
 	  
@@ -432,18 +713,20 @@ namespace InertialOdometry
 	  return returnval;
   }
   
-  void QuaternionLib::e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C)
+  void QuaternionLib::e2C(Eigen::Vector3d const &Ec, Eigen::Matrix<double, 3, 3> &C)
   {
 	  double st, sp, sps;
 	  double ct, cp, cps;
 	  
-	  sp = sin(E(0));
-	  st = sin(E(1));
-	  sps = sin(E(2));
+	  //std::cout << "e2C\n";
+
+	  sp = sin(Ec(0));
+	  st = sin(Ec(1));
+	  sps = sin(Ec(2));
 	  
-	  cp = cos(E(0));
-	  ct = cos(E(1));
-	  cps = cos(E(2));
+	  cp = cos(Ec(0));
+	  ct = cos(Ec(1));
+	  cps = cos(Ec(2));
 	  
 	  C(0,0) = cps*ct;
 	  C(0,1) = sps*ct;
@@ -458,24 +741,24 @@ namespace InertialOdometry
 	  C(2,2) = ct * cp;
   }
   
-  Eigen::Vector3d QuaternionLib::C2e(const Eigen::Matrix<double, 3, 3> &C) {
+  Eigen::Vector3d QuaternionLib::C2e(const Eigen::Matrix<double, 3, 3> &C__) {
 
-	  Eigen::Quaterniond q;
+	  Eigen::Quaterniond q__;
 	  
-	  q = C2q(C);
+	  q__ = C2q(C__);
 
-	  q.normalize();
+	  q__.normalize();
 
 	  //std::cout << "Q at this point is: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
 
-	  return q2e(q);
+	  return q2e(q__);
   }
       
   
   Eigen::Quaterniond QuaternionLib::e2q(const Eigen::Vector3d &E) {
 	  //Eigen::Quaterniond q;
 	  
-	  //std::cout << "e2q -- E = " << E.transpose() << std::endl;
+	  std::cout << "e2q -- E = " << E.transpose() << std::endl;
 	  
 	  //return C2q(e2C(E));
 	  

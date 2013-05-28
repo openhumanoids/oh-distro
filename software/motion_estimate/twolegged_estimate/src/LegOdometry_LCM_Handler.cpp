@@ -309,11 +309,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Quaterniond tq(_msg->origin_position.rotation.w, _msg->origin_position.rotation.x, _msg->origin_position.rotation.y, _msg->origin_position.rotation.z);
 
 	//true_pelvis.rotate(tq);
-	true_pelvis.linear() = InertialOdometry::QuaternionLib::q2C(tq);
+	true_pelvis.linear() = q2C(tq);
 
 
 	// TODO -- This is to be removed, only using this for testing
-	_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(tq));
+	//_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(tq));
+	//std::cout << "true check\n";
+	_leg_odo->setTruthE(q2e_new(tq));
+
 #endif
 
 	// Here we start populating the estimated robot state data
@@ -717,7 +720,7 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 
 	  pelvis.setIdentity();
 	  pelvis.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-	  pelvis.linear() = InertialOdometry::QuaternionLib::q2C(q);
+	  pelvis.linear() = q2C(q);
 
 		  //std::cout << truebody.translation().transpose() << " is tb\n";
 
@@ -728,11 +731,11 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 
 	  local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
 	  local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
-	  local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
+	  local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, C2e(local_to_head.linear()));
 
 	// estimate the rotational velocity of the head
 	Eigen::Quaterniond l2head_rot;
-	l2head_rot = InertialOdometry::QuaternionLib::C2q(local_to_head.linear());
+	l2head_rot = C2q(local_to_head.linear());
 
 	l2head_msg->utime = msg->utime;
 
@@ -768,7 +771,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 
   {
   Eigen::Vector3d elogged;
-  elogged = InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(est_msgout->origin_position.rotation.w, est_msgout->origin_position.rotation.x, est_msgout->origin_position.rotation.y, est_msgout->origin_position.rotation.z));
+  elogged = q2e_new(Eigen::Quaterniond(est_msgout->origin_position.rotation.w, est_msgout->origin_position.rotation.x, est_msgout->origin_position.rotation.y, est_msgout->origin_position.rotation.z));
 
   //std::cout << "logged: " << (_leg_odo->truth_E - elogged).norm() << std::endl;
 
@@ -834,7 +837,7 @@ void LegOdometry_Handler::stateMessage_to_stream(const drc::robot_state_t *msg, 
 	Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
 	Eigen::Vector3d E;
 
-	E = InertialOdometry::QuaternionLib::q2e(q);
+	E = q2e_new(q);
 
 	ss << msg->origin_position.translation.x << ", ";
 	ss << msg->origin_position.translation.y << ", ";
@@ -866,12 +869,12 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	// To filter or not to filter the angular rates
 	if (false) {
 		Eigen::Vector3d E;
-		E = InertialOdometry::QuaternionLib::q2e(q);
+		E = q2e_new(q);// change to new
 
 		for (int i=0;i<3;i++) {
 		  rates[i] = lpfilter[i+2].processSample(msg->angular_velocity[i]); // +2 since the foot force values use the first two filters
 		  angles[i] = lpfilter[i+5].processSample(E(i));
-		  q = InertialOdometry::QuaternionLib::e2q(E);
+		  q = e2q(E);
 		}
 	} else {
 		for (int i=0;i<3;i++) {
@@ -968,7 +971,7 @@ void LegOdometry_Handler::drawSumPose() {
 void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d &target) {
   
   Eigen::Vector3d E;
-  InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(target.linear()),E);
+  E = q2e_new(Eigen::Quaterniond(target.linear()));//change to new
   _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),E(2),E(1),E(0)));
 }
 
@@ -990,13 +993,15 @@ void LegOdometry_Handler::DrawLegPoses(const Eigen::Isometry3d &left, const Eige
   //clear the list to prevent memory growth
   _obj_leg_poses->clear();
 	
+
+  // The best way to add two isometries -- maintained to be consistent with the rest of the code. This should probably be changed
   for (int i=0;i<2;i++) {
-    added_vals[i] = TwoLegOdometry::add(true_pelvis, target[i]); // this is the same function that is used by TwoLegOdometry to accumulate Isometry transforms
-    InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(added_vals[i].linear()),E);
+    added_vals[i] = _leg_odo->add(true_pelvis, target[i]); // this is the same function that is used by TwoLegOdometry to accumulate Isometry transforms
+    E = q2e_new(Eigen::Quaterniond(added_vals[i].linear()));
     _obj_leg_poses->add(50+i, isam::Pose3d(added_vals[i].translation().x(),added_vals[i].translation().y(),added_vals[i].translation().z(),E(2),E(1),E(0)));
     
-    back_from_feet[i] = TwoLegOdometry::add(added_vals[i], target[i+2]);
-    InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(back_from_feet[i].linear()),E);
+    back_from_feet[i] = _leg_odo->add(added_vals[i], target[i+2]);
+    E = q2e_new(Eigen::Quaterniond(back_from_feet[i].linear()));
     _obj_leg_poses->add(50+i+2, isam::Pose3d(back_from_feet[i].translation().x(),back_from_feet[i].translation().y(),back_from_feet[i].translation().z(),E(2),E(1),E(0)));
   }
   
@@ -1119,8 +1124,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  left_lleg.rotate(q_ll_l);
 	  right_lleg.rotate(q_ll_r);
 
-	  left_lleg.linear() = InertialOdometry::QuaternionLib::q2C(q_ll_l);
-	  right_lleg.linear() = InertialOdometry::QuaternionLib::q2C(q_ll_r);
+	  left_lleg.linear() = q2C(q_ll_l);
+	  right_lleg.linear() = q2C(q_ll_r);
 
 
 	  // Now i need to imitate the ankle pitch and roll angles
@@ -1181,8 +1186,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 		  // TODO -- confirm the use of transpose() convert the rotation matrix into the correct frae, as this may be in the q2C function..
 		  //left.linear() = InertialOdometry::QuaternionLib::q2C(leftq).transpose(); // note Isometry3d.rotation() is still marked as "experimental"
 		  //right.linear() = InertialOdometry::QuaternionLib::q2C(rightq).transpose();
-		  left.linear() = InertialOdometry::QuaternionLib::q2C(leftq); // note Isometry3d.rotation() is still marked as "experimental"
-		  right.linear() = InertialOdometry::QuaternionLib::q2C(rightq);
+		  left.linear() = q2C(leftq); // note Isometry3d.rotation() is still marked as "experimental"
+		  right.linear() = q2C(rightq);
 
 	  }
 
@@ -1190,50 +1195,58 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  	  Eigen::Isometry3d IMU_rp;
 	  	  IMU_rp.setIdentity();
 	  	  Eigen::Vector3d imu_E;
-	  	  imu_E = InertialOdometry::QuaternionLib::q2e(_leg_odo->getLocalOrientation());
+
+	  	  //std::cout << "Bangles: " <<_leg_odo->getLocalOrientation().w() << ", " <<_leg_odo->getLocalOrientation().x() << ", " <<_leg_odo->getLocalOrientation().y() << ", " <<_leg_odo->getLocalOrientation().z() << std::endl;
+	  	  imu_E = q2e_new(_leg_odo->getLocalOrientation());
 	  	  imu_E(2) = 0.;
-	  	  IMU_rp.linear() = InertialOdometry::QuaternionLib::e2C(imu_E);
+	  	  //std::cout << "Aangles: " << imu_E.transpose() << std::endl << q2C(e2q(imu_E)) << std::endl;
 
-	  	  //Eigen::Isometry3d toprintleft;
+
+	  	  IMU_rp.linear() = e2C(imu_E);
+
 	  	  Eigen::Isometry3d temptransform;
-	  	  //toprintleft = IMU_rp.inverse()*left;
+	  	  Eigen::Isometry3d tempright, templeft;
 
 
-	  	  temptransform = IMU_rp.inverse();
-	  	  IMU_rp = temptransform;
-	  	  temptransform = IMU_rp * left;
+	  	  temptransform.setIdentity();
+	  	  temptransform = (IMU_rp)*left;
 	  	  left = temptransform;
-	  	  temptransform = IMU_rp * right;
+	  	  temptransform = (IMU_rp)*right;
 	  	  right = temptransform;
 
-	  	  /*
+
+
 	  	  // now we strip out the influence of the ankle joints.
 	  	  // We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
 	  	  Eigen::Vector3d stripRP;
 
-	  	  stripRP = InertialOdometry::QuaternionLib::C2e(left.linear());
+	  	  //stripRP = q2e_new(InertialOdometry::QuaternionLib::C2q(left.linear()));
+  	  	  stripRP = q2e_new(C2q(left.linear()));
+  	  	  //std::cout << "Stripping left angles: " << stripRP.transpose() << std::endl;
 	  	  stripRP(0) = 0.;
 	  	  stripRP(1) = 0.;
-	  	  left.linear() = InertialOdometry::QuaternionLib::e2C(stripRP);
 
-	  	  stripRP = InertialOdometry::QuaternionLib::C2e(right.linear());
+	  	  templeft.setIdentity();
+	  	  templeft.translation() = left.translation();
+	  	  templeft.linear() = e2C(stripRP);
+
+
+	  	  stripRP = q2e_new(C2q(right.linear()));
 		  stripRP(0) = 0.;
 		  stripRP(1) = 0.;
-		  right.linear() = InertialOdometry::QuaternionLib::e2C(stripRP);
-		*/
+
+		  tempright.setIdentity();
+		  tempright.translation() = right.translation();
+		  tempright.linear() = e2C(stripRP);
+
+		  left = templeft;
+		  right = tempright;
 
 
-	  if (true) {
-		  std::cout << "JOINTS:\t" << std::fixed << (left.inverse()).translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left.rotation()).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
-		  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::C2e(left_lleg.rotation()).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl;
-		  std::cout << std::endl;
-		  //std::cout << InertialOdometry::QuaternionLib::q2C(q_ll_l) <<std::endl << std::endl;
+		  //std::cout << "LEFT: " << left.translation().transpose() << " | RIGHT " << right.translation().transpose() << "\n";
+		  //std::cout << std::endl;
 
-	//	  std::cout << "JOINTS:\t" << std::fixed << left.translation().transpose() << " | " << InertialOdometry::QuaternionLib::q2e(leftq).transpose() << " | " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() <<"\n\t"
-	//	  			  << left_lleg.translation().transpose() << " | " << InertialOdometry::QuaternionLib::q2e(q_ll_l).transpose() << " | " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() <<std::endl << std::endl;
-	  }
 
-	  // Draw lleg
 
 #ifdef LOG_LEG_TRANSFORMS
 	  // The idea here is to push all the required data to a single array [pelvis_to_feet_transform], which is to be logged in publish state method
@@ -1251,12 +1264,12 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[3+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[2].diff(u_ts,InertialOdometry::QuaternionLib::C2e(left.rotation()));
+	  tempvar = pelvis_to_feet_speed[2].diff(u_ts,C2e(left.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[6+i] = tempvar(i); // left vel, right vel, left rate, right rate
 	  }
-	  tempvar = pelvis_to_feet_speed[3].diff(u_ts,InertialOdometry::QuaternionLib::C2e(right.rotation()));
+	  tempvar = pelvis_to_feet_speed[3].diff(u_ts,C2e(right.rotation()));
 	  // left vel, right vel, left rate, right rate
 	  for (i=0;i<3;i++) {
 		  pelvis_to_feet_transform[9+i] = tempvar(i); // left vel, right vel, left rate, right rate

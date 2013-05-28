@@ -94,8 +94,8 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d getPelvisFromStep();
 		Eigen::Isometry3d getSecondaryFootToPelvis();
-		Eigen::Isometry3d getPrimaryFootToPelvis();
 		
+
 		// This has been moved to QuaternionLib
 		//Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 		
@@ -116,6 +116,8 @@ class TwoLegOdometry {
 		TwoLegOdometry(bool _log_data_files, bool dont_init_hack);
 		~TwoLegOdometry();
 		
+		Eigen::Isometry3d getPrimaryFootToPelvis();
+
 		// Testing function not dependent on LCM messages
 		// not implemented yet
 		void CalculateBodyStates_Testing(int counter);
@@ -156,7 +158,7 @@ class TwoLegOdometry {
 		
 		void terminate();
 		
-		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
+		Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 		
 		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis);
 		void overwritePelvisVelocity(const Eigen::Vector3d &set_velocity);
