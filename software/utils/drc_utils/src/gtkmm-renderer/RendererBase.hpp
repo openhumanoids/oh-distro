@@ -9,6 +9,7 @@
 typedef struct _BotViewer BotViewer;
 typedef struct _BotParam BotParam;
 typedef struct _BotFrames BotFrames;
+typedef struct _BotEventHandler BotEventHandler;
 typedef struct _lcm_t lcm_t;
 typedef struct _GdkEventKey GdkEventKey;
 typedef struct _GdkEventButton GdkEventButton;
@@ -48,6 +49,7 @@ protected:
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
   BotViewer* getBotViewer() const;
+  BotEventHandler* getBotEventHandler() const;
   Gtk::DrawingArea* getGlDrawingArea() const;
   Gtk::Container* getGtkContainer() const;
   Gtk::Toolbar* getGtkToolbar() const;

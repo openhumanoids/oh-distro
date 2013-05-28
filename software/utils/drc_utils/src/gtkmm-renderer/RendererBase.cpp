@@ -349,6 +349,11 @@ getBotViewer() const {
   return mHelper->mBotViewer;
 }
 
+BotEventHandler* RendererBase::
+getBotEventHandler() const {
+  return &mHelper->mBotEventHandler;
+}
+
 Gtk::DrawingArea* RendererBase::
 getGlDrawingArea() const {
   return mHelper->mGlDrawingArea;
