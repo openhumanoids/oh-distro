@@ -72,6 +72,7 @@ struct Worker {
         break;
       case drc::data_request_t::HEIGHT_MAP_COARSE:
         sendHeightMapCoarseRequest();
+        break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
         sendDepthMapSceneRequest();
         break;
