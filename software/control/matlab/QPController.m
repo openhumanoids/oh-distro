@@ -224,7 +224,7 @@ classdef QPController < MIMODrakeSystem
     % determine contact via kinematics.
     % this is not optimized (we're repeating contact constraints call below
     % and for the mex case, we should not be doing this in matlab
-    contact_threshold = 0.001; % m
+    contact_threshold = 0.0005; % m
     kinsol = doKinematics(r,q,false,true);
     
     % get active contacts
