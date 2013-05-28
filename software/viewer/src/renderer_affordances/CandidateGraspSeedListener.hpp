@@ -57,8 +57,9 @@ namespace renderer_affordances
 			      const drc::desired_grasp_state_t* msg);
 			      
 		//-------------utils
-  private:	      
+  public:
 		void add_or_update_sticky_hand(int uid, std::string& unique_hand_name, KDL::Frame &T_world_hand, drc::joint_angles_t &posture_msg);		
+  private:	      
 		bool load_hand_urdf(int grasp_type);
 		
 		std::string _object_name;

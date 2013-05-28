@@ -22,7 +22,10 @@ void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, co
   graspSeed.xyz[0] = geo.p.x(), graspSeed.xyz[1] = geo.p.y(), graspSeed.xyz[2] = geo.p.z();
   geo.M.GetRPY(graspSeed.rpy[0],graspSeed.rpy[1],graspSeed.rpy[2]);
   graspSeed.parent_name = "TODO";
+  graspSeed.object_name = hand_it->second.object_name;
+  graspSeed.geometry_name = hand_it->second.geometry_name;
   graspSeed.grasp_type = hand_it->second.hand_type;
+  graspSeed.joint_names = hand_it->second.joint_name;
   graspSeed.joint_positions = hand_it->second.joint_position;
   graspSeed.writeToOtdf(filepath);
 

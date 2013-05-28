@@ -12,6 +12,7 @@
 #include <drc_utils/PointConvert.h>
 
 #include <affordance/AffordanceUtils.hpp>
+#include <renderer_affordances/CandidateGraspSeedListener.hpp>
 
 using namespace std;
 using namespace boost;
@@ -314,8 +315,40 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
 
   //->visual->geometry;
 
+  // handle sticky hands if available
+  if(instance_struc._otdf_instance){
+    std::vector<GraspSeed>& list = instance_struc._otdf_instance->graspSeedList_;
+    CandidateGraspSeedListener& cgsl = *_parent_affordance_renderer->candidateGraspSeedListener;
+    for(int i=0; i<list.size(); i++) {
+      std::stringstream objname;
+      objname << aff.otdf_type << "_"<< aff.uid;
+      int uid = _parent_affordance_renderer->free_running_sticky_hand_cnt++;
+      std::stringstream oss;
+      oss << objname.str() <<"_"<< list[i].geometry_name << "_lgrasp_" << uid;  //TODO
+      string name = oss.str();
+      KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],list[i].rpy[2]));
+      KDL::Vector xyz(list[i].xyz[0],list[i].xyz[1],list[i].xyz[2]);
+      KDL::Frame pos(rot,xyz);
+      drc::joint_angles_t joints;
+      joints.utime = -1;
+      joints.num_joints = list[i].joint_positions.size();
+      joints.joint_name = list[i].joint_names;
+      joints.joint_position = list[i].joint_positions;
+      cout << "Calling add_or_update_sticky_hand:\n";
+      cout << uid << " " << name << endl;
+      cout << pos.p.x() << " " << pos.p.y() << " " << pos.p.z() <<  endl;
+      cout <<  list[i].rpy[0] << " " << list[i].rpy[1] << " " << list[i].rpy[2] << endl;
+      cout << joints.num_joints << " " << joints.joint_name.size() << " " 
+           << joints.joint_position.size() << endl;
+      for(int j=0;j<joints.num_joints;j++) {
+        cout << joints.joint_name[j] << " " << joints.joint_position[j] << endl;
+      }
+      //TODO: cgsl.add_or_update_sticky_hand(uid,name,pos,joints);
+      cout << "Done\n";
+    }
+  }
 
-  //_parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
+  //_parent_affordance_reinstance_strucnderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
   _parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
   // Update params 
   

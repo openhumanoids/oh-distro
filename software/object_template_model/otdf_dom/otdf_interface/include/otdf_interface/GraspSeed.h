@@ -7,8 +7,11 @@
 
 struct GraspSeed{
   std::string parent_name;
+  std::string object_name;
+  std::string geometry_name; 
   double xyz[3],rpy[3];
   int grasp_type;
+  std::vector<std::string> joint_names;
   std::vector<double> joint_positions;
 
   ///////////////////////////////////////////////////////////////////////
@@ -16,6 +19,16 @@ struct GraspSeed{
     TiXmlElement* parent = grasp_seed_xml->FirstChildElement("parent");
     if(parent) {
       parent_name = parent->Attribute("name");
+    }else std::cout << "Error parsing grasp_seed parent\n";
+    
+    TiXmlElement* object = grasp_seed_xml->FirstChildElement("object");
+    if(object) {
+      object_name = object->Attribute("name");
+    }else std::cout << "Error parsing grasp_seed object\n";
+    
+    TiXmlElement* geometry = grasp_seed_xml->FirstChildElement("geometry");
+    if(geometry) {
+      geometry_name = geometry->Attribute("name");
     }else std::cout << "Error parsing grasp_seed parent\n";
     
     TiXmlElement* relative_pose_ele = grasp_seed_xml->FirstChildElement("relative_pose");
@@ -34,9 +47,14 @@ struct GraspSeed{
     TiXmlElement* state = grasp_seed_xml->FirstChildElement("state");
     if(state) {
       int numJoints = atoi(state->Attribute("num_joints"));
+      joint_names.resize(numJoints);    
       joint_positions.resize(numJoints);    
-      std::stringstream joints(state->Attribute("joint_positions"));
-      for(int i=0;i<numJoints;i++) joints >> joint_positions[i];
+      std::stringstream joint_names_ss(state->Attribute("joint_names"));
+      std::stringstream joint_positions_ss(state->Attribute("joint_positions"));
+      for(int i=0;i<numJoints;i++) {
+        joint_names_ss >> joint_names[i];
+        joint_positions_ss >> joint_positions[i];
+      }
     }else std::cout << "Error parsing grasp_seed state\n";
   }
 
@@ -60,10 +78,15 @@ struct GraspSeed{
     std::stringstream grasp_seed;
     grasp_seed << "<grasp_seed>" << std::endl;
     grasp_seed << "\t<parent name=\"" << parent_name << "\" />" << std::endl;
+    grasp_seed << "\t<object name=\"" << object_name << "\" />" << std::endl;
+    grasp_seed << "\t<geometry name=\"" << geometry_name << "\" />" << std::endl;
     grasp_seed << "\t<relative_pose rpy=\"" << rpy[0] << " " << rpy[1] << " " << rpy[2] << "\"";
     grasp_seed << " xyz=\"" << xyz[0] << " " << xyz[1] << " " << xyz[2] << "\" />" << std::endl;
     grasp_seed << "\t<grasp_type type=\"" << grasp_type << "\" />" << std::endl;
-    grasp_seed << "\t<state num_joints=\""<< joint_positions.size() << "\" joint_positions=\"";
+    grasp_seed << "\t<state num_joints=\""<< joint_positions.size();
+    grasp_seed << "\" joint_names=\"";
+    for(int i=0;i<joint_names.size();i++) grasp_seed << joint_names[i] << " ";
+    grasp_seed << "\" joint_positions=\"";
     for(int i=0;i<joint_positions.size();i++) grasp_seed << joint_positions[i] << " ";
     grasp_seed << "\" />" << std::endl;
     grasp_seed << "</grasp_seed>" << std::endl;
