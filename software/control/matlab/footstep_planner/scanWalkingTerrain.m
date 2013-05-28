@@ -70,9 +70,9 @@ infeasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_
    'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
 
 
-plot_lcm_points([reshape(X, [], 1), reshape(Y, [], 1), reshape(Z, [], 1)], [reshape(F, [], 1), reshape(1-F, [], 1), reshape(zeros(size(F)), [], 1)], 71, 'Terrain Feasibility', 1, 1);
  
 if debug
+  plot_lcm_points([reshape(X, [], 1), reshape(Y, [], 1), reshape(Z, [], 1)], [reshape(F, [], 1), reshape(1-F, [], 1), reshape(zeros(size(F)), [], 1)], 71, 'Terrain Feasibility', 1, 1);
   figure(1)
   mesh(X, Y, Z)
   axis equal

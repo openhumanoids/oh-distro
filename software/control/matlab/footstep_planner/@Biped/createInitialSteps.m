@@ -34,10 +34,15 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
 
   [~, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0);
   if options.ignore_terrain
+    normal = rpy2rotmat(p0(4:6)) * [0;0;1];
+    foot_centers.right(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.right(1,:) - p0(1)) + normal(2) * (foot_centers.right(2,:) - p0(2)));
+    foot_centers.left(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.left(1,:) - p0(1)) + normal(2) * (foot_centers.left(2,:) - p0(2)));
+    for j = 1:size(foot_centers.right, 2)
+      foot_centers.right(:,j) = fitPosToNormal(foot_centers.right(:,j), normal);
+      foot_centers.left(:,j) = fitPosToNormal(foot_centers.left(:,j), normal);
+    end
     infeasibility.right = zeros(size(infeasibility.right));
     infeasibility.left = zeros(size(infeasibility.left));
-    foot_centers.right(3,:) = p0(3);
-    foot_centers.left(3,:) = p0(3);
   else
     for f = {'right', 'left'}
       foot = f{1};
@@ -147,6 +152,10 @@ aborted = false;
       final_pos = biped.stepCenter2FootCenter(final_center, is_right_foot);
       if ~options.ignore_terrain
         final_pos = fitStepToTerrain(biped, final_pos);
+      else
+        normal = rpy2rotmat(p0(4:6)) * [0;0;1];
+        final_pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (final_pos(1) - p0(1)) + normal(2) * (final_pos(2) - p0(2)));
+        final_pos = fitPosToNormal(final_pos, normal);
       end
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
       if (length(X) - 2) >= options.min_num_steps
