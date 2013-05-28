@@ -337,9 +337,14 @@ classdef QPController < MIMODrakeSystem
       else
         y0 = ctrl_data.y0.eval(t); 
       end
+      if isfield(ctrl_data,'mu')
+        mu = ctrl_data.mu;
+      else
+        mu = 1.0;
+      end
     else
       % allocate these for passing into mex
-      A_ls=zeros(4);B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);
+      A_ls=zeros(4);B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);mu=1.0;
       D_ls=zeros(2);S=zeros(4);s1=zeros(4,1);s2=0;x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
     end
     
@@ -487,10 +492,8 @@ classdef QPController < MIMODrakeSystem
         beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
         
         % linear friction constraints
-        % TEMP: hard code mu
-        mu = 1.0*ones(nc,1);
         for i=1:nc
-          Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
+          Ain_{i} = -mu*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
           bin_{i} = 0;
         end
       end
@@ -602,7 +605,7 @@ classdef QPController < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-       [y,Vdot] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+       [y,Vdot] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu);
        V = 0; % don't compute V for mex yet (will we ever use this?)
     end
 
@@ -617,7 +620,7 @@ classdef QPController < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
-      [y,~,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+      [y,~,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);

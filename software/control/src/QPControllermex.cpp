@@ -28,7 +28,7 @@
 #include "RigidBodyManipulator.h"
 
 const int m_surface_tangents = 2;  // number of faces in the friction cone approx
-const double mu = 1.0;  // coefficient of friction
+//const double mu = 1.0;  // coefficient of friction
 
 using namespace std;
 
@@ -408,6 +408,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==1);
   Map< Vector2d > y0(mxGetPr(prhs[narg++]));
+
+  double mu = mxGetScalar(prhs[narg++]);
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   

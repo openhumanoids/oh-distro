@@ -103,6 +103,8 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_qnom_bytes = length(msg.qnom);
       
+      msg.mu = data.mu;
+
       obj.lc.publish(obj.channel, msg);
 		end
 

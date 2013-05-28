@@ -20,6 +20,7 @@ classdef WalkingController < DRCController
         'lfoottraj',[],...
         'rfoottraj',[],...
         'supptraj',[],...
+        'mu',1.0,...
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0)); % time derivative of cost to go used in controller status message
@@ -162,6 +163,8 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('qtraj',matdata.qnom);
+
+      obj.controller_data.setField('mu',msg_data.mu);
 
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
     end

@@ -104,7 +104,9 @@ classdef WalkingPlanListener
         matdata = load('tmp_w.mat');
         qnom = matdata.qnom;
         
-        walking_data = struct('qtraj',qtraj,...
+        mu = msg.mu;
+        
+        walking_data = struct('qtraj',qtraj,'mu',mu,...
           'comtraj',comtraj,'zmptraj',zmptraj,'lfoottraj',lfoottraj,...
           'rfoottraj',rfoottraj,'S',S,'s1',s1,'s2',s2,'supptraj',supptraj,'qnom',qnom);
 
