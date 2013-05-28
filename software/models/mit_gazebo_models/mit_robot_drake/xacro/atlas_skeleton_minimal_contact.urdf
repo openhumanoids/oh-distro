@@ -206,6 +206,16 @@
     </visual>
   </link>
   <link name="pelvis">
+    <xacro:collision_point group="front" xyz="0.17 0.042 0.115" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.17 -0.042 0.115" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.17 0.042 0.065" visualize="1"/>
+    <xacro:collision_point group="front" xyz="0.17 -0.042 0.065" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.15 0.042 0.115" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.15 -0.042 0.115" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.15 0.042 0.065" visualize="1"/>
+    <xacro:collision_point group="back" xyz="-0.15 -0.042 0.065" visualize="1"/>
+    <xacro:collision_point group="butt" xyz="-0.15 0.075 -0.15" visualize="1"/>
+    <xacro:collision_point group="butt" xyz="-0.15 -0.075 -0.15" visualize="1"/>
     <inertial>
       <mass value="12.64638" /> <!-- 0.1 added to adjust for IMU link -->
       <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
@@ -217,11 +227,6 @@
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1. 1. 1." />
       </geometry>
     </visual>
-    <xacro:collision_point group="front" xyz="0.17 0.042 0.09" visualize="1"/>
-    <xacro:collision_point group="front" xyz="0.17 -0.042 0.09" visualize="1"/>
-    <xacro:collision_point group="front" xyz="0.156 0.0 -0.02" visualize="1"/>
-    <xacro:collision_point group="butt" xyz="-0.15 0.075 -0.15" visualize="1"/>
-    <xacro:collision_point group="butt" xyz="-0.15 -0.075 -0.15" visualize="1"/>
 
   </link>
   <link name="r_clav">
