@@ -22,15 +22,7 @@ controllers = struct(harness_controller.name,harness_controller, ...
 
 state_machine = DRCStateMachine(controllers,harness_controller.name);
 
-monitor = drake.util.MessageMonitor(drc.utime_t,'utime');
-lc = lcm.lcm.LCM.getSingleton();
-lc.subscribe('PRECOMP_SERVER_HEARTBEAT',monitor);
-disp('Waiting for precomputation server heartbeat...');
-while isempty(monitor.getNextMessage(10)) end
-disp('precomp server running.');
-
 state_machine.run();
-
 
 end
 

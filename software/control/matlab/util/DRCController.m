@@ -200,22 +200,23 @@ classdef DRCController
       t_offset = -1;
       lcm_check_tic = tic;
       status_tic = tic;
-      precompute_tic = tic;
+%       precompute_tic = tic;
       while (1)
 %         tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
-          obj=checkPrecomputeResponses(obj);
+          %obj=checkPrecomputeResponses(obj); % DISABLED
           % check termination conditions and break if any are true        
           [transition,data] = checkLCMTransitions(obj);
           lcm_check_tic = tic;
           if transition 
-            fn = fieldnames(data);
-            if isfield(obj.precompute_response_targets,fn{1})
-              d = getfield(obj.precompute_response_targets,fn{1}); % take first transition if many
-              if ~isempty(d)
-                data = struct('precomp',d); % pass precomputation message to next controller
-              end
-            end
+            % DISABLED PRECOMP STUFF
+%             fn = fieldnames(data);
+%             if isfield(obj.precompute_response_targets,fn{1})
+%               d = getfield(obj.precompute_response_targets,fn{1}); % take first transition if many
+%               if ~isempty(d)
+%                 data = struct('precomp',d); % pass precomputation message to next controller
+%               end
+%             end
  
             % append last input data
             for i=1:obj.n_input_frames
@@ -261,16 +262,17 @@ classdef DRCController
             end
           end
         end
-        
-        if toc(precompute_tic)>0.1
-          for i=1:length(obj.precompute_triggers)
-            if obj.precompute_active{i}
-              f=obj.precompute_triggers{i};
-              obj.precompute_active{i} = f(input_frame_data,input_frame_time);
-            end
-          end
-          precompute_tic=tic;
-        end
+
+        % DISABLED BECAUSE WE'RE NOT USING IT
+%         if toc(precompute_tic)>0.1
+%           for i=1:length(obj.precompute_triggers)
+%             if obj.precompute_active{i}
+%               f=obj.precompute_triggers{i};
+%               obj.precompute_active{i} = f(input_frame_data,input_frame_time);
+%             end
+%           end
+%           precompute_tic=tic;
+%         end
         
         tt = max(input_frame_time);
 %         if isempty(ttprev)

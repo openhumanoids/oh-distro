@@ -93,7 +93,7 @@ classdef FootstepReplanner < DrakeSystem
 
             fprintf('RF:Adjusting footsteps by %2.4f m \n',diffz);
             cdata.rfoottraj(3) = cdata.rfoottraj(3) + diffz; %% VERY INEFFICIENT
-            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT
+            cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT try not doing subassign
 
             obj.controller_data.setField('rfoottraj',cdata.rfoottraj)
             obj.controller_data.setField('lfoottraj',cdata.lfoottraj)

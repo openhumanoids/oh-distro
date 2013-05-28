@@ -77,15 +77,36 @@ classdef StandingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       
+      
+      % use saved nominal pose 
+      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      q0 = d.xstar(1:getNumDOF(obj.robot));
+      kinsol = doKinematics(obj.robot,q0);
+      com = getCOM(obj.robot,kinsol);
+
+      % build TI-ZMP controller 
+      foot_pos = contactPositions(obj.robot,kinsol); 
+      ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
+      comgoal = mean(foot_pos(1:2,ch),2);
+      limp = LinearInvertedPendulum(com(3));
+      [~,V] = lqr(limp,comgoal);
+
+      foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
+
+      obj.controller_data.setField('S',V.S);
+      obj.controller_data.setField('D',-com(3)/9.81*eye(2));
+      obj.controller_data.setField('qtraj',q0);
+      obj.controller_data.setField('x0',[comgoal;0;0]);
+      obj.controller_data.setField('y0',comgoal);
+      obj.controller_data.setField('supptraj',foot_support);
+      
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
 
       % should make this a more specific channel name
       %obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for quasistatic motions
-
-      obj = initialize(obj,struct());
-  
+ 
     end
     
     function send_status(obj,t_sim,t_ctrl)
@@ -100,18 +121,7 @@ classdef StandingController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'precomp')
-        disp('standing controller: using precompute data');
-        cdata = data.precomp.resp_data;
-        
-        obj.controller_data.setField('S',cdata.S);
-        obj.controller_data.setField('D',-cdata.h/9.81*eye(2));
-        obj.controller_data.setField('qtraj',cdata.q_nom);
-        obj.controller_data.setField('x0',cdata.x0);
-        obj.controller_data.setField('y0',cdata.y0);
-        obj.controller_data.setField('supptraj',cdata.support);
-        
-      elseif isfield(data,'AtlasState')
+      if isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
         r = obj.robot;
@@ -119,25 +129,18 @@ classdef StandingController < DRCController
         x0 = data.AtlasState;
         q0 = x0(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
-        com = getCOM(r,kinsol);
+%         com = getCOM(r,kinsol);
 
-        % build TI-ZMP controller 
         foot_pos = contactPositions(r,kinsol); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
-        zmap = getTerrainHeight(r,com(1:2));
-        robot_z = com(3)-zmap;
-        limp = LinearInvertedPendulum(robot_z);
-        [~,V] = lqr(limp,comgoal);
-
-        foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
-        
-        obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('D',-robot_z/9.81*eye(2));
+%         zmap = getTerrainHeight(r,com(1:2));
+%         robot_z = com(3)-zmap;
+  
+%         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
-        obj.controller_data.setField('supptraj',foot_support);
 
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
         % standing and reaching plan
@@ -147,29 +150,6 @@ classdef StandingController < DRCController
 
         obj.controller_data.setField('qtraj',qtraj);
         obj = setDuration(obj,inf,false); % set the controller timeout
-
-      else
-        % use saved nominal pose 
-        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-        q0 = d.xstar(1:getNumDOF(obj.robot));
-        kinsol = doKinematics(obj.robot,q0);
-        com = getCOM(obj.robot,kinsol);
-
-        % build TI-ZMP controller 
-        foot_pos = contactPositions(obj.robot,kinsol); 
-        ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-        comgoal = mean(foot_pos(1:2,ch),2);
-        limp = LinearInvertedPendulum(com(3));
-        [~,V] = lqr(limp,comgoal);
-
-        foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
-
-        obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
-        obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('x0',[comgoal;0;0]);
-        obj.controller_data.setField('y0',comgoal);
-        obj.controller_data.setField('supptraj',foot_support);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout
