@@ -283,6 +283,126 @@
     </visual>
   </link>
   <link name="pelvis">
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <inertial>
       <mass value="12.64638"/>
       <!-- 0.1 added to adjust for IMU link -->
@@ -293,66 +413,6 @@
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1. 1. 1."/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.09"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.09"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.09"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.09"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.156 0.0 -0.02"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.156 0.0 -0.02"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="butt">
-      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="butt">
-      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0.01"/>
       </geometry>
     </visual>
   </link>
