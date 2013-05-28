@@ -17,6 +17,8 @@
 #include <lcmtypes/occ_map/pixel_map_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 
+#include <bot_vis/viewer.h>
+
 // TODO: should use c++ version
 #include <lcmtypes/occ_map_pixel_map_t.h>
 
@@ -183,6 +185,12 @@ public:
     requestDraw();
   }
 
+  void onInputModeChanged() {
+    if (mInputMode == InputModeCamera) {
+      getBotEventHandler()->picking = 0;
+    }
+  }
+
   void setupWidgets() {
     Gtk::Container* container = getGtkContainer();
     Gtk::Notebook* notebook = Gtk::manage(new Gtk::Notebook());
@@ -238,6 +246,8 @@ public:
       mInputMode = InputModeCamera;
       mInputModeComboBox =
         addCombo("Input Mode", mInputMode, labels, ids, requestBox);
+      mInputModeComboBox->signal_changed().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onInputModeChanged));
 
       ids = { ViewBase::TypeOctree, ViewBase::TypePointCloud,
               ViewBase::TypeDepthImage, ViewBase::TypeDepthImage+1 };
@@ -407,6 +417,16 @@ public:
 
   void onClearViewsButton() {
     mViewClient.clearAll();
+  }
+
+  double pickQuery(const double iRayStart[3], const double iRayDir[3]) {
+    if (mInputMode == InputModeCamera) {
+      getBotEventHandler()->picking = 0;
+      return -1;
+    }
+    else {
+      return 0;
+    }
   }
 
   bool mousePress(const GdkEventButton* iEvent,
