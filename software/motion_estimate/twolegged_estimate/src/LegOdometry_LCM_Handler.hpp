@@ -112,6 +112,8 @@ private:
 	std::vector<drc::link_transform_t> _link_tfs;
 	
 	std::vector<double> filtered_joints;
+	
+	Eigen::Isometry3d body_to_head;
 
 	// Drawing stuff
 	ObjectCollection* _obj;

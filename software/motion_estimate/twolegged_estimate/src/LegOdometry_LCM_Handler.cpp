@@ -34,6 +34,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
 	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
 	
+	body_to_head.setIdentity();
+
 	first_get_transforms = true;
 	ratecounter = 0;
 	local_to_head_vel_diff.setSize(3);
@@ -442,13 +444,13 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// Here the rate change is propagated into the rest of the system
 		if (ratechangeiter==1) {
 
-			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
-			UpdateHeadStates(&est_msgout, &est_headmsg);
+		//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
+		UpdateHeadStates(&est_msgout, &est_headmsg);
 
-			//clock_gettime(CLOCK_REALTIME, &threequat);
+		//clock_gettime(CLOCK_REALTIME, &threequat);
 
-			PublishEstimatedStates(_msg, &est_msgout);
-			PublishHeadStateMsgs(&est_headmsg);
+		PublishEstimatedStates(_msg, &est_msgout);
+		PublishHeadStateMsgs(&est_headmsg);
 
 	#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 			// True state messages will ont be available during the VRC and must be removed accordingly
@@ -703,35 +705,39 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 
 	Eigen::Isometry3d local_to_head;
 
-	int status;
-	  double matx[16];
-	  Eigen::Isometry3d body_to_head;
-	  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "head", "body", msg->utime, matx);
-	  for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-		  body_to_head(i,j) = matx[i*4+j];
+	// Replace this with FK
+	if (false) {
+		int status;
+		double matx[16];
+		status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "head", "body", msg->utime, matx);
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < 4; ++j) {
+				body_to_head(i,j) = matx[i*4+j];
+			}
 		}
-	  }
+	}
 
-	  //std::cout << body_to_head.translation().transpose() << " is b2h\n";
-	  Eigen::Isometry3d pelvis;
-	  Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
-	  // TODO -- remember this flag
+	
 
-	  pelvis.setIdentity();
-	  pelvis.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-	  pelvis.linear() = q2C(q);
+	//std::cout << body_to_head.translation().transpose() << " is b2h\n";
+	Eigen::Isometry3d pelvis;
+	Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+	// TODO -- remember this flag
 
-		  //std::cout << truebody.translation().transpose() << " is tb\n";
+	pelvis.setIdentity();
+	pelvis.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+	pelvis.linear() = q2C(q);
 
-	  local_to_head = pelvis * body_to_head;
-		  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
+	  //std::cout << truebody.translation().transpose() << " is tb\n";
 
-	  // now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
+	local_to_head = pelvis * body_to_head;
+	  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
 
-	  local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
-	  local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
-	  local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, C2e(local_to_head.linear()));
+	// now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
+
+	local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
+	local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
+	local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, C2e(local_to_head.linear()));
 
 	// estimate the rotational velocity of the head
 	Eigen::Quaterniond l2head_rot;
@@ -1089,75 +1095,84 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 
 
-    map<string, drc::transform_t >::iterator transform_it_ll_l;
-    map<string, drc::transform_t >::iterator transform_it_ll_r;
+	map<string, drc::transform_t >::iterator transform_it_ll_l;
+	map<string, drc::transform_t >::iterator transform_it_ll_r;
 
-    transform_it_ll_l=cartpos_out.find("l_talus");
-    transform_it_ll_r=cartpos_out.find("r_talus");
+	transform_it_ll_l=cartpos_out.find("l_talus");
+	transform_it_ll_r=cartpos_out.find("r_talus");
+
+	// Find the pelvis to head transform
+	map<string, drc::transform_t >::iterator transform_it_ph;
+	transform_it_ph=cartpos_out.find("head");
+
+	Eigen::Quaterniond b2head_q(transform_it_ph->second.rotation.w, transform_it_ph->second.rotation.x,transform_it_ph->second.rotation.y,transform_it_ph->second.rotation.z);
+	body_to_head.linear() = q2C(b2head_q);
+
+	body_to_head.translation() << transform_it_ph->second.translation.x, transform_it_ph->second.translation.y, transform_it_ph->second.translation.z;
 
 
-    //T_body_head = KDL::Frame::Identity();
-	  if(transform_it_ll_l!=cartpos_out.end()){// fk cart pos exists
+	//T_body_head = KDL::Frame::Identity();
+	if(transform_it_ll_l!=cartpos_out.end()){// fk cart pos exists
 		// This gives us the translation from body to left foot
 
-	  }else{
+	}else{
 		std::cout<< "fk position does not exist" <<std::endl;
-	  }
+	}
 
-	  if(transform_it_ll_r!=cartpos_out.end()){// fk cart pos exists
+	if(transform_it_ll_r!=cartpos_out.end()){// fk cart pos exists
 
-	  }else{
+	}else{
 		std::cout<< "fk position does not exist" << std::endl;
-	  }
+	}
 
 
-	  // Get lower leg quaternions
-	  Eigen::Quaterniond q_ll_l(transform_it_ll_l->second.rotation.w, transform_it_ll_l->second.rotation.x,transform_it_ll_l->second.rotation.y,transform_it_ll_l->second.rotation.z);
-	  Eigen::Quaterniond q_ll_r(transform_it_ll_r->second.rotation.w, transform_it_ll_r->second.rotation.x,transform_it_ll_r->second.rotation.y,transform_it_ll_r->second.rotation.z);
+	// Get lower leg quaternions
+	Eigen::Quaterniond q_ll_l(transform_it_ll_l->second.rotation.w, transform_it_ll_l->second.rotation.x,transform_it_ll_l->second.rotation.y,transform_it_ll_l->second.rotation.z);
+	Eigen::Quaterniond q_ll_r(transform_it_ll_r->second.rotation.w, transform_it_ll_r->second.rotation.x,transform_it_ll_r->second.rotation.y,transform_it_ll_r->second.rotation.z);
 
-	  Eigen::Isometry3d left_lleg;
-	  Eigen::Isometry3d right_lleg;
+	Eigen::Isometry3d left_lleg;
+	Eigen::Isometry3d right_lleg;
 
-	  left_lleg.translation() << transform_it_ll_l->second.translation.x, transform_it_ll_l->second.translation.y, transform_it_ll_l->second.translation.z;
-	  right_lleg.translation() << transform_it_ll_r->second.translation.x, transform_it_ll_r->second.translation.y, transform_it_ll_r->second.translation.z;
+	left_lleg.translation() << transform_it_ll_l->second.translation.x, transform_it_ll_l->second.translation.y, transform_it_ll_l->second.translation.z;
+	right_lleg.translation() << transform_it_ll_r->second.translation.x, transform_it_ll_r->second.translation.y, transform_it_ll_r->second.translation.z;
 
-	  left_lleg.rotate(q_ll_l);
-	  right_lleg.rotate(q_ll_r);
+	left_lleg.rotate(q_ll_l);
+	right_lleg.rotate(q_ll_r);
 
-	  left_lleg.linear() = q2C(q_ll_l);
-	  right_lleg.linear() = q2C(q_ll_r);
+	left_lleg.linear() = q2C(q_ll_l);
+	right_lleg.linear() = q2C(q_ll_r);
 
 
-	  // Now i need to imitate the ankle pitch and roll angles
-	  // this involves rotating the lower leg position with the IMU world angles. pay attention to the order in which these rotations are applied.
+	// Now i need to imitate the ankle pitch and roll angles
+	// this involves rotating the lower leg position with the IMU world angles. pay attention to the order in which these rotations are applied.
 
-	    //bot_core::rigid_transform_t tf;
-	    //KDL::Frame T_body_head;
+	//bot_core::rigid_transform_t tf;
+	//KDL::Frame T_body_head;
 
-	    map<string, drc::transform_t >::iterator transform_it_lf;
-	    map<string, drc::transform_t >::iterator transform_it_rf;
+	map<string, drc::transform_t >::iterator transform_it_lf;
+	map<string, drc::transform_t >::iterator transform_it_rf;
 
-		transform_it_lf=cartpos_out.find("l_foot");
-		transform_it_rf=cartpos_out.find("r_foot");
+	transform_it_lf=cartpos_out.find("l_foot");
+	transform_it_rf=cartpos_out.find("r_foot");
 
-		//T_body_head = KDL::Frame::Identity();
-		  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
-			// This gives us the translation from body to left foot
+	//T_body_head = KDL::Frame::Identity();
+	if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+		// This gives us the translation from body to left foot
 
-		  }else{
-			std::cout<< "fk position does not exist" <<std::endl;
-		  }
+	}else{
+		std::cout<< "fk position does not exist" <<std::endl;
+	}
 
-		  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+	if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
 
-		  }else{
-			std::cout<< "fk position does not exist" << std::endl;
-		  }
+	}else{
+		std::cout<< "fk position does not exist" << std::endl;
+	}
 
-	  //Eigen::Vector3d E_;
-	  // quaternion scale and vector ordering seems to be correct
-	  Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
-	  Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
+	//Eigen::Vector3d E_;
+	// quaternion scale and vector ordering seems to be correct
+	Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
+	Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
 	  
 
 	  //Eigen::Quaterniond tempq;
@@ -1192,59 +1207,59 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  }
 
 	  // level out foot position from IMU
-	  	  Eigen::Isometry3d IMU_rp;
-	  	  IMU_rp.setIdentity();
-	  	  Eigen::Vector3d imu_E;
+	  Eigen::Isometry3d IMU_rp;
+	  IMU_rp.setIdentity();
+	  Eigen::Vector3d imu_E;
 
-	  	  //std::cout << "Bangles: " <<_leg_odo->getLocalOrientation().w() << ", " <<_leg_odo->getLocalOrientation().x() << ", " <<_leg_odo->getLocalOrientation().y() << ", " <<_leg_odo->getLocalOrientation().z() << std::endl;
-	  	  imu_E = q2e_new(_leg_odo->getLocalOrientation());
-	  	  imu_E(2) = 0.;
-	  	  //std::cout << "Aangles: " << imu_E.transpose() << std::endl << q2C(e2q(imu_E)) << std::endl;
-
-
-	  	  IMU_rp.linear() = e2C(imu_E);
-
-	  	  Eigen::Isometry3d temptransform;
-	  	  Eigen::Isometry3d tempright, templeft;
+	  //std::cout << "Bangles: " <<_leg_odo->getLocalOrientation().w() << ", " <<_leg_odo->getLocalOrientation().x() << ", " <<_leg_odo->getLocalOrientation().y() << ", " <<_leg_odo->getLocalOrientation().z() << std::endl;
+	  imu_E = q2e_new(_leg_odo->getLocalOrientation());
+	  imu_E(2) = 0.;
+	  //std::cout << "Aangles: " << imu_E.transpose() << std::endl << q2C(e2q(imu_E)) << std::endl;
 
 
-	  	  temptransform.setIdentity();
-	  	  temptransform = (IMU_rp)*left;
-	  	  left = temptransform;
-	  	  temptransform = (IMU_rp)*right;
-	  	  right = temptransform;
+	  IMU_rp.linear() = e2C(imu_E);
+
+	  Eigen::Isometry3d temptransform;
+	  Eigen::Isometry3d tempright, templeft;
+
+
+	  temptransform.setIdentity();
+	  temptransform = (IMU_rp)*left;
+	  left = temptransform;
+	  temptransform = (IMU_rp)*right;
+	  right = temptransform;
 
 
 
-	  	  // now we strip out the influence of the ankle joints.
-	  	  // We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
-	  	  Eigen::Vector3d stripRP;
+	  // now we strip out the influence of the ankle joints.
+	  // We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
+	  Eigen::Vector3d stripRP;
 
-	  	  //stripRP = q2e_new(InertialOdometry::QuaternionLib::C2q(left.linear()));
-  	  	  stripRP = q2e_new(C2q(left.linear()));
-  	  	  //std::cout << "Stripping left angles: " << stripRP.transpose() << std::endl;
-	  	  stripRP(0) = 0.;
-	  	  stripRP(1) = 0.;
+	  //stripRP = q2e_new(InertialOdometry::QuaternionLib::C2q(left.linear()));
+	  stripRP = q2e_new(C2q(left.linear()));
+	  //std::cout << "Stripping left angles: " << stripRP.transpose() << std::endl;
+	  stripRP(0) = 0.;
+	  stripRP(1) = 0.;
 
-	  	  templeft.setIdentity();
-	  	  templeft.translation() = left.translation();
-	  	  templeft.linear() = e2C(stripRP);
-
-
-	  	  stripRP = q2e_new(C2q(right.linear()));
-		  stripRP(0) = 0.;
-		  stripRP(1) = 0.;
-
-		  tempright.setIdentity();
-		  tempright.translation() = right.translation();
-		  tempright.linear() = e2C(stripRP);
-
-		  left = templeft;
-		  right = tempright;
+	  templeft.setIdentity();
+	  templeft.translation() = left.translation();
+	  templeft.linear() = e2C(stripRP);
 
 
-		  //std::cout << "LEFT: " << left.translation().transpose() << " | RIGHT " << right.translation().transpose() << "\n";
-		  //std::cout << std::endl;
+	  stripRP = q2e_new(C2q(right.linear()));
+	  stripRP(0) = 0.;
+	  stripRP(1) = 0.;
+
+	  tempright.setIdentity();
+	  tempright.translation() = right.translation();
+	  tempright.linear() = e2C(stripRP);
+
+	  left = templeft;
+	  right = tempright;
+
+
+	  //std::cout << "LEFT: " << left.translation().transpose() << " | RIGHT " << right.translation().transpose() << "\n";
+	  //std::cout << std::endl;
 
 
 
