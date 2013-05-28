@@ -2,6 +2,7 @@ classdef StandingController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
+    foot_idx;
   end
   
   methods
@@ -92,7 +93,8 @@ classdef StandingController < DRCController
       [~,V] = lqr(limp,comgoal);
 
       foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
-
+      obj.foot_idx = find(foot_support);
+      
       obj.controller_data.setField('S',V.S);
       obj.controller_data.setField('D',-com(3)/9.81*eye(2));
       obj.controller_data.setField('qtraj',q0);
@@ -131,8 +133,8 @@ classdef StandingController < DRCController
         kinsol = doKinematics(r,q0);
 %         com = getCOM(r,kinsol);
 
-        foot_pos = contactPositions(r,kinsol); 
-        ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
+        foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+        ch = convhull(foot_pos(1:2,:)');
         comgoal = mean(foot_pos(1:2,ch),2);
 %         zmap = getTerrainHeight(r,com(1:2));
 %         robot_z = com(3)-zmap;
