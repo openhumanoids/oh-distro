@@ -94,10 +94,6 @@ group "a.2.walking" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
     }
-    cmd "PrecomputationServer" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "extra";
-    }
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "extra";
@@ -137,10 +133,6 @@ group "a.3.hose" {
         exec = "affordance_init -e 2";
         host = "robot";
     } 
-    cmd "PrecomputationServer" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "robot";
-    }
 }
 
 group "a.3.grasping4qual2" {
@@ -187,10 +179,6 @@ group "a.3.unpinned_grasping" {
         exec = "affordance_init -e 2";
         host = "extra";
     } 
-    cmd "PrecomputationServer" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "extra";
-    }
 }
 
 group "a.3.walking_manip" {
@@ -214,10 +202,6 @@ group "a.3.walking_manip" {
         exec = "affordance_init -e 2";
         host = "extra";
     } 
-    cmd "PrecomputationServer" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "extra";
-    }
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "robot";
@@ -269,10 +253,6 @@ group "a.4.driving" {
 group "a.6.ingress" {
     cmd "IngressStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
-        host = "robot";
-    }
-    cmd "PrecomputationServer" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
         host = "robot";
     }
 }
