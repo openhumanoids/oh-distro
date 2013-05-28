@@ -43,6 +43,7 @@
 
 #include "link.h"
 #include "joint.h"
+#include "GraspSeed.h"
 #include "expression_parsing.h"
 #include "otdf_addendum.h"
 
@@ -121,6 +122,7 @@ public:
     this->link_patterns_.clear();
     this->materials_.clear();
     this->root_link_.reset();
+    this->graspSeedList_.clear();
   };
 
   /// non-const getLink()
@@ -175,6 +177,8 @@ public:
   /// \brief complete list of Materials
   std::map<std::string, boost::shared_ptr<Material> > materials_;
   
+  std::vector<GraspSeed> graspSeedList_;
+
   /// \brief complete list of bounding volumes
   std::map<std::string, boost::shared_ptr<Bounding_volume> > bounding_volumes_;
   std::map<std::string, boost::shared_ptr<Link_pattern> > link_patterns_;

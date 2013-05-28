@@ -34,6 +34,7 @@ void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, co
   geo.M.GetRPY(r,p,yaw);
 
   // create grasp_seed xml
+  // TODO move to GraspSeed
   // TODO scale pose to the size of the object
   // TODO use pose from before opt
   stringstream grasp_seed;

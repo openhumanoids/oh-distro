@@ -384,32 +384,39 @@ namespace otdf {
     }
    
     // read in grasp_seed
+    // TODO move to GraspSeed
     for (TiXmlElement* grasp_it = object_xml->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed"))
     {
       TiXmlElement* parent = grasp_it->FirstChildElement("parent");
+      GraspSeed grasp_seed;
       if(parent) {
-        const char* name = parent->Attribute("name");
+        grasp_seed.parent_name = parent->Attribute("name");
       }else cout << "Error parsing grasp_seed parent\n";
       
       TiXmlElement* relative_pose = grasp_it->FirstChildElement("relative_pose");
       if(relative_pose) {
-        const char* rpy_str = relative_pose->Attribute("rpy");
-        const char* xyz_str = relative_pose->Attribute("xyz");
+        stringstream xyz(relative_pose->Attribute("xyz"));
+        xyz >> grasp_seed.xyz[0] >> grasp_seed.xyz[1] >> grasp_seed.xyz[2];
+        stringstream rpy(relative_pose->Attribute("rpy"));
+        rpy >> grasp_seed.rpy[0] >> grasp_seed.rpy[1] >> grasp_seed.rpy[2];
       }else cout << "Error parsing grasp_seed relative_pose\n";
 
       TiXmlElement* grasp_type = grasp_it->FirstChildElement("grasp_type");
       if(grasp_type) {
-        const char* grasp_type_str = grasp_type->Attribute("type");
+        grasp_seed.grasp_type = atoi(grasp_type->Attribute("type"));
       }else cout << "Error parsing grasp_seed grasp_type\n";
 
       TiXmlElement* state = grasp_it->FirstChildElement("state");
       if(state) {
-        const char* joint_pos_str = state->Attribute("joint_positions");
+        int numJoints = atoi(state->Attribute("num_joints"));
+        grasp_seed.joint_positions.resize(numJoints);    
+        stringstream joints(state->Attribute("joint_positions"));
+        for(int i=0;i<numJoints;i++) joints >> grasp_seed.joint_positions[i];
       }else cout << "Error parsing grasp_seed state\n";
-  
-      //TODO: populate sticky hands
-    }    
 
+      model->graspSeedList_.push_back(grasp_seed);
+    }    
+    cout << "graspseedlist size: " << model->graspSeedList_.size() << endl;
 
     // every link has children links and joints, but no parents, so we create a
     // local convenience data structure for keeping child->parent relations
