@@ -5,9 +5,15 @@ struct robot_plan_w_keyframes_t
     int64_t utime;
     string robot_name;    
     int32_t num_keyframes;
+    int32_t num_breakpoints;
     int32_t num_states;
     boolean is_keyframe[num_states];
+    boolean is_breakpoint[num_states]; // successively commits a plan upto the next breakpoint on approval.    
     robot_state_t plan[num_states]; //each individual state is also timed.
+    // Decoupling hand states from robot state as atlas api deals with them separately.
+    // Also drake expects robot joints excluding hand joints. 
+    int32_t num_grasp_transitions;
+   	grasp_transition_state_t grasps[num_grasp_transitions];//each individual grasp state is also timed.
     int32_t num_bytes;
    	byte matlab_data[num_bytes];
 }
