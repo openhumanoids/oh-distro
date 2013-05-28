@@ -41,9 +41,8 @@ com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
 [c,V] = ZMPtracker(limp,zmptraj);
-comtraj = ZMPplanFromTracker(limp,com(1:2),zeros(2,1),zmptraj,c);
+comtraj = COMplanFromTracker(limp,com(1:2),zeros(2,1),zmptraj.tspan,c);
 
-% time spacing of samples for IK
 ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);
 
@@ -88,6 +87,7 @@ options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankle
 options.lcm_foot_contacts = false;
 options.full_body_opt = false;
 options.use_mex = true;
+options.debug = false;
 qp = QPController(r,ctrl_data,options);
 clear options;
 
