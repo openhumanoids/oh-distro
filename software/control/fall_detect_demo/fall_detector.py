@@ -1,4 +1,5 @@
 from __future__ import division
+import time
 import lcm
 import os
 import sys
@@ -16,6 +17,7 @@ Usage:
 vdot_threshold = 0.01
 vdot_count_threshold = 3
 vdot_memory = 10
+retransmit_delay_s = 5
 
 m = lcm.LCM()
 
@@ -25,6 +27,7 @@ class FallDetector:
         self.vdot_errror_count = 0
         self.vdot_history = deque()
         self.last_t = None
+        self.last_publish_time = 0
 
     def handle(self, channel, data):
         msg = drc.controller_status_t.decode(data)
@@ -45,16 +48,18 @@ class FallDetector:
             # print self.vdot_history
             if self.vdot_errror_count > vdot_count_threshold:
                 print "WARNING: POSSIBLE FALL at time: {:.3f}".format(t)
-                brace_msg = drc.utime_t()
-                brace_msg.utime = 0
-                m.publish("BRACE_FOR_FALL", brace_msg.encode())
-                status_msg = drc.system_status_t()
-                status_msg.utime = msg.utime
-                status_msg.system = 8
-                status_msg.importance = 0
-                status_msg.frequency = 0
-                status_msg.value = 'Possible fall detected. Bracing now!'
-                m.publish('SYSTEM_STATUS', status_msg.encode())
+                if time.time() - self.last_publish_time > retransmit_delay_s:
+                    brace_msg = drc.utime_t()
+                    brace_msg.utime = 0
+                    m.publish("BRACE_FOR_FALL", brace_msg.encode())
+                    status_msg = drc.system_status_t()
+                    status_msg.utime = msg.utime
+                    status_msg.system = 8
+                    status_msg.importance = 0
+                    status_msg.frequency = 0
+                    status_msg.value = 'Possible fall detected. Bracing now!'
+                    m.publish('SYSTEM_STATUS', status_msg.encode())
+                    self.last_publish_time = time.time()
             self.last_t = t
 
 def main():
