@@ -1,0 +1,5 @@
+1. install ccache for optimized rebuilds:
+make clean
+make
+
+2. fix the drake revision number for the competition
