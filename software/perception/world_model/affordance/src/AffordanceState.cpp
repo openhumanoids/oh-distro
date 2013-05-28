@@ -724,6 +724,29 @@ std::string AffordanceState:: getName() const
       + _otdf_type + ToString::toStr(_uid);
 }
 
+//split affName by slashes.  should be of the form: linkName/groupName/objName
+//we lump groupName/objName into 1 string
+void AffordanceState::splitNameIntoLinkGroup(string &linkName, 
+                                             string &groupObjNames) const
+{
+  vector<string> nameSplit = affordance::ToString::split(getName(), '/');
+  linkName = nameSplit[0];
+  if (nameSplit.size() == 1)
+    {
+      cout << "\n\n\n name didn't have a slash\n\n" << endl;
+      groupObjNames = "N/A";
+      return;
+    }
+  
+  groupObjNames = "";
+  for(uint i = 1; i < nameSplit.size(); i++)
+    {
+      groupObjNames += nameSplit[i];
+      if (i < nameSplit.size() - 1)
+        groupObjNames += "/";
+    }
+}
+
 AffordanceState::OTDF_TYPE AffordanceState:: getOTDFType() const
 {
   return _otdf_type;

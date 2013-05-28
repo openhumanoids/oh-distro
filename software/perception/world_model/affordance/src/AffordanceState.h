@@ -133,6 +133,9 @@ namespace affordance
     
 
     virtual std::string getName() const;
+    virtual void splitNameIntoLinkGroup(std::string &linkName,
+                                        std::string &groupObjName) const; //try to split the name into link,group
+    
 
     virtual Eigen::Vector3f getColor() const;
     virtual Eigen::Vector3f getXYZ() const;    
