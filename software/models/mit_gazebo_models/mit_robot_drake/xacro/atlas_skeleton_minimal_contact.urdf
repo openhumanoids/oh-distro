@@ -107,7 +107,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 -0 0" />
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="100. 100. 100." />
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="1 1 1" />
       </geometry>
     </visual>
     <xacro:collision_point group="knee" xyz="0.1096 0.0029 0.012" visualize="1"/>
