@@ -14,8 +14,11 @@ struct walking_plan_t
 //	int32_t n_hddtraj_bytes;
 //  byte hddtraj[n_hddtraj_bytes];
 
-	int32_t n_supptraj_bytes;
-  byte supptraj[n_supptraj_bytes];
+	int32_t n_support_times;
+  float support_times[n_support_times];
+
+	int32_t n_supports_bytes;
+  byte supports[n_supports_bytes];
 
 	int32_t n_S_bytes;
   byte S[n_S_bytes];
