@@ -30,6 +30,8 @@
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64.h>
 
+#include <sandia_hand_msgs/RawTactile.h>
+
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -112,6 +114,13 @@ private:
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo,
   sensor_msgs::Image, sensor_msgs::CameraInfo> r_hand_sync_;
   
+  // Hand Sensors:
+  ros::Subscriber l_hand_tactile_sub_, r_hand_tactile_sub_;
+  void l_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg);
+  void r_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg);
+  void send_tactile(const sandia_hand_msgs::RawTactileConstPtr& msg,string channel );  
+  
+  
   // Image Compression
   image_io_utils*  imgutils_;
 };
@@ -174,11 +183,44 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
     r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
     r_hand_stereo_last_utime_=0;
+    
+    
+    l_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/l_hand/tactile_raw"),100, &App::l_hand_tactile_cb ,this);
+    r_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/r_hand/tactile_raw"),100, &App::r_hand_tactile_cb ,this);
   }
   
 };
 
 App::~App()  {
+}
+
+
+
+void App::send_tactile(const sandia_hand_msgs::RawTactileConstPtr& msg,string channel ){
+  drc::raw_tactile_t msg_out;
+  msg_out.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);  
+
+  msg_out.f0.assign( msg->f0.begin(), msg->f0.end() );
+  msg_out.n_f0 = msg_out.f0.size();
+  msg_out.f1.assign( msg->f1.begin(), msg->f1.end() );
+  msg_out.n_f1 = msg_out.f1.size();
+  msg_out.f2.assign( msg->f2.begin(), msg->f2.end() );
+  msg_out.n_f2 = msg_out.f2.size();
+  msg_out.f3.assign( msg->f3.begin(), msg->f3.end() );
+  msg_out.n_f3 =msg_out.f3.size();
+  msg_out.palm.assign( msg->palm.begin(), msg->palm.end() );
+  msg_out.n_palm =msg_out.palm.size();
+
+  lcm_publish_.publish(channel, &msg_out);
+}
+
+void App::l_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg){
+  //ROS_ERROR("ROS2LCM Stereo: got l hand tacile");  
+  send_tactile(msg,"TACTILE_RAW_LHAND");  
+}
+void App::r_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg){
+  //ROS_ERROR("ROS2LCM Stereo: got r hand tacile");  
+  send_tactile(msg,"TACTILE_RAW_RHAND");  
 }
 
 void App::hand_fps_cb(const std_msgs::Float64ConstPtr& msg){
