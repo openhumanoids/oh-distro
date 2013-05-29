@@ -664,7 +664,7 @@ script "dev.vrc_driving_with_manip" {
 }
 
 
-script "dev.mit_walking" {
+script "dev.mit_state_est" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
@@ -675,23 +675,8 @@ script "dev.mit_walking" {
     wait ms 5000;
 		start cmd "simple_right_grasp";
 		start cmd "simple_left_grasp";
-}
-
-script "dev.mit_walking_vo" {
-    start group "0.development";
-    start group "a.1.core";
     stop cmd "estpub";
-    start group "a.5.a.motion_vo";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
-    wait ms 25000;
-    start cmd "gz_mit_walking";
-    wait ms 3000;
-    start cmd "set-sim-rate-slower";
-    start cmd "logger-no-vis";
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
+    start group "m.5.state_est";
 }
 
 script "dev.ingress" { 
@@ -728,13 +713,5 @@ script "systest-main" {
     stop group "b.2.walking";
     stop cmd "BotWalkingPlanner";
     stop cmd "gz_mit_walking";
-}
-
-
-script "systest-vo-start" {
-    run_script "dev.mit_walking";
-    stop cmd "estpub";
-    start group "a.5.a.motion_vo";
-    start cmd "systemwide-test";
 }
 
