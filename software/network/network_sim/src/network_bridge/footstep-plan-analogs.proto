@@ -8,7 +8,7 @@ message MinimalFootStepPlan
   option (dccl.msg).max_bytes = 2000;
   option (dccl.msg).id = 0xD4C0005;
   
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
   required MinimalFootStepGoal first_goal = 2;
   required MinimalFootStepGoalDiff goal_diff = 3;
   required bool is_new_plan = 4;
@@ -18,7 +18,7 @@ message MinimalFootStepPlan
 
 message MinimalFootStepGoal
 {
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
 
   required Position3D pos = 2;
 
@@ -41,7 +41,7 @@ message MinimalFootStepGoal
 
 message MinimalFootStepGoalDiff
 {
-  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 60000000 max_repeat: 100 codec: "presence_bit"}];
+  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 max_repeat: 100 codec: "presence_bit"}];
 
   required Position3DDiff pos_diff = 2;
   

@@ -7,7 +7,7 @@ message MinimalRobotState
   option (dccl.msg).max_bytes = 1000;
   option (dccl.msg).id = 0xD4C0004;
 
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
   required Position3D origin_position = 2;
   repeated float joint_position = 3 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 53 codec: "presence_bit" } ];
 }
@@ -32,6 +32,14 @@ message RotationQuaternion
   required double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 3}];
   required double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 3}];
   required double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 3}];
+}
+
+message MinimalRobotStateDiff
+{
+  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6  max_repeat: 100 codec: "presence_bit" }];
+  required Position3DDiff pos_diff = 2;
+  repeated float joint_position = 3 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 53 codec: "presence_bit" } ];
+ 
 }
 
 message Position3DDiff
