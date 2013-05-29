@@ -279,7 +279,12 @@ void DistributedDiff::ParameterFileInit() {
 
 	FILE *fp;
 
-	if( (fp = fopen("weights.txt", "r+")) == NULL)
+	char* pHome = getenv("HOME");
+	std::string home = std::string(pHome);
+
+
+
+	if( (fp = fopen((home + "/drc/software/config/subsystems/legged_odometry/weights.txt").c_str(), "r+")) == NULL)
 	{
 		std::cout << "weights.txt not found in the current directory.\n";
 		exit(1);

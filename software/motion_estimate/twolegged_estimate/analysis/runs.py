@@ -21,7 +21,7 @@ def doAllRuns(logListFile,prefix):
     files = open(os.path.expandvars(logListFile),'r').readlines()
     runOptions = ['A','B','C']
     #windowDurations = [30, 60, 90]
-    windowDurations = [30, 60]
+    windowDurations = [30]
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
 
     # TODO: temporarily disabling sweep over weights

@@ -247,7 +247,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 	DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	if (_switches->publish_footcontact_states) {
-	  std::cout << "Foot forces are: " << left_force << ", " << right_force << std::endl;
+	  //std::cout << "Foot forces are: " << left_force << ", " << right_force << std::endl;
 	  PublishFootContactEst(_msg->utime);
 	}
 	
