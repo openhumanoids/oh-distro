@@ -149,7 +149,22 @@ void StatePub::outputDriving(const drc::robot_state_t * TRUE_state_msg,
   msgout= *TRUE_state_msg;
   msgout.origin_position.translation.x=0;
   msgout.origin_position.translation.y=0;
+  //z might need to change 
   msgout.origin_position.translation.z=1.059; 
+
+  double quat[4] = {msgout.origin_position.rotation.w, msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
+                    msgout.origin_position.rotation.z};
+  double rpy[3] = {0};
+  bot_quat_to_roll_pitch_yaw(quat, rpy);
+  rpy[2] = 0;
+  double quat_new[4];
+  bot_roll_pitch_yaw_to_quat(rpy, quat_new);
+
+  msgout.origin_position.rotation.w = quat_new[0];
+  msgout.origin_position.rotation.x = quat_new[1];
+  msgout.origin_position.rotation.y = quat_new[2];
+  msgout.origin_position.rotation.z = quat_new[3];
+  
   // this is the assumed height of the pelvis from the ground. 
   // this is paired with NOT running -g in drc-joint-frames to draw the height of the robot at z but with x and y =0
   // maintained by sachi
@@ -161,8 +176,19 @@ void StatePub::outputDriving(const drc::robot_state_t * TRUE_state_msg,
   T_world_body.p[0]= msgout.origin_position.translation.x;
   T_world_body.p[1]= msgout.origin_position.translation.y;
   T_world_body.p[2]= msgout.origin_position.translation.z;
+
+  //take out the yaw in the message 
+  
+  
+
+  /*fprintf(stderr, "Quat : %f, %f,%f,%f => %f,%f,%f,%f\n", 
+          quat[0], quat[1], quat[2], quat[3], 
+          quat_new[0], quat_new[1], quat_new[2], quat_new[3]);*/
   T_world_body.M =  KDL::Rotation::Quaternion(msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
-                                                msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
+                                              msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
+
+  //T_world_body.M =  KDL::Rotation::Quaternion(quat_new[1], quat_new[2], quat_new[3], quat_new[0]);
+
   T_world_head = T_world_body * T_body_head; 
   sendPose(T_world_head, msgout.utime, "POSE_HEAD");   
   sendPose(T_world_head, msgout.utime, "POSE_HEAD_TRUE"); // courtesy publish
@@ -292,7 +318,7 @@ void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     outputDriving(TRUE_state_msg, T_body_head);
   }
   //}else{
-  //  outputSensing(TRUE_state_msg, T_body_head);
+  //  outputSensing(TRUE_state_msg, T_body_head;)
   //}
 }
 
