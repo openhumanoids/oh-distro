@@ -102,7 +102,7 @@ namespace renderer_sticky_feet
     if (operation_mode==0){ // typical mode
       lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     }else{ // loopback mode -- TODO: change to right channel
-      lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("COMMITTED_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     }
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
 
