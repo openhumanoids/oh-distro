@@ -198,7 +198,8 @@ classdef DRCManipMapStateMachine< handle
       qtraj_rleg = [];
       qtraj=[];
       plan_length =25;
-
+      valid_plans = 0;
+      
       if(obj.manip_map_received), 
         obj.determineDofIndices();
         ee_names=cellstr(char(obj.affinds(1).ee_name));
@@ -221,6 +222,7 @@ classdef DRCManipMapStateMachine< handle
                disp(desired_dof_value)
                disp(plan_indices)
                qtraj_larm = obj.qmap.eval(plan_indices);
+               valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_hand'))
                start_mapindex=obj.chain_dofIndices(1);
                %start_mapindex=interp1(obj.r_hand_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
@@ -230,7 +232,7 @@ classdef DRCManipMapStateMachine< handle
                goal_mapindex = min(max(goal_mapindex,0),1.0);
                plan_indices = linspace(start_mapindex,goal_mapindex,plan_length);  
                qtraj_rarm = obj.qmap.eval(plan_indices);
-
+               valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'l_foot'))
                start_mapindex=obj.chain_dofIndices(2);
                %start_mapindex=interp1(obj.l_foot_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
@@ -240,7 +242,7 @@ classdef DRCManipMapStateMachine< handle
                goal_mapindex = min(max(goal_mapindex,0),1.0);
                plan_indices = linspace(start_mapindex,goal_mapindex,plan_length);   
                qtraj_lleg = obj.qmap.eval(plan_indices);
- 
+               valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_foot'))
                disp('r_foot');
                start_mapindex=obj.chain_dofIndices(3);
@@ -252,8 +254,15 @@ classdef DRCManipMapStateMachine< handle
                plan_indices = linspace(start_mapindex,goal_mapindex,plan_length);                  
                disp(plan_indices)
                qtraj_rleg = obj.qmap.eval(plan_indices);
-           end
+               valid_plans = 1;
+           end;
         end
+        
+        if(~valid_plans)
+            qtraj = [];
+            return;
+        end;
+        
         floatingoffset=6;
         rarm =floatingoffset+[19  18  27  17  16  20];
         larm =floatingoffset+[7  6  15  5  4  8];

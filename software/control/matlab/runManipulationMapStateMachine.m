@@ -61,11 +61,15 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
       if (~isempty(goal))
           disp('received new driving manip cmd');
           q_breaks = state_machine.getPlanGivenAffGoal(goal);
-          qdot_breaks = 0*q_breaks;
-          s_breaks=linspace(0,1,size(q_breaks,2));
-          t_breaks=s_breaks.*(length(s_breaks)*0.001);
-          %planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
-          plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+          if (isempty (q_breaks))
+              fprintf (1, 'Unable to handle manipulation goal'); 
+          else
+            qdot_breaks = 0*q_breaks;
+            s_breaks=linspace(0,1,size(q_breaks,2));
+            t_breaks=s_breaks.*(length(s_breaks)*0.001);
+            %planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+            plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+          end;
       end
   end
   
