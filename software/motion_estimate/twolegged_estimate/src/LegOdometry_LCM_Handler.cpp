@@ -291,7 +291,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		if (firstpass>0)
 		{
 			firstpass--;// = false;
-			_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+
+			if (_switches->grab_true_init) {
+				_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+			} else {
+				Eigen::Isometry3d init_state;
+				init_state.setIdentity();
+				_leg_odo->ResetWithLeftFootStates(left,right,init_state);
+			}
 		}
 
 		// This must be broken into separate position and velocity states
@@ -392,11 +399,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		if (ratechangeiter==1) {
 
 		//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
-		UpdateHeadStates(&est_msgout, &est_headmsg);
+
 
 		//clock_gettime(CLOCK_REALTIME, &threequat);
 
 		PublishEstimatedStates(_msg, &est_msgout);
+		UpdateHeadStates(&est_msgout, &est_headmsg);
 		PublishHeadStateMsgs(&est_headmsg);
 
 	#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE

@@ -84,6 +84,7 @@ struct command_switches {
   bool OPTION_A;
   bool OPTION_B;
   bool OPTION_C;
+  bool grab_true_init;
 };
 
 

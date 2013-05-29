@@ -46,6 +46,7 @@ int main(int argc, char ** argv) {
   switches.OPTION_A = false;
   switches.OPTION_B = false;
   switches.OPTION_C = false;
+  switches.grab_true_init = false;
 
   
   ConciseArgs opt(argc, (char**)argv);
@@ -59,6 +60,7 @@ int main(int argc, char ** argv) {
   opt.add(switches.OPTION_A,"A","MedianFitler -> Dist Diff -> Rate decimation");
   opt.add(switches.OPTION_B,"B","Dist Diff -> MedianFitler -> Rate decimation");
   opt.add(switches.OPTION_C,"C","Dist Diff -> Rate decimation -> MedianFitler");
+  opt.add(switches.grab_true_init,"y","Initializing the state with TRUE_ROBOT_STATE message");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;

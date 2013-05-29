@@ -239,6 +239,7 @@ for k=1:length(figs)
 
     for n=1:spa
         subplot(spa,spb,n);
+        
         v=axis;
 
         y=get(findobj(get(gca,'Children'),'type','line'),'ydata');

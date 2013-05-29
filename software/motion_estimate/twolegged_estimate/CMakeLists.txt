@@ -27,6 +27,8 @@ pods_use_pkg_config_packages(drc-foot-state model-client lcm lcmtypes_drc_lcmtyp
 #pods_use_pkg_config_packages(testing_isometry)
 #pods_use_pkg_config_packages(testing_imu lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable")
+
 
 pods_install_executables(drc-legged-odometry )
 pods_install_executables(drc-foot-state )
