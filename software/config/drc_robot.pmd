@@ -493,10 +493,6 @@ group "m.3.dev_tools" {
 }
 
 group "m.5.state_est"{
-    cmd "estpub_reduced" {
-        exec = "est_robot_state_publisher";
-        host = "extra";
-    }
     cmd "LegOdometry" {
         exec = "drc-legged-odometry -e -C -x";
         host = "robot";
