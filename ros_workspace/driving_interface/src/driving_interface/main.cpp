@@ -121,9 +121,11 @@ static int publish_gas_pedal(void *user_data){
         msg.aff_uid = 1;
         msg.num_dofs = 1;
         msg.dof_name = (char **) dof_name_local;
+        msg.dof_value = (double *) calloc(msg.num_dofs, sizeof(double));
         msg.dof_value[0] = s->gas_pedal;
 
         drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        free (msg.dof_value);
         return 0;
     }
 }
@@ -180,9 +182,11 @@ static int publish_brake_pedal(void *user_data){
         msg.aff_uid = 1;
         msg.num_dofs = 1;
         msg.dof_name = (char **) dof_name_local;
+        msg.dof_value = (double *) calloc(msg.num_dofs, sizeof(double));
         msg.dof_value[0] = s->brake_pedal;
 
         drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        free (msg.dof_value);
         return 0;
     }
 }
@@ -299,9 +303,11 @@ static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
         msg.aff_uid = 1;
         msg.num_dofs = 1;
         msg.dof_name = (char **) dof_name_local;
+        msg.dof_value = (double *) calloc(msg.num_dofs, sizeof(double));
         msg.dof_value[0] = s->hand_wheel;
 
         drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        free (msg.dof_value);
     }
 
     if(s->verbose)
@@ -335,9 +341,11 @@ static int update_and_publish_hand_wheel(double new_val, state_t *s){
             msg.aff_uid = 1;
             msg.num_dofs = 1;
             msg.dof_name = (char **) dof_name_local;
+            msg.dof_value = (double *) calloc(msg.num_dofs, sizeof(double));
             msg.dof_value[0] = s->hand_wheel;
             fprintf(stderr, "Setting Hand Wheel : %f\n", bot_to_degrees(s->hand_wheel));
             drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+            free (msg.dof_value);
         }
         if(s->verbose)
             fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
