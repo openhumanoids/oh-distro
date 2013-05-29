@@ -490,12 +490,13 @@
     </model>
     <include>
       <uri>model://atlas_sandia_hands</uri>
+<!--      <pose>-10.0 2.0 1.0 0 0 -1.5707</pose>-->
       <pose>-3.0 1.0 1.0 0 0 -1.5707</pose>
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
-         <model_name>atlas</model_name>
-         <pin_link>pelvis</pin_link>
+        <model_name>atlas</model_name>
+        <pin_link>pelvis</pin_link>
       </atlas>
       <drc_vehicle>
         <model_name>drc_vehicle</model_name>
@@ -507,9 +508,7 @@
         <standpipe_model>standpipe</standpipe_model>
         <spout_link>standpipe</spout_link>
         <thread_pitch>-1000</thread_pitch>
-        <coupling_relative_pose>
-          1.17038e-05 -0.125623 0.35 -0.0412152 -1.57078 1.61199
-        </coupling_relative_pose>
+        <coupling_relative_pose>1.17038e-05 -0.125623 0.35 -0.0412152 -1.57078 1.61199</coupling_relative_pose>
       </drc_fire_hose>
     </plugin>
     <plugin filename="libVRCScoringPlugin.so" name="vrc_scoring">
