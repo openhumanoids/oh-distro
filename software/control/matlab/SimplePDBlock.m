@@ -64,7 +64,7 @@ classdef SimplePDBlock < MIMODrakeSystem
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
       
-      err_q = q_des - q;
+      err_q = angleDiff(q,q_des);
       y = obj.Kp*err_q - obj.Kd*qd;
     end
   end

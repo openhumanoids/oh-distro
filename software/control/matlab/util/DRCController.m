@@ -283,18 +283,18 @@ classdef DRCController
           % on timeout events, we pass back the latest input data unless
           % there is precomputed stuff available
           
-          d=[];
-          if isfield(obj.precompute_response_targets,obj.timed_transition)
-            d = getfield(obj.precompute_response_targets,obj.timed_transition); 
-          end
-          if ~isempty(d)
-            input_data = struct('precomp',d); % pass precomputation message to next controller
-          else
+%           d=[];
+%           if isfield(obj.precompute_response_targets,obj.timed_transition)
+%             d = getfield(obj.precompute_response_targets,obj.timed_transition); 
+%           end
+%           if ~isempty(d)
+%             input_data = struct('precomp',d); % pass precomputation message to next controller
+%           else
             input_data = struct();
             for i=1:obj.n_input_frames
               input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
             end
-          end
+%           end
           data = setfield(data,obj.timed_transition,input_data);
           break;
         end
