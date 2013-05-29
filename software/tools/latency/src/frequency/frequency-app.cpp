@@ -25,6 +25,8 @@ public:
   int mode_;
   std::string message_;
   
+  int64_t ratecheck_wall_utime_, ratecheck_sim_utime_;
+  
 private:
   Frequency* frequency_;  
   
@@ -37,6 +39,11 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_, bool verbose): _lcm(_lcm)
 
   _lcm->subscribe("ROBOT_UTIME", &App::handleUtime, this); 
   _lcm->subscribe(".*", &App::handleAllMsg, this); 
+  
+  
+  // 
+  ratecheck_wall_utime_ = 0;
+  ratecheck_sim_utime_ = 0;
 }
 
 
@@ -58,8 +65,36 @@ void App::handleUtime(const lcm::ReceiveBuffer* rbuf, const std::string& chan, c
     out.num = out.frequency.size();
     std::vector< std::string> chans = frequency_->getChannels();
     out.channel = chans;
+    
+    
+    int64_t curr_wall_time = _timestamp_now();
+    float frac = float( msg->utime - ratecheck_sim_utime_ ) / float(curr_wall_time  - ratecheck_wall_utime_);
+    std::cout << frac << " real time rate\n";
+    ratecheck_wall_utime_ = curr_wall_time;
+    ratecheck_sim_utime_ = msg->utime;
+    out.real_time_percent= (int8_t) 100.0*frac; // will be a percetn 0-100
+    
     _lcm->publish("FREQUENCY_LCM", &out);
   }
+  
+  
+ 
+
+/*
+ *  if (m.utime > last_10hz_rbot_time + 100000):
+    #print "================="
+    #print m.utime
+    #print last_10hz_rbot_time
+    #print float(m.utime - last_10hz_rbot_time)
+    #print float(curr_wall_time  - last_10hz_rbot_time)
+    frac = float( m.utime - last_10hz_rbot_time ) / float(curr_wall_time  - last_10hz_wall_time)
+    #print frac
+    utime_10hz_rate.append(m.utime,frac)
+    last_10hz_wall_time = curr_wall_time
+    last_10hz_rbot_time = m.utime  */
+ 
+ 
+  
 }
 
 void App::handleAllMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan){
