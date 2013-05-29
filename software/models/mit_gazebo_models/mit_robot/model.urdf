@@ -1427,41 +1427,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="right_f0_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f0_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f0_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f0_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -1745,41 +1746,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="right_f1_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f1_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f1_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f1_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -2063,41 +2065,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="right_f2_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f2_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f2_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f2_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -2381,41 +2384,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="right_f3_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f3_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f3_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="right_f3_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -2429,8 +2433,13 @@
     <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="right_palm">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.00</minDepth>
+    <maxContacts>6</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <joint name="right_palm_left_camera_frame_joint" type="fixed">
@@ -2593,7 +2602,7 @@
       </geometry>
     </collision>
     <collision group="other">
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -2640,7 +2649,7 @@
       </material>
     </visual>
     <visual>
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -2990,41 +2999,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="left_f0_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f0_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f0_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f0_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -3308,41 +3318,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="left_f1_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f1_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f1_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f1_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -3626,41 +3637,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="left_f2_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f2_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f2_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f2_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -3944,41 +3956,42 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="left_f3_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.001</minDepth>
+    <minDepth>0.00</minDepth>
+    <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f3_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f3_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="left_f3_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
     <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <kd>10.0</kd>
     <maxVel>0.1</maxVel>
-    <minDepth>0.003</minDepth>
+    <minDepth>0.00</minDepth>
     <maxContacts>1</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
@@ -3992,8 +4005,13 @@
     <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="left_palm">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
+    <mu1>1.1</mu1>
+    <mu2>1.1</mu2>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.00</minDepth>
+    <maxContacts>6</maxContacts>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <joint name="left_palm_left_camera_frame_joint" type="fixed">
