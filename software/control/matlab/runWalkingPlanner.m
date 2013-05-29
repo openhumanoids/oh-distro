@@ -88,10 +88,10 @@ while true
     end
   end
   mu = footstep_opts.mu;
-  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts);
+  [xtraj, qtraj, htraj, support_times, supports, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts);
   %hddot = fnder(htraj,2);
   walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'htraj',htraj,...
-      'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],'mu',mu,...
+      'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',[],'mu',mu,...
       'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj,'qnom',qstar)
   last_approved_footsteps = footsteps;
 

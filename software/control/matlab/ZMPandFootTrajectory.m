@@ -1,4 +1,4 @@
-function [zmptraj,lfoottraj,rfoottraj,supporttraj] = ZMPandFootTrajectory(r,q0,num_steps,step_length,step_time)
+function [zmptraj,lfoottraj,rfoottraj,support_times,supports] = ZMPandFootTrajectory(r,q0,num_steps,step_length,step_time)
 
 % @param r is RigidBodyManipulator/TimeSteppingRigidBodyManipulator
 % @param q0 is the initial pos
@@ -23,6 +23,8 @@ sizecheck(step_time,1);
 kinsol = doKinematics(r,q0);
 rfoot_body = findLink(r,'r_foot');
 lfoot_body = findLink(r,'l_foot');
+rfoot_body_idx = findLinkInd(r,'r_foot');
+lfoot_body_idx = findLinkInd(r,'l_foot');
 
 com0 = getCOM(r,q0);
 rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);
@@ -82,14 +84,14 @@ for istep=1:num_steps
     rf(1,:) = rf(1,:)+[0,step_length(istep)/2,step_length(istep),step_length(istep)];
     rf(3,:) = rf(3,:)+[0,.04,0.005,0];
     stepzmp = [repmat(lfootCenter(lf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
-    rfootsupport = [rfootsupport 0 0 0.5 1 1]; 
+    rfootsupport = [rfootsupport 0 0 1 1 1]; 
     lfootsupport = [lfootsupport 1 1 1 1 1]; 
   else
     lf(1,:) = lf(1,:)+[0,step_length(istep)/2,step_length(istep),step_length(istep)];
     lf(3,:) = lf(3,:)+[0,.04,0.005,0];
     stepzmp = [repmat(rfootCenter(rf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
     rfootsupport = [rfootsupport 1 1 1 1 1]; 
-    lfootsupport = [lfootsupport 0 0 0.5 1 1]; 
+    lfootsupport = [lfootsupport 0 0 1 1 1]; 
   end
   rfootpos = [rfootpos,rf,rf(:,end)];
   lfootpos = [lfootpos,lf,lf(:,end)];
@@ -111,9 +113,11 @@ lfoottraj = PPTrajectory(foh(ts,lfootpos));
 rfoottraj = PPTrajectory(foh(ts,rfootpos));
 
 % create support body trajectory
-supporttraj = repmat(0*ts,length(r.getLinkNames),1);
-supporttraj(strcmp('r_foot',r.getLinkNames),:) = rfootsupport;
-supporttraj(strcmp('l_foot',r.getLinkNames),:) = lfootsupport;
-supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(r));
+support_times = ts;
+foot_supports = [rfootsupport * rfoot_body_idx; lfootsupport * lfoot_body_idx];
+supports = cell(length(ts),1);
+for i=1:length(ts)
+  supports{i} = SupportState(r,foot_supports(:,i));
+end
 
 end

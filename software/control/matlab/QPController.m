@@ -118,6 +118,17 @@ classdef QPController < MIMODrakeSystem
       obj.con_inputs = 1:getNumInputs(r);
     end
     
+    
+    if isfield(options,'use_collision_groups')
+      % whether to reason about contacts on a body or collision group level
+      typecheck(options.use_collision_groups,'logical');
+      sizecheck(options.use_collision_groups,1);
+      obj.use_collision_groups = options.use_collision_groups;
+    else
+      obj.use_collision_groups = false;
+    end
+    
+    
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -205,13 +216,13 @@ classdef QPController < MIMODrakeSystem
     
     
     % use support trajectory to get desired foot contact state
-    if typecheck(ctrl_data.supptraj,'double')
-      supp = ctrl_data.supptraj;
+    supp_idx = find(ctrl_data.support_times<=t,1,'last');
+    if isa(ctrl_data.supports,'cell')
+      supp = ctrl_data.supports{supp_idx};
     else
-      supp = ctrl_data.supptraj.eval(t); % OPT: don't really need a PPTrajectory here...
+      supp = ctrl_data.supports(supp_idx);
     end
-    desired_supports = find(supp);    
-    
+    desired_supports = supp.bodies;
     
     % Change in logic here due to recent tests with heightmap noise
     % for now, we will do a logical OR of the force-based sensor and the
@@ -360,7 +371,6 @@ classdef QPController < MIMODrakeSystem
       nq_free = length(obj.free_dof);
       nq_con = length(obj.con_dof);
       nu_con = length(obj.con_inputs);
-
 
       kinsol = doKinematics(r,q,false,true,qd);
       
@@ -762,5 +772,6 @@ classdef QPController < MIMODrakeSystem
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
     num_body_contacts; % vector of num contacts for each body
+    use_collision_groups;
   end
 end

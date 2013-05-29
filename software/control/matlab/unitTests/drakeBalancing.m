@@ -36,7 +36,7 @@ comgoal = mean(foot_pos(1:2,ch),2);
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
-foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
+foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
     
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
@@ -51,7 +51,8 @@ ctrl_data = SharedDataHandle(struct(...
   'u0',zeros(2,1),...
   'y0',comgoal,...
   'qtraj',q0,...
-  'supptraj',foot_support));           
+  'support_times',0,...
+  'supports',foot_support));           
            
 % instantiate QP controller
 options.slack_limit = 30.0;
@@ -81,7 +82,7 @@ ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],[],outs);
+sys = mimoFeedback(pd,sys,[],[],ins,outs);
 clear ins outs;
 
 qt = QTrajEvalBlock(r,ctrl_data);

@@ -1,10 +1,10 @@
-function [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(biped, x0, qstar, footsteps, footstep_opts)
+function [xtraj, qtraj, htraj, support_times, supports, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(biped, x0, qstar, footsteps, footstep_opts)
 
 nq = getNumDOF(biped);
 q0 = x0(1:nq);
 kinsol = doKinematics(biped,q0);
 
-[zmptraj,foottraj, supptraj] = planInitialZMPTraj(biped, q0, footsteps, footstep_opts);
+[zmptraj,foottraj, support_times, supports] = planInitialZMPTraj(biped, q0, footsteps, footstep_opts);
 
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 

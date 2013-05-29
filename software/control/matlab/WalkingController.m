@@ -19,7 +19,8 @@ classdef WalkingController < DRCController
         'comtraj',[],...
         'lfoottraj',[],...
         'rfoottraj',[],...
-        'supptraj',[],...
+        'support_times',[],...
+        'supports',[],...
         'mu',1.0,...
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
@@ -126,11 +127,14 @@ classdef WalkingController < DRCController
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('s2',matdata.s2);
       
+      support_times = msg_data.support_times;
+      obj.controller_data.setField('support_times',support_times);
+
       fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.supptraj,'uint8'),'uint8');
+      fwrite(fid,typecast(msg_data.supports,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
-      obj.controller_data.setField('supptraj',matdata.supptraj);
+      obj.controller_data.setField('supports',matdata.supports);
 
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.comtraj,'uint8'),'uint8');

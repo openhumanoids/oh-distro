@@ -1,4 +1,4 @@
-function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X, options)
+function [zmptraj, foottraj, support_times, supports] = planInitialZMPTraj(biped, q0, X, options)
 
 debug = true;
 
@@ -126,7 +126,7 @@ for f = {'right', 'left'}
   % add a segment at the end to recover
   footpos.(foot).orig = [footpos.(foot).orig footpos.(foot).orig(:,end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
-  footsupport.(foot) = [footsupport.(foot), 1 + footsupport.(foot)(end)];
+  footsupport.(foot) = [footsupport.(foot), 1];
 end
 
 % create ZMP trajectory
@@ -135,10 +135,14 @@ zmp = [zmp,p(1:2)];
 zmptraj = PPTrajectory(foh(zmp_ts,zmp));
 
 % create support body trajectory
-supporttraj = repmat(0*zmp_ts,length(biped.getLinkNames),1);
-supporttraj(strcmp(biped.r_foot_name,biped.getLinkNames),:) = footsupport.right;
-supporttraj(strcmp(biped.l_foot_name,biped.getLinkNames),:) = footsupport.left;
-supporttraj = setOutputFrame(PPTrajectory(zoh(zmp_ts,supporttraj)),AtlasBody(biped));
+rfoot_body_idx = findLinkInd(biped,biped.r_foot_name);
+lfoot_body_idx = findLinkInd(biped,biped.l_foot_name);
+support_times = zmp_ts;
+foot_supports = [footsupport.right * rfoot_body_idx; footsupport.left * lfoot_body_idx];
+supports = cell(length(zmp_ts),1);
+for i=1:length(zmp_ts)
+  supports{i} = SupportState(biped,foot_supports(:,i));
+end
 
 if debug
   tt = 0:0.02:zmp_ts(end);
