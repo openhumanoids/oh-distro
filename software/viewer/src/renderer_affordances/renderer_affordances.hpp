@@ -73,6 +73,7 @@
 #define PARAM_CLEAR "Clear All Instances"
 #define PARAM_SELECTION "Enable Selection"
 #define PARAM_OPT_POOL_READY "OptPool Ready"
+#define PARAM_SHOW_PROPOSED_MANIP_MAP "Show Proposed Manip Map"
 #define PARAM_LHAND_URDF_SELECT "LHand"
 #define PARAM_RHAND_URDF_SELECT "RHand"
 
@@ -334,6 +335,9 @@ struct RendererAffordances {
 
   
   std::map<std::string, int > instance_cnt; // templateName, value. keeps track of how many times each template is instantiated. (only used for creating a local aff store)
+
+    std::map<std::string, vector<KDL::Frame> > ee_frames_map;
+    std::map<std::string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
   
   long last_state_msg_timestamp;
   float alpha;    // transparency of the object:

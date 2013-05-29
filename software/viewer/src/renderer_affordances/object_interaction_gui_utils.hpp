@@ -644,7 +644,7 @@ namespace renderer_affordances_gui_utils
     }
     else if(!strcmp(name,PARAM_GET_MANIP_MAP)) {
       self->instance_selection  = std::string(self->object_selection);  
-      spawn_set_dof_range_popup(self);
+      spawn_set_manip_map_dof_range_popup(self);
     }
     
     bot_viewer_request_redraw(self->viewer);

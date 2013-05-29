@@ -161,15 +161,14 @@ namespace renderer_affordances_gui_utils
         map<string, double> jointpos_in;
       
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
-            {     
-                double desired_dof_pos = 0;
-                if(joint->second->type!=(int) otdf::Joint::FIXED) {
-                    desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
-                    jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
-                    cout <<  joint->first << " dof changed to " << desired_dof_pos*(180/M_PI) << endl;
-                }
+        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
+            double desired_dof_pos = 0;
+            if(joint->second->type!=(int) otdf::Joint::FIXED) {
+                desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
+                jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
+                cout <<  joint->first << " dof changed to " << desired_dof_pos*(180/M_PI) << endl;
             }
+        }
      
         if(!it->second._gl_object->is_future_state_changing())   {
             it->second._gl_object->set_future_state_changing(true);
@@ -182,7 +181,7 @@ namespace renderer_affordances_gui_utils
   
   
     //------------------------------------------------------------------  
-    static void on_otdf_dof_range_widget_popup_close (BotGtkParamWidget *pw, void *user)
+    static void on_otdf_manip_map_dof_range_widget_popup_close (BotGtkParamWidget *pw, void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
@@ -200,141 +199,134 @@ namespace renderer_affordances_gui_utils
         it->second._gl_object->set_future_state(self->otdf_T_world_body_hold,self->otdf_current_jointpos_hold);
         cout << "dof_range_widget popup close\n";
 
-        map<string, vector<KDL::Frame> > ee_frames_map;
-        map<string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
+        //map<string, vector<KDL::Frame> > ee_frames_map;
+        //map<string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
+
+        self->ee_frames_map.clear();
+        self->ee_frame_affindices_map.clear();
 
         // Publish EE Range goals for associated sticky hands 
         typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-        for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
-            {
-                string host_name = hand_it->second.object_name;
-                if (host_name == (it->first))
-                    {
-         
-                        string ee_name;
-                        if(hand_it->second.hand_type==0)
-                            ee_name ="left_palm";    
-                        else if(hand_it->second.hand_type==1)   
-                            ee_name ="right_palm";    
-                        else
-                            cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
-               
-                        // if ee_name already exists in ee_frames_map, redundant ee_frames
-                        // e.g two right sticky hands on the same object.
-                        map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
-                        if(ee_it!=ee_frames_map.end()){
-                            cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
-                            return;   
-                        }
-          
-                        KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
-                        if(!hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_ee))
-                            cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-         
-         
-                        vector<KDL::Frame> T_world_geometry_frames;        
-                        string seed_geometry_name = hand_it->second.geometry_name;
-                        self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
-                        std::string dof_name;
-                        vector<double> dof_values;  
-                        bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
-            
-                        if(isdofset) // dof range was set
-                            {
-                                int num_of_incs = T_world_geometry_frames.size();
-                                vector<KDL::Frame> T_world_ee_frames;
-                                vector<drc::affordance_index_t> frame_affindices;
-                                for(size_t i=0;i<(size_t)num_of_incs;i++)
-                                    {
-                                        KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-                                        T_world_ee_frames.push_back(T_world_ee);
-                                        drc::affordance_index_t aff_index;
-                                        aff_index.utime=(int64_t)i;
-                                        aff_index.aff_type = it->second.otdf_type; 
-                                        aff_index.aff_uid = it->second.uid;   
-                                        aff_index.num_ees =1;  
-                                        aff_index.ee_name.push_back(ee_name); 
-                                        aff_index.dof_name.push_back(dof_name);     
-                                        aff_index.dof_value.push_back(dof_values[i]); 
-
-                                        frame_affindices.push_back(aff_index);
-                                    } 
-                                ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-                                ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));   
-                            }// ebd if dofset
-            
-                    } // end if (host_name == (it->first))
-            }// end for sticky hands
+        for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++) {
+            string host_name = hand_it->second.object_name;
+            if (host_name == (it->first)) {
+                
+                string ee_name;
+                if(hand_it->second.hand_type==0)
+                    ee_name ="left_palm";    
+                else if(hand_it->second.hand_type==1)   
+                    ee_name ="right_palm";    
+                else
+                    cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
+                
+                // if ee_name already exists in ee_frames_map, redundant ee_frames
+                // e.g two right sticky hands on the same object.
+                map<string, vector<KDL::Frame> >::const_iterator ee_it = self->ee_frames_map.find(ee_name);
+                if(ee_it!=self->ee_frames_map.end()){
+                    cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
+                    return;   
+                }
+                
+                KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
+                if(!hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_ee))
+                    cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+                
+                
+                vector<KDL::Frame> T_world_geometry_frames;        
+                string seed_geometry_name = hand_it->second.geometry_name;
+                self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
+                std::string dof_name;
+                vector<double> dof_values;  
+                bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
+                // dof range was set
+                if(isdofset) {
+                    int num_of_incs = T_world_geometry_frames.size();
+                    vector<KDL::Frame> T_world_ee_frames;
+                    vector<drc::affordance_index_t> frame_affindices;
+                    for(size_t i=0;i<(size_t)num_of_incs;i++) {
+                        KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
+                        T_world_ee_frames.push_back(T_world_ee);
+                        drc::affordance_index_t aff_index;
+                        aff_index.utime=(int64_t)i;
+                        aff_index.aff_type = it->second.otdf_type; 
+                        aff_index.aff_uid = it->second.uid;   
+                        aff_index.num_ees =1;  
+                        aff_index.ee_name.push_back(ee_name); 
+                        aff_index.dof_name.push_back(dof_name);     
+                        aff_index.dof_value.push_back(dof_values[i]); 
+                        
+                        frame_affindices.push_back(aff_index);
+                    } 
+                    self->ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+                    self->ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));   
+                }// ebd if dofset
+            } // end if (host_name == (it->first))
+        }// end for sticky hands
         
         // Publish EE Range goals for associated stick feet 
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-        for(sticky_feet_map_type_::const_iterator foot_it = self->sticky_feet.begin(); foot_it!=self->sticky_feet.end(); foot_it++)
-            {
-                string host_name = foot_it->second.object_name;
-                if (host_name == (it->first))
-                    {
-         
-                        string ee_name;
-                        if(foot_it->second.foot_type==0)
-                            ee_name ="l_foot";    
-                        else if(foot_it->second.foot_type==1)   
-                            ee_name ="r_foot";    
-                        else
-                            cout << "unknown foot_type in on_otdf_dof_range_widget_popup_close\n";  
-               
-                        // if ee_name already exists in ee_frames_map, redundant ee_frames
-                        // e.g two right sticky hands on the same object.
-                        map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
-                        if(ee_it!=ee_frames_map.end()){
-                            cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
-                            return;   
-                        }      
-          
-                        KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
-                        if(!foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_ee))
-                            cout <<"ERROR: ee link "<< ee_name << " not found in sticky foot urdf"<< endl;
-         
-         
-                        vector<KDL::Frame> T_world_geometry_frames;
-                        string seed_geometry_name = foot_it->second.geometry_name;
-                        self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
-                        std::string dof_name;
-                        vector<double> dof_values;  
-                        bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
-                        if(isdofset) // dof range was set
-                            {
-                                int num_of_incs = T_world_geometry_frames.size();
-                                vector<KDL::Frame> T_world_ee_frames;
-                                vector<drc::affordance_index_t> frame_affindices;
-                                for(size_t i=0;i<(size_t)num_of_incs;i++){
-                                    KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-                                    T_world_ee_frames.push_back(T_world_ee);
+        for(sticky_feet_map_type_::const_iterator foot_it = self->sticky_feet.begin(); foot_it!=self->sticky_feet.end(); foot_it++) {
+            string host_name = foot_it->second.object_name;
+            if (host_name == (it->first)) {
                 
-                                    drc::affordance_index_t aff_index;
-                                    aff_index.utime=(int64_t)i;
-                                    aff_index.aff_type = it->second.otdf_type; 
-                                    aff_index.aff_uid = it->second.uid; 
-                                    aff_index.num_ees =1; 
-                                    aff_index.ee_name.push_back(ee_name); 
-                                    aff_index.dof_name.push_back(dof_name);     
-                                    aff_index.dof_value.push_back(dof_values[i]); 
-                                    frame_affindices.push_back(aff_index);
-                                } 
-              
-                                ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-                                ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices)); 
-                            } // end if isdofset  
-                    } // end if (host_name == (it->first))
+                string ee_name;
+                if(foot_it->second.foot_type==0)
+                    ee_name ="l_foot";    
+                else if(foot_it->second.foot_type==1)   
+                    ee_name ="r_foot";    
+                else
+                    cout << "unknown foot_type in on_otdf_dof_range_widget_popup_close\n";  
+                
+                // if ee_name already exists in ee_frames_map, redundant ee_frames
+                // e.g two right sticky hands on the same object.
+                map<string, vector<KDL::Frame> >::const_iterator ee_it = self->ee_frames_map.find(ee_name);
+                if(ee_it!=self->ee_frames_map.end()){
+                    cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
+                    return;   
+                }      
+                
+                KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
+                if(!foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_ee))
+                    cout <<"ERROR: ee link "<< ee_name << " not found in sticky foot urdf"<< endl;
+                
+                
+                vector<KDL::Frame> T_world_geometry_frames;
+                string seed_geometry_name = foot_it->second.geometry_name;
+                self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
+                std::string dof_name;
+                vector<double> dof_values;  
+                bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
+                if(isdofset) { // dof range was set
+                    int num_of_incs = T_world_geometry_frames.size();
+                    vector<KDL::Frame> T_world_ee_frames;
+                    vector<drc::affordance_index_t> frame_affindices;
+                    for(size_t i=0;i<(size_t)num_of_incs;i++){
+                        KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
+                        T_world_ee_frames.push_back(T_world_ee);
+                        
+                        drc::affordance_index_t aff_index;
+                        aff_index.utime=(int64_t)i;
+                        aff_index.aff_type = it->second.otdf_type; 
+                        aff_index.aff_uid = it->second.uid; 
+                        aff_index.num_ees =1; 
+                        aff_index.ee_name.push_back(ee_name); 
+                        aff_index.dof_name.push_back(dof_name);     
+                        aff_index.dof_value.push_back(dof_values[i]); 
+                        frame_affindices.push_back(aff_index);
+                    } 
+                    
+                    self->ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+                    self->ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices)); 
+                } // end if isdofset  
+            } // end if (host_name == (it->first))
+        } // end sticky feet
       
-            } // end sticky feet
-
-      
-        string channel  ="DESIRED_MANIP_MAP_EE_LOCI"; 
-        publish_aff_indexed_traj_opt_constraint(channel, ee_frames_map, ee_frame_affindices_map, self);
+        string channel  = "DESIRED_MANIP_MAP_EE_LOCI"; 
+        publish_aff_indexed_traj_opt_constraint(channel, self->ee_frames_map, self->ee_frame_affindices_map, self);
     
     }
     //------------------------------------------------------------------    
-    static void on_otdf_dof_range_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
+    static void on_otdf_manip_map_dof_range_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
@@ -350,65 +342,68 @@ namespace renderer_affordances_gui_utils
     
         bool doFK= false;
     
+        // Build up a map of the desired joint position ranges
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
-            {     
-      
-                if(joint->second->type!=(int) otdf::Joint::FIXED) 
-                    {
-      
-                        double current_dof_vel = 0;
-                        double current_dof_pos = 0;
-                        it->second._otdf_instance->getJointState(joint->first,current_dof_pos,current_dof_vel);
-                        string temp1 = joint->first + "_MIN"; 
-                        string temp2 = joint->first +"_MAX";   
-                        vector<string>::const_iterator found1,found2;
-                        found1 = find (self->popup_widget_name_list.begin(),self->popup_widget_name_list.end(), temp1);
-                        found2= find (self->popup_widget_name_list.begin(),self->popup_widget_name_list.end(), temp2);
-                        if ((found1 != self->popup_widget_name_list.end())&&(found2 != self->popup_widget_name_list.end())) 
-                            {
-                                unsigned int index1 = found1 - self->popup_widget_name_list.begin();      
-                                unsigned int index2 = found2 - self->popup_widget_name_list.begin(); 
-                                double desired_dof_pos_min = 0;
-                                double desired_dof_pos_max = 0;
-                                desired_dof_pos_min =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index1].c_str())*(M_PI/180);
-                                desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str())*(M_PI/180);
-          
-                                current_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_min)); 
-                                future_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_max)); 
-                                if((current_dof_pos>(desired_dof_pos_min+1e-2))||(current_dof_pos<(desired_dof_pos_max-1e-2)))
-                                    {
-                                        cout <<  joint->first << ":: desired dof range set to " << desired_dof_pos_min*(180/M_PI) << " : "<< desired_dof_pos_max*(180/M_PI)<< endl;
-                                        dof_names.push_back(joint->first);
-                                        dof_min.push_back(desired_dof_pos_min);
-                                        dof_max.push_back(desired_dof_pos_max);
-                                        doFK = true;
-                                    }
-                            }  
-       
-                    }// end if
-            }// end for
+        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
+            if(joint->second->type!=(int) otdf::Joint::FIXED) {
+                double current_dof_vel = 0;
+                double current_dof_pos = 0;
+                it->second._otdf_instance->getJointState (joint->first, current_dof_pos, current_dof_vel);
+                string temp1 = joint->first + "_MIN"; 
+                string temp2 = joint->first +"_MAX";   
+                vector<string>::const_iterator found1,found2;
+                found1 = find (self->popup_widget_name_list.begin(), self->popup_widget_name_list.end(), temp1);
+                found2 = find (self->popup_widget_name_list.begin(), self->popup_widget_name_list.end(), temp2);
+                if ((found1 != self->popup_widget_name_list.end()) && (found2 != self->popup_widget_name_list.end())) {
+                    unsigned int index1 = found1 - self->popup_widget_name_list.begin();      
+                    unsigned int index2 = found2 - self->popup_widget_name_list.begin(); 
+                    double desired_dof_pos_min = 0;
+                    double desired_dof_pos_max = 0;
+                    if (joint->second->type == otdf::Joint::REVOLUTE) {
+                        desired_dof_pos_min =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index1].c_str())*(M_PI/180);
+                        desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str())*(M_PI/180);
+                    }
+                    else {
+                        desired_dof_pos_min =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index1].c_str())*(M_PI/180);
+                        desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str())*(M_PI/180);
+                    }
 
-     
-        if(doFK)
-            {
-                //doBatchFK given DOF Desired Ranges
-                //int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
-                int num_of_increments = 30; // determines no of intermediate holds between dof_min and dof_max;
-                self->dofRangeFkQueryHandler->doBatchFK(dof_names,dof_min,dof_max,num_of_increments);
-            } 
+                    current_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_min)); 
+                    future_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_max)); 
+                    if((current_dof_pos>(desired_dof_pos_min+1e-2)) && (current_dof_pos<(desired_dof_pos_max-1e-2))) {
+                        if (joint->second->type == otdf::Joint::REVOLUTE)
+                            cout <<  joint->first << ":: desired dof range set to " << desired_dof_pos_min*(180/M_PI) << " : "<< desired_dof_pos_max*(180/M_PI)<< "(rad)" << endl;
+                        else
+                            cout <<  joint->first << ":: desired dof range set to " << desired_dof_pos_min << " : "<< desired_dof_pos_max<< endl;
+
+                        dof_names.push_back(joint->first);
+                        dof_min.push_back(desired_dof_pos_min);
+                        dof_max.push_back(desired_dof_pos_max);
+                        doFK = true;
+                    }
+                }  
+            }// end if
+        }// end for
+        
+        
+        if(doFK) {
+            //doBatchFK given DOF Desired Ranges
+            //int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
+            int num_of_increments = 30; // determines no of intermediate holds between dof_min and dof_max;
+            self->dofRangeFkQueryHandler->doBatchFK(dof_names, dof_min, dof_max, num_of_increments);
+        } 
 
         // Visualizing how seeds change with dof range changes
         //--------------------------------------
         if(!it->second._gl_object->is_future_state_changing()) {
             it->second._gl_object->set_future_state_changing(true);
         }      
+        fprintf (stdout, "Visualizing range for manip map\n");
         KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
         it->second.otdf_instance_viz_object_sync = false;
         it->second._gl_object->set_state(T_world_object,current_jointpos_in);  
         it->second._gl_object->set_future_state(T_world_object,future_jointpos_in);
         bot_viewer_request_redraw(self->viewer);
-
     }  
 
 
@@ -562,44 +557,56 @@ namespace renderer_affordances_gui_utils
 
         // Need tarcked joint positions of all objects.
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
-            {     
-                double current_dof_position = 0;// TODO: dof pos tracking
-                if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                    if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
-                        bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                    }
-                    else{
-                        bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                        joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                    }   
+        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
+            // Skip certain joints
+            if (!joint->first.compare("front_left_steering_joint") || !joint->first.compare("front_left_wheel_joint") ||
+                !joint->first.compare("front_right_steering_joint") || !joint->first.compare("front_right_wheel_joint") ||
+                !joint->first.compare("rear_left_wheel_joint") || !joint->first.compare("rear_right_wheel_joint"))
+                continue;
+            
+            double current_dof_position = 0;// TODO: dof pos tracking
+            if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+                if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
+                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, 
+                                                    -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
                 }
+                else if (joint->second->type == (int) otdf::Joint::REVOLUTE) 
+                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                    joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), 
+                                                    .01, current_dof_position*(180/M_PI));
+                else 
+                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                    joint->second->limits->lower, joint->second->limits->upper, .01, current_dof_position);       
             }
+        }
         //Have to handle joint_patterns separately   
         // DoF of all joints in joint patterns.
         typedef map<string,boost::shared_ptr<otdf::Joint_pattern> > jp_mapType;
-        for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++)
-            {
-                // for all joints in joint pattern.
-                for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
-                    {
-                        double current_dof_position = 0;// TODO: dof pos tracking
-                        if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                            if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
-                                bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                                -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                            }
-                            else{
-                                bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                                jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                            }   
-                        } // end if         
-                    } // end for all joints in jp
-            }// for all joint patterns
+        for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++) {
+            // for all joints in joint pattern.
+            for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++) {
+                double current_dof_position = 0;// TODO: dof pos tracking
+                if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+                    if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
+                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                        -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                    }
+                    else if (jp_it->second->joint_set[i]->type == (int) otdf::Joint::REVOLUTE) {
+                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                        jp_it->second->joint_set[i]->limits->lower*(180/M_PI), 
+                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                    }   
+                    else
+                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                        jp_it->second->joint_set[i]->limits->lower, 
+                                                        jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+                } // end if         
+            } // end for all joints in jp
+        }// for all joint patterns
 
         g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed), self);
-
-
+        
+        
         close_button = gtk_button_new_with_label ("Close");
         g_signal_connect (G_OBJECT (close_button),
                           "clicked",
@@ -617,7 +624,7 @@ namespace renderer_affordances_gui_utils
     }
     //------------------------------------------------------------------
 
-    static void spawn_set_dof_range_popup (RendererAffordances *self)
+    static void spawn_set_manip_map_dof_range_popup (RendererAffordances *self)
     {
 
         GtkWidget *window, *close_button, *vbox;
@@ -653,20 +660,46 @@ namespace renderer_affordances_gui_utils
             double current_dof_position = 0;
             it->second._otdf_instance->getJointState(joint->first,current_dof_position,current_dof_velocity);
             if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+
+                // Skip certain joints
+                if (!joint->first.compare("front_left_steering_joint") || !joint->first.compare("front_left_wheel_joint") ||
+                    !joint->first.compare("front_right_steering_joint") || !joint->first.compare("front_right_wheel_joint") ||
+                    !joint->first.compare("rear_left_wheel_joint") || !joint->first.compare("rear_right_wheel_joint"))
+                    continue;
+
                 if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
                     self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
-                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, 
+                                                    current_dof_position*(180/M_PI)); 
                     self->popup_widget_name_list.push_back(joint->first+"_MAX");   
-                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, 
+                                                    current_dof_position*(180/M_PI)); 
                     //bot_gtk_param_widget_add_separator (pw," ");
                 }
-                else {
+                else if (joint->second->type == (int) otdf::Joint::REVOLUTE) {
                     self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
-                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), 
+                                                    joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
                     self->popup_widget_name_list.push_back(joint->first+"_MAX"); 
-                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), 
+                                                    joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
                     // bot_gtk_param_widget_add_separator (pw," ");
                 }   
+                else {
+                    self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower, 
+                                                    joint->second->limits->upper, .01, current_dof_position);
+                    self->popup_widget_name_list.push_back(joint->first+"_MAX"); 
+                    bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                    BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower, 
+                                                    joint->second->limits->upper, .01, current_dof_position);
+                    // bot_gtk_param_widget_add_separator (pw," ");
+                }
             }
         }
         //Have to handle joint_patterns separately   
@@ -679,28 +712,43 @@ namespace renderer_affordances_gui_utils
                 double current_dof_position = 0;
                 it->second._otdf_instance->getJointState(jp_it->second->joint_set[i]->name,current_dof_position,current_dof_velocity);
                 if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                    if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) 
-                        {          
-                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX");  
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
-                            //bot_gtk_param_widget_add_separator (pw," ");
-                        }
-                    else
-                        {
-                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");  
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                            jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                            self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX"); 
-                            bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                            jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                            //bot_gtk_param_widget_add_separator (pw," ");
-                        }   
+                    if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {          
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, 
+                                                        current_dof_position*(180/M_PI)); 
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX");  
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, 
+                                                        current_dof_position*(180/M_PI)); 
+                        //bot_gtk_param_widget_add_separator (pw," ");
+                    }
+                    else if (jp_it->second->joint_set[i]->type==(int) otdf::Joint::REVOLUTE) {
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");  
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, jp_it->second->joint_set[i]->limits->lower*(180/M_PI), 
+                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX"); 
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, jp_it->second->joint_set[i]->limits->lower*(180/M_PI), 
+                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                        //bot_gtk_param_widget_add_separator (pw," ");
+                    }   
+                    else {
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MIN");  
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, jp_it->second->joint_set[i]->limits->lower, 
+                                                        jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+                        self->popup_widget_name_list.push_back(jp_it->second->joint_set[i]->name+"_MAX"); 
+                        bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
+                                                        BOT_GTK_PARAM_WIDGET_SLIDER, jp_it->second->joint_set[i]->limits->lower, 
+                                                        jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+                        //bot_gtk_param_widget_add_separator (pw," ");
+                    }
                 } // end if         
             } // end for all joints in jp
         }// for all joint patterns
-    
+        
     
         // store current object state (will be restored on popup close).
         self->otdf_T_world_body_hold=it->second._gl_object->_T_world_body;
@@ -710,7 +758,7 @@ namespace renderer_affordances_gui_utils
         int num_of_increments = 5; // preallocates 5 spaces for speed
         self->dofRangeFkQueryHandler=boost::shared_ptr<BatchFKQueryHandler>(new BatchFKQueryHandler(it->second._otdf_instance,num_of_increments));
 
-        g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_dof_range_widget_changed), self);
+        g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_manip_map_dof_range_widget_changed), self);
 
 
         close_button = gtk_button_new_with_label ("Close");
@@ -719,7 +767,7 @@ namespace renderer_affordances_gui_utils
                           G_CALLBACK (on_popup_close),
                           (gpointer) window);
         g_signal_connect(G_OBJECT(pw), "destroy",
-                         G_CALLBACK(on_otdf_dof_range_widget_popup_close), self); 
+                         G_CALLBACK(on_otdf_manip_map_dof_range_widget_popup_close), self); 
 
 
         vbox = gtk_vbox_new (FALSE, 3);
@@ -850,10 +898,9 @@ namespace renderer_affordances_gui_utils
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
             self->instantiated_objects.clear();
             self->sticky_hands.clear();
-            for( map<string,int >::iterator it = self->instance_cnt.begin(); it!=self->instance_cnt.end(); it++)
-                { 
-                    it->second = 0;
-                }
+            for( map<string,int >::iterator it = self->instance_cnt.begin(); it!=self->instance_cnt.end(); it++) { 
+                it->second = 0;
+            }
             self->link_selection = " ";
             self->object_selection = " ";
             self->stickyhand_selection = " ";
@@ -885,34 +932,31 @@ namespace renderer_affordances_gui_utils
         char ** otdf_instance_names;
         int * otdf_instance_nums;
 
-        if( self->instantiated_objects.size() > 0)
-            {
-                num_otdf_instances = self->instantiated_objects.size();
-                otdf_instance_names =(char **) calloc(num_otdf_instances, sizeof(char *));
-                otdf_instance_nums = (int *)calloc(num_otdf_instances, sizeof(int));
-
-                unsigned int i = 0;  
-                typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-                for( object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
-                    { 
-                        string instance_name = it->first;
-                        otdf_instance_names[i] = (char *) instance_name.c_str();
-                        otdf_instance_nums[i] =i;
-                        // cout << "Instance:  " << instance_name  << " i: "<< i << endl;
-                        // self->instantiated_objects_id.insert(make_pair(i,instance_name));
-                        ++i;
-                    }
+        if( self->instantiated_objects.size() > 0) {
+            num_otdf_instances = self->instantiated_objects.size();
+            otdf_instance_names =(char **) calloc(num_otdf_instances, sizeof(char *));
+            otdf_instance_nums = (int *)calloc(num_otdf_instances, sizeof(int));
+            
+            unsigned int i = 0;  
+            typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+            for( object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++) { 
+                string instance_name = it->first;
+                otdf_instance_names[i] = (char *) instance_name.c_str();
+                otdf_instance_nums[i] =i;
+                // cout << "Instance:  " << instance_name  << " i: "<< i << endl;
+                // self->instantiated_objects_id.insert(make_pair(i,instance_name));
+                ++i;
             }
-        else 
-            {
-                num_otdf_instances = 1;
-                otdf_instance_names =(char **) calloc(num_otdf_instances, sizeof(char *));
-                otdf_instance_nums = (int *)calloc(num_otdf_instances, sizeof(int));
-
-                string instance_name = "No objects Instantiated";
-                otdf_instance_names[0]= (char *) instance_name.c_str();
-                otdf_instance_nums[0] =0; 
-            }
+        }
+        else {
+            num_otdf_instances = 1;
+            otdf_instance_names =(char **) calloc(num_otdf_instances, sizeof(char *));
+            otdf_instance_nums = (int *)calloc(num_otdf_instances, sizeof(int));
+            
+            string instance_name = "No objects Instantiated";
+            otdf_instance_names[0]= (char *) instance_name.c_str();
+            otdf_instance_nums[0] =0; 
+        }
 
         bot_gtk_param_widget_add_enumv (pw, PARAM_OTDF_INSTANCE_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
                                         0,
@@ -920,14 +964,13 @@ namespace renderer_affordances_gui_utils
                                         (const char **)  otdf_instance_names,
                                         otdf_instance_nums);
 
-        if( self->instantiated_objects.size() > 0)
-            {
+        if( self->instantiated_objects.size() > 0) {
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_FLIP_PITCH, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR_ALL, NULL);
-            }
+        }
 
         g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_instance_management_widget_changed), self);
 
