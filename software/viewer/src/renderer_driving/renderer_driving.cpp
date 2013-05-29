@@ -60,6 +60,10 @@
 
 #define PARAM_MAX_STEERING "Max Steering"
 #define PARAM_MIN_STEERING "Min Steering"
+
+#define PARAM_MAX_GAS "Max Gas"
+#define PARAM_MIN_GAS "Min Gas"
+
 #define PARAM_UPDATE_MANIP_MAP "Update Manip Map"
 
 #define PARAM_STEERING_ANGLE "Steering Angle"
@@ -1211,23 +1215,57 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	bot_viewer_set_status_bar_message(self->viewer, "Min value is larger than max");
       }      
     }
+    else if(!strcmp(name, PARAM_MAX_GAS)){
+      //make sure that the value is above or equal to the min 
+      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_GAS);
+      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_GAS);
+      if(max < min){
+	bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_GAS, min);
+	bot_viewer_set_status_bar_message(self->viewer, "Max value is smaller than min");
+      }      
+    }
+    else if(!strcmp(name, PARAM_MIN_GAS)){
+      //make sure that the value is above or equal to the min 
+      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_GAS);
+      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_GAS);
+      if(min > max){
+	bot_gtk_param_widget_set_double(self->pw, PARAM_MIN_GAS, max);
+	bot_viewer_set_status_bar_message(self->viewer, "Min value is larger than max");
+      }      
+    }
     else if(!strcmp(name, PARAM_UPDATE_MANIP_MAP)){      
       //make sure that the value is above or equal to the min 
-      double min = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_STEERING);
-      double max = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_STEERING);
-      drc_driving_affordance_status_t msg;
-      msg.utime = bot_timestamp_now();
-      msg.aff_type = "car";
-      msg.aff_uid = 1;   // affordance uid
-      msg.dof_name = "steering";
-      msg.ee_name = "left_hand";
-      
-      msg.have_manip_map = 1; 
-      
-      msg.dof_value_0 = bot_to_radians(min); // initial dof value in the manip map
-      msg.dof_value_1 = bot_to_radians(max); // final dof value in the manip map
-      
-      drc_driving_affordance_status_t_publish(self->lc, "DRIVING_STEERING_ACTUATION_STATUS", &msg);
+        double min_s = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_STEERING);
+        double max_s = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_STEERING);
+        double min_g = bot_gtk_param_widget_get_double (self->pw, PARAM_MIN_GAS);
+        double max_g = bot_gtk_param_widget_get_double (self->pw, PARAM_MAX_GAS);
+        drc_driving_affordance_status_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.aff_type = "car";
+        msg.aff_uid = 1;   // affordance uid
+        msg.dof_name = "steering";
+        msg.ee_name = "left_hand";
+        
+        msg.have_manip_map = 1; 
+        
+        msg.dof_value_0 = bot_to_radians(min_s); // initial dof value in the manip map
+        msg.dof_value_1 = bot_to_radians(max_s); // final dof value in the manip map
+        
+        drc_driving_affordance_status_t_publish(self->lc, "DRIVING_STEERING_ACTUATION_STATUS", &msg);
+
+        drc_driving_affordance_status_t msg_g;
+        msg_g.utime = bot_timestamp_now();
+        msg_g.aff_type = "car";
+        msg_g.aff_uid = 1;   // affordance uid
+        msg_g.dof_name = "gas";
+        msg_g.ee_name = "right_foot";
+        
+        msg_g.have_manip_map = 1; 
+        
+        msg_g.dof_value_0 = min_g; // initial dof value in the manip map
+        msg_g.dof_value_1 = max_g; // final dof value in the manip map
+        
+        drc_driving_affordance_status_t_publish(self->lc, "DRIVING_GAS_ACTUATION_STATUS", &msg_g);
     }
     else if(!strcmp(name, PARAM_GOAL_SEND)) {
         fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
@@ -1418,6 +1456,7 @@ static void on_driving_affordance_status(const lcm_recv_buf_t * buf, const char 
 
         double new_min = min(msg->dof_value_0, msg->dof_value_1);
         double new_max = max(msg->dof_value_0, msg->dof_value_1);
+
         if (msg->have_manip_map) {
             if ( (fabs (new_min - self->gas_pedal_min) > 0.01) || (fabs (new_max - self->gas_pedal_max) > 0.01) ) {
                 double value = bot_gtk_param_widget_get_double (self->pw, PARAM_THROTTLE_RATIO);
@@ -1682,6 +1721,13 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     
     bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_STEERING, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, -90, 90, 0.1, -35);
+    
+    bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_GAS, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0.1);
+
+    bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_GAS, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0);
+
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_MANIP_MAP, NULL);
 
