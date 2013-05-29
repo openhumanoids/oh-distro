@@ -65,7 +65,8 @@ warning(s);
 nq = r.getNumDOF();
 % load the "zero position"
 load('data/atlas_fp.mat');
-q = xstar(1:nq);
+q_standing = xstar(1:nq);
+q = q_standing;
 options.q_traj_nom = ConstantTrajectory(q);
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
@@ -84,7 +85,7 @@ cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
 cost.base_y = 0;
 cost.base_z = 0;
-arm_cost = 1e2;
+arm_cost = 1e1;
 cost.l_arm_usy = arm_cost;
 cost.l_arm_shx = arm_cost;
 cost.l_arm_ely = arm_cost;
@@ -102,6 +103,7 @@ cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);
 options = struct();
+options.q_nom = q_standing;
 options.Q = diag(cost(1:r.getNumDOF));
 [jointLimitMin, jointLimitMax] = r.getJointLimits();
 joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
@@ -159,7 +161,7 @@ while (1)
     try
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
-        if ~action_options.generate_implicit_constraints_from_q0 && goal.lower_bound_completion_time == 0.1
+        if ~action_options.generate_implicit_constraints_from_q0 && roundn(goal.lower_bound_completion_time,-6) == 0.1
           goal.lower_bound_completion_time = 0;
         end
         kc = getConstraintFromGoal(r,goal);
@@ -167,26 +169,6 @@ while (1)
         fprintfVerb(action_options,'Added constraint %d: %s\n',numel(action_sequence.kincons),action_sequence.kincons{i}.name);
       end
       n_kincons = length(action_sequence.kincons);
-
-      if action_options.generate_implicit_constraints_from_q0
-        action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
-        n_kincons_new = length(action_sequence.kincons);
-        if n_kincons_new > n_kincons
-          for i = (n_kincons+1):n_kincons_new
-            fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
-          end
-          n_kincons = n_kincons_new;
-        end
-      end
-
-      action_sequence = action_sequence.addStaticContactConstraint(r,q,action_sequence.key_time_samples(1));
-      n_kincons_new = length(action_sequence.kincons);
-      if n_kincons_new > n_kincons
-        for i = (n_kincons+1):n_kincons_new
-          fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
-        end
-        n_kincons = n_kincons_new;
-      end
 
       for i=1:length(action_sequence.kincons)
         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
@@ -198,7 +180,35 @@ while (1)
           end
           action_sequence.kincons{i}.contact_state0 = contact_state0;
         end
+        if(action_sequence.kincons{i}.tspan(2) == action_sequence.tspan(2))
+          contact_statef = action_sequence.kincons{i}.contact_statef ;
+          contact_statei = action_sequence.kincons{i}.contact_statei ;
+          for j = 1:length(contact_statef)
+            ind_break = contact_statef{j}==ActionKinematicConstraint.BREAK_CONTACT;
+            contact_statef{j}(ind_break) = contact_statei{j}(ind_break);
+          end
+          action_sequence.kincons{i}.contact_statef = contact_statef;
+        end
       end
+      if action_options.generate_implicit_constraints_from_q0
+        action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
+        n_kincons_new = length(action_sequence.kincons);
+        if n_kincons_new > n_kincons
+          for i = (n_kincons+1):n_kincons_new
+            fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
+          end
+          n_kincons = n_kincons_new;
+        end
+      end
+      action_sequence = action_sequence.addStaticContactConstraint(r,q,action_sequence.key_time_samples(1));
+      n_kincons_new = length(action_sequence.kincons);
+      if n_kincons_new > n_kincons
+        for i = (n_kincons+1):n_kincons_new
+          fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
+        end
+        n_kincons = n_kincons_new;
+      end
+
 
       % Above ground constraints
       %tspan = action_sequence.tspan;
@@ -223,6 +233,7 @@ while (1)
       com_key_time_samples(:,1) = getCOM(r,kinsol);
       options.quasiStaticFlag = true;
       options.shrinkFactor = 0.5;
+      options.q_nom = q_standing;
       if(action_options.ignore_q0)
         ind_first_time= 1;
       else
@@ -230,19 +241,6 @@ while (1)
       end
 
       for i = ind_first_time:num_key_time_samples
-        if i==num_key_time_samples
-          for j=1:length(action_sequence.kincons)
-            if(action_sequence.kincons{j}.tspan(2) == action_sequence.tspan(2))
-              contact_statef = action_sequence.kincons{j}.contact_statef ;
-              contact_statei = action_sequence.kincons{j}.contact_statei ;
-              for k = 1:length(contact_statef)
-                ind_break = contact_statef{k}==ActionKinematicConstraint.BREAK_CONTACT;
-                contact_statef{k}(ind_break) = contact_statei{k}(ind_break);
-              end
-              action_sequence.kincons{j}.contact_statef = contact_statef;
-            end
-          end
-        end
         ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
         if(isempty(ikargs))
           q_key_time_samples(:,i) = ...
@@ -337,12 +335,13 @@ while (1)
           com_qs_traj,action_sequence.tspan);
         action_sequence = action_sequence.addKinematicConstraint(com_kc);
         window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
-        %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
-        t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
+        t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+        %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
         t_qs_breaks(end) = action_sequence.tspan(end);
         q_qs_plan = zeros(size(q_qs_plan,1),numel(t_qs_breaks));
         options.Q = 1e0*eye(length(q0));
         options.quasiStaticFlag = true;
+        options = rmfield(options,'q_nom');
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
         q_qs_plan(:,1) = q0;
         for i = ind_first_time:numel(t_qs_breaks)
@@ -593,7 +592,8 @@ function kc = getConstraintFromGoal(r,goal)
     error('The contact type is not supported yet');
   end
   body_ind = findLinkContaining(r,char(goal.object_1_name));
-  tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
+  t_prec = 1e6;
+  tspan = round([goal.lower_bound_completion_time goal.upper_bound_completion_time]*t_prec)/t_prec;
   kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
   if(goal.contact_type == goal.COLLISION_AVOIDANCE)
     collision_group_pts = [0;0;0];
