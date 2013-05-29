@@ -15,6 +15,9 @@ class FootStepPlanCodec : public CustomChannelCodec
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       
     bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
+
+    int set_bool_mask(const drc::footstep_goal_t& goal);
+    void read_bool_mask(int bool_mask, drc::footstep_goal_t * goal);
     
   private:
     goby::acomms::DCCLCodec* dccl_;

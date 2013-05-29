@@ -1,10 +1,11 @@
 import "goby/acomms/protobuf/dccl_option_extensions.proto";
+import "robot-state-analogs.proto";
 
 package drc;
 
 message MinimalFootStepPlan
 {
-  option (dccl.msg).max_bytes = 1500;
+  option (dccl.msg).max_bytes = 2000;
   option (dccl.msg).id = 0xD4C0005;
   
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
@@ -19,52 +20,43 @@ message MinimalFootStepGoal
 {
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
 
-  required double translation_x = 2 [(dccl.field) = { min: -200 max: 200 precision: 3}];
-  required double translation_y = 3 [(dccl.field) = { min: -200 max: 200 precision: 3}];
-  required double translation_z = 4 [(dccl.field) = { min: -200 max: 200 precision: 3}];
-
-  required double rotation_x = 30 [(dccl.field) = { min: -1 max: 1 precision: 3}];
-  required double rotation_y = 31 [(dccl.field) = { min: -1 max: 1 precision: 3}];
-  required double rotation_z = 32 [(dccl.field) = { min: -1 max: 1 precision: 3}];
-  required double rotation_w = 33 [(dccl.field) = { min: -1 max: 1 precision: 3}];
+  required Position3D pos = 2;
 
   required double step_speed = 5 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 }];
   required double step_height = 6 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 }];
 
   required int32 id = 7 [(dccl.field) = { min: 0 max: 0xFFFF }];
-  required bool is_right_foot = 8;
-  required bool is_in_contact = 9;
-  required bool fixed_x = 10;
-  required bool fixed_y = 11;
-  required bool fixed_z = 12;
-  required bool fixed_roll = 13;
-  required bool fixed_pitch = 14;
-  required bool fixed_yaw = 15;  
+
+  // bitmask for booleans (in order from LSB -> MSB):
+  // 0: is_right_foot
+  // 1: is_in_contact
+  // 2: fixed_x
+  // 3: fixed_y
+  // 4: fixed_z
+  // 5: fixed_roll
+  // 6: fixed_pitch
+  // 7: fixed_yaw
+  required int32 bool_mask = 10 [(dccl.field) = { min: 0 max: 0xFF } ];    
 }
 
 message MinimalFootStepGoalDiff
 {
   repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 60000000 max_repeat: 100 codec: "presence_bit"}];
-  repeated double translation_x_diff = 2 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-  repeated double translation_y_diff = 3 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-  repeated double translation_z_diff = 4 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
 
-  repeated double rotation_x_diff = 30 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-  repeated double rotation_y_diff = 31 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-  repeated double rotation_z_diff = 32 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-  repeated double rotation_w_diff = 33 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
-
+  required Position3DDiff pos_diff = 2;
+  
   repeated int32 id_diff = 7 [(dccl.field) = { min: 0 max: 3 max_repeat: 100 codec: "presence_bit"}];
   
-
-  repeated bool is_right_foot = 10 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool is_in_contact = 11 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_x = 12 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_y = 13 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_z = 14 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_roll = 15 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_pitch = 16 [(dccl.field) = { max_repeat: 100 }];
-  repeated bool fixed_yaw = 17 [(dccl.field) = { max_repeat: 100 }];
+  // bitmask for booleans (in order from LSB -> MSB):
+  // 0: is_right_foot
+  // 1: is_in_contact
+  // 2: fixed_x
+  // 3: fixed_y
+  // 4: fixed_z
+  // 5: fixed_roll
+  // 6: fixed_pitch
+  // 7: fixed_yaw
+  repeated int32 bool_mask = 10 [(dccl.field) = { min: 0 max: 0xFF max_repeat: 100 codec: "presence_bit" } ];
 
   repeated double step_speed = 20 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 max_repeat: 100 codec: "presence_bit" }];
   repeated double step_height = 21 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 max_repeat: 100 codec: "presence_bit"}];

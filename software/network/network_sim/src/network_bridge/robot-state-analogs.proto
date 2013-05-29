@@ -15,7 +15,7 @@ message MinimalRobotState
 message Position3D
 {
   required TranslationVector translation = 1;
-  optional RotationQuaternion rotation = 2;
+  required RotationQuaternion rotation = 2;
 }
 
 
@@ -28,8 +28,29 @@ message TranslationVector
 
 message RotationQuaternion
 {
-  optional double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
-  optional double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
-  optional double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
-  optional double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 3 codec: "presence_bit"}];
+  required double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 3}];
+  required double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 3}];
+  required double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 3}];
+  required double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 3}];
+}
+
+message Position3DDiff
+{
+  required TranslationVectorDiff translation_diff = 1;
+  required RotationQuaternionDiff rotation_diff = 2;
+}
+
+message TranslationVectorDiff
+{
+  repeated double dx = 1 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double dy = 2 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double dz = 3 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+}
+
+message RotationQuaternionDiff
+{
+  repeated double dx = 1 [(dccl.field) = {min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double dy = 2 [(dccl.field) = {min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double dz = 3 [(dccl.field) = {min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double dw = 4 [(dccl.field) = {min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
 }
