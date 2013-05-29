@@ -4,8 +4,12 @@ package drc;
 struct frequency_t
 {
    int64_t utime;
+   
+   // simuation rate as percentage (0-100) of wall time:
+   int8_t real_time_percent;
+   
    int8_t num;
-   // integer frequency of messageing
+   // integer frequency of messaging
    // published by drc-frequency
    int16_t frequency[num];
    string channel[num];
