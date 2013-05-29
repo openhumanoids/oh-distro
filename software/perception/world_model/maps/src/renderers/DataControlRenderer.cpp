@@ -131,8 +131,7 @@ public:
     return true;
   }
 
-  bool checkAffordances() {
-
+  std::vector<int> getSelectedAffordanceIds() {
     struct Functor {
       std::vector<int> mIds;
       void callback(const Gtk::TreeModel::iterator& iIter) {
@@ -142,12 +141,16 @@ public:
       }
     };
 
-    // save existing selection
     AffordanceColumns columns;
     Functor functor;
     auto activeRows = mAffordanceListBox->get_selection();
     activeRows->selected_foreach_iter
       (sigc::mem_fun(functor, &Functor::callback) );
+    return functor.mIds;
+  }
+
+  bool checkAffordances() {
+    std::vector<int> selectedIds = getSelectedAffordanceIds();
 
     // check whether affordances have changed
     std::vector<affordance::AffConstPtr> affordances;
@@ -170,6 +173,8 @@ public:
     }
 
     // populate new list
+    AffordanceColumns columns;
+    auto activeRows = mAffordanceListBox->get_selection();
     if (affordancesChanged) {
       mAffordanceTreeModel->clear();
       for (size_t i = 0; i < affordances.size(); ++i) {
@@ -177,8 +182,8 @@ public:
         const Gtk::TreeModel::Row& row = *localIter;
         row[columns.mId] = affordances[i]->_uid;
         row[columns.mLabel] = newNames[affordances[i]->_uid];
-        if (std::find(functor.mIds.begin(), functor.mIds.end(),
-                      affordances[i]->_uid) != functor.mIds.end()) {
+        if (std::find(selectedIds.begin(), selectedIds.end(),
+                      affordances[i]->_uid) != selectedIds.end()) {
           activeRows->select(localIter);
         }
       }
@@ -386,18 +391,21 @@ public:
   }
 
   void onDataPushButton() {
+    std::vector<int> selectedIds = getSelectedAffordanceIds();
     std::vector<affordance::AffPlusPtr> affordances;
     mAffordanceWrapper->getAllAffordancesPlus(affordances);
     drc::affordance_plus_collection_t msg;
     msg.name = "updateFromDataControlRenderer";
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.map_id = -1;
-    msg.naffs = affordances.size();
     for (int i = 0; i < msg.naffs; ++i) {
+      if (std::find(selectedIds.begin(), selectedIds.end(),
+                    affordances[i]->aff->_uid) == selectedIds.end()) continue;
       drc::affordance_plus_t aff;
       affordances[i]->toMsg(&aff);
       msg.affs_plus.push_back(aff);
     }
+    msg.naffs = msg.affs_plus.size();
     getLcm()->publish(affordance::AffordanceServer::
                       AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
     std::cout << "Sent affordance list" << std::endl;
