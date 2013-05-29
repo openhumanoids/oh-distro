@@ -1123,9 +1123,6 @@ bool GlKinematicBody::get_link_geometry_frame(const std::string &link_geometry_n
 {
       LinkFrameStruct state;	    
 
-      cout << "Name: " << link_geometry_name << endl;
-      cout <<  _link_geometry_names.size() << endl;
-
      // retrieve T_world_link from store
       std::vector<std::string>::const_iterator found;
       found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
