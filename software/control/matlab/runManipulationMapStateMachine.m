@@ -59,12 +59,12 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
       
       goal = affgoal_listener.getNextMessage(0);
       if (~isempty(goal))
-          disp('candidate manipulation plan was rejected');
+          disp('received new driving manip cmd');
           q_breaks = state_machine.getPlanGivenAffGoal(goal);
           qdot_breaks = 0*q_breaks;
           s_breaks=linspace(0,1,size(q_breaks,2));
           t_breaks=s_breaks.*(length(s_breaks)*0.001);
-          planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+          %planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
           plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
       end
   end
