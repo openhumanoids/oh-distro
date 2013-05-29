@@ -226,6 +226,7 @@ private:
 	// Publishing of all the required LCM messages
 	void PublishHeadStateMsgs(const bot_core::pose_t * msg);
 	void PublishPoseBodyTrue(const drc::robot_state_t * msg);
+	void PublishH2B(const unsigned long long &utime,  const Eigen::Isometry3d &h2b);
 
 	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
 

@@ -406,16 +406,17 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		PublishEstimatedStates(_msg, &est_msgout);
 		UpdateHeadStates(&est_msgout, &est_headmsg);
 		PublishHeadStateMsgs(&est_headmsg);
+		PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
 
-	#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
+		#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 			// True state messages will ont be available during the VRC and must be removed accordingly
 			PublishPoseBodyTrue(_msg);
-	#endif
-	#ifdef LOG_28_JOINT_COMMANDS
+		#endif
+		#ifdef LOG_28_JOINT_COMMANDS
 		   for (int i=0;i<16;i++) {
 			   measured_joint_effort[i] = _msg->measured_effort[i];
 		   }
-	#endif
+		#endif
 
 			if (_switches->log_data_files) {
 				LogAllStateData(_msg, &est_msgout);
@@ -498,6 +499,24 @@ void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Ei
 
 	_viewer->sendCollection(*_obj_leg_poses, true);
 
+}
+
+void LegOdometry_Handler::PublishH2B(const unsigned long long &utime, const Eigen::Isometry3d &h2b) {
+
+	Eigen::Quaterniond h2bq = C2q(h2b.linear());
+
+	bot_core::rigid_transform_t tf;
+	tf.utime = utime;
+	tf.trans[0] = h2b.translation().x();
+	tf.trans[1] = h2b.translation().y();
+	tf.trans[2] = h2b.translation().z();
+
+	tf.quat[0] = h2bq.w();
+	tf.quat[1] = h2bq.x();
+	tf.quat[2] = h2bq.y();
+	tf.quat[3] = h2bq.z();
+
+	lcm_->publish("HEAD_TO_BODY" + _channel_extension, &tf);
 }
 
 void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout) {
