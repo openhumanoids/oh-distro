@@ -54,7 +54,7 @@ namespace renderer_robot_plan
     bool _is_manip_map;
     int64_t _last_plan_msg_timestamp; 
     RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm,
-		       BotViewer *viewer);
+		       BotViewer *viewer, int operation_mode);
     ~RobotPlanListener();
     
    // boost::shared_ptr<collision::Collision_Detector> _collision_detector;

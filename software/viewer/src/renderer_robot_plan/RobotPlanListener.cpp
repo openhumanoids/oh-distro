@@ -14,7 +14,7 @@ namespace renderer_robot_plan
   //==================constructor / destructor
   
   /**Subscribes to Robot URDF Model and to EST_ROBOT_STATE.*/
-  RobotPlanListener::RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer):
+  RobotPlanListener::RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, int operation_mode):
     _urdf_parsed(false),
     _lcm(lcm),
     _viewer(viewer),
@@ -41,7 +41,13 @@ namespace renderer_robot_plan
 				       this);  
     _urdf_subscription_on =  true;
     lcm->subscribe("CANDIDATE_ROBOT_PLAN", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this); //&this ?
-    lcm->subscribe("CANDIDATE_MANIP_PLAN", &renderer_robot_plan::RobotPlanListener::handleManipPlanMsg, this);
+    if ( operation_mode ==0 ){ // typical
+      lcm->subscribe("CANDIDATE_MANIP_PLAN", &renderer_robot_plan::RobotPlanListener::handleManipPlanMsg, this);
+    }else if(operation_mode ==1){ // sent to base shaper:
+      lcm->subscribe("COMMITTED_ROBOT_PLAN", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this);
+    }else if(operation_mode ==2){ // what would be published by robot shaper:
+      lcm->subscribe("COMMITTED_ROBOT_PLAN_COMPRESSED_LOOPBACK", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this);
+    }
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
 

@@ -295,13 +295,15 @@ int main(int argc, char *argv[])
 
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm);
-  setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
-  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,true);
-  
+  //
+  setup_renderer_robot_plan(viewer, 0, lcm, 0);
+  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   if (network_debug){
     // Renderers for Testing Loopback Quality:
-    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,false);
+    setup_renderer_robot_plan(viewer, 0, lcm, 1);
+    setup_renderer_robot_plan(viewer, 0, lcm, 2);
+    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1);
   }
   
   // Individual Renderers:

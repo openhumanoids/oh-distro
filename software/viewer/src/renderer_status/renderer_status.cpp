@@ -113,6 +113,7 @@ typedef struct
     int64_t frequency_utime;
     std::vector<int> frequency_list;
     std::vector< std::string> channel_list;
+    int8_t real_time_percent;
     
     float left_contact;
     float right_contact;
@@ -234,6 +235,8 @@ on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequenc
     self->channel_list.push_back( msg->channel[i] );
   }
     //std::cout << "freqs recevied\n";
+    
+  self->real_time_percent = msg->real_time_percent;
 }
 
 static void
@@ -312,7 +315,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	  ///std::cout <<  self->frequency_list[i] << "\n";
 	  sprintf(line, "%03d %s", self->frequency_list[i], self->channel_list[i].c_str() );
 	  x = 0 ;// hind * 150 + 120;
-   	  y = gl_height + (-i - 10) * line_height;
+   	  y = gl_height + (-i - 11) * line_height;
 	  // top left:
 	  //y = 10 + i*line_height;//gl_height - 8 * line_height;
 	  glColor3f(  1.0, 0.0, 0.0 );
@@ -322,18 +325,26 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	
 	char lineX[80];
 	float elapsed_time =  (self->last_utime - self->frequency_utime)*1E-6;
-	y = gl_height - 9 * line_height;
+	y = gl_height - 10 * line_height;
 	sprintf(lineX, "%.1f AGE OF FREQS", elapsed_time);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineX);
+	
+	char lineY[80];
+	y = gl_height - 9 * line_height;
+	sprintf(lineY, ".%d GAZEBO RATE", self->real_time_percent);
+	glColor3f(  1.0, 0.0, 0.0 );
+	glRasterPos2f(x, y);
+	glutBitmapString(font, (unsigned char*) lineY);
+	
       }
       
       if (self->score != NULL){
 	char line[80];
 	sprintf(line, "%d FALLS %d TASK %d SCORE",self->score->falls, self->score->task_type, self->score->completion_score );
 	double x = 0 ;// hind * 150 + 120;
-	double y = gl_height + ( - self->frequency_list.size() - 10) * line_height;
+	double y = gl_height + ( - self->frequency_list.size() - 11) * line_height;
 	glColor3f(  0.0, 0.0, 1.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
@@ -343,11 +354,11 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	float remaining_sec = 30.0*60.0 - elapsed_sec;
 	
 	sprintf(line, "%.1f LEFT %.1f", remaining_sec, remaining_sec/60 );
-	y = gl_height + (-1 - self->frequency_list.size() - 10) * line_height;
+	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
 	sprintf(line, "%.1f ELAPSED", elapsed_sec );
-	y = gl_height + (-2 - self->frequency_list.size() - 10) * line_height;
+	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
       }

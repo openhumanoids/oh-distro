@@ -558,6 +558,8 @@ namespace renderer_robot_plan
   
 }//end namespace
 
-void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm);
+
+// 0 = typical mode, 1 = robot_plan 2 = robot_plan_compressed
+void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode);
 
 #endif //RENDERER_ROBOTPLAN_HPP

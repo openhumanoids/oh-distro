@@ -362,6 +362,6 @@ namespace renderer_sticky_feet{
 
 
 void setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
-    BotFrames * frames, bool typical_mode);
+    BotFrames * frames, bool operation_mode);
 
 #endif //RENDERER_STICKYFEET_HPP
