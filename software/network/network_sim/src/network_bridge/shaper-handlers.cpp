@@ -131,7 +131,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
 
     
-    const std::string& footstep_plan_channel = "CANDIDATE_FOOTSTEP_PLAN";
+    const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
 
