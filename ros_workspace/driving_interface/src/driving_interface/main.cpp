@@ -107,10 +107,25 @@ static int publish_gas_pedal(void *user_data){
     //if (s->gas_pedal >=0.09) {    s->gas_pedal = 0.09; }
     if (s->gas_pedal <=0.0) {    s->gas_pedal = 0.0; }
 
-    std_msgs::Float64 msg;
-    msg.data = s->gas_pedal;
-    gas_pedal_pub.publish(msg);
-    return 0; 
+    if (s->dbw_gas_pedal) {
+        std_msgs::Float64 msg;
+        msg.data = s->gas_pedal;
+        gas_pedal_pub.publish(msg);
+        return 0; 
+    }
+    else {
+        string dof_name_local[] = {"gas_joint"};
+        drc_affordance_goal_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.aff_type = (char *) "car";
+        msg.aff_uid = 1;
+        msg.num_dofs = 1;
+        msg.dof_name = (char **) dof_name_local;
+        msg.dof_value[0] = s->gas_pedal;
+
+        drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        return 0;
+    }
 }
 
 static int publish_hand_brake(void *user_data){
@@ -150,11 +165,26 @@ static int publish_brake_pedal(void *user_data){
     if(s->brake_pedal > 0){
       fprintf(stderr, "Stopping Car\n");
     }
+    
+    if (s->dbw_brake_pedal) {
+        std_msgs::Float64 msg;
+        msg.data = s->brake_pedal;
+        brake_pedal_pub.publish(msg);
+        return 0; 
+    }
+    else {
+        string dof_name_local[] = {"brake_joint"};
+        drc_affordance_goal_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.aff_type = (char *) "car";
+        msg.aff_uid = 1;
+        msg.num_dofs = 1;
+        msg.dof_name = (char **) dof_name_local;
+        msg.dof_value[0] = s->brake_pedal;
 
-    std_msgs::Float64 msg;
-    msg.data = s->brake_pedal;
-    brake_pedal_pub.publish(msg);
-    return 0; 
+        drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
+        return 0;
+    }
 }
 
 /*
@@ -275,14 +305,16 @@ static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
     }
 
     if(s->verbose)
-        fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);    
+        fprintf(stderr, "Publishing steering delta = %f:  Steering Angle = %f (deg) --> %f (deg)\n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel-delta), bot_to_degrees(s->hand_wheel));
 
     return 0;
 }
 
 static int update_and_publish_hand_wheel(double new_val, state_t *s){
+
     int64_t utime = bot_timestamp_now();
     double delta = new_val - s->hand_wheel;
+
     if(fabs(delta) > 0 || (utime - s->hw_utime) / 1.0e6 > TIMEOUT_COMMAND){
         s->hand_wheel = new_val;
         s->hw_utime = utime;
@@ -374,8 +406,9 @@ static int publish_exit(void *user_data){
 }
 
 void init_state(state_t *s){
-    fprintf(stderr, "Initializing State\n");
+    fprintf(stderr, "Initializing State: NEEDS TO BE CHANGED FOR MANUAL ACTUATION\n");
     
+    // We won't know these in advance, but should get them via perception
     s->hand_wheel = 0;
     s->gas_pedal = 0;
     s->hand_brake = 0.05;
@@ -394,18 +427,29 @@ void init_state(state_t *s){
     s->hand_brake = 0.00;
     publish_hand_brake(s);
     sleep(1.0);
-    publish_gas_pedal(s);
-    sleep(1.0);
-    update_and_publish_hand_wheel(0, s);
-    sleep(1.0);
-    publish_brake_pedal(s);
-    sleep(1.0);
-    publish_key(s);
-    sleep(1.0);
-    publish_direction(s);
-    sleep(1.0);
-    s->direction = 1.0;
-    publish_direction(s);
+
+    if (s->gas_pedal) {
+        publish_gas_pedal(s);
+        sleep(1.0);
+    }
+    if (s->dbw_hand_wheel) {
+        update_and_publish_hand_wheel(0, s);
+        sleep(1.0);
+    }
+    if (s->dbw_brake_pedal) {
+        publish_brake_pedal(s);
+        sleep(1.0);
+    }
+    if (s->dbw_key) {
+        publish_key(s);
+        sleep(1.0);
+    }
+    if (s->dbw_transmission) {
+        publish_direction(s);
+        sleep(1.0);
+        s->direction = 1.0;
+        publish_direction(s);
+    }
 }
 
 
