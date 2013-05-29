@@ -1,9 +1,10 @@
 <robot name="multisense_sl">
   <link name="head">
     <inertial>
-      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
+      <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
+      <!-- includes mass of hokuyo link and imu -->
       <mass value="1.477574" />
-      <inertia iyy="0.0041178" ixy="-1.5797E-06" iyz="-6.8415E-07" ixx="0.0039688" ixz="-0.00089293" izz="0.0035243" />
+      <inertia ixx="0.0036053766" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.002080106" iyz="-6.8415E-07" izz="0.001782985"/>
     </inertial>
   <visual>
     <origin xyz="-0.0503 0 -0.00195" rpy="0 0 0" />
@@ -18,12 +19,5 @@
     </geometry>
   </visual>
   </link>
-
-
-
-  <gazebo>
-    <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin"/>
-  </gazebo>
-
 </robot>
 
