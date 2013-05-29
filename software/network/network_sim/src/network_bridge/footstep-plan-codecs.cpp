@@ -21,6 +21,9 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
     
     dccl_plan.set_utime(lcm_object.utime);
     dccl_plan.set_is_new_plan(lcm_object.is_new_plan);
+    dccl_plan.set_opts_ignore_terrain(lcm_object.footstep_opts.ignore_terrain);
+    dccl_plan.set_opts_mu(lcm_object.footstep_opts.mu);
+
     if(lcm_object.num_steps > 0)
     {
         drc::MinimalFootStepGoal* first_goal = dccl_plan.mutable_first_goal();
@@ -29,6 +32,11 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         first_goal->set_translation_x(first_lcm_goal.pos.translation.x);
         first_goal->set_translation_y(first_lcm_goal.pos.translation.y);
         first_goal->set_translation_z(first_lcm_goal.pos.translation.z);
+        
+        first_goal->set_rotation_x(first_lcm_goal.pos.rotation.x);
+        first_goal->set_rotation_y(first_lcm_goal.pos.rotation.y);
+        first_goal->set_rotation_z(first_lcm_goal.pos.rotation.z);
+        first_goal->set_rotation_w(first_lcm_goal.pos.rotation.w);
 
         first_goal->set_step_speed(first_lcm_goal.step_speed);
         first_goal->set_step_height(first_lcm_goal.step_height);
@@ -42,7 +50,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         first_goal->set_fixed_z(first_lcm_goal.fixed_z);
         first_goal->set_fixed_roll(first_lcm_goal.fixed_roll);
         first_goal->set_fixed_pitch(first_lcm_goal.fixed_pitch);
-        first_goal->set_fixed_yaw(first_lcm_goal.fixed_yaw);        
+        first_goal->set_fixed_yaw(first_lcm_goal.fixed_yaw);
         
         drc::MinimalFootStepGoalDiff* goal_diff = dccl_plan.mutable_goal_diff();
         for(int i = 1, n = lcm_object.num_steps; i < n; ++i)
@@ -55,7 +63,6 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
             const int TRANSLATION_X_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_x")->options().GetExtension(dccl::field).precision();
             const int TRANSLATION_Y_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_y")->options().GetExtension(dccl::field).precision();
             const int TRANSLATION_Z_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("translation_z")->options().GetExtension(dccl::field).precision();
-            
            
             goal_diff->add_translation_x_diff(later_lcm_goal.pos.translation.x-
                                               goby::util::unbiased_round(previous_lcm_goal.pos.translation.x, TRANSLATION_X_PRECISION));
@@ -64,6 +71,21 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
             goal_diff->add_translation_z_diff(later_lcm_goal.pos.translation.z-
                                               goby::util::unbiased_round(previous_lcm_goal.pos.translation.z, TRANSLATION_Z_PRECISION));
 
+            const int ROTATION_X_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("rotation_x")->options().GetExtension(dccl::field).precision();
+            const int ROTATION_Y_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("rotation_y")->options().GetExtension(dccl::field).precision();
+            const int ROTATION_Z_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("rotation_z")->options().GetExtension(dccl::field).precision();
+            const int ROTATION_W_PRECISION = drc::MinimalFootStepGoal::descriptor()->FindFieldByName("rotation_w")->options().GetExtension(dccl::field).precision();
+
+            goal_diff->add_rotation_x_diff(later_lcm_goal.pos.rotation.x-
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.rotation.x, ROTATION_X_PRECISION));
+            goal_diff->add_rotation_y_diff(later_lcm_goal.pos.rotation.y-
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.rotation.y, ROTATION_Y_PRECISION));
+            goal_diff->add_rotation_z_diff(later_lcm_goal.pos.rotation.z-
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.rotation.z, ROTATION_Z_PRECISION));
+            goal_diff->add_rotation_w_diff(later_lcm_goal.pos.rotation.w-
+                                              goby::util::unbiased_round(previous_lcm_goal.pos.rotation.w, ROTATION_W_PRECISION));
+            
+            
             goal_diff->add_id_diff(later_lcm_goal.id-previous_lcm_goal.id);
 
 
@@ -129,6 +151,9 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
     lcm_object.robot_name = "atlas";
     lcm_object.num_steps = dccl_plan.goal_diff().utime_diff_size() + 1; // +1 for first_goal    
     lcm_object.is_new_plan = dccl_plan.is_new_plan();    
+    lcm_object.footstep_opts.ignore_terrain = dccl_plan.opts_ignore_terrain();
+    lcm_object.footstep_opts.mu = dccl_plan.opts_mu();
+    
     
     const drc::MinimalFootStepGoal& first_goal = dccl_plan.first_goal();
     
@@ -141,10 +166,11 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
     first_lcm_goal.pos.translation.y = first_goal.translation_y();
     first_lcm_goal.pos.translation.z = first_goal.translation_z();
 
-    first_lcm_goal.pos.rotation.x = std::numeric_limits<double>::quiet_NaN();
-    first_lcm_goal.pos.rotation.y = std::numeric_limits<double>::quiet_NaN();
-    first_lcm_goal.pos.rotation.z = std::numeric_limits<double>::quiet_NaN();
-    first_lcm_goal.pos.rotation.w = std::numeric_limits<double>::quiet_NaN();
+    first_lcm_goal.pos.rotation.x = first_goal.rotation_x();
+    first_lcm_goal.pos.rotation.y = first_goal.rotation_y();
+    first_lcm_goal.pos.rotation.z = first_goal.rotation_z();
+    first_lcm_goal.pos.rotation.w = first_goal.rotation_w();
+    quaternion_normalize(first_lcm_goal.pos.rotation);
     
     first_lcm_goal.id = first_goal.id();
     first_lcm_goal.is_right_foot = first_goal.is_right_foot();
@@ -172,6 +198,13 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
         lcm_goal.pos.translation.x += goal_diff.translation_x_diff(i);
         lcm_goal.pos.translation.y += goal_diff.translation_y_diff(i);
         lcm_goal.pos.translation.z += goal_diff.translation_z_diff(i);
+
+        lcm_goal.pos.rotation.x += goal_diff.rotation_x_diff(i);
+        lcm_goal.pos.rotation.y += goal_diff.rotation_y_diff(i);
+        lcm_goal.pos.rotation.z += goal_diff.rotation_z_diff(i);
+        lcm_goal.pos.rotation.w += goal_diff.rotation_w_diff(i);
+        quaternion_normalize(lcm_goal.pos.rotation);
+        
         lcm_goal.id += goal_diff.id_diff(i);
         
         lcm_goal.is_right_foot = goal_diff.is_right_foot(i);

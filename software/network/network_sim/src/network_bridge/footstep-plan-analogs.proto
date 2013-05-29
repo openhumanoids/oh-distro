@@ -11,14 +11,23 @@ message MinimalFootStepPlan
   required MinimalFootStepGoal first_goal = 2;
   required MinimalFootStepGoalDiff goal_diff = 3;
   required bool is_new_plan = 4;
+  required bool opts_ignore_terrain = 10;
+  required double opts_mu = 11 [(dccl.field) = { min: 0 max: 1.5 precision: 2 }];
 }
 
 message MinimalFootStepGoal
 {
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 604800000000 }];
+
   required double translation_x = 2 [(dccl.field) = { min: -200 max: 200 precision: 3}];
   required double translation_y = 3 [(dccl.field) = { min: -200 max: 200 precision: 3}];
   required double translation_z = 4 [(dccl.field) = { min: -200 max: 200 precision: 3}];
+
+  required double rotation_x = 30 [(dccl.field) = { min: -1 max: 1 precision: 3}];
+  required double rotation_y = 31 [(dccl.field) = { min: -1 max: 1 precision: 3}];
+  required double rotation_z = 32 [(dccl.field) = { min: -1 max: 1 precision: 3}];
+  required double rotation_w = 33 [(dccl.field) = { min: -1 max: 1 precision: 3}];
+
   required double step_speed = 5 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 }];
   required double step_height = 6 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 }];
 
@@ -39,6 +48,12 @@ message MinimalFootStepGoalDiff
   repeated double translation_x_diff = 2 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
   repeated double translation_y_diff = 3 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
   repeated double translation_z_diff = 4 [(dccl.field) = { min: -1.6 max: 1.6 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+
+  repeated double rotation_x_diff = 30 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double rotation_y_diff = 31 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double rotation_z_diff = 32 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+  repeated double rotation_w_diff = 33 [(dccl.field) = { min: -1 max: 1 precision: 3 max_repeat: 100 codec: "presence_bit"}];
+
   repeated int32 id_diff = 7 [(dccl.field) = { min: 0 max: 3 max_repeat: 100 codec: "presence_bit"}];
   
 
@@ -53,4 +68,5 @@ message MinimalFootStepGoalDiff
 
   repeated double step_speed = 20 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 max_repeat: 100 codec: "presence_bit" }];
   repeated double step_height = 21 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 max_repeat: 100 codec: "presence_bit"}];
+
 }

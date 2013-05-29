@@ -155,15 +155,12 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
 
     // renormalize rotation quat
     const drc::RotationQuaternion& rotation = dccl_state.origin_position().rotation();
-    double length = std::sqrt(rotation.x()*rotation.x() +
-                       rotation.y()*rotation.y() +
-                       rotation.z()*rotation.z() +
-                       rotation.w()*rotation.w());
+    lcm_object.origin_position.rotation.x = rotation.x();
+    lcm_object.origin_position.rotation.y = rotation.y();
+    lcm_object.origin_position.rotation.z = rotation.z();
+    lcm_object.origin_position.rotation.w = rotation.w();
 
-    lcm_object.origin_position.rotation.x = rotation.x() / length;
-    lcm_object.origin_position.rotation.y = rotation.y() / length;
-    lcm_object.origin_position.rotation.z = rotation.z() / length;
-    lcm_object.origin_position.rotation.w = rotation.w() / length;
+    quaternion_normalize(lcm_object.origin_position.rotation);
 
     lcm_object.num_joints = dccl_state.joint_position_size();
     lcm_object.joint_name.resize(dccl_state.joint_position_size());
