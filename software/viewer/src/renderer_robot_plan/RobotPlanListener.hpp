@@ -267,6 +267,19 @@ namespace renderer_robot_plan
 		    return _is_multi_approve_plan;
 		};
 		
+		void purge_current_plan(){
+		    _gl_robot_list.clear();
+        if(_is_manip_plan){
+        _gl_robot_keyframe_list.clear();
+        _gl_left_hand->enable_bodypose_adjustment(false); 
+        _gl_right_hand->enable_bodypose_adjustment(false);
+        _gl_left_foot->enable_bodypose_adjustment(false); 
+        _gl_right_foot->enable_bodypose_adjustment(false);
+        _is_manip_plan = false;
+        }
+        _is_manip_map = false;
+		};	
+		
 		void activate_walking_plan()
     {
 		  _is_manip_plan =false;

@@ -15,8 +15,7 @@ namespace renderer_robot_plan_gui_utils
     cout <<"Publishing on REJECTED_MANIP_MAP" << endl;
     string channel = "REJECTED_MANIP_MAP";   
     self->robotPlanListener->commit_manip_map(self->robot_utime,channel);    
-    self->robotPlanListener->_gl_robot_list.clear(); 
-    self->robotPlanListener->_is_manip_map = false;
+    self->robotPlanListener->purge_current_plan();
     gtk_widget_destroy (self->plan_approval_dock);
     self->plan_approval_dock= NULL;
     bot_viewer_request_redraw(self->viewer);

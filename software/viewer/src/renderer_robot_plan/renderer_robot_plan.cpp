@@ -152,15 +152,21 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glPopMatrix();
   }
   
-  
-
   int plan_size =   self->robotPlanListener->_gl_robot_list.size();
-  if (plan_size ==0) // nothing to renderer
+  if (plan_size ==0){ // nothing to renderer
+  // on receipt of a apprved footstep plan, the current plan is purged in waiting for a new walking plan.
+  // if any plan execution/approval dock's exist, they will be destroyed.
+    if(self->plan_execution_dock!=NULL){
+      gtk_widget_destroy(self->plan_execution_dock);
+      self->plan_execution_dock= NULL;  
+    } 
+    if(self->plan_approval_dock!=NULL){
+      gtk_widget_destroy(self->plan_approval_dock);
+      self->plan_approval_dock= NULL;  
+    }   
     return;
-    
+  }
 
-  
-  
    // Show keyframes
   if((self->show_keyframes)&&(self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
   {
@@ -225,6 +231,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
  if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))
     spawn_plan_approval_dock (self);
+    
+
 }
 
 

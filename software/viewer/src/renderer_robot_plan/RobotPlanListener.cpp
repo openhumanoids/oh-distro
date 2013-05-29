@@ -340,6 +340,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   {
 		_received_footstep_plan = *msg;
     _aprvd_footstep_plan_in_cache = true;
+     purge_current_plan();
   }
   
   void RobotPlanListener::handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
