@@ -241,7 +241,7 @@ classdef ManipulationPlanner < handle
             if(is_manip_map)
                 timeIndices = unique([Indices.time]);
             else
-                timeIndices = Indices;
+                timeIndices = unique(Indices);
             end
             N = length(timeIndices);
             plan_Indices=[];
@@ -1279,8 +1279,8 @@ classdef ManipulationPlanner < handle
                 r_hand_pose_at_t=pose_spline(s_breaks,rhand_breaks,si);  %#ok<*PROP> % evaluate in quaternions
                 l_hand_pose_at_t=pose_spline(s_breaks,lhand_breaks,si); % evaluate in quaternions
                 r_foot_pose_at_t=pose_spline(s_breaks,rfoot_breaks,si);  %#ok<*PROP> % evaluate in quaternions
-                    l_foot_pose_at_t=pose_spline(s_breaks,lfoot_breaks,si);
-                    head_pose_at_t=pose_spline(s_breaks,head_breaks,si); % evaluate in quaternions
+                l_foot_pose_at_t=pose_spline(s_breaks,lfoot_breaks,si);
+                head_pose_at_t=pose_spline(s_breaks,head_breaks,si); % evaluate in quaternions
                 
                 
                 if(si~=s(end))

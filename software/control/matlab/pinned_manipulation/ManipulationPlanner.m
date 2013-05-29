@@ -241,7 +241,7 @@ classdef ManipulationPlanner < handle
             if(is_manip_map)
                 timeIndices = unique([Indices.time]);
             else
-                timeIndices = Indices;
+                timeIndices = unique(Indices);
             end
             N = length(timeIndices);
             plan_Indices=[];
