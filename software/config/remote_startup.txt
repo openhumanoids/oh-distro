@@ -1,3 +1,8 @@
+1. on gazebo:
+roscore
+drc-set-sim-rate 0.2
+
+2. on other 3 machines:
 ROBOT:
 drc-network-shaper -t manipulation -r robot -c drc_robot.cfg
 bot-procman-deputy -n robot
@@ -10,3 +15,18 @@ bot-procman-deputy -n base
 drc-network-shaper -t manipulation -r base -c drc_robot.cfg
 bot-procman-sheriff ~/drc/software/config/drc_robot.pmd
 
+3. 
+roslaunch mit.launch [your world]
+gzclient
+
+
+
+
+
+
+robot - paladin-02 - 10.0.0.52
+drc@???
+extra - paladin-10 - 10.0.0.53
+drc@128.30.29.173
+gazebo - paladin-13 - 10.0.0.51
+drc@128.30.29.193
