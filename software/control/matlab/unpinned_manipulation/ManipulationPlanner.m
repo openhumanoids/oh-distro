@@ -27,7 +27,8 @@ classdef ManipulationPlanner < handle
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.num_breaks = 4;
             obj.v_desired = 0.3; % 30cm/sec seconds, hard coded for now
-            obj.plan_pub = RobotPlanPublisherWKeyFrames('atlas',joint_names,true,'CANDIDATE_MANIP_PLAN',obj.num_breaks);
+            %obj.plan_pub = RobotPlanPublisherWKeyFrames('atlas',joint_names,true,'CANDIDATE_MANIP_PLAN',obj.num_breaks);
+            obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
             restrict_feet=true;
         end
@@ -41,7 +42,7 @@ classdef ManipulationPlanner < handle
             
             switch nargin
                 case 7
-            is_keyframe_constraint = false;
+                    is_keyframe_constraint = false;
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
                     lh_ee_goal= varargin{3};
@@ -59,11 +60,12 @@ classdef ManipulationPlanner < handle
                     h_ee_goal = varargin{6};
                     q_desired = varargin{7};
                     runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint,q_desired);
-                case 5
+                case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
                     ee_loci = varargin{3};
                     timeIndices = varargin{4};
+                    postureconstraint = varargin{5};
                     % runs IK sequence but its  slow. 
                     % Given N constraitns, iksequence needs atleast N break points
                     % which is slow.
@@ -71,7 +73,7 @@ classdef ManipulationPlanner < handle
                     
                     % Point wise IK, much faster, linear complexity.
                     is_manip_map =false;
-                    runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,is_manip_map);            
+                    runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,is_manip_map);            
                 otherwise
                     error('Incorrect usage of generateAndPublishManipulationPlan in Mnaip Planner. Undefined number of vargin.')
             end
@@ -81,13 +83,13 @@ classdef ManipulationPlanner < handle
         
         function generateAndPublishManipulationMap(obj,x0,ee_names,ee_loci,affIndices)
             is_manip_map =true;
-            runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,affIndices,is_manip_map);
+            runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,affIndices,[],is_manip_map);
         end
         
         function generateAndPublishPosturePlan(obj,x0,q_desired)
            runOptimizationForPosturePlan(obj,x0,q_desired);
         end
-            
+        
         function runOptimizationForPosturePlan(obj,x0,q_desired)
             disp('Generating posture plan...');
             q0 = x0(1:getNumDOF(obj.r));
@@ -124,7 +126,7 @@ classdef ManipulationPlanner < handle
             end
             obj.qtraj_guess_fine = PPTrajectory(spline(s, q));                  
             disp('Publishing posture plan...');
-            xtraj = zeros(getNumStates(obj.r)+1,length(s));
+            xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             
  
@@ -149,17 +151,20 @@ classdef ManipulationPlanner < handle
             for l =1:length(s_breaks),
                 ind = find(abs(s - s_breaks(l))<1e-3);
                 xtraj(1,ind) = 1.0;
+                xtraj(2,ind) = 0.0;
             end
-            xtraj(2:getNumDOF(obj.r)+1,:) = q;  
+            xtraj(3:getNumDOF(obj.r)+2,:) = q;  
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
-            obj.plan_pub.publish(ts,xtraj);
-        
+            
+            %obj.plan_pub.publish(ts,xtraj);
+            utime = now() * 24 * 60 * 60;
+            obj.plan_pub.publish(xtraj,ts,utime);
         end       
                 
-        function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,is_manip_map)
+        function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,is_manip_map)
             if(is_manip_map)
-            disp('Generating manip map...');
+                disp('Generating manip map...');
                 send_status(3,0,0,'Generating manip map...');
             else
                 disp('Generating manip plan...');
@@ -173,7 +178,7 @@ classdef ManipulationPlanner < handle
             kinsol = doKinematics(obj.r,q0);
             r_foot_body = obj.r.findLink('r_foot');
             l_foot_body = obj.r.findLink('l_foot');
-			head_body = obj.r.findLink('head');
+            head_body = obj.r.findLink('head');
             
             r_foot_pose0 = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],2);
@@ -214,7 +219,7 @@ classdef ManipulationPlanner < handle
             T_palm_hand_l = inv_HT(T_hand_palm_l);
             T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
             T_palm_hand_r = inv_HT(T_hand_palm_r);
-                       
+            
             ind = getActuatedJoints(obj.r);
             cost = getCostVector2(obj);
             
@@ -288,8 +293,8 @@ classdef ManipulationPlanner < handle
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-                        lhand_const.min = l_hand_pose-1e-4*[ones(3,1);ones(4,1)];
-                        lhand_const.max = l_hand_pose+1e-4*[ones(3,1);ones(4,1)];
+                        lhand_const.min = l_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
+                        lhand_const.max = l_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
                             plan_Indices(i).aff_type=Indices(ind(k)).aff_type;
                             plan_Indices(i).aff_uid=Indices(ind(k)).aff_uid;
@@ -313,8 +318,8 @@ classdef ManipulationPlanner < handle
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
-                        rhand_const.min = r_hand_pose-1e-4*[ones(3,1);ones(4,1)];
-                        rhand_const.max = r_hand_pose+1e-4*[ones(3,1);ones(4,1)];
+                        rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
+                        rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
                             plan_Indices(i).aff_type=Indices(ind(k)).aff_type;
                             plan_Indices(i).aff_uid=Indices(ind(k)).aff_uid;
@@ -488,15 +493,18 @@ classdef ManipulationPlanner < handle
                 
                 obj.map_pub.publish(xtraj,plan_Indices,utime);
             else
-                xtraj = zeros(getNumStates(obj.r)+1,length(timeIndices));
+                xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
                 xtraj(1,:) = 0*timeIndices;
                 keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.num_breaks))); % no more than ${obj.num_breaks} keyframes
                 xtraj(1,keyframe_inds) = 1.0;
-                xtraj(2:getNumDOF(obj.r)+1,:) = q;
+                xtraj(2,:) = 0*timeIndices;
+                xtraj(3:getNumDOF(obj.r)+2,:) = q;
                 
-                s = (timeIndices-min(timeIndices))/max(timeIndices);
+                s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
                 obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
-                s_breaks = s(keyframe_inds);
+                
+                s_sorted = sort(s);
+                s_breaks = s_sorted(keyframe_inds);
                 obj.s_breaks = s_breaks;
                 % calculate end effectors breaks via FK.
                 for brk =1:length(s_breaks),
@@ -507,14 +515,14 @@ classdef ManipulationPlanner < handle
                     rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,r_foot_body,[0;0;0],2);
                     lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,l_foot_body,[0;0;0],2);
                     head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,head_body,[0;0;0],2);
-        end
+                end
                 s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
                 s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
                 s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-                s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);  ;
-       
+                s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head); 
+                
                 ts = s.*(s_total/obj.v_desired); % plan timesteps
                 obj.time_2_index_scale = (obj.v_desired/s_total);
                 obj.plan_pub.publish(ts,xtraj);
@@ -548,11 +556,15 @@ classdef ManipulationPlanner < handle
                     h_ee_goal = varargin{6};
                     is_keyframe_constraint = varargin{7};
                     q_desired = varargin{8};
-                case 5
+                case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
                     ee_loci = varargin{3};
                     timeIndices = varargin{4};
+                    postureconstraint =varargin{5};
+                    % joint_timestamps=[postureconstraint.time];
+                    % joint_names = {postureconstraint.name};
+                    % joint_positions = [postureconstraint.joint_position];
                     is_locii = true;
                 otherwise
                     error('Incorrect usage of runOptimization in Manip Planner. Undefined number of vargin.')
@@ -608,9 +620,9 @@ classdef ManipulationPlanner < handle
             
             if(~is_keyframe_constraint)
                 
-
+                
                 obj.restrict_feet=true;
-
+                
                 if(isempty(rh_ee_goal))
                     rh_ee_goal = forwardKin(obj.r,kinsol,r_hand_body,[0;0;0],1);
                     rhandT  = rh_ee_goal(1:6);
@@ -714,7 +726,7 @@ classdef ManipulationPlanner < handle
                     T_world_hand_r = T_world_palm_r*T_palm_hand_r;
                     rhand_int_constraint(1:3) = T_world_hand_r(1:3,4);
                     rhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
-
+                    
                     if(abs(1-s_int_rh)<1e-3)
                       disp('rh end state is modified')
                       r_hand_poseT(1:3) = rhand_int_constraint(1:3);
@@ -1339,8 +1351,9 @@ classdef ManipulationPlanner < handle
             
             % publish robot plan
             disp('Publishing plan...');
-            xtraj = zeros(getNumStates(obj.r)+1,length(s));
+            xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
+            xtraj(2,:) = 0*s;
             if(length(s_breaks)>obj.num_breaks)                
                keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.num_breaks)));   
             else
@@ -1351,15 +1364,17 @@ classdef ManipulationPlanner < handle
                 ind = find(s == s_breaks(l));
                 xtraj(1,ind) = 1.0;
             end
-            xtraj(2:getNumDOF(obj.r)+1,:) = q;
+            xtraj(3:getNumDOF(obj.r)+2,:) = q;
             
             
             
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
-            obj.plan_pub.publish(ts,xtraj);
+            %obj.plan_pub.publish(ts,xtraj);
+            utime = now() * 24 * 60 * 60;
+            obj.plan_pub.publish(xtraj,ts,utime);
         end
-         
+        
         function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;

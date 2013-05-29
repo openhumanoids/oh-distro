@@ -76,12 +76,6 @@ x0 = getInitialState(r);
 q0 = x0(1:getNumDOF(r));
 
 kinsol = doKinematics(r,q0);
-% r_hand_body = findLink(r,'right_palm');
-% l_hand_body = findLink(r,'left_palm');
-% r_hand_body = findLink(r,'r_hand');
-% l_hand_body = findLink(r,'l_hand');
-% rh_ee_goal = forwardKin(r,kinsol,r_hand_body,[0;0;0],1);
-% lh_ee_goal = forwardKin(r,kinsol,l_hand_body,[0;0;0],1);
 
 
 rh_ee_goal = [];
@@ -185,7 +179,7 @@ while(1)
        
   end
   
-  lh_ee_traj= lh_ee_motion_command_listener.getNextMessage(0);
+  [lh_ee_traj,~]= lh_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(lh_ee_traj))
       disp('Left hand traj goal received.');
       p = lh_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -195,7 +189,7 @@ while(1)
       lh_ee_goal=[p(:);rpy(:)];
   end
   
-  rh_ee_traj= rh_ee_motion_command_listener.getNextMessage(0);
+  [rh_ee_traj,~]= rh_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(rh_ee_traj))
       disp('Right hand traj goal received.');
       p = rh_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -205,7 +199,7 @@ while(1)
       rh_ee_goal=[p(:);rpy(:)];
   end
   
-  lf_ee_traj= lf_ee_motion_command_listener.getNextMessage(0);
+  [lf_ee_traj,~]= lf_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(lf_ee_traj))
       disp('Left foot traj goal received.');
       p = lf_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -216,8 +210,8 @@ while(1)
       lep = [lep_pos(1:3,:);bsxfun(@times,ones(1,size(lfoot_pts,2)),q(:))];
       lf_ee_goal=[lep_pos(1:3,:);bsxfun(@times,ones(1,size(lfoot_pts,2)),rpy(1:3))];
   end
-
-  rf_ee_traj= rf_ee_motion_command_listener.getNextMessage(0);
+  
+  [rf_ee_traj,~]= rf_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(rf_ee_traj))
       disp('Right hand traj goal received.');
       p = rf_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -234,8 +228,8 @@ while(1)
       (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
       manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal); 
   end
-  
-  trajoptconstraint= trajoptconstraint_listener.getNextMessage(0);
+
+  [trajoptconstraint,postureconstraint]= trajoptconstraint_listener.getNextMessage(0);
   if(~isempty(trajoptconstraint))
       disp('time indexed traj opt constraint for manip plan received .');
       
@@ -243,13 +237,17 @@ while(1)
       timestamps =[trajoptconstraint.time];
       ee_names = {trajoptconstraint.name};
       ee_loci = zeros(6,length(ee_names));
+      
+        % joint_timestamps=[postureconstraint.time];
+        % joint_names = {postureconstraint.name};
+        % joint_positions = [postureconstraint.joint_position];
       for i=1:length(ee_names),
           p = trajoptconstraint(i).desired_pose(1:3);% for now just take the end state
           q = trajoptconstraint(i).desired_pose(4:7);q=q/norm(q);
           rpy = quat2rpy(q);
           ee_loci(:,i)=[p(:);rpy(:)];
       end
-      manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps);
+      manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps,postureconstraint);
   end    
   
   

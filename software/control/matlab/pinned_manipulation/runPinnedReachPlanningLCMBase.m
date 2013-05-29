@@ -307,7 +307,7 @@ while(1)
       disp ('Clearing head goal pose');
       h_ee_goal = [];
   end
-  
+
 end
 
 

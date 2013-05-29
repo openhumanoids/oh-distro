@@ -747,7 +747,7 @@ classdef ManipulationPlanner < handle
                 r_foot_poseT = [rfootT(1:3); rpy2quat(rfootT(4:6))];
                 l_foot_poseT = [lfootT(1:3); rpy2quat(lfootT(4:6))];
                 head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
-                
+
                 if(isempty(rh_ee_goal))
                     s_int_rh= nan;
                     rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
@@ -762,12 +762,12 @@ classdef ManipulationPlanner < handle
                     rhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                     
                     if(abs(1-s_int_rh)<1e-3)
-                        disp('rh end state is modified')
-                        r_hand_poseT(1:3) = rhand_int_constraint(1:3);
-                        r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
-                        obj.rhandT = rhand_int_constraint;
-                        rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
-                        rh_ee_goal=[];
+                      disp('rh end state is modified')
+                      r_hand_poseT(1:3) = rhand_int_constraint(1:3);
+                      r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
+                      obj.rhandT = rhand_int_constraint;
+                      rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
+                      rh_ee_goal=[];
                     end
                 end
                 
@@ -785,12 +785,12 @@ classdef ManipulationPlanner < handle
                     lhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                     
                     if(abs(1-s_int_lh)<1e-3)
-                        disp('lh end state is modified')
-                        l_hand_poseT(1:3) = lhand_int_constraint(1:3);
-                        l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
-                        obj.lhandT = lhand_int_constraint;
-                        lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
-                        lh_ee_goal=[];
+                      disp('lh end state is modified')
+                      l_hand_poseT(1:3) = lhand_int_constraint(1:3);
+                      l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
+                      obj.lhandT = lhand_int_constraint;
+                      lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
+                      lh_ee_goal=[];
                     end
                 end
                 
@@ -908,8 +908,8 @@ classdef ManipulationPlanner < handle
             
             % kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
             % ks = ks.addKinematicConstraint(kc_com);
-            
-            if(isempty(q_desired))
+        
+			if(isempty(q_desired))
                 r_hand_poseT_relaxed.min=r_hand_poseT-1e-3;
                 r_hand_poseT_relaxed.max=r_hand_poseT+1e-3;
                 l_hand_poseT_relaxed.min=l_hand_poseT-1e-3;
