@@ -219,6 +219,8 @@ classdef ManipulationPlanner < handle
             T_palm_hand_l = inv_HT(T_hand_palm_l);
             T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
             T_palm_hand_r = inv_HT(T_hand_palm_r);
+            T_palm_grasp = HT([0.05;0;0],0,0,0); % Notional grasp point
+            T_grasp_palm = inv_HT(T_palm_grasp);
             
             ind = getActuatedJoints(obj.r);
             cost = getCostVector2(obj);
@@ -293,6 +295,11 @@ classdef ManipulationPlanner < handle
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
+                        T_world_grasp = T_world_palm_l * T_palm_grasp;
+                        lgraspT = zeros(6,1);
+                        lgraspT(1:3) = T_world_grasp(1:3,4);
+                        lgraspT(4:6) =rotmat2rpy(T_world_grasp(1:3,1:3));
+                        l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];
                         lhand_const.min = l_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         lhand_const.max = l_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
@@ -302,7 +309,8 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('l_hand')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
-                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_hand_pose];
+                            %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_hand_pose];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_grasp_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.lhandT = l_ee_goal;
@@ -424,22 +432,29 @@ classdef ManipulationPlanner < handle
                         elseif (strcmp('r_foot',ee_name))
                             map_pose = forwardKin(obj.r,kinsol_tmp,r_foot_body,[0;0;0],2);
                         end;
-                        
+                        rpy = quat2rpy(map_pose(4:7));
+                        T_world_m_hand = HT(map_pose(1:3),rpy(1), rpy(2), rpy(3));
+                        %map_pose = T_palm_grasp * T_hand_palm_l * map_pose;
+                        T_world_m_grasp = T_world_m_hand * T_hand_palm_l * T_palm_grasp;
+                        map_pose = [T_world_m_grasp(1:3,4); rpy2quat(rotmat2rpy(T_world_m_hand(1:3,1:3)))];
                         desired_pose = plan_Indices(i).dof_pose(:,j);
-                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
+                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2))
                         
                         if (numel(ee_temp) < j)
                             ee_temp(j).map_pose = [];
                             ee_temp(j).dof_reached = [];
+                            ee_temp(j).pos_dist = [];
                             ee_temp(j).ee_name = ee_name;
                         end;
                         
+                        e_threshold = 0.075;
                         ee_temp(j).map_pose = [ee_temp(j).map_pose map_pose];
-                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < 0.01)];
-                                                    
+                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < e_threshold)];
+                        ee_temp(j).pos_dist = [ee_temp(j).pos_dist pos_dist];
+                        
                         % Is the resulting pose sufficiently close to the
                         % desired pose?
-                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < 0.01)];
+                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < e_threshold)];
                     end;
                 end;
                         
@@ -457,6 +472,7 @@ classdef ManipulationPlanner < handle
                             [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2)); 
                         end;
                         
+                        fprintf (1, 'Current index is %d whose distance is %.4f\n', jcur, ee_temp(i).pos_dist(jcur));
                         % find the min and max indices of the dof value
                         jmax = jcur;
                         jmin = jcur;
@@ -501,6 +517,13 @@ classdef ManipulationPlanner < handle
                 xtraj(3:getNumDOF(obj.r)+2,:) = q;
                 
                 s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
+                
+                timeIndices
+                
+                fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
+                    
+                s
+                
                 obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
                 
                 s_sorted = sort(s);
