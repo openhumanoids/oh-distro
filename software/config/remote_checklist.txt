@@ -3,3 +3,11 @@ make clean
 make
 
 2. fix the drake revision number for the competition
+
+
+3. 4 machine revision as of 28th May:
+drc   4198
+drake 6137
+to disable mex: use_mex = false
+matlab/StandingController.m 
+matkab/WalkingController.m

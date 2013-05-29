@@ -208,7 +208,7 @@ group "a.4.driving" {
     }
 }
 
-group "a.6.ingress" {
+group "a.4.ingress" {
     cmd "IngressStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
         host = "robot";
@@ -216,7 +216,7 @@ group "a.6.ingress" {
 }
 
 # Controllers & ManipMap2Plan parsers for vrc task 1 (Driving)
-group "a.7.manipulation4driving" {
+group "a.4.manipulation4driving" {
     cmd "DrivingController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
         host = "robot";
