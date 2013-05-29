@@ -5,7 +5,8 @@
  		<mass value="3.131"/> <!--NEW value-->
     <!-- <mass value="2.312"/>--><!--OLD value-->
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      <!--Changed inertias from 0.01 to 0.1. Temporary fix (Sisir)-->
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -21,7 +22,7 @@
  		<mass value="3.131"/> <!--NEW value-->
     <!-- <mass value="2.312"/>--><!--OLD value-->
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -37,7 +38,7 @@
     <child link="l_hand_point_mass"/>
 
     <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/><!--NEW value-->
-   <!-- <origin rpy="0 0 0" xyz="0.0054 0.1905 -0.0129"/>--><!--OLD value-->
+   <!-- <origin rpy="0 0 0" xyz="0.0054 0.1905 -0.129"/>--><!--OLD value-->
   </joint>
 
 <!-- COM numbers are made up for now -->
@@ -45,7 +46,7 @@
     <parent link="r_hand"/>
     <child link="r_hand_point_mass"/>
 	 <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/><!--NEW value-->
-   <!--   <origin rpy="0 0 0" xyz="0.0054 -0.1905 -0.0129"/>--><!--OLD value-->
+   <!--   <origin rpy="0 0 0" xyz="0.0054 -0.1905 -0.129"/>--><!--OLD value-->
   </joint>
    
 </robot>
