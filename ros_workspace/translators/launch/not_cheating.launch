@@ -7,14 +7,16 @@
   <node type="dynparam" pkg="dynamic_reconfigure" args="set /multisense_sl/camera/right/image_rect/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
 
   <!-- L Hand -->
-  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/l_hand/camera/left/image_raw '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
-  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/l_hand/camera/right/image_raw '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
+  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/l_hand/camera/left/image_raw/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
+  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/l_hand/camera/right/image_raw/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
 
   <!-- R Hand -->
-  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/r_hand/camera/left/image_raw '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
-  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/r_hand/camera/right/image_raw '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
+  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/r_hand/camera/left/image_raw/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
+  <node type="dynparam" pkg="dynamic_reconfigure" args="set /sandia_hands/r_hand/camera/right/image_raw/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
 
 
+
+  <node name="lcm2ros" pkg="translators" type="lcm2ros" /> 
 
   <node name="ros2lcm" pkg="translators" type="ros2lcm" args="vrc_cheats_disabled" /> 
 
@@ -27,5 +29,4 @@
   <param name="/ros2lcm_camera/image_transport" value="compressed" />
   <node name="ros2lcm_camera" pkg="translators" type="ros2lcm_camera"  /> 
 </launch>
-  
 
