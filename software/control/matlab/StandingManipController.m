@@ -17,7 +17,8 @@ classdef StandingManipController < DRCController
         'R',zeros(2),...
         'Qy',eye(2),...
         'S',[],...
-        's1',zeros(4,1),...
+        's1',[],...
+        's2',[],...
         'x0',zeros(4,1),...
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
@@ -25,7 +26,12 @@ classdef StandingManipController < DRCController
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0,...
-        'ee_link_ind',[]));
+        'rh_goal',[],...
+				'lh_goal',[],...
+				'lh_prev_t',[],...
+				'lh_err_int',[],...
+				'rh_prev_t',[],...
+				'rh_err_int',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -40,23 +46,12 @@ classdef StandingManipController < DRCController
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
       if(~isfield(options,'use_mex')) options.use_mex = false; end
 
+      options.lcm_foot_contacts = true;
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      if(~isfield(options,'control'))
-        options.control = 'SimplePD';
-      end
-      if(strcmp(options.control,'SimplePD'))
-        pd = SimplePDBlock(r,ctrl_data);
-      elseif(strcmp(options.control,'NaivePD'))
-        pd = NaivePDController(r,ctrl_data);
-      elseif(strcmp(options.control,'Impedance'))
-        if(isfield(options,'impedance'))
-          pd = ImpedanceController(r,ctrl_data,options.impedance);
-        else
-          pd = ImpedanceController(r,ctrl_data);
-        end
-      end
+			pd = SimplePDBlock(r,ctrl_data);
+
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -82,7 +77,23 @@ classdef StandingManipController < DRCController
       connection(2).from_output = 2;
       connection(2).to_input = 2;
       sys = mimoCascade(neck,sys,connection,ins,outs);
-      
+
+			% cascade cartesian controller on left and right hands
+      ee_control = ManipCartesianController(r,ctrl_data);
+			ins(1).system = 1;
+			ins(1).input = 1;
+			ins(2).system = 1;
+			ins(2).input = 2;
+			ins(3).system = 1;
+			ins(3).input = 3;
+			ins(4).system = 2;
+			ins(4).input = 2;
+			outs(1).system = 2;
+			outs(1).output = 1;
+			connection(1).from_output = 1;
+			connection(1).to_input = 1;
+			sys = mimoCascade(sys,ee_control,[],ins,outs);
+
       obj = obj@DRCController(name,sys);
  
       obj.robot = r;
@@ -92,6 +103,7 @@ classdef StandingManipController < DRCController
       obj.controller_data = ctrl_data;
       
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
+      obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
 
       % should make this a more specific channel name
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
@@ -184,7 +196,6 @@ classdef StandingManipController < DRCController
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
         obj.controller_data.setField('supptraj',foot_support);
-%         obj.controller_data.setField('qnom',q0);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout
