@@ -100,7 +100,7 @@ group "a.2.walking" {
     }
 }
 
-
+# Bare bone grasping
 group "a.3.grasping" {
     cmd "HarnessedController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
@@ -112,29 +112,7 @@ group "a.3.grasping" {
     } 
 }
 
-group "a.3.hose" {
-    cmd "Task3StateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runTask3StateMachine;\"";
-        host = "robot";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
-       host = "robot";
-    } 
-    cmd "imagemask" {
-        exec = "drc-image-passthrough";
-        host = "robot";
-    }
-    cmd "tracker" {
-        exec = "object-tracker -s -a 1";
-        host = "robot";
-    } 
-    cmd "affordance_init" {
-        exec = "affordance_init -e 2";
-        host = "robot";
-    } 
-}
-
+# Bare bone grasping for quals 2 with drill affordance init
 group "a.3.grasping4qual2" {
     cmd "HarnessedController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
@@ -158,30 +136,8 @@ group "a.3.grasping4qual2" {
     } 
 }
 
-group "a.3.unpinned_grasping" {
-    cmd "UnpinnedManipStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runUnpinnedManipStateMachine;\"";
-        host = "robot";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
-       host = "robot";
-    } 
-    cmd "imagemask" {
-        exec = "drc-image-passthrough";
-        host = "extra";
-    }
-    cmd "tracker" {
-        exec = "object-tracker";
-        host = "extra";
-    } 
-    cmd "affordance_init" {
-        exec = "affordance_init -e 2";
-        host = "extra";
-    } 
-}
-
-group "a.3.walking_manip" {
+# Controllers for vrc task 3 (hose manipulation)
+group "a.3.vrc_task_3_walking_manip_controllers" {
     cmd "WalkingManipStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
         host = "robot";
@@ -190,18 +146,20 @@ group "a.3.walking_manip" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
-    cmd "imagemask" {
-        exec = "drc-image-passthrough";
-        host = "extra";
-    }
-    cmd "tracker" {
-        exec = "object-tracker";
-        host = "extra";
-    } 
-    cmd "affordance_init" {
-        exec = "affordance_init -e 2";
-        host = "extra";
-    } 
+# To be integrated (Sisir,28th May)
+# ----------------------------------
+#    cmd "imagemask" {
+#        exec = "drc-image-passthrough";
+#        host = "extra";
+#    }
+#    cmd "tracker" {
+#        exec = "object-tracker";
+#        host = "extra";
+#    } 
+#    cmd "affordance_init" {
+#        exec = "affordance_init -e 5";
+#        host = "extra";
+#    } 
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "robot";
@@ -257,6 +215,7 @@ group "a.6.ingress" {
     }
 }
 
+# Controllers & ManipMap2Plan parsers for vrc task 1 (Driving)
 group "a.7.manipulation4driving" {
     cmd "DrivingController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
@@ -333,18 +292,8 @@ group "b.3.grasping" {
     }
 }
 
-group "b.3.unpinned_grasping" {
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
-       host = "base";
-    }
-    cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
-       host = "base";
-    }
-}
-
-group "b.3.walking_manip" {
+# Planners for Simulataneous Walking and Manipulation
+group "b.3.vrc_task_3_walking_manip_planners" {
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
        host = "base";
@@ -424,15 +373,11 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit_not_walking.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
         host = "robot";
     }
-    cmd "gz_vrc_hose" {
-        exec = "roslaunch mit_drcsim_scripts mit_not_walking.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
-        host = "robot";
-    }
     cmd "gz_vrc_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
-    cmd "gz_vrc_manip" {
+    cmd "gz_vrc_task_3_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
@@ -625,8 +570,8 @@ script "comp.vrc_walking" {
 script "comp.vrc_manip" {
     start group "a.1.core";
     start group "b.1.core";
-    start group "a.3.grasping";
-    start group "b.3.grasping";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
 }
 
 script "comp.vrc_driving" {
@@ -718,18 +663,6 @@ script "dev.vrc_driving_with_manip" {
     #start group "b.4.driving";
 }
 
-script "dev.vrc_hose_task" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.hose";
-    start group "b.3.grasping";
-    wait ms 25000;
-    start cmd "gz_vrc_hose";
-    #wait ms 5000; 
-    #start cmd "enable_gravity_when_pinned";
-    wait ms 5000; 
-    start cmd "enable_user_mode";
-}
 
 script "dev.mit_walking" {
     start group "0.development";
@@ -761,25 +694,6 @@ script "dev.mit_walking_vo" {
 		start cmd "simple_left_grasp";
 }
 
-script "dev.mit_manip_nohands" {
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 25000;
-    start cmd "gz_mit_manip_nohands";
-}
-
-script "dev.mit_manip" {
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
-    wait ms 25000;
-    start cmd "gz_mit_manip";
-}
-
 script "dev.ingress" { 
     start group "0.development";
     start group "a.1.core";
@@ -791,24 +705,14 @@ script "dev.ingress" {
 		start cmd "simple_left_grasp";
 }
 
-script "dev.unpinned_manip" { 
+script "dev.vrc_task_3_hose_manip" { 
     start group "0.development";
     start group "a.1.core";
-    wait ms 1000;
-    start group "a.3.unpinned_grasping";
-    start group "b.3.grasping";
-    wait ms 12000;
-    start cmd "gz_unpinned_manip";    
-}
-
-script "dev.walking_manip" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.walking_manip";
-    start group "b.3.walking_manip";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
     stop cmd "BotWalkingPlanner";
-    wait ms 20000;
-    start cmd "gz_walking_manip";    
+    wait ms 25000;
+    start cmd "gz_vrc_task_3_manip";
 }
 
 ############ System Tests ############
