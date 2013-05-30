@@ -529,9 +529,9 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
     Eigen::Vector3f plane_normal,plane_pt;
     plane_normal << 0,0,1;
     if(ray_start[2]<0)
-        plane_pt << 0,0,5;
+        plane_pt << 0,0,10;
     else
-        plane_pt << 0,0,-5;
+        plane_pt << 0,0,-10;
  
    
     double lambda1 = ray_dir[0] * plane_normal[0]+
