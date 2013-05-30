@@ -70,6 +70,7 @@ public:
 								msg->origin_position.rotation.y,
 								msg->origin_position.rotation.z);
 
+
 		cout << "" << (msg->utime - prev_msg_utime)/1000. << endl;
 
 		prev_msg_utime = msg->utime;

@@ -294,8 +294,8 @@ void DistributedDiff::ParameterFileInit() {
 	fscanf(fp,"%ld\n",&period_,&status);
 	std::cout << "Period was set to: " << period_ << std::endl;
 
-	int t[30];
-	float w[30];
+	int t[100];
+	float w[100];
 
 	int i=0;
 
@@ -305,14 +305,14 @@ void DistributedDiff::ParameterFileInit() {
 
     //w[i] = atof(item);
 
-    Eigen::VectorXd timespans(30);
-    Eigen::VectorXd weights(30);
+    Eigen::VectorXd timespans(i);
+    Eigen::VectorXd weights(i);
 
-    for (i=0;i<30;i++) {
-    	timespans(i) = t[i];
-    	weights(i) = w[i];
+    for (int j=0;j<i;j++) {
+    	timespans(j) = t[j];
+    	weights(j) = w[j];
 
-    	std::cout << "Read values are: " << timespans(i) << ", " << weights(i) << std::endl;
+    	std::cout << "Read values are: " << timespans(j) << ", " << weights(j) << std::endl;
     }
 
     // TODO

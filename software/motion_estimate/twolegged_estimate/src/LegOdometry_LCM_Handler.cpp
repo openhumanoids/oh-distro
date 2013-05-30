@@ -45,8 +45,10 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	rate_changer.setSize(3);
 	rate_changer.setDesiredPeriod_us(0,4500);
 
+	imu_msg_received = false;
+
 	for (int i=0;i<3;i++) {
-		median_filter[i].setLength(15);
+		median_filter[i].setLength(9);
 	}
 
 #ifdef LOG_LEG_TRANSFORMS
@@ -403,10 +405,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		//clock_gettime(CLOCK_REALTIME, &threequat);
 
-		PublishEstimatedStates(_msg, &est_msgout);
-		UpdateHeadStates(&est_msgout, &est_headmsg);
-		PublishHeadStateMsgs(&est_headmsg);
-		PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
+		if (imu_msg_received) {
+			PublishEstimatedStates(_msg, &est_msgout);
+			UpdateHeadStates(&est_msgout, &est_headmsg);
+			PublishHeadStateMsgs(&est_headmsg);
+			PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
+		}
 
 		#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 			// True state messages will ont be available during the VRC and must be removed accordingly
@@ -837,6 +841,8 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 												const std::string& channel, 
 												const  drc::imu_t* msg) {
 	
+
+
 	double rates[3];
 	double angles[3];
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
@@ -861,6 +867,10 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 			
 	_leg_odo->setOrientationTransform(q, rates_b);
 	
+	if (!imu_msg_received) {
+		imu_msg_received = true;
+	}
+
 	return;
 }
 

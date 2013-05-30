@@ -124,6 +124,7 @@ private:
 	volatile bool stillbusy;
 	volatile bool first_get_transforms;
 	volatile bool filter_joints_vector_size_set;
+	bool imu_msg_received;
 	int poseplotcounter;
 	int collectionindex;
 	int firstpass;//was bool
