@@ -5,7 +5,7 @@ bw_run = 2;
 % point after the initial startup
 % where the bandwidth will be typical
 % set to 0.0 to see all the bandwidth
-end_of_init_time = 1.0 % seconds
+end_of_init_time = 1369883588325240/1E6 % seconds
 
 % bands of rate of BW usage:
 if (0==1)
@@ -40,7 +40,7 @@ area(d.sec, d.rx.data)
 grid on
 legend( d.rx.names,'Location','NorthWest'); 
 set(gca,'Layer','top')
-title ('Cum. Rx [KB]','fontSize',14,'fontWeight','bold') ; axis([0 inf -inf inf])
+title ('Cum. Rx [KB]','fontSize',14,'fontWeight','bold') ;% axis([0 inf -inf inf])
 for i=1:size(d.rx.bands,2)
     plot(d.sec,  d.sec*d.rx.bands(i) ,['--' color_list(i)],'LineWidth',2)
 end
@@ -87,7 +87,8 @@ files = dir([path 'drc-network-shaper-data-usage-base-*.csv']);
 filename = files(end).name
 
 path = '/home/mfallon/drc/software/tools/tools/scripts/';
-filename ='drc-network-shaper-data-usage-example.csv'; 
+%filename ='drc-network-shaper-data-usage-example.csv'; 
+filename = 'drc-network-shaper-data-usage-example-newer.csv';
 
 fid=fopen([path filename]);
 tline = fgetl(fid);
@@ -124,3 +125,5 @@ d.tx.data = d.tx.data(idx_keep, :) - repmat ( tx_data_blurp,  size(d.tx.data(idx
 rx.data_blurp = d.rx.data(start_idx, :);
 d.rx.data = d.rx.data(idx_keep, :) - repmat ( rx.data_blurp,  size(d.rx.data(idx_keep, :),1 ),1 ) ;
 d.sec = d.sec(idx_keep);
+
+d.sec= d.sec - end_of_init_time;
