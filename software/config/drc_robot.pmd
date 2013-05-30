@@ -146,23 +146,10 @@ group "a.3.vrc_task_3_walking_manip_controllers" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
-# To be integrated (Sisir,28th May)
-# ----------------------------------
-#    cmd "imagemask" {
-#        exec = "drc-image-passthrough";
-#        host = "extra";
-#    }
-#    cmd "tracker" {
-#        exec = "object-tracker";
-#        host = "extra";
-#    } 
-    cmd "affordance_init" {
-        exec = "affordance_init -e 5";
-        host = "extra";
-    } 
+    
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
-       host = "extra";
+       host = "robot";
     }
 }
 group "a.4.driving" {
@@ -551,6 +538,20 @@ group "m.6.driving_utils" {
     }
 }
 
+group "m.6.hose_task_utils" {
+    cmd "affordance_init_standpipe" {
+        exec = "affordance_init -e 4";
+        host = "extra";
+    } 
+    cmd "affordance_init_firehose" {
+        exec = "affordance_init -e 5";
+        host = "extra";
+    } 
+    cmd "affordance_init_valve" {
+        exec = "affordance_init -e 6";
+        host = "extra";
+    }     
+}
 ####################################################
 # drc102 - gazebo
 # pal-02 - robot
@@ -695,6 +696,8 @@ script "dev.vrc_task_3_hose_manip" {
     wait ms 25000;
     start cmd "gz_vrc_task_3_manip";
     start cmd "set-sim-rate";
+    wait ms 10000;
+    start group "m.6.hose_task_utils";    
 }
 
 script "dev.quals2_walking_manip" { 
