@@ -9,6 +9,7 @@
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
 #include "DepthImageView.hpp"
+#include "DepthImage.hpp"
 
 using namespace maps;
 
@@ -226,8 +227,22 @@ DepthImageView::Ptr LocalMap::
 getAsDepthImage(const int iWidth, const int iHeight,
                 const Eigen::Projective3f& iProjector,
                 const SpaceTimeBounds& iBounds) const {
+  return getAsDepthImage(iWidth, iHeight, iProjector,
+                         DepthImage::AccumulationMethodExtremal, iBounds);
+}
+
+DepthImageView::Ptr LocalMap::
+getAsDepthImage(const int iWidth, const int iHeight,
+                const Eigen::Projective3f& iProjector,
+                const int iAccumMethod,
+                const SpaceTimeBounds& iBounds) const {
   DepthImageView::Ptr view(new DepthImageView());
   view->setSize(iWidth, iHeight);
+  if (iAccumMethod >= 0) {
+    DepthImage::AccumulationMethod method =
+      (DepthImage::AccumulationMethod)iAccumMethod;
+    view->getDepthImage()->setAccumulationMethod(method);
+  }
   PointCloudView::Ptr cloudView = getAsPointCloud(0, iBounds);
   view->setSize(iWidth, iHeight);
   view->setTransform(iProjector);

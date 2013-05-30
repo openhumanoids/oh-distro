@@ -94,6 +94,11 @@ public:
   getAsDepthImage(const int iWidth, const int iHeight,
                   const Eigen::Projective3f& iProjector,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
+  std::shared_ptr<DepthImageView>
+  getAsDepthImage(const int iWidth, const int iHeight,
+                  const Eigen::Projective3f& iProjector,
+                  const int iAccumMethod,
+                  const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
 protected:
   int64_t mStateId;

@@ -20,5 +20,6 @@ struct data_request_t {
   const int8_t HEIGHT_MAP_COARSE      = 24;
   const int8_t DEPTH_MAP_SCENE        = 25;
   const int8_t DEPTH_MAP_WORKSPACE    = 26;
+  const int8_t STEREO_MAP             = 27;
   const int8_t TERRAIN_COST           = 30;
 }

@@ -343,7 +343,7 @@ public:
     // TODO: HACK for stereo depth
     if (mRequestType == ViewBase::TypeDepthImage+1) {
       spec.mType = ViewBase::TypeDepthImage;
-      spec.mMapId = 1111;
+      spec.mViewId = drc::data_request_t::STEREO_MAP;
     }
     else {
       spec.mType = ViewBase::Type(mRequestType);

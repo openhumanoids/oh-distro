@@ -12,6 +12,7 @@
 #include <lcmtypes/drc/map_params_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
 #include <lcmtypes/drc/map_macro_t.hpp>
+#include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
 
 #include <maps/MapManager.hpp>
@@ -108,6 +109,9 @@ struct StereoHandler {
       return view;
     }
     view.reset(new DepthImageView());
+
+    // uncompress image
+    // TODO
 
     // split images
     int w(mLatestImage.width), h(mLatestImage.height/2);
@@ -232,9 +236,10 @@ struct ViewWorker {
       LcmTranslator::fromLcm(mRequest, spec);
 
       // TODO: HACK for stereo data; need to think about cleaner approach
-      if (mRequest.map_id == 1111) {
+      if (mRequest.view_id == drc::data_request_t::STEREO_MAP) {
         DepthImageView::Ptr view =
           mStereoHandler->getDepthImageView(spec.mClipPlanes);
+        std::cout << "STEREO VIEW HERE" << std::endl;
         if (view != NULL) {
           view->setId(mRequest.view_id);
           drc::map_image_t msg;
@@ -329,9 +334,17 @@ struct ViewWorker {
           if (spec.mRelativeLocation) {
             projector = projector*headToLocal.inverse();
           }
+          DepthImage::AccumulationMethod accumMethod;
+          // TODO: hack to differentiate between accumulation variants
+          if (Utils::isOrthographic(projector.matrix())) {
+            accumMethod = DepthImage::AccumulationMethodMean;
+          }
+          else {
+            accumMethod = DepthImage::AccumulationMethodExtremal;
+          }
           DepthImageView::Ptr image =
             localMap->getAsDepthImage(mRequest.width, mRequest.height,
-                                      projector, bounds);
+                                      projector, accumMethod, bounds);
           image->setId(mRequest.view_id);
           drc::map_image_t msgImg;
           LcmTranslator::toLcm(*image, msgImg, mRequest.quantization_max);
