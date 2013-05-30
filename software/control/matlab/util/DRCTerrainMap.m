@@ -24,6 +24,12 @@ classdef DRCTerrainMap < RigidBodyTerrain
       else
         options.name = '';
       end
+
+      if isfield(options,'status_code')
+        typecheck(options.status_code, 'numeric');
+      else
+        options.status_code = 3;
+      end
       
       if isfield(options,'raw');
         typecheck(options.raw,'logical');
