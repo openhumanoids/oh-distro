@@ -4,6 +4,14 @@
 #include "plan_execution_gui_utils.hpp" 
 #include "plan_approval_gui_utils.hpp"
 
+#define PARAM_KP_DEFAULT 5
+#define PARAM_KD_DEFAULT 1
+#define PARAM_KP_MIN 0
+#define PARAM_KD_MIN 0
+#define PARAM_KP_MAX 100
+#define PARAM_KD_MAX 100
+#define PARAM_KP_INC 1
+#define PARAM_KD_INC 1
 
 #define RENDERER_NAME "Robot Plan Display"
 #define PARAM_SELECTION "Enable Selection"
@@ -23,8 +31,7 @@
 #define PARAM_SSE_KD_LEFT "Kd_L"  
 #define PARAM_SSE_KP_RIGHT "Kp_R"  
 #define PARAM_SSE_KD_RIGHT "Kd_R"
-#define PARAM_KP_DEFAULT 5
-#define PARAM_KD_DEFAULT 1
+
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
@@ -624,13 +631,13 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KP_DEFAULT); 
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_LEFT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KD_DEFAULT); 
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); 
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_RIGHT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KP_DEFAULT); 
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_RIGHT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KD_DEFAULT); 
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); 
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
