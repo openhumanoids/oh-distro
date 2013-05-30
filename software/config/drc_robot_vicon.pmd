@@ -1,0 +1,730 @@
+group "0.development" {
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
+        host = "localhost";
+    }
+    cmd "extra_deputy" {
+        exec = "bot-procman-deputy -n extra";
+        host = "localhost";
+    }
+    cmd "base_deputy" {
+        exec = "bot-procman-deputy -n base";
+        host = "localhost";
+    }
+    cmd "set-sim-rate" {
+        exec = "drc-set-sim-rate 0.3";
+        host = "robot";
+    }
+}
+
+
+group "a.1.core" {
+    cmd "aa-translators" {
+        exec = "roslaunch translators cheating.launch";
+        host = "robot";
+    }
+    cmd "viewer-REMOVEFORCOMP" {
+        exec = "drc-viewer";
+        host = "robot";
+    }
+    cmd "foot-state" {
+       exec = "drc-foot-state";
+        host = "extra";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
+        host = "extra";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        host = "extra";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher -g";
+        host = "extra";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -g";
+        host = "extra";
+    }
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "extra";
+    }
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "extra";
+    }
+    cmd "affordance-gaze" {
+        exec = "affordance-gaze";
+        host = "extra";
+    }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
+        host = "extra";
+    }
+    cmd "image-tx" {
+        exec = "drc-image-transmit";
+        host = "extra";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r robot";
+        host = "extra";
+    }
+    cmd "init-laser" {
+        exec = "drc-init-laser";
+        host = "extra";
+    }
+    cmd "logger-robot-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_robot_log.lcm";
+        host = "extra";
+    }
+    cmd "drc-frequency" {
+        exec = "drc-frequency";
+        host = "extra";
+    }
+    cmd "image-rx-REMOVEFORCOMP" {
+        exec = "drc-image-receive";
+        host = "robot";
+    }
+}
+
+group "a.2.walking" {
+    cmd "WalkingStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
+        host = "robot";
+    }
+    cmd "BotWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
+       host = "extra";
+    }
+}
+
+# Bare bone grasping
+group "a.3.grasping" {
+    cmd "HarnessedController" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+}
+
+# Bare bone grasping for quals 2 with drill affordance init
+group "a.3.grasping4qual2" {
+    cmd "HarnessedController" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "extra";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "extra";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "extra";
+    } 
+}
+
+# Controllers for vrc task 3 (hose manipulation)
+group "a.3.vrc_task_3_walking_manip_controllers" {
+    cmd "WalkingManipStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+# To be integrated (Sisir,28th May)
+# ----------------------------------
+#    cmd "imagemask" {
+#        exec = "drc-image-passthrough";
+#        host = "extra";
+#    }
+#    cmd "tracker" {
+#        exec = "object-tracker";
+#        host = "extra";
+#    } 
+#    cmd "affordance_init" {
+#        exec = "affordance_init -e 5";
+#        host = "extra";
+#    } 
+    cmd "BotWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
+       host = "robot";
+    }
+}
+group "a.4.driving" {
+    cmd "vehicle-groundtruth-state" {
+        exec = "rosrun driving_interface groundtruth_receiver";
+        host = "robot";
+    }
+    cmd "car-vis" {
+        exec = "drc-car-quick-vis";
+        host = "robot";
+    }
+    cmd "driving_interface" {
+        exec = "rosrun driving_interface driving_interface";
+        host = "robot";
+    }
+    cmd "tld-tracker" {
+        exec = "drc-driving-tracker";
+        host = "robot";
+    }
+    cmd "affordance-tracker" {
+        exec = "object-tracker -v 2";
+        host = "robot";
+    }
+    cmd "affordance-to-carframe" {
+    	exec = "affordance-to-frames";
+        host = "robot";
+    }
+    cmd "affordance_server -r robot" {
+        exec = "affordance_server -r robot";
+        host = "robot";
+    }
+    cmd "enter_car" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
+    cmd "drc-driving-control" {
+        exec = "drc-driving-control";
+        host = "robot";
+    }
+    cmd "drc-terrain-classifier" {
+        exec = "drc-terrain-classifier";
+        host = "robot";
+    }
+}
+
+group "a.4.ingress" {
+    cmd "IngressStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
+        host = "robot";
+    }
+}
+
+# Controllers & ManipMap2Plan parsers for vrc task 1 (Driving)
+group "a.4.manipulation4driving" {
+    cmd "DrivingController" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "robot";
+    } 
+    cmd "ManipMapStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
+        host = "robot";
+    }
+}
+
+group "b.1.core" {
+    cmd "base_viewer" {
+        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
+        host = "base";
+    }
+    cmd "segmentation_viewer" {
+        exec = "segmentation-viewer -r base";
+        host = "base";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        host = "base";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "base";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base -g";
+        host = "base";
+    }
+    cmd "param_server" {
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        host = "base";
+    }
+    cmd "est_rsp_base" {
+        exec = "est_robot_state_publisher -g";
+        host = "base";
+    }
+    cmd "image-rx" {
+        exec = "drc-image-receive";
+        host = "base";
+    }
+    cmd "lcm-logger-base-nocams" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_base_log.lcm";
+        host = "base";
+    }
+}
+
+group "b.2.walking" {
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
+    }
+    cmd "BaseWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
+       host = "base";
+    }
+}
+
+group "b.3.grasping" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+}
+
+# Planners for Simulataneous Walking and Manipulation
+group "b.3.vrc_task_3_walking_manip_planners" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
+    }
+    cmd "BaseWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
+       host = "base";
+    }
+}
+group "b.4.driving" {
+    cmd "car-vis-local" {
+       exec = "drc-car-quick-vis";
+       host = "base";
+    }
+    cmd "tld-segmenter" {
+        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
+        host = "base";
+    }
+}
+
+
+group "g.0.gazebo" {
+    cmd "gz_mit_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
+        host = "robot";
+    }
+    cmd "gz_mit_manip_nohands" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_nohands.world";
+        host = "robot";
+    }
+    cmd "gz_mit_ingress" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
+        host = "robot";
+    }
+    cmd "gz_mit_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        host = "robot";
+    }
+    cmd "gz_mit_driving" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
+        host = "robot";
+    }
+    cmd "gz_quals_1" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
+        host = "robot";
+    }
+    cmd "gz_quals_1_steps" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
+        host = "robot";
+    }
+    cmd "gz_quals_2" {
+        exec = "roslaunch atlas_utils qual_task_2.launch";
+        host = "robot";
+    }
+    cmd "gz_quals_2_vicon" {
+        exec = "roslaunch mit_drcsim_scripts qual_task_2_Vicon.launch";
+        host = "robot";
+    }
+    cmd "gz_unpinned_manip" {
+        #exec = "roslaunch atlas_utils qual_task_2.launch";
+	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+	host = "robot";
+    }
+    cmd "gz_walking_manip" {
+	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+	host = "robot";
+    }
+    cmd "gz_quals_3" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_driving" {
+        exec = "roslaunch mit_drcsim_scripts mit_not_walking.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_task_3_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
+        host = "robot";
+    }
+}
+
+group "m.1.robot" {
+    cmd "lcmscope" {
+        exec = "drc-lcmscope";
+        host = "robot";
+    }
+    cmd "teleop" {
+        exec = "rosrun keyboard_teleop keyboard_teleop";
+        host = "robot";
+    }
+    cmd "bandwidth-scope" {
+        exec = "drc-bandwidth-scope";
+        host = "robot";
+    }
+    cmd "sheriff_obs" {
+        exec = "bot-procman-sheriff -o";
+        host = "robot";
+    }
+    cmd "driving-lidar-classifier" {
+        exec = "drc-lidar-classifier";
+        host = "robot";
+    }
+    cmd "stereo-bm" {
+        exec = "stereo-bm";
+        host = "robot";
+    }
+}
+
+group "m.2.simple-control" {
+    cmd "head_0" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
+        host = "robot";
+    }
+    cmd "head_45" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
+        host = "robot";
+    }
+    cmd "head_90" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
+        host = "robot";
+    }
+    cmd "hand_in_view" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  hand_in_view";
+        host = "robot";
+    }
+    cmd "individual_joints" {
+        exec = "rosrun tutorial_atlas_control traj_gui.py";
+        host = "robot";
+    }
+    cmd "simple_right_grasp" {
+        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
+    cmd "simple_left_grasp" {
+        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
+    cmd "multisense_fps" {
+        exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
+        host = "robot";
+    }
+}
+
+group "m.3.dev_tools" {
+    cmd "enable_gravity_when_pinned" {
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
+        host = "robot";
+    }
+    cmd "teleport_to_steps" {
+        exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
+        host = "robot";
+    }
+    cmd "teleport_to_000" {
+        exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[0.0, 0.0, 1.00]' '[0, 0, 0, 1]'";
+        host = "robot";
+    }
+    cmd "oracle2coll" {
+        exec = "drc-oracle2collection";
+        host = "robot";
+    }
+    cmd "maskunzip" {
+        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
+        host = "robot";
+    }
+    cmd "systemwide-test" {
+        exec = "drc-systemwide-tests";
+        host = "base";
+    }
+    cmd "lcm-logger" {
+        exec = "lcm-logger -f $HOME/drc/latest_log.lcm";
+        host = "robot";
+    }
+    cmd "gzclient" {
+        exec = "gzclient";
+        host = "robot";
+    }
+    cmd "lcmscope" {
+        exec = "drc-lcmscope";
+        host = "base";
+    }
+    cmd "bandwidth-scope" {
+        exec = "drc-bandwidth-scope";
+        host = "base";
+    }
+    cmd "fall-detector-EXPERIMENTAL" {
+        exec = "python $HOME/drc/software/control/fall_detect_demo/fall_detector.py";
+        host = "robot";
+    }
+}
+
+group "m.5.state_est"{
+    cmd "LegOdometry" {
+        exec = "drc-legged-odometry -e -C -x";
+        host = "robot";
+    }
+}
+
+group "m.6.driving_utils" {
+    cmd "enable_gravity_when_pinned" {
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
+        host = "robot";
+    }
+    cmd "exit_car" {
+        exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
+   cmd "enter_car_pelvis_pinned" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.28}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        host = "robot";
+    }  
+    cmd "enable_user_mode" {
+        exec = "rostopic pub --once atlas/control_mode std_msgs/String 'User'";
+        host = "robot";
+    }  
+    cmd "unpin" {
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'nominal'";
+        host = "robot";
+    }
+    
+    cmd "pin" {
+        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned'";
+        host = "robot";
+    }
+    cmd "disengage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "engage_hand_brake" {
+        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 1 }'";
+        host = "robot";
+    }
+    cmd "ignition" {
+        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
+    }
+    cmd "set_gear_N" {
+        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : 0 }'";
+        host = "robot";
+    }
+    cmd "set_gear_F" {
+        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : 1 }'";
+        host = "robot";
+    }
+    cmd "set_gear_R" {
+        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : -1 }'";
+        host = "robot";
+    }
+}
+
+####################################################
+# drc102 - gazebo
+# pal-02 - robot
+# drc005 - base
+############# drc102, pal-02, drc005 ######################
+script "comp.vrc_walking" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+}
+
+script "comp.vrc_manip" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
+}
+
+script "comp.vrc_driving" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.4.driving";
+    start group "b.4.driving";
+}
+
+script "comp.vrc_ingress" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.6.ingress";
+}
+
+######################################
+# testing on a single machine - with deputies:
+script "dev.qual_1" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_quals_1"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
+}
+script "dev.qual_2" { 
+    start group "0.development";
+    start group "a.1.core";
+    wait ms 1000;
+    start group "a.3.grasping4qual2";
+    start group "b.3.grasping";
+    wait ms 12000;
+    start cmd "gz_quals_2";    
+    wait ms 5000;  
+    start cmd "enable_gravity_when_pinned"; 
+}
+script "dev.qual_3" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_quals_3"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
+}
+script "dev.vrc_walking" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_vrc_walking"; 
+    start cmd "set-sim-rate";
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
+}
+script "dev.vrc_driving" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.4.driving";
+    wait ms 500;
+    start cmd "gz_mit_driving";
+    wait ms 6000;
+    start group "b.4.driving";
+}
+script "dev.vrc_driving_with_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    #start group "a.4.driving";
+    start group "b.3.grasping";
+    start group "a.7.manipulation4driving";
+    wait ms 25000;
+    start cmd "gz_vrc_driving";
+    wait ms 500;
+    start cmd "enable_gravity_when_pinned";
+    wait ms 15000; 
+    start cmd "enter_car_pelvis_pinned";
+    wait ms 1000; 
+    start cmd "enable_user_mode";
+    #start group "b.4.driving";
+}
+
+
+script "dev.mit_state_est" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_mit_walking";
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
+    stop cmd "estpub";
+    start group "m.5.state_est";
+}
+
+script "dev.ingress" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.6.ingress";
+    wait ms 25000;
+    start cmd "gz_mit_ingress"; 
+    wait ms 5000;
+		start cmd "simple_right_grasp";
+		start cmd "simple_left_grasp";
+}
+
+script "dev.vrc_task_3_hose_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_vrc_task_3_manip";
+}
+
+
+script "dev.qual_2_VICON" { 
+    start group "0.development";
+    start group "a.1.core";
+    wait ms 1000;
+    start group "a.3.grasping4qual2";
+    start group "b.3.grasping";
+    wait ms 12000;
+    start cmd "gz_quals_2_vicon";    
+    wait ms 5000;  
+    start cmd "enable_gravity_when_pinned"; 
+}
+
+############ System Tests ############
+
+script "systest-main" {
+    run_script "dev.mit_walking";
+    start cmd "systemwide-test";
+    wait ms 200000;
+    stop cmd "systemwide-test";
+    stop group "0.development";
+    stop group "a.1.core";
+    stop group "a.2.walking";
+    stop group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    stop cmd "gz_mit_walking";
+}
+
