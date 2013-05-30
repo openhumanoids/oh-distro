@@ -19,7 +19,12 @@
 #define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
 #define PARAM_SHOW_FULLPLAN "Show Full Plan"	
 #define PARAM_SHOW_KEYFRAMES "Show Keyframes"
-
+#define PARAM_SSE_KP_LEFT "Kp_L"  
+#define PARAM_SSE_KD_LEFT "Kd_L"  
+#define PARAM_SSE_KP_RIGHT "Kp_R"  
+#define PARAM_SSE_KD_RIGHT "Kd_R"
+#define PARAM_KP_DEFAULT 5
+#define PARAM_KD_DEFAULT 1
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
@@ -293,7 +298,18 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
     _lcm->publish(channel, &goalmsg);
   }
-
+  
+  static void publish_manip_gain(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel,int64_t utime, double Kp, double Kd, int ee_type)
+  {
+    drc::ee_manip_gain_t  msg;
+    msg.utime = utime;
+    msg.is_leg = false;      
+    msg.ee_type=ee_type;
+    msg.Kp=Kp;
+    msg.Kd=Kd;
+    _lcm->publish(channel, &msg);
+  }
+  
 //========================= Event Handling ================
 
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
@@ -520,7 +536,26 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
     self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
-  }else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
+  }
+  else if(!strcmp(name,PARAM_SSE_KP_LEFT)){
+    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
+    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_LEFT);
+    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,0);
+  }else if(!strcmp(name,PARAM_SSE_KD_LEFT)){
+    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
+    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_LEFT); 
+    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,0);
+  }
+   else if(!strcmp(name,PARAM_SSE_KP_RIGHT)){
+    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_RIGHT);
+    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_RIGHT);
+    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,1);
+  }else if(!strcmp(name,PARAM_SSE_KD_RIGHT)){
+    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_RIGHT);
+    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_RIGHT); 
+    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,1);
+  }    
+  else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
     msg.utime = self->robot_utime;//bot_timestamp_now();
     msg.type = self->vicon_type;
@@ -586,7 +621,16 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
-   
+    
+    bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
+    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KP_DEFAULT); 
+    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_LEFT,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KD_DEFAULT); 
+    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_RIGHT,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KP_DEFAULT); 
+    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_RIGHT,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100, 1, PARAM_KD_DEFAULT); 
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
