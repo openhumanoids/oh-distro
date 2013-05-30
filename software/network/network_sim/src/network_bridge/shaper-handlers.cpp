@@ -135,7 +135,9 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
 
-    custom_codecs_.insert(std::make_pair("CANDIDATE_MANIP_PLAN", boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec)));
+    const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
+    custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
 
     dccl_->validate<drc::ShaperHeader>();
     
