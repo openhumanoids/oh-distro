@@ -63,7 +63,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
 
       % wait for at least one map message to arrive before continuing
       msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
-      send_status(3, 0, 0, msg );
+      send_status(options.status_code, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];
       while isempty(obj.minval)
