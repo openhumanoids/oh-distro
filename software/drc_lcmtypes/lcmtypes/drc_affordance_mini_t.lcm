@@ -1,0 +1,21 @@
+package drc;
+
+struct affordance_mini_t
+{
+  int8_t type;
+  int32_t uid;      //affordance uid, should come from a free running cnt in aff store.
+
+  // geometrical properties - were all doubles
+  float origin_xyz[3];
+  float origin_rpy[3];
+
+  const int8_t CAR_PCD=1; // "car.pcd"
+  const int8_t CAR_CABIN_2CM_PCD=2; // "car_cabin_2cm.pcd"
+}
+
+
+// Removed:
+//  float bounding_xyz[3];
+//  float bounding_rpy[3];
+//  float bounding_lwh[3]; 
+
