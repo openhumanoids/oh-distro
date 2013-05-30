@@ -4,26 +4,33 @@ struct affordance_t
 {
 
   int64_t utime;
-  string otdf_type; //name of the otdf file
-  string friendly_name; //informal, non-unique name for the affordance
-  int32_t uid;      //affordance uid, should come from a free running cnt in aff store.
+  //name of the otdf file
+  string otdf_type; 
+  //informal, non-unique name for the affordance
+  string friendly_name; 
+
+  // Unique ID: should come from a free running clock in aff store.
   // This field is not required for a NEW AFFORDANCE FIT. 
-  // The aff store will figure out what the field is acc to its free running counter.
+  // The aff store will figure out what the field 
+  // is acc to its free running counter.
+  int8_t uid;      
+  // placeholder for future
+  int8_t map_id; 
   
-  int32_t map_id; // placeholder for future
+  int8_t aff_store_control;
+  const int8_t NEW=0;
+  const int8_t UPDATE=1;
+  const int8_t DELETE=2; //interruption for reset or halting
   
-  int16_t aff_store_control;
-  const int16_t NEW=0, UPDATE=1, DELETE=2; //interruption for reset or halting
-  
-  // geometrical properties, 
+  // geometric properties:
   double origin_xyz[3];
   double origin_rpy[3];
 
-  int32_t nparams;
+  int16_t nparams;
   double params[nparams];
   string param_names[nparams];
 
-  int32_t nstates;
+  int16_t nstates;
   double states[nstates];
   string state_names[nstates];
   
@@ -37,7 +44,8 @@ struct affordance_t
   double bounding_lwh[3]; 
 
   // Name of file containing model
-  // This is an alternative to setting triangles and points in the affordance_plus_t message
+  // This is an alternative to setting triangles and points 
+  // in the affordance_plus_t message
   // may be a pcd file or ply
   string modelfile;
 }

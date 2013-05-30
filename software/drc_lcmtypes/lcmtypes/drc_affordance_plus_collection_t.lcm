@@ -7,6 +7,6 @@ struct affordance_plus_collection_t
   int64_t utime; 
   int32_t map_id; // id of the local map - duplication of the above?
 
-  int32_t naffs;
+  int16_t naffs;
   affordance_plus_t affs_plus[naffs];
 }

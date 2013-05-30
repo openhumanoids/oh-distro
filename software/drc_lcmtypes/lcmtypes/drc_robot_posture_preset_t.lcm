@@ -6,12 +6,12 @@ package drc;
 struct robot_posture_preset_t 
 {
   int64_t utime;
-  int16_t preset;
+  int8_t preset;
 
   // enum for preset
-  const int16_t CURRENT=0;
-  const int16_t STANDING_HNDS_DWN=1;
-  const int16_t STANDING_HNDS_UP=2;
-  const int16_t SITTING_HNDS_DWN=3;
-  const int16_t SITTING_HNDS_UP=4; 
+  const int8_t CURRENT=0;
+  const int8_t STANDING_HNDS_DWN=1;
+  const int8_t STANDING_HNDS_UP=2;
+  const int8_t SITTING_HNDS_DWN=3;
+  const int8_t SITTING_HNDS_UP=4; 
 }
