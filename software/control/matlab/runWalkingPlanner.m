@@ -21,7 +21,7 @@ options.dt = 0.001;
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
-r = setTerrain(r,DRCTerrainMap(false,struct('name','Walk Plan','fill',true)));
+r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
 r = compile(r);
 
 lc = lcm.lcm.LCM.getSingleton();
