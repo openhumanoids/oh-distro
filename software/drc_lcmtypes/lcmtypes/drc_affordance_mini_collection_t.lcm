@@ -4,7 +4,7 @@ package drc;
 struct affordance_mini_collection_t
 {
   int8_t naffs;
-  affordance_minimal_t affs[naffs];
+  affordance_mini_t affs[naffs];
 }
 
 
