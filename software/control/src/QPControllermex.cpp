@@ -667,7 +667,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (nlhs>1) {
     double Vdot;
     if (nc>0) 
-      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(Jdot*qdvec + J*qdd));
+      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(Jdot.topRows(2)*qdvec + J.topRows(2)*qdd));
     else
       Vdot = 0;
     plhs[1] = mxCreateDoubleScalar(Vdot);
