@@ -1,7 +1,7 @@
 function read_shaper_usage()
 close all
 % which bank to compare with [1 is hardest, 5 easist]
-bw_run = 2; 
+bw_run = 2;
 % point after the initial startup
 % where the bandwidth will be typical
 % set to 0.0 to see all the bandwidth
@@ -42,7 +42,7 @@ legend( d.rx.names,'Location','NorthWest');
 set(gca,'Layer','top')
 title ('Cum. Rx [KB]','fontSize',14,'fontWeight','bold') ; axis([0 inf -inf inf])
 for i=1:size(d.rx.bands,2)
-    plot(d.sec,  cumsum(d.sec,2)*d.rx.bands(i) ,['--' color_list(i)],'LineWidth',2)
+    plot(d.sec,  d.sec*d.rx.bands(i) ,['--' color_list(i)],'LineWidth',2)
 end
 xlabel(['Rx: ' rx_msg],'fontSize',14,'fontWeight','bold')
 
@@ -64,7 +64,7 @@ legend( d.tx.names,'Location','NorthWest');
 set(gca,'Layer','top')
 title ('Cum. Tx [KB]','fontSize',14,'fontWeight','bold'); axis([0 inf -inf inf])
 for i=1:size(d.rx.bands,2)
-    plot(d.sec,  cumsum(d.sec,2)*d.tx.bands(i) ,['--' color_list(i)],'LineWidth',2)
+    plot(d.sec,  d.sec*d.tx.bands(i) ,['--' color_list(i)],'LineWidth',2)
 end
 xlabel(['Tx: ' tx_msg],'fontSize',14,'fontWeight','bold')
 
@@ -85,6 +85,9 @@ function d=getFile(d,end_of_init_time )
 path = '~/drc/software/config/'
 files = dir([path 'drc-network-shaper-data-usage-base-*.csv']);
 filename = files(end).name
+
+path = '/home/mfallon/drc/software/tools/tools/scripts/';
+filename ='drc-network-shaper-data-usage-example.csv'; 
 
 fid=fopen([path filename]);
 tline = fgetl(fid);
