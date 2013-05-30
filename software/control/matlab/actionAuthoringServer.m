@@ -127,6 +127,7 @@ options.jointLimitMin(isnan(options.jointLimitMin)) = -Inf;
 options.jointLimitMax = jointLimitMid + jointLimitHalfLength;
 options.jointLimitMax(isnan(options.jointLimitMax)) = Inf;
 
+
 options.jointLimitMin(knee_ind) = 0.6;
 options.jointLimitMin(hip_ind) = 0.0;
 
@@ -139,8 +140,13 @@ if(action_options.drake_vis)
   v.draw(0,q);
 end
 
+clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid jointLimitMin jointLimitMax knee_ind elbow_ind back_ind hip_ind joint_names cost arm_cost IK ustar zstar xstar;
+
 timeout=10;
 display('Listening ...');
+% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
+first_time = true;
+% END DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
 while (1)
   warning on
   data = getNextMessage(monitor,timeout);
@@ -240,6 +246,7 @@ while (1)
         ind_first_time = 2;
       end
 
+      key_time_IK_failed = false;
       for i = ind_first_time:num_key_time_samples
         ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
         if(isempty(ikargs))
@@ -251,9 +258,19 @@ while (1)
           else
             q0 = q_key_time_samples(:,i-1);
           end
+          % DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
+          if first_time
+            save('first_time','action_options','contact_tol','nq','options','q','q_standing','r','s','timeout')
+            first_time = false;
+          else
+            save('second_time','action_options','contact_tol','nq','options','q','q_standing','r','s','timeout')
+          end
+          % END DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
           [q_key_time_samples(:,i),info] = inverseKin(r,q0,ikargs{:},options);
           if(info>10)
             warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+            key_time_IK_failed = true;
+            break;
           else
             fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
           end
@@ -270,6 +287,16 @@ while (1)
         end
         kinsol = doKinematics(r,q_key_time_samples(:,i));
         com_key_time_samples(:,i) = getCOM(r,kinsol);
+      end
+      publish(robot_plan_publisher, action_sequence.key_time_samples(1:i), ...
+        [q_key_time_samples(:,1:i); 0*q_key_time_samples(:,1:i)]);
+      if(key_time_IK_failed)
+        error('IK at key times was not successful! Publishing key time results.');
+      else
+        key = input('Enter ''y''to refine trajectory. Press any other key to listen for new action sequence.');
+        if ~strcmp(key,'y')
+          continue;
+        end
       end
       if(action_options.drake_vis)
         v.draw(0,q_key_time_samples(:,1));
@@ -339,7 +366,7 @@ while (1)
         %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
         t_qs_breaks(end) = action_sequence.tspan(end);
         q_qs_plan = zeros(size(q_qs_plan,1),numel(t_qs_breaks));
-        options.Q = 1e0*eye(length(q0));
+        %options.Q = 1e0*eye(length(q0));
         options.quasiStaticFlag = true;
         options = rmfield(options,'q_nom');
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
