@@ -121,6 +121,7 @@ void GraspSeed::clearAllFromOtdf(const std::string& otdf_file){
     return;
   }
 
+  // for each grasp_seed, remove from object
   while(true){    
     TiXmlElement* ele = object->FirstChildElement("grasp_seed");
     if(!ele) break;
@@ -145,6 +146,7 @@ void GraspSeed::unstoreFromOtdf(const std::string& otdf_file){
     return;
   }
 
+  // for each grasp_seed, parse and compare.  If matches this, append to toRemove
   vector<TiXmlElement*> toRemove;
   for (TiXmlElement* grasp_it = object->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed")) {
     GraspSeed readSeed;
@@ -155,17 +157,20 @@ void GraspSeed::unstoreFromOtdf(const std::string& otdf_file){
 
   cout << "Unstoring: " << toRemove.size() << endl;
 
+  // remove all elements of toRemove from otdf and write to file
   if(!toRemove.empty()){
     for(int i=0;i<toRemove.size();i++) object->RemoveChild(toRemove[i]);
     doc.SaveFile();
   }
 }
 
+// smart double comparison within epsilon
 static bool dblsame(double x, double y){
   return fabs(x-y)<1e-3;
 }
 
 bool GraspSeed::operator==(const GraspSeed& other){
+  if(geometry_name!=other.geometry_name) return false;
   if(!dblsame(xyz[0],other.xyz[0])) return false;
   if(!dblsame(xyz[1],other.xyz[1])) return false;
   if(!dblsame(xyz[2],other.xyz[2])) return false;
