@@ -21,7 +21,7 @@ using namespace std;
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_, int footsteps_);
     
     ~Pass(){
     }    
@@ -42,11 +42,15 @@ class Pass{
     std::vector<std::string> mode_names_;
     int test_counter_;
     
+    int footsteps_;
     
+    drc::footstep_plan_t last_footstep_msg_;
+    
+    bool was_walking_last_;
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_): 
-    lcm_(lcm_), stage_(stage_), mode_(mode_){
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_, int footsteps_): 
+    lcm_(lcm_), stage_(stage_), mode_(mode_), footsteps_(footsteps_){
   
 
   lcm_->subscribe( "EST_ROBOT_STATE" ,&Pass::robotStateHandler,this);
@@ -60,6 +64,11 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_, int mode_):
   mode_names_.push_back("left");
   mode_names_.push_back("right");
   
+  // Initial request for height map
+  sendDataRequests(0);
+  sleep(1);
+  
+  was_walking_last_=false;
 }
 
 
@@ -69,22 +78,23 @@ Eigen::Isometry3d Pass::getRandomGoal(){
     float dy=0.0;
     float dyaw=0.0;
     
-    float nx=2.0;
-    float ny=2.0;
-    float nyaw = 2.0;
+    // plus or minus
+    float nx=1.0;
+    float ny=1.0;
+    float nyaw = 0.5;  // was 1
     if (mode_==0){
-      dx = 3.0 + (float)  nx*( ((float) rand ()/(RAND_MAX)) -0.5);
-      dy = 0.0 + (float)  ny*( ((float) rand ()/(RAND_MAX)) -0.5);
-      dyaw = 0.0 + (float) nyaw*( ((float) rand ()/(RAND_MAX)) -0.5); // -/+28degrees
+      dx = 3.0 + (float)  nx*2*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dy = 0.0 + (float)  ny*2*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dyaw = 0.0 + (float) nyaw*2*( ((float) rand ()/(RAND_MAX)) -0.5); // -/+28degrees
     }else if(mode_==1){
-      dx = 3.0 + (float)  nx*( ((float) rand ()/(RAND_MAX)) -0.5);
-      dy = 3.0 + (float)  ny*( ((float) rand ()/(RAND_MAX)) -0.5);
-      dyaw = 0.75 + (float)  nyaw*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dx = 3.0 + (float)  nx*2*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dy = 3.0 + (float)  ny*2*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dyaw = 0.75 + (float)  nyaw*2*( ((float) rand ()/(RAND_MAX)) -0.5);
     }else if(mode_==2){
-      dx =  3.0 + (float)  nx*( ((float) rand ()/(RAND_MAX)) -0.5);
-      dy = -3.0 + (float)  ny*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dx =  3.0 + (float)  nx*2*( ((float) rand ()/(RAND_MAX)) -0.5);
+      dy = -3.0 + (float)  ny*2*( ((float) rand ()/(RAND_MAX)) -0.5);
       dyaw = -0.75 + (float)  nyaw*( ((float) rand ()/(RAND_MAX)) -0.5);
-    }else if(mode_==3){
+    }else if(mode_==3){ // this doesnt work - too random
       dx =   100.0*( ((float) rand ()/(RAND_MAX)) -0.5);
       dy =   100.0*( ((float) rand ()/(RAND_MAX)) -0.5);
       dyaw = 100.0 + (float)  nyaw*( ((float) rand ()/(RAND_MAX)) -0.5);
@@ -135,13 +145,14 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     quat.z = quat_out.z();
     goal_pos.rotation = quat;
     goal.goal_pos = goal_pos;
-    goal.max_num_steps = 10;
+    goal.max_num_steps = footsteps_;
     goal.min_num_steps = 0;
     goal.timeout = 0;
     goal.step_speed = 0.5;
     goal.step_height = 0.05;
     goal.follow_spline = true;
     goal.ignore_terrain = false;
+    goal.mu = 1.0;
     goal.allow_optimization = false;
     goal.is_new_goal = true;
     goal.right_foot_lead = true;
@@ -150,17 +161,19 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     sleep(5); // added to make sure that the footstep plane is new before accepting it, could be smaller?
     stage_=1;
     std::cout << "Stage 0: got EST_ROBOT_STATE, publishing WALKING_GOAL. Moving to Stage 1\n";
-    std::cout << "         Mode: " << mode_names_[mode_]  <<"\n";
+    std::cout << "         Mode: " << mode_names_[mode_] << " | Sequence: " << test_counter_ <<"\n";
     
-    // Walk 5 steps per mode:
     test_counter_ ++;
-    if (test_counter_ >= 5){
-      test_counter_=0;
-      mode_++;
-      if (mode_>2){ mode_=0; }      
-        std::cout << "         Next time the mode will be: " << mode_names_[mode_]  <<"\n";
+    // Walk 5 steps per mode:
+    bool vary_mode=false;
+    if (vary_mode){
+      if (test_counter_ >= 5){
+	test_counter_=0;
+	mode_++;
+	if (mode_>2){ mode_=0; }      
+	  std::cout << "         Next time the mode will be: " << mode_names_[mode_]  <<"\n";
+      }
     }
-      
   }
 }
 
@@ -169,20 +182,27 @@ void Pass::candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf,
   if (stage_==1){
     sendDataRequests(msg->utime);
     sleep(1); 
-    lcm_->publish("COMMITTED_FOOTSTEP_PLAN", msg );
+    lcm_->publish("APPROVED_FOOTSTEP_PLAN", msg );
+    last_footstep_msg_ = *msg;
     stage_ =2;
     std::cout << "Stage 1: got CANDIDATE_FOOTSTEP_PLAN, republishing as COMMITTED. Moving to Stage 2\n";
   }
 }
+
+
 
 void Pass::candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_plan_t* msg){
   if (stage_==2){
     sendDataRequests(msg->utime);
     sleep(1); // this was required as matlab was too slow to receive it immediately
-    lcm_->publish("COMMITTED_ROBOT_PLAN", msg );
+    //lcm_->publish("COMMITTED_ROBOT_PLAN", msg );
+    lcm_->publish("COMMITTED_FOOTSTEP_PLAN", &last_footstep_msg_ );
     stage_ =3;
     std::cout << "Stage 2: got CANDIDATE_ROBOT_PLAN, republishing as COMMITTED. Moving to Stage 3\n";
+    std::cout << "         Sleeping for 45seconds until to allow walking to start\n";
+    sleep(45);
+    std::cout << "         Finished sleeping\n";
   }
 }
 
@@ -191,12 +211,23 @@ void Pass::candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf,
 void Pass::controllerStatusHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::controller_status_t* msg){
   if (stage_==3){
-    if (msg->state== drc::controller_status_t::STANDING){
+    
+    // if standing now but was walking before:
+    if ((msg->state== drc::controller_status_t::STANDING)&&(was_walking_last_)){
       sendDataRequests(msg->utime);
       stage_ =0;
       std::cout << "Stage 3: controller=STANDING, restarting. Moving to Stage 0\n"
                 << "===========================================================\n";
     }
+    
+
+    if (msg->state == drc::controller_status_t::WALKING){
+      was_walking_last_ = true; 
+    }else{
+      was_walking_last_ = false;
+    }
+    
+    
   }
 }
 
@@ -207,10 +238,10 @@ void Pass::sendDataRequests(int64_t this_utime){
   reqs.utime = this_utime;
   drc::data_request_t req1; //EST_ROBOT_STATE
   req1.period = 10;
-  req1.type =2;
+  req1.type = drc::data_request_t::MINIMAL_ROBOT_STATE;
   drc::data_request_t req2; // Planning Height Map
   req2.period = 10;
-  req2.type =6;
+  req2.type = drc::data_request_t::HEIGHT_MAP_SCENE;
   reqs.requests.push_back(req1); 
   reqs.requests.push_back(req2);
   reqs.num_requests = reqs.requests.size();
@@ -221,22 +252,24 @@ int main(int argc, char ** argv) {
   int verbose = 0;
   int stage = 3;
   int mode = 0;
+  int footsteps = 6;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(verbose, "v", "verbosity","0 none, 1 little, 2 debug");
   opt.add(stage, "s", "stage","Starting Stage");
   opt.add(mode, "m", "mode","Mode 0forward 1left 2right");// 3random");
+  opt.add(footsteps, "f", "footsteps","Number of Footsteps");// 3random");
   opt.parse();
   std::cout << "verbose: " << verbose << "\n";    
   std::cout << "stage: " << stage << "\n";    
   std::cout << "mode: " << mode << " [where 0forward 1left 2right\n";//3random]\n";    
-  
+  std::cout << "footsteps: " << footsteps << " footsteps\n";      
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm, stage, mode);
+  Pass app(lcm, stage, mode, footsteps);
   cout << "System Test Ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
