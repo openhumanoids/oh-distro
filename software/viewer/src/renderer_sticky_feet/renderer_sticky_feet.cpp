@@ -367,7 +367,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
 void 
 setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
-    BotFrames * frames, bool operation_mode)
+    BotFrames * frames, int operation_mode)
 {
     RendererStickyFeet *self = (RendererStickyFeet*) calloc (1, sizeof (RendererStickyFeet));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
@@ -388,7 +388,9 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     renderer->widget = bot_gtk_param_widget_new();
     renderer->name = (char *) RENDERER_NAME;
     if (operation_mode == 1){
-      renderer->name =(char *) "Footstep Loopback";
+      renderer->name =(char *) "Footstep Committed";
+    }else if (operation_mode == 2){
+      renderer->name =(char *) "Footstep Loopback";      
     }
     renderer->user = self;
     renderer->enabled = 1;
@@ -428,7 +430,9 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     ehandler->user = self;
     
     if (operation_mode ==1){
-      ehandler->name =(char *) "Footstep Loopback";
+      ehandler->name =(char *) "Footstep Committed";
+    }else if (operation_mode == 2){
+      ehandler->name =(char *) "Footstep Loopback";      
     }
     
 

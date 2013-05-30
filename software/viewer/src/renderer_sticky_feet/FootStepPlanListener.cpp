@@ -19,7 +19,7 @@ namespace renderer_sticky_feet
 //  FootStepPlanListener::FootStepPlanListener(RendererStickyFeet* parent_renderer):
 //    _parent_renderer(parent_renderer)
    
-  FootStepPlanListener::FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, bool operation_mode):
+  FootStepPlanListener::FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, int operation_mode):
     _lcm(lcm),_viewer(viewer)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
@@ -101,7 +101,9 @@ namespace renderer_sticky_feet
 
     if (operation_mode==0){ // typical mode
       lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
-    }else{ // loopback mode -- TODO: change to right channel
+    }else if (operation_mode == 1){ 
+      lcm->subscribe("COMMITTED_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+    }else if (operation_mode == 2){
       lcm->subscribe("COMMITTED_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     }
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   

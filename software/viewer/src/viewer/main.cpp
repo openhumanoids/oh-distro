@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
   
   string config_file = ""; // leave this empty so force viewer to get it from the param server
   string role = "robot";
-  bool network_debug = false;
+  int network_debug = 0; 
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(role, "r", "role","Role - robot or base");
@@ -299,11 +299,13 @@ int main(int argc, char *argv[])
   //
   setup_renderer_robot_plan(viewer, 0, lcm, 0);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
-  if (network_debug){
-    // Renderers for Testing Loopback Quality:
+  // Renderers for Testing Loopback Quality:
+  if (network_debug==1){    
+    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1); // committed
+    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,2); // loopback
+  }else if ( network_debug ==2) { /// DONT RUN THIS WHEN WALKING AS ALL THE PLANS CRASH THE VIEWER:
     setup_renderer_robot_plan(viewer, 0, lcm, 1);
     setup_renderer_robot_plan(viewer, 0, lcm, 2);
-    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1);
   }
   
   // Individual Renderers:

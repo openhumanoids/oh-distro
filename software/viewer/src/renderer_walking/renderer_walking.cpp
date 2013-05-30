@@ -45,18 +45,6 @@
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
 
-
-#define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
-#define PARAM_REINITIALIZE "[R]einit"
-#define PARAM_NEW_MAP "New Map"
-#define PARAM_NEW_OCTOMAP "New OctoMap"
-#define PARAM_HEIGHTMAP_RES "Heightmap Res"
-#define PARAM_UPDATE_HEIGHTMAP "Update Heightmap"
-
-typedef enum _heightmap_res_t {
-  HEIGHTMAP_RES_HIGH, HEIGHTMAP_RES_LOW,
-} heightmap_res_t;
-
 typedef enum _leading_foot_t {
   LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
 } leading_foot_t;
@@ -179,8 +167,6 @@ typedef struct _RendererWalking {
   int max_num_steps;
   int min_num_steps;
   leading_foot_t leading_foot;
-
-  heightmap_res_t heightmap_res;
 
   int64_t max_draw_utime;
   double circle_color[3];
@@ -420,7 +406,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
   self->step_height = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_HEIGHT);
   self->mu = bot_gtk_param_widget_get_double(self->pw, PARAM_MU);
-  self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);

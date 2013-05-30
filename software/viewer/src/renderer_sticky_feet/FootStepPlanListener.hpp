@@ -69,7 +69,7 @@ namespace renderer_sticky_feet
       KDL::Frame _T_bodyframe_groundframe_right;
    
     //FootStepPlanListener(RendererStickyFeet *parent_renderer);
-    FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, bool typical_mode);
+    FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, int operation_mode);
     ~FootStepPlanListener();
     
 
