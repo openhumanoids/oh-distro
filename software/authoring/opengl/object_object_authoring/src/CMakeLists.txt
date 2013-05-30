@@ -13,7 +13,7 @@ pods_install_headers(opengl_object_affordance.h
 pods_install_libraries(opengl_object_authoring)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES affordance opengl_object)
+set(REQUIRED_PACKAGES affordance opengl_object visualization-utils)
 pods_use_pkg_config_packages(opengl_object_authoring ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

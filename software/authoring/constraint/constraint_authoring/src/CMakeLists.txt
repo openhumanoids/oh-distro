@@ -17,7 +17,7 @@ pods_install_headers(constraint.h
 pods_install_libraries(constraint_authoring)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES affordance)
+set(REQUIRED_PACKAGES affordance visualization-utils)
 pods_use_pkg_config_packages(constraint_authoring ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
