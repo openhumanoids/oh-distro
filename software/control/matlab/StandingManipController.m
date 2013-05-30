@@ -23,17 +23,14 @@ classdef StandingManipController < DRCController
         'x0',zeros(4,1),...
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
-        'supptraj',[],...
+        'support_times',0,...
+        'supports',[],...
         'mu',1.0,...
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0,...
-        'rh_goal',[],...
-				'lh_goal',[],...
-				'lh_prev_t',[],...
-				'lh_err_int',[],...
-				'rh_prev_t',[],...
-				'rh_err_int',[]));
+        'ee_goal',[],...
+				'ee_controller_state',0)); % controller_state: 0 - no goal received. 1 - goal received, controller off, 2 goal received, PI contoller on
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -46,13 +43,14 @@ classdef StandingManipController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      if(~isfield(options,'use_mex')) options.use_mex = false; end
+      if(~isfield(options,'use_mex')) options.use_mex = true; end
 
       options.lcm_foot_contacts = true;
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      pd = SimplePDBlock(r,ctrl_data);
+			%pd = SimplePDBlock(r,ctrl_data);
+			pd = ManipPDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -93,14 +91,11 @@ classdef StandingManipController < DRCController
 			outs(1).output = 1;
 			connection(1).from_output = 1;
 			connection(1).to_input = 1;
-			sys = mimoCascade(sys,ee_control,[],ins,outs);
+			%sys = mimoCascade(sys,ee_control,[],ins,outs);
 
       obj = obj@DRCController(name,sys);
  
       obj.robot = r;
-      lhand_ind = obj.robot.findLinkInd('l_hand+l_hand_point_mass');
-      rhand_ind = obj.robot.findLinkInd('r_hand+r_hand_point_mass');
-      ctrl_data.setField('ee_link_ind',[lhand_ind rhand_ind])
       obj.controller_data = ctrl_data;
       
       
@@ -119,19 +114,20 @@ classdef StandingManipController < DRCController
 
       foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
       obj.foot_idx = find(foot_support);
+      supports = SupportState(r,obj.foot_idx);
       
       obj.controller_data.setField('S',V.S);
       obj.controller_data.setField('D',-com(3)/9.81*eye(2));
       obj.controller_data.setField('qtraj',q0);
       obj.controller_data.setField('x0',[comgoal;0;0]);
       obj.controller_data.setField('y0',comgoal);
-      obj.controller_data.setField('supptraj',foot_support);
+      obj.controller_data.setField('supports',supports);
       
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
 
       % should make this a more specific channel name
-      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
 %       obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for standing/reaching tasks
     end
     
@@ -174,7 +170,7 @@ classdef StandingManipController < DRCController
         msg = data.COMMITTED_ROBOT_PLAN;
         [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-
+        
         obj.controller_data.setField('qtraj',qtraj);
         obj = setDuration(obj,inf,false); % set the controller timeout
       end
