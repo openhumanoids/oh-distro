@@ -114,8 +114,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     end
 
     function apex_pos = findApexPos(obj, last_pos, next_pos, apex_height)
+      next_pos = last_pos + angleDiff(last_pos, next_pos);
       apex_pos = mean([last_pos, next_pos], 2);
-      apex_pos(4:6) = mean(unwrap([last_pos(4:6), next_pos(4:6)], [], 2), 2);
+%       apex_pos(4:6) = mean(unwrap([last_pos(4:6), next_pos(4:6)], [], 2), 2);
       if nargin < 4
         apex_height = obj.nom_step_clearance;
       end
