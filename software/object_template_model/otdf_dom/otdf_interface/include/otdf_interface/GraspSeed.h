@@ -6,8 +6,6 @@
 #include <tinyxml.h>
 
 struct GraspSeed{
-  std::string parent_name;
-  std::string object_name;
   std::string geometry_name; 
   double xyz[3],rpy[3];
   int grasp_type;
@@ -16,16 +14,7 @@ struct GraspSeed{
 
   ///////////////////////////////////////////////////////////////////////
   void setFromXml(TiXmlElement* grasp_seed_xml){
-    TiXmlElement* parent = grasp_seed_xml->FirstChildElement("parent");
-    if(parent) {
-      parent_name = parent->Attribute("name");
-    }else std::cout << "Error parsing grasp_seed parent\n";
-    
-    TiXmlElement* object = grasp_seed_xml->FirstChildElement("object");
-    if(object) {
-      object_name = object->Attribute("name");
-    }else std::cout << "Error parsing grasp_seed object\n";
-    
+
     TiXmlElement* geometry = grasp_seed_xml->FirstChildElement("geometry");
     if(geometry) {
       geometry_name = geometry->Attribute("name");
@@ -77,8 +66,6 @@ struct GraspSeed{
     // TODO use pose from before opt
     std::stringstream grasp_seed;
     grasp_seed << "<grasp_seed>" << std::endl;
-    grasp_seed << "\t<parent name=\"" << parent_name << "\" />" << std::endl;
-    grasp_seed << "\t<object name=\"" << object_name << "\" />" << std::endl;
     grasp_seed << "\t<geometry name=\"" << geometry_name << "\" />" << std::endl;
     grasp_seed << "\t<relative_pose rpy=\"" << rpy[0] << " " << rpy[1] << " " << rpy[2] << "\"";
     grasp_seed << " xyz=\"" << xyz[0] << " " << xyz[1] << " " << xyz[2] << "\" />" << std::endl;

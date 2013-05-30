@@ -320,30 +320,44 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
     std::vector<GraspSeed>& list = instance_struc._otdf_instance->graspSeedList_;
     CandidateGraspSeedListener& cgsl = *_parent_affordance_renderer->candidateGraspSeedListener;
     for(int i=0; i<list.size(); i++) {
+
       std::stringstream objname;
       objname << aff.otdf_type << "_"<< aff.uid;
       int uid = _parent_affordance_renderer->free_running_sticky_hand_cnt++;
-      std::stringstream oss;
-      oss << objname.str() <<"_"<< list[i].geometry_name << "_lgrasp_" << uid;  //TODO
-      string name = oss.str();
+
+      drc::position_3d_t pose;
+      pose.translation.x = list[i].xyz[0];
+      pose.translation.y = list[i].xyz[1];
+      pose.translation.z = list[i].xyz[2];
       KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],list[i].rpy[2]));
-      KDL::Vector xyz(list[i].xyz[0],list[i].xyz[1],list[i].xyz[2]);
-      KDL::Frame pos(rot,xyz);
-      drc::joint_angles_t joints;
-      joints.utime = -1;
-      joints.num_joints = list[i].joint_positions.size();
-      joints.joint_name = list[i].joint_names;
-      joints.joint_position = list[i].joint_positions;
-      cout << "Calling add_or_update_sticky_hand:\n";
-      cout << uid << " " << name << endl;
-      cout << pos.p.x() << " " << pos.p.y() << " " << pos.p.z() <<  endl;
-      cout <<  list[i].rpy[0] << " " << list[i].rpy[1] << " " << list[i].rpy[2] << endl;
-      cout << joints.num_joints << " " << joints.joint_name.size() << " " 
-           << joints.joint_position.size() << endl;
-      for(int j=0;j<joints.num_joints;j++) {
-        cout << joints.joint_name[j] << " " << joints.joint_position[j] << endl;
+      rot.GetQuaternion(pose.rotation.x, pose.rotation.y,
+                        pose.rotation.z, pose.rotation.w);
+
+      drc::desired_grasp_state_t msg;
+      msg.utime = -1;
+      msg.robot_name = "TODO";
+      msg.object_name = objname.str();
+      msg.geometry_name = list[i].geometry_name;
+      msg.unique_id = uid;
+      msg.grasp_type = list[i].grasp_type;
+      msg.power_grasp = false;
+      if(true){ // TODO
+        msg.num_r_joints = 0;
+        msg.num_l_joints = list[i].joint_positions.size();
+        msg.l_hand_pose = pose;
+        msg.l_joint_name = list[i].joint_names;
+        msg.l_joint_position = list[i].joint_positions;
+      }else{
+        msg.num_l_joints = 0;
+        msg.num_r_joints = list[i].joint_positions.size();
+        msg.r_hand_pose = pose;
+        msg.r_joint_name = list[i].joint_names;
+        msg.r_joint_position = list[i].joint_positions;
       }
-      //TODO: cgsl.add_or_update_sticky_hand(uid,name,pos,joints);
+      msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
+      //cgsl.handleDesiredGraspStateMsg(NULL,string(),&msg);
+      _lcm->publish("CANDIDATE_GRASP",&msg);
+
       cout << "Done\n";
     }
   }
