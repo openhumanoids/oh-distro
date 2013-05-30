@@ -201,4 +201,23 @@ public:
 };
 
 
+template<int N>
+class BlipFilter {
+private:
+  typedef Eigen::Matrix<double,N,1> VecType;
+
+  int mMedianFilterLength;
+  double mMinBlipMagnitude;
+  boost::circular_buffer<VecType> mData;
+
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  BlipFilter();
+  void setMedianFilterLength(const int iLength);
+  void setMinBlipMagnitude(const double iMag);
+  VecType getValue(const VecType& iSample);
+};
+
+
 #endif /*SIGNALTAP_HPP_*/
