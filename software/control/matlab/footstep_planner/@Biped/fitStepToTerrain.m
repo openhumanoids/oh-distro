@@ -13,5 +13,5 @@ end
 ground_pos = pos;
 if ~any(isnan(closest_terrain_pos))
   ground_pos(1:3) = closest_terrain_pos;
-  ground_pos = fitPosToNormal(ground_pos, normal);
+  ground_pos = fitPoseToNormal(ground_pos, normal);
 end
