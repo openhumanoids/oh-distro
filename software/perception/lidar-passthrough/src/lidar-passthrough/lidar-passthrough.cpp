@@ -47,7 +47,7 @@ using namespace boost::assign; // bring 'operator+()' into scope
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_);
+         std::string lidar_channel_, double radius_threshold_);
     
     ~Pass(){
     }    
@@ -56,6 +56,8 @@ class Pass{
     boost::shared_ptr<ModelClient> model_;
     bool verbose_;
     std::string lidar_channel_;
+    
+    double radius_threshold_;
     
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
@@ -92,7 +94,7 @@ class Pass{
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_):
+         std::string lidar_channel_, double radius_threshold_):
     lcm_(lcm_), verbose_(verbose_), 
     lidar_channel_(lidar_channel_),urdf_parsed_(false){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -104,8 +106,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL );
   n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
   
-  double radius_threshold = 0.04;   // was 0.04 for a long time
-  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , radius_threshold);
+  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , radius_threshold_);
   // create the collision detector
   collision_detector_ = new Collision_Detector();
   // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
@@ -336,8 +337,10 @@ int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
   string lidar_channel="SCAN";
+  double radius_threshold = 0.04; // was 0.04 for a long time
   parser.add(verbose, "v", "verbose", "Verbosity");
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
+  parser.add(radius_threshold, "r", "radius_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
   parser.parse();
   cout << verbose << " is verbose\n";
   cout << lidar_channel << " is lidar_channel\n";
@@ -347,7 +350,7 @@ int main( int argc, char** argv ){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm,verbose,lidar_channel);
+  Pass app(lcm,verbose,lidar_channel, radius_threshold);
   cout << "Ready to filter lidar points" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
