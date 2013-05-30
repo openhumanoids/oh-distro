@@ -41,7 +41,7 @@ def doRun(logFile, runOption, maxDuration, profileType, medianLength, prefix):
     sys.stdout.write('starting run %s ...\n' % (runName))
     
     # write weights file
-    weightFile = '/tmp/weights.txt';
+    weightFile = os.path.expandvars('${HOME}/drc/software/config/subsystems/legged_odometry/weights.txt');
     writeWeights(maxDuration, 30, profileType, weightFile)
     sys.stdout.write('  wrote weights file %s\n' % weightFile)
     
