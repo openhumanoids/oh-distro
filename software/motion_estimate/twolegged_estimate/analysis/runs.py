@@ -19,27 +19,25 @@ def doAllRuns(logListFile,prefix):
 
     # get all options lists
     files = open(os.path.expandvars(logListFile),'r').readlines()
+    medianLengths = [5,9,15]
     runOptions = ['A','B','C']
     #windowDurations = [30, 60, 90]
-    windowDurations = [30]
+    windowDurations = [20,40]
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
-
-    # TODO: temporarily disabling sweep over weights
-    #windowDurations = [30]
-    #weightProfiles = ['uniform']
 
     # loop and run    
     for runOption in runOptions:
-	for duration in windowDurations:
-	    for profile in weightProfiles:
-		for filename in files:
-                    doRun(filename, runOption, duration, profile, prefix)
+        for duration in windowDurations:
+            for profile in weightProfiles:
+                for medianLength in medianLengths:
+                    for filename in files:
+                        doRun(filename, runOption, duration, profile, medianLength, prefix)
 
 
-def doRun(logFile, runOption, maxDuration, profileType, prefix):
+def doRun(logFile, runOption, maxDuration, profileType, medianLength, prefix):
     #prefixName = os.path.split(prefix)[1]
     logName = os.path.split(os.path.split(logFile)[0])[1];
-    runName = logName + '_' + runOption + '_' + str(maxDuration) + '_' + profileType
+    runName = logName + '_' + runOption + '_' + str(maxDuration) + '_' + profileType + '_' + str(medianLength)
     sys.stdout.write('starting run %s ...\n' % (runName))
     
     # write weights file
@@ -49,10 +47,11 @@ def doRun(logFile, runOption, maxDuration, profileType, prefix):
     
     # start up motion estimator
     motionExe = 'drc-legged-odometry'
-    motionArgs = '-e -l' + ' -' + runOption
+    motionArgs = '-e -l' + ' -' + runOption + ' -m ' + str(medianLength)
     motionCmd = shlex.split(motionExe + ' ' + motionArgs)
     motionProc = subprocess.Popen(motionCmd, cwd='/tmp')
     sys.stdout.write('  spawned motion estimator\n')
+    sys.stdout.write(motionExe + ' ' + motionArgs)
     
     # start up logplayer
     playerExe = 'lcm-logplayer'
