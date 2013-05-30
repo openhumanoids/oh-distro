@@ -598,7 +598,8 @@ namespace renderer_affordances_lcm_utils
                         // hand_it->second.joint_name;  
                         // hand_it->second.joint_position; 
            
-                        for(uint k = 0; k< (uint) hand_it->second.joint_name.size(); k++) {
+                          for(uint k = 0; k< (uint) hand_it->second.joint_name.size(); k++) 
+                          {
                             std::string joint_name = hand_it->second.joint_name[k];
                             vector<double> joint_pos;
                             vector<int64_t> joint_pos_timestamps;
@@ -611,18 +612,18 @@ namespace renderer_affordances_lcm_utils
                             //}
                             // append reverse motion with a small back up palm offset
                             if(is_retractable){
-                                //for(uint i = 0; i < (uint) num_frames; i++)
-                                    //{
-                                    //joint_pos.push_back(0.5*hand_it->second.joint_position[k]); % dont open fully, just loosen hold until half way
-                                    joint_pos.push_back(0.0);
-                
-                                    int64_t timestamp=(int64_t)(num_frames+i)*1000000;
-                                    joint_pos_timestamps.push_back(timestamp);   
-                                    //} 
-                                }
-                                joint_pos_map.insert(make_pair(joint_name,joint_pos));
-                                joint_pos_timestamps_map.insert(make_pair(joint_name, joint_pos_timestamps));  
-                            }
+                              //for(uint i = 0; i < (uint) num_frames; i++)
+                                  //{
+                                  //joint_pos.push_back(0.5*hand_it->second.joint_position[k]); % dont open fully, just loosen hold until half way
+                                  joint_pos.push_back(0.0);
+              
+                                  int64_t timestamp=(int64_t)(num_frames+i)*1000000;
+                                  joint_pos_timestamps.push_back(timestamp);   
+                                  //} 
+                              }
+                              joint_pos_map.insert(make_pair(joint_name,joint_pos));
+                              joint_pos_timestamps_map.insert(make_pair(joint_name, joint_pos_timestamps));  
+                          }
            
                     } // end if (host_name == (it->first))
             } // end for sticky hands

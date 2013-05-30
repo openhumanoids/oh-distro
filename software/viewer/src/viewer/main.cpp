@@ -154,7 +154,7 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
   {
     msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT;
     std::cout << "Sending a lcm msg to update nominal posture in P&C to current state." << "\n";
-    drc_robot_posture_preset_t_publish(lcm, "UPDATE_NOMINAL_POSTURE", &msg);
+    drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
   }
   else{
     //CURRENT=0, STANDING_HNDS_UP=1, STANDING_HNDS_DWN=2,SITTING_HNDS_UP=3, SITTING_HNDS_DWN=4;
