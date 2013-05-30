@@ -95,6 +95,9 @@ while(1)
             publish(l_hand_joint_cmd_publisher,ts,[K_pos;K_vel;q_l;e_l]','L_HAND_JOINT_COMMANDS');
         elseif(msg.grasp_type==msg.SANDIA_RIGHT)
             publish(r_hand_joint_cmd_publisher,ts,[K_pos;K_vel;q_r;e_r]','R_HAND_JOINT_COMMANDS');
+        elseif(msg.grasp_type==msg.SANDIA_BOTH)
+            publish(l_hand_joint_cmd_publisher,ts,[K_pos;K_vel;q_l;e_l]','L_HAND_JOINT_COMMANDS');
+            publish(r_hand_joint_cmd_publisher,ts,[K_pos;K_vel;q_r;e_r]','R_HAND_JOINT_COMMANDS');
         end
         
               

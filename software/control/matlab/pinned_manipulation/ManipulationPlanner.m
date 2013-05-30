@@ -551,39 +551,75 @@ classdef ManipulationPlanner < handle
                 brkpts =logical(zeros(1,length(timeIndices))==1);
                 if(~isempty(postureconstraint))
                     timetags = [postureconstraint.utime];
-                    if(length(timetags) > 1)
+                    if(length(unique(timetags)) > 1)
                         for k=1:length(timetags),
                             brkpts = brkpts|(timeIndices == timetags(k));
                         end
                     end
                     brkpts_shiftright=circshift(brkpts,[ 0 -1]);
                     xtraj(2,:) = brkpts|brkpts_shiftright;
-                    unique_transitions = unique(timetags);
+                    
+                    unique_transitions = unique(timetags);%get all values for a given time index
+                    cnt = 1;
                     for j=1:length(unique_transitions),
-                       s_transition =(unique_transitions(j)-min(timeIndices))/(max(timeIndices)-min(timeIndices));
-                       G(j).utime =  s_transition.*(s_total/obj.v_desired);
-                       ind = find(unique_transitions(j)==timetags);
-                       num_joints = length(ind);
-                       G(j).num_joints=round(num_joints);
-                       G(j).joint_name=javaArray('java.lang.String', num_joints);
-                       G(j).joint_position=zeros(1,num_joints);
-                       for k=1:num_joints,
-                          G(j).joint_name(k) = postureconstraint(ind(k)).joint_name; 
-                          G(j).joint_position(k) = postureconstraint(ind(k)).joint_position; 
-                       end
-                        G(j).affordance_uid = 0;
-                        G(j).grasp_on = false;
-                        if(regexp(char(G(j).joint_name(1)),'right_'))
-                            G(j).grasp_type = 1;%const int16_t LEFT=0, RIGHT=1;
-                        else
-                            G(j).grasp_type = 0;
+                        s_transition =(unique_transitions(j)-min(timeIndices))/(max(timeIndices)-min(timeIndices));
+                        ind = find(unique_transitions(j)==timetags);
+                        num_joints = length(ind);
+                        num_l_joints = 0;
+                        num_r_joints = 0;
+                        ind_l =[];ind_r =[];
+                        % figure out if it is bihanded or single hand grasp transition.
+                        for(k=1:num_joints),
+                            if(~isempty(regexp(char(postureconstraint(ind(k)).joint_name),'left_')))
+                                num_l_joints = num_l_joints+1;
+                                ind_l = [ind_l ind(k)];
+                            else
+                                num_r_joints = num_r_joints+1;
+                                ind_r =[ind_r ind(k)];
+                            end
                         end
-                        G(j).power_grasp=false;
-                        pose = drc.position_3d_t();
-                        pose.translation = drc.vector_3d_t();
-                        pose.rotation = drc.quaternion_t();
-                        pose.rotation.w =1.0;
-                        G(j).hand_pose = pose;   
+                        
+                        if(num_l_joints>0)
+                            G(cnt).utime =  s_transition.*(s_total/obj.v_desired);
+                            G(cnt).num_joints=round(num_l_joints);
+                            G(cnt).joint_name=javaArray('java.lang.String', num_l_joints);
+                            G(cnt).joint_position=zeros(1,num_l_joints);
+                            for k=1:num_l_joints,
+                                G(cnt).joint_name(k) = postureconstraint(ind_l(k)).joint_name;
+                                G(cnt).joint_position(k) = postureconstraint(ind_l(k)).joint_position;
+                            end
+                            G(cnt).affordance_uid = 0;
+                            G(cnt).grasp_on = false;
+                            G(cnt).grasp_type = 0; % LEFT
+                            G(cnt).power_grasp=false;
+                            pose = drc.position_3d_t();
+                            pose.translation = drc.vector_3d_t();
+                            pose.rotation = drc.quaternion_t();
+                            pose.rotation.w =1.0;
+                            G(cnt).hand_pose = pose;
+                            cnt = cnt+1;
+                        end
+                        
+                        if(num_r_joints>0)
+                            G(cnt).utime =  s_transition.*(s_total/obj.v_desired);
+                            G(cnt).num_joints=round(num_r_joints);
+                            G(cnt).joint_name=javaArray('java.lang.String', num_r_joints);
+                            G(cnt).joint_position=zeros(1,num_r_joints);
+                            for k=1:num_r_joints,
+                                G(cnt).joint_name(k) = postureconstraint(ind_r(k)).joint_name;
+                                G(cnt).joint_position(k) = postureconstraint(ind_r(k)).joint_position;
+                            end
+                            G(cnt).affordance_uid = 0;
+                            G(cnt).grasp_on = false;
+                            G(cnt).grasp_type = 1; % RIGHT
+                            G(cnt).power_grasp=false;
+                            pose = drc.position_3d_t();
+                            pose.translation = drc.vector_3d_t();
+                            pose.rotation = drc.quaternion_t();
+                            pose.rotation.w =1.0;
+                            G(cnt).hand_pose = pose;
+                            cnt = cnt+1;
+                        end
                     end
                     %utime = 0;
                     obj.plan_pub.publish(xtraj,ts,G,utime);
