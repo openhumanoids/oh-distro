@@ -398,7 +398,7 @@ public:
     msg.name = "updateFromDataControlRenderer";
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.map_id = -1;
-    for (int i = 0; i < msg.naffs; ++i) {
+    for (size_t i = 0; i < affordances.size(); ++i) {
       if (std::find(selectedIds.begin(), selectedIds.end(),
                     affordances[i]->aff->_uid) == selectedIds.end()) continue;
       drc::affordance_plus_t aff;
@@ -408,7 +408,7 @@ public:
     msg.naffs = msg.affs_plus.size();
     getLcm()->publish(affordance::AffordanceServer::
                       AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
-    std::cout << "Sent affordance list" << std::endl;
+    std::cout << "Sent " << msg.naffs << " affordances" << std::endl;
   }
 
   void onSendRatesControlButton() {
