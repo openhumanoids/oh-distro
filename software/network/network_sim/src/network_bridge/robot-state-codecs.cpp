@@ -127,28 +127,13 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
     if(!to_minimal_position3d(lcm_object.origin_position, dccl_state->mutable_origin_position()))
         return false;
 
-    for(int i = 0, n = lcm_object.joint_position.size(); i < n; ++i)
-        dccl_state->add_joint_position(std::numeric_limits<float>::quiet_NaN());
+
+    if(!to_minimal_joint_pos(lcm_object.joint_name,
+                             lcm_object.joint_position,
+                             dccl_state->mutable_joint_position()))
+        return false;
     
-    for(int i = 0, n = lcm_object.joint_position.size(); i < n; ++i)
-    {
-        std::map<std::string, int>::const_iterator order =
-            joint_names_to_order_.find(lcm_object.joint_name[i]);
 
-        if(order == joint_names_to_order_.end())
-        {
-            glog.is(WARN) && glog << "No joint called [" << lcm_object.joint_name[i] << "] found in hard-coded map." << std::endl;
-            return false;
-        }
-
-        double position = lcm_object.joint_position[i];
-        const double pi = 3.14159; 
-        while(position >= pi) position -= 2*pi;
-        while(position < -pi) position += 2*pi;
-        
-
-        dccl_state->set_joint_position(order->second, position);
-    }
     return true;
 }
 
@@ -164,12 +149,13 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
         return false;    
     
     lcm_object->num_joints = dccl_state.joint_position_size();
-    lcm_object->joint_name.resize(dccl_state.joint_position_size());
-    std::copy(joint_names_.begin(), joint_names_.begin() + dccl_state.joint_position_size(), lcm_object->joint_name.begin());
-    
-    for(int i = 0, n = dccl_state.joint_position_size(); i < n; ++i)
-        lcm_object->joint_position.push_back(dccl_state.joint_position(i));
 
+    
+    if(!from_minimal_joint_pos(&lcm_object->joint_name,
+                               &lcm_object->joint_position,
+                               dccl_state.joint_position()))
+        return false;
+    
     std::vector<float> joint_zeros;
     joint_zeros.assign ( joint_names_.size(),0); 
     drc::joint_covariance_t j_cov;
@@ -296,3 +282,5 @@ bool RobotStateCodec::from_position3d_diff(drc::Position3D* present_pos,
     return true;
 }
 
+
+    

@@ -44,14 +44,46 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
         
         joint_pos_diff->mutable_jp_diff_val()->CopyFrom(present_goal.joint_position());
     }
-    
-    // add grasp
 
+    dccl_plan.set_num_grasp_transitions(lcm_object.num_grasp_transitions);
+    for(int i = 0, n = lcm_object.grasps.size(); i < n; ++i)
+    {
+        const drc::grasp_transition_state_t& present_grasp = lcm_object.grasps[i];
+        drc::GraspTransition* dccl_grasp = dccl_plan.add_grasp();
+        dccl_grasp->set_utime(present_grasp.utime);
+        dccl_grasp->set_affordance_uid(present_grasp.affordance_uid);
+
+        if(!RobotStateCodec::to_minimal_position3d(present_grasp.hand_pose, dccl_grasp->mutable_hand_pose()))
+            return false;
+        
+        dccl_grasp->set_grasp_on(present_grasp.grasp_on);
+        dccl_grasp->set_grasp_type(present_grasp.grasp_type);
+        dccl_grasp->set_power_grasp(present_grasp.power_grasp);
+
+        int offset = (present_grasp.grasp_type == drc::grasp_transition_state_t::LEFT) ?
+            RobotStateCodec::joint_names_to_order_["left_f0_j0"] :
+            RobotStateCodec::joint_names_to_order_["right_f0_j0"];
+        
+        if(!RobotStateCodec::to_minimal_joint_pos(present_grasp.joint_name,
+                                                  present_grasp.joint_position,
+                                                  dccl_grasp->mutable_joint_position(),
+                                                  offset))
+            return false;
+        
+    }
+    
     dccl_plan.set_arms_control_type(lcm_object.arms_control_type);
     dccl_plan.set_legs_control_type(lcm_object.legs_control_type);
     
     
-    glog.is(VERBOSE) && glog << "MinimalRobotPlan: " << dccl_plan.ShortDebugString() << std::endl;
+    if(glog.is(VERBOSE))
+    {
+        google::protobuf::TextFormat::Printer printer;
+        printer.SetUseShortRepeatedPrimitives(true);
+        std::string dccl_plan_debug;
+        printer.PrintToString(dccl_plan, &dccl_plan_debug);
+        glog << "MinimalRobot: " << dccl_plan_debug << std::endl;
+    }
     
     std::string encoded;
     dccl_->encode(&encoded, dccl_plan);
@@ -70,6 +102,16 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
     drc::MinimalRobotPlan dccl_plan;
 
     dccl_->decode(encoded, &dccl_plan);
+
+
+    if(glog.is(VERBOSE))
+    {
+        google::protobuf::TextFormat::Printer printer;
+        printer.SetUseShortRepeatedPrimitives(true);
+        std::string dccl_plan_debug;
+        printer.PrintToString(dccl_plan, &dccl_plan_debug);
+        glog << "MinimalRobotPlan: " << dccl_plan_debug << std::endl;
+    }
     
     drc::robot_plan_t lcm_object;
 
@@ -104,9 +146,34 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
     }
     
     
-    // add grasp
-    lcm_object.num_grasp_transitions = 0;
+    lcm_object.num_grasp_transitions = dccl_plan.num_grasp_transitions();
+    for(int i = 0, n = dccl_plan.num_grasp_transitions(); i < n; ++i)
+    {
+        drc::grasp_transition_state_t present_grasp;
+        const drc::GraspTransition& dccl_grasp = dccl_plan.grasp(i);
+        present_grasp.utime = dccl_grasp.utime();
+        present_grasp.affordance_uid = dccl_grasp.affordance_uid();
 
+        if(!RobotStateCodec::from_minimal_position3d(&present_grasp.hand_pose, dccl_grasp.hand_pose()))
+            return false;
+        
+        present_grasp.grasp_on = dccl_grasp.grasp_on();
+        present_grasp.grasp_type = dccl_grasp.grasp_type();
+        present_grasp.power_grasp = dccl_grasp.power_grasp();
+
+        int offset = (present_grasp.grasp_type == drc::grasp_transition_state_t::LEFT) ?
+            RobotStateCodec::joint_names_to_order_["left_f0_j0"] :
+            RobotStateCodec::joint_names_to_order_["right_f0_j0"];
+
+        present_grasp.num_joints = dccl_grasp.joint_position_size();
+        if(!RobotStateCodec::from_minimal_joint_pos(&present_grasp.joint_name,
+                                                    &present_grasp.joint_position,
+                                                    dccl_grasp.joint_position(),
+                                                    offset))
+            return false;
+
+        lcm_object.grasps.push_back(present_grasp);
+    }
     
     lcm_object.arms_control_type = dccl_plan.arms_control_type();
     lcm_object.legs_control_type = dccl_plan.legs_control_type();

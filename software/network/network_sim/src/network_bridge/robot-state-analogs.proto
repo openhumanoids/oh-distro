@@ -12,6 +12,7 @@ message MinimalRobotState
   repeated float joint_position = 3 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 53 codec: "presence_bit" } ];
 }
 
+
 message Position3D
 {
   required TranslationVector translation = 1;

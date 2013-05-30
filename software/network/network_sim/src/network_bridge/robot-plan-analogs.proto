@@ -13,7 +13,8 @@ message MinimalRobotPlan
   required MinimalRobotState goal = 2;
   required MinimalRobotStateDiff goal_diff = 3;
 
-  repeated GraspTransition grasp = 10 [(dccl.field) = { max_repeat: 10 }];
+  required int32 num_grasp_transitions = 10 [(dccl.field) = { min: 0  max: 10 }];
+  repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 }];
   
   required int32 arms_control_type = 20 [(dccl.field) = { min: 0  max: 3 }];
   required int32 legs_control_type = 21 [(dccl.field) = { min: 0  max: 3 }];
@@ -22,13 +23,13 @@ message MinimalRobotPlan
 
 message GraspTransition
 {
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
-  required int32 affordance_uid = 2 [(dccl.field) = {min: 0 max: 0x7FFFFFFE } ];
-  required Position3D hand_pose = 3;
+  optional uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 codec: "presence_bit"}];
+  optional int32 affordance_uid = 2 [(dccl.field) = {min: 0 max: 0x7FFFFFFE codec: "presence_bit"} ];
+  optional Position3D hand_pose = 3;
   
-  required bool grasp_on = 4;
-  required int32 grasp_type = 5 [(dccl.field) = {min:0 max: 1}];
-  required bool power_grasp = 6;
+  optional bool grasp_on = 4;
+  optional int32 grasp_type = 5 [(dccl.field) = {min:0 max: 1 codec: "presence_bit"}];
+  optional bool power_grasp = 6;
     
-  repeated float joint_position = 7 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 53 codec: "presence_bit" } ];
+  repeated float joint_position = 7 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
 }
