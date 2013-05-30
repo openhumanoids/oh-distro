@@ -6,8 +6,8 @@
 #define PARAM_SEED_LF "Seed LFoot"
 #define PARAM_SEED_RF "Seed RFoot"
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
-#define PARAM_STORE "Store" 
-#define PARAM_UNSTORE "Unstore" 
+#define PARAM_STORE "Store to otdf file" 
+#define PARAM_UNSTORE "Unstore from otdf file" 
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
