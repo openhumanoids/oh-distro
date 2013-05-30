@@ -156,13 +156,13 @@ group "a.3.vrc_task_3_walking_manip_controllers" {
 #        exec = "object-tracker";
 #        host = "extra";
 #    } 
-#    cmd "affordance_init" {
-#        exec = "affordance_init -e 5";
-#        host = "extra";
-#    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 5";
+        host = "extra";
+    } 
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
-       host = "robot";
+       host = "extra";
     }
 }
 group "a.4.driving" {
@@ -694,8 +694,19 @@ script "dev.vrc_task_3_hose_manip" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_vrc_task_3_manip";
+    start cmd "set-sim-rate";
 }
 
+script "dev.quals2_walking_manip" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_walking_manip";
+    start cmd "set-sim-rate";
+}
 ############ System Tests ############
 
 script "systest-main" {
