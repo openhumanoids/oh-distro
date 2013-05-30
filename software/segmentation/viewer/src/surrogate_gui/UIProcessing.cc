@@ -1747,6 +1747,14 @@ namespace surrogate_gui
 					" points from octree" << endl;
 			}
 
+      // clear selection
+		  ObjectPointsPtr currObj = getCurrentObjectSelected();
+		  if (currObj->indices->size() != 0)
+		  {
+			  currObj->indices->clear();
+			  currObj->auto_segment_indices.clear();
+		  }
+
 		}
 
 
