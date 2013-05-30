@@ -26,7 +26,7 @@ r = compile(r);
 
 lc = lcm.lcm.LCM.getSingleton();
 qnom_mon = drake.util.MessageMonitor(drc.robot_posture_preset_t,'utime');
-lc.subscribe('UPDATE_NOMINAL_POSTURE',qnom_mon);
+lc.subscribe('COMMITTED_POSTURE_PRESET',qnom_mon);
 qnom_state = '';
 while true 
 
