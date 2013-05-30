@@ -19,8 +19,12 @@ group "0.development" {
 
 
 group "a.1.core" {
-    cmd "aa-translators" {
+    cmd "aa-control" {
         exec = "roslaunch translators cheating.launch";
+        host = "robot";
+    }
+    cmd "aa-perception" {
+        exec = "roslaunch translators perception.launch";
         host = "robot";
     }
     cmd "viewer-REMOVEFORCOMP" {
