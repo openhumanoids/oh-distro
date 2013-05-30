@@ -297,12 +297,15 @@ namespace surrogate_gui
 		  maxZ = max(maxZ,msg->points[i].z);
 		}
 
+    bool drawRed = bot_gtk_param_widget_get_bool(_pw, PARAM_NAME_POINT_COLOR);
 
 		//iterate through all the points
 		for (uint i = 0; i < msg->size(); i++)
 		{
 		         float heightRatio = (msg->points[i].z-minZ)/(maxZ-minZ);
-			 float *outColor = bot_color_util_jet(heightRatio);
+			 float *outColor;
+       if(drawRed) outColor = bot_color_util_jet(heightRatio);
+       else        outColor = bot_color_util_jet(1);
 
 			//extract (original) color
 			RGB_PCL pclColor;

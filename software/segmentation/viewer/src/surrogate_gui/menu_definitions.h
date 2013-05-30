@@ -44,6 +44,7 @@ namespace surrogate_gui
 
 	//===========pull from map
 	#define PARAM_NAME_PULL_MAP "1. Get Map"
+  #define PARAM_NAME_POINT_COLOR "Color points by height"
 
 	//==========tracking
 	#define PARAM_NAME_TRACK_METHOD "Tracking Method"

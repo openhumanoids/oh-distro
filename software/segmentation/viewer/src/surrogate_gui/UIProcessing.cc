@@ -171,6 +171,8 @@ namespace surrogate_gui
 		//affordance save cloud button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_SAVE_CLOUD, NULL);
 
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_POINT_COLOR, 1, NULL);
+
 		// master reset button
 		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
 
@@ -1634,6 +1636,11 @@ namespace surrogate_gui
 			//_surrogate_renderer.setHintText("Object Segmentation Cleared");
 			return;
 		}
+
+		if (stringsEqual(name, PARAM_NAME_POINT_COLOR))
+		{
+  		bot_viewer_request_redraw(_surrogate_renderer._viewer);
+    }
 
 		//clear warnings
 		if (stringsEqual(name, PARAM_NAME_CLEAR_WARNING_MSGS))
