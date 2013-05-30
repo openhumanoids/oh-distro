@@ -87,12 +87,16 @@ _handle_est_robot_state_msg( const ReceiveBuffer * rbuf,
   }
   return;
 }
-
+int skip_counter = 0;
 void
 Qt4_Widget_Authoring_LCM_Interface::
 _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
                                     const string& channel,
                                     const affordance_collection_t* msg ){
+  if( skip_counter++ % 100 != 0){
+    return;
+  }
+  skip_counter = 0;
   if( msg != NULL ){
     vector< AffordanceState > affordance_collection;
     for( unsigned int i = 0; i < msg->naffs; i++ )

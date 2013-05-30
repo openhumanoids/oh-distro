@@ -14,7 +14,7 @@ namespace authoring {
 
   class Constraint {
   public:
-    Constraint( const std::string& id = "N/A", bool active = true, double start = 0.0, double end = 0.0 );
+    Constraint( const std::string& id = "N/A", bool active = true, double start = 0.1, double end = 1.0 );
     ~Constraint();
     Constraint( const Constraint& other );
     Constraint& operator=( const Constraint& other );

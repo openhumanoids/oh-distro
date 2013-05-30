@@ -31,6 +31,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
                                             _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
                                             _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
+                                            _check_box_visible_initial_state( new QCheckBox( "initial state", this ) ),
                                             _slider_current_time( new QLabel("frame 0") ),
                                             _robot_model(),
                                             _affordance_collection(),
@@ -58,6 +59,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _check_box_visible_current_index->setCheckState( Qt::Checked );
   _check_box_visible_trajectory->setCheckState( Qt::Checked );
   _check_box_visible_trajectory_wrist->setCheckState( Qt::Unchecked );
+  _check_box_visible_initial_state->setCheckState( Qt::Checked );
 
   QGroupBox * controls_group_box = new QGroupBox( QString( "controls" ) );
   QHBoxLayout * controls_layout = new QHBoxLayout();
@@ -87,11 +89,12 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   QWidget * plan_widget = new QWidget( this );
   QGridLayout * plan_layout =  new QGridLayout();
   plan_layout->addWidget( new QLabel( QString("visualize: ") ), 0, 0 );
-  plan_layout->addWidget( _check_box_visible_current_index, 0, 1 );
-  plan_layout->addWidget( _check_box_visible_trajectory, 0, 2 );
-  plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 3 );
+  plan_layout->addWidget( _check_box_visible_initial_state, 0, 1 );
+  plan_layout->addWidget( _check_box_visible_current_index, 0, 2 );
+  plan_layout->addWidget( _check_box_visible_trajectory, 0, 3 );
+  plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 4 );
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 4 );
-  plan_layout->addWidget( _slider_current_time, 2, 0, 1, 4 );
+  plan_layout->addWidget( _slider_current_time, 2, 0, 1, 5 );
   plan_widget->setLayout( plan_layout );
 
   plan_scroll_area->setWidget( plan_widget );
@@ -129,6 +132,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( _check_box_visible_current_index, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_current_index( int ) ) );
   connect( _check_box_visible_trajectory, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory( int ) ) );
   connect( _check_box_visible_trajectory_wrist, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory_wrist( int ) ) );
+  connect( _check_box_visible_initial_state, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_initial_state( int ) ) );
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );

@@ -35,6 +35,7 @@ namespace authoring {
     void update_opengl_object_robot_plan_visible_current_index( int visibleCurrentIndex );
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
     void update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist );
+    void update_opengl_object_robot_plan_visible_initial_state( int visibleTrajectoryWrist );
     void update_constraint_visualizer( Constraint* constraint);
 
   protected slots:

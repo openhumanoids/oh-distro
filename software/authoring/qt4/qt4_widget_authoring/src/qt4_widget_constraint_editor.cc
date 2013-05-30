@@ -63,7 +63,12 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
   _double_spin_box_time_end->setRange( 0.1, 1000000.0 );
   _double_spin_box_time_end->setSingleStep( 0.1 );
   _double_spin_box_time_end->setSuffix( " s" );
-  _line_edit_description->setFixedWidth( 395 );
+  _line_edit_description->setFixedWidth( 1024 );
+
+  if(_constraint){
+    _double_spin_box_time_start->setValue( _constraint->start() );
+    _double_spin_box_time_end->setValue( _constraint->end() );
+  }
 
   QHBoxLayout * widget_layout = new QHBoxLayout();
   widget_layout->addWidget( _check_box_active );
@@ -156,6 +161,7 @@ Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_start_value_changed( double start ){
   if( _constraint != NULL ){
     _constraint->start() = _double_spin_box_time_start->value();
+    cout <<"_constraint->start() = " <<  _constraint->start() << endl;
     check_valid_times();
     update_description( QString::fromStdString( _constraint->description() ) );
   } else {
@@ -227,6 +233,8 @@ _check_box_active_changed( int state ){
   }
   if( _constraint != NULL ){
     update_description( QString::fromStdString( _constraint->description() ) );
+    _double_spin_box_time_start->setValue( _constraint->start() );
+    _double_spin_box_time_end->setValue( _constraint->end() );
   } else {
     update_description( "N/A" );
   }
@@ -291,6 +299,8 @@ _combo_box_type_changed( int index ){
   }
   if( _constraint != NULL ){
     update_description( QString::fromStdString( _constraint->description() ) );
+    _double_spin_box_time_start->setValue( _constraint->start() );
+    _double_spin_box_time_end->setValue( _constraint->end() );
   } else {
     update_description( "N/A" );
   }

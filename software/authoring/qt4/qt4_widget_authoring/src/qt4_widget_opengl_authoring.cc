@@ -11,7 +11,7 @@ Qt4_Widget_OpenGL_Authoring( const string& xmlString,
                               QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                                   _opengl_object_affordance_collection(),
                                                   _opengl_object_affordance_collection_ghost(),
-                                                  _opengl_object_robot_plan(),
+                                                  _opengl_object_robot_plan(xmlString),
                                                   _opengl_object_gfe( xmlString ),
                                                   _opengl_object_gfe_ghost( xmlString ),
                                                   _opengl_object_constraint_visualizer(),
@@ -148,6 +148,18 @@ update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryW
     _opengl_object_robot_plan.set_visible_trajectory_wrist( true );
   } else {
     _opengl_object_robot_plan.set_visible_trajectory_wrist( false );
+  }
+  update();
+  return;
+}
+
+void 
+Qt4_Widget_OpenGL_Authoring::
+update_opengl_object_robot_plan_visible_initial_state( int visibleInitialState ){
+  if( visibleInitialState == Qt::Checked ){
+    _opengl_object_gfe.set_visible( true );
+  } else {
+    _opengl_object_gfe.set_visible( false );
   }
   update();
   return;

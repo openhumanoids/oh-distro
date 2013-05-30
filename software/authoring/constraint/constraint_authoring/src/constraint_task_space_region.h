@@ -20,7 +20,7 @@ namespace authoring {
 
   class Constraint_Task_Space_Region: public Constraint {
   public:
-    Constraint_Task_Space_Region( const std::string& id = "N/A", bool active = true, double start = 0.0, double end = 0.0, const std::pair< std::string, std::string >& parent = std::pair< std::string, std::string >( "N/A", "N/A" ), affordance::AffordanceState* child = NULL );
+    Constraint_Task_Space_Region( const std::string& id = "N/A", bool active = true, double start = 0.1, double end = 1.0, const std::pair< std::string, std::string >& parent = std::pair< std::string, std::string >( "N/A", "N/A" ), affordance::AffordanceState* child = NULL );
     ~Constraint_Task_Space_Region();
     Constraint_Task_Space_Region( const Constraint_Task_Space_Region& other );
     Constraint_Task_Space_Region& operator=( const Constraint_Task_Space_Region& other );

@@ -115,12 +115,12 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   _double_spin_box_yaw_min->setSuffix( " deg" );
   _double_spin_box_yaw_max->setSuffix( " deg" );
 */
-  _double_spin_box_x_min->setSingleStep( 0.1 );
-  _double_spin_box_x_max->setSingleStep( 0.1 );
-  _double_spin_box_y_min->setSingleStep( 0.1 );
-  _double_spin_box_y_max->setSingleStep( 0.1 );
-  _double_spin_box_z_min->setSingleStep( 0.1 );
-  _double_spin_box_z_max->setSingleStep( 0.1 );
+  _double_spin_box_x_min->setSingleStep( 0.01 );
+  _double_spin_box_x_max->setSingleStep( 0.01 );
+  _double_spin_box_y_min->setSingleStep( 0.01 );
+  _double_spin_box_y_max->setSingleStep( 0.01 );
+  _double_spin_box_z_min->setSingleStep( 0.01 );
+  _double_spin_box_z_max->setSingleStep( 0.01 );
 /*
   _double_spin_box_roll_min->setSingleStep( 11.25 );
   _double_spin_box_roll_max->setSingleStep( 11.25 );

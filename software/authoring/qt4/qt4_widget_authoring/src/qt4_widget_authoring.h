@@ -63,6 +63,7 @@ namespace authoring {
     QCheckBox * _check_box_visible_current_index;
     QCheckBox * _check_box_visible_trajectory;
     QCheckBox * _check_box_visible_trajectory_wrist;
+    QCheckBox * _check_box_visible_initial_state;
     QLabel * _slider_current_time;
 
     urdf::Model _robot_model;
