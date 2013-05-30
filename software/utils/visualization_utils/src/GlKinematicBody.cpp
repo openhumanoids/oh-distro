@@ -6,10 +6,51 @@ using namespace boost;
 using namespace visualization_utils;
 
 // copy constructor
-//GlKinematicBody::GlKinematicBody( const GlKinematicBody& other )
-//{
-//   *this = other;
-//}
+/*GlKinematicBody::GlKinematicBody( const GlKinematicBody& other )
+{
+   //*this = other;
+
+  urdf::Model model; 
+  if (!model.initString(other._urdf_xml_string))
+  {
+    cerr << "ERROR: Could not generate robot model" << endl;
+  }
+
+ _joint_names_= other._joint_names_;
+ _jointlimit_min=other._jointlimit_min;
+ _jointlimit_max=other._jointlimit_max;
+ _current_jointpos= other._current_jointpos;
+ _future_jointpos= other._future_jointpos;
+
+  // get root link
+  boost::shared_ptr<const urdf::Link> root_link=model.getRoot();
+  _root_name = root_link->name;
+  if(!root_link->inertial){
+   cerr << "WARNING: root link has no inertia, Adding small inertia" << endl;
+   model.root_link_->inertial.reset(new urdf::Inertial);
+   model.root_link_->inertial->mass = 0.01;
+   model.root_link_->inertial->ixx = 0.01;
+   model.root_link_->inertial->iyy = 0.01;
+   model.root_link_->inertial->izz = 0.01;
+  }
+  
+  // Parse KDL tree
+  KDL::Tree tree;
+  //if (!kdl_parser::treeFromString(_urdf_xml_string,tree))
+  if (!kdl_parser::treeFromUrdfModel(model,tree))
+  {
+    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl; 
+    return;
+  }
+
+  _fksolver = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+
+  _links_map =  model.links_;
+  _mesh_model_map = other._mesh_model_map;
+  _mesh_map= other._mesh_map;
+  _unique_root_geometry_name=other._unique_root_geometry_name;
+
+} */
 
 //constructor
 GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false),isShowMeshSelected(false)
@@ -92,8 +133,12 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
           // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
           string file_path = evalMeshFilePath(mesh->filename);
           //storing wavefront_model for different file_paths to prevent repeated creation of the same wavefront model  
-          MeshStruct mesh_struct;
-          typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+          
+	  MeshStruct mesh_struct;
+	  shared_ptr<MeshStruct> mesh_struct_ptr;
+
+          //typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+	  typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_model_map_type_;
           mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
           if(mesh_model_it==_mesh_model_map.end()) // does not exist
           {
@@ -112,22 +157,33 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
            
             double minv[3];
             double maxv[3];
+	    mesh_struct_ptr = shared_ptr<MeshStruct>(new MeshStruct);
             bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
-            mesh_struct.displaylist = dl;            
+            /*mesh_struct.displaylist = dl;            
             mesh_struct.span_x =mesh->scale.x*(maxv[0] - minv[0]);
             mesh_struct.span_y =mesh->scale.y*(maxv[1] - minv[1]);
             mesh_struct.span_z =mesh->scale.z*(maxv[2] - minv[2]);
             mesh_struct.offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
             mesh_struct.offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
-            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
+            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);*/
+	    mesh_struct_ptr->displaylist = dl;            
+            mesh_struct_ptr->span_x =mesh->scale.x*(maxv[0] - minv[0]);
+            mesh_struct_ptr->span_y =mesh->scale.y*(maxv[1] - minv[1]);
+            mesh_struct_ptr->span_z =mesh->scale.z*(maxv[2] - minv[2]);
+            mesh_struct_ptr->offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
+            mesh_struct_ptr->offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
+            mesh_struct_ptr->offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
             bot_wavefront_model_destroy(wavefront_model);
             // remember store in memory
-            _mesh_model_map.insert(make_pair(file_path, mesh_struct));
+            //_mesh_model_map.insert(make_pair(file_path, mesh_struct));
+
+            _mesh_model_map.insert(make_pair(file_path, mesh_struct_ptr));
           }
           else
           {
           //recall from memory if the a wavefront model for a file path exists.
-           mesh_struct = mesh_model_it->second;
+           //mesh_struct = mesh_model_it->second;
+	   mesh_struct_ptr = mesh_model_it->second;
           }
           
           std::stringstream oss;
@@ -136,10 +192,13 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
             
          // populate data structures
-          typedef std::map<std::string, MeshStruct> mesh_map_type_;
+         //typedef std::map<std::string, MeshStruct> mesh_map_type_;
+ 	 typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
           mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
-          if(mesh_map_it==_mesh_map.end())
-            _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));
+          if(mesh_map_it==_mesh_map.end()){
+            //_mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));
+	    _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct_ptr));
+ 	 }
 
         }//end  if  (type == MESH)
         
@@ -277,7 +336,9 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
           string file_path = evalMeshFilePath(mesh->filename);
                 
           MeshStruct mesh_struct;
-          typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+	  shared_ptr<MeshStruct> mesh_struct_ptr;
+          //typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+          typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_model_map_type_;
           mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
           if(mesh_model_it==_mesh_model_map.end()) // does not exist
           {
@@ -294,23 +355,35 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
             glEndList ();
             double minv[3];
             double maxv[3];
+	    mesh_struct_ptr = shared_ptr<MeshStruct>(new MeshStruct);
             bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
-            mesh_struct.displaylist = dl;
+
+           /*mesh_struct.displaylist = dl;            
             mesh_struct.span_x =mesh->scale.x*(maxv[0] - minv[0]);
             mesh_struct.span_y =mesh->scale.y*(maxv[1] - minv[1]);
             mesh_struct.span_z =mesh->scale.z*(maxv[2] - minv[2]);
-            // offset with respect to geometric center.
             mesh_struct.offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
             mesh_struct.offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
-            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
+            mesh_struct.offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);*/
+	    mesh_struct_ptr->displaylist = dl;            
+            mesh_struct_ptr->span_x =mesh->scale.x*(maxv[0] - minv[0]);
+            mesh_struct_ptr->span_y =mesh->scale.y*(maxv[1] - minv[1]);
+            mesh_struct_ptr->span_z =mesh->scale.z*(maxv[2] - minv[2]);
+	    // offset with respect to geometric center.
+            mesh_struct_ptr->offset_x = mesh->scale.x*((maxv[0] + minv[0])/2.0);
+            mesh_struct_ptr->offset_y = mesh->scale.y*((maxv[1] + minv[1])/2.0);
+            mesh_struct_ptr->offset_z = mesh->scale.z*((maxv[2] + minv[2])/2.0);
+
             bot_wavefront_model_destroy(wavefront_model);
             // remember store in memory
-            _mesh_model_map.insert(make_pair(file_path, mesh_struct));
+            //_mesh_model_map.insert(make_pair(file_path, mesh_struct));
+           _mesh_model_map.insert(make_pair(file_path, mesh_struct_ptr));
           }
           else
           {
           //recall from memory if the a wavefront model for a file path exists.
-           mesh_struct = mesh_model_it->second;
+           //mesh_struct = mesh_model_it->second;
+	   mesh_struct_ptr = mesh_model_it->second;
           }
             
           std::stringstream oss;
@@ -319,10 +392,13 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
 
             
          // populate data structures
-          typedef std::map<std::string, MeshStruct> mesh_map_type_;
+          //typedef std::map<std::string, MeshStruct> mesh_map_type_;
+ 	  typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
           mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
-          if(mesh_map_it==_mesh_map.end())
-            _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));    
+          if(mesh_map_it==_mesh_map.end()){
+            //_mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));   
+	    _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct_ptr));
+	   } 
 
         }//end  if  (type == MESH)
         
@@ -1284,11 +1360,13 @@ bool GlKinematicBody::get_joint_info(const std::string &joint_name, JointFrameSt
 
 bool GlKinematicBody::get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct) 
 {
-  std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+  //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+  std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
   mesh_map_it = _mesh_map.find(link_geometry_name);
   if(mesh_map_it!=_mesh_map.end()) 
   { 
-    mesh_struct = mesh_map_it->second;
+   //mesh_struct = mesh_map_it->second;
+    mesh_struct = *mesh_map_it->second;
     return true;
   }
   else 
@@ -1431,7 +1509,8 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
         axis[0], axis[1], axis[2]); 
 
 
-        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
         mesh_map_it=_mesh_map.find(nextTfname);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
@@ -1439,20 +1518,29 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
           if(!visualize_bbox)
           {
             //cout << mesh_map_it->first <<  " dl: " << mesh_map_it->second.displaylist<< endl;
-            glCallList (mesh_map_it->second.displaylist); 
+            //glCallList (mesh_map_it->second.displaylist); 
+	    glCallList (mesh_map_it->second->displaylist); 
             //cout << glGetError() << endl;
           }
           else 
           {
             // get the vertices for mesh_map_it->second
-            double xDim = mesh_map_it->second.span_x;
+            /*double xDim = mesh_map_it->second.span_x;
             double yDim = mesh_map_it->second.span_y;
             double zDim = mesh_map_it->second.span_z;
             double xc = mesh_map_it->second.offset_x;
             double yc = mesh_map_it->second.offset_y;
-            double zc = mesh_map_it->second.offset_z;
+            double zc = mesh_map_it->second.offset_z;;*/
+            double xDim = mesh_map_it->second->span_x;
+            double yDim = mesh_map_it->second->span_y;
+            double zDim = mesh_map_it->second->span_z;
+            double xc = mesh_map_it->second->offset_x;
+            double yc = mesh_map_it->second->offset_y;
+            double zc = mesh_map_it->second->offset_z;
             
-            glCallList (mesh_map_it->second.displaylist);
+            //glCallList (mesh_map_it->second.displaylist);
+            glCallList (mesh_map_it->second->displaylist); 
+
             glPopMatrix(); 
             // (27th Nov- Steven and Sisir)
             // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
@@ -1618,26 +1706,36 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
         axis[0], axis[1], axis[2]); 
 
 
-        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
         mesh_map_it=_mesh_map.find(nextTfname);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
           if(!visualize_bbox)
           {
-            glCallList (mesh_map_it->second.displaylist);
+            //glCallList (mesh_map_it->second.displaylist);
+	    glCallList (mesh_map_it->second->displaylist);
           }
           else 
           {
             // get the vertices for mesh_map_it->second
-            double xDim = mesh_map_it->second.span_x;
+            /*double xDim = mesh_map_it->second.span_x;
             double yDim = mesh_map_it->second.span_y;
             double zDim = mesh_map_it->second.span_z;
             double xc = mesh_map_it->second.offset_x;
             double yc = mesh_map_it->second.offset_y;
-            double zc = mesh_map_it->second.offset_z;
+            double zc = mesh_map_it->second.offset_z;*/
+            double xDim = mesh_map_it->second->span_x;
+            double yDim = mesh_map_it->second->span_y;
+            double zDim = mesh_map_it->second->span_z;
+            double xc = mesh_map_it->second->offset_x;
+            double yc = mesh_map_it->second->offset_y;
+            double zc = mesh_map_it->second->offset_z;
             
-            glCallList (mesh_map_it->second.displaylist);
-             
+            
+            //glCallList (mesh_map_it->second.displaylist);
+            glCallList (mesh_map_it->second->displaylist); 
+
             // (27th Nov- Steven and Sisir)
             // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
             // The visual origin itself is set to 0,0,0
@@ -1824,17 +1922,25 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
       }
       else if  (type == urdf::Geometry::MESH)
       {
-        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+	std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
         mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
           // get the vertices for mesh_map_it->second
-          double xDim = mesh_map_it->second.span_x;
+          /*double xDim = mesh_map_it->second.span_x;
           double yDim = mesh_map_it->second.span_y;
           double zDim = mesh_map_it->second.span_z;
            xc = mesh_map_it->second.offset_x;
            yc = mesh_map_it->second.offset_y;
-           zc = mesh_map_it->second.offset_z;
+           zc = mesh_map_it->second.offset_z;*/
+
+          double xDim = mesh_map_it->second->span_x;
+          double yDim = mesh_map_it->second->span_y;
+          double zDim = mesh_map_it->second->span_z;
+           xc = mesh_map_it->second->offset_x;
+           yc = mesh_map_it->second->offset_y;
+           zc = mesh_map_it->second->offset_z;
           min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
           max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
         }
@@ -1864,17 +1970,24 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
       }
       else if  (type == otdf::Geometry::MESH)
       {
-        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+	std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
         mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
           // get the vertices for mesh_map_it->second
-          double xDim = mesh_map_it->second.span_x;
+          /*double xDim = mesh_map_it->second.span_x;
           double yDim = mesh_map_it->second.span_y;
           double zDim = mesh_map_it->second.span_z;
            xc = mesh_map_it->second.offset_x;
            yc = mesh_map_it->second.offset_y;
-           zc = mesh_map_it->second.offset_z;
+           zc = mesh_map_it->second.offset_z;*/
+          double xDim = mesh_map_it->second->span_x;
+          double yDim = mesh_map_it->second->span_y;
+          double zDim = mesh_map_it->second->span_z;
+           xc = mesh_map_it->second->offset_x;
+           yc = mesh_map_it->second->offset_y;
+           zc = mesh_map_it->second->offset_z;
           min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
           max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
         }

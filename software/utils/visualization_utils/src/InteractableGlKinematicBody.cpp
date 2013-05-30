@@ -159,12 +159,14 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
           {
             shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
 
-            typedef std::map<std::string, MeshStruct > mesh_map_type_;
+            //typedef std::map<std::string, MeshStruct > mesh_map_type_;
+	    typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
             mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
      
             Eigen::Vector3f dims;
-            dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
-      
+            //dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
+            dims<<  mesh_map_it->second->span_x,mesh_map_it->second->span_y,mesh_map_it->second->span_z;
+
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
             _collision_object_map.insert(make_pair(oss.str(), object_ptr));
              
@@ -275,12 +277,14 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           {
             shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(visuals[iv]->geometry));
 
-            typedef std::map<std::string, MeshStruct > mesh_map_type_;
+            //typedef std::map<std::string, MeshStruct > mesh_map_type_;
+  	    typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
             mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
      
             Eigen::Vector3f dims;
-            dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
-            
+            //dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
+            dims<<  mesh_map_it->second->span_x,mesh_map_it->second->span_y,mesh_map_it->second->span_z;
+
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
             _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
             // add a collision object to the collision detector class
@@ -433,14 +437,17 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
             }
             else if  (type == MESH)
             {
-              MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
-
+              //MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
+	      shared_ptr<MeshStruct> mesh_struct_ptr = _mesh_map.find(unique_geometry_name)->second;
               KDL::Frame T_visual_objorigin, T_world_objorigin; 
 
               T_visual_objorigin = KDL::Frame::Identity();
-              T_visual_objorigin.p[0]= mesh_struct.offset_x;
+              /*T_visual_objorigin.p[0]= mesh_struct.offset_x;
               T_visual_objorigin.p[1]= mesh_struct.offset_y;
-              T_visual_objorigin.p[2]= mesh_struct.offset_z;
+              T_visual_objorigin.p[2]= mesh_struct.offset_z;*/
+	      T_visual_objorigin.p[0]= mesh_struct_ptr->offset_x;
+              T_visual_objorigin.p[1]= mesh_struct_ptr->offset_y;
+              T_visual_objorigin.p[2]= mesh_struct_ptr->offset_z;
 
               /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
               T_world_objorigin = T_world_visual*T_visual_objorigin;
@@ -570,14 +577,18 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
             }
             else if  (type == MESH)
             {
-              MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
+              //MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
+	      shared_ptr<MeshStruct> mesh_struct_ptr = _mesh_map.find(unique_geometry_name)->second;
 
               KDL::Frame T_visual_objorigin, T_world_objorigin; 
 
               T_visual_objorigin = KDL::Frame::Identity();
-              T_visual_objorigin.p[0]= mesh_struct.offset_x;
+              /*T_visual_objorigin.p[0]= mesh_struct.offset_x;
               T_visual_objorigin.p[1]= mesh_struct.offset_y;
-              T_visual_objorigin.p[2]= mesh_struct.offset_z;
+              T_visual_objorigin.p[2]= mesh_struct.offset_z;*/
+	      T_visual_objorigin.p[0]= mesh_struct_ptr->offset_x;
+              T_visual_objorigin.p[1]= mesh_struct_ptr->offset_y;
+              T_visual_objorigin.p[2]= mesh_struct_ptr->offset_z;
 
               /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
               T_world_objorigin = T_world_visual*T_visual_objorigin;
@@ -1197,17 +1208,26 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
   }
   else if  (type == otdf::Geometry::MESH)
   {
-    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
     mesh_map_it=_mesh_map.find(link_tf.name);
     if(mesh_map_it!=_mesh_map.end()) // exists in cache
     { 
       // get the vertices for mesh_map_it->second
-      float xDim = mesh_map_it->second.span_x;
+      /*float xDim = mesh_map_it->second.span_x;
       float yDim = mesh_map_it->second.span_y;
       float zDim = mesh_map_it->second.span_z;
       float xc = mesh_map_it->second.offset_x;
       float yc = mesh_map_it->second.offset_y;
-      float zc = mesh_map_it->second.offset_z;
+      float zc = mesh_map_it->second.offset_z;*/
+
+      float xDim = mesh_map_it->second->span_x;
+      float yDim = mesh_map_it->second->span_y;
+      float zDim = mesh_map_it->second->span_z;
+      float xc = mesh_map_it->second->offset_x;
+      float yc = mesh_map_it->second->offset_y;
+      float zc = mesh_map_it->second->offset_z;
+
       float dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
       float newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
       float maxdim= max(dims[2],max(dims[0],dims[1]));
@@ -1256,17 +1276,26 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ur
   }
   else if  (type == urdf::Geometry::MESH)
   {
-    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    // std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
+
     mesh_map_it=_mesh_map.find(link_tf.name);
     if(mesh_map_it!=_mesh_map.end()) // exists in cache
     { 
       // get the vertices for mesh_map_it->second
-      float xDim = mesh_map_it->second.span_x;
+      /*float xDim = mesh_map_it->second.span_x;
       float yDim = mesh_map_it->second.span_y;
       float zDim = mesh_map_it->second.span_z;
       float xc = mesh_map_it->second.offset_x;
       float yc = mesh_map_it->second.offset_y;
-      float zc = mesh_map_it->second.offset_z;
+      float zc = mesh_map_it->second.offset_z;*/
+
+      float xDim = mesh_map_it->second->span_x;
+      float yDim = mesh_map_it->second->span_y;
+      float zDim = mesh_map_it->second->span_z;
+      float xc = mesh_map_it->second->offset_x;
+      float yc = mesh_map_it->second->offset_y;
+      float zc = mesh_map_it->second->offset_z;
       float dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
       float newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
        

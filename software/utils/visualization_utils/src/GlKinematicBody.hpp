@@ -88,9 +88,15 @@ class GlKinematicBody
     std::vector<std::string > _joint_names; 
     std::vector<JointFrameStruct > _joint_tfs;
      
-    std::map<std::string, MeshStruct > _mesh_map; // associates link geometry name with meshstruct
+
+
+   // std::map<std::string, MeshStruct > _mesh_map; // associates link geometry name with meshstruct
   //Avoids loading the same mesh multiple times.
-    std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
+   // std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
+
+    std::map<std::string, boost::shared_ptr<MeshStruct> > _mesh_map; // associates link geometry name with meshstruct
+  //Avoids loading the same mesh multiple times.
+    std::map<std::string, boost::shared_ptr<MeshStruct> > _mesh_model_map; // associates file name with meshstruct
     
  
     bool visualize_bbox;
@@ -104,7 +110,7 @@ class GlKinematicBody
    
    public:
     // Constructors and destructor
-    //GlKinematicBody( const GlKinematicBody& other );// copy constructor
+   // GlKinematicBody( const GlKinematicBody& other );// copy constructor
     // GlKinematicBody(std::string urdfFilename); 
     GlKinematicBody(std::string &urdf_xml_string);
     //GlKinematicBody(boost::shared_ptr<urdf::Model> urdf_instance);
