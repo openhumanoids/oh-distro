@@ -196,6 +196,39 @@ if (legkinvels)
 end
 
 
+figure(6); clf
+
+subplot(spa,spb,1)
+plot(t,evel)
+hold on
+plot(t,tvel,'--','linewidth',2)
+plot(t,left_con*0.1,':m','linewidth',2.5)
+plot(t,right_con*0.1,':c','linewidth',2.5)
+grid on
+legend({'est vel x', 'est vel y', 'est vel z', 'left c','righ c'})
+title('States')
+grid on
+title('Raw Vel');
+
+subplot(spa,spb,2)
+plot(t, stageA)
+hold on
+plot(t, stageB,'--','linewidth',2)
+grid on
+title('Stage A');
+
+subplot(spa,spb,3)
+plot(t, stageB)
+grid on
+title('Stage B');
+
+subplot(spa,spb,4)
+plot(t, stageC)
+grid on
+title('Stage C');
+
+
+
 figure(1)
 %%
 

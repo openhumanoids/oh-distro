@@ -84,7 +84,10 @@ struct command_switches {
   bool OPTION_A;
   bool OPTION_B;
   bool OPTION_C;
+  bool OPTION_D;
+  bool OPTION_E;
   bool grab_true_init;
+  int medianlength;
 };
 
 
@@ -136,10 +139,14 @@ private:
 	NumericalDiff local_to_head_acc_diff;
 	NumericalDiff local_to_head_rate_diff;
 	
+	NumericalDiff stageA_test_vel;
+
 	// the integrator and differentiator pair are used in combination with rate change to affect a filter -- the idea is to achieve a zero information loss filter with minimum latency
 	// here we intend to reduce the rate from 1kHz to 200Hz for the Atlas robot. This was written in build up to the VRC. The need for this filter arose due to noise in the joints from Gazebo collisions
 	TrapezoidalInt joint_integrator;
 	NumericalDiff joint_pos_filter;
+
+	//BlipFilter<3> blip_filter;
 
 	MedianFilter median_filter[3];
 

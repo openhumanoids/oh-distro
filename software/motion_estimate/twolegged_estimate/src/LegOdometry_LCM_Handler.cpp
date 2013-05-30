@@ -42,13 +42,17 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
 	
+	stageA_test_vel.setSize(3);
+
 	rate_changer.setSize(3);
+
 	rate_changer.setDesiredPeriod_us(0,4500);
+
 
 	imu_msg_received = false;
 
 	for (int i=0;i<3;i++) {
-		median_filter[i].setLength(9);
+		median_filter[i].setLength(_switches->medianlength);
 	}
 
 #ifdef LOG_LEG_TRANSFORMS
@@ -373,15 +377,35 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		if (_switches->OPTION_C) {
 
+			Eigen::Vector3d store_vel_state;
 			Eigen::VectorXd filtered_pelvis_vel(3);
+
+			Eigen::Vector3d pos;
+			pos << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
+
+			store_vel_state = stageA_test_vel.diff(_msg->utime,pos);
+
+			stageA[0] = store_vel_state(0);
+			stageA[1] = store_vel_state(1);
+			stageA[2] = store_vel_state(2);
 
 			// DD
 			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis);
 
+			stageB[0] = _leg_odo->getPelvisVelocityStates()(0);
+			stageB[1] = _leg_odo->getPelvisVelocityStates()(1);
+			stageB[2] = _leg_odo->getPelvisVelocityStates()(2);
+
 			// Rate change
-			ratechangeiter = rate_changer.genericRateChange(_msg->utime,_leg_odo->getPelvisVelocityStates(),filtered_pelvis_vel);
+
+			store_vel_state = _leg_odo->getPelvisVelocityStates();
+			ratechangeiter = rate_changer.genericRateChange(_msg->utime,store_vel_state,filtered_pelvis_vel);
+			_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
 
 			if (ratechangeiter==1) {
+				stageC[0] = filtered_pelvis_vel(0);
+				stageC[1] = filtered_pelvis_vel(1);
+				stageC[2] = filtered_pelvis_vel(2);
 
 				// Median Filter
 				vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
@@ -391,8 +415,11 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				for (int i=0;i<3;i++) {	filtered_pelvis_vel(i) = vel[i]; }
 				_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
 
+
 			}
+
 		}
+
 
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
@@ -793,9 +820,12 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 	 ss << filtered_joints[i] << ", "; //103-118
    }
 
+   //std::cout << "Stage A: ";
    for (int i=0;i<3;i++) {
 	 ss << stageA[i] << ", "; //119-121
+	 //std::cout << stageA[i] << ", ";
    }
+   //std::cout << std::endl;
    for (int i=0;i<3;i++) {
 	 ss << stageB[i] << ", "; //122-124
    }

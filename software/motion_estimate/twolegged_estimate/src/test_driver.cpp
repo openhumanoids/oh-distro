@@ -46,9 +46,11 @@ int main(int argc, char ** argv) {
   switches.OPTION_A = false;
   switches.OPTION_B = false;
   switches.OPTION_C = false;
+  switches.OPTION_D = false;
+  switches.OPTION_E = false;
   switches.grab_true_init = false;
+  switches.medianlength=9;
 
-  
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
   opt.add(switches.draw_footsteps, "f", "draw_footsteps","Draw footstep poses in viewer");
@@ -60,7 +62,10 @@ int main(int argc, char ** argv) {
   opt.add(switches.OPTION_A,"A","MedianFitler -> Dist Diff -> Rate decimation");
   opt.add(switches.OPTION_B,"B","Dist Diff -> MedianFitler -> Rate decimation");
   opt.add(switches.OPTION_C,"C","Dist Diff -> Rate decimation -> MedianFitler");
+  opt.add(switches.OPTION_D,"D","BlipFilter -> Dist Diff -> MedianFitler -> Rate decimation");
+  opt.add(switches.OPTION_E,"E","BlipFilter -> Dist Diff -> Rate decimation -> MedianFitler");
   opt.add(switches.grab_true_init,"y","Initializing the state with TRUE_ROBOT_STATE message");
+  opt.add(switches.medianlength, "m", "Casually challenged median filter length");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;
