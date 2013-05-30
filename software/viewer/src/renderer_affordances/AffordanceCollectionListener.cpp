@@ -341,21 +341,24 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
       msg.unique_id = uid;
       msg.grasp_type = list[i].grasp_type;
       msg.power_grasp = false;
-      if(true){ // TODO
-        msg.num_r_joints = 0;
+      msg.num_r_joints = 0;
+      msg.num_l_joints = 0;
+      if(msg.grasp_type == msg.SANDIA_LEFT || msg.grasp_type == msg.SANDIA_BOTH 
+        || msg.grasp_type == msg.IROBOT_LEFT || msg.grasp_type == msg.IROBOT_BOTH){
         msg.num_l_joints = list[i].joint_positions.size();
         msg.l_hand_pose = pose;
         msg.l_joint_name = list[i].joint_names;
         msg.l_joint_position = list[i].joint_positions;
-      }else{
-        msg.num_l_joints = 0;
+      }else if(msg.grasp_type == msg.SANDIA_RIGHT || msg.grasp_type == msg.SANDIA_BOTH 
+        || msg.grasp_type == msg.IROBOT_RIGHT || msg.grasp_type == msg.IROBOT_BOTH){
         msg.num_r_joints = list[i].joint_positions.size();
         msg.r_hand_pose = pose;
         msg.r_joint_name = list[i].joint_names;
         msg.r_joint_position = list[i].joint_positions;
+      }else{
+        cout << "add_new_otdf_object_instance error. grasp_type not recognized: " << msg.grasp_type << endl;
       }
       msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
-      //cgsl.handleDesiredGraspStateMsg(NULL,string(),&msg);
       _lcm->publish("CANDIDATE_GRASP",&msg);
 
       cout << "Done\n";
