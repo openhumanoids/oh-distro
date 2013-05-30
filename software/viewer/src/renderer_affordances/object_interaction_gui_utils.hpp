@@ -7,6 +7,7 @@
 #define PARAM_SEED_RF "Seed RFoot"
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_STORE "Store" 
+#define PARAM_UNSTORE "Unstore" 
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
@@ -796,7 +797,7 @@ namespace renderer_affordances_gui_utils
   }
   
  
-  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user);
+  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
 
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
@@ -903,7 +904,10 @@ namespace renderer_affordances_gui_utils
        cout << "TODO" << endl;
     }
     else if ((!strcmp(name, PARAM_STORE))) {
-      store_sticky_hand(pw,name,user);    
+      store_sticky_hand(pw,name,user,false);    
+    }
+    else if ((!strcmp(name, PARAM_UNSTORE))) {
+      store_sticky_hand(pw,name,user,true);    
     }
         
     bot_viewer_request_redraw(self->viewer);
@@ -948,6 +952,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
 
     

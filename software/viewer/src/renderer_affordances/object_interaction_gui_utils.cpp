@@ -1,7 +1,7 @@
 #include "object_interaction_gui_utils.hpp"
 #include <tinyxml.h>
 
-void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user)
+void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore)
 {
 
   RendererAffordances *self = (RendererAffordances*) user;
@@ -25,7 +25,8 @@ void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, co
   graspSeed.grasp_type = hand_it->second.hand_type;
   graspSeed.joint_names = hand_it->second.joint_name;
   graspSeed.joint_positions = hand_it->second.joint_position;
-  graspSeed.writeToOtdf(filepath);
+  if(unstore) graspSeed.unstoreFromOtdf(filepath);
+  else        graspSeed.writeToOtdf(filepath);
 
 }  
 

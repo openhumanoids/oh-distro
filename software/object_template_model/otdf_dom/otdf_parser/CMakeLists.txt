@@ -5,7 +5,7 @@
 #)
 
 # Create a shared library liburdf_dom.so with a single source file
-add_library(otdf_dom SHARED src/expression_parsing.cpp src/link.cpp src/joint.cpp src/otdf_parser.cpp src/otdf_to_urdf_converter.cpp)
+add_library(otdf_dom SHARED src/expression_parsing.cpp src/link.cpp src/joint.cpp src/otdf_parser.cpp src/otdf_to_urdf_converter.cpp src/GraspSeed.cpp)
  
 # make the header public
 # install it to include/urdf_interface
