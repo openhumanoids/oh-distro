@@ -27,3 +27,14 @@ pods_use_pkg_config_packages(drc-histogram-tracker lcm
 target_link_libraries (drc-histogram-tracker boost_system 
            ${REQUIRED_LIBS} ${LCMTYPES_LIBS})
 pods_install_executables(drc-histogram-tracker)
+
+
+add_executable(drc-object-segmentation 
+  object-segmentation-app.cpp)
+pods_use_pkg_config_packages(drc-object-segmentation lcm 
+  bot2-param-client bot2-lcmgl-client
+  bot2-frames  bot2-frames_cpp
+  opencv  image_io_utils pointcloud_filters  pointcloud_vis pointcloud_lcm histogram-tracker)
+target_link_libraries (drc-object-segmentation boost_system 
+           ${REQUIRED_LIBS} ${LCMTYPES_LIBS})
+pods_install_executables(drc-object-segmentation)
