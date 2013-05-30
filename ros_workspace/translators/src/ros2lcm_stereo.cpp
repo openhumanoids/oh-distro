@@ -24,7 +24,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Imu.h>
@@ -63,19 +62,7 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
-  // Imu:
-  ros::Subscriber head_imu_sub_;
-  void head_imu_cb(const sensor_msgs::ImuConstPtr& msg);
-  void send_imu(const sensor_msgs::ImuConstPtr& msg,string channel );
 
-  // Laser:
-  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
-  ros::Subscriber rotating_scan_sub_;
-  void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
-  // porterbot:
-  ros::Subscriber scan_left_sub_,scan_right_sub_; // porterbot
-  void scan_left_cb(const sensor_msgs::LaserScanConstPtr& msg);
-  void scan_right_cb(const sensor_msgs::LaserScanConstPtr& msg);
 
   // Rate messages:
   double hand_stereo_publish_fps_, head_stereo_publish_fps_;
@@ -134,10 +121,7 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );
   
   if (send_head_cameras_){
-    // IMU:
-    head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 100, &App::head_imu_cb,this);
-    // Laser:
-    rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
+    // LASER is now in the ros2lcm.cpp
     
     // This is done by directly requesting from Gazebo at lower rate:
     head_stereo_publish_fps_ = 1.0;
@@ -166,7 +150,6 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     // This is done by discarding whats coming from ros:
     hand_stereo_publish_fps_ = 5.0;
     hand_fps_sub_ = node_.subscribe("/mit/set_hand_fps", 10, &App::hand_fps_cb,this);
-
     
     l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 30);
     l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 30);
@@ -193,8 +176,6 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
 
 App::~App()  {
 }
-
-
 
 void App::send_tactile(const sandia_hand_msgs::RawTactileConstPtr& msg,string channel ){
   drc::raw_tactile_t msg_out;
@@ -228,55 +209,6 @@ void App::hand_fps_cb(const std_msgs::Float64ConstPtr& msg){
   ROS_ERROR("ROS2LCM Stereo: set output fps to : %f", hand_stereo_publish_fps_ );  
 }
 
-void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
-  send_imu(msg,"HEAD_IMU");
-  //send_imu_as_pose(msg,"POSE_HEAD_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
-}
-
-
-void App::send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ){
-  drc::imu_t imu_msg;
-  imu_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);  
-  //imu_msg.frame_id = msg->header->frame_id;
-  imu_msg.orientation[0] = msg->orientation.w; // NB: order here is wxyz
-  imu_msg.orientation[1] = msg->orientation.x;
-  imu_msg.orientation[2] = msg->orientation.y;
-  imu_msg.orientation[3] = msg->orientation.z;
-  imu_msg.angular_velocity[0] = msg->angular_velocity.x;
-  imu_msg.angular_velocity[1] = msg->angular_velocity.y;
-  imu_msg.angular_velocity[2] = msg->angular_velocity.z;
-  imu_msg.linear_acceleration[0] = msg->linear_acceleration.x;
-  imu_msg.linear_acceleration[1] = msg->linear_acceleration.y;
-  imu_msg.linear_acceleration[2] = msg->linear_acceleration.z;
-  for (size_t i=0;i<9;i++){
-    imu_msg.orientation_covariance[i] = msg->orientation_covariance[i];
-    imu_msg.angular_velocity_covariance[i] = msg->angular_velocity_covariance[i];
-    imu_msg.linear_acceleration_covariance[i] = msg->linear_acceleration_covariance[i];
-  }
-  lcm_publish_.publish(channel, &imu_msg);
-}
-
-int scan_counter=0;
-void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
-  if (scan_counter%80 ==0){
-    ROS_ERROR("LSCAN [%d]", scan_counter );
-    //std::cout << "SCAN " << scan_counter << "\n";
-  }  
-  scan_counter++;
-  send_lidar(msg, "SCAN");
-}
-void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
-  bot_core::planar_lidar_t scan_out;
-  scan_out.ranges = msg->ranges;
-  scan_out.intensities = msg->intensities; // currently all identical
-  scan_out.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
-  scan_out.nranges =msg->ranges.size();
-  scan_out.nintensities=msg->intensities.size();
-  scan_out.rad0 = msg->angle_min;
-  scan_out.radstep = msg->angle_increment;
-
-  lcm_publish_.publish(channel.c_str(), &scan_out);
-}
 
 int stereo_counter=0;
 void App::head_stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info){

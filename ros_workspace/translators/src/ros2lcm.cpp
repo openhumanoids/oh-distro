@@ -18,6 +18,8 @@
 #include <atlas_msgs/ForceTorqueSensors.h>
 #include <atlas_msgs/VRCScore.h>
 #include <std_msgs/Float64.h>
+#include <sensor_msgs/LaserScan.h>
+
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -63,10 +65,17 @@ private:
   nav_msgs::Odometry ground_truth_odom_;
   //////////////////////////////////////////////////////////////////////////
   
-  // Imu:
+  // Imus:
   ros::Subscriber torso_imu_sub_;
   void torso_imu_cb(const sensor_msgs::ImuConstPtr& msg);
   void send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ); 
+  ros::Subscriber head_imu_sub_;
+  void head_imu_cb(const sensor_msgs::ImuConstPtr& msg);
+  // Laser:
+  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
+  ros::Subscriber rotating_scan_sub_;
+  void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);  
+  
 };
 
 App::App(ros::NodeHandle node_, bool send_ground_truth_) :
@@ -118,6 +127,12 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
     init_recd_[0]=true; // NB: needed to fool this program into believing it has got GTO when we aren't going to provide it
   }
 
+  
+  // IMU:
+  head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 100, &App::head_imu_cb,this);
+  // Laser:
+  rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
+  
   
 };
 
@@ -184,6 +199,34 @@ void App::send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ){
 void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"TORSO_IMU");
 }
+
+void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
+  send_imu(msg,"HEAD_IMU");
+}
+
+
+int scan_counter=0;
+void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  if (scan_counter%80 ==0){
+    ROS_ERROR("LSCAN [%d]", scan_counter );
+    //std::cout << "SCAN " << scan_counter << "\n";
+  }  
+  scan_counter++;
+  send_lidar(msg, "SCAN");
+}
+void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
+  bot_core::planar_lidar_t scan_out;
+  scan_out.ranges = msg->ranges;
+  scan_out.intensities = msg->intensities; // currently all identical
+  scan_out.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
+  scan_out.nranges =msg->ranges.size();
+  scan_out.nintensities=msg->intensities.size();
+  scan_out.rad0 = msg->angle_min;
+  scan_out.radstep = msg->angle_increment;
+
+  lcm_publish_.publish(channel.c_str(), &scan_out);
+}
+
 
 void App::end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& msg){
   end_effector_sensors_ = *msg;
