@@ -51,7 +51,8 @@ class ToString
     std::stringstream stream(input);
     std::string nextWord;
     while(getline(stream,nextWord,delim))
-      result.push_back(nextWord);
+      if( !nextWord.empty() )
+        result.push_back(nextWord);
     return result;
   } 
 }; //class ToString

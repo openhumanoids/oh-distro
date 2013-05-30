@@ -730,6 +730,11 @@ void AffordanceState::splitNameIntoLinkGroup(string &linkName,
                                              string &groupObjNames) const
 {
   vector<string> nameSplit = affordance::ToString::split(getName(), '/');
+  if( nameSplit.empty() )
+    {
+      cout << "empty nameSplit" << endl;
+      return;
+    }   
   linkName = nameSplit[0];
   if (nameSplit.size() == 1)
     {
