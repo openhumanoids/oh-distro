@@ -286,7 +286,6 @@ namespace surrogate_gui
 			glEnable(GL_BLEND); //for dimming contrast
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
-		glBegin(GL_POINTS);
 
 		float minZ=1e10;
 		float maxZ=-1e10;
@@ -300,37 +299,51 @@ namespace surrogate_gui
     bool drawRed = bot_gtk_param_widget_get_bool(_pw, PARAM_NAME_POINT_COLOR);
 
 		//iterate through all the points
-		for (uint i = 0; i < msg->size(); i++)
-		{
-		         float heightRatio = (msg->points[i].z-minZ)/(maxZ-minZ);
-			 float *outColor;
-       if(drawRed) outColor = bot_color_util_jet(heightRatio);
-       else        outColor = bot_color_util_jet(1);
+    for (int pass=0; pass<2; pass++){  // first pass to draw small points, second pass to draw big points
+      if(pass==0) glPointSize(2.0f);
+      else if(pass==1) glPointSize(4.0f);
 
-			//extract (original) color
-			RGB_PCL pclColor;
-			pclColor.float_value = msg->points[i].rgb;
+  		glBegin(GL_POINTS);
+		  for (uint i = 0; i < msg->size(); i++)
+		  {
+		           float heightRatio = (msg->points[i].z-minZ)/(maxZ-minZ);
+			   float *outColor;
+         if(drawRed) outColor = bot_color_util_jet(heightRatio);
+         else        outColor = bot_color_util_jet(1);
 
-			if (_display_info.highlightColors[i] == Color::NULL_COLOR)
-			{
-				//blend w/ background color.  see OpenGL superbible page 231
-				glColor4f(_viewer->backgroundColor[0], _viewer->backgroundColor[1], _viewer->backgroundColor[2], 255);
-				//glColor4ub(pclColor.red, pclColor.green, pclColor.blue, ALPHA_CLOUD_UB); //use original point cloud color
-				glColor4f(outColor[0], outColor[1], outColor[2], ALPHA_CLOUD_UB/255.0f); 
-			}
-			else if (isPaused()) //might be highlighting a selection
-			{
-				RGB_PCL rgb;
-				Color::getColor(_display_info.highlightColors[i], rgb);
-				glColor3f(rgb.red, rgb.green, rgb.blue);
-			}
+			  //extract (original) color
+			  RGB_PCL pclColor;
+			  pclColor.float_value = msg->points[i].rgb;
 
-			//only draw a vertex if either (a) drawing everything or
-			//(b) we have segments to highlight
-			if (_display_info.displayLcmCloud || _display_info.highlightColors[i] != Color::NULL_COLOR)
-				glVertex3f(msg->points[i].x, msg->points[i].y, msg->points[i].z);
-		}
-		glEnd(); //-----GL_POINTS
+        bool drawPoint = false;
+
+			  if (_display_info.highlightColors[i] == Color::NULL_COLOR)
+			  {
+          if(pass==0){
+				    //blend w/ background color.  see OpenGL superbible page 231
+				    glColor4f(_viewer->backgroundColor[0], _viewer->backgroundColor[1], _viewer->backgroundColor[2], 255);
+				    //glColor4ub(pclColor.red, pclColor.green, pclColor.blue, ALPHA_CLOUD_UB); //use original point cloud color
+				    glColor4f(outColor[0], outColor[1], outColor[2], ALPHA_CLOUD_UB/255.0f); 
+            drawPoint = true;
+          }
+			  }
+			  else if (isPaused()) //might be highlighting a selection
+			  {
+          if(pass==1){
+				    RGB_PCL rgb;
+				    Color::getColor(_display_info.highlightColors[i], rgb);
+				    glColor3f(rgb.red, rgb.green, rgb.blue);
+            drawPoint = true;
+          }
+			  }
+
+			  //only draw a vertex if either (a) drawing everything or
+			  //(b) we have segments to highlight
+			  if (_display_info.displayLcmCloud || _display_info.highlightColors[i] != Color::NULL_COLOR)
+				  if(drawPoint) glVertex3f(msg->points[i].x, msg->points[i].y, msg->points[i].z);
+		  }
+		  glEnd(); //-----GL_POINTS
+    }
 
 		if (shouldDrawTrackingCloud())
 			glDisable(GL_BLEND); //was turned on above in this case
