@@ -2,35 +2,26 @@ package drc;
 
 struct aff_indexed_robot_plan_t
 {
-  int64_t utime;
-  string robot_name;  
-  int16_t num_states;
-  //each individual state is also timed.
-  robot_state_t plan[num_states]; 
-  affordance_index_t aff_index[num_states];
-  
-  // Decoupling hand states from robot state 
-  // as atlas api deals with them separately.
-  // Also drake expects robot joints excluding hand joints. 
-  // each individual grasp state is also timed and a pose.
-  // grasp transitions can be triggered off time
-  // or when the ee reaches a particular pose.
-  int16_t num_grasp_transitions;
-  grasp_transition_state_t grasps[num_grasp_transitions];
-  
-  // information for the controller. 
-  // Flexibility to do mixed pos/impedance
-  //  control for hands and feet
-  int8_t arms_control_type; 
-  int8_t legs_control_type; 
-
-  // constants for arm/leg control type:
-  const int8_t POS_ONLY        = 0;
-  const int8_t LEFT_IMPEDANCE  = 1;
-  const int8_t RIGHT_IMPEDANCE = 2;
-  const int8_t BOTH_IMPEDANCE  = 3;
+    int64_t utime;
+    string robot_name;    
+    int32_t num_states;
+    robot_state_t plan[num_states]; //each individual state is also timed.
     
-  int16_t num_bytes;
-  byte matlab_data[num_bytes];
+    // Decoupling hand states from robot state as atlas api deals with them separately.
+    // Also drake expects robot joints excluding hand joints. 
+    int32_t num_grasp_transitions;
+   	grasp_transition_state_t grasps[num_grasp_transitions];//each individual grasp state is also timed and a pose.
+   	//grasp transitions can be triggered off time or when the ee reaches a particular pose.
+   	
+   	//information for the controller. Flexibility to do mixed pos/impedance control for hands and feet
+   	int16_t arms_control_type; // see constants below 
+   	int16_t legs_control_type;  
+    const int16_t POS_ONLY=0, LEFT_IMPEDANCE=1, RIGHT_IMPEDANCE=2, BOTH_IMPEDANCE=3;
+   	    
+    int32_t num_bytes;
+   	byte matlab_data[num_bytes];
+   	
+   	affordance_index_t aff_index[num_states];
 }
+
 

@@ -5,6 +5,7 @@ package drc;
 
 struct affordance_plus_t
 {
+
   affordance_t aff;
 
   // Points on the object - relative to the affordance xyzrpy
