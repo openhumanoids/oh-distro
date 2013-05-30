@@ -13,8 +13,7 @@ namespace renderer_robot_plan_gui_utils
       gtk_widget_destroy (pWindow);
       return TRUE;
   }
-  
-  
+
   static void on_control_type_selection_popup_close (BotGtkParamWidget *pw, void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -69,13 +68,33 @@ namespace renderer_robot_plan_gui_utils
       gtk_widget_show_all(window); 
   }   
  //==================================================================================================    
-  
+   static gboolean on_pause_button_clicked (GtkButton* button, void *user)
+  {
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+
+    if(self->robotPlanListener->is_manip_plan()){
+      cout <<"Pausing manip plan" << endl;
+      string channel = "COMMITTED_PLAN_PAUSE";
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,true,false);
+    }
+
+    
+   return TRUE;
+  }
+   
   static gboolean on_cancel_button_clicked (GtkButton* button, void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     self->robotPlanListener->purge_current_plan();
-    gtk_widget_destroy(self->plan_execution_dock);
-    self->plan_execution_dock= NULL;
+    
+    if(self->robotPlanListener->is_multi_approval_plan()){
+      gtk_widget_destroy(self->multiapprove_plan_execution_dock);
+      self->multiapprove_plan_execution_dock= NULL;    
+    }
+    else {
+      gtk_widget_destroy(self->plan_execution_dock);
+      self->plan_execution_dock= NULL;
+    }
     cout <<"Robot plan terminated" << endl;
     cout <<"Publishing on REJECTED_ROBOT_PLAN" << endl;
     string channel = "REJECTED_ROBOT_PLAN";
@@ -89,6 +108,14 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
+    
+        
+    if(self->robotPlanListener->is_plan_paused()){
+      cout <<"Unpausing manip plan" << endl;
+      string channel = "COMMITTED_PLAN_PAUSE";
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,false);
+      return TRUE;
+    }
 
 		if(!self->robotPlanListener->is_walking_plan())
 		{
@@ -121,8 +148,10 @@ namespace renderer_robot_plan_gui_utils
       gtk_entry_set_text(GTK_ENTRY(self->breakpoint_entry),str.c_str());   
     } 		
 
+ // if(!self->robotPlanListener->is_multi_approval_plan()){
  //   gtk_widget_destroy(self->plan_execution_dock);
  //   self->plan_execution_dock= NULL;
+ //}
     return TRUE;
   }
   
@@ -135,8 +164,12 @@ namespace renderer_robot_plan_gui_utils
 //    string channel = "COMMITTED_COMPLIANT_ROBOT_PLAN";
 //    self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
       spawn_plan_control_type_selection_popup(self);
+      
+ // if(!self->robotPlanListener->is_multi_approval_plan()){
  //   gtk_widget_destroy(self->plan_execution_dock);
  //   self->plan_execution_dock= NULL;
+ //}
+ 
     return TRUE;
   }
    
@@ -160,12 +193,15 @@ namespace renderer_robot_plan_gui_utils
 
     execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
     compliant_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CONNECT);
-    pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
+    if(self->robotPlanListener->is_manip_plan())
+    {
+      pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
+      gtk_widget_set_tooltip_text (pause_button, "Pause");
+    }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
         
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
     gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
-    gtk_widget_set_tooltip_text (pause_button, "Pause (To Be Implemented)");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Plan");
     
     GtkWidget *hbox;
@@ -178,15 +214,30 @@ namespace renderer_robot_plan_gui_utils
     if(self->robotPlanListener->is_multi_approval_plan())
       gtk_box_pack_start (GTK_BOX (hbox), self->breakpoint_entry, FALSE, FALSE,3);
     gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
-    gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
+    if(self->robotPlanListener->is_manip_plan())   
+      gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
     gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
     gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
     gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
-    self->plan_execution_dock = GTK_WIDGET(toolitem);  
-    gtk_widget_show_all (self->plan_execution_dock);
+    if(self->robotPlanListener->is_multi_approval_plan()){    
+      if(self->plan_execution_dock!=NULL){ // kill other dock
+        gtk_widget_destroy(self->plan_execution_dock);
+        self->plan_execution_dock= NULL;  
+      } 
+      self->multiapprove_plan_execution_dock = GTK_WIDGET(toolitem);
+      gtk_widget_show_all (self->multiapprove_plan_execution_dock);  
+   }
+    else{
+      if(self->multiapprove_plan_execution_dock!=NULL){ // kill other dock
+        gtk_widget_destroy(self->multiapprove_plan_execution_dock);
+        self->multiapprove_plan_execution_dock= NULL;  
+      } 
+      self->plan_execution_dock = GTK_WIDGET(toolitem);  
+      gtk_widget_show_all (self->plan_execution_dock);
+    }
     
 
    g_signal_connect (G_OBJECT (cancel_button),
@@ -201,7 +252,12 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_compliant_execute_button_clicked),
                   self);
-                     
+   if(self->robotPlanListener->is_manip_plan())   {
+     g_signal_connect (G_OBJECT (pause_button),
+                  "clicked",
+                  G_CALLBACK (on_pause_button_clicked),
+                  self);  
+    }                  
    /* 
     self->plan_execution_dock = window; 
     gtk_container_add (GTK_CONTAINER (window), hbox);

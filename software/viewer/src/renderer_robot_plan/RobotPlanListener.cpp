@@ -25,7 +25,8 @@ namespace renderer_robot_plan
 		_aprvd_footstep_plan_in_cache(false),
 		_is_multi_approve_plan(false),
 		_active_breakpoint(0),
-		_num_breakpoints(0)
+		_num_breakpoints(0),
+		_plan_paused(false)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
@@ -92,7 +93,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	const string& chan, const drc::robot_plan_t* msg)
   {
     //cout << "\n received robot plan message\n";
-
+    _plan_paused = false;
     if (!_urdf_parsed){
       cout << "\n handleRobotPlanMsg: Waiting for urdf to be parsed" << endl;
       return;
@@ -148,7 +149,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const drc::robot_plan_w_keyframes_t* msg)						 
   {
     //cout << "\n received robot manipulation plan message\n";
-
+    _plan_paused = false;
     if (!_urdf_parsed){
       cout << "\n handleManipPlanMsg: Waiting for urdf to be parsed" << endl;
       return;
@@ -264,7 +265,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const drc::aff_indexed_robot_plan_t* msg)						 
   {
     cout << "\n received aff_indexed_robot_plan for pre-execution_approval message\n";
-
+    _plan_paused = false;
     if (!_urdf_parsed)
     {
       cout << "\n handleAffIndexedRobotPlanMsg: Waiting for urdf to be parsed" << endl;
@@ -426,22 +427,34 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       {
           size_t k_max = 0;
           bool is_grasp_transition=false;
+          bool bi_handed=false;
           for(size_t k=0;k<_received_plan.num_grasp_transitions;k++)
           {
+          
             if(_received_plan.plan[start_ind+1].utime >= _received_plan.grasps[k].utime){
              k_max = std::max(k_max,k);
              is_grasp_transition=true;
-            }
+            }            
           }
+          // get the latest grasp transition index.
           if(is_grasp_transition){            
             //cout << "commit grasp at:" << start_ind << endl;
+            std::vector<int> kmax_inds;
+            //_received_plan.grasps[k].utime can be non-unique upto 2 (getting both inds)
+             for(size_t k=0;k<_received_plan.num_grasp_transitions;k++)
+            {
+              if(_received_plan.grasps[k].utime==_received_plan.grasps[k_max].utime)
+                  kmax_inds.push_back(k);
+            }
+            
             string channel ="COMMITTED_GRASP";
-            commit_desired_grasp_state(utime,channel,(int)k_max);
+            commit_desired_grasp_state(utime,channel,kmax_inds);
             msg.num_grasp_transitions = 1;
             msg.grasps.push_back(_received_plan.grasps[k_max]); 
             usleep(1000000);
          }
       }
+
           
       if(_active_breakpoint<_breakpoint_indices.size()-1) 
       {
@@ -493,48 +506,111 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   
   void RobotPlanListener::commit_manip_map(int64_t utime, std::string &channel)
   {
+  
     drc::aff_indexed_robot_plan_t msg = _received_map;
     msg.utime = utime;
     _lcm->publish(channel, &msg);
   }
   
   
-  void RobotPlanListener::commit_desired_grasp_state(int64_t utime, std::string &channel,int received_plan_grasp_index)
+  void RobotPlanListener::commit_desired_grasp_state(int64_t utime, std::string &channel, std::vector<int> &received_plan_grasp_indices)
   {
-  
-    drc::grasp_transition_state_t state = _received_plan.grasps[received_plan_grasp_index];  
+    int num_grasps = received_plan_grasp_indices.size();
+    
+    std::vector<drc::grasp_transition_state_t> states;
+     int ind = received_plan_grasp_indices[0];
+     states.push_back(_received_plan.grasps[ind]);
+    if(num_grasps>1){
+     ind = received_plan_grasp_indices[1];
+     states.push_back(_received_plan.grasps[ind]); 
+     }
+     
+    if(num_grasps>2){
+      cerr<< "ERROR: More than two grasps for a given transition are actieve. Only one left and one right are physically possible . " << endl;
+      return;
+    }
+     
+    //drc::grasp_transition_state_t state = _received_plan.grasps[received_plan_grasp_index];  
     drc::desired_grasp_state_t msg;
     msg.utime = utime;
     msg.robot_name = _robot_name;
     
     msg.object_name = " ";
     msg.geometry_name = " ";
-    msg.unique_id = state.affordance_uid;
+    msg.unique_id = states[0].affordance_uid;
     msg.num_r_joints =0;
     msg.num_l_joints =0;
     msg.l_hand_pose.rotation.w = 1;
     msg.r_hand_pose.rotation.w = 1;
-    if(state.grasp_type==state.LEFT)
+    if(states[0].grasp_type==states[0].LEFT)
     {
       msg.grasp_type = msg.SANDIA_LEFT;
-      msg.l_hand_pose = state.hand_pose;
-      msg.num_l_joints =state.num_joints;
-      msg.l_joint_name  =state.joint_name;
-      msg.l_joint_position=state.joint_position;
+      msg.l_hand_pose = states[0].hand_pose;
+      msg.num_l_joints =states[0].num_joints;
+      msg.l_joint_name  =states[0].joint_name;
+      msg.l_joint_position=states[0].joint_position;
       
+      if(num_grasps>1){
+          if(states[1].grasp_type==states[1].RIGHT){
+            msg.grasp_type = msg.SANDIA_BOTH;
+            msg.r_hand_pose = states[1].hand_pose;
+            msg.num_r_joints =states[1].num_joints;
+            msg.r_joint_name  =states[1].joint_name;
+            msg.r_joint_position=states[1].joint_position;
+          }
+          else
+          {
+            cerr<< "ERROR: Two grasps for a given transition are both left.  Two left grasps are not physically possible" << endl;
+            return;
+          }
+      }      
     }
     else
     {
       msg.grasp_type = msg.SANDIA_RIGHT;
-      msg.r_hand_pose = state.hand_pose;
-      msg.num_r_joints =state.num_joints;
-      msg.r_joint_name  =state.joint_name;
-      msg.r_joint_position=state.joint_position;
+      msg.r_hand_pose = states[0].hand_pose;
+      msg.num_r_joints =states[0].num_joints;
+      msg.r_joint_name  =states[0].joint_name;
+      msg.r_joint_position=states[0].joint_position;
+      if(num_grasps>1){
+       if(states[1].grasp_type==states[1].LEFT){
+          msg.grasp_type = msg.SANDIA_BOTH;
+          msg.l_hand_pose = states[1].hand_pose;
+          msg.num_l_joints =states[1].num_joints;
+          msg.l_joint_name  =states[1].joint_name;
+          msg.l_joint_position=states[1].joint_position;
+        }
+        else{
+            cerr<< "ERROR: Two grasps for a given transition are both right.  Two left grasps are not physically possible" << endl;
+            return;
+        }
+      }  
     }
-    msg.power_grasp = state.power_grasp;
+    msg.power_grasp = states[0].power_grasp;
+    if(num_grasps>1)
+     msg.power_grasp = (states[0].power_grasp||states[1].power_grasp);
     _lcm->publish(channel, &msg);
   }
   
+  void RobotPlanListener::commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate)
+  {
+  
+    drc::plan_control_t  msg;
+    msg.utime = utime;
+    if((pause)&&(!terminate)){
+      msg.control = msg.PAUSE;
+      _plan_paused = true;
+    }
+    else if((!pause)&&(!terminate)){
+      msg.control = msg.UNPAUSE;
+      _plan_paused = false;
+    }
+    else{
+       msg.control = msg.TERMINATE; 
+       _plan_paused = false;
+    }
+    _lcm->publish(channel, &msg);
+  }  
   
   bool RobotPlanListener::load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string)
   {

@@ -67,6 +67,7 @@ namespace renderer_robot_plan
     // Our only source of a free running clock:
     int64_t robot_utime;
     GtkWidget *plan_execution_dock;
+    GtkWidget *multiapprove_plan_execution_dock;
     GtkWidget *plan_approval_dock;
     GtkWidget *breakpoint_entry;
     

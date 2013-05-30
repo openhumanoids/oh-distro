@@ -151,7 +151,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glEnd();
     glPopMatrix();
   }
-  
+
   int plan_size =   self->robotPlanListener->_gl_robot_list.size();
   if (plan_size ==0){ // nothing to renderer
   // on receipt of a apprved footstep plan, the current plan is purged in waiting for a new walking plan.
@@ -159,6 +159,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     if(self->plan_execution_dock!=NULL){
       gtk_widget_destroy(self->plan_execution_dock);
       self->plan_execution_dock= NULL;  
+    } 
+    if(self->multiapprove_plan_execution_dock!=NULL)
+    {
+      gtk_widget_destroy(self->multiapprove_plan_execution_dock);
+      self->multiapprove_plan_execution_dock= NULL;  
     } 
     if(self->plan_approval_dock!=NULL){
       gtk_widget_destroy(self->plan_approval_dock);
@@ -226,12 +231,20 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     }
   }
 
- if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
-      spawn_plan_execution_dock(self);
 
- if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))
-    spawn_plan_approval_dock (self);
-    
+  if(self->robotPlanListener->is_multi_approval_plan())
+  {
+   if((self->multiapprove_plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
+      spawn_plan_execution_dock(self); 
+  }
+  else
+  {
+   if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
+      spawn_plan_execution_dock(self);
+  }
+
+   if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))
+       spawn_plan_approval_dock (self);
 
 }
 
@@ -586,7 +599,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->is_left_in_motion =  true;
     self->is_hand_in_motion =  true;
     self->visualize_bbox = false;
-    
+    self->multiapprove_plan_execution_dock= NULL; 
+    self->plan_execution_dock= NULL; 
+    self->plan_approval_dock= NULL; 
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
     self->show_keyframes = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_KEYFRAMES);

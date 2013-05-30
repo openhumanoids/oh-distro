@@ -41,6 +41,7 @@ namespace renderer_robot_plan
     bool _urdf_subscription_on;
     bool _aprvd_footstep_plan_in_cache;
     bool _is_multi_approve_plan;
+    bool _plan_paused; // a manip plan is paused on pressing the pause button, unpaused on pressing play again.
     
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_robot;
     //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _base_gl_robot;
@@ -85,7 +86,9 @@ namespace renderer_robot_plan
     void commit_compliant_manip_plan(int64_t utime,std::string &channel,int,int);
     void commit_manip_map(int64_t utime,std::string &channel);
     void commit_footstep_plan(int64_t utime,std::string &channel);    
-    void commit_desired_grasp_state(int64_t utime, std::string &channel,int received_plan_grasp_index);
+    void commit_desired_grasp_state(int64_t utime, std::string &channel,std::vector<int> &received_plan_grasp_indices);
+    void commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate);
+
     void set_in_motion_hands_state(int index)
     {
  
@@ -267,6 +270,11 @@ namespace renderer_robot_plan
 		    return _is_multi_approve_plan;
 		};
 		
+		bool is_plan_paused()
+		{
+		  return _plan_paused;
+		};
+		
 		void purge_current_plan(){
 		    _gl_robot_list.clear();
         if(_is_manip_plan){
@@ -354,17 +362,30 @@ namespace renderer_robot_plan
            k_max = std::max(k_max,k);
       }
       
-      for(size_t i=0;i< msg->grasps[k_max].num_joints;i++)
+      std::vector<int> kmax_inds;
+      //_received_plan.grasps[k].utime can be non-unique upto 2 (getting both inds)
+       for(size_t k=0;k<msg->num_grasp_transitions;k++)
       {
-         state_msg->num_joints++;
-         state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);      
-         state_msg->joint_position.push_back(msg->grasps[k_max].joint_position[i]);  
-         state_msg->joint_velocity.push_back(0);
-         state_msg->measured_effort.push_back(0);
-         drc::joint_covariance_t jcov;
-         jcov.variance = 0;
-         state_msg->joint_cov.push_back(jcov);
-       }// end for  
+        if(msg->grasps[k].utime==msg->grasps[k_max].utime)
+            kmax_inds.push_back(k);
+      }
+
+      for(size_t j=0;j< kmax_inds.size();j++)
+      {
+        k_max= kmax_inds[j];
+        for(size_t i=0;i< msg->grasps[k_max].num_joints;i++)
+        {
+           state_msg->num_joints++;
+           state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);      
+           state_msg->joint_position.push_back(msg->grasps[k_max].joint_position[i]);  
+           state_msg->joint_velocity.push_back(0);
+           state_msg->measured_effort.push_back(0);
+           drc::joint_covariance_t jcov;
+           jcov.variance = 0;
+           state_msg->joint_cov.push_back(jcov);
+         }// end for  
+       }     
+       
     }// end if	 
   };
 			      
