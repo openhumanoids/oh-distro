@@ -2,21 +2,6 @@
   <object xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:mat="http://www.mit.edu"
         name="polaris_ranger_ev">
-  <!--Desired x and y coordinates for left toe at start of ingress-->
-  <param name="l_toe_x" default_value="0.32" inc="0.01" min="-5" max="5"/>
-  <param name="l_toe_y" default_value="-0.7" inc="0.01" min="-5" max="5"/>
-  
-  <!--Desired x and y coordinates for right toe at start of ingress-->
-  <param name="r_toe_x" default_value="0.5" inc="0.01" min="-5" max="5"/>
-  <param name="r_toe_y" default_value="-0.7" inc="0.01" min="-5" max="5"/>
-  
-  <!--Width and thickness of toe target visual element-->
-  <param name="toe_target_w" default_value="0.01" inc="0.01" min="0" max="0.1"/>
-   <param name="toe_target_h" default_value="0.01" inc="0.01" min="0" max="0.1"/>
-  
-   <!--Foot dimensions-->
-   <param name="foot_length" default_value="0.26" inc="0.01" min="0" max="0.1"/> 
-   <param name="foot_width" default_value="0.1249" inc="0.01" min="0" max="0.1"/> 
   
   <!--X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
   <!--World frame origin of the object-->
@@ -376,13 +361,12 @@
       <visual name="toe_target">
          <origin rpy="0 0 0" xyz="0 0 0"/>
          <geometry>
-            <box size="${foot_width+sqrt((l_toe_x-r_toe_x)^2+(l_toe_y-r_toe_y)^2)} ${toe_target_w} ${toe_target_h}"/>
+           <box size="0.3049 0.01 0.01 " />
          </geometry>
       </visual>
    </link>
    <joint name="toe_target_joint" type="fixed">
-      <origin rpy="0 0 ${atan2(l_toe_y-r_toe_y,l_toe_x-r_toe_x)}"
-              xyz="${(l_toe_x+r_toe_x)/2} ${(l_toe_y+r_toe_y)/2} ${toe_target_h/2}"/>
+      <origin xyz="0.41 -0.7 0.005 " rpy="0 -0 3.14159 " />
       <parent link="chassis" type="link"/>
       <child link="toe_target" type="link"/>
    </joint>
@@ -390,13 +374,12 @@
      <visual name="center_target">
        <origin rpy="0 0 0" xyz="0 0 0"/>
        <geometry>
-         <box size="${foot_length/2} ${toe_target_w} ${toe_target_h}"/>
+         <box size="0.13 0.01 0.01 " />
        </geometry>
      </visual>
    </link>
    <joint name="center_target_joint" type="fixed">
-     <origin rpy="0 0 ${pi/2}" 
-             xyz="0 ${foot_length/4} 0"/>
+     <origin xyz="0 0.065 0 " rpy="0 -0 1.5708 " />
      <parent link="toe_target" type="link"/>
      <child link="center_target" type="link"/>
    </joint>
@@ -430,7 +413,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="rear_right_wheel_joint" type="continuous">
+   <joint name="rear_right_wheel_joint" type="fixed">
       <origin xyz="-0.85 -0.10064492801220848 0.2946127575332104" rpy="1.52 -0 0"/>
       <axis xyz="0 0.000838977734800031 -1.001248868222262"/>
       <child link="rear_right_wheel" type="link"/>
@@ -455,7 +438,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="rear_left_wheel_joint" type="continuous">
+   <joint name="rear_left_wheel_joint" type="fixed">
       <origin xyz="-0.85 0.6 0.32" rpy="-1.52 -0 0"/>
       <axis xyz="0 0.000838977734800031 1.001248868222262"/>
       <child link="rear_left_wheel" type="link"/>
@@ -481,7 +464,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="front_right_wheel_joint" type="continuous">
+   <joint name="front_right_wheel_joint" type="fixed">
       <origin xyz="0 -3.2679489614384494E-8 0.09999999999999465"
               rpy="-0.05079600000000006 -0 0"/>
       <axis xyz="0 0.000838977734800031 -1.001248868222262"/>
@@ -508,7 +491,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="front_right_steering_joint" type="revolute">
+   <joint name="front_right_steering_joint" type="fixed">
       <origin xyz="1.03 -0.5 0.32" rpy="1.570796 -0 0"/>
       <axis xyz="0 0.9999999999999466 3.2679489653813835E-7"/>
       <limit effort="1" velocity="1" lower="-1.0" upper="1.0"/>
@@ -535,7 +518,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="front_left_wheel_joint" type="continuous">
+   <joint name="front_left_wheel_joint" type="fixed">
       <origin xyz="0 3.2679489614384494E-8 -0.09999999999999454" rpy="-3.090796 -0 0"/>
       <axis xyz="0 0.000838977734800031 1.001248868222262"/>
       <child link="front_left_wheel" type="link"/>
@@ -560,7 +543,7 @@
          </geometry>
       </visual>
    </link>
-   <joint name="front_left_steering_joint" type="revolute">
+   <joint name="front_left_steering_joint" type="fixed">
       <origin xyz="1.03 0.5 0.32" rpy="1.570796 -0 0"/>
       <axis xyz="0 0.9999999999999466 3.2679489653813835E-7"/>
       <limit effort="1" velocity="1" lower="-1.0" upper="1.0"/>
