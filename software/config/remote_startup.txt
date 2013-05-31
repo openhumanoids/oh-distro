@@ -4,7 +4,7 @@ drc-set-sim-rate 0.2
 
 2. on other 3 machines:
 ROBOT:
-drc-network-shaper -t manipulation -r robot -c drc_robot.cfg
+drc-network-shaper -t manipulation -r robot -c drc_robot.cfg -l
 bot-procman-deputy -n robot
 
 EXTRA:
@@ -12,7 +12,7 @@ bot-procman-deputy -n extra
 
 BASE:
 bot-procman-deputy -n base
-drc-network-shaper -t manipulation -r base -c drc_robot.cfg
+drc-network-shaper -t manipulation -r base -c drc_robot.cfg -l
 bot-procman-sheriff ~/drc/software/config/drc_robot.pmd
 
 3. on gazebo:

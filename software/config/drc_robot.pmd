@@ -335,24 +335,8 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
-    cmd "gz_mit_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
-        host = "robot";
-    }
-    cmd "gz_quals_1" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "robot";
-    }
-    cmd "gz_quals_1_steps" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
-        host = "robot";
-    }
     cmd "gz_quals_2" {
-        exec = "roslaunch atlas_utils qual_task_2.launch";
-        host = "robot";
-    }
-    cmd "gz_walking_manip" {
-	      exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "robot";
     }
     cmd "gz_quals_3" {
@@ -360,14 +344,14 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit_not_walking.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
         host = "robot";
     }
     cmd "gz_vrc_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
-    cmd "gz_vrc_task_3_manip" {
+    cmd "gz_vrc_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
@@ -585,28 +569,7 @@ script "comp.vrc_ingress" {
 
 ######################################
 # testing on a single machine - with deputies:
-script "dev.qual_1" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
-    wait ms 25000;
-    start cmd "gz_quals_1"; 
-    wait ms 5000;
-}
-script "dev.qual_2" { 
-    start group "0.development";
-    start group "a.1.core";
-    wait ms 1000;
-    start group "a.3.grasping4qual2";
-    start group "b.3.grasping";
-    wait ms 12000;
-    start cmd "gz_quals_2";    
-    wait ms 5000;  
-    start cmd "enable_gravity_when_pinned"; 
-}
-script "dev.qual_3" { 
+script "dev.quals_slope" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
@@ -630,15 +593,6 @@ script "dev.vrc_walking" {
 script "dev.vrc_driving" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.4.driving";
-    wait ms 500;
-    start cmd "gz_mit_driving";
-    wait ms 6000;
-    start group "b.4.driving";
-}
-script "dev.vrc_driving_with_manip" { 
-    start group "0.development";
-    start group "a.1.core";
     #start group "a.4.driving";
     start group "b.3.grasping";
     start group "a.7.manipulation4driving";
@@ -654,7 +608,7 @@ script "dev.vrc_driving_with_manip" {
 }
 
 
-script "dev.mit_state_est" {
+script "dev.flat_walking" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
@@ -674,27 +628,27 @@ script "dev.ingress" {
     wait ms 5000;
 }
 
-script "dev.vrc_task_3_hose_manip" { 
+script "dev.vrc_manip" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.3.vrc_task_3_walking_manip_controllers";
     start group "b.3.vrc_task_3_walking_manip_planners";
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
-    start cmd "gz_vrc_task_3_manip";
+    start cmd "gz_vrc_manip";
     start cmd "set-sim-rate";
     wait ms 10000;
     start group "m.6.hose_task_utils";    
 }
 
-script "dev.quals2_walking_manip" { 
+script "dev.quals_manip" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.3.vrc_task_3_walking_manip_controllers";
     start group "b.3.vrc_task_3_walking_manip_planners";
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
-    start cmd "gz_walking_manip";
+    start cmd "gz_quals_2";
     start cmd "set-sim-rate";
 }
 ############ System Tests ############
