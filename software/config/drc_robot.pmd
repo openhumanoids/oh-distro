@@ -165,7 +165,7 @@ group "a.3.vrc_task_3_walking_manip_controllers" {
     
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
-       host = "extra";
+       host = "robot";
     }
 }
 group "a.4.driving" {
@@ -355,6 +355,11 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
+    
+   cmd "gz_vrc_manip_mating_test" {
+      exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
+      host = "robot";
+   }
 }
 
 group "m.1.robot" {
@@ -636,6 +641,19 @@ script "dev.vrc_manip" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_vrc_manip";
+    start cmd "set-sim-rate";
+    wait ms 10000;
+    start group "m.6.hose_task_utils";    
+}
+
+cript "dev.vrc_manip_mating_test" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.vrc_task_3_walking_manip_controllers";
+    start group "b.3.vrc_task_3_walking_manip_planners";
+    stop cmd "BotWalkingPlanner";
+    wait ms 25000;
+    start cmd "gz_vrc_task_3_mating";
     start cmd "set-sim-rate";
     wait ms 10000;
     start group "m.6.hose_task_utils";    
