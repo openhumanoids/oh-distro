@@ -38,6 +38,7 @@
 #include <lcm/lcm.h>
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include "TwoLegOdometry.h"
+#include "Odometry.hpp"
 
 // So that we can draw pretty pictures and figure out what the transforms are doing
 #include "visualization/viewer.hpp"
@@ -94,6 +95,14 @@ struct command_switches {
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
+	InertialOdometry::Odometry inert_odo;
+
+	InertialOdometry::DynamicState InerOdoEst;
+
+	double df_feedback_gain;
+
+	TrapezoidalInt acc_bias_est;
+
 	boost::shared_ptr<lcm::LCM> lcm_;
     BotParam* _botparam;
     BotFrames* _botframes;
@@ -134,6 +143,7 @@ private:
 	std::string _channel_extension;
 	
 	RateChange rate_changer;
+	RateChange fusion_rate;
 
 	NumericalDiff local_to_head_vel_diff;
 	NumericalDiff local_to_head_acc_diff;
@@ -237,6 +247,8 @@ private:
 	void PublishH2B(const unsigned long long &utime,  const Eigen::Isometry3d &h2b);
 
 	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
+
+	InertialOdometry::DynamicState data_fusion( const unsigned long long &uts, const InertialOdometry::DynamicState &LO, const InertialOdometry::DynamicState &IO);
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW

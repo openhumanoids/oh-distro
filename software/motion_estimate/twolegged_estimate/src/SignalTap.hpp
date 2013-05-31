@@ -154,6 +154,8 @@ public:
 	Eigen::VectorXd integrate(const unsigned long long &u_ts, const Eigen::VectorXd &dx);
 	Eigen::VectorXd integrate(const unsigned long long &ts, const int &num_joints, const double samples[]);
 
+	Eigen::VectorXd getVal();
+
 	void reset_in_time();
 
 };

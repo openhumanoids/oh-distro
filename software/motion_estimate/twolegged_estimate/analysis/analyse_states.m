@@ -229,6 +229,21 @@ title('Stage C');
 
 
 
+
+figure(7);clf
+
+subplot(spa,spb,1)
+plot(t,imu_P)
+hold on
+plot(t,tpos,'--','linewidth',2)
+plot(t,left_con*0.1,':m','linewidth',2.5)
+plot(t,right_con*0.1,':c','linewidth',2.5)
+grid on
+title('States')
+grid on
+title('Raw Vel');
+
+
 figure(1)
 %%
 

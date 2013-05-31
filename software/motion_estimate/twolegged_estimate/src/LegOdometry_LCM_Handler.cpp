@@ -45,8 +45,15 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	stageA_test_vel.setSize(3);
 
 	rate_changer.setSize(3);
+	fusion_rate.setSize(1);
+
+	acc_bias_est.setSize(3);
 
 	rate_changer.setDesiredPeriod_us(0,4500);
+
+	// Tuning parameters for data fusion
+	fusion_rate.setDesiredPeriod_us(0,2E5);
+	df_feedback_gain = 1E-4;
 
 
 	imu_msg_received = false;
@@ -213,10 +220,41 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 
 }
 
+InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned long long &uts,
+																	const InertialOdometry::DynamicState &LeggO,
+																	const InertialOdometry::DynamicState &InerO) {
+
+	Eigen::VectorXd dummy(1);
+	dummy <<0;
+
+	if (fusion_rate.genericRateChange(uts,dummy,dummy) ) {
+		// Yes now we do comparison and feedback
+
+		Eigen::Vector3d err_b;
+
+		err_b = q2C(InerO.q).transpose() * (LeggO.P - InerO.P);
+
+
+		acc_bias_est.integrate(uts,	df_feedback_gain * err_b);
+
+		double b_a[3];
+
+		for (int i=0;i<3;i++) {
+			b_a[i] = acc_bias_est.getVal()(i);
+		}
+
+		inert_odo.imu_compensator.UpdateAccelBiases(b_a);
+
+	}
+
+	return InerO;
+
+}
+
 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
-												const  drc::robot_state_t* _msg) {
+												const drc::robot_state_t* _msg) {
 
 	//clock_gettime(CLOCK_REALTIME, &before);
 	if (_switches->print_computation_time) {
@@ -300,6 +338,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 			if (_switches->grab_true_init) {
 				_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+
+
 			} else {
 				Eigen::Isometry3d init_state;
 				init_state.setIdentity();
@@ -310,6 +350,23 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// This must be broken into separate position and velocity states
 		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here
 		current_pelvis = _leg_odo->getPelvisState();
+
+
+		// At this point the pelvis position has been found from leg kinematics
+		//DynamicState = data_fusion(uts, LO, IO);
+
+		if (false) {
+			InertialOdometry::DynamicState datafusion_out, LeggO;
+
+			LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
+
+			datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst);
+
+
+			current_pelvis.translation().x() = datafusion_out.P(0);
+			current_pelvis.translation().y() = datafusion_out.P(1);
+			current_pelvis.translation().z() = datafusion_out.P(2);
+		}
 
 		double pos[3];
 		double vel[3];
@@ -833,6 +890,14 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 	 ss << stageC[i] << ", "; //125-127
    }
 
+   for (int i=0;i<3;i++) {
+	   ss << InerOdoEst.P(i) << ", ";
+   }
+   for (int i=0;i<3;i++) {
+	   ss << InerOdoEst.V(i) << ", ";
+   }
+
+
 	ss <<std::endl;
 
 	state_estimate_error_log << ss.str();
@@ -874,6 +939,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 
 
 	double rates[3];
+	double accels[3];
 	double angles[3];
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
 	
@@ -890,13 +956,20 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	} else {
 		for (int i=0;i<3;i++) {
 			rates[i] = msg->angular_velocity[i]; // +2 since the foot force values use the first two filters
+			accels[i] = -msg->linear_acceleration[i];
 		}
 	}
 	
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
-			
+
 	_leg_odo->setOrientationTransform(q, rates_b);
 	
+
+	InertialOdometry::IMU_dataframe imu_data;
+	imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
+
+	InerOdoEst = inert_odo.PropagatePrediction(&imu_data,q);
+
 	if (!imu_msg_received) {
 		imu_msg_received = true;
 	}

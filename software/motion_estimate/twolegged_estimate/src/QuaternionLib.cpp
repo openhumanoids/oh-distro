@@ -223,6 +223,16 @@ Eigen::Matrix3d e2C(Eigen::Vector3d Ec) {
 	  */
   }
 
+void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew)
+{
+
+  skew << 0., -v_(2), v_(1),
+		  v_(2), 0., -v_(0),
+		  -v_(1), v_(0), 0.;
+
+  return;
+}
+
 
 
 

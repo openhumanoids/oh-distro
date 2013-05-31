@@ -143,6 +143,12 @@ stageB = data(:,(offset:(offset+2)));
 offset = 125;
 stageC = data(:,(offset:(offset+2)));
 
+offset = 128;
+imu_P = data(:,(offset:(offset+2)));
+offset = 131;
+imu_v = data(:,(offset:(offset+2)));
+
+
 
 % end
 

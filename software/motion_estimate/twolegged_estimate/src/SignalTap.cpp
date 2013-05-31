@@ -553,6 +553,10 @@ void TrapezoidalInt::reset_in_time() {
 	//std::cout << "zeroed";
 }
 
+Eigen::VectorXd TrapezoidalInt::getVal() {
+	return int_dx;
+}
+
 Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &u_ts, const Eigen::VectorXd &dx) {
 	// TODO -- This function should use the u_time stamp from zero. Then it can also be used as an integral time counter and makes best possible use of the available time variable dynamic range
 
