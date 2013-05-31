@@ -96,7 +96,7 @@ classdef QuasistaticMotionController < DRCController
         % build TI-ZMP controller 
         foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-        comgoal = mean(foot_pos(1:2,ch),2);
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
         ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
         [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),obj.Q,obj.R);
 
@@ -144,7 +144,7 @@ classdef QuasistaticMotionController < DRCController
         % build TI-ZMP controller 
         foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-        comgoal = mean(foot_pos(1:2,ch),2);
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
         ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
         [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),obj.Q,obj.R);
 

@@ -108,7 +108,7 @@ classdef StandingManipController < DRCController
       % build TI-ZMP controller 
       foot_pos = contactPositions(obj.robot,kinsol); 
       ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-      comgoal = mean(foot_pos(1:2,ch),2);
+      comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
@@ -155,7 +155,7 @@ classdef StandingManipController < DRCController
 
         foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
         ch = convhull(foot_pos(1:2,:)');
-        comgoal = mean(foot_pos(1:2,ch),2);
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 %         zmap = getTerrainHeight(r,com(1:2));
 %         robot_z = com(3)-zmap;
   

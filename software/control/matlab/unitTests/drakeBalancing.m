@@ -32,7 +32,7 @@ com = getCOM(r,kinsol);
 % build TI-ZMP controller 
 foot_pos = contactPositions(r,q0); 
 ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-comgoal = mean(foot_pos(1:2,ch),2);
+comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 

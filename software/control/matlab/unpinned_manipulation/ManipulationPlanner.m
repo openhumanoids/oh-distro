@@ -192,7 +192,7 @@ classdef ManipulationPlanner < handle
             gc = contactPositions(obj.r,q0);
             k = convhull(gc(1:2,:)');
             com0 = getCOM(obj.r,q0);
-            %   comgoal = [mean(gc(1:2,k),2);com0(3)];
+            %   comgoal = [mean(gc(1:2,k(1:end-1)),2);com0(3)];
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
             comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];

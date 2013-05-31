@@ -41,7 +41,7 @@ classdef StandingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      if(~isfield(options,'use_mex')) options.use_mex = true; end
+      if(~isfield(options,'use_mex')) options.use_mex = false; end
       
       options.lcm_foot_contacts = true;
       qp = QPController(r,ctrl_data,options);
@@ -89,7 +89,7 @@ classdef StandingController < DRCController
       % build TI-ZMP controller 
       foot_pos = contactPositions(obj.robot,kinsol); 
       ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-      comgoal = mean(foot_pos(1:2,ch),2);
+      comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
@@ -137,7 +137,7 @@ classdef StandingController < DRCController
 
         foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
         ch = convhull(foot_pos(1:2,:)');
-        comgoal = mean(foot_pos(1:2,ch),2);
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 %         zmap = getTerrainHeight(r,com(1:2));
 %         robot_z = com(3)-zmap;
   
