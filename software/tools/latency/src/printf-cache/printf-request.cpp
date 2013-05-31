@@ -9,27 +9,23 @@
 #include <stdio.h>
 #include <signal.h>
 #include <math.h>
-#include <iostream>
 #include <string>
 #include <sstream>      // std::stringstream
-
+#include <map>
+#include <sys/time.h>
+#include <time.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/circular_buffer.hpp>
-#include <lcm/lcm-cpp.hpp>
-#include <map>
 
+#include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_procman/printf_t.hpp>
 #include <lcmtypes/bot_procman/info_t.hpp>
-
 #include <lcmtypes/drc_lcmtypes.hpp>
-
 
 #include <ConciseArgs>
 
-
 using namespace std;
-
 
 class Pass{
   public:
@@ -60,9 +56,44 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int request_):
     lcm_->subscribe( "PMD_PRINTF_REPLY" ,&Pass::replyHandler,this);  
 }
 
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+
 void Pass::replyHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::printf_reply_t* msg){
 
+  //* Replicate the messages locally
+  for(size_t i=0; i <msg->printfs.size() ; i++){
+      std::cout << i<<": " << msg->printfs[i] << "\n";
+      bot_procman::printf_t msg_out;
+      msg_out.utime = _timestamp_now();
+      if (msg->robot){
+        msg_out.deputy_name = "robot";
+      }else{
+        msg_out.deputy_name = "extra"; 
+      }
+      msg_out.sheriff_id = msg->sheriff_id;
+      msg_out.text = msg->printfs[i];
+      lcm_->publish("PMD_PRINTF", &msg_out);
+  }     
+  
+  std::string deputy_name;
+  if (msg->robot){
+    deputy_name = "robot";
+  }else{
+    deputy_name = "extra"; 
+  }
+  
+  
+  std::cout << "Reply for: " << msg->sheriff_id << " | " << deputy_name << "\n";
+  if (msg->printfs.size() == 0){
+    std::cout << "<--- no messages cached for this process --->\n"; 
+  }
   for(size_t i=0; i <msg->printfs.size() ; i++){
       std::cout << i<<": " << msg->printfs[i] << "\n";
   }	
