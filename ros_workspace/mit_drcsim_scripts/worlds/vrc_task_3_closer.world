@@ -106,12 +106,13 @@
     <include>
       <uri>model://table</uri>
       <static>true</static>
-      <pose>-1.9 -4.0 0 0 0 1.5707</pose>
+<!--      <pose>-1.9 -4.0 0 0 0 1.5707</pose>-->
+      <pose>-1.3 -3.7 0 0 0 0</pose>
     </include>
     <include>
-      <uri>model://mit_firehose_long</uri> <!-- mit version sets friction coefficients -->
-      <pose>-2.2 -4.7 1.1 0 0 1.5707</pose>
-      <!--<pose>-2.5 -3.5 1.2 0 0 -1.5707</pose>-->
+      <uri>model://mit_firehose_long</uri> 
+      <pose>-1.5 -3.50 1.2 1.5707 0 1.5707</pose>
+     <!-- <pose>-2.5 -3.5 1.2 0 0 -1.5707</pose>-->
     </include>
     <include>
       <uri>model://vrc_standpipe</uri>
@@ -124,8 +125,8 @@
     <include>
       <uri>model://mit_robot</uri>
       <!--<pose>-7 -15 1.0 0 0 0</pose> -->
-      <pose> -1.3 -6.0 0.95 0 0 -3.14</pose>
-      <!--<pose> -2.5 -4.2 1.0 0 0 1.57</pose>-->
+      <!--<pose> -1.3 -6.0 0.95 0 0 -3.14</pose>-->
+      <pose> -2.65 -4.3 0.95 0 0 0</pose>
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
@@ -144,8 +145,8 @@
         <valve_model>valve</valve_model>
         <valve_joint>valve</valve_joint>
         <thread_pitch>-1000</thread_pitch>
-<!--        <coupling_relative_pose>1.17038e-05 -0.125623 0.35 -0.0412152 -1.57078 1.61199</coupling_relative_pose>-->
-        <coupling_relative_pose>0 0 0 -0.0412152 -1.57078 1.61199</coupling_relative_pose>
+        <coupling_relative_pose>1.17038e-05 -0.125623 0.023 -0.0412152 -1.57078 1.61199</coupling_relative_pose>
+
       </drc_fire_hose>
     </plugin>
     <plugin filename="libVRCScoringPlugin.so" name="vrc_scoring">
