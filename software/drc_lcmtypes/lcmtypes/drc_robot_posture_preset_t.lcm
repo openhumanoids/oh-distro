@@ -1,7 +1,7 @@
 package drc;
 
-// published on UPDATE_NOMINAL_POSTURE 
-// if CURRENT (or) PRESET_POSTURE_GOAL 
+// published on COMMITTED_POSTURE_PRESET
+// if CURRENT/_LFTHND_FIX/_RGTHND_FIX/_BOTHHNDS_FIX (or) PRESET_POSTURE_GOAL 
 // if its one of the other precomputed fixed points.
 struct robot_posture_preset_t 
 {
@@ -10,8 +10,11 @@ struct robot_posture_preset_t
 
   // enum for preset
   const int16_t CURRENT=0;
-  const int16_t STANDING_HNDS_DWN=1;
-  const int16_t STANDING_HNDS_UP=2;
-  const int16_t SITTING_HNDS_DWN=3;
-  const int16_t SITTING_HNDS_UP=4; 
+  const int16_t CURRENT_LFTHND_FIX = 1;
+  const int16_t CURRENT_RGTHND_FIX = 2;
+  const int16_t CURRENT_BOTHHNDS_FIX = 3;
+  const int16_t STANDING_HNDS_DWN=4;
+  const int16_t STANDING_HNDS_UP=5;
+  const int16_t SITTING_HNDS_DWN=6;
+  const int16_t SITTING_HNDS_UP=7; 
 }
