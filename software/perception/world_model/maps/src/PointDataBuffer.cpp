@@ -111,7 +111,7 @@ getTimeMax() const {
   if (mTimes.size() == 0) {
     return -1;
   }
-  return *mTimes.end();
+  return *mTimes.rbegin();
 }
 
 maps::PointCloud::Ptr PointDataBuffer::

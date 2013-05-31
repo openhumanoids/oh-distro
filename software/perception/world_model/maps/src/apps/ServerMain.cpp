@@ -27,6 +27,7 @@
 #include <maps/BotWrapper.hpp>
 #include <maps/Utils.hpp>
 #include <maps/Collector.hpp>
+#include <maps/PointDataBuffer.hpp>
 
 #include <drc_utils/PointerUtils.hpp>
 #include <drc_utils/Clock.hpp>
@@ -261,106 +262,112 @@ struct ViewWorker {
       }
 
       if (localMap != NULL) {
+        // do not send if there is not enough data
+        // TODO: should make this cleaner; for now, 3 seconds
+        int64_t timeMin = localMap->getPointData()->getTimeMin();
+        int64_t timeMax = localMap->getPointData()->getTimeMax();
+        if ((timeMax-timeMin) > 3000000) {
 
-        // get bounds
-        LocalMap::SpaceTimeBounds bounds;
-        bounds.mTimeMin = spec.mTimeMin;
-        bounds.mTimeMax = spec.mTimeMax;
-        bounds.mPlanes = spec.mClipPlanes;
+          // get bounds
+          LocalMap::SpaceTimeBounds bounds;
+          bounds.mTimeMin = spec.mTimeMin;
+          bounds.mTimeMax = spec.mTimeMax;
+          bounds.mPlanes = spec.mClipPlanes;
 
-        // transform bounds if necessary
-        int64_t curTime = drc::Clock::instance()->getCurrentTime();
-        if (spec.mRelativeTime) {
-          bounds.mTimeMin += curTime;
-          bounds.mTimeMax += curTime;
-        }
-        Eigen::Isometry3f headToLocal = Eigen::Isometry3f::Identity();
-        if (spec.mRelativeLocation) {
-          if (mBotWrapper->getTransform("head", "local",
-                                        headToLocal, curTime)) {
-            float theta = atan2(headToLocal(1,0), headToLocal(0,0));
-            Eigen::Matrix3f rotation;
-            rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-            headToLocal.linear() = rotation;
-            Eigen::Matrix4f planeTransform =
-              (headToLocal.inverse()).matrix().transpose();
-            for (int i = 0; i < bounds.mPlanes.size(); ++i) {
-              bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
-            }
+          // transform bounds if necessary
+          int64_t curTime = drc::Clock::instance()->getCurrentTime();
+          if (spec.mRelativeTime) {
+            bounds.mTimeMin += curTime;
+            bounds.mTimeMax += curTime;
           }
-        }
-
-        // get and publish octree
-        if (mRequest.type == drc::map_request_t::OCTREE) {
-          OctreeView::Ptr octree =
-            localMap->getAsOctree(mRequest.resolution, false,
-                                  Eigen::Vector3f(0,0,0), bounds);
-          octree->setId(mRequest.view_id);
-          std::cout << "Publishing octree..." << std::endl;
-          drc::map_octree_t octMsg;
-          LcmTranslator::toLcm(*octree, octMsg);
-          octMsg.utime = drc::Clock::instance()->getCurrentTime();
-          octMsg.map_id = localMap->getId();
-          std::string chan =
-            mRequest.channel.size()>0 ? mRequest.channel : "MAP_OCTREE";
-          lcm->publish(chan, &octMsg);
-          std::cout << "Sent octree on " << chan << " at " <<
-            octMsg.num_bytes << " bytes (view " << octree->getId() <<
-            ")" << std::endl;
-        }
-
-        // get and publish point cloud
-        else if (mRequest.type == drc::map_request_t::POINT_CLOUD) {
-          PointCloudView::Ptr cloud =
-            localMap->getAsPointCloud(mRequest.resolution, bounds);
-          cloud->setId(mRequest.view_id);
-          drc::map_cloud_t msgCloud;
-          LcmTranslator::toLcm(*cloud, msgCloud, mRequest.quantization_max);
-          msgCloud.utime = drc::Clock::instance()->getCurrentTime();
-          msgCloud.map_id = localMap->getId();
-          msgCloud.blob.utime = msgCloud.utime;
-          std::string chan =
-            mRequest.channel.size()>0 ? mRequest.channel : "MAP_CLOUD";
-          lcm->publish(chan, &msgCloud);
-          std::cout << "Sent point cloud on " << chan << " at " <<
-            msgCloud.blob.num_bytes << " bytes (view " << cloud->getId() <<
-            ")" << std::endl;
-        }
-
-        // get and publish depth image
-        else if (mRequest.type == drc::map_request_t::DEPTH_IMAGE) {
-          Eigen::Projective3f projector;
-          for (int i = 0; i < 4; ++i) {
-            for (int j = 0; j < 4; ++j) {
-              projector(i,j) = mRequest.transform[i][j];
-            }
-          }
+          Eigen::Isometry3f headToLocal = Eigen::Isometry3f::Identity();
           if (spec.mRelativeLocation) {
-            projector = projector*headToLocal.inverse();
+            if (mBotWrapper->getTransform("head", "local",
+                                          headToLocal, curTime)) {
+              float theta = atan2(headToLocal(1,0), headToLocal(0,0));
+              Eigen::Matrix3f rotation;
+              rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+              headToLocal.linear() = rotation;
+              Eigen::Matrix4f planeTransform =
+                (headToLocal.inverse()).matrix().transpose();
+              for (int i = 0; i < bounds.mPlanes.size(); ++i) {
+                bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
+              }
+            }
           }
-          DepthImage::AccumulationMethod accumMethod;
-          // TODO: hack to differentiate between accumulation variants
-          if (Utils::isOrthographic(projector.matrix())) {
-            accumMethod = DepthImage::AccumulationMethodMean;
+
+          // get and publish octree
+          if (mRequest.type == drc::map_request_t::OCTREE) {
+            OctreeView::Ptr octree =
+              localMap->getAsOctree(mRequest.resolution, false,
+                                    Eigen::Vector3f(0,0,0), bounds);
+            octree->setId(mRequest.view_id);
+            std::cout << "Publishing octree..." << std::endl;
+            drc::map_octree_t octMsg;
+            LcmTranslator::toLcm(*octree, octMsg);
+            octMsg.utime = drc::Clock::instance()->getCurrentTime();
+            octMsg.map_id = localMap->getId();
+            std::string chan =
+              mRequest.channel.size()>0 ? mRequest.channel : "MAP_OCTREE";
+            lcm->publish(chan, &octMsg);
+            std::cout << "Sent octree on " << chan << " at " <<
+              octMsg.num_bytes << " bytes (view " << octree->getId() <<
+              ")" << std::endl;
           }
-          else {
-            accumMethod = DepthImage::AccumulationMethodExtremal;
+
+          // get and publish point cloud
+          else if (mRequest.type == drc::map_request_t::POINT_CLOUD) {
+            PointCloudView::Ptr cloud =
+              localMap->getAsPointCloud(mRequest.resolution, bounds);
+            cloud->setId(mRequest.view_id);
+            drc::map_cloud_t msgCloud;
+            LcmTranslator::toLcm(*cloud, msgCloud, mRequest.quantization_max);
+            msgCloud.utime = drc::Clock::instance()->getCurrentTime();
+            msgCloud.map_id = localMap->getId();
+            msgCloud.blob.utime = msgCloud.utime;
+            std::string chan =
+              mRequest.channel.size()>0 ? mRequest.channel : "MAP_CLOUD";
+            lcm->publish(chan, &msgCloud);
+            std::cout << "Sent point cloud on " << chan << " at " <<
+              msgCloud.blob.num_bytes << " bytes (view " << cloud->getId() <<
+              ")" << std::endl;
           }
-          DepthImageView::Ptr image =
-            localMap->getAsDepthImage(mRequest.width, mRequest.height,
-                                      projector, accumMethod, bounds);
-          image->setId(mRequest.view_id);
-          drc::map_image_t msgImg;
-          LcmTranslator::toLcm(*image, msgImg, mRequest.quantization_max);
-          msgImg.utime = drc::Clock::instance()->getCurrentTime();
-          msgImg.map_id = localMap->getId();
-          msgImg.blob.utime = msgImg.utime;
-          std::string chan =
-            mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
-          lcm->publish(chan, &msgImg);
-          std::cout << "Sent depth image on " << chan << " at " <<
-            msgImg.blob.num_bytes << " bytes (view " << image->getId() <<
-            ")" << std::endl;
+
+          // get and publish depth image
+          else if (mRequest.type == drc::map_request_t::DEPTH_IMAGE) {
+            Eigen::Projective3f projector;
+            for (int i = 0; i < 4; ++i) {
+              for (int j = 0; j < 4; ++j) {
+                projector(i,j) = mRequest.transform[i][j];
+              }
+            }
+            if (spec.mRelativeLocation) {
+              projector = projector*headToLocal.inverse();
+            }
+            DepthImage::AccumulationMethod accumMethod;
+            // TODO: hack to differentiate between accumulation variants
+            if (Utils::isOrthographic(projector.matrix())) {
+              accumMethod = DepthImage::AccumulationMethodMean;
+            }
+            else {
+              accumMethod = DepthImage::AccumulationMethodExtremal;
+            }
+            DepthImageView::Ptr image =
+              localMap->getAsDepthImage(mRequest.width, mRequest.height,
+                                        projector, accumMethod, bounds);
+            image->setId(mRequest.view_id);
+            drc::map_image_t msgImg;
+            LcmTranslator::toLcm(*image, msgImg, mRequest.quantization_max);
+            msgImg.utime = drc::Clock::instance()->getCurrentTime();
+            msgImg.map_id = localMap->getId();
+            msgImg.blob.utime = msgImg.utime;
+            std::string chan =
+              mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
+            lcm->publish(chan, &msgImg);
+            std::cout << "Sent depth image on " << chan << " at " <<
+              msgImg.blob.num_bytes << " bytes (view " << image->getId() <<
+              ")" << std::endl;
+          }
         }
       }
 
