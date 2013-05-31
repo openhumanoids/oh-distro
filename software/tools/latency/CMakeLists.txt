@@ -6,7 +6,7 @@ include(cmake/pods.cmake)
 
 add_subdirectory(src/latency)
 add_subdirectory(src/frequency)
-
+add_subdirectory(src/printf-cache)
 
 # require python
 find_package(PythonInterp REQUIRED)

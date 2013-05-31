@@ -1,0 +1,10 @@
+package drc;
+
+// This basic type used to reply
+// with printf
+
+struct printf_reply_t
+{
+   int8_t n_printfs;
+   string printfs[n_printfs];
+}
