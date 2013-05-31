@@ -58,13 +58,14 @@ namespace affordance
     double _bounding_xyz[3];
     double _bounding_rpy[3];
     double _bounding_lwh[3];
+
+    std::string _modelfile;
     
   private:
     /**type of affordance.  this is a relative otdf file name w/o
      the otdf extension at the end.  e.g. "cylinder"*/
     OTDF_TYPE _otdf_type;
     std::string _friendly_name;
-    std::string _modelfile;
 
 
     //-----------constructor/destructor
