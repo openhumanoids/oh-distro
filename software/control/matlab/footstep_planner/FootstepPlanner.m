@@ -123,10 +123,9 @@ classdef FootstepPlanner < DRCPlanner
       function publish(X)
         if length(X) > 2
           [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
-          pts.right = foottraj.right.orig.eval(linspace(foottraj.right.orig.tspan(1),...
-                                                         foottraj.right.orig.tspan(end)));
-          pts.left = foottraj.left.orig.eval(linspace(foottraj.left.orig.tspan(1),...
-                                                         foottraj.left.orig.tspan(end)));
+          ts = linspace(foottraj.right.orig.tspan(1),foottraj.right.orig.tspan(end));
+          pts.right = foottraj.right.orig.eval(ts);
+          pts.left = foottraj.left.orig.eval(ts);
 %           pts.right = obj.biped.footOrig2Contact(pts.right, 'center', 1);
 %           pts.left = obj.biped.footOrig2Contact(pts.left, 'center', 0);
           plot_lcm_points(pts.right', repmat([224/255, 116/255, 27/255], size(pts.right, 2), 1), 30, 'Right Foot Trajectory', 2, 1);
