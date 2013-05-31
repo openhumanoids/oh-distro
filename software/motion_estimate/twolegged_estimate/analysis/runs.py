@@ -42,12 +42,12 @@ def doRun(logFile, runOption, maxDuration, profileType, medianLength, prefix):
     
     # write weights file
     weightFile = os.path.expandvars('${HOME}/drc/software/config/subsystems/legged_odometry/weights.txt');
-    writeWeights(maxDuration, 30, profileType, weightFile)
+    writeWeights(maxDuration, maxDuration, profileType, weightFile)
     sys.stdout.write('  wrote weights file %s\n' % weightFile)
     
     # start up motion estimator
     motionExe = 'drc-legged-odometry'
-    motionArgs = '-e -l' + ' -' + runOption + ' -m ' + str(medianLength)
+    motionArgs = '-e -l -y' + ' -' + runOption + ' -m ' + str(medianLength)
     motionCmd = shlex.split(motionExe + ' ' + motionArgs)
     motionProc = subprocess.Popen(motionCmd, cwd='/tmp')
     sys.stdout.write('  spawned motion estimator\n')
