@@ -327,14 +327,6 @@ group "b.4.driving" {
 
 
 group "g.0.gazebo" {
-    cmd "gz_mit_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
-        host = "robot";
-    }
-    cmd "gz_mit_manip_nohands" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_nohands.world";
-        host = "robot";
-    }
     cmd "gz_mit_ingress" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
@@ -359,14 +351,9 @@ group "g.0.gazebo" {
         exec = "roslaunch atlas_utils qual_task_2.launch";
         host = "robot";
     }
-    cmd "gz_unpinned_manip" {
-        #exec = "roslaunch atlas_utils qual_task_2.launch";
-	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
-	host = "robot";
-    }
     cmd "gz_walking_manip" {
-	exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
-	host = "robot";
+	      exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        host = "robot";
     }
     cmd "gz_quals_3" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";

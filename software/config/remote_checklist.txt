@@ -11,3 +11,18 @@ drake 6137
 to disable mex: use_mex = false
 matlab/StandingController.m 
 matkab/WalkingController.m
+
+
+
+
+
+
+
+
+
+robot - paladin-02 - 10.0.0.52
+drc@???
+extra - paladin-10 - 10.0.0.53
+drc@128.30.29.173
+gazebo - paladin-13 - 10.0.0.51
+drc@128.30.29.193
