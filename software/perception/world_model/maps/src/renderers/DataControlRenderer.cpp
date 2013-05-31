@@ -17,11 +17,11 @@
 #include <lcmtypes/drc/sensor_request_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/neck_pitch_t.hpp>
+#include <lcmtypes/drc/affordance_mini_t.hpp>
+#include <lcmtypes/drc/affordance_mini_collection_t.hpp>
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
-
-// TODO: slow sweep commands
 
 // convenience class for affordance list box
 struct AffordanceColumns : public Gtk::TreeModel::ColumnRecord {
@@ -60,6 +60,7 @@ protected:
   int mHandCameraFrameRate;
   int mCameraCompression;
   int mHeadPitchAngle;
+  bool mMinimalAffordances;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -278,6 +279,8 @@ public:
     Gtk::Label* label =
       Gtk::manage(new Gtk::Label("Affordances", Gtk::ALIGN_LEFT));
     vbox->pack_start(*label, false, false);
+    mMinimalAffordances = false;
+    addCheck("Minimal", mMinimalAffordances, vbox);
     Gtk::ScrolledWindow* scroll = Gtk::manage(new Gtk::ScrolledWindow());
     scroll->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     scroll->set_size_request(-1, 100);
@@ -394,21 +397,80 @@ public:
     std::vector<int> selectedIds = getSelectedAffordanceIds();
     std::vector<affordance::AffPlusPtr> affordances;
     mAffordanceWrapper->getAllAffordancesPlus(affordances);
-    drc::affordance_plus_collection_t msg;
-    msg.name = "updateFromDataControlRenderer";
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.map_id = -1;
-    for (size_t i = 0; i < affordances.size(); ++i) {
-      if (std::find(selectedIds.begin(), selectedIds.end(),
-                    affordances[i]->aff->_uid) == selectedIds.end()) continue;
-      drc::affordance_plus_t aff;
-      affordances[i]->toMsg(&aff);
-      msg.affs_plus.push_back(aff);
+
+    if (!mMinimalAffordances) {
+      drc::affordance_plus_collection_t msg;
+      msg.name = "updateFromDataControlRenderer";
+      msg.utime = drc::Clock::instance()->getCurrentTime();
+      msg.map_id = -1;
+      for (size_t i = 0; i < affordances.size(); ++i) {
+        if (std::find(selectedIds.begin(), selectedIds.end(),
+                      affordances[i]->aff->_uid) == selectedIds.end()) continue;
+        drc::affordance_plus_t aff;
+        affordances[i]->toMsg(&aff);
+        msg.affs_plus.push_back(aff);
+      }
+      msg.naffs = msg.affs_plus.size();
+      if (msg.naffs > 0) {
+        getLcm()->publish(affordance::AffordanceServer::
+                          AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
+        std::cout << "Sent " << msg.naffs << " affordances" << std::endl;
+      }
+      else std::cout << "Warning: did not send any affordances" << std::endl;
     }
-    msg.naffs = msg.affs_plus.size();
-    getLcm()->publish(affordance::AffordanceServer::
-                      AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
-    std::cout << "Sent " << msg.naffs << " affordances" << std::endl;
+
+    else {
+      drc::affordance_mini_collection_t msg;
+      for (size_t i = 0; i < affordances.size(); ++i) {
+        if (std::find(selectedIds.begin(), selectedIds.end(),
+                      affordances[i]->aff->_uid) == selectedIds.end()) continue;
+        affordance::AffPtr aff = affordances[i]->aff;
+        drc::affordance_mini_t msgAff;
+        msgAff.uid = aff->_uid;
+        for (int k = 0; k < 3; ++k) {
+          msgAff.origin_xyz[k] = aff->_origin_xyz[k];
+          msgAff.origin_rpy[k] = aff->_origin_rpy[k];
+        }
+
+        if (aff->getType() == affordance::AffordanceState::CAR) {
+          msgAff.type = drc::affordance_mini_t::CAR;
+          msgAff.nparams = 0;
+          if (aff->_modelfile == "car.pcd") {
+            msgAff.modelfile = drc::affordance_mini_t::CAR_PCD;
+          }
+          else if (aff->_modelfile == "car_cabin_2cm.pcd") {
+            msgAff.modelfile = drc::affordance_mini_t::CABIN_2CM_PCD;
+          }
+          else {
+            msgAff.modelfile = drc::affordance_mini_t::UNKNOWN_FILE;
+          }
+        }
+
+        else if (aff->getType() == affordance::AffordanceState::CYLINDER) {
+          msgAff.type = drc::affordance_mini_t::CYLINDER;
+          msgAff.nparams = 2;
+          msgAff.param_names.resize(2);
+          msgAff.param_names[0] = drc::affordance_mini_t::LENGTH;
+          msgAff.param_names[1] = drc::affordance_mini_t::RADIUS;
+          msgAff.params.resize(2);
+          msgAff.params[0] =
+            aff->_params[affordance::AffordanceState::LENGTH_NAME];
+          msgAff.params[1] =
+            aff->_params[affordance::AffordanceState::RADIUS_NAME];
+          msgAff.modelfile = drc::affordance_mini_t::UNKNOWN_FILE;
+        }
+
+        else continue;
+
+        msg.affs.push_back(msgAff);
+      }
+      msg.naffs = msg.affs.size();
+      if (msg.naffs > 0) {
+        getLcm()->publish("AFFORDANCE_MINI_BOT_OVERWRITE", &msg);
+        std::cout << "Sent " << msg.naffs << " affordances" << std::endl;
+      }
+      else std::cout << "Warning: did not send any affordances" << std::endl;
+    }
   }
 
   void onSendRatesControlButton() {
