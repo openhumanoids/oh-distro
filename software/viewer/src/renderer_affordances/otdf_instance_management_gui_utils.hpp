@@ -238,6 +238,7 @@ namespace renderer_affordances_gui_utils
                 std::string dof_name;
                 vector<double> dof_values;  
                 bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
+                
                 // dof range was set
                 if(isdofset) {
                     int num_of_incs = T_world_geometry_frames.size();
@@ -250,7 +251,7 @@ namespace renderer_affordances_gui_utils
                         aff_index.utime=(int64_t)i;
                         aff_index.aff_type = it->second.otdf_type; 
                         aff_index.aff_uid = it->second.uid;   
-                        aff_index.num_ees =1;  
+                        aff_index.num_ees = 1;  
                         aff_index.ee_name.push_back(ee_name); 
                         aff_index.dof_name.push_back(dof_name);     
                         aff_index.dof_value.push_back(dof_values[i]); 
@@ -295,7 +296,7 @@ namespace renderer_affordances_gui_utils
                 self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
                 std::string dof_name;
                 vector<double> dof_values;  
-                bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
+                bool isdofset = self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
                 if(isdofset) { // dof range was set
                     int num_of_incs = T_world_geometry_frames.size();
                     vector<KDL::Frame> T_world_ee_frames;
@@ -364,13 +365,14 @@ namespace renderer_affordances_gui_utils
                         desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str())*(M_PI/180);
                     }
                     else {
-                        desired_dof_pos_min =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index1].c_str())*(M_PI/180);
-                        desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str())*(M_PI/180);
+                        desired_dof_pos_min =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index1].c_str());
+                        desired_dof_pos_max =  bot_gtk_param_widget_get_double (pw, self->popup_widget_name_list[index2].c_str());
                     }
 
                     current_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_min)); 
                     future_jointpos_in.insert(make_pair(joint->first, desired_dof_pos_max)); 
-                    if((current_dof_pos>(desired_dof_pos_min+1e-2)) && (current_dof_pos<(desired_dof_pos_max-1e-2))) {
+                    //if((current_dof_pos>(desired_dof_pos_min+1e-2)) && (current_dof_pos<(desired_dof_pos_max-1e-2))) {
+                    if((current_dof_pos>(desired_dof_pos_min-1e-4)) && (current_dof_pos<(desired_dof_pos_max+1e-4))) {
                         if (joint->second->type == otdf::Joint::REVOLUTE)
                             cout <<  joint->first << ":: desired dof range set to " << desired_dof_pos_min*(180/M_PI) << " : "<< desired_dof_pos_max*(180/M_PI)<< "(rad)" << endl;
                         else
@@ -676,7 +678,7 @@ namespace renderer_affordances_gui_utils
                     bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
                                                     BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, 
                                                     current_dof_position*(180/M_PI)); 
-                    //bot_gtk_param_widget_add_separator (pw," ");
+                    bot_gtk_param_widget_add_separator (pw," ");
                 }
                 else if (joint->second->type == (int) otdf::Joint::REVOLUTE) {
                     self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
@@ -687,18 +689,18 @@ namespace renderer_affordances_gui_utils
                     bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
                                                     BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower*(180/M_PI), 
                                                     joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
-                    // bot_gtk_param_widget_add_separator (pw," ");
+                    bot_gtk_param_widget_add_separator (pw," ");
                 }   
                 else {
                     self->popup_widget_name_list.push_back(joint->first+"_MIN"); 
                     bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
                                                     BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower, 
-                                                    joint->second->limits->upper, .01, current_dof_position);
+                                                    joint->second->limits->upper, .005, current_dof_position);
                     self->popup_widget_name_list.push_back(joint->first+"_MAX"); 
                     bot_gtk_param_widget_add_double(pw, self->popup_widget_name_list[self->popup_widget_name_list.size()-1].c_str(), 
                                                     BOT_GTK_PARAM_WIDGET_SLIDER,joint->second->limits->lower, 
-                                                    joint->second->limits->upper, .01, current_dof_position);
-                    // bot_gtk_param_widget_add_separator (pw," ");
+                                                    joint->second->limits->upper, .005, current_dof_position);
+                    bot_gtk_param_widget_add_separator (pw," ");
                 }
             }
         }

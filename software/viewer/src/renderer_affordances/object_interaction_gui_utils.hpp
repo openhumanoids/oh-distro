@@ -511,14 +511,14 @@ namespace renderer_affordances_gui_utils
       std::string object_geometry_name = self->link_selection;
       std::string object_name_token  = object_name + "_";
       size_t found = object_geometry_name.find(object_name_token);  
-      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+      std::string geometry_name = object_geometry_name.substr(found+object_name_token.size());
       
-           Eigen::Vector3f eVx,eVy,eVz,diff;
+      Eigen::Vector3f eVx,eVy,eVz,diff;
       diff=self->ray_hit_drag-self->ray_hit;
       cout << diff.norm() << endl;
-      if(diff.norm()< 0.001){
-        diff << 0,0,1;
-       } 
+      if(diff.norm()< 0.001)
+          diff << 0,0,1;
+
       diff.normalize();
       eVz = self->ray_hit_normal; eVz.normalize();
       eVy = eVz.cross(diff);  eVy.normalize();
@@ -530,21 +530,27 @@ namespace renderer_affordances_gui_utils
       Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
 
       KDL::Frame T_world_footcontact= KDL::Frame::Identity();
-      T_world_footcontact.p[0] = self->ray_hit[0];
-      T_world_footcontact.p[1] = self->ray_hit[1];
-      T_world_footcontact.p[2] = self->ray_hit[2];
+      //T_world_footcontact.p[0] = self->ray_hit[0];
+      //T_world_footcontact.p[1] = self->ray_hit[1];
+      //T_world_footcontact.p[2] = self->ray_hit[2];
+
+      // For the car (pedals) we offset the sticky foot to prevent the pedal from being depressed
+      double delta = 0.025;
+      T_world_footcontact.p[0] = self->ray_hit[0] + delta * eVz[0];
+      T_world_footcontact.p[1] = self->ray_hit[1] + delta * eVz[1];
+      T_world_footcontact.p[2] = self->ray_hit[2] + delta * eVz[2];
+
       KDL::Rotation tempM(Vx,Vy,Vz);
       T_world_footcontact.M = tempM;
 
       KDL::Frame T_world_objectgeometry = KDL::Frame::Identity(); 
       if(! it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry))
-      {
-       cerr << " ERROR: failed to retrieve " << geometry_name<<" in object " << object_name <<endl;
-      }
-      KDL::Frame  T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
+          cerr << " ERROR: failed to retrieve " << geometry_name <<" in object " << object_name <<endl;
+
+      KDL::Frame T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
       KDL::Frame T_objectgeometry_foot,T_contactframe_footframe;
-      T_contactframe_footframe=self->candidateFootStepSeedManager->_T_groundframe_bodyframe_right;
-      T_objectgeometry_foot=T_objectgeometry_footcontact*(T_contactframe_footframe);
+      T_contactframe_footframe = self->candidateFootStepSeedManager->_T_groundframe_bodyframe_right;
+      T_objectgeometry_foot = T_objectgeometry_footcontact*(T_contactframe_footframe);
       
       std::vector<std::string> joint_names;
       std::vector<double> joint_positions;
@@ -980,71 +986,66 @@ namespace renderer_affordances_gui_utils
 
   static void on_sticky_foot_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
-    RendererAffordances *self = (RendererAffordances*) user;
-    
-    if(self->stickyfoot_selection==" "){
-      gtk_widget_destroy(self->dblclk_popup);
-      return;
-    }
-    
-    if (! strcmp(name, PARAM_DELETE)) {
-      fprintf(stderr,"\n Clearing selected sticky foot\n");
+      RendererAffordances *self = (RendererAffordances*) user;
       
-      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
-      if(foot_it!=self->sticky_feet.end())
-        self->sticky_feet.erase(foot_it);
-      self->stickyfoot_selection = " ";
-      bot_viewer_request_redraw(self->viewer);
-    }
-    else if(! strcmp(name, PARAM_MOVE_EE)) {
-    
-      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
-
-      drc::grasp_opt_control_t msg; // just to access types
-      int grasp_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-        //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT){
-          publish_desired_foot_motion(foot_it->second,"l_foot","DESIRED_L_FOOT_MOTION",self);
-         }
-        else if(grasp_type== msg.SANDIA_RIGHT){
-          publish_desired_foot_motion( foot_it->second,"r_foot","DESIRED_R_FOOT_MOTION",self);
-        }
-    }
-    else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
-    
-      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
-
-      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
-      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
-
-      if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_graspgeometry))
-      cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;
-      else { 
-       // just to access types
-        int foot_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-        bool touch_flag = !strcmp(name, PARAM_TOUCH);
-        bool reach_flag = !strcmp(name, PARAM_REACH);
-
-        //publish ee goal msg.
-        if(foot_type == 0) {
-           publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"l_foot","L_FOOT_GOAL",T_world_graspgeometry,reach_flag);
-        }
-        else if(foot_type== 1) {
-          publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"r_foot","R_FOOT_GOAL",T_world_graspgeometry,reach_flag);
-        }
+      if(self->stickyfoot_selection==" "){
+          gtk_widget_destroy(self->dblclk_popup);
+          return;
       }
- 
-    }
-        
-    bot_viewer_request_redraw(self->viewer);
-    gtk_widget_destroy(self->dblclk_popup);
+      
+      if (! strcmp(name, PARAM_DELETE)) {
+          fprintf(stderr,"\n Clearing selected sticky foot\n");
+          
+          typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+          if(foot_it!=self->sticky_feet.end())
+              self->sticky_feet.erase(foot_it);
+          self->stickyfoot_selection = " ";
+          bot_viewer_request_redraw(self->viewer);
+      }
+      else if(! strcmp(name, PARAM_MOVE_EE)) {
+          
+          typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+          
+          drc::grasp_opt_control_t msg; // just to access types
+          int grasp_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+          //publish ee goal msg.
+          if(grasp_type == msg.SANDIA_LEFT)
+              publish_desired_foot_motion(foot_it->second,"l_foot","DESIRED_L_FOOT_MOTION",self);
+          else if(grasp_type== msg.SANDIA_RIGHT)
+              publish_desired_foot_motion( foot_it->second,"r_foot","DESIRED_R_FOOT_MOTION",self);
+      }
+      else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
+          
+          typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+          
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+          KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+          
+          if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_graspgeometry))
+              cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;
+          else { 
+              // just to access types
+              int foot_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+              bool touch_flag = !strcmp(name, PARAM_TOUCH);
+              bool reach_flag = !strcmp(name, PARAM_REACH);
+              
+              //publish ee goal msg.
+              if(foot_type == 0)
+                  publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"l_foot","L_FOOT_GOAL",T_world_graspgeometry,reach_flag);
+              else if(foot_type== 1)
+                  publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"r_foot","R_FOOT_GOAL",T_world_graspgeometry,reach_flag);
+          }
+      }
+      
+      bot_viewer_request_redraw(self->viewer);
+      gtk_widget_destroy(self->dblclk_popup);
     
-   }
-  
+  }
+    
   static void spawn_sticky_foot_dblclk_popup (RendererAffordances *self)
   {
   

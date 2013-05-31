@@ -414,7 +414,8 @@ namespace renderer_affordances_lcm_utils
     }
   
     //----------------------------------------------------------------------------------------------------
-    static void publish_eegoal_to_sticky_foot(boost::shared_ptr<lcm::LCM> &_lcm, StickyFootStruc &sticky_foot_struc,string ee_name, string channel,KDL::Frame &T_world_geometry,bool reach_flag)
+    static void publish_eegoal_to_sticky_foot(boost::shared_ptr<lcm::LCM> &_lcm, StickyFootStruc &sticky_foot_struc,
+                                              string ee_name, string channel,KDL::Frame &T_world_geometry,bool reach_flag)
     {
         drc::ee_goal_t goalmsg;
         goalmsg.robot_name = "atlas";
@@ -427,13 +428,13 @@ namespace renderer_affordances_lcm_utils
         KDL::Frame  T_geometry_foot = sticky_foot_struc.T_geometry_foot;  
         T_world_ee = T_world_geometry*T_geometry_foot;
              
-        if(reach_flag)
-            {
-                KDL::Vector footframe_offset;
-                footframe_offset[0]=0.0;footframe_offset[1]=0;footframe_offset[2]=-0.05;
-                KDL::Vector worldframe_offset=T_world_ee.M*footframe_offset;
-                T_world_ee.p += worldframe_offset;
-            }  
+        if(reach_flag) {
+            // Set the reach position to be slightly off the sticky foot
+            KDL::Vector footframe_offset(0.0, 0.0, 0.025);
+            //footframe_offset[0]=0.0;footframe_offset[1]=0; footframe_offset[2]=-0.05;
+            KDL::Vector worldframe_offset=T_world_ee.M*footframe_offset;
+            T_world_ee.p += worldframe_offset;
+        }  
 
         //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 

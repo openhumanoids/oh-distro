@@ -138,27 +138,24 @@ namespace renderer_affordances
     }
     std::vector<std::string>::const_iterator found;
     found = std::find(_dof_names.begin(), _dof_names.end(), it->second->parent_joint->name); 
-    if(found !=  _dof_names.end()) 
-    {
-      unsigned int index = found - _dof_names.begin();
-      dof_name = _dof_names[index];
-      Eigen::VectorXf dof_positions;
-      dof_positions.setLinSpaced(_num_of_incs,_dof_min[index],_dof_max[index]);
-      for(size_t k =0;k<(size_t)_num_of_incs;k++)
-      {
-        dof_values.push_back(dof_positions[k]);
-      }
+    if(found != _dof_names.end()) {
+        unsigned int index = found - _dof_names.begin();
+        dof_name = _dof_names[index];
+        Eigen::VectorXf dof_positions;
+        dof_positions.setLinSpaced(_num_of_incs,_dof_min[index],_dof_max[index]);
+        for(size_t k =0;k<(size_t)_num_of_incs;k++) {
+            dof_values.push_back(dof_positions[k]);
+        }
     }
-    else
-    {
-      //cerr <<"ERROR: parent dof for link: "<< link_name << "  " << it->second->parent_joint->name  << " was never set in BatchFK"<< endl;
-      return false;
+    else {
+        //cerr <<"ERROR: parent dof for link: "<< link_name << "  " << it->second->parent_joint->name  << " was never set in BatchFK"<< endl;
+        return false;
     }    
- 
-   dof_name = it->second->parent_joint->name;
-   return true;
+    
+    dof_name = it->second->parent_joint->name;
+    return true;
   }
-
+    
 //------------------------------------------------------------------------------ 
 
   

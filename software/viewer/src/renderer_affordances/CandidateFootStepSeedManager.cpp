@@ -116,7 +116,8 @@ namespace renderer_affordances
   
     //-------------------------------------------------------------------------------------------
 
-    void CandidateFootStepSeedManager::add_or_update_sticky_foot(int uid,int foot_type, string& object_name, string& geometry_name, KDL::Frame &T_world_foot,       vector<string> &joint_names,vector<double> &joint_positions)		
+    void CandidateFootStepSeedManager::add_or_update_sticky_foot(int uid,int foot_type, string& object_name, string& geometry_name, 
+                                                                 KDL::Frame &T_world_foot, vector<string> &joint_names,vector<double> &joint_positions)		
     {
     
         if(!_foot_urdfs_found) {
@@ -152,9 +153,9 @@ namespace renderer_affordances
                     sticky_foot_struc._gl_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_base_gl_foot_right),sticky_foot_struc._collision_detector,true,unique_foot_name));
       
             drc::joint_angles_t posture_msg;
-            posture_msg.num_joints= joint_names.size();
-            posture_msg.joint_name= joint_names;
-            posture_msg.joint_position= joint_positions;
+            posture_msg.num_joints = joint_names.size();
+            posture_msg.joint_name = joint_names;
+            posture_msg.joint_position = joint_positions;
       
             sticky_foot_struc._gl_foot->set_state(T_world_foot, posture_msg);
             sticky_foot_struc.foot_type = foot_type;
