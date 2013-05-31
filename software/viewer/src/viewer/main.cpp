@@ -150,29 +150,37 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
    drc_robot_posture_preset_t msg;
    msg.utime = bot_timestamp_now();
    
-  if(current_active_posture_preset==0)
-  {
-    msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT;
-    std::cout << "Sending a lcm msg to update nominal posture in P&C to current state." << "\n";
-    drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
-  }
-  else{
-    //CURRENT=0, STANDING_HNDS_UP=1, STANDING_HNDS_DWN=2,SITTING_HNDS_UP=3, SITTING_HNDS_DWN=4;
     switch (current_active_posture_preset)                                      
     {
+      case 0:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT;
+        drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
+        break;
       case 1:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT_LFTHND_FIX;
+        drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
+        break;
+      case 2:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT_RGTHND_FIX;
+        drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
+        break;
+      case 3:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CURRENT_BOTHHNDS_FIX;
+        drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
+        break;
+      case 4:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_DWN;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;   
-      case 2:
+      case 5:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_UP;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break; 
-      case 3:
+      case 6:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_DWN;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break; 
-      case 4:
+      case 7:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_UP;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                          
@@ -180,8 +188,6 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
        std::cout << "Unknown preset. Not found in lcmtype";
        break;
     }// end switch case
-    
-  }// end if else
 
 }
 
@@ -373,6 +379,9 @@ int main(int argc, char *argv[])
   GtkWidget* vseparator = gtk_vseparator_new ();
   GtkWidget* posture_presets_combo_box=gtk_combo_box_new_text();
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_LHndFix" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_RHndFix" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_BothHndFix" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsDn" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsUp" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsDn" );
