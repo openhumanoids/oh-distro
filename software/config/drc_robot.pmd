@@ -153,7 +153,7 @@ group "a.3.vrc_task_3_walking_manip_controllers" {
     
     cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
-       host = "robot";
+       host = "extra";
     }
 }
 group "a.4.driving" {
