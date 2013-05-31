@@ -31,7 +31,8 @@ namespace renderer_affordances
         _left_foot_name ="l_foot";
         _right_foot_name = "r_foot";
         if(!load_foot_urdfs()){
-            cerr << "##### ERROR: #####" <<  " sticky_foot urdfs not found in CandidateFootStepSeedManager.cpp. Disabling CandidateFootStepSeed Manager in renderer_affordances. Please update your models folder" << endl;            return;
+            cerr << "##### ERROR: #####" <<  " sticky_foot urdfs not found in CandidateFootStepSeedManager.cpp. Disabling CandidateFootStepSeed Manager in renderer_affordances. Please update your models folder" << endl;    
+            return;
         }
         _foot_urdfs_found= true;
         _base_gl_foot_left =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
@@ -76,9 +77,9 @@ namespace renderer_affordances
         int res = get_URDF_filenames_from_dir(urdf_models_path, urdf_files);  
   
      
-        if(res==0)   //urdf found
+        if(res==0)  //urdf found
             cout << "found " << urdf_files.size() << " " << urdf_files[0] << " " << urdf_files[1] << " files"<< endl;
-        else {
+        else{
             cerr << "ERROR: no urdf files found in: "<< (urdf_models_path) << endl;
             return false;
         } 
@@ -97,14 +98,14 @@ namespace renderer_affordances
             cerr <<"ERROR: " << _left_foot_name  << ".urdf not found"<< endl;
             return false;
         }
-        
+
         found = std::find (urdf_files.begin(), urdf_files.end(), _right_foot_name);  
         if(found !=  urdf_files.end()) {
             unsigned int index = found - urdf_files.begin();
             std::stringstream oss;
             oss << urdf_models_path << urdf_files[index] << ".urdf" ;
             get_xmlstring_from_file(oss.str(), _right_urdf_xml_string);
-            }
+        }
         else {
             cerr <<"ERROR:" << _right_foot_name  << ".urdf not found"<< endl;
             return false;
@@ -115,16 +116,14 @@ namespace renderer_affordances
   
     //-------------------------------------------------------------------------------------------
 
-    void CandidateFootStepSeedManager::add_or_update_sticky_foot(int uid,int foot_type, string& object_name, 
-                                                                 string& geometry_name, KDL::Frame &T_world_foot,
-                                                                 vector<string> &joint_names,vector<double> &joint_positions)		
+    void CandidateFootStepSeedManager::add_or_update_sticky_foot(int uid,int foot_type, string& object_name, string& geometry_name, KDL::Frame &T_world_foot,       vector<string> &joint_names,vector<double> &joint_positions)		
     {
     
         if(!_foot_urdfs_found) {
             cerr << "##### ERROR: #####" <<  " sticky_foot urdfs not found in CandidateFootStepSeedManager.cpp. Cannot spawn sticky feet" << endl;    
             return;    
         }
-    
+        
         string  unique_foot_name;
         std::stringstream oss;
         if(foot_type==0)
@@ -135,47 +134,47 @@ namespace renderer_affordances
   
         typedef std::map<std::string,StickyFootStruc> sticky_feet_map_type;
         sticky_feet_map_type::iterator it = _parent_renderer->sticky_feet.find(unique_foot_name);
-        if(it ==_parent_renderer->sticky_feet.end() ) // not in cache {
+        if(it ==_parent_renderer->sticky_feet.end() ) { // not in cache
      
             StickyFootStruc sticky_foot_struc;
-        sticky_foot_struc.object_name = object_name;//.c_str() ;
-        sticky_foot_struc.geometry_name = geometry_name;//.c_str(); if created here as na c str it goes out of scope when called from top level functions, hence using string.
-        sticky_foot_struc.uid = uid; 
-        sticky_foot_struc._collision_detector.reset();
-        // should we have a global collision detector and add and remove objects to it as we create and delete objects and foots. We would have to manually add and remove multiple links to the collision detector.??
-        // Each foot has its own collision detector for now.
-        sticky_foot_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector()); 
-        sticky_foot_struc.foot_type=foot_type;
+            sticky_foot_struc.object_name = object_name;//.c_str() ;
+            sticky_foot_struc.geometry_name = geometry_name;//.c_str(); if created here as na c str it goes out of scope when called from top level functions, hence using string.
+            sticky_foot_struc.uid = uid; 
+            sticky_foot_struc._collision_detector.reset();
+            // should we have a global collision detector and add and remove objects to it as we create and delete objects and foots. We would have to manually add and remove multiple links to the collision detector.??
+            // Each foot has its own collision detector for now.
+            sticky_foot_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector()); 
+            sticky_foot_struc.foot_type=foot_type;
       
-        if(foot_type==0)// LEFT
-            sticky_foot_struc._gl_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_base_gl_foot_left),sticky_foot_struc._collision_detector,true,unique_foot_name));
-        else if(foot_type==1)// RIGHT
-            sticky_foot_struc._gl_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_base_gl_foot_right),sticky_foot_struc._collision_detector,true,unique_foot_name));
+            if(foot_type==0)// LEFT
+                    sticky_foot_struc._gl_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_base_gl_foot_left),sticky_foot_struc._collision_detector,true,unique_foot_name));
+            else if(foot_type==1)// RIGHT
+                    sticky_foot_struc._gl_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_base_gl_foot_right),sticky_foot_struc._collision_detector,true,unique_foot_name));
       
-        drc::joint_angles_t posture_msg;
-        posture_msg.num_joints= joint_names.size();
-        posture_msg.joint_name= joint_names;
-        posture_msg.joint_position= joint_positions;
+            drc::joint_angles_t posture_msg;
+            posture_msg.num_joints= joint_names.size();
+            posture_msg.joint_name= joint_names;
+            posture_msg.joint_position= joint_positions;
       
-        sticky_foot_struc._gl_foot->set_state(T_world_foot, posture_msg);
-        sticky_foot_struc.foot_type = foot_type;
-        sticky_foot_struc.T_geometry_foot = T_world_foot;
+            sticky_foot_struc._gl_foot->set_state(T_world_foot, posture_msg);
+            sticky_foot_struc.foot_type = foot_type;
+            sticky_foot_struc.T_geometry_foot = T_world_foot;
 
-        sticky_foot_struc.joint_name = joint_names;
-        sticky_foot_struc.joint_position = joint_positions;
-        _parent_renderer->sticky_feet.insert(make_pair(unique_foot_name, sticky_foot_struc));
-    }
-    else {
-        drc::joint_angles_t posture_msg;
-        posture_msg.num_joints= joint_names.size();
-        posture_msg.joint_name= joint_names;
-        posture_msg.joint_position= joint_positions;
+            sticky_foot_struc.joint_name = joint_names;
+            sticky_foot_struc.joint_position = joint_positions;
+            _parent_renderer->sticky_feet.insert(make_pair(unique_foot_name, sticky_foot_struc));
+        }
+        else {
+            drc::joint_angles_t posture_msg;
+            posture_msg.num_joints= joint_names.size();
+            posture_msg.joint_name= joint_names;
+            posture_msg.joint_position= joint_positions;
 
-        it->second._gl_foot->set_state(T_world_foot, posture_msg);
-        it->second.T_geometry_foot = T_world_foot; 
-        it->second.joint_position = joint_positions;
+            it->second._gl_foot->set_state(T_world_foot, posture_msg);
+            it->second.T_geometry_foot = T_world_foot; 
+            it->second.joint_position = joint_positions;
+        }
     }
-}
     
 
 
