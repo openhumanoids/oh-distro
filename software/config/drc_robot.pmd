@@ -20,11 +20,15 @@ group "0.development" {
 
 group "a.1.core" {
     cmd "aa-control" {
-        exec = "roslaunch translators cheating.launch";
+        exec = "roslaunch translators not_cheating.launch";
         host = "robot";
     }
     cmd "aa-perception" {
         exec = "roslaunch translators perception.launch";
+        host = "robot";
+    }
+    cmd "drc-printf-cache" {
+        exec = "drc-printf-cache";
         host = "robot";
     }
     cmd "viewer-REMOVEFORCOMP" {
@@ -43,9 +47,9 @@ group "a.1.core" {
         exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "extra";
     }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher -g";
-        host = "extra";
+    cmd "LegOdometry" {
+        exec = "drc-legged-odometry -e -C -x";
+        host = "robot";
     }
     cmd "j2f" {
         exec = "drc-joints2frames -g";
@@ -89,6 +93,14 @@ group "a.1.core" {
     }
     cmd "image-rx-REMOVEFORCOMP" {
         exec = "drc-image-receive";
+        host = "robot";
+    }
+    cmd "simple_right_grasp" {
+        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
+    cmd "simple_left_grasp" {
+        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
         host = "robot";
     }
 }
@@ -422,14 +434,6 @@ group "m.2.simple-control" {
         exec = "rosrun tutorial_atlas_control traj_gui.py";
         host = "robot";
     }
-    cmd "simple_right_grasp" {
-        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
-        host = "robot";
-    }
-    cmd "simple_left_grasp" {
-        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
-        host = "robot";
-    }
     cmd "multisense_fps" {
         exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
         host = "robot";
@@ -483,10 +487,14 @@ group "m.3.dev_tools" {
     }
 }
 
-group "m.5.state_est"{
-    cmd "LegOdometry" {
-        exec = "drc-legged-odometry -e -C -x";
+group "m.5.ground_truth"{
+    cmd "cheating_launch" {
+        exec = "roslaunch translators cheating.launch";
         host = "robot";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher -g";
+        host = "extra";
     }
 }
 
@@ -599,8 +607,6 @@ script "dev.qual_1" {
     wait ms 25000;
     start cmd "gz_quals_1"; 
     wait ms 5000;
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
 }
 script "dev.qual_2" { 
     start group "0.development";
@@ -622,8 +628,6 @@ script "dev.qual_3" {
     wait ms 25000;
     start cmd "gz_quals_3"; 
     wait ms 5000;
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
 }
 script "dev.vrc_walking" { 
     start group "0.development";
@@ -635,8 +639,6 @@ script "dev.vrc_walking" {
     start cmd "gz_vrc_walking"; 
     start cmd "set-sim-rate";
     wait ms 5000;
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
 }
 script "dev.vrc_driving" { 
     start group "0.development";
@@ -674,10 +676,6 @@ script "dev.mit_state_est" {
     wait ms 25000;
     start cmd "gz_mit_walking";
     wait ms 5000;
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
-    stop cmd "estpub";
-    start group "m.5.state_est";
 }
 
 script "dev.ingress" { 
@@ -687,8 +685,6 @@ script "dev.ingress" {
     wait ms 25000;
     start cmd "gz_mit_ingress"; 
     wait ms 5000;
-		start cmd "simple_right_grasp";
-		start cmd "simple_left_grasp";
 }
 
 script "dev.vrc_task_3_hose_manip" { 
