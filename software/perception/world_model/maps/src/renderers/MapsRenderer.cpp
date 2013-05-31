@@ -516,8 +516,8 @@ public:
 
   bool mouseMotion(const GdkEventMotion* iEvent,
                    const double iRayStart[3], const double iRayDir[3]) {
-    bool button1 = iEvent->state == GDK_BUTTON1_MASK;
-    bool button3 = iEvent->state == GDK_BUTTON3_MASK;
+    bool button1 = (iEvent->state & GDK_BUTTON1_MASK) != 0;
+    bool button3 = (iEvent->state & GDK_BUTTON3_MASK) != 0;
     if (mInputMode == InputModeRect) {
       if (button1 && mDragging) {
         mDragPoint2 = Eigen::Vector2f(iEvent->x, iEvent->y);
