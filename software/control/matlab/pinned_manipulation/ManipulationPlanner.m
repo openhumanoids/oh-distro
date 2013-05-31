@@ -183,6 +183,7 @@ classdef ManipulationPlanner < handle
             r_foot_pose0 = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],2);
             head_pose0 = forwardKin(obj.r,kinsol,head_body,[0;0;0],2);
+            head_pose0(1:3)=nan(3,1); % only set head orientation not position
             head_pose0_relaxed.min=head_pose0-[1e-2*ones(3,1);1e-2*ones(4,1)];
             head_pose0_relaxed.max=head_pose0+[1e-2*ones(3,1);1e-2*ones(4,1)];
             
@@ -223,7 +224,7 @@ classdef ManipulationPlanner < handle
             T_grasp_palm = inv_HT(T_palm_grasp);
             
             ind = getActuatedJoints(obj.r);
-            cost = getCostVector2(obj);
+            cost = getCostVector(obj);
             
             ikoptions = struct();
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
@@ -388,9 +389,9 @@ classdef ManipulationPlanner < handle
                 ikoptions.Q = 0*diag(cost(1:getNumDOF(obj.r)));
                 ikoptions.q_nom = q_guess;
                 %           0,comgoal,...
+                %utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                 [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
                     pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                    utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                     head_body,[0;0;0],head_pose0_relaxed,{},{},{},...
                     r_foot_body,[0;0;0],rfoot_const,{},{},{}, ...
                     l_foot_body,[0;0;0],lfoot_const,{},{},{}, ...
@@ -787,11 +788,12 @@ classdef ManipulationPlanner < handle
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
                 r_foot_poseT = [rfootT(1:3); rpy2quat(rfootT(4:6))];
                 l_foot_poseT = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                headT(1:3)=nan(3,1); % only orientation constraint for the head.
                 head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
                 obj.rhandT = rhandT;
                 obj.lhandT = lhandT;
                 obj.rfootT = rfootT;
-                obj.lfootT = lfootT;
+                obj.lfootT = lfootT;               
                 obj.headT = headT;
                 
             elseif((is_keyframe_constraint)&&(~is_locii))
@@ -939,15 +941,15 @@ classdef ManipulationPlanner < handle
             %======================================================================================================
             
             
-            cost = getCostVector2(obj);
+            cost = getCostVector(obj);
             
             ikoptions = struct();
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             if(is_keyframe_constraint)
-                ikoptions.MajorIterationsLimit = 100;
+                ikoptions.MajorIterationsLimit = 300;
             else
-                ikoptions.MajorIterationsLimit = 100;
+                ikoptions.MajorIterationsLimit = 500;
             end
             
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
@@ -1120,9 +1122,9 @@ classdef ManipulationPlanner < handle
                 end % end for
                 %============================
                 % find the start location (Assuming we are not current posture =! start of manip plan)
+                % utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                 [q0,snopt_info] = inverseKin(obj.r,q0,...
                             pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                            utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                             r_foot_body,[0;0;0],r_foot_pose0,{},{},{}, ...
                             l_foot_body,[0;0;0],l_foot_pose0,{},{},{}, ...
                             r_hand_body,[0;0;0],r_hand_pose0,{},{},{}, ...
@@ -1135,8 +1137,8 @@ classdef ManipulationPlanner < handle
             
             kc_pelvis = ActionKinematicConstraint(obj.r,pelvis_body,[0;0;0],pelvis_pose0,[s(1),s(end)],'pelvis');
             ks = ks.addKinematicConstraint(kc_pelvis);
-            kc_torso = ActionKinematicConstraint(obj.r,utorso_body,[0;0;0],utorso_pose0_relaxed,[s(1),s(end)],'utorso');
-            ks = ks.addKinematicConstraint(kc_torso);
+           % kc_torso = ActionKinematicConstraint(obj.r,utorso_body,[0;0;0],utorso_pose0_relaxed,[s(1),s(end)],'utorso');
+           % ks = ks.addKinematicConstraint(kc_torso);
             
             if(is_keyframe_constraint)
                 % If break point is adjusted via gui.
@@ -1208,10 +1210,9 @@ classdef ManipulationPlanner < handle
                 if(isempty(q_desired))
 
                      q_start=q0;
-                    if(obj.restrict_feet)
+                      if(obj.restrict_feet)
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
-                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                            utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
+                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...                        
                             r_foot_body,[0;0;0],r_foot_pose0,{},{},{}, ...
                             l_foot_body,[0;0;0],l_foot_pose0,{},{},{}, ...
                             r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
@@ -1221,7 +1222,6 @@ classdef ManipulationPlanner < handle
                     else
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
                             pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                            utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                             r_foot_body,[0;0;0],rfoot_const,{},{},{}, ...
                             l_foot_body,[0;0;0],lfoot_const,{},{},{}, ...
                             r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
@@ -1262,6 +1262,7 @@ classdef ManipulationPlanner < handle
                 ikseq_options.MajorIterationsLimit = 100;
                 ikseq_options.qtraj0 = qtraj_guess;
             end
+            ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
             %============================
             [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
             if(snopt_info == 13)
@@ -1308,7 +1309,7 @@ classdef ManipulationPlanner < handle
                 %tic;
                 
                 if(do_second_stage_IK_verify)
-                    ikoptions.Q = 0*diag(cost(1:getNumDOF(obj.r)));
+                    ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
                     ikoptions.q_nom = q(:,i-1);
                     r_hand_pose_at_t=pose_spline(s_breaks,rhand_breaks,si);  %#ok<*PROP> % evaluate in quaternions
                     l_hand_pose_at_t=pose_spline(s_breaks,lhand_breaks,si); % evaluate in quaternions
@@ -1347,10 +1348,10 @@ classdef ManipulationPlanner < handle
                     %============================
                     q_guess =qtraj_guess.eval(si);
                     %   0,comgoal,...
+                    %   utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                     if(obj.restrict_feet)
                         [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
-                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                            utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
+                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...                          
                             r_foot_body,[0;0;0],r_foot_pose0,{},{},{}, ...
                             l_foot_body,[0;0;0],l_foot_pose0,{},{},{}, ...
                             r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
@@ -1358,9 +1359,9 @@ classdef ManipulationPlanner < handle
                             head_body,[0;0;0],head_const,{},{},{},...
                             ikoptions);
                     else
+                     % utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
                         [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
-                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...
-                            utorso_body,[0;0;0],utorso_pose0_relaxed,{},{},{},...
+                            pelvis_body,[0;0;0],pelvis_pose0,{},{},{},...                            
                             r_foot_body,[0;0;0],rfoot_const,{},{},{}, ...
                             l_foot_body,[0;0;0],lfoot_const,{},{},{}, ...
                             r_hand_body,[0;0;0],rhand_const,{},{},{}, ...
@@ -1409,19 +1410,19 @@ classdef ManipulationPlanner < handle
             utime = now() * 24 * 60 * 60;
             obj.plan_pub.publish(xtraj,ts,utime);
         end
-        
-        function cost = getCostVector2(obj)
+   
+        function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
-            cost.base_x = 1;
-            cost.base_y = 1;
-            cost.base_z = 1;
-            cost.base_roll = 1;
-            cost.base_pitch = 1;
-            cost.base_yaw = 1;
-            cost.back_lbz = 1;
-            cost.back_mby = 1;
-            cost.back_ubx = 1;
-            cost.neck_ay =  1;
+            cost.base_x = 100;
+            cost.base_y = 100;
+            cost.base_z = 100;
+            cost.base_roll = 100;
+            cost.base_pitch = 100;
+            cost.base_yaw = 100;
+            cost.back_lbz = 10000;
+            cost.back_mby = 10000;
+            cost.back_ubx = 10000;
+            cost.neck_ay =  100;
             cost.l_arm_usy = 1;
             cost.l_arm_shx = 1;
             cost.l_arm_ely = 1;
@@ -1434,46 +1435,6 @@ classdef ManipulationPlanner < handle
             cost.l_leg_kny = 1;
             cost.l_leg_uay = 1;
             cost.l_leg_lax = 1;
-            cost.r_arm_usy = cost.l_arm_usy;
-            cost.r_arm_shx = cost.l_arm_shx;
-            cost.r_arm_ely = cost.l_arm_ely;
-            cost.r_arm_elx = cost.l_arm_elx;
-            cost.r_arm_uwy = cost.l_arm_uwy;
-            cost.r_arm_mwx = cost.l_arm_mwx;
-            cost.r_leg_uhz = cost.l_leg_uhz;
-            cost.r_leg_mhx = cost.l_leg_mhx;
-            cost.r_leg_lhy = cost.l_leg_lhy;
-            cost.r_leg_kny = cost.l_leg_kny;
-            cost.r_leg_uay = cost.l_leg_uay;
-            cost.r_leg_lax = cost.l_leg_lax;
-            cost = double(cost);
-            
-        end
-        
-        function cost = getCostVector(obj)
-            cost = Point(obj.r.getStateFrame,1);
-            cost.base_x = 10000;
-            cost.base_y = 10000;
-            cost.base_z = 10000;
-            cost.base_roll = 10000;
-            cost.base_pitch = 10000;
-            cost.base_yaw = 10000;
-            cost.back_lbz = 10000;
-            cost.back_mby = 10000;
-            cost.back_ubx = 10000;
-            cost.neck_ay =  10;
-            cost.l_arm_usy = 1;
-            cost.l_arm_shx = 1;
-            cost.l_arm_ely = 1;
-            cost.l_arm_elx = 1;
-            cost.l_arm_uwy = 1;
-            cost.l_arm_mwx = 1;
-            cost.l_leg_uhz = 10000;
-            cost.l_leg_mhx = 10000;
-            cost.l_leg_lhy = 10000;
-            cost.l_leg_kny = 10000;
-            cost.l_leg_uay = 10000;
-            cost.l_leg_lax = 10000;
             cost.r_arm_usy = cost.l_arm_usy;
             cost.r_arm_shx = cost.l_arm_shx;
             cost.r_arm_ely = cost.l_arm_ely;
