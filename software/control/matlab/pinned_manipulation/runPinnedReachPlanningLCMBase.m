@@ -84,12 +84,13 @@ rh_ee_constraint = [];
 lf_ee_constraint = [];
 rf_ee_constraint = [];
 h_ee_constraint = [];
+msg_timeout = 1; % ms
 
 % get initial state and end effector goals
 disp('Listening for goals...');
 send_status(3,0,0,'Manipulation Planner: Listening for goals...');
 while(1)
-  rep = getNextMessage(rh_ee.frame,0); 
+  rep = getNextMessage(rh_ee.frame,msg_timeout); 
   if (~isempty(rep))
     disp('Right hand goal received.');
     p=rep(2:4);   rpy=rep(5:7);
@@ -97,7 +98,7 @@ while(1)
     rh_ee_goal=[p(:);rpy(:)];
   end
   
-  lep = getNextMessage(lh_ee.frame,0);
+  lep = getNextMessage(lh_ee.frame,msg_timeout);
   if (~isempty(lep))
     disp('Left hand goal received.');
     p=lep(2:4);   rpy=lep(5:7);
@@ -105,7 +106,7 @@ while(1)
     lh_ee_goal=[p(:);rpy(:)];
   end
   
-  rfep = getNextMessage(rf_ee.frame,0); 
+  rfep = getNextMessage(rf_ee.frame,msg_timeout); 
   if (~isempty(rfep))
     disp('Right foot goal received.');
     p=rfep(2:4);   rpy=rfep(5:7);
@@ -113,7 +114,7 @@ while(1)
     rf_ee_goal=[p(:);rpy(:)];
   end
   
-  lfep = getNextMessage(lf_ee.frame,0);
+  lfep = getNextMessage(lf_ee.frame,msg_timeout);
   if (~isempty(lfep))
     disp('Left foot goal received.');
     p=lfep(2:4);   rpy=lfep(5:7);
@@ -121,7 +122,7 @@ while(1)
     lf_ee_goal=[p(:);rpy(:)];
   end
   
-  hep = getNextMessage(h_ee.frame,0);
+  hep = getNextMessage(h_ee.frame,msg_timeout);
   if (~isempty(hep))
     disp('head goal received.');
     p = hep(2:4);   
@@ -131,7 +132,7 @@ while(1)
   end
   
   
-  [x,ts] = getNextMessage(state_frame,0);
+  [x,ts] = getNextMessage(state_frame,msg_timeout);
   if (~isempty(x))
     %  fprintf('received state at time %f\n',ts);
     % disp('Robot state received.');
@@ -140,7 +141,7 @@ while(1)
     x0 = x;
   end
   
-  x= constraint_listener.getNextMessage(0); % not a frame
+  x= constraint_listener.getNextMessage(msg_timeout); % not a frame
   if(~isempty(x))
      num_links = length(x.time);
      if((num_links==1)&&(strcmp(x.name,'left_palm')))
@@ -165,7 +166,7 @@ while(1)
        
   end
   
-  [lh_ee_traj,~]= lh_ee_motion_command_listener.getNextMessage(0);
+  [lh_ee_traj,~]= lh_ee_motion_command_listener.getNextMessage(msg_timeout);
   if(~isempty(lh_ee_traj))
       disp('Left hand traj goal received.');
       p = lh_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -175,7 +176,7 @@ while(1)
       lh_ee_goal=[p(:);rpy(:)];
   end
   
-  [rh_ee_traj,~]= rh_ee_motion_command_listener.getNextMessage(0);
+  [rh_ee_traj,~]= rh_ee_motion_command_listener.getNextMessage(msg_timeout);
   if(~isempty(rh_ee_traj))
       disp('Right hand traj goal received.');
       p = rh_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -185,7 +186,7 @@ while(1)
       rh_ee_goal=[p(:);rpy(:)];
   end
   
-  [lf_ee_traj,~]= lf_ee_motion_command_listener.getNextMessage(0);
+  [lf_ee_traj,~]= lf_ee_motion_command_listener.getNextMessage(msg_timeout);
   if(~isempty(lf_ee_traj))
       disp('Left foot traj goal received.');
       p = lf_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -195,7 +196,7 @@ while(1)
       lf_ee_goal=[p(:);rpy(:)];
   end
   
-  [rf_ee_traj,~]= rf_ee_motion_command_listener.getNextMessage(0);
+  [rf_ee_traj,~]= rf_ee_motion_command_listener.getNextMessage(msg_timeout);
   if(~isempty(rf_ee_traj))
       disp('Right hand traj goal received.');
       p = rf_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -211,7 +212,7 @@ while(1)
       manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal); 
   end
 
-  [trajoptconstraint,postureconstraint]= trajoptconstraint_listener.getNextMessage(0);
+  [trajoptconstraint,postureconstraint]= trajoptconstraint_listener.getNextMessage(msg_timeout);
   if(~isempty(trajoptconstraint))
       disp('time indexed traj opt constraint for manip plan received .');
       
@@ -233,7 +234,7 @@ while(1)
   end    
   
   
-  indexed_trajoptconstraint= indexed_trajoptconstraint_listener.getNextMessage(0);  
+  indexed_trajoptconstraint= indexed_trajoptconstraint_listener.getNextMessage(msg_timeout);  
   if(~isempty(indexed_trajoptconstraint))
       disp('Aff indexed traj opt constraint for manip map received .');
        
@@ -253,7 +254,7 @@ while(1)
   end
   
 
-  posture_goal =posture_goal_listener.getNextMessage(0);  
+  posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
   if(~isempty(posture_goal))
       disp('Preset Posture goal received .');
       if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
@@ -272,7 +273,7 @@ while(1)
 
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
-  p = committed_plan_listener.getNextMessage(0);
+  p = committed_plan_listener.getNextMessage(msg_timeout);
   if (~isempty(p))
     disp('candidate manipulation plan was committed');
        rh_ee_goal = [];
@@ -287,7 +288,7 @@ while(1)
        h_ee_constraint = [];
   end
   
-  p = rejected_plan_listener.getNextMessage(0);
+  p = rejected_plan_listener.getNextMessage(msg_timeout);
   if (~isempty(p))
     disp('candidate manipulation plan was rejected');
     rh_ee_goal = [];
@@ -302,7 +303,7 @@ while(1)
     h_ee_constraint = [];
   end
   
-  p = getNextMessage (h_ee_clear.frame, 0);
+  p = getNextMessage (h_ee_clear.frame, msg_timeout);
   if (~isempty(p))
       disp ('Clearing head goal pose');
       h_ee_goal = [];
