@@ -293,7 +293,7 @@ void Pass::doDemo(int which_publish, bool add_filename){
   
   if ((which_publish==4) || (which_publish==0)){
     int uid1 = 15;
-    std::vector<double> xyzrpy1 = {-2.5 , -3.5 , 1.2 , -M_PI/2 , 0 , 0};  
+    std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  
     string filename1 = "standpipe.ply";
     drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1, add_filename );
@@ -349,7 +349,7 @@ void Pass::doDemo(int which_publish, bool add_filename){
   
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
-    std::vector<double> xyzrpy1 = {-3.0, -3.414, 1.2, 0, 0, 0};  
+    std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, 0};  
     string filename1 = "valve.ply";
     drc::affordance_plus_t a1 = getDynamicMeshSteeringCylAffordancePlus(filename1, xyzrpy1, uid1);
     std::vector<std::string>::const_iterator found;
