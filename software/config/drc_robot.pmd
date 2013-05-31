@@ -646,7 +646,7 @@ script "dev.vrc_manip" {
     start group "m.6.hose_task_utils";    
 }
 
-cript "dev.vrc_manip_mating_test" { 
+script "dev.vrc_manip_mating_test" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.3.vrc_task_3_walking_manip_controllers";
