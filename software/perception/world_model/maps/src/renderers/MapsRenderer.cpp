@@ -774,6 +774,10 @@ public:
         data->mLabel = "Depthmap Workspace";
         data->mColor = Eigen::Vector3f(0,0,1);
         break;
+      case drc::data_request_t::STEREO_MAP:
+        data->mLabel = "Stereo Map";
+        data->mColor = Eigen::Vector3f(0,0.5,0.5);
+        break;
       case 1000:
         data->mLabel = "Heightmap Controller";
         data->mColor = Eigen::Vector3f(0.5,0,0);

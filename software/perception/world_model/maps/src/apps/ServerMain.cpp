@@ -110,12 +110,17 @@ struct StereoHandler {
     }
     view.reset(new DepthImageView());
 
-    // uncompress image
-    // TODO
+    // uncompress image if necessary
+    int w(mLatestImage.width), h(mLatestImage.height/2);
+    cv::Mat img;
+    if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
+      img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
+    }
+    else {
+      img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
+    }
 
     // split images
-    int w(mLatestImage.width), h(mLatestImage.height/2);
-    cv::Mat img(2*h, w, CV_8UC1, mLatestImage.data.data());
     cv::Mat leftImage = img.rowRange(0, h).clone();
     cv::Mat rightImage = img.rowRange(h, 2*h).clone();
 
@@ -239,7 +244,6 @@ struct ViewWorker {
       if (mRequest.view_id == drc::data_request_t::STEREO_MAP) {
         DepthImageView::Ptr view =
           mStereoHandler->getDepthImageView(spec.mClipPlanes);
-        std::cout << "STEREO VIEW HERE" << std::endl;
         if (view != NULL) {
           view->setId(mRequest.view_id);
           drc::map_image_t msg;
