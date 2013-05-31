@@ -20,6 +20,9 @@
 using namespace std;
 
 
+int total_buffers = 30; // totol processes to keep cache of. (safety limit)
+int buffer_size =5; // size of buffer history
+
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_);
@@ -34,6 +37,7 @@ class Pass{
     void requestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::printf_request_t* msg);   
     
     void outputBuffer(boost::circular_buffer<string> &cb);
+    void outputBufferList();
     
     std::map<int, boost::circular_buffer<string> > pmap_;
 };
@@ -55,8 +59,10 @@ void Pass::outputBuffer(boost::circular_buffer<string> &cb){
 }
 
 void Pass::requestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::printf_request_t* msg){
+  std::cout << "==============================\n";
+    
   if( pmap_.find(msg->sheriff_id) !=pmap_.end() ){ // if it exists
-    std::cout << "about to reply to request for "<< msg->sheriff_id << "\n";
+    std::cout << "Reply to request for "<< msg->sheriff_id << "\n";
     std::map<int, boost::circular_buffer<string> >::iterator it;
     it = pmap_.find(msg->sheriff_id);
     
@@ -81,24 +87,36 @@ void Pass::requestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& cha
     reply.robot=false; //... actually can't provide this information
     lcm_->publish("PMD_PRINTF_REPLY", &reply);
   }
+  
+  std::cout << "==============================\n";
 }
 
 
-void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  bot_procman::printf_t* msg){
+void Pass::outputBufferList(){
   std::cout << pmap_.size() << " buffers total\n";
   typedef std::map<int, boost::circular_buffer<string> >::iterator it_type;
   for(it_type iterator = pmap_.begin(); iterator != pmap_.end(); iterator++) {
     std::cout << iterator->first << ", ";
   }  
   std::cout << "\n";
+}
+
+void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf, 
+                        const std::string& channel, const  bot_procman::printf_t* msg){
   
+  //outputBufferList();
   
   // Search for the id, if you dont find it add a new map member:
   if( pmap_.find(msg->sheriff_id) ==pmap_.end() ){
-    std::cout << "didnt find "<< msg->sheriff_id <<"\n";
-    boost::circular_buffer<string> cb(5);
-    pmap_[msg->sheriff_id] = cb;      
+    
+    if (pmap_.size() < total_buffers){
+      std::cout << "didnt find "<< msg->sheriff_id <<" - adding it\n";
+      boost::circular_buffer<string> cb(buffer_size);
+      pmap_[msg->sheriff_id] = cb;    
+    }else{
+      std::cout << "didnt find "<< msg->sheriff_id <<" - but we already have "<< pmap_.size() << " buffers. not creating new buffer\n";
+      return;
+    }
   }
 
   std::map<int, boost::circular_buffer<string> >::iterator it;
@@ -110,8 +128,7 @@ void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf,
 
   std::string text_str = msg->text;
   
-  text_str.erase( std::remove(text_str.begin(), text_str.end(), '\r'), text_str.end() );
-  text_str.erase(std::remove(text_str.begin(), text_str.end(), '\n'), text_str.end());
+  //text_str.erase( std::remove(text_str.begin(), text_str.end(), '\r'), text_str.end() );
 
   std::string is_robot;
   if (msg->deputy_name == "extra"){
@@ -120,10 +137,14 @@ void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf,
     is_robot ="1";
   }
   std::stringstream ss;
-  ss << is_robot << secs_100 << text_str.substr (0,48) ;
+  ss << is_robot << secs_100 << text_str.substr (0,48)  ;
+
+  string string_last = ss.str();
+  string_last.erase(std::remove(string_last.begin(), string_last.end(), '\n'), string_last.end());
+  string_last = string_last + "\n";
   // BOOLTIMEMESSAGE
   
-  string msg_plus = ss.str() ;
+  string msg_plus = string_last ;
   it->second.push_back (msg_plus) ;
 
   //outputBuffer(it->second);

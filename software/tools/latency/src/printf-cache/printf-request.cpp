@@ -67,7 +67,7 @@ int64_t _timestamp_now(){
 void Pass::replyHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::printf_reply_t* msg){
 
-  //* Replicate the messages locally
+  //* Replicate the messages locally for the sheriff
   for(size_t i=0; i <msg->printfs.size() ; i++){
       std::cout << i<<": " << msg->printfs[i] << "\n";
       bot_procman::printf_t msg_out;
@@ -95,7 +95,9 @@ void Pass::replyHandler(const lcm::ReceiveBuffer* rbuf,
     std::cout << "<--- no messages cached for this process --->\n"; 
   }
   for(size_t i=0; i <msg->printfs.size() ; i++){
-      std::cout << i<<": " << msg->printfs[i] << "\n";
+      string string_last = msg->printfs[i];
+      string_last.erase(std::remove(string_last.begin(), string_last.end(), '\n'), string_last.end());
+      std::cout << i<<": " << string_last << "\n";
   }	
   exit(-1);
 }
