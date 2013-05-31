@@ -3,23 +3,23 @@ function xtraj = fromProne
 
 draw_frames=false;
 
-s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
-warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
-warning(s);
+options.floating = true;
+options.dt = 0.002;
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+data = load('data/atlas_prone.mat');
+r = setInitialState(r,data.xstar);
 v = r.constructVisualizer();
 
-data = load('data/aa_atlas_fp.mat');
 q = data.xstar(1:getNumDOF(r));
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
-cost.pelvis_x = 0;
-cost.pelvis_y = 0;
-cost.pelvis_z = 0;
-cost.pelvis_roll = 1000;
-cost.pelvis_pitch = 1000;
-cost.pelvis_yaw = 0;
+cost.base_x = 0;
+cost.base_y = 0;
+cost.base_z = 0;
+cost.base_roll = 1000;
+cost.base_pitch = 1000;
+cost.base_yaw = 0;
 cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);

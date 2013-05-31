@@ -12,7 +12,7 @@ options.dt = 0.002;
 if (nargin>0) options.use_mex = use_mex;
 else options.use_mex = false; end
 
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 

@@ -239,9 +239,9 @@ classdef QPController < MIMODrakeSystem
     kinsol = doKinematics(r,q,false,true);
     
     % get active contacts
-    phi = contactConstraints(r,kinsol,desired_supports);
+    phi = contactConstraints(r,kinsol,desired_supports,supp.contact_pts);
 
-    num_desired_contacts = obj.num_body_contacts(desired_supports);
+    num_desired_contacts = supp.num_contact_pts;
     % check foot contacts via kinematics
     lfoot_contact_state_kin = 0;
     rfoot_contact_state_kin = 0;
@@ -265,11 +265,14 @@ classdef QPController < MIMODrakeSystem
     rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
     
     active_supports = [];
+    active_contact_pts = {};
     if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
       active_supports = [active_supports; obj.lfoot_idx];
+      active_contact_pts{length(active_supports)} = supp.contact_pts{find(obj.lfoot_idx==desired_supports)};
     end
     if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
       active_supports = [active_supports; obj.rfoot_idx];
+      active_contact_pts{length(active_supports)} = supp.contact_pts{find(obj.rfoot_idx==desired_supports)};
     end
     
     %----------------------------------------------------------------------
@@ -280,6 +283,7 @@ classdef QPController < MIMODrakeSystem
         c_pre = sum(num_desired_contacts(1:i-1));
         if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
           active_supports = [active_supports; desired_supports(i)];
+          active_contact_pts{length(active_supports)} = supp.contact_pts{i};
         end
       end
     end
@@ -392,7 +396,7 @@ classdef QPController < MIMODrakeSystem
       Jdot = Jdot(1:2,:);
     
       if ~isempty(active_supports)
-        [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+        [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
         nc = length(phi);
       else
         nc = 0;
@@ -401,7 +405,7 @@ classdef QPController < MIMODrakeSystem
       %     neps = length(active_supports)*2*dim;
       
       if nc > 0
-        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
+        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
         %       Jp=zeros(neps,nq);
         %       Jpdot=zeros(neps,nq);
         %       for k=1:length(active_supports)

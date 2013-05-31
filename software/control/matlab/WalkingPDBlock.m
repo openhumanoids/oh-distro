@@ -96,8 +96,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
-      obj.rfoot_body_idx = r.findLinkInd(r.r_foot_name);
-      obj.lfoot_body_idx = r.findLinkInd(r.l_foot_name);
+      obj.rfoot_body_idx = r.findLinkInd('r_foot');
+      obj.lfoot_body_idx = r.findLinkInd('l_foot');
       obj.robot = r;
       
     end
