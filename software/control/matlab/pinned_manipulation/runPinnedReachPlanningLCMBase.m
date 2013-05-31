@@ -256,13 +256,13 @@ while(1)
   posture_goal =posture_goal_listener.getNextMessage(0);  
   if(~isempty(posture_goal))
       disp('Preset Posture goal received .');
-      if(posture_goal.preset==1)
+      if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));%standing hands down
-      elseif(posture_goal.preset==2)
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_UP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
-      elseif(posture_goal.preset==3)
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
-      elseif(posture_goal.preset==4) 
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
       end
       q_desired = d.xstar(1:getNumDOF(r));
