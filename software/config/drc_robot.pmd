@@ -468,8 +468,13 @@ group "m.5.ground_truth"{
         exec = "roslaunch translators cheating.launch";
         host = "robot";
     }
-    cmd "estpub" {
+    
+cmd "estpub" {
         exec = "est_robot_state_publisher -g";
+        host = "extra";
+    }
+cmd "estdriving" {
+        exec = "driving_state_publisher";
         host = "extra";
     }
 }
