@@ -23,10 +23,6 @@ group "a.1.core" {
         exec = "roslaunch translators not_cheating.launch";
         host = "robot";
     }
-    cmd "aa-perception" {
-        exec = "roslaunch translators perception.launch";
-        host = "robot";
-    }
     cmd "drc-printf-cache" {
         exec = "drc-printf-cache";
         host = "robot";
@@ -93,14 +89,6 @@ group "a.1.core" {
     }
     cmd "image-rx-REMOVEFORCOMP" {
         exec = "drc-image-receive";
-        host = "robot";
-    }
-    cmd "simple_right_grasp" {
-        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
-        host = "robot";
-    }
-    cmd "simple_left_grasp" {
-        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
         host = "robot";
     }
 }
@@ -387,6 +375,10 @@ group "m.1.robot" {
         exec = "stereo-bm";
         host = "robot";
     }
+    cmd "perception-restart" {
+        exec = "roslaunch translators perception.launch";
+        host = "robot";
+    }
 }
 
 group "m.2.simple-control" {
@@ -412,6 +404,14 @@ group "m.2.simple-control" {
     }
     cmd "multisense_fps" {
         exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
+        host = "robot";
+    }
+    cmd "simple_right_grasp" {
+        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+        host = "robot";
+    }
+    cmd "simple_left_grasp" {
+        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
         host = "robot";
     }
 }
