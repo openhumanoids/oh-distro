@@ -37,6 +37,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
    bool bodypose_adjustment_enabled;
    bool jointdof_adjustment_enabled;
    bool jointdof_markers_initialized;
+   std::vector<std::string> _jointdof_marker_filter;
+   bool _jointdof_marker_filter_on;
    
    void init_vars(void);
   public:  
@@ -156,7 +158,6 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void highlight_body(std::string &body_name)   {
        selected_link = body_name; 
    };   
-   
     
    void highlight_marker(std::string &marker_name)   {
        selected_marker = marker_name; 
@@ -179,6 +180,25 @@ class InteractableGlKinematicBody: public GlKinematicBody
 //      if(_collision_detector_jointdof_markers==NULL)
 //        _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
     }
+   };
+   
+   bool set_jointdof_marker_filter(std::vector<std::string> joint_filter_list){
+
+    // go through joint name list and verufy that everything is ok.
+    std::vector<std::string>::const_iterator found;
+    for(size_t i=0;i<_jointdof_marker_filter.size();i++) 
+    {
+       found = std::find (_joint_names.begin(), _joint_names.end(),_jointdof_marker_filter[i]);
+       if(found == _link_geometry_names.end());
+       {
+         std::cerr << "In InteractableGlKinematicBody::set_jointdof_marker_filter: " <<_jointdof_marker_filter[i] << " does not exist in _joint_names\n";
+        return false;
+       }
+    }
+    _jointdof_marker_filter.clear();
+    _jointdof_marker_filter = joint_filter_list;
+    _jointdof_marker_filter_on = true;
+    return true;
    };
    
   void set_bodypose_adjustment_type(int type){
