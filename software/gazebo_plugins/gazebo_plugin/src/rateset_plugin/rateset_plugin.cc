@@ -10,17 +10,11 @@
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
-#include <pointcloud_tools/pointcloud_math.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+//#include <pointcloud_tools/pointcloud_math.hpp>
+//#include <pointcloud_tools/pointcloud_vis.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 
-struct AffordancePlus
-{
-  Eigen::Isometry3d offset; // offset between the ros pose and the affordance collection pose
-  drc::affordance_t aff;
-};
-
+#include <boost/foreach.hpp>
 
 namespace gazebo
 {
@@ -101,6 +95,20 @@ void RateSetPlugin::OnUpdate(){
   }
 }
 
+
+Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
+  double sy = sin(yaw*0.5);
+  double cy = cos(yaw*0.5);
+  double sp = sin(pitch*0.5);
+  double cp = cos(pitch*0.5);
+  double sr = sin(roll*0.5);
+  double cr = cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return Eigen::Quaterniond(w,x,y,z);
+}
 
 void RateSetPlugin::QueueThread(){
     lcm::LCM lcm_subscribe_ ;

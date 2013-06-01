@@ -12,8 +12,8 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 
 add_library(rateset_plugin SHARED  rateset_plugin.cc)
 pods_install_libraries(rateset_plugin)
-pods_use_pkg_config_packages(rateset_plugin eigen3
-        pointcloud_lcm        pointcloud_vis        pointcloud_math)
+pods_use_pkg_config_packages(rateset_plugin eigen3)
+#        pointcloud_lcm        pointcloud_vis        pointcloud_math)
 target_link_libraries(rateset_plugin ${GAZEBO_LIBRARIES} lcm boost_thread)
 pods_install_pkg_config_file(rateset_plugin
     CFLAGS

@@ -10,7 +10,7 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 #add_subdirectory(src/hokuyospin_plugin)
-add_subdirectory(src/oracle_plugin)
+#add_subdirectory(src/oracle_plugin)
 
 add_subdirectory(src/rateset_plugin)
 
