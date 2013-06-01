@@ -1,6 +1,6 @@
 function state = csv_to_mat(csv_file, mat_file)
 
-data = dlmread(csv_file);
+data = load(csv_file);
 
 % check if kinematic foot velocities are available
 legkinvels = size(data,2)>91;
