@@ -37,8 +37,9 @@ pos_control_flag = [1.0 0 0    1.0 1.0 1.0   1.0 0 0   1.0 1.0 1.0]';
 %pos_control_flag = [1.0 0 0    1.0 0.0 0.0   1.0 0 0   1.0 1.0 1.0]'; % where ever there is zero we are doing mixed control
 %Kd(find(pos_control_flag==0))= 0;
 %Kp(find(pos_control_flag==0))= 10;
+msg_timeout = 5; % ms
 while(1)
-    [x,ts] = getNextMessage(grasp_state_listener,1);%getNextMessage(obj,timeout)
+    [x,ts] = getNextMessage(grasp_state_listener,msg_timeout);%getNextMessage(obj,timeout)
     if (~isempty(x))
         fprintf('received message at time %f\n',ts);
         %fprintf('state is %f\n',x);
