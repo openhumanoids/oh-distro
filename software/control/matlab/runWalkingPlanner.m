@@ -126,17 +126,17 @@ while true
     joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
     plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
     plan_pub.publish(ts,xtraj);
+    if debug
+      tt = 0:0.04:ts(end);
+      compoints = zeros(3,length(tt));
+      for i=1:length(tt)
+        compoints(1:2,i) = comtraj.eval(tt(i));
+      end
+      compoints(3,:) = getTerrainHeight(r,compoints(1:2,:));
+      plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
+    end  
   end
 
-  if debug
-    tt = 0:0.04:ts(end);
-    compoints = zeros(3,length(tt));
-    for i=1:length(tt)
-      compoints(1:2,i) = comtraj.eval(tt(i));
-    end
-    compoints(3,:) = getTerrainHeight(r,compoints(1:2,:));
-    plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
-  end  
 end
 
 end
