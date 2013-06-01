@@ -49,6 +49,14 @@ end
 footpos = struct('right', struct(), 'left', struct());
 footpos.right.orig = [foot0.right, step_locations.right(1:6,1)];
 footpos.left.orig = [foot0.left, step_locations.left(1:6,1)];
+footpos.right.toe.min = nan*ones(3,2);
+footpos.right.toe.max = nan*ones(3,2);
+footpos.right.heel.min = nan*ones(3,2);
+footpos.right.heel.max = nan*ones(3,2);
+footpos.left.toe.min = nan*ones(3,2);
+footpos.left.toe.max = nan*ones(3,2);
+footpos.left.heel.min = nan*ones(3,2);
+footpos.left.heel.max = nan*ones(3,2);
 
 zmp = [com0(1:3), feetCenter(footpos.right.orig(:,2), footpos.left.orig(:,2))];
 zmp = zmp(1:2,:);
@@ -75,8 +83,16 @@ while 1
     biped.footOrig2Contact(step_locations.(m_foot)(1:6, istep.(m_foot)), 'center', is_right_foot),...
     biped.footOrig2Contact(step_locations.(m_foot)(1:6, istep.(m_foot)+1), 'center', is_right_foot), options);
   tstep = ts(end) + swing_ts;
-  step.(m_foot).orig = biped.footContact2Orig(swing_poses,'center',strcmp(m_foot, 'right'));
-  step.(s_foot).orig = repmat(step_locations.(s_foot)(1:6, istep.(s_foot)), 1, length(tstep));
+  step.(m_foot) = swing_poses;
+  step.(m_foot).orig = biped.footContact2Orig(swing_poses.center,'center',strcmp(m_foot, 'right'));
+  % step.(m_foot).toe = toe_heights;
+  stance_pos = step_locations.(s_foot)(1:6, istep.(s_foot));
+  % stance_toe = biped.footOrig2Contact(stance_pos,'toe', strcmp(s_foot, 'right'));
+  step.(s_foot).orig = repmat(stance_pos, 1, length(tstep));
+  step.(s_foot).toe.min = repmat(nan, 3, length(tstep));
+  step.(s_foot).toe.max = repmat(nan, 3, length(tstep)); 
+  step.(s_foot).heel.min = repmat(nan, 3, length(tstep)); 
+  step.(s_foot).heel.max = repmat(nan, 3, length(tstep)); 
 
   % Release orientation constraints on the foot during the middle of the swing
   step.(m_foot).orig(4:5,3:end-3) = nan;
@@ -102,10 +118,12 @@ while 1
   
   for f = {'right', 'left'}
     foot = f{1};
-%     tspan = foottraj.(foot).orig.getTimeSpan();
-%     step_traj.(foot).orig = step_traj.(foot).orig.shiftTime(tspan(end));
-    % foottraj.(foot).orig = foottraj.(foot).orig.append(step_traj.(foot).orig);
     footpos.(foot).orig = [footpos.(foot).orig, step.(foot).orig];
+    footpos.(foot).toe.min = [footpos.(foot).toe.min, step.(foot).toe.min];
+    footpos.(foot).toe.max = [footpos.(foot).toe.max, step.(foot).toe.max];
+    footpos.(foot).heel.min = [footpos.(foot).heel.min, step.(foot).heel.min];
+    footpos.(foot).heel.max = [footpos.(foot).heel.max, step.(foot).heel.max];
+    % footpos.(foot).toe_z_min = [footpos.(foot).toe_z_min, step.(foot).toe_z_min];
   end
   zmp = [zmp, stepzmp(1:2,:)];
   ts = [ts, tstep];
@@ -125,7 +143,17 @@ for f = {'right', 'left'}
   
   % add a segment at the end to recover
   footpos.(foot).orig = [footpos.(foot).orig footpos.(foot).orig(:,end)];
+  footpos.(foot).toe.min = [footpos.(foot).toe.min footpos.(foot).toe.min(:,end)];
+  footpos.(foot).toe.max = [footpos.(foot).toe.max footpos.(foot).toe.max(:,end)];
+  footpos.(foot).heel.min = [footpos.(foot).heel.min footpos.(foot).heel.min(:,end)];
+  footpos.(foot).heel.max = [footpos.(foot).heel.max footpos.(foot).heel.max(:,end)];
+  % footpos.(foot).toe_z_min = [footpos.(foot).toe_z_min footpos.(foot).toe_z_min(end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
+  foottraj.(foot).toe.min = PPTrajectory(foh(ts, footpos.(foot).toe.min));
+  foottraj.(foot).toe.max = PPTrajectory(foh(ts, footpos.(foot).toe.max));
+  foottraj.(foot).heel.min = PPTrajectory(foh(ts, footpos.(foot).heel.min));
+  foottraj.(foot).heel.max = PPTrajectory(foh(ts, footpos.(foot).heel.max));
+  % foottraj.(foot).toe_z_min = PPTrajectory(foh(ts, footpos.(foot).toe_z_min));
   footsupport.(foot) = [footsupport.(foot), 1];
 end
 
@@ -145,13 +173,15 @@ for i=1:length(zmp_ts)
 end
 
 if debug
-  tt = 0:0.02:zmp_ts(end);
-  zmppoints = ones(3,length(tt));
-  for i=1:length(tt)
-    zmppoints(1:2,i) = zmptraj.eval(tt(i));
-  end
+%   tt = 0:0.02:zmp_ts(end);
+  tt = zmp_ts;
+  zmppoints = zeros(3,length(tt));
+  zmppoints(1:2,:) = zmptraj.eval(tt);
+%   for i=1:length(tt)
+%     zmppoints(1:2,i) = zmptraj.eval(tt(i));
+%   end
   zmppoints(3,:) = getTerrainHeight(biped,zmppoints(1:2,:));
-  plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',1,true);
+  plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',2,true);
   % biped.plot_step_clearance_lcm(footpos);
 end
 

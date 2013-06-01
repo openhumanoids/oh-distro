@@ -86,19 +86,26 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_zmptraj_bytes = length(msg.zmptraj); 
 
-      lfoottraj = data.lfoottraj;
-      save('tmp_r.mat','lfoottraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.lfoottraj = fread(fid,inf,'*uint8');
+      link_constraints = data.link_constraints;
+      save('tmp_r.mat', 'link_constraints');
+      fid = fopen('tmp_r.mat', 'r');
+      msg.link_constraints = fread(fid,inf,'*uint8');
       fclose(fid);
-      msg.n_lfoottraj_bytes = length(msg.lfoottraj); 
+      msg.n_link_constraints_bytes = length(msg.link_constraints);
+
+      % lfoottraj = data.lfoottraj;
+      % save('tmp_r.mat','lfoottraj');
+      % fid = fopen('tmp_r.mat','r');
+      % msg.lfoottraj = fread(fid,inf,'*uint8');
+      % fclose(fid);
+      % msg.n_lfoottraj_bytes = length(msg.lfoottraj); 
       
-      rfoottraj = data.rfoottraj;
-      save('tmp_r.mat','rfoottraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.rfoottraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
+      % rfoottraj = data.rfoottraj;
+      % save('tmp_r.mat','rfoottraj');
+      % fid = fopen('tmp_r.mat','r');
+      % msg.rfoottraj = fread(fid,inf,'*uint8');
+      % fclose(fid);
+      % msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
       
       qnom = data.qnom;
       save('tmp_r.mat','qnom');

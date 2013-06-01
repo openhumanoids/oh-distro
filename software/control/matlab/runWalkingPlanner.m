@@ -23,21 +23,25 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
 r = compile(r);
-
+state_frame = getStateFrame(r);
+state_frame.subscribe('EST_ROBOT_STATE');
+nq = getNumDOF(r);
+  
 lc = lcm.lcm.LCM.getSingleton();
 qnom_mon = drake.util.MessageMonitor(drc.robot_posture_preset_t,'utime');
 lc.subscribe('COMMITTED_POSTURE_PRESET',qnom_mon);
 qnom_state = '';
+fixed_links = [];
 while true 
 
-  d = load('data/atlas_fp.mat');
-  xstar = d.xstar;
+  % if nominal posture was not set previously. Load from file.
+  if(~strcmp(qnom_state,'current')) 
+   d = load('data/atlas_fp.mat');
+   xstar = d.xstar;     
+  end
+  
   r = r.setInitialState(xstar);
-  state_frame = getStateFrame(r);
-  state_frame.subscribe('EST_ROBOT_STATE');
-
-  nq = getNumDOF(r);
-  x0 = xstar;
+  x0 = xstar; % sho
   qstar = xstar(1:nq);
 
   pose = [goal_x;goal_y;0;0;0;goal_yaw];
@@ -51,7 +55,6 @@ while true
     msg =['Walk Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
     waiting = true;
     committed = false;
-    foottraj = [];
 
     while waiting
       [x,~] = getNextMessage(state_frame,10);
@@ -76,23 +79,37 @@ while true
       qnom_data = qnom_mon.getNextMessage(0);
       
       if(~isempty(qnom_data))
+        disp('got new committed posture preset')
         qnom_msg = drc.robot_posture_preset_t(qnom_data);
-        if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT)
+        qnom_msg.preset
+        if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           qnom_state = 'current';
+        end
+        if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
+          fixed_links = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0]);
+        elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
+          fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0]);
+        elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
+          fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0]);
+          fixed_links(2) = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0]);
+        else
+          fixed_links = [];
         end
       end
       
       if(strcmp(qnom_state,'current'))
+       % update xstar to current posture.
         qstar = x0(1:nq);
+        xstar = x0; 
       end
     end
   end
   mu = footstep_opts.mu;
-  [xtraj, qtraj, htraj, support_times, supports, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts);
+  [xtraj, qtraj, htraj, support_times, supports, comtraj, link_constraints, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts, fixed_links);
   %hddot = fnder(htraj,2);
   walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'htraj',htraj,...
       'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',[],'mu',mu,...
-      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj,'qnom',qstar)
+      'link_constraints',link_constraints,'zmptraj',zmptraj,'qnom',qstar)
   last_approved_footsteps = footsteps;
 
   
@@ -118,37 +135,6 @@ while true
     compoints(3,:) = getTerrainHeight(r,compoints(1:2,:));
     plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
   end  
-
-  % msg ='Walk Plan : Waiting for confirmation...'; disp(msg); send_status(status_code,0,0,msg);
-  % plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
-  % reject_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
-  % waiting = true;
-  % execute = true;
-  % while waiting
-  %   rplan = plan_listener.getNextMessage(100);
-  %   if (~isempty(rplan))
-  %     % for now don't do anything with it, just use it as a flag
-  %     msg ='Walk Plan : Confirmed. Executing...'; disp(msg); send_status(status_code,0,0,msg);
-  %     waiting = false;
-  %   end
-  %   rplan = reject_listener.getNextMessage(100);
-  %   if (~isempty(rplan))
-  %     % for now don't do anything with it, just use it as a flag
-  %     disp('Walk Plan : Plan rejected.');
-  %     waiting = false;
-  %     execute = false;
-  %   else 
-  %   %   plan_pub.publish(ts,xtraj);
-  %     pause(0.5);
-  %   end
-  % end
-
-  % if execute
-  %   walking_pub = WalkingPlanPublisher('WALKING_PLAN');
-  %   walking_pub.publish(0,struct('S',V.S,'s1',V.s1,'htraj',htraj,'hddtraj', ...
-  %     hddot,'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
-  %     'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj));
-  % end
 end
 
 end
