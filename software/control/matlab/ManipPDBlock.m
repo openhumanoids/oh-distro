@@ -19,6 +19,9 @@ classdef ManipPDBlock < MIMODrakeSystem
 		num_rhand_pts;
 		num_lhand_pts;
 		Kp_c; % cartesian feedback proportion gain
+    Ki_c;
+    lambda; % For L2 penalizing.
+    int_interval;
 		lc;
 		mon;
   end
@@ -27,7 +30,6 @@ classdef ManipPDBlock < MIMODrakeSystem
     function obj = ManipPDBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
-      disp('run the controller that should eliminate steady state error for left and right hands');
       coords = AtlasCoordinates(r);
       input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
       obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);
@@ -85,9 +87,29 @@ classdef ManipPDBlock < MIMODrakeSystem
 				end
 				obj.Kp_c = options.Kp_c;
 			else
-				obj.Kp_c = 0.1*diag([1 1 1]);
-			end
+				obj.Kp_c = 1*diag([1 1 1]);
+      end
+      
+      if(isfield(options,'Ki_c'))
+				typecheck(options.Ki_c,'double');
+				sizecheck(options.Ki_c,[3,3]);
+				if(any(real(eig(options.Kp_c))<-1e-5))
+					error('ManipPDBlock: Ki_c must be positive definite');
+				end
+				obj.Ki_c = options.Ki_c;
+			else
+				obj.Ki_c = 0.1*diag([1 1 1]);
+      end
 			
+      obj.int_interval = 1;
+      obj.lambda = 1e-6;
+      
+% 			obj.rhand_pts = [[0;0;0] [0;0.1;0] [0;0;0.1]];
+% 			obj.lhand_pts = [[0;0;0] [0;0.1;0] [0;0;0.1]];
+      obj.rhand_pts = zeros(3,1);
+      obj.lhand_pts = zeros(3,1);
+			obj.num_rhand_pts = size(obj.rhand_pts,2);
+			obj.num_lhand_pts = size(obj.lhand_pts,2);
 			if(isfield(options,'cartesian_active_tol'))
 				typecheck(options.cartesian_active_tol,'double');
 				sizecheck(options.cartesian_active_tol,[1,1]);
@@ -96,21 +118,28 @@ classdef ManipPDBlock < MIMODrakeSystem
 				end
 				obj.cartesian_active_tol = options.cartesian_active_tol;
 			else
-				obj.cartesian_active_tol = 0.02^2*(obj.num_lhand_pts+obj.num_rhand_pts);
+				obj.cartesian_active_tol = 0.015^2*(obj.num_lhand_pts+obj.num_rhand_pts);
 			end
 			
 			obj.lc = lcm.lcm.LCM.getSingleton();
-			obj.mon = drake.util.MessageMonitor(drc.robot_plant_t,'utime');
+			obj.mon = drake.util.MessageMonitor(drc.robot_plan_t,'utime');
 			obj.lc.subscribe('COMMITTED_ROBOT_PLAN',obj.mon);
-			controller_data.setField('ee_goal',inf(3,obj.num_rhand_pts));
+			controller_data.setField('ee_goal',inf(3,obj.num_rhand_pts+obj.num_lhand_pts));
 			controller_data.setField('ee_controller_state',0);
+      controller_data.setField('ee_err_int',zeros(3,obj.num_rhand_pts+obj.num_lhand_pts));
+      controller_data.setField('int_start_time',0);
+      controller_data.setField('int_prev_t',0);
 			obj.controller_data = controller_data;
-				matdata.t = [];
-				matdata.ee_curr = [];
-				matdata.ee_goal = [];
-				matdata.qdd_err = [];
-				matdata.qdd_cartesian = [];
-				save('cartesian_pd_err.mat','-struct','matdata','t','ee_curr','ee_goal','qdd_err','qdd_cartesian');
+% 				matdata.t = [];
+% 				matdata.q = [];
+% 				matdata.q_des = [];
+% 				matdata.ee_curr = [];
+% 				matdata.ee_goal = [];
+%         matdata.ee_err = [];
+% 				matdata.delta_q = [];
+%         matdata.q_err = [];
+%         matdata.y = [];
+% 				save('cartesian_pd_err.mat','-struct','matdata','t','q','q_des','ee_curr','ee_goal','ee_err','delta_q','q_err','y');
     end
    
     function y=mimoOutput(obj,t,~,varargin)
@@ -120,10 +149,12 @@ classdef ManipPDBlock < MIMODrakeSystem
       qd = x(obj.nq+1:end);
 			r = obj.robot;
 
-			controller_data = getData(obj.controller_data);
-			typecheck(controller_data.ee_goal,'double');
-			sizecheck(controller_data.ee_goal,[3,obj.num_rhand_pts+obj.num_lhand_pts]);
-			ee_goal = controller_data.ee_goal;
+			ctrl_data = getData(obj.controller_data);
+			ee_goal = ctrl_data.ee_goal;
+			ee_controller_state = ctrl_data.ee_controller_state;
+      ee_err_int = ctrl_data.ee_err_int;
+      int_start_time = ctrl_data.int_start_time;
+      int_prev_t = ctrl_data.int_prev_t;
 			
 			data = getNextMessage(obj.mon,0);
 			if(~isempty(data))
@@ -139,28 +170,58 @@ classdef ManipPDBlock < MIMODrakeSystem
 			end
 			
 			% I suppose that the foot position does not change
-			if(ee_controller_state == 1)
+			if(ee_controller_state ~=0)
 				kinsol_curr = doKinematics(r,q);
 				[rh_curr,J_rh] = forwardKin(r,kinsol_curr,obj.rhand_body,obj.rhand_pts,0);
 				[lh_curr,J_lh] = forwardKin(r,kinsol_curr,obj.lhand_body,obj.lhand_pts,0);
 				rf_curr = forwardKin(r,kinsol_curr,obj.rfoot_body,obj.rfoot_pts,1);
-				lh_curr = forwardKin(r,kinsol_curr,obj.lfoot_body,obj.lfoot_pts,1);
+				lf_curr = forwardKin(r,kinsol_curr,obj.lfoot_body,obj.lfoot_pts,1);
 				ee_curr = [rh_curr lh_curr];
-				ee_err = ee_goal-ee_err;
+				ee_err = ee_goal-ee_curr;
 				ee_err_norm = sum(sum(ee_err.*ee_err,1));
-				if(ee_err_norm<obj.cartesian_active_tol)
-					ee_controller_state = 2;
-				end
+        if(ee_controller_state == 1)
+          if(ee_err_norm<obj.cartesian_active_tol)
+            int_start_time = t;
+            ee_controller_state = 2;
+          end
+        end
 			end
 
-			if(ee_controller_state == 0 || ee_controller_state == 1)
-				delta_q = zeros(obj.nq,1);
-			elseif(ee_controller_state == 2)
-				J = [J_rh J_lh];
-				delta_q = J(:,7:end)'*reshape(obj.Ki_p*ee_curr,[],1);
-			end
-			q_err = [q_des(1:6)-q(1:6);anglediff(q_des(7:end),q(7:end))]+delta_q;
+      q_err = [q_des(1:3)-q(1:3);angleDiff(q(4:end),q_des(4:end))];
+			if(ee_controller_state == 2||ee_controller_state == 3)
+        display(sprintf('The right hand error is %10.6f, %10.6f, %10.6f\n',ee_err(1,1),ee_err(2,1),ee_err(3,1)));        
+        J = [J_rh;J_lh];
+        J_joint = J(:,7:end);
+        ee_err_bnd = 0.01;
+        ee_err = max(min(ee_err,ee_err_bnd),-ee_err_bnd);
+        delta_q = zeros(obj.nq,1);
+        if(ee_controller_state == 2)
+          if(t-int_start_time<obj.int_interval)
+            ee_err_int = ee_err_int+ee_err*(t-int_prev_t);
+            delta_q(7:end) = J_joint'*(J_joint*J_joint'+obj.lambda*eye(3*(obj.num_lhand_pts+obj.num_rhand_pts)))*reshape(obj.Ki_c*ee_err_int,[],1);
+            delta_q(34) = 0;
+            int_prev_t = t;
+          else
+            ee_controller_state = 3;
+            display('Start proportional control');
+          end
+        end
+        if(ee_controller_state == 3)
+          delta_q(7:end) = J_joint'*(J_joint*J_joint'+obj.lambda*eye(3*(obj.num_lhand_pts+obj.num_rhand_pts)))*reshape(obj.Kp_c*ee_err,[],1);
+          delta_q(34) = 0;
+        end
+        q_err = q_err+delta_q;
+      end
+      
+      
+			
 			y = obj.Kp*q_err-obj.Kd*qd;
+      
+			obj.controller_data.setField('ee_goal',ee_goal);
+			obj.controller_data.setField('ee_controller_state',ee_controller_state);
+      obj.controller_data.setField('int_start_time',int_start_time);
+      obj.controller_data.setField('ee_err_int',ee_err_int);
+      obj.controller_data.setField('int_prev_t',int_prev_t);
     end
   end
   
