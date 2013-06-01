@@ -465,7 +465,7 @@ group "m.3.dev_tools" {
 
 group "m.5.ground_truth"{
     cmd "cheating_launch" {
-        exec = "roslaunch translators cheating.launch";
+        exec = "roslaunch translators cheating.launch --wait";
         host = "robot";
     }
     
