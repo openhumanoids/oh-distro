@@ -38,8 +38,10 @@ zmap = getTerrainHeight(biped,com(1:2));
 limp = LinearInvertedPendulum(com(3)-zmap);
 
 % get COM traj from desired ZMP traj
-[c,V] = ZMPtracker(limp,zmptraj);
-comtraj = COMplanFromTracker(limp,com(1:2),[0;0],zmptraj.tspan,c);
+options.use_tvlqr = false;
+options.ignore_frames = true;
+options.com0 = com(1:2);
+[c,V,comtraj] = ZMPtracker(limp,zmptraj,options);
 
 % comf = mean([footsteps(end).pos(1:2), footsteps(end-1).pos(1:2)], 2);
 % comtraj = ZMPplan(limp,com(1:2),comf,zmptraj);

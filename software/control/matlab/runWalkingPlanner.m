@@ -107,6 +107,7 @@ while true
   mu = footstep_opts.mu;
   [xtraj, qtraj, htraj, support_times, supports, comtraj, link_constraints, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps, footstep_opts, fixed_links);
   %hddot = fnder(htraj,2);
+    tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
   walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'htraj',htraj,...
       'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',[],'mu',mu,...
       'link_constraints',link_constraints,'zmptraj',zmptraj,'qnom',qstar)
