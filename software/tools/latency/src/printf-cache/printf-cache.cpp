@@ -21,7 +21,7 @@ using namespace std;
 
 
 int total_buffers = 30; // totol processes to keep cache of. (safety limit)
-int buffer_size =5; // size of buffer history
+int buffer_size =10; // size of buffer history
 
 class Pass{
   public:
