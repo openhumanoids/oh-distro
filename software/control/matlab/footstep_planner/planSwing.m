@@ -88,6 +88,7 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
 else
   %% Just ignore the terrain and provide an apex pose
   step_dist_xy = 1;
+  has_terrain = false;
   traj_pts = [[0; last_pos(3)], [0.5;apex_pos(3)], [1;next_pos(3) + pre_contact_height]];
 end
 traj_pts_xyz = [last_pos(1) + (next_pos(1) - last_pos(1)) * traj_pts(1,:) / step_dist_xy;
