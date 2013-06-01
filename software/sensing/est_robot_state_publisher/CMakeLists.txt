@@ -18,6 +18,13 @@ pods_use_pkg_config_packages(est_robot_state_publisher   model-client lcm lcmtyp
 pods_install_executables(est_robot_state_publisher)
 
 
+add_executable(driving_state_publisher src/driving_state_publisher.cpp)
+pods_use_pkg_config_packages(driving_state_publisher   model-client lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES}
+  bot2-param-client
+  bot2-frames  bot2-frames_cpp)
+pods_install_executables(driving_state_publisher)
+
+
 ######### THIS IS NO LONGER USED IN THE SYSTEM #############################
 # EST_ROBOT_STATE -> EST_ROBOT_STATE_MINIMAL ->  network
 #add_executable(est_robot_state_to_minimal src/est_robot_state_to_minimal.cpp)
