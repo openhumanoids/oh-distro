@@ -507,6 +507,8 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   if((*self->marker_selection)  != " "){
     double t = self->ray_hit_t;
     self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+    //TODO: Add support for joint dof markers [switch via check box in main pane instead of a popup]
+    //TODO: JointDof constraint comms with planner (pain) 
     adjust_keyframe_on_marker_motion(self);
     // cout << (*self->marker_selection) << ": mouse drag\n";
   }
@@ -629,7 +631,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
     
-    bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
+   /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_LEFT,
@@ -637,7 +639,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_RIGHT,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_RIGHT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); 
+                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); */
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
