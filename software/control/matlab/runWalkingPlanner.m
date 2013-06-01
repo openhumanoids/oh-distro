@@ -119,7 +119,7 @@ while true
   else
     nq = getNumDOF(r);
     q0 = x0(1:nq);
-    [xtraj, qtraj, htraj, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
+    [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
     % publish robot plan
     msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
     joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
