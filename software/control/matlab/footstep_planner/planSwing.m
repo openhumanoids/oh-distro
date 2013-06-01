@@ -11,8 +11,6 @@ if ~isfield(options, 'ignore_terrain')
   options.ignore_terrain = false;
 end
 
-apex_pos = biped.findApexPos(last_pos, next_pos, options.step_height);
-
 debug = false;
 
 planar_clearance = 0.05;
@@ -36,7 +34,6 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
 effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame, which we enforce with the toe_height constraint later
-apex_pos(3) = apex_pos(3) + effective_height;
 
 % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
 contact_length = effective_length / 2 + planar_clearance;
@@ -45,10 +42,16 @@ contact_height = effective_height + nom_z_clearance;
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
+apex_fracs = [0.15, 0.85];
+next_pos = last_pos + angleDiff(last_pos, next_pos);
+apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
+apex_pos(3,:) = max([last_pos(3), next_pos(3)]) + options.step_height;
+apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
+% apex_pos(3) = apex_pos(3) + effective_height;
+
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   % Create a single default apex pose to ensure that we at least rise by this much on flat ground
-  apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
-  
+  % apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
  
   % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
 
@@ -64,8 +67,10 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   %% Expand terrain convex hull by the size of the foot
   % expanded_terrain_pts = [terrain_pts(:,1)];
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
+  has_terrain = false;
   for j = 1:length(terrain_pts(1,:))
     if terrain_pts(2, j) > (j / length(terrain_pts(1,:))) * (next_pos(3) - last_pos(3)) + last_pos(3) + (options.step_height / 2)
+      has_terrain = true;
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; contact_height];
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; contact_height];
     end
@@ -113,6 +118,9 @@ swing_poses.center = [traj_pts_xyz; rpy_pts];
 
 toe_start = biped.footOrig2Contact(biped.footContact2Orig(last_pos, 'center', 1), 'toe', 1);
 toe_end = biped.footOrig2Contact(biped.footContact2Orig(next_pos, 'center', 1), 'toe', 1);
+if ~has_terrain
+  effective_height = 0.02;
+end
 % toe.min = max([traj_pts(2,:) - effective_height; 
 %                (traj_pts(1,:) / step_dist_xy) * (toe_end(3) - toe_start(3)) + toe_start(3)]);
 toe.min = traj_pts(2,:) - effective_height;
