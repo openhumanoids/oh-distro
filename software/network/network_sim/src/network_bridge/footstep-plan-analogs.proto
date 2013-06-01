@@ -5,7 +5,7 @@ package drc;
 
 message MinimalFootStepPlan
 {
-  option (dccl.msg).max_bytes = 2000;
+  option (dccl.msg).max_bytes = 2400;
   option (dccl.msg).id = 0xD4C0005;
   
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
