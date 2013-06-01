@@ -54,7 +54,7 @@ namespace renderer_robot_state
     //----------------constructor/destructor
   public:
     RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm,
-		       BotViewer *viewer);
+		       BotViewer *viewer, int operation_mode);
     ~RobotStateListener();
 
     boost::shared_ptr<collision::Collision_Detector> _collision_detector; 

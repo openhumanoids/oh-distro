@@ -294,5 +294,5 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
 } // end namespace
   
   
-void setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm);
+void setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode);
 #endif //RENDERER_ROBOT_STATE_HPP

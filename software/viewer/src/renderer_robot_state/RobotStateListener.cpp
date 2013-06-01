@@ -13,7 +13,8 @@ namespace renderer_robot_state
   //==================constructor / destructor
   
   /**Subscribes to Robot URDF Model and to EST_ROBOT_STATE.*/
-  RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer):
+  RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm, 
+          BotViewer *viewer, int operation_mode):
     _urdf_parsed(false),
     _lcm(lcm),
     _viewer(viewer)
@@ -34,7 +35,12 @@ namespace renderer_robot_state
     _urdf_subscription_on = true;
     //Subscribes to MEAS_JOINT_ANGLES 
     //lcm->subscribe("MEAS_JOINT_ANGLES", &RobotStateListener::handleJointAnglesMsg, this); 
-    lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
+    if (operation_mode==0){
+      lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
+    }else if(operation_mode==1){
+      lcm->subscribe("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &RobotStateListener::handleRobotStateMsg, this); 
+    }
+      
     
     _jointdof_filter_list.clear();
     _jointdof_filter_list.push_back("l_arm_usy");

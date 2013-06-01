@@ -259,13 +259,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
+setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode)
 {
     RobotStateRendererStruc *self = (RobotStateRendererStruc*) calloc (1, sizeof (RobotStateRendererStruc));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
 
     self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self->lcm, 
-												    viewer));
+              viewer, operation_mode));
     
     BotRenderer *renderer = &self->renderer;
 
@@ -274,6 +274,10 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
 
     renderer->widget = bot_gtk_param_widget_new();
     renderer->name = (char *) RENDERER_NAME;
+    if (operation_mode==1){
+      renderer->name =(char *) "Robot State LB Compressed";
+    }
+    
     renderer->user = self;
     renderer->enabled = 1;
 
@@ -294,13 +298,13 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
       
-  	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  	self->alpha = 1.0;
-  	self->selection_enabled = 0;
-	  bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
+    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+    self->alpha = 1.0;
+    self->selection_enabled = 0;
+    bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->clicked = 0;	
+    self->selection = new std::string(" ");
     self->dragging = 0;  
-  	self->selection = new std::string(" ");
   	self->marker_selection = new std::string(" ");
     self->visualize_bbox = false;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
@@ -319,6 +323,9 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;
+    if (operation_mode==1){
+      ehandler->name =(char *) "Robot State LB Compressed";
+    }
     ehandler->enabled = 1;
     ehandler->pick_query = pick_query;
     ehandler->hover_query = NULL;

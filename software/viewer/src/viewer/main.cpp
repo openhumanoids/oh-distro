@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(role, "r", "role","Role - robot or base");
-  opt.add(network_debug, "n", "network_debug","Network Debug (for loopbacks)");
+  opt.add(network_debug, "n", "network_debug","Network Debug [0 nothing, 1 feet, 2 plan, 3 state]");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
   std::cout << "role: " << role << "\n";
@@ -300,18 +300,20 @@ int main(int argc, char *argv[])
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
-  setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
-  //
+  setup_renderer_robot_state(viewer, 0, lcm,0);
   setup_renderer_robot_plan(viewer, 0, lcm, 0);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   // Renderers for Testing Loopback Quality:
-  if (network_debug==1){    
+  if (network_debug == 1){    
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1); // committed
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,2); // loopback
-  }else if ( network_debug ==2) { /// DONT RUN THIS WHEN WALKING AS ALL THE PLANS CRASH THE VIEWER:
+  }else if ( network_debug == 2) { /// DONT RUN THIS WHEN WALKING AS ALL THE PLANS CRASH THE VIEWER:
     setup_renderer_robot_plan(viewer, 0, lcm, 1);
     setup_renderer_robot_plan(viewer, 0, lcm, 2);
+  }else if ( network_debug == 3) {
+    setup_renderer_robot_state(viewer, 0, lcm, 1);
+    // only one debg version needed
   }
   
   // Individual Renderers:
