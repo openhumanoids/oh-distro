@@ -35,7 +35,7 @@ end
 %% construct ZMP feedback controller
 com = getCOM(biped,kinsol);
 zmap = getTerrainHeight(biped,com(1:2));
-limp = LinearInvertedPendulum(com(3)-zmap);
+limp = LinearInvertedPendulum(com(3)-zmap,9.81,struct('ignore_frames',true));
 
 % get COM traj from desired ZMP traj
 options.use_tvlqr = false;
