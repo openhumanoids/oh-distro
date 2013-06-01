@@ -17,8 +17,7 @@ classdef WalkingController < DRCController
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
         'comtraj',[],...
-        'lfoottraj',[],...
-        'rfoottraj',[],...
+        'link_constraints',[],...
         'support_times',[],...
         'supports',[],...
         'mu',1.0,...
@@ -150,17 +149,15 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('y0',matdata.zmptraj);
 
       fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.lfoottraj,'uint8'),'uint8');
+      fwrite(fid,typecast(msg_data.link_constraints,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
-      obj.controller_data.setField('lfoottraj',matdata.lfoottraj);
-
-      fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.rfoottraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load('tmp_w.mat');
-      obj.controller_data.setField('rfoottraj',matdata.rfoottraj);
-      tspan_end = matdata.rfoottraj.tspan(end);
+      obj.controller_data.setField('link_constraints',matdata.link_constraints);
+      if ~isempty(matdata.link_constraints(1).traj)
+        tspan_end = matdata.link_constraints(1).traj.tspan(end);
+      else
+        tspan_end = matdata.link_constraints(1).min.tspan(end);
+      end
       
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.qnom,'uint8'),'uint8');
