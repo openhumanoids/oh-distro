@@ -27,9 +27,9 @@ message GraspTransition
   optional int32 affordance_uid = 2 [(dccl.field) = {min: 0 max: 0x7FFFFFFE codec: "presence_bit"} ];
   optional Position3D hand_pose = 3;
   
-  optional bool grasp_on = 4;
+  required bool grasp_on = 4;
   optional int32 grasp_type = 5 [(dccl.field) = {min:0 max: 1 codec: "presence_bit"}];
-  optional bool power_grasp = 6;
+  required bool power_grasp = 6;
     
   repeated float joint_position = 7 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
 }

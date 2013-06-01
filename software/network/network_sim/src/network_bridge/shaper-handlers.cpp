@@ -124,6 +124,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
+
     //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
 
     const std::string& ers_channel = "EST_ROBOT_STATE";
@@ -139,6 +140,11 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
     custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
 
+    
+    const std::string& grasp_channel = "COMMITTED_GRASP";
+    custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
+    
     dccl_->validate<drc::ShaperHeader>();
     
     goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << *dccl_ << std::endl;
