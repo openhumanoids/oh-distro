@@ -20,7 +20,7 @@ group "0.development" {
 
 group "a.1.core" {
     cmd "aa-control" {
-        exec = "roslaunch translators not_cheating.launch";
+        exec = "roslaunch translators not_cheating.launch --wait";
         host = "robot";
     }
     cmd "drc-printf-cache" {
