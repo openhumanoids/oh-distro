@@ -49,7 +49,8 @@ h_ee_clear.frame.subscribe('HEAD_GOAL_CLEAR');
 h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
 h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
 
-posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
+preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
+posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
 
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
@@ -272,7 +273,7 @@ while(1)
   end
   
 
-  posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
+  posture_goal =preset_posture_goal_listener.getNextMessage(msg_timeout);  
   if(~isempty(posture_goal))
       disp('Preset Posture goal received .');
       if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
@@ -289,6 +290,21 @@ while(1)
       manip_planner.generateAndPublishPosturePlan(x0,q_desired);
   end
 
+  posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
+  if(~isempty(posture_goal))
+      disp('Posture goal received .');
+      q0 = x0(1:getNumDOF(r));
+      q_desired =q0;
+      joint_names = {posture_goal.joint_name};
+      joint_positions = [posture_goal.joint_position];
+      for i=1:length(joint_names),
+        dofnum = strcmp(r.getStateFrame.coordinates,joint_names(i));
+        q_desired(dofnum) = joint_positions(i);
+      end
+      q_desired(1:6) = x0(1:6); % fix pelvis pose to current
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired);
+  end  
+  
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
   p = committed_plan_listener.getNextMessage(msg_timeout);
