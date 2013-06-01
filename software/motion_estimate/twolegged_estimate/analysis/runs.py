@@ -22,7 +22,7 @@ def doAllRuns(logListFile,prefix):
     medianLengths = [5,9,15]
     runOptions = ['A','B','C']
     #windowDurations = [30, 60, 90]
-    windowDurations = [20,40]
+    windowDurations = [30]
     weightProfiles = ['uniform','tri','ramp','revramp','revtri']
 
     # loop and run    
