@@ -1,5 +1,7 @@
-function link_constraints = buildLinkConstraints(biped, foottraj, fixed_links)
-  
+function link_constraints = buildLinkConstraints(biped, q0, foottraj, fixed_links)
+
+kinsol = doKinematics(biped,q0);
+
 %% Convert the foottraj to an easier format to hand to IK
 link_constraints(1) = struct('link_ndx', find(strcmp(biped.getLinkNames(),biped.foot_bodies.right.linkname),1), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.right.orig);
 link_constraints(2) = struct('link_ndx', find(strcmp(biped.getLinkNames(),biped.foot_bodies.left.linkname),1), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.left.orig);

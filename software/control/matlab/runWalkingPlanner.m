@@ -107,7 +107,9 @@ while true
   mu = footstep_opts.mu;
   [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps, footstep_opts);
   tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
-  link_constraints = buildLinkConstraints(r, foottraj, fixed_links);
+  nq = getNumDOF(r);
+  q0 = x0(1:nq);
+  link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
   if committed
     walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
@@ -117,8 +119,6 @@ while true
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
     walking_pub.publish(0,walking_plan);
   else
-    nq = getNumDOF(r);
-    q0 = x0(1:nq);
     [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
     % publish robot plan
     msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
