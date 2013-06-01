@@ -60,14 +60,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
 
-    function [xtraj, qtraj, htraj, V, ts] = walkingPlan(obj, x0, qstar, navgoal, options)
-      if nargin < 5
-        options = struct();
-      end
-      X = obj.planFootsteps(x0, navgoal, options);
-      [xtraj, qtraj, htraj, V, ts] = obj.walkingPlanFromSteps(x0, qstar, X);
-    end
-
     function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
       if is_right_foot
         offs = [0; -obj.nom_step_width/2; 0];
