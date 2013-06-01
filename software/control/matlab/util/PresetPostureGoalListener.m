@@ -16,14 +16,14 @@ classdef PresetPostureGoalListener
             if isempty(goal_msg)
                 X = [];
             else
-                [X] = PresetPostureGoalListener.decodeAffGoal(drc.robot_posture_preset_t(goal_msg.data));
+                [X] = PresetPostureGoalListener.decode(drc.robot_posture_preset_t(goal_msg.data));
             end
         end
         
     end
 
     methods(Static)
-        function X = decodeAffGoal(msg)
+        function X = decode(msg)
                 X.time = double(msg.utime)/1000000; 
                 X.preset =msg.preset;
          end
