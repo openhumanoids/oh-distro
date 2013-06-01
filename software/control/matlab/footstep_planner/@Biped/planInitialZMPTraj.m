@@ -123,7 +123,6 @@ while 1
     footpos.(foot).toe.max = [footpos.(foot).toe.max, step.(foot).toe.max];
     footpos.(foot).heel.min = [footpos.(foot).heel.min, step.(foot).heel.min];
     footpos.(foot).heel.max = [footpos.(foot).heel.max, step.(foot).heel.max];
-    % footpos.(foot).toe_z_min = [footpos.(foot).toe_z_min, step.(foot).toe_z_min];
   end
   zmp = [zmp, stepzmp(1:2,:)];
   ts = [ts, tstep];
@@ -147,13 +146,11 @@ for f = {'right', 'left'}
   footpos.(foot).toe.max = [footpos.(foot).toe.max footpos.(foot).toe.max(:,end)];
   footpos.(foot).heel.min = [footpos.(foot).heel.min footpos.(foot).heel.min(:,end)];
   footpos.(foot).heel.max = [footpos.(foot).heel.max footpos.(foot).heel.max(:,end)];
-  % footpos.(foot).toe_z_min = [footpos.(foot).toe_z_min footpos.(foot).toe_z_min(end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
   foottraj.(foot).toe.min = PPTrajectory(foh(ts, footpos.(foot).toe.min));
   foottraj.(foot).toe.max = PPTrajectory(foh(ts, footpos.(foot).toe.max));
   foottraj.(foot).heel.min = PPTrajectory(foh(ts, footpos.(foot).heel.min));
   foottraj.(foot).heel.max = PPTrajectory(foh(ts, footpos.(foot).heel.max));
-  % foottraj.(foot).toe_z_min = PPTrajectory(foh(ts, footpos.(foot).toe_z_min));
   footsupport.(foot) = [footsupport.(foot), 1];
 end
 
@@ -173,13 +170,9 @@ for i=1:length(zmp_ts)
 end
 
 if debug
-%   tt = 0:0.02:zmp_ts(end);
   tt = zmp_ts;
   zmppoints = zeros(3,length(tt));
   zmppoints(1:2,:) = zmptraj.eval(tt);
-%   for i=1:length(tt)
-%     zmppoints(1:2,i) = zmptraj.eval(tt(i));
-%   end
   zmppoints(3,:) = getTerrainHeight(biped,zmppoints(1:2,:));
   plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',2,true);
   % biped.plot_step_clearance_lcm(footpos);
