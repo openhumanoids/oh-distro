@@ -137,7 +137,7 @@ void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf,
     is_robot ="1";
   }
   std::stringstream ss;
-  ss << is_robot << secs_100 << text_str.substr (0,48)  ;
+  ss << is_robot << secs_100 << text_str.substr (0,100)  ;
 
   string string_last = ss.str();
   string_last.erase(std::remove(string_last.begin(), string_last.end(), '\n'), string_last.end());
