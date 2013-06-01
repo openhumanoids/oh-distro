@@ -148,7 +148,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     dir<< ray_dir[0], ray_dir[1], ray_dir[2];
     start<< ray_start[0], ray_start[1], ray_start[2];
     set_desired_robot_posture_on_marker_motion(self,start,dir);
-    cout << (*self->marker_selection) << ": mouse drag\n";
+    //cout << (*self->marker_selection) << ": mouse drag\n";
   }
   bot_viewer_request_redraw(self->viewer);
   return 1;
