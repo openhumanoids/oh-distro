@@ -35,7 +35,33 @@ namespace renderer_robot_state
     //Subscribes to MEAS_JOINT_ANGLES 
     //lcm->subscribe("MEAS_JOINT_ANGLES", &RobotStateListener::handleJointAnglesMsg, this); 
     lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
- 
+    
+    _jointdof_filter_list.clear();
+    _jointdof_filter_list.push_back("l_arm_usy");
+    _jointdof_filter_list.push_back("r_arm_usy");
+    _jointdof_filter_list.push_back("l_arm_shx");
+    _jointdof_filter_list.push_back("r_arm_shx");
+    _jointdof_filter_list.push_back("l_arm_ely");
+    _jointdof_filter_list.push_back("r_arm_ely");
+    _jointdof_filter_list.push_back("l_arm_elx");
+    _jointdof_filter_list.push_back("r_arm_elx");
+    _jointdof_filter_list.push_back("l_arm_uwy");
+    _jointdof_filter_list.push_back("r_arm_uwy");
+    _jointdof_filter_list.push_back("l_arm_mwx");
+    _jointdof_filter_list.push_back("r_arm_mwx");
+    _jointdof_filter_list.push_back("l_leg_uhz");
+    _jointdof_filter_list.push_back("r_leg_uhz");
+    _jointdof_filter_list.push_back("l_leg_mhx");
+    _jointdof_filter_list.push_back("r_leg_mhx");
+    _jointdof_filter_list.push_back("l_leg_lhy");
+    _jointdof_filter_list.push_back("r_leg_lhy");
+    _jointdof_filter_list.push_back("l_leg_kny");
+    _jointdof_filter_list.push_back("r_leg_kny");
+    _jointdof_filter_list.push_back("l_leg_uay");
+    _jointdof_filter_list.push_back("r_leg_uay");
+    _jointdof_filter_list.push_back("l_leg_lax");
+    _jointdof_filter_list.push_back("r_leg_lax");  
+    _jointdof_filter_list.push_back("neck_ay");
   }
 
   RobotStateListener::~RobotStateListener() {
@@ -101,6 +127,7 @@ namespace renderer_robot_state
       _gl_robot = shared_ptr<visualization_utils::InteractableGlKinematicBody>(new visualization_utils::InteractableGlKinematicBody(_urdf_xml_string,_collision_detector,true,_robot_name));
   
       cout<< "Number of Joints: " << _gl_robot->get_num_joints() <<endl;
+      _gl_robot->set_jointdof_marker_filter(_jointdof_filter_list);
       
       //remember that we've parsed the urdf already
       _urdf_parsed = true;

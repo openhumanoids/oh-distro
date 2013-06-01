@@ -34,8 +34,9 @@ namespace renderer_robot_state
   class RobotStateListener
   {
     //--------fields
-  private:
+  public:  
     std::string _robot_name;
+  private:  
     std::string _urdf_xml_string; 
 
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
@@ -45,7 +46,7 @@ namespace renderer_robot_state
     BotViewer *_viewer;
     
     bool _urdf_parsed;
-    
+    std::vector<std::string> _jointdof_filter_list;
   public:  
     bool _urdf_subscription_on;
     int64_t _last_state_msg_timestamp; 
