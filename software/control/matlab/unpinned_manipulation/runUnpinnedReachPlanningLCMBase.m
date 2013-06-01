@@ -298,7 +298,7 @@ while(1)
       joint_names = {posture_goal.joint_name};
       joint_positions = [posture_goal.joint_position];
       for i=1:length(joint_names),
-        dofnum = strcmp(r.getStateFrame.coordinates,joint_names(i));
+        dofnum = strcmp(r.getStateFrame.coordinates,joint_names{i});
         q_desired(dofnum) = joint_positions(i);
       end
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
