@@ -16,6 +16,7 @@
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
+#define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
 
@@ -879,6 +880,65 @@ namespace renderer_affordances_gui_utils
       }
      
     }
+    else if (!strcmp(name, PARAM_PARTIAL_GRASP_UNGRASP)) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      int g_status = bot_gtk_param_widget_get_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP);
+      fprintf(stderr, "Requested grasp status : %d\n", g_status);
+      //set the value 
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+      else { 
+        drc::desired_grasp_state_t msg; // just to access types
+        //publish desired_grasp_state_t on COMMITED_GRASP msg.
+            //publish ee goal msg.
+        int grasp_type = hand_it->second.hand_type;
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_partial_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+          
+        //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+        hand_it->second.partial_grasp_status = g_status; 
+      }
+
+
+
+    
+
+      /*bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+      else { 
+        drc::desired_grasp_state_t msg; // just to access types
+        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        
+        bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
+        if(power_flag)
+         val=true;
+  
+
+        //publish desired_grasp_state_t on COMMITED_GRASP msg.
+            //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          
+        hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+        }*/
+     
+    }
+
     else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
@@ -957,10 +1017,17 @@ namespace renderer_affordances_gui_utils
     bool val = (hand_it->second.grasp_status==0);
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
+    int p_val = (hand_it->second.partial_grasp_status);
+    
+
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
+
+    bot_gtk_param_widget_add_separator(pw, "Partial Grasp");
+    bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
+    //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_PARTIAL_GRASP_UNGRASP, !val, NULL);
 
     
     //cout <<self->selection << endl; // otdf_type::geom_name

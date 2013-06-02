@@ -185,6 +185,7 @@ struct StickyHandStruc {
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
     int grasp_status;//CANDIDATE=0,COMMITTED=1;
+    int partial_grasp_status; 
     bool motion_trail_log_enabled;
 };   
 
