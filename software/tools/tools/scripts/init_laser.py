@@ -26,7 +26,7 @@ def on_utime(channel, data):
   m = utime_t.decode(data)
   t = m.utime
   #print t
-  if ( abs(t - 300000) < 5000): # after 3secs send a spin rate
+  if ( abs(t - 500000) < 10000): # after .3secs send a spin rate
     print "Set lidar spinning at 7 RPM and Cameras to 5 FPS and Compression to Low | %d" %(t)
     o = sensor_request_t()
     o.utime = t
