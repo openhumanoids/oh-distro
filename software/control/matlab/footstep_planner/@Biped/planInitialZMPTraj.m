@@ -95,7 +95,7 @@ while 1
   step.(s_foot).heel.max = repmat(nan, 3, length(tstep)); 
 
   % Release orientation constraints on the foot during the middle of the swing
-  step.(m_foot).orig(4:5,3:end-3) = nan;
+  step.(m_foot).orig(4:5,3:end-4) = nan;
 
   step_duration = (tstep(end) - tstep(1));
   zmp_tstep = ts(end) + [takeoff_time, mean([takeoff_time, landing_time]),...
@@ -146,11 +146,20 @@ for f = {'right', 'left'}
   footpos.(foot).toe.max = [footpos.(foot).toe.max footpos.(foot).toe.max(:,end)];
   footpos.(foot).heel.min = [footpos.(foot).heel.min footpos.(foot).heel.min(:,end)];
   footpos.(foot).heel.max = [footpos.(foot).heel.max footpos.(foot).heel.max(:,end)];
+
+  % build trajectories
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
-  foottraj.(foot).toe.min = PPTrajectory(foh(ts, footpos.(foot).toe.min));
-  foottraj.(foot).toe.max = PPTrajectory(foh(ts, footpos.(foot).toe.max));
-  foottraj.(foot).heel.min = PPTrajectory(foh(ts, footpos.(foot).heel.min));
-  foottraj.(foot).heel.max = PPTrajectory(foh(ts, footpos.(foot).heel.max));
+  for g = {'toe', 'heel'}
+    grp = g{1};
+    for l = {'min', 'max'}
+      lim = l{1};
+      if all(all(isnan(footpos.(foot).(grp).(lim))))
+        foottraj.(foot).(grp).(lim) = ConstantTrajectory(repmat(nan, size(footpos.(foot).(grp).(lim), 1), 1));
+      else
+        foottraj.(foot).(grp).(lim) = PPTrajectory(foh(ts, footpos.(foot).(grp).(lim)));
+      end
+    end
+  end
   footsupport.(foot) = [footsupport.(foot), 1];
 end
 
