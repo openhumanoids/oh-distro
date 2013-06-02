@@ -109,29 +109,9 @@ struct StereoHandler {
     if (mLatestImage.size == 0) {
       return view;
     }
-    view.reset(new DepthImageView());
-
-    // uncompress image if necessary
-    int w(mLatestImage.width), h(mLatestImage.height/2);
-    cv::Mat img;
-    if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
-      img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
-    }
-    else {
-      img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
-    }
-
-    // split images
-    cv::Mat leftImage = img.rowRange(0, h).clone();
-    cv::Mat rightImage = img.rowRange(h, 2*h).clone();
-
-    // compute disparity
-    mStereoMatcher->doStereoB(leftImage, rightImage);
-    cv::Mat disparityMat;
-    cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
-      convertTo(disparityMat, CV_32F, 1.0f/16);
 
     // project bound polyhedron onto camera
+    int w(mLatestImage.width), h(mLatestImage.height/2);
     std::vector<Eigen::Vector3f> vertices;
     std::vector<std::vector<int> > faces;
     Utils::polyhedronFromPlanes(iBoundPlanes, vertices, faces);
@@ -153,6 +133,31 @@ struct StereoHandler {
     minPt[1] = std::max(0, minPt[1]);
     maxPt[0] = std::min(w-1, maxPt[0]);
     maxPt[1] = std::min(h-1, maxPt[1]);
+    if ((minPt[0] >= maxPt[0]) || (minPt[1] >= maxPt[1])) {
+      std::cout << "Warning: requested volume is outside image" << std::endl;
+      return view;
+    }
+
+    view.reset(new DepthImageView());
+
+    // uncompress image if necessary
+    cv::Mat img;
+    if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
+      img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
+    }
+    else {
+      img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
+    }
+
+    // split images
+    cv::Mat leftImage = img.rowRange(0, h).clone();
+    cv::Mat rightImage = img.rowRange(h, 2*h).clone();
+
+    // compute disparity
+    mStereoMatcher->doStereoB(leftImage, rightImage);
+    cv::Mat disparityMat;
+    cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
+      convertTo(disparityMat, CV_32F, 1.0f/16);
 
     // form output depth image
     DepthImage depthImage;
