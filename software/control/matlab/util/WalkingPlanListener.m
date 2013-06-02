@@ -107,7 +107,7 @@ classdef WalkingPlanListener
         link_constraints=matdata.link_constraints;
         
         fid = fopen('tmp_w.mat','w');
-        fwrite(fid,typecase(msg.qnom,'uint8'),'uint8');
+        fwrite(fid,typecast(msg.qnom,'uint8'),'uint8');
         fclose(fid);
         matdata = load('tmp_w.mat');
         qnom = matdata.qnom;

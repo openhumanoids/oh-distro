@@ -42,6 +42,7 @@ classdef StandingController < DRCController
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
       if(~isfield(options,'use_mex')) options.use_mex = false; end
+      if(~isfield(options,'debug')) options.debug = false; end
       
       options.lcm_foot_contacts = true;
       qp = QPController(r,ctrl_data,options);
@@ -78,7 +79,6 @@ classdef StandingController < DRCController
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
-      
       
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));

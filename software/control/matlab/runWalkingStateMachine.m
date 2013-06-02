@@ -1,4 +1,4 @@
-function runWalkingStateMachine()
+function runWalkingStateMachine(options)
 
 addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -10,9 +10,12 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
 r = compile(r);
 
-standing_controller = StandingController('standing',r);
-walking_controller = WalkingController('walking',r);
-bracing_controller = BracingController('bracing',r);
+if(~isfield(options,'use_mex')) options.use_mex = false; end
+if(~isfield(options,'debug')) options.debug = false; end
+
+standing_controller = StandingController('standing',r,options);
+walking_controller = WalkingController('walking',r,options);
+bracing_controller = BracingController('bracing',r,options);
 
 controllers = struct(standing_controller.name,standing_controller, ...
                       walking_controller.name,walking_controller,...     

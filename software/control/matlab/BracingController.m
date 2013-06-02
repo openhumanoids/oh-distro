@@ -5,7 +5,7 @@ classdef BracingController < DRCController
     end
     
     methods
-        function obj = BracingController(name,r)
+        function obj = BracingController(name,r,options)
             typecheck(r,'Atlas');
             
             ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));

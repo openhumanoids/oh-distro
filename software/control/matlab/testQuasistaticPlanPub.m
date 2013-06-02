@@ -10,14 +10,14 @@ load('data/atlas_fp.mat');
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 
-% while true
-%   [x,~] = getNextMessage(state_frame,10);
-%   if (~isempty(x))
-%     x0=x;
-%     break
-%   end
-% end
 x0=xstar;
+while true
+  [x,~] = getNextMessage(state_frame,10);
+  if (~isempty(x))
+    x0=x;
+    break
+  end
+end
 
 nq = getNumDOF(r);
 q_nom = xstar(1:nq);
@@ -50,8 +50,8 @@ lhand_pos = forwardKin(r,kinsol,lhand_body,[0;0;0],false);
 % q_nom(1:6) = pelvis_pos;
 options.q_nom = q_nom;
 
-rhand_goal = [-0.4; -0.25; 1.35];
-lhand_goal = [0.4; -0.25; 1.05];
+rhand_goal = rhand_pos + [0.2; -0.25; 0.35];
+lhand_goal = lhand_pos + [0.05; 0; 0.7];
 
 rfoot_body = r.findLink('r_foot');
 lfoot_body = r.findLink('l_foot');
@@ -80,7 +80,6 @@ for i=1:length(ts)
 end
 qtraj = PPTrajectory(spline(ts,q));
 comtraj = PPTrajectory(zoh([ts(1) ts(end)],[com(1:2) com(1:2)]));
-foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
 Q = 1*eye(4);
 R = 0.001*eye(2);
@@ -97,10 +96,16 @@ S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenv
 warning(S);
 [~,V] = tvlqr(ltisys,x0traj,u0traj,Q,R,V,options);
 
-data = struct('qtraj',qtraj,'comtraj',comtraj,...
-      'supptraj',foot_support,'htraj',[],'hddtraj',[],...
-      'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[]);
-
+support_times = 0;
+supports = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+link_constraints(1) = struct('link_ndx', r.findLinkInd('r_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', rfoot_pos);
+link_constraints(2) = struct('link_ndx', r.findLinkInd('l_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', lfoot_pos);
+      
+mu=1.0;
+data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
+        'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',qtraj,'mu',mu,...
+        'link_constraints',link_constraints,'zmptraj',[],'qnom',[]);
+    
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 pub.publish(0,data);
 
