@@ -92,6 +92,7 @@ classdef WalkingController < DRCController
       obj = setTimedTransition(obj,100,'standing',false); % default timeout
       
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
+      obj = addLCMTransition(obj,'STOP_WALKING',drc.utime_t(),'standing');
     end
     
     function send_status(obj,t_sim,t_ctrl)
@@ -106,7 +107,9 @@ classdef WalkingController < DRCController
     
     function obj = initialize(obj,data)
             
-      msg_data = getfield(data,'WALKING_PLAN');
+      % TODO: put some error handling in here
+      
+      msg_data = data.WALKING_PLAN;
       % do we have to save to file to convert a byte stream to a
       % matlab binary?
       fid = fopen('tmp_w.mat','w');

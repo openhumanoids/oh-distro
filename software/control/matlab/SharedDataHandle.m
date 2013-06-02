@@ -38,12 +38,12 @@ classdef SharedDataHandle < handle
     
     function setField(obj,fieldname,val)
  %     typecheck(obj.data,'struct');
-      obj.data = setfield(obj.data,fieldname,val);
+      obj.data.(fieldname)=val;
     end
     
     function d=getField(obj,fieldname)
 %      typecheck(obj.data,'struct');
-      d = getfield(obj.data,fieldname);
+      d = obj.data.(fieldname);
     end
   end
 end

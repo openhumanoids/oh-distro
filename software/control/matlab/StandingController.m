@@ -3,6 +3,7 @@ classdef StandingController < DRCController
   properties (SetAccess=protected,GetAccess=protected)
     robot;
     foot_idx;
+    contact_est_monitor;
   end
   
   methods
@@ -80,6 +81,9 @@ classdef StandingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       
+      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
+      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
+      
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
@@ -93,8 +97,7 @@ classdef StandingController < DRCController
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
-      foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
-      obj.foot_idx = find(foot_support);
+      obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
       supports = SupportState(r,obj.foot_idx);
       
       obj.controller_data.setField('S',V.S);
@@ -124,7 +127,51 @@ classdef StandingController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'AtlasState')
+      
+      if isfield(data,'STOP_WALKING')
+        % transition from walking:
+        % take in new nominal pose and compute standing controller
+        data
+        % get foot contact state over LCM
+        contact_data = obj.contact_est_monitor.getMessage();
+        if isempty(contact_data)
+          lfoot_contact_state = 1;
+          rfoot_contact_state = 1;
+        else
+          msg = drc.foot_contact_estimate_t(contact_data);
+          lfoot_contact_state = msg.left_contact;
+          rfoot_contact_state = msg.right_contact;
+        end
+        lfoot_contact_state = 1
+        rfoot_contact_state = 1
+        
+        r = obj.robot;
+        q0 = data.AtlasState(1:getNumDOF(r));
+        kinsol = doKinematics(r,q0);
+%         com = getCOM(r,kinsol);
+
+        foot_pos = contactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state])); 
+        ch = convhull(foot_pos(1:2,:)');
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+%         zmap = getTerrainHeight(r,com(1:2));
+%         robot_z = com(3)-zmap;
+  
+%         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
+        obj.controller_data.setField('qtraj',q0);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
+        obj.controller_data.setField('y0',comgoal);
+        
+      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
+        % standing and reaching plan
+        sprintf('standing controller on\n');
+        msg = data.COMMITTED_ROBOT_PLAN;
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
+        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+
+        obj.controller_data.setField('qtraj',qtraj);
+        obj = setDuration(obj,inf,false); % set the controller timeout
+        
+      elseif isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
         r = obj.robot;
@@ -144,16 +191,8 @@ classdef StandingController < DRCController
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
-
-      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
-        % standing and reaching plan
-        sprintf('standing controller on\n');
-        msg = data.COMMITTED_ROBOT_PLAN;
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
-        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-
-        obj.controller_data.setField('qtraj',qtraj);
-        obj = setDuration(obj,inf,false); % set the controller timeout
+     
+      
       else
         % first initialization should come here... wait for state
         state_frame = getStateFrame(obj.robot);

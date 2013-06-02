@@ -15,7 +15,7 @@ classdef DRCStateMachine
     function obj = addController(obj,name,controller)
       typecheck(name,'char');
       typecheck(controller,'DRCController');
-      obj.controllers = setfield(obj.controllers, name, controller);
+      obj.controllers.(name) = controller;
     end
     
     function obj = setActiveController(obj,active_controller)
@@ -30,7 +30,7 @@ classdef DRCStateMachine
       data = [];
       transition_tic = tic;
       while 1
-        ctrl = getfield(obj.controllers,obj.active_controller);
+        ctrl = obj.controllers.(obj.active_controller);
         msg = ['Controller: initializing ' ctrl.name];
         send_status(3, 0, 0, msg );
         disp(msg);
@@ -54,7 +54,7 @@ classdef DRCStateMachine
         disp(msg);
         
         obj = setActiveController(obj,transition_to);
-        data = getfield(transition_data,obj.active_controller);
+        data = transition_data.(obj.active_controller);
       end
     end
   end

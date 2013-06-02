@@ -128,7 +128,7 @@ classdef DRCController
       n = length(obj.precompute_response_monitors)+1;
       obj.precompute_response_channels{n} = response_channel;
       obj.precompute_response_monitors{n} = mon;
-      obj.precompute_response_targets = setfield(obj.precompute_response_targets,transition_to_controller,[]);
+      obj.precompute_response_targets.(transition_to_controller) = [];
     end
     
     function obj = addPrecomputeTrigger(obj,trigger_function_handle)
@@ -146,9 +146,9 @@ classdef DRCController
         d = obj.transition_monitors{i}.getNextMessage(0);
         if ~isempty(d)
           if isempty(obj.transition_coders{i})
-            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors{i}.newInstance(d)));
+            data.(obj.transition_targets{i}) = struct(obj.transition_channels{i},obj.constructors{i}.newInstance(d));
           else
-            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.coders{i}.decode(d)));
+            data.(obj.transition_targets{i}) = struct(obj.transition_channels{i},obj.coders{i}.decode(d));
           end
           transition = true;
         end
@@ -167,8 +167,7 @@ classdef DRCController
             fwrite(fid,typecast(msg.matdata,'uint8'),'uint8');
             fclose(fid);
             matdata = load('prec_w.mat');
-            obj.precompute_response_targets = setfield(obj.precompute_response_targets, ...
-               fn{i},matdata);
+            obj.precompute_response_targets.(fn{i}) = matdata;
           end
         end
       end
@@ -212,17 +211,19 @@ classdef DRCController
             % DISABLED PRECOMP STUFF
 %             fn = fieldnames(data);
 %             if isfield(obj.precompute_response_targets,fn{1})
-%               d = getfield(obj.precompute_response_targets,fn{1}); % take first transition if many
+%               d = obj.precompute_response_targets.(fn{1}); % take first transition if many
 %               if ~isempty(d)
 %                 data = struct('precomp',d); % pass precomputation message to next controller
 %               end
 %             end
  
+            fn = fieldnames(data); % get channel names for transitions, take first one
             % append last input data
+            tmpstruct = data.(fn{1});
             for i=1:obj.n_input_frames
-              data = setfield(data,obj.controller_input_frames{i}.name,input_frame_data{i});
+              tmpstruct.(obj.controller_input_frames{i}.name) = input_frame_data{i};
             end
-
+            data.(fn{1}) = tmpstruct;
             break;
           end
         end
@@ -285,17 +286,17 @@ classdef DRCController
           
 %           d=[];
 %           if isfield(obj.precompute_response_targets,obj.timed_transition)
-%             d = getfield(obj.precompute_response_targets,obj.timed_transition); 
+%             d = obj.precompute_response_targets.(obj.timed_transition); 
 %           end
 %           if ~isempty(d)
 %             input_data = struct('precomp',d); % pass precomputation message to next controller
 %           else
             input_data = struct();
             for i=1:obj.n_input_frames
-              input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
+              input_data.(obj.controller_input_frames{i}.name) = input_frame_data{i};
             end
 %           end
-          data = setfield(data,obj.timed_transition,input_data);
+          data.(obj.timed_transition) = input_data;
           break;
         end
         

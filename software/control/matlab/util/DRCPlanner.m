@@ -58,7 +58,7 @@ classdef DRCPlanner < handle
       % changed.  (e.g. data.x0 = false)
       changed=false; changelist=struct();
       for i=1:length(obj.monitors)
-        changelist = setfield(changelist,obj.name{i},false);
+        changelist.(obj.name{i})=false;
         % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>=data.utime)
         % if obj.updatable(i)
         if obj.updatable(i) && (getLastTimestamp(obj.monitors{i}) >= obj.last_msg_utimes(i))
@@ -76,12 +76,12 @@ classdef DRCPlanner < handle
           % end
           if ~isempty(d)
             if isempty(obj.coders{i})
-              % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
-              data = setfield(data,obj.name{i},obj.constructors{i}.newInstance(d));
+              % data.(obj.name{i})=obj.lcmtype_constructor.newInstance(d);
+              data.(obj.name{i})=obj.constructors{i}.newInstance(d);
             else
-              data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
+              data.(obj.name{i})=obj.coders{i}.decode(d);
             end
-            changelist = setfield(changelist,obj.name{i},true);
+            changelist.(obj.name{i})=true;
             changed = true;
           end
         end
