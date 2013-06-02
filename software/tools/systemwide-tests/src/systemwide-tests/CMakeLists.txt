@@ -13,3 +13,11 @@ pods_use_pkg_config_packages(drc-pinpoint-fall
     pointcloud_math
     eigen3  bot2-core lcmtypes_visualization  lcmtypes_bot2-core)
 pods_install_executables(drc-pinpoint-fall)
+
+
+
+add_executable (drc-thrash-cpu thrash-cpu.cpp )
+target_link_libraries(drc-thrash-cpu boost_system boost_thread)
+pods_install_executables(drc-thrash-cpu)
+
+

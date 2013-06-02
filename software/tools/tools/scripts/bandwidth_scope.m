@@ -5,7 +5,7 @@ bw_run = 2;
 % point after the initial startup
 % where the bandwidth will be typical
 % set to 0.0 to see all the bandwidth
-end_of_init_time = 1369883588325240/1E6 % seconds
+end_of_init_time = 1370036390970730/1E6 % seconds
 
 % bands of rate of BW usage:
 if (0==1)
@@ -86,9 +86,9 @@ path = '~/drc/software/config/'
 files = dir([path 'drc-network-shaper-data-usage-base-*.csv']);
 filename = files(end).name
 
-path = '/home/mfallon/drc/software/tools/tools/scripts/';
+%path = '/home/mfallon/drc/software/tools/tools/scripts/';
 %filename ='drc-network-shaper-data-usage-example.csv'; 
-filename = 'drc-network-shaper-data-usage-example-newer.csv';
+%filename = 'drc-network-shaper-data-usage-example-newer.csv';
 
 fid=fopen([path filename]);
 tline = fgetl(fid);
