@@ -333,7 +333,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	
 	char lineY[80];
 	y = gl_height - 9 * line_height;
-	sprintf(lineY, ".%d GAZEBO RATE", self->real_time_percent);
+	sprintf(lineY, "%d%% GAZEBO RATE", self->real_time_percent);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineY);
