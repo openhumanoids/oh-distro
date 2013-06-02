@@ -13,5 +13,9 @@ struct score_t
     // it will be published seperately
     // string message; 
     int32_t task_type;
+
+    // these come from the shaper - not from gazebo:
+    int64_t bytes_downlink_remaining;
+    int64_t bytes_uplink_remaining;
 }
 
