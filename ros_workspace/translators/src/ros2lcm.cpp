@@ -18,6 +18,7 @@
 #include <atlas_msgs/ForceTorqueSensors.h>
 #include <atlas_msgs/VRCScore.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
 #include <sensor_msgs/LaserScan.h>
 
 
@@ -76,6 +77,11 @@ private:
   ros::Subscriber rotating_scan_sub_;
   void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);  
   
+  ros::Subscriber vrc_Bdown_sub_, vrc_Bup_sub_;
+  void vrc_Bdown_cb(const std_msgs::StringConstPtr& msg);
+  void vrc_Bup_cb(const std_msgs::StringConstPtr& msg);
+  int64_t Bdown_, Bup_;
+  
 };
 
 App::App(ros::NodeHandle node_, bool send_ground_truth_) :
@@ -91,6 +97,11 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   
   // Score:
   vrc_score_sub_ = node_.subscribe(string("/vrc_score"), 100, &App::vrc_score_cb,this);
+  // Score from OSRF netshaper:
+  vrc_Bup_sub_ = node_.subscribe(string("/vrc/bytes/remaining/uplink"), 100, &App::vrc_Bup_cb,this);
+  vrc_Bdown_sub_ = node_.subscribe(string("/vrc/bytes/remaining/downlink"), 100, &App::vrc_Bdown_cb,this);
+  Bdown_=0;
+  Bup_ =0;
   
   // IMU:
   torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 100, &App::torso_imu_cb,this);
@@ -139,6 +150,14 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
 App::~App()  {
 }
 
+void App::vrc_Bdown_cb(const std_msgs::StringConstPtr& msg){
+  Bdown_ = atoi(msg->data.c_str());
+}
+void App::vrc_Bup_cb(const std_msgs::StringConstPtr& msg){
+  Bup_ = atoi(msg->data.c_str());
+}
+
+
 void App::vrc_score_cb(const atlas_msgs::VRCScoreConstPtr& msg){
   //std::cout << "got vrc score\n";  
   drc::score_t score;
@@ -149,6 +168,8 @@ void App::vrc_score_cb(const atlas_msgs::VRCScoreConstPtr& msg){
   score.completion_score = msg->completion_score;
   score.falls = msg->falls;
   score.task_type = msg->task_type;
+  score.bytes_downlink_remaining = Bdown_;
+  score.bytes_uplink_remaining = Bup_;
   lcm_publish_.publish("VRC_SCORE", &score);
 
   if (!msg->message.empty() ){
