@@ -55,6 +55,150 @@ namespace renderer_affordances_lcm_utils
         trajmsg.num_joints =0; 
         self->lcm->publish(channel, &trajmsg);
     }
+
+     static void publish_partial_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name, string channel,KDL::Frame &T_world_geometry, 
+                                                           int grasp_state, void *user)
+    {
+        //grasp state = 0 - open
+        //grasp state = 1 - partial 
+        //grasp state = 2 - full grasp 
+        RendererAffordances *self = (RendererAffordances*) user;
+        drc::desired_grasp_state_t msg;
+        msg.utime = self->last_state_msg_timestamp;
+        msg.robot_name = self->robot_name;
+    
+        msg.object_name = string(sticky_hand_struc.object_name);
+        msg.geometry_name = string(sticky_hand_struc.geometry_name);
+        msg.unique_id = sticky_hand_struc.uid;
+        msg.grasp_type = sticky_hand_struc.hand_type;
+        msg.power_grasp = 0;
+        // desired ee position in world frame
+        KDL::Frame T_world_ee,T_body_ee;
+    
+        // Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
+        KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+        //    KDL::Frame T_hand_palm = KDL::Frame::Identity();
+        //    // this was there in urdf to make sure fingers are pointing in z axis.
+        //    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
+        //    KDL::Frame  T_geometry_palm = T_geometry_hand*T_hand_palm.Inverse()
+
+        KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+        if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+            cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+
+
+    
+        T_world_ee = T_world_geometry*T_geometry_palm;
+        KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
+    
+    
+        KDL::Frame T_hand_offset = KDL::Frame::Identity();
+    
+        // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
+        KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
+    
+        // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+        T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
+        //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+
+     
+        // double ro,pi,ya;
+        //   T_world_ee.M.GetRPY(ro,pi,ya);
+        //   cout <<"roll"<<ro*(180/M_PI) << endl;
+        //   cout <<"pitch"<<pi*(180/M_PI) << endl;
+        //   cout <<"yaw"<<ya*(180/M_PI) << endl;
+       
+          
+        //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
+
+        // desired ee position wrt to robot body.
+        //T_body_ee = T_body_world*T_world_ee;
+        T_body_ee = T_world_ee; // send them in world frame for now.
+        double x,y,z,w;
+        T_body_ee.M.GetQuaternion(x,y,z,w);
+    
+        drc::position_3d_t hand_pose; 
+
+        hand_pose.translation.x = T_body_ee.p[0];
+        hand_pose.translation.y = T_body_ee.p[1];
+        hand_pose.translation.z = T_body_ee.p[2];
+
+        hand_pose.rotation.x = x;
+        hand_pose.rotation.y = y;
+        hand_pose.rotation.z = z;
+        hand_pose.rotation.w = w;
+    
+        if((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.IROBOT_LEFT)){
+            msg.l_hand_pose = hand_pose;
+            msg.num_l_joints  = sticky_hand_struc.joint_name.size();
+            msg.num_r_joints  = 0;
+            msg.l_joint_name.resize(msg.num_l_joints);
+            msg.l_joint_position.resize(msg.num_l_joints);
+            for(int i = 0; i < msg.num_l_joints; i++){
+                //if(grasp_flag){
+                if(grasp_state == 2){
+                    msg.l_joint_position[i]= sticky_hand_struc.joint_position[i];
+                }
+                else if(grasp_state == 1){
+                    if(i>=9)
+                        msg.l_joint_position[i]=0;
+                    else  if(i %3 == 1){
+                        msg.l_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
+                    }
+                    else{
+                        msg.l_joint_position[i]=0;
+                    }
+                }
+                else if(grasp_state == 3){
+                    if(i>=9)
+                        msg.l_joint_position[i]=0;
+                    else{
+                        msg.l_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
+                    }
+                }
+                else{
+                    msg.l_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
+                }
+                msg.l_joint_name[i]= sticky_hand_struc.joint_name[i];
+            }
+        }
+        else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
+            msg.r_hand_pose = hand_pose;
+            msg.num_r_joints  = sticky_hand_struc.joint_name.size();
+            msg.num_l_joints  = 0;
+            msg.r_joint_name.resize(msg.num_r_joints);
+            msg.r_joint_position.resize(msg.num_r_joints);
+            for(int i = 0; i < msg.num_r_joints; i++){
+                if(grasp_state == 2){
+                    msg.r_joint_position[i]= sticky_hand_struc.joint_position[i];
+                }
+                else if(grasp_state == 1){
+                    if(i>=9)
+                        msg.r_joint_position[i]=0;
+                    else if(i %3 == 1){
+                        msg.r_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
+                    }
+                    else{
+                        msg.r_joint_position[i]=0;
+                    }
+                }
+                else if(grasp_state == 3){
+                    if(i>=9)
+                        msg.r_joint_position[i]=0;
+                    else{
+                        msg.r_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
+                    }
+                }
+                else{
+                    msg.r_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
+                }
+                msg.r_joint_name[i]= sticky_hand_struc.joint_name[i];
+            }
+        }
+
+        // Publish the message 
+        self->lcm->publish(channel, &msg);
+    }
   
     // one traj_opt_constraint
     // for N ee's and K timesteps.    
