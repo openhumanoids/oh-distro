@@ -114,13 +114,12 @@ classdef WalkingPDBlock < MIMODrakeSystem
       ik_args = {};
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
-          pos_min = cdata.link_constraints(j).traj.eval(t);
-          pos_max = pos_min;
+          approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, cdata.link_constraints(j).traj.eval(t)};
         else
           pos_min = cdata.link_constraints(j).min_traj.eval(t);
           pos_max = cdata.link_constraints(j).max_traj.eval(t);
+          approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         end
-        approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         ik_args(end+1:end+6) = horzcat(approx_args(end-2:end), {[],[],[]});
       end
 
