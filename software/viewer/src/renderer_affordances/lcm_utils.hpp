@@ -980,7 +980,19 @@ namespace renderer_affordances_lcm_utils
       publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
   } 
     
-  
+
+  static void publish_mate_cmd (void *user, string channel)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+
+        /*drc::hongkai_is_awesome_t msg.;
+        msg..utime = self->last_state_msg_timestamp;
+        msg.robot_name = self->robot_name;*/
+
+        //self->lcm->publish(channel, &msg.);
+
+  } 
+      
 
 }// end namespace
 

@@ -17,6 +17,7 @@
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
 #define PARAM_SEND_POSE_GOAL     "Get Robot Pose"
+#define PARAM_MATE     "Mate"
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
@@ -661,6 +662,11 @@ namespace renderer_affordances_gui_utils
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal(self,channel,T_world_body_desired);  
     }
+    else if(!strcmp(name,PARAM_MATE)){
+      string channel = "MATE_CMD";
+      publish_mate_cmd(self,channel);  
+    }
+    
     
     bot_viewer_request_redraw(self->viewer);
     if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS))
@@ -789,7 +795,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
 
    }
-    
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
 
