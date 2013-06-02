@@ -45,16 +45,12 @@ step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 apex_fracs = [0.15, 0.85];
 next_pos = last_pos + angleDiff(last_pos, next_pos);
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
-apex_pos(3,:) = max([last_pos(3), next_pos(3)]) + options.step_height;
+apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + abs(next_pos(3) - last_pos(3));
+% apex_pos(3,:) = max([last_pos(3), next_pos(3)]) + options.step_height;
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 % apex_pos(3) = apex_pos(3) + effective_height;
 
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)
-  % Create a single default apex pose to ensure that we at least rise by this much on flat ground
-  % apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
- 
-  % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos in the xy plane.
-
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos
   terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, max([ceil(step_dist_xy / 0.02),3]), 10);
   terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
@@ -65,7 +61,6 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   end
   
   %% Expand terrain convex hull by the size of the foot
-  % expanded_terrain_pts = [terrain_pts(:,1)];
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
   has_terrain = false;
   for j = 1:length(terrain_pts(1,:))
@@ -75,7 +70,6 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; contact_height];
     end
   end
-  % expanded_terrain_pts = [expanded_terrain_pts, terrain_pts(:,end), apex_pos_l];
   expanded_terrain_pts(1,:) = bsxfun(@max, bsxfun(@min, expanded_terrain_pts(1,:), step_dist_xy), 0);
   expanded_terrain_pts = expanded_terrain_pts(:, convhull(expanded_terrain_pts(1,:), expanded_terrain_pts(2,:), 'simplify', true));
   expanded_terrain_pts = expanded_terrain_pts(:, end:-1:1); % convert counterclockwise to clockwise convex hull
@@ -89,7 +83,7 @@ else
   %% Just ignore the terrain and provide an apex pose
   step_dist_xy = 1;
   has_terrain = false;
-  traj_pts = [[0; last_pos(3)], [0.5;apex_pos(3)], [1;next_pos(3) + pre_contact_height]];
+  traj_pts = [[0; last_pos(3)], [apex_fracs; apex_pos(3,:)], [1;next_pos(3) + pre_contact_height]];
 end
 traj_pts_xyz = [last_pos(1) + (next_pos(1) - last_pos(1)) * traj_pts(1,:) / step_dist_xy;
                 last_pos(2) + (next_pos(2) - last_pos(2)) * traj_pts(1,:) / step_dist_xy;
@@ -125,7 +119,7 @@ end
 % toe.min = max([traj_pts(2,:) - effective_height; 
 %                (traj_pts(1,:) / step_dist_xy) * (toe_end(3) - toe_start(3)) + toe_start(3)]);
 toe.min = traj_pts(2,:) - effective_height;
-toe.min(end-1:end) = toe.min(end-1:end) - 0.01;
+% toe.min(end-1:end) = toe.min(end-1:end) - 0.01;
 toe.min = [nan*ones(2, length(toe.min)); toe.min];
 toe.max = nan * toe.min;
 
@@ -136,6 +130,9 @@ heel.min = traj_pts(2,:) - effective_height;
 %                 (traj_pts(1,:) / step_dist_xy) * (heel_end(3) - heel_start(3)) + heel_start(3)]);
 heel.min = [nan*ones(2,length(heel.min)); heel.min];
 heel.max = nan * heel.min;
+
+toe.min = nan*toe.min;
+heel.min = nan*heel.min;
 
 swing_poses.toe = toe;
 swing_poses.heel = heel;
