@@ -796,17 +796,18 @@
          </geometry>
       </collision>
       <visual name="hand_brake_collision">
-         <origin xyz="0 0 -0.1" rpy="0 -0 0"/>
+         <origin xyz="0.03 0.0 -0.1" rpy="0 -0 0"/>
          <geometry>
-            <cylinder radius="0.02" length="0.45"/>
+            <cylinder radius="0.015" length="0.2"/>
          </geometry>
       </visual>      
    </link>
    <!-- 0.07 is correct -->
    <joint name="hand_brake_joint" type="revolute">
-     <origin xyz="0.5 0.07 0.9" rpy="3.141592653589793 0.025 3.141592653589793"/> <!---0.05840734641020694 3.141592653589793"/>-->
+     <origin xyz="0.53 0.07 1.05" rpy="3.141592653589793 0.594027 3.141592653589793"/>
+     <!--<origin xyz="0.5 0.07 0.9" rpy="3.141592653589793 0.025 3.141592653589793"/> --><!---0.05840734641020694 3.141592653589793"/>-->
      <axis xyz="0 -1 -0"/>
-     <limit effort="1" velocity="1" lower="-0.6" upper="0.6"/>
+     <limit effort="1" velocity="1" lower="-0.9" upper="0.2"/>
      <parent link="chassis" type="link"/>
      <child link="hand_brake" type="link"/>
      
