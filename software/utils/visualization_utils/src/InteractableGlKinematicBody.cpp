@@ -617,7 +617,25 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
     }//end for
 }
 
+void InteractableGlKinematicBody::set_future_state(const drc::robot_state_t &msg)
+{
 
+  GlKinematicBody::set_future_state(msg);
+  
+   if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+      update_floatingbase_marker_collision_objects();  
+   }
+
+    if(!jointdof_markers_initialized){
+      init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+      jointdof_markers_initialized = true; 
+    }
+
+    update_jointdof_marker_collision_objects();
+
+}//end void GlKinematicBody::set_future_state
 
 void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {

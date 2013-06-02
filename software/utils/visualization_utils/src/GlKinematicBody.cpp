@@ -596,6 +596,40 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::st
   
 }//end void GlKinematicBody::set_state(const KDL::Frame &, const std::map<std::string, double> & )
 
+void GlKinematicBody::set_future_state(const drc::robot_state_t &msg)
+{
+
+  // dont clear old just update
+   map<string, double>::iterator joint_it;
+    for (uint i=0; i< (uint) msg.num_joints; i++){
+       joint_it = _future_jointpos.find(msg.joint_name[i]);
+       if(joint_it!=_future_jointpos.end())
+          joint_it->second = msg.joint_position[i];
+    }
+    
+  //TODO: STORE previous jointpos_in and T_world_body as private members?
+  //InteractableGLKinematicBody will provide an method for interactive adjustment.  
+    
+  KDL::Frame T_world_body_future;
+  T_world_body_future.p[0]= msg.origin_position.translation.x;
+  T_world_body_future.p[1]= msg.origin_position.translation.y;
+  T_world_body_future.p[2]= msg.origin_position.translation.z;		    
+  T_world_body_future.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
+  _T_world_body_future = T_world_body_future;
+  
+ if(!future_display_active){
+   future_display_active = true;
+  }
+//  std::map<std::string, double> jointpos_in;
+//  for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
+//    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i]));     
+
+    if(is_otdf_instance)
+        run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
+    else
+        run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
+  
+}//end GlKinematicBody::set_state(const drc::robot_state_t &msg)
 
    
 // space and time visualization.

@@ -147,7 +147,7 @@ class GlKinematicBody
     void set_state(boost::shared_ptr<otdf::ModelInterface> _otdf_instance); 
     void run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::string, double> &jointpos_in,const KDL::Frame &T_world_body, bool update_future_frame);
     
-    
+    void set_future_state(const drc::robot_state_t &msg);
     void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);// ability to visualize in space and time, should work for both otdf and urdf.
 
     void draw_link(boost::shared_ptr<urdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);

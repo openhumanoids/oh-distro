@@ -84,6 +84,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void update_otdf_collision_objects(void);
    
    // overloaded from GLKinematicBody They call update functions for marker collision objects
+   void set_future_state(const drc::robot_state_t &msg);
    void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);
 
    // double c[3] = {0.3,0.3,0.3};
