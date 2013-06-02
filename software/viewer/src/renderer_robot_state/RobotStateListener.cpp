@@ -19,7 +19,9 @@ namespace renderer_robot_state
     _lcm(lcm),
     _viewer(viewer)
   {
-   _last_state_msg_timestamp = 0;
+   _last_state_msg_system_timestamp = 0;
+   _last_state_msg_sim_timestamp = 0;
+   _end_pose_received = false;
    _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     if(!lcm->good())
@@ -40,7 +42,7 @@ namespace renderer_robot_state
     }else if(operation_mode==1){
       lcm->subscribe("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &RobotStateListener::handleRobotStateMsg, this); 
     }
-      
+    lcm->subscribe("CANDIDATE_ROBOT_ENDPOSE", &RobotStateListener::handleCandidateRobotEndPoseMsg, this);   
     
     _jointdof_filter_list.clear();
     _jointdof_filter_list.push_back("l_arm_usy");
@@ -100,19 +102,41 @@ namespace renderer_robot_state
     }
     
     // Render at 100Hz of Real Time. Too much rendering will make the viewer less reponsive.
-    //cout << msg->utime - _last_state_msg_timestamp << endl;
+    //cout << msg->utime - _last_state_msg_system_timestamp << endl;
 		int64_t now = bot_timestamp_now();//msg->utime
-    if(now-_last_state_msg_timestamp >= 100000)  // timestamps are in usec
+    if(now-_last_state_msg_system_timestamp >= 100000)  // timestamps are in usec
     {
-    // cout << now - _last_state_msg_timestamp << endl;
+    // cout << now - _last_state_msg_system_timestamp << endl;
     _gl_robot->set_state(*msg);
     bot_viewer_request_redraw(_viewer);
-     _last_state_msg_timestamp = now;//msg->utime;
+     _last_state_msg_system_timestamp = now;//msg->utime;
+     _last_state_msg_sim_timestamp = msg->utime;
     }
 
     //int64_t toc = bot_timestamp_now();
     //cout << bot_timestamp_useconds(toc-tic) << endl;
     
+  } // end handleMessage
+  
+  void RobotStateListener::handleCandidateRobotEndPoseMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::robot_state_t* msg)						 
+  { 
+  
+   cout << "\n in handleCandidateRobotEndPoseMsg:" << endl;
+    if (!_urdf_parsed)    
+      return;   
+    if(_urdf_subscription_on)
+    {			
+      cout << "\n handleCandidateRobotEndPoseMsg: unsubscribing from _urdf_subscription" << endl;
+      _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
+      _urdf_subscription_on =  false; 	
+    }
+
+     _gl_robot->set_future_state(*msg);
+     _end_pose_received =true;
+     // spawn_pose_approval_dock();
+     bot_viewer_request_redraw(_viewer);     
   } // end handleMessage
 
 //-------------------------------------------------------------------------------------        

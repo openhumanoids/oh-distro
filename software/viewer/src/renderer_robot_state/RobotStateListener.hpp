@@ -46,10 +46,13 @@ namespace renderer_robot_state
     BotViewer *_viewer;
     
     bool _urdf_parsed;
+  
     std::vector<std::string> _jointdof_filter_list;
   public:  
     bool _urdf_subscription_on;
-    int64_t _last_state_msg_timestamp; 
+    int64_t _last_state_msg_sim_timestamp; 
+    int64_t _last_state_msg_system_timestamp; 
+    bool _end_pose_received;
    
     //----------------constructor/destructor
   public:
@@ -64,6 +67,9 @@ namespace renderer_robot_state
     //-------------message callback
   private:
     void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
+			      const std::string& chan, 
+			      const drc::robot_state_t* msg);
+	  void handleCandidateRobotEndPoseMsg (const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 

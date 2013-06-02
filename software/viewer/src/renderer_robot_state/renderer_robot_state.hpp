@@ -47,6 +47,8 @@ namespace renderer_robot_state
     bool clicked;
     bool dragging; 
     bool visualize_bbox;
+    
+    GtkWidget *pose_approval_dock;
 
     std::string* selection;
     std::string* marker_selection;
@@ -273,7 +275,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
   {
         RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
         drc::joint_angles_t msg;
-        msg.utime = self->robotStateListener->_last_state_msg_timestamp;
+        msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp;
         msg.robot_name = self->robotStateListener->_robot_name;
         int num_joints = 0;
         typedef map<string,double> jointpos_type;
@@ -290,6 +292,40 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
         msg.num_joints =  num_joints; 
         self->lcm->publish(channel, &msg);
    }
+   
+  inline static void publish_walking_goal(void *user, const string& channel)
+  {
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    drc::walking_goal_t msg;
+    msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp; //bot_timestamp_now();
+    msg.max_num_steps = (int32_t) 15;
+    msg.min_num_steps = (int32_t) 2;
+    msg.robot_name = self->robotStateListener->_robot_name; 
+
+    msg.goal_pos.translation.x = self->robotStateListener->_gl_robot->_T_world_body_future.p[0];
+    msg.goal_pos.translation.y = self->robotStateListener->_gl_robot->_T_world_body_future.p[1];
+    msg.goal_pos.translation.z = 0;
+    double r,p,y;
+    self->robotStateListener->_gl_robot->_T_world_body_future.M.GetRPY(r,p,y);
+    double rpy[] = {0,0,y};
+    double quat_out[4];
+    bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
+    msg.goal_pos.rotation.w = quat_out[0];
+    msg.goal_pos.rotation.x = quat_out[1];
+    msg.goal_pos.rotation.y = quat_out[2];
+    msg.goal_pos.rotation.z = quat_out[3];
+    msg.is_new_goal = true;
+    msg.allow_optimization = false;
+    msg.step_speed = 0.50;
+    msg.step_height = 0.05;
+    msg.mu = 1.00;
+    msg.follow_spline = false;
+    msg.ignore_terrain = false;
+    msg.right_foot_lead = true;
+
+    cout << "Sending WALKING_GOAL\n";
+    self->lcm->publish(channel, &msg);
+ }   
   
 } // end namespace
   

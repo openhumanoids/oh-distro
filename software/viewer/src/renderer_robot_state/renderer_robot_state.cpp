@@ -15,6 +15,7 @@
 
 
 #include "RobotStateListener.hpp"
+#include "pose_approval_gui_utils.hpp"
 #include "renderer_robot_state.hpp"
 
 
@@ -33,7 +34,7 @@ using namespace Eigen;
 using namespace visualization_utils;
 using namespace collision;
 using namespace renderer_robot_state;
-
+using namespace renderer_robot_state_gui_utils;
 
 
 
@@ -199,6 +200,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
    self->robotStateListener->_gl_robot->draw_body (c,alpha);
 
   }
+  
+  if(self->robotStateListener->_end_pose_received){
+     self->robotStateListener->_end_pose_received = false;
+     spawn_pose_approval_dock(self);
+   }
 
 // int64_t toc = bot_timestamp_now();
 // cout << bot_timestamp_useconds(toc-tic) << endl;
@@ -236,9 +242,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   else if(! strcmp(name, PARAM_RESET_POSTURE)) {
    if(self->robotStateListener->_gl_robot->is_future_state_changing())
       self->robotStateListener->_gl_robot->set_future_state_changing(false);
-      self->robotStateListener->_gl_robot->set_future_state( self->robotStateListener->_gl_robot->_T_world_body, self->robotStateListener->_gl_robot->_current_jointpos);   
-      self->robotStateListener->_gl_robot->disable_future_display();      
-      bot_viewer_request_redraw(self->viewer);
+   self->robotStateListener->_gl_robot->set_future_state( self->robotStateListener->_gl_robot->_T_world_body, self->robotStateListener->_gl_robot->_current_jointpos);   
+   self->robotStateListener->_gl_robot->disable_future_display();      
+   bot_viewer_request_redraw(self->viewer);
   }
   else if (! strcmp(name, PARAM_ENABLE_POSTURE_ADJUSTMENT)) 
   {
@@ -306,6 +312,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     self->selection = new std::string(" ");
     self->dragging = 0;  
   	self->marker_selection = new std::string(" ");
+  	self->pose_approval_dock= NULL; 
     self->visualize_bbox = false;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 

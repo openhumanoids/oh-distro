@@ -16,6 +16,7 @@
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
+#define PARAM_SEND_POSE_GOAL     "Get Robot Pose"
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
@@ -41,7 +42,7 @@
 #include "lcm_utils.hpp"
 
 //#include "AffordanceCollectionListener.hpp"
-//#include "RobotStateListener.hpp"
+#include "RobotStateListener.hpp"
 #include "InitGraspOptPublisher.hpp"
 #include "CandidateGraspSeedListener.hpp"
 #include "GraspOptStatusListener.hpp"
@@ -654,6 +655,12 @@ namespace renderer_affordances_gui_utils
       self->instance_selection  = std::string(self->object_selection);  
       spawn_set_manip_map_dof_range_popup(self);
     }
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL)){
+      string channel = "POSE_GOAL";
+       // only orientation is considered as seed in pose optimization
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      publish_pose_goal(self,channel,T_world_body_desired);  
+    }
     
     bot_viewer_request_redraw(self->viewer);
     if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS))
@@ -778,7 +785,8 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(for approval)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
 
    }
     

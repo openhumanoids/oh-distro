@@ -84,8 +84,6 @@ namespace renderer_affordances
             return false;
         } 
         
-    
-
         std::vector<std::string>::const_iterator found;
         found = std::find (urdf_files.begin(), urdf_files.end(), _left_foot_name); 
         if(found !=  urdf_files.end()) {

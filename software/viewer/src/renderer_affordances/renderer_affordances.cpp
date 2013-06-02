@@ -191,7 +191,6 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             float ch[3];
             
             
-            
             // Check reachability w.r.t to current pelvis
             bool reachable;
             if(hand_it->second.hand_type == 1) {//SANDIA_LEFT=0, SANDIA_RIGHT=1,

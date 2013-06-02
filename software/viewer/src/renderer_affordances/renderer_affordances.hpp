@@ -1383,8 +1383,6 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
     self->stickyfoot_selection  = " ";
     self->marker_selection = " ";
     
-
-
     if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
     {
      //if marker based adjustment is enabled

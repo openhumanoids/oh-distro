@@ -56,8 +56,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    T_world_body.p[2]= msg->origin_position.translation.z;		    
 	    T_world_body.M =  KDL::Rotation::Quaternion(msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z, msg->origin_position.rotation.w);
 
-      T_body_world=T_world_body.Inverse();   
-      
+      T_body_world=T_world_body.Inverse(); 
    
       last_robotstate_msg = (*msg);
       _parent_renderer->last_state_msg_timestamp = msg->utime;
