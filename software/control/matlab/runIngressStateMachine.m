@@ -12,15 +12,13 @@ if(nargin<1) options = struct(); end
 if(~isfield(options,'use_mex')) options.use_mex = true; end
 if(~isfield(options,'debug')) options.debug = false; end
 
-harness_controller = HarnessController('harnessed',r);
 standing_controller = StandingController('standing',r);
 quasistatic_controller = QuasistaticMotionController('qs_motion',r,options);
 
-controllers = struct(harness_controller.name,harness_controller, ...
-                      standing_controller.name,standing_controller, ...
+controllers = struct(standing_controller.name,standing_controller, ...
                       quasistatic_controller.name,quasistatic_controller);
 
-state_machine = DRCStateMachine(controllers,harness_controller.name);
+state_machine = DRCStateMachine(controllers,standing_controller.name);
 
 state_machine.run();
 

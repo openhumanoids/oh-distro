@@ -460,7 +460,7 @@ classdef QPController < MIMODrakeSystem
         end
 
         % solve for qdd_free unconstrained
-        qdd_free = -inv(Hqp)*fqp';
+        qdd_free = -Hqp\fqp';
       end      
         
     

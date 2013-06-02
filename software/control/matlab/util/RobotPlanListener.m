@@ -74,7 +74,7 @@ classdef RobotPlanListener
             G = [];
             for i=1:msg.num_grasp_transitions,
                 G(i).time = msg.grasps(i).utime;
-               G(i).affordance_uid =msg.grasps(i).affordance_uid; %(Ignore for now.)
+                G(i).affordance_uid =msg.grasps(i).affordance_uid; %(Ignore for now.)
                 G(i).hand_pose = msg.grasps(i).hand_pose;
                 G(i).grasp_on=msg.grasps(i).grasp_on;
                 G(i).grasp_type=msg.grasps(i).grasp_type;

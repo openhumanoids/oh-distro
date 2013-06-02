@@ -11,13 +11,11 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 % r = setTerrain(r,DRCTerrainMap(false,struct('name','UnpinnedManipStateMachine')));
 r = compile(r);
 
-harness_controller = HarnessController('harnessed',r);
 standing_controller = StandingManipController('standing',r,struct('control','Impedance'));
 % standing_controller = StandingController('standing',r);
-controllers = struct(harness_controller.name,harness_controller,...
-                     standing_controller.name,standing_controller);
+controllers = struct(standing_controller.name,standing_controller);
 
-state_machine = DRCStateMachine(controllers,harness_controller.name);
+state_machine = DRCStateMachine(controllers,standing_controller.name);
 
 state_machine.run();
 

@@ -110,7 +110,6 @@ classdef StandingController < DRCController
       % should make this a more specific channel name
 %      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
        obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for standing/reaching tasks
- 
     end
     
     function send_status(obj,t_sim,t_ctrl)
@@ -155,6 +154,19 @@ classdef StandingController < DRCController
 
         obj.controller_data.setField('qtraj',qtraj);
         obj = setDuration(obj,inf,false); % set the controller timeout
+      else
+        % first initialization should come here... wait for state
+        state_frame = getStateFrame(obj.robot);
+        state_frame.subscribe('EST_ROBOT_STATE');
+        while true
+          [x,~] = getNextMessage(state_frame,10);
+          if (~isempty(x))
+            data = struct();
+            data.AtlasState = x;
+            break;
+          end
+        end
+        obj = initialize(obj,data);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout

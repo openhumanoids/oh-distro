@@ -170,9 +170,22 @@ classdef StandingManipController < DRCController
         msg = data.COMMITTED_ROBOT_PLAN;
         [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-        
+
         obj.controller_data.setField('qtraj',qtraj);
         obj = setDuration(obj,inf,false); % set the controller timeout
+      else
+        % first initialization should come here... wait for state
+        state_frame = getStateFrame(obj.robot);
+        state_frame.subscribe('EST_ROBOT_STATE');
+        while true
+          [x,~] = getNextMessage(state_frame,10);
+          if (~isempty(x))
+            data = struct();
+            data.AtlasState = x;
+            break;
+          end
+        end
+        obj = initialize(obj,data);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout
