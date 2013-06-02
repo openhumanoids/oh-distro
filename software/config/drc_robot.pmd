@@ -12,7 +12,7 @@ group "0.development" {
         host = "localhost";
     }
     cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.15";
+        exec = "drc-set-sim-rate 0.2";
         host = "robot";
     }
 }
@@ -316,36 +316,36 @@ group "b.4.driving" {
 
 group "g.0.gazebo" {
     cmd "gz_mit_ingress" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
     cmd "gz_mit_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
     cmd "gz_quals_2" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "robot";
     }
     cmd "gz_quals_3" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
         host = "robot";
     }
     cmd "gz_vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
         host = "robot";
     }
     cmd "gz_vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
     cmd "gz_vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
     
    cmd "gz_vrc_manip_mating_test" {
-      exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
+      exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
       host = "robot";
    }
 }
@@ -588,7 +588,10 @@ script "dev.quals_slope" {
     wait ms 25000;
     start cmd "gz_quals_3"; 
     wait ms 5000;
+	start cmd "simple_right_grasp";
+	start cmd "simple_left_grasp";
 }
+
 script "dev.vrc_walking" { 
     start group "0.development";
     start group "a.1.core";
@@ -597,9 +600,11 @@ script "dev.vrc_walking" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_vrc_walking"; 
-    start cmd "set-sim-rate";
     wait ms 5000;
+	start cmd "simple_right_grasp";
+	start cmd "simple_left_grasp";
 }
+
 script "dev.vrc_driving" { 
     start group "0.development";
     start group "a.1.core";
@@ -627,6 +632,8 @@ script "dev.flat_walking" {
     wait ms 25000;
     start cmd "gz_mit_walking";
     wait ms 5000;
+	start cmd "simple_right_grasp";
+	start cmd "simple_left_grasp";
 }
 
 script "dev.ingress" { 
@@ -636,6 +643,8 @@ script "dev.ingress" {
     wait ms 25000;
     start cmd "gz_mit_ingress"; 
     wait ms 5000;
+	start cmd "simple_right_grasp";
+	start cmd "simple_left_grasp";
 }
 
 script "dev.vrc_manip" { 
