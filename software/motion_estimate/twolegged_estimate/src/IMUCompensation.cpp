@@ -14,9 +14,16 @@ namespace InertialOdometry {
                                                                          
   void IMUCompensation::UpdateAccelBiases(const double biases[3])
   {
+	  std::cout << "Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
     for (int i=0;i<3;i++)
       accel_biases(i) = biases[i];
-  }             
+  }
+
+  void IMUCompensation::AccumulateAccelBiases(const double delta_biases[3]) {
+	  for (int i=0;i<3;i++) {
+	        accel_biases(i) += delta_biases[i];
+	  }
+  }
 
   void IMUCompensation::UpdateGyroScaleFactor(const double sf[3])
   {
@@ -67,7 +74,12 @@ namespace InertialOdometry {
   //Compensation subtracts biases FIRST, then scales according to the scale factors given
   void IMUCompensation::Accel_Compensation(IMU_dataframe *_imu_pre)
   {
-    _imu_pre->accel_ = accel_errors * (_imu_pre->accel_ - accel_biases);
+	  //Eigen::Vector3d pre;
+	  //pre = _imu_pre->acc_b;
+    _imu_pre->acc_comp = accel_errors * (_imu_pre->acc_b - accel_biases);
+
+    //std::cout << "Compensating Accel: " << pre.transpose() << " | " << _imu_pre->accel_.transpose() << " | " << accel_errors <<  std::endl;
+
     _imu_pre->accel_compensated_flag = true;
     return;
   }
@@ -82,6 +94,10 @@ namespace InertialOdometry {
 
     return;
   }
+
+   Eigen::Vector3d IMUCompensation::get_accel_biases() {
+	   return accel_biases;
+   }
 
 
   IMUCompensation::IMUCompensation()

@@ -22,15 +22,15 @@ namespace InertialOdometry {
   {
 	  SubtractGravity(_imu);
 
-	  Eigen::VectorXd test;
+	  Eigen::Vector3d test;
 
 	  test = a2v.integrate(_imu->uts,_imu->force_);
 
 	  state.first_pose_rel_vel = test;
 
-	  //std::cout << "state: " << _imu->force_.transpose() << " | " << test.transpose() << std::endl;
-
 	  state.first_pose_rel_pos = v2p.integrate(_imu->uts, state.first_pose_rel_vel);
+
+	  //std::cout << " state: " << _imu->force_.transpose() << " | " << state.first_pose_rel_pos.transpose() << std::endl;
 
 	  last_uts = _imu->uts;
 
@@ -47,5 +47,20 @@ namespace InertialOdometry {
 	  return;
   }
 
+   void VP_Mechanization::setPosStates(const Eigen::Vector3d &P_set) {
+
+	   v2p.setStateTo(P_set);
+	   state.first_pose_rel_pos = P_set;
+
+	   return;
+   }
+
+   void VP_Mechanization::setVelStates(const Eigen::Vector3d &V_set) {
+
+   	   a2v.setStateTo(V_set);
+   	   state.first_pose_rel_vel = V_set;
+
+   	   return;
+   }
 
 }

@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;
   std::cout << "Logging of data to file: " << switches.log_data_files << std::endl;
-  std::cout << "Adding extenstion to LCM messages: " << switches.lcm_add_ext << std::endl;
+  std::cout << "Adding extension to LCM messages: " << switches.lcm_add_ext << std::endl;
   std::cout << "Listening to truth LCM messages, including POSE_HEAD: " << switches.lcm_read_trues << std::endl;
   std::cout << "Using true Z position for state estimate: " << switches.use_true_z << std::endl;
 

@@ -15,7 +15,8 @@ namespace InertialOdometry {
 
     orc.updateOrientation(_imu->uts,orient);
 
-    _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_b);//??
+    _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
+
     avp.PropagateTranslation(_imu);
 
     // update output structure
@@ -71,5 +72,18 @@ namespace InertialOdometry {
 	  return R;
   }
 
-}
+	void Odometry::setPositionState(const Eigen::Vector3d &P_set) {
 
+		avp.setPosStates(P_set);
+
+		return;
+	}
+
+	void Odometry::setVelocityState(const Eigen::Vector3d &V_set) {
+
+		avp.setVelStates(V_set);
+
+		return;
+	}
+
+}

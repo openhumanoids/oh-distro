@@ -65,6 +65,7 @@
 
 #define LOG_28_JOINT_COMMANDS
 #define NUMBER_JOINTS             28
+#define PI						 3.14159265358979323
 
 #define LOG_LEG_TRANSFORMS
 
@@ -100,6 +101,10 @@ private:
 	InertialOdometry::DynamicState InerOdoEst;
 
 	double df_feedback_gain;
+	double df_pos_feedback_gain;
+	unsigned long df_events;
+
+	InertialOdometry::IMU_dataframe just_checking_imu_frame;
 
 	TrapezoidalInt acc_bias_est;
 
@@ -248,7 +253,6 @@ private:
 
 	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
 
-	InertialOdometry::DynamicState data_fusion( const unsigned long long &uts, const InertialOdometry::DynamicState &LO, const InertialOdometry::DynamicState &IO);
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -256,6 +260,10 @@ public:
 	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, command_switches* commands);
 	~LegOdometry_Handler();
 	
+
+	InertialOdometry::DynamicState data_fusion( const unsigned long long &uts, const InertialOdometry::DynamicState &LO, const InertialOdometry::DynamicState &IO);
+	Eigen::Vector3d getInerAccBiases();
+
 	void finish() { _finish = true; }
 	
 	void terminate();

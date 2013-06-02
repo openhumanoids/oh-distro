@@ -528,6 +528,8 @@ TrapezoidalInt::TrapezoidalInt() {
 void TrapezoidalInt::Init() {
 	first_pass = true;
 	size_set = false;
+	int_dx.setZero();
+	prev_dx.setZero();
 }
 
 /*
@@ -557,12 +559,22 @@ Eigen::VectorXd TrapezoidalInt::getVal() {
 	return int_dx;
 }
 
+void TrapezoidalInt::setStateTo(const Eigen::VectorXd &set_val) {
+	int_dx = set_val;
+	prev_dx = set_val;
+
+}
+
 Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &u_ts, const Eigen::VectorXd &dx) {
 	// TODO -- This function should use the u_time stamp from zero. Then it can also be used as an integral time counter and makes best possible use of the available time variable dynamic range
 
 	if (u_ts < u_stime) {
 		std::cout << "TrapezoidalInt::integrate is jumping back in time. This is not supposed to happen -- behavior will be unpredictable.\n";
 		u_stime = u_ts;
+	}
+	if (first_pass) {
+		u_stime = u_ts;
+		first_pass = false;
 	}
 
 	// Eigen does not ensure self assigned computations x = x + 1

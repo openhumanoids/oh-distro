@@ -30,6 +30,9 @@ namespace InertialOdometry {
       // This function
       void updateOutput(InertialOdomOutput *_out);
 
+      void setPosStates(const Eigen::Vector3d &P_set);
+      void setVelStates(const Eigen::Vector3d &V_set);
+
       int Reset_all_states();
 
   };

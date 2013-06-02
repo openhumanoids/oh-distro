@@ -35,6 +35,10 @@ namespace InertialOdometry {
 		Odometry();
 		// Propagate the internal state registers with new IMU data
 		DynamicState PropagatePrediction(IMU_dataframe* _imu, const Eigen::Quaterniond &orient);
+
+		void setPositionState(const Eigen::Vector3d &P_set);
+
+		void setVelocityState(const Eigen::Vector3d &V_set);
   };
 
 }

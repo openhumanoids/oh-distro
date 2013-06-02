@@ -17,6 +17,7 @@ namespace InertialOdometry {
     Eigen::Vector3d force_;
     Eigen::Vector3d accel_;
     Eigen::Vector3d acc_b;
+    Eigen::Vector3d acc_comp;
 
     bool gyro_compensated_flag;
     bool accel_compensated_flag;
