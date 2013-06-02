@@ -56,9 +56,7 @@ classdef RobotPlanPublisher
             num_dofs = (size(X,1)-offset)/2;
             plan = javaArray('drc.robot_state_t', msg.num_states);
             float_offset = 0;
-            for i=1:msg.num_states,        
-                is_keyframe(i) = (X(1,i)==1.0);
-                is_breakpoint(i) = (X(2,i)==1.0);
+            for i=1:msg.num_states,    
                 plan(i) = drc.robot_state_t();
                 plan(i).utime = (T(i)*1000000);% use relative time, not absolute (G(i).utime*1000000+msg.utime)
                 plan(i).robot_name = msg.robot_name;
@@ -66,11 +64,11 @@ classdef RobotPlanPublisher
                     plan(i).origin_position = drc.position_3d_t();
                     plan(i).origin_position.translation = drc.vector_3d_t();
                     plan(i).origin_position.rotation = drc.quaternion_t();
-                    plan(i).origin_position.translation.x = X(3,i);
-                    plan(i).origin_position.translation.y = X(4,i);
-                    plan(i).origin_position.translation.z = X(5,i);
+                    plan(i).origin_position.translation.x = X(1,i);
+                    plan(i).origin_position.translation.y = X(2,i);
+                    plan(i).origin_position.translation.z = X(3,i);
                     
-                    q = rpy2quat([X(6,i) X(7,i) X(8,i)]);                    
+                    q = rpy2quat([X(4,i) X(5,i) X(6,i)]);                  
                     plan(i).origin_position.rotation.w = q(1);
                     plan(i).origin_position.rotation.x = q(2);
                     plan(i).origin_position.rotation.y = q(3);

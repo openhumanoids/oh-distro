@@ -51,6 +51,7 @@ h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
+pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
 
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
@@ -304,6 +305,27 @@ while(1)
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
       manip_planner.generateAndPublishPosturePlan(x0,q_desired);
   end  
+  
+  [posegoal,postureconstraint]= pose_goal_listener.getNextMessage(msg_timeout);
+  if(~isempty(posegoal))
+      disp('pose goal received .');
+      
+      % cache the a subset of fields as indices for aff_indexed_plans
+      timestamps =[posegoal.time];
+      ee_names = {posegoal.name};
+      ee_loci = zeros(6,length(ee_names));
+      
+        % joint_timestamps=[postureconstraint.time];
+        % joint_names = {postureconstraint.name};
+        % joint_positions = [postureconstraint.joint_position];
+      for i=1:length(ee_names),
+          p = posegoal(i).desired_pose(1:3);% for now just take the end state
+          q = posegoal(i).desired_pose(4:7);q=q/norm(q);
+          rpy = quat2rpy(q);
+          ee_loci(:,i)=[p(:);rpy(:)];
+      end
+      manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint);
+  end    
   
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
