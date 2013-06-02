@@ -509,7 +509,10 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
     //TODO: Add support for joint dof markers [switch via check box in main pane instead of a popup]
     //TODO: JointDof constraint comms with planner (pain) 
-    adjust_keyframe_on_marker_motion(self);
+      Eigen::Vector3f start,dir;
+    dir<< ray_dir[0], ray_dir[1], ray_dir[2];
+    start<< ray_start[0], ray_start[1], ray_start[2]; 
+    adjust_keyframe_on_marker_motion(self,start,dir);
     // cout << (*self->marker_selection) << ": mouse drag\n";
   }
   bot_viewer_request_redraw(self->viewer);

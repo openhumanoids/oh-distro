@@ -453,7 +453,7 @@ namespace renderer_robot_plan
   }  
   
 // ===================================================================  
-  inline static void adjust_keyframe_on_marker_motion(void *user)
+  inline static void adjust_keyframe_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
   {
       RendererRobotPlan *self = (RendererRobotPlan*) user;
       int index = self->selected_keyframe_index;
@@ -502,6 +502,26 @@ namespace renderer_robot_plan
           T_world_ee.p[2] = dz;
         }
         else if((*self->marker_selection)=="markers::base_roll"){
+            
+          // proper hit_drag point via marker plane ray intersection.
+          Eigen::Vector3f plane_normal,plane_point;
+          plane_normal<< 1,0,0;
+          plane_point[0]=T_world_ee.p[0];
+          plane_point[1]=T_world_ee.p[1];
+          plane_point[2]=T_world_ee.p[2];       
+          double lambda1 = dir.dot(plane_normal);
+          double lambda2 = (plane_point - start).dot(plane_normal);
+          double t;
+         // check for degenerate case where ray is (more or less) parallel to plane
+         if (fabs (lambda1) >= 1e-9) {
+           t = lambda2 / lambda1;
+            self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
+           }
+          // else  no solution    
+          Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
+          if(diff.norm() > 0.05){
+            self->prev_ray_hit_drag = self->ray_hit_drag; 
+          }     
           currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_ee.p[2],self->prev_ray_hit_drag[1]-T_world_ee.p[1]);
           angleTo = atan2(self->ray_hit_drag[2]-T_world_ee.p[2],self->ray_hit_drag[1]-T_world_ee.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
@@ -511,6 +531,25 @@ namespace renderer_robot_plan
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if((*self->marker_selection)=="markers::base_pitch"){ 
+          // proper hit_drag point via marker plane ray intersection.
+          Eigen::Vector3f plane_normal,plane_point;
+          plane_normal<< 0,1,0;
+          plane_point[0]=T_world_ee.p[0];
+          plane_point[1]=T_world_ee.p[1];
+          plane_point[2]=T_world_ee.p[2];       
+          double lambda1 = dir.dot(plane_normal);
+          double lambda2 = (plane_point - start).dot(plane_normal);
+          double t;
+         // check for degenerate case where ray is (more or less) parallel to plane
+         if (fabs (lambda1) >= 1e-9) {
+           t = lambda2 / lambda1;
+            self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
+           }
+          // else  no solution    
+          Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
+          if(diff.norm() > 0.05){
+            self->prev_ray_hit_drag = self->ray_hit_drag; 
+          } 
           currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_ee.p[0],self->prev_ray_hit_drag[2]-T_world_ee.p[2]);
           angleTo = atan2(self->ray_hit_drag[0]-T_world_ee.p[0],self->ray_hit_drag[2]-T_world_ee.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
@@ -520,6 +559,25 @@ namespace renderer_robot_plan
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         } 
         else if((*self->marker_selection)=="markers::base_yaw"){
+         // proper hit_drag point via marker plane ray intersection.
+          Eigen::Vector3f plane_normal,plane_point;
+          plane_normal<< 0,0,1;
+          plane_point[0]=T_world_ee.p[0];
+          plane_point[1]=T_world_ee.p[1];
+          plane_point[2]=T_world_ee.p[2];       
+          double lambda1 = dir.dot(plane_normal);
+          double lambda2 = (plane_point - start).dot(plane_normal);
+          double t;
+         // check for degenerate case where ray is (more or less) parallel to plane
+         if (fabs (lambda1) >= 1e-9) {
+           t = lambda2 / lambda1;
+            self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
+           }
+          // else  no solution    
+          Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
+          if(diff.norm() > 0.05){
+            self->prev_ray_hit_drag = self->ray_hit_drag; 
+          } 
           currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_ee.p[1],self->prev_ray_hit_drag[0]-T_world_ee.p[0]);
           angleTo = atan2(self->ray_hit_drag[1]-T_world_ee.p[1],self->ray_hit_drag[0]-T_world_ee.p[0]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);

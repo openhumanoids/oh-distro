@@ -709,7 +709,8 @@ namespace renderer_affordances_gui_utils
     /*if((!has_seeds)&&((self->marker_selection  == " ")
       ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
       ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) */
-    if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
+    //if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
+    if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
       bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
