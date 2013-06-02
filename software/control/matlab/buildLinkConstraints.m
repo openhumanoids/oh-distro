@@ -3,14 +3,14 @@ function link_constraints = buildLinkConstraints(biped, q0, foottraj, fixed_link
 kinsol = doKinematics(biped,q0);
 
 %% Convert the foottraj to an easier format to hand to IK
-link_constraints(1) = struct('link_ndx', find(strcmp(biped.getLinkNames(),biped.foot_bodies.right.linkname),1), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.right.orig);
-link_constraints(2) = struct('link_ndx', find(strcmp(biped.getLinkNames(),biped.foot_bodies.left.linkname),1), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.left.orig);
+link_constraints(1) = struct('link_ndx', biped.findLinkInd(biped.foot_bodies.right.linkname), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.right.orig);
+link_constraints(2) = struct('link_ndx', biped.findLinkInd(biped.foot_bodies.left.linkname), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.left.orig);
 for f = {'right', 'left'}
   foot = f{1};
   for g = {'toe', 'heel'}
     grp = g{1};
     for pt_ndx = biped.foot_bodies.(foot).collision_group{strcmp(biped.foot_bodies.(foot).collision_group_name, grp)}
-      link_constraints(end+1) = struct('link_ndx', find(strcmp(biped.getLinkNames(),biped.foot_bodies.(foot).linkname),1), 'pt', biped.foot_bodies.(foot).contact_pts(:,pt_ndx), 'min_traj', foottraj.(foot).(grp).min, 'max_traj', foottraj.(foot).(grp).max, 'traj', []);
+      link_constraints(end+1) = struct('link_ndx', biped.findLinkInd(biped.foot_bodies.(foot).linkname), 'pt', biped.foot_bodies.(foot).contact_pts(:,pt_ndx), 'min_traj', foottraj.(foot).(grp).min, 'max_traj', foottraj.(foot).(grp).max, 'traj', []);
     end
   end
 end
