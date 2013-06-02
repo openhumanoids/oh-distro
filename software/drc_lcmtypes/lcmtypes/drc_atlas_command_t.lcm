@@ -1,0 +1,49 @@
+package drc;
+
+// modeled after the DRCSIM AtlasCommand ROS message
+// This structure contains the gains to be applied to a joint.
+// The controller is a PID with feedforward desired torque:
+// 
+// This message has been carefully constructed to be less
+// than 1500 in size when serialized, to accommodate transfer
+// UDP.
+//
+//   k_effort * (
+//     kp_position     * ( position - measured_position )       +
+//     ki_position     * 1/s * ( position - measured_position ) +
+//     kd_position     * s * ( position - measured_position ) +
+//     kp_velocity     * ( velocity - measured_velocity )     +
+//     effort ) +
+//   (1 - k_effort)  * effort_bdi
+//
+//  Where effort_bdi comes from AtlasSimInterface Dynamics Behavior Library.
+
+
+struct atlas_command_t 
+{
+    int64_t utime;
+    int32_t num_joints;
+    
+    double position [num_joints];
+    double velocity [num_joints];
+    double effort [num_joints];
+
+    double kp_position [num_joints];
+    double ki_position [num_joints];
+    double kd_position [num_joints];
+    double kp_velocity [num_joints];
+
+		// k_effort can be an unsigned int 8value from 0 to 255, 
+	  //    at run time, a double between 0 and 1 is obtained
+    //    by dividing by 255.0d.
+		byte k_effort[num_joints]; 
+
+    double i_effort_min [num_joints];
+    double i_effort_max [num_joints];
+
+		// max allowed controller update period in milli-seconds simulation time 
+		// for controller synchronization. See SynchronizationStatistics.msg for 
+		// tracking synchronization status.
+		byte desired_controller_period_ms; 
+}
+
