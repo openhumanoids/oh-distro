@@ -72,28 +72,13 @@ classdef FootstepReplanner < DrakeSystem
             kinsol = doKinematics(obj.robot,q,false,true);
 
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-
-            % lfoot_des = cdata.lfoottraj.orig.eval(t);
             lfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
             diffz = lfoot_act(3) - lfoot_des(3);
-
+            cdata.z_drift = -diffz;
+            
             fprintf('LF:Adjusting footsteps by %2.4f m \n',diffz);
-            for j = 1:length(cdata.link_constraints)
-              if ~isempty(cdata.link_constraints(j).traj)
-                cdata.link_constraints(j).traj(3) = cdata.link_constraints(j).traj(3) + diffz; %% VERY INEFFECIENT
-              else
-                cdata.link_constraints(j).min_traj(3) = cdata.link_constraints(j).min_traj(3) + diffz; %% VERY INEFFECIENT
-                cdata.link_constraints(j).max_traj(3) = cdata.link_constraints(j).max_traj(3) + diffz; %% VERY INEFFECIENT
-              end
-            end
-
-            % cdata.rfoottraj.orig(3) = cdata.rfoottraj.orig(3) + diffz; %% VERY INEFFICIENT
-            % cdata.lfoottraj.orig(3) = cdata.lfoottraj.orig(3) + diffz; %% VERY INEFFICIENT
-
-            % obj.controller_data.setField('rfoottraj',cdata.rfoottraj)
-            % obj.controller_data.setField('lfoottraj',cdata.lfoottraj)
-            obj.controller_data.setField('link_constraints',cdata.link_constraints);
+            obj.controller_data.setField('z_drift', cdata.z_drift);
           elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
             cdata = obj.controller_data.getData();
@@ -101,27 +86,13 @@ classdef FootstepReplanner < DrakeSystem
             kinsol = doKinematics(obj.robot,q,false,true);
 
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-            % rfoot_des = cdata.rfoottraj.orig.eval(t);
             rfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
             diffz = rfoot_act(3) - rfoot_des(3);
+            cdata.z_drift = -diffz;
 
             fprintf('RF:Adjusting footsteps by %2.4f m \n',diffz);
-            for j = 1:length(cdata.link_constraints)
-              if ~isempty(cdata.link_constraints(j).traj)
-                cdata.link_constraints(j).traj(3) = cdata.link_constraints(j).traj(3) + diffz; %% VERY INEFFECIENT
-              else
-                cdata.link_constraints(j).min_traj(3) = cdata.link_constraints(j).min_traj(3) + diffz; %% VERY INEFFECIENT
-                cdata.link_constraints(j).max_traj(3) = cdata.link_constraints(j).max_traj(3) + diffz; %% VERY INEFFECIENT
-              end
-            end
-            % cdata.rfoottraj.orig(3) = cdata.rfoottraj.orig(3) + diffz; %% VERY INEFFICIENT
-            % cdata.lfoottraj.orig(3) = cdata.lfoottraj.orig(3) + diffz; %% VERY INEFFICIENT
-            % cdata.lfoottraj(3) = cdata.lfoottraj(3) + diffz; %% VERY INEFFICIENT try not doing subassign
-
-            % obj.controller_data.setField('rfoottraj',cdata.rfoottraj)
-            % obj.controller_data.setField('lfoottraj',cdata.lfoottraj)
-            obj.controller_data.setField('link_constraints',cdata.link_constraints);
+            obj.controller_data.setField('z_drift', cdata.z_drift);
           end
 
           lfoot_contact_state = msg.left_contact>0.5;
