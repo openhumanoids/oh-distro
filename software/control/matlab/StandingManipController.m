@@ -144,7 +144,16 @@ classdef StandingManipController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'AtlasState')
+      if isfield(data,'COMMITTED_ROBOT_PLAN')
+        % standing and reaching plan
+        sprintf('standing controller on\n');
+        msg = data.COMMITTED_ROBOT_PLAN;
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
+        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+
+        obj.controller_data.setField('qtraj',qtraj);
+        obj = setDuration(obj,inf,false); % set the controller timeout
+      elseif isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
         r = obj.robot;
@@ -165,15 +174,6 @@ classdef StandingManipController < DRCController
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
 
-      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
-        % standing and reaching plan
-        sprintf('standing controller on\n');
-        msg = data.COMMITTED_ROBOT_PLAN;
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
-        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-
-        obj.controller_data.setField('qtraj',qtraj);
-        obj = setDuration(obj,inf,false); % set the controller timeout
       else
         % first initialization should come here... wait for state
         state_frame = getStateFrame(obj.robot);

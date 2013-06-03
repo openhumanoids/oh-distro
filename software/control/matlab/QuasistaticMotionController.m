@@ -125,8 +125,20 @@ classdef QuasistaticMotionController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'AtlasState')
-        % take in new nominal pose and compute quasistatic standing
+      if isfield(data,'QUASISTATIC_ROBOT_PLAN')
+        % execute quasistatic motion
+        msg = data.QUASISTATIC_ROBOT_PLAN;
+        cdata = WalkingPlanListener.decode(msg);
+        
+        obj.controller_data.setField('S',cdata.S);
+        obj.controller_data.setField('s1',cdata.s1);
+        obj.controller_data.setField('s2',0);
+        obj.controller_data.setField('qtraj',cdata.qtraj);
+        obj.controller_data.setField('comtraj',cdata.comtraj);
+        obj.controller_data.setField('supports',cdata.supports);
+        obj.controller_data.setField('support_times',cdata.support_times);
+      elseif isfield(data,'AtlasState')
+        % ta ke in new nominal pose and compute quasistatic standing
         % controller
         r = obj.robot;
 
@@ -150,18 +162,6 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('supports',supports);
         obj.controller_data.setField('support_times',0);
         
-      elseif isfield(data,'QUASISTATIC_ROBOT_PLAN')
-        % execute quasistatic motion
-        msg = data.QUASISTATIC_ROBOT_PLAN;
-        cdata = WalkingPlanListener.decode(msg);
-        
-        obj.controller_data.setField('S',cdata.S);
-        obj.controller_data.setField('s1',cdata.s1);
-        obj.controller_data.setField('s2',0);
-        obj.controller_data.setField('qtraj',cdata.qtraj);
-        obj.controller_data.setField('comtraj',cdata.comtraj);
-        obj.controller_data.setField('supports',cdata.supports);
-        obj.controller_data.setField('support_times',cdata.support_times);
       else
         % ...wait for state (hopefully we don't enter here)
         warning('QuasistaticMotionController:initialize: waiting for state');
