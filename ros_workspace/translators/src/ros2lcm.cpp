@@ -157,10 +157,18 @@ void App::vrc_Bup_cb(const std_msgs::StringConstPtr& msg){
   Bup_ = atoi(msg->data.c_str());
 }
 
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
 
 void App::vrc_score_cb(const atlas_msgs::VRCScoreConstPtr& msg){
   //std::cout << "got vrc score\n";  
   drc::score_t score;
+  score.utime = _timestamp_now();
   score.wall_time=(int64_t) floor(msg->wall_time.toNSec()/1000);  
   score.sim_time=(int64_t) floor(msg->sim_time.toNSec()/1000);  
   score.wall_time_elapsed=(int64_t) floor(msg->wall_time_elapsed.toNSec()/1000);  
