@@ -94,7 +94,8 @@ if strcmpi(getenv('USER'),'russt') && ismac   % sorry... :)
 else
 	load drake_config;
 	gurobi_os_dir = fullfile(getDrakePath(),'thirdParty','gurobi','linux64');
-[~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
+  [~,cflags]=system('pkg-config --cflags maps eigen3 lcm bullet');
+  [~,bullet_ldflags]=system('pkg-config --libs-only-L bullet'); bullet_ldflags = strtrim(bullet_ldflags);
   incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
   
   [~,libs]=system('pkg-config --libs maps eigen3 lcm opencv');
@@ -107,6 +108,7 @@ else
   	['-I',fullfile(getDrakePath(),'systems','plants')], ...
   	['-I',fullfile(gurobi_os_dir,'/include')], ...
   	['-L',fullfile(gurobi_os_dir,'/lib')],...
+    bullet_ldflags, '-lBulletCollision -lLinearMath',... 
   	'-lgurobi51',...
     libs};
 	cmdstr = ['mex src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
