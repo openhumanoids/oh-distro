@@ -182,6 +182,9 @@ class GlKinematicBody
     void draw_body (float (&c)[3], float alpha)
     {
 
+     if(alpha==0)
+			return;
+
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
       double t;

@@ -1538,6 +1538,9 @@ bool InteractableGlKinematicBody::draw_mesh(int linkType){
 
 void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
 {
+  if(alpha==0)
+		return;
+
   glColor4f(c[0],c[1],c[2],alpha);
   double t;
   if(enable_blinking){
