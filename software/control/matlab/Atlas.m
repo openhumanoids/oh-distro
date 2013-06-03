@@ -15,6 +15,7 @@ classdef Atlas < Biped
         options.floating = true;
       end
       
+      S = warning('off','Drake:RigidBodyManipulator:SingularH');
   
 %       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped(urdf,options.dt,options);
@@ -29,11 +30,14 @@ classdef Atlas < Biped
         obj.manip = compile(obj.manip);
         obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
+      warning(S);
     end
     
     function obj = compile(obj)
+      S = warning('off','Drake:RigidBodyManipulator:SingularH');
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
-
+      warning(S);
+      
       state_frame = AtlasState(obj);
       obj = obj.setStateFrame(state_frame);
       obj = obj.setOutputFrame(state_frame);
