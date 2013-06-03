@@ -14,11 +14,11 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
         [Kp,Kd] = getPDGains(r,gains_id);
       end
       
-      coder = JointCommandCoder('atlas',input_names,diag(Kp),diag(Kd));
+      coder = AtlasCommandCoder(input_names,diag(Kp),diag(Kd));
       
       obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',r.getNumInputs(),'x',JLCMCoder(coder));
       obj.setCoordinateNames(input_names);
-      obj.setDefaultChannel('JOINT_COMMANDS');
+      obj.setDefaultChannel('ATLAS_COMMAND');
     end
   end
 end
