@@ -507,7 +507,7 @@ classdef ManipulationPlanner < handle
                         rgraspT = zeros(6,1);
                         rgraspT(1:3) = T_world_grasp_r(1:3,4);
                         rgraspT(4:6) =rotmat2rpy(T_world_grasp_r(1:3,1:3));
-                        r_grasp_pose = [lgraspT(1:3); rpy2quat(rgraspT(4:6))];
+                        r_grasp_pose = [rgraspT(1:3); rpy2quat(rgraspT(4:6))];
                         rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
