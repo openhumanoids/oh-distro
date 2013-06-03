@@ -582,7 +582,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
     Eigen::Isometry3d aff_to_hand;
     aff_to_hand.setIdentity();
     aff_to_hand.translation()  << 0, 0.0, 0.03;
-    double ypr[3]={0, 1.571,0};
+    double ypr[3]={0, -1.571,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     aff_to_hand.rotate(quat);
   
