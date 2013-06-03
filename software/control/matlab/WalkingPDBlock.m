@@ -71,6 +71,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
         obj.controller_data.setField('qtraj',q_nom);
       end
       
+      if ~isfield(obj.controller_data,'z_drift')
+        obj.controller_data.setField('z_drift',0);
+      end
+      
       % setup IK parameters
       cost = Point(r.getStateFrame,1);
       cost.base_x = 0;
@@ -91,8 +95,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       % Prevent the knee from locking
       [obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
       joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
-      knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
-      obj.ikoptions.jointLimitMin(knee_ind) = 0.6;
+      obj.ikoptions.jointLimitMin(~cellfun(@isempty,strfind(joint_names,'kny'))) = 0.6;
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
