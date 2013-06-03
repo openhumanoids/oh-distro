@@ -84,13 +84,19 @@ int main (int argc, char* argv[])
 
             counter++;
 
-            if(counter % 5 == 0)
+            if(counter % 20 == 0)
             {
-                // request a state message
-                drc::shaper_data_request_t request_msg;
-                request_msg.channel = "EST_ROBOT_STATE_MINIMAL";
-                request_msg.priority = 1;
-                robot_lcm->publish("SHAPER_DATA_REQUEST", &request_msg);
+                // reset stats
+                drc::utime_t t;
+                t.utime = goby::common::goby_time<goby::uint64>(); 
+                base_lcm->publish("RESET_SHAPER_STATS", &t);
+                
+
+                // // request a state message
+                // drc::shaper_data_request_t request_msg;
+                // request_msg.channel = "EST_ROBOT_STATE_MINIMAL";
+                // request_msg.priority = 1;
+                // robot_lcm->publish("SHAPER_DATA_REQUEST", &request_msg);
             }
             
         }            

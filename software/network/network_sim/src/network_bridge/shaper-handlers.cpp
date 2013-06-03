@@ -181,6 +181,23 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     if(app.cl_cfg.file_log)
     {
+        // debug log
+        using namespace boost::posix_time;
+
+        std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
+
+        flog_.open(goby_debug_file_name.c_str());
+        if(!flog_.is_open())
+        {
+            std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
+                              &flog_);
+
+
+        // data usage log
 	open_usage_log();
     }    
     
@@ -262,18 +279,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 void DRCShaper::open_usage_log()
 {
     using namespace boost::posix_time;
-
-    std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
-
-    flog_.open(goby_debug_file_name.c_str());
-    if(!flog_.is_open())
-    {
-	std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
-	exit(EXIT_FAILURE);
-    }
-
-    goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
-			  &flog_);
 
     std::string data_usage_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-data-usage-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".csv";
 
@@ -625,21 +630,13 @@ void DRCShaper::post_bw_stats()
       std::cout << "Received request to reset the stats. Zeroing all transmission counts\n";
       data_usage_log_.close();
       
-      for (size_t i=0 ; i < sent_data_usage_.size() ; i++ )
-      {
-	  sent_data_usage_[i].queued_msgs = 0;
-	  sent_data_usage_[i].queued_bytes = 0;
-	  sent_data_usage_[i].sent_bytes = 0;
-	  //sent_data_usage_[i].received_bytes = 0;
-      }
-      
-      for (size_t i=0 ; i < received_data_usage_.size() ; i++ )
-      {
-	  //received_data_usage_[i].queued_msgs = 0;
-	  //received_data_usage_[i].queued_bytes = 0;
-	  //received_data_usage_[i].sent_bytes = 0;
-	  received_data_usage_[i].received_bytes = 0;
-      }          
+      for (std::map<int, DataUsage>::iterator it = sent_data_usage_.begin(),
+               end = sent_data_usage_.end(); it != end; ++it)
+          it->second = DataUsage();
+
+      for (std::map<int, DataUsage>::iterator it = received_data_usage_.begin(),
+               end = received_data_usage_.end(); it != end; ++it)
+          it->second = DataUsage();      
       
       open_usage_log();
       app_.set_reset_usage_stats(false);
@@ -682,7 +679,7 @@ void DRCShaper::post_bw_stats()
         data_usage_log_ << app_.get_current_utime();
         for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
         {
-            int bytes = sent_data_usage_[it->second].sent_bytes ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
+            int bytes = (sent_data_usage_.count(it->second)) ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
             data_usage_log_ << "," << bytes;
         }
         data_usage_log_ << std::endl;
