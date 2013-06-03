@@ -74,7 +74,8 @@ class Pass{
     }    
     
     void initiate_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, 
-                       bool use_icp_tracker, bool use_stereo_tracker, bool use_plane_tracker, int plane_affordance_id);
+                       bool use_icp_tracker, bool use_stereo_tracker, bool use_inhand_tracker,
+                       bool use_plane_tracker, int plane_affordance_id);
     
   private:
     int verbose_;
@@ -127,6 +128,7 @@ class Pass{
     bool use_histogram_tracker_;
     bool use_icp_tracker_;
     bool use_stereo_icp_tracker_;
+    bool use_inhand_tracker_;
     
     StereoB*  stereob_;
     int stereo_decimate_;
@@ -571,8 +573,26 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera_);
   frames_cpp_->get_trans_with_utime( botframes_ , "head", "local"  , img_.utime, head_to_local_);
   
+  if (use_inhand_tracker_){
+    std::cout << "use inhand tracker\n";  
+    Eigen::Isometry3d hand_to_local;
+    
+    frames_cpp_->get_trans_with_utime( botframes_ , "RHAND", "local"  , img_.utime, hand_to_local);
+    
+    Eigen::Isometry3d aff_to_hand;
+    aff_to_hand.setIdentity();
+    aff_to_hand.translation()  << 0, 0.0, 0.03;
+    double ypr[3]={0, 1.571,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    aff_to_hand.rotate(quat);
   
-  if (use_icp_tracker_){
+    
+    object_pose_ = hand_to_local*aff_to_hand;
+    publishUpdatedAffordance();
+    
+    
+    
+  }else if (use_icp_tracker_){
     
     // Ask the maps collector for a sweep :
     // true if we got a new sweep, make a box 5x5x5m centered around the robot's head
@@ -781,7 +801,7 @@ void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, 
-                             bool use_icp_tracker, bool use_stereo_icp_tracker,
+                             bool use_icp_tracker, bool use_stereo_icp_tracker, bool use_inhand_tracker,
                              bool use_plane_tracker, int plane_affordance_id){
   affordance_id_ = affordance_id;
   use_color_tracker_ = use_color_tracker;
@@ -789,6 +809,7 @@ void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use
   use_icp_tracker_ = use_icp_tracker;
   use_stereo_icp_tracker_ = use_stereo_icp_tracker;
   use_plane_tracker_ = use_plane_tracker;
+  use_inhand_tracker_ = use_inhand_tracker;
   plane_affordance_id_ = plane_affordance_id;
   tracker_initiated_ = true;
   got_initial_affordance_ = false;
@@ -828,6 +849,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
   use_icp_tracker_ = false;
   use_stereo_icp_tracker_ = false;
   use_plane_tracker_= false;
+  use_inhand_tracker_ =false;
   plane_affordance_id_ = -1;
   
   
@@ -845,6 +867,8 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
     use_icp_tracker_= true;
   }else if(msg->tracker_type== drc::tracker_command_t::STEREOICP){ 
     use_stereo_icp_tracker_= true;
+  }else if(msg->tracker_type== drc::tracker_command_t::INHAND){ 
+    use_inhand_tracker_= true;
   }else{
     cout << "Tracker Type not understood ["<< ((int)msg->tracker_type)  <<"]\n";
   }
@@ -858,6 +882,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
   // Largely Superflous
   initiate_tracking(msg->uid, use_color_tracker_, use_histogram_tracker_, 
                     use_icp_tracker_, use_stereo_icp_tracker_,
+                    use_inhand_tracker_,
                     use_plane_tracker_, plane_affordance_id_);  
 }
 
@@ -871,6 +896,7 @@ int main(int argc, char ** argv) {
   bool use_plane_tracker =false;  
   bool use_stereo_icp_tracker =false;
   bool use_icp_tracker =false;  
+  bool use_inhand_tracker =false;  
   int verbose = 0;
   int plane_affordance_id=-1;
   int tracker_instance_id=1; // id of this tracker instance. Plane Tracker==0, otherwise above that
@@ -882,6 +908,7 @@ int main(int argc, char ** argv) {
   opt.add(use_histogram_tracker, "g", "use_histogram_tracker","Use Histogram Tracker");
   opt.add(use_icp_tracker, "i", "use_icp_tracker","Use ICP Tracker");
   opt.add(use_stereo_icp_tracker, "s", "use_stereo_tracker","Use Stereo ICP Tracker");
+  opt.add(use_inhand_tracker, "f", "use_inhand_tracker","Use Inhand Tracker (fixed to link)");
   opt.add(use_plane_tracker, "p", "use_plane_tracker","Use Plane Tracker");
   opt.add(plane_affordance_id, "l", "plane_affordance_id","Plane Affordance ID");
   opt.add(tracker_instance_id, "t", "tracker","Tracker ID");
@@ -908,7 +935,8 @@ int main(int argc, char ** argv) {
   if (affordance_id>=0){
     // if a valid id - initiate tracker on launch
     app.initiate_tracking(affordance_id, use_color_tracker, use_histogram_tracker,
-      use_icp_tracker, use_stereo_icp_tracker, use_plane_tracker, plane_affordance_id);
+      use_icp_tracker, use_stereo_icp_tracker, use_inhand_tracker,
+      use_plane_tracker, plane_affordance_id);
   }else{
     cout << "Starting Object Tracker Uninitiated\n";
   }  
