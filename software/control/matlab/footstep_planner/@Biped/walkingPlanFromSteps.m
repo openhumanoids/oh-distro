@@ -9,10 +9,7 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 %% construct ZMP feedback controller
 com = getCOM(biped,kinsol);
 zmap = getTerrainHeight(biped,com(1:2));
-limp = LinearInvertedPendulum(com(3)-zmap,9.81,struct('ignore_frames',true));
 
 % get COM traj from desired ZMP traj
-options.use_tvlqr = false;
-options.ignore_frames = true;
 options.com0 = com(1:2);
-[c,V,comtraj] = ZMPtracker(limp,zmptraj,options);
+[c,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zmap,zmptraj,options);
