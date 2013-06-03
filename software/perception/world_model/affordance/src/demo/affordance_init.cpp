@@ -45,7 +45,20 @@ class Pass{
     drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid, bool add_filename);
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshSteeringCylAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid); 
+    drc::affordance_plus_t getDynamicMeshTwoCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     AffordanceUtils affutils;
+    
+    bool set_param(drc::affordance_plus_t &a1,std::string param_name, double val){
+      std::vector<std::string>::const_iterator found;
+      found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(),param_name);
+      if (found != a1.aff.param_names.end()) {
+        unsigned int index = found - a1.aff.param_names.begin();
+        a1.aff.params[index]=val;  
+        return true;
+      }  
+      else
+       return false;
+    };
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
@@ -144,9 +157,63 @@ drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string fi
   a.params.push_back(0.0  ); a.param_names.push_back("pitch_offset");
   a.params.push_back(0.0  ); a.param_names.push_back("roll_offset");
   a.params.push_back( 1.571); a.param_names.push_back("yaw_offset");
+  a.params.push_back(0.00); a.param_names.push_back("x_offset");
+  a.params.push_back(0.00); a.param_names.push_back("y_offset");
+  a.params.push_back(0.00); a.param_names.push_back("z_offset");
+  a.nparams =a.params.size();
+  a.nstates =0;
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+ 
+  p.aff = a;
+  
+  
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  affutils.getModelAsLists(filename_full, points, triangles);
+  p.points =points;
+  p.npoints=points.size(); 
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
+  
+  return p;
+}
+
+drc::affordance_plus_t Pass::getDynamicMeshTwoCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="dynamic_mesh_w_2_cylinders";
+  a.aff_store_control = drc::affordance_t::NEW;
+  
+  a.params.push_back(0.1  ); a.param_names.push_back("length");
+  a.params.push_back(0.03  ); a.param_names.push_back("radius");
+  a.params.push_back(2.0  ); a.param_names.push_back("mass");
+  a.params.push_back(0.0  ); a.param_names.push_back("pitch_offset");
+  a.params.push_back(0.0  ); a.param_names.push_back("roll_offset");
+  a.params.push_back(0.0); a.param_names.push_back("yaw_offset");
   a.params.push_back( 0.00); a.param_names.push_back("x_offset");
-  a.params.push_back(-0.005); a.param_names.push_back("y_offset");
-  a.params.push_back( -0.02); a.param_names.push_back("z_offset");
+  a.params.push_back( 0.00); a.param_names.push_back("y_offset");
+  a.params.push_back( 0.00); a.param_names.push_back("z_offset");
+  
+  a.params.push_back(0.1); a.param_names.push_back("length2");
+  a.params.push_back(0.03); a.param_names.push_back("radius2");
+  a.params.push_back(2.0); a.param_names.push_back("mass2");
+  a.params.push_back(0.0); a.param_names.push_back("pitch_offset2");
+  a.params.push_back(0.0); a.param_names.push_back("roll_offset2");
+  a.params.push_back(0.0); a.param_names.push_back("yaw_offset2");
+  a.params.push_back(0.00); a.param_names.push_back("x_offset2");
+  a.params.push_back(0.00); a.param_names.push_back("y_offset2");
+  a.params.push_back(0.00); a.param_names.push_back("z_offset2");
+  
   a.nparams =a.params.size();
   a.nstates =0;
 
@@ -295,19 +362,17 @@ void Pass::doDemo(int which_publish, bool add_filename){
     int uid1 = 15;
     std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  
     string filename1 = "standpipe.ply";
-    drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
-    //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1, add_filename );
-    std::vector<std::string>::const_iterator found;
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "radius");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.055;  
-    } 
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "length");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.025;  
-    } 
+    //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
+    //set_param(a1,"radius",0.055);
+    //set_param(a1,"length",0.025);
+    
+   drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
+    set_param(a1,"radius",0.019);
+    set_param(a1,"length",0.18);
+    set_param(a1,"radius2",0.055);
+    set_param(a1,"length2",0.025);
+    set_param(a1,"z_offset",-0.14);
+    set_param(a1,"z_offset2",-0.03);
     
     a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.2; 
@@ -326,19 +391,14 @@ void Pass::doDemo(int which_publish, bool add_filename){
     int uid1 = 16;
     std::vector<double> xyzrpy1 = {-2.2 , -4.7 , 1.1 , M_PI/2 , 0 , 0};  
     string filename1 = "firehose.ply";
-    drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
-    std::vector<std::string>::const_iterator found;
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "radius");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.018;  
-    } 
+    //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
+    drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
+    set_param(a1,"radius",0.019);
+    set_param(a1,"length",0.18);
+    set_param(a1,"radius2",0.053);
+    set_param(a1,"length2",0.025);
+    set_param(a1,"z_offset2",0.110);
 
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "length");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.18;  
-    } 
     
     //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 , add_filename );
     a1.aff.bounding_lwh[0]=0.16;       a1.aff.bounding_lwh[1]=0.16;      a1.aff.bounding_lwh[2]=0.3;
@@ -352,24 +412,10 @@ void Pass::doDemo(int which_publish, bool add_filename){
     std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, 0};  
     string filename1 = "valve.ply";
     drc::affordance_plus_t a1 = getDynamicMeshSteeringCylAffordancePlus(filename1, xyzrpy1, uid1);
-    std::vector<std::string>::const_iterator found;
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "radius");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.15;  
-    } 
+    set_param(a1,"radius",0.15);
+    set_param(a1,"length",0.03);
+    set_param(a1,"roll_offset",1.5708);
 
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "length");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=0.03;  
-    }
-    
-    found = std::find (a1.aff.param_names.begin(), a1.aff.param_names.end(), "roll_offset");
-    if (found != a1.aff.param_names.end()) {
-      unsigned int index = found - a1.aff.param_names.begin();
-      a1.aff.params[index]=1.5708;  
-    }
     //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1, add_filename  );
     a1.aff.bounding_lwh[0]=0.34;       a1.aff.bounding_lwh[1]=0.14;      a1.aff.bounding_lwh[2]=0.34;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
