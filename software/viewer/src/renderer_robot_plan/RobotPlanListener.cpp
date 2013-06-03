@@ -50,6 +50,8 @@ namespace renderer_robot_plan
       lcm->subscribe("COMMITTED_ROBOT_PLAN_COMPRESSED_LOOPBACK", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this);
     }
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
+    
+    lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleCanFootStepPlanMsg, this);  
     lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
 
     lcm->subscribe("CONTROLLER_STATUS", &renderer_robot_plan::RobotPlanListener::handleControllerStatusMsg, this);  
@@ -350,6 +352,15 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
      purge_current_plan();
   }
   
+   void RobotPlanListener::handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::footstep_plan_t* msg)						 
+  {
+    if(_aprvd_footstep_plan_in_cache)
+      _aprvd_footstep_plan_in_cache = false;
+     purge_current_plan();
+  }
+  
   void RobotPlanListener::handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
                                                  const string& chan, 
                                                  const drc::controller_status_t* msg)                                                
@@ -367,6 +378,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _lcm->publish(channel, &msg);
     _aprvd_footstep_plan_in_cache = false; //clear flag on commit
   }
+
 
   void RobotPlanListener::commit_robot_plan(int64_t utime,std::string &channel)
   {

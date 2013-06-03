@@ -344,6 +344,9 @@ namespace renderer_robot_plan
 			    const  drc::robot_urdf_t* msg);
    void handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
 						 const drc::footstep_plan_t* msg);    
+	 void handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
+						 const drc::footstep_plan_t* msg);  				 
+						 
    
    void handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
                                                  const string& chan, 
