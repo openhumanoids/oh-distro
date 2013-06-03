@@ -31,6 +31,7 @@ struct ViewClientWrapper {
   std::shared_ptr<Listener> mListener;
   int mHeightMapViewId;
   std::shared_ptr<MapHandle> mHandle;
+  int64_t mLastReceiptTime;
 
   int mNormalRadius;
   bool mShouldFill;

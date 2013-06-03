@@ -6,6 +6,8 @@
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImageView.hpp>
 
+#include <drc_utils/Clock.hpp>
+
 #include "FillMethods.hpp"
 #include "MapLib.hpp"
 
@@ -21,6 +23,7 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
     auto view = std::static_pointer_cast<maps::DepthImageView>
       (mWrapper->mViewClient->getView(iViewId));
     if (view != NULL) {
+      mWrapper->mLastReceiptTime = drc::Clock::instance()->getCurrentWallTime();
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
       view->setNormalRadius(mWrapper->mNormalRadius);
       if (mWrapper->mShouldFill) {
@@ -43,6 +46,7 @@ ViewClientWrapper::
 ViewClientWrapper(const int iId, const std::shared_ptr<lcm::LCM>& iLcm) {
   mId = iId;
   mLcm = iLcm;
+  mLastReceiptTime = -1;
   mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
   mNormalRadius = 0;
   mShouldFill = false;
@@ -82,8 +86,11 @@ stop() {
 
 maps::ViewBase::Ptr ViewClientWrapper::
 getView() {
-  // TODO: make this check how much time has elapsed since last receipt
-  requestHeightMap();
+  int64_t curTime = drc::Clock::instance()->getCurrentWallTime();
+  if ((curTime - mLastReceiptTime) > 1000000) {
+    requestHeightMap();
+    mLastReceiptTime = curTime;
+  }
 
   auto view = std::static_pointer_cast<maps::DepthImageView>
     (mViewClient->getView(mHeightMapViewId));
@@ -115,7 +122,7 @@ requestHeightMap() {
   spec.mViewId = MapHandle::kHeightMapViewId;
   spec.mType = maps::ViewBase::TypeDepthImage;
   spec.mChannel = MapHandle::kHeightMapChannel;
-  spec.mFrequency = 0.5;
+  spec.mFrequency = 1 / 2.0;
   spec.mQuantizationMax = 0;
   spec.mTimeMax = 0;
   spec.mRelativeTime = true;
