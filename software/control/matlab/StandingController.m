@@ -131,7 +131,7 @@ classdef StandingController < DRCController
       if isfield(data,'STOP_WALKING')
         % transition from walking:
         % take in new nominal pose and compute standing controller
-        data
+
         % get foot contact state over LCM
         contact_data = obj.contact_est_monitor.getMessage();
         if isempty(contact_data)
@@ -139,11 +139,9 @@ classdef StandingController < DRCController
           rfoot_contact_state = 1;
         else
           msg = drc.foot_contact_estimate_t(contact_data);
-          lfoot_contact_state = msg.left_contact;
-          rfoot_contact_state = msg.right_contact;
+          lfoot_contact_state = msg.left_contact > 0.5;
+          rfoot_contact_state = msg.right_contact > 0.5;
         end
-        lfoot_contact_state = 1
-        rfoot_contact_state = 1
         
         r = obj.robot;
         q0 = data.AtlasState(1:getNumDOF(r));
