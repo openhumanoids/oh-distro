@@ -386,7 +386,7 @@ classdef ManipulationPlanner < handle
             T_palm_hand_l = inv_HT(T_hand_palm_l);
             T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
             T_palm_hand_r = inv_HT(T_hand_palm_r);
-            T_palm_grasp = HT([0.05;0;0],0,0,0); % Notional grasp point
+            T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
             T_grasp_palm = inv_HT(T_palm_grasp);
             
             ind = getActuatedJoints(obj.r);
@@ -462,10 +462,10 @@ classdef ManipulationPlanner < handle
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-                        T_world_grasp = T_world_palm_l * T_palm_grasp;
+                        T_world_grasp_l = T_world_palm_l * T_palm_grasp;
                         lgraspT = zeros(6,1);
-                        lgraspT(1:3) = T_world_grasp(1:3,4);
-                        lgraspT(4:6) =rotmat2rpy(T_world_grasp(1:3,1:3));
+                        lgraspT(1:3) = T_world_grasp_l(1:3,4);
+                        lgraspT(4:6) =rotmat2rpy(T_world_grasp_l(1:3,1:3));
                         l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];
                         lhand_const.min = l_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         lhand_const.max = l_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
@@ -493,6 +493,11 @@ classdef ManipulationPlanner < handle
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
+                        T_world_grasp_r = T_world_palm_r * T_palm_grasp;
+                        rgraspT = zeros(6,1);
+                        rgraspT(1:3) = T_world_grasp_r(1:3,4);
+                        rgraspT(4:6) =rotmat2rpy(T_world_grasp_r(1:3,1:3));
+                        r_grasp_pose = [lgraspT(1:3); rpy2quat(rgraspT(4:6))];
                         rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
@@ -502,7 +507,8 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('r_hand')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
-                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
+                            %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_grasp_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.rhandT = r_ee_goal;
@@ -605,7 +611,7 @@ classdef ManipulationPlanner < handle
                         T_world_m_grasp = T_world_m_hand * T_hand_palm_l * T_palm_grasp;
                         map_pose = [T_world_m_grasp(1:3,4); rpy2quat(rotmat2rpy(T_world_m_hand(1:3,1:3)))];
                         desired_pose = plan_Indices(i).dof_pose(:,j);
-                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2))
+                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
                         
                         if (numel(ee_temp) < j)
                             ee_temp(j).map_pose = [];
@@ -614,14 +620,18 @@ classdef ManipulationPlanner < handle
                             ee_temp(j).ee_name = ee_name;
                         end;
                         
-                        e_threshold = 0.075;
+                        if (strcmp('l_foot', ee_name) || strcmp('r_foot', ee_name))
+                            pos_dist_threshold = 100;
+                        else
+                            pos_dist_threshold = 0.075;
+                        end;
                         ee_temp(j).map_pose = [ee_temp(j).map_pose map_pose];
-                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < e_threshold)];
+                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < pos_dist_threshold)];
                         ee_temp(j).pos_dist = [ee_temp(j).pos_dist pos_dist];
                         
                         % Is the resulting pose sufficiently close to the
                         % desired pose?
-                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < e_threshold)];
+                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < pos_dist_threshold)];
                     end;
                 end;
                         
