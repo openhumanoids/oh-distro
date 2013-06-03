@@ -146,7 +146,7 @@ stageC = data(:,(offset:(offset+2)));
 offset = 128;
 imu_P = data(:,(offset:(offset+2)));
 offset = 131;
-imu_v = data(:,(offset:(offset+2)));
+imu_V = data(:,(offset:(offset+2)));
 
 
 
