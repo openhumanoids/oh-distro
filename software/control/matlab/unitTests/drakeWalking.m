@@ -10,7 +10,7 @@ step_time = 1.0;
 options.floating = true;
 options.dt = 0.002;
 if (nargin>0) options.use_mex = use_mex;
-else options.use_mex = false; end
+else options.use_mex = true; end
 
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
@@ -89,7 +89,6 @@ ankle_idx = find(ankle_idx);
 options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
 options.full_body_opt = false;
-options.use_mex = true;
 options.debug = false;
 qp = QPController(r,ctrl_data,options);
 clear options;
