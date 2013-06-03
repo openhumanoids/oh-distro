@@ -23,4 +23,5 @@ struct tracker_command_t
   const int8_t FEATURE   = 4;  
   const int8_t ICP       = 5;
   const int8_t STEREOICP = 6;  
+  const int8_t INHAND    = 7;  
 }
