@@ -75,6 +75,7 @@ classdef ManipulationPlanner < handle
                     
                     % Point wise IK, much faster, linear complexity.
                     is_manip_map =false;
+                    fprintf('EELoci function being called');
                     runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,is_manip_map);
                 otherwise
                     error('Incorrect usage of generateAndPublishManipulationPlan in Mnaip Planner. Undefined number of vargin.')
@@ -397,13 +398,22 @@ classdef ManipulationPlanner < handle
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 100;
 
-						%%% Hokkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
+						%%% Honkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
 						coords = obj.r.getStateFrame();
-						[joint_min,joing_max] = obj.r.getJointLimits();
+						[joint_min,joint_max] = obj.r.getJointLimits();
 						joint_min = Point(coords,[joint_min;0*joint_min]);
 						joint_min.back_mby = -.2;
 						joint_min = double(joint_min);
-						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
+           
+            %joint_max
+            
+            %Setting a max joint limit on the back also 
+            
+            joint_max = Point(coords,[joint_max;0*joint_max]);
+						joint_max.back_mby = 0.2;
+						joint_max = double(joint_max);
+						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             
 						%% Might be worth preventing leaning forward too much also 
 
