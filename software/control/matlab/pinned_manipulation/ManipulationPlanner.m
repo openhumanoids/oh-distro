@@ -396,7 +396,17 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 100;
+
+						%%% Hokkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
+						coords = obj.r.getStateFrame();
+						[joint_min,joing_max] = obj.r.getJointLimits();
+						joint_min = Point(coords,[joint_min;0*joint_min]);
+						joint_min.back_mby = -.2;
+						joint_min = double(joint_min);
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
             
+						%% Might be worth preventing leaning forward too much also 
+
             if(~is_manip_map)
                 obj.rfootT = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],1);
                 obj.lfootT = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],1);
