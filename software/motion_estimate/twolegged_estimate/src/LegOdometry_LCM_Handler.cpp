@@ -246,7 +246,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 		for (int i=0;i<3;i++) {
 			//db_a[i] = df_feedback_gain * err_b(i) - 0.15 * errv_b(i);
-			db_a[i] = -0.6 * err_b(i) - 0.1 * errv_b(i);
+			db_a[i] = -0.5 * err_b(i) - 0.3 * errv_b(i);
 			//db_a[i] = -0.6 * err_b(i);
 		}
 
@@ -261,12 +261,12 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		a = 1/(1 + 1000*err_b.norm());
 		b = 1/(1 + 100*errv_b.norm());
 
-		//inert_odo.setPositionState(0.7*InerO.P + 0.3*LeggO.P);
-		//inert_odo.setVelocityState(0.9*InerO.V + 0.1*LeggO.V);
+		inert_odo.setPositionState(0.7*InerO.P + 0.3*LeggO.P);
+		inert_odo.setVelocityState(0.9*InerO.V + 0.1*LeggO.V);
 
 		// Dynamic wind up reset
-		inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
-		inert_odo.setVelocityState((0.6+0.3*(b))*InerO.V + (0.3*(1-b)+0.1)*LeggO.V);
+		//inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
+		//inert_odo.setVelocityState((0.8+0.1*(b))*InerO.V + (0.1*(1-b)+0.1)*LeggO.V);
 
 
 		if (_switches->verbose) {
