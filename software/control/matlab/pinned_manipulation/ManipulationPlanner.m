@@ -684,7 +684,11 @@ classdef ManipulationPlanner < handle
                 end;
 
                 fprintf (1, 'Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                stat = sprintf('Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                send_status(3,0,0,stat);
+                
                 timeIndices = timeIndices(min_dof_idx:max_dof_idx);
+                
                 plan_Indices = plan_Indices(min_dof_idx:max_dof_idx);
                 q = q(:,min_dof_idx:max_dof_idx);
                 
@@ -705,11 +709,11 @@ classdef ManipulationPlanner < handle
                 
                 s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
                 
-                timeIndices
+                %timeIndices
                 
                 fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
                     
-                s
+                %s
                 
                 obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
                 
