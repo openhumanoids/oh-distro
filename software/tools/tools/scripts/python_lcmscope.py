@@ -60,7 +60,14 @@ def reset_all():
   vo_angdelta.reset(); vo_angrate.reset();
   lf_force.reset(); lf_torque.reset();
   rf_force.reset(); rf_torque.reset();
-  
+  lhand_force.reset();
+  rhand_force.reset();
+  lhand_force_filt.reset();
+  rhand_force_filt.reset();
+  lhand_torque.reset();
+  rhand_torque.reset();
+  lhand_torque_filt.reset();
+  rhand_torque_filt.reset();
 
 
 def quat_to_euler(q) :
@@ -242,6 +249,61 @@ def plot_data():
     ax12.legend(loc=2,prop={'size':10})
     ax12.set_xlim( float(last_utime - plot_window - first_utime)/1000000 ,  float(last_utime + front_block - first_utime)/1000000 )
     
+  if (len(utime_10hz_rate.utimes) >1):
+    plt.figure(4)
+    ax13.cla()
+    ax13.plot(lhand_force.utimes[2:], np.transpose(lhand_force.v[2:,0]), 'r',  linewidth=1,label="L force X")
+    ax13.plot(lhand_force.utimes[2:], np.transpose(lhand_force.v[2:,1]), 'g',  linewidth=1,label="L force Y")
+    ax13.plot(lhand_force.utimes[2:], np.transpose(lhand_force.v[2:,2]), 'b',  linewidth=1,label="L force Z")
+    ax13.plot(lhand_force_filt.utimes[2:], np.transpose(lhand_force_filt.v[2:,0]), 'r:+',  linewidth=1,label="L force X")
+    ax13.plot(lhand_force_filt.utimes[2:], np.transpose(lhand_force_filt.v[2:,1]), 'g:+',  linewidth=1,label="L force Y")
+    ax13.plot(lhand_force_filt.utimes[2:], np.transpose(lhand_force_filt.v[2:,2]), 'b:+',  linewidth=1,label="L force Z")
+    ax13.legend(loc=2,prop={'size':10});   ax13.set_xlabel('Time '+ str(last_utime));   ax13.set_ylabel('Force [?? units]')  
+    ax13.grid(True)
+    ax13.set_xlim( float(last_utime - plot_window - first_utime)/1000000 ,  float(last_utime + front_block - first_utime)/1000000 )
+    ax13.set_ylim( -50, 60 )
+    ax13.set_title("Left hand forces - measured and filtered")
+
+    ax14.cla()
+    ax14.plot(rhand_force.utimes[2:], np.transpose(rhand_force.v[2:,0]), 'r',  linewidth=1,label="R force X")
+    ax14.plot(rhand_force.utimes[2:], np.transpose(rhand_force.v[2:,1]), 'g',  linewidth=1,label="R force Y")
+    ax14.plot(rhand_force.utimes[2:], np.transpose(rhand_force.v[2:,2]), 'b',  linewidth=1,label="R force Z")
+    ax14.plot(rhand_force_filt.utimes[2:], np.transpose(rhand_force_filt.v[2:,0]), 'r:+',  linewidth=1,label="R force X")
+    ax14.plot(rhand_force_filt.utimes[2:], np.transpose(rhand_force_filt.v[2:,1]), 'g:+',  linewidth=1,label="R force Y")
+    ax14.plot(rhand_force_filt.utimes[2:], np.transpose(rhand_force_filt.v[2:,2]), 'b:+',  linewidth=1,label="R force Z")
+    ax14.legend(loc=2,prop={'size':10});   ax13.set_xlabel('Time '+ str(last_utime));   ax13.set_ylabel('Force [?? units]')
+    ax14.grid(True)
+    ax14.set_xlim( float(last_utime - plot_window - first_utime)/1000000 ,  float(last_utime + front_block - first_utime)/1000000 )
+    ax14.set_ylim( -50, 60 )
+    ax14.set_title("Right hand forces - measured and filtered")
+
+    ax15.cla()
+    ax15.plot(lhand_torque.utimes[2:], np.transpose(lhand_torque.v[2:,0]), 'r',  linewidth=1,label="R torque X")
+    ax15.plot(lhand_torque.utimes[2:], np.transpose(lhand_torque.v[2:,1]), 'g',  linewidth=1,label="R torque Y")
+    ax15.plot(lhand_torque.utimes[2:], np.transpose(lhand_torque.v[2:,2]), 'b',  linewidth=1,label="R torque Z")
+    ax15.plot(lhand_torque_filt.utimes[2:], np.transpose(lhand_torque_filt.v[2:,0]), 'r:+',  linewidth=1,label="R torque X")
+    ax15.plot(lhand_torque_filt.utimes[2:], np.transpose(lhand_torque_filt.v[2:,1]), 'g:+',  linewidth=1,label="R torque Y")
+    ax15.plot(lhand_torque_filt.utimes[2:], np.transpose(lhand_torque_filt.v[2:,2]), 'b:+',  linewidth=1,label="R torque Z")
+    ax15.legend(loc=2,prop={'size':10});   ax13.set_xlabel('Time '+ str(last_utime));   ax13.set_ylabel('Force [?? units]')
+    ax15.grid(True)
+    ax15.set_xlim( float(last_utime - plot_window - first_utime)/1000000 ,  float(last_utime + front_block - first_utime)/1000000 )
+    ax15.set_ylim( -15, 15 )
+    ax15.set_title("Left hand torques - measured and filtered")
+
+    ax16.cla()
+    ax16.plot(rhand_torque.utimes[2:], np.transpose(rhand_torque.v[2:,0]), 'r',  linewidth=1,label="R torque X")
+    ax16.plot(rhand_torque.utimes[2:], np.transpose(rhand_torque.v[2:,1]), 'g',  linewidth=1,label="R torque Y")
+    ax16.plot(rhand_torque.utimes[2:], np.transpose(rhand_torque.v[2:,2]), 'b',  linewidth=1,label="R torque Z")
+    ax16.plot(rhand_torque_filt.utimes[2:], np.transpose(rhand_torque_filt.v[2:,0]), 'r:+',  linewidth=1,label="R torque X")
+    ax16.plot(rhand_torque_filt.utimes[2:], np.transpose(rhand_torque_filt.v[2:,1]), 'g:+',  linewidth=1,label="R torque Y")
+    ax16.plot(rhand_torque_filt.utimes[2:], np.transpose(rhand_torque_filt.v[2:,2]), 'b:+',  linewidth=1,label="R torque Z")
+    ax16.legend(loc=2,prop={'size':10});   ax13.set_xlabel('Time '+ str(last_utime));   ax13.set_ylabel('Force [?? units]') 
+    ax16.grid(True)
+    ax16.set_xlim( float(last_utime - plot_window - first_utime)/1000000 ,  float(last_utime + front_block - first_utime)/1000000 )
+    ax16.set_ylim( -15, 15 )
+    ax16.set_title("Right hand torques - measured and filtered")
+
+
   plt.plot()
   plt.draw()
   
@@ -293,7 +355,13 @@ def on_true_robot_state(channel, data):
   lf_force.append(m.utime,  [m.contacts.contact_force[0].z])#, m.contacts.contact_force[0].y , m.contacts.contact_force[0].z  ] )
   rf_force.append(m.utime,  [m.contacts.contact_force[1].z])#, m.contacts.contact_force[1].y , m.contacts.contact_force[1].z  ] )
   #
-  
+  lhand_force.append(m.utime, [m.contacts.contact_force[2].x,m.contacts.contact_force[2].y, m.contacts.contact_force[2].z])
+  rhand_force.append(m.utime, [m.contacts.contact_force[3].x,m.contacts.contact_force[3].y, m.contacts.contact_force[3].z]) 
+  lhand_torque.append(m.utime, [m.contacts.contact_torque[2].x,m.contacts.contact_torque[2].y, m.contacts.contact_torque[2].z])
+  rhand_torque.append(m.utime, [m.contacts.contact_torque[3].x,m.contacts.contact_torque[3].y, m.contacts.contact_torque[3].z])
+
+ 
+
   pos.append(m.utime,  [m.origin_position.translation.x, m.origin_position.translation.y, m.origin_position.translation.z ] )
   #rpy = quat_to_euler([m.origin_position.rotation.w, m.origin_position.rotation.x, m.origin_position.rotation.y, m.origin_position.rotation.z] )
   #print "t: %f %f %f" %(rpy[0]*180.0/math.pi,rpy[1]*180.0/math.pi,rpy[2]*180.0/math.pi)  
@@ -318,6 +386,10 @@ def on_est_robot_state(channel, data):
   ang_est.append(m.utime,quat_to_euler([m.origin_position.rotation.w, m.origin_position.rotation.x, m.origin_position.rotation.y, m.origin_position.rotation.z] ))
   posrate_est.append(m.utime,  [m.origin_twist.linear_velocity.x, m.origin_twist.linear_velocity.y, m.origin_twist.linear_velocity.z] )
   angrate_est.append(m.utime,  [m.origin_twist.angular_velocity.x, m.origin_twist.angular_velocity.y, m.origin_twist.angular_velocity.z] )  
+  lhand_force_filt.append(m.utime, [m.contacts.contact_force[2].x,m.contacts.contact_force[2].y, m.contacts.contact_force[2].z])
+  rhand_force_filt.append(m.utime, [m.contacts.contact_force[3].x,m.contacts.contact_force[3].y, m.contacts.contact_force[3].z])  
+  lhand_torque_filt.append(m.utime, [m.contacts.contact_torque[2].x,m.contacts.contact_torque[2].y, m.contacts.contact_torque[2].z])
+  rhand_torque_filt.append(m.utime, [m.contacts.contact_torque[3].x,m.contacts.contact_torque[3].y, m.contacts.contact_torque[3].z])
   
 # Gazebo Simulated IMU:
 def on_imu(channel, data):
@@ -382,6 +454,16 @@ lf_force = SensorData(1); rf_force = SensorData(1); # left and right foot. z onl
 lf_torque = SensorData(3); rf_torque = SensorData(3); # left and right foot
 foot_contact_est= SensorData(2); #b
 
+lhand_force = SensorData(3);
+lhand_force_filt = SensorData(3);
+rhand_force = SensorData(3);
+rhand_force_filt = SensorData(3);
+lhand_torque = SensorData(3);
+lhand_torque_filt = SensorData(3);
+rhand_torque = SensorData(3);
+rhand_torque_filt = SensorData(3);
+
+
 utime_10hz_rate = SensorData(1); utime_1hz_rate = SensorData(1); 
 
 left, bottom, width, height =0.07, 0.07, 0.395, 0.395
@@ -401,6 +483,12 @@ ax9 = fig3.add_axes(box_ul)
 ax10 = fig3.add_axes(box_ur)
 ax11 = fig3.add_axes(box_ll)
 ax12 = fig3.add_axes(box_lr)
+
+fig4 = plt.figure(num=4, figsize=(14, 10), dpi=80, facecolor='w', edgecolor='k')
+ax13 = fig4.add_axes(box_ul)
+ax14 = fig4.add_axes(box_ur)
+ax15 = fig4.add_axes(box_ll)
+ax16 = fig4.add_axes(box_lr)
 
 plt.interactive(True)
 plt.plot()
