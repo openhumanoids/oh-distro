@@ -111,7 +111,7 @@ namespace InertialOdometry {
     	   Qimu.setZero(6,6);
     	   Qimu.setIdentity(6,6);
     	   
-    	   gravity << 0, 0, -9.81;
+    	   gravity << 0, 0, 9.81;
        }
   };
 

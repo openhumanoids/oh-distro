@@ -53,7 +53,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	// Tuning parameters for data fusion
 	fusion_rate.setDesiredPeriod_us(0,40000-500);
-	df_feedback_gain = -0.6;
+	df_feedback_gain = -0.5;
 	df_events = 0;
 
 
@@ -233,40 +233,57 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 		df_events++;
 
-		Eigen::Vector3d err_b;
+		Eigen::Vector3d err_b, errv_b;
+		Eigen::Matrix3d C_wb;
 
-		err_b = q2C(InerO.q).transpose() * (LeggO.P - InerO.P);
+		C_wb = q2C(InerO.q).transpose();
+
+		// Determine the error in the body frame
+		err_b = C_wb * (LeggO.P - InerO.P);
+		errv_b = C_wb * (LeggO.V - InerO.V);
 
 		double db_a[3];
 
 		for (int i=0;i<3;i++) {
-			//b_a[i] = acc_bias_est.getVal()(i);
-
-			db_a[i] = df_feedback_gain * err_b(i);
+			//db_a[i] = df_feedback_gain * err_b(i) - 0.15 * errv_b(i);
+			db_a[i] = -0.6 * err_b(i) - 0.1 * errv_b(i);
 			//db_a[i] = -0.6 * err_b(i);
-
 		}
 
 		//inert_odo.imu_compensator.UpdateAccelBiases(b_a);
 		inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
 
 		// Reset inertial position offset here
-		inert_odo.setPositionState(0.7*InerO.P + 0.3*LeggO.P);
-		inert_odo.setVelocityState(0.9*InerO.V + 0.1*LeggO.V);
 
-#ifdef VERBOSE_DEBUG_DATA_FUSION
-		std::cout << "LeggO: " << LeggO.P.transpose() << std::endl
-				  << "InerO: " << InerO.P.transpose() << std::endl
-				  << "IO.q : " << InerO.q.w() << ", " << InerO.q.x() << ", " << InerO.q.y() << ", " << InerO.q.z() << std::endl
-				  << "err_b: " << err_b.transpose() << std::endl
-				  << "acc_b: " << just_checking_imu_frame.acc_b.transpose() << std::endl
-				  << "b_acc: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
-				  << "acc_c: " << just_checking_imu_frame.acc_comp.transpose() << std::endl
-				  << "accel_ " << just_checking_imu_frame.accel_.transpose() << std::endl
-				  << "force_ " << just_checking_imu_frame.force_.transpose() << std::endl
-				  << "C_w2b: " << std::endl << q2C(InerO.q) << std::endl
-				  << std::endl;
-#endif
+		double a;
+		double b;
+
+		a = 1/(1 + 1000*err_b.norm());
+		b = 1/(1 + 100*errv_b.norm());
+
+		//inert_odo.setPositionState(0.7*InerO.P + 0.3*LeggO.P);
+		//inert_odo.setVelocityState(0.9*InerO.V + 0.1*LeggO.V);
+
+		// Dynamic wind up reset
+		inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
+		inert_odo.setVelocityState((0.6+0.3*(b))*InerO.V + (0.3*(1-b)+0.1)*LeggO.V);
+
+
+		if (_switches->verbose) {
+			std::cout << "LeggO: " << LeggO.P.transpose() << std::endl
+					  << "InerO: " << InerO.P.transpose() << std::endl
+					  << "dP_w : " << (LeggO.P - InerO.P).transpose() << std::endl
+					  << "IO.q : " << InerO.q.w() << ", " << InerO.q.x() << ", " << InerO.q.y() << ", " << InerO.q.z() << std::endl
+					  << "err_b: " << err_b.transpose() << std::endl
+					  << "acc_b: " << just_checking_imu_frame.acc_b.transpose() << std::endl
+					  << "b_acc: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
+					  << "acc_c: " << just_checking_imu_frame.acc_comp.transpose() << std::endl
+					  << "accel_ " << just_checking_imu_frame.accel_.transpose() << std::endl
+					  << "force_ " << just_checking_imu_frame.force_.transpose() << std::endl
+					  << "a gain " << err_b.norm() << " | "<< a << ", " << (0.6+0.3*(a)) << ", " << 0.3*(1-a)+0.1 << ", " << (0.6+0.3*(a))+0.3*(1-a)+0.1 << std::endl
+					  << "C_w2b: " << std::endl << q2C(InerO.q).transpose() << std::endl
+					  << std::endl;
+		}
 
 	}
 
@@ -289,7 +306,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 
 	if (_msg->utime - prev_frame_utime > 1000) {
-		std::cout << (_msg->utime - prev_frame_utime)/1000 << " frames were missed\n";
+		std::cerr << _msg->utime << " @ " << (_msg->utime - prev_frame_utime)/1000 << " frames were missed\n";
 	}
 
 	prev_frame_utime = _msg->utime;
@@ -445,7 +462,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			}
 		}
 
-		if (_switches->OPTION_C) {
+		if (_switches->OPTION_C || _switches->OPTION_D) {
 
 			Eigen::Vector3d store_vel_state;
 			Eigen::VectorXd filtered_pelvis_vel(3);
@@ -496,20 +513,22 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		InertialOdometry::DynamicState datafusion_out, LeggO;
 
 		// TODO
-		//LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
-		//LeggO.V = _leg_odo->getPelvisVelocityStates();
+		LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
+		LeggO.V = _leg_odo->getPelvisVelocityStates();
 
 
-		LeggO.P << 0.,0.,0.;
-		LeggO.V << 0., 0., 0.;
+		//LeggO.P << 0.,0.,0.;
+		//LeggO.V << 0., 0., 0.;
 
 		datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst);
 
-		if (false) {
+		if (_switches->OPTION_D) {
 			// This is for the computations that follow -- not directly leg odometry position
 			current_pelvis.translation().x() = datafusion_out.P(0);
 			current_pelvis.translation().y() = datafusion_out.P(1);
 			current_pelvis.translation().z() = datafusion_out.P(2);
+
+			_leg_odo->overwritePelvisVelocity(datafusion_out.V);
 		}
 
 
@@ -991,7 +1010,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	} else {
 		for (int i=0;i<3;i++) {
 			rates[i] = msg->angular_velocity[i]; // +2 since the foot force values use the first two filters
-			accels[i] = -msg->linear_acceleration[i];
+			accels[i] = msg->linear_acceleration[i];
 		}
 	}
 	
@@ -1004,7 +1023,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	imu_data.uts = msg->utime;
 
 
-//	imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
+	imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
 
 
 	Eigen::Quaterniond trivial_OL_q;
@@ -1018,10 +1037,10 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 
 	trivial_OL_q = e2q(Eigen::Vector3d(PI/2*0.,-PI/4., 0.*PI/2));
 
-	imu_data.acc_b << 0.1-9.81/sqrt(2), 0., -9.81/sqrt(2);
+	//imu_data.acc_b << 0.1+9.81/sqrt(2), 0., +9.81/sqrt(2);
 
 	just_checking_imu_frame = imu_data;
-	InerOdoEst = inert_odo.PropagatePrediction(&imu_data,trivial_OL_q);
+	InerOdoEst = inert_odo.PropagatePrediction(&imu_data,q);
 
 	//std::cout << "T_OL, ut: " << imu_data.uts << ", " << InerOdoEst.V.transpose() << " | " << InerOdoEst.P.transpose() << std::endl;
 
@@ -1325,7 +1344,6 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 
 		  //left.rotate(leftC); // with rotation matrix
 	  } else {
-
 
 		  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
 		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;

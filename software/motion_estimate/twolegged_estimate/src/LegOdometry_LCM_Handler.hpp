@@ -89,6 +89,7 @@ struct command_switches {
   bool OPTION_D;
   bool OPTION_E;
   bool grab_true_init;
+  bool verbose;
   int medianlength;
 };
 
