@@ -931,7 +931,7 @@ namespace renderer_affordances_lcm_utils
                   else if(foot_it->second.foot_type==1)   
                       ee_name ="r_foot";    
                   else
-                      cout << "unknown foot_type in on_otdf_dof_range_widget_popup_close\n";  
+                      cout << "unknown foot_type in publish_pose_goal\n";  
          
                   // if ee_name already exists in ee_frames_map, redundant ee_frames
                   // e.g two right sticky hands on the same object.
@@ -979,8 +979,100 @@ namespace renderer_affordances_lcm_utils
 
       publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
   } 
-    
+  
+  static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
 
+  
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+  
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map;    
+  
+      // Publish time indexed ee motion constraints from the selected sticky hand
+      string host_name = handstruc.object_name;
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it = self->instantiated_objects.find(host_name);
+
+
+      string ee_name;
+      if(handstruc.hand_type==0)
+          ee_name ="left_palm";    
+      else if(handstruc.hand_type==1)   
+          ee_name ="right_palm";    
+      else
+          cout << "unknown hand_type in publish_pose_goal_to_sticky_hand\n";   
+
+      // if ee_name already exists in ee_frames_map, redundant ee_frames
+      // e.g two right sticky hands on the same object.
+      map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
+      if(ee_it!=ee_frames_map.end()){
+          cerr<<" ERROR: Cannot of two seeds of the same ee. Please consider deleting redundant seeds\n";
+          return;   
+      }
+
+      //======================     
+      KDL::Frame  T_geometry_hand = handstruc.T_geometry_hand;
+      KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+      if(!handstruc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+          cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+      KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
+
+      KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+      if(!it->second._gl_object->get_link_geometry_frame(string(handstruc.geometry_name),T_world_graspgeometry))
+            cerr << " failed to retrieve " << handstruc.geometry_name<<" in object " << handstruc.object_name <<endl;
+
+      int num_frames = 1;
+      vector<KDL::Frame> T_world_ee_frames;
+      vector<int64_t> frame_timestamps;
+      for(uint i = 0; i < (uint) num_frames; i++) {
+          KDL::Frame  T_world_ee = T_world_graspgeometry*T_geometry_palm;   
+          KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
+          KDL::Vector handframe_offset;
+          handframe_offset[0]=0.01;handframe_offset[1]=0;handframe_offset[2]=0;
+          KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+          KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+          T_world_ee.p += worldframe_offset;                    
+          
+          T_world_ee_frames.push_back(T_world_ee);
+          int64_t timestamp=(int64_t)i*1000000;
+          frame_timestamps.push_back(timestamp);   
+      }
+      //===================         
+
+      ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+      ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));   
+      // handstruc.joint_name;  
+      // handstruc.joint_position; 
+
+        for(uint k = 0; k< (uint) handstruc.joint_name.size(); k++) 
+        {
+          std::string joint_name = handstruc.joint_name[k];
+          vector<double> joint_pos;
+          vector<int64_t> joint_pos_timestamps;
+          uint i=0;
+          joint_pos.push_back(handstruc.joint_position[k]);
+          int64_t timestamp=(int64_t)i*1000000;
+          joint_pos_timestamps.push_back(timestamp);
+          joint_pos_map.insert(make_pair(joint_name,joint_pos));
+          joint_pos_timestamps_map.insert(make_pair(joint_name, joint_pos_timestamps));  
+        }
+          
+      //body pose constraint  (only orientation will be considered during pose optimization)
+      vector<KDL::Frame> T_world_ee_frames_root;
+      vector<int64_t> frame_timestamps_root;
+      T_world_ee_frames_root.push_back(T_world_body_desired);
+      frame_timestamps_root.push_back(0);               
+      ee_frames_map.insert(make_pair("pelvis", T_world_ee_frames_root));
+      ee_frame_timestamps_map.insert(make_pair("pelvis", frame_timestamps_root));      
+
+      publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
+  }  
+//==================================
   static void publish_mate_cmd (void *user, string channel)
   {
       RendererAffordances *self = (RendererAffordances*) user;

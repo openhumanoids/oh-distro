@@ -919,11 +919,7 @@ namespace renderer_affordances_gui_utils
         //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 
       }
-
-
-
-    
-
+ 
       /*bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
@@ -949,8 +945,16 @@ namespace renderer_affordances_gui_utils
           publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
           
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
-        }*/
-     
+        }*/      
+    }
+  
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL)){
+      string channel = "POSE_GOAL";
+       // only orientation is considered as seed in pose optimization
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired);  
     }
 
     else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
@@ -990,6 +994,7 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_UNSTORE))) {
       store_sticky_hand(pw,name,user,true);    
     }
+  
         
     bot_viewer_request_redraw(self->viewer);
     gtk_widget_destroy(self->dblclk_popup);
@@ -1041,6 +1046,8 @@ namespace renderer_affordances_gui_utils
 
     bot_gtk_param_widget_add_separator(pw, "Partial Grasp");
     bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
+    
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL, NULL);
     //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_PARTIAL_GRASP_UNGRASP, !val, NULL);
 
     
