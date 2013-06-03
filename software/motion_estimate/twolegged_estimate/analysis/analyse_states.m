@@ -235,16 +235,39 @@ figure(7);clf
 subplot(spa,spb,1)
 plot(t,imu_P)
 hold on
-plot(t,tpos,'--','linewidth',2)
+plot(t,epos,'--','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
 title('States')
 grid on
-title('Raw Vel');
 
+subplot(spa,spb,2)
+plot(t,imu_V)
+hold on
+plot(t,evel,'--','linewidth',2)
+plot(t,left_con*0.1,':m','linewidth',2.5)
+plot(t,right_con*0.1,':c','linewidth',2.5)
+grid on
+title('Vel States')
+grid on
 
-figure(1)
+subplot(spa,spb,3)
+plot(t,imu_V)
+hold on
+plot(t,tvel,'--','linewidth',2)
+plot(t,left_con*0.1,':m','linewidth',2.5)
+plot(t,right_con*0.1,':c','linewidth',2.5)
+grid on
+title('Vel States')
+grid on
+
+subplot(spa,spb,4)
+plot(t,tvel-imu_V)
+grid on
+title('INS velocity errors')
+
+figure(7)
 %%
 
 if (true)
@@ -313,8 +336,38 @@ for k=1:length(figs)
     end
 end
 
+%% Plot TRUE/LEG/INERT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% adjust plots for 4, 1
-if (false)
+if (true)
     %plot at so many sigma
     sigma_plot = 4;
 
