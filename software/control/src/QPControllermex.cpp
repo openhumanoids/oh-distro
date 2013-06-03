@@ -52,6 +52,25 @@ mxArray* myGetProperty(const mxArray* pobj, const char* propname)
   return pm;
 }
 
+// comment out the #define to disable error checking
+#define CHECK_GUROBI_ERRORS
+
+#ifndef CHECK_GUROBI_ERRORS
+
+#define CGE( call, env ) { call ;}
+
+#else
+
+void PGE ( GRBenv *env )
+{
+  mexPrintf ("Gurobi error %s\n", GRBgeterrormsg( env ));
+}
+
+#define CGE( call, env ) {int gerror; gerror = call; if (gerror) PGE ( env );}
+
+#endif
+
+
 template <typename DerivedA, typename DerivedB>
 void getRows(set<int> &rows, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB> &Msub)
 {
@@ -473,7 +492,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.bottomRows(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.bottomRows(neps) = pdata->slack_limit*VectorXd::Ones(neps);
   
-  error = GRBnewmodel(pdata->env,&model,"QPController",nparams,NULL,lb.data(),ub.data(),NULL,NULL);
+  CGE (GRBnewmodel(pdata->env,&model,"QPController",nparams,NULL,lb.data(),ub.data(),NULL,NULL), pdata->env);
   
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
@@ -505,30 +524,30 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       for (i=0; i<nq_con; i++)
         for (j=0; j<nq_con; j++)
           if (abs(Hqp_con(i,j))>1e-10) 
-            error = GRBaddqpterms(model,1,&i,&j,&(Hqp_con(i,j)));
+            CGE (GRBaddqpterms(model,1,&i,&j,&(Hqp_con(i,j))), pdata->env);
 
       // obj(1:nq_con) = 2*fqp_con
       fqp_con *= 2;
-      error = GRBsetdblattrarray(model,"Obj",0,nq_con,fqp_con.data());
+      CGE (GRBsetdblattrarray(model,"Obj",0,nq_con,fqp_con.data()), pdata->env);
       
       // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
       double cost = .001;
       for (i=nparams-neps; i<nparams; i++) {
-        error = GRBaddqpterms(model,1,&i,&i,&cost);
+        CGE (GRBaddqpterms(model,1,&i,&i,&cost), pdata->env);
       }
     } else {
       // Q(1:nq_con,1:nq_con) = eye(nq_con)
       double cost = 1;
       for (i=0; i<nq_con; i++) {  
-        error = GRBaddqpterms(model,1,&i,&i,&cost);
+        CGE (GRBaddqpterms(model,1,&i,&i,&cost), pdata->env);
       }
       // obj(1:nq_con) = -qddot_des_con
       q_ddot_des_con *= -1;
-      error = GRBsetdblattrarray(model,"Obj",0,nq_con,q_ddot_des_con.data());
+      CGE (GRBsetdblattrarray(model,"Obj",0,nq_con,q_ddot_des_con.data()), pdata->env);
     } 
     
     // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
-    error = GRBaddqpterms(model,pdata->Rnnz,pdata->Rind1,pdata->Rind2,pdata->Rval);
+    CGE (GRBaddqpterms(model,pdata->Rnnz,pdata->Rind1,pdata->Rind2,pdata->Rval), pdata->env);
   }      
   
   { // constrained dynamics
@@ -553,7 +572,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       beq -= H_con_free*qdd_free;
     }      
 
-    error = myGRBaddconstrs(model,Aeq,beq,GRB_EQUAL);
+    CGE (myGRBaddconstrs(model,Aeq,beq,GRB_EQUAL), pdata->env);
   }
 
   if (nc > 0) {
@@ -566,7 +585,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Aeq.topRightCorner(neps,neps) = MatrixXd::Identity(neps,neps);
     beq = (-Jpdot_con - 1.0*Jp_con)*qd_con;
     
-    error = myGRBaddconstrs(model,Aeq,beq,GRB_EQUAL);
+    CGE (myGRBaddconstrs(model,Aeq,beq,GRB_EQUAL), pdata->env);
   }    
   
   if (nc>0) {
@@ -578,15 +597,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       // -mu*lambda[i] + sum(beta[i]s) <= 0
       cind[0] = nq_con+nu_con+i;
       for (j=0; j<nd; j++) cind[j+1]=nq_con+nu_con+nc+i*nd+j;
-      error = GRBaddconstr(model,1+nd,cind,cval,GRB_LESS_EQUAL,0,NULL);
+      CGE (GRBaddconstr(model,1+nd,cind,cval,GRB_LESS_EQUAL,0,NULL), pdata->env);
     }
   }    
   
-  error = GRBupdatemodel(model);
-  error = GRBoptimize(model);
+  CGE (GRBupdatemodel(model), pdata->env);
+  CGE (GRBoptimize(model), pdata->env);
   
   VectorXd alpha(nparams);
-  error = GRBgetdblattrarray(model, GRB_DBL_ATTR_X, 0, nparams, alpha.data());
+  CGE (GRBgetdblattrarray(model, GRB_DBL_ATTR_X, 0, nparams, alpha.data()), pdata->env);
   
   //----------------------------------------------------------------------
   // Solve for free inputs -----------------------------------------------
@@ -635,10 +654,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   if (nlhs>2) {  // return model.Q (for unit testing)
     int qnz;
-    error = GRBgetintattr(model,"NumQNZs",&qnz);
+    CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
     int *qrow = new int[qnz], *qcol = new int[qnz];
     double* qval = new double[qnz];
-    error = GRBgetq(model,&qnz,qrow,qcol,qval);
+    CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
     plhs[2] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
     double* pm = mxGetPr(plhs[2]);
     memset(pm,0,sizeof(double)*nparams*nparams);
@@ -650,25 +669,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     if (nlhs>3) {  // return model.obj (for unit testing)
       plhs[3] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-      error = GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[3]));
+      CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[3])), pdata->env);
 
       if (nlhs>4) {  // return model.A (for unit testing)
         int numcon;
-        error = GRBgetintattr(model,"NumConstrs",&numcon);
+        CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
         plhs[4] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
         double *pm = mxGetPr(plhs[4]);
         for (i=0; i<numcon; i++)
           for (j=0; j<nparams; j++)
-            error = GRBgetcoeff(model,i,j,&pm[i+j*numcon]);
+            CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
         
         if (nlhs>5) {  // return model.rhs (for unit testing)
           plhs[5] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-          GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[5]));
+          CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[5])), pdata->env);
         } 
         
         if (nlhs>6) { // return model.sense
           char* sense = new char[numcon+1];
-          GRBgetcharattrarray(model,"Sense",0,numcon,sense);
+          CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
           sense[numcon]='\0';
           plhs[6] = mxCreateString(sense);
           // delete[] sense;  // it seems that I'm not supposed to free this
