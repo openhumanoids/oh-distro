@@ -66,6 +66,8 @@ class KMCLApp{
     
     void utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                    const  drc::utime_t* msg); 
+    void reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                   const  drc::utime_t* msg); 
     
     BotParam * bot_param;
     
@@ -88,6 +90,13 @@ class KMCLApp{
     
     int64_t get_current_utime();
     
+    void set_reset_usage_stats(bool reset_usage_stat_in){
+      reset_usage_stats = reset_usage_stat_in; 
+    }
+    bool get_reset_usage_stats()
+    { return reset_usage_stats; }
+    
+    
     const std::vector<Resend>& resendlist() 
     { return resendlist_; }
 
@@ -104,6 +113,7 @@ class KMCLApp{
   private:
     std::vector<Resend> resendlist_;    
     
+    bool reset_usage_stats;
     int64_t current_utime;   
     boost::mutex guard;
 };

@@ -96,6 +96,8 @@ class DRCShaper
     void run();
 
   private:
+    void open_usage_log();
+    
     void outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
     void udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg);
     void publish_receive(std::string channel,
@@ -166,6 +168,7 @@ class DRCShaper
 
     std::ofstream flog_;
     std::ofstream data_usage_log_;
+    std::stringstream header_string_;
     
     class ReceiveMessageParts
     {

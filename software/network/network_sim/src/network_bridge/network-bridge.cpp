@@ -27,7 +27,7 @@ const std::string KMCLApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
 KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
                  const CommandLineConfig& cl_cfg):
     robot_lcm(robot_lcm), base_lcm(base_lcm),
-    cl_cfg(cl_cfg){
+    cl_cfg(cl_cfg), reset_usage_stats(false){
     
     current_utime=0;
   
@@ -220,9 +220,13 @@ void KMCLApp::send_resend_list(){
 // The clock/robot_utime message is used to timing:
 void KMCLApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                             const  drc::utime_t* msg){
-    //KMCLApp* app = (KMCLApp*) user_data;
     set_current_utime(msg->utime);
 //  std::cout << "got current time\n";
+}
+
+void KMCLApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                            const  drc::utime_t* msg){
+    set_reset_usage_stats(true);
 }
 
 int main (int argc, char ** argv) {
@@ -303,10 +307,13 @@ int main (int argc, char ** argv) {
     boost::thread_group thread_group;
 
     // Subscribe to robot time and use that to key the publishing of all messages in both directions:
-    if(cl_cfg.base_only)
+    if(cl_cfg.base_only){
         app->base_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
-    else
+	app->base_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+    }else{
         app->robot_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
+	app->robot_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+    }
   
     thread_group.create_thread(boost::bind(robot2base, boost::ref( *app)));
     thread_group.create_thread(boost::bind(base2robot, boost::ref( *app)));

@@ -89,33 +89,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
     goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
 
-    if(app.cl_cfg.file_log)
-    {
-        using namespace boost::posix_time;
 
-        std::string goby_debug_file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
-        
-        flog_.open(goby_debug_file_name.c_str());
-        if(!flog_.is_open())
-        {
-            std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
-                              &flog_);
-
-        
-        std::string data_usage_file_name = app.cl_cfg.log_path + "/drc-network-shaper-data-usage-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".csv";
-        
-        data_usage_log_.open(data_usage_file_name.c_str());
-        if(!data_usage_log_.is_open())
-        {
-            std::cerr << "Failed to open requested CSV data log file: " << data_usage_file_name << ". Check value and permissions on --logpath" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        
-    }
 
     
     if(app.cl_cfg.enable_gui)
@@ -204,23 +178,14 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         }
     }
 
-
-    if(data_usage_log_.is_open())
+    
+    if(app.cl_cfg.file_log)
     {
-//        data_usage_log_ << app_.get_current_utime();
-        data_usage_log_ << "UTIME";
-      
-        for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
-        {
-            bool robot2base = (node_ == ROBOT) ? sent_data_usage_.count(it->second) : received_data_usage_.count(it->second);
-            data_usage_log_ << "," << it->first << (robot2base ? 0 : 1);
-        }
-        data_usage_log_ << std::endl;
-    }
+	open_usage_log();
+    }    
     
     
     largest_id_ = current_id-1;
-    
     
     
     // outgoing 
@@ -293,6 +258,50 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     else
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
 }
+
+void DRCShaper::open_usage_log()
+{
+    using namespace boost::posix_time;
+
+    std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
+
+    flog_.open(goby_debug_file_name.c_str());
+    if(!flog_.is_open())
+    {
+	std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
+	exit(EXIT_FAILURE);
+    }
+
+    goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
+			  &flog_);
+
+    std::string data_usage_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-data-usage-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".csv";
+
+    data_usage_log_.open(data_usage_file_name.c_str());
+    if(!data_usage_log_.is_open())
+    {
+	std::cerr << "Failed to open requested CSV data log file: " << data_usage_file_name << ". Check value and permissions on --logpath" << std::endl;
+	exit(EXIT_FAILURE);
+    }
+
+    if(data_usage_log_.is_open())
+    {
+        // Cache header strings in case or reset commands:
+        if (header_string_.str().empty()){
+	  header_string_ << "UTIME";
+	  for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
+	  {
+	      bool robot2base = (node_ == ROBOT) ? sent_data_usage_.count(it->second) : received_data_usage_.count(it->second);
+	      header_string_ << "," << it->first << (robot2base ? 0 : 1);
+	  }
+	  header_string_ << std::endl;
+	}
+	data_usage_log_ << header_string_.str();
+    }
+}
+
+
+
 
 
 void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
@@ -611,6 +620,31 @@ void DRCShaper::publish_receive(std::string channel,
 
 void DRCShaper::post_bw_stats()
 {
+
+   if (app_.get_reset_usage_stats() ){
+      std::cout << "Received request to reset the stats. Zeroing all transmission counts\n";
+      data_usage_log_.close();
+      
+      for (size_t i=0 ; i < sent_data_usage_.size() ; i++ )
+      {
+	  sent_data_usage_[i].queued_msgs = 0;
+	  sent_data_usage_[i].queued_bytes = 0;
+	  sent_data_usage_[i].sent_bytes = 0;
+	  //sent_data_usage_[i].received_bytes = 0;
+      }
+      
+      for (size_t i=0 ; i < received_data_usage_.size() ; i++ )
+      {
+	  //received_data_usage_[i].queued_msgs = 0;
+	  //received_data_usage_[i].queued_bytes = 0;
+	  //received_data_usage_[i].sent_bytes = 0;
+	  received_data_usage_[i].received_bytes = 0;
+      }          
+      
+      open_usage_log();
+      app_.set_reset_usage_stats(false);
+    }	  
+ 
     uint64_t now = goby::common::goby_time<uint64_t>();
     double elapsed_time = (now - app_.bw_init_utime)/1.0e6 ;
     double bw_window = 1.0; // bw window in seconds
@@ -642,13 +676,13 @@ void DRCShaper::post_bw_stats()
         lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
         app_.bw_init_utime = stats.utime;
     }
-
+    
     if(data_usage_log_.is_open())
     {
         data_usage_log_ << app_.get_current_utime();
         for(boost::bimap<std::string, int>::left_const_iterator it = channel_id_.left.begin(), end = channel_id_.left.end(); it != end; ++it)
         {
-            int bytes = (sent_data_usage_.count(it->second)) ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
+            int bytes = sent_data_usage_[it->second].sent_bytes ? sent_data_usage_[it->second].sent_bytes : received_data_usage_[it->second].received_bytes;
             data_usage_log_ << "," << bytes;
         }
         data_usage_log_ << std::endl;
