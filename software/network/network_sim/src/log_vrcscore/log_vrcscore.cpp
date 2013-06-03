@@ -24,6 +24,9 @@ using namespace std;
 
 using namespace boost::posix_time;
 
+char* pHome = getenv("HOME");  
+string home = string(pHome);
+
 
 class Pass{
   public:
@@ -54,11 +57,13 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   
   last_utime_ =0;
   
+  open_usage_log();
 }
 
 void Pass::open_usage_log(){
+  string pathname = string(home + "/drc/software/config/");
 
-  std::string data_usage_file_name = "vrc-score-" + to_iso_string(second_clock::universal_time()) + ".csv";
+  std::string data_usage_file_name = pathname + "vrc-score-" + to_iso_string(second_clock::universal_time()) + ".csv";
   data_usage_log_.open(data_usage_file_name.c_str()  );
   
   if(!data_usage_log_.is_open())
@@ -70,7 +75,7 @@ void Pass::open_usage_log(){
   }
   
   if(data_usage_log_.is_open()){
-    header_string_ << "UTIME,BYTESDOWN,BYTESUP\n";
+    header_string_ << "UTIME,BYTESDOWN,BYTESUP" << std::endl;
     data_usage_log_ << header_string_.str();
     data_usage_log_.flush();
   }
@@ -107,19 +112,13 @@ void Pass::vrcScoreHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 int main(int argc, char ** argv) {
-  string filename = "path/to/lcm/log";
-  ConciseArgs opt(argc, (char**)argv);
-  opt.add(filename, "f", "filename","Filename");
-  opt.parse();
-  std::cout << "filename: " << filename << " filename\n";      
-
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM()  );
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
   Pass app(lcm);
-  cout << "Pin point fall Ready" << endl << "============================" << endl;
+  cout << "Ready to write VRC_SCORE plan" << endl << "============================" << endl;
   while(0 == lcm->handle());
   
   

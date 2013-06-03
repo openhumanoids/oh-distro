@@ -52,6 +52,21 @@ const bool PARAM_STATUS_7_DEFAULT = false;
 const bool PARAM_STATUS_8_DEFAULT = false;
 const bool PARAM_IMPORTANT_DEFAULT = false;
 
+const char* PARAM_TOTAL_KB = "Total Up";
+
+#define PARAM_RESET_SHAPER_STATS "Reset Network Stats"
+
+
+// bit values divided by (1024*8)
+int total_KB_up[5]={14.0625, 56.25, 225, 900.1220703125, 3600};
+int total_KB_down[5]={7200, 14400, 28800, 57600, 115200}; 
+
+typedef enum _rate_t {
+    TOTAL_KB_0, TOTAL_KB_1, TOTAL_KB_2, TOTAL_KB_3, TOTAL_KB_4
+} rate_t;
+
+  
+
 
 float colors[NUMBER_OF_SYSTEMS][3] = {
         { 1.0, 0.0, 0.0 }, // red
@@ -273,6 +288,57 @@ static void format_time_str (int64_t lutime, char *line)
   
 } 
 
+
+//function msg=
+// all figures in KB: (bits/1204/8)
+void get_ttl(BotViewer *viewer, BotRenderer *r, int total_remaining_bytes, int elapsed_sec , 
+	     double &percent_left , int &expected_ttl_min, int &expected_ttl_sec, bool down_link){
+  //total_used,total_budget , current_time_sec, band_id){
+    RendererSystemStatus *self = (RendererSystemStatus*)r;
+  rate_t total_kb_val  = (rate_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_TOTAL_KB);
+  int total_kb_key =0;
+  if ( total_kb_val == TOTAL_KB_0 ){ total_kb_key=0;
+  }else if( total_kb_val == TOTAL_KB_1 ){ total_kb_key=1;
+  }else if( total_kb_val == TOTAL_KB_2 ){ total_kb_key=2;
+  }else if( total_kb_val == TOTAL_KB_3 ){ total_kb_key=3;
+  }else if( total_kb_val == TOTAL_KB_4 ){ total_kb_key=4; }
+
+    
+  
+  int total_budget_bytes = 115200*1024;
+  if (down_link){
+    total_budget_bytes = total_KB_down[total_kb_key]*1024;
+  }else{
+    total_budget_bytes = total_KB_up[total_kb_key]*1024;
+  }
+  
+//  int total_budget_bytes 
+  int total_used_bytes = total_budget_bytes - total_remaining_bytes;
+  
+  double rate = (double) total_used_bytes/elapsed_sec; // KB/sec
+  double expected_duration = (double) elapsed_sec * total_budget_bytes  / total_used_bytes;
+  double expected_ttl = expected_duration - elapsed_sec;
+  percent_left = (double) 100.0* (1.0 - (double) total_used_bytes/ (double) total_budget_bytes );
+  expected_ttl_min = floor( expected_ttl / 60 );
+  expected_ttl_sec = floor( expected_ttl - expected_ttl_min*60);
+  
+  /*
+  std::cout << "total_kb_key: " << total_kb_key << "\n";
+  std::cout << "downlink? " << (int) down_link << "\n";
+  std::cout << total_budget_bytes << " total_budget_bytes\n";
+  std::cout << total_used_bytes << " total_used_bytes\n";
+  std::cout << total_remaining_bytes << " remaining bytes\n";
+  std::cout << expected_duration << " expected_duration\n";
+  std::cout << elapsed_sec << " elapsed_sec\n";
+  std::cout << percent_left << " percent_left\n";
+  std::cout << expected_ttl << " expected_ttl\n";
+  std::cout << expected_ttl_min << " expected_ttl_min\n";
+  std::cout << expected_ttl_sec << " expected_ttl_sec\n";
+  std::cout << "=====================================\n";
+  */
+  
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
 ////////////////////////////////////////////////////////////////////////////////
@@ -349,18 +415,77 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
 
+	//
+	// NB: sim_time_elapsed time is NOT the number of seconds left in the 30mins
+	// 	
+	float elapsed_sec = (float) (self->score->sim_time/1E6) ;
+	float total_sec = 30.0*60.0;
+	int total_remaining_sec = floor(total_sec - elapsed_sec);
+	int remaining_min = floor(total_remaining_sec/60.0);
+        int remaining_sec = floor(total_remaining_sec - remaining_min*60);
+	float percent_remaining = 100*total_remaining_sec / total_sec;
 	
-	float elapsed_sec = (float) (self->score->sim_time_elapsed /1E6) ;
-	float remaining_sec = 30.0*60.0 - elapsed_sec;
-	
-	sprintf(line, "%.1f LEFT %.1f", remaining_sec, remaining_sec/60 );
+	sprintf(line, "%2.2f TIME %2d:%2d",percent_remaining, remaining_min,remaining_sec);
 	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);
-	glutBitmapString(font, (unsigned char*) line);
-	sprintf(line, "%.1f ELAPSED", elapsed_sec );
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+	
+	double percent_left;
+	int expected_ttl_min, expected_ttl_sec;
+	if (self->score->bytes_downlink_remaining !=0){
+	  get_ttl(viewer, r, self->score->bytes_downlink_remaining, elapsed_sec , percent_left , expected_ttl_min, expected_ttl_sec, true);
+          sprintf(line, "%2.2f DOWN %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
+	}else{
+          sprintf(line, "No Downlink Info");
+	}
 	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);
-	glutBitmapString(font, (unsigned char*) line);
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+
+	if (self->score->bytes_uplink_remaining !=0){
+  	  get_ttl(viewer, r, self->score->bytes_uplink_remaining, elapsed_sec , percent_left , expected_ttl_min, expected_ttl_sec, false);
+  	  sprintf(line, "%2.2f  UP  %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
+	}else{
+          sprintf(line, "No Uplink Info");
+	}
+	y = gl_height + (-3 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+	
+	sprintf(line, "  %%   ====  TTL ");
+	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+	
+	
+	
+	
+	
+/*	
+	sprintf(line, "LEFT %.1f MINS %.1f", remaining_sec, remaining_sec/60 );
+	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+	sprintf(line, "GONE %.1f", elapsed_sec );
+	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+	
+	sprintf(line, "DOWN TTL abcd", elapsed_sec );
+	y = gl_height + (-6 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+	sprintf(line, "LEFT %.1f \% %.1f", remaining_sec, remaining_sec/60 );
+	y = gl_height + (-5 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+	sprintf(line, "GONE %.1f", elapsed_sec );
+	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+	
+	
+	sprintf(line, "  UP TTL abcd", elapsed_sec );
+	y = gl_height + (-9 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
+	sprintf(line, "LEFT %.1f \% %.1f", remaining_sec, remaining_sec/60 );
+	y = gl_height + (-8 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+	sprintf(line, "GONE %.1f", elapsed_sec );
+	y = gl_height + (-7 - self->frequency_list.size() - 11) * line_height;
+	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
+*/	
       }
     
     }
@@ -391,6 +516,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_STANDING){ status ="STANDING";
     }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_WALKING){ status ="WALKING"; 
     }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_HARNESSED){ status ="HARNESS"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_QUASISTATIC){ status ="QUASISTATIC"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_BRACING){ status ="BRACING"; 
     }else{ status ="UNKNOWNX"; // shouldnt happen
     }
     sprintf(line9, "%s [AGE %.1f]", status.c_str() , elapsed_control_time);
@@ -628,6 +755,14 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
   self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);
+  
+  if (! strcmp(param, PARAM_RESET_SHAPER_STATS)) {
+    drc_utime_t msg;
+    msg.utime = self->last_utime;
+    drc_utime_t_publish(self->lcm, "RESET_SHAPER_STATS", &msg);
+    
+  }
+  
   bot_viewer_request_redraw (self->viewer);
 }
 
@@ -752,6 +887,11 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_SHADING, PARAM_SHADING_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_SCORE_AND_RATES, PARAM_SCORE_AND_RATES_DEFAULT, NULL);
+    bot_gtk_param_widget_add_enum (self->pw, PARAM_TOTAL_KB, (BotGtkParamWidgetUIHint)0, TOTAL_KB_0, 
+	      "0 | 14KB/sec", TOTAL_KB_0 , "1 | 56B/sec", TOTAL_KB_1, 
+	      "2 | 225KB/sec", TOTAL_KB_2, "3 | 900KB/sec", TOTAL_KB_3, 	      
+	      "4 | 3600KB/sec", TOTAL_KB_4, NULL);    
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_RESET_SHAPER_STATS, NULL);
     
     
     gtk_widget_show (GTK_WIDGET (self->pw));
