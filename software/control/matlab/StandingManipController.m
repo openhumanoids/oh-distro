@@ -3,6 +3,7 @@ classdef StandingManipController < DRCController
   properties (SetAccess=protected,GetAccess=protected)
     robot;
     foot_idx;
+    contact_est_monitor;
   end
   
   methods
@@ -29,7 +30,11 @@ classdef StandingManipController < DRCController
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0,...
+        'int_start_time',0,...
+        'ee_err_int',[],...
         'ee_goal',[],...
+        'ee_int',[],...
+        'ee_prev_t',[],...
 				'ee_controller_state',0)); % controller_state: 0 - no goal received. 1 - goal received, controller off, 2 goal received, PI contoller on
       
       % instantiate QP controller
@@ -51,7 +56,7 @@ classdef StandingManipController < DRCController
 
       % cascade PD qtraj controller 
 			pd = SimplePDBlock(r,ctrl_data);
-			%pd = ManipPDBlock(r,ctrl_data);
+% 			pd = ManipPDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -79,26 +84,26 @@ classdef StandingManipController < DRCController
       sys = mimoCascade(neck,sys,connection,ins,outs);
 
 			% cascade cartesian controller on left and right hands
-      ee_control = ManipCartesianController(r,ctrl_data);
-			ins(1).system = 1;
-			ins(1).input = 1;
-			ins(2).system = 1;
-			ins(2).input = 2;
-			ins(3).system = 1;
-			ins(3).input = 3;
-			ins(4).system = 2;
-			ins(4).input = 2;
-			outs(1).system = 2;
-			outs(1).output = 1;
-			connection(1).from_output = 1;
-			connection(1).to_input = 1;
-			%sys = mimoCascade(sys,ee_control,[],ins,outs);
+%       ee_control = ManipCartesianController(r,ctrl_data);
+% 			ins(1).system = 1;
+% 			ins(1).input = 1;
+% 			ins(2).system = 1;
+% 			ins(2).input = 2;
+% 			ins(3).system = 1;
+% 			ins(3).input = 3;
+% 			ins(4).system = 2;
+% 			ins(4).input = 2;
+% 			outs(1).system = 2;
+% 			outs(1).output = 1;
+% 			sys = mimoCascade(sys,ee_control,[],ins,outs);
 
       obj = obj@DRCController(name,sys);
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
       
+      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
+      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
       
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -113,8 +118,7 @@ classdef StandingManipController < DRCController
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
-      foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
-      obj.foot_idx = find(foot_support);
+      obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
       supports = SupportState(r,obj.foot_idx);
       
       obj.controller_data.setField('S',V.S);
@@ -144,7 +148,39 @@ classdef StandingManipController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'COMMITTED_ROBOT_PLAN')
+      
+      if isfield(data,'STOP_WALKING')
+        % transition from walking:
+        % take in new nominal pose and compute standing controller
+
+        % get foot contact state over LCM
+        contact_data = obj.contact_est_monitor.getMessage();
+        if isempty(contact_data)
+          lfoot_contact_state = 1;
+          rfoot_contact_state = 1;
+        else
+          msg = drc.foot_contact_estimate_t(contact_data);
+          lfoot_contact_state = msg.left_contact > 0.5;
+          rfoot_contact_state = msg.right_contact > 0.5;
+        end
+        
+        r = obj.robot;
+        q0 = data.AtlasState(1:getNumDOF(r));
+        kinsol = doKinematics(r,q0);
+%         com = getCOM(r,kinsol);
+
+        foot_pos = contactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state])); 
+        ch = convhull(foot_pos(1:2,:)');
+        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+%         zmap = getTerrainHeight(r,com(1:2));
+%         robot_z = com(3)-zmap;
+  
+%         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
+        obj.controller_data.setField('qtraj',q0);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
+        obj.controller_data.setField('y0',comgoal);
+        
+      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
         % standing and reaching plan
         sprintf('standing controller on\n');
         msg = data.COMMITTED_ROBOT_PLAN;
@@ -153,6 +189,7 @@ classdef StandingManipController < DRCController
 
         obj.controller_data.setField('qtraj',qtraj);
         obj = setDuration(obj,inf,false); % set the controller timeout
+        
       elseif isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
@@ -173,7 +210,8 @@ classdef StandingManipController < DRCController
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
-
+     
+      
       else
         % first initialization should come here... wait for state
         state_frame = getStateFrame(obj.robot);
