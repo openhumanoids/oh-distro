@@ -666,7 +666,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
             }
         else{
         
-            //if (found==std::string::npos){
+            if (found==std::string::npos){
               KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
               self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
             }
@@ -702,9 +702,8 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
     if (self->dragging) {
         self->dragging = 0;
         if(self->selection_hold_on && !self->show_popup_onrelease && !self->dblclk_popup){
-            if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())){
+            if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
                publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
-            }
         }
     }
     if (ehandler->picking==1)
