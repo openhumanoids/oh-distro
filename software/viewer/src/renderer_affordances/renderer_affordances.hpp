@@ -1384,10 +1384,9 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
           
           Eigen::Vector3f da= self->ray_hit_drag-self->marker_offset_on_press;
           double desired_pos = da.dot(joint_axis);
-          double current_pos, velocity;
-          self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
-          current_pos += (desired_pos-current_pos);
-          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos,velocity); 
+         // double current_pos, velocity;
+         // self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
+          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, desired_pos,0); 
           self->otdf_instance_hold._otdf_instance->update(); 
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
         }    

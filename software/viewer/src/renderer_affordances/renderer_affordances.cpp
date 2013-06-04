@@ -666,16 +666,15 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
             }
         else{
         
-            if (found==std::string::npos){
+          //  if (found==std::string::npos){
               KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
               self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
-            }
-            /*else{
+           /* }
+            else{
               self->otdf_instance_hold._gl_object->get_link_frame( self->otdf_instance_hold._gl_object->_mate_end_link,T_world_mate_endlink);                    
               self->marker_offset_on_press << self->ray_hit[0]-T_world_mate_endlink.p[0],self->ray_hit[1]-T_world_mate_endlink.p[1],self->ray_hit[2]-T_world_mate_endlink.p[2]; 
             }   */
-            
-            cout <<self->marker_offset_on_press.transpose()<< "1) self->marker_offset_on_press\n";          
+        
         }
         return 1;// consumed
      }
