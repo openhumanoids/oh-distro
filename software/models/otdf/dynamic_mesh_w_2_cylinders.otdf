@@ -22,19 +22,16 @@
     <param name="roll_offset" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch_offset" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw_offset" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-  
-   <!-- Size of the Second grasping cylinder -->
-   <param name="mass2" default_value="1.0" inc="0.01" min="0" max="100" />
+    <!-- Size of the Second grasping cylinder -->
     <param name="radius2" default_value="0.055" inc="0.0025" min="0" max="100" />
-    <param name="length2" default_value="0.025" inc="0.0025" min="0" max="100" />   
-   <!-- cyl2_offset w.r.t. dynamic_mesh -->
+    <param name="length2" default_value="0.025" inc="0.0025" min="0" max="100" />
+    <!-- cyl2_offset w.r.t. dynamic_mesh -->
     <param name="x_offset2" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y_offset2" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="z_offset2" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="roll_offset2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch_offset2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw_offset2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    
     <link name="base_link" />
     <link name="dynamic_mesh">
         <inertial>
@@ -72,11 +69,10 @@
             </geometry>
         </collision>
     </link>
-    
     <link name="cylinder2">
         <inertial>
-            <mass value="${mass2}" />
-            <inertia ixx="${(mass2/12)*(3*(radius2^2)+(length2^2))}" ixy="0.0" ixz="0.0" iyy="${(mass2/12)*(3*(radius2^2)+(length2^2))}" iyz="0.0" izz="${(mass2/2)*(radius2^2)}" />
+            <mass value="${mass}" />
+            <inertia ixx="${(mass/12)*(3*(radius2^2)+(length2^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius2^2)+(length2^2))}" iyz="0.0" izz="${(mass/2)*(radius2^2)}" />
         </inertial>
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -107,9 +103,10 @@
         <origin rpy="${roll_offset2} ${pitch_offset2} ${yaw_offset2}" xyz="${x_offset2} ${y_offset2} ${z_offset2}" />
     </joint>
     <grasp_seed>
-        <geometry name="cylinder_0" />
-        <relative_pose rpy="0.922426 -0.0215589 -0.120686" xyz="0.0574487 0.0870802 0.0184348" />
-        <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141647 1.51581 1.22957 -0.0030027 1.50121 1.22802 0.0140212 1.50162 1.18286 1.37862 1.20326 0.121627 " />
+        <geometry name="cylinder2_0" />
+        <relative_pose rpy="-0.913718 0.00610383 1.82873" xyz="0.0781197 0.0677913 -0.0654786" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141461 1.5048 1.19234 -0.00233591 1.49839 1.19802 0.0140151 1.49235 1.20214 1.37502 1.18981 0.0880066 " />
     </grasp_seed>
+  
 </object>
