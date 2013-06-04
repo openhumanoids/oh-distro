@@ -9,7 +9,6 @@ using boost::shared_mutex;
 using boost::upgrade_lock;
 using boost::upgrade_to_unique_lock;
 
-#include <ConciseArgs>
 
 mutex a;
 shared_mutex b;
@@ -25,11 +24,7 @@ void worker(int j) {
  
 int main(int argc, char** argv)
 {
-  int nthreads=0; // id of this tracker instance. Plane Tracker==0, otherwise above that
-  ConciseArgs opt(argc, (char**)argv);
-  opt.add(nthreads, "t", "threads","Number of threads");
-  opt.parse();
-  
+   int nthreads = atoi(argv[1]);  
   
     thread *threads[nthreads];
  
