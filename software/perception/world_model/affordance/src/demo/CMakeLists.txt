@@ -37,3 +37,12 @@ pods_use_pkg_config_packages(affordance_init  lcm  affordance-utils
   pointcloud_vis
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_init)
+
+###################################
+# Send the drill model as an affordance_fit
+add_executable (ply2pcd ply2pcd.cpp )
+target_link_libraries(ply2pcd boost_system)
+pods_use_pkg_config_packages(ply2pcd  lcm  affordance-utils
+  pointcloud_vis
+  ${PCL_LIBRARIES})
+pods_install_executables(ply2pcd)

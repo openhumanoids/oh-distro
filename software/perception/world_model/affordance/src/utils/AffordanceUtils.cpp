@@ -51,6 +51,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getCloudFromAffordance(s
     pts->points.push_back(pt);
   }
   cout << pts->points.size() << " points extracted [converted]\n";
+  pts->width = 1; pts->height = pts->size(); // to prevent "Number of points different than width * height!"
   return pts;
 }
 
@@ -60,6 +61,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getCloudFromAffordance(s
   pcl::PolygonMesh::Ptr mesh = getMeshFromAffordance(points,triangles);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts =prim_->sampleMesh(mesh, pts_per_msquared);
   cout << pts->points.size() << " points extracted [sampled] at " <<  pts_per_msquared << " psm\n";
+  pts->width = 1; pts->height = pts->size(); // to prevent "Number of points different than width * height!"
   return pts;
 }
 
