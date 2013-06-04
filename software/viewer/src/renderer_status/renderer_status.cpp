@@ -425,7 +425,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
         int remaining_sec = floor(total_remaining_sec - remaining_min*60);
 	float percent_remaining = 100*total_remaining_sec / total_sec;
 	
-	sprintf(line, "%2.2f TIME %2d:%2d",percent_remaining, remaining_min,remaining_sec);
+	sprintf(line, "%2.2f TIME %2d:%02d",percent_remaining, remaining_min,remaining_sec);
 	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
