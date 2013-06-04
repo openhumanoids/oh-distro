@@ -3,7 +3,7 @@ function bandwidth_scope()
 close all
 % which bank to compare with [1 is hardest, 5 easist]
 p.scale = 1024
-p.bw_run =5 ;% 1 easy 5 hard
+p.bw_run =1 ;% 5 easy 1 hard
 
 % bands of rate of BW usage:
 if (0==1)
