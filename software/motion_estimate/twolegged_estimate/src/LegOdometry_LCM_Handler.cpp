@@ -437,7 +437,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	FilterHandForces(_msg, &est_msgout);
 
 
-
 	int ratechangeiter=0;
 
 	if (_switches->do_estimation){
@@ -1273,9 +1272,9 @@ void LegOdometry_Handler::addFootstepPose_draw() {
 void LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]) {
   
   if (filtered_joints.capacity() != msg->num_joints || !filter_joints_vector_size_set) {
+	  std::cout << "LegOdometry_Handler::getJoints -- Automatically changing the capacity of filt.joints -- capacity: " << filtered_joints.capacity() << ", num_joints: " << msg->num_joints << std::endl;
 	  filter_joints_vector_size_set = true;
 	  filtered_joints.resize(msg->num_joints);
-	  std::cout << "Automatically changing the capacity of the filtered joints\n";
   }
 
 

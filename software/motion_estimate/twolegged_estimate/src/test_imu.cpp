@@ -78,9 +78,9 @@ public:
 		Eigen::Vector3d err_angles;
 
 		Eigen::Matrix3d C;
-		C = QuaternionLib::q2C(tp_q);
+		C = q2C(tp_q);
 
-		err_angles = QuaternionLib::C2e(C) - QuaternionLib::q2e(imu_orientation);
+		err_angles = C2e(C) - q2e_new(imu_orientation);
 
 		if (err_angles.norm()>max) {
 			max = err_angles.norm();
@@ -90,6 +90,8 @@ public:
 			//cout << fixed << max*57.29 << " | " << err_angles.norm()*57.29 << endl;
 		}
 		//cout << "Receiving state\n";
+
+		cout << "num_joints: " << msg->num_joints << endl;
 
 	}
 
@@ -103,7 +105,7 @@ public:
 		Eigen::Vector4d check_conv;
 		Eigen::Quaterniond __q;
 
-		__q = QuaternionLib::e2q(QuaternionLib::q2e(q));
+		__q = e2q(q2e_new(q));
 
 		check_conv(0) = __q.w() - q.w();
 		check_conv(1) = __q.x() - q.x();
