@@ -5,12 +5,14 @@ classdef SupportState
   properties (SetAccess=protected)
     bodies; % array of supporting body indices
     contact_pts; % cell array of supporting contact point indices
-    num_contact_pts; % convenience array containing the desired number of 
-                     %   contact points for each support body
+    num_contact_pts;  % convenience array containing the desired number of 
+                      %             contact points for each support body
+    contact_surfaces; % int IDs either: 0 (terrain), -1 (any body in bullet collision world)
+                      %             or (1:num_bodies) collision object ID
   end
   
   methods
-    function obj = SupportState(r,bodies,contact_pts)
+    function obj = SupportState(r,bodies,contact_pts,contact_surfaces)
       typecheck(r,'Atlas');
       typecheck(bodies,'double');
       obj.bodies = bodies(bodies~=0);
@@ -35,6 +37,18 @@ classdef SupportState
           obj.num_contact_pts(i)=length(obj.contact_pts{i});
         end
       end
+      
+      if nargin>3
+        obj = setContactSurfaces(obj,contact_surfaces);
+      else
+        obj.contact_surfaces = zeros(length(bodies),1);
+      end
+    end
+    
+    function obj = setContactSurfaces(obj,contact_surfaces)
+      typecheck(contact_surfaces,'double');
+      sizecheck(contact_surfaces,length(obj.bodies));
+      obj.contact_surfaces = contact_surfaces;
     end
   end
   
