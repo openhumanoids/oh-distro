@@ -14,3 +14,4 @@ pods_install_executables(drc-terrain-classifier)
 # one shot lidar classifier
 add_subdirectory(src/lidar-classifier)
 add_subdirectory(src/car-quick-vis)
+add_subdirectory(src/wheel-tracker)
