@@ -109,12 +109,10 @@ classdef HarnessController < DRCController
         % pinned reaching plan
         msg = data.COMMITTED_ROBOT_PLAN;
         joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names);
-        if obj.floating
-          qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-        else
-          qtraj = PPTrajectory(spline(ts,xtraj(6+(1:getNumDOF(obj.robot)),:)));
-        end
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,obj.floating,joint_names);
+        % We don't need to incorporate the offset for floating as the
+        % RobotPlanListener takes care of it
+        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
         obj = setDuration(obj,inf,false); % set the controller timeout
       else
         % use saved nominal pose
