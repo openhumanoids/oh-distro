@@ -38,9 +38,18 @@ pos_control_flag = [1.0 0 0    1.0 1.0 1.0   1.0 0 0   1.0 1.0 1.0]';
 %Kd(find(pos_control_flag==0))= 0;
 %Kp(find(pos_control_flag==0))= 10;
 msg_timeout = 5; % ms
+
+
+init = false;
 while(1)
+    if (init==false)
+        init=true;
+        out_string = 'Grasp: Ready'; disp(out_string); send_status(3,0,0,out_string);
+    end
+    
     [x,ts] = getNextMessage(grasp_state_listener,msg_timeout);%getNextMessage(obj,timeout)
     if (~isempty(x))
+        out_string = 'Grasp: Got msg'; disp(out_string); send_status(3,0,0,out_string);
         fprintf('received message at time %f\n',ts);
         %fprintf('state is %f\n',x);
         
