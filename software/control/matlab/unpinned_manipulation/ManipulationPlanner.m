@@ -229,7 +229,12 @@ classdef ManipulationPlanner < handle
 
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q_guess;
-
+						coords = obj.r.getStateFrame();
+						[joint_min,joing_max] = r.getJointLimits;
+						joint_min = Point(coords,[joint_min;0*joint_min]);
+						joint_min.back_mby = -.2;
+						joint_min = double(joint_min);
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
             ikoptions.quasiStaticFlag = true;
             [q_out,snopt_info] = inverseKin(obj.r,q_guess,...
                 pelvis_body,[0;0;0],pelvis_const,{},{},{},...

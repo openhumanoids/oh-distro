@@ -53,8 +53,8 @@ for didx = 1:length(driving_dof_names)
         elseif(strcmp(char(ee_name),'l_hand'))
             if (state_machine.l_hand_chain.active)
                 have_manip_map = 1;
-                dof_value_0 = state_machine.l_hand_chain.dof_values(1);
-                dof_value_1 = state_machine.l_hand_chain.dof_values(end);
+                dof_value_0 = state_machine.l_hand_chain.dof_values(1)
+                dof_value_1 = state_machine.l_hand_chain.dof_values(end)
             else
                 have_manip_map = 0;
                 dof_value_0 = -1;
@@ -84,6 +84,6 @@ for didx = 1:length(driving_dof_names)
         dof_value_0 = -1;
         dof_value_1 = -1;
     end;
-    
+    fprintf(1, 'Publishing Mainp Map');
     driving_aff_status_pub.publish(status_channels(didx),aff_type, aff_uid, dof_name, ee_name,  have_manip_map, dof_value_0, dof_value_1)
 end;

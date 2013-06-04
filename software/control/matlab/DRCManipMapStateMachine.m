@@ -43,6 +43,16 @@ classdef DRCManipMapStateMachine< handle
         obj.l_foot_breaks=zeros(7,length(obj.mapindices));
         obj.r_foot_breaks=zeros(7,length(obj.mapindices));
         
+        obj.l_hand_chain.dof_name = {};
+        obj.l_hand_chain.dof_values = [];
+        obj.r_hand_chain.dof_name = {};
+        obj.r_hand_chain.dof_values = [];
+        
+        obj.l_foot_chain.dof_name = {};
+        obj.l_foot_chain.dof_values = [];
+        obj.r_foot_chain.dof_name = {};
+        obj.r_foot_chain.dof_values = [];
+        
         for brk =1:length(obj.mapindices),
             kinsol_tmp = doKinematics(obj.robot,obj.qbreaks(:,brk));
             pelvis_pose_worldframe= forwardKin(obj.robot,kinsol_tmp,pelvis_body,[0;0;0],2);
@@ -101,6 +111,8 @@ classdef DRCManipMapStateMachine< handle
             end
           end
         end 
+        
+        
         
         obj.manip_map_received = true;
         obj.chain_dofIndices=[0 0 0];
@@ -264,6 +276,8 @@ classdef DRCManipMapStateMachine< handle
         end;
         
         floatingoffset=6;
+        
+         %% This is 
         rarm =floatingoffset+[19  18  27  17  16  20];
         larm =floatingoffset+[7  6  15  5  4  8];
         back =floatingoffset+[1 2 3];

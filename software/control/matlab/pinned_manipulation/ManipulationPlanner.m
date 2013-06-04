@@ -643,7 +643,7 @@ classdef ManipulationPlanner < handle
                         if (strcmp('l_foot', ee_name) || strcmp('r_foot', ee_name))
                             pos_dist_threshold = 100;
                         else
-                            pos_dist_threshold = 0.075;
+                            pos_dist_threshold = 0.025;
                         end;
                         ee_temp(j).map_pose = [ee_temp(j).map_pose map_pose];
                         ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < pos_dist_threshold)];

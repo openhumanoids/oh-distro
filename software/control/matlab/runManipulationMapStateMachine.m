@@ -52,7 +52,7 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
       
       [xmap,affinds] = map_listener.getNextMessage(0);
       if (~isempty(xmap))
-          disp('candidate manipulation plan was committed');
+          disp('candidate manipulation map was committed');
           state_machine.setMap(xmap,affinds);
           % or setGraph
       end
