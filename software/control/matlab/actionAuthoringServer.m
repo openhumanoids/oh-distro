@@ -85,7 +85,7 @@ cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
 cost.base_y = 0;
 cost.base_z = 0;
-arm_cost = 1e1;
+arm_cost = 1e2;
 cost.l_arm_usy = arm_cost;
 cost.l_arm_shx = arm_cost;
 cost.l_arm_ely = arm_cost;
@@ -96,8 +96,8 @@ cost.r_arm_shx = arm_cost;
 cost.r_arm_ely = arm_cost;
 cost.r_arm_elx = arm_cost;
 cost.r_arm_uwy = arm_cost;
-cost.base_roll = 1e3;
-cost.base_pitch = 1e3;
+cost.base_roll = 0;
+cost.base_pitch =0;
 cost.base_yaw = 0;
 cost.back_mby = 100;
 cost.back_ubx = 100;
@@ -177,24 +177,24 @@ while (1)
       n_kincons = length(action_sequence.kincons);
 
       for i=1:length(action_sequence.kincons)
-        if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
-          contact_state0 = action_sequence.kincons{i}.contact_state0 ;
-          contact_statei = action_sequence.kincons{i}.contact_statei ;
-          for j = 1:length(contact_state0)
-            ind_make = contact_state0{j}==ActionKinematicConstraint.MAKE_CONTACT;
-            contact_state0{j}(ind_make) = contact_statei{j}(ind_make);
-          end
-          action_sequence.kincons{i}.contact_state0 = contact_state0;
-        end
-        if(action_sequence.kincons{i}.tspan(2) == action_sequence.tspan(2))
-          contact_statef = action_sequence.kincons{i}.contact_statef ;
-          contact_statei = action_sequence.kincons{i}.contact_statei ;
-          for j = 1:length(contact_statef)
-            ind_break = contact_statef{j}==ActionKinematicConstraint.BREAK_CONTACT;
-            contact_statef{j}(ind_break) = contact_statei{j}(ind_break);
-          end
-          action_sequence.kincons{i}.contact_statef = contact_statef;
-        end
+%         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
+%           contact_state0 = action_sequence.kincons{i}.contact_state0 ;
+%           contact_statei = action_sequence.kincons{i}.contact_statei ;
+%           for j = 1:length(contact_state0)
+%             ind_make = contact_state0{j}==ActionKinematicConstraint.MAKE_CONTACT;
+%             contact_state0{j}(ind_make) = contact_statei{j}(ind_make);
+%           end
+%           action_sequence.kincons{i}.contact_state0 = contact_state0;
+%         end
+%         if(action_sequence.kincons{i}.tspan(2) == action_sequence.tspan(2))
+%           contact_statef = action_sequence.kincons{i}.contact_statef ;
+%           contact_statei = action_sequence.kincons{i}.contact_statei ;
+%           for j = 1:length(contact_statef)
+%             ind_break = contact_statef{j}==ActionKinematicConstraint.BREAK_CONTACT;
+%             contact_statef{j}(ind_break) = contact_statei{j}(ind_break);
+%           end
+%           action_sequence.kincons{i}.contact_statef = contact_statef;
+%         end
       end
       if action_options.generate_implicit_constraints_from_q0
         action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
@@ -247,7 +247,29 @@ while (1)
       end
 
       key_time_IK_failed = false;
-      for i = ind_first_time:num_key_time_samples
+      for i = ind_first_time:num_key_time_samples 
+        if(i==num_key_time_samples)
+          for j=1:length(action_sequence.kincons)
+              %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
+              %           contact_state0 = action_sequence.kincons{i}.contact_state0 ;
+              %           contact_statei = action_sequence.kincons{i}.contact_statei ;
+              %           for j = 1:length(contact_state0)
+              %             ind_make = contact_state0{j}==ActionKinematicConstraint.MAKE_CONTACT;
+              %             contact_state0{j}(ind_make) = contact_statei{j}(ind_make);
+              %           end
+              %           action_sequence.kincons{i}.contact_state0 = contact_state0;
+              %         end
+              if(action_sequence.kincons{j}.tspan(2) == action_sequence.tspan(2))
+                  contact_statef = action_sequence.kincons{j}.contact_statef ;
+                  contact_statei = action_sequence.kincons{j}.contact_statei ;
+                  for k = 1:length(contact_statef)
+                      ind_break = contact_statef{k}==ActionKinematicConstraint.BREAK_CONTACT;
+                      contact_statef{k}(ind_break) = contact_statei{k}(ind_break);
+                  end
+                  action_sequence.kincons{j}.contact_statef = contact_statef;
+              end
+          end
+        end
         ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
         if(isempty(ikargs))
           q_key_time_samples(:,i) = ...
@@ -397,17 +419,29 @@ while (1)
             end
             body_ind{i}(n) = ikargs{j};
             if(body_ind{i}(n) == 0)
-              j = j+5;
+              j = j+2;
             else
               body_pos{i}{n} = ikargs{j+1};
               if(ischar(body_pos{i}{n})||numel(body_pos{i}{n})==1)
                 body_pos{i}{n} = getContactPoints(r.body(body_ind{i}(n)),body_pos{i}{n});
               end
-              support_polygon_flags{i}{n} = ...
-                any(cell2mat(ikargs{j+3}') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
-                any(cell2mat(ikargs{j+3}') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1);
-              contact_states{i}{n} = ikargs{j+3};
-              j = j+6;
+              if(i == 1)
+                support_polygon_flags{i}{n} = ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1) | ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.MAKE_CONTACT,1);
+              elseif(i == numel(t_qs_breaks))
+                support_polygon_flags{i}{n} = ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1) | ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.BREAK_CONTACT,1);
+              else
+                support_polygon_flags{i}{n} = ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1);
+              end
+              contact_state{i}{n} = ikargs{j+2}.contact_state;
+              j = j+3;
               [rows,mi] = size(body_pos{i}{n});
               if(rows~=3) error('bodypos must be 3xmi');end
               num_sequence_support_vertices{i}(n) = sum(support_polygon_flags{i}{n});

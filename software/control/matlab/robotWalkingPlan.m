@@ -39,7 +39,6 @@ for i=1:length(ts)
   t = ts(i);
   if (i>1)
     approx_args = {};
-    ik_args = {};
     for j = 1:length(link_constraints)
       if ~isempty(link_constraints(j).traj)
         approx_args(end+1:end+3) = {link_constraints(j).link_ndx, link_constraints(j).pt, link_constraints(j).traj.eval(t)};
@@ -48,14 +47,13 @@ for i=1:length(ts)
         pos_max = link_constraints(j).max_traj.eval(t);
         approx_args(end+1:end+3) = {link_constraints(j).link_ndx, link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
       end
-      ik_args(end+1:end+6) = horzcat(approx_args(end-2:end), {[],[],[]});
     end
     try
       q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
     catch err
       disp(err)
       full_IK_calls = full_IK_calls + 1
-      q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],[],[],[],ik_args{:},options);
+      q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
     end
 
   else
