@@ -118,23 +118,24 @@ classdef WalkingPDBlock < MIMODrakeSystem
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
           pos = cdata.link_constraints(j).traj.eval(t);
-          pos(3) = pos(3) - cdata.z_drift;
+          pos(3) = pos(3) - cdata.trans_drift(3);
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
         else
           pos_min = cdata.link_constraints(j).min_traj.eval(t);
-          pos_min(3) = pos_min(3) - cdata.z_drift;
+          pos_min(3) = pos_min(3) - cdata.trans_drift(3);
           pos_max = cdata.link_constraints(j).max_traj.eval(t);
-          pos_max(3) = pos_max(3) - cdata.z_drift;
+          pos_max(3) = pos_max(3) - cdata.trans_drift(3);
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         end
         ik_args(end+1:end+6) = horzcat(approx_args(end-2:end), {[],[],[]});
       end
+      compos = [cdata.comtraj.eval(t);nan];
 
       try
-        q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan],approx_args{:},obj.ikoptions);
+        q_des = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
       catch err
         disp(err)
-        q_des = inverseKin(obj.robot,q,0,[cdata.comtraj.eval(t);nan],ik_args{:},obj.ikoptions);
+        q_des = inverseKin(obj.robot,q,0,compos,ik_args{:},obj.ikoptions);
       end
 
       err_q = q_des - q;

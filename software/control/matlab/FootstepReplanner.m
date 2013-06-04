@@ -74,11 +74,10 @@ classdef FootstepReplanner < DrakeSystem
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
             lfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
-            diffz = lfoot_act(3) - lfoot_des(3);
-            cdata.z_drift = -diffz;
-            
-            fprintf('LF:Adjusting footsteps by %2.4f m \n',diffz);
-            obj.controller_data.setField('z_drift', cdata.z_drift);
+            cdata.trans_drift = lfoot_des(1:3) - lfoot_act(1:3);
+
+            fprintf('LF:Adjusting footsteps by %2.4f m \n',cdata.trans_drift);
+            obj.controller_data.setField('trans_drift', cdata.trans_drift);
           elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
             cdata = obj.controller_data.getData();
@@ -88,11 +87,10 @@ classdef FootstepReplanner < DrakeSystem
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
             rfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
-            diffz = rfoot_act(3) - rfoot_des(3);
-            cdata.z_drift = -diffz;
+            cdata.trans_drift = rfoot_des(1:3) - rfoot_act(1:3);
 
-            fprintf('RF:Adjusting footsteps by %2.4f m \n',diffz);
-            obj.controller_data.setField('z_drift', cdata.z_drift);
+            fprintf('RF:Adjusting footsteps by %2.4f m \n',cdata.trans_drift);
+            obj.controller_data.setField('trans_drift', cdata.trans_drift);
           end
 
           lfoot_contact_state = msg.left_contact>0.5;
