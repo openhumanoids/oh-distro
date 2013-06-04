@@ -38,6 +38,12 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
+
+  bool receivedhead_joint_states_;
+  bool receivedl_hand_joint_states_;
+  bool receivedr_hand_joint_states_;
+  bool receivedrobot_joint_states_;
+
   // Clock:
   ros::Subscriber clock_sub_;
   void clock_cb(const rosgraph_msgs::ClockConstPtr& msg);
@@ -87,6 +93,11 @@ private:
 App::App(ros::NodeHandle node_, bool send_ground_truth_) :
     node_(node_), send_ground_truth_(send_ground_truth_){
   ROS_INFO("Initializing Translator");
+
+  receivedhead_joint_states_ = false;
+  receivedl_hand_joint_states_ = false;
+  receivedr_hand_joint_states_ = false;
+  receivedrobot_joint_states_ = false;
 
   if(!lcm_publish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -275,12 +286,15 @@ void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
 /// Locally cache the joint states:
 void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   head_joint_states_= *msg;
+  receivedhead_joint_states_ = true;
 }
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   l_hand_joint_states_= *msg;
+  receivedl_hand_joint_states_ = true;
 }
 void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   r_hand_joint_states_= *msg;
+  receivedr_hand_joint_states_ = true;
 }
 int js_counter=0;
 void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
@@ -292,6 +306,7 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   robot_joint_states_ = *msg; 
   init_recd_[1] =true; 
   int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  receivedrobot_joint_states_ = true;
   publishRobotState(joint_utime);
   
   drc::utime_t utime_msg;
@@ -398,7 +413,14 @@ void App::publishRobotState(int64_t utime_in){
   appendLimbSensor(robot_state_msg, end_effector_sensors_);
   robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
     
-  lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  // ensure that all the data has been received -- this is to force the number of joints in the TRUE_ROBOT_STATE message to be consistent at startup
+  if (receivedrobot_joint_states_ && receivedhead_joint_states_ && receivedl_hand_joint_states_ && receivedr_hand_joint_states_) {
+    lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  } else {
+    std::cerr << "Publish of TRUE_ROBOT_STATE suppressed, because all ROS messages have not yet been received: " << receivedrobot_joint_states_ << receivedhead_joint_states_ << receivedl_hand_joint_states_ << receivedr_hand_joint_states_ << std::endl;
+  }
+
+
 }
 
 int main(int argc, char **argv){
