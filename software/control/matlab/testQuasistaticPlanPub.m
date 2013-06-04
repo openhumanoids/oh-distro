@@ -20,8 +20,8 @@ while true
 end
 
 nq = getNumDOF(r);
-q_nom = xstar(1:nq);
 q0 = x0(1:nq);
+q_nom = x0(1:nq);
 kinsol = doKinematics(r,q0);
 com = getCOM(r,kinsol);
 

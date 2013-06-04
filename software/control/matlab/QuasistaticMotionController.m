@@ -61,19 +61,21 @@ classdef QuasistaticMotionController < DRCController
       sys = mimoCascade(pd,qp,[],ins,outs);
       clear ins outs;
       
-      % cascade qtraj eval block
-      qt = QTrajEvalBlock(r,ctrl_data);
+      % cascade neck pitch control block
+      neck = NeckControlBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
-      ins(2).system = 2;
-      ins(2).input = 3;
+      ins(2).system = 1;
+      ins(2).input = 2;
+      ins(3).system = 2;
+      ins(3).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
       connection(1).to_input = 1;
       connection(2).from_output = 2;
       connection(2).to_input = 2;
-      sys = mimoCascade(qt,sys,connection,ins,outs);
+      sys = mimoCascade(neck,sys,connection,ins,outs);
       clear ins outs;
       
       obj = obj@DRCController(name,sys);
@@ -87,7 +89,6 @@ classdef QuasistaticMotionController < DRCController
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
       kinsol = doKinematics(obj.robot,q0);
-      com = getCOM(obj.robot,kinsol);
 
       % build TI-LQR controller 
       foot_pos = contactPositions(obj.robot,kinsol); 
@@ -108,8 +109,6 @@ classdef QuasistaticMotionController < DRCController
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
       % hijack the walking plan type for now
       obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),name); % for standing/reaching tasks
-
-      obj = initialize(obj,struct());
   
     end
 
@@ -138,7 +137,7 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('supports',cdata.supports);
         obj.controller_data.setField('support_times',cdata.support_times);
       elseif isfield(data,'AtlasState')
-        % ta ke in new nominal pose and compute quasistatic standing
+        % take in new nominal pose and compute quasistatic standing
         % controller
         r = obj.robot;
 
