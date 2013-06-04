@@ -230,11 +230,11 @@ public:
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD, "Camera Head",
-               "CAMERALEFT_RX", ChannelTypeAnonymous);
+               "CAMERALEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
-               "CAMERA_LHANDLEFT_RX", ChannelTypeAnonymous);
+               "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
-               "CAMERA_RHANDLEFT_RX", ChannelTypeAnonymous);
+               "CAMERA_RHANDLEFT", ChannelTypeAnonymous);
     mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     
     /*
