@@ -473,14 +473,12 @@ draw() {
         float dot = normal.dot(mState->mNormalZero)/len;
         if (dot < 0) dot = -dot;
         float angle = acos(dot);
-        valueMin = std::min(valueMin, angle);
-        valueMax = std::max(valueMax, angle);
+        //valueMin = std::min(valueMin, angle);
+        //valueMax = std::max(valueMax, angle);
         values[i] = angle;
       }
-      /*
       valueMin = 0;
       valueMax = acos(-1)/2;
-      */
       invValueDenom = 1/(valueMax-valueMin);
     }
     for (int i = 0; i < numVertices; ++i) {
