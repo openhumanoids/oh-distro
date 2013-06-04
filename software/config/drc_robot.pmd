@@ -497,6 +497,7 @@ script "comp.vrc_ingress" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.4.ingress";
+    start group "b.2.walking";
 }
 
 ######################################
@@ -529,11 +530,13 @@ script "dev.vrc_walking" {
 
 
 script "dev.vrc_driving" {
+    start group "0.development";
     start group "a.1.core";
     stop cmd "LegOdometry";
     start group "a.4.manipulation4driving";
     start group "b.4.driving";
     start cmd "estdriving";
+    start cmd "gz_vrc_driving";
     wait ms 5000;
     start cmd "enable_gravity_when_pinned";
     wait ms 1000;
@@ -560,8 +563,9 @@ script "dev.ingress" {
     start group "0.development";
     start group "a.1.core";
     start group "a.4.ingress";
+    start group "b.2.walking";
     wait ms 25000;
-    start cmd "gz_mit_ingress"; 
+    start cmd "gz_vrc_driving";
     wait ms 5000;
 	start cmd "simple_right_grasp";
 	start cmd "simple_left_grasp";
