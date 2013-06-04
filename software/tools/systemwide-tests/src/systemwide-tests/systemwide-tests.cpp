@@ -118,6 +118,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
   }
   if (stage_==0){
     sendDataRequests(msg->utime);
+    sleep(2);
 
     Eigen::Isometry3d current_pose;
     current_pose.setIdentity();
