@@ -62,7 +62,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle.setNormalRadius(options.normal_radius);
 
       % wait for at least one map message to arrive before continuing
-      msg = [options.name,' : Waiting for a non-empty terrain map message... [DRCTerrainMap.m]'];
+      msg = [options.name,' : Waiting for terrain map'];
       send_status(options.status_code, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];
