@@ -46,6 +46,7 @@ class Pass{
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshSteeringCylAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid); 
     drc::affordance_plus_t getDynamicMeshTwoCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getAffordancePlusForFirehoseMatableStandpipe(std::string filename, std::vector<double> &xyzrpy, int uid);
     AffordanceUtils affutils;
     
     bool set_param(drc::affordance_plus_t &a1,std::string param_name, double val){
@@ -206,7 +207,6 @@ drc::affordance_plus_t Pass::getDynamicMeshTwoCylinderAffordancePlus(std::string
   
   a.params.push_back(0.1); a.param_names.push_back("length2");
   a.params.push_back(0.03); a.param_names.push_back("radius2");
-  a.params.push_back(2.0); a.param_names.push_back("mass2");
   a.params.push_back(0.0); a.param_names.push_back("pitch_offset2");
   a.params.push_back(0.0); a.param_names.push_back("roll_offset2");
   a.params.push_back(0.0); a.param_names.push_back("yaw_offset2");
@@ -224,7 +224,6 @@ drc::affordance_plus_t Pass::getDynamicMeshTwoCylinderAffordancePlus(std::string
   a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
  
   p.aff = a;
-  
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
@@ -320,6 +319,71 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
 }
 
 
+// TODO:: Delete after VRC
+drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::string filename, std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="standpipe::mate::firehose";
+  a.aff_store_control = drc::affordance_t::NEW;
+  
+  a.params.push_back(1.0); a.param_names.push_back("mass");
+  a.params.push_back(0.025); a.param_names.push_back("length_cyl_1");
+  a.params.push_back(0.055); a.param_names.push_back("radius_cyl_1");
+  a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_1");
+  a.params.push_back(0.0); a.param_names.push_back("roll_offset_cyl_1");
+  a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_1");
+  a.params.push_back(0.0); a.param_names.push_back("x_offset_cyl_1");
+  a.params.push_back(0.0); a.param_names.push_back("y_offset_cyl_1");
+  a.params.push_back(-0.03); a.param_names.push_back("z_offset_cyl_1");
+  
+  a.params.push_back(0.025); a.param_names.push_back("length_cyl_2_1");
+  a.params.push_back(0.055); a.param_names.push_back("radius_cyl_2_1");
+  a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_2_1");
+  a.params.push_back(M_PI); a.param_names.push_back("roll_offset_cyl_2_1");
+  a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_2_1");
+  a.params.push_back(0.0); a.param_names.push_back("x_offset_cyl_2_1");
+  a.params.push_back(0.0); a.param_names.push_back("y_offset_cyl_2_1");
+  a.params.push_back(0.0); a.param_names.push_back("z_offset_cyl_2_1");
+  a.params.push_back(0.18); a.param_names.push_back("length_cyl_2_2");
+  a.params.push_back(0.019); a.param_names.push_back("radius_cyl_2_2");
+  a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_2_2");
+  a.params.push_back(M_PI); a.param_names.push_back("roll_offset_cyl_2_2");
+  a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_2_2");
+  a.params.push_back(0.0); a.param_names.push_back("x_offset_cyl_2_2");
+  a.params.push_back(0.0); a.param_names.push_back("y_offset_cyl_2_2");
+  a.params.push_back(0.11); a.param_names.push_back("z_offset_cyl_2_2");
+
+  
+  a.nparams =a.params.size();
+  a.nstates =0;
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+ 
+  p.aff = a;
+  
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+
+
+  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  affutils.getModelAsLists(filename_full, points, triangles);
+  p.points =points;
+  p.npoints=points.size(); 
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
+  
+  return p;
+}
+
+
 
 
 void Pass::doDemo(int which_publish, bool add_filename){
@@ -361,18 +425,14 @@ void Pass::doDemo(int which_publish, bool add_filename){
   if ((which_publish==4) || (which_publish==0)){
     int uid1 = 15;
     std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  
+    
+    
     string filename1 = "standpipe.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     //set_param(a1,"radius",0.055);
     //set_param(a1,"length",0.025);
-    
-   drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
-    set_param(a1,"radius",0.019);
-    set_param(a1,"length",0.18);
-    set_param(a1,"radius2",0.055);
-    set_param(a1,"length2",0.025);
-    set_param(a1,"z_offset",-0.14);
-    set_param(a1,"z_offset2",-0.03);
+
+    drc::affordance_plus_t a1 = getAffordancePlusForFirehoseMatableStandpipe(filename1, xyzrpy1, uid1);
     
     a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.2; 
@@ -393,11 +453,11 @@ void Pass::doDemo(int which_publish, bool add_filename){
     string filename1 = "firehose.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
-    set_param(a1,"radius",0.019);
-    set_param(a1,"length",0.18);
-    set_param(a1,"radius2",0.053);
-    set_param(a1,"length2",0.025);
-    set_param(a1,"z_offset2",0.110);
+    set_param(a1,"radius2",0.019);
+    set_param(a1,"length2",0.18);
+    set_param(a1,"radius",0.053);
+    set_param(a1,"length",0.025);
+    set_param(a1,"z_offset",0.110);
 
     
     //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 , add_filename );
@@ -462,6 +522,7 @@ void Pass::doDemo(int which_publish, bool add_filename){
     a1.ntriangles =0;
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }  
+
   
 /*  
   drc::affordance_plus_collection_t aplus_coll;
