@@ -578,7 +578,7 @@ script "comp.vrc_driving" {
 script "comp.vrc_ingress" {
     start group "a.1.core";
     start group "b.1.core";
-    start group "a.6.ingress";
+    start group "a.4.ingress";
 }
 
 ######################################
@@ -641,7 +641,7 @@ script "dev.flat_walking" {
 script "dev.ingress" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.6.ingress";
+    start group "a.4.ingress";
     wait ms 25000;
     start cmd "gz_mit_ingress"; 
     wait ms 5000;
