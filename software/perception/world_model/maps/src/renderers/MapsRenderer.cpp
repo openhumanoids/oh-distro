@@ -241,6 +241,11 @@ public:
       Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
       notebook->append_page(*requestBox, "Request");
 
+      Gtk::Button* clearButton = Gtk::manage(new Gtk::Button("Clear"));
+      clearButton->signal_clicked().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onClearRequestButton));
+      requestBox->add(*clearButton);
+
       ids = { InputModeCamera, InputModeRect, InputModeDepth };
       labels = { "Move View", "Drag Rect", "Adjust Depth" };
       mInputMode = InputModeCamera;
@@ -336,6 +341,12 @@ public:
     requestDraw();
   }
 
+  void onClearRequestButton() {
+    mBoxValid = false;
+    mInputModeComboBox->set_active(InputModeCamera);
+    requestDraw();
+  }
+
   void onRequestButton() {
     if (!mBoxValid) return;
     ViewBase::Spec spec;
@@ -396,7 +407,6 @@ public:
     }
     mViewClient.request(spec);
     mInputModeComboBox->set_active(InputModeCamera);
-    mBoxValid = false;
   }
 
   void onCommandButton() {
@@ -503,6 +513,7 @@ public:
         updateFrontAndBackPlanes(mFrustum);
 
         mBoxValid = true;
+        mInputModeComboBox->set_active(InputModeCamera);
 
         requestDraw();
         return true;
