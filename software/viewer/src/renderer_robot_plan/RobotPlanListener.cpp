@@ -185,7 +185,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
      else
       deactivate_multi_approval();
      
-    int max_num_states = 20;
+    int max_num_states = 30;
     int num_states = 0;
     int inc = 1;
     if (msg->num_states > max_num_states) {
@@ -194,7 +194,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       num_states = max_num_states;   
     }   
     else 
-      num_states = msg->num_states;   
+        num_states = msg->num_states;   
 
     //clear stored data
     _gl_robot_list.clear();
@@ -202,45 +202,43 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _keyframe_timestamps.clear();
     _breakpoint_indices.clear();
 
-    
     int count=0; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)msg->num_states; i++)
-    {
-       if(msg->is_keyframe[i]) 
-       {
-        drc::robot_state_t state_msg  = msg->plan[i];
-        // Merge in grasp state transitions into the plan states.
-        appendHandStatesToStateMsg(msg,&state_msg);
-	      std::stringstream oss;
-	      oss << _robot_name << "_" << "keyframe"<< "_"<< count; 
-	      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-       _gl_robot_keyframe_list.push_back(new_object_ptr);
-       _gl_robot_keyframe_list[count]->enable_whole_body_selection(true);
-       _gl_robot_keyframe_list[count]->set_state(state_msg);
-       _keyframe_timestamps.push_back(state_msg.utime);
-        count++;
-       }
+        {
+            if(msg->is_keyframe[i]) 
+                {
+                    drc::robot_state_t state_msg  = msg->plan[i];
+                    // Merge in grasp state transitions into the plan states.
+                    appendHandStatesToStateMsg(msg,&state_msg);
+                    std::stringstream oss;
+                    oss << _robot_name << "_" << "keyframe"<< "_"<< count; 
+                    shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
+                    _gl_robot_keyframe_list.push_back(new_object_ptr);
+                    _gl_robot_keyframe_list[count]->enable_whole_body_selection(true);
+                    _gl_robot_keyframe_list[count]->set_state(state_msg);
+                    _keyframe_timestamps.push_back(state_msg.utime);
+                    count++;
+                }
        
-       if(msg->is_breakpoint[i]) 
-       {
-         _breakpoint_indices.push_back(i);
-       }
-    }//end for num of states in robot_plan msg;
+            if(msg->is_breakpoint[i]) 
+                {
+                    _breakpoint_indices.push_back(i);
+                }
+        }//end for num of states in robot_plan msg;
 
-    
     count=msg->num_states-1; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)num_states; i++)
-    {
-      drc::robot_state_t state_msg  = msg->plan[count];
-      // Merge in grasp state transitions into the plan states.
-      appendHandStatesToStateMsg(msg,&state_msg);
-    	std::stringstream oss;
-    	oss << _robot_name << "_"<< count; 
-    	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
-			_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
-			_gl_robot_list[0]->set_state(state_msg);
-			count-=inc;
-    }//end for num of states in robot_plan msg; 
+        {
+            drc::robot_state_t state_msg  = msg->plan[count];
+            // Merge in grasp state transitions into the plan states.
+            appendHandStatesToStateMsg(msg,&state_msg);
+            std::stringstream oss;
+            oss << _robot_name << "_"<< count; 
+            shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
+            _gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
+            _gl_robot_list[0]->set_state(state_msg);
+            count-=inc;
+        }//end for num of states in robot_plan msg; 
     
     
     if(count!=0) // always include the initial state too/.
@@ -285,7 +283,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
    // 0. Make Local copy to later output
     _received_map = *msg;
 
-  	int max_num_states = 20;
+  	int max_num_states = 30;
   	int num_states = 0;
    	int inc = 1;
  	if (msg->num_states > max_num_states) {
@@ -302,13 +300,13 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     int count=msg->num_states-1; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)num_states; i++)
     {
-      drc::robot_state_t state_msg  = msg->plan[count];
+        drc::robot_state_t state_msg  = msg->plan[count];
     	std::stringstream oss;
     	oss << _robot_name << "_"<< count; 
     	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-			_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
-			_gl_robot_list[0]->set_state(state_msg);
-			count-=inc;
+        _gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
+        _gl_robot_list[0]->set_state(state_msg);
+        count-=inc;
     }//end for num of states in robot_plan msg;
    	
 		_last_plan_msg_timestamp = bot_timestamp_now(); //initialize
