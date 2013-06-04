@@ -80,7 +80,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "logger-robot-nocams" {
-        exec = "lcm-logger  -v -f $HOME/drc/latest_robot_log.lcm";
+        exec = "lcm-logger -f $HOME/drc/latest_robot_log.lcm";
         host = "extra";
     }
     cmd "drc-frequency" {
@@ -107,20 +107,20 @@ group "a.2.walking" {
 
 # Controllers for vrc task 3 (hose manipulation)
 group "a.3.manip" {
-    cmd "WalkingManipStateMachine" {
+    cmd "mWalkingManipStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
         host = "robot";
     }
-    cmd "GraspController" {
+    cmd "mGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
-       host = "robot";
+       host = "extra";
     } 
-    
-    cmd "BotWalkingPlanner" {
+    cmd "mBotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
-       host = "robot";
+       host = "extra";
     }
 }
+
 group "a.4.driving" {
     cmd "vehicle-groundtruth-state" {
         exec = "rosrun driving_interface groundtruth_receiver";
@@ -221,7 +221,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "lcm-logger-base-nocams" {
-        exec = "lcm-logger  -v -f $HOME/drc/latest_base_log.lcm";
+        exec = "lcm-logger  -f $HOME/drc/latest_base_log.lcm";
         host = "base";
     }
     cmd "drc-log-vrcscore"{
@@ -248,7 +248,7 @@ group "b.3.grasping" {
 # Planners for Simulataneous Walking and Manipulation
 group "b.3.manip" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
@@ -266,7 +266,7 @@ group "b.3.manip" {
 }
 group "b.4.driving" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
