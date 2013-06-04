@@ -12,5 +12,5 @@
 # from any directory
 #    
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $DIR/key-sim.pem ubuntu@10.0.0.51
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$DIR"/key-sim.pem ubuntu@10.0.0.51
     

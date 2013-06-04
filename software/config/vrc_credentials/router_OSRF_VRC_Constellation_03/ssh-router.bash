@@ -12,5 +12,5 @@
 # from any directory
 #    
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $DIR/key-router.pem ubuntu@75.126.3.83
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$DIR"/key-router.pem ubuntu@75.126.3.83
     

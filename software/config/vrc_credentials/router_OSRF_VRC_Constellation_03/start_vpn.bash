@@ -9,7 +9,7 @@ fi
 
 echo "Killing other openvpn connections..."
 killall openvpn || true
-openvpn --config  $DIR/openvpn.config >/dev/null 2>&1 &
+openvpn --config  "$DIR"/openvpn.config >/dev/null 2>&1 &
 
 # Wait for tun0 to come up, then add a static route to the 10.0.0.0/24 network, which is the VPC on the other side
 # of the router.
