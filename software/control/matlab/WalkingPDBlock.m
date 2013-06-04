@@ -71,8 +71,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
         obj.controller_data.setField('qtraj',q_nom);
       end
       
-      if ~isfield(obj.controller_data,'z_drift')
-        obj.controller_data.setField('z_drift',0);
+      if ~isfield(obj.controller_data,'trans_drift')
+        obj.controller_data.setField('trans_drift',[0;0;0]);
       end
       
       % setup IK parameters
