@@ -26,6 +26,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	standing_foot = -1;
 
 	imu_orientation_estimate.setIdentity();
+	local_frame_orientation.setIdentity();
 	
 	foottransitionintermediateflag = true;
 	standingintermediate = true;

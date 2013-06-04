@@ -1100,7 +1100,18 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	double rates[3];
 	double accels[3];
 	double angles[3];
+
+	if (isnan((float)msg->angular_velocity[0]) || isnan((float)msg->angular_velocity[1]) || isnan((float)msg->angular_velocity[2]) || isnan((float)msg->linear_acceleration[0]) || isnan((float)msg->linear_acceleration[1]) || isnan((float)msg->linear_acceleration[2])) {
+		std::cerr << "torso_imu_handler -- NAN encountered, skipping this frame\n";
+		return;
+	}
+
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
+	std::cout << "orient[0] is: " << msg->orientation[0] << std::endl;
+	if (q.norm() <= 0.95) {
+		std::cerr << "LegOdometry_Handler::torso_imu_handler -- Non unit quaternion encountered, skipping this frame.\n";
+		return;
+	}
 	
 	// To filter or not to filter the angular rates
 	if (false) {
@@ -1119,9 +1130,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 	}
 	
-	if (isnan((float)accels[0]) || isnan((float)accels[1]) || isnan((float)accels[2])) {
-		std::cout << "torso_imu_handler -- NAN happened\n";
-	}
+
 
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
 
@@ -1135,16 +1144,11 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
 
 
-	Eigen::Quaterniond trivial_OL_q;
+	//Eigen::Quaterniond trivial_OL_q;
 
-	trivial_OL_q.setIdentity();
+	//trivial_OL_q.setIdentity();
 
-	trivial_OL_q.w() = 1.;
-	trivial_OL_q.x() = 0.;
-	trivial_OL_q.y() = 0.;
-	trivial_OL_q.z() = 0.;
-
-	trivial_OL_q = e2q(Eigen::Vector3d(PI/2*0.,-PI/4., 0.*PI/2));
+	//trivial_OL_q = e2q(Eigen::Vector3d(PI/2*0.,-PI/4., 0.*PI/2));
 
 	//imu_data.acc_b << 0.1+9.81/sqrt(2), 0., +9.81/sqrt(2);
 

@@ -18,6 +18,11 @@ namespace InertialOdometry {
 
 	void OrientationComputer::updateOrientation(const unsigned long long &uts, const Eigen::Quaterniond &set_to_q) {
 
+		if (set_to_q.norm() <=0.95) {
+			std::cerr << "OrientationComputer::updateOrientation -- asking to set the quaternion to a non-unit quaternion. Skipping this assignment.\n";
+			return;
+		}
+
 		q_state = set_to_q;
 
 		latest_uts = uts;
