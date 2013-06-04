@@ -97,6 +97,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
                                                                    const string& chan, 
                                                                    const drc::affordance_plus_collection_t* msg)						 
   {
+
     // call handleAffordancePlusMsg for each affordance in collection
     set<pair<string,int> > currentAffs;
     for (size_t i=0; i< (size_t)msg->naffs; i++) {
@@ -105,6 +106,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       currentAffs.insert(make_pair(aff.aff.otdf_type, aff.aff.uid));
     }
 
+    /* TODO: put back in after solving sticky hands crash issue. 
     // delete any affordance not in message
     if(!_parent_affordance_renderer->debugMode){
       std::map<std::string, OtdfInstanceStruc>::iterator it;
@@ -124,7 +126,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
           sticky_hands_map_type_::iterator hand_it = _parent_affordance_renderer->sticky_hands.begin();
           while (hand_it!=_parent_affordance_renderer->sticky_hands.end()) {
             string hand_name = string(hand_it->second.object_name);
-            if (hand_name == string(instance_name)) {
+            if (instance_name && hand_name == string(instance_name)) {
               if(_parent_affordance_renderer->stickyhand_selection==hand_it->first)
                  _parent_affordance_renderer->stickyhand_selection = " ";
               _parent_affordance_renderer->sticky_hands.erase(hand_it++);
@@ -136,7 +138,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
           bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
         } else ++it;   // otherwise go to next object
       }
-    }
+    }*/
+
   }
 
    // =======================================================================  
