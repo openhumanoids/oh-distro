@@ -19,6 +19,7 @@
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 #include <lcmtypes/drc/affordance_mini_t.hpp>
 #include <lcmtypes/drc/affordance_mini_collection_t.hpp>
+#include <lcmtypes/drc/grasp_cmd_t.hpp>
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
@@ -60,6 +61,8 @@ protected:
   int mHandCameraFrameRate;
   int mCameraCompression;
   int mHeadPitchAngle;
+  bool mLeftGrasp;
+  bool mRightGrasp;
   bool mMinimalAffordances;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
@@ -327,6 +330,30 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
+
+    // grasp
+    Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
+    Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+    mLeftGrasp = false;
+    bind(check, "LeftGrasp", mLeftGrasp);
+    label = Gtk::manage(new Gtk::Label("left"));
+    box->pack_start(*check,false,false);
+    box->pack_start(*label,false,false);
+    hbox->add(*box);
+    box = Gtk::manage(new Gtk::HBox());
+    check = Gtk::manage(new Gtk::CheckButton());
+    mRightGrasp = false;
+    bind(check, "RightGrasp", mRightGrasp);
+    label = Gtk::manage(new Gtk::Label("right"));
+    box->pack_start(*check,false,false);
+    box->pack_start(*label,false,false);
+    hbox->add(*box);
+    button = Gtk::manage(new Gtk::Button("Grasp"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onGraspButton));
+    hbox->add(*button);
+    sensorControlBox->pack_start(*hbox, false, false);
     
     notebook->append_page(*sensorControlBox, "Sensor");
     
@@ -493,6 +520,12 @@ public:
     getLcm()->publish("DESIRED_NECK_PITCH", &msg);
   }
 
+  void onGraspButton() {
+    drc::grasp_cmd_t msg;
+    msg.close_left = mLeftGrasp;
+    msg.close_right = mRightGrasp;
+    getLcm()->publish("GRASP_CMD", &msg);
+  }
 
   void draw() {
     // intentionally left blank
