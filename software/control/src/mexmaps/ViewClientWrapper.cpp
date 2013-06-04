@@ -20,8 +20,9 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
 
   void notifyData(const int64_t iViewId) {
     if (iViewId != mWrapper->mHeightMapViewId) return;
-    auto view = std::static_pointer_cast<maps::DepthImageView>
+    auto view = std::dynamic_pointer_cast<maps::DepthImageView>
       (mWrapper->mViewClient->getView(iViewId));
+    //fprintf(stderr, "NOTIFY %x %d\n", view.get(), view.use_count());
     if (view != NULL) {
       mWrapper->mLastReceiptTime = drc::Clock::instance()->getCurrentWallTime();
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
@@ -92,7 +93,7 @@ getView() {
     mLastReceiptTime = curTime;
   }
 
-  auto view = std::static_pointer_cast<maps::DepthImageView>
+  auto view = std::dynamic_pointer_cast<maps::DepthImageView>
     (mViewClient->getView(mHeightMapViewId));
   return view;
 }

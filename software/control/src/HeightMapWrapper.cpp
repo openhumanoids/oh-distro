@@ -257,7 +257,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 2) {
       mexErrMsgTxt("MapWrapper: too many arguments to getrawdepth");
     }
-    auto view = std::static_pointer_cast<maps::DepthImageView>
+    auto view = std::dynamic_pointer_cast<maps::DepthImageView>
       (wrapper->getView());
     if (view == NULL) {
       plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
@@ -279,7 +279,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 3) {
       mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
     }
-    auto view = std::static_pointer_cast<maps::DepthImageView>
+    auto view = std::dynamic_pointer_cast<maps::DepthImageView>
       (wrapper->getView());
     if (view == NULL) {
       mexErrMsgTxt("MapWrapper: no view object, so not setting depths\n");
