@@ -61,6 +61,8 @@ struct  JointFrameStruct
     KDL::Frame future_frame;
     KDL::Vector axis; // in world frame
     KDL::Vector future_axis; // in future_world frame
+    std::string parent_link_name;
+    std::string child_link_name;
     int type;
 }; 
   
@@ -87,7 +89,6 @@ class GlKinematicBody
     
     std::vector<std::string > _joint_names; 
     std::vector<JointFrameStruct > _joint_tfs;
-     
 
 
    // std::map<std::string, MeshStruct > _mesh_map; // associates link geometry name with meshstruct
@@ -120,6 +121,10 @@ class GlKinematicBody
     //object state
     KDL::Frame _T_world_body; //store position in the world
     KDL::Frame _T_world_body_future; //store position in the world
+         
+    std::string _mate_start_link;
+    std::string _mate_end_link;
+    
     //Also store current jointangles map.
     std::map<std::string, double> _current_jointpos;
     std::map<std::string, double> _future_jointpos;

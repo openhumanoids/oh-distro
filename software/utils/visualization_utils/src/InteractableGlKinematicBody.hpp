@@ -30,15 +30,17 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
   private:   
    std::string selected_link;
-   bool link_selection_enabled;
-   bool whole_body_selection_enabled; 
+   bool _link_selection_enabled;
+   bool _whole_body_selection_enabled; 
    
    std::string selected_marker;
-   bool bodypose_adjustment_enabled;
-   bool jointdof_adjustment_enabled;
-   bool jointdof_markers_initialized;
+   bool _bodypose_adjustment_enabled;
+   bool _jointdof_adjustment_enabled;
+   bool _jointdof_markers_initialized;
    std::vector<std::string> _jointdof_marker_filter;
    bool _jointdof_marker_filter_on;
+   bool _jointdof_marker_flip_check_done;
+   std::vector<bool> _jointdof_marker_flip;
    
    void init_vars(void);
   public:  
@@ -83,6 +85,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void update_urdf_collision_objects(void);
    void update_otdf_collision_objects(void);
    
+
+   
    // overloaded from GLKinematicBody They call update functions for marker collision objects
    void set_future_state(const drc::robot_state_t &msg);
    void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);
@@ -111,10 +115,10 @@ class InteractableGlKinematicBody: public GlKinematicBody
         
         std::stringstream oss;
         oss << _unique_name << "_"<< nextTf.name; 
-        if((link_selection_enabled)&&(selected_link == oss.str())) {
-//          if((bodypose_adjustment_enabled)&&(is_otdf_instance))
+        if((_link_selection_enabled)&&(selected_link == oss.str())) {
+//          if((_bodypose_adjustment_enabled)&&(is_otdf_instance))
 //            draw_interactable_markers(_otdf_link_shapes[i],nextTf); 
-//          else if((bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
+//          else if((_bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
 //            draw_interactable_markers(_link_shapes[i],nextTf);   
             
           glColor4f(0.7,0.1,0.1,alpha);         
@@ -122,7 +126,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
         else
            glColor4f(c[0],c[1],c[2],alpha);
 
-        if((whole_body_selection_enabled)&&(selected_link == _unique_name)) {
+        if((_whole_body_selection_enabled)&&(selected_link == _unique_name)) {
           glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
         }
         
@@ -150,7 +154,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
    
    void enable_link_selection(bool value)   {
-       link_selection_enabled = value; 
+       _link_selection_enabled = value; 
    };   
    void highlight_link(std::string &link_name)   {
        selected_link = link_name; 
@@ -164,10 +168,10 @@ class InteractableGlKinematicBody: public GlKinematicBody
        selected_marker = marker_name; 
    };   
    void enable_bodypose_adjustment(bool value)   { 
-    bodypose_adjustment_enabled = value;
+    _bodypose_adjustment_enabled = value;
     if(value)
     {
-      jointdof_adjustment_enabled = false; // mutually exclusive
+      _jointdof_adjustment_enabled = false; // mutually exclusive
       if(_root_name=="world"){
         std::cerr << "ERROR: root link pose cannot be adjusted as it is fixed to the world. Enabling jointdof adjusment instead" << std::endl;
         enable_jointdof_adjustment(true);   
@@ -175,9 +179,9 @@ class InteractableGlKinematicBody: public GlKinematicBody
     }
    };
    void enable_jointdof_adjustment(bool value)   { 
-    jointdof_adjustment_enabled = value;
+    _jointdof_adjustment_enabled = value;
     if(value){
-      bodypose_adjustment_enabled = false; // mutually exclusive
+      _bodypose_adjustment_enabled = false; // mutually exclusive
 //      if(_collision_detector_jointdof_markers==NULL)
 //        _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
     }
@@ -212,14 +216,31 @@ class InteractableGlKinematicBody: public GlKinematicBody
    }
    
    bool is_bodypose_adjustment_enabled()   { 
-    return bodypose_adjustment_enabled;
+    return _bodypose_adjustment_enabled;
    };
    bool is_jointdof_adjustment_enabled()   { 
-    return jointdof_adjustment_enabled;
+    return _jointdof_adjustment_enabled;
    };
    void enable_whole_body_selection(bool value)   { 
-    whole_body_selection_enabled = value;
+    _whole_body_selection_enabled = value;
    };
+   
+  bool is_joint_axis_flipped(std::string &joint_name)  
+  {
+    if(!_jointdof_adjustment_enabled)
+       return false;
+  
+    std::vector<std::string>::const_iterator found;
+    found = std::find (_joint_names.begin(), _joint_names.end(), joint_name);
+    if (found != _joint_names.end()) {
+      unsigned int index = found - _joint_names.begin();
+      return _jointdof_marker_flip[index];
+    }
+    else
+    {
+       return false;
+    }
+  };
    
    void flip_trans_marker_xdir(bool value)   { 
 

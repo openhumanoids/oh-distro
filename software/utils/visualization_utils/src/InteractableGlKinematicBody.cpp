@@ -8,11 +8,12 @@ using namespace collision;
 
 // Variable initialization
 void InteractableGlKinematicBody::init_vars(){
-  bodypose_adjustment_enabled =false;
-  jointdof_adjustment_enabled = false;
-  jointdof_markers_initialized = false;  
-  whole_body_selection_enabled = false;
+  _bodypose_adjustment_enabled =false;
+  _jointdof_adjustment_enabled = false;
+  _jointdof_markers_initialized = false;  
+  _whole_body_selection_enabled = false;
   _jointdof_marker_filter_on = false;
+  _jointdof_marker_flip_check_done =false;
   selected_link = " ";
   _floatingbase_markers_boxsize = 0;
   bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
@@ -24,7 +25,7 @@ void InteractableGlKinematicBody::init_vars(){
 // Copy constructors
 InteractableGlKinematicBody::InteractableGlKinematicBody( const InteractableGlKinematicBody& other, string unique_name): 
 GlKinematicBody(other),
-link_selection_enabled(other.link_selection_enabled),
+_link_selection_enabled(other._link_selection_enabled),
 _unique_name(unique_name)
 { 
   _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
@@ -39,7 +40,7 @@ _unique_name(unique_name)
 
 InteractableGlKinematicBody::InteractableGlKinematicBody( const GlKinematicBody& other, shared_ptr<Collision_Detector> col_detector, bool enable_selection, string unique_name):
 GlKinematicBody(other),
-link_selection_enabled(enable_selection),
+_link_selection_enabled(enable_selection),
 _collision_detector(col_detector),
 _unique_name(unique_name)
 { 
@@ -53,7 +54,7 @@ _unique_name(unique_name)
 
 InteractableGlKinematicBody::InteractableGlKinematicBody( const GlKinematicBody& other, bool enable_selection, string unique_name):
 GlKinematicBody(other),
-link_selection_enabled(enable_selection),
+_link_selection_enabled(enable_selection),
 _unique_name(unique_name)
 { 
   _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
@@ -70,7 +71,7 @@ _unique_name(unique_name)
 InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
   bool enable_selection, string unique_name):
   GlKinematicBody(urdf_xml_string), 
-  link_selection_enabled(enable_selection) ,
+  _link_selection_enabled(enable_selection) ,
   _unique_name(unique_name)
 {  
 
@@ -86,7 +87,7 @@ InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
   shared_ptr<Collision_Detector> col_detector,
   bool enable_selection, string unique_name):
   GlKinematicBody(urdf_xml_string), 
-  link_selection_enabled(enable_selection) ,
+  _link_selection_enabled(enable_selection) ,
   _collision_detector(col_detector),
   _unique_name(unique_name)
 {  
@@ -191,7 +192,7 @@ InteractableGlKinematicBody::InteractableGlKinematicBody (shared_ptr<otdf::Model
   shared_ptr<Collision_Detector> col_detector, 
   bool enable_selection, string unique_name):  
   GlKinematicBody(otdf_instance), 
-  link_selection_enabled(enable_selection),
+  _link_selection_enabled(enable_selection),
  _collision_detector(col_detector),
   _unique_name(unique_name)
 {  
@@ -305,7 +306,7 @@ InteractableGlKinematicBody::~InteractableGlKinematicBody()
   // clear the collision world
   if(_floatingbase_markers_boxsize!=0)
     _collision_detector_floatingbase_markers->clear_collision_objects();
-  if(jointdof_markers_initialized)
+  if(_jointdof_markers_initialized)
     _collision_detector_jointdof_markers->clear_collision_objects();
   //_collision_detector->clear_collision_objects(); // The parent program should handle this.
 }
@@ -323,9 +324,9 @@ void InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
       update_floatingbase_marker_collision_objects();  
    }
    
-    if(!jointdof_markers_initialized){
+    if(!_jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-      jointdof_markers_initialized = true; 
+      _jointdof_markers_initialized = true; 
     }
     update_jointdof_marker_collision_objects(); 
    
@@ -342,9 +343,9 @@ void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, cons
       update_floatingbase_marker_collision_objects();  
    }
    
-    if(!jointdof_markers_initialized){
+    if(!_jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-      jointdof_markers_initialized = true; 
+      _jointdof_markers_initialized = true; 
     }
     update_jointdof_marker_collision_objects();
     
@@ -360,9 +361,9 @@ void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, std:
         update_floatingbase_marker_collision_objects();  
    }
    
-    if(!jointdof_markers_initialized){
+    if(!_jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-      jointdof_markers_initialized = true; 
+      _jointdof_markers_initialized = true; 
     }
     update_jointdof_marker_collision_objects();
 
@@ -492,11 +493,11 @@ void InteractableGlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterfa
       update_floatingbase_marker_collision_objects();  
     }
     
-    if(jointdof_markers_initialized)
+    if(_jointdof_markers_initialized)
       _collision_detector_jointdof_markers->clear_collision_objects(); 
     _dofmarkers_collision_object_map.clear();
     init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-    jointdof_markers_initialized = true; 
+    _jointdof_markers_initialized = true; 
     update_jointdof_marker_collision_objects();/**/          
     
 } // end InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
@@ -628,9 +629,9 @@ void InteractableGlKinematicBody::set_future_state(const drc::robot_state_t &msg
       update_floatingbase_marker_collision_objects();  
    }
 
-    if(!jointdof_markers_initialized){
+    if(!_jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-      jointdof_markers_initialized = true; 
+      _jointdof_markers_initialized = true; 
     }
 
     update_jointdof_marker_collision_objects();
@@ -648,9 +649,9 @@ void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_bod
       update_floatingbase_marker_collision_objects();  
    }
 
-    if(!jointdof_markers_initialized){
+    if(!_jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
-      jointdof_markers_initialized = true; 
+      _jointdof_markers_initialized = true; 
     }
 
     update_jointdof_marker_collision_objects();
@@ -893,18 +894,46 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
   Eigen::Vector3f p;
   Eigen::Vector4f q;
 
+
   for (size_t j = 0;j < _joint_tfs.size();j++)
   {
     JointFrameStruct jointInfo = _joint_tfs[j];
     Eigen::Vector3f joint_axis;
+    
     float pos[3];
     if(future_display_active){
       pos[0] = jointInfo.future_frame.p[0];  pos[1] = jointInfo.future_frame.p[1];  pos[2] = jointInfo.future_frame.p[2];
       joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2]; // joint axis in future_world_frame;
+      
+      //if jointInfo.name has mate:: in it use object center instead of joint axis center
+       string token  = "mate::";
+       size_t found = jointInfo.name.find(token); 
+       if ((found!=std::string::npos)&&(is_otdf_instance)) {
+         KDL::Frame T_world_link;     
+         bool  val =get_link_future_frame(_mate_end_link, T_world_link);
+        // get the child_link_name of the joint and takes its frame.
+          pos[0] = T_world_link.p[0];
+          pos[1] = T_world_link.p[1];
+          pos[2] = T_world_link.p[2];
+       }      
+        
     }
     else {
       pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
       joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
+      
+      
+      //if jointInfo.name has mate:: in it use object center instead of joint axis center
+       string token  = "mate::";
+       size_t found = jointInfo.name.find(token); 
+       if ((found!=std::string::npos)&&(is_otdf_instance)) {
+         KDL::Frame T_world_link;     
+         bool  val =get_link_frame(_mate_end_link, T_world_link);
+        // get the child_link_name of the joint and takes its frame.
+          pos[0] = T_world_link.p[0];
+          pos[1] = T_world_link.p[1];
+          pos[2] = T_world_link.p[2];
+       }    
     }
    joint_axis.normalize();
    int type = jointInfo.type;
@@ -941,8 +970,16 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);          
         
           KDL::Frame JointAxisOffset = KDL::Frame::Identity();
-         
-          if(flipped>normal+1e-1) {
+          
+          
+          bool flip_criteria = (flipped>normal+1e-1);
+          if(_jointdof_marker_flip_check_done){
+           flip_criteria = _jointdof_marker_flip[j];
+          }
+          else
+          _jointdof_marker_flip.push_back(flip_criteria);
+          
+          if(flip_criteria){
             JointAxisOffset.p[2] =-2*arrow_length/3;          
             JointAxisFrame = JointAxisFrame*JointAxisOffset;
             double x,y,z,w;
@@ -958,7 +995,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
             p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
             q << x,y,z,w;
           }
-          
+         
           std::stringstream oss;
           oss << "markers::" <<  jointInfo.name;
           shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
@@ -990,9 +1027,14 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
           JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);
           KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+          bool flip_criteria = (flipped>normal+1e-1);
+          if(_jointdof_marker_flip_check_done){
+           flip_criteria = _jointdof_marker_flip[j];
+          }
+          else
+          _jointdof_marker_flip.push_back(flip_criteria);
           
-          
-          if(flipped>normal+1e-1) {
+          if(flip_criteria){
   //        glTranslatef(pos[0],pos[1],pos[2]);
   //        glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
   //        glTranslatef(0,0,-2*arrow_length/3);
@@ -1003,12 +1045,6 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
             JointAxisFrame.M.GetQuaternion(x,y,z,w);
             p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
             q << x,y,z,w;
-            
-            std::stringstream oss;
-            oss << "markers::" <<  jointInfo.name;
-            shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);   
-
           }
           else{
   //          glTranslatef(pos[0],pos[1],pos[2]);
@@ -1021,20 +1057,19 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
             JointAxisFrame.M.GetQuaternion(x,y,z,w);
             p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
             q << x,y,z,w;
-            
-            std::stringstream oss;
-            oss << "markers::" <<  jointInfo.name;
-            shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-
           }
-        
+          
+          
+          std::stringstream oss;
+          oss << "markers::" <<  jointInfo.name;
+          shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
+          downcasted_object->set_transform(p,q);        
        }//end if revolute or continuous joints
        
     }// end if ((!_jointdof_marker_filter_on)||(infilter))
 
   }//end for
-
+  _jointdof_marker_flip_check_done= true;
 }
 
 //----------------------------------------------------------------------------------------------------------------
@@ -1060,12 +1095,39 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
     if(future_display_active){
       pos[0] = jointInfo.future_frame.p[0];  pos[1] = jointInfo.future_frame.p[1];  pos[2] = jointInfo.future_frame.p[2];
       joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2]; // joint axis in future_world_frame;
+      
+      //if jointInfo.name has mate:: in it use object center instead of joint axis center
+       string token  = "mate::";
+       size_t found = jointInfo.name.find(token); 
+       if ((found!=std::string::npos)&&(is_otdf_instance)) {
+         KDL::Frame T_world_link;     
+         bool  val =get_link_future_frame(_mate_end_link, T_world_link);
+        // get the child_link_name of the joint and takes its frame.
+          pos[0] = T_world_link.p[0];
+          pos[1] = T_world_link.p[1];
+          pos[2] = T_world_link.p[2];
+       }      
     }
     else {
       pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
       joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
+      
+      //if jointInfo.name has mate:: in it use object center instead of joint axis center
+       string token  = "mate::";
+       size_t found = jointInfo.name.find(token); 
+       if ((found!=std::string::npos)&&(is_otdf_instance)) {
+         KDL::Frame T_world_link;     
+         bool  val =get_link_frame(_mate_end_link, T_world_link);
+        // get the child_link_name of the joint and takes its frame.
+          pos[0] = T_world_link.p[0];
+          pos[1] = T_world_link.p[1];
+          pos[2] = T_world_link.p[2];
+       }    
     }
     joint_axis.normalize();
+    
+
+    
     int type = jointInfo.type;
     //jointInfo.name in filter list?
    std::vector<std::string>::const_iterator found;
@@ -1097,7 +1159,14 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
           u_body_to_joint.normalize();
           double normal = acos(u_body_to_joint.dot(joint_axis));
           double flipped = acos(u_body_to_joint.dot(-joint_axis));
-          if(flipped>normal+1e-1) {
+          bool flip_criteria = (flipped>normal+1e-1);
+          if(_jointdof_marker_flip_check_done){
+           flip_criteria = _jointdof_marker_flip[j];
+          }
+          else
+          _jointdof_marker_flip.push_back(flip_criteria);
+          
+          if(flip_criteria){
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
@@ -1149,7 +1218,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
           //--get rotation in angle/axis form
           double theta;
           Eigen::Vector3f axis;      
-          Eigen::Vector3f ux,uz; ux << 1 , 0 , 0;uz << 0 , 0 , 1;
+          Eigen::Vector3f ux,uz; ux << 1 , 0 , 0; uz << 0 , 0 , 1;
           axis = ux.cross(joint_axis); // Required rotation to be align a arrow in the joint axis direction
           theta = acos(ux.dot(joint_axis));
                
@@ -1168,7 +1237,14 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
           u_body_to_joint.normalize();
           double normal = acos(u_body_to_joint.dot(joint_axis));
           double flipped = acos(u_body_to_joint.dot(-joint_axis));
-          if(flipped>normal+1e-1) {
+          bool flip_criteria = (flipped>normal+1e-1);
+          if(_jointdof_marker_flip_check_done){
+            flip_criteria = _jointdof_marker_flip[j];
+          }
+          else
+            _jointdof_marker_flip.push_back(flip_criteria);
+          
+          if(flip_criteria){
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
@@ -1560,10 +1636,10 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
     LinkFrameStruct nextTf=_link_geometry_tfs[i];
     std::stringstream oss;
     oss << _unique_name << "_"<< _link_geometry_tfs[i].name; 
-    if((link_selection_enabled)&&(selected_link == oss.str())) {
-//          if((bodypose_adjustment_enabled)&&(is_otdf_instance))
+    if((_link_selection_enabled)&&(selected_link == oss.str())) {
+//          if((_bodypose_adjustment_enabled)&&(is_otdf_instance))
 //            draw_interactable_markers(_otdf_link_shapes[i],_link_geometry_tfs[i]); // draws shapes and adds them to _collision_detector 
-//          else if((bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
+//          else if((_bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
 //            draw_interactable_markers(_link_shapes[i],_link_geometry_tfs[i]);   
         
       glColor4f(0.7,0.1,0.1,alpha);         
@@ -1571,7 +1647,7 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
     else
        glColor4f(c[0],c[1],c[2],alpha);
 
-    if((whole_body_selection_enabled)&&(selected_link == _unique_name)){
+    if((_whole_body_selection_enabled)&&(selected_link == _unique_name)){
       glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
     } 
     //int64_t tic = bot_timestamp_now();
@@ -1582,12 +1658,12 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
   }
   
   //draw_whole_body_bbox();
-   if((_root_name!="world")&&(bodypose_adjustment_enabled)){
+   if((_root_name!="world")&&(_bodypose_adjustment_enabled)){
     if(_floatingbase_markers_boxsize!=0){
       draw_floatingbase_markers();
     }
    }
-   if(jointdof_adjustment_enabled){
+   if(_jointdof_adjustment_enabled){
      draw_jointdof_markers();
    }
    

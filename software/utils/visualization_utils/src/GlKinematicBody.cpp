@@ -70,6 +70,18 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   typedef map<string, shared_ptr<urdf::Joint> > joints_mapType;
   for( joints_mapType::const_iterator it = model.joints_.begin(); it!= model.joints_.end(); it++)
   { 
+
+      string joint_name = it->first;
+      size_t found = joint_name.find("mate::start"); 
+      if (found!=std::string::npos){
+       _mate_start_link = it->second->parent_link_name;
+       }
+      found = joint_name.find("mate::end"); 
+      if (found!=std::string::npos){
+       _mate_end_link = it->second->child_link_name;
+       } 
+  
+  
     if(it->second->type!=urdf::Joint::FIXED){ // All joints that not of the type FIXED.
       _joint_names_.push_back(it->first);
       if((it->second->type==urdf::Joint::REVOLUTE)||(it->second->type==urdf::Joint::PRISMATIC)){
@@ -254,6 +266,17 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
   typedef map<string, shared_ptr<otdf::Joint> > joints_mapType;
   for( joints_mapType::const_iterator it = otdf_instance->joints_.begin(); it!= otdf_instance->joints_.end(); it++)
   { 
+  
+    string joint_name = it->first;
+    size_t found = joint_name.find("mate::start"); 
+    if (found!=std::string::npos){
+     _mate_start_link = it->second->parent_link_name;  
+     }
+    found = joint_name.find("mate::end"); 
+    if (found!=std::string::npos){
+     _mate_end_link = it->second->child_link_name;    
+     } 
+    
     if(it->second->type!=otdf::Joint::FIXED){ // All joints that not of the type FIXED.
       _joint_names_.push_back(it->first);
       if((it->second->type==otdf::Joint::REVOLUTE)||(it->second->type==otdf::Joint::PRISMATIC)){
@@ -731,6 +754,8 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
             KDL::Frame T_world_jointorigin =T_world_body*T_body_parentlink*T_parentlink_jointorigin;
             JointFrameStruct jointInfo;
             jointInfo.name=it->second->child_joints[i]->name;
+            jointInfo.parent_link_name=it->second->child_joints[i]->parent_link_name;
+            jointInfo.child_link_name=it->second->child_joints[i]->child_link_name;
             if (!update_future_frame){
               jointInfo.frame=T_world_jointorigin;
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
@@ -765,6 +790,8 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
 
             JointFrameStruct jointInfo;
             jointInfo.name=it->second->child_joints[i]->name;
+            jointInfo.parent_link_name=it->second->child_joints[i]->parent_link_name;
+            jointInfo.child_link_name=it->second->child_joints[i]->child_link_name;
             if (!update_future_frame){
               jointInfo.frame=T_world_jointorigin;
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
@@ -1017,6 +1044,8 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
             
             JointFrameStruct jointInfo;
             jointInfo.name=it->second->child_joints[i]->name;
+            jointInfo.parent_link_name=it->second->child_joints[i]->parent_link_name;
+            jointInfo.child_link_name=it->second->child_joints[i]->child_link_name;
             if (!update_future_frame){
               jointInfo.frame=T_world_jointorigin;
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
@@ -1061,6 +1090,8 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
             JointFrameStruct jointInfo;
             jointInfo.name=it->second->child_joints[i]->name;
+            jointInfo.parent_link_name=it->second->child_joints[i]->parent_link_name;
+            jointInfo.child_link_name=it->second->child_joints[i]->child_link_name;
             if (!update_future_frame){
               jointInfo.frame=T_world_jointorigin;
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
