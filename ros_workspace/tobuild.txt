@@ -1,6 +1,5 @@
 atlas_gazebo_msgs
 translators
-mit_drcsim_plugins
 keyboard_teleop
 keyboard_driving
 multisense_command

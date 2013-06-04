@@ -1,7 +1,7 @@
 
 SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
 
-SUBDIRS = atlas_gazebo_msgs translators mit_drcsim_plugins keyboard_teleop keyboard_driving multisense_command driving_interface
+SUBDIRS = atlas_gazebo_msgs translators keyboard_teleop keyboard_driving multisense_command driving_interface
 
 all: $(SUBDIRS)
 	echo Making MITs ROS DRC repo
