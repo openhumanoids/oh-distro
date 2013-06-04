@@ -611,6 +611,11 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			_leg_odo->overwritePelvisVelocity(datafusion_out.V);
 		}
 
+		if (isnan((float)datafusion_out.V(0)) || isnan((float)datafusion_out.V(1)) || isnan((float)datafusion_out.V(2))) {
+			std::cout << "LegOdometry_Handler::robot_state_handler -- NAN happened\n";
+		}
+
+
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		gettimeofday(&mid,NULL);
@@ -638,6 +643,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 #endif
 
 			//clock_gettime(CLOCK_REALTIME, &threequat);
+
+			//std::cout << "Standing on: " << (_leg_odo->getActiveFoot()==LEFTFOOT ? "LEFT" : "RIGHT" ) << std::endl;
 
 			if (imu_msg_received) {
 				PublishEstimatedStates(_msg, &est_msgout);
@@ -1112,6 +1119,10 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 	}
 	
+	if (isnan((float)accels[0]) || isnan((float)accels[1]) || isnan((float)accels[2])) {
+		std::cout << "torso_imu_handler -- NAN happened\n";
+	}
+
 	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
 
 	_leg_odo->setOrientationTransform(q, rates_b);

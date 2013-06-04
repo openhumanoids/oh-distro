@@ -1,8 +1,16 @@
-%%
+%% You will need this path to access specific matlab scripts
 
 addpath('~/drc/software/motion_estimate/twolegged_estimate/analysis')
 
-%%
+%% change current directory to
+
+cd '~/drc/software/config'
+
+%% change current directory to
+
+cd '~/drc/software/motion_estimate/twolegged_estimate'
+
+%% Load the csv into matlab workspace
 
 vars = csv_to_mat('true_estimated_states.csv','');
 field_names = fieldnames(vars);
