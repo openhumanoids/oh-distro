@@ -580,7 +580,7 @@
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
         <model_name>atlas</model_name>
-        <pin_link>pelvis</pin_link>
+        <pin_link>utorso</pin_link>
       </atlas>
       <drc_vehicle>
         <model_name>golf_cart</model_name>

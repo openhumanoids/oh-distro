@@ -489,14 +489,16 @@
       </link>
     </model>
     <include>
-      <uri>model://atlas_sandia_hands</uri>
+      <uri>model://mit_robot</uri>
+			<!-- default starting position -->
 <!--      <pose>-10.0 2.0 1.0 0 0 -1.5707</pose>-->
-      <pose>-3.0 1.0 1.0 0 0 -1.5707</pose>
+			<!-- near car -->
+      <pose>1.0 -2.0 1.0 0 0 1.5707</pose>
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
         <model_name>atlas</model_name>
-        <pin_link>pelvis</pin_link>
+        <pin_link>utorso</pin_link>
       </atlas>
       <drc_vehicle>
         <model_name>drc_vehicle</model_name>
