@@ -1,7 +1,0 @@
-package drc;
-
-struct grasp_cmd_t
-{
-    boolean close_left;
-    boolean close_right;
-}

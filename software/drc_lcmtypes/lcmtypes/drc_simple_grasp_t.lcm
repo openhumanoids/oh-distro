@@ -1,0 +1,8 @@
+package drc;
+
+// Matches ROS's simple grasps - for low bandwidth open-closed- grasping
+struct simple_grasp_t
+{
+    boolean close_left;
+    boolean close_right;
+}
