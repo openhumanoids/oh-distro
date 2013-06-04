@@ -646,20 +646,39 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         return 1;// consumed if pop up comes up.
     }
     else if((self->marker_selection  != " "))
-        {
-            self->dragging = 1;
-            if(!(self->selection_hold_on))
-                {
-                    object_instance_map_type_::iterator it = self->instantiated_objects.find(self->object_selection);            
-                    KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-                    self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2]; 
-                }
-            else{
-                KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
-                self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
+    {
+        string token  = "mate::";
+        size_t found = self->marker_selection.find(token);  
+        KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
+   
+        self->dragging = 1;
+        if(!(self->selection_hold_on))
+            {
+                object_instance_map_type_::iterator it = self->instantiated_objects.find(self->object_selection);            
+                KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
+                //if (found==std::string::npos){
+                  self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2]; 
+               /* }
+                else{ // if mate offset from mating end link otherwise using object center.
+                  it->second._gl_object->get_link_future_frame(it->second._gl_object->_mate_end_link,T_world_mate_endlink);                    
+                  self->marker_offset_on_press << self->ray_hit[0]-T_world_mate_endlink.p[0],self->ray_hit[1]-T_world_mate_endlink.p[1],self->ray_hit[2]-T_world_mate_endlink.p[2]; 
+                }*/
             }
-            return 1;// consumed
+        else{
+        
+            //if (found==std::string::npos){
+              KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
+              self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
+            }
+            /*else{
+              self->otdf_instance_hold._gl_object->get_link_frame( self->otdf_instance_hold._gl_object->_mate_end_link,T_world_mate_endlink);                    
+              self->marker_offset_on_press << self->ray_hit[0]-T_world_mate_endlink.p[0],self->ray_hit[1]-T_world_mate_endlink.p[1],self->ray_hit[2]-T_world_mate_endlink.p[2]; 
+            }   */
+            
+            cout <<self->marker_offset_on_press.transpose()<< "1) self->marker_offset_on_press\n";          
         }
+        return 1;// consumed
+     }
 
     bot_viewer_request_redraw(self->viewer);
     return 0; // not consumed if pop up does not come up.
@@ -683,8 +702,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
     if (self->dragging) {
         self->dragging = 0;
         if(self->selection_hold_on && !self->show_popup_onrelease && !self->dblclk_popup){
-            if(self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())
-                publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+            if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())){
+               publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+            }
         }
     }
     if (ehandler->picking==1)
@@ -707,7 +727,6 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     if((self->show_popup_onrelease)||(self->marker_selection  != " ")){
         double t = self->ray_hit_t;
         self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
-
 
 
         Eigen::Vector3f start,dir;

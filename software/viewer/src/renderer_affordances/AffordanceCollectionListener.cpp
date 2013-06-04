@@ -292,7 +292,13 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
 
   instance_struc._otdf_instance->update();
   
-  //TODO: set All JointStates too.
+    //set All JointStates too.
+  // set non-standard params from affordance message
+   for (size_t i=0; i < (size_t)aff.nstates; i++)
+   {   
+       instance_struc._otdf_instance->setJointState(aff.state_names[i],aff.states[i],0);   
+   }
+
   
   // create a KDL tree parser from OTDF instance, without having to convert to urdf.
   // otdf can contain some elements that are not part of urdf. e.g. TORUS, DYNAMIC_MESH (They are handled as special cases)  
@@ -398,7 +404,12 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
   it->second._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
   it->second._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
        
-    //TODO: set All JointStates too.
+  //set All JointStates too.
+  // set non-standard params from affordance message
+   for (size_t i=0; i < (size_t)aff.nstates; i++)
+   {   
+       it->second._otdf_instance->setJointState(aff.state_names[i],aff.states[i],0);   
+   }
 
     it->second._otdf_instance->update();
     if(it->second.otdf_instance_viz_object_sync)

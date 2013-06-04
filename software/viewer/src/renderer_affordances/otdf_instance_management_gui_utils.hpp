@@ -102,8 +102,6 @@ namespace renderer_affordances_gui_utils
         bot_viewer_request_redraw(self->viewer);// gives realtime feedback of the geometry changing.
     }
   
-
-  
   
     //------------------------------------------------------------------
     // DOF adjust popup management
@@ -111,71 +109,32 @@ namespace renderer_affordances_gui_utils
     {
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
-        typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-        it->second._gl_object->set_future_state_changing(false);
-        //   TODO: Send publish desired affordance state command msg    
+        publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+        self->selection_hold_on=false;
+        bot_viewer_request_redraw(self->viewer);
   
     }
     //------------------------------------------------------------------ 
     static void on_otdf_adjust_dofs_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
-        string instance_name=  self->instance_selection;
-        typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-
-        if(!it->second._gl_object->is_future_state_changing()) 
-            {
-                it->second._gl_object->set_future_state_changing(true);
-
-                // clear previously accumulated motion states for all dependent bodies
-                typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-                sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-                while (hand_it!=self->sticky_hands.end()) 
-                    {
-                        string hand_name = string(hand_it->second.object_name);
-                        if (hand_name == (instance_name))
-                            {
-                                hand_it->second._gl_hand->clear_desired_body_motion_history();
-                            }
-                        hand_it++;
-                    }
-
-                typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-                sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-                while (foot_it!=self->sticky_feet.end()) 
-                    {
-                        string foot_name = string(foot_it->second.object_name);
-                        if (foot_name == (instance_name))
-                            {
-                                foot_it->second._gl_foot->clear_desired_body_motion_history();
-                            }
-                        foot_it++;
-                    }
-      
-            }//end if(!it->second._gl_object->is_future_state_changing())
 
         // get desired state from popup sliders
-        KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+        KDL::Frame T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
         map<string, double> jointpos_in;
       
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
-            double desired_dof_pos = 0;
+        for (joints_mapType::iterator joint = self->otdf_instance_hold._otdf_instance->joints_.begin();joint != self->otdf_instance_hold._otdf_instance->joints_.end(); joint++) {     
+            double dof_pos = 0;
             if(joint->second->type!=(int) otdf::Joint::FIXED) {
-                desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
-                jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
-                cout <<  joint->first << " dof changed to " << desired_dof_pos*(180/M_PI) << endl;
+                dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
+                jointpos_in.insert(make_pair(joint->first, dof_pos)); 
+                self->otdf_instance_hold._otdf_instance->setJointState(joint->first, dof_pos,0);
+                cout <<  joint->first << " dof changed to " << dof_pos*(180/M_PI) << endl;
             }
         }
-     
-        if(!it->second._gl_object->is_future_state_changing())   {
-            it->second._gl_object->set_future_state_changing(true);
-        }  
-        it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
 
-  
+        self->otdf_instance_hold._gl_object->set_state(T_world_object,jointpos_in); 
         bot_viewer_request_redraw(self->viewer);
     }
   
@@ -605,6 +564,26 @@ namespace renderer_affordances_gui_utils
                 } // end if         
             } // end for all joints in jp
         }// for all joint patterns
+        
+        
+        // create a temp copy of the selected otdf instance to make modifications to.    
+        if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
+            self->otdf_instance_hold.uid=it->second.uid;
+     
+            self->otdf_instance_hold.otdf_type = it->second.otdf_type;
+            self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+            self->otdf_instance_hold._gl_object.reset();
+            self->otdf_instance_hold._collision_detector.reset();
+            self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
+            self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+            self->otdf_instance_hold._otdf_instance->update();
+            self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+            self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
+            self->otdf_instance_hold._gl_object->points = it->second._gl_object->points;
+            self->otdf_instance_hold._gl_object->isShowMeshSelected = it->second._gl_object->isShowMeshSelected;
+            self->selection_hold_on=true;
+        }
+        
 
         g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed), self);
         

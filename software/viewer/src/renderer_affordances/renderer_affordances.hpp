@@ -1109,7 +1109,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         KDL::Frame T_world_marker = KDL::Frame::Identity();
         KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
         double arrow_length =0.2;
-        if(flipped>normal+1e-1) {
+        bool flip_criteria = it->second._gl_object->is_joint_axis_flipped(joint_name);
+        if(flip_criteria) {
           T_jointaxis_marker.p[2] =-2*arrow_length/3;
          }
         else{
@@ -1163,20 +1164,31 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
-          double s=1;
-          if(diff.dot(joint_axis)<0)
-            s = -1;
-          double distance = s*diff.norm();
+          /*string token  = "mate::";
+          size_t found = joint_name.find(token);  
+          KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
+          if (found!=std::string::npos){
+            it->second._gl_object->get_link_future_frame(it->second._gl_object->_mate_end_link,T_world_mate_endlink);
+            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_mate_endlink.p[0],
+                                start[1]+self->ray_hit_t*dir[1]-T_world_mate_endlink.p[1],
+                                start[2]+self->ray_hit_t*dir[2]-T_world_mate_endlink.p[2]; 
+          }
+          else{*/
+            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_object.p[0],
+                                  start[1]+self->ray_hit_t*dir[1]-T_world_object.p[1],
+                                  start[2]+self->ray_hit_t*dir[2]-T_world_object.p[2]; 
+           //}
+           diff= self->ray_hit_drag - self->marker_offset_on_press;
+           double distance = diff.dot(joint_axis);
            std::map<std::string, double> jointpos_in;
            jointpos_in = it->second._gl_object->_future_jointpos;
-           jointpos_in.find(joint_name)->second -= distance;
+           jointpos_in.find(joint_name)->second = distance;
            it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
-            bot_viewer_request_redraw(self->viewer);  
+           bot_viewer_request_redraw(self->viewer); 
          }
       }
-      
       self->prev_ray_hit_drag = self->ray_hit_drag; 
-     bot_viewer_request_redraw(self->viewer);     
+      bot_viewer_request_redraw(self->viewer);     
   }   // end set_object_desired_state_on_marker_motion()
   
 
@@ -1298,7 +1310,10 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
         
         double arrow_length =0.2;
-        if(flipped>normal+1e-1) {
+
+        
+        bool flip_criteria = self->otdf_instance_hold._gl_object->is_joint_axis_flipped(joint_name);
+        if(flip_criteria) {
           T_jointaxis_marker.p[2] =-2*arrow_length/3; 
          }
         else{
@@ -1352,16 +1367,31 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         }// end revolute joints
         else if(type==otdf::Joint::PRISMATIC)
         {
-          double s=1;
-          if(diff.dot(joint_axis)<0)
-            s = -1;
-          double distance = s*diff.norm();
+          /*string token  = "mate::";
+          size_t found = joint_name.find(token);  
+          KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
+          if (found!=std::string::npos){
+            self->otdf_instance_hold._gl_object->get_link_frame(self->otdf_instance_hold._gl_object->_mate_end_link,T_world_mate_endlink);
+            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_mate_endlink.p[0],
+                                start[1]+self->ray_hit_t*dir[1]-T_world_mate_endlink.p[1],
+                                start[2]+self->ray_hit_t*dir[2]-T_world_mate_endlink.p[2]; 
+          }
+          else{*/
+            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_object.p[0],
+                                  start[1]+self->ray_hit_t*dir[1]-T_world_object.p[1],
+                                  start[2]+self->ray_hit_t*dir[2]-T_world_object.p[2]; 
+         // }
+          
+          diff= self->ray_hit_drag-self->marker_offset_on_press;
+           cout <<diff.transpose()<< " diff\n";  
+          double distance = diff.dot(joint_axis);
           double current_pos, velocity;
           self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
-          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos-distance,velocity); 
+          current_pos = distance;
+          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos,velocity); 
           self->otdf_instance_hold._otdf_instance->update(); 
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
-        }
+        }    
       }
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 

@@ -663,10 +663,23 @@ namespace renderer_affordances_gui_utils
       publish_pose_goal(self,channel,T_world_body_desired);  
     }
     else if(!strcmp(name,PARAM_MATE)){
-      string channel = "MATE_CMD";
-      publish_mate_cmd(self,channel);  
+        // get desired state from popup sliders
+        KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+        map<string, double> jointpos_in=it->second._gl_object->_current_jointpos;
+        typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+        for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
+            double dof_pos = 0;
+            string token  = "mate::";
+            string joint_name = joint->first;
+            size_t found = joint_name.find(token);  
+            if ((found!=std::string::npos)&&(joint->second->type!=(int) otdf::Joint::FIXED)) {
+                dof_pos =  0;
+                jointpos_in.find(joint->first)->second =  dof_pos; 
+                cout <<  joint->first << " dof changed to " << dof_pos*(180/M_PI) << endl;
+            }
+        }
+        it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
     }
-    
     
     bot_viewer_request_redraw(self->viewer);
     if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS))
