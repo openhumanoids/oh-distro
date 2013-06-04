@@ -192,6 +192,11 @@ classdef DRCController
           end
       end
       
+      % clear lcm transition buffers
+      for i=1:length(obj.transition_monitors)
+        obj.transition_monitors{i}.getNextMessage(0);
+      end
+      
 %       missed_frames = 0;
 %       max_state_delay = 0;
 %       ttprev = [];
