@@ -595,7 +595,12 @@ void TwoLegOdometry::terminate() {
 	accel_spike_isolation_log.Close();
 }
 
+
 void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis) {
+	calculateUpdateVelocityStates(current_time, current_pelvis, false,false);
+}
+
+void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis, const bool &usedirectdiff, const bool &applyfiltering) {
 	//std::cout << "Not implemented yet\n";
 	stringstream accel_data_ss (stringstream::in | stringstream::out);
 		
@@ -608,48 +613,49 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
 	prev_velocities = local_velocities;
 	Eigen::Vector3d unfiltered_vel;
 
-	//unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-	unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-
-	//std::cout << "diff vals: " << unfiltered_vel.transpose() << std::endl;
-
-	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
-	
-	local_accelerations = accel.diff(current_time, local_velocities);
-	
-	//accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
-	
-	/*
-	if (false) {
-		// this was used to isolate velocity spikes, while there was a bug in the foot to pelvis transforms -- 
-		
-		for (int i=0;i<3;i++) {
-			_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
-			
-			accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
-			
-			if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
-			{
-				if (!_vel_spike_isolation[i]->getState()) {
-					// accel values have not remained high, and can therefore be ignored
-					local_velocities(i) = prev_velocities(i);
-				}
-				
-			}
-		}
-	}
-	*/
-
-	// with or without filtering
-	if (true) {
-		// no filtering on the joints
-		overwritePelvisVelocity(unfiltered_vel);
+	if (usedirectdiff) {
+		unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
 	} else {
+		// use a distributed differential
+		unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+	}
+	
+	// with or without filtering
+	if (applyfiltering) {
 		for (int i=0;i<3;i++) {
 			local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));
 		}
+	} else {
+		// no filtering on the joints
+		overwritePelvisVelocity(unfiltered_vel);
 	}
 	
+	local_accelerations = accel.diff(current_time, local_velocities);
+
+
+
+	/*
+	 * This is older spike isolation code -- but turns out this is lossy. The correct way to do this is loosely slave IMU double integral to LegOdo position
+		if (false) {
+			// this was used to isolate velocity spikes, while there was a bug in the foot to pelvis transforms --
+
+			for (int i=0;i<3;i++) {
+				_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
+
+				accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
+
+				if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
+				{
+					if (!_vel_spike_isolation[i]->getState()) {
+						// accel values have not remained high, and can therefore be ignored
+						local_velocities(i) = prev_velocities(i);
+					}
+
+				}
+			}
+		}
+		*/
+
 }
 
 void TwoLegOdometry::overwritePelvisVelocity(const Eigen::Vector3d &set_velocity) {

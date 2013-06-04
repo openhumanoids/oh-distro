@@ -159,6 +159,7 @@ class TwoLegOdometry {
 		Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 		
 		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis);
+		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis, const bool &usedirectdiff, const bool &applyfiltering);
 		void overwritePelvisVelocity(const Eigen::Vector3d &set_velocity);
 
 

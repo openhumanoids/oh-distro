@@ -56,6 +56,18 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	df_feedback_gain = -0.5;
 	df_events = 0;
 
+#ifdef DO_FOOT_SLIP_FEEDBACK
+	{
+		// TODO -- remove this -- used to subjectively measure the foot velocity
+		//Eigen::VectorXd w(5);
+		//w << 0.2,0.2,0.2,0.2,0.2;
+		//Eigen::VectorXd t(5);
+		//t << 5000, 10000, 15000, 20000, 25000;
+		SethFootPrintOut.setSize(3);
+		FootVelCompensation.setSize(3);
+	}
+#endif
+
 
 	imu_msg_received = false;
 
@@ -189,6 +201,67 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
 	_leg_odo->updateSingleFootContactStates(utime, left_z, right_z);
 }
 
+void LegOdometry_Handler::FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg) {
+
+	Eigen::VectorXd lefthand(6);
+	Eigen::VectorXd righthand(6);
+
+	map<string, drc::vector_3d_t> forces;
+	map<string, drc::vector_3d_t> torques;
+	map<string, int> order;
+
+	for (int i=0;i<msg->contacts.num_contacts;i++) {
+		forces.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_force[i]));
+		torques.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_torque[i]));
+		order.insert(make_pair(msg->contacts.id[i],i));
+
+	}
+	typedef map<string, drc::vector_3d_t >  contact_map_type_;
+	contact_map_type_::iterator contact_lf,contact_rf,contact_lt,contact_rt;
+
+	contact_lf=forces.find("l_hand");
+	contact_rf=forces.find("r_hand");
+	contact_lt=torques.find("l_hand");
+	contact_rt=torques.find("r_hand");
+
+	lefthand(0) = lefthandforcesfilters[0].processSample(contact_lf->second.x);
+	lefthand(1) = lefthandforcesfilters[1].processSample(contact_lf->second.y);
+	lefthand(2) = lefthandforcesfilters[2].processSample(contact_lf->second.z);
+
+	lefthand(3) = lefthandforcesfilters[3].processSample(contact_lt->second.x);
+	lefthand(4) = lefthandforcesfilters[4].processSample(contact_lt->second.y);
+	lefthand(5) = lefthandforcesfilters[5].processSample(contact_lt->second.z);
+
+	righthand(0) =righthandforcesfilters[0].processSample(contact_rf->second.x);
+	righthand(1) =righthandforcesfilters[1].processSample(contact_rf->second.y);
+	righthand(2) =righthandforcesfilters[2].processSample(contact_rf->second.z);
+
+	righthand(3) =righthandforcesfilters[3].processSample(contact_rt->second.x);
+	righthand(4) =righthandforcesfilters[4].processSample(contact_rt->second.y);
+	righthand(5) =righthandforcesfilters[5].processSample(contact_rt->second.z);
+
+	//estmsg->contacts = msg->contacts;
+	estmsg->contacts.num_contacts = msg->contacts.num_contacts;
+	int j=order.find("l_hand")->second;
+	estmsg->contacts.contact_force[j].x=lefthand(0);
+	estmsg->contacts.contact_force[j].y=lefthand(1);
+	estmsg->contacts.contact_force[j].z=lefthand(2);
+
+	estmsg->contacts.contact_torque[j].x=lefthand(3);
+	estmsg->contacts.contact_torque[j].y=lefthand(4);
+	estmsg->contacts.contact_torque[j].z=lefthand(5);
+
+	j=order.find("r_hand")->second;
+	estmsg->contacts.contact_force[j].x=righthand(0);
+	estmsg->contacts.contact_force[j].y=righthand(1);
+	estmsg->contacts.contact_force[j].z=righthand(2);
+
+	estmsg->contacts.contact_torque[j].x=righthand(3);
+	estmsg->contacts.contact_torque[j].y=righthand(4);
+	estmsg->contacts.contact_torque[j].z=righthand(5);
+
+}
+
 void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
 	// TODO -- This must be updated to use naming and not numerical 0 and 1 for left to right foot isolation
 	
@@ -295,7 +368,6 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 }
 
-
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
 												const drc::robot_state_t* _msg) {
@@ -329,9 +401,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	int joints_were_updated=0;
 
+
 	double left_force, right_force;
 
+
 	ParseFootForces(_msg, left_force, right_force);
+
 
 	DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	if (_switches->publish_footcontact_states) {
@@ -348,7 +423,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	//true_pelvis.rotate(tq);
 	true_pelvis.linear() = q2C(tq);
 
-
 	// TODO -- This is to be removed, only using this for testing
 	//_leg_odo->setTruthE(InertialOdometry::QuaternionLib::q2e(tq));
 	//std::cout << "true check\n";
@@ -360,11 +434,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	// TODO -- Measure the computation time required for this copy operation.
 	est_msgout = *_msg;
 
+	FilterHandForces(_msg, &est_msgout);
+
+
+
 	int ratechangeiter=0;
 
 	if (_switches->do_estimation){
 		
-
 		double alljoints[_msg->num_joints];
 		std::string jointnames[_msg->num_joints];
 		map<std::string, double> jointpos_in;
@@ -394,8 +471,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// This must be broken into separate position and velocity states
 		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here
 		current_pelvis = _leg_odo->getPelvisState();
-
-
 
 
 		double pos[3];
@@ -507,10 +582,16 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		}
 
+		/*if (_switches->OPTION_D) {
+
+			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis,true,true);// use direct diff
+
+		}*/
+
 
 		// At this point the pelvis position has been found from leg kinematics
 
-		InertialOdometry::DynamicState datafusion_out, LeggO;
+		InertialOdometry::DynamicState datafusion_out;
 
 		// TODO
 		LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
@@ -531,34 +612,50 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			_leg_odo->overwritePelvisVelocity(datafusion_out.V);
 		}
 
-
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		gettimeofday(&mid,NULL);
 		// Here the rate change is propagated into the rest of the system
 		if (ratechangeiter==1) {
 
-		//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
+			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
+			// TODO -- remove the foot velocity measurement
+#ifdef DO_FOOT_SLIP_FEEDBACK
+			switch (_leg_odo->getActiveFoot()) {
+			case LEFTFOOT:
 
-		//clock_gettime(CLOCK_REALTIME, &threequat);
+				Eigen::VectorXd difffoot(3);
+				Eigen::Vector3d trn;
+				trn << _leg_odo->getLeftInLocal().translation().x(), _leg_odo->getLeftInLocal().translation().y(), _leg_odo->getLeftInLocal().translation().z();
+				difffoot = SethFootPrintOut.diff(_msg->utime, trn);
 
-		if (imu_msg_received) {
-			PublishEstimatedStates(_msg, &est_msgout);
-			UpdateHeadStates(&est_msgout, &est_headmsg);
-			PublishHeadStateMsgs(&est_headmsg);
-			PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
-		}
+				std::cout << "LEFT-FOOT subjective: " << std::fixed << difffoot.transpose() << std::endl;
 
-		#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
+				//FootVelCompensation
+
+				break;
+			}
+#endif
+
+			//clock_gettime(CLOCK_REALTIME, &threequat);
+
+			if (imu_msg_received) {
+				PublishEstimatedStates(_msg, &est_msgout);
+				UpdateHeadStates(&est_msgout, &est_headmsg);
+				PublishHeadStateMsgs(&est_headmsg);
+				PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
+			}
+
+			#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 			// True state messages will ont be available during the VRC and must be removed accordingly
 			PublishPoseBodyTrue(_msg);
-		#endif
-		#ifdef LOG_28_JOINT_COMMANDS
+			#endif
+			#ifdef LOG_28_JOINT_COMMANDS
 		   for (int i=0;i<16;i++) {
 			   measured_joint_effort[i] = _msg->measured_effort[i];
 		   }
-		#endif
+			#endif
 
 			if (_switches->log_data_files) {
 				LogAllStateData(_msg, &est_msgout);
@@ -570,7 +667,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	if (_switches->draw_footsteps) {
 		DrawDebugPoses(left, right, _leg_odo->getPelvisState(), legchangeflag);
 	}
-
  
    if (_switches->print_computation_time) {
 	   //clock_gettime(CLOCK_REALTIME, &after);
@@ -945,12 +1041,15 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    }
 
    for (int i=0;i<3;i++) {
-	   ss << InerOdoEst.P(i) << ", ";
+	   ss << InerOdoEst.P(i) << ", "; //128-130
    }
    for (int i=0;i<3;i++) {
-	   ss << InerOdoEst.V(i) << ", ";
+	   ss << InerOdoEst.V(i) << ", ";//131-133
    }
 
+   for (int i=0;i<3;i++) {
+   	   ss << LeggO.V(i) << ", ";//134-136
+   }
 
 	ss <<std::endl;
 

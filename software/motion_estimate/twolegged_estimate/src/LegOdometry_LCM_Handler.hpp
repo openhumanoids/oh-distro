@@ -55,6 +55,7 @@
 //#include "OrientationConversions.hpp"
 
 #include "Filter.hpp"
+#include "HeavyLowPassFilter.hpp"
 
 //#include "urdf/model.h"
 
@@ -100,6 +101,7 @@ private:
 	InertialOdometry::Odometry inert_odo;
 
 	InertialOdometry::DynamicState InerOdoEst;
+	InertialOdometry::DynamicState LeggO;
 
 	double df_feedback_gain;
 	double df_pos_feedback_gain;
@@ -155,6 +157,11 @@ private:
 	NumericalDiff local_to_head_acc_diff;
 	NumericalDiff local_to_head_rate_diff;
 	
+#ifdef DO_FOOT_SLIP_FEEDBACK
+	NumericalDiff SethFootPrintOut;
+	TrapezoidalInt FootVelCompensation;
+#endif
+
 	NumericalDiff stageA_test_vel;
 
 	// the integrator and differentiator pair are used in combination with rate change to affect a filter -- the idea is to achieve a zero information loss filter with minimum latency
@@ -197,6 +204,10 @@ private:
 	std::vector<LowPassFilter> joint_lpfilters;
 	//std::vector<Filter*> _joint_filters;
 	
+	HeavyFiltering::HeavyLowPassFilter lefthandforcesfilters[6];
+	HeavyFiltering::HeavyLowPassFilter righthandforcesfilters[6];
+
+
 	double pulse_time_;
 	int pulse_counter;
 
@@ -253,6 +264,8 @@ private:
 	void PublishH2B(const unsigned long long &utime,  const Eigen::Isometry3d &h2b);
 
 	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
+
+	void FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg);
 
 
 public:

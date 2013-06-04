@@ -148,6 +148,10 @@ imu_P = data(:,(offset:(offset+2)));
 offset = 131;
 imu_V = data(:,(offset:(offset+2)));
 
+offset = 134;
+leg_V = data(:,(offset:(offset+2)));
+
+
 
 
 % end
