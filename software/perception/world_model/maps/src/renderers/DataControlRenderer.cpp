@@ -521,10 +521,10 @@ public:
   }
 
   void onGraspButton() {
-    drc::grasp_cmd_t msg;
+    drc::simple_grasp_t msg;
     msg.close_left = mLeftGrasp;
     msg.close_right = mRightGrasp;
-    getLcm()->publish("GRASP_CMD", &msg);
+    getLcm()->publish("SIMPLE_GRASP_COMMAND", &msg);
   }
 
   void draw() {
