@@ -19,7 +19,7 @@
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 #include <lcmtypes/drc/affordance_mini_t.hpp>
 #include <lcmtypes/drc/affordance_mini_collection_t.hpp>
-#include <lcmtypes/drc/grasp_cmd_t.hpp>
+#include <lcmtypes/drc/simple_grasp_t.hpp>
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
