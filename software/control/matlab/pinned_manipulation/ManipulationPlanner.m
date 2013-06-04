@@ -1026,12 +1026,12 @@ classdef ManipulationPlanner < handle
                     rhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                     
                     if(abs(1-s_int_rh)<1e-3)
-                      disp('rh end state is modified')
-                      r_hand_poseT(1:3) = rhand_int_constraint(1:3);
-                      r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
-                      obj.rhandT = rhand_int_constraint;
-                      rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
-                      rh_ee_goal=[];
+                        disp('rh end state is modified')
+                        r_hand_poseT(1:3) = rhand_int_constraint(1:3);
+                        r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
+                        obj.rhandT = rhand_int_constraint;
+                        rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
+                        rh_ee_goal=[];
                     end
                 end
                 
@@ -1049,12 +1049,12 @@ classdef ManipulationPlanner < handle
                     lhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                     
                     if(abs(1-s_int_lh)<1e-3)
-                      disp('lh end state is modified')
-                      l_hand_poseT(1:3) = lhand_int_constraint(1:3);
-                      l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
-                      obj.lhandT = lhand_int_constraint;
-                      lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
-                      lh_ee_goal=[];
+                        disp('lh end state is modified')
+                        l_hand_poseT(1:3) = lhand_int_constraint(1:3);
+                        l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
+                        obj.lhandT = lhand_int_constraint;
+                        lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
+                        lh_ee_goal=[];
                     end
                 end
                 
@@ -1157,20 +1157,20 @@ classdef ManipulationPlanner < handle
             
             %%%%%%%%%%%%%%%%%%%% Setting the Torso max and min 
             coords = obj.r.getStateFrame();
-						[joint_min,joint_max] = obj.r.getJointLimits();
-						joint_min = Point(coords,[joint_min;0*joint_min]);
-						joint_min.back_mby = -.2;
-						joint_min = double(joint_min);
-						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
+            [joint_min,joint_max] = obj.r.getJointLimits();
+            joint_min = Point(coords,[joint_min;0*joint_min]);
+            joint_min.back_mby = -.2;
+            joint_min = double(joint_min);
+            ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
            
             %joint_max
             
             %Setting a max joint limit on the back also 
             
             joint_max = Point(coords,[joint_max;0*joint_max]);
-						joint_max.back_mby = 0.2;
-						joint_max = double(joint_max);
-						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+            joint_max.back_mby = 0.2;
+            joint_max = double(joint_max);
+            ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
@@ -1475,6 +1475,8 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=false;
+            ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
+            ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
                 ikseq_options.MajorIterationsLimit = 100;
                 ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed

@@ -190,7 +190,7 @@ classdef DRCManipMapStateMachine< handle
         [~,rleg_index] = min(r_foot_err); 
         [~,lleg_index] = min(l_foot_err); 
         obj.chain_dofIndices=finer_mapindices([torso_index,lleg_index,rleg_index]);
-        disp(obj.chain_dofIndices)
+        %disp(obj.chain_dofIndices)
       end
     end
     
@@ -220,8 +220,9 @@ classdef DRCManipMapStateMachine< handle
         for t=1:length(aff_goal.dof_name),
            % get active chain from aff_goal.dof_name(t)
            ind=find(strcmp(char(aff_goal.dof_name(t)),dof_names));
+           end;
            if(strcmp(char(ee_names(ind)),'l_hand'))
-               disp('l_hand');
+               %disp('l_hand');
                start_mapindex=obj.chain_dofIndices(1);
                %start_mapindex=interp1(obj.l_hand_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
                desired_dof_value= min(max(aff_goal.dof_value(t),min(obj.l_hand_chain.dof_values)),max(obj.l_hand_chain.dof_values));
@@ -229,10 +230,10 @@ classdef DRCManipMapStateMachine< handle
                start_mapindex = min(max(start_mapindex,0),1.0);
                goal_mapindex = min(max(goal_mapindex,0),1.0);
                plan_indices = linspace(start_mapindex,goal_mapindex,plan_length);
-               disp(obj.l_hand_chain.dof_values)
-               disp(aff_goal.dof_value(t))
-               disp(desired_dof_value)
-               disp(plan_indices)
+               %disp(obj.l_hand_chain.dof_values)
+               %disp(aff_goal.dof_value(t))
+               %disp(desired_dof_value)
+               %disp(plan_indices)
                qtraj_larm = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_hand'))
@@ -256,7 +257,7 @@ classdef DRCManipMapStateMachine< handle
                qtraj_lleg = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_foot'))
-               disp('r_foot');
+               %disp('r_foot');
                start_mapindex=obj.chain_dofIndices(3);
                %start_mapindex=interp1(obj.r_foot_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
                desired_dof_value= min(max(aff_goal.dof_value(t),min(obj.r_foot_chain.dof_values)),max(obj.r_foot_chain.dof_values));
@@ -264,7 +265,7 @@ classdef DRCManipMapStateMachine< handle
                start_mapindex = min(max(start_mapindex,0),1.0);
                goal_mapindex = min(max(goal_mapindex,0),1.0);
                plan_indices = linspace(start_mapindex,goal_mapindex,plan_length);                  
-               disp(plan_indices)
+               %disp(plan_indices)
                qtraj_rleg = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            end;
@@ -286,10 +287,11 @@ classdef DRCManipMapStateMachine< handle
         lleg =floatingoffset+[12  14  11  10  13   9];
         rleg =floatingoffset+[24  26  23  22  25  21];
         
-         q_nominal = obj.qmap.eval(0);
+         %q_nominal = obj.qmap.eval(0);
+         q_nominal = obj.qcurrent;
          %q0 = zeros(getNumDOF(obj.robot),1);  %
          qtraj = repmat(q_nominal,1,plan_length); % initialize to current state
-         
+         qtrajbak = qtraj;
          if(~isempty(qtraj_larm))
           qtraj(larm,:) = qtraj_larm(larm,:);
          end
@@ -303,7 +305,6 @@ classdef DRCManipMapStateMachine< handle
           qtraj(rleg,:) = qtraj_rleg(rleg,:);
          end        
         
-
       end  % if(obj.manip_map_received)
     end  %end function 
   
