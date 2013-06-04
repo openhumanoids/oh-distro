@@ -41,7 +41,6 @@ classdef ManipulationPlanner < handle
         end
         
         function generateAndPublishManipulationPlan(obj,varargin)
-            
             switch nargin
                 case 7
                     is_keyframe_constraint = false;
@@ -1151,6 +1150,24 @@ classdef ManipulationPlanner < handle
             else
                 ikoptions.MajorIterationsLimit = 500;
             end
+            
+            %%%%%%%%%%%%%%%%%%%% Setting the Torso max and min 
+            coords = obj.r.getStateFrame();
+						[joint_min,joint_max] = obj.r.getJointLimits();
+						joint_min = Point(coords,[joint_min;0*joint_min]);
+						joint_min.back_mby = -.2;
+						joint_min = double(joint_min);
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
+           
+            %joint_max
+            
+            %Setting a max joint limit on the back also 
+            
+            joint_max = Point(coords,[joint_max;0*joint_max]);
+						joint_max.back_mby = 0.2;
+						joint_max = double(joint_max);
+						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
             comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
