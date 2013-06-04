@@ -16,6 +16,7 @@ classdef ManipPDBlock < MIMODrakeSystem
 		rfoot_body;
 		lfoot_pts;
 		rfoot_pts;
+    joint_names;
 		num_rhand_pts;
 		num_lhand_pts;
 		Kp_c; % cartesian feedback proportion gain
@@ -76,6 +77,7 @@ classdef ManipPDBlock < MIMODrakeSystem
       end
       
       obj.robot = r;
+      obj.joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
       
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
@@ -160,7 +162,7 @@ classdef ManipPDBlock < MIMODrakeSystem
 			if(~isempty(data))
 				display('ManiPDBlock: receive robot plan');
 				msg = drc.robot_plan_t(data);
-				[xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true);
+				[xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,obj.joint_names);
 				q_end = xtraj(1:obj.nq,end);
 				kinsol_goal = doKinematics(r,q_end);
 				rh_goal = forwardKin(r,kinsol_goal,obj.rhand_body,obj.rhand_pts,0);

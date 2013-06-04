@@ -108,7 +108,8 @@ classdef HarnessController < DRCController
       if isfield(data,'COMMITTED_ROBOT_PLAN')
         % pinned reaching plan
         msg = data.COMMITTED_ROBOT_PLAN;
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true);
+        joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names);
         if obj.floating
           qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
         else

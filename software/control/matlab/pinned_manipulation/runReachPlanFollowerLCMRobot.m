@@ -14,7 +14,7 @@ r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_conta
 
 % create robot plan listener
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
+plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_names);
 
 % atlas state subscriber
 state_frame = r.getStateFrame();

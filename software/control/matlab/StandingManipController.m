@@ -184,7 +184,8 @@ classdef StandingManipController < DRCController
         % standing and reaching plan
         sprintf('standing controller on\n');
         msg = data.COMMITTED_ROBOT_PLAN;
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
+        joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
         obj.controller_data.setField('qtraj',qtraj);

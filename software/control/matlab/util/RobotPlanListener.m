@@ -3,14 +3,17 @@ classdef RobotPlanListener
         lc
         aggregator
         floating
+        joint_names
     end
     
     methods
-        function obj = RobotPlanListener(channel,floating)
+        function obj = RobotPlanListener(channel,floating,joint_names)
             obj.lc = lcm.lcm.LCM.getSingleton();
             obj.aggregator = lcm.lcm.MessageAggregator();
             obj.lc.subscribe(channel, obj.aggregator);
-            if nargin > 1
+            obj.joint_names = joint_names;
+            % obj.coord_map = containers.Map(joint_names, 1:length(joint_names));
+            if nargin > 2
                 obj.floating = floating;
             else
                 obj.floating = true;
@@ -24,7 +27,7 @@ classdef RobotPlanListener
                 CT.arms_control_type = 0;
                 CT.legs_control_type = 0;  
             else
-                [X,T,G,CT] = RobotPlanListener.decodeRobotPlan(drc.robot_plan_t(plan_msg.data),obj.floating);
+                [X,T,G,CT] = RobotPlanListener.decodeRobotPlan(drc.robot_plan_t(plan_msg.data),obj.floating,obj.joint_names);
             end
         end % end function
         
@@ -32,12 +35,13 @@ classdef RobotPlanListener
     
     methods(Static)
 
-        function [X,T,G,CT] = decodeRobotPlan(msg,floating)
+        function [X,T,G,CT] = decodeRobotPlan(msg,floating,joint_names)
             float_offset = 0;
             if floating
                 float_offset = 6;
             end
-            
+            coord_map = containers.Map(joint_names, 1:length(joint_names));
+
             num_dofs = float_offset + msg.plan(1).num_joints;
             X = zeros(num_dofs*2,msg.num_states);
             T= zeros(1,msg.num_states);
@@ -66,8 +70,12 @@ classdef RobotPlanListener
                 end
                 
                 for j=float_offset+1:num_dofs
-                    X(j,i) = msg.plan(i).joint_position(j-float_offset);
-                    X(j+num_dofs,i) = msg.plan(i).joint_velocity(j-float_offset);
+                    name = msg.plan(i).joint_name(j-float_offset);
+                    coord_ndx = coord_map(char(name));
+                    X(coord_ndx,i) = msg.plan(i).joint_position(j-float_offset);
+                    X(coord_ndx+num_dofs,i) = msg.plan(i).joint_velocity(j-float_offset);
+                    % X(j,i) = msg.plan(i).joint_position(j-float_offset);
+                    % X(j+num_dofs,i) = msg.plan(i).joint_velocity(j-float_offset);
                 end
             end
             

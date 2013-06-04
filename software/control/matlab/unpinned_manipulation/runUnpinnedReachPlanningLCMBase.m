@@ -71,8 +71,8 @@ joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change
 plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 % committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
 % rejected_plan_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
-committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
-rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
+committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_names);
+rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_names);
 
 x0 = getInitialState(r); 
 q0 = x0(1:getNumDOF(r));

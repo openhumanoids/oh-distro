@@ -24,6 +24,7 @@ classdef ManipCartesianController < MIMODrakeSystem
 		T_palm_hand_l;
 		B_inv;
 		integral_bnd;
+    joint_names;
   end
   
   methods
@@ -51,6 +52,7 @@ classdef ManipCartesianController < MIMODrakeSystem
       obj.robot = r;
       obj.nq = r.getNumDOF();
       obj.nu = r.getNumInputs();
+      obj.joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
       
 			[~,~,B] = r.manipulatorDynamics(zeros(obj.nq,1),zeros(obj.nq,1));
 			obj.B_inv = inv(B(7:end,:));
@@ -180,7 +182,7 @@ classdef ManipCartesianController < MIMODrakeSystem
 				if(~isempty(data))
 					display('ManipCartesianController: receive robot plan');
 					msg = drc.robot_plan_t(data);
-					[xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true);
+					[xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,obj.joint_names);
 					q_end = xtraj(1:obj.nq,end);
 					kinsol_goal = doKinematics(r,q_end);
 					rh_goal_pos = forwardKin(r,kinsol_goal,obj.rhand_body,obj.rhand_pts,0);
