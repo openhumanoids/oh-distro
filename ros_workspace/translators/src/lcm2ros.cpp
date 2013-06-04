@@ -9,6 +9,7 @@
 #include <std_msgs/Float64.h>
 #include <osrf_msgs/JointCommands.h>
 #include <atlas_msgs/AtlasCommand.h>
+#include <sandia_hand_msgs/SimpleGrasp.h>
 
 #include <ConciseArgs>
 
@@ -47,6 +48,10 @@ class LCM2ROS{
     ros::Publisher gas_pedal_pub_, brake_pedal_pub_;
     void estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg);   
     
+    ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
+    void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
+    
+    
     ros::NodeHandle* rosnode;
     bool have_set_multisense_rate_; // have you set the initial multisesne rate
 };
@@ -76,6 +81,12 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   sandia_l_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/l_hand/joint_commands",10);
   lcm_->subscribe("R_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaRHandJointCommandHandler,this);  
   sandia_r_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/joint_commands",10); 
+
+  lcm_->subscribe("SIMPLE_GRASP_COMMAND",&LCM2ROS::simpleGraspCmdHandler,this);  
+  simple_grasp_pub_left_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/l_hand/simple_grasp",10); 
+  simple_grasp_pub_right_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/simple_grasp",10); 
+//drc_robot.pmd:        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+  
   
   
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
@@ -91,6 +102,30 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 }
 
 
+void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::simple_grasp_t* msg) {
+  sandia_hand_msgs::SimpleGrasp msgout_l;
+  msgout_l.name = "cylindrical";
+  if (msg->close_left){
+    msgout_l.closed_amount =100;
+  }else{
+    msgout_l.closed_amount =0;
+  }
+
+  sandia_hand_msgs::SimpleGrasp msgout_r;
+  msgout_r.name = "cylindrical";
+  if (msg->close_right){
+    msgout_l.closed_amount =100;
+  }else{
+    msgout_l.closed_amount =0;
+  }
+  
+  if(ros::ok()) {
+    ROS_ERROR("LCM2ROS Sending simple grasp commands");
+    simple_grasp_pub_left_.publish(msgout_l);
+    simple_grasp_pub_right_.publish(msgout_r);    
+  }   
+}
+  
 void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
   osrf_msgs::JointCommands joint_command_msg;
@@ -120,7 +155,6 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   }
   if(ros::ok()) {
     joint_cmd_pub_.publish(joint_command_msg);
-    
   } 
 }  
 
