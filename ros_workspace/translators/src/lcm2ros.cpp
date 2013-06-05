@@ -66,6 +66,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 
   /// DRCSIM 2.6 atlas command API
   lcm_->subscribe("ATLAS_COMMAND",&LCM2ROS::atlasCommandHandler,this);  
+  // hang up to the bdi controller:
+  lcm_->subscribe("ATLAS_COMMAND_HANGUP",&LCM2ROS::atlasCommandHandler,this);  
   atlas_cmd_pub_ = nh_.advertise<atlas_msgs::AtlasCommand>("/atlas/atlas_command",10, true);
 
   /// Spinning Laser control:
@@ -162,6 +164,9 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
 
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
+  if (msg->effort[0] == 0){ // assume this is enough to trigger
+    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
+  }
   
   atlas_msgs::AtlasCommand atlas_command_msg;
   atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
