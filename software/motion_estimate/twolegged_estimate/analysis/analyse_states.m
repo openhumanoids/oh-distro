@@ -257,7 +257,7 @@ plot(t,leg_V,'--','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
-title('Vel States')
+title('Vel States - Leg Odo')
 grid on
 
 subplot(spa,spb,3)
@@ -267,7 +267,7 @@ plot(t,tvel,'--','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
-title('Vel States')
+title('Vel States - Truth')
 grid on
 
 subplot(spa,spb,4)

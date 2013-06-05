@@ -1107,7 +1107,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
-	std::cout << "orient[0] is: " << msg->orientation[0] << std::endl;
+
 	if (q.norm() <= 0.95) {
 		std::cerr << "LegOdometry_Handler::torso_imu_handler -- Non unit quaternion encountered, skipping this frame.\n";
 		return;

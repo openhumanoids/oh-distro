@@ -101,11 +101,12 @@ public:
 
 		imu_orientation = q;
 
-
 		Eigen::Vector4d check_conv;
 		Eigen::Quaterniond __q;
 
 		__q = e2q(q2e_new(q));
+
+		std::cout <<  "IMU_ANGLES: " << q2e_new(q).transpose() << std::endl;
 
 		check_conv(0) = __q.w() - q.w();
 		check_conv(1) = __q.x() - q.x();
