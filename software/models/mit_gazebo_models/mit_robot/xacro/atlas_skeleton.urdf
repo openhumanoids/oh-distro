@@ -1006,7 +1006,7 @@
         <parent link="pelvis" />
         <child link="r_uglut" />
         <dynamics damping="1.0" friction="0" />
-        <limit effort="260" velocity="12" lower="-1.14" upper="0.32" />
+        <limit effort="110" velocity="12" lower="-1.14" upper="0.32" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32" />
     </joint>
 </robot>
