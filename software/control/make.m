@@ -61,6 +61,8 @@ make;
 cd(p);
 
 %% build drc drake mexfiles
+setenv('PKG_CONFIG_PATH',[getenv('PKG_CONFIG_PATH'),':',fullfile(getDrakePath(),'thirdParty')]);
+load drake_config;
 
 if isunix && ~ismac % build maps
   [~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
@@ -76,44 +78,48 @@ if isunix && ~ismac % build maps
   cmdstr = ['mex -v src/bot_timestamp_now.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
   disp(cmdstr);
   eval(cmdstr);
-end
 
-if strcmpi(getenv('USER'),'russt') && ismac   % sorry... :)
-  load drake_config;
-  gurobi_os_dir = '/Library/gurobi510/mac64';
-  args = {'-largeArrayDims', ...
-    ['-I',conf.eigen3_incdir], ...
-    fullfile(getDrakePath(),'systems','plants',['RigidBodyManipulator.',objext]), ...
-    ['-I',fullfile(getDrakePath(),'systems','plants')], ...
-    ['-I',fullfile(gurobi_os_dir,'/include')], ...
-    ['-L',fullfile(gurobi_os_dir,'/lib')],...
-    '-lgurobi51'};
-  cmdstr = ['mex src/QPControllermex.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
-  disp(cmdstr);
-  eval(cmdstr);
-else
-	load drake_config;
-	gurobi_os_dir = fullfile(getDrakePath(),'thirdParty','gurobi','linux64');
-  [~,cflags]=system('pkg-config --cflags maps eigen3 lcm bullet');
+
+  [~,cflags]=system('pkg-config --cflags maps eigen3 lcm bullet gurobi');
   [~,bullet_ldflags]=system('pkg-config --libs-only-L bullet'); bullet_ldflags = strtrim(bullet_ldflags);
   incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
-  
-  [~,libs]=system('pkg-config --libs maps eigen3 lcm opencv');
+
+  [~,libs]=system('pkg-config --libs maps eigen3 lcm opencv gurobi');
   libs = strrep(libs,'-pthread','');%-lpthread');
   
   args = {'-largeArrayDims', ...
-    incs, ...
-  	['-I',conf.eigen3_incdir], ...
- 		fullfile(getDrakePath(),'systems','plants',['RigidBodyManipulator.',objext]), ...
-  	['-I',fullfile(getDrakePath(),'systems','plants')], ...
-  	['-I',fullfile(gurobi_os_dir,'/include')], ...
-  	['-L',fullfile(gurobi_os_dir,'/lib')],...
-    bullet_ldflags, '-lBulletCollision -lLinearMath',... 
-  	'-lgurobi51',...
-    libs};
-	cmdstr = ['mex src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
-	disp(cmdstr);
-	eval(cmdstr);
+	'-DUSE_MAPS'
+	fullfile(getDrakePath(),'systems','plants',['RigidBodyManipulator.',objext]), ...
+	incs, ...
+	['-I',fullfile(getDrakePath(),'systems','plants')], ...
+	bullet_ldflags, '-lBulletCollision -lLinearMath', ...
+	libs};
+  cmdstr = ['mex src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
+  disp(cmdstr);
+  eval(cmdstr);
+  
+else  % don't build with maps
+
+  [~,cflags]=system('pkg-config --cflags eigen3 bullet gurobi');
+  [~,bullet_ldflags]=system('pkg-config --libs-only-L bullet'); bullet_ldflags = strtrim(bullet_ldflags);
+  incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
+
+  [~,libs]=system('pkg-config --libs gurobi');
+  libs = strrep(libs,'-pthread','');%-lpthread');
+  
+  args = {'-largeArrayDims', ...
+	fullfile(getDrakePath(),'systems','plants',['RigidBodyManipulator.',objext]), ...
+	incs, ...
+	['-I',fullfile(getDrakePath(),'systems','plants')], ...
+	bullet_ldflags, '-lBulletCollision -lLinearMath', ...
+	libs};
+  cmdstr = ['mex -g src/QPControllermex.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
+  disp(cmdstr);
+  eval(cmdstr);
+  
+
+end
+
 end
 
 

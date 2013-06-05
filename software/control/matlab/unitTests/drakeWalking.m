@@ -21,8 +21,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 1000*randn();
-xstar(2) = 1000*randn();
+%xstar(1) = 1000*randn();
+%xstar(2) = 1000*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -40,8 +40,8 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
-[c,V] = ZMPtracker(limp,zmptraj);
-comtraj = COMplanFromTracker(limp,com(1:2),zeros(2,1),zmptraj.tspan,c);
+[c,V,comtraj] = ZMPtracker(limp,zmptraj,struct('use_tvlqr',false,'com0',com(1:2)));
+%comtraj = COMplanFromTracker(limp,com(1:2),zeros(2,1),zmptraj.tspan,c);
 
 ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);

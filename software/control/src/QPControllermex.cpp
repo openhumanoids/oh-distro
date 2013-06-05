@@ -22,8 +22,12 @@
 //#include <Eigen/Sparse>
 #include <gurobi_c++.h>
 
+#ifdef USE_MAPS
+
 #include "mexmaps/MapLib.hpp"
 #include <maps/ViewBase.hpp>
+
+#endif
 
 #include "RigidBodyManipulator.h"
 
@@ -100,6 +104,7 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
 {
   Vector3f floatPos, floatNormal;
   if (map_ptr) {
+#ifdef USE_MAPS    
     auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
     if (state != NULL) {
       auto view = state->getView();
@@ -111,6 +116,7 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
         }
       }
     }
+#endif      
   } else {
 //    mexPrintf("Warning: using 0,0,1 as normal\n");
     pos << contact_pos.topRows(2), 0;
@@ -156,6 +162,7 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
   for (set<int>::iterator iter = body_idx.begin(); iter!=body_idx.end(); iter++) {
     RigidBody* b = &(pdata->r->bodies[*iter]);
     nc = b->contact_pts.cols();
+//    mexPrintf("****** body %d has %d contact points ********\n", *iter, nc);
     if (nc>0) {
       for (i=0; i<nc; i++) {
         tmp = b->contact_pts.col(i);
@@ -329,6 +336,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (!mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the first argument should be the ptr");
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
+
+//  for (i=0; i<pdata->r->num_bodies; i++)
+//  	mexPrintf("body %d (%s) has %d contact points\n", i, pdata->r->bodies[i].linkname.c_str(), pdata->r->bodies[i].contact_pts.cols());
 
   int nu = pdata->B.cols(), 
       nq = pdata->r->num_dof,
