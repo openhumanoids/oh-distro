@@ -81,7 +81,7 @@ Eigen::Isometry3d Pass::getRandomGoal(){
     // plus or minus
     float nx=1.0;
     float ny=1.0;
-    float nyaw = 0.5;  // was 1
+    float nyaw = 1;  // was 1
     if (mode_==0){
       dx = 3.0 + (float)  nx*2*( ((float) rand ()/(RAND_MAX)) -0.5);
       dy = 0.0 + (float)  ny*2*( ((float) rand ()/(RAND_MAX)) -0.5);

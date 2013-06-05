@@ -52,7 +52,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
   double ypr[3];
   quat_to_euler(quat_in, ypr[0], ypr[1], ypr[2]);
   
-  double thres = 20*M_PI/180;
+  double thres = 40*M_PI/180;
   
   if (ypr[2] > thres   || ypr[1] > thres ) {
     std::cout << "Pitch: " << ypr[1]*180/M_PI << " | Roll: " << ypr[2]*180/M_PI << " Degrees\n";
