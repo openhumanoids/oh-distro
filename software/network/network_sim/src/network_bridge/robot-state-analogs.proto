@@ -9,7 +9,7 @@ message MinimalRobotState
 
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
   required Position3D origin_position = 2;
-  repeated float joint_position = 3 [(dccl.field) = { min: -3.14 max: 3.14 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
+  repeated float joint_position = 3 [(dccl.field) = { min: -3.142 max: 3.142 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
   // jp: precision was 2 -> 90bytes | 3 -> 110bytes
 }
 
@@ -45,7 +45,7 @@ message MinimalRobotStateDiff
 
   message JointPositionDiff
   {
-    repeated float jp_diff_val= 3 [(dccl.field) = { min: -3.14 max: 3.14 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
+    repeated float jp_diff_val= 3 [(dccl.field) = { min: -3.142 max: 3.142 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
   }
   
 }

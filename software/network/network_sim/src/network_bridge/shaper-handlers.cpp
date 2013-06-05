@@ -142,12 +142,68 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
         dccl_->decode(bytes, &diff_out);
 
-        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
+//        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
         assert(diff.SerializeAsString() == diff_out.SerializeAsString());
 
     }
         
-    
+
+    // test minimal robot state
+    {
+        drc::MinimalRobotPlan plan, plan_out;
+        plan.set_utime(6000000);
+
+        plan.mutable_goal()->set_utime(0);
+        drc::TranslationVector* translation = plan.mutable_goal()->mutable_origin_position()->mutable_translation();
+        drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_origin_position()->mutable_rotation();
+
+        translation->set_x(23);
+        translation->set_y(50);
+        translation->set_z(8.4);
+
+        rotation->set_x(0);
+        rotation->set_y(1);
+        rotation->set_z(0);
+        rotation->set_w(0);
+
+
+        plan.mutable_goal_diff()->add_utime_diff(100);
+        plan.mutable_goal_diff()->add_utime_diff(200);
+        plan.mutable_goal_diff()->add_utime_diff(300);
+        drc::TranslationVectorDiff* trans_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_translation_diff();
+        drc::RotationQuaternionDiff* rot_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_rotation_diff();
+        
+
+        trans_diff->add_dx(0.1);
+        trans_diff->add_dy(0.2);
+        trans_diff->add_dz(0.01);
+
+        rot_diff->add_dx(0);
+        rot_diff->add_dy(1);
+        rot_diff->add_dz(0);
+        rot_diff->add_dw(0);
+
+        
+        plan.set_num_grasp_transitions(0);
+        plan.set_arms_control_type(1);
+        plan.set_legs_control_type(2);
+
+//        std::cout << plan.DebugString() << std::endl;
+        
+        std::string bytes;
+        dccl_->encode(&bytes, plan);
+        
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotPlan>();
+        dccl_->decode(bytes, &plan_out);
+
+        while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
+            plan_out.mutable_grasp()->RemoveLast();
+        
+//        std::cout << plan_out.DebugString() << std::endl;
+        assert(plan.SerializeAsString() == plan_out.SerializeAsString());
+    }
+        
+
     
     
     const std::vector<Resend>& resendlist = app.resendlist();
@@ -494,92 +550,100 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
 
 
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
-{    
-    drc::ShaperPacket packet;
+{
+    try
+    {
+        
+        drc::ShaperPacket packet;
 
-    DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
-    dccl_->decode(msg.frame(0), packet.mutable_header());
-    packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
+        dccl_->decode(msg.frame(0), packet.mutable_header());
+        packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 
-    received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
+        received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
     
-    glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
-         << DebugStringNoData(packet) << std::endl;    
+        glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
+                                 << DebugStringNoData(packet) << std::endl;    
 
-    if(packet.header().is_last_fragment()
-       && !packet.header().has_fragment())
-    {
-        std::vector<unsigned char> buffer(packet.data().size());
-        for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
-            buffer[i] = packet.data()[i];
-
-        publish_receive(channel_id_.right.at(packet.header().channel()),
-                        packet.header().message_number(),
-                        buffer);
-    }
-    else
-    {
-        std::map<int, ReceiveMessageParts>& this_queue = receive_queue_[packet.header().channel()];
-        // do cleanup on oldest 1/2 messages
-        int begin = packet.header().message_number()-3*RECEIVE_MODULUS/4;
-        receive_mod(begin);
-        int end = packet.header().message_number()-RECEIVE_MODULUS/4;
-        receive_mod(end);
-            
-        for(int i = begin; i != end; )
+        if(packet.header().is_last_fragment()
+           && !packet.header().has_fragment())
         {
-            //glog.is(VERBOSE) && glog << "Cleanup on Message #" << i << ": " << std::endl;
+            std::vector<unsigned char> buffer(packet.data().size());
+            for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
+                buffer[i] = packet.data()[i];
 
-            std::map<int, ReceiveMessageParts>::iterator it = this_queue.find(i);
-            
-            if(it == this_queue.end() || it->second.size() == 0)
-            {
-                // glog.is(VERBOSE) && glog << "Ok, packet has been processed." << std::endl;
-            }
-            else
-            {
-                int expected = it->second.expected();
-                int received = it->second.size();
-                if(it->second.decoder_done())
-                {                
-                    glog.is(VERBOSE) &&
-                        glog << group("rx-cleanup") << "Received enough fragments to decode message " << i << " from channel: "
-                             << channel_id_.right.at(packet.header().channel()) << " - received " << received
-                             << " of " << expected << std::endl;
-                }
-                else
-                {
-                    glog.is(WARN) &&
-                        glog <<  group("rx-cleanup") <<  "Not enough fragments received for message " << i << " from channel: "
-                             << channel_id_.right.at(packet.header().channel()) << " - received " << received
-                             << " of " << expected << std::endl;
-                }
-                this_queue.erase(it);
-            }
-
-            ++i;
-            receive_mod(i);
-        }
-
-        ReceiveMessageParts& message_parts = this_queue[packet.header().message_number()];
-        if(message_parts.decoder_done())
-        {
-            // already done and published, just add for statistics
-            message_parts.add_fragment(packet);            
+            publish_receive(channel_id_.right.at(packet.header().channel()),
+                            packet.header().message_number(),
+                            buffer);
         }
         else
         {
-            message_parts.add_fragment(packet);
+            std::map<int, ReceiveMessageParts>& this_queue = receive_queue_[packet.header().channel()];
+            // do cleanup on oldest 1/2 messages
+            int begin = packet.header().message_number()-3*RECEIVE_MODULUS/4;
+            receive_mod(begin);
+            int end = packet.header().message_number()-RECEIVE_MODULUS/4;
+            receive_mod(end);
+            
+            for(int i = begin; i != end; )
+            {
+                //glog.is(VERBOSE) && glog << "Cleanup on Message #" << i << ": " << std::endl;
+
+                std::map<int, ReceiveMessageParts>::iterator it = this_queue.find(i);
+            
+                if(it == this_queue.end() || it->second.size() == 0)
+                {
+                    // glog.is(VERBOSE) && glog << "Ok, packet has been processed." << std::endl;
+                }
+                else
+                {
+                    int expected = it->second.expected();
+                    int received = it->second.size();
+                    if(it->second.decoder_done())
+                    {                
+                        glog.is(VERBOSE) &&
+                            glog << group("rx-cleanup") << "Received enough fragments to decode message " << i << " from channel: "
+                                 << channel_id_.right.at(packet.header().channel()) << " - received " << received
+                                 << " of " << expected << std::endl;
+                    }
+                    else
+                    {
+                        glog.is(WARN) &&
+                            glog <<  group("rx-cleanup") <<  "Not enough fragments received for message " << i << " from channel: "
+                                 << channel_id_.right.at(packet.header().channel()) << " - received " << received
+                                 << " of " << expected << std::endl;
+                    }
+                    this_queue.erase(it);
+                }
+
+                ++i;
+                receive_mod(i);
+            }
+
+            ReceiveMessageParts& message_parts = this_queue[packet.header().message_number()];
             if(message_parts.decoder_done())
             {
-                std::vector<unsigned char> buffer(packet.header().message_size());
-                message_parts.get_decoded(&buffer);
-                publish_receive(channel_id_.right.at(packet.header().channel()),
-                                packet.header().message_number(),
-                                buffer);
+                // already done and published, just add for statistics
+                message_parts.add_fragment(packet);            
             }
-        }
-    }    
+            else
+            {
+                message_parts.add_fragment(packet);
+                if(message_parts.decoder_done())
+                {
+                    std::vector<unsigned char> buffer(packet.header().message_size());
+                    message_parts.get_decoded(&buffer);
+                    publish_receive(channel_id_.right.at(packet.header().channel()),
+                                    packet.header().message_number(),
+                                    buffer);
+                }
+            }
+        }    
+    }
+    catch(std::exception& e)
+    {
+        glog.is(WARN) && glog << "Failed to handle incoming UDP message. Reason: " << e.what() << std::endl;
+    }
 }
 
 void DRCShaper::publish_receive(std::string channel,
