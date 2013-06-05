@@ -362,7 +362,8 @@ class GlKinematicBody
     {
       return _link_geometry_names;
     };
-
+    
+    std::string get_root_link_name(void) { return _root_name; };
     bool get_link_frame(const std::string &link_name, KDL::Frame &T_world_link);
     bool get_link_future_frame(const std::string &link_name, KDL::Frame &T_world_link);// if not future display not active return false    
     bool get_link_geometry_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link);
@@ -371,6 +372,8 @@ class GlKinematicBody
     bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom);
     bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
     bool get_joint_info(const std::string &joint_name, JointFrameStruct &jointinfo_struct);
+    bool get_current_joint_pos(const std::string &joint_name, double pos);
+    bool get_future_joint_pos(const std::string &joint_name, double pos);
     void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
     
     bool get_associated_link_name(std::string &link_geometry_name,std::string &link_name)

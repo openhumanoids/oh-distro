@@ -1422,6 +1422,35 @@ bool GlKinematicBody::get_joint_info(const std::string &joint_name, JointFrameSt
      return false; 
 }
 
+bool GlKinematicBody::get_current_joint_pos(const std::string &joint_name, double pos)
+{
+    pos= 0;
+    std::map<std::string, double >::const_iterator jointpos_map_it;
+    jointpos_map_it = _current_jointpos.find(joint_name); 
+    if(jointpos_map_it!=_current_jointpos.end()) 
+    { 
+      pos = jointpos_map_it->second;
+      return true;
+    }
+    else 
+     return false; 
+}
+
+bool GlKinematicBody::get_future_joint_pos(const std::string &joint_name, double pos)
+{
+    pos= 0;
+    std::map<std::string, double >::const_iterator jointpos_map_it;
+    jointpos_map_it = _current_jointpos.find(joint_name); 
+    if(jointpos_map_it!=_current_jointpos.end()) 
+    { 
+      pos = jointpos_map_it->second;
+      return true;
+    }
+    else 
+     return false; 
+}
+
+
 
 bool GlKinematicBody::get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct) 
 {
