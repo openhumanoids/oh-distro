@@ -1,3 +1,6 @@
+============= PRE-RUN =========
+Make sure that at least one laptop (e.g. Maurice's) can launch and run a remote simulation so that it can be dropped in as required.
+
 a. Login, create deputy and shaper processes and pipe to a file or null
 TODO: have Toby oversee this.
 
@@ -14,6 +17,7 @@ c.
 .
 
 d. After having taken control, verify that MATLAB processes are still ok (but before being clocked for this.
+- close the fingers using the grasp buttons in the Data Control renderer
 
 .
 .

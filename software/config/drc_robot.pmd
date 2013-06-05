@@ -348,6 +348,10 @@ group "m.dev_tools" {
         exec = "drc-lidar-classifier";
         host = "robot";
     }
+    cmd "control-hangup" {
+        exec = "drc-control-hangup";
+        host = "robot";
+    }
 }
 
 # Bare bone grasping
