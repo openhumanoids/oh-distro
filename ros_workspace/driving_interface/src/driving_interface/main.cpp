@@ -50,7 +50,7 @@ using namespace std;
 #define COLOR_WARN  4
 #define STEP_TESTING 1
 
-#define TIMEOUT_COMMAND 20.0
+#define TIMEOUT_COMMAND 2000.0
 
 ros::Publisher hand_wheel_pub;
 ros::Publisher hand_brake_pub;
@@ -478,40 +478,9 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel,
 
     static int first = 1;
 
-    fprintf (stdout, "Got command of type %d\n", msg->type);
-
-    if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_CAR){
-        fprintf(stderr, "Starting vehicle - this should be ignored - vehicle always on\n");
-        self->direction = 0;
-        publish_direction(self);
-        update_and_publish_key(1, self);
-        self->direction = 1;
-        publish_direction(self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_SWITCH_OFF_ENGINE){
-        fprintf(stderr, "Switching off engine - this should be ignored - vehicle always on\n");
-        update_and_publish_key(0, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_FORWARD){
-        fprintf(stderr, "Putting gear forward\n");
-        update_and_publish_direction(1, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_NEUTRAL){
-        fprintf(stderr, "Putting gear neutral\n");
-        update_and_publish_direction(0, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_REVERSE){
-        fprintf(stderr, "Putting gear reverse\n");
-        update_and_publish_direction(-1, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE){
+    if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE){
         if(self->verbose)
             fprintf(stderr, "Driving - Received command: wheel heading (deg): %f Throttle : %f Brake : %f\n", bot_to_degrees(msg->steering_angle), msg->throttle_value,  msg->brake_value);
-
-        /*update_and_publish_hand_brake(0.0, self);
-        update_and_publish_brake_pedal(msg->brake_value, self);
-        update_and_publish_hand_wheel(msg->steering_angle, self);
-        update_and_publish_gas_pedal(msg->throttle_value, self);*/
 
         self->ds_hand_wheel = msg->steering_angle;
         self->ds_hand_brake = 0;
@@ -519,137 +488,18 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel,
         self->ds_gas_pedal = msg->throttle_value;
         self->new_command_to_process = 1;
     } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING){
-        if(self->verbose)
-            fprintf(stderr, "Driving - turning wheel delta heading (deg): %f Throttle : %f Brake : %f \n", bot_to_degrees(msg->steering_angle + self->hand_wheel), msg->throttle_value, msg->brake_value);
-        update_and_publish_hand_brake(0.0, self);
-        //update_and_publish_brake_pedal(0.0, self);
-        update_and_publish_hand_wheel_delta(msg->steering_angle, self);
-        update_and_publish_brake_pedal(msg->brake_value, self);
-        update_and_publish_gas_pedal(msg->throttle_value, self);
-    } 
     else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE){
-        //if(self->verbose)
-        //    fprintf(stderr, "Applying brake %f\n", msg->brake_value); 
+        if(self->verbose)
+            fprintf(stderr, "Applying brake %f\n", msg->brake_value); 
 
         self->ds_brake_pedal = msg->brake_value;
         self->ds_gas_pedal = 0;
-        //update_and_publish_hand_wheel(msg->steering_angle, self);
-        //update_and_publish_brake_pedal(msg->brake_value, self);
-        //update_and_publish_gas_pedal(0, self);
+        self->new_command_to_process = 1;
     } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_E_STOP){
-        fprintf(stderr, "E Stopping Vehicle \n");
-        update_and_publish_brake_pedal(1.0, self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_ON){
-        fprintf(stderr, "Applying Handbrake \n");
-        //update_and_publish_hand_brake(0.05, self);
-        //update_and_publish_hand_brake(.3, self);
-        update_and_publish_hand_brake(1.0, self);
-        //update_and_publish_hand_brake(1.0, self);
-        //update_and_publish_hand_brake(1.0, self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_OFF){
-        fprintf(stderr, "Removing Handbrake\n");
-        update_and_publish_hand_brake(0.00, self);
-    }
-
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_SEQUENCE){
-        fprintf(stderr, "Initializing start sequence\n");
-        init_state(self);
-        fprintf(stderr, "Done with the startup");
+    else{
+        fprintf(stderr, "Error : Unable to handle command of type : %d\n", msg->type);
     }
 }
-
-void on_driving_cmd_old(const lcm_recv_buf_t *rbuf, const char * channel, const drc_driving_control_cmd_t * msg, void * user) {
-    state_t *self = (state_t *) user;
-
-    self->new_command_to_process = 1;
-
-    static int first = 1;
-    /*if(first)
-        init_state(self);
-        
-        first = 0;*/
-
-    //fprintf(stderr, "Command => Utime : %f\n", msg->utime/1.0e6);
-    if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_CAR){
-        fprintf(stderr, "Starting vehicle - this should be ignored - vehicle always on\n");
-        //self->key = 1;
-        //publish_key(user);
-        self->direction = 0;
-        publish_direction(self);
-        update_and_publish_key(1, self);
-        self->direction = 1;
-        publish_direction(self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_SWITCH_OFF_ENGINE){
-        fprintf(stderr, "Switching off engine - this should be ignored - vehicle always on\n");
-        update_and_publish_key(0, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_FORWARD){
-        fprintf(stderr, "Putting gear forward\n");
-        update_and_publish_direction(1, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_NEUTRAL){
-        fprintf(stderr, "Putting gear neutral\n");
-        update_and_publish_direction(0, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_GEAR_REVERSE){
-        fprintf(stderr, "Putting gear reverse\n");
-        update_and_publish_direction(-1, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE){
-        if(self->verbose)
-            fprintf(stderr, "Driving - turning wheel heading (deg): %f Throttle : %f Brake : %f\n", 
-                    bot_to_degrees(msg->steering_angle), msg->throttle_value,  msg->brake_value);
-        update_and_publish_hand_brake(0.0, self);
-        update_and_publish_brake_pedal(msg->brake_value, self);
-        update_and_publish_hand_wheel(msg->steering_angle, self);
-        update_and_publish_gas_pedal(msg->throttle_value, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING){
-        if(self->verbose)
-            fprintf(stderr, "Driving - turning wheel delta heading (deg): %f Throttle : %f Brake : %f \n", bot_to_degrees(msg->steering_angle + self->hand_wheel), msg->throttle_value, msg->brake_value);
-        update_and_publish_hand_brake(0.0, self);
-        //update_and_publish_brake_pedal(0.0, self);
-        update_and_publish_hand_wheel_delta(msg->steering_angle, self);
-        update_and_publish_brake_pedal(msg->brake_value, self);
-        update_and_publish_gas_pedal(msg->throttle_value, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE){
-        //if(self->verbose)
-        //    fprintf(stderr, "Applying brake %f\n", msg->brake_value); 
-        //update_and_publish_hand_wheel(msg->steering_angle, self);
-        update_and_publish_brake_pedal(msg->brake_value, self);
-        update_and_publish_gas_pedal(0, self);
-    } 
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_E_STOP){
-        fprintf(stderr, "E Stopping Vehicle \n");
-        update_and_publish_brake_pedal(1.0, self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_ON){
-        fprintf(stderr, "Applying Handbrake \n");
-        //update_and_publish_hand_brake(0.05, self);
-        //update_and_publish_hand_brake(.3, self);
-        update_and_publish_hand_brake(1.0, self);
-        //update_and_publish_hand_brake(1.0, self);
-        //update_and_publish_hand_brake(1.0, self);
-    }
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_OFF){
-        fprintf(stderr, "Removing Handbrake\n");
-        update_and_publish_hand_brake(0.00, self);
-    }
-
-    else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_SEQUENCE){
-        fprintf(stderr, "Initializing start sequence\n");
-        init_state(self);
-        fprintf(stderr, "Done with the startup");
-    }
-}
-
-
 
 static gboolean
 on_timer (void * user)
@@ -689,6 +539,10 @@ on_control_timer (void * user)
     int send_hw = 0;
     int send_gp = 0;
     int send_bp = 0;
+    
+    if(s->verbose)
+        fprintf(stderr, "HW (LS/DS): %f, %f GP (LS/DS) : %f, %f\n", s->ls_hand_wheel, s->ds_hand_wheel, 
+                s->ls_gas_pedal, s->ds_gas_pedal);
 
     if(s->ds_gas_pedal != s->ls_gas_pedal || (utime - s->gp_utime) / 1.0e6 > TIMEOUT_COMMAND){
         if (s->verbose)
@@ -722,28 +576,6 @@ on_control_timer (void * user)
         s->ls_hand_wheel = s->ds_hand_wheel;
         s->hw_utime = utime;
         send_hw = 1;
-
-        /*if (s->dbw_hand_wheel) {
-            std_msgs::Float64 msg;
-            msg.data = s->hand_wheel;
-            hand_wheel_pub.publish(msg);
-        }
-        else {
-            string dof_name_local[] = {"steering_joint"};
-            drc_affordance_goal_t msg;
-            msg.utime = bot_timestamp_now();
-            msg.aff_type = (char *) "car";
-            msg.aff_uid = 1;
-            msg.num_dofs = 1;
-            msg.dof_name = (char **) dof_name_local;
-            msg.dof_value = (double *) calloc(msg.num_dofs, sizeof(double));
-            msg.dof_value[0] = s->hand_wheel;
-            fprintf(stderr, "Setting Hand Wheel : %f\n", bot_to_degrees(s->hand_wheel));
-            drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
-            free (msg.dof_value);
-        }
-        if(s->verbose)
-        fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);*/
     }
     else {
         if (s->verbose) 
@@ -761,9 +593,9 @@ on_control_timer (void * user)
     }
 
     int num_dofs_to_send = send_hb + send_hw + send_bp + send_gp;
-    if (num_dofs_to_send <= 0)
+    if (num_dofs_to_send <= 0){
         return TRUE;
-
+    }
 
     drc_affordance_goal_t msg;
     msg.utime = bot_timestamp_now();
@@ -801,6 +633,8 @@ on_control_timer (void * user)
     drc_affordance_goal_t_publish (s->lcm, "DRIVING_MANIP_CMD", &msg);
     s->new_command_to_process = 0;
   
+    s->verbose = 0;
+    
     free (msg.dof_value);
 
     return TRUE;
