@@ -83,8 +83,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   sandia_r_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/joint_commands",10); 
 
   lcm_->subscribe("SIMPLE_GRASP_COMMAND",&LCM2ROS::simpleGraspCmdHandler,this);  
-  simple_grasp_pub_left_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/l_hand/simple_grasp",10); 
-  simple_grasp_pub_right_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/simple_grasp",10); 
+  simple_grasp_pub_left_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/l_hand/simple_grasp",10); 
+  simple_grasp_pub_right_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/r_hand/simple_grasp",10); 
 //drc_robot.pmd:        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
   
   
@@ -103,6 +103,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 
 
 void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::simple_grasp_t* msg) {
+  ROS_ERROR("LCM2ROS Sending got simpele");
   sandia_hand_msgs::SimpleGrasp msgout_l;
   msgout_l.name = "cylindrical";
   if (msg->close_left){
@@ -114,9 +115,9 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
   sandia_hand_msgs::SimpleGrasp msgout_r;
   msgout_r.name = "cylindrical";
   if (msg->close_right){
-    msgout_l.closed_amount =100;
+    msgout_r.closed_amount =100;
   }else{
-    msgout_l.closed_amount =0;
+    msgout_r.closed_amount =0;
   }
   
   if(ros::ok()) {
