@@ -21,7 +21,7 @@ using namespace std;
 
 
 int total_buffers = 30; // totol processes to keep cache of. (safety limit)
-int buffer_size =10; // size of buffer history
+int buffer_size =15; // size of buffer history
 
 class Pass{
   public:
@@ -137,7 +137,7 @@ void Pass::printfHandler(const lcm::ReceiveBuffer* rbuf,
     is_robot ="1";
   }
   std::stringstream ss;
-  ss << is_robot << secs_100 << text_str.substr (0,100)  ;
+  ss << is_robot << secs_100 << text_str.substr (0,150)  ;
 
   string string_last = ss.str();
   string_last.erase(std::remove(string_last.begin(), string_last.end(), '\n'), string_last.end());
