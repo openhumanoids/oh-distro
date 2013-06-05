@@ -117,7 +117,7 @@ hip_ind = find( ...
                 %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...
 
 jointLimitShrink = ones(size(jointLimitMin));
-jointLimitShrink(back_ind) = 0.4;
+% jointLimitShrink(back_ind) = 0.4;
 %jointLimitShrink(hip_ind) = 0.6;
 jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
 jointLimitMid = (jointLimitMax + jointLimitMin)/2;
@@ -129,7 +129,7 @@ options.jointLimitMax(isnan(options.jointLimitMax)) = Inf;
 
 
 options.jointLimitMin(knee_ind) = 0.6;
-options.jointLimitMin(hip_ind) = 0.0;
+% options.jointLimitMin(hip_ind) = 0.0;
 
 options.use_mex = action_options.use_mex;
 
