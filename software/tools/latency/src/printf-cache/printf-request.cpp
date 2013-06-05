@@ -1,8 +1,8 @@
 // 1. find out the map-server process id:
 //drc-printf-request | grep map
 //extra maps-server	343092855
-
-// 2. 
+// 2. then request the map server printf:
+// drc--printf-request -r 343092855
 
 
 #include <iostream>
