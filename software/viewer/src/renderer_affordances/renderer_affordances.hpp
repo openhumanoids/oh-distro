@@ -249,6 +249,7 @@ struct RendererAffordances {
     motion_trail_log_enabled=false;
     
     ray_hit_t = 0;
+    joint_marker_pos_on_press = 0;
     otdf_id = 0;
     num_otdfs = 0;
     alpha = 1.0;
@@ -350,6 +351,7 @@ struct RendererAffordances {
   Eigen::Vector3f prev_ray_hit_drag;
   Eigen::Vector3f ray_hit_normal;
   Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
+  double joint_marker_pos_on_press;
   double ray_hit_t;
   
   
@@ -1164,25 +1166,22 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
-          /*string token  = "mate::";
-          size_t found = joint_name.find(token);  
-          KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
-          if (found!=std::string::npos){
-            it->second._gl_object->get_link_future_frame(it->second._gl_object->_mate_end_link,T_world_mate_endlink);
-            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_mate_endlink.p[0],
-                                start[1]+self->ray_hit_t*dir[1]-T_world_mate_endlink.p[1],
-                                start[2]+self->ray_hit_t*dir[2]-T_world_mate_endlink.p[2]; 
-          }
-          else{*/
-            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_object.p[0],
-                                  start[1]+self->ray_hit_t*dir[1]-T_world_object.p[1],
-                                  start[2]+self->ray_hit_t*dir[2]-T_world_object.p[2]; 
-           //}
-           diff= self->ray_hit_drag - self->marker_offset_on_press;
-           double distance = diff.dot(joint_axis);
+          string token  = "mate::";
+          size_t found = joint_name.find(token); 
+          self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+                                start[1]+self->ray_hit_t*dir[1],
+                                start[2]+self->ray_hit_t*dir[2]; 
+          Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+          Eigen::Vector3f dragpt_obj_frame;
+          dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object_future.p[0],
+                   self->ray_hit_drag[1]-T_world_object_future.p[1],
+                   self->ray_hit_drag[2]-T_world_object_future.p[2];
+          Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+          double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
+
            std::map<std::string, double> jointpos_in;
            jointpos_in = it->second._gl_object->_future_jointpos;
-           jointpos_in.find(joint_name)->second = distance;
+           jointpos_in.find(joint_name)->second = desired_pos;
            it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
            bot_viewer_request_redraw(self->viewer); 
          }
@@ -1367,25 +1366,22 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         }// end revolute joints
         else if(type==otdf::Joint::PRISMATIC)
         {
-          /*string token  = "mate::";
+          string token  = "mate::";
           size_t found = joint_name.find(token);  
           KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
-          if (found!=std::string::npos){
-            self->otdf_instance_hold._gl_object->get_link_frame(self->otdf_instance_hold._gl_object->_mate_end_link,T_world_mate_endlink);
-            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_mate_endlink.p[0],
-                                start[1]+self->ray_hit_t*dir[1]-T_world_mate_endlink.p[1],
-                                start[2]+self->ray_hit_t*dir[2]-T_world_mate_endlink.p[2]; 
-          }
-          else{*/
-            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0]-T_world_object.p[0],
-                                  start[1]+self->ray_hit_t*dir[1]-T_world_object.p[1],
-                                  start[2]+self->ray_hit_t*dir[2]-T_world_object.p[2]; 
-         // }
-          
-          Eigen::Vector3f da= self->ray_hit_drag-self->marker_offset_on_press;
-          double desired_pos = da.dot(joint_axis);
-         // double current_pos, velocity;
-         // self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
+          self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+                                start[1]+self->ray_hit_t*dir[1],
+                                start[2]+self->ray_hit_t*dir[2]; 
+          Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+          Eigen::Vector3f dragpt_obj_frame;
+          KDL::Frame T_world_object;
+            T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+            dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object.p[0],
+                   self->ray_hit_drag[1]-T_world_object.p[1],
+                   self->ray_hit_drag[2]-T_world_object.p[2];
+          Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+          double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
+          double current_pos, velocity;
           self->otdf_instance_hold._otdf_instance->setJointState(joint_name, desired_pos,0); 
           self->otdf_instance_hold._otdf_instance->update(); 
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
@@ -1393,7 +1389,6 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
       }
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 
-          
   }   // end set_object_current_state_on_marker_motion()
   
 
@@ -1459,6 +1454,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 
 
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+
     // loop through object list and check if ray intersect any of them.
     for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
     {

@@ -647,8 +647,14 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     }
     else if((self->marker_selection  != " "))
     {
-        string token  = "mate::";
-        size_t found = self->marker_selection.find(token);  
+        string token  = "markers::";
+        size_t found = self->marker_selection.find(token);
+        string joint_name= " ";  
+        if (found!=std::string::npos)
+          joint_name =self->marker_selection.substr(found+token.size());
+          
+        token  = "mate::";
+        found = self->marker_selection.find(token);  
         KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
    
         self->dragging = 1;
@@ -656,25 +662,15 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
             {
                 object_instance_map_type_::iterator it = self->instantiated_objects.find(self->object_selection);            
                 KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-                //if (found==std::string::npos){
-                  self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2]; 
-               /* }
-                else{ // if mate offset from mating end link otherwise using object center.
-                  it->second._gl_object->get_link_future_frame(it->second._gl_object->_mate_end_link,T_world_mate_endlink);                    
-                  self->marker_offset_on_press << self->ray_hit[0]-T_world_mate_endlink.p[0],self->ray_hit[1]-T_world_mate_endlink.p[1],self->ray_hit[2]-T_world_mate_endlink.p[2]; 
-                }*/
+                self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2];
+                self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
             }
         else{
-        
-          //  if (found==std::string::npos){
-              KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
-              self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
-           /* }
-            else{
-              self->otdf_instance_hold._gl_object->get_link_frame( self->otdf_instance_hold._gl_object->_mate_end_link,T_world_mate_endlink);                    
-              self->marker_offset_on_press << self->ray_hit[0]-T_world_mate_endlink.p[0],self->ray_hit[1]-T_world_mate_endlink.p[1],self->ray_hit[2]-T_world_mate_endlink.p[2]; 
-            }   */
-        
+           KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
+           double current_pos, current_vel; 
+          self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);         
+          self->joint_marker_pos_on_press = current_pos;
+          self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
         }
         return 1;// consumed
      }
