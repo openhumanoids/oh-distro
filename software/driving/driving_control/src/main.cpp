@@ -1397,8 +1397,9 @@ perform_emergency_stop (state_t *self)
     }
     drc_driving_control_cmd_t msg;
     msg.utime = bot_timestamp_now();
-    msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
+    msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; 
     msg.brake_value = self->brake_val;
+    msg.throttle_value = self->throttle_val;
     drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
 }
 
@@ -1646,14 +1647,8 @@ on_controller_timer (gpointer data)
 
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
-        if(self->use_differential_angle){
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
-            msg.steering_angle =  steering_input;
-        }
-        else{
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE;
-            msg.steering_angle =  steering_input;
-        }
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE;
+        msg.steering_angle =  steering_input;
 
         msg.throttle_value = throttle_val;
         msg.brake_value = brake_val;
@@ -1784,21 +1779,8 @@ on_controller_timer (gpointer data)
 
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
-        if(self->use_differential_angle){
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
-            //if(fabs(steering_input) > bot_to_radians(5)){
-            msg.steering_angle =  steering_input;
-            /*}
-              else{
-              msg.steering_angle =  0;
-              }
-          
-              fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
-        }
-        else{
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
-            msg.steering_angle =  steering_input;
-        }
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; 
+        msg.steering_angle =  steering_input;
     
         msg.throttle_value = throttle_val;
         msg.brake_value = brake_val;
