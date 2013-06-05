@@ -520,6 +520,44 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     drc::aff_indexed_robot_plan_t msg = _received_map;
     msg.utime = utime;
     _lcm->publish(channel, &msg);
+    
+    //send out a manip map status message - for the driving renderer at the base end to use 
+    if(msg.num_states > 0){
+        int no_ees = msg.aff_index[0].num_ees; 
+        for (int j=0; j < no_ees; j++){ 
+            drc::driving_affordance_status_t msg_s;
+            msg_s.utime = utime; 
+            msg_s.aff_type = msg.aff_index[0].aff_type;
+            msg_s.aff_uid = msg.aff_index[0].aff_uid;
+            msg_s.dof_name = msg.aff_index[0].dof_name[j]; 
+            msg_s.ee_name = msg.aff_index[0].ee_name[j]; 
+
+            double max = -100000;
+            double min =  100000;
+            for(int i=0; i < msg.num_states; i++){
+                max = fmax(max,msg.aff_index[i].dof_value[j]); 
+                min = fmin(min,msg.aff_index[i].dof_value[j]); 
+            }
+
+            fprintf(stderr, "DOF : %s -> Max : %f Min : %f\n",  msg_s.dof_name.c_str(), max, min);
+            msg_s.have_manip_map = 1; 
+            msg_s.dof_value_0 = min;
+            msg_s.dof_value_1 = max;
+            
+            if(!strcmp(msg_s.dof_name.c_str(), "steering_joint")){//!msg_s.dof_name.compare("steering_joint")){
+                _lcm->publish("DRIVING_STEERING_ACTUATION_STATUS", &msg_s);
+            }
+            else if(!strcmp(msg_s.dof_name.c_str(), "gas_joint")){//!msg_s.dof_name.compare(msg_s.dof_name, "gas_joint")){
+                _lcm->publish("DRIVING_GAS_ACTUATION_STATUS", &msg_s);
+            }
+            else if(!strcmp(msg_s.dof_name.c_str(), "brake_joint")){//!msg_s.dof_name.compare("brake_joint")){
+                _lcm->publish("DRIVING_BRAKE_ACTUATION_STATUS", &msg_s);
+            }
+            else if(!strcmp(msg_s.dof_name.c_str(), "hand_brake_joint")){//!msg_s.dof_name.compare("hand_brake_joint")){
+                _lcm->publish("DRIVING_HAND_BRAKE_ACTUATION_STATUS", &msg_s);
+            }
+        }
+    }
   }
   
   
