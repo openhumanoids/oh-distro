@@ -563,7 +563,7 @@ script "dev.vrc_manip" {
     start cmd "gz_vrc_manip";
     start cmd "set-sim-rate";
     wait ms 10000;
-    start group "m.6.hose_task_utils";    
+    start group "m.hose_task_utils";    
 }
 
 script "dev.vrc_manip_mating_test" { 
@@ -576,7 +576,7 @@ script "dev.vrc_manip_mating_test" {
     start cmd "gz_vrc_task_3_mating";
     start cmd "set-sim-rate";
     wait ms 10000;
-    start group "m.6.hose_task_utils";    
+    start group "m.hose_task_utils";    
 }
 
 script "dev.quals_manip" { 
