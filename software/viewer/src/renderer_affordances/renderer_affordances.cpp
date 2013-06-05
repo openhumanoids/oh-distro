@@ -210,7 +210,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 
                 KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
                 }
                 if(reachable){
                     ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
@@ -234,7 +234,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 
                 KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
                 if(reachable){
                     ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
                 }
@@ -278,7 +278,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 
                     KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
                     if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
+                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
                     }
                     if(reachable){
                         ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
@@ -303,7 +303,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 
                     KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
                     if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
+                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
                     if(reachable){
                         ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
                     }
@@ -354,7 +354,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 
                 KDL::Frame T_world_foot_r = T_world_geometry*T_geometry_foot; // but this is palm or frame
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->_last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
                 if(reachable) {
                     ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
                 } else {
@@ -371,7 +371,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 KDL::Frame T_world_foot_l = T_world_geometry*T_geometry_foot;// but this is palm or frame
             
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->_last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
                 if(reachable) {
                     ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
                 } else {
@@ -410,7 +410,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             
                 KDL::Frame T_world_foot_r = T_world_geometry*T_geometry_foot; // but this is palm or frame
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->_last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
             
                 if(reachable) {
                     ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
@@ -427,7 +427,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 KDL::Frame T_world_foot_l = T_world_geometry*T_geometry_foot;// but this is palm or frame
             
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->_last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
                 if(reachable) {
                     ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
                 } else {

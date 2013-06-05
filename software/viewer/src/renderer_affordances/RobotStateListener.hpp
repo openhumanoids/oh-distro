@@ -9,6 +9,8 @@
 #include <kdl/frames.hpp>
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
+#include <visualization_utils/GlKinematicBody.hpp>
+#include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include "lcmtypes/bot_core.hpp"
 #include <bot_vis/bot_vis.h>
 #include "renderer_affordances.hpp" // has definition of RendererAffordances struc
@@ -22,8 +24,11 @@ namespace renderer_affordances
     //--------fields
   private:
     std::string _robot_name;
+    std::string _urdf_xml_string;
+    lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
     boost::shared_ptr<lcm::LCM> _lcm;    
     RendererAffordances* _parent_renderer; 
+	int64_t _last_state_msg_system_timestamp;
     
     //BotViewer *_viewer;
 
@@ -35,14 +40,22 @@ namespace renderer_affordances
     
     KDL::Frame T_body_world; // current body origin in world frame
 
-    drc::robot_state_t last_robotstate_msg;
+    drc::robot_state_t _last_robotstate_msg;
     bool _robot_state_received;
+    bool _urdf_parsed;
+    bool _urdf_subscription_on;
+    // Using GlKinematicBody as cache for fk queries.
+    // TODO: Feature dev after VRC  (Sisir, 5th June)
+    // We should have a bare bones KinematicBody class when no drawing(parsing meshes etc) is required.
+    boost::shared_ptr<visualization_utils::GlKinematicBody> _gl_robot; 
 
     //-------------message callback
   private:
     void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);
+    void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+			    const  drc::robot_urdf_t* msg); 
 
     }; //class RobotStateListener
 

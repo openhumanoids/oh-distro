@@ -167,6 +167,7 @@ struct StickyHandStruc {
     {
      grasp_status = 0;
      motion_trail_log_enabled = true;
+     is_melded= false;
     };
     
      ~StickyHandStruc()
@@ -182,6 +183,9 @@ struct StickyHandStruc {
     KDL::Frame T_geometry_hand; // this is stored in obj frame
     std::vector<std::string> joint_name;
     std::vector<double> joint_position;
+    bool is_melded;
+    KDL::Frame optimized_T_geometry_hand; // store as backup when melded. Retains the ability to unmeld.
+    std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
     int grasp_status;//CANDIDATE=0,COMMITTED=1;

@@ -16,7 +16,9 @@
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
-#define PARAM_SEND_POSE_GOAL     "Get Robot Pose"
+#define PARAM_SEND_POSE_GOAL  "Get Robot Pose"
+#define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
+#define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MATE     "Mate"
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
@@ -1007,6 +1009,69 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_UNSTORE))) {
       store_sticky_hand(pw,name,user,true);    
     }
+    else if (!strcmp(name, PARAM_MELD_HAND_TO_CURRENT))
+    {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      if(!hand_it->second.is_melded)
+      {
+        //change joint_position to current hand state and 
+        //T_geometry_hand to T_geometry_world*T_world_palm(from FK)*T_palm_stickyhandbase;   
+      
+        hand_it->second.optimized_joint_position = hand_it->second.joint_position;  
+        hand_it->second.optimized_T_geometry_hand = hand_it->second.T_geometry_hand;
+        
+        if(self->robotStateListener->_urdf_parsed) 
+        {
+          for (size_t k=0;k<hand_it->second.joint_name.size();k++)
+          {
+            double pos;
+            bool val= self->robotStateListener->_gl_robot->get_current_joint_pos(hand_it->second.joint_name[k],pos);
+            hand_it->second.joint_position[k] = pos;
+            cout << hand_it->second.joint_name[k] << " pos:" << pos << " flag:"<< val << endl;
+          }// end for
+          drc::joint_angles_t posture_msg;
+          posture_msg.num_joints= hand_it->second.joint_name.size();
+          posture_msg.joint_name = hand_it->second.joint_name;
+          posture_msg.joint_position = hand_it->second.joint_position; 
+          
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+          KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
+          if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry))
+            cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;           
+          
+          KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase; 
+          std::string ee_name;
+          if(hand_it->second.hand_type==0)
+             ee_name = "left_palm";
+          else
+             ee_name = "right_palm";
+          T_geometry_stickyhandbase = hand_it->second._gl_hand->_T_world_body;
+          hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm);         
+          T_palm_stickyhandbase = T_geometry_palm.Inverse()*T_geometry_stickyhandbase;
+          
+          self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_palm);
+          KDL::Frame T_geometry_palm_new = T_world_geometry.Inverse()*T_world_palm;
+          KDL::Frame T_geometry_stickyhandbase_new = T_geometry_palm_new*T_palm_stickyhandbase;
+          cout << "setting sticky hand state to current hand pose and posture " << endl;
+          hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase_new, posture_msg);
+        } // end if
+        hand_it->second.is_melded = !hand_it->second.is_melded;     // 
+      } 
+      else {
+        cout << "resetting  sticky hand state to optimized hand pose and posture " << endl;
+        hand_it->second.T_geometry_hand = hand_it->second.optimized_T_geometry_hand;
+        hand_it->second.joint_position = hand_it->second.optimized_joint_position; // reset;
+        hand_it->second.is_melded = !hand_it->second.is_melded;    
+        drc::joint_angles_t posture_msg;
+        posture_msg.num_joints= hand_it->second.joint_name.size();
+        posture_msg.joint_name = hand_it->second.joint_name;
+        posture_msg.joint_position = hand_it->second.joint_position;   
+        KDL::Frame T_geometry_stickyhandbase = hand_it->second.T_geometry_hand;
+        hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase, posture_msg); 
+      } 
+    } // end if else
   
         
     bot_viewer_request_redraw(self->viewer);
@@ -1061,7 +1126,9 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
     
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL, NULL);
-    //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_PARTIAL_GRASP_UNGRASP, !val, NULL);
+    
+    val  = hand_it->second.is_melded;
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
 
     
     //cout <<self->selection << endl; // otdf_type::geom_name
@@ -1076,7 +1143,7 @@ namespace renderer_affordances_gui_utils
 
     vbox = gtk_vbox_new (FALSE, 3);
     gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
     gtk_container_add (GTK_CONTAINER (window), vbox);
     gtk_widget_show_all(window); 
 
