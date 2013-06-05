@@ -52,9 +52,13 @@ classdef FootstepReplanner < DrakeSystem
     end
     
     function y=output(obj,t,~,x)
-      persistent lfoot_contact_state rfoot_contact_state;
-        
-      if mod(t,obj.dt)==0 % manually enforce sample time here, not the correct way to do it because states do not arrive at a reliable interval
+      persistent lfoot_contact_state rfoot_contact_state last_t;
+
+      if (isempty(last_t) || last_t > t)
+        last_t = 0;
+      end
+      if (t - last_t >= obj.dt)
+        last_t = t;
         if isempty(lfoot_contact_state)
           lfoot_contact_state = false;
         end
@@ -76,7 +80,7 @@ classdef FootstepReplanner < DrakeSystem
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
             cdata.trans_drift = lfoot_des(1:3) - lfoot_act(1:3);
 
-            fprintf('LF:Footstep drift from plan: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
+            fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
@@ -89,7 +93,7 @@ classdef FootstepReplanner < DrakeSystem
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
             cdata.trans_drift = rfoot_des(1:3) - rfoot_act(1:3);
 
-            fprintf('RF:Footstep drift from plan: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
+            fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           end
 
