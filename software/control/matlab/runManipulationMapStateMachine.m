@@ -67,7 +67,7 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
             qdot_breaks = 0*q_breaks;
             s_breaks=linspace(0,1,size(q_breaks,2));
             t_breaks=s_breaks.*(length(s_breaks)*0.001);
-            %planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
+            planviz_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
             plan_pub.publish(t_breaks,[q_breaks;qdot_breaks]);
           end;
       end
