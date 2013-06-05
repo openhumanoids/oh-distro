@@ -1,0 +1,11 @@
+package drc;
+
+// specifies the driving wheel state
+struct driving_wheel_state_t 
+{
+    int64_t utime;  
+    float u, v;
+    float theta;
+
+}
+
