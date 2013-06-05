@@ -17,6 +17,12 @@ group "0.development" {
     }
 }
 
+group "g.0.gazebo" {
+    cmd "gz_mit_ingress" {
+        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
+        host = "robot";
+    }
+}
 
 group "a.1.core" {
     cmd "aa-translators" {
@@ -95,15 +101,15 @@ group "a.1.core" {
 
 group "authoring" {
     cmd "MotionPlanServer_from_seated" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupname',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupnames',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
     }
 
     cmd "MotionPlanServer_from_standing" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupname',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
     }
 
     cmd "MotionPlanServer_from_turtled" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupname',{{'back','back'}})));\"";
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
        host = "localhost";
     }
 
@@ -113,7 +119,7 @@ group "authoring" {
     }
 
     cmd "AuthoringGUI" {
-       exec = "qt4-widget-authoring-lcm-interface-test";
+       exec = "qt4-widget-authoring-lcm-interface-test ../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf";
        host = "localhost";
     }
 }
