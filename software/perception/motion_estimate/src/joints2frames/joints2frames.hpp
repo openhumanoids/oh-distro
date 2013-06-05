@@ -54,6 +54,7 @@ class joints2frames{
     
     double last_ground_height_;
     int64_t last_ground_publish_utime_;
+    int64_t last_joint_publish_utime_;
     
     Eigen::Quaterniond  euler_to_quat(double yaw, double pitch, double roll);
 };    

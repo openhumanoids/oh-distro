@@ -40,6 +40,7 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
   
   last_ground_publish_utime_ =0;
+  last_joint_publish_utime_ =0;
 }
 
 // same as bot_timestamp_now():
@@ -164,6 +165,11 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
   bool body_to_head_found =false;
   bool body_to_hokuyo_link_found = false;
+  bool joint_publish_ok = (msg->utime - last_joint_publish_utime_)  > 1E6/200;  // 200Hz update for joints
+  if (joint_publish_ok) {
+    last_joint_publish_utime_ = msg->utime;
+  }
+
   for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string joint = (*ii).first;
     if (   (*ii).first.compare( "head" ) == 0 ){
@@ -172,12 +178,14 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = DRCTransformToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
-      publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND" );
-    }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
-      publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND" );
+    }else if (joint_publish_ok){
+      if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
+        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND" );
+      }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
+        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND" );
+      }
     }
-  }  
+  }
 
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
