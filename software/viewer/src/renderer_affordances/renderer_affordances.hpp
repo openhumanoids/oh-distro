@@ -199,6 +199,7 @@ struct StickyFootStruc {
     StickyFootStruc()
     {
      motion_trail_log_enabled = true;
+     is_melded= false;
     };
     
      ~StickyFootStruc()
@@ -213,6 +214,9 @@ struct StickyFootStruc {
     KDL::Frame T_geometry_foot; // this is stored in obj frame
     std::vector<std::string> joint_name;
     std::vector<double> joint_position;
+    bool is_melded;
+    KDL::Frame optimized_T_geometry_foot; // store as backup when melded. Retains the ability to unmeld.
+    std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.
     int uid;
     bool motion_trail_log_enabled;
    // int opt_status;

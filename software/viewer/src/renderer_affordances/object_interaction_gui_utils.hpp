@@ -1209,6 +1209,69 @@ namespace renderer_affordances_gui_utils
                   publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"r_foot","R_FOOT_GOAL",T_world_graspgeometry,reach_flag);
           }
       }
+      else if (!strcmp(name, PARAM_MELD_FOOT_TO_CURRENT))
+      {
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+        if(!foot_it->second.is_melded)
+        {
+          //change joint_position to current foot state and 
+          //T_geometry_foot to T_geometry_world*T_world_foot(from FK);   
+        
+          foot_it->second.optimized_joint_position = foot_it->second.joint_position;  
+          foot_it->second.optimized_T_geometry_foot = foot_it->second.T_geometry_foot;
+          
+          if(self->robotStateListener->_urdf_parsed) 
+          {
+            for (size_t k=0;k<foot_it->second.joint_name.size();k++)
+            {
+              double pos;
+              bool val= self->robotStateListener->_gl_robot->get_current_joint_pos(foot_it->second.joint_name[k],pos);
+              foot_it->second.joint_position[k] = pos;
+              cout << foot_it->second.joint_name[k] << " pos:" << pos << " flag:"<< val << endl;
+            }// end for
+            drc::joint_angles_t posture_msg;
+            posture_msg.num_joints= foot_it->second.joint_name.size();
+            posture_msg.joint_name = foot_it->second.joint_name;
+            posture_msg.joint_position = foot_it->second.joint_position; 
+            
+            typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+            object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+            KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
+            if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
+              cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;           
+            
+            KDL::Frame T_world_foot, T_geometry_stickyfootbase,T_geometry_foot,T_foot_stickyfootbase; 
+            std::string ee_name;
+            if(foot_it->second.foot_type==0)
+               ee_name = "l_foot";
+            else
+               ee_name = "r_foot";
+            T_geometry_stickyfootbase = foot_it->second._gl_foot->_T_world_body;
+            foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_foot);         
+            T_foot_stickyfootbase = T_geometry_foot.Inverse()*T_geometry_stickyfootbase;
+            
+            self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_foot);
+            KDL::Frame T_geometry_foot_new = T_world_geometry.Inverse()*T_world_foot;
+            KDL::Frame T_geometry_stickyfootbase_new = T_geometry_foot_new*T_foot_stickyfootbase;
+            cout << "setting sticky foot state to current foot pose and posture " << endl;
+            foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase_new, posture_msg);
+          } // end if
+          foot_it->second.is_melded = !foot_it->second.is_melded;     // 
+        } 
+        else {
+          cout << "resetting  sticky foot state to optimized foot pose and posture " << endl;
+          foot_it->second.T_geometry_foot = foot_it->second.optimized_T_geometry_foot;
+          foot_it->second.joint_position = foot_it->second.optimized_joint_position; // reset;
+          foot_it->second.is_melded = !foot_it->second.is_melded;    
+          drc::joint_angles_t posture_msg;
+          posture_msg.num_joints= foot_it->second.joint_name.size();
+          posture_msg.joint_name = foot_it->second.joint_name;
+          posture_msg.joint_position = foot_it->second.joint_position;   
+          KDL::Frame T_geometry_stickyfootbase = foot_it->second.T_geometry_foot;
+          foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase, posture_msg); 
+        } 
+      } // end if else
       
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
@@ -1244,7 +1307,9 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL); 
 
-
+    bool val  = foot_it->second.is_melded;
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_FOOT_TO_CURRENT, val, NULL);
+    
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_foot_dblclk_popup_param_widget_changed), self);
     self->dblclk_popup  = window;
 
