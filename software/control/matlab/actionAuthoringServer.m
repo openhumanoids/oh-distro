@@ -197,7 +197,23 @@ while (1)
 %         end
       end
       if action_options.generate_implicit_constraints_from_q0
-        action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
+          if isfield(action_options,'initial_contact_groups')
+              for i = 1:length(action_options.initial_contact_groups.linknames)
+                  linkname = action_options.initial_contact_groups.linknames{i};
+                  linkname=regexprep(linkname,'\+','\\\+');
+                  ind = find(cellfun(@(x)~isempty(x),regexp(lower({r.body.linkname}),[lower(linkname) '\+?'])));
+                  if (length(ind)>1)
+                      action_options.initial_contact_groups.linknames{i} = r.body(ind(1)).linkname;
+                      warning('Couldn''t find unique link %s. Returning first match: %s', ...
+                          linkname,body.linkname);
+                  elseif (length(ind)<1)
+                      error(['couldn''t find link ' ,linkname]);
+                  else
+                      action_options.initial_contact_groups.linknames{i} = r.body(ind).linkname;
+                  end
+              end
+          end
+          action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
         n_kincons_new = length(action_sequence.kincons);
         if n_kincons_new > n_kincons
           for i = (n_kincons+1):n_kincons_new
