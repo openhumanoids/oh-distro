@@ -948,6 +948,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
    
       if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
       {
+         
           double theta;
           Eigen::Vector3f axis;      
           Eigen::Vector3f uz; uz << 0 , 0 , 1;
@@ -1004,6 +1005,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
        
       if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
       {
+         
           //--get rotation in angle/axis form
           double theta;
           Eigen::Vector3f axis;      
@@ -1138,6 +1140,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
       if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
       {
         //--get rotation in angle/axis form
+          length =0.2;
           double theta;
           Eigen::Vector3f axis;      
           Eigen::Vector3f ux,uz; ux << 1 , 0 , 0;uz << 0 , 0 , 1;
@@ -1175,7 +1178,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
             glPopMatrix();
 
-            glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+            glColor4f(c_blue[0],c_blue[1],c_blue[2],0.5);
             if(selected_marker==oss.str())
               glColor4f(0.7,0.1,0.1,1.0);
             axis = uz.cross(joint_axis);
@@ -1197,7 +1200,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
             glPopMatrix();
 
-            glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+            glColor4f(c_blue[0],c_blue[1],c_blue[2],0.5);
             if(selected_marker==oss.str())
               glColor4f(0.7,0.1,0.1,1.0);
             axis = uz.cross(joint_axis);
@@ -1214,7 +1217,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
         
       if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
       {
-      
+          length =0.2;
           //--get rotation in angle/axis form
           double theta;
           Eigen::Vector3f axis;      
