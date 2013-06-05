@@ -333,14 +333,6 @@ group "m.simple-control" {
         exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
         host = "robot";
     }
-    cmd "simple_right_grasp" {
-        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
-        host = "robot";
-    }
-    cmd "simple_left_grasp" {
-        exec = "rostopic pub /sandia_hands/l_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
-        host = "robot";
-    }
 }
 
 group "m.dev_tools" {
