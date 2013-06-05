@@ -39,6 +39,10 @@ operator=( const OpenGL_Object_Affordance& other ) {
 void
 OpenGL_Object_Affordance::
 set( AffordanceState& affordanceState ){
+    _opengl_object_cylinder.set_visible( false );
+    _opengl_object_sphere.set_visible( false );
+    _opengl_object_box.set_visible( false );
+
   if( affordanceState.getType() == AffordanceState::CYLINDER ){
     _opengl_object_cylinder.set_visible( true );
     _opengl_object_sphere.set_visible( false );
@@ -47,7 +51,7 @@ set( AffordanceState& affordanceState ){
                                   Vector2f( affordanceState._params[ AffordanceState::RADIUS_NAME ],
                                             affordanceState._params[ AffordanceState::LENGTH_NAME ] ) );
   } else if ( affordanceState.getType() == AffordanceState::LEVER ){
-
+    
   } else if ( affordanceState.getType() == AffordanceState::SPHERE ){
     _opengl_object_cylinder.set_visible( false );
     _opengl_object_sphere.set_visible( true );
