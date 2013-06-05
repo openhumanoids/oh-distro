@@ -19,6 +19,8 @@
 #include <Eigen/Dense>
 #include "QuaternionLib.h"
 
+#define PI  3.14159265358979323
+
 
 using namespace std;
 using namespace InertialOdometry;
@@ -47,6 +49,8 @@ private:
 	Eigen::Quaterniond imu_orientation;
 	double max;
 	unsigned long long prev_msg_utime;
+	unsigned long long fall_utime;
+	
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -58,6 +62,7 @@ public:
 		_lcm->subscribe("TORSO_IMU",&HandleIMU::torso_state_handler,this);
 
 		prev_msg_utime = 0;
+		fall_utime = 0;
 
 	}
 
@@ -71,7 +76,7 @@ public:
 								msg->origin_position.rotation.z);
 
 
-		cout << "" << (msg->utime - prev_msg_utime)/1000. << endl;
+		//cout << "" << (msg->utime - prev_msg_utime)/1000. << endl;
 
 		prev_msg_utime = msg->utime;
 
@@ -91,7 +96,7 @@ public:
 		}
 		//cout << "Receiving state\n";
 
-		cout << "num_joints: " << msg->num_joints << endl;
+		//cout << "num_joints: " << msg->num_joints << endl;
 
 	}
 
@@ -106,7 +111,16 @@ public:
 
 		__q = e2q(q2e_new(q));
 
-		std::cout <<  "IMU_ANGLES: " << q2e_new(q).transpose() << std::endl;
+		//std::cout <<  "IMU_ANGLES: " << q2e_new(q).transpose() << std::endl;
+
+		Eigen::Vector3d E;
+		E = q2e_new(q);
+
+		// fall detector
+		if ((E(1) > 20*PI/180. || E(0) > 20*PI/180.) && (msg->utime - fall_utime) > 30000000) {
+			fall_utime = msg->utime;
+			system("notify-send ROBOT_FELL_OVER");
+		}
 
 		check_conv(0) = __q.w() - q.w();
 		check_conv(1) = __q.x() - q.x();
@@ -135,6 +149,8 @@ int main() {
 
   // register signal SIGINT and signal handler
   signal(SIGINT, signalHandler);
+
+  system("notify-send FallDetectorStarted");
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good())
