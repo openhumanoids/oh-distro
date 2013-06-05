@@ -578,9 +578,9 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     }
   
     // Alternatively this could be controlled using the input dropdown..
-    if (!bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE)) {
-        return; 
-    }
+    //if (!bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE)) {
+    //    return; 
+    //}
 
     // Render text
     glPushAttrib (GL_ENABLE_BIT);
