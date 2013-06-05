@@ -76,7 +76,7 @@ classdef FootstepReplanner < DrakeSystem
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
             cdata.trans_drift = lfoot_des(1:3) - lfoot_act(1:3);
 
-            fprintf('LF:Adjusting footsteps by %2.4f m \n',cdata.trans_drift);
+            fprintf('LF:Footstep drift from plan: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           elseif msg.right_contact>0.5 && ~rfoot_contact_state
             % right foot coming into contact
@@ -89,7 +89,7 @@ classdef FootstepReplanner < DrakeSystem
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
             cdata.trans_drift = rfoot_des(1:3) - rfoot_act(1:3);
 
-            fprintf('RF:Adjusting footsteps by %2.4f m \n',cdata.trans_drift);
+            fprintf('RF:Footstep drift from plan: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           end
 
