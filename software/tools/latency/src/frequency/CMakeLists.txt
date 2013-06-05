@@ -15,7 +15,7 @@ pods_install_pkg_config_file(frequency
   
   
 add_executable(drc-frequency frequency-app.cpp  )
-pods_use_pkg_config_packages(drc-frequency frequency
+pods_use_pkg_config_packages(drc-frequency lcmtypes_drc_lcmtypes frequency
              bot2-param-client path-util
-             lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+             lcmtypes_bot2-core lcm)
 pods_install_executables(drc-frequency )

@@ -5,7 +5,9 @@
 #include <sys/time.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+//#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/frequency_t.hpp"
 #include "lcmtypes/bot_core.hpp"
 #include <frequency/frequency.hpp>
 
@@ -64,7 +66,19 @@ void App::handleUtime(const lcm::ReceiveBuffer* rbuf, const std::string& chan, c
     }
     out.num = out.frequency.size();
     std::vector< std::string> chans = frequency_->getChannels();
-    out.channel = chans;
+    
+//    out.channel = chans;
+    
+    for (size_t i=0; i < chans.size() ;i++){
+      if (chans[i] == "EST_ROBOT_STATE"){ out.channel.push_back( (int8_t)  drc::frequency_t::EST_ROBOT_STATE) ;
+      }else if (chans[i] == "ATLAS_COMMAND"){    out.channel.push_back( (int8_t) drc::frequency_t::ATLAS_COMMAND) ;
+      }else if (chans[i] == "CAMERA"){ out.channel.push_back( (int8_t) drc::frequency_t::CAMERA) ;
+      }else if (chans[i] == "CAMERA_LHAND"){ out.channel.push_back( (int8_t) drc::frequency_t::CAMERA_LHAND) ;
+      }else if (chans[i] == "CAMERA_RHAND"){ out.channel.push_back( (int8_t) drc::frequency_t::CAMERA_RHAND) ;
+      }else if (chans[i] == "SCAN"){ out.channel.push_back( (int8_t) drc::frequency_t::SCAN) ;
+      }else{ out.channel.push_back( (int8_t) drc::frequency_t::UNKNOWN) ; 
+      }
+    }
     
     
     int64_t curr_wall_time = _timestamp_now();

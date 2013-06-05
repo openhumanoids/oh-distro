@@ -127,7 +127,7 @@ typedef struct
         
     int64_t frequency_utime;
     std::vector<int> frequency_list;
-    std::vector< std::string> channel_list;
+    std::vector< int8_t> channel_list;
     int8_t real_time_percent;
     
     float left_contact;
@@ -247,7 +247,7 @@ on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequenc
   self->channel_list.clear(); 
   for (size_t i=0;i <msg->num; i++){
     self->frequency_list.push_back( (int16_t) msg->frequency[i] );
-    self->channel_list.push_back( msg->channel[i] );
+    self->channel_list.push_back( (int8_t) msg->channel[i] );
   }
     //std::cout << "freqs recevied\n";
     
@@ -379,7 +379,18 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	for (size_t i=0; i <self->frequency_list.size() ; i++) {
 	  char line[80];
 	  ///std::cout <<  self->frequency_list[i] << "\n";
-	  sprintf(line, "%03d %s", self->frequency_list[i], self->channel_list[i].c_str() );
+          
+          std::string chan="";
+          if (self->channel_list[i] == DRC_FREQUENCY_T_EST_ROBOT_STATE ){ chan = "EST_ROBOT_STATE";
+          }else if (self->channel_list[i] == DRC_FREQUENCY_T_ATLAS_COMMAND ){ chan = "ATLAS_COMMAND";
+          }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA ){ chan = "CAMERA";
+          }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA_LHAND ){ chan = "CAMERA_LHAND";
+          }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA_RHAND ){ chan = "CAMERA_RHAND";
+          }else if (self->channel_list[i] == DRC_FREQUENCY_T_SCAN ){ chan = "SCAN";
+          }else { chan = "UNKNOWN"; }
+          
+          sprintf(line, "%03d %s", self->frequency_list[i], chan.c_str());
+          
 	  x = 0 ;// hind * 150 + 120;
    	  y = gl_height + (-i - 11) * line_height;
 	  // top left:
