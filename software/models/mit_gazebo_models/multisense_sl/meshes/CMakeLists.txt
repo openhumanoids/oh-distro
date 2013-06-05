@@ -1,6 +1,6 @@
 set (files 
-  base_link.STL
-  hokuyo_link.STL
+  base_link.stl
+  hokuyo_link.stl
   head.dae
   head_camera.dae
 )
