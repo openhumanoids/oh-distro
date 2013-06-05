@@ -76,6 +76,13 @@ classdef QPController < MIMODrakeSystem
       obj.debug = false;
     end
 
+    if isfield(options,'multi_robot')
+      typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
+      obj.multi_robot = options.multi_robot;
+    else
+      obj.multi_robot = 0;
+    end
+    
     if isfield(options,'use_mex')
       % 0 - no mex
       % 1 - use mex
@@ -117,17 +124,6 @@ classdef QPController < MIMODrakeSystem
       obj.free_inputs = [];
       obj.con_inputs = 1:getNumInputs(r);
     end
-    
-    
-    if isfield(options,'use_collision_groups')
-      % whether to reason about contacts on a body or collision group level
-      typecheck(options.use_collision_groups,'logical');
-      sizecheck(options.use_collision_groups,1);
-      obj.use_collision_groups = options.use_collision_groups;
-    else
-      obj.use_collision_groups = false;
-    end
-    
     
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
@@ -238,25 +234,42 @@ classdef QPController < MIMODrakeSystem
     contact_threshold = 0.0005; % m
     kinsol = doKinematics(r,q,false,true);
     
-    % get active contacts
-    phi = contactConstraints(r,kinsol,desired_supports,supp.contact_pts);
-
+    if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+      kinsol_multi = doKinematics(obj.multi_robot,q,false,true); % for now assume the same state frame
+    end
+      
     num_desired_contacts = supp.num_contact_pts;
+
+    % get active contacts
+    phi = zeros(sum(num_desired_contacts),1);
+    c_pre = 0;
+    for j=1:length(supp.bodies)
+      if supp.contact_surfaces(j) == 0
+        phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
+      elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+        % use bullet collision between bodies
+        phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
+      else
+        error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
+      end
+      c_pre = c_pre + num_desired_contacts(j);
+    end
+
     % check foot contacts via kinematics
     lfoot_contact_state_kin = 0;
     rfoot_contact_state_kin = 0;
     if any(obj.lfoot_idx==desired_supports) 
-      foot_desired_idx = find(obj.lfoot_idx==desired_supports);
-      c_pre = sum(num_desired_contacts(1:foot_desired_idx-1));
-      if any(phi(c_pre+(1:num_desired_contacts(foot_desired_idx)))<=contact_threshold)
+      lfoot_desired_idx = find(obj.lfoot_idx==desired_supports);
+      c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
+      if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
         lfoot_contact_state_kin = 1;
       end
     end
     
     if any(obj.rfoot_idx==desired_supports) 
-      foot_desired_idx = find(obj.rfoot_idx==desired_supports);
-      c_pre = sum(num_desired_contacts(1:foot_desired_idx-1));
-      if any(phi(c_pre+(1:num_desired_contacts(foot_desired_idx)))<=contact_threshold)
+      rfoot_desired_idx = find(obj.rfoot_idx==desired_supports);
+      c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
+      if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
         rfoot_contact_state_kin = 1;
       end
     end
@@ -265,27 +278,36 @@ classdef QPController < MIMODrakeSystem
     rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
     
     active_supports = [];
+    active_surfaces = [];
     active_contact_pts = {};
+    num_active_contacts = [];
     if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
       active_supports = [active_supports; obj.lfoot_idx];
-      active_contact_pts{length(active_supports)} = supp.contact_pts{find(obj.lfoot_idx==desired_supports)};
+      active_surfaces = [active_surfaces; supp.contact_surfaces(lfoot_desired_idx)];
+      active_contact_pts{length(active_supports)} = supp.contact_pts{lfoot_desired_idx};
+      num_active_contacts = [num_active_contacts; length(supp.contact_pts{lfoot_desired_idx})];
     end
     if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
       active_supports = [active_supports; obj.rfoot_idx];
-      active_contact_pts{length(active_supports)} = supp.contact_pts{find(obj.rfoot_idx==desired_supports)};
+      active_surfaces = [active_surfaces; supp.contact_surfaces(rfoot_desired_idx)];
+      active_contact_pts{length(active_supports)} = supp.contact_pts{rfoot_desired_idx};
+      num_active_contacts = [num_active_contacts; length(supp.contact_pts{rfoot_desired_idx})];
     end
     
     %----------------------------------------------------------------------
     % END CODE THAT TREATS FEET DIFFERENTLY -------------------------------
 
+    c_pre = 0;
     for i=1:length(desired_supports)
       if desired_supports(i)~=obj.lfoot_idx && desired_supports(i)~=obj.rfoot_idx
-        c_pre = sum(num_desired_contacts(1:i-1));
         if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
           active_supports = [active_supports; desired_supports(i)];
+          active_surfaces = [active_surfaces; supp.contact_surfaces(i)];
           active_contact_pts{length(active_supports)} = supp.contact_pts{i};
+          num_active_contacts = [num_active_contacts; length(supp.contact_pts{i})];
         end
       end
+      c_pre = c_pre + num_desired_contacts(i);
     end
     
     
@@ -394,10 +416,34 @@ classdef QPController < MIMODrakeSystem
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
       Jdot = Jdot(1:2,:);
-    
+      
       if ~isempty(active_supports)
-        [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
-        nc = length(phi);
+        nc = sum(num_active_contacts);
+        phi = zeros(nc,1);
+        Jz = zeros(nc,nq);
+        
+        c_pre = 0;
+        for j=1:length(active_supports)
+          if active_surfaces(j) == 0
+            [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
+          elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+            % use bullet collision between bodies
+            [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+          else
+            error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
+          end
+          c_pre = c_pre + num_desired_contacts(j);
+        
+          % kinda gross
+          if j==1
+            D_=D__;
+          else
+            for k=1:nd
+              D_{k} = [D_{k}; D__{k}];
+            end
+          end
+        
+        end
       else
         nc = 0;
       end
@@ -776,6 +822,6 @@ classdef QPController < MIMODrakeSystem
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
     num_body_contacts; % vector of num contacts for each body
-    use_collision_groups;
+    multi_robot;
   end
 end

@@ -1,11 +1,20 @@
 function drakeWalking(use_mex)
 
+
+use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
+
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 num_steps = 5;
 step_length = 0.5;
 step_time = 1.0;
+
+% set initial state to fixed point
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+xstar(1) = 0*randn();
+xstar(2) = 0*randn();
+
 
 options.floating = true;
 options.dt = 0.002;
@@ -16,13 +25,18 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
+if use_bullet
+  r_bullet = RigidBodyManipulator();
+  r_bullet = addRobotFromURDF(r_bullet,strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),[0;0;0],[0;0;0],options);
+  r_bullet = addRobotFromURDF(r_bullet,strcat(fullfile(getDrakePath,'systems','plants','test'),'/ground_plane.urdf'),[xstar(1);xstar(2);0],zeros(3,1),struct('floating',false));
+  r_bullet = TimeSteppingRigidBodyManipulator(r_bullet,options.dt,options);
+  r_bullet = removeCollisionGroupsExcept(r_bullet,{'heel','toe'});
+  r_bullet = compile(r_bullet);
+end
+
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
-% set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-%xstar(1) = 1000*randn();
-%xstar(2) = 1000*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -35,6 +49,13 @@ kinsol = doKinematics(r,q0);
 % create desired ZMP trajectory
 [zmptraj,lfoottraj,rfoottraj,support_times,supports] = ZMPandFootTrajectory(r,q0,num_steps,step_length,step_time);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
+
+
+if use_bullet
+  for i=1:length(supports)
+    supports{i}=supports{i}.setContactSurfaces(-ones(length(supports{i}.bodies),1));
+  end
+end
 
 % construct ZMP feedback controller
 com = getCOM(r,kinsol);
@@ -90,6 +111,10 @@ options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankle
 options.lcm_foot_contacts = false;
 options.full_body_opt = false;
 options.debug = false;
+
+if use_bullet
+  options.multi_robot = r_bullet;
+end
 qp = QPController(r,ctrl_data,options);
 clear options;
 
