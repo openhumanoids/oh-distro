@@ -2,6 +2,7 @@ function drakeWalking(use_mex)
 
 
 use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
+use_state_corrupter = true;
 
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -118,12 +119,19 @@ end
 qp = QPController(r,ctrl_data,options);
 clear options;
 
+sys = r;
+
+if use_state_corrupter
+  sc = StateCorrupter(r);   % <=== Dehann todo: pass in any params, args you'd like here
+  sys = cascade(sys,sc);
+end
+
 % feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(qp,r,[],[],ins,outs);
+sys = mimoFeedback(qp,sys,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD block 
