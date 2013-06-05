@@ -97,7 +97,7 @@ namespace renderer_sticky_feet
       map<string,double> jointpos_in;
       jointpos_in = _gl_planned_stickyfeet_list[index]->_current_jointpos;    
       _gl_in_motion_copy->set_state(_gl_planned_stickyfeet_list[index]->_T_world_body,jointpos_in);
-      _gl_in_motion_copy->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
+      _gl_in_motion_copy->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_HALF_D);
       in_motion_footstep_id=_gl_planned_stickyfeet_ids[index];
     };
     
