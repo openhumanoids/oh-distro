@@ -948,7 +948,6 @@ classdef ManipulationPlanner < handle
             
             if(~is_keyframe_constraint)
                 
-                
                 obj.restrict_feet=true;
                 
                 if(isempty(rh_ee_goal))
@@ -1475,7 +1474,7 @@ classdef ManipulationPlanner < handle
                     ks = ks.addKinematicConstraint(kc_head_intermediate);
                 end
                 
-            end
+            end %if(is_keyframe_constraint)
             
             % Solve IK at final pose and pass as input to sequence search
             
@@ -1494,8 +1493,8 @@ classdef ManipulationPlanner < handle
                 %============================
                 %       0,comgoal,...
                 q_final_quess= q0;
+            
                 if(isempty(q_desired))
-                    
                     q_start=q0;
                     r_foot_pose0_static_contact = struct('max',r_foot_pose0,...
                       'min',r_foot_pose0,...
@@ -1506,7 +1505,7 @@ classdef ManipulationPlanner < handle
                       'min',l_foot_pose0,...
                       'contact_state',{ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
                       'contact_dist',{struct('min',zeros(1,num_l_foot_pts),'max',zeros(1,num_l_foot_pts))},...
-                      'contact_affs',{ContactAffordance()});
+                      'contact_affs',{ContactAffordance()});    
                     if(obj.restrict_feet)
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
                             pelvis_body,[0;0;0],pelvis_pose0,...
@@ -1541,7 +1540,7 @@ classdef ManipulationPlanner < handle
                 qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
                 
                 
-            end
+            end % end if (~keyframe_constraint)
             
             % PERFORM IKSEQUENCE OPT
             ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
@@ -1600,7 +1599,7 @@ classdef ManipulationPlanner < handle
             s= linspace(0,1,round(s_total/res));
             s = unique([s(:);s_breaks(:)]);
             
-            do_second_stage_IK_verify =  true; % fine grained verification of COM constraints of fixed resolution.
+            do_second_stage_IK_verify =  false; % fine grained verification of COM constraints of fixed resolution.
             for i=2:length(s)
                 si = s(i);
                 %tic;
@@ -1652,6 +1651,18 @@ classdef ManipulationPlanner < handle
                     q_guess =qtraj_guess.eval(si);
                     %   0,comgoal,...
                     %   utorso_body,[0;0;0],utorso_pose0_relaxed,...
+                    
+                    r_foot_pose0_static_contact = struct('max',r_foot_pose0,...
+                      'min',r_foot_pose0,...
+                      'contact_state',{ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
+                      'contact_dist',{struct('min',zeros(1,num_r_foot_pts),'max',zeros(1,num_r_foot_pts))},...
+                      'contact_affs',{ContactAffordance()});
+                    l_foot_pose0_static_contact = struct('max',l_foot_pose0,...
+                      'min',l_foot_pose0,...
+                      'contact_state',{ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
+                      'contact_dist',{struct('min',zeros(1,num_l_foot_pts),'max',zeros(1,num_l_foot_pts))},...
+                      'contact_affs',{ContactAffordance()});                  
+                    
                     if(obj.restrict_feet)
                         [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
                             pelvis_body,[0;0;0],pelvis_pose0,...
@@ -1754,7 +1765,7 @@ classdef ManipulationPlanner < handle
             
         end
         
-  function cost = getCostVector2(obj)
+        function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;
             cost.base_y = 1;
