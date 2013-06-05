@@ -503,8 +503,6 @@ script "dev.quals_slope" {
     wait ms 25000;
     start cmd "gz_quals_3"; 
     wait ms 5000;
-	start cmd "simple_right_grasp";
-	start cmd "simple_left_grasp";
 }
 
 script "dev.vrc_walking" { 
@@ -516,8 +514,6 @@ script "dev.vrc_walking" {
     wait ms 25000;
     start cmd "gz_vrc_walking"; 
     wait ms 5000;
-	start cmd "simple_right_grasp";
-	start cmd "simple_left_grasp";
 }
 
 
@@ -546,9 +542,6 @@ script "dev.flat_walking" {
     stop cmd "BotWalkingPlanner";
     wait ms 25000;
     start cmd "gz_mit_walking";
-    wait ms 5000;
-	start cmd "simple_right_grasp";
-	start cmd "simple_left_grasp";
 }
 
 script "dev.ingress" { 
@@ -558,9 +551,6 @@ script "dev.ingress" {
     start group "b.2.walking";
     wait ms 25000;
     start cmd "gz_vrc_driving";
-    wait ms 5000;
-	start cmd "simple_right_grasp";
-	start cmd "simple_left_grasp";
 }
 
 script "dev.vrc_manip" { 
