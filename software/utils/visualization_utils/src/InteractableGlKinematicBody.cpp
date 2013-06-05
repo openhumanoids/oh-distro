@@ -952,7 +952,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           double theta;
           Eigen::Vector3f axis;      
           Eigen::Vector3f uz; uz << 0 , 0 , 1;
-          double arrow_length =0.2;
+          double arrow_length =0.4;
           
           Eigen::Vector3f u_body_to_joint;
           //u_body_to_joint << _T_world_body.p[0]-jointInfo.frame.p[0], _T_world_body.p[1]-jointInfo.frame.p[1],_T_world_body.p[2]-jointInfo.frame.p[2]; 
@@ -1140,7 +1140,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
       if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
       {
         //--get rotation in angle/axis form
-          length =0.2;
+          length =0.4;
           double theta;
           Eigen::Vector3f axis;      
           Eigen::Vector3f ux,uz; ux << 1 , 0 , 0;uz << 0 , 0 , 1;
