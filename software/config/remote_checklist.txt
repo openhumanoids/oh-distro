@@ -1,3 +1,40 @@
+a. Login, create deputy and shaper processes and pipe to a file or null
+TODO: have Toby oversee this.
+
+b. verify that the printf from all/some processes is good.
+planners and controller for certain.
+TODO: write in this file the final messages we should expect e.g.
+"Waiting for Terrain map"
+
+c. 
+
+
+.
+.
+.
+
+d. After having taken control, verify that MATLAB processes are still ok (but before being clocked for this.
+
+.
+.
+.
+.
+
+
+e. during the mission the mission assistant will at 1Hz check that vitals for 
+MATLAB processes are good... well there is only the on-bot planners.
+
+
+
+============= TASK OR RUN DEPENDENT =========
+1. for low bandwidth missions reduce the EST_ROBOT_STATE frequency? (not essential)
+
+
+
+
+
+==================== NOTES =============
+
 1. install ccache for optimized rebuilds:
 make clean
 make
