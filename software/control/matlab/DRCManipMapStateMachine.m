@@ -89,26 +89,30 @@ classdef DRCManipMapStateMachine< handle
         % Basically treat as 4 separate maps for each ee and then merged the chains to form a final plan.
         % Q: will this work if the robot is not pinned?
         obj.l_hand_chain.active=false;obj.r_hand_chain.active=false;
-        obj.l_foot_chain.active=false;obj.r_foot_chain.active=false;          
-        for k =1:length(obj.affinds), % no of robot states in map
-          for t =1:obj.affinds(k).num_ees, % no of ee's active per map pose, (fixed for entire map for now, eventually with a graph this wont be the case.)
-            if (strcmp(char(obj.affinds(k).ee_name(t)),'l_hand')),
-               obj.l_hand_chain.active=true;
-               obj.l_hand_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
-               obj.l_hand_chain.dof_values(k)=obj.affinds(k).dof_value(t);
-            elseif (strcmp(char(obj.affinds(k).ee_name(t)),'r_hand')),
-               obj.r_hand_chain.active=true;  
-               obj.r_hand_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
-               obj.r_hand_chain.dof_values(k)=obj.affinds(k).dof_value(t);
-            elseif (strcmp(char(obj.affinds(k).ee_name(t)),'l_foot')),
-                obj.l_foot_chain.active=true;  
-                obj.l_foot_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
-                obj.l_foot_chain.dof_values(k)=obj.affinds(k).dof_value(t);
-            elseif (strcmp(char(obj.affinds(k).ee_name(t)),'r_foot')),
-                obj.r_foot_chain.active=true;  
-                obj.r_foot_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
-                obj.r_foot_chain.dof_values(k)=obj.affinds(k).dof_value(t);
-            end
+        obj.l_foot_chain.active=false;obj.r_foot_chain.active=false; 
+        temp_dof_inds = [obj.affinds(:).dof_value];
+        for t =1:obj.affinds(1).num_ees, % no of ee's active per map pose, (fixed for entire map for now, eventually with a graph this wont be the case.)
+            if (abs(max(temp_dof_inds(t,:)) - min(temp_dof_inds(t,:))) < 0.01)
+                continue;
+            end;
+            for k =1:length(obj.affinds), % no of robot states in map
+              if (strcmp(char(obj.affinds(k).ee_name(t)),'l_hand')),
+                  obj.l_hand_chain.active=true;
+                  obj.l_hand_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
+                  obj.l_hand_chain.dof_values(k)=obj.affinds(k).dof_value(t);
+              elseif (strcmp(char(obj.affinds(k).ee_name(t)),'r_hand')),
+                  obj.r_hand_chain.active=true;
+                  obj.r_hand_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
+                  obj.r_hand_chain.dof_values(k)=obj.affinds(k).dof_value(t);
+              elseif (strcmp(char(obj.affinds(k).ee_name(t)),'l_foot')),
+                  obj.l_foot_chain.active=true;
+                  obj.l_foot_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
+                  obj.l_foot_chain.dof_values(k)=obj.affinds(k).dof_value(t);
+              elseif (strcmp(char(obj.affinds(k).ee_name(t)),'r_foot')),
+                  obj.r_foot_chain.active=true;
+                  obj.r_foot_chain.dof_name(k) =obj.affinds(k).dof_name(t); % dof association
+                  obj.r_foot_chain.dof_values(k)=obj.affinds(k).dof_value(t);
+              end
           end
         end 
         
@@ -220,8 +224,21 @@ classdef DRCManipMapStateMachine< handle
         for t=1:length(aff_goal.dof_name),
            % get active chain from aff_goal.dof_name(t)
            ind=find(strcmp(char(aff_goal.dof_name(t)),dof_names));
+           
+           if (~isempty(ind))
+               fprintf (1, '\nAsked to drive %s to %f\n', char(aff_goal.dof_name(t)), aff_goal.dof_value(t));
+           end;
+           
            if(strcmp(char(ee_names(ind)),'l_hand'))
                %disp('l_hand');
+               
+               % In case we get a manip cmd for which our map has a dof
+               % name but an empty manip map (e.g., if we have a sticky
+               % hand on the steering but no manip map range
+               if (isempty(obj.l_hand_chain.dof_values))
+                   continue;
+               end;
+               
                start_mapindex=obj.chain_dofIndices(1);
                %start_mapindex=interp1(obj.l_hand_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
                desired_dof_value= min(max(aff_goal.dof_value(t),min(obj.l_hand_chain.dof_values)),max(obj.l_hand_chain.dof_values));
@@ -236,6 +253,13 @@ classdef DRCManipMapStateMachine< handle
                qtraj_larm = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_hand'))
+               % In case we get a manip cmd for which our map has a dof
+               % name but an empty manip map (e.g., if we have a sticky
+               % hand on the steering but no manip map range
+               if (isempty(obj.r_hand_chain.dof_values))
+                   continue;
+               end;
+               
                start_mapindex=obj.chain_dofIndices(1);
                %start_mapindex=interp1(obj.r_hand_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
                desired_dof_value= min(max(aff_goal.dof_value(t),min(obj.r_hand_chain.dof_values)),max(obj.r_hand_chain.dof_values));
@@ -246,6 +270,13 @@ classdef DRCManipMapStateMachine< handle
                qtraj_rarm = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'l_foot'))
+               % In case we get a manip cmd for which our map has a dof
+               % name but an empty manip map (e.g., if we have a sticky
+               % hand on the steering but no manip map range
+               if (isempty(obj.l_foot_chain.dof_values))
+                   continue;
+               end;
+               
                start_mapindex=obj.chain_dofIndices(2);
                %start_mapindex=interp1(obj.l_foot_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
                desired_dof_value= min(max(aff_goal.dof_value(t),min(obj.l_foot_chain.dof_values)),max(obj.l_foot_chain.dof_values));
@@ -256,6 +287,13 @@ classdef DRCManipMapStateMachine< handle
                qtraj_lleg = obj.qmap.eval(plan_indices);
                valid_plans = 1;
            elseif(strcmp(char(ee_names(ind)),'r_foot'))
+               % In case we get a manip cmd for which our map has a dof
+               % name but an empty manip map (e.g., if we have a sticky
+               % hand on the steering but no manip map range
+               if (isempty(obj.r_foot_chain.dof_values))
+                   continue;
+               end;
+               
                %disp('r_foot');
                start_mapindex=obj.chain_dofIndices(3);
                %start_mapindex=interp1(obj.r_foot_chain.dof_values,mapindices,aff_state.dof_value(t),'spline');
