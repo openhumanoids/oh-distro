@@ -6,5 +6,17 @@ set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6)
 
 # create an executable, and make it public
 add_executable(drc-wheel-estimator car-wheel-estimation-app.cpp)
-pods_use_pkg_config_packages(drc-wheel-estimator bot2-core bot2-frames opencv perception-opencv-utils image_io_utils bot2-lcmgl-client occ-map bot2-frames_cpp stereo-bm histogram-tracker ${PCL_LIBRARIES}) 
+pods_use_pkg_config_packages(drc-wheel-estimator bot2-core bot2-frames opencv perception-opencv-utils image_io_utils bot2-lcmgl-client occ-map bot2-frames_cpp stereo-bm histogram-tracker lcmtypes_drc_lcmtypes ${PCL_LIBRARIES}) 
+target_link_libraries(drc-wheel-estimator
+  ${LCMTYPES_LIBS} 
+)
 pods_install_executables(drc-wheel-estimator)
+
+
+# create an executable, and make it public
+add_executable(drc-wheel-segmenter car-wheel-segmenter-app.cpp)
+pods_use_pkg_config_packages(drc-wheel-segmenter bot2-core bot2-frames opencv perception-opencv-utils image_io_utils bot2-lcmgl-client occ-map bot2-frames_cpp stereo-bm histogram-tracker lcmtypes_drc_lcmtypes ${PCL_LIBRARIES}) 
+target_link_libraries(drc-wheel-segmenter
+  ${LCMTYPES_LIBS} 
+)
+pods_install_executables(drc-wheel-segmenter)

@@ -14,6 +14,7 @@ One time estimation of the car mask
 
 #include <lcmtypes/perception_image_roi_t.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
+#include <lcmtypes/drc_driving_wheel_state_t.h>
 
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <ConciseArgs>
@@ -24,17 +25,13 @@ One time estimation of the car mask
 #include <Eigen/StdVector>
 
 #include <bot_lcmgl_client/lcmgl.h>
-#include <bot_frames_cpp/bot_frames_cpp.hpp>
-
-#include <pcl/registration/icp.h>
-#include <pcl/features/normal_3d.h> //for computePointNormal
 
 #include <stereo-bm/stereo-bm.hpp>
 #include "opencv2/nonfree/nonfree.hpp"
 #include <trackers/histogram-tracker.hpp>
 
-const int WINDOW_WIDTH = 800; 
-const int WINDOW_HEIGHT = 800; 
+int MAX_IMAGE_WIDTH = 0;
+int MAX_IMAGE_HEIGHT = 0;
 
 #define WINDOW_NAME "Wheel estimator"
 #define AFFORDANCE_OFFSET 64
@@ -47,7 +44,7 @@ struct CarWheelEstimatorOptions {
     std::string vSTEREO_CHANNEL;
 
     CarWheelEstimatorOptions () : 
-        vCHANNEL(std::string("CAMERALEFT")), vSTEREO_CHANNEL(std::string("CAMERA")), vSCALE(1.f), vDEBUG(false) {}
+        vCHANNEL(std::string("CAMERALEFT")), vSTEREO_CHANNEL(std::string("CAMERA")), vSCALE(0.25f), vDEBUG(false) {}
 };
 CarWheelEstimatorOptions options;
 
@@ -58,25 +55,21 @@ struct state_t {
     bot_lcmgl_t* lcmgl;
 
     pthread_t lcm_thread;
-    pthread_mutex_t img_mutex;
 
     BotParam* param;
-    BotFrames* frames;
-    bot::frames frames_cpp;
+    // BotFrames* frames;
 
     // Stereo img
     cv::Mat img, left, right;
+
+    cv::Mat p_img, p_desc;
+    std::vector<cv::KeyPoint> p_kpts;
 
     // utimes for image
     int64_t img_utime, stereo_utime;
 
     // Stereo BM library
     StereoB* stereoBM; 
-
-    // Color info for hood
-    HistogramInfo hue_info, val_info, sat_info; 
-    cv::Mat hood_bp; 
-    int hood_height; 
 
     int counter;
 
@@ -86,11 +79,16 @@ struct state_t {
     Rect selection;
     Point origin, destination;
     bool selectObject;
+    drc_driving_wheel_state_t* wheel_segment;
 
     double mean_wheel_depth; 
 
     std::vector<cv::Scalar> id_colors; 
 
+    // Color info for hood
+    HistogramInfo hue_info, val_info, sat_info; 
+    cv::Mat hood_bp; 
+    int hood_height; 
 
     void construct_dashbd_histogram() { 
         hood_height = -1;
@@ -154,16 +152,16 @@ struct state_t {
         lcmgl = NULL;
 
         param = bot_param_new_from_server(lcm, 1);
-        frames = bot_frames_get_global (lcm, param);
+        // frames = bot_frames_get_global (lcm, param);
 
         // Init stereoBM
         stereoBM = new StereoB(lcm_);
         stereoBM->setScale(_options.vSCALE);
             
-        img_mutex = PTHREAD_MUTEX_INITIALIZER;
 
         // Init histogram info
         // construct_dashbd_histogram();
+        wheel_segment = NULL;
 
         // Counter for debug prints
         counter = 0; 
@@ -175,66 +173,6 @@ struct state_t {
     }
 };
 state_t* state = NULL; 
-
-void* lcm_thread_handler(void *l) {
-    state_t* state = (state_t*)l;
-    // while(1)
-
-}
-
-struct MouseEvent {
-    MouseEvent() { event = -1; buttonState = 0; }
-    Point pt;
-    int event;
-    int buttonState;
-};
-MouseEvent mouse;
-
-static void onMouse(int event, int x, int y, int flags, void* userdata) {
-    MouseEvent* data = (MouseEvent*)userdata;
-
-    float sx = 1.f / WINDOW_WIDTH ; 
-    float sy = 1.f / WINDOW_HEIGHT;
-
-    if (state->selectObject) {
-        state->destination = Point(x,y);
-        // state->selection.x = MIN(x, state->origin.x);
-        // state->selection.y = MIN(y, state->origin.y);
-        // state->selection.width = std::abs(x - state->origin.x);
-        // state->selection.height = std::abs(y - state->origin.y);
-        state->selection &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    }
-
-    switch (event) {
-    case CV_EVENT_LBUTTONDOWN:
-        state->origin = Point(x, y);
-        state->destination = Point(x, y);
-        state->selection = Rect(x-10, y-10, 20, 20);
-        state->selectObject = true;
-        break;
-    case CV_EVENT_LBUTTONUP:
-        state->selectObject = false;
-        std::cerr << "SEND selection: " << state->img_utime << " - " << 
-            state->selection.x << " " << state->selection.y << " " << 
-            state->selection.width << " " << state->selection.height << std::endl;
-
-        // perception_image_roi_t img_selection;
-        // img_selection.utime = state->img_utime;
-        // img_selection.object_id = OBJECT_ID; 
-        // img_selection.feature_id = 1; // FEATURE_ID; 
-        // img_selection.roi.x = state->selection.x * sx;
-        // img_selection.roi.y = state->selection.y * sy;
-        // img_selection.roi.width = state->selection.width * sx;
-        // img_selection.roi.height = state->selection.height * sy;
-        // perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_selection);
-        // // destroyWindow(WINDOW_NAME);
-        // // state->img = cv::Mat();
-
-        break;
-    }
-    return;
-}
-
 
 void
 decode_image(const bot_core_image_t * msg, cv::Mat& img)
@@ -288,7 +226,7 @@ decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
   // extract image data
   switch (msg->pixelformat) {
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
-        fprintf(stderr, "rgb : %d\n", (int) msg->pixelformat);
+        // fprintf(stderr, "rgb : %d\n", (int) msg->pixelformat);
 
         if (left.empty() || right.empty()) { 
             left.create(msg->height/2, msg->width, CV_8UC3);
@@ -300,7 +238,7 @@ decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
         cv::cvtColor(right, right, CV_RGB2BGR);
       break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
-      fprintf(stderr, "mjpeg : %d\n", (int) msg->pixelformat);
+      // fprintf(stderr, "mjpeg : %d\n", (int) msg->pixelformat);
       // for some reason msg->row_stride is 0, so we use msg->width instead.
       jpeg_decompress_8u_gray(msg->data,
                               msg->size,
@@ -316,7 +254,7 @@ decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
       memcpy(right.data,  img.data + msg->width * msg->height / 2 , msg->width * msg->height / 2);
       break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
-      fprintf(stderr, "gray : %d\n", (int) msg->pixelformat);
+      // fprintf(stderr, "gray : %d\n", (int) msg->pixelformat);
       if (left.empty() || right.empty()) { 
           left.create(msg->height/2, msg->width, CV_8UC1);
           right.create(msg->height/2, msg->width, CV_8UC1);
@@ -376,9 +314,6 @@ static void crossCheckMatching( Ptr<DescriptorMatcher>& descriptorMatcher,
     }
 }
 
-
-cv::Mat p_img, p_desc;
-std::vector<cv::KeyPoint> p_kpts;
 
 //Copy (x,y) location of descriptor matches found from KeyPoint data structures into Point2f vectors
 static void matches2points(const vector<DMatch>& matches, const vector<KeyPoint>& kpts_train,
@@ -441,16 +376,14 @@ void track_wheel_features(const cv::Mat& _img, cv::Mat mask = cv::Mat()) {
     cv::Mat output;
     if (img.channels() == 3) output = img.clone();
     else cv::cvtColor(img, output, CV_GRAY2BGR);
-    // for (int j=0; j<kpts.size(); j++)
-    //     cv::circle(output, kpts[j].pt, 3, cv::Scalar(0,255,0), 1, CV_AA);
 
     // Compute and draw matches
-    if (kpts.size() && p_kpts.size()) { 
+    if (kpts.size() && state->p_kpts.size()) { 
         std::vector<cv::DMatch> matches;
-        matcher->match(desc, p_desc, matches);
+        matcher->match(desc, state->p_desc, matches);
 
         std::vector<cv::Point2f> p_pts, pts;
-        matches2points(matches, p_kpts, kpts, p_pts, pts); 
+        matches2points(matches, state->p_kpts, kpts, p_pts, pts); 
 
         if ((p_pts.size() == pts.size()) && p_pts.size() >= 4 && pts.size() >= 4) { 
             // cout << "< Computing homography (RANSAC)..." << p_pts.size() << " " << pts.size() << endl;
@@ -469,27 +402,65 @@ void track_wheel_features(const cv::Mat& _img, cv::Mat mask = cv::Mat()) {
             py = (int)((H12(1,0)*x + H12(1,1)*y + H12(1,2))*Z);
             cv::Point tf_destination(px,py);            
 
-            cv::Point2f wvec(tf_origin.y-tf_destination.y, tf_origin.x-tf_destination.x);
-            wvec *= 1.f / cv::norm(wvec);
-            double angle = atan2(wvec.y,wvec.x) * 180 / CV_PI;
-            std::cerr << "angle: " << angle << std::endl;
+            cv::Point2f tfvec(tf_destination.y-tf_origin.y, tf_destination.x-tf_origin.x);
+            tfvec *= 1.f / cv::norm(tfvec);
+            double angle1 = atan2(tfvec.y,tfvec.x);
 
-            cv::circle(output, tf_origin, 20, cv::Scalar(0,255,0), 1, CV_AA);
-            cv::line(output, tf_origin, tf_destination, cv::Scalar(0,255,255), 1, CV_AA);
+            cv::Point2f ovec(state->destination.y-state->origin.y, state->destination.x-state->origin.x);
+            ovec *= 1.f / cv::norm(ovec);
+            double angle2 = atan2(ovec.y,ovec.x);
+            // std::cerr << "angle: " << angle2 * 180 / CV_PI  << " (" << angle2 << ") " << 
+            //     state->wheel_segment->theta * 180 / CV_PI << " (" << state->wheel_segment->theta << ") " << std::endl;
+            
+            double dangle = angle2-angle1; // ccw +ve
+            // if (dangle > CV_PI) dangle -= CV_PI; 
+            // if (dangle < -CV_PI) dangle += CV_PI;
 
-            cv::Mat img_match; 
-            cv::drawMatches(img, kpts, p_img, p_kpts, matches, img_match, cv::Scalar::all(-1), Scalar::all(-1), status);
-            cv::imshow("matches", img_match);
+            float sx = 1.f / state->img.cols ; 
+            float sy = 1.f / state->img.rows ;
+            drc_driving_wheel_state_t wheel_state; 
+            wheel_state.utime = state->img_utime;
+            wheel_state.u = tf_origin.x * sx;
+            wheel_state.v = tf_origin.y * sy;
+            wheel_state.theta = dangle;
+            drc_driving_wheel_state_t_publish(state->lcm, "WHEEL_STATE_ESTIMATE", &wheel_state);
+
+            if (options.vDEBUG) { 
+                std::cerr << "angle: " << angle1 * 180 / CV_PI  << " (" << angle1 << ") " << 
+                    angle2 * 180 / CV_PI << " (" << angle2 << ") " << 
+                    dangle * 180 / CV_PI << " (" << dangle << ") " << std::endl;
+
+                float sz = 150;
+                cv::Point origin_ = cv::Point(tf_origin.x,tf_origin.y);
+                cv::Point destination_ = cv::Point(tf_origin.x + sin(state->wheel_segment->theta-dangle)*sz,tf_origin.y + cos(state->wheel_segment->theta-dangle)*sz);
+
+                // cv::Mat output = state->img.clone();
+                cv::circle(output, origin_, 20, cv::Scalar(0,255,0), 2, CV_AA);
+                cv::line(output, origin_, destination_, cv::Scalar(0,255,255), 2, CV_AA);
+
+                // cv::circle(output, tf_origin, 20, cv::Scalar(0,255,0), 2, CV_AA);
+                // cv::line(output, tf_origin, tf_destination, cv::Scalar(0,255,255), 2, CV_AA);
+            }
+
+
+            if (options.vDEBUG) { 
+                cv::Mat img_match; 
+                cv::drawMatches(img, kpts, state->p_img, state->p_kpts, matches, img_match, cv::Scalar::all(-1), Scalar::all(-1), status);
+                cv::imshow("matches", img_match);
+            }
+
+            
         }
     }
 
     // One time copy keypts
-    if (p_img.empty()) { 
-        p_img = img.clone();
-        p_kpts = kpts;
-        p_desc = desc.clone();
+    if (state->p_img.empty()) { 
+        state->p_img = img.clone();
+        state->p_kpts = kpts;
+        state->p_desc = desc.clone();
     }
-    cv::imshow("kpts", output);
+    if (options.vDEBUG)
+        cv::imshow("kpts", output);
 
     if (state->counter%100==0) printf("time: wheel_tracking %4.3f\n", (bot_timestamp_now() - st) * 1e-3 ); 
     state->counter++;
@@ -540,6 +511,407 @@ void determine_dashboard(const cv::Mat& _img) {
     }
     return;
 }
+
+
+static void on_segment (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const drc_driving_wheel_state_t *msg, 
+                            void *user_data ) {
+
+    std::cerr << "RECV selection: " << msg->utime << " - " << 
+        msg->u << " " << msg->v << " " << msg->theta << std::endl;
+
+    if (!MAX_IMAGE_WIDTH || !MAX_IMAGE_HEIGHT)
+        return;
+
+    if (state->wheel_segment)
+        drc_driving_wheel_state_t_destroy(state->wheel_segment);
+    state->wheel_segment = drc_driving_wheel_state_t_copy(msg);
+
+    float sz = 150; 
+    float cx = msg->u * MAX_IMAGE_WIDTH;
+    float cy = msg->v * MAX_IMAGE_HEIGHT;
+    float dx = cx + sin(msg->theta)*sz;
+    float dy = cy + cos(msg->theta)*sz;
+    
+    state->origin = cv::Point(cx,cy);
+    state->destination = cv::Point(dx,dy);
+
+    // Reset
+    state->p_img = cv::Mat(); 
+    state->p_kpts.clear();
+    state->p_desc = cv::Mat();
+
+    // cv::Mat output = state->img.clone();
+    // cv::circle(output, state->origin, 20, cv::Scalar(0,255,0), 2, CV_AA);
+    // cv::line(output, state->origin, state->destination, cv::Scalar(0,255,255), 2, CV_AA);
+    // cv::imshow("test", output);
+
+    state->selection = Rect(cx-10, cy-10, 20, 20);
+    state->selection &= Rect(0, 0, MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT);
+
+    return;
+}
+
+static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const bot_core_image_t *msg, 
+                            void *user_data ) {
+
+    if (!msg->width || !msg->height) return;
+    if (!MAX_IMAGE_WIDTH || !MAX_IMAGE_HEIGHT) { 
+        MAX_IMAGE_WIDTH = msg->width;
+        MAX_IMAGE_HEIGHT = msg->height;
+    }
+    
+    state_t* state = (state_t*) user_data; 
+    decode_image(msg, state->img);    
+    state->img_utime = msg->utime; 
+
+    return;
+}
+
+static bool contour_size_compare(const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) { 
+    return lhs.second < rhs.second;
+}
+
+
+static void on_stereo_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const bot_core_image_t *msg, 
+                            void *user_data ) {
+
+    if (!msg->width || !msg->height) return;
+    
+    state_t* state = (state_t*) user_data; 
+    decode_stereo_image(msg, state->left, state->right);
+    state->stereo_utime = msg->utime; 
+
+    cv::Mat left = state->left.clone(), right = state->right.clone(); 
+    state->stereoBM->doStereoB(left, right);
+
+    cv::Mat gray, display;
+    if (state->left.channels() == 3) { 
+        display = state->left.clone();
+        cv::cvtColor(display, gray, CV_BGR2GRAY);
+    } else { 
+        gray = state->left.clone();
+        cv::cvtColor(gray, display, CV_GRAY2BGR);
+    }
+    cv::Mat disp = cv::Mat(state->left.rows, state->left.cols, CV_16SC1, state->stereoBM->getDisparity()); 
+
+    if (!state->selection.area())
+        return;
+
+    // std::cerr << "selection: " << state->selection.tl() << " "<< state->selection.br() << std::endl;
+    if (!state->mean_wheel_depth) { 
+
+        // Estimate depth and threshold out the wheel
+        cv::Mat_<float> droi = cv::Mat(disp, state->selection).clone();
+        cv::Mat_<float> data = cv::Mat_<float>::zeros(droi.cols * droi.rows, 2); 
+        for (int j=0; j<droi.rows * droi.cols; j++) 
+            data.at<float>(j,0) = droi.at<float>(j);
+
+        cv::Mat labels,centers;
+        cv::kmeans(data, 2, 
+                   labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+                   10, KMEANS_PP_CENTERS, centers);
+
+        // std::cerr << "data: " << droi << std::endl;
+        std::cerr << "centers: " << centers << std::endl;
+
+        // Depth Mode-seeking
+        std::vector<int> votes(centers.rows, 0); 
+        for (int j=0; j<labels.rows; j++)
+            votes[labels.at<int>(j)]++;
+        cv::Point maxIdx(-1,-1); 
+        cv::minMaxLoc(votes, 0, 0, 0, &maxIdx);
+
+        state->mean_wheel_depth = centers.at<float>(maxIdx.x, 0);
+    }            
+
+    float d_offset = 100;
+    cv::Mat_<uchar> mask_disp = (disp > state->mean_wheel_depth - 2 * d_offset) & 
+        (disp < state->mean_wheel_depth + 2 * d_offset);
+
+    // Find contours for the mask
+    vector<vector<cv::Point> > contours;
+    vector<cv::Vec4i> hierarchy;
+    cv::Size size(mask_disp.cols, mask_disp.rows);
+    cv::findContours(mask_disp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE); 
+
+    // Sort contours with max area
+    std::vector<std::pair<int, int> > contour_sizes; 
+    for (int idx=0; idx>=0; idx = hierarchy[idx][0])
+        contour_sizes.push_back(std::make_pair(idx, cv::contourArea(contours[idx])));
+    std::vector<std::pair<int, int> >::iterator it = 
+        std::max_element(contour_sizes.begin(), contour_sizes.end(), contour_size_compare);
+
+    int largest_contour_id = it->first;
+    std::vector<cv::Point> largest_contour = contours[largest_contour_id];
+
+    // Draw Contours from depth
+    cv::Mat zmat = cv::Mat::zeros(size, CV_8U);
+    cv::Mat3b zmat2 = cv::Mat3b::zeros(size);
+    drawContours(zmat, contours, largest_contour_id, cv::Scalar(255), CV_FILLED, 8, hierarchy); 
+    cv::dilate(zmat, zmat, cv::Mat(), cv::Point(-1,-1), 3);
+
+    // Track Features on Wheel
+    track_wheel_features(state->left, zmat); 
+    if (options.vDEBUG)
+        cv::imshow("zmat", zmat);
+
+    return;
+}
+
+
+
+void  INThandler(int sig) {
+    printf("Exiting\n");
+    if (state) delete state;
+    exit(0);
+}
+
+
+int main(int argc, char** argv)
+{
+    std::cout << "============= QUICK MODES ===================\n";
+    std::cout << "drc-wheel-estimation -s 0.5 -c CAMERALEFT\n";
+    std::cout << "=============================================\n";
+
+    ConciseArgs opt(argc, (char**)argv);
+    opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
+    opt.add(options.vCHANNEL, "t", "stereo-channel","Camera Channel [CAMERA]");
+    opt.add(options.vSCALE, "s", "scale","Scale Factor");
+    opt.add(options.vDEBUG, "d", "debug","Debug mode");
+    opt.parse();
+
+    std::cerr << "===========  DRC Wheel Estimation ============" << std::endl;
+    std::cerr << "=> CAMERA CHANNEL : " << options.vCHANNEL << std::endl;
+    std::cerr << "=> STEREO CAMERA CHANNEL : " << options.vSTEREO_CHANNEL << std::endl;
+    std::cerr << "=> SCALE : " << options.vSCALE << std::endl;
+    std::cerr << "=> DEBUG : " << options.vDEBUG << std::endl;
+    std::cerr << "===============================================" << std::endl;
+
+    // Install signal handler to free data.
+    signal(SIGINT, INThandler);
+
+    // Param server, botframes
+    state = new state_t(options);
+
+    // Subscriptions
+    bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
+    bot_core_image_t_subscribe(state->lcm, options.vSTEREO_CHANNEL.c_str(), on_stereo_frame, (void*)state);
+    drc_driving_wheel_state_t_subscribe(state->lcm, "WHEEL_STATE_SEGMENT", on_segment, (void*)state);
+
+    // Main lcm handle
+    while(1) { 
+        lcm_handle(state->lcm);
+        unsigned char c = cv::waitKey(1) & 0xff;
+        if (c == 'q') { 
+            break;      
+        } 
+        // // pthread_mutex_lock(&state->img_mutex);
+        // // UI handling 
+        // if (options.vDEBUG) { 
+        //     if (!state->img.empty()) { 
+        //         cv::Mat display;
+        //         cv::resize(state->img.clone(), display, cv::Size(MAX_IMAGE_WIDTH,MAX_IMAGE_HEIGHT)); 
+        //         if (state->selection.width > 0 && state->selection.height > 0) {
+                
+        //             cv::Mat roi(display, state->selection);
+        //             rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
+        //             cv::circle(display, state->origin, 20, cv::Scalar(0,255,0), 1, CV_AA);
+        //             cv::line(display, state->origin, state->destination, cv::Scalar(0,255,255), 1, CV_AA);
+        //             // bitwise_not(roi, roi);
+        //         }
+        //         imshow(WINDOW_NAME, display);
+        //     }
+        // }
+        // // pthread_mutex_unlock(&state->img_mutex);
+    }
+
+    if (state) delete state;
+    return 0;
+}
+
+
+
+    // // Find wheel center and fit ellipse
+    // cv::RotatedRect wrect = fitEllipse(largest_contour); 
+    // cv::ellipse( zmat2, wrect, cv::Scalar(0,255,0), 1, CV_AA );    
+
+    // // Perform distance transform on the center of the wheel
+    // int voronoiType = 0;
+    // int maskSize = voronoiType >= 0 ? CV_DIST_MASK_5 : CV_DIST_MASK_5;
+    // int distType = voronoiType >= 0 ? CV_DIST_L2 : CV_DIST_L1;
+
+    // cv::Mat dist, distlabels, dist8u; 
+    // distanceTransform( zmat, dist, distlabels, distType, maskSize, voronoiType );
+    // cv::Mat_<uchar> borderlabels = cv::Mat_<uchar>::zeros(distlabels.size());
+
+    // // Find the border in labels
+    // for (int i=1; i<distlabels.rows-1; i++) { 
+    //     const int* ll = (const int*)distlabels.ptr(i);
+    //     const int* llu = (const int*)distlabels.ptr(i-1);
+    //     const int* llb = (const int*)distlabels.ptr(i+1);
+    //     for (int j=1; j<distlabels.cols-1; j++) { 
+    //         int llj = ll[j];
+    //         if ((llj != ll[j-1]) || (llj != ll[j+1]) ||
+    //             (llj != llu[j-1]) || (llj != llu[j]) || (llj != llu[j+1]) ||
+    //             (llj != llb[j-1]) || (llj != llb[j]) || (llj != llb[j+1]))
+    //             borderlabels(i,j) = 255;
+    //     }
+    // }
+
+    // // Perform probabilistic hough transform
+    // std::vector<cv::Vec4i> wheel_lines;
+    // cv::HoughLinesP(borderlabels, wheel_lines, 1, CV_PI/180, 50, 30, 10); 
+    // // std::cerr << "wheel_lines: " << wheel_lines.size() << std::endl;
+    // // std::cerr << "wrect: " << wrect.center << std::endl;
+        
+    // std::vector<cv::Point2f> spoke_angles; 
+    // for( size_t i = 0; i < wheel_lines.size(); i++ ) {
+    //     cv::Vec4i l = wheel_lines[i];
+
+    //     cv::Point2f p1 = cv::Point(l[0], l[1]); 
+    //     cv::Point2f p2 = cv::Point(l[2], l[3]); 
+
+    //     cv::Point2f v = p1 - p2; 
+    //     float norm = cv::norm(v); 
+    //     if (norm > 0) v *= 1.f / norm; 
+
+    //     cv::Point2f pc = p1 + (v.dot(wrect.center-p1))*v;
+    //     float d = cv::norm(pc-wrect.center);
+    //     if (d > 50) continue;
+
+    //     if (v.y < 0) { v.x = -v.x; v.y = fabs(v.y); }
+    //     spoke_angles.push_back(v);
+
+    //     cv::line( borderlabels, p1, p2, cv::Scalar(128), 2, CV_AA);
+    //     cv::circle( borderlabels, pc, 4, cv::Scalar(128), 1, CV_AA);
+    //     cv::circle( borderlabels, wrect.center, 8, cv::Scalar(100), 1, 8, 0 );
+    // }
+
+    // // float wheel_angle = 0;
+    // // bool wheel_angle_good = false;
+    // // if (spoke_angles.size() > 2) { 
+
+    // //     // CosineDistanceSimilarity<float> dist_func(2); 
+    // //     // cv::Mat(spoke_angles)
+    // //     cv::Mat spoke_labels, spoke_centers;
+    // //     cv::kmeans(cv::Mat(spoke_angles), 3, 
+    // //                spoke_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+    // //                10, KMEANS_PP_CENTERS, spoke_centers);
+
+
+    // //     std::cerr << "spokes: " << cv::Mat(spoke_angles) << std::endl;
+    // //     std::cerr << "spokes lab: " << spoke_labels << std::endl;
+    // //     std::cerr << "spokes centers: " << spoke_centers << std::endl;
+
+    // //     // Depth Mode-seeking
+    // //     cv::Point maxIdx(-1,-1); 
+    // //     cv::minMaxLoc(spoke_centers, 0, 0, 0, &maxIdx);
+    // //     std::cerr << "maxidx: " << maxIdx.y << std::endl;
+
+    // //     for (int j=0; j<spoke_labels.rows; j++)
+    // //         if (spoke_labels.at<int>(j) == maxIdx.y)
+    // //             spoke_angles[j] = spoke_angles[j] - 180;
+
+    // //     std::cerr << "spokes: " << cv::Mat(spoke_angles) << std::endl;
+
+    // //     cv::kmeans(cv::Mat(spoke_angles), 2, 
+    // //                spoke_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+    // //                10, KMEANS_PP_CENTERS, spoke_centers);
+
+    // //     std::cerr << "spokes lab: " << spoke_labels << std::endl;
+    // //     std::cerr << "spokes centers: " << spoke_centers << std::endl;
+
+
+    // //     // int count0 = 0, count1 = 0; 
+    // //     // for (int j=0; j<spoke_labels.rows; j++) 
+    // //     //     if (spoke_labels.at<int>(j) == 1) count1++;
+    // //     //     else count0++;
+    // //     // if (count0 > count1) { 
+    // //     //     // wheel_angle = spoke_centers.at<float>(0);
+    // //     //     wheel_angle = atan2(spoke_centers.at<float>(0,1), spoke_centers.at<float>(0,0));
+    // //     //     wheel_angle_good = true; 
+    // //     // } else if (count1 > count0) { 
+    // //     //     // wheel_angle = spoke_centers.at<float>(1);
+    // //     //     wheel_angle = atan2(spoke_centers.at<float>(1,1), spoke_centers.at<float>(1,0));
+    // //     //     wheel_angle_good = true; 
+    // //     // }
+
+    // //     std::cerr << "wheel angle: " << wheel_angle_good << " " << wheel_angle << std::endl;
+
+    // //     // if (wheel_angle_good) { 
+    // //     //     cv::Point2f wheeltip = wrect.center;
+    // //     //     wheeltip.x += cos(wheel_angle) * wrect.size.width/2;
+    // //     //     wheeltip.y += sin(wheel_angle) * wrect.size.width/2;
+    // //     //     cv::line( borderlabels, wrect.center, wheeltip, cv::Scalar(128), 2, CV_AA);
+    // //     // }
+    // // }
+    // cv::imshow("border", borderlabels);
+    // // for (int idx=largest_contour_id; idx<largest_contour_id+1; idx++) { 
+    // //     std::vector<cv::Point>& contourj = contours[idx]; 
+    // //     for (int j=0; j<contourj.size(); j++)
+    // //         cv::circle(zmat2, contourj[j], 1, cv::Scalar(0,255,0)); 
+    // // }
+
+    // // Find all contours with the largest component as their parent
+    // std::vector<std::pair<int, int> > contour_children; 
+    // // std::cerr << "largest: " << largest_contour_id << std::endl;
+    // for (int idx=0; idx<contours.size(); idx++) { 
+    //     // std::cerr << "hier: " << idx << " " << cv::Mat(hierarchy[idx]) << " " << contours[idx].size() << std::endl;
+    //     if (hierarchy[idx][3] == largest_contour_id)
+    //         contour_children.push_back(std::make_pair(idx, contours[idx].size()));
+    // }
+
+
+    // std::vector<std::vector<cv::Point> > inner_contours;
+    // it = std::max_element(contour_children.begin(), contour_children.end(), contour_size_compare);
+    // int cidx = it->first;
+    // // drawContours(zmat2, contours, cidx, colors[count], CV_FILLED, 8, hierarchy); 
+
+    // std::vector<cv::Point>& contourj = contours[cidx]; 
+    // cv::RotatedRect crect = fitEllipse(contourj); 
+    // cv::Point2f p1 = wrect.center;
+    // cv::Point2f p2 = crect.center;
+    // cv::Point2f p12vec = cv::Point2f(p2.x-p1.x,p2.y-p1.y);
+            
+    // float p12norm = cv::norm(p12vec);
+    // if (p12norm) p12vec *= 1.f / p12norm;
+
+    // // cv::line(zmat2, wrect.center, wrect.center + p12vec * wrect.size.width * 0.5, cv::Scalar(200,0,200), 2, CV_AA); 
+
+    // int spoke_lines_count = 0; 
+    // cv::Point2f mean_spoke_vec(0,0);
+    // for (int j=0; j<spoke_angles.size(); j++) { 
+    //     if (fabs(p12vec.dot(spoke_angles[j])) > 0.8) { 
+    //         mean_spoke_vec.x += spoke_angles[j].x;
+    //         mean_spoke_vec.y += spoke_angles[j].y;
+    //         // cv::line(zmat2, wrect.center, wrect.center + spoke_angles[j] * wrect.size.width * 0.5, 
+    //         //          cv::Scalar(0,200,0), 2, CV_AA); 
+    //         spoke_lines_count++;
+    //     }
+    // }
+
+    // if (spoke_lines_count) { 
+    //     mean_spoke_vec.x /= spoke_lines_count; 
+    //     mean_spoke_vec.y /= spoke_lines_count; 
+    //     if (mean_spoke_vec.dot(p12vec) > 0)
+    //         cv::line(zmat2, wrect.center, wrect.center + mean_spoke_vec * wrect.size.width * 0.5, 
+    //                  cv::Scalar(0,200,200), 2, CV_AA); 
+    //     else 
+    //         cv::line(zmat2, wrect.center, wrect.center - mean_spoke_vec * wrect.size.width * 0.5, 
+    //                  cv::Scalar(0,200,200), 2, CV_AA); 
+
+    // }
+    // // cv::imshow("zmat2", zmat2);
+    // addWeighted(display, 0.3, zmat2, 1.0, 0, display);
+    // cv::imshow("Display", display);
+    // // int ndisps = ((state->left.size().width/8) + 15) & -16;
+    // // cv::Mat disp8; 
+    // // disp.convertTo(disp8, CV_8U, 1.f);
+    // // cv::imshow("disp", disp);
+    // // state->stereoBM->sendRangeImage(msg->utime);
 
 
 // void circleRANSAC(cv::vector<cv::Point>& pts, 
@@ -962,371 +1334,3 @@ void determine_dashboard(const cv::Mat& _img) {
 //     cv::imshow("img", display);
 //     return;
 // }
-
-static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
-                            const bot_core_image_t *msg, 
-                            void *user_data ) {
-
-    if (!msg->width || !msg->height) return;
-    
-    state_t* state = (state_t*) user_data; 
-    decode_image(msg, state->img);    
-    state->img_utime = msg->utime; 
-
-    // determine_dashboard(state->img);
-    // compute_edges(state->img); 
-
-    return;
-}
-
-static bool contour_size_compare(const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) { 
-    return lhs.second < rhs.second;
-}
-
-
-static void on_stereo_frame (const lcm_recv_buf_t *rbuf, const char *channel,
-                            const bot_core_image_t *msg, 
-                            void *user_data ) {
-
-    if (!msg->width || !msg->height) return;
-    
-    state_t* state = (state_t*) user_data; 
-    decode_stereo_image(msg, state->left, state->right);
-    cv::imshow("left", state->left);    
-    cv::imshow("right", state->right);
-    state->stereo_utime = msg->utime; 
-
-    state->stereoBM->doStereoB(state->left, state->right);
-
-    cv::Mat gray, display;
-    if (state->left.channels() == 3) { 
-        display = state->left.clone();
-        cv::cvtColor(display, gray, CV_BGR2GRAY);
-    } else { 
-        gray = state->left.clone();
-        cv::cvtColor(gray, display, CV_GRAY2BGR);
-    }
-    cv::Mat disp = cv::Mat(state->left.rows, state->left.cols, CV_16SC1, state->stereoBM->getDisparity()); 
-
-    if (!state->selection.area())
-        return;
-
-    // std::cerr << "selection: " << state->selection.tl() << " "<< state->selection.br() << std::endl;
-    if (!state->mean_wheel_depth) { 
-
-        // Estimate depth and threshold out the wheel
-        cv::Mat_<float> droi = cv::Mat(disp, state->selection).clone();
-        cv::Mat_<float> data = cv::Mat_<float>::zeros(droi.cols * droi.rows, 2); 
-        for (int j=0; j<droi.rows * droi.cols; j++) 
-            data.at<float>(j,0) = droi.at<float>(j);
-
-        cv::Mat labels,centers;
-        cv::kmeans(data, 2, 
-                   labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
-                   10, KMEANS_PP_CENTERS, centers);
-
-        // std::cerr << "data: " << droi << std::endl;
-        std::cerr << "centers: " << centers << std::endl;
-
-        // Depth Mode-seeking
-        std::vector<int> votes(centers.rows, 0); 
-        for (int j=0; j<labels.rows; j++)
-            votes[labels.at<int>(j)]++;
-        cv::Point maxIdx(-1,-1); 
-        cv::minMaxLoc(votes, 0, 0, 0, &maxIdx);
-
-        state->mean_wheel_depth = centers.at<float>(maxIdx.x, 0);
-    }            
-
-    float d_offset = 100;
-    cv::Mat_<uchar> mask_disp = (disp > state->mean_wheel_depth - 2 * d_offset) & 
-        (disp < state->mean_wheel_depth + 2 * d_offset);
-
-    // Find contours for the mask
-    vector<vector<cv::Point> > contours;
-    vector<cv::Vec4i> hierarchy;
-    cv::Size size(mask_disp.cols, mask_disp.rows);
-    cv::findContours(mask_disp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE); 
-
-    // Sort contours with max area
-    std::vector<std::pair<int, int> > contour_sizes; 
-    for (int idx=0; idx>=0; idx = hierarchy[idx][0])
-        contour_sizes.push_back(std::make_pair(idx, cv::contourArea(contours[idx])));
-    std::vector<std::pair<int, int> >::iterator it = 
-        std::max_element(contour_sizes.begin(), contour_sizes.end(), contour_size_compare);
-
-    int largest_contour_id = it->first;
-    std::vector<cv::Point> largest_contour = contours[largest_contour_id];
-
-    // Draw Contours from depth
-    cv::Mat zmat = cv::Mat::zeros(size, CV_8U);
-    cv::Mat3b zmat2 = cv::Mat3b::zeros(size);
-    drawContours(zmat, contours, largest_contour_id, cv::Scalar(255), CV_FILLED, 8, hierarchy); 
-    cv::dilate(zmat, zmat, cv::Mat(), cv::Point(-1,-1), 3);
-
-    // Track Features on Wheel
-    track_wheel_features(state->left, zmat); 
-    cv::imshow("zmat", zmat);
-
-    return;
-}
-
-
-
-void  INThandler(int sig) {
-    printf("Exiting\n");
-    if (state) delete state;
-    exit(0);
-}
-
-
-int main(int argc, char** argv)
-{
-    std::cout << "============= QUICK MODES ===================\n";
-    std::cout << "drc-wheel-estimation -s 0.5 -c CAMERALEFT\n";
-    std::cout << "=============================================\n";
-
-    ConciseArgs opt(argc, (char**)argv);
-    opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
-    opt.add(options.vCHANNEL, "t", "stereo-channel","Camera Channel [CAMERA]");
-    opt.add(options.vSCALE, "s", "scale","Scale Factor");
-    opt.add(options.vDEBUG, "d", "debug","Debug mode");
-    opt.parse();
-
-    std::cerr << "===========  DRC Wheel Estimation ============" << std::endl;
-    std::cerr << "=> CAMERA CHANNEL : " << options.vCHANNEL << std::endl;
-    std::cerr << "=> STEREO CAMERA CHANNEL : " << options.vSTEREO_CHANNEL << std::endl;
-    std::cerr << "=> SCALE : " << options.vSCALE << std::endl;
-    std::cerr << "=> DEBUG : " << options.vDEBUG << std::endl;
-    std::cerr << "===============================================" << std::endl;
-
-    // Install signal handler to free data.
-    signal(SIGINT, INThandler);
-
-    // Param server, botframes
-    state = new state_t(options);
-
-    printf("starting lcm thread\n");
-    // pthread_create(&(state->lcm_thread), NULL, lcm_thread_handler, state);
-
-    // Subscriptions
-    bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
-    bot_core_image_t_subscribe(state->lcm, options.vSTEREO_CHANNEL.c_str(), on_stereo_frame, (void*)state);
-
-    cv::namedWindow( WINDOW_NAME );
-    cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
-
-    // Main lcm handle
-    while(1) { 
-        lcm_handle(state->lcm);
-        unsigned char c = cv::waitKey(1) & 0xff;
-        // lcm_handle(state->lcm);
-        if (c == 'q') { 
-            break;      
-        } 
-
-        // pthread_mutex_lock(&state->img_mutex);
-        // UI handling 
-        if (!state->img.empty()) { 
-            cv::Mat display;
-            cv::resize(state->img.clone(), display, cv::Size(WINDOW_WIDTH,WINDOW_HEIGHT)); 
-            if (state->selection.width > 0 && state->selection.height > 0) {
-                
-                cv::Mat roi(display, state->selection);
-                rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
-                if (state->selectObject) { 
-                    cv::circle(display, state->origin, 20, cv::Scalar(0,255,0), 1, CV_AA);
-                    cv::line(display, state->origin, state->destination, cv::Scalar(0,255,255), 1, CV_AA);
-                }
-                // bitwise_not(roi, roi);
-            }
-            imshow(WINDOW_NAME, display);
-        }
-        // pthread_mutex_unlock(&state->img_mutex);
-
-    }
-
-    if (state) delete state;
-    return 0;
-}
-
-
-
-    // // Find wheel center and fit ellipse
-    // cv::RotatedRect wrect = fitEllipse(largest_contour); 
-    // cv::ellipse( zmat2, wrect, cv::Scalar(0,255,0), 1, CV_AA );    
-
-    // // Perform distance transform on the center of the wheel
-    // int voronoiType = 0;
-    // int maskSize = voronoiType >= 0 ? CV_DIST_MASK_5 : CV_DIST_MASK_5;
-    // int distType = voronoiType >= 0 ? CV_DIST_L2 : CV_DIST_L1;
-
-    // cv::Mat dist, distlabels, dist8u; 
-    // distanceTransform( zmat, dist, distlabels, distType, maskSize, voronoiType );
-    // cv::Mat_<uchar> borderlabels = cv::Mat_<uchar>::zeros(distlabels.size());
-
-    // // Find the border in labels
-    // for (int i=1; i<distlabels.rows-1; i++) { 
-    //     const int* ll = (const int*)distlabels.ptr(i);
-    //     const int* llu = (const int*)distlabels.ptr(i-1);
-    //     const int* llb = (const int*)distlabels.ptr(i+1);
-    //     for (int j=1; j<distlabels.cols-1; j++) { 
-    //         int llj = ll[j];
-    //         if ((llj != ll[j-1]) || (llj != ll[j+1]) ||
-    //             (llj != llu[j-1]) || (llj != llu[j]) || (llj != llu[j+1]) ||
-    //             (llj != llb[j-1]) || (llj != llb[j]) || (llj != llb[j+1]))
-    //             borderlabels(i,j) = 255;
-    //     }
-    // }
-
-    // // Perform probabilistic hough transform
-    // std::vector<cv::Vec4i> wheel_lines;
-    // cv::HoughLinesP(borderlabels, wheel_lines, 1, CV_PI/180, 50, 30, 10); 
-    // // std::cerr << "wheel_lines: " << wheel_lines.size() << std::endl;
-    // // std::cerr << "wrect: " << wrect.center << std::endl;
-        
-    // std::vector<cv::Point2f> spoke_angles; 
-    // for( size_t i = 0; i < wheel_lines.size(); i++ ) {
-    //     cv::Vec4i l = wheel_lines[i];
-
-    //     cv::Point2f p1 = cv::Point(l[0], l[1]); 
-    //     cv::Point2f p2 = cv::Point(l[2], l[3]); 
-
-    //     cv::Point2f v = p1 - p2; 
-    //     float norm = cv::norm(v); 
-    //     if (norm > 0) v *= 1.f / norm; 
-
-    //     cv::Point2f pc = p1 + (v.dot(wrect.center-p1))*v;
-    //     float d = cv::norm(pc-wrect.center);
-    //     if (d > 50) continue;
-
-    //     if (v.y < 0) { v.x = -v.x; v.y = fabs(v.y); }
-    //     spoke_angles.push_back(v);
-
-    //     cv::line( borderlabels, p1, p2, cv::Scalar(128), 2, CV_AA);
-    //     cv::circle( borderlabels, pc, 4, cv::Scalar(128), 1, CV_AA);
-    //     cv::circle( borderlabels, wrect.center, 8, cv::Scalar(100), 1, 8, 0 );
-    // }
-
-    // // float wheel_angle = 0;
-    // // bool wheel_angle_good = false;
-    // // if (spoke_angles.size() > 2) { 
-
-    // //     // CosineDistanceSimilarity<float> dist_func(2); 
-    // //     // cv::Mat(spoke_angles)
-    // //     cv::Mat spoke_labels, spoke_centers;
-    // //     cv::kmeans(cv::Mat(spoke_angles), 3, 
-    // //                spoke_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
-    // //                10, KMEANS_PP_CENTERS, spoke_centers);
-
-
-    // //     std::cerr << "spokes: " << cv::Mat(spoke_angles) << std::endl;
-    // //     std::cerr << "spokes lab: " << spoke_labels << std::endl;
-    // //     std::cerr << "spokes centers: " << spoke_centers << std::endl;
-
-    // //     // Depth Mode-seeking
-    // //     cv::Point maxIdx(-1,-1); 
-    // //     cv::minMaxLoc(spoke_centers, 0, 0, 0, &maxIdx);
-    // //     std::cerr << "maxidx: " << maxIdx.y << std::endl;
-
-    // //     for (int j=0; j<spoke_labels.rows; j++)
-    // //         if (spoke_labels.at<int>(j) == maxIdx.y)
-    // //             spoke_angles[j] = spoke_angles[j] - 180;
-
-    // //     std::cerr << "spokes: " << cv::Mat(spoke_angles) << std::endl;
-
-    // //     cv::kmeans(cv::Mat(spoke_angles), 2, 
-    // //                spoke_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
-    // //                10, KMEANS_PP_CENTERS, spoke_centers);
-
-    // //     std::cerr << "spokes lab: " << spoke_labels << std::endl;
-    // //     std::cerr << "spokes centers: " << spoke_centers << std::endl;
-
-
-    // //     // int count0 = 0, count1 = 0; 
-    // //     // for (int j=0; j<spoke_labels.rows; j++) 
-    // //     //     if (spoke_labels.at<int>(j) == 1) count1++;
-    // //     //     else count0++;
-    // //     // if (count0 > count1) { 
-    // //     //     // wheel_angle = spoke_centers.at<float>(0);
-    // //     //     wheel_angle = atan2(spoke_centers.at<float>(0,1), spoke_centers.at<float>(0,0));
-    // //     //     wheel_angle_good = true; 
-    // //     // } else if (count1 > count0) { 
-    // //     //     // wheel_angle = spoke_centers.at<float>(1);
-    // //     //     wheel_angle = atan2(spoke_centers.at<float>(1,1), spoke_centers.at<float>(1,0));
-    // //     //     wheel_angle_good = true; 
-    // //     // }
-
-    // //     std::cerr << "wheel angle: " << wheel_angle_good << " " << wheel_angle << std::endl;
-
-    // //     // if (wheel_angle_good) { 
-    // //     //     cv::Point2f wheeltip = wrect.center;
-    // //     //     wheeltip.x += cos(wheel_angle) * wrect.size.width/2;
-    // //     //     wheeltip.y += sin(wheel_angle) * wrect.size.width/2;
-    // //     //     cv::line( borderlabels, wrect.center, wheeltip, cv::Scalar(128), 2, CV_AA);
-    // //     // }
-    // // }
-    // cv::imshow("border", borderlabels);
-    // // for (int idx=largest_contour_id; idx<largest_contour_id+1; idx++) { 
-    // //     std::vector<cv::Point>& contourj = contours[idx]; 
-    // //     for (int j=0; j<contourj.size(); j++)
-    // //         cv::circle(zmat2, contourj[j], 1, cv::Scalar(0,255,0)); 
-    // // }
-
-    // // Find all contours with the largest component as their parent
-    // std::vector<std::pair<int, int> > contour_children; 
-    // // std::cerr << "largest: " << largest_contour_id << std::endl;
-    // for (int idx=0; idx<contours.size(); idx++) { 
-    //     // std::cerr << "hier: " << idx << " " << cv::Mat(hierarchy[idx]) << " " << contours[idx].size() << std::endl;
-    //     if (hierarchy[idx][3] == largest_contour_id)
-    //         contour_children.push_back(std::make_pair(idx, contours[idx].size()));
-    // }
-
-
-    // std::vector<std::vector<cv::Point> > inner_contours;
-    // it = std::max_element(contour_children.begin(), contour_children.end(), contour_size_compare);
-    // int cidx = it->first;
-    // // drawContours(zmat2, contours, cidx, colors[count], CV_FILLED, 8, hierarchy); 
-
-    // std::vector<cv::Point>& contourj = contours[cidx]; 
-    // cv::RotatedRect crect = fitEllipse(contourj); 
-    // cv::Point2f p1 = wrect.center;
-    // cv::Point2f p2 = crect.center;
-    // cv::Point2f p12vec = cv::Point2f(p2.x-p1.x,p2.y-p1.y);
-            
-    // float p12norm = cv::norm(p12vec);
-    // if (p12norm) p12vec *= 1.f / p12norm;
-
-    // // cv::line(zmat2, wrect.center, wrect.center + p12vec * wrect.size.width * 0.5, cv::Scalar(200,0,200), 2, CV_AA); 
-
-    // int spoke_lines_count = 0; 
-    // cv::Point2f mean_spoke_vec(0,0);
-    // for (int j=0; j<spoke_angles.size(); j++) { 
-    //     if (fabs(p12vec.dot(spoke_angles[j])) > 0.8) { 
-    //         mean_spoke_vec.x += spoke_angles[j].x;
-    //         mean_spoke_vec.y += spoke_angles[j].y;
-    //         // cv::line(zmat2, wrect.center, wrect.center + spoke_angles[j] * wrect.size.width * 0.5, 
-    //         //          cv::Scalar(0,200,0), 2, CV_AA); 
-    //         spoke_lines_count++;
-    //     }
-    // }
-
-    // if (spoke_lines_count) { 
-    //     mean_spoke_vec.x /= spoke_lines_count; 
-    //     mean_spoke_vec.y /= spoke_lines_count; 
-    //     if (mean_spoke_vec.dot(p12vec) > 0)
-    //         cv::line(zmat2, wrect.center, wrect.center + mean_spoke_vec * wrect.size.width * 0.5, 
-    //                  cv::Scalar(0,200,200), 2, CV_AA); 
-    //     else 
-    //         cv::line(zmat2, wrect.center, wrect.center - mean_spoke_vec * wrect.size.width * 0.5, 
-    //                  cv::Scalar(0,200,200), 2, CV_AA); 
-
-    // }
-    // // cv::imshow("zmat2", zmat2);
-    // addWeighted(display, 0.3, zmat2, 1.0, 0, display);
-    // cv::imshow("Display", display);
-    // // int ndisps = ((state->left.size().width/8) + 15) & -16;
-    // // cv::Mat disp8; 
-    // // disp.convertTo(disp8, CV_8U, 1.f);
-    // // cv::imshow("disp", disp);
-    // // state->stereoBM->sendRangeImage(msg->utime);
