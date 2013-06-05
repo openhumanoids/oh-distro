@@ -239,6 +239,7 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
 void
 decode_image(const bot_core_image_t * msg, cv::Mat& img)
 {
+    int ch = msg->row_stride / msg->width;
     if (img.empty() || img.rows != msg->height || img.cols != msg->width)
         img.create(msg->height, msg->width, CV_8UC3);
 
@@ -250,18 +251,29 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
       break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
       // for some reason msg->row_stride is 0, so we use msg->width instead.
-      jpeg_decompress_8u_gray(msg->data,
-                              msg->size,
-                              img.data,
-                              msg->width,
-                              msg->height,
-                              msg->width);
+        if (ch == 3) { 
+            jpeg_decompress_8u_rgb(msg->data,
+                                    msg->size,
+                                    img.data,
+                                    msg->width,
+                                    msg->height,
+                                    msg->width * ch);
+            cv::cvtColor(img, img, CV_RGB2BGR);
+        } else { 
+            jpeg_decompress_8u_gray(msg->data,
+                                    msg->size,
+                                    img.data,
+                                    msg->width,
+                                    msg->height,
+                                    msg->width);
+        }
+        
       break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
       memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
       break;
     default:
-      fprintf(stderr, "Unrecognized image format\n");
+        fprintf(stderr, "Unrecognized image format : %d\n", (int) msg->pixelformat);
       break;
   }
   return;
@@ -271,9 +283,13 @@ void
 decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
 {
 
+    cv::Mat1b img(msg->height, msg->width);
+      
   // extract image data
   switch (msg->pixelformat) {
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+        fprintf(stderr, "rgb : %d\n", (int) msg->pixelformat);
+
         if (left.empty() || right.empty()) { 
             left.create(msg->height/2, msg->width, CV_8UC3);
             right.create(msg->height/2, msg->width, CV_8UC3);
@@ -283,16 +299,24 @@ decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
         cv::cvtColor(left, left, CV_RGB2BGR);
         cv::cvtColor(right, right, CV_RGB2BGR);
       break;
-    // case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
-    //   // for some reason msg->row_stride is 0, so we use msg->width instead.
-    //   jpeg_decompress_8u_gray(msg->data,
-    //                           msg->size,
-    //                           img.data,
-    //                           msg->width,
-    //                           msg->height,
-    //                           msg->width);
-    //   break;
+  case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      fprintf(stderr, "mjpeg : %d\n", (int) msg->pixelformat);
+      // for some reason msg->row_stride is 0, so we use msg->width instead.
+      jpeg_decompress_8u_gray(msg->data,
+                              msg->size,
+                              img.data,
+                              msg->width,
+                              msg->height,
+                              msg->width);
+      if (left.empty() || right.empty()) { 
+          left.create(msg->height/2, msg->width, CV_8UC1);
+          right.create(msg->height/2, msg->width, CV_8UC1);
+      }
+      memcpy(left.data,  img.data , msg->width * msg->height / 2);
+      memcpy(right.data,  img.data + msg->width * msg->height / 2 , msg->width * msg->height / 2);
+      break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+      fprintf(stderr, "gray : %d\n", (int) msg->pixelformat);
       if (left.empty() || right.empty()) { 
           left.create(msg->height/2, msg->width, CV_8UC1);
           right.create(msg->height/2, msg->width, CV_8UC1);
@@ -301,7 +325,8 @@ decode_stereo_image(const bot_core_image_t * msg, cv::Mat& left, cv::Mat& right)
       memcpy(right.data,  msg->data + msg->size/2 , msg->size/2);
       break;
     default:
-      fprintf(stderr, "Unrecognized image format\n");
+        fprintf(stderr, "Unrecognized image format : %d\n", (int) msg->pixelformat);
+        //fprintf(stderr, "Unrecognized image format\n");
       break;
   }
   return;
@@ -447,7 +472,7 @@ void track_wheel_features(const cv::Mat& _img, cv::Mat mask = cv::Mat()) {
             cv::Point2f wvec(tf_origin.y-tf_destination.y, tf_origin.x-tf_destination.x);
             wvec *= 1.f / cv::norm(wvec);
             double angle = atan2(wvec.y,wvec.x) * 180 / CV_PI;
-            // std::cerr << "angle: " << angle << std::endl;
+            std::cerr << "angle: " << angle << std::endl;
 
             cv::circle(output, tf_origin, 20, cv::Scalar(0,255,0), 1, CV_AA);
             cv::line(output, tf_origin, tf_destination, cv::Scalar(0,255,255), 1, CV_AA);
@@ -966,7 +991,9 @@ static void on_stereo_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     if (!msg->width || !msg->height) return;
     
     state_t* state = (state_t*) user_data; 
-    decode_stereo_image(msg, state->left, state->right);    
+    decode_stereo_image(msg, state->left, state->right);
+    cv::imshow("left", state->left);    
+    cv::imshow("right", state->right);
     state->stereo_utime = msg->utime; 
 
     state->stereoBM->doStereoB(state->left, state->right);
