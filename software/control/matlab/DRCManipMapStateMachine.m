@@ -220,7 +220,6 @@ classdef DRCManipMapStateMachine< handle
         for t=1:length(aff_goal.dof_name),
            % get active chain from aff_goal.dof_name(t)
            ind=find(strcmp(char(aff_goal.dof_name(t)),dof_names));
-           end;
            if(strcmp(char(ee_names(ind)),'l_hand'))
                %disp('l_hand');
                start_mapindex=obj.chain_dofIndices(1);
@@ -303,20 +302,18 @@ classdef DRCManipMapStateMachine< handle
          end     
          if(~isempty(qtraj_rleg))
           qtraj(rleg,:) = qtraj_rleg(rleg,:);
-         end        
-        
+         end                
       end  % if(obj.manip_map_received)
-    end  %end function 
-  
+    end  %end function
   end % end methods
   
   methods (Static=true)
-     function T= HT(p,roll,pitch,yaw)
-        T = zeros(4);
-        M = rotz(yaw)*roty(pitch)*rotx(roll);
-
-        T(1:3,1:3) = M;
-        T(1:4,4) = [p(:); 1];
+      function T= HT(p,roll,pitch,yaw)
+          T = zeros(4);
+          M = rotz(yaw)*roty(pitch)*rotx(roll);
+          
+          T(1:3,1:3) = M;
+          T(1:4,4) = [p(:); 1];
       end
       function T_out=inv_HT(T)
           M = T(1:3,1:3);
@@ -327,8 +324,8 @@ classdef DRCManipMapStateMachine< handle
           T_out(1:4,4) = [p(:); 1];
       end
       function out_pose = applyHT(Frame_out_in,in_pose)
-        rpy=quat2rpy(in_pose(4:7));
-        Frame_in = DRCManipMapStateMachine.HT(in_pose(1:3),rpy(1),rpy(2),rpy(3));
+          rpy=quat2rpy(in_pose(4:7));
+          Frame_in = DRCManipMapStateMachine.HT(in_pose(1:3),rpy(1),rpy(2),rpy(3));
         Frame_out = Frame_out_in*Frame_in;
         out_pose=0.*in_pose;
         out_pose(1:3) = Frame_out(1:3,4);
