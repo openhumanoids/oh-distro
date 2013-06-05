@@ -44,7 +44,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "LegOdometry" {
-        exec = "drc-legged-odometry -e -C -x";
+        exec = "drc-legged-odometry -e -D -x";
         host = "robot";
     }
     cmd "j2f" {
