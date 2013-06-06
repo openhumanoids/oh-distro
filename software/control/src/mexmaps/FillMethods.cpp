@@ -44,48 +44,56 @@ fitHorizontalPlane(const std::vector<Eigen::Vector3f>& iPoints) {
   return sol;
 }
 
+
+
+
+
+struct HorizontalPlaneFitProblem {
+  typedef Eigen::Vector3f Solution;
+
+  std::vector<Eigen::Vector3f>* mPoints;
+  FillMethods* mFillMethods;
+
+  HorizontalPlaneFitProblem(FillMethods* iFillMethods) :
+    mFillMethods(iFillMethods) {}
+
+  int getNumDataPoints() const { return mPoints->size(); }
+  int getSampleSize() const { return 3; }
+
+  Solution estimate(const std::vector<int> iIndices) const {
+    std::vector<Eigen::Vector3f> pts(iIndices.size());
+    for (size_t i = 0; i < iIndices.size(); ++i) {
+      pts[i] = (*mPoints)[iIndices[i]];
+    }
+    Solution plane = mFillMethods->fitHorizontalPlane(pts);
+    return plane;
+  }
+
+  std::vector<double>
+  computeSquaredErrors(const Solution& iPlane) const {
+    size_t n = mPoints->size();
+    std::vector<double> e2(n);
+    for (size_t i = 0; i < n; ++i) {
+      Eigen::Vector3f p = (*mPoints)[i];
+      double e = p[0]*iPlane[0] + p[1]*iPlane[1] + p[2] + iPlane[2];
+      e2[i] = e*e;
+    }
+    return e2;
+  }
+};
+
+
+
 Eigen::Vector3f FillMethods::
 fitHorizontalPlaneRansac(const std::vector<Eigen::Vector3f>& iPoints) {
   if (iPoints.size() < 3) return Eigen::Vector3f::Zero();
-  struct Problem {
-    typedef Eigen::Vector3f Solution;
-
-    std::vector<Eigen::Vector3f>* mPoints;
-    FillMethods* mFillMethods;
-
-    Problem(FillMethods* iFillMethods) : mFillMethods(iFillMethods) {}
-
-    int getNumDataPoints() const { return mPoints->size(); }
-    int getSampleSize() const { return 3; }
-
-    Solution estimate(const std::vector<int> iIndices) const {
-      std::vector<Eigen::Vector3f> pts(iIndices.size());
-      for (size_t i = 0; i < iIndices.size(); ++i) {
-        pts[i] = (*mPoints)[iIndices[i]];
-      }
-      Solution plane = mFillMethods->fitHorizontalPlane(pts);
-      return plane;
-    }
-
-    std::vector<double>
-    computeSquaredErrors(const Solution& iPlane) const {
-      size_t n = mPoints->size();
-      std::vector<double> e2(n);
-      for (size_t i = 0; i < n; ++i) {
-        Eigen::Vector3f p = (*mPoints)[i];
-        double e = p[0]*iPlane[0] + p[1]*iPlane[1] + p[2] + iPlane[2];
-        e2[i] = e*e;
-      }
-      return e2;
-    }
-  };
-
-  Problem problem(this);
+  HorizontalPlaneFitProblem problem(this);
   problem.mPoints = const_cast<std::vector<Eigen::Vector3f>*>(&iPoints);
-  RansacGeneric<Problem> ransacObj;
+  RansacGeneric<HorizontalPlaneFitProblem> ransacObj;
   ransacObj.setMaximumError(0.05);
   ransacObj.setRefineUsingInliers(true);
-  RansacGeneric<Problem>::Result result = ransacObj.solve(problem);
+  RansacGeneric<HorizontalPlaneFitProblem>::Result result =
+    ransacObj.solve(problem);
   if (result.mSuccess) return result.mSolution;
   return Eigen::Vector3f(0,0,0);
 }
