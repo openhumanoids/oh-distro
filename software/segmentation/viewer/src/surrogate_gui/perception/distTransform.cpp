@@ -25,7 +25,9 @@ limitations under the License.
 // ----
 // $Id: distTransform.cpp 598 2009-05-11 21:27:59Z galbreath $
 
-// converted to float and added idxarr by Paul Ilardi 6/2013
+// Changes by Paul Ilardi 6/2013
+// converted to float and added idxarr 
+// non-zero is now on.
 
 #include "distTransform.h"
 
@@ -49,7 +51,7 @@ void distTransform(float *f, int *idxarr, int L, int M, int N)
   for (idx = 0; idx < slsz*N; idx++) {
       //if (f[idx] > 0)   fDist[idx] = 0;
 	  //else fDist[idx] = 5000;
-	  if (f[idx] > 0)   fDist[idx] = 5000;
+	  if (f[idx] == 0)   fDist[idx] = 5000;
 	  else {
             fDist[idx] = 0;
             idxarr[idx] = idx;
