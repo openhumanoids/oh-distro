@@ -73,7 +73,7 @@ float colors[NUMBER_OF_SYSTEMS][3] = {
         { 0.7, 0.7, 0.0 }, // yellow
         { 0.0, 1.0, 0.5 }, // green
         { 0.0, 0.7, 0.7 }, // cyan
-        { 0.15, 0.15, 1.0 }, // blue
+        { 0.45, 0.45, 1.0 }, // blue
         { 0.0, 0.4, 0.3 }, // dark green
         { 1.0, 0.5, 0.0 },  // orange
         { 1.0, 0.5, 0.5 },  // salmon
@@ -427,11 +427,13 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glutBitmapString(font, (unsigned char*) line);
 
 	//
-	// NB: sim_time_elapsed time is NOT the number of seconds left in the 30mins
+	// NB: sim_time is the number of useconds elapsed in the 30mins
+	// NB: sim_time_elapsed is the number of useconds since the data bank was started
 	// 	
-	float elapsed_sec = (float) (self->score->sim_time/1E6) ;
+	float elapsed_sec_30min = (float) (self->score->sim_time/1E6) ;
+	float elapsed_sec_bwclock = (float) (self->score->sim_time_elapsed/1E6) ;
 	float total_sec = 30.0*60.0;
-	int total_remaining_sec = floor(total_sec - elapsed_sec);
+	int total_remaining_sec = floor(total_sec - elapsed_sec_30min);
 	int remaining_min = floor(total_remaining_sec/60.0);
         int remaining_sec = floor(total_remaining_sec - remaining_min*60);
 	float percent_remaining = 100*total_remaining_sec / total_sec;
@@ -443,7 +445,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	double percent_left;
 	int expected_ttl_min, expected_ttl_sec;
 	if (self->score->bytes_downlink_remaining !=0){
-	  get_ttl(viewer, r, self->score->bytes_downlink_remaining, elapsed_sec , percent_left , expected_ttl_min, expected_ttl_sec, true);
+	  get_ttl(viewer, r, self->score->bytes_downlink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, true);
           sprintf(line, "%2.2f DOWN %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
 	}else{
           sprintf(line, "No Downlink Info");
@@ -452,7 +454,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 
 	if (self->score->bytes_uplink_remaining !=0){
-  	  get_ttl(viewer, r, self->score->bytes_uplink_remaining, elapsed_sec , percent_left , expected_ttl_min, expected_ttl_sec, false);
+  	  get_ttl(viewer, r, self->score->bytes_uplink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, false);
   	  sprintf(line, "%2.2f  UP  %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
 	}else{
           sprintf(line, "No Uplink Info");
@@ -465,38 +467,6 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
 	
-	
-	
-	
-/*	
-	sprintf(line, "LEFT %.1f MINS %.1f", remaining_sec, remaining_sec/60 );
-	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-	sprintf(line, "GONE %.1f", elapsed_sec );
-	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-	
-	sprintf(line, "DOWN TTL abcd", elapsed_sec );
-	y = gl_height + (-6 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-	sprintf(line, "LEFT %.1f \% %.1f", remaining_sec, remaining_sec/60 );
-	y = gl_height + (-5 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-	sprintf(line, "GONE %.1f", elapsed_sec );
-	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-	
-	
-	sprintf(line, "  UP TTL abcd", elapsed_sec );
-	y = gl_height + (-9 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-	sprintf(line, "LEFT %.1f \% %.1f", remaining_sec, remaining_sec/60 );
-	y = gl_height + (-8 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-	sprintf(line, "GONE %.1f", elapsed_sec );
-	y = gl_height + (-7 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);
-*/	
       }
     
     }

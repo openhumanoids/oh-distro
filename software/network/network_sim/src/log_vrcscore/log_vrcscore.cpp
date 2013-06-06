@@ -56,6 +56,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   lcm_->subscribe( "RESET_SHAPER_STATS" ,&Pass::resetHandler,this);  
   
   last_utime_ =0;
+  header_string_ << "UTIME,BYTESDOWN,BYTESUP" << std::endl;
   
   open_usage_log();
 }
@@ -75,7 +76,6 @@ void Pass::open_usage_log(){
   }
   
   if(data_usage_log_.is_open()){
-    header_string_ << "UTIME,BYTESDOWN,BYTESUP" << std::endl;
     data_usage_log_ << header_string_.str();
     data_usage_log_.flush();
   }
