@@ -249,7 +249,7 @@ bool AffordanceState::toBoxesCylindersSpheres(vector<boost::shared_ptr<Affordanc
               shared_ptr<otdf::Collision> cObj = nextCollGroup->at(n);
 
               //-compute the world tf
-              KDL::Frame inWorldFrame = getOriginFrame()*nextLinkTf.frame*poseToKDL(cObj->origin);
+              KDL::Frame inWorldFrame = nextLinkTf.frame*poseToKDL(cObj->origin);
 
               //add as affordance
               affs.push_back(geometryToAff(cObj->geometry, inWorldFrame, 
