@@ -70,6 +70,9 @@ namespace renderer_robot_state
     _jointdof_filter_list.push_back("l_leg_lax");
     _jointdof_filter_list.push_back("r_leg_lax");  
     _jointdof_filter_list.push_back("neck_ay");
+    _jointdof_filter_list.push_back("back_lbz");
+    _jointdof_filter_list.push_back("back_mby");
+    _jointdof_filter_list.push_back("back_ubx");
   }
 
   RobotStateListener::~RobotStateListener() {
