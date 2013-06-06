@@ -331,7 +331,7 @@ classdef DRCController
           % tt+t_offset is the timestamp of the message that I should be
           % sending.  if I haven't seen that message for 10msec, then come
           % out of backup_mode
-          if ((tt+t_offset) - getLastTimestamp(obj.controller_output_frame))>.01)
+          if (tt+t_offset) - getLastTimestamp(obj.controller_output_frame)>.01
             backup_mode = false;
           elseif toc(status_tic)>0.2
             % send the backup status message
