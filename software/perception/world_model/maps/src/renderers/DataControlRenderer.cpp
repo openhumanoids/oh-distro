@@ -24,12 +24,13 @@
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
 
-// convenience class for affordance list box
-struct AffordanceColumns : public Gtk::TreeModel::ColumnRecord {
+// convenience class for list boxes
+struct ComboColumns : public Gtk::TreeModel::ColumnRecord {
   Gtk::TreeModelColumn<int> mId;
   Gtk::TreeModelColumn<Glib::ustring> mLabel;
-  AffordanceColumns() { add(mId); add(mLabel); }
+  ComboColumns() { add(mId); add(mLabel); }
 };
+
 
 
 class DataControlRenderer : public gtkmm::RendererBase {
@@ -61,8 +62,8 @@ protected:
   int mHandCameraFrameRate;
   int mCameraCompression;
   int mHeadPitchAngle;
-  bool mLeftGrasp;
-  bool mRightGrasp;
+  int mLeftGraspState;
+  int mRightGraspState;
   bool mMinimalAffordances;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
@@ -139,13 +140,13 @@ public:
     struct Functor {
       std::vector<int> mIds;
       void callback(const Gtk::TreeModel::iterator& iIter) {
-        AffordanceColumns columns;
+        ComboColumns columns;
         Gtk::TreeModel::Row row = *iIter;
         mIds.push_back(row[columns.mId]);
       }
     };
 
-    AffordanceColumns columns;
+    ComboColumns columns;
     Functor functor;
     auto activeRows = mAffordanceListBox->get_selection();
     activeRows->selected_foreach_iter
@@ -177,7 +178,7 @@ public:
     }
 
     // populate new list
-    AffordanceColumns columns;
+    ComboColumns columns;
     auto activeRows = mAffordanceListBox->get_selection();
     if (affordancesChanged) {
       mAffordanceTreeModel->clear();
@@ -287,8 +288,8 @@ public:
     Gtk::ScrolledWindow* scroll = Gtk::manage(new Gtk::ScrolledWindow());
     scroll->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     scroll->set_size_request(-1, 100);
-    AffordanceColumns columns;
-    mAffordanceTreeModel = Gtk::ListStore::create(AffordanceColumns());
+    ComboColumns columns;
+    mAffordanceTreeModel = Gtk::ListStore::create(ComboColumns());
     mAffordanceListBox = Gtk::manage(new Gtk::TreeView());
     mAffordanceListBox->set_model(mAffordanceTreeModel);
     mAffordanceListBox->append_column("name",columns.mLabel);
@@ -331,24 +332,47 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
 
+    //
     // grasp
+    //
+    labels = { "Leave", "Closed", "Open" };
+    ids = { drc::simple_grasp_t::UNCHANGED, drc::simple_grasp_t::CLOSED,
+            drc::simple_grasp_t::OPEN };
+    Glib::RefPtr<Gtk::ListStore> treeModel = Gtk::ListStore::create(columns);
+    for (size_t i = 0; i < ids.size(); ++i) {
+      const Gtk::TreeModel::Row& row = *(treeModel->append());
+      row[columns.mId] = ids[i];
+      row[columns.mLabel] = labels[i];
+    }
+
+    // left
     Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
-    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
-    mLeftGrasp = false;
-    bind(check, "LeftGrasp", mLeftGrasp);
+    Gtk::ComboBox* combo = Gtk::manage(new Gtk::ComboBox());
+    combo->set_model(treeModel);
+    combo->pack_start(columns.mLabel);
+    mLeftGraspState = drc::simple_grasp_t::UNCHANGED;
+    bind(combo, "LeftGrasp", mLeftGraspState);
+    combo->set_active(mLeftGraspState);
     label = Gtk::manage(new Gtk::Label("left"));
-    box->pack_start(*check,false,false);
     box->pack_start(*label,false,false);
+    box->pack_start(*combo,false,false);
     hbox->add(*box);
+
+    // right
     box = Gtk::manage(new Gtk::HBox());
-    check = Gtk::manage(new Gtk::CheckButton());
-    mRightGrasp = false;
-    bind(check, "RightGrasp", mRightGrasp);
+    combo = Gtk::manage(new Gtk::ComboBox());
+    combo->set_model(treeModel);
+    combo->pack_start(columns.mLabel);
+    mRightGraspState = drc::simple_grasp_t::UNCHANGED;
+    bind(combo, "RightGrasp", mRightGraspState);
+    combo->set_active(mRightGraspState);
     label = Gtk::manage(new Gtk::Label("right"));
-    box->pack_start(*check,false,false);
     box->pack_start(*label,false,false);
+    box->pack_start(*combo,false,false);
     hbox->add(*box);
+
+    // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onGraspButton));
@@ -522,9 +546,12 @@ public:
 
   void onGraspButton() {
     drc::simple_grasp_t msg;
-    msg.close_left = mLeftGrasp;
-    msg.close_right = mRightGrasp;
-    getLcm()->publish("SIMPLE_GRASP_COMMAND", &msg);
+    msg.left_state = mLeftGraspState;
+    msg.right_state = mRightGraspState;
+    if ((mLeftGraspState != drc::simple_grasp_t::UNCHANGED) ||
+        (mRightGraspState != drc::simple_grasp_t::UNCHANGED)) {
+      getLcm()->publish("SIMPLE_GRASP_COMMAND", &msg);
+    }
   }
 
   void draw() {

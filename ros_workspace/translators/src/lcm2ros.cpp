@@ -106,26 +106,26 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 
 void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::simple_grasp_t* msg) {
   ROS_ERROR("LCM2ROS Sending got simpele");
-  sandia_hand_msgs::SimpleGrasp msgout_l;
-  msgout_l.name = "cylindrical";
-  if (msg->close_left){
-    msgout_l.closed_amount =100;
-  }else{
-    msgout_l.closed_amount =0;
-  }
 
-  sandia_hand_msgs::SimpleGrasp msgout_r;
-  msgout_r.name = "cylindrical";
-  if (msg->close_right){
-    msgout_r.closed_amount =100;
-  }else{
-    msgout_r.closed_amount =0;
-  }
-  
   if(ros::ok()) {
-    ROS_ERROR("LCM2ROS Sending simple grasp commands");
-    simple_grasp_pub_left_.publish(msgout_l);
-    simple_grasp_pub_right_.publish(msgout_r);    
+    sandia_hand_msgs::SimpleGrasp msgout;
+    msgout.name = "cylindrical";
+    if (msg->left_state != drc::simple_grasp_t::UNCHANGED) {
+      if (msg->left_state == drc::simple_grasp_t::CLOSED) {
+        msgout.closed_amount = 100;
+      }
+      else msgout.closed_amount = 0;
+      ROS_ERROR("LCM2ROS Sending simple grasp command (left)");
+      simple_grasp_pub_left_.publish(msgout);
+    }
+    if (msg->right_state != drc::simple_grasp_t::UNCHANGED) {
+      if (msg->right_state == drc::simple_grasp_t::CLOSED) {
+        msgout.closed_amount = 100;
+      }
+      else msgout.closed_amount = 0;
+      ROS_ERROR("LCM2ROS Sending simple grasp command (right)");
+      simple_grasp_pub_right_.publish(msgout);    
+    }
   }   
 }
   
