@@ -194,23 +194,7 @@ while (1)
 %         end
       end
       if action_options.generate_implicit_constraints_from_q0
-          if isfield(action_options,'initial_contact_groups')
-              for i = 1:length(action_options.initial_contact_groups.linknames)
-                  linkname = action_options.initial_contact_groups.linknames{i};
-                  linkname=regexprep(linkname,'\+','\\\+');
-                  ind = find(cellfun(@(x)~isempty(x),regexp(lower({r.body.linkname}),[lower(linkname) '\+?'])));
-                  if (length(ind)>1)
-                      action_options.initial_contact_groups.linknames{i} = r.body(ind(1)).linkname;
-                      warning('Couldn''t find unique link %s. Returning first match: %s', ...
-                          linkname,body.linkname);
-                  elseif (length(ind)<1)
-                      error(['couldn''t find link ' ,linkname]);
-                  else
-                      action_options.initial_contact_groups.linknames{i} = r.body(ind).linkname;
-                  end
-              end
-          end
-          action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
+        action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
         n_kincons_new = length(action_sequence.kincons);
         if n_kincons_new > n_kincons
           for i = (n_kincons+1):n_kincons_new
@@ -290,6 +274,7 @@ while (1)
         else
           if true || i==1
             q0 = q;
+            q0(7:end) = q_standing(7:end);
           else
             q0 = q_key_time_samples(:,i-1);
           end
@@ -544,7 +529,7 @@ while (1)
             % action_options.ref_link_str, if present.
             if(isfield(action_options,'ref_link_str'))
               typecheck(action_options.ref_link_str,'char');
-              ref_link = findLinkContaining(r,action_options.ref_link_str);
+              ref_link = findLink(r,action_options.ref_link_str);
               pelvis = r.findLink('pelvis');
               for i = 1:length(t_qs_breaks)
                 kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
@@ -706,7 +691,7 @@ function kc = getConstraintFromGoal(r,goal)
   if(goal.contact_type ~= goal.SUPPORTED_WITHIN_REGION) && (goal.contact_type ~= goal.WITHIN_REGION) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
     error('The contact type is not supported yet');
   end
-  body_ind = findLinkContaining(r,char(goal.object_1_name));
+  body_ind = findLink(r,char(goal.object_1_name));
   t_prec = 1e6;
   tspan = round([goal.lower_bound_completion_time goal.upper_bound_completion_time]*t_prec)/t_prec;
   kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
@@ -715,11 +700,10 @@ function kc = getConstraintFromGoal(r,goal)
     pos = struct();
     pos.max = inf(3,1);
     pos.min = -inf(3,1);
-    obstacle = findLinkContaining(r,char(goal.object_2_name));
-    if isempty(obstacle) error('couldn''t find body %s in manipulator',char(goal.object_2_name)); end
+    obstacle = findLink(r,char(goal.object_2_name));
     kc = CollisionAvoidanceConstraint(r,body_ind,tspan,kc_name,obstacle);
   else
-    child = findLinkContaining(r,char(goal.object_2_name));
+    child = findLink(r,char(goal.object_2_name));
     groupname = regexprep(char(goal.object_2_contact_grp),'\/.*','');
     contact_aff = {ContactShapeAffordance(r,child,groupname)};
     collision_group_name = char(goal.object_1_contact_grp);
