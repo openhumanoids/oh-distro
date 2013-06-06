@@ -40,7 +40,6 @@ classdef WalkingController < DRCController
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
 
-      options.lcm_foot_contacts = true;
       qp = QPController(r,ctrl_data,options);
 
       % cascade walking PD controller 
