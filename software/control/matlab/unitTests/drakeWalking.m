@@ -2,7 +2,7 @@ function drakeWalking(use_mex)
 
 
 use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
-use_state_corrupter = true;
+use_state_corrupter = false;
 
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -122,7 +122,21 @@ clear options;
 sys = r;
 
 if use_state_corrupter
-  sc = StateCorrupter(r);   % <=== Dehann todo: pass in any params, args you'd like here
+  % parameters for state corruption
+  % populate types, terms and  channels for all the noise source to be
+  % added.
+  SCParam.P.types = {'ramp','whitenoise'};
+  ramp.rate = 0.001;
+  wnP.sigma = 0.002;
+  SCParam.P.terms = {ramp,wnP};
+  SCParam.P.channels = {'y'}; % to be completed
+  
+  SCParam.V.types = {'whitenoise'};
+  wnV.sigma = 0.015;
+  SCParam.V.terms = {wnV};
+  SCParam.V.channels = {'xyz'}; % to be completed
+    
+  sc = StateCorrupter(r,SCParam);
   sys = cascade(sys,sc);
 end
 
