@@ -17,13 +17,15 @@ classdef DRCManipMapStateMachine< handle
     r_foot_chain;
     chain_dofIndices;
     qcurrent;
+    coord_map;
   end
 
   methods
   
-    function obj = DRCManipMapStateMachine(robot)
+    function obj = DRCManipMapStateMachine(robot, c_map)
         typecheck(robot,'Atlas');
         obj.robot = robot;
+        obj.coord_map = c_map;
         obj.manip_map_received=false;
         obj.qcurrent=zeros(getNumDOF(obj.robot),1);
     end
@@ -315,25 +317,40 @@ classdef DRCManipMapStateMachine< handle
         
         floatingoffset=6;
         
-         %% This is 
-        rarm =floatingoffset+[19  18  27  17  16  20];
-        larm =floatingoffset+[7  6  15  5  4  8];
-        back =floatingoffset+[1 2 3];
-        neck =floatingoffset+[28];
-        torso = [back neck larm rarm];
-        lleg =floatingoffset+[12  14  11  10  13   9];
-        rleg =floatingoffset+[24  26  23  22  25  21];
         
+       %% This is 
+         coord_map_vals = cell2mat([obj.coord_map.values]);
+         rarm = coord_map_vals(strmatch('r_arm',[obj.coord_map.keys]));
+         larm = coord_map_vals(strmatch('l_arm',[obj.coord_map.keys]));
+         back = coord_map_vals(strmatch('back_',[obj.coord_map.keys]));
+         neck = coord_map_vals(strmatch('neck_',[obj.coord_map.keys]));
+         torso_l = [back neck larm];
+         torso_r = [rarm];
+         lleg = coord_map_vals(strmatch('l_leg',[obj.coord_map.keys]));
+         rleg = coord_map_vals(strmatch('r_leg',[obj.coord_map.keys]));
+         
+        
+         
+         %rarm =floatingoffset+[19  18  27  17  16  20];
+         %larm =floatingoffset+[7  6  15  5  4  8];
+        %back =floatingoffset+[1 2 3];
+        %neck =floatingoffset+[28];
+        %torso = [back neck larm rarm];
+        %lleg =floatingoffset+[12  14  11  10  13   9];
+        %rleg =floatingoffset+[24  26  23  22  25  21];
+                
          %q_nominal = obj.qmap.eval(0);
          q_nominal = obj.qcurrent;
          %q0 = zeros(getNumDOF(obj.robot),1);  %
          qtraj = repmat(q_nominal,1,plan_length); % initialize to current state
-         qtrajbak = qtraj;
+         %qtraj2 = qtraj;
+         %qtrajbak = qtraj;
          if(~isempty(qtraj_larm))
-          qtraj(larm,:) = qtraj_larm(larm,:);
+          qtraj(torso_l,:) = qtraj_larm(torso_l,:);
+          %qtraj2(larm2,:) = qtraj_larm(larm2,:);
          end
          if(~isempty(qtraj_rarm))
-          qtraj(rarm,:) = qtraj_rarm(rarm,:);
+          qtraj(torso_r,:) = qtraj_rarm(torso_r,:);
          end      
          if(~isempty(qtraj_lleg))
           qtraj(lleg,:) = qtraj_lleg(lleg,:);

@@ -9,11 +9,14 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
   r = removeCollisionGroupsExcept(r,{'heel','toe'});
   r = compile(r);
+  
 
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+  
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); 
+  coord_map = containers.Map(joint_names, 1:length(joint_names));
 
-  state_machine = DRCManipMapStateMachine(r);
+  state_machine = DRCManipMapStateMachine(r, coord_map);
 
   % atlas state subscriber
   state_frame = r.getStateFrame();
@@ -39,6 +42,7 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
           if (~isempty(x))
               float_offset=6;
               qcurrent=x(1:getNumDOF(r));
+              %%Make sure to add the mapping
               state_machine.setActiveState(qcurrent);
           end
           ts = tic;
@@ -50,7 +54,7 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
           ts0 = tic;
       end;
       
-      [xmap,affinds] = map_listener.getNextMessage(0);
+      [xmap,affinds] = map_listener.getNextMessage(0, coord_map);
       if (~isempty(xmap))
           disp('candidate manipulation map was committed');
           state_machine.setMap(xmap,affinds);

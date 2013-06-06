@@ -17,19 +17,19 @@ classdef AffIndexedRobotPlanListener
             end
         end
         
-        function [X,I] = getNextMessage(obj, t_ms)
+        function [X,I] = getNextMessage(obj, t_ms, coord_map)
             plan_msg = obj.aggregator.getNextMessage(t_ms);
             if isempty(plan_msg)
                 X = [];I=[];
             else
-                [X,I] = AffIndexedRobotPlanListener.decodeAffIndexedRobotPlan(drc.aff_indexed_robot_plan_t(plan_msg.data),obj.floating);
+                [X,I] = AffIndexedRobotPlanListener.decodeAffIndexedRobotPlan(drc.aff_indexed_robot_plan_t(plan_msg.data),obj.floating, coord_map);
             end
         end
         
     end
     
     methods(Static)
-        function [X,I] = decodeAffIndexedRobotPlan(msg,floating)
+        function [X,I] = decodeAffIndexedRobotPlan(msg,floating, coord_map)
             
             float_offset = 0;
             if floating
@@ -70,9 +70,13 @@ classdef AffIndexedRobotPlanListener
                     X(num_dofs+6,i) = msg.plan(i).origin_twist.angular_velocity.z;
                 end
                 
+                %Here is the problem ?? 
                 for j=float_offset+1:num_dofs
-                    X(j,i) = msg.plan(i).joint_position(j-float_offset);
-                    X(j+num_dofs,i) = msg.plan(i).joint_velocity(j-float_offset);
+                    name = msg.plan(i).joint_name(j-float_offset);
+                    %Do the remapping                     
+                    coord_ndx = coord_map(char(name));
+                    X(coord_ndx,i) = msg.plan(i).joint_position(j-float_offset);
+                    X(coord_ndx+num_dofs,i) = msg.plan(i).joint_velocity(j-float_offset);
                 end
             end
             
