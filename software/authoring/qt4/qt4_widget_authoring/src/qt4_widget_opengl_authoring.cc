@@ -172,13 +172,13 @@ update_constraint_visualizer( Constraint* constraint) {
   if ( constraint->type() == CONSTRAINT_TASK_SPACE_REGION_TYPE ) {
       Constraint_Task_Space_Region* _tsr_constraint = dynamic_cast <Constraint_Task_Space_Region*>(constraint);
       if ( _tsr_constraint->child() != NULL) {
-        double h = _tsr_constraint->ranges()[0].second - _tsr_constraint->ranges()[0].first;
-        double w = _tsr_constraint->ranges()[1].second - _tsr_constraint->ranges()[1].first;
-        double l = _tsr_constraint->ranges()[2].second - _tsr_constraint->ranges()[2].first;
+        double h = _tsr_constraint->ranges()[1].second - _tsr_constraint->ranges()[0].second;
+        double w = _tsr_constraint->ranges()[3].second - _tsr_constraint->ranges()[2].second;
+        double l = _tsr_constraint->ranges()[5].second - _tsr_constraint->ranges()[4].second;
 
-        double x = (_tsr_constraint->ranges()[0].second + _tsr_constraint->ranges()[0].first) / 2.0;
-        double y = (_tsr_constraint->ranges()[1].second + _tsr_constraint->ranges()[1].first) / 2.0;
-        double z = (_tsr_constraint->ranges()[2].second + _tsr_constraint->ranges()[2].first) / 2.0;
+        double x = (_tsr_constraint->ranges()[1].second + _tsr_constraint->ranges()[0].second) / 2.0;
+        double y = (_tsr_constraint->ranges()[3].second + _tsr_constraint->ranges()[2].second) / 2.0;
+        double z = (_tsr_constraint->ranges()[5].second + _tsr_constraint->ranges()[4].second) / 2.0;
 
         KDL::Frame tsr_frame = _tsr_constraint->child()->getOriginFrame() * KDL::Frame( KDL::Vector( x, y, z ) );
 

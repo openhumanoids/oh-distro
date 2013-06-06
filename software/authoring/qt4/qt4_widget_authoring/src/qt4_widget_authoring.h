@@ -14,6 +14,7 @@
 #include <affordance/AffordanceState.h>
 
 #include <state/state_gfe.h>
+#include <kinematics/kinematics_model_gfe.h>
 
 #include <authoring/constraint.h>
 #include <authoring/constraint_sequence.h>
@@ -48,6 +49,8 @@ namespace authoring {
     void _push_button_import_pressed( void );
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
+    void _push_button_stand_up_from_back_pressed( void );
+    void _push_button_stand_up_from_front_pressed( void );
     void _slider_updated( int currentIndex );
     void _constraint_selected( const QString& id );
 
@@ -58,6 +61,8 @@ namespace authoring {
     QPushButton * _push_button_import;
     QPushButton * _push_button_export;
     QPushButton * _push_button_publish;
+    QPushButton * _push_button_stand_up_from_back;
+    QPushButton * _push_button_stand_up_from_front;
     QTextEdit * _text_edit_affordance_collection;
     QSlider * _slider_plan_current_index;
     QCheckBox * _check_box_visible_current_index;
@@ -67,6 +72,7 @@ namespace authoring {
     QLabel * _slider_current_time;
 
     urdf::Model _robot_model;
+    kinematics::Kinematics_Model_GFE _kinematics_model_gfe;
     std::vector< affordance::AffordanceState > _affordance_collection;
     std::vector< affordance::AffordanceState > _affordance_collection_ghost;
     std::vector< state::State_GFE > _robot_plan;

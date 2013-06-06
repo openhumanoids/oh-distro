@@ -19,60 +19,27 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
                                               QWidget * parent ) : QWidget( parent, Qt::Dialog ),
                                                                     _constraint( constraint ),
                                                                     _robot_model( robotModel ),
-                                                                    _robot_affordances(),
                                                                     _object_affordances( affordanceCollection ),
-                                                                    _label_id( new QLabel( "N/A", this ) ),
-                                                                    _combo_box_parent( new QComboBox( this ) ),
+                                                                    _list_widget_parent ( new QListWidget( this ) ),
                                                                     _combo_box_child( new QComboBox( this ) ),
                                                                     _combo_box_type( new QComboBox( this ) ),
-                                                                    _double_spin_box_x_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_x_max( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_y_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_y_max( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_z_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_z_max( new QDoubleSpinBox( this ) ),
-/*
-                                                                    _double_spin_box_roll_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_roll_max( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_pitch_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_pitch_max( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_yaw_min( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_yaw_max( new QDoubleSpinBox( this ) ),
-*/
-                                                                    _push_button_x_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_x_max( new QPushButton( QString( "max" ), this ) ),
-                                                                    _push_button_y_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_y_max( new QPushButton( QString( "max" ), this ) ),
-                                                                    _push_button_z_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_z_max( new QPushButton( QString( "max" ), this ) ){
-/*
-                                                                    _push_button_roll_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_roll_max( new QPushButton( QString( "max" ), this ) ),
-                                                                    _push_button_pitch_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_pitch_max( new QPushButton( QString( "max" ), this ) ),
-                                                                    _push_button_yaw_min( new QPushButton( QString( "min" ), this ) ),
-                                                                    _push_button_yaw_max( new QPushButton( QString( "max" ), this ) ),
-                                                                    _double_spin_box_parent_to_constraint_x( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_parent_to_constraint_y( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_parent_to_constraint_z( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_child_to_constraint_x( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_child_to_constraint_y( new QDoubleSpinBox( this ) ),
-                                                                    _double_spin_box_child_to_constraint_z( new QDoubleSpinBox( this ) ){
-*/
+                                                                    _double_spin_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ),
+                                                                    _check_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ) {
+  for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+    _double_spin_box_ranges[ i ] = new QDoubleSpinBox( this );
+    _check_box_ranges[ i ] = new QCheckBox( this );
+  } 
 
   vector< shared_ptr< Link > > links;
-
   this->installEventFilter(this);
-
+  
   _robot_model.getLinks( links );
   for( vector< shared_ptr< Link > >::iterator it1 = links.begin(); it1 != links.end(); it1++ ){
     for( map< string, shared_ptr< vector< shared_ptr< Collision > > > >::iterator it2 = (*it1)->collision_groups.begin(); it2 != (*it1)->collision_groups.end(); it2++ ){
-      _robot_affordances.push_back( pair< string, string >( (*it1)->name, it2->first ) );
+      QListWidgetItem * affordance_item = new QListWidgetItem( QString( "%1-%2" ).arg( QString::fromStdString( (*it1)->name ) ).arg( QString::fromStdString( it2->first ) ), _list_widget_parent );
+      affordance_item->setFlags( affordance_item->flags() | Qt::ItemIsUserCheckable );
+      affordance_item->setCheckState( Qt::Unchecked );
     }
-  }
-
-  for( vector< pair< string, string > >::iterator it = _robot_affordances.begin(); it != _robot_affordances.end(); it++ ){
-    _combo_box_parent->addItem( QString( "%1-%2" ).arg( QString::fromStdString( it->first ) ).arg( QString::fromStdString( it->second ) ) );
   }
 
   if (! (_object_affordances.size() > 0) ) {
@@ -85,103 +52,32 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   }
 
 
-  for ( uint i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES; i++ ) {
+  for ( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES; i++ ) {
     _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
   }
 
-  _double_spin_box_x_min->setSuffix( " m" );
-  _double_spin_box_x_max->setSuffix( " m" );
-  _double_spin_box_y_min->setSuffix( " m" );
-  _double_spin_box_y_max->setSuffix( " m" );
-  _double_spin_box_z_min->setSuffix( " m" );
-  _double_spin_box_z_max->setSuffix( " m" );
-  _double_spin_box_x_min->setDecimals( 3 );
-  _double_spin_box_x_max->setDecimals( 3 );
-  _double_spin_box_y_min->setDecimals( 3 );
-  _double_spin_box_y_max->setDecimals( 3 );
-  _double_spin_box_z_min->setDecimals( 3 );
-  _double_spin_box_z_max->setDecimals( 3 );
-/*
-  _double_spin_box_roll_min->setDecimals( 3 );
-  _double_spin_box_roll_max->setDecimals( 3 );
-  _double_spin_box_pitch_min->setDecimals( 3 );
-  _double_spin_box_pitch_max->setDecimals( 3 );
-  _double_spin_box_yaw_min->setDecimals( 3 );
-  _double_spin_box_yaw_max->setDecimals( 3 );
-  _double_spin_box_roll_min->setSuffix( " deg" );
-  _double_spin_box_roll_max->setSuffix( " deg" );
-  _double_spin_box_pitch_min->setSuffix( " deg" );
-  _double_spin_box_pitch_max->setSuffix( " deg" );
-  _double_spin_box_yaw_min->setSuffix( " deg" );
-  _double_spin_box_yaw_max->setSuffix( " deg" );
-*/
-  _double_spin_box_x_min->setSingleStep( 0.01 );
-  _double_spin_box_x_max->setSingleStep( 0.01 );
-  _double_spin_box_y_min->setSingleStep( 0.01 );
-  _double_spin_box_y_max->setSingleStep( 0.01 );
-  _double_spin_box_z_min->setSingleStep( 0.01 );
-  _double_spin_box_z_max->setSingleStep( 0.01 );
-/*
-  _double_spin_box_roll_min->setSingleStep( 11.25 );
-  _double_spin_box_roll_max->setSingleStep( 11.25 );
-  _double_spin_box_pitch_min->setSingleStep( 11.25 );
-  _double_spin_box_pitch_max->setSingleStep( 11.25 );
-  _double_spin_box_yaw_min->setSingleStep( 11.25 );
-  _double_spin_box_yaw_max->setSingleStep( 11.25 );
-*/
-  _double_spin_box_x_min->setRange( -1000.0, 1000.0 );
-  _double_spin_box_x_max->setRange( -1000.0, 1000.0 );
-  _double_spin_box_y_min->setRange( -1000.0, 1000.0 );
-  _double_spin_box_y_max->setRange( -1000.0, 1000.0 );
-  _double_spin_box_z_min->setRange( -1000.0, 1000.0 );
-  _double_spin_box_z_max->setRange( -1000.0, 1000.0 );
-/*
-  _double_spin_box_roll_min->setRange( -180.0, 180.0 );
-  _double_spin_box_roll_max->setRange( -180.0, 180.0 );
-  _double_spin_box_pitch_min->setRange( -90.0, 90.0 );
-  _double_spin_box_pitch_max->setRange( -90.0, 90.0 );
-  _double_spin_box_yaw_min->setRange( -180.0, 180.0 );
-  _double_spin_box_yaw_max->setRange( -180.0, 180.0 );
-  _double_spin_box_parent_to_constraint_x->setSuffix( " m" );
-  _double_spin_box_parent_to_constraint_y->setSuffix( " m" );
-  _double_spin_box_parent_to_constraint_z->setSuffix( " m" );
-  _double_spin_box_parent_to_constraint_x->setDecimals( 3 );
-  _double_spin_box_parent_to_constraint_y->setDecimals( 3 );
-  _double_spin_box_parent_to_constraint_z->setDecimals( 3 );
-  _double_spin_box_parent_to_constraint_x->setRange( -1000.0, 1000.0 );
-  _double_spin_box_parent_to_constraint_y->setRange( -1000.0, 1000.0 );
-  _double_spin_box_parent_to_constraint_z->setRange( -1000.0, 1000.0 );
+  for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_ranges.begin(); it != _double_spin_box_ranges.end(); it++ ){
+    (*it)->setSuffix( " m" );
+    (*it)->setDecimals( 3 );
+    (*it)->setRange( -1000.0, 1000.0 );
+    (*it)->setSingleStep( 0.01 );
+  } 
 
-  _double_spin_box_child_to_constraint_x->setSuffix( " m" );
-  _double_spin_box_child_to_constraint_y->setSuffix( " m" );
-  _double_spin_box_child_to_constraint_z->setSuffix( " m" );
-  _double_spin_box_child_to_constraint_x->setDecimals( 3 );
-  _double_spin_box_child_to_constraint_y->setDecimals( 3 );
-  _double_spin_box_child_to_constraint_z->setDecimals( 3 );
-  _double_spin_box_child_to_constraint_x->setRange( -1000.0, 1000.0 );
-  _double_spin_box_child_to_constraint_y->setRange( -1000.0, 1000.0 );
-  _double_spin_box_child_to_constraint_z->setRange( -1000.0, 1000.0 );
-*/
+  for( vector< QCheckBox* >::iterator it = _check_box_ranges.begin(); it != _check_box_ranges.end(); it++ ){
+    (*it)->setCheckState( Qt::Checked );
+  }
+  
   if( _constraint != NULL ){
     _combo_box_type->setCurrentIndex( _constraint->contact_type() );
-    _label_id->setTextFormat(Qt::RichText);
-    _label_id->setText( QString("A <i>task space region constraint</i> defines a constraint between a <i>parent</i> link,<br/> typically a component of the robot, and <i>child</i> link, typically an affordance." ) );
     setWindowTitle( QString("[%1] - task space region constraint").arg( QString::fromStdString( _constraint->id() ) ) );
-    
-    if( _constraint->parent().first != "N/A" ){
-      for( unsigned int i = 0; i < _robot_affordances.size(); i++ ){
-        if( _robot_affordances[ i ].first == _constraint->parent().first ){
-          if( _robot_affordances[ i ].second == _constraint->parent().second ){
-            _combo_box_parent->setCurrentIndex( i );
-          }
+    for( vector< string >::iterator it1 = _constraint->parents().begin(); it1 != _constraint->parents().end(); it1++ ){
+      for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
+        if( _list_widget_parent->item( i )->text().toStdString() == (*it1) ){
+          _list_widget_parent->item( i )->setCheckState( Qt::Checked );
         }
       }
-    } else {
-      if( !_robot_affordances.empty() ){
-        _constraint->parent().first = _robot_affordances.begin()->first;
-        _constraint->parent().second = _robot_affordances.begin()->second;
-      }
     }
+
     if( _constraint->child() != NULL ){
       for( unsigned int i = 0; i < _object_affordances.size(); i++ ){
         if( _object_affordances[ i ].getName() == _constraint->child()->getName() ){
@@ -193,74 +89,17 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
         _constraint->child() = &(*_object_affordances.begin());
       }
     }
-    _double_spin_box_x_min->setValue( _constraint->ranges()[0].first );
-    _double_spin_box_x_max->setValue( _constraint->ranges()[0].second );
-    _double_spin_box_y_min->setValue( _constraint->ranges()[1].first );
-    _double_spin_box_y_max->setValue( _constraint->ranges()[1].second );
-    _double_spin_box_z_min->setValue( _constraint->ranges()[2].first );
-    _double_spin_box_z_max->setValue( _constraint->ranges()[2].second );
-/*
-    _double_spin_box_roll_min->setValue( _constraint->ranges()[3].first );
-    _double_spin_box_roll_max->setValue( _constraint->ranges()[3].second );
-    _double_spin_box_pitch_min->setValue( _constraint->ranges()[4].first );
-    _double_spin_box_pitch_max->setValue( _constraint->ranges()[4].second );
-    _double_spin_box_yaw_min->setValue( _constraint->ranges()[5].first );
-    _double_spin_box_yaw_max->setValue( _constraint->ranges()[5].second );
-    _double_spin_box_parent_to_constraint_x->setValue( _constraint->parent_to_constraint().p[0] );
-    _double_spin_box_parent_to_constraint_y->setValue( _constraint->parent_to_constraint().p[1] );
-    _double_spin_box_parent_to_constraint_z->setValue( _constraint->parent_to_constraint().p[2] );
-    _double_spin_box_child_to_constraint_x->setValue( _constraint->child_to_constraint().p[0] );
-    _double_spin_box_child_to_constraint_y->setValue( _constraint->child_to_constraint().p[1] );
-    _double_spin_box_child_to_constraint_z->setValue( _constraint->child_to_constraint().p[2] );
-*/
-    _push_button_x_min->setCheckable(true);
-    _push_button_x_min->setCheckable(true);
-    _push_button_x_max->setCheckable(true);
-    _push_button_y_min->setCheckable(true);
-    _push_button_y_max->setCheckable(true);
-    _push_button_z_min->setCheckable(true);
-    _push_button_z_max->setCheckable(true);
-/*
-    _push_button_roll_min->setCheckable(true);
-    _push_button_roll_max->setCheckable(true);
-    _push_button_pitch_min->setCheckable(true);
-    _push_button_pitch_max->setCheckable(true);
-    _push_button_yaw_min->setCheckable(true);
-    _push_button_yaw_max->setCheckable(true);
-*/
-    _push_button_x_min->setChecked(_double_spin_box_x_min->value() == _double_spin_box_x_min->minimum());
-    _push_button_x_max->setChecked(_double_spin_box_x_max->value() == _double_spin_box_x_max->maximum());
-    _push_button_y_min->setChecked(_double_spin_box_y_min->value() == _double_spin_box_y_min->minimum());
-    _push_button_y_max->setChecked(_double_spin_box_y_max->value() == _double_spin_box_y_max->maximum());
-    _push_button_z_min->setChecked(_double_spin_box_z_min->value() == _double_spin_box_z_min->minimum());
-    _push_button_z_max->setChecked(_double_spin_box_z_max->value() == _double_spin_box_z_max->maximum());
-/*
-    _push_button_roll_min->setChecked(_double_spin_box_roll_min->value() == _double_spin_box_roll_min->minimum());
-    _push_button_roll_max->setChecked(_double_spin_box_roll_max->value() == _double_spin_box_roll_max->maximum());
-    _push_button_pitch_min->setChecked(_double_spin_box_pitch_min->value() == _double_spin_box_pitch_min->minimum());
-    _push_button_pitch_max->setChecked(_double_spin_box_pitch_max->value() == _double_spin_box_pitch_max->maximum());
-    _push_button_yaw_min->setChecked(_double_spin_box_yaw_min->value() == _double_spin_box_yaw_min->minimum());
-    _push_button_yaw_max->setChecked(_double_spin_box_yaw_max->value() == _double_spin_box_yaw_max->maximum());
-*/
-    _double_spin_box_x_min->setEnabled(_double_spin_box_x_min->value() != _double_spin_box_x_min->minimum());
-    _double_spin_box_x_max->setEnabled(_double_spin_box_x_max->value() != _double_spin_box_x_max->maximum());
-    _double_spin_box_y_min->setEnabled(_double_spin_box_y_min->value() != _double_spin_box_y_min->minimum());
-    _double_spin_box_y_max->setEnabled(_double_spin_box_y_max->value() != _double_spin_box_y_max->maximum());
-    _double_spin_box_z_min->setEnabled(_double_spin_box_z_min->value() != _double_spin_box_z_min->minimum());
-    _double_spin_box_z_max->setEnabled(_double_spin_box_z_max->value() != _double_spin_box_z_max->maximum());
-/*
-    _double_spin_box_roll_min->setEnabled(_double_spin_box_roll_min->value() != _double_spin_box_roll_min->minimum());
-    _double_spin_box_roll_max->setEnabled(_double_spin_box_roll_max->value() != _double_spin_box_roll_max->maximum());
-    _double_spin_box_pitch_min->setEnabled(_double_spin_box_pitch_min->value() != _double_spin_box_pitch_min->minimum());
-    _double_spin_box_pitch_max->setEnabled(_double_spin_box_pitch_max->value() != _double_spin_box_pitch_max->maximum());
-    _double_spin_box_yaw_min->setEnabled(_double_spin_box_yaw_min->value() != _double_spin_box_yaw_min->minimum());
-    _double_spin_box_yaw_max->setEnabled(_double_spin_box_yaw_max->value() != _double_spin_box_yaw_max->maximum());
-*/
+
+    for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+      _check_box_ranges[ i ]->setCheckState( _constraint->ranges()[ i ].first ? Qt::Checked : Qt::Unchecked );
+      _double_spin_box_ranges[ i ]->setEnabled( _constraint->ranges()[ i ].first );
+      _double_spin_box_ranges[ i ]->setValue( _constraint->ranges()[ i ].second );
+    }
   }
 
   QGroupBox * parent_group_box = new QGroupBox( "parent (robot link)" );
   QGridLayout * parent_layout = new QGridLayout();
-  parent_layout->addWidget( _combo_box_parent );
+  parent_layout->addWidget( _list_widget_parent );
   parent_group_box->setLayout( parent_layout );
 
   QGroupBox * child_group_box = new QGroupBox( "child (affordance)" );
@@ -275,139 +114,42 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
   QGroupBox * range_group_box = new QGroupBox( "range" );
   QGridLayout * range_layout = new QGridLayout();
-  range_layout->addWidget( _push_button_x_min, 0, 0 );
-  range_layout->addWidget( _double_spin_box_x_min, 0, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 0, 2 );
-  range_layout->addWidget( new QLabel( QString( "x" ), this ), 0, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 0, 4 );
-  range_layout->itemAtPosition( 0, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 0, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 0, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_x_max, 0, 5 );
-  range_layout->addWidget( _push_button_x_max, 0, 6 );
-  range_layout->addWidget( _push_button_y_min, 1, 0 );
-  range_layout->addWidget( _double_spin_box_y_min, 1, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 1, 2 );
-  range_layout->addWidget( new QLabel( QString( "y" ), this ), 1, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 1, 4 );
-  range_layout->itemAtPosition( 1, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 1, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 1, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_y_max, 1, 5 );
-  range_layout->addWidget( _push_button_y_max, 1, 6 );
-  range_layout->addWidget( _push_button_z_min, 2, 0 );
-  range_layout->addWidget( _double_spin_box_z_min, 2, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 2, 2 );
-  range_layout->addWidget( new QLabel( QString( "z" ), this ), 2, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 2, 4 );
-  range_layout->itemAtPosition( 2, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 2, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 2, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_z_max, 2, 5 );
-  range_layout->addWidget( _push_button_z_max, 2, 6 );
-/*
-  range_layout->addWidget( _push_button_roll_min, 3, 0 );
-  range_layout->addWidget( _double_spin_box_roll_min, 3, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 3, 2 );
-  range_layout->addWidget( new QLabel( QString( "roll" ), this ), 3, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 3, 4 );
-  range_layout->itemAtPosition( 3, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 3, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 3, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_roll_max, 3, 5 );
-  range_layout->addWidget( _push_button_roll_max, 3, 6 );
-  range_layout->addWidget( _push_button_pitch_min, 4, 0 );
-  range_layout->addWidget( _double_spin_box_pitch_min, 4, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 4, 2 );
-  range_layout->addWidget( new QLabel( QString( "pitch" ), this ), 4, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 4, 4 );
-  range_layout->itemAtPosition( 4, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 4, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 4, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_pitch_max, 4, 5 );
-  range_layout->addWidget( _push_button_pitch_max, 4, 6 );
-  range_layout->addWidget( _push_button_yaw_min, 5, 0 );
-  range_layout->addWidget( _double_spin_box_yaw_min, 5, 1 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 5, 2 );
-  range_layout->addWidget( new QLabel( QString( "yaw" ), this ), 5, 3 );
-  range_layout->addWidget( new QLabel( QString::fromUtf8( "\u2264" ), this ), 5, 4 );
-  range_layout->itemAtPosition( 5, 2 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 5, 3 )->setAlignment( Qt::AlignCenter );
-  range_layout->itemAtPosition( 5, 4 )->setAlignment( Qt::AlignCenter );
-  range_layout->addWidget( _double_spin_box_yaw_max, 5, 5 );
-  range_layout->addWidget( _push_button_yaw_max, 5, 6 );
-*/
+  range_layout->addWidget( new QLabel( QString::fromUtf8( " \u2264 x \u2264 " ), this ), 0, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( " \u2264 y \u2264 " ), this ), 1, 2 );
+  range_layout->addWidget( new QLabel( QString::fromUtf8( " \u2264 z \u2264 " ), this ), 2, 2 );
+  for( unsigned int i = 0; i < ( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES/2 ); i++ ){
+    range_layout->addWidget( _check_box_ranges[ 2 * i ], i, 0 );
+    range_layout->addWidget( _double_spin_box_ranges[ 2 * i ], i, 1 );
+    range_layout->addWidget( _double_spin_box_ranges[ 2 * i + 1 ], i, 3 );
+    range_layout->addWidget( _check_box_ranges[ 2 * i + 1 ], i, 4 );
+    for( unsigned int j = 0; j < 5; j++ ){
+      if( range_layout->itemAtPosition( i, j ) != NULL ){
+        range_layout->itemAtPosition( i, j )->setAlignment( Qt::AlignCenter );
+      }
+    }
+  }
+  
   range_group_box->setLayout( range_layout );
-/*
-  QGroupBox * parent_to_constraint_group_box = new QGroupBox( "parent_to_constraint" );
-  QGridLayout * parent_to_constraint_layout = new QGridLayout();
-  parent_to_constraint_layout->addWidget( _double_spin_box_parent_to_constraint_x );
-  parent_to_constraint_layout->addWidget( _double_spin_box_parent_to_constraint_y );
-  parent_to_constraint_layout->addWidget( _double_spin_box_parent_to_constraint_z );
-  parent_to_constraint_group_box->setLayout( parent_to_constraint_layout );
-
-  QGroupBox * child_to_constraint_group_box = new QGroupBox( "child_to_constraint" );
-  QGridLayout * child_to_constraint_layout = new QGridLayout();
-  child_to_constraint_layout->addWidget( _double_spin_box_child_to_constraint_x );
-  child_to_constraint_layout->addWidget( _double_spin_box_child_to_constraint_y );
-  child_to_constraint_layout->addWidget( _double_spin_box_child_to_constraint_z );
-  child_to_constraint_group_box->setLayout( child_to_constraint_layout );
-*/
+  
   QGridLayout * widget_layout = new QGridLayout( this );
-  widget_layout->addWidget( _label_id, 0, 0, 1, 2 );
-  widget_layout->addWidget( parent_group_box, 1, 0, 1, 2 );
-  widget_layout->addWidget( child_group_box, 2, 0, 1, 2 );
-  widget_layout->addWidget( type_group_box, 3, 0, 1, 2 );
-  widget_layout->addWidget( range_group_box, 4, 0, 1, 2 );
-/*
-  widget_layout->addWidget( parent_to_constraint_group_box, 5, 0 );
-  widget_layout->addWidget( child_to_constraint_group_box, 5, 1 );
-*/
+  widget_layout->addWidget( parent_group_box, 0, 0 );
+  widget_layout->addWidget( child_group_box, 1, 0 );
+  widget_layout->addWidget( type_group_box, 2, 0 );
+  widget_layout->addWidget( range_group_box, 3, 0 );
   setLayout( widget_layout );
 
-  connect( _combo_box_parent, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
+  connect( _list_widget_parent, SIGNAL( itemChanged( QListWidgetItem* ) ), this, SLOT( _constraint_changed( QListWidgetItem* ) ) );
   connect( _combo_box_child, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
   connect( _combo_box_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
 
-  connect( _combo_box_parent, SIGNAL( highlighted( int ) ), this, SLOT( _map_highlighted_parent( int ) ) );
-  connect( _combo_box_parent, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _map_highlighted_parent( int ) ) );
+  for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_ranges.begin(); it != _double_spin_box_ranges.end(); it++ ){
+    connect( (*it), SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
+  }   
 
-  connect( _push_button_x_min, SIGNAL( clicked() ), this, SLOT( _range_x_minimize() ) );
-  connect( _push_button_x_max, SIGNAL( clicked() ), this, SLOT( _range_x_maximize() ) );
-  connect( _push_button_y_min, SIGNAL( clicked() ), this, SLOT( _range_y_minimize() ) );
-  connect( _push_button_y_max, SIGNAL( clicked() ), this, SLOT( _range_y_maximize() ) );
-  connect( _push_button_z_min, SIGNAL( clicked() ), this, SLOT( _range_z_minimize() ) );
-  connect( _push_button_z_max, SIGNAL( clicked() ), this, SLOT( _range_z_maximize() ) );
-/*
-  connect( _push_button_roll_min, SIGNAL( clicked() ), this, SLOT( _range_roll_minimize() ) );
-  connect( _push_button_roll_max, SIGNAL( clicked() ), this, SLOT( _range_roll_maximize() ) );
-  connect( _push_button_pitch_min, SIGNAL( clicked() ), this, SLOT( _range_pitch_minimize() ) );
-  connect( _push_button_pitch_max, SIGNAL( clicked() ), this, SLOT( _range_pitch_maximize() ) );
-  connect( _push_button_yaw_min, SIGNAL( clicked() ), this, SLOT( _range_yaw_minimize() ) );
-  connect( _push_button_yaw_max, SIGNAL( clicked() ), this, SLOT( _range_yaw_maximize() ) );
-*/
-  connect( _double_spin_box_x_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_x_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_y_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_y_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_z_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_z_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-/*
-  connect( _double_spin_box_roll_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_roll_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_pitch_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_pitch_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_yaw_min, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_yaw_max, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
+  for( vector< QCheckBox* >::iterator it = _check_box_ranges.begin(); it != _check_box_ranges.end(); it++ ){
+    connect( (*it), SIGNAL( clicked() ), this, SLOT( _constraint_changed() ) );
+  }
 
-  connect( _double_spin_box_parent_to_constraint_x, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_parent_to_constraint_y, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_parent_to_constraint_z, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  
-  connect( _double_spin_box_child_to_constraint_x, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_child_to_constraint_y, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-  connect( _double_spin_box_child_to_constraint_z, SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
-*/
 }
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
@@ -417,15 +159,18 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor::
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 Qt4_Widget_Constraint_Task_Space_Region_Editor( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other )  : _robot_model( other._robot_model ),
-    _robot_affordances( other._robot_affordances ),
-    _object_affordances( other._object_affordances ){
-
+                                                                                                                  _object_affordances( other._object_affordances ),
+                                                                                                                  _double_spin_box_ranges( other._double_spin_box_ranges ),
+                                                                                                                  _check_box_ranges( other._check_box_ranges ){
 }
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor&
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 operator=( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other ) {
-
+  _robot_model = other._robot_model;
+  _object_affordances = other._object_affordances;
+  _double_spin_box_ranges = other._double_spin_box_ranges;
+  _check_box_ranges = other._check_box_ranges;
   return (*this);
 }
 
@@ -433,283 +178,84 @@ bool
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 eventFilter(QObject *object, QEvent *event)
 {
-    if (event->type() == QEvent::WindowActivate) {
-        emit widget_selected();
-    }
-    return false;
+  if( event->type() == QEvent::WindowActivate ) {
+    emit widget_selected();
+  }
+  return false;
 }
 
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( void ){
+  for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+    _double_spin_box_ranges[ i ]->setEnabled( _check_box_ranges[ i ]->isChecked() );
+  }
+  if( _constraint != NULL ) {
+    // set the child
+    _constraint->child() = NULL;
+    if( _combo_box_child->currentIndex() < _object_affordances.size() ){
+      _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
+    }
+    // set the parents
+    _constraint->parents().clear();
+    for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
+      if( _list_widget_parent->item( i )->checkState() == Qt::Checked ){
+        _constraint->parents().push_back( _list_widget_parent->item( i )->text().toStdString() );
+      }
+    }
+    // set the contact type
+    _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
+    // set the ranges
+    for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+      _constraint->ranges()[ i ].first = _check_box_ranges[ i ]->isChecked();
+      _constraint->ranges()[ i ].second = _double_spin_box_ranges[ i ]->value();
+    }
+  }
+  emit description_update( QString::fromStdString( _constraint->description() ) );
+  emit widget_selected();
+  return;
+}
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor::
+_constraint_changed( int index ){
+  _constraint_changed();
   return;
 }
 
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _constraint_changed( double value ){
-  if( _constraint != NULL ){
-/*
-    _constraint->parent_to_constraint().p[0] = _double_spin_box_parent_to_constraint_x->value();
-    _constraint->parent_to_constraint().p[1] = _double_spin_box_parent_to_constraint_y->value();
-    _constraint->parent_to_constraint().p[2] = _double_spin_box_parent_to_constraint_z->value();
-
-    _constraint->child_to_constraint().p[0] = _double_spin_box_child_to_constraint_x->value();
-    _constraint->child_to_constraint().p[1] = _double_spin_box_child_to_constraint_y->value();
-    _constraint->child_to_constraint().p[2] = _double_spin_box_child_to_constraint_z->value();
-*/ 
-    _constraint->ranges()[0].first = _double_spin_box_x_min->value();
-    _constraint->ranges()[0].second = _double_spin_box_x_max->value();
-    _constraint->ranges()[1].first = _double_spin_box_y_min->value();
-    _constraint->ranges()[1].second = _double_spin_box_y_max->value();
-    _constraint->ranges()[2].first = _double_spin_box_z_min->value();
-    _constraint->ranges()[2].second = _double_spin_box_z_max->value();
-/*
-    _constraint->ranges()[3].first = _double_spin_box_roll_min->value();
-    _constraint->ranges()[3].second = _double_spin_box_roll_max->value();
-    _constraint->ranges()[4].first = _double_spin_box_pitch_min->value();
-    _constraint->ranges()[4].second = _double_spin_box_pitch_max->value();
-    _constraint->ranges()[5].first = _double_spin_box_yaw_min->value();
-    _constraint->ranges()[5].second = _double_spin_box_yaw_max->value();
-*/
-    mark_invalid_spin_boxes();
-    emit description_update( QString::fromStdString( _constraint->description() ) );
-    emit widget_selected();
-  } else {
-    emit description_update( QString( "N/A" ) );
-  }
+  _constraint_changed();
+  _mark_invalid_spin_boxes();
   return;
 }
 
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
-mark_invalid_spin_boxes() {
-    QString invalid = "QDoubleSpinBox { background-color: #ff0000; color: white }";
-    QString valid = "";
-    _double_spin_box_x_min->setStyleSheet((_double_spin_box_x_min->value() > _double_spin_box_x_max->value()) ? invalid : valid);
-    _double_spin_box_x_max->setStyleSheet((_double_spin_box_x_min->value() > _double_spin_box_x_max->value()) ? invalid : valid);
-    _double_spin_box_y_min->setStyleSheet((_double_spin_box_y_min->value() > _double_spin_box_y_max->value()) ? invalid : valid);
-    _double_spin_box_y_max->setStyleSheet((_double_spin_box_y_min->value() > _double_spin_box_y_max->value()) ? invalid : valid);
-    _double_spin_box_z_min->setStyleSheet((_double_spin_box_z_min->value() > _double_spin_box_z_max->value()) ? invalid : valid);
-    _double_spin_box_z_max->setStyleSheet((_double_spin_box_z_min->value() > _double_spin_box_z_max->value()) ? invalid : valid);
-/*
-    _double_spin_box_roll_min->setStyleSheet((_double_spin_box_roll_min->value() > _double_spin_box_roll_max->value()) ? invalid : valid);
-    _double_spin_box_roll_max->setStyleSheet((_double_spin_box_roll_min->value() > _double_spin_box_roll_max->value()) ? invalid : valid);
-    _double_spin_box_pitch_min->setStyleSheet((_double_spin_box_pitch_min->value() > _double_spin_box_pitch_max->value()) ? invalid : valid);
-    _double_spin_box_pitch_max->setStyleSheet((_double_spin_box_pitch_min->value() > _double_spin_box_pitch_max->value()) ? invalid : valid);
-    _double_spin_box_yaw_min->setStyleSheet((_double_spin_box_yaw_min->value() > _double_spin_box_yaw_max->value()) ? invalid : valid);
-    _double_spin_box_yaw_max->setStyleSheet((_double_spin_box_yaw_min->value() > _double_spin_box_yaw_max->value()) ? invalid : valid);
-*/
-}
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor::
-_constraint_changed( int index ){
-  if( _constraint != NULL ){
-    if( _combo_box_parent->currentIndex() < _robot_affordances.size() ){
-      _constraint->parent() = _robot_affordances[ _combo_box_parent->currentIndex() ];
-    }
-    if( _combo_box_child->currentIndex() < _object_affordances.size() ){
-      _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
-    }
-    _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
-    emit description_update( QString::fromStdString( _constraint->description() ) );
-  } else {
-    emit description_update( QString( "N/A" ) );
-  }
+_constraint_changed( QListWidgetItem * item ){
+  _constraint_changed();
   return;
 }
 
 void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_x_minimize( void )
-{
-    if (_push_button_x_min->isChecked()) {
-        _double_spin_box_x_min_cached = _double_spin_box_x_min->value(); 
-        _double_spin_box_x_min->setValue( _double_spin_box_x_min->minimum() );
-    } else {
-        _double_spin_box_x_min->setValue( _double_spin_box_x_min_cached );
-    }
-    _double_spin_box_x_min->setEnabled( !( _push_button_x_min->isChecked() ) );
+Qt4_Widget_Constraint_Task_Space_Region_Editor::
+_mark_invalid_spin_boxes() {
+  QString invalid = "QDoubleSpinBox { background-color: #ff0000; color: white }";
+  QString valid = "";
+  for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES/2; i++ ){
+    _double_spin_box_ranges[ 2 * i ]->setStyleSheet( ( _double_spin_box_ranges[ 2 * i ]->value() > _double_spin_box_ranges[ 2 * i + 1 ]->value() ) ? invalid : valid );
+    _double_spin_box_ranges[ 2 * i + 1 ]->setStyleSheet( ( _double_spin_box_ranges[ 2 * i ]->value() > _double_spin_box_ranges[ 2 * i + 1 ]->value() ) ? invalid : valid );
+  }
+  return; 
+}
 
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_y_minimize( void )
-{
-    if (_push_button_y_min->isChecked()) {
-        _double_spin_box_y_min_cached = _double_spin_box_y_min->value(); 
-        _double_spin_box_y_min->setValue( _double_spin_box_y_min->minimum() );
-    } else {
-        _double_spin_box_y_min->setValue( _double_spin_box_y_min_cached );
-    }
-    _double_spin_box_y_min->setEnabled( !( _push_button_y_min->isChecked() ) );
-
-    return; 
-};
-
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_z_minimize( void )
-{
-    if (_push_button_z_min->isChecked()) {
-        _double_spin_box_z_min_cached = _double_spin_box_z_min->value(); 
-        _double_spin_box_z_min->setValue( _double_spin_box_z_min->minimum() );
-    } else {
-        _double_spin_box_z_min->setValue( _double_spin_box_z_min_cached );
-    }
-    _double_spin_box_z_min->setEnabled( !( _push_button_z_min->isChecked() ) );
-
-    return; 
-};
-
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_x_maximize( void )
-{
-    if (_push_button_x_max->isChecked()) {
-        _double_spin_box_x_max_cached = _double_spin_box_x_max->value(); 
-        _double_spin_box_x_max->setValue( _double_spin_box_x_max->maximum() );
-    } else {
-        _double_spin_box_x_max->setValue( _double_spin_box_x_max_cached );
-    }
-    _double_spin_box_x_max->setEnabled( !( _push_button_x_max->isChecked() ) );
-
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_y_maximize( void )
-{
-    if (_push_button_y_max->isChecked()) {
-        _double_spin_box_y_max_cached = _double_spin_box_y_max->value(); 
-        _double_spin_box_y_max->setValue( _double_spin_box_y_max->maximum() );
-    } else {
-        _double_spin_box_y_max->setValue( _double_spin_box_y_max_cached );
-    }
-    _double_spin_box_y_max->setEnabled( !( _push_button_y_max->isChecked() ) );
-
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_z_maximize( void )
-{
-    if (_push_button_z_max->isChecked()) {
-        _double_spin_box_z_max_cached = _double_spin_box_z_max->value(); 
-        _double_spin_box_z_max->setValue( _double_spin_box_z_max->maximum() );
-    } else {
-        _double_spin_box_z_max->setValue( _double_spin_box_z_max_cached );
-    }
-    _double_spin_box_z_max->setEnabled( !( _push_button_z_max->isChecked() ) );
-
-    return; 
-};
-
-
-/*
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_roll_minimize( void )
-{
-    if (_push_button_roll_min->isChecked()) {
-        _double_spin_box_roll_min_cached = _double_spin_box_roll_min->value(); 
-        _double_spin_box_roll_min->setValue( _double_spin_box_roll_min->minimum() );
-    } else {
-        _double_spin_box_roll_min->setValue( _double_spin_box_roll_min_cached );
-    }
-    _double_spin_box_roll_min->setEnabled( !( _push_button_roll_min->isChecked() ) );
-
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_pitch_minimize( void )
-{
-    if (_push_button_pitch_min->isChecked()) {
-        _double_spin_box_pitch_min_cached = _double_spin_box_pitch_min->value(); 
-        _double_spin_box_pitch_min->setValue( _double_spin_box_pitch_min->minimum() );
-    } else {
-        _double_spin_box_pitch_min->setValue( _double_spin_box_pitch_min_cached );
-    }
-    _double_spin_box_pitch_min->setEnabled( !( _push_button_pitch_min->isChecked() ) );
-
-    return; 
-};
-
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_yaw_minimize( void )
-{
-    if (_push_button_yaw_min->isChecked()) {
-        _double_spin_box_yaw_min_cached = _double_spin_box_yaw_min->value(); 
-        _double_spin_box_yaw_min->setValue( _double_spin_box_yaw_min->minimum() );
-    } else {
-        _double_spin_box_yaw_min->setValue( _double_spin_box_yaw_min_cached );
-    }
-    _double_spin_box_yaw_min->setEnabled( !( _push_button_yaw_min->isChecked() ) );
-
-    return; 
-};
-
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_roll_maximize( void )
-{
-    if (_push_button_roll_max->isChecked()) {
-        _double_spin_box_roll_max_cached = _double_spin_box_roll_max->value(); 
-        _double_spin_box_roll_max->setValue( _double_spin_box_roll_max->maximum() );
-    } else {
-        _double_spin_box_roll_max->setValue( _double_spin_box_roll_max_cached );
-    }
-    _double_spin_box_roll_max->setEnabled( !( _push_button_roll_max->isChecked() ) );
-
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_pitch_maximize( void )
-{
-    if (_push_button_pitch_max->isChecked()) {
-        _double_spin_box_pitch_max_cached = _double_spin_box_pitch_max->value(); 
-        _double_spin_box_pitch_max->setValue( _double_spin_box_pitch_max->maximum() );
-    } else {
-        _double_spin_box_pitch_max->setValue( _double_spin_box_pitch_max_cached );
-    }
-    _double_spin_box_pitch_max->setEnabled( !( _push_button_pitch_max->isChecked() ) );
-
-    return; 
-};
-
-void
-Qt4_Widget_Constraint_Task_Space_Region_Editor:: 
-_range_yaw_maximize( void )
-{
-    if (_push_button_yaw_max->isChecked()) {
-        _double_spin_box_yaw_max_cached = _double_spin_box_yaw_max->value(); 
-        _double_spin_box_yaw_max->setValue( _double_spin_box_yaw_max->maximum() );
-    } else {
-        _double_spin_box_yaw_max->setValue( _double_spin_box_yaw_max_cached );
-    }
-    _double_spin_box_yaw_max->setEnabled( !( _push_button_yaw_max->isChecked() ) );
-
-    return; 
-};
-*/
 void 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 _map_highlighted_parent( int index ) {
+/*
   emit highlight_parent_link_by_name( QString::fromStdString( _robot_affordances[ index ].first ) );
+*/
 }
 
 namespace authoring {

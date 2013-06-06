@@ -141,6 +141,8 @@ update_constraint( void ){
     _combo_box_type->setCurrentIndex( _constraint->type() );
     _double_spin_box_time_start->setValue( _constraint->start() );
     _double_spin_box_time_end->setValue( _constraint->end() );
+    _line_edit_description->clear();
+    _line_edit_description->setText( QString::fromStdString( _constraint->description() ) );
   } else {
     _check_box_active->setCheckState( Qt::Unchecked );
   }
@@ -309,7 +311,9 @@ _combo_box_type_changed( int index ){
 void
 Qt4_Widget_Constraint_Editor::
 show_visualizer( void ){
+  if( _constraint != NULL ){
     emit constraint_selected( QString::fromStdString( _constraint->id() ) );
+  }
 }
 
 void

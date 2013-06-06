@@ -15,6 +15,8 @@ namespace authoring {
     Constraint_Configuration( const Constraint_Configuration& other );
     Constraint_Configuration& operator=( const Constraint_Configuration& other );
 
+    virtual void to_xml( std::ofstream& out, unsigned int indent = 0 )const;
+
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );
 
     virtual inline constraint_type_t type( void )const{ return CONSTRAINT_CONFIGURATION_TYPE; };

@@ -13,6 +13,16 @@
 namespace authoring {
 
   typedef enum {
+    CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE,
+    CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE,
+    CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE,
+    CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE,
+    CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE,
+    CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE,
+    NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES
+  } range_index_t;
+
+  typedef enum {
     CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE,
     CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE,
     NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES
@@ -20,10 +30,12 @@ namespace authoring {
 
   class Constraint_Task_Space_Region: public Constraint {
   public:
-    Constraint_Task_Space_Region( const std::string& id = "N/A", bool active = true, double start = 0.1, double end = 1.0, const std::pair< std::string, std::string >& parent = std::pair< std::string, std::string >( "N/A", "N/A" ), affordance::AffordanceState* child = NULL );
+    Constraint_Task_Space_Region( const std::string& id = "N/A", bool active = true, double start = 0.1, double end = 1.0, const std::string& parent = std::string( "N/A" ), affordance::AffordanceState* child = NULL, contact_type_t contactType = CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE );
     ~Constraint_Task_Space_Region();
     Constraint_Task_Space_Region( const Constraint_Task_Space_Region& other );
     Constraint_Task_Space_Region& operator=( const Constraint_Task_Space_Region& other );
+
+    virtual void to_xml( std::ofstream& out, unsigned int indent = 0 )const;
 
     virtual void add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence );    
     
@@ -33,24 +45,21 @@ namespace authoring {
     virtual std::string description( void )const;
     inline contact_type_t& contact_type( void ) { return _contact_type; }
     inline const contact_type_t& contact_type( void )const{ return _contact_type; };
-    inline std::vector< std::pair< double, double > >& ranges( void ){ return _ranges; };
-    inline const std::vector< std::pair< double, double > >& ranges( void )const{ return _ranges; };
-    inline std::pair< std::string, std::string >& parent( void ){ return _parent; };
-    inline const std::pair< std::string, std::string >& parent( void )const{ return _parent; };
+    inline std::vector< std::pair< bool, double > >& ranges( void ){ return _ranges; };
+    inline const std::vector< std::pair< bool, double > >& ranges( void )const{ return _ranges; };
+    inline std::vector< std::string >& parents( void ){ return _parents; };
+    inline const std::vector< std::string >& parents( void )const{ return _parents; };
     inline affordance::AffordanceState*& child( void ){ return _child; };
     inline const affordance::AffordanceState* child( void )const{ return _child; };
-    inline KDL::Frame& parent_to_constraint( void ){ return _parent_to_constraint; };
-    inline const KDL::Frame& parent_to_constraint( void )const{ return _parent_to_constraint; };
-    inline KDL::Frame& child_to_constraint( void ){ return _child_to_constraint; };
-    inline const KDL::Frame& child_to_constraint( void )const{ return _child_to_constraint; };
+    inline KDL::Frame& offset( void ){ return _offset; };
+    inline const KDL::Frame& offset( void )const{ return _offset; };
 
   protected:
     contact_type_t _contact_type;
-    std::vector< std::pair< double, double > > _ranges;
-    std::pair< std::string, std::string > _parent;
+    std::vector< std::pair< bool, double > > _ranges;
+    std::vector< std::string > _parents;
     affordance::AffordanceState* _child;
-    KDL::Frame _parent_to_constraint;
-    KDL::Frame _child_to_constraint;
+    KDL::Frame _offset;
 
   private:
 

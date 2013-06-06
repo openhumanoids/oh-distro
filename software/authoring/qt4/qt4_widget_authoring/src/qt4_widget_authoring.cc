@@ -10,6 +10,7 @@
 using namespace std;
 using namespace opengl;
 using namespace qt4;
+using namespace KDL;
 using namespace drc;
 using namespace kinematics;
 using namespace state;
@@ -26,6 +27,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _push_button_import( new QPushButton( QString( "import..." ), this ) ),
                                             _push_button_export( new QPushButton( QString( "export..." ), this ) ),
                                             _push_button_publish( new QPushButton( QString( "publish constraints" ), this ) ),
+                                            _push_button_stand_up_from_back( new QPushButton( QString( "stand up from back" ), this ) ),
+                                            _push_button_stand_up_from_front( new QPushButton( QString( "stand up from front" ), this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
                                             _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
@@ -34,6 +37,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _check_box_visible_initial_state( new QCheckBox( "initial state", this ) ),
                                             _slider_current_time( new QLabel("frame 0") ),
                                             _robot_model(),
+                                            _kinematics_model_gfe( xmlString ),
                                             _affordance_collection(),
                                             _affordance_collection_ghost(),
                                             _robot_plan(),
@@ -62,11 +66,13 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _check_box_visible_initial_state->setCheckState( Qt::Checked );
 
   QGroupBox * controls_group_box = new QGroupBox( QString( "controls" ) );
-  QHBoxLayout * controls_layout = new QHBoxLayout();
-  controls_layout->addWidget( _push_button_grab );
-  controls_layout->addWidget( _push_button_import );
-  controls_layout->addWidget( _push_button_export );
-  controls_layout->addWidget( _push_button_publish );
+  QGridLayout * controls_layout = new QGridLayout();
+  controls_layout->addWidget( _push_button_grab, 0, 0 );
+  controls_layout->addWidget( _push_button_import, 0, 1 );
+  controls_layout->addWidget( _push_button_export, 0, 2 );
+  controls_layout->addWidget( _push_button_publish, 0, 3 );
+  controls_layout->addWidget( _push_button_stand_up_from_back, 1, 0 );
+  controls_layout->addWidget( _push_button_stand_up_from_front, 1, 1 );
   controls_group_box->setLayout( controls_layout );
  
   QWidget * affordances_widget = new QWidget( this );
@@ -143,6 +149,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
   connect( _push_button_export, SIGNAL( clicked() ), this, SLOT( _push_button_export_pressed() ) );
   connect( _push_button_publish, SIGNAL( clicked() ), this, SLOT( _push_button_publish_pressed() ) );
+  connect( _push_button_stand_up_from_back, SIGNAL( clicked() ), this, SLOT( _push_button_stand_up_from_back_pressed() ) );
+  connect( _push_button_stand_up_from_front, SIGNAL( clicked() ), this, SLOT( _push_button_stand_up_from_front_pressed() ) );
 }
 
 Qt4_Widget_Authoring::
@@ -254,8 +262,212 @@ Qt4_Widget_Authoring::
 _push_button_publish_pressed( void ){
   action_sequence_t msg; 
   _constraint_sequence.to_msg( msg ); 
+  Constraint_Sequence::print_msg( msg );
   emit drc_action_sequence_t_publish( msg );     
   emit info_update( QString( "[<b>OK</b>] published constraint sequence as drc::action_sequence_t" ) ); 
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+_push_button_stand_up_from_back_pressed( void ){
+  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
+    if( _constraint_sequence.constraints()[ i ] != NULL ){
+      delete _constraint_sequence.constraints()[ i ];
+      _constraint_sequence.constraints()[ i ] = NULL;
+    }
+  }
+
+  AffordanceState * ground = NULL;
+  for( unsigned int i = 0; i < _affordance_collection.size(); i++ ){
+    cout << "affordance_collection[" << i << "]: " << _affordance_collection[ i ].getName() << " xyz: " << _affordance_collection[ i ].getXYZ().x() << "," << _affordance_collection[ i ].getXYZ().y() << "," << _affordance_collection[ i ].getXYZ().z() << endl;
+  }
+  if( _affordance_collection.size() == 1 ){
+    ground = &_affordance_collection[ 0 ];
+  }
+
+  _kinematics_model_gfe.set( _constraint_sequence.q0() );
+  Frame frame_pelvis = _kinematics_model_gfe.link( "pelvis" );
+  Frame frame_head = _kinematics_model_gfe.link( "head" );
+  double yaw = atan2( frame_head.p[1] - frame_pelvis.p[1], frame_head.p[0] - frame_pelvis.p[0] );
+
+  Frame frame_constraint_center = Frame( Rotation::RPY( 0.0, 0.0, yaw ), Vector( frame_pelvis.p[0], frame_pelvis.p[1], 0.0 ) );
+/*
+  // initial constraints
+  _constraint_sequence.constraints()[ 4 ] = new Constraint_Task_Space_Region( "4", true, 0.1, 1.0, "utorso-back", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 0 ].second = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 1 ].second = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 ); 
+
+  _constraint_sequence.constraints()[ 5 ] = new Constraint_Task_Space_Region( "5", true, 0.1, 1.0, "pelvis-back", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 0 ].second = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 1 ].second = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+
+  // put hands and feet on the floor
+  Frame frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.6, -0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 10 ] = new Constraint_Task_Space_Region( "10", true, 0.1, 1.0, "l_foot-toe", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 0 ].second = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 1 ].second = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 11 ] = new Constraint_Task_Space_Region( "11", true, 0.1, 1.0, "l_foot-heel", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 0 ].second = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 1 ].second = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.6, 0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 12 ] = new Constraint_Task_Space_Region( "12", true, 0.1, 1.0, "r_foot-toe", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 0 ].second = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 1 ].second = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 13 ] = new Constraint_Task_Space_Region( "13", true, 0.1, 1.0, "r_foot-heel", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 0 ].second = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 1 ].second = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( 0.5, -0.4, 0.0 ) );
+  _constraint_sequence.constraints()[ 14 ] = new Constraint_Task_Space_Region( "14", true, 0.1, 1.0, "left_palm-knuckle", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 14 ] )->ranges()[ 0 ].second = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 14 ] )->ranges()[ 1 ].second = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 14 ] )->ranges()[ 2 ].second = pair< double, double >( 0.0, 0.0 );
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( 0.5, 0.4, 0.0 ) );
+  _constraint_sequence.constraints()[ 15 ] = new Constraint_Task_Space_Region( "15", true, 0.1, 1.0, "right_palm-knuckle", ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 15 ] )->ranges()[ 0 ] = pair< bool, pair< double, double > >( true, pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 ) );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 15 ] )->ranges()[ 1 ] = pair< bool, pair< double, double > >( true, pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 ) );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 15 ] )->ranges()[ 2 ] = pair< bool, pair< double, double > >( true, pair< double, double >( 0.0, 0.0 ) );
+*/
+  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
+    _constraint_editors[ i ]->update_constraint();
+  }
+
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+_push_button_stand_up_from_front_pressed( void ){
+  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
+    if( _constraint_sequence.constraints()[ i ] != NULL ){
+      delete _constraint_sequence.constraints()[ i ];
+      _constraint_sequence.constraints()[ i ] = NULL;
+    }
+  }
+
+
+  AffordanceState * ground = NULL;
+  for( unsigned int i = 0; i < _affordance_collection.size(); i++ ){
+    cout << "affordance_collection[" << i << "]: " << _affordance_collection[ i ].getName() << " xyz: " << _affordance_collection[ i ].getXYZ().x() << "," << _affordance_collection[ i ].getXYZ().y() << "," << _affordance_collection[ i ].getXYZ().z() << endl;
+  }
+  if( _affordance_collection.size() == 1 ){
+    ground = &_affordance_collection[ 0 ];
+  }
+
+  cout << "state_gfe xyz: " << _constraint_sequence.q0().pose().p[0] << "," << _constraint_sequence.q0().pose().p[1] << "," << _constraint_sequence.q0().pose().p[2] << endl;
+  _kinematics_model_gfe.set( _constraint_sequence.q0() );
+  Frame frame_pelvis = _kinematics_model_gfe.link( "pelvis" );
+  cout << "pelvis xyz: " << frame_pelvis.p[0] << "," << frame_pelvis.p[1] << "," << frame_pelvis.p[2] << endl;
+  Frame frame_head = _kinematics_model_gfe.link( "head" );
+  cout << "head xyz: " << frame_head.p[0] << "," << frame_head.p[1] << "," << frame_head.p[2] << endl;
+
+  double yaw = atan2( frame_head.p[1] - frame_pelvis.p[1], frame_head.p[0] - frame_pelvis.p[0] );
+  cout << "yaw: " << yaw << endl;
+
+  Frame frame_constraint_center = Frame( Rotation::RPY( 0.0, 0.0, yaw ), Vector( frame_pelvis.p[0], frame_pelvis.p[1], 0.0 ) );
+  cout << "frame_constraint_center xyz: " << frame_constraint_center.p[0] << "," << frame_constraint_center.p[1] << "," << frame_constraint_center.p[2] << endl;
+/*
+  // z > 0 constraints
+  _constraint_sequence.constraints()[ 0 ] = new Constraint_Task_Space_Region( "0", true, 0.1, 1.0, pair< string, string >( "l_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 0 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 0 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 0 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 100.0 );
+  _constraint_sequence.constraints()[ 1 ] = new Constraint_Task_Space_Region( "1", true, 0.1, 1.0, pair< string, string >( "l_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 1 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 1 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 1 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 100.0 );
+  _constraint_sequence.constraints()[ 2 ] = new Constraint_Task_Space_Region( "2", true, 0.1, 1.0, pair< string, string >( "r_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 2 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 2 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 2 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 100.0 );
+  _constraint_sequence.constraints()[ 3 ] = new Constraint_Task_Space_Region( "3", true, 0.1, 1.0, pair< string, string >( "r_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 3 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 3 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 3 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 100.0 );
+
+  _constraint_sequence.constraints()[ 4 ] = new Constraint_Task_Space_Region( "4", true, 0.1, 1.0, pair< string, string >( "utorso", "front" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 4 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  _constraint_sequence.constraints()[ 5 ] = new Constraint_Task_Space_Region( "5", true, 0.1, 1.0, pair< string, string >( "l_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 5 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  _constraint_sequence.constraints()[ 6 ] = new Constraint_Task_Space_Region( "6", true, 0.1, 1.0, pair< string, string >( "r_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 6 ] )->ranges()[ 0 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 6 ] )->ranges()[ 1 ] = pair< double, double >( -10000.0, 10000.0 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 6 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  // put hands on the floor
+  Frame frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( 0.75, 0.5, 0.0 ) );
+  _constraint_sequence.constraints()[ 10 ] = new Constraint_Task_Space_Region( "10", true, 0.1, 1.0, pair< string, string >( "left_palm", "knuckle" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( 0.75, -0.5, 0.0 ) );
+  _constraint_sequence.constraints()[ 11 ] = new Constraint_Task_Space_Region( "11", true, 0.1, 1.0, pair< string, string >( "right_palm", "knuckle" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+*/
+/*
+  // put hands and feet on the floor
+  Frame frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.75, 0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 10 ] = new Constraint_Task_Space_Region( "10", true, 0.1, 1.0, pair< string, string >( "l_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 10 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 11 ] = new Constraint_Task_Space_Region( "11", true, 0.1, 1.0, pair< string, string >( "l_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 11 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.75, -0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 12 ] = new Constraint_Task_Space_Region( "12", true, 0.1, 1.0, pair< string, string >( "r_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 12 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 13 ] = new Constraint_Task_Space_Region( "13", true, 0.1, 1.0, pair< string, string >( "r_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 13 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  // raise the body
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.75, 0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 20 ] = new Constraint_Task_Space_Region( "20", true, 0.1, 1.0, pair< string, string >( "l_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 20 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 20 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 20 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 21 ] = new Constraint_Task_Space_Region( "21", true, 0.1, 1.0, pair< string, string >( "l_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 21 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 21 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 21 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+
+  frame_tmp = frame_constraint_center * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), Vector( -0.75, -0.2, 0.0 ) );
+  _constraint_sequence.constraints()[ 22 ] = new Constraint_Task_Space_Region( "22", true, 0.1, 1.0, pair< string, string >( "r_foot", "toe" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 22 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 22 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 22 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+  _constraint_sequence.constraints()[ 23 ] = new Constraint_Task_Space_Region( "23", true, 0.1, 1.0, pair< string, string >( "r_foot", "heel" ), ground, CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 23 ] )->ranges()[ 0 ] = pair< double, double >( frame_tmp.p[0] - 0.3, frame_tmp.p[0] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 23 ] )->ranges()[ 1 ] = pair< double, double >( frame_tmp.p[1] - 0.3, frame_tmp.p[1] + 0.3 );
+  dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 23 ] )->ranges()[ 2 ] = pair< double, double >( 0.0, 0.0 );
+*/
+
+  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
+    _constraint_editors[ i ]->update_constraint();
+  }
+
   return;
 }
 
@@ -271,9 +483,11 @@ void
 Qt4_Widget_Authoring::
 _constraint_selected( const QString& id ){
   for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    if (_constraint_sequence.constraints()[ i ]->id() == id.toStdString()) {
-      _widget_opengl_authoring->update_constraint_visualizer(_constraint_sequence.constraints()[ i ]);
-      break;
+    if( _constraint_sequence.constraints()[ i ] != NULL ){
+      if( _constraint_sequence.constraints()[ i ]->id() == id.toStdString() ) {
+        _widget_opengl_authoring->update_constraint_visualizer( _constraint_sequence.constraints()[ i ] );
+        break;
+      }
     }
   }
 }

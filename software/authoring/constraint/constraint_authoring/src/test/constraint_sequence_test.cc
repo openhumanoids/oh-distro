@@ -31,28 +31,30 @@ main( int argc,
   AffordanceState box( 1, 0,
                       KDL::Frame(KDL::Vector(0.0, 0.0, -0.05)),
                       Eigen::Vector3f(0.75, 0.75, 0.0)); //color
-  box._params[AffordanceState::LENGTH_NAME] = 100;
-  box._params[AffordanceState::WIDTH_NAME]  = 100;
-  box._params[AffordanceState::HEIGHT_NAME] = 0.1;
-  box.setType(AffordanceState::BOX);
+  box.setToBox( 100.0, 100.0, 0.01, 0, 0, KDL::Frame(KDL::Vector(0.0, 0.0, -0.01)),
+                        Eigen::Vector3f(0.75, 0.75, 0.0));
   affordance_collection.push_back( box );
 
   Constraint_Sequence constraint_sequence_1;
-  Constraint_Task_Space_Region * c0 = new Constraint_Task_Space_Region( "C0", true, 0.0, 1.75, pair< string, string >( "l_foot", "heel" ), &box );
-  c0->ranges()[0].first = -1000.0;
-  c0->ranges()[1].first = -1000.0;
-  c0->ranges()[2].first = 0.1;
-  c0->ranges()[0].second = 1000.0;
-  c0->ranges()[1].second = 1000.0;
-  c0->ranges()[2].second = 0.2;
+  Constraint_Task_Space_Region * c0 = new Constraint_Task_Space_Region( "C0", true, 0.0, 1.75, "l_foot-heel", &box );
+  c0->parents().push_back( "l_foot-toe" );
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second = -1.0;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second = 2.0;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first = false;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second = -3.0;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second = 4.0;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second = -5.0;
+  c0->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second = 6.0;
+  cout << "c0: " << *c0 << endl;
   constraint_sequence_1.constraints().push_back( c0 );
-  Constraint_Task_Space_Region * c1 = new Constraint_Task_Space_Region( "C1", true, 0.0, 1.25, pair< string, string >( "r_foot", "heel" ), &sphere );
-  c1->ranges()[0].first = -1000.0;
-  c1->ranges()[1].first = -1000.0;
-  c1->ranges()[2].first = -0.1;
-  c1->ranges()[0].second = 1000.0;
-  c1->ranges()[1].second = 1000.0;
-  c1->ranges()[2].second = 0.1;
+  Constraint_Task_Space_Region * c1 = new Constraint_Task_Space_Region( "C1", true, 0.0, 1.25, "r_foot-heel", &sphere );
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second = -1.0;
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second = 2.0;
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second = -3.0;
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second = 4.0;
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second = -5.0;
+  c1->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second = 6.0;
+  cout << "c1: " << *c1 << endl;
   constraint_sequence_1.constraints().push_back( c1 );  
 
   cout << "constraint_sequence_1: " << constraint_sequence_1 << endl;
@@ -61,11 +63,13 @@ main( int argc,
   constraint_sequence_1.to_msg( msg );
   Constraint_Sequence::print_msg( msg );
   constraint_sequence_1.save( "constraint_sequence_1.bin" );
+  constraint_sequence_1.to_xml( "constraint_sequence_1.xml" );
 
   Constraint_Sequence constraint_sequence_2;
   cout << "constraint_sequence_2: " << constraint_sequence_2 << endl;
   constraint_sequence_2.load( "constraint_sequence_1.bin", affordance_collection );
   constraint_sequence_2.to_msg( msg );
+  constraint_sequence_2.to_xml( "constraint_sequence_2.xml" );
   Constraint_Sequence::print_msg( msg );
 
   cout << "end of Constraint_Sequence class demo program" << endl;

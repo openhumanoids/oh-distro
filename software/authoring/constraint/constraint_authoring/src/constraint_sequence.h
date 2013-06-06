@@ -18,7 +18,9 @@ namespace authoring {
     Constraint_Sequence& operator=( const Constraint_Sequence& other );
 
     void save( std::string filename );
-    void load( std::string filename, std::vector< affordance::AffordanceState >& affordanceCollection );
+    void load( std::string filename, std::vector< affordance::AffordanceState >& affordanceCollection );  
+    void to_xml( std::string filename )const;
+    void to_xml( std::ofstream& out, unsigned int indent = 0 )const;
     void to_msg( drc::action_sequence_t& msg );
     void from_msg( const drc::action_sequence_t& msg, std::vector< affordance::AffordanceState >& affordanceCollection );
     static void print_msg( const drc::action_sequence_t& msg );

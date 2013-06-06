@@ -36,6 +36,13 @@ operator=( const Constraint_Configuration& other ) {
   return (*this);
 }
 
+void
+Constraint_Configuration::
+to_xml( ofstream& out,
+        unsigned int indent )const{
+  return;
+}
+
 void 
 Constraint_Configuration::
 add_to_drc_action_sequence_t( action_sequence_t& actionSequence ){

@@ -71,6 +71,30 @@ save( string filename ){
 
 void
 Constraint_Sequence::
+to_xml( string filename )const{
+  ofstream out;
+  out.open( filename.c_str() );
+  to_xml( out );
+  out.close();
+  return;
+}
+
+void
+Constraint_Sequence::
+to_xml( ofstream& out,
+        unsigned int indent )const{
+  out << string( indent, ' ' ) << "<constraint_sequence>" << endl;
+  for( vector< Constraint* >::const_iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    if( (*it) != NULL ){
+      (*it)->to_xml( out, indent + 2 );
+    }   
+  }
+  out << string( indent, ' ' ) << "</constraint_sequence>" << endl;
+  return;
+}
+
+void
+Constraint_Sequence::
 to_msg( action_sequence_t& msg ){ 
   msg.utime = 0;
   msg.num_contact_goals = 0;
@@ -78,6 +102,10 @@ to_msg( action_sequence_t& msg ){
   msg.robot_name = "atlas";
   _q0.to_lcm( &msg.q0 );
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    if( (*it) != NULL ){
+      cout << (*it)->id() << ": " << (*it)->active() << endl;
+    }
+  
     if( (*it) != NULL && (*it)->active() ) {
       (*it)->add_to_drc_action_sequence_t( msg );
     }
@@ -89,6 +117,7 @@ void
 Constraint_Sequence::
 from_msg( const action_sequence_t& msg,
           vector< AffordanceState >& affordanceCollection ){
+/*
   _q0.from_lcm( &msg.q0 );
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     if( (*it) != NULL ){
@@ -123,6 +152,7 @@ from_msg( const action_sequence_t& msg,
     }
     _constraints[ i ] = constraint;
   }
+*/
   return;
 }
 
