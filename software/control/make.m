@@ -20,6 +20,7 @@ fprintf(fptr,'\n\n% Setup javaclasspath\n');
 [~,lcmclasspath]=system('pkg-config lcm-java --variable=classpath');
 fprintf(fptr,'javaaddpath(''%s'');\n',strtrim(lcmclasspath));
 fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_drc_lcmtypes.jar'');\n',BUILD_PREFIX);
+fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_bot2-core.jar'');\n',BUILD_PREFIX);
 fprintf(fptr,'javaaddpath(''%s/drake/drake.jar'');\n',pwd);
 fprintf(fptr,'javaaddpath(''%s/share/java/drc_control.jar'');\n',BUILD_PREFIX);
 fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_visualization.jar'');\n',BUILD_PREFIX);
