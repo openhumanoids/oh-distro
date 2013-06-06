@@ -143,7 +143,8 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 1000;
-
+            ikoptions.shrinkFactor = 0.6;
+            
             
             % Solve IK 
             timeIndices = unique(Indices);
