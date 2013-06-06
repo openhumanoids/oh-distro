@@ -18,6 +18,7 @@
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImage.hpp>
+#include <maps/ObjectPool.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <bot_param/param_client.h>
@@ -215,13 +216,19 @@ struct Helper {
 
 
 int main() {
-  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
-  drc::Clock::instance()->setLcm(lcm);
-  drc::Clock::instance()->setVerbose(true);
-  std::cout << drc::Clock::instance()->getCurrentTime() << std::endl;
-  sleep(3);
-  std::cout << drc::Clock::instance()->getCurrentTime() << std::endl;
-  lcm.reset();
+  maps::ObjectPool<DepthImageView,5> pool;
+  std::vector<std::shared_ptr<DepthImageView> > pointers;
+  for (int i = 0; i < pool.getCapacity()+3; ++i) {
+    auto testPtr = pool.get();
+    if (testPtr != NULL) {
+      std::cout << "SUCCESS" << std::endl;
+      std::cout << "NUM FREE " << pool.getNumFree() << std::endl;
+      pointers.push_back(testPtr);
+    }
+    else {
+      std::cout << "FAILURE" << std::endl;
+    }
+  }
 
   return 0;
 

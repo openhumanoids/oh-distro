@@ -80,7 +80,7 @@ struct DepthImage::Helper {
     mCalib = Eigen::Matrix3f::Identity();
     mProjector = Eigen::Projective3f::Identity();
     mIsOrthographic = true;
-    mAccumulationMethod = AccumulationMethodExtremal;
+    mAccumulationMethod = AccumulationMethodClosest;
     mDataCache.resize(3);
     mDataNeedsUpdate.resize(mDataCache.size());
     updateMatrices();
@@ -284,9 +284,15 @@ create(const maps::PointCloud::Ptr& iCloud) {
     int idx = y*mHelper->mWidth + x;
     float z = proj[2];
     switch (method) {
-    case AccumulationMethodExtremal:
+    case AccumulationMethodClosest:
       if ((mHelper->mIsOrthographic && (z < mHelper->mData[idx])) ||
           (!mHelper->mIsOrthographic && (z > mHelper->mData[idx]))) {
+        mHelper->mData[idx] = z;
+      }
+      break;
+    case AccumulationMethodFurthest:
+      if ((mHelper->mIsOrthographic && (z > mHelper->mData[idx])) ||
+          (!mHelper->mIsOrthographic && (z < mHelper->mData[idx]))) {
         mHelper->mData[idx] = z;
       }
       break;

@@ -148,7 +148,7 @@ snapshotMap(const int64_t iId,
 }
 
 bool MapManager::
-addData(const maps::PointSet& iPointSet) {
+addData(const maps::PointSet& iPointSet, const int64_t iMapId) {
   // add to internal point buffer
   mPointData->add(iPointSet);
 
@@ -159,7 +159,9 @@ addData(const maps::PointSet& iPointSet) {
     if (!localMap->isActive()) {
       continue;
     }
-    localMap->addData(iPointSet);
+    if ((iMapId <= 0) || (localMap->getId() == iMapId)) {
+      localMap->addData(iPointSet);
+    }
   }
   return true;
 }

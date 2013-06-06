@@ -355,7 +355,7 @@ struct ViewWorker {
               accumMethod = DepthImage::AccumulationMethodMean;
             }
             else {
-              accumMethod = DepthImage::AccumulationMethodExtremal;
+              accumMethod = DepthImage::AccumulationMethodClosest;
             }
             DepthImageView::Ptr image =
               localMap->getAsDepthImage(mRequest.width, mRequest.height,
@@ -652,6 +652,13 @@ int main(const int iArgc, const char** iArgv) {
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
                laserChannel, "local");
+  state.mCollector->bind(laserChannel, 1);
+
+  // this channel is for original scan messages
+  state.mCollector->getDataReceiver()->
+    addChannel("SCAN", SensorDataReceiver::SensorTypePlanarLidar,
+               "SCAN", "local");
+  state.mCollector->bind("SCAN", 2);
 
   // set up remaining parameters
   LocalMap::Spec mapSpec;
@@ -661,6 +668,8 @@ int main(const int iArgc, const char** iArgv) {
   mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*1e10;
   mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*1e10;
   mapSpec.mResolution = defaultResolution;
+  state.mCollector->getMapManager()->createMap(mapSpec);
+  mapSpec.mId = 2;
   state.mCollector->getMapManager()->createMap(mapSpec);
   state.mRequestSubscription =
     lcm->subscribe("MAP_REQUEST", &State::onRequest, &state);

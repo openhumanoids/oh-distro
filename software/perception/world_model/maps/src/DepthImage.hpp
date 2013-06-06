@@ -21,7 +21,8 @@ public:
   };
 
   enum AccumulationMethod {
-    AccumulationMethodExtremal,
+    AccumulationMethodClosest,
+    AccumulationMethodFurthest,
     AccumulationMethodMean,
     AccumulationMethodMedian
   };

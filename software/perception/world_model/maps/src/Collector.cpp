@@ -5,6 +5,7 @@
 #include "PointDataBuffer.hpp"
 
 #include <set>
+#include <unordered_map>
 #include <thread>
 
 using namespace maps;
@@ -16,6 +17,7 @@ struct Collector::Helper {
   std::thread mConsumerThread;
   bool mRunning;
   std::set<DataListener*> mDataListeners;
+  std::unordered_map<std::string,int64_t> mChannelToMapBindings;
 
   static const float kPi;
 
@@ -26,7 +28,14 @@ struct Collector::Helper {
       while (mHelper->mRunning) {
         SensorDataReceiver::SensorData data;
         if (mHelper->mDataReceiver->waitForData(data)) {
-          mHelper->mMapManager->addData(*data.mPointSet);
+          int64_t mapId = -1;
+          if (mHelper->mChannelToMapBindings.size() > 0) {
+            auto item = mHelper->mChannelToMapBindings.find(data.mChannel);
+            if (item != mHelper->mChannelToMapBindings.end()) {
+              mapId = item->second;
+            }
+          }
+          mHelper->mMapManager->addData(*data.mPointSet, mapId);
           std::set<DataListener*>::const_iterator iter =
             mHelper->mDataListeners.begin();
           for (; iter != mHelper->mDataListeners.end(); ++iter) {
@@ -93,6 +102,24 @@ addListener(const DataListener& iListener) {
 void Collector::
 removeListener(const DataListener& iListener) {
   mHelper->mDataListeners.erase(const_cast<DataListener*>(&iListener));
+}
+
+void Collector::
+bind(const std::string& iChannel, const int64_t iMapId) {
+  mHelper->mChannelToMapBindings[iChannel] = iMapId;
+}
+
+void Collector::
+unbind(const std::string& iChannel) {
+  auto item = mHelper->mChannelToMapBindings.find(iChannel);
+  if (item != mHelper->mChannelToMapBindings.end()) {
+    mHelper->mChannelToMapBindings.erase(item);
+  }
+}
+
+void Collector::
+unbindAll() {
+  mHelper->mChannelToMapBindings.clear();
 }
 
 std::shared_ptr<SensorDataReceiver> Collector::

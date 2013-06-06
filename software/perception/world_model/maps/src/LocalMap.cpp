@@ -228,7 +228,7 @@ getAsDepthImage(const int iWidth, const int iHeight,
                 const Eigen::Projective3f& iProjector,
                 const SpaceTimeBounds& iBounds) const {
   return getAsDepthImage(iWidth, iHeight, iProjector,
-                         DepthImage::AccumulationMethodExtremal, iBounds);
+                         DepthImage::AccumulationMethodClosest, iBounds);
 }
 
 DepthImageView::Ptr LocalMap::

@@ -60,7 +60,7 @@ public:
                       const int64_t iStartTime, const int64_t iEndTime);
 
   // add data to all active maps
-  bool addData(const maps::PointSet& iPointSet);
+  bool addData(const maps::PointSet& iPointSet, const int64_t iMapId=-1);
 
   // get underlying point data
   const std::shared_ptr<PointDataBuffer> getPointData() const;

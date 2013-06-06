@@ -102,6 +102,7 @@ protected:
   double mRequestResolution;
   double mRequestTimeWindow;
   bool mRequestRelativeLocation;
+  bool mRequestRawScan;
   bool mDragging;
   Eigen::Vector2f mDragPoint1;
   Eigen::Vector2f mDragPoint2;  
@@ -272,6 +273,9 @@ public:
       mRequestRelativeLocation = false;
       addCheck("Relative Position?", mRequestRelativeLocation, requestBox);
 
+      mRequestRawScan = false;
+      addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
+
       Gtk::Button* requestButton = Gtk::manage(new Gtk::Button("Send Request"));
       requestButton->signal_clicked().connect
         (sigc::mem_fun(*this, &MapsRenderer::onRequestButton));
@@ -369,6 +373,7 @@ public:
     }
     spec.mClipPlanes = mFrustum.mPlanes;
     spec.mRelativeLocation = mRequestRelativeLocation;
+    spec.mMapId = mRequestRawScan ? 2 : 1;
 
     // compute depth image transform from gl view parameters
     if (spec.mType == ViewBase::TypeDepthImage) {

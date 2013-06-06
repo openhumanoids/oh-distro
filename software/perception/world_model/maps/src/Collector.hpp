@@ -27,6 +27,10 @@ public:
   void addListener(const DataListener& iListener);
   void removeListener(const DataListener& iListener);
 
+  void bind(const std::string& iChannel, const int64_t iMapId);
+  void unbind(const std::string& iChannel);
+  void unbindAll();
+
   std::shared_ptr<SensorDataReceiver> getDataReceiver() const;
   std::shared_ptr<MapManager> getMapManager() const;
 
