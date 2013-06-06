@@ -4,7 +4,6 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
-#include <random>
 
 namespace mexmaps {
 
@@ -60,9 +59,6 @@ public:
 
     // for random sample index generation
     std::vector<int> allIndices(n);
-    std::random_device randomDevice;
-    std::default_random_engine randomGenerator(randomDevice());
-    std::uniform_int_distribution<> randomDist(0, n-1);
 
     // iterate until adaptive number of iterations are exceeded
     while (iterationCount < numIterationsNeeded) {
@@ -72,7 +68,7 @@ public:
         allIndices[i] = i;
       }
       for (int i = 0; i < sampleSize; ++i) {
-        int randIndex = randomDist(randomGenerator);
+        int randIndex = std::rand() % n;
         std::swap(allIndices[i], allIndices[randIndex]);
       }
       std::vector<int> sampleIndices(allIndices.begin(),
