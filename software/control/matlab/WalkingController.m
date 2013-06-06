@@ -51,9 +51,12 @@ classdef WalkingController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 2;
+      ins(4).system = 2;
+      ins(4).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
+      clear connection ins outs;
       
       % cascade neck pitch control block
       neck = NeckControlBlock(r,ctrl_data);
@@ -63,6 +66,8 @@ classdef WalkingController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
+      ins(4).system = 2;
+      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
@@ -80,6 +85,8 @@ classdef WalkingController < DRCController
       ins(2).input = 1;
       ins(3).system = 2;
       ins(3).input = 3;
+      ins(4).system = 2;
+      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection.from_output = 1;

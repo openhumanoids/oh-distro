@@ -22,8 +22,9 @@ classdef QPController < MIMODrakeSystem
     end
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-
-    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
+    hand_ft_frame = AtlasHandForceTorque();
+    
+    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame,hand_ft_frame});
     output_frame = r.getInputFrame();
     obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[.005;0]); % sets controller update rate
@@ -97,6 +98,12 @@ classdef QPController < MIMODrakeSystem
       obj.use_mex = 0;
     end
 
+    if isfield(options,'use_hand_ft')
+      obj.use_hand_ft = options.use_hand_ft;
+    else
+      obj.use_hand_ft = false;
+    end
+    
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
     if (isfield(options,'full_body_opt'))
@@ -128,6 +135,8 @@ classdef QPController < MIMODrakeSystem
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
+    obj.rhand_idx = findLinkInd(r,'r_hand');
+    obj.lhand_idx = findLinkInd(r,'l_hand');
 
     if obj.lcm_foot_contacts
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
@@ -183,10 +192,8 @@ classdef QPController < MIMODrakeSystem
     end
   end
     
-  function y=mimoOutput(obj,t,~,varargin)
+  function y=mimoOutput(obj,t,~,q_ddot_des,x,hand_ft)
 %    out_tic = tic;
-    q_ddot_des = varargin{1};
-    x = varargin{2};
     ctrl_data = getData(obj.controller_data);
     
     r = obj.robot;
@@ -310,6 +317,18 @@ classdef QPController < MIMODrakeSystem
       c_pre = c_pre + num_desired_contacts(i);
     end
     
+    %----------------------------------------------------------------------
+    % Disable hand force/torque contribution to dynamics as necessary
+    if (~obj.use_hand_ft) 
+      hand_ft=0*hand_ft; 
+    else
+      if any(active_supports==obj.lhand_idx)
+        hand_ft(1:6)=0;
+      end
+      if any(active_supports==obj.rhand_idx)
+        hand_ft(7:12)=0;
+      end
+    end
     
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
@@ -401,6 +420,10 @@ classdef QPController < MIMODrakeSystem
       kinsol = doKinematics(r,q,false,true,qd);
       
       [H,C,B] = manipulatorDynamics(r,q,qd);
+      
+      [~,Jlhand] = forwardKin(r,kinsol,obj.lhand_idx,zeros(3,1),1);
+      [~,Jrhand] = forwardKin(r,kinsol,obj.rhand_idx,zeros(3,1),1);
+      C = C + Jlhand'*hand_ft(1:6) + Jrhand'*hand_ft(7:12);
       
       H_con = H(obj.con_dof,:);
       C_con = C(obj.con_dof);
@@ -810,11 +833,14 @@ classdef QPController < MIMODrakeSystem
     con_inputs
     rfoot_idx;
     lfoot_idx;
+    rhand_idx;
+    lhand_idx;
     R; % quadratic input cost matrix
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug;
     use_mex;
+    use_hand_ft;
     mex_ptr;
     lc;
     contact_est_monitor;
