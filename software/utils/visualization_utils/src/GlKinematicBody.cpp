@@ -1422,7 +1422,7 @@ bool GlKinematicBody::get_joint_info(const std::string &joint_name, JointFrameSt
      return false; 
 }
 
-bool GlKinematicBody::get_current_joint_pos(const std::string &joint_name, double pos)
+bool GlKinematicBody::get_current_joint_pos(const std::string &joint_name, double &pos)
 {
     pos= 0;
     std::map<std::string, double >::const_iterator jointpos_map_it;
@@ -1436,7 +1436,7 @@ bool GlKinematicBody::get_current_joint_pos(const std::string &joint_name, doubl
      return false; 
 }
 
-bool GlKinematicBody::get_future_joint_pos(const std::string &joint_name, double pos)
+bool GlKinematicBody::get_future_joint_pos(const std::string &joint_name, double &pos)
 {
     pos= 0;
     std::map<std::string, double >::const_iterator jointpos_map_it;
