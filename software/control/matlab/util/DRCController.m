@@ -36,7 +36,7 @@ classdef DRCController
     initialize(obj,data); % controllers need to implement this
     %  in the event of a lcm transition, data contains a struct that maps channel names to the 
     %  decoded lcm message data. for timed transitions, it maps input frame names to the latest data
-    send_status(obj,t_sim,t_ctrl); % each controller should populate a drc_controller_status_t message
+    msg = status_message(obj,t_sim,t_ctrl); % each controller should populate a drc_controller_status_t message
     %  and send it back to the base station
   end
 
@@ -46,7 +46,10 @@ classdef DRCController
       if ~(isa(sys,'DrakeSystem') || isa(sys,'SimulinkModel'))
         error('DRCController::Argument sys should be a DrakeSystem or SimulinkModel');
       end
-    
+      if ~isDT(sys)
+        error('DRCController: only supports discrete time systems');
+      end
+        
       obj.name = name;
       obj.controller = sys;
       
@@ -64,6 +67,10 @@ classdef DRCController
       end
       
       obj.lc = lcm.lcm.LCM.getSingleton();
+      
+      % in order to support backup mode:
+      typecheck(obj.controller_output_frame,'LCMCoordinateFrameWCoder'); % could be more general, but this should get us started
+      obj.controller_output_frame.subscribe(defaultChannel(obj.controller_output_frame));
     end
     
     function obj = setTimedTransition(obj,t_final,transition_to_controller,absolute_time)
@@ -136,7 +143,7 @@ classdef DRCController
       n = length(obj.precompute_triggers)+1;
       obj.precompute_triggers{n} = trigger_function_handle;
       obj.precompute_active{n} = true;
-   end
+    end
     
     function [transition,data] = checkLCMTransitions(obj)
       data = struct();
@@ -173,12 +180,21 @@ classdef DRCController
       end
     end
     
-    function data = run(obj)
+    function [data,backup_mode] = run(obj,backup_mode)
       % runs the controller and, upon receiving a message on a termination
       % channel or if t >= t_final, halts and returns a struct mapping the
       % name of the controller to take over to lcm message data (or halting
       % time in the case of a timed transition)
-
+      % 
+      % @param if backup_mode=true, the controller will continue to
+      % listen for incoming messages and run update.  It will also
+      % subscribe to the messages that it is supposed to publish, and if it
+      % does not hear that message, then it will switch out of backup mode
+      % and start publishing (e.g. assuming that the primary controller has
+      % crashed).
+      
+      if (nargin<2) backup_mode = false; end
+      
       % on startup, populate input frames with last received data
       data = struct();
       input_frame_data = cell(obj.n_input_frames,1);
@@ -205,6 +221,8 @@ classdef DRCController
       lcm_check_tic = tic;
       status_tic = tic;
 %       precompute_tic = tic;
+      num_x = getNumStates(obj.controller);
+      if (num_x>0), x = getInitialState(obj.controller); else x=[]; end
       while (1)
 %         tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
@@ -309,17 +327,39 @@ classdef DRCController
 %           missed_frames = missed_frames +1;
 %         end
         
+        if backup_mode  % backup_mode logic
+          % tt+t_offset is the timestamp of the message that I should be
+          % sending.  if I haven't seen that message for 10msec, then come
+          % out of backup_mode
+          if ((tt+t_offset) - getLastTimestamp(obj.controller_output_frame))>.01)
+            backup_mode = false;
+          elseif toc(status_tic)>0.2
+            % send the backup status message
+            msg = status_message(obj,tt+t_offset,tt);
+            obj.lc.publish('BACKUP_CONTROLLER_STATUS',msg);
+            status_tic=tic;
+          end
+        end
+         
+
         if any(input_frame_time >=0) % could also do 'all' here
 %           max_state_delay = max(max_state_delay,tt-ttprev);
 %           ttprev=tt;
 
-          u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
-          obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
+          if ~backup_mode
+            u = obj.controller.output(tt,x,vertcat(input_frame_data{:}));
+            obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
+
+            % publish controller status
+            if toc(status_tic)>0.2
+              msg = status_message(obj,tt+t_offset,tt);
+              obj.lc.publish('CONTROLLER_STATUS',msg);
+              status_tic=tic;
+            end
+          end
           
-          % publish controller status
-          if toc(status_tic)>0.2
-            send_status(obj,tt+t_offset,tt);
-            status_tic=tic;
+          if num_x>0
+            x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
           end
         end
 %         fprintf('Num missed frames: %d \n',missed_frames);

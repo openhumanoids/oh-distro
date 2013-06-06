@@ -112,14 +112,13 @@ classdef QuasistaticMotionController < DRCController
   
     end
 
-    function send_status(obj,t_sim,t_ctrl)
+    function msg = status_message(obj,t_sim,t_ctrl)
       msg = drc.controller_status_t();
       msg.utime = t_sim * 1000000;
       msg.state = msg.QUASISTATIC;
       msg.controller_utime = t_ctrl * 1000000;
       msg.V = obj.controller_data.getField('V');
       msg.Vdot = obj.controller_data.getField('Vdot');
-      obj.lc.publish('CONTROLLER_STATUS',msg);
     end
     
     function obj = initialize(obj,data)

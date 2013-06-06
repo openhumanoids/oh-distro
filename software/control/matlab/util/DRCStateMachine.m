@@ -26,7 +26,8 @@ classdef DRCStateMachine
       obj.active_controller = active_controller;
     end
     
-    function run(obj)
+    function run(obj,backup_mode)
+      if (nargin<2) backup_mode=false; end
       data = [];
       transition_tic = tic;
       while 1
@@ -44,7 +45,7 @@ classdef DRCStateMachine
         send_controller_status(ctrl.name);
         disp(msg);
         disp(['Controller: transition time ' num2str(toc(transition_tic))]);
-        transition_data = ctrl.run();
+        [transition_data,backup_mode] = ctrl.run(backup_mode);
         transition_tic = tic;
         fn = fieldnames(transition_data);
         transition_to = fn{1}; % arbitrarily take the first one if multiple transitions occured simultaneously
