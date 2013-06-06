@@ -20,7 +20,7 @@ end
 
 r = Atlas(urdf,options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
-%r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
+r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
 r = compile(r);
 
 standing_controller = StandingController('standing',r,options);
