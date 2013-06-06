@@ -2,8 +2,22 @@
 <robot xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema"
        xmlns:mat="http://www.mit.edu"
        name="polaris_ranger_ev">
+       <link name="box">
+         <collision group="default">
+           <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+           <geometry>
+             <box size="10 10 0.1"/>
+           </geometry>
+         </collision>
+       </link>
+      <joint name="chassis_fixed" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <parent link="box" type="link"/>
+        <child link="chassis" type="link"/>
+      </joint>
+
     <link name="chassis">
-      
       <collision group="chassis_bottom">
          <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
          <geometry>
@@ -94,12 +108,12 @@
             <!--<box size="0.6 1.15 0.1"/>-->
          <!--</geometry>-->
       <!--</collision>-->
-      <visual name="mud_seat">
-         <origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>
-         <geometry>
-            <box size="0.6 1.15 0.1"/>
-         </geometry>
-      </visual>
+      <!--<visual name="mud_seat">-->
+         <!--<origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>-->
+         <!--<geometry>-->
+            <!--<box size="0.6 1.15 0.1"/>-->
+         <!--</geometry>-->
+      <!--</visual>-->
       <collision group="seat_back">
          <origin xyz="-0.3 0 1.125" rpy="0 -0.19999999999999998 0"/>
          <geometry>
