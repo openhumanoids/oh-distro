@@ -26,6 +26,7 @@ add_library(maps SHARED
 pods_install_headers(
   Types.hpp
   ThreadSafeQueue.hpp
+  ObjectPool.hpp
   DataBlob.hpp
   Utils.hpp
   PointDataBuffer.hpp

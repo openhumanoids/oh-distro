@@ -16,6 +16,7 @@
 #include "ThreadSafeQueue.hpp"
 #include "BotWrapper.hpp"
 #include "Utils.hpp"
+#include "ObjectPool.hpp"
 
 using namespace maps;
 
@@ -31,7 +32,7 @@ struct ViewClient::Worker {
     typedef std::shared_ptr<Message> Ptr;
     std::vector<uint8_t> mBytes;
   };
-  
+
   ViewClient* mClient;
   BotWrapper::Ptr mBotWrapper;
   State mState;
@@ -41,6 +42,10 @@ struct ViewClient::Worker {
   std::mutex mMutex;
   std::condition_variable mCondition;
   std::thread mThread;
+
+  ObjectPool<OctreeView,20> mOctreeViewPool;
+  ObjectPool<PointCloudView,20> mPointCloudViewPool;
+  ObjectPool<DepthImageView,20> mDepthImageViewPool;
 
   Worker(ViewClient* iClient) {
     mClient = iClient;
@@ -188,9 +193,13 @@ struct ViewClient::Worker {
       if (hash == drc::map_octree_t::getHash()) {
         drc::map_octree_t octree;
         octree.decode(buf, 0, maxBufferSize);
-        OctreeView* octreeView = new OctreeView();
+        auto octreeView = mOctreeViewPool.get();
+        if (octreeView == NULL) {
+          std::cout << "Warning: no objects in octree pool" << std::endl;
+          continue;
+        }
         LcmTranslator::fromLcm(octree, *octreeView);
-        view.reset(octreeView);
+        view = octreeView;
         view->setUpdateTime(octree.utime);
       }
 
@@ -198,9 +207,13 @@ struct ViewClient::Worker {
       else if (hash == drc::map_cloud_t::getHash()) {
         drc::map_cloud_t cloud;
         cloud.decode(buf, 0, maxBufferSize);
-        PointCloudView* cloudView = new PointCloudView();
+        auto cloudView = mPointCloudViewPool.get();
+        if (cloudView == NULL) {
+          std::cout << "Warning: no objects in pointcloud pool" << std::endl;
+          continue;
+        }
         LcmTranslator::fromLcm(cloud, *cloudView);
-        view.reset(cloudView);
+        view = cloudView;
         view->setUpdateTime(cloud.utime);
       }
 
@@ -208,13 +221,17 @@ struct ViewClient::Worker {
       else if (hash == drc::map_image_t::getHash()) {
         drc::map_image_t image;
         image.decode(buf, 0, maxBufferSize);
-        DepthImageView* depthView = new DepthImageView();
+        auto depthView = mDepthImageViewPool.get();
+        if (depthView == NULL) {
+          std::cout << "Warning: no objects in depthimage pool" << std::endl;
+          continue;          
+        }
         LcmTranslator::fromLcm(image, *depthView);
-        view.reset(depthView);
+        view = depthView;
         view->setUpdateTime(image.utime);
       }
 
-      if (view == NULL) return;
+      if (view == NULL) continue;
 
       // find view or insert new one for this id
       SpecCollection::const_iterator item =

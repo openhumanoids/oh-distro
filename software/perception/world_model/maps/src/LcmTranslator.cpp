@@ -385,7 +385,6 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
     }
     zScale /= ((1 << bits) - 1);
   }
-  std::cout << "BITS " << bits << std::endl;
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
     if (val == invalidValue) continue;
