@@ -11,50 +11,28 @@ class ObjectPool {
 public:
   typedef std::shared_ptr<T> DataType;
 
-private:
-  struct Object {
-    bool mInUse;
-    DataType mData;
-  };
-
 public:
 
   ObjectPool() {
     mObjects.resize(N);
     for (size_t i = 0; i < mObjects.size(); ++i) {
-      mObjects[i].mInUse = false;
-      mObjects[i].mData.reset(new T());  // TODO: what about constructor arguments?
+      mObjects[i].reset(new T());  // TODO: what about constructor arguments?
     }
   }
 
   DataType get() {
     for (size_t i = 0; i < mObjects.size(); ++i) {
-      if (mObjects[i].mInUse && (mObjects[i].mData.use_count() == 1)) {
-        mObjects[i].mInUse = false;
-      }
-      if (!mObjects[i].mInUse) {
-        mObjects[i].mInUse = true;
-        return mObjects[i].mData;
+      if (mObjects[i].use_count() == 1) {
+        return mObjects[i];
       }
     }
     return DataType();
   }
 
-  bool done(const DataType& iData) {
-    for (size_t i = 0; i < mObjects.size(); ++i) {
-      if (mObjects[i].mInUse && (mObjects[i].mData == iData)) {
-        mObjects[i].mInUse = false;
-        return true;
-      }
-    }
-    return false;
-  }
-
   int getNumFree() {
     int total = 0;
     for (size_t i = 0; i < mObjects.size(); ++i) {
-      if (mObjects[i].mData.use_count() == 1) mObjects[i].mInUse = false;
-      if (!mObjects[i].mInUse) ++total;
+      if (mObjects[i].use_count() == 1) ++total;
     }
     return total;
   }
@@ -64,7 +42,7 @@ public:
   }
 
 protected:
-  std::vector<Object> mObjects;
+  std::vector<DataType> mObjects;
 };
 
 }
