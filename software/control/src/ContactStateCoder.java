@@ -5,17 +5,18 @@ import lcm.lcm.*;
 public class ContactStateCoder implements drake.util.LCMCoder
 {
     String m_robot_name;
-    String m_contact_name;  // todo: make this String[] contact_names
+    String[] m_contact_names;  
 
-    public ContactStateCoder(String robot_name, String contact_name)
+    public ContactStateCoder(String robot_name, String[] contact_names)
     {
       m_robot_name = robot_name;
-      m_contact_name = contact_name;
+      m_contact_names = new String[contact_names.length];
+      System.arraycopy(contact_names,0,m_contact_names,0,contact_names.length);
     }
     
     public int dim()
     {
-      return 6;
+      return 6*m_contact_names.length;
     }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
@@ -32,29 +33,25 @@ public class ContactStateCoder implements drake.util.LCMCoder
     public drake.util.CoordinateFrameData decode(drc.robot_state_t msg)
     {
       if (msg.robot_name.equals(m_robot_name)) {
-        Integer j;
         int index;
 
         drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-        fdata.val = new double[6];
+        fdata.val = new double[dim()];
         fdata.t = (double)msg.utime / 1000000.0;
 
-        boolean b_found = false;
-        for (int i=0; i<msg.contacts.num_contacts; i++) {
-          if (m_contact_name.equals(msg.contacts.id[i])) {
-            fdata.val[0] = msg.contacts.contact_force[i].x;
-            fdata.val[1] = msg.contacts.contact_force[i].y;
-            fdata.val[2] = msg.contacts.contact_force[i].z;
-            fdata.val[3] = msg.contacts.contact_torque[i].x;
-            fdata.val[4] = msg.contacts.contact_torque[i].y;
-            fdata.val[5] = msg.contacts.contact_torque[i].z;
-            b_found = true;
-            break;
+        for (int i=0; i<m_contact_names.length; i++) {
+          for (int j=0; j<msg.contacts.num_contacts; j++) {
+            if (m_contact_names[i].equals(msg.contacts.id[j])) {
+              fdata.val[0+6*i] = msg.contacts.contact_force[j].x;
+              fdata.val[1+6*i] = msg.contacts.contact_force[j].y;
+              fdata.val[2+6*i] = msg.contacts.contact_force[j].z;
+              fdata.val[3+6*i] = msg.contacts.contact_torque[j].x;
+              fdata.val[4+6*i] = msg.contacts.contact_torque[j].y;
+              fdata.val[5+6*i] = msg.contacts.contact_torque[j].z;
+              break;
+            }
           }
         }
-        if (!b_found) {
-          System.out.println("ContactStateCoder: message didn't have a "+m_contact_name+" field");
-        }          
 
         return fdata;
       }

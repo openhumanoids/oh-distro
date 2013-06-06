@@ -2,11 +2,16 @@ classdef AtlasHandForceTorque < LCMCoordinateFrameWCoder & Singleton
   
   methods
     function obj=AtlasHandForceTorque()
-      coder = ContactStateCoder('atlas', 'l_hand');
+      contacts = {'l_hand','r_hand'};
+      coder = ContactStateCoder('atlas', contacts);
       
       coords = {'fx','fy','fz','tx','ty','tz'};
-      obj = obj@LCMCoordinateFrameWCoder('AtlasHandForceTorque',6,'f',JLCMCoder(coder));
-      obj.setCoordinateNames(coords);
+      coordinates={};
+      for i=1:length(contacts)
+        coordinates = horzcat(coordinates,cellfun(@(a) [contacts{i},'_',a],coords,'UniformOutput',false));
+      end
+      obj = obj@LCMCoordinateFrameWCoder('AtlasHandForceTorque',length(coordinates),'f',JLCMCoder(coder));
+      obj.setCoordinateNames(coordinates);
       obj.setDefaultChannel('EST_ROBOT_STATE');
     end
   end
