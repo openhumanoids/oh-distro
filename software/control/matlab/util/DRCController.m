@@ -331,8 +331,10 @@ classdef DRCController
           % tt+t_offset is the timestamp of the message that I should be
           % sending.  if I haven't seen that message for 10msec, then come
           % out of backup_mode
-          if (tt+t_offset) - getLastTimestamp(obj.controller_output_frame)>.01
+          last_tt = getLastTimestamp(obj.controller_output_frame);
+          if last_tt>0 && tt+t_offset-last_tt >.01
             backup_mode = false;
+            disp('HEARTBEAT MISSED.  TRANSITIONING OUT OF BACKUP MODE.');
           elseif toc(status_tic)>0.2
             % send the backup status message
             msg = status_message(obj,tt+t_offset,tt);
