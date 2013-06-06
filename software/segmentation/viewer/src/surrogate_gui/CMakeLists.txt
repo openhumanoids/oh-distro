@@ -31,6 +31,7 @@ add_library(surrogate SHARED
   perception/Segmentation.cc
   perception/PclSurrogateUtils.cc
 	perception/pcl_circle3d/src/sac_model_circle3d.cpp
+        perception/distTransform.cpp
 #  otdf_renderer/renderer_otdf.cpp
 #  otdf_renderer/AffordanceCollectionListener.cpp
 #  otdf_renderer/RobotStateListener.cpp
@@ -84,3 +85,21 @@ pods_use_pkg_config_packages(segmentation-viewer
     pointcloud_vis pointcloud_math)
 
 pods_install_executables(segmentation-viewer)
+
+#########################################################33
+
+add_executable(testfitting perception/testfitting.cpp)
+pods_use_pkg_config_packages(testfitting
+    glib-2.0
+    bot2-vis
+    bot2-frames
+    bot2-param-client
+    bot2-lcmgl-client
+    bot2-lcmgl-renderer
+    lcm
+    surrogate
+    renderer_affordances
+        renderer_drcgrid
+    pointcloud_vis pointcloud_math)
+
+pods_install_executables(testfitting)
