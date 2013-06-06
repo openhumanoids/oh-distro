@@ -1,5 +1,7 @@
 #include "FillMethods.hpp"
 
+#include "RansacGeneric.hpp"
+
 #include <Eigen/Sparse>
 
 #include <maps/BotWrapper.hpp>
@@ -24,6 +26,68 @@ computeMedian(const Eigen::VectorXf& iData) {
   std::vector<float> data(iData.data(), iData.data()+n);
   std::sort(data.begin(), data.end());
   float medVal = (n%2 != 0) ? data[n/2] : 0.5*(data[n/2-1] + data[n/2]);
+}
+
+Eigen::Vector3f FillMethods::
+fitHorizontalPlane(const std::vector<Eigen::Vector3f>& iPoints) {
+  int n = iPoints.size();
+  Eigen::VectorXf rhs(n);
+  Eigen::MatrixXf lhs(n,3);
+  for (int i = 0; i < n; ++i) {
+    rhs[i] = -iPoints[i][2];
+    lhs(i,0) = iPoints[i][0];
+    lhs(i,1) = iPoints[i][1];
+    lhs(i,2) = 1;
+  }
+  Eigen::Vector3f sol =
+    lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(rhs);
+  return sol;
+}
+
+Eigen::Vector3f FillMethods::
+fitHorizontalPlaneRansac(const std::vector<Eigen::Vector3f>& iPoints) {
+  if (iPoints.size() < 3) return Eigen::Vector3f::Zero();
+  struct Problem {
+    typedef Eigen::Vector3f Solution;
+
+    std::vector<Eigen::Vector3f>* mPoints;
+    FillMethods* mFillMethods;
+
+    Problem(FillMethods* iFillMethods) : mFillMethods(iFillMethods) {}
+
+    int getNumDataPoints() const { return mPoints->size(); }
+    int getSampleSize() const { return 3; }
+
+    Solution estimate(const std::vector<int> iIndices) const {
+      std::vector<Eigen::Vector3f> pts(iIndices.size());
+      for (size_t i = 0; i < iIndices.size(); ++i) {
+        pts[i] = (*mPoints)[iIndices[i]];
+      }
+      Solution plane = mFillMethods->fitHorizontalPlane(pts);
+      return plane;
+    }
+
+    std::vector<double>
+    computeSquaredErrors(const Solution& iPlane) const {
+      size_t n = mPoints->size();
+      std::vector<double> e2(n);
+      for (size_t i = 0; i < n; ++i) {
+        Eigen::Vector3f p = (*mPoints)[i];
+        double e = p[0]*iPlane[0] + p[1]*iPlane[1] + p[2] + iPlane[2];
+        e2[i] = e*e;
+      }
+      return e2;
+    }
+  };
+
+  Problem problem(this);
+  problem.mPoints = const_cast<std::vector<Eigen::Vector3f>*>(&iPoints);
+  RansacGeneric<Problem> ransacObj;
+  ransacObj.setMaximumError(0.05);
+  ransacObj.setRefineUsingInliers(true);
+  RansacGeneric<Problem>::Result result = ransacObj.solve(problem);
+  if (result.mSuccess) return result.mSolution;
+  return Eigen::Vector3f(0,0,0);
 }
 
 Eigen::Vector3f FillMethods::
@@ -283,7 +347,7 @@ fillViewPlanar(maps::DepthImageView::Ptr& iView) {
 }
 
 void FillMethods::
-fillUnderRobot(maps::DepthImageView::Ptr& iView) {
+fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   const float radiusMeters = 0.5;
 
   // get view data
@@ -321,7 +385,13 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView) {
   if (points.size() < 10) return;
 
   // solve for plane
-  Eigen::Vector3f sol = fitHorizontalPlaneRobust(points);
+  Eigen::Vector3f sol;
+  if (iMethod == MethodRobust) {
+    sol = fitHorizontalPlaneRobust(points);
+  }
+  else {
+    sol = fitHorizontalPlaneRansac(points);
+  }
 
   // fill in invalid values
   for (int i = cy-r; i <= cy+r; ++i) {
@@ -336,6 +406,7 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView) {
   }
   img->setData(depths, type);
 }
+
 
 void FillMethods::
 fillContours(maps::DepthImageView::Ptr& iView) {

@@ -22,7 +22,6 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
     if (iViewId != mWrapper->mHeightMapViewId) return;
     auto view = std::dynamic_pointer_cast<maps::DepthImageView>
       (mWrapper->mViewClient->getView(iViewId));
-    //fprintf(stderr, "NOTIFY %x %d\n", view.get(), view.use_count());
     if (view != NULL) {
       mWrapper->mLastReceiptTime = drc::Clock::instance()->getCurrentWallTime();
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
@@ -30,7 +29,7 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
       if (mWrapper->mShouldFill) {
         auto startTime = std::chrono::high_resolution_clock::now();
         FillMethods fillMethods(mWrapper->mBotWrapper);
-        fillMethods.fillUnderRobot(view);
+        fillMethods.fillUnderRobot(view, FillMethods::MethodRansac);
         fillMethods.fillIterative(view);
         fillMethods.fillConnected(view);
         auto endTime = std::chrono::high_resolution_clock::now();
