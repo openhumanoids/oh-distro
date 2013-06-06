@@ -27,7 +27,7 @@ classdef ManipulationPlanner < handle
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.num_breaks = 4;
-            obj.v_desired = 0.3; % 30cm/sec seconds, hard coded for now
+            obj.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
             %obj.plan_pub = RobotPlanPublisherWKeyFrames('atlas',joint_names,true,'CANDIDATE_MANIP_PLAN',obj.num_breaks);
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
