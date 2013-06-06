@@ -117,9 +117,14 @@ public:
 		E = q2e_new(q);
 
 		// fall detector
-		if ((E(1) > 20*PI/180. || E(0) > 20*PI/180.) && (msg->utime - fall_utime) > 30000000) {
-			fall_utime = msg->utime;
-			system("notify-send ROBOT_FELL_OVER");
+
+		if (E(1) > 20*PI/180. || E(0) > 20*PI/180.) {
+			//std::cout << "Falling\n";
+			if ((msg->utime - fall_utime) > 1200000) {
+				std::cout << "Timeout.\n";				
+				fall_utime = msg->utime;
+				system("notify-send ROBOT_FELL_OVER");
+			}
 		}
 
 		check_conv(0) = __q.w() - q.w();
