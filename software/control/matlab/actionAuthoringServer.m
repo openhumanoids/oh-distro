@@ -59,6 +59,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
 %r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
 r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf', [],[],struct('floating',true));
+r_Atlas = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',struct('floating',true));
 r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake.urdf',[0;0;0],[0;0;0]);
 warning(s);
 
@@ -75,8 +76,7 @@ robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',J
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher_viewer =  RobotPlanPublisher('atlas',joint_names,true, ...  
-  'CANDIDATE_ROBOT_PLAN');
+robot_plan_publisher_viewer =  WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
 %%
 
 
@@ -144,9 +144,6 @@ clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid j
 
 timeout=10;
 display('Listening ...');
-% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
-first_time = true;
-% END DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
 while (1)
   warning on
   data = getNextMessage(monitor,timeout);
@@ -296,14 +293,6 @@ while (1)
           else
             q0 = q_key_time_samples(:,i-1);
           end
-          % DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
-          if first_time
-            save('first_time','action_options','contact_tol','nq','options','q','q_standing','r','s','timeout')
-            first_time = false;
-          else
-            save('second_time','action_options','contact_tol','nq','options','q','q_standing','r','s','timeout')
-          end
-          % END DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%
           [q_key_time_samples(:,i),info] = inverseKin(r,q0,ikargs{:},options);
           if(info>10)
             warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
@@ -408,12 +397,16 @@ while (1)
         options.quasiStaticFlag = true;
         options = rmfield(options,'q_nom');
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
-        q_qs_plan(:,1) = q0;
-        for i = ind_first_time:numel(t_qs_breaks)
+        supports = {};
+        support_times = [];
+        support_times_ind = [];
+        
+        % Compute support at t0
+        for i = 1:numel(t_qs_breaks)
           ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
           if(isempty(ikargs))
             q_qs_plan(:,i) = q_qs_traj.eval(t_qs_breaks(i));
-          else
+          elseif i >= ind_first_time
             [q_qs_plan(:,i),info] = ...
               inverseKin(r,q_qs_traj.eval(t_qs_breaks(i)),ikargs{:},options);
             if(info>10)
@@ -426,6 +419,8 @@ while (1)
                   t_qs_breaks(i));
               end
             end
+          else
+              q_qs_plan(:,i) = q0;
           end
           j = 1;
           n = 1;
@@ -470,28 +465,71 @@ while (1)
           total_body_support_vert = 0;
           com_qs_plan(:,i) = getCOM(r,kinsol);
           support_vert_pos{i} = zeros(2,num_sample_support_vertices(i));
+          body_contact_ind = {};
+          support_body_ind = [];
           for j = 1:length(body_ind{i})
             if(body_ind{i}(j) ~= 0)
               [x,J] = forwardKin(r,kinsol,body_ind{i}(j),body_pos{i}{j},0); 
+              if i==1 || i == support_times_ind(end) || any(any(support_vert_pos{support_times_ind(end)}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j))) ~= x(1:2,support_polygon_flags{i}{j})))
+                
+                body_contact_points = r_Atlas.getBodyContacts(body_ind{i}(j));
+                [~,body_contact_ind_j] = ismember(body_pos{i}{j}',body_contact_points','rows');
+                if any(body_contact_ind_j) 
+                    if ((i==1 && isempty(support_times_ind))|| i ~= support_times_ind(end))
+                        support_times_ind = [support_times_ind, i];
+                    end
+                    support_body_ind = [support_body_ind, body_ind{i}(j)];
+                    body_contact_ind{end+1} = body_contact_ind_j(body_contact_ind_j>0);
+                end
+              end
               support_vert_pos{i}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j)))...
                 = x(1:2,support_polygon_flags{i}{j});
               total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
             end
           end
+          if i == support_times_ind(end)
+            supports = [supports; {SupportState(r_Atlas,support_body_ind,body_contact_ind)}];
+          end
         end
-          %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
+        support_times = t_qs_breaks(support_times_ind);
+        %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 
-          % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
-          constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
-            size(q_qs_plan,2));
+        % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
+        constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
+          size(q_qs_plan,2));
 
-          %publish(robot_plan_publisher, t_qs_breaks, ...
-            %[q_qs_plan; 0*q_qs_plan], ...
-            %constraints_satisfied);
-          publish(robot_plan_publisher, t_qs_breaks, ...
-            [q_qs_plan; 0*q_qs_plan]);
-          publish(robot_plan_publisher_viewer, t_qs_breaks, ...
-            [q_qs_plan; 0*q_qs_plan]);
+        %publish(robot_plan_publisher, t_qs_breaks, ...
+        %[q_qs_plan; 0*q_qs_plan], ...
+        %constraints_satisfied);
+        publish(robot_plan_publisher, t_qs_breaks, ...
+          [q_qs_plan; 0*q_qs_plan]);
+        
+        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.');
+        if ~strcmp(key,'y')
+          continue;
+        end
+        % Publish plan to viewer
+        Q = 1*eye(4);
+        R = 0.001*eye(2);
+        comgoal = com_qs_plan(1:2,end);
+        ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
+        [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),Q,R);
+
+        % compute TVLQR
+        options.tspan = linspace(com_qs_traj.tspan(1),com_qs_traj.tspan(2),10);
+        options.sqrtmethod = false;
+        x0traj = setOutputFrame([com_qs_traj(1:2);0;0],ltisys.getStateFrame);
+        u0traj = setOutputFrame(ConstantTrajectory([0;0]),ltisys.getInputFrame);
+        S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenvalues, which numerically fluctuate below 0
+        warning(S);
+        [~,V] = tvlqr(ltisys,x0traj,u0traj,Q,R,V,options);
+
+        mu=0.5;
+        data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
+          'support_times',support_times,'supports',{supports},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
+          'link_constraints',[],'zmptraj',[],'qnom',[]);
+
+        robot_plan_publisher_viewer.publish(0,data);
 
         % Drake gui playback
         if(action_options.drake_vis)
@@ -740,7 +778,7 @@ function kc = getConstraintFromGoal(r,goal)
     pseudo_Inf = 1e3;
     pos.min(abs(pos.min) > 0.9*pseudo_Inf) = -Inf;
     pos.max(abs(pos.max) > 0.9*pseudo_Inf) = Inf;
-    if(num_pts>1 && goal.contact_type~=goal.WITHIN_REGION)
+    if false && (num_pts>1 && goal.contact_type~=goal.WITHIN_REGION)
       collision_group_pts = [mean(collision_group_pts,2) collision_group_pts];
       pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
       pos.max(1:2,2:end) = inf(2,num_pts);
