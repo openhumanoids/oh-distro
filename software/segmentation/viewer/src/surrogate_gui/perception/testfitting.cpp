@@ -7,12 +7,29 @@
 #include <pcl/io/pcd_io.h>
 #include <Eigen/SVD>
 #include <Eigen/Eigen>
+#include <bot_core/rotations.h>
 
 using namespace std;
 using namespace pcl;
 using namespace Eigen;
 
 #define ASSERT_PI(b) {if(!(b)) {cout << "Error on line: " << __LINE__ << endl; exit(-1);}}
+#define SQ(x) ((x)*(x))
+
+static Matrix3f ypr2rot(Vector3f ypr){
+  double rpy[]={ypr[2],ypr[1],ypr[0]};
+  double q[4];
+  double mat[9];
+  bot_roll_pitch_yaw_to_quat(rpy,q);
+  int rc=bot_quat_to_matrix(q,mat);
+  Matrix3d mat2(mat);
+  for(int j=0;j<3;j++){
+    for(int i=0;i<3;i++){
+      mat2(j,i) = mat[j*3+i];
+    }
+  }
+  return mat2.cast<float>();
+}
 
 void align_pts_3d(const vector<Vector3f>& pts_ref, const vector<Vector3f>& pts_cur,
                   Matrix3f& R, Vector3f& T){
@@ -110,6 +127,77 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
     vol[index] = 1;
   }
 }
+
+void point_pairs_from_dist_inds(vector<int>& dist_inds, Vector3i vol_size, const vector<Vector3f>& pts, 
+                                vector<Vector3f>& p0, vector<Vector3f>& p1)
+{
+  //TODO
+}
+
+void align_coarse_to_fine(
+          const vector<Vector3f>& pts_model, 
+          const vector<Vector3f>& pts_data, 
+          const vector<float>& res_range
+          //TODO pose_init
+          )
+{
+  /////////////////////////////
+  // coarse align
+  float res = res_range[0];
+  float padding = .1;
+
+  // convert model to voxels
+  vector<float> dist_xform;
+  vector<int> dist_inds;
+  Vector3i vol_size;
+  Matrix4f world_to_vol;
+  create_voxels(pts_model, res, padding, dist_xform, vol_size, world_to_vol);
+
+  // perform distance transform on model
+  dist_inds.resize(dist_xform.size());
+  distTransform(dist_xform.data(), dist_inds.data(), vol_size[2], vol_size[1], vol_size[0]); 
+  float maxDist = SQ(vol_size[0]) + SQ(vol_size[1]) + SQ(vol_size[2]);
+  maxDist = sqrt(maxDist);
+  for(int i=0;i<dist_xform.size();i++) dist_xform[i]/=maxDist;
+  Vector3f avg_model(0,0,0);
+  for(int i=0;i<pts_model.size();i++) avg_model+=pts_model[i];
+  avg_model/=pts_model.size();
+  //TODO pts_data_dec = decimate_points(pts_data,res);
+  vector<Vector3f> pts_data_dec = pts_data;
+  
+  // iterate through angles
+  float angle_step=30;
+  //TODO: allow limit to search
+  for(float roll=-180; roll<180; roll+=angle_step){
+    for(float pitch=-90; pitch<90; roll+=angle_step){
+      for(float yaw=-180; yaw<180; yaw+=angle_step){
+        Matrix3f R = ypr2rot(Vector3f(yaw,pitch,roll));
+        //Matrix3f Rt = R.transpose();
+        vector<Vector3f> pts(pts_data_dec.size());
+        for(int i=0;i<pts.size();i++) pts[i] = pts_data_dec[i].transpose()*R; //TODO: this transpose ok, should R be transpose??
+        Vector3f pts_mean(0,0,0);
+        for(int i=0;i<pts.size();i++) pts_mean+=pts[i];
+        pts_mean/=pts.size();
+        Vector3f T=avg_model-pts_mean;
+        for(int i=0;i<pts.size();i++) {
+          Vector3f p = pts[i]+T;
+          Vector4f p4(p[0],p[1],p[2],1);
+          p4=(p4.transpose()*world_to_vol).transpose(); //TODO: this right?
+          pts[i]=Vector3f(p4[0]/p4[3],p4[1]/p4[3],p4[2]/p4[3]); //TODO: is div required??
+        }
+
+        // compute point pairs and align
+        vector<Vector3f> p0,p1;
+        point_pairs_from_dist_inds(dist_inds, vol_size, pts, p0, p1);
+        Matrix3f R_opt;
+        Vector3f T_opt;
+        align_pts_3d(p0,p1,R_opt,T_opt);
+        //TODO left off at dist_xform_error
+      }  
+    }
+  }
+}
+
 
 /* Notes
    distTransform L M N: L is the inner loop
