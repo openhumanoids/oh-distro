@@ -574,7 +574,7 @@ namespace renderer_affordances_lcm_utils
              
         if(reach_flag) {
             // Set the reach position to be slightly off the sticky foot
-            KDL::Vector footframe_offset(0.0, 0.0, 0.025);
+            KDL::Vector footframe_offset(0.0, 0.0, 0.05);
             //footframe_offset[0]=0.0;footframe_offset[1]=0; footframe_offset[2]=-0.05;
             KDL::Vector worldframe_offset=T_world_ee.M*footframe_offset;
             T_world_ee.p += worldframe_offset;

@@ -1713,7 +1713,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_STOP_CONTROLLER, NULL);
   
-    bot_gtk_param_widget_add_separator (self->pw, "Simulate Manip Map Threshold");
+    /*bot_gtk_param_widget_add_separator (self->pw, "Simulate Manip Map Threshold");
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_STEERING, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, -90, 90, 0.1, 35);
@@ -1726,10 +1726,10 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0.1);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_GAS, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0);
+    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0);
 
 
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_MANIP_MAP, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_MANIP_MAP, NULL);*/
 
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);
