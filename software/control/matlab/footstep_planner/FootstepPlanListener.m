@@ -47,6 +47,14 @@ classdef FootstepPlanListener
 		         goal_msg.pos.translation.y;...
 		         goal_msg.pos.translation.z;...
 		         rpy];
+
+		  % Handle NaNs from network compression
+		  if any(isnan(X.pos([1,2,6])))
+		  	error('I don''t know how to handle NaN in x, y, or yaw');
+		  else
+		  	X.pos(isnan(X.pos)) = 0;
+		  end
+
 		  % X.time = goal_msg.step_time / 1000000;
 		  X.step_speed = goal_msg.step_speed;
 		  X.step_height = goal_msg.step_height;
