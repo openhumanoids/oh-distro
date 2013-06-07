@@ -244,7 +244,13 @@ while (1)
       end
 
       key_time_IK_failed = false;
-      for i = ind_first_time:num_key_time_samples 
+      
+      support_times = action_sequence.key_time_samples;
+      support_body_ind = zeros(size(support_times));
+      support_body_ind = [];
+      contact_surface_ind = [];
+      support_states = {};
+      for i = 1:num_key_time_samples 
         if(i==num_key_time_samples)
           for j=1:length(action_sequence.kincons)
               %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
@@ -268,35 +274,64 @@ while (1)
           end
         end
         ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
-        if(isempty(ikargs))
-          q_key_time_samples(:,i) = ...
-            options.q_traj_nom.eval(action_sequence.key_time_samples(i));
-        else
-          if true || i==1
-            q0 = q;
-            q0(7:end) = q_standing(7:end);
+        if i >= ind_first_time
+          if(isempty(ikargs))
+            q_key_time_samples(:,i) = ...
+              options.q_traj_nom.eval(action_sequence.key_time_samples(i));
           else
-            q0 = q_key_time_samples(:,i-1);
-          end
-          [q_key_time_samples(:,i),info] = inverseKin(r,q0,ikargs{:},options);
-          if(info>10)
-            warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
-            key_time_IK_failed = true;
-            break;
-          else
-            fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
-          end
-          if(i<num_key_time_samples)
-            action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
-            n_kincons_new = length(action_sequence.kincons);
-            if n_kincons_new > n_kincons
-              for j = (n_kincons+1):n_kincons_new
-                fprintfVerb(action_options,'Added constraint %d: %s\n',j,action_sequence.kincons{j}.name);
+            if true || i==1
+              q0 = q;
+              q0(7:end) = q_standing(7:end);
+            else
+              q0 = q_key_time_samples(:,i-1);
+            end
+            [q_key_time_samples(:,i),info] = inverseKin(r,q0,ikargs{:},options);
+            if(info>10)
+              warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+              key_time_IK_failed = true;
+              break;
+            else
+              fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
+            end
+            if(i<num_key_time_samples)
+              action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
+              n_kincons_new = length(action_sequence.kincons);
+              if n_kincons_new > n_kincons
+                for j = (n_kincons+1):n_kincons_new
+                  fprintfVerb(action_options,'Added constraint %d: %s\n',j,action_sequence.kincons{j}.name);
+                end
+                n_kincons = n_kincons_new;
               end
-              n_kincons = n_kincons_new;
             end
           end
         end
+        support_body_ind = [];
+        surface_body_ind = [];
+        support_point_ind = {};
+        support_point_ind_unique = {};
+        for j = 1:length(action_sequence.kincons)
+          if action_sequence.key_time_samples(i) >= action_sequence.kincons{j}.tspan(1) && ...
+              action_sequence.key_time_samples(i) <= action_sequence.kincons{j}.tspan(2) && ...
+              any(any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+              any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1)|...
+              any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.MAKE_CONTACT,1)|...
+              any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.BREAK_CONTACT,1))
+            support_body_ind = [support_body_ind, action_sequence.kincons{j}.body_ind];
+            B = r.body(support_body_ind(end));
+            body_contact_points = r_Atlas.getBodyContacts(support_body_ind(end));
+            [~,support_point_ind_j] = ismember(action_sequence.kincons{j}.body_pts',body_contact_points','rows');
+            support_point_ind = [support_point_ind, support_point_ind_j];
+            surface_body_ind = [surface_body_ind, 1];
+          end
+        end
+        [support_body_ind_unique,ia,ic] = unique(support_body_ind,'stable');
+        for j = 1:length(support_body_ind_unique)
+          support_point_ind_unique{j} = unique(vertcat(support_point_ind{ic==j}));
+        end
+        surface_body_ind = surface_body_ind(ia);
+        support_states = [support_states; {SupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)}];
+        
+        
         kinsol = doKinematics(r,q_key_time_samples(:,i));
         com_key_time_samples(:,i) = getCOM(r,kinsol);
       end
@@ -382,9 +417,6 @@ while (1)
         options.quasiStaticFlag = true;
         options = rmfield(options,'q_nom');
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
-        supports = {};
-        support_times = [];
-        support_times_ind = [];
         
         % Compute support at t0
         for i = 1:numel(t_qs_breaks)
@@ -434,7 +466,9 @@ while (1)
               else
                 support_polygon_flags{i}{n} = ...
                   any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
-                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1);
+                  any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1)|...
+                  (any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.MAKE_CONTACT,1)&...
+                   any(cell2mat(ikargs{j+2}.contact_state') == ActionKinematicConstraint.BREAK_CONTACT,1));
               end
               contact_state{i}{n} = ikargs{j+2}.contact_state;
               j = j+3;
@@ -450,33 +484,16 @@ while (1)
           total_body_support_vert = 0;
           com_qs_plan(:,i) = getCOM(r,kinsol);
           support_vert_pos{i} = zeros(2,num_sample_support_vertices(i));
-          body_contact_ind = {};
-          support_body_ind = [];
           for j = 1:length(body_ind{i})
             if(body_ind{i}(j) ~= 0)
               [x,J] = forwardKin(r,kinsol,body_ind{i}(j),body_pos{i}{j},0); 
-              if i==1 || i == support_times_ind(end) || any(any(support_vert_pos{support_times_ind(end)}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j))) ~= x(1:2,support_polygon_flags{i}{j})))
-                
-                body_contact_points = r_Atlas.getBodyContacts(body_ind{i}(j));
-                [~,body_contact_ind_j] = ismember(body_pos{i}{j}',body_contact_points','rows');
-                if any(body_contact_ind_j) 
-                    if ((i==1 && isempty(support_times_ind))|| i ~= support_times_ind(end))
-                        support_times_ind = [support_times_ind, i];
-                    end
-                    support_body_ind = [support_body_ind, body_ind{i}(j)];
-                    body_contact_ind{end+1} = body_contact_ind_j(body_contact_ind_j>0);
-                end
-              end
               support_vert_pos{i}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j)))...
                 = x(1:2,support_polygon_flags{i}{j});
               total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
             end
           end
-          if i == support_times_ind(end)
-            supports = [supports; {SupportState(r_Atlas,support_body_ind,body_contact_ind)}];
-          end
         end
-        support_times = t_qs_breaks(support_times_ind);
+
         %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 
         % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
@@ -511,7 +528,7 @@ while (1)
 
         mu=0.5;
         data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
-          'support_times',support_times,'supports',{supports},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
+          'support_times',support_times,'supports',{support_states},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
           'link_constraints',[],'zmptraj',[],'qnom',[]);
 
         robot_plan_publisher_viewer.publish(0,data);
