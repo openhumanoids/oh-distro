@@ -8,7 +8,7 @@ options.floating = true;
 
 if ~isfield(options,'backup_mode') options.backup_mode = false; end
 if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end
-if(~isfield(options,'use_mex')) options.use_mex = false; end
+if(~isfield(options,'use_mex')) options.use_mex = true; end
 if(~isfield(options,'debug')) options.debug = false; end
 
 
