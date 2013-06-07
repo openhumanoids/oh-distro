@@ -475,7 +475,7 @@ void
 Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
   if ( currentIndex < _robot_plan.size() ) {
-    _slider_current_time->setText( QString( "time: %1 sec" ).arg( _robot_plan[currentIndex].time() / 100000.0 ) );
+    _slider_current_time->setText( QString( "time: %1 sec" ).arg( _robot_plan[currentIndex].time() / 1000000.0 ) );
   }
 }
 
