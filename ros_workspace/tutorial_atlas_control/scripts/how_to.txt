@@ -3,3 +3,13 @@ face down -> null -> facedown_to_faceup.csv -> face up
 
 
 faceup to face down is very tough
+
+
+
+
+
+1. on side --> to flat on back
+2. flat on back --> to pre crawl
+3. pre crawl --> crawl
+4. if on side go to 1.
+
