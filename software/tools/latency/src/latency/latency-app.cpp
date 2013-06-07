@@ -19,7 +19,7 @@ public:
   ~App() {}
   boost::shared_ptr<lcm::LCM> _lcm;
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg);
-  void handleJointCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t * msg);
+  void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg);
   void handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg);
 
   int mode_;
@@ -34,11 +34,11 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_): _lcm(_lcm),mode_(mode_){
   
   if ( mode_==0){
     _lcm->subscribe("TRUE_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("JOINT_COMMANDS",&App::handleJointCommandMsg,this);
+    _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
     message_ = "TRAN";
   }else if(mode_==1){
     _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("JOINT_COMMANDS",&App::handleJointCommandMsg,this);
+    _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
     message_ = "ESTM";
   }else if(mode_==2){
     _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
@@ -71,7 +71,7 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
   latency_->add_from(msg->utime, _timestamp_now() );
 }
 
-void App::handleJointCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t * msg)  {
+void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
   latency_->add_to(msg->utime, _timestamp_now(), message_ );
 }
 
@@ -83,8 +83,8 @@ void App::handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& c
 }
 
 int main (int argc, char ** argv){
-  std::cout << "0: TRUE_ROBOT_STATE <-> JOINT_COMMANDS\n";
-  std::cout << "1:  EST_ROBOT_STATE <-> JOINT_COMMANDS\n";
+  std::cout << "0: TRUE_ROBOT_STATE <-> ATLAS_COMMAND\n";
+  std::cout << "1:  EST_ROBOT_STATE <-> ATLAS_COMMAND\n";
   std::cout << "2:  EST_ROBOT_STATE <-> LATENCY_CONTROL_A\n";
   std::cout << "3:  EST_ROBOT_STATE <-> LATENCY_CONTROL_B\n";
   std::cout << "4:  EST_ROBOT_STATE <-> LATENCY_CONTROL_C\n";
