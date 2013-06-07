@@ -553,35 +553,31 @@
       </joint>
     <!-- gas/brake pedals, steering wheel and hand brake -->
     <link name="gas_pedal">
-      <inertial>
-         <origin xyz="0 0 0" rpy="0 -0 0"/>
-         <mass value="0.1"/>
-         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-      </inertial>
-      <collision name="gas_pedal_collision">
-         <origin xyz="-0.0385 0 -0.086"
-                 rpy="3.141592653589793 1.1255926535897933 3.141592653589793"/>
-         <geometry>
-            <box size="0.1069000 0.0770000 0.010000"/>
-         </geometry>
-      </collision>
-      <visual name="gas_pedal_collision">
-         <origin xyz="-0.0385 0 -0.086"
-                 rpy="3.141592653589793 1.1255926535897933 3.141592653589793"/>
-         <geometry>
-            <box size="0.1069000 0.0770000 0.010000"/>
-         </geometry>
-      </visual>
-   </link>
-   <joint name="gas_joint" type="prismatic">
-      <origin xyz="0.63 0.1 0.58" rpy="0 -0 0"/>
-      <axis xyz="1 0 -1"/>
-      <limit effort="1" velocity="1" lower="0.00" upper="0.08"/>
-      <parent link="chassis" type="link"/>
-      <child link="gas_pedal" type="link"/>
-        
-      </joint>
-
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <mass value="0.1" />
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+        </inertial>
+        <collision name="gas_pedal_collision">
+            <origin xyz="-0.0385 0 -0.086" rpy="3.141592653589793 1.1255926535897933 3.141592653589793" />
+            <geometry>
+                <box size="0.1069000 0.0770000 0.010000" />
+            </geometry>
+        </collision>
+        <visual name="gas_pedal_collision">
+            <origin xyz="-0.0385 0 -0.086" rpy="3.141592653589793 1.1255926535897933 3.141592653589793" />
+            <geometry>
+                <box size="0.1069000 0.0770000 0.010000" />
+            </geometry>
+        </visual>
+    </link>
+    <joint name="gas_joint" type="prismatic">
+        <origin xyz="0.63 0.1 0.58" rpy="0 -0 0" />
+        <axis xyz="1 0 -1" />
+        <limit effort="1" velocity="1" lower="0.00" upper="0.2" />
+        <parent link="chassis" type="link" />
+        <child link="gas_pedal" type="link" />
+    </joint>
     <link name="brake_pedal">
       <inertial>
          <origin xyz="0 0 0" rpy="0 -0 0"/>
@@ -839,4 +835,10 @@
      <limit effort="1" velocity="1" lower="0" upper="0.6"/>
      <parent link="chassis" type="link"/>
      <child link="hand_brake" type="link"/> -->
-  </object>
+    <grasp_seed>
+        <geometry name="steering_wheel_4" />
+        <relative_pose rpy="-2.31901 0.0506205 -1.27042" xyz="-0.0730066 -0.0723146 0.0440651" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142226 1.52346 1.37803 -0.00293375 1.53692 1.32742 0.0140219 1.54334 1.31305 0.875808 1.29825 -0.251281 " />
+    </grasp_seed>
+</object>
