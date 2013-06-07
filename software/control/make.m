@@ -116,10 +116,10 @@ else  % don't build with maps
 	libs};
 %	'-DBULLET_COLLISION',...
 %	bullet_ldflags, '-lBulletCollision -lLinearMath', ...
-  cmdstr = ['mex -O src/QPControllermex.cpp -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
-  disp(cmdstr);
-  eval(cmdstr);
-  
+  cmdstr = ['mex -g src/QPControllermex.cpp -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
+ % disp(cmdstr);
+ % eval(cmdstr);
+  makeRule(fullfile(BUILD_PREFIX,'matlab',['QPControllermex.',mexext]),{'src/QPControllermex.cpp','drake/systems/plants/RigidBodyManipulator.o'},cmdstr);
 
 end
 

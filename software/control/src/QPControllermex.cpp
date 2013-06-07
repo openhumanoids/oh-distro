@@ -39,11 +39,13 @@ using namespace std;
 struct QPControllerData {
   GRBenv *env;
   RigidBodyManipulator* r;
+  RigidBodyManipulator* multi_robot;
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
   int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
   MatrixXd B, B_con, B_free;
   set<int> free_dof, con_dof, free_inputs, con_inputs; 
+  int rfoot_idx, lfoot_idx;
   VectorXd umin_con, umax_con;
   ArrayXd umin,umax;
   void* map_ptr;
@@ -140,18 +142,18 @@ void getCols(set<int> &cols, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB>
     Msub.col(i++) = M.col(*iter);
 }
 
-void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d &normal)
+void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d *normal)
 {
-  Vector3f floatPos, floatNormal;
   if (map_ptr) {
 #ifdef USE_MAPS    
+    Vector3f floatPos, floatNormal;
     auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
     if (state != NULL) {
       auto view = state->getView();
       if (view != NULL) {
         if (view->getClosest(contact_pos.cast<float>(),floatPos,floatNormal)) {
           pos = floatPos.cast<double>();
-          normal = floatNormal.cast<double>();
+          if (normal) *normal = floatNormal.cast<double>();
           return;
         }
       }
@@ -160,7 +162,7 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
   } else {
 //    mexPrintf("Warning: using 0,0,1 as normal\n");
     pos << contact_pos.topRows(2), 0;
-    normal << 0,0,1;
+    if (normal) *normal << 0,0,1;
   }
   // just assume mu = 1 for now
 }
@@ -185,7 +187,28 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
   }
 }
 
-int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot) 
+int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi)
+{
+  RigidBody* b = &(pdata->r->bodies[body_idx]);
+	int nc = b->contact_pts.cols();
+	phi.resize(nc);
+
+  Vector3d contact_pos,pos,normal; Vector4d tmp;
+
+	for (int i=0; i<nc; i++) {
+		tmp = b->contact_pts.col(i);
+		pdata->r->forwardKin(body_idx,tmp,0,contact_pos);
+		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL);
+
+		pos -= contact_pos;  // now -rel_pos in matlab version
+		phi(i) = pos.norm();
+		if (pos.dot(normal)>0)
+			phi(i)=-phi(i);
+  }
+	return nc;
+}
+
+int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot)
 {
   int i, j, k=0, nc = pdata->r->getNumContacts(body_idx), nq = pdata->r->num_dof;
 
@@ -209,9 +232,9 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
         pdata->r->forwardKin(*iter,tmp,0,contact_pos);
         pdata->r->forwardJac(*iter,tmp,0,J);
 
-        collisionDetect(pdata->map_ptr,contact_pos,pos,normal);
+        collisionDetect(pdata->map_ptr,contact_pos,pos,&normal);
         
-// phi is not even being used right now        
+// phi not being used right now
 //        pos -= contact_pos;  // now -rel_pos in matlab version
 //        phi(k) = pos.norm();
 //        if (pos.dot(normal)>0) phi(k)=-phi(k);
@@ -242,7 +265,7 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
-  if (nrhs<1) mexErrMsgTxt("usage: ptr = QPControllermex(0,control_obj,robot_obj); alpha=QPControllermex(ptr,...,...)");
+  if (nrhs<1) mexErrMsgTxt("usage: ptr = QPControllermex(0,control_obj,robot_obj,...); alpha=QPControllermex(ptr,...,...)");
   if (nlhs<1) mexErrMsgTxt("take at least one output... please.");
   
   struct QPControllerData* pdata;
@@ -351,6 +374,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     
+    // get the multi-robot ptr back from matlab
+    if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
+    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the map ptr");
+    memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
+
+    pdata->rfoot_idx = (int) mxGetScalar(prhs[8]) - 1;
+    pdata->lfoot_idx = (int) mxGetScalar(prhs[9]) - 1;
+
+
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
 
@@ -398,10 +430,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
   
-  set<int> active_supports;
+  set<int> desired_supports, active_supports;
   pr = mxGetPr(prhs[narg]);
   for (i=0; i<mxGetNumberOfElements(prhs[narg]); i++)
-    active_supports.insert((int)pr[i] - 1);
+    desired_supports.insert((int)pr[i] - 1);
   narg++;
   
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==4);
@@ -438,11 +470,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map< Vector2d > y0(mxGetPr(prhs[narg++]));
 
   double mu = mxGetScalar(prhs[narg++]);
+  bool rfoot_contact_state = (bool) mxGetScalar(prhs[narg++]),
+  		lfoot_contact_state = (bool) mxGetScalar(prhs[narg++]);
+  double contact_threshold = mxGetScalar(prhs[narg++]);
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
   pdata->r->doKinematics(q,false,qd);
   
+  //---------------------------------------------------------------------
+  // Compute active support from desired supports -----------------------
+
+  VectorXd phi;
+  if (desired_supports.find(pdata->rfoot_idx)!=desired_supports.end()) {
+  	contactPhi(pdata,pdata->rfoot_idx,phi);
+  	if (phi.maxCoeff()<contact_threshold || rfoot_contact_state)
+  			active_supports.insert(pdata->rfoot_idx);
+  }
+  if (desired_supports.find(pdata->lfoot_idx)!=desired_supports.end()) {
+  	contactPhi(pdata,pdata->lfoot_idx,phi);
+  	if (phi.maxCoeff()<contact_threshold || lfoot_contact_state)
+  			active_supports.insert(pdata->lfoot_idx);
+  }
+
   MatrixXd H(nq,nq);
   VectorXd C(nq);
   
@@ -471,7 +521,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   VectorXd qd_con(nq_con);
   getRows(pdata->con_dof,qdvec,qd_con);
   
-//  VectorXd phi;
   MatrixXd Jz,Jp,Jpdot,D;
   int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot);
   int neps = nc*dim;
@@ -592,7 +641,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         CGE (GRBaddqpterms(model,1,&i,&i,&cost), pdata->env);
       }
       // obj(1:nq_con) = -qddot_des_con
-      q_ddot_des_con *= -1;
+//      q_ddot_des_con *= -1;
+      q_ddot_des_con *= -2;  // NOTE:  This is very strange, and appears to be related to a bug we've found in gurobi.  the linear term in the objective seems to be off by a factor of 2 in the unconstrained case.
       CGE (GRBsetdblattrarray(model,"Obj",0,nq_con,q_ddot_des_con.data()), pdata->env);
     } 
     
@@ -701,7 +751,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[1] = mxCreateDoubleScalar(Vdot);
   }
     
-  
   if (nlhs>2) {  // return model.Q (for unit testing)
     int qnz;
     CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
@@ -745,6 +794,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         if (nlhs>7) plhs[7] = eigenToMatlab(lb);
         if (nlhs>8) plhs[8] = eigenToMatlab(ub);
+
+        if (nlhs>9) {
+        	plhs[9] = mxCreateDoubleMatrix(active_supports.size(),1,mxREAL);
+        	pr = mxGetPr(plhs[9]);
+        	int i=0;
+          for (set<int>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
+          	pr[i++] = (double) (*iter + 1);
+          }
+        }
       }
     }
   }

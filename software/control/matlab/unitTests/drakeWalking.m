@@ -43,7 +43,7 @@ r = r.setInitialState(xstar);
 nq = getNumDOF(r);
 nu = getNumInputs(r);
 
-x0 = xstar;
+x0 = xstar;% + 0.01*randn(size(xstar));
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 

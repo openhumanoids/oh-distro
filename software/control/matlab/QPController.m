@@ -182,7 +182,12 @@ classdef QPController < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
+      if obj.multi_robot==0
+        multi_robot_ptr = 0;
+      else
+        multi_robot_ptr = obj.robot.getMexModelPtr.getData();
+      end
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr,obj.rfoot_idx,obj.lfoot_idx));
 %       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
     end
 
@@ -217,7 +222,78 @@ classdef QPController < MIMODrakeSystem
       rfoot_contact_state=0;
     end
     
+    %----------------------------------------------------------------------
+    % Linear system stuff for zmp/com control -----------------------------
+    A_ls = ctrl_data.A; % always TI
+    B_ls = ctrl_data.B; % always TI
+    Qy = ctrl_data.Qy;
+    if isfield(ctrl_data,'R')
+      R_ls = ctrl_data.R;
+    else
+      R_ls = zeros(2);
+    end
+    if typecheck(ctrl_data.C,'double')
+      C_ls = ctrl_data.C;
+    else
+      C_ls = ctrl_data.C.eval(t);
+    end
+    if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
+      D_ls = ctrl_data.D;
+    else
+      % assumed  ZMP system
+      hddot = 0; % could use estimated comddot here
+      D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
+      % or current height above height map
+    end
+    if typecheck(ctrl_data.S,'double')
+      S = ctrl_data.S;
+    else
+      S = ctrl_data.S.eval(t);
+    end
+    if isfield(ctrl_data,'s1') && ~isempty(ctrl_data.s1)
+      if typecheck(ctrl_data.s1,'double')
+        s1 = ctrl_data.s1;
+      else
+        s1 = ctrl_data.s1.eval(t);
+      end
+    else
+      s1= zeros(4,1);
+    end
+    if isfield(ctrl_data,'s2') && ~isempty(ctrl_data.s2)
+      if typecheck(ctrl_data.s2,'double')
+        s2 = ctrl_data.s2;
+      else
+        s2=0;
+        %         s2=ctrl_data.s2.eval(t); % this is expensive, do we really need it?
+      end
+    else
+      s2=0;
+    end
+    if typecheck(ctrl_data.x0,'double')
+      x0 = ctrl_data.x0;
+    else
+      x0 = ctrl_data.x0.eval(t);
+    end
+    if typecheck(ctrl_data.u0,'double')
+      u0 = ctrl_data.u0;
+    else
+      u0 = ctrl_data.u0.eval(t);
+    end
+    if typecheck(ctrl_data.y0,'double')
+      y0 = ctrl_data.y0;
+    else
+      y0 = ctrl_data.y0.eval(t);
+    end
+    if isfield(ctrl_data,'mu')
+      mu = ctrl_data.mu;
+    else
+      mu = 1.0;
+    end
     
+    R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
+
+
+    %----------------------------------------------------------------------
     % use support trajectory to get desired foot contact state
     supp_idx = find(ctrl_data.support_times<=t,1,'last');
     if isa(ctrl_data.supports,'cell')
@@ -226,189 +302,122 @@ classdef QPController < MIMODrakeSystem
       supp = ctrl_data.supports(supp_idx);
     end
     desired_supports = supp.bodies;
+
     
-    % Change in logic here due to recent tests with heightmap noise
-    % for now, we will do a logical OR of the force-based sensor and the
-    % kinematic criterion for foot contacts
-    %
-    % another option would be to limit forces on the feet when kinematics
-    % says 'contact', but force sensors do not. when both agree, allow full
-    % forces on the feet
+    %----------------------------------------------------------------------
+    % check for cases that I haven't implemented yet in mex
+    if (obj.use_mex~=0)  
+      if any(supp.contact_surfaces~=0)
+        error('multi-robot contact not supported by mex version yet');
+      end
+      if ~isempty(setdiff(desired_supports,[obj.rfoot_idx,obj.lfoot_idx]))
+        error('non-foot contacts are not supported by mex version yet (sorry, this is coming very soon)');
+      end
+    end
     
-    % determine contact via kinematics.
-    % this is not optimized (we're repeating contact constraints call below
-    % and for the mex case, we should not be doing this in matlab
     contact_threshold = 0.0005; % m
-    kinsol = doKinematics(r,q,false,true);
-    
-    if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-      kinsol_multi = doKinematics(obj.multi_robot,q,false,true); % for now assume the same state frame
-    end
-      
-    num_desired_contacts = supp.num_contact_pts;
-
-    % get active contacts
-    phi = zeros(sum(num_desired_contacts),1);
-    c_pre = 0;
-    for j=1:length(supp.bodies)
-      if supp.contact_surfaces(j) == 0
-        phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
-      elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        % use bullet collision between bodies
-        phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
-      else
-        error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
-      end
-      c_pre = c_pre + num_desired_contacts(j);
-    end
-
-    % check foot contacts via kinematics
-    lfoot_contact_state_kin = 0;
-    rfoot_contact_state_kin = 0;
-    if any(obj.lfoot_idx==desired_supports) 
-      lfoot_desired_idx = find(obj.lfoot_idx==desired_supports);
-      c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
-      if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
-        lfoot_contact_state_kin = 1;
-      end
-    end
-    
-    if any(obj.rfoot_idx==desired_supports) 
-      rfoot_desired_idx = find(obj.rfoot_idx==desired_supports);
-      c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
-      if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
-        rfoot_contact_state_kin = 1;
-      end
-    end
-
-    lfoot_contact_state = lfoot_contact_state || lfoot_contact_state_kin;
-    rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
-    
-    active_supports = [];
-    active_surfaces = [];
-    active_contact_pts = {};
-    num_active_contacts = [];
-    if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
-      active_supports = [active_supports; obj.lfoot_idx];
-      active_surfaces = [active_surfaces; supp.contact_surfaces(lfoot_desired_idx)];
-      active_contact_pts{length(active_supports)} = supp.contact_pts{lfoot_desired_idx};
-      num_active_contacts = [num_active_contacts; length(supp.contact_pts{lfoot_desired_idx})];
-    end
-    if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
-      active_supports = [active_supports; obj.rfoot_idx];
-      active_surfaces = [active_surfaces; supp.contact_surfaces(rfoot_desired_idx)];
-      active_contact_pts{length(active_supports)} = supp.contact_pts{rfoot_desired_idx};
-      num_active_contacts = [num_active_contacts; length(supp.contact_pts{rfoot_desired_idx})];
-    end
-    
-    %----------------------------------------------------------------------
-    % END CODE THAT TREATS FEET DIFFERENTLY -------------------------------
-
-    c_pre = 0;
-    for i=1:length(desired_supports)
-      if desired_supports(i)~=obj.lfoot_idx && desired_supports(i)~=obj.rfoot_idx
-        if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
-          active_supports = [active_supports; desired_supports(i)];
-          active_surfaces = [active_surfaces; supp.contact_surfaces(i)];
-          active_contact_pts{length(active_supports)} = supp.contact_pts{i};
-          num_active_contacts = [num_active_contacts; length(supp.contact_pts{i})];
-        end
-      end
-      c_pre = c_pre + num_desired_contacts(i);
-    end
-    
-    %----------------------------------------------------------------------
-    % Disable hand force/torque contribution to dynamics as necessary
-    if (~obj.use_hand_ft) 
-      hand_ft=0*hand_ft; 
-    else
-      if any(active_supports==obj.lhand_idx)
-        hand_ft(1:6)=0;
-      end
-      if any(active_supports==obj.rhand_idx)
-        hand_ft(7:12)=0;
-      end
-    end
-    
-    %----------------------------------------------------------------------
-    % Linear system stuff for zmp/com control -----------------------------
-    if ~isempty(active_supports)
-      A_ls = ctrl_data.A; % always TI
-      B_ls = ctrl_data.B; % always TI
-      Qy = ctrl_data.Qy;
-      if isfield(ctrl_data,'R')
-        R_ls = ctrl_data.R;
-      else
-        R_ls = zeros(2);
-      end
-      if typecheck(ctrl_data.C,'double')
-        C_ls = ctrl_data.C;
-      else
-        C_ls = ctrl_data.C.eval(t);
-      end
-      if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
-        D_ls = ctrl_data.D;
-      else
-        % assumed  ZMP system
-        hddot = 0; % could use estimated comddot here
-        D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
-        % or current height above height map
-      end
-      if typecheck(ctrl_data.S,'double')
-        S = ctrl_data.S;
-      else
-        S = ctrl_data.S.eval(t);
-      end
-      if isfield(ctrl_data,'s1') && ~isempty(ctrl_data.s1)
-       if typecheck(ctrl_data.s1,'double')
-        s1 = ctrl_data.s1;
-       else
-        s1 = ctrl_data.s1.eval(t);
-       end
-      else
-        s1= zeros(4,1); 
-      end
-      if isfield(ctrl_data,'s2') && ~isempty(ctrl_data.s2)
-       if typecheck(ctrl_data.s2,'double')
-        s2 = ctrl_data.s2;
-       else
-        s2=0;
-%         s2=ctrl_data.s2.eval(t); % this is expensive, do we really need it?
-       end
-      else
-        s2=0; 
-      end
-      if typecheck(ctrl_data.x0,'double')
-        x0 = ctrl_data.x0;
-      else
-        x0 = ctrl_data.x0.eval(t); 
-      end
-      if typecheck(ctrl_data.u0,'double')
-        u0 = ctrl_data.u0;
-      else
-        u0 = ctrl_data.u0.eval(t); 
-      end
-      if typecheck(ctrl_data.y0,'double')
-        y0 = ctrl_data.y0;
-      else
-        y0 = ctrl_data.y0.eval(t); 
-      end
-      if isfield(ctrl_data,'mu')
-        mu = ctrl_data.mu;
-      else
-        mu = 1.0;
-      end
-    else
-      % allocate these for passing into mex
-      A_ls=zeros(4);B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);mu=1.0;
-      D_ls=zeros(2);S=zeros(4);s1=zeros(4,1);s2=0;x0=zeros(4,1);u0=zeros(2,1);y0=zeros(2,1);
-    end
-    
-    R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
-
-
     if (obj.use_mex==0 || obj.use_mex==2)
 
+      % Change in logic here due to recent tests with heightmap noise
+      % for now, we will do a logical OR of the force-based sensor and the
+      % kinematic criterion for foot contacts
+      %
+      % another option would be to limit forces on the feet when kinematics
+      % says 'contact', but force sensors do not. when both agree, allow full
+      % forces on the feet
+      kinsol = doKinematics(r,q,false,true);
+    
+      if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+        kinsol_multi = doKinematics(obj.multi_robot,q,false,true); % for now assume the same state frame
+      end
+      
+      num_desired_contacts = supp.num_contact_pts;
+    
+      % get active contacts
+      phi = zeros(sum(num_desired_contacts),1);
+      c_pre = 0;
+      for j=1:length(supp.bodies)
+        if supp.contact_surfaces(j) == 0
+          phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
+        elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+          % use bullet collision between bodies
+          phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
+        else
+          error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
+        end
+        c_pre = c_pre + num_desired_contacts(j);
+      end
+
+      % check foot contacts via kinematics
+      lfoot_contact_state_kin = 0;
+      rfoot_contact_state_kin = 0;
+      if any(obj.lfoot_idx==desired_supports)
+        lfoot_desired_idx = find(obj.lfoot_idx==desired_supports);
+        c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
+        if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
+          lfoot_contact_state_kin = 1;
+        end
+      end
+    
+      if any(obj.rfoot_idx==desired_supports)
+        rfoot_desired_idx = find(obj.rfoot_idx==desired_supports);
+        c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
+        if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
+          rfoot_contact_state_kin = 1;
+        end
+      end
+      
+      lfoot_contact_state = lfoot_contact_state || lfoot_contact_state_kin;
+      rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
+      
+      active_supports = [];
+      active_surfaces = [];
+      active_contact_pts = {};
+      num_active_contacts = [];
+      if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
+        active_supports = [active_supports; obj.lfoot_idx];
+        active_surfaces = [active_surfaces; supp.contact_surfaces(lfoot_desired_idx)];
+        active_contact_pts{length(active_supports)} = supp.contact_pts{lfoot_desired_idx};
+        num_active_contacts = [num_active_contacts; length(supp.contact_pts{lfoot_desired_idx})];
+      end
+      if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
+        active_supports = [active_supports; obj.rfoot_idx];
+        active_surfaces = [active_surfaces; supp.contact_surfaces(rfoot_desired_idx)];
+        active_contact_pts{length(active_supports)} = supp.contact_pts{rfoot_desired_idx};
+        num_active_contacts = [num_active_contacts; length(supp.contact_pts{rfoot_desired_idx})];
+      end
+      
+      %----------------------------------------------------------------------
+      % END CODE THAT TREATS FEET DIFFERENTLY -------------------------------
+      
+      c_pre = 0;
+      for i=1:length(desired_supports)
+        if desired_supports(i)~=obj.lfoot_idx && desired_supports(i)~=obj.rfoot_idx
+          if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
+            active_supports = [active_supports; desired_supports(i)];
+            active_surfaces = [active_surfaces; supp.contact_surfaces(i)];
+            active_contact_pts{length(active_supports)} = supp.contact_pts{i};
+            num_active_contacts = [num_active_contacts; length(supp.contact_pts{i})];
+          end
+        end
+        c_pre = c_pre + num_desired_contacts(i);
+      end
+      
+      %----------------------------------------------------------------------
+      % Disable hand force/torque contribution to dynamics as necessary
+      if (~obj.use_hand_ft)
+        hand_ft=0*hand_ft;
+      else
+        if any(active_supports==obj.lhand_idx)
+          hand_ft(1:6)=0;
+        end
+        if any(active_supports==obj.rhand_idx)
+          hand_ft(7:12)=0;
+        end
+      end
+          
+      %----------------------------------------------------------------------
+      
       nu = getNumInputs(r);
       nq = getNumDOF(r);
       dim = 3; % 3D
@@ -688,7 +697,7 @@ classdef QPController < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-       [y,Vdot] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu);
+       [y,Vdot] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
        V = 0; % don't compute V for mex yet (will we ever use this?)
     end
 
@@ -703,7 +712,8 @@ classdef QPController < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
-      [y,~,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu);
+      [y,Vdotmex,Q,gobj,A,rhs,sense,lb,ub,as] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
+      valuecheck(as,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);
@@ -714,6 +724,8 @@ classdef QPController < MIMODrakeSystem
 %       valuecheck(y,des.y,1e-4);  % they are close, but not *quite* the
 %       same. ---I don't like this, I'm seeing differences up to 5Nm in
 %       some dimensions.
+%      valuecheck(Vdotmex,Vdot,1e-4);  % this one, too. (coincidentally
+%      Vdotmex was < Vdot in the very few cases I looked at carefully)
     end
     
    

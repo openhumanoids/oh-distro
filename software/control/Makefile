@@ -66,6 +66,8 @@ drake: matlabfoo $(BUILD_PREFIX)/share/java/drc_control.jar
 clean:
 	-rm $(CLASSFILES)
 	-rm $(BUILD_PREFIX)/share/java/drc_control.jar 	
+	-rm $(BUILD_PREFIX)/matlab/*.mex*  # todo: make this only delete our local files
+	$(MAKE) -C drake clean;
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
