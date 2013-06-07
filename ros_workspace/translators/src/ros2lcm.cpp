@@ -58,7 +58,7 @@ private:
   void l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
   void r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
   void head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
-  void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in); 
+  void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in, bool wrap_safe); 
   void appendLimbSensor(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in);
   void publishRobotState(int64_t utime_in);
   bool init_recd_[2]; // have recived gt [0], robot joints [1]
@@ -287,6 +287,7 @@ void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
 void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   head_joint_states_= *msg;
   receivedhead_joint_states_ = true;
+  
 }
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   l_hand_joint_states_= *msg;
@@ -314,12 +315,22 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   lcm_publish_.publish("ROBOT_UTIME", &utime_msg);
 }
 
-void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointState msg_in){
+void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointState msg_in,bool wrap_safe){
   drc::joint_covariance_t j_cov;
   j_cov.variance = 0;
   for (std::vector<int>::size_type i = 0; i < msg_in.name.size(); i++)  {
     msg_out.joint_name.push_back(msg_in.name[i]);
-    msg_out.joint_position.push_back(msg_in.position[i]);
+    if (wrap_safe){ // this should only happend for the head angle
+      double angle = msg_in.position[i];
+      double angle_fixed =  angle -   floor( angle/ (2*M_PI) ) *(2*M_PI);
+      if (angle_fixed > M_PI)
+        angle_fixed = angle_fixed -2*M_PI;
+      
+      // std::cout << angle << " with " << angle_fixed << "\n";
+      msg_out.joint_position.push_back(angle_fixed);
+    }else{
+      msg_out.joint_position.push_back(msg_in.position[i]);      
+    }
     msg_out.joint_velocity.push_back(msg_in.velocity[i]);
     msg_out.measured_effort.push_back( msg_in.effort[i] );
     msg_out.joint_cov.push_back(j_cov);
@@ -403,10 +414,10 @@ void App::publishRobotState(int64_t utime_in){
   }
 
   // Joint States:
-  appendJointStates(robot_state_msg, robot_joint_states_);
-  appendJointStates(robot_state_msg, head_joint_states_);
-  appendJointStates(robot_state_msg, l_hand_joint_states_);
-  appendJointStates(robot_state_msg, r_hand_joint_states_);
+  appendJointStates(robot_state_msg, robot_joint_states_,false);
+  appendJointStates(robot_state_msg, head_joint_states_,true);
+  appendJointStates(robot_state_msg, l_hand_joint_states_,false);
+  appendJointStates(robot_state_msg, r_hand_joint_states_,false);
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
   // Limb Sensor states
