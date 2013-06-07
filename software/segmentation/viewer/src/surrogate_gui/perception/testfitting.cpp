@@ -92,7 +92,7 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
 
   // create world to vol
   world_to_vol = Matrix4f::Identity();
-  world_to_vol.block<3,1>(0,3) = Vector3f(-padding-1,-padding-1,-padding-1);
+  world_to_vol.block<3,1>(0,3) = Vector3f(-padding,-padding,-padding);
   Matrix4f scale = Matrix4f::Identity();
   scale(0,0) = res;
   scale(1,1) = res;
@@ -104,7 +104,8 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
   world_to_vol = world_to_vol.inverse();
   
   // alloc vol
-  Vector3i size = ((pt_max-pt_min+Vector3f(padding,padding,padding))/res+Vector3f(2,2,2)).cast<int>();
+  Vector3f sizef = (pt_max-pt_min)/res+2*Vector3f(padding,padding,padding);
+  Vector3i size(ceil(sizef[0]),  ceil(sizef[1]), ceil(sizef[2]));
   vol_size = size;
   vol.clear();
   vol.resize(size[0]*size[1]*size[2]);
@@ -115,8 +116,8 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
   // populate vol
   for(int i=0;i<pts.size();i++){
     Vector4f pts4(pts[i][0],pts[i][1],pts[i][2],1.0);
-    Vector4f voli4 = world_to_vol*pts4;
-    Vector3i voli(voli4[0]/voli4[3],voli4[1]/voli4[3],voli4[2]/voli4[3]);
+    Vector4f vol4 = world_to_vol*pts4;
+    Vector3i voli(round(vol4[0]),round(vol4[1]),round(vol4[2]));
     //cout << i << " " << voli.transpose() << endl;
     //cout << i << " " << size.transpose() << endl;
 
@@ -129,9 +130,29 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
 }
 
 void point_pairs_from_dist_inds(vector<int>& dist_inds, Vector3i vol_size, const vector<Vector3f>& pts, 
+                                Matrix3f R, Vector3f T,
                                 vector<Vector3f>& p0, vector<Vector3f>& p1)
 {
-  //TODO
+  for(int i=0;i<pts.size();i++){
+    Vector3f pt_cur = R*pts[i]+T; 
+    Vector3i pt_int(round(pt_cur[0]), round(pt_cur[1]), round(pt_cur[2]));
+    bool good=true;
+    for(int j=0;j<3;j++) if(pt_int[j]<0||pt_int[j]>=vol_size[j]) good=false;
+
+    if(good){
+      int ind=pt_int[0]*vol_size[1]*vol_size[2] + pt_int[1]*vol_size[2] + pt_int[2]; //TODO: double check
+      int model_ind = dist_inds[ind];
+      Vector3f modelPos;
+      modelPos[2] = model_ind%vol_size[2];
+      model_ind/=vol_size[2];
+      modelPos[1] = model_ind%vol_size[1];
+      model_ind/=vol_size[1];
+      modelPos[0] = model_ind;
+      ASSERT_PI(model_ind<vol_size[0]);
+      p0.push_back(modelPos);
+      p1.push_back(pt_cur);
+    }
+  }
 }
 
 void align_coarse_to_fine(
@@ -144,7 +165,7 @@ void align_coarse_to_fine(
   /////////////////////////////
   // coarse align
   float res = res_range[0];
-  float padding = .1;
+  float padding = 10; //TODO
 
   // convert model to voxels
   vector<float> dist_xform;
@@ -169,12 +190,12 @@ void align_coarse_to_fine(
   float angle_step=30;
   //TODO: allow limit to search
   for(float roll=-180; roll<180; roll+=angle_step){
-    for(float pitch=-90; pitch<90; roll+=angle_step){
+    for(float pitch=-90; pitch<90; pitch+=angle_step){
       for(float yaw=-180; yaw<180; yaw+=angle_step){
         Matrix3f R = ypr2rot(Vector3f(yaw,pitch,roll));
         //Matrix3f Rt = R.transpose();
         vector<Vector3f> pts(pts_data_dec.size());
-        for(int i=0;i<pts.size();i++) pts[i] = pts_data_dec[i].transpose()*R; //TODO: this transpose ok, should R be transpose??
+        for(int i=0;i<pts.size();i++) pts[i] = R*pts_data_dec[i]; //TODO: this transpose ok, should R be transpose??
         Vector3f pts_mean(0,0,0);
         for(int i=0;i<pts.size();i++) pts_mean+=pts[i];
         pts_mean/=pts.size();
@@ -182,13 +203,13 @@ void align_coarse_to_fine(
         for(int i=0;i<pts.size();i++) {
           Vector3f p = pts[i]+T;
           Vector4f p4(p[0],p[1],p[2],1);
-          p4=(p4.transpose()*world_to_vol).transpose(); //TODO: this right?
-          pts[i]=Vector3f(p4[0]/p4[3],p4[1]/p4[3],p4[2]/p4[3]); //TODO: is div required??
+          p4=world_to_vol*p4; 
+          pts[i]=Vector3f(p4[0],p4[1],p4[2]); 
         }
 
         // compute point pairs and align
         vector<Vector3f> p0,p1;
-        point_pairs_from_dist_inds(dist_inds, vol_size, pts, p0, p1);
+        point_pairs_from_dist_inds(dist_inds, vol_size, pts, Matrix3f::Identity(), Vector3f(0,0,0), p0, p1);
         Matrix3f R_opt;
         Vector3f T_opt;
         align_pts_3d(p0,p1,R_opt,T_opt);
@@ -202,6 +223,7 @@ void align_coarse_to_fine(
 /* Notes
    distTransform L M N: L is the inner loop
    create_voxels: size[2] is the inner loop
+   TODO: use one convention.
 */
 
 
