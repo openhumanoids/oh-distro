@@ -750,15 +750,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       Vdot = 0;
     plhs[1] = mxCreateDoubleScalar(Vdot);
   }
-    
-  if (nlhs>2) {  // return model.Q (for unit testing)
+
+  if (nlhs>2) {
+      plhs[2] = mxCreateDoubleMatrix(active_supports.size(),1,mxREAL);
+      pr = mxGetPr(plhs[2]);
+      int i=0;
+      for (set<int>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
+          pr[i++] = (double) (*iter + 1);
+      }
+  }
+  
+  if (nlhs>3) {  // return model.Q (for unit testing)
     int qnz;
     CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
     int *qrow = new int[qnz], *qcol = new int[qnz];
     double* qval = new double[qnz];
     CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
-    plhs[2] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
-    double* pm = mxGetPr(plhs[2]);
+    plhs[3] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
+    double* pm = mxGetPr(plhs[3]);
     memset(pm,0,sizeof(double)*nparams*nparams);
     for (i=0; i<qnz; i++)
       pm[qrow[i]+nparams*qcol[i]] = qval[i];
@@ -766,43 +775,34 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     delete[] qcol;
     delete[] qval;
     
-    if (nlhs>3) {  // return model.obj (for unit testing)
-      plhs[3] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-      CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[3])), pdata->env);
+    if (nlhs>4) {  // return model.obj (for unit testing)
+      plhs[4] = mxCreateDoubleMatrix(1,nparams,mxREAL);
+      CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[4])), pdata->env);
 
-      if (nlhs>4) {  // return model.A (for unit testing)
+      if (nlhs>5) {  // return model.A (for unit testing)
         int numcon;
         CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
-        plhs[4] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
-        double *pm = mxGetPr(plhs[4]);
+        plhs[5] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
+        double *pm = mxGetPr(plhs[5]);
         for (i=0; i<numcon; i++)
           for (j=0; j<nparams; j++)
             CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
         
-        if (nlhs>5) {  // return model.rhs (for unit testing)
-          plhs[5] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-          CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[5])), pdata->env);
+        if (nlhs>6) {  // return model.rhs (for unit testing)
+          plhs[6] = mxCreateDoubleMatrix(numcon,1,mxREAL);
+          CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[6])), pdata->env);
         } 
         
-        if (nlhs>6) { // return model.sense
+        if (nlhs>7) { // return model.sense
           char* sense = new char[numcon+1];
           CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
           sense[numcon]='\0';
-          plhs[6] = mxCreateString(sense);
+          plhs[7] = mxCreateString(sense);
           // delete[] sense;  // it seems that I'm not supposed to free this
         }
         
-        if (nlhs>7) plhs[7] = eigenToMatlab(lb);
-        if (nlhs>8) plhs[8] = eigenToMatlab(ub);
-
-        if (nlhs>9) {
-        	plhs[9] = mxCreateDoubleMatrix(active_supports.size(),1,mxREAL);
-        	pr = mxGetPr(plhs[9]);
-        	int i=0;
-          for (set<int>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
-          	pr[i++] = (double) (*iter + 1);
-          }
-        }
+        if (nlhs>8) plhs[8] = eigenToMatlab(lb);
+        if (nlhs>9) plhs[9] = eigenToMatlab(ub);
       }
     }
   }
