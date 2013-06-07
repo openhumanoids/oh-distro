@@ -382,25 +382,29 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   {
     drc::robot_plan_t msg = _received_plan;
     msg.utime = utime;
-    msg.arms_control_type = msg.POS_ONLY;
-    msg.legs_control_type = msg.POS_ONLY;
+    msg.left_arm_control_type = msg.NONE;
+    msg.right_arm_control_type = msg.NONE;
+    msg.left_leg_control_type = msg.NONE;
+    msg.right_leg_control_type = msg.NONE;
     _lcm->publish(channel, &msg);
   }
   
   void RobotPlanListener::commit_manip_plan(int64_t utime,std::string &channel)
   {
     drc::robot_plan_t msg;
-    commit_compliant_manip_plan(utime,channel,msg.POS_ONLY,msg.POS_ONLY);
+    commit_compliant_manip_plan(utime,channel,msg.NONE,msg.NONE,msg.NONE,msg.NONE);
   }
   
-  void RobotPlanListener::commit_compliant_manip_plan(int64_t utime,std::string &channel,int arms_control_type,int legs_control_type)
+  void RobotPlanListener::commit_compliant_manip_plan(int64_t utime,std::string &channel,int left_arm_control_type,int right_arm_control_type,int left_leg_control_type,int right_leg_control_type)
   {
   //cout << "in commit compliant manip plan\n";
    if(!is_multi_approval_plan()) {
       drc::robot_plan_t msg = _received_plan;
       msg.utime = utime;
-      msg.arms_control_type = arms_control_type;
-      msg.legs_control_type = legs_control_type;
+      msg.left_arm_control_type = left_arm_control_type;
+      msg.right_arm_control_type = right_arm_control_type;
+      msg.left_leg_control_type = left_leg_control_type;
+      msg.right_leg_control_type = right_leg_control_type;
       for(uint i=0;i<msg.num_states;i++)
         cout << msg.plan[i].utime << endl;
       _lcm->publish(channel, &msg);
@@ -414,9 +418,11 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       msg.robot_name = _received_plan.robot_name;
       msg.num_bytes = _received_plan.num_bytes;
       msg.matlab_data = _received_plan.matlab_data;
-      msg.num_grasp_transitions = 0;  
-      msg.arms_control_type = arms_control_type;
-      msg.legs_control_type = legs_control_type;    
+      msg.num_grasp_transitions = 0; 
+      msg.left_arm_control_type = left_arm_control_type;
+      msg.right_arm_control_type = right_arm_control_type;
+      msg.left_leg_control_type = left_leg_control_type;
+      msg.right_leg_control_type = right_leg_control_type;   
       int num_states=0;
  
       // example breakpoints [0 9 10 19]

@@ -1,7 +1,9 @@
 #ifndef PLAN_EXECUTION_GUI_UTILS_HPP
 #define PLAN_EXECUTION_GUI_UTILS_HPP
-#define PARAM_ARMS_CT_SELECT "Arms  "
-#define PARAM_LEGS_CT_SELECT "Legs  "
+#define PARAM_LEFT_ARM_CT_SELECT "Left arm  "
+#define PARAM_RIGHT_ARM_CT_SELECT "Right arm  "
+#define PARAM_LEFT_LEG_CT_SELECT "Left legs  "
+#define PARAM_RIGHT_LEG_CT_SELECT "Right legs  "
 
 
 using namespace renderer_robot_plan;  
@@ -18,12 +20,14 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"A compliant robot plan approved" << endl;
-    cout <<"Publishing a compliant robot plan on COMMITTED_MANIP_PLAN" << endl;
-    string channel = "COMMITTED_MANIP_PLAN";
+    cout <<"Publishing a compliant robot plan on COMMITTED_ROBOT_PLAN" << endl;
+    string channel = "COMMITTED_ROBOT_PLAN";
 
-    int arms_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_ARMS_CT_SELECT);
-    int legs_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_LEGS_CT_SELECT);
-    self->robotPlanListener->commit_compliant_manip_plan(self->robot_utime,channel,arms_control_type,legs_control_type);
+    int left_arm_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_LEFT_ARM_CT_SELECT);
+    int right_arm_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_RIGHT_ARM_CT_SELECT);
+    int left_leg_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_LEFT_LEG_CT_SELECT);
+    int right_leg_control_type = bot_gtk_param_widget_get_enum(pw, PARAM_RIGHT_LEG_CT_SELECT);
+    self->robotPlanListener->commit_compliant_manip_plan(self->robot_utime,channel,left_arm_control_type,right_arm_control_type,left_leg_control_type,right_leg_control_type);
   }
   
   static void spawn_plan_control_type_selection_popup (RendererRobotPlan *self)
@@ -48,10 +52,16 @@ namespace renderer_robot_plan_gui_utils
       gtk_container_set_border_width(GTK_CONTAINER(window), 5);
       pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
       bot_gtk_param_widget_add_separator (pw,"Select Cntl-Type");
-      bot_gtk_param_widget_add_enum(pw, PARAM_ARMS_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"POS_ONLY",0,"LEFT_IMPEDANCE", 
-                                    1,"RIGHT_IMPEDANCE", 2,"BOTH_IMPEDANCE", 3, NULL);
-      bot_gtk_param_widget_add_enum(pw, PARAM_LEGS_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"POS_ONLY",0,"LEFT_IMPEDANCE", 
-                                    1,"RIGHT_IMPEDANCE", 2,"BOTH_IMPEDANCE", 3, NULL);
+      bot_gtk_param_widget_add_enum(pw, PARAM_LEFT_ARM_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"NONE",0,"POSITION",1,"IMPEDANCE", 
+                                    2,"STIFF", 3,"COMPLIANT", 4, NULL);
+      bot_gtk_param_widget_add_enum(pw, PARAM_RIGHT_ARM_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"NONE",0,"POSITION",1,"IMPEDANCE", 
+                                    2,"STIFF", 3,"COMPLIANT", 4, NULL);
+      bot_gtk_param_widget_add_enum(pw, PARAM_LEFT_LEG_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"NONE",0,"POSITION",1,"IMPEDANCE", 
+                                    2,"STIFF", 3,"COMPLIANT", 4, NULL);
+      bot_gtk_param_widget_add_enum(pw, PARAM_RIGHT_LEG_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"NONE",0,"POSITION",1,"IMPEDANCE", 
+                                    2,"STIFF", 3,"COMPLIANT", 4, NULL);
+      //bot_gtk_param_widget_add_enum(pw, PARAM_LEGS_CT_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 0,"POS_ONLY",0,"LEFT_IMPEDANCE", 
+      //                              1,"RIGHT_IMPEDANCE", 2,"BOTH_IMPEDANCE", 3, NULL);
       close_button = gtk_button_new_with_label ("Commit");
 
       g_signal_connect (G_OBJECT (close_button),
@@ -121,7 +131,7 @@ namespace renderer_robot_plan_gui_utils
 		{
 		  string channel;
 		  if(self->robotPlanListener->is_manip_plan()){
-			  cout <<"Publishing on COMMITTED_MANIP_PLAN" << endl;
+			  cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
 			  channel = "COMMITTED_ROBOT_PLAN";
 			  self->robotPlanListener->commit_manip_plan(self->robot_utime,channel);
 		  }
