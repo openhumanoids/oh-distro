@@ -34,8 +34,14 @@ classdef StandingManipController < DRCController
         'ee_err_int',[],...
         'ee_goal',[],...
         'ee_int',[],...
-        'ee_prev_t',[],...
-				'ee_controller_state',0)); % controller_state: 0 - no goal received. 1 - goal received, controller off, 2 goal received, PI contoller on
+        'int_prev_t',[],...
+				'ee_controller_state',0,... % controller_state: 0 - no goal received. 1 - goal received, controller off, 2 goal received, PI contoller on
+        'Kp_lhand',[],...
+        'Kd_lhand',[],...
+        'Kp_rhand',[],...
+        'Kd_rhand',[],...
+        'r_arm_control_type',drc.robot_plan_t.NONE,...
+        'l_arm_control_type',drc.robot_plan_t.NONE));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -55,8 +61,8 @@ classdef StandingManipController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-			pd = SimplePDBlock(r,ctrl_data);
-% 			pd = ManipPDBlock(r,ctrl_data);
+% 			pd = SimplePDBlock(r,ctrl_data);
+			pd = ManipPDBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -184,10 +190,12 @@ classdef StandingManipController < DRCController
         sprintf('standing controller on\n');
         msg = data.COMMITTED_ROBOT_PLAN;
         joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+        [xtraj,ts,~,control_type] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
         obj.controller_data.setField('qtraj',qtraj);
+        obj.controller_data.setField('r_arm_control_type',control_type.right_arm_control_type);
+        obj.controller_data.setField('l_arm_control_type',control_type.left_arm_control_type);
         obj = setDuration(obj,inf,false); % set the controller timeout
         
       elseif isfield(data,'AtlasState')
