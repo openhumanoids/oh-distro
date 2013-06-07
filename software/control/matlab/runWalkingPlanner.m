@@ -75,6 +75,22 @@ while true
           committed = false;
         end
       end
+
+      if (~isempty(footsteps))
+        if footstep_opts.ignore_terrain
+          kinsol = doKinematics(r, x0(1:nq));
+          p0 = forwardKin(r, kinsol, r.foot_bodies.right,...
+                          [0;0;0], 1);
+          normal = rpy2rotmat(p0(4:6)) * [0;0;1];
+          for j = 1:length(footsteps)
+            footsteps(j).pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (footsteps(j).pos(1) - p0(1)) + normal(2) * (footsteps(j).pos(2) - p0(2)));
+            footsteps(j).pos = fitPoseToNormal(footsteps(j).pos, normal);
+          end
+        else
+          for j = 1:length(footsteps)
+            footsteps(j).pos = fitStepToTerrain(r, footsteps(j).pos, 'orig');
+          end
+      end
       
       qnom_data = qnom_mon.getNextMessage(0);
       

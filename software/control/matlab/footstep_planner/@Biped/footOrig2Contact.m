@@ -1,5 +1,8 @@
 function Xc = footOrig2Contact(biped, Xo, group_name, is_right_foot)
 
+if strcmp(group_name, 'orig')
+	Xc = Xo;
+else
 	Xc = zeros(size(Xo));
 	if is_right_foot
 		foot_name = 'right';
@@ -16,4 +19,5 @@ function Xc = footOrig2Contact(biped, Xo, group_name, is_right_foot)
 % 		d = M * [offs; 1];
 		Xc(:, j) = [Xo(1:3, j) + d(1:3); Xo(4:end, j)];
 	end
+end
 end
