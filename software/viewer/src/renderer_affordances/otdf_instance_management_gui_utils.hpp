@@ -507,7 +507,7 @@ namespace renderer_affordances_gui_utils
         gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
         //gtk_widget_set_size_request (window, 300, 250);
         //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-        gtk_window_set_title(GTK_WINDOW(window), "Adjust Dofs");
+        gtk_window_set_title(GTK_WINDOW(window), "Adjust Current DOFs");
         gtk_container_set_border_width(GTK_CONTAINER(window), 5);
         pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
@@ -624,7 +624,7 @@ namespace renderer_affordances_gui_utils
         gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
         //gtk_widget_set_size_request (window, 300, 250);
         //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-        gtk_window_set_title(GTK_WINDOW(window), "Adjust Dofs");
+        gtk_window_set_title(GTK_WINDOW(window), "Adjust DOFs");
         gtk_container_set_border_width(GTK_CONTAINER(window), 5);
         pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 

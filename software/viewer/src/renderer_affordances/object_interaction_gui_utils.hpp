@@ -156,7 +156,7 @@ namespace renderer_affordances_gui_utils
     gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
     //gtk_widget_set_size_request (window, 300, 250);
     //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-    gtk_window_set_title(GTK_WINDOW(window), "Adjust Dofs");
+    gtk_window_set_title(GTK_WINDOW(window), "Adjust Desired DOFs");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
@@ -174,9 +174,9 @@ namespace renderer_affordances_gui_utils
     // add x,y,z,roll,pitch,yaw sliders.
     if(it->second._otdf_instance->root_link_->name!= "world")// object is not bolted to the world.
     {
-        bot_gtk_param_widget_add_double(pw, "x", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[0]); 
-        bot_gtk_param_widget_add_double(pw, "y", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[1]);
-        bot_gtk_param_widget_add_double(pw, "z", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[2]);
+        bot_gtk_param_widget_add_double(pw, "x", BOT_GTK_PARAM_WIDGET_SLIDER, T_world_object.p[0]-1, T_world_object.p[0]+1, .01, T_world_object.p[0]); 
+        bot_gtk_param_widget_add_double(pw, "y", BOT_GTK_PARAM_WIDGET_SLIDER, T_world_object.p[1]-1, T_world_object.p[1]+1, .01, T_world_object.p[1]);
+        bot_gtk_param_widget_add_double(pw, "z", BOT_GTK_PARAM_WIDGET_SLIDER, T_world_object.p[2]-1, T_world_object.p[2]+1, .01, T_world_object.p[2]);
         bot_gtk_param_widget_add_double(pw, "roll", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_roll*(180/M_PI)); 
         bot_gtk_param_widget_add_double(pw, "pitch", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_pitch*(180/M_PI)); 
         bot_gtk_param_widget_add_double(pw, "yaw", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_yaw*(180/M_PI)); 
@@ -1241,22 +1241,19 @@ namespace renderer_affordances_gui_utils
             if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
               cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;           
             
-            KDL::Frame T_world_ankle, T_geometry_stickyfootbase,T_foot_stickyfootbase; 
-            std::string joint_name;
-            if(foot_it->second.foot_type==0){
-               joint_name = "l_leg_uay";
-            }
-            else {
-               joint_name = "r_leg_uay";
-            }
-            // stickyfoot base is a dummy link at  ankle joint origin
-            T_geometry_stickyfootbase = foot_it->second._gl_foot->_T_world_body; 
-          
-            JointFrameStruct jointinfo_struct;
-            self->robotStateListener->_gl_robot->get_joint_info(joint_name,jointinfo_struct);
-            T_world_ankle =jointinfo_struct.frame;
-            KDL::Frame T_geometry_stickyfootbase_new = T_world_geometry.Inverse()*T_world_ankle;
+            KDL::Frame T_world_foot, T_geometry_stickyfootbase,T_geometry_foot,T_foot_stickyfootbase; 
+            std::string ee_name;
+            if(foot_it->second.foot_type==0)
+               ee_name = "l_foot";
+            else
+               ee_name = "r_foot";
+            T_geometry_stickyfootbase = foot_it->second._gl_foot->_T_world_body;
+            foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_foot);         
+            T_foot_stickyfootbase = T_geometry_foot.Inverse()*T_geometry_stickyfootbase;
             
+            self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_foot);
+            KDL::Frame T_geometry_foot_new = T_world_geometry.Inverse()*T_world_foot;
+            KDL::Frame T_geometry_stickyfootbase_new = T_geometry_foot_new*T_foot_stickyfootbase;
             cout << "setting sticky foot state to current foot pose and posture " << endl;
             foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase_new, posture_msg);
           } // end if
