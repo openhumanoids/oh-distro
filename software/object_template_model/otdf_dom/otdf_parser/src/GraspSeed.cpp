@@ -6,6 +6,13 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////
 void GraspSeed::setFromXml(TiXmlElement* grasp_seed_xml){
 
+  appType = HAND;
+  TiXmlElement* appendage = grasp_seed_xml->FirstChildElement("appendage");
+  if(appendage) {
+    string _apptype = appendage->Attribute("type");
+    if(_apptype == "FOOT") appType = FOOT;
+  } 
+
   TiXmlElement* geometry = grasp_seed_xml->FirstChildElement("geometry");
   if(geometry) {
     geometry_name = geometry->Attribute("name");
@@ -57,6 +64,9 @@ void GraspSeed::writeToOtdf(const std::string& otdf_file){
   // TODO use pose from before opt
   std::stringstream grasp_seed;
   grasp_seed << "<grasp_seed>" << std::endl;
+  if(appType==HAND) grasp_seed << "\t<appendage type=\"HAND\" />" << std::endl;
+  else if(appType==FOOT) grasp_seed << "\t<appendage type=\"FOOT\" />" << std::endl;
+  else cout << "GraspSeed: unrecognized appType\n";
   grasp_seed << "\t<geometry name=\"" << geometry_name << "\" />" << std::endl;
   grasp_seed << "\t<relative_pose rpy=\"" << rpy[0] << " " << rpy[1] << " " << rpy[2] << "\"";
   grasp_seed << " xyz=\"" << xyz[0] << " " << xyz[1] << " " << xyz[2] << "\" />" << std::endl;
@@ -170,6 +180,7 @@ static bool dblsame(double x, double y){
 }
 
 bool GraspSeed::operator==(const GraspSeed& other){
+  if(appType!=other.appType) return false;
   if(geometry_name!=other.geometry_name) return false;
   if(!dblsame(xyz[0],other.xyz[0])) return false;
   if(!dblsame(xyz[1],other.xyz[1])) return false;

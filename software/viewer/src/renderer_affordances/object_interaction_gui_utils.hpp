@@ -878,7 +878,8 @@ namespace renderer_affordances_gui_utils
   }
   
  
-  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
+  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);  
+  void store_sticky_feet(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
 
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
@@ -1319,6 +1320,13 @@ namespace renderer_affordances_gui_utils
         } 
       } // end if else
       
+    else if ((!strcmp(name, PARAM_STORE))) {
+      store_sticky_feet(pw,name,user,false);    
+    }
+    else if ((!strcmp(name, PARAM_UNSTORE))) {
+      store_sticky_feet(pw,name,user,true);    
+    }
+
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
     
@@ -1352,6 +1360,9 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_REACH,NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL); 
+    bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL); 
+    bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL); 
+    
 
     bool val  = foot_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_FOOT_TO_CURRENT, val, NULL);

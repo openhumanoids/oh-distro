@@ -8,6 +8,8 @@
 struct GraspSeed{
 
   // information about the grasp similar to what's found in render_affordances::StickyHandStruc
+  enum Type{HAND,FOOT};
+  Type appType;
   std::string geometry_name; 
   double xyz[3],rpy[3];
   int grasp_type;

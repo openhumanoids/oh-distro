@@ -13,6 +13,7 @@
 
 #include <affordance/AffordanceUtils.hpp>
 #include <renderer_affordances/CandidateGraspSeedListener.hpp>
+#include <renderer_affordances/CandidateFootStepSeedManager.hpp>
 
 using namespace std;
 using namespace boost;
@@ -324,51 +325,69 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
 
   //->visual->geometry;
 
-  // handle sticky hands if available
+  // handle sticky hands/feet if available
   if(instance_struc._otdf_instance){
     std::vector<GraspSeed>& list = instance_struc._otdf_instance->graspSeedList_;
     CandidateGraspSeedListener& cgsl = *_parent_affordance_renderer->candidateGraspSeedListener;
     for(int i=0; i<list.size(); i++) {
 
-      std::stringstream objname;
-      objname << aff.otdf_type << "_"<< aff.uid;
-      int uid = _parent_affordance_renderer->free_running_sticky_hand_cnt++;
+      if(list[i].appType == GraspSeed::HAND){
+        std::stringstream objname;
+        objname << aff.otdf_type << "_"<< aff.uid;
+        int uid = _parent_affordance_renderer->free_running_sticky_hand_cnt++;
 
-      drc::position_3d_t pose;
-      pose.translation.x = list[i].xyz[0];
-      pose.translation.y = list[i].xyz[1];
-      pose.translation.z = list[i].xyz[2];
-      KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],list[i].rpy[2]));
-      rot.GetQuaternion(pose.rotation.x, pose.rotation.y,
-                        pose.rotation.z, pose.rotation.w);
+        drc::position_3d_t pose;
+        pose.translation.x = list[i].xyz[0];
+        pose.translation.y = list[i].xyz[1];
+        pose.translation.z = list[i].xyz[2];
+        KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],list[i].rpy[2]));
+        rot.GetQuaternion(pose.rotation.x, pose.rotation.y,
+                          pose.rotation.z, pose.rotation.w);
 
-      drc::desired_grasp_state_t msg;
-      msg.utime = -1;
-      msg.robot_name = "TODO";
-      msg.object_name = objname.str();
-      msg.geometry_name = list[i].geometry_name;
-      msg.unique_id = uid;
-      msg.grasp_type = list[i].grasp_type;
-      msg.power_grasp = false;
-      msg.num_r_joints = 0;
-      msg.num_l_joints = 0;
-      if(msg.grasp_type == msg.SANDIA_LEFT || msg.grasp_type == msg.SANDIA_BOTH 
-        || msg.grasp_type == msg.IROBOT_LEFT || msg.grasp_type == msg.IROBOT_BOTH){
-        msg.num_l_joints = list[i].joint_positions.size();
-        msg.l_hand_pose = pose;
-        msg.l_joint_name = list[i].joint_names;
-        msg.l_joint_position = list[i].joint_positions;
-      }else if(msg.grasp_type == msg.SANDIA_RIGHT || msg.grasp_type == msg.SANDIA_BOTH 
-        || msg.grasp_type == msg.IROBOT_RIGHT || msg.grasp_type == msg.IROBOT_BOTH){
-        msg.num_r_joints = list[i].joint_positions.size();
-        msg.r_hand_pose = pose;
-        msg.r_joint_name = list[i].joint_names;
-        msg.r_joint_position = list[i].joint_positions;
+        drc::desired_grasp_state_t msg;
+        msg.utime = -1;
+        msg.robot_name = "TODO";
+        msg.object_name = objname.str();
+        msg.geometry_name = list[i].geometry_name;
+        msg.unique_id = uid;
+        msg.grasp_type = list[i].grasp_type;
+        msg.power_grasp = false;
+        msg.num_r_joints = 0;
+        msg.num_l_joints = 0;
+        if(msg.grasp_type == msg.SANDIA_LEFT || msg.grasp_type == msg.SANDIA_BOTH 
+          || msg.grasp_type == msg.IROBOT_LEFT || msg.grasp_type == msg.IROBOT_BOTH){
+          msg.num_l_joints = list[i].joint_positions.size();
+          msg.l_hand_pose = pose;
+          msg.l_joint_name = list[i].joint_names;
+          msg.l_joint_position = list[i].joint_positions;
+        }else if(msg.grasp_type == msg.SANDIA_RIGHT || msg.grasp_type == msg.SANDIA_BOTH 
+          || msg.grasp_type == msg.IROBOT_RIGHT || msg.grasp_type == msg.IROBOT_BOTH){
+          msg.num_r_joints = list[i].joint_positions.size();
+          msg.r_hand_pose = pose;
+          msg.r_joint_name = list[i].joint_names;
+          msg.r_joint_position = list[i].joint_positions;
+        }else{
+          cout << "add_new_otdf_object_instance error. grasp_type not recognized: " << msg.grasp_type << endl;
+        }
+        msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
+        _lcm->publish("CANDIDATE_GRASP",&msg);
+      }else  if(list[i].appType == GraspSeed::FOOT){
+
+        std::stringstream objname;
+        objname << aff.otdf_type << "_"<< aff.uid;
+        int uid = _parent_affordance_renderer->free_running_sticky_foot_cnt++;
+        double*xyz = list[i].xyz;
+        KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],
+                                             list[i].rpy[2]));
+        KDL::Frame frame(rot, KDL::Vector(xyz[0],xyz[1],xyz[2]));
+        string obj_name = objname.str();
+        _parent_affordance_renderer->candidateFootStepSeedManager->add_or_update_sticky_foot(
+                                 uid,list[i].grasp_type,obj_name,
+                                 list[i].geometry_name,frame,list[i].joint_names,
+                                 list[i].joint_positions);	
       }else{
-        cout << "add_new_otdf_object_instance error. grasp_type not recognized: " << msg.grasp_type << endl;
+        cout << "render_affordances error.  Unregconized graspseed apptype\n";
       }
-      msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
-      _lcm->publish("CANDIDATE_GRASP",&msg);
 
       cout << "Done\n";
     }
