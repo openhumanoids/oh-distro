@@ -81,7 +81,7 @@ void Pass::trsHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel
     mout.k_effort.assign (n,-0);  // ie no control output - use BDI
     mout.i_effort_min.assign( n, -1.0);
     mout.i_effort_max.assign( n, -1.0);
-    mout.desired_controller_period_ms = 5;
+//    mout.desired_controller_period_ms = 5;
     lcm_->publish( "ATLAS_COMMAND_HANGUP", &mout);
 
   }
