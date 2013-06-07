@@ -327,28 +327,26 @@ classdef DRCController
 %           missed_frames = missed_frames +1;
 %         end
         
-        if backup_mode  % backup_mode logic
-          % tt+t_offset is the timestamp of the message that I should be
-          % sending.  if I haven't seen that message for 10msec, then come
-          % out of backup_mode
-          last_tt = getLastTimestamp(obj.controller_output_frame);
-          if last_tt>0 && tt+t_offset-last_tt >.01
-            backup_mode = false;
-            disp('HEARTBEAT MISSED.  TRANSITIONING OUT OF BACKUP MODE.');
-          elseif toc(status_tic)>0.2
-            % send the backup status message
-            msg = status_message(obj,tt+t_offset,tt);
-            obj.lc.publish('BACKUP_CONTROLLER_STATUS',msg);
-            status_tic=tic;
-          end
-        end
-         
-
         if any(input_frame_time >=0) % could also do 'all' here
 %           max_state_delay = max(max_state_delay,tt-ttprev);
 %           ttprev=tt;
 
-          if ~backup_mode
+          if backup_mode  % backup_mode logic
+            % tt+t_offset is the timestamp of the message that I should be
+            % sending.  if I haven't seen that message for 10msec, then come
+            % out of backup_mode
+            t_heartbeat = getLastTimestamp(obj.controller_output_frame) / 1e6;
+
+            if t_heartbeat>0 && tt+t_offset - t_heartbeat > 0.1
+              backup_mode = false;
+              disp('HEARTBEAT MISSED.  TRANSITIONING OUT OF BACKUP MODE.');
+            elseif toc(status_tic)>0.2
+              % send the backup status message
+              msg = status_message(obj,tt+t_offset,tt);
+              obj.lc.publish('BACKUP_CONTROLLER_STATUS',msg);
+              status_tic=tic;
+            end
+          else
             u = obj.controller.output(tt,x,vertcat(input_frame_data{:}));
             obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
 
@@ -358,15 +356,15 @@ classdef DRCController
               obj.lc.publish('CONTROLLER_STATUS',msg);
               status_tic=tic;
             end
+
+            if num_x>0
+              x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
+            end
           end
-          
-          if num_x>0
-            x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
-          end
+  %         fprintf('Num missed frames: %d \n',missed_frames);
+  %         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);
+  %         toc
         end
-%         fprintf('Num missed frames: %d \n',missed_frames);
-%         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);
-%         toc
       end
     end
   end
