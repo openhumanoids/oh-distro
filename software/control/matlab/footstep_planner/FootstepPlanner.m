@@ -123,7 +123,7 @@ classdef FootstepPlanner < DRCPlanner
       function publish(X)
         if length(X) > 2
           [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
-          ts = linspace(foottraj.right.orig.tspan(1),foottraj.right.orig.tspan(end));
+          ts = foottraj.right.orig.getBreaks();
           pts.right = foottraj.right.orig.eval(ts);
           pts.left = foottraj.left.orig.eval(ts);
 %           pts.right = obj.biped.footOrig2Contact(pts.right, 'center', 1);
