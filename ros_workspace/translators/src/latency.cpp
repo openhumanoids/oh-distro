@@ -19,6 +19,7 @@
 
 #include <sensor_msgs/JointState.h>
 #include <osrf_msgs/JointCommands.h>
+#include <atlas_msgs/AtlasCommand.h>
 
 
 #include <ros/callback_queue.h>
@@ -38,9 +39,9 @@ public:
 private:
   ros::NodeHandle node_;
   
-  ros::Subscriber  joint_states_sub_, joint_commands_sub_;  
+  ros::Subscriber  joint_states_sub_, atlas_command_sub_;  
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
-  void joint_commands_cb(const osrf_msgs::JointCommandsConstPtr& msg);  
+  void atlas_command_cb(const atlas_msgs::AtlasCommandConstPtr& msg);  
   Latency* latency_;  
   std::string message_;
 };
@@ -50,7 +51,7 @@ App::App(ros::NodeHandle node_){
   latency_ = new Latency();  
 
   joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  joint_commands_sub_ = node_.subscribe(string("/atlas/joint_commands"), 1000, &App::joint_commands_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  atlas_command_sub_ = node_.subscribe(string("/atlas/atlas_command"), 1000, &App::atlas_command_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   message_ = "ROS ";
 
 };
@@ -72,7 +73,7 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   latency_->add_from( (int64_t) floor(msg->header.stamp.toNSec()/1000)   , _timestamp_now() );
 }
 
-void App::joint_commands_cb(const osrf_msgs::JointCommandsConstPtr& msg){
+void App::atlas_command_cb(const atlas_msgs::AtlasCommandConstPtr& msg){
   latency_->add_to(  (int64_t) floor(msg->header.stamp.toNSec()/1000)   , _timestamp_now(), message_ );
 }
 
