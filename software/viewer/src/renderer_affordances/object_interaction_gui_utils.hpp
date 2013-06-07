@@ -677,10 +677,54 @@ namespace renderer_affordances_gui_utils
             if ((found!=std::string::npos)&&(joint->second->type!=(int) otdf::Joint::FIXED)) {
                 dof_pos =  0;
                 jointpos_in.find(joint->first)->second =  dof_pos; 
-                cout <<  joint->first << " dof changed to " << dof_pos*(180/M_PI) << endl;
+                cout <<  joint->first << " DOF changed to " << dof_pos*(180/M_PI) << endl;
             }
         }
+        it->second._gl_object->set_future_state_changing(true);
         it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
+        
+      // set dependent bodies desired motion state to mate state
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+         std::string hand_name = std::string(hand_it->second.object_name);
+         if (hand_name == (it->first))
+         {
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
+            KDL::Frame T_world_graspgeometry;
+            it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_graspgeometry);
+            hand_it->second._gl_hand->log_motion_trail(true);
+            KDL::Frame T_accumulationFrame_body;
+            //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
+            T_accumulationFrame_body = (T_world_graspgeometry.Inverse())*hand_it->second._gl_hand->_T_world_body;
+            hand_it->second._gl_hand->_desired_body_motion_history.push_back(T_accumulationFrame_body);
+         }
+         hand_it++;
+      }
+
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
+      while (foot_it!=self->sticky_feet.end()) 
+      {
+         std::string foot_name = std::string(foot_it->second.object_name);
+         if (foot_name == (it->first))
+         {
+            foot_it->second._gl_foot->clear_desired_body_motion_history();
+            KDL::Frame T_world_geometry;
+            it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_geometry);
+            hand_it->second._gl_hand->log_motion_trail(true);
+            KDL::Frame T_accumulationFrame_body;
+            //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
+            T_accumulationFrame_body = (T_world_geometry.Inverse())*hand_it->second._gl_hand->_T_world_body;
+            foot_it->second._gl_foot->_desired_body_motion_history.push_back(T_accumulationFrame_body);
+            
+         }
+         foot_it++;
+      }
+      bot_viewer_request_redraw(self->viewer);
+        
+        
     }
     
     bot_viewer_request_redraw(self->viewer);

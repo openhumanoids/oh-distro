@@ -125,12 +125,12 @@ namespace renderer_robot_plan_gui_utils
 			  channel = "COMMITTED_ROBOT_PLAN";
 			  self->robotPlanListener->commit_manip_plan(self->robot_utime,channel);
 		  }
-		  else
+		  /*else // only publish a committed robot plan if it is manipulation.
 		  {
 		    cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
 			  channel = "COMMITTED_ROBOT_PLAN";
 			  self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
-		  }
+		  }*/
 		  
 		}
 		else 
@@ -142,11 +142,11 @@ namespace renderer_robot_plan_gui_utils
 		
 		if(self->robotPlanListener->is_multi_approval_plan())
 		{
-      std::stringstream oss;
-      oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints;
-      string str = oss.str();
-      gtk_entry_set_text(GTK_ENTRY(self->breakpoint_entry),str.c_str());   
-    } 		
+		  std::stringstream oss;
+		  oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints;
+		  string str = oss.str();
+		  gtk_entry_set_text(GTK_ENTRY(self->breakpoint_entry),str.c_str());   
+    	} 		
 
  // if(!self->robotPlanListener->is_multi_approval_plan()){
  //   gtk_widget_destroy(self->plan_execution_dock);

@@ -130,7 +130,7 @@ namespace renderer_affordances_gui_utils
                 dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
                 jointpos_in.insert(make_pair(joint->first, dof_pos)); 
                 self->otdf_instance_hold._otdf_instance->setJointState(joint->first, dof_pos,0);
-                cout <<  joint->first << " dof changed to " << dof_pos*(180/M_PI) << endl;
+                cout <<  joint->first << " DOF changed to " << dof_pos*(180/M_PI) << endl;
             }
         }
 
