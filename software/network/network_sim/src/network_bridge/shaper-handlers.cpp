@@ -185,8 +185,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
         
         plan.set_num_grasp_transitions(0);
-        plan.set_arms_control_type(1);
-        plan.set_legs_control_type(2);
+        plan.set_left_arm_control_type(1);
+        plan.set_left_leg_control_type(2);
+        plan.set_right_arm_control_type(4);
+        plan.set_right_leg_control_type(0);
 
 //        std::cout << plan.DebugString() << std::endl;
         

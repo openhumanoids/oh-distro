@@ -72,8 +72,10 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
         
     }
     
-    dccl_plan.set_arms_control_type(lcm_object.arms_control_type);
-    dccl_plan.set_legs_control_type(lcm_object.legs_control_type);
+    dccl_plan.set_left_arm_control_type(lcm_object.left_arm_control_type);
+    dccl_plan.set_right_arm_control_type(lcm_object.right_arm_control_type);
+    dccl_plan.set_left_leg_control_type(lcm_object.left_leg_control_type);
+    dccl_plan.set_right_leg_control_type(lcm_object.right_leg_control_type);
     
     
     if(glog.is(VERBOSE))
@@ -175,8 +177,10 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
         lcm_object.grasps.push_back(present_grasp);
     }
     
-    lcm_object.arms_control_type = dccl_plan.arms_control_type();
-    lcm_object.legs_control_type = dccl_plan.legs_control_type();
+    lcm_object.left_arm_control_type = dccl_plan.left_arm_control_type();
+    lcm_object.right_arm_control_type = dccl_plan.right_arm_control_type();
+    lcm_object.left_leg_control_type = dccl_plan.left_leg_control_type();
+    lcm_object.right_leg_control_type = dccl_plan.right_leg_control_type();
 
     lcm_object.num_bytes = 0;
     
