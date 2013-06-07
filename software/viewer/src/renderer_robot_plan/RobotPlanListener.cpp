@@ -50,6 +50,7 @@ namespace renderer_robot_plan
       lcm->subscribe("COMMITTED_ROBOT_PLAN_COMPRESSED_LOOPBACK", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this);
     }
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
+    lcm->subscribe("COMMITTED_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     
     lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleCanFootStepPlanMsg, this);  
     lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  

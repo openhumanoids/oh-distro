@@ -66,6 +66,8 @@
 
 #define PARAM_UPDATE_MANIP_MAP "Update Manip Map"
 
+#define PARAM_STEERING_ANGLE_OFFSET "Steering Offset"
+
 #define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
 
@@ -86,7 +88,7 @@
 #define PARAM_THROTTLE_DELTA 0.01
 #define PARAM_BRAKE_DELTA 0.05
 
-#define STEERING_RATIO 0.063670
+#define STEERING_RATIO 0.125//0.063670
 
 #define MAX_ACCELERATION_TIME 6
 #define DEFAULT_ACCELERATION_TIME 2
@@ -382,7 +384,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 
         double R;
         
-        if(fabs(wheel_angle) < 0.01){
+        if(fabs(wheel_angle) < 0.002){
             R = 1000;
         }
         else{
@@ -500,7 +502,9 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     
         //this part could be done upon msg also 
         //get the wheel arcs from the steering angle
-        double wheel_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE)) * STEERING_RATIO ;
+        double steering_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE) + bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE_OFFSET));
+
+        double wheel_angle = -steering_angle * STEERING_RATIO ;
                 
         BotTrans pt_to_car;
         double rpy[3];
@@ -1686,7 +1690,10 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_double(self->pw, PARAM_D_GAIN, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 10.0, 0.01, 0);
 
-    
+    bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE_OFFSET, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, -20, 20, PARAM_STEERING_DELTA, 0);
+
+
     bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, PARAM_STEERING_DELTA, 0);
     bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
