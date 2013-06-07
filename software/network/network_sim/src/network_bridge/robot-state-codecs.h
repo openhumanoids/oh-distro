@@ -100,7 +100,7 @@ class RobotStateCodec : public CustomChannelCodec
 
     static void wrap_minus_pi_to_pi(double& angle)
     {
-        const double pi = 3.14159;
+        const double pi = 3.142;
         while(angle >= pi) angle -= 2*pi;
         while(angle < -pi) angle += 2*pi;
     }
