@@ -102,7 +102,6 @@ _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
     for( unsigned int i = 0; i < msg->naffs; i++ )
       {
         AffordanceState affordance( &msg->affs[i] );
-/*        
         if (affordance.getOTDFType() != AffordanceState::CAR)
           affordance_collection.push_back( affordance );
         else
@@ -113,13 +112,13 @@ _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
             for(uint i = 0; i < split.size();i++)
               affordance_collection.push_back(*split[i]);
           }
-*/
+/*
         vector<AffPtr> split;
         if (!affordance.toBoxesCylindersSpheres(split))
           throw runtime_error("to boxes cylinders sphere failed for car");
         for(uint i = 0; i < split.size();i++)
           affordance_collection.push_back(*split[i]);
-
+*/
     }
     emit affordance_collection_update( affordance_collection );
   }

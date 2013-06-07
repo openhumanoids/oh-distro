@@ -51,8 +51,6 @@ namespace authoring {
     void _push_button_import_pressed( void );
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
-    void _push_button_stand_up_from_back_pressed( void );
-    void _push_button_stand_up_from_front_pressed( void );
     void _slider_updated( int currentIndex );
 
   protected:
@@ -62,8 +60,6 @@ namespace authoring {
     QPushButton * _push_button_import;
     QPushButton * _push_button_export;
     QPushButton * _push_button_publish;
-    QPushButton * _push_button_stand_up_from_back;
-    QPushButton * _push_button_stand_up_from_front;
     QTextEdit * _text_edit_affordance_collection;
     QSlider * _slider_plan_current_index;
     QCheckBox * _check_box_visible_current_index;
