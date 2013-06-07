@@ -47,6 +47,7 @@ namespace renderer_robot_state
     bool clicked;
     bool dragging; 
     bool visualize_bbox;
+    bool visualize_forces;
     
     GtkWidget *pose_approval_dock;
 

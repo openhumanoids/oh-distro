@@ -27,6 +27,7 @@
 #define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
 #define PARAM_SEND_POSTURE_GOAL "Send Posture Goal"
 #define PARAM_RESET_POSTURE "Reset"
+#define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
 
 using namespace std;
 using namespace boost;
@@ -155,8 +156,57 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   return 1;
 }
 
+
 //=================================
 
+static void draw_ee_force(void *user,std::string ee_name)
+{
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    std::map<std::string, Eigen::Vector3f >::iterator it;
+    it=self->robotStateListener->ee_forces_map.find(ee_name);
+    KDL::Frame ee_frame;
+    self->robotStateListener->_gl_robot->get_link_frame(ee_name, ee_frame);
+    if(it!=self->robotStateListener->ee_forces_map.end()) 
+    {
+      //draw arrow
+      Eigen::Vector3f F = it->second;
+      
+      //cout << "F:" <<F.transpose() << " " << F.norm() << endl;
+      double length = 0.05*(F.norm()/9.81);//(F_meas/g)x0.1
+      
+      std::stringstream oss;
+      oss << F.norm();
+      std::string text = oss.str() + " N";
+     double pos[3];
+      pos[0] = ee_frame.p[0]; 
+      pos[1] = ee_frame.p[1]; 
+      pos[2] = ee_frame.p[2]+0.0;
+      double head_width = 0.03; double head_length = 0.03;double body_width = 0.01;
+      glColor4f(1,0,0,1);
+      bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, text.c_str(),0);
+      glPushMatrix();
+      glTranslatef(ee_frame.p[0], ee_frame.p[1],ee_frame.p[2]);
+      Eigen::Vector3f F_worldframe;
+      rotate_eigen_vector_given_kdl_frame(F,ee_frame,F_worldframe); 
+     // cout << "F_worldframe:" <<F_worldframe.transpose() << " " << F_worldframe.norm() << endl;
+      //--get rotation in angle/axis form
+      double theta;
+      Eigen::Vector3f direction=F_worldframe;
+      direction.normalize(); 
+      //--get rotation in angle/axis form
+      Eigen::Vector3f axis;
+      Eigen::Vector3f uz,ux;   uz << 0 , 0 , 1;ux << 1 , 0 , 0;
+      axis = ux.cross(direction);axis.normalize();
+      theta = acos(ux.dot(direction));
+      glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+      glTranslatef(length/2, 0,0);
+      bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+      glTranslatef(length/2, 0,0);
+
+      glPopMatrix();
+    }
+  
+}
 
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
@@ -192,13 +242,17 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   float alpha = self->alpha;
   if(self->robotStateListener->_gl_robot)
   {
-   self->robotStateListener->_gl_robot->show_bbox(self->visualize_bbox);
-   self->robotStateListener->_gl_robot->enable_link_selection(self->selection_enabled);
+    self->robotStateListener->_gl_robot->show_bbox(self->visualize_bbox);
+    self->robotStateListener->_gl_robot->enable_link_selection(self->selection_enabled);
     self->robotStateListener->_gl_robot->highlight_link((*self->selection));
     self->robotStateListener->_gl_robot->highlight_marker((*self->marker_selection));
-  //self->robotStateListener->_gl_robot->enable_whole_body_selection(self->selection_enabled);
-   self->robotStateListener->_gl_robot->draw_body (c,alpha);
-
+    //self->robotStateListener->_gl_robot->enable_whole_body_selection(self->selection_enabled);
+    self->robotStateListener->_gl_robot->draw_body (c,alpha);
+    
+    if(self->visualize_forces){
+      draw_ee_force(self,"l_hand");   draw_ee_force(self,"r_hand");
+      draw_ee_force(self,"l_foot");   draw_ee_force(self,"r_foot");
+    }
   }
   
   if(self->robotStateListener->_end_pose_received){
@@ -209,6 +263,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 // int64_t toc = bot_timestamp_now();
 // cout << bot_timestamp_useconds(toc-tic) << endl;
 }
+
 
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
@@ -229,6 +284,14 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
     else{
       self->visualize_bbox = false;
+    }
+  }
+  else if(! strcmp(name, PARAM_SHOW_FORCES)) {
+    if (bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FORCES)){
+      self->visualize_forces= true;  
+    }
+    else{
+      self->visualize_forces = false;
     }
   }
   else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
@@ -293,6 +356,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
 
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FORCES, 0, NULL);
     
     bool val=false;
     if(!(self->robotStateListener->_urdf_subscription_on))
@@ -314,6 +378,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
   	self->marker_selection = new std::string(" ");
   	self->pose_approval_dock= NULL; 
     self->visualize_bbox = false;
+    self->visualize_forces = false;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 
 

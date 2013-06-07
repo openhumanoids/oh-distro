@@ -53,6 +53,9 @@ namespace renderer_robot_state
     int64_t _last_state_msg_sim_timestamp; 
     int64_t _last_state_msg_system_timestamp; 
     bool _end_pose_received;
+
+    std::map<std::string,Eigen::Vector3f> ee_forces_map;
+    std::map<std::string,Eigen::Vector3f> ee_torques_map;
    
     //----------------constructor/destructor
   public:
@@ -74,6 +77,7 @@ namespace renderer_robot_state
 			      const drc::robot_state_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg); 
+		void updateContactForceAndTorqueCache(const drc::contact_state_t &contactsmsg);
 
   }; //class RobotStateListener
 

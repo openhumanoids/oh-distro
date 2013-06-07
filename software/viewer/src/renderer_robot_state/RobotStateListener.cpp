@@ -73,6 +73,18 @@ namespace renderer_robot_state
     _jointdof_filter_list.push_back("back_lbz");
     _jointdof_filter_list.push_back("back_mby");
     _jointdof_filter_list.push_back("back_ubx");
+    
+    
+    Eigen::Vector3f temp;
+    temp << 0,0,0;
+    ee_forces_map.insert(make_pair("l_hand", temp));
+    ee_forces_map.insert(make_pair("r_hand", temp));
+    ee_forces_map.insert(make_pair("l_foot", temp));
+    ee_forces_map.insert(make_pair("r_foot", temp));
+    ee_torques_map.insert(make_pair("l_hand", temp));
+    ee_torques_map.insert(make_pair("r_hand", temp));
+    ee_torques_map.insert(make_pair("l_foot", temp));
+    ee_torques_map.insert(make_pair("r_foot", temp));
   }
 
   RobotStateListener::~RobotStateListener() {
@@ -111,6 +123,7 @@ namespace renderer_robot_state
     {
     // cout << now - _last_state_msg_system_timestamp << endl;
     _gl_robot->set_state(*msg);
+    updateContactForceAndTorqueCache(msg->contacts);
     bot_viewer_request_redraw(_viewer);
      _last_state_msg_system_timestamp = now;//msg->utime;
      _last_state_msg_sim_timestamp = msg->utime;
@@ -168,6 +181,31 @@ namespace renderer_robot_state
  
   } // end urdf handler
 
+   void RobotStateListener::updateContactForceAndTorqueCache(const drc::contact_state_t &contactsmsg) 
+  {
+
+     int num_contacts = contactsmsg.num_contacts;
+     for (size_t j=0;j<num_contacts;j++)
+     {
+      Eigen::Vector3f force_measured,torque_measured;
+
+      force_measured << contactsmsg.contact_force[j].x,contactsmsg.contact_force[j].y,contactsmsg.contact_force[j].z;
+      torque_measured << contactsmsg.contact_torque[j].x,contactsmsg.contact_torque[j].y,contactsmsg.contact_torque[j].z;
+      std::map<std::string, Eigen::Vector3f >::iterator it;
+      it=ee_forces_map.find(contactsmsg.id[j]);
+      if(it!=ee_forces_map.end()) // exists in cache
+      { 
+        it->second = force_measured;
+      }
+      it=ee_torques_map.find(contactsmsg.id[j]);
+      if(it!=ee_torques_map.end()) // exists in cache
+      { 
+        it->second = torque_measured;
+      }
+     }// end for
+  } // end updateContactForceAndTorqueCache
+  
+  
 
 
 } //namespace renderer_robot_state
