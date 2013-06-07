@@ -1,4 +1,5 @@
 #include "robot-state-codecs.h"
+#include "bot_core/bot_core.h"
 
 std::map<std::string, int> RobotStateCodec::joint_names_to_order_;
 std::vector<std::string> RobotStateCodec::joint_names_;
@@ -186,35 +187,75 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
 }
 
 bool RobotStateCodec::to_minimal_position3d(const drc::position_3d_t& lcm_pos,
-                           drc::Position3D* dccl_pos)
+                                            drc::Position3D* dccl_pos, bool use_rpy /* = false */)
 {
     dccl_pos->mutable_translation()->set_x(lcm_pos.translation.x);
     dccl_pos->mutable_translation()->set_y(lcm_pos.translation.y);
     dccl_pos->mutable_translation()->set_z(lcm_pos.translation.z);
-    
-    dccl_pos->mutable_rotation()->set_x(lcm_pos.rotation.x);
-    dccl_pos->mutable_rotation()->set_y(lcm_pos.rotation.y);
-    dccl_pos->mutable_rotation()->set_z(lcm_pos.rotation.z);
-    dccl_pos->mutable_rotation()->set_w(lcm_pos.rotation.w);
 
+    if(!use_rpy)
+    {
+        dccl_pos->mutable_rotation()->set_x(lcm_pos.rotation.x);
+        dccl_pos->mutable_rotation()->set_y(lcm_pos.rotation.y);
+        dccl_pos->mutable_rotation()->set_z(lcm_pos.rotation.z);
+        dccl_pos->mutable_rotation()->set_w(lcm_pos.rotation.w);
+    } 
+    else
+    {
+        double q[4] = { 0 };
+        double rpy[3] = { 0 };
+
+        q[0] = lcm_pos.rotation.w;
+        q[1] = lcm_pos.rotation.x;
+        q[2] = lcm_pos.rotation.y;
+        q[3] = lcm_pos.rotation.z;
+        
+        bot_quat_to_roll_pitch_yaw(q, rpy);
+
+        dccl_pos->mutable_rpy_rotation()->set_roll(rpy[0]);
+        dccl_pos->mutable_rpy_rotation()->set_pitch(rpy[1]);
+
+        wrap_minus_pi_to_pi(rpy[2]);
+        dccl_pos->mutable_rpy_rotation()->set_yaw(rpy[2]);
+    }
+    
     return true;
 }
 
 
 bool RobotStateCodec::from_minimal_position3d(drc::position_3d_t* lcm_pos,
-                             const drc::Position3D& dccl_pos)
+                                              const drc::Position3D& dccl_pos,
+                                              bool use_rpy /* = false */)
 {
     lcm_pos->translation.x = dccl_pos.translation().x();
     lcm_pos->translation.y = dccl_pos.translation().y();
     lcm_pos->translation.z = dccl_pos.translation().z();
 
-    // renormalize rotation quat
-    const drc::RotationQuaternion& rotation = dccl_pos.rotation();
-    lcm_pos->rotation.x = rotation.x();
-    lcm_pos->rotation.y = rotation.y();
-    lcm_pos->rotation.z = rotation.z();
-    lcm_pos->rotation.w = rotation.w();
+    if(!use_rpy)
+    {
+        const drc::RotationQuaternion& rotation = dccl_pos.rotation();
+        lcm_pos->rotation.x = rotation.x();
+        lcm_pos->rotation.y = rotation.y();
+        lcm_pos->rotation.z = rotation.z();
+        lcm_pos->rotation.w = rotation.w();
+    }
+    else
+    {
+        double q[4] = { 0 };
+        double rpy[3] = { 0 };
 
+        rpy[0] = dccl_pos.rpy_rotation().roll();
+        rpy[1] = dccl_pos.rpy_rotation().pitch();
+        rpy[2] = dccl_pos.rpy_rotation().yaw();
+        
+        bot_roll_pitch_yaw_to_quat(rpy, q);
+        
+        lcm_pos->rotation.w = q[0];
+        lcm_pos->rotation.x = q[1];
+        lcm_pos->rotation.y = q[2];
+        lcm_pos->rotation.z = q[3];
+    }
+    
     quaternion_normalize(lcm_pos->rotation);    
 
     return true;
@@ -223,7 +264,8 @@ bool RobotStateCodec::from_minimal_position3d(drc::position_3d_t* lcm_pos,
 
 bool RobotStateCodec::to_position3d_diff(const drc::position_3d_t& present_pos,
                                          const drc::position_3d_t& previous_pos,
-                                         drc::Position3DDiff* pos_diff)
+                                         drc::Position3DDiff* pos_diff,
+                                         bool use_rpy /* = false */)
 {
 
     // pre-round the values to avoid cumulative rounding errors
@@ -238,29 +280,65 @@ bool RobotStateCodec::to_position3d_diff(const drc::position_3d_t& present_pos,
     pos_diff->mutable_translation_diff()->add_dz(present_pos.translation.z-
         goby::util::unbiased_round(previous_pos.translation.z, TRANSLATION_Z_PRECISION));
 
-    const int ROTATION_X_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dx")->options().GetExtension(dccl::field).precision();
-    const int ROTATION_Y_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dy")->options().GetExtension(dccl::field).precision();
-    const int ROTATION_Z_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dz")->options().GetExtension(dccl::field).precision();
-    const int ROTATION_W_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dw")->options().GetExtension(dccl::field).precision();
+    
+    if(!use_rpy)
+    {
+        const int ROTATION_X_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dx")->options().GetExtension(dccl::field).precision();
+        const int ROTATION_Y_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dy")->options().GetExtension(dccl::field).precision();
+        const int ROTATION_Z_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dz")->options().GetExtension(dccl::field).precision();
+        const int ROTATION_W_PRECISION = drc::RotationQuaternionDiff::descriptor()->FindFieldByName("dw")->options().GetExtension(dccl::field).precision();
+        
+        pos_diff->mutable_rotation_diff()->add_dx(present_pos.rotation.x-
+                                                  goby::util::unbiased_round(previous_pos.rotation.x, ROTATION_X_PRECISION));
+        
+        pos_diff->mutable_rotation_diff()->add_dy(present_pos.rotation.y-
+                                                  goby::util::unbiased_round(previous_pos.rotation.y, ROTATION_Y_PRECISION));
+        
+        pos_diff->mutable_rotation_diff()->add_dz(present_pos.rotation.z-
+                                                  goby::util::unbiased_round(previous_pos.rotation.z, ROTATION_Z_PRECISION));
+        
+        pos_diff->mutable_rotation_diff()->add_dw(present_pos.rotation.w-
+                                                  goby::util::unbiased_round(previous_pos.rotation.w, ROTATION_W_PRECISION));
+    }
+    else
+    {
+        double present_q[4] = { 0 };
+        double present_rpy[3] = { 0 };
+        double previous_q[4] = { 0 };
+        double previous_rpy[3] = { 0 };
 
-    pos_diff->mutable_rotation_diff()->add_dx(present_pos.rotation.x-
-        goby::util::unbiased_round(previous_pos.rotation.x, ROTATION_X_PRECISION));
+        present_q[0] = present_pos.rotation.w;
+        present_q[1] = present_pos.rotation.x;
+        present_q[2] = present_pos.rotation.y;
+        present_q[3] = present_pos.rotation.z;
+        previous_q[0] = previous_pos.rotation.w;
+        previous_q[1] = previous_pos.rotation.x;
+        previous_q[2] = previous_pos.rotation.y;
+        previous_q[3] = previous_pos.rotation.z;
+        
+        bot_quat_to_roll_pitch_yaw(present_q, present_rpy);
+        bot_quat_to_roll_pitch_yaw(previous_q, previous_rpy);
 
-    pos_diff->mutable_rotation_diff()->add_dy(present_pos.rotation.y-
-        goby::util::unbiased_round(previous_pos.rotation.y, ROTATION_Y_PRECISION));
-            
-    pos_diff->mutable_rotation_diff()->add_dz(present_pos.rotation.z-
-        goby::util::unbiased_round(previous_pos.rotation.z, ROTATION_Z_PRECISION));
+        const int ROTATION_ROLL_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("droll")->options().GetExtension(dccl::field).precision();
+        const int ROTATION_PITCH_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("dpitch")->options().GetExtension(dccl::field).precision();
+        const int ROTATION_YAW_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("dyaw")->options().GetExtension(dccl::field).precision();
+        
+        pos_diff->mutable_rpy_rotation_diff()->add_droll(present_rpy[0] - goby::util::unbiased_round(previous_rpy[0], ROTATION_ROLL_PRECISION));
+        pos_diff->mutable_rpy_rotation_diff()->add_dpitch(present_rpy[1] - goby::util::unbiased_round(previous_rpy[1], ROTATION_PITCH_PRECISION));
 
-    pos_diff->mutable_rotation_diff()->add_dw(present_pos.rotation.w-
-        goby::util::unbiased_round(previous_pos.rotation.w, ROTATION_W_PRECISION));
+        wrap_minus_pi_to_pi(present_rpy[2]);
+        wrap_minus_pi_to_pi(previous_rpy[2]);
+        
+        pos_diff->mutable_rpy_rotation_diff()->add_dyaw(present_rpy[2] - goby::util::unbiased_round(previous_rpy[2], ROTATION_YAW_PRECISION));
+    }
     
     return true;
 }
 
 bool RobotStateCodec::from_position3d_diff(drc::Position3D* present_pos,
                                            const drc::Position3DDiff& pos_diff,
-                                           int i)
+                                           int i,
+                                           bool use_rpy /* = false */)
 {        
     present_pos->mutable_translation()->set_x(
         present_pos->translation().x() + pos_diff.translation_diff().dx(i));
@@ -269,15 +347,39 @@ bool RobotStateCodec::from_position3d_diff(drc::Position3D* present_pos,
     present_pos->mutable_translation()->set_z(
         present_pos->translation().z() + pos_diff.translation_diff().dz(i));
         
-    present_pos->mutable_rotation()->set_x(
-        present_pos->rotation().x() + pos_diff.rotation_diff().dx(i));
-    present_pos->mutable_rotation()->set_y(
-        present_pos->rotation().y() + pos_diff.rotation_diff().dy(i));
-    present_pos->mutable_rotation()->set_z(
-        present_pos->rotation().z() + pos_diff.rotation_diff().dz(i));
-    present_pos->mutable_rotation()->set_w(
-        present_pos->rotation().w() + pos_diff.rotation_diff().dw(i));
+    
+    if(!use_rpy)
+    {
+        present_pos->mutable_rotation()->set_x(
+            present_pos->rotation().x() + pos_diff.rotation_diff().dx(i));
+        present_pos->mutable_rotation()->set_y(
+            present_pos->rotation().y() + pos_diff.rotation_diff().dy(i));
+        present_pos->mutable_rotation()->set_z(
+            present_pos->rotation().z() + pos_diff.rotation_diff().dz(i));
+        present_pos->mutable_rotation()->set_w(
+            present_pos->rotation().w() + pos_diff.rotation_diff().dw(i));
+    }
+    else
+    {
+        present_pos->mutable_rpy_rotation()->set_roll(present_pos->rpy_rotation().roll() + pos_diff.rpy_rotation_diff().droll(i));
+        present_pos->mutable_rpy_rotation()->set_pitch(present_pos->rpy_rotation().pitch() + pos_diff.rpy_rotation_diff().dpitch(i));
+        present_pos->mutable_rpy_rotation()->set_yaw(present_pos->rpy_rotation().yaw() + pos_diff.rpy_rotation_diff().dyaw(i));
+        
+        double q[4] = { 0 };
+        double rpy[3] = { 0 };
 
+        rpy[0] = present_pos->rpy_rotation().roll();
+        rpy[1] = present_pos->rpy_rotation().pitch();
+        rpy[2] = present_pos->rpy_rotation().yaw();
+        
+        bot_roll_pitch_yaw_to_quat(rpy, q);
+
+        present_pos->mutable_rotation()->set_w(q[0]);
+        present_pos->mutable_rotation()->set_x(q[1]);
+        present_pos->mutable_rotation()->set_y(q[2]);
+        present_pos->mutable_rotation()->set_z(q[3]);
+    }
+    
     
     return true;
 }

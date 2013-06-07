@@ -4,7 +4,7 @@ package drc;
 
 message MinimalRobotState
 {
-  option (dccl.msg).max_bytes = 1000;
+  option (dccl.msg).max_bytes = 1500;
   option (dccl.msg).id = 0xD4C0004;
 
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
@@ -17,7 +17,10 @@ message MinimalRobotState
 message Position3D
 {
   required TranslationVector translation = 1;
-  required RotationQuaternion rotation = 2;
+  optional RotationQuaternion rotation = 2;
+
+  // for footstep plan only
+  optional RotationRPY rpy_rotation = 3;
 }
 
 
@@ -30,11 +33,23 @@ message TranslationVector
 
 message RotationQuaternion
 {
-  required double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 6}];
-  required double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 6}];
-  required double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 6}];
-  required double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 6}];
+  optional double x = 1 [(dccl.field) = {min: -1 max: 1 precision: 6 codec: "presence_bit" }];
+  optional double y = 2 [(dccl.field) = {min: -1 max: 1 precision: 6 codec: "presence_bit" }];
+  optional double z = 3 [(dccl.field) = {min: -1 max: 1 precision: 6 codec: "presence_bit" }];
+  optional double w = 4 [(dccl.field) = {min: -1 max: 1 precision: 6 codec: "presence_bit" }];
 }
+
+
+message RotationRPY
+{
+  // 80 degrees, +/- one degree 
+  optional double roll = 1 [(dccl.field) = {min: -1.397 max: 1.397 precision: 2 codec: "presence_bit" }];
+  optional double pitch = 2 [(dccl.field) = {min: -1.397 max: 1.397 precision: 2 codec: "presence_bit" }];
+
+  // 360 degrees, +/- one degree
+  optional double yaw = 3 [(dccl.field) = {min: -3.142 max: 3.142 precision: 2 codec: "presence_bit" }];
+}
+
 
 message MinimalRobotStateDiff
 {
@@ -53,7 +68,10 @@ message MinimalRobotStateDiff
 message Position3DDiff
 {
   required TranslationVectorDiff translation_diff = 1;
-  required RotationQuaternionDiff rotation_diff = 2;
+  optional RotationQuaternionDiff rotation_diff = 2;
+
+  // for footstep plan only
+  optional RotationRPYDiff rpy_rotation_diff = 3;
 }
 
 message TranslationVectorDiff
@@ -69,4 +87,11 @@ message RotationQuaternionDiff
   repeated double dy = 2 [(dccl.field) = {min: -2 max: 2 precision: 6 max_repeat: 100 codec: "presence_bit"}];
   repeated double dz = 3 [(dccl.field) = {min: -2 max: 2 precision: 6 max_repeat: 100 codec: "presence_bit"}];
   repeated double dw = 4 [(dccl.field) = {min: -2 max: 2 precision: 6 max_repeat: 100 codec: "presence_bit"}];
+}
+
+message RotationRPYDiff
+{
+  repeated double droll = 1 [(dccl.field) = {min: -2.794 max: 2.794 precision: 2 max_repeat: 100 codec: "presence_bit" }];
+  repeated double dpitch = 2 [(dccl.field) = {min: -2.794 max: 2.794 precision: 2 max_repeat: 100 codec: "presence_bit" }];
+  repeated double dyaw = 3 [(dccl.field) = {min: -6.283 max: 6.283 precision: 2 max_repeat: 100 codec: "presence_bit" }];
 }

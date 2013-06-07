@@ -14,8 +14,9 @@ inline void quaternion_normalize(drc::quaternion_t& q)
     q.x = q.x / length;
     q.y = q.y / length;
     q.z = q.z / length;
-    q.w = q.w / length;
+    q.w = q.w / length;    
 }
+
 
 class RobotStateCodec : public CustomChannelCodec
 {
@@ -32,17 +33,19 @@ class RobotStateCodec : public CustomChannelCodec
                                    const drc::MinimalRobotState& dccl_state);
 
     static bool to_minimal_position3d(const drc::position_3d_t& lcm_pos,
-                                      drc::Position3D* dccl_pos);
+                                      drc::Position3D* dccl_pos, bool use_rpy = false);
     static bool from_minimal_position3d(drc::position_3d_t* lcm_pos,
-                                        const drc::Position3D& dccl_pos);    
+                                        const drc::Position3D& dccl_pos, bool use_rpy = false);    
 
 
     static bool to_position3d_diff(const drc::position_3d_t& present_pos,
                                    const drc::position_3d_t& previous_pos,
-                                   drc::Position3DDiff* pos_diff);
+                                   drc::Position3DDiff* pos_diff,
+                                   bool use_rpy = false);
     static bool from_position3d_diff(drc::Position3D* pos,
                                      const drc::Position3DDiff& pos_diff,
-                                     int index);
+                                     int index,
+                                     bool use_rpy = false);
 
     // offset is the starting point of joint names in the master list of all 53
     template<class D1, class D2>
@@ -70,10 +73,7 @@ class RobotStateCodec : public CustomChannelCodec
             }
 
             double position = joint_pos[i];
-            const double pi = 3.14159; 
-            while(position >= pi) position -= 2*pi;
-            while(position < -pi) position += 2*pi;
-        
+            wrap_minus_pi_to_pi(position);        
 
             dccl_joint_pos->Set(order->second - offset, position);
         }
@@ -96,6 +96,13 @@ class RobotStateCodec : public CustomChannelCodec
 
         return true;
 
+    }
+
+    static void wrap_minus_pi_to_pi(double& angle)
+    {
+        const double pi = 3.14159;
+        while(angle >= pi) angle -= 2*pi;
+        while(angle < -pi) angle += 2*pi;
     }
     
     
