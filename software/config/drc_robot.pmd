@@ -102,6 +102,10 @@ group "a.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
+    cmd "fall-detector" {
+        exec = "drc-fall-detector --vdot_threshold 0.5 --count_threshold 5 --memory 10";
+        host = "robot";
+    }
 }
 
 
@@ -334,10 +338,6 @@ group "m.dev_tools" {
     }
     cmd "gzclient" {
         exec = "gzclient";
-        host = "robot";
-    }
-    cmd "fall-detector-EXPERIMENTAL" {
-        exec = "python $HOME/drc/software/control/fall_detect_demo/fall_detector.py";
         host = "robot";
     }
     cmd "perception-restart" {
