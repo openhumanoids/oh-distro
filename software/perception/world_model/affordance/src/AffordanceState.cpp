@@ -741,7 +741,7 @@ void AffordanceState::splitNameIntoLinkGroup(string &linkName,
   if (nameSplit.size() == 1)
     {
       cout << "\n\n\n name didn't have a slash\n\n" << endl;
-      groupObjNames = "N/A";
+      groupObjNames = "default";
       return;
     }
   
