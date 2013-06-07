@@ -1,0 +1,5 @@
+upright harnessed -> lean_forward, nominal -> face down
+face down -> null -> facedown_to_faceup.csv -> face up
+
+
+faceup to face down is very tough
