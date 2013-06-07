@@ -41,13 +41,14 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _affordance_collection(),
                                             _affordance_collection_ghost(),
                                             _robot_plan(),
-                                            _state_gfe_ghost(){
+                                            _state_gfe_ghost(),
+                                            _constraint_sequence( numConstraints ){
   _robot_model.initString( xmlString );
 
-  _constraint_sequence.constraints().resize( numConstraints );
   for( unsigned int i = 0; i < numConstraints; i++ ){
-    _constraint_sequence.constraints()[ i ] = NULL;
-    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, ( QString( "C%1" ).arg( QString::number( i ) ) ).toStdString(), this ) );
+    _constraint_sequence.constraints()[ i ].id() = QString( "C%1" ).arg( i ).toStdString();
+    _constraint_sequence.constraints()[ i ].active() = false;
+    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, i, this ) );
   }
 
   _push_button_publish->setToolTip("publish all constraints to a motion plan server over LCM");
@@ -142,8 +143,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
-    connect( *it, SIGNAL( constraint_selected ( const QString& ) ), this, SLOT( _constraint_selected( const QString& ) ) );
-    connect( *it, SIGNAL( highlight_link_by_name ( const QString& ) ), _widget_opengl_authoring, SLOT ( update_opengl_object_gfe_selected_link ( const QString& ) ) );
+    connect( *it, SIGNAL( constraint_update( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
+    connect( *it, SIGNAL( constraint_highlight ( const QString& ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString& ) ) );
   }
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
@@ -180,6 +181,17 @@ update_info( const QString& info ){
   return;
 }
 
+void
+Qt4_Widget_Authoring::
+update_constraint( const Constraint_Task_Space_Region& constraint,
+                    unsigned int constraintIndex ){
+  if( constraintIndex < _constraint_sequence.constraints().size() ){
+    _constraint_sequence.constraints()[ constraintIndex ] = constraint;
+    _widget_opengl_authoring->update_opengl_object_constraint_sequence( _constraint_sequence );
+  }
+  return;
+}
+
 void 
 Qt4_Widget_Authoring::
 update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
@@ -205,6 +217,13 @@ update_state_gfe( State_GFE& stateGFE ){
 
 void
 Qt4_Widget_Authoring::
+highlight_constraint( const QString& id ){
+  cout << "Qt4_Widget_Authoring::highlight_constraint: " << id.toStdString() << endl;
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
 _push_button_grab_pressed( void ){
   emit info_update( QString( "[<b>OK</b>] grab pressed" ) );
   _affordance_collection = _affordance_collection_ghost;
@@ -213,7 +232,6 @@ _push_button_grab_pressed( void ){
     _text_edit_affordance_collection->append( QString( "name: %1 uid: <%2,%3> xyz: (%4,%5,%6) rpy: (%7,%8,%9)" ).arg( QString::fromStdString( it->getName() ) ).arg( it->getGlobalUniqueId().first ).arg( it->getGlobalUniqueId().second ).arg( QString::number( it->getXYZ().x() ) ).arg( QString::number( it->getXYZ().y() ) ).arg( QString::number( it->getXYZ().z() ) ).arg( QString::number( it->getRPY().x() ) ).arg( QString::number( it->getRPY().y() ) ).arg( QString::number( it->getRPY().z() ) ) );
   }
   _constraint_sequence.q0() = _state_gfe_ghost;
-  cout << "grabbed state" << endl << _state_gfe_ghost << endl;
   emit affordance_collection_update( _affordance_collection );
   emit state_gfe_update( _constraint_sequence.q0() );
   return;
@@ -224,16 +242,16 @@ Qt4_Widget_Authoring::
 _push_button_import_pressed( void ){
   QString filename = QFileDialog::getOpenFileName(this, tr("Load Constraint Sequence"),
                                                   "/home",
-                                                  tr("ActionSequence (*.bin)"));  
+                                                  tr("ActionSequence (*.xml)"));  
   if (filename.isEmpty()) {
     emit info_update( QString( "[<b>ERROR</b>] failed to import (filename empty)" ) );
     return;
   }
 
-  _constraint_sequence.load( filename.toStdString(), _affordance_collection );
+  _constraint_sequence.from_xml( filename.toStdString() );
   emit info_update( QString( "[<b>OK</b>] imported constraint sequence to file %1" ).arg( filename ) );
   for( unsigned int i = 0; i < _constraint_editors.size(); i++ ){
-    _constraint_editors[ i ]->update_constraint();
+    _constraint_editors[ i ]->update_constraint( _constraint_sequence.constraints()[ i ] );
   } 
   return;
 }
@@ -243,15 +261,15 @@ Qt4_Widget_Authoring::
 _push_button_export_pressed( void )
 {
   QString filename = QFileDialog::getSaveFileName(this, tr("Save Constraint Sequence"),
-                                                  "/home/untitled.bin",
-                                                  tr("ActionSequence (*.bin)"));
+                                                  "/home/untitled.xml",
+                                                  tr("ActionSequence (*.xml)"));
   
   if ( filename.isEmpty() ){
     emit info_update( QString( "[<b>ERROR</b>] failed to export (filename empty)" ) );
     return;
   }
 
-  _constraint_sequence.save( filename.toStdString() );
+  _constraint_sequence.to_xml( filename.toStdString() );
   emit info_update( QString( "[<b>OK</b>] exported constraint sequence to file %1" ).arg( filename ) );
 
   return;
@@ -261,7 +279,7 @@ void
 Qt4_Widget_Authoring::
 _push_button_publish_pressed( void ){
   action_sequence_t msg; 
-  _constraint_sequence.to_msg( msg ); 
+  _constraint_sequence.to_msg( msg, _affordance_collection ); 
   Constraint_Sequence::print_msg( msg );
   emit drc_action_sequence_t_publish( msg );     
   emit info_update( QString( "[<b>OK</b>] published constraint sequence as drc::action_sequence_t" ) ); 
@@ -272,10 +290,7 @@ void
 Qt4_Widget_Authoring::
 _push_button_stand_up_from_back_pressed( void ){
   for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    if( _constraint_sequence.constraints()[ i ] != NULL ){
-      delete _constraint_sequence.constraints()[ i ];
-      _constraint_sequence.constraints()[ i ] = NULL;
-    }
+    _constraint_sequence.constraints()[i].active() = false;
   }
 
   AffordanceState * ground = NULL;
@@ -337,7 +352,7 @@ _push_button_stand_up_from_back_pressed( void ){
   dynamic_cast< Constraint_Task_Space_Region* >( _constraint_sequence.constraints()[ 15 ] )->ranges()[ 2 ] = pair< bool, pair< double, double > >( true, pair< double, double >( 0.0, 0.0 ) );
 */
   for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    _constraint_editors[ i ]->update_constraint();
+    _constraint_editors[ i ]->update_constraint( _constraint_sequence.constraints()[ i ] );
   }
 
   return;
@@ -347,10 +362,7 @@ void
 Qt4_Widget_Authoring::
 _push_button_stand_up_from_front_pressed( void ){
   for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    if( _constraint_sequence.constraints()[ i ] != NULL ){
-      delete _constraint_sequence.constraints()[ i ];
-      _constraint_sequence.constraints()[ i ] = NULL;
-    }
+    _constraint_sequence.constraints()[i].active() = false;
   }
 
 
@@ -465,7 +477,7 @@ _push_button_stand_up_from_front_pressed( void ){
 */
 
   for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    _constraint_editors[ i ]->update_constraint();
+    _constraint_editors[ i ]->update_constraint( _constraint_sequence.constraints()[ i ] );
   }
 
   return;
@@ -476,19 +488,6 @@ Qt4_Widget_Authoring::
 _slider_updated( int currentIndex ){
   if ( currentIndex < _robot_plan.size() ) {
     _slider_current_time->setText( QString( "time: %1 sec" ).arg( _robot_plan[currentIndex].time() / 1000000.0 ) );
-  }
-}
-
-void 
-Qt4_Widget_Authoring::
-_constraint_selected( const QString& id ){
-  for( unsigned int i = 0; i < _constraint_sequence.constraints().size(); i++ ){
-    if( _constraint_sequence.constraints()[ i ] != NULL ){
-      if( _constraint_sequence.constraints()[ i ]->id() == id.toStdString() ) {
-        _widget_opengl_authoring->update_constraint_visualizer( _constraint_sequence.constraints()[ i ] );
-        break;
-      }
-    }
   }
 }
 

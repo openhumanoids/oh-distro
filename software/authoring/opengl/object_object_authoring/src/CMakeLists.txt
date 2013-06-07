@@ -1,11 +1,15 @@
 # Create a shared library libopengl_object_authoring.so with a single source file
 add_library(opengl_object_authoring SHARED
+            opengl_object_constraint_task_space_region.cc
+            opengl_object_constraint_sequence.cc
             opengl_object_affordance.cc
             opengl_object_affordance_collection.cc)
 
 # make the header public
 # install it to include/opengl_object_authoring
-pods_install_headers(opengl_object_affordance.h
+pods_install_headers(opengl_object_constraint_task_space_region.h
+                      opengl_object_constraint_sequence.h
+                      opengl_object_affordance.h
                       opengl_object_affordance_collection.h 
                       DESTINATION authoring)
 
@@ -13,7 +17,7 @@ pods_install_headers(opengl_object_affordance.h
 pods_install_libraries(opengl_object_authoring)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES affordance opengl_object visualization-utils)
+set(REQUIRED_PACKAGES constraint_authoring affordance opengl_object visualization-utils)
 pods_use_pkg_config_packages(opengl_object_authoring ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

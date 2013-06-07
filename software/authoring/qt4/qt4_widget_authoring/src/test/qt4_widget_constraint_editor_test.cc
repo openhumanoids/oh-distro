@@ -15,7 +15,7 @@ main( int argc,
   cout << "start of Qt4_Widget_Constraint_Editor class demo program" << endl;
   QApplication app( argc, argv );
 
-  Constraint* constraint_task_space_region = new Constraint_Task_Space_Region( "constraint_task_space_region", 0.0, 0.0 );
+  Constraint_Task_Space_Region constraint_task_space_region( "constraint_task_space_region", 0.0, 0.0 );
   Model robot_model;
   vector< AffordanceState > affordance_collection;
 

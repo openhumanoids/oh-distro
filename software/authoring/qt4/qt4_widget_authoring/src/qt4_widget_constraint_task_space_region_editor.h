@@ -20,40 +20,40 @@ namespace authoring {
   class Qt4_Widget_Constraint_Task_Space_Region_Editor : public QWidget {
     Q_OBJECT
   public:
-    Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * constraint, urdf::Model& robotModel, std::vector< affordance::AffordanceState >& affordanceCollection, QWidget * parent = 0 );
+    Qt4_Widget_Constraint_Task_Space_Region_Editor( const Constraint_Task_Space_Region& constraint, urdf::Model& robotModel, std::vector< affordance::AffordanceState >& affordanceCollection, QWidget * parent = 0 );
     ~Qt4_Widget_Constraint_Task_Space_Region_Editor();
     Qt4_Widget_Constraint_Task_Space_Region_Editor( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other );
     Qt4_Widget_Constraint_Task_Space_Region_Editor& operator=( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other );
 
   signals:
-    void description_update( const QString& description ); 
-    void widget_selected( void );
-    void constraint_selected( const QString& constraintID );
-    void highlight_parent_link_by_name( const QString& linkName );
+    void constraint_update( const Constraint_Task_Space_Region& constraint );
+    void constraint_highlight( const QString& id );
+  
+  public slots:
+    void update_constraint( const Constraint_Task_Space_Region& constraint );
 
-  public slots: 
+  protected slots: 
+    virtual void enterEvent( QEvent* event );
     void _constraint_changed( void );
     void _constraint_changed( double value );
     void _constraint_changed( int index );
     void _constraint_changed( QListWidgetItem * item );
-
-  protected slots:
     void _mark_invalid_spin_boxes( void );
-    bool eventFilter(QObject *object, QEvent *event);
-    void _map_highlighted_parent( int );
 
   protected:
-    Constraint_Task_Space_Region * _constraint;
+    Constraint_Task_Space_Region _constraint;
     urdf::Model& _robot_model;
     std::vector< affordance::AffordanceState >& _object_affordances;
 
     QListWidget * _list_widget_parent;
 
     QComboBox * _combo_box_child;
-    QComboBox * _combo_box_type;
+    QComboBox * _combo_box_relation_type;
+    QComboBox * _combo_box_contact_type;
 
     std::vector< QDoubleSpinBox * > _double_spin_box_ranges;
     std::vector< QCheckBox * > _check_box_ranges;
+    std::vector< QDoubleSpinBox * > _double_spin_box_offsets;
 
   private:
 

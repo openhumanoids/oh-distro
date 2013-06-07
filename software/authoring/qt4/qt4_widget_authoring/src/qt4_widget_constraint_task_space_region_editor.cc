@@ -8,12 +8,13 @@
 
 using namespace std;
 using namespace boost;
+using namespace KDL;
 using namespace urdf;
 using namespace affordance;
 using namespace authoring;
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
-Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * constraint, 
+Qt4_Widget_Constraint_Task_Space_Region_Editor( const Constraint_Task_Space_Region& constraint, 
                                               Model& robotModel,
                                               vector< AffordanceState >& affordanceCollection, 
                                               QWidget * parent ) : QWidget( parent, Qt::Dialog ),
@@ -22,13 +23,19 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
                                                                     _object_affordances( affordanceCollection ),
                                                                     _list_widget_parent ( new QListWidget( this ) ),
                                                                     _combo_box_child( new QComboBox( this ) ),
-                                                                    _combo_box_type( new QComboBox( this ) ),
+                                                                    _combo_box_relation_type( new QComboBox( this ) ),
+                                                                    _combo_box_contact_type( new QComboBox( this ) ),
                                                                     _double_spin_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ),
-                                                                    _check_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ) {
+                                                                    _check_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ),
+                                                                    _double_spin_box_offsets( 3, NULL ) {
   for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
     _double_spin_box_ranges[ i ] = new QDoubleSpinBox( this );
     _check_box_ranges[ i ] = new QCheckBox( this );
   } 
+
+  for( unsigned int i = 0; i < 3; i++ ){
+    _double_spin_box_offsets[ i ] = new QDoubleSpinBox( this );
+  }
 
   vector< shared_ptr< Link > > links;
   this->installEventFilter(this);
@@ -51,9 +58,12 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
     }
   }
 
+  for ( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RELATION_TYPES; i++ ) {
+    _combo_box_relation_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::relation_type_t_to_std_string( (relation_type_t) i ) ) );
+  }
 
   for ( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_CONTACT_TYPES; i++ ) {
-    _combo_box_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
+    _combo_box_contact_type->addItem( QString::fromStdString( Constraint_Task_Space_Region::contact_type_t_to_std_string( (contact_type_t) i ) ) );
   }
 
   for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_ranges.begin(); it != _double_spin_box_ranges.end(); it++ ){
@@ -66,35 +76,39 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   for( vector< QCheckBox* >::iterator it = _check_box_ranges.begin(); it != _check_box_ranges.end(); it++ ){
     (*it)->setCheckState( Qt::Checked );
   }
-  
-  if( _constraint != NULL ){
-    _combo_box_type->setCurrentIndex( _constraint->contact_type() );
-    setWindowTitle( QString("[%1] - task space region constraint").arg( QString::fromStdString( _constraint->id() ) ) );
-    for( vector< string >::iterator it1 = _constraint->parents().begin(); it1 != _constraint->parents().end(); it1++ ){
-      for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
-        if( _list_widget_parent->item( i )->text().toStdString() == (*it1) ){
-          _list_widget_parent->item( i )->setCheckState( Qt::Checked );
-        }
+ 
+  for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_offsets.begin(); it != _double_spin_box_offsets.end(); it++ ){
+    (*it)->setSuffix( " m" );
+    (*it)->setDecimals( 3 );
+    (*it)->setRange( -1000.0, 1000.0 );
+    (*it)->setSingleStep( 0.01 );
+  }
+ 
+  _combo_box_relation_type->setCurrentIndex( _constraint.relation_type() );
+  _combo_box_contact_type->setCurrentIndex( _constraint.contact_type() );
+  setWindowTitle( QString("[%1] - task space region constraint").arg( QString::fromStdString( _constraint.id() ) ) );
+  for( vector< string >::iterator it1 = _constraint.parents().begin(); it1 != _constraint.parents().end(); it1++ ){
+    for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
+      if( _list_widget_parent->item( i )->text().toStdString() == (*it1) ){
+        _list_widget_parent->item( i )->setCheckState( Qt::Checked );
       }
     }
+  }
+    
+  for( unsigned int i = 0; i < _object_affordances.size(); i++ ){
+    if( _object_affordances[ i ].getName() == _constraint.child() ){
+      _combo_box_child->setCurrentIndex( i );
+    }
+  }
 
-    if( _constraint->child() != NULL ){
-      for( unsigned int i = 0; i < _object_affordances.size(); i++ ){
-        if( _object_affordances[ i ].getName() == _constraint->child()->getName() ){
-          _combo_box_child->setCurrentIndex( i );
-        }
-      }
-    } else {
-      if( !_object_affordances.empty() ){
-        _constraint->child() = &(*_object_affordances.begin());
-      }
-    }
+  for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+    _check_box_ranges[ i ]->setCheckState( _constraint.ranges()[ i ].first ? Qt::Checked : Qt::Unchecked );
+    _double_spin_box_ranges[ i ]->setEnabled( _constraint.ranges()[ i ].first );
+    _double_spin_box_ranges[ i ]->setValue( _constraint.ranges()[ i ].second );
+  }
 
-    for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
-      _check_box_ranges[ i ]->setCheckState( _constraint->ranges()[ i ].first ? Qt::Checked : Qt::Unchecked );
-      _double_spin_box_ranges[ i ]->setEnabled( _constraint->ranges()[ i ].first );
-      _double_spin_box_ranges[ i ]->setValue( _constraint->ranges()[ i ].second );
-    }
+  for( unsigned int i = 0; i < 3; i++ ){
+    _double_spin_box_offsets[ i ]->setValue( _constraint.offset().p[ i ] );
   }
 
   QGroupBox * parent_group_box = new QGroupBox( "parent (robot link)" );
@@ -107,10 +121,15 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
   child_layout->addWidget( _combo_box_child );
   child_group_box->setLayout( child_layout );
 
-  QGroupBox * type_group_box = new QGroupBox( "type" );
-  QGridLayout * type_layout = new QGridLayout();
-  type_layout->addWidget( _combo_box_type );
-  type_group_box->setLayout( type_layout );
+  QGroupBox * relation_type_group_box = new QGroupBox( "relation type" );
+  QGridLayout * relation_type_layout = new QGridLayout();
+  relation_type_layout->addWidget( _combo_box_relation_type );
+  relation_type_group_box->setLayout( relation_type_layout );
+  
+  QGroupBox * contact_type_group_box = new QGroupBox( "contact type" );
+  QGridLayout * contact_type_layout = new QGridLayout();
+  contact_type_layout->addWidget( _combo_box_contact_type );
+  contact_type_group_box->setLayout( contact_type_layout );
 
   QGroupBox * range_group_box = new QGroupBox( "range" );
   QGridLayout * range_layout = new QGridLayout();
@@ -128,19 +147,28 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
       }
     }
   }
-  
   range_group_box->setLayout( range_layout );
-  
+ 
+  QGroupBox * offset_group_box = new QGroupBox( "offset" );
+  QGridLayout * offset_layout = new QGridLayout();
+  offset_layout->addWidget( _double_spin_box_offsets[ 0 ], 0, 0 );
+  offset_layout->addWidget( _double_spin_box_offsets[ 1 ], 0, 1 );
+  offset_layout->addWidget( _double_spin_box_offsets[ 2 ], 0, 2 );
+  offset_group_box->setLayout( offset_layout );
+ 
   QGridLayout * widget_layout = new QGridLayout( this );
   widget_layout->addWidget( parent_group_box, 0, 0 );
   widget_layout->addWidget( child_group_box, 1, 0 );
-  widget_layout->addWidget( type_group_box, 2, 0 );
-  widget_layout->addWidget( range_group_box, 3, 0 );
+  widget_layout->addWidget( relation_type_group_box, 2, 0 );
+  widget_layout->addWidget( contact_type_group_box, 3, 0 );
+  widget_layout->addWidget( range_group_box, 4, 0 );
+  widget_layout->addWidget( offset_group_box, 5, 0 );
   setLayout( widget_layout );
 
   connect( _list_widget_parent, SIGNAL( itemChanged( QListWidgetItem* ) ), this, SLOT( _constraint_changed( QListWidgetItem* ) ) );
   connect( _combo_box_child, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
-  connect( _combo_box_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
+  connect( _combo_box_relation_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
+  connect( _combo_box_contact_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _constraint_changed( int ) ) );
 
   for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_ranges.begin(); it != _double_spin_box_ranges.end(); it++ ){
     connect( (*it), SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
@@ -150,6 +178,9 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
     connect( (*it), SIGNAL( clicked() ), this, SLOT( _constraint_changed() ) );
   }
 
+  for( vector< QDoubleSpinBox* >::iterator it = _double_spin_box_offsets.begin(); it != _double_spin_box_offsets.end(); it++ ){
+    connect( (*it), SIGNAL( valueChanged( double ) ), this, SLOT( _constraint_changed( double ) ) );
+  }
 }
 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
@@ -174,14 +205,11 @@ operator=( const Qt4_Widget_Constraint_Task_Space_Region_Editor& other ) {
   return (*this);
 }
 
-bool
+void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
-eventFilter(QObject *object, QEvent *event)
-{
-  if( event->type() == QEvent::WindowActivate ) {
-    emit widget_selected();
-  }
-  return false;
+update_constraint( const Constraint_Task_Space_Region& constraint ){
+  _constraint = constraint;
+  return;
 }
 
 void
@@ -190,29 +218,23 @@ _constraint_changed( void ){
   for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
     _double_spin_box_ranges[ i ]->setEnabled( _check_box_ranges[ i ]->isChecked() );
   }
-  if( _constraint != NULL ) {
-    // set the child
-    _constraint->child() = NULL;
-    if( _combo_box_child->currentIndex() < _object_affordances.size() ){
-      _constraint->child() = &( _object_affordances[ _combo_box_child->currentIndex() ] );
-    }
-    // set the parents
-    _constraint->parents().clear();
-    for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
-      if( _list_widget_parent->item( i )->checkState() == Qt::Checked ){
-        _constraint->parents().push_back( _list_widget_parent->item( i )->text().toStdString() );
-      }
-    }
-    // set the contact type
-    _constraint->contact_type() = ( contact_type_t )( _combo_box_type->currentIndex() );
-    // set the ranges
-    for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
-      _constraint->ranges()[ i ].first = _check_box_ranges[ i ]->isChecked();
-      _constraint->ranges()[ i ].second = _double_spin_box_ranges[ i ]->value();
+  if( _combo_box_child->currentIndex() < _object_affordances.size() ){
+    _constraint.child() = _object_affordances[ _combo_box_child->currentIndex() ].getName();
+  }
+  _constraint.parents().clear();
+  for( unsigned int i = 0; i < _list_widget_parent->count(); i++ ){
+    if( _list_widget_parent->item( i )->checkState() == Qt::Checked ){
+      _constraint.parents().push_back( _list_widget_parent->item( i )->text().toStdString() );
     }
   }
-  emit description_update( QString::fromStdString( _constraint->description() ) );
-  emit widget_selected();
+  _constraint.relation_type() = ( relation_type_t )( _combo_box_relation_type->currentIndex() );
+  _constraint.contact_type() = ( contact_type_t )( _combo_box_contact_type->currentIndex() );
+  for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
+    _constraint.ranges()[ i ].first = _check_box_ranges[ i ]->isChecked();
+    _constraint.ranges()[ i ].second = _double_spin_box_ranges[ i ]->value();
+  }
+  _constraint.offset().p = Vector( _double_spin_box_offsets[ 0 ]->value(), _double_spin_box_offsets[ 1 ]->value(), _double_spin_box_offsets[ 2 ]->value() ); 
+  emit constraint_update( _constraint );
   return;
 }
 
@@ -252,10 +274,9 @@ _mark_invalid_spin_boxes() {
 
 void 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
-_map_highlighted_parent( int index ) {
-/*
-  emit highlight_parent_link_by_name( QString::fromStdString( _robot_affordances[ index ].first ) );
-*/
+enterEvent( QEvent* event ){
+  emit constraint_highlight( QString::fromStdString( _constraint.id() ) ); 
+  return;
 }
 
 namespace authoring {

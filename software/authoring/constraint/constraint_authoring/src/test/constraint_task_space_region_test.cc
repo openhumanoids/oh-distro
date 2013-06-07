@@ -3,6 +3,7 @@
 
 using namespace std;
 using namespace drc;
+using namespace affordance;
 using namespace authoring;
 
 int
@@ -10,11 +11,12 @@ main( int argc,
       char* argv[] ) {
   int status = 0;
   cout << "start of Constraint_Task_Space_Region class demo program" << endl;
+  vector< AffordanceState > affordance_collection;
   Constraint_Task_Space_Region constraint_task_space_region;
   cout << "constraint_task_space_region: " << constraint_task_space_region << endl;
   action_sequence_t action_sequence;
   action_sequence.num_contact_goals = 0;
-  constraint_task_space_region.add_to_drc_action_sequence_t( action_sequence );
+  constraint_task_space_region.add_to_drc_action_sequence_t( action_sequence, affordance_collection );
   cout << "utime: " << action_sequence.utime << endl;
   cout << "robot_name: " << action_sequence.robot_name << endl;
   cout << "num_contact_goals: " << action_sequence.num_contact_goals << endl;

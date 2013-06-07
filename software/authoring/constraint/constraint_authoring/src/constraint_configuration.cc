@@ -38,6 +38,12 @@ operator=( const Constraint_Configuration& other ) {
 
 void
 Constraint_Configuration::
+from_xml( xmlNodePtr root ){
+  return;
+}
+
+void
+Constraint_Configuration::
 to_xml( ofstream& out,
         unsigned int indent )const{
   return;

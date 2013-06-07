@@ -40,9 +40,11 @@ namespace authoring {
 
   public slots:
     void update_info( const QString& info );
+    void update_constraint( const Constraint_Task_Space_Region& constraint, unsigned int constraintIndex );
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_state_gfe( state::State_GFE& stateGFE );
+    void highlight_constraint( const QString& id );
 
   protected slots:
     void _push_button_grab_pressed( void );
@@ -52,7 +54,6 @@ namespace authoring {
     void _push_button_stand_up_from_back_pressed( void );
     void _push_button_stand_up_from_front_pressed( void );
     void _slider_updated( int currentIndex );
-    void _constraint_selected( const QString& id );
 
   protected:
     Qt4_Widget_OpenGL_Authoring * _widget_opengl_authoring;

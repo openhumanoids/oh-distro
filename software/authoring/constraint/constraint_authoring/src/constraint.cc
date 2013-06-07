@@ -2,16 +2,21 @@
 
 using namespace std;
 using namespace drc;
+using namespace affordance;
 using namespace authoring;
 
 Constraint::
 Constraint( const string& id,
             bool active,
+            bool visible,
             double start,
-            double end ) : _id( id ),
-                            _active( active ),
-                            _start( start ),
-                            _end( end ) {
+            double end,
+            const string& metadata ) : _id( id ),
+                                        _active( active ),
+                                        _visible( visible ),
+                                        _start( start ),
+                                        _end( end ),
+                                        _metadata( metadata ) {
 
 }
 
@@ -23,8 +28,10 @@ Constraint::
 Constraint::
 Constraint( const Constraint& other ) : _id( other._id ),
                                         _active( other._active ),
+                                        _visible( other._visible ),
                                         _start( other._start ),
-                                        _end( other._end ){
+                                        _end( other._end ),
+                                        _metadata( other._metadata ){
 
 }
 
@@ -33,8 +40,10 @@ Constraint::
 operator=( const Constraint& other ) {
   _id = other._id;
   _active = other._active;
+  _visible = other._visible;
   _start = other._start;
   _end = other._end;
+  _metadata = other._metadata;
   return (*this);
 }
 
@@ -57,7 +66,8 @@ constraint_type_t_to_std_string( constraint_type_t constraintType ){
 
 void
 Constraint::
-add_to_drc_action_sequence_t( action_sequence_t& actionSequence ){
+add_to_drc_action_sequence_t( action_sequence_t& actionSequence,
+                              vector< AffordanceState >& affordanceCollection ){
   return;
 }
 
@@ -71,8 +81,14 @@ namespace authoring {
     } else {
       out << "active: F ";
     }
+    if( other.visible() ){
+      out << "visible: T ";
+    } else {
+      out << "visible: F ";
+    }
     out << "start: " << other.start() << " ";
     out << "end: " << other.end() << " ";
+    out << "metadata:\"" << other.metadata() << "\"";
     return out;
   }
 

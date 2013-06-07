@@ -13,23 +13,24 @@ using namespace affordance;
 using namespace authoring;
 
 Qt4_Widget_Constraint_Editor::
-Qt4_Widget_Constraint_Editor( Constraint *& constraint,
+Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
                               Model& robotModel,
                               vector< AffordanceState >& affordanceCollection,
                               const string& urdf_xml_string,
-                              const string& id,
+                              unsigned int constraintIndex,
                               QWidget * parent ) : QWidget( parent ),
                                                     _constraint( constraint ),
                                                     _robot_model( robotModel ),
                                                     _robot_affordances(),
                                                     _object_affordances( affordanceCollection ),
-                                                    _id( id ),
-                                                    _label_id( new QLabel( QString::fromStdString( id ), this ) ),
+                                                    _constraint_index( constraintIndex ),
+                                                    _label_id( new QLabel( QString( "C%1" ).arg( _constraint_index ), this ) ),
                                                     _check_box_active( new QCheckBox( this ) ),
-                                                    _combo_box_type( new QComboBox( this ) ),
+                                                    _check_box_visible( new QCheckBox( this ) ),
                                                     _push_button_edit( new QPushButton( QString( "edit" ), this ) ),
                                                     _double_spin_box_time_start( new QDoubleSpinBox( this ) ),
                                                     _double_spin_box_time_end( new QDoubleSpinBox( this ) ),
+                                                    _line_edit_metadata( new QLineEdit( QString::fromStdString( _constraint.metadata() ), this ) ),
                                                     _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
                                                     _constraint_editor_popup( NULL ) {
 
@@ -47,13 +48,12 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
     }
   }
 
-  for( unsigned int i = 0; i < NUM_CONSTRAINT_TYPES; i++ ){
-    _combo_box_type->addItem( QString::fromStdString( Constraint::constraint_type_t_to_std_string( ( constraint_type_t )( i ) ) ) );
-  }
-
   _label_id->setFixedWidth( 35 );
+  _label_id->setAlignment( Qt::AlignRight | Qt::AlignVCenter );
   _check_box_active->setFixedWidth( 25 );
-  _combo_box_type->setFixedWidth( 65 );
+  _check_box_active->setEnabled( true );
+  _check_box_visible->setFixedWidth( 25 );
+  _check_box_visible->setEnabled( true );
   _push_button_edit->setFixedWidth( 50 );
   _double_spin_box_time_start->setFixedWidth( 70 );
   _double_spin_box_time_start->setRange( 0.1, 1000000.0 );
@@ -63,40 +63,31 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
   _double_spin_box_time_end->setRange( 0.1, 1000000.0 );
   _double_spin_box_time_end->setSingleStep( 0.1 );
   _double_spin_box_time_end->setSuffix( " s" );
+  _line_edit_metadata->setFixedWidth( 200 );
   _line_edit_description->setFixedWidth( 1024 );
 
-  if(_constraint){
-    _double_spin_box_time_start->setValue( _constraint->start() );
-    _double_spin_box_time_end->setValue( _constraint->end() );
-  }
+  _double_spin_box_time_start->setValue( _constraint.start() );
+  _double_spin_box_time_end->setValue( _constraint.end() );
 
   QHBoxLayout * widget_layout = new QHBoxLayout();
-  widget_layout->addWidget( _check_box_active );
   widget_layout->addWidget( _label_id );
-  widget_layout->addWidget( _combo_box_type );
+  widget_layout->addWidget( _check_box_active );
+  widget_layout->addWidget( _check_box_visible );
   widget_layout->addWidget( _push_button_edit );
   widget_layout->addWidget( _double_spin_box_time_start );
   widget_layout->addWidget( _double_spin_box_time_end );
+  widget_layout->addWidget( _line_edit_metadata );
   widget_layout->addWidget( _line_edit_description );
   setLayout( widget_layout );
 
+  update_constraint( _constraint );
+
   connect( _check_box_active, SIGNAL( stateChanged( int ) ), this, SLOT( _check_box_active_changed( int ) ) );
-  connect( _combo_box_type, SIGNAL( currentIndexChanged( int ) ), this, SLOT( _combo_box_type_changed( int ) ) );
+  connect( _check_box_visible, SIGNAL( stateChanged( int ) ), this, SLOT( _check_box_visible_changed( int ) ) );
   connect( _push_button_edit, SIGNAL( clicked() ), this, SLOT( _push_button_edit_pressed() ) );
   connect( _double_spin_box_time_start, SIGNAL( valueChanged( double ) ), this, SLOT( _double_spin_box_time_start_value_changed( double ) ) );
   connect( _double_spin_box_time_end, SIGNAL( valueChanged( double ) ), this, SLOT( _double_spin_box_time_end_value_changed( double ) ) );
-
-  if( constraint != NULL ){
-    _combo_box_type->setEnabled( constraint->active() );
-    _push_button_edit->setEnabled( constraint->active() );
-    _double_spin_box_time_start->setEnabled( constraint->active() );
-    _double_spin_box_time_end->setEnabled( constraint->active() );
-  } else {
-    _combo_box_type->setEnabled( false );
-    _push_button_edit->setEnabled( false );
-    _double_spin_box_time_start->setEnabled( false );
-    _double_spin_box_time_end->setEnabled( false );
-  }
+  connect( _line_edit_metadata, SIGNAL( textEdited( const QString& ) ), this, SLOT( _line_edit_metadata_text_changed( const QString& ) ) );
 }
 
 Qt4_Widget_Constraint_Editor::
@@ -121,31 +112,29 @@ operator=( const Qt4_Widget_Constraint_Editor& other ) {
 
 QString
 Qt4_Widget_Constraint_Editor::
-description_from_constraint( const Constraint* constraint ){
-  if( constraint != NULL ){
-    return QString::fromStdString( constraint->description() );
-  } else {
-    return QString( "N/A" );
-  }
+description_from_constraint( const Constraint_Task_Space_Region& constraint ){
+  return QString::fromStdString( constraint.description() );
 } 
 
 void
 Qt4_Widget_Constraint_Editor::
-update_constraint( void ){
-  if( _constraint != NULL ){
-    if( _constraint->active() ){
-      _check_box_active->setCheckState( Qt::Checked );
-    } else {
-      _check_box_active->setCheckState( Qt::Unchecked );
-    }
-    _combo_box_type->setCurrentIndex( _constraint->type() );
-    _double_spin_box_time_start->setValue( _constraint->start() );
-    _double_spin_box_time_end->setValue( _constraint->end() );
-    _line_edit_description->clear();
-    _line_edit_description->setText( QString::fromStdString( _constraint->description() ) );
-  } else {
-    _check_box_active->setCheckState( Qt::Unchecked );
-  }
+update_constraint( const Constraint_Task_Space_Region& constraint ){
+  _constraint = constraint;
+  _check_box_active->setCheckState( ( _constraint.active() ? Qt::Checked : Qt::Unchecked ) );
+  _check_box_visible->setEnabled( _constraint.active() );
+  _check_box_visible->setCheckState( ( _constraint.visible() ? Qt::Checked : Qt::Unchecked ) );
+  _push_button_edit->setEnabled( _constraint.active() );
+  _double_spin_box_time_start->setEnabled( _constraint.active() );
+  _double_spin_box_time_start->setValue( _constraint.start() );
+  _double_spin_box_time_end->setEnabled( _constraint.active() );
+  _double_spin_box_time_end->setValue( _constraint.end() );
+  _line_edit_metadata->setEnabled( _constraint.active() );
+  _line_edit_metadata->clear();
+  _line_edit_metadata->setText( QString::fromStdString( _constraint.metadata() ) );
+  _line_edit_description->setEnabled( _constraint.active() );
+  _line_edit_description->clear();
+  _line_edit_description->setText( QString::fromStdString( _constraint.description() ) );
+  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
@@ -160,38 +149,49 @@ update_description( const QString& description ){
 
 void
 Qt4_Widget_Constraint_Editor::
+highlight_constraint( const QString& id ){
+  emit constraint_highlight( id );
+  return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_start_value_changed( double start ){
-  if( _constraint != NULL ){
-    _constraint->start() = _double_spin_box_time_start->value();
-    cout <<"_constraint->start() = " <<  _constraint->start() << endl;
-    check_valid_times();
-    update_description( QString::fromStdString( _constraint->description() ) );
-  } else {
-    update_description( "N/A" );
-  }
+  _constraint.start() = _double_spin_box_time_start->value();
+  check_valid_times();
+  update_description( QString::fromStdString( _constraint.description() ) );
+  emit constraint_update( _constraint );
+  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
 void
 Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_end_value_changed( double end ){
-  if( _constraint != NULL ){
-    _constraint->end() = _double_spin_box_time_end->value();
-    check_valid_times();
-    update_description( QString::fromStdString( _constraint->description() ) );
-  } else {
-    update_description( "N/A" );
-  }
+  _constraint.end() = _double_spin_box_time_end->value();
+  check_valid_times();
+  update_description( QString::fromStdString( _constraint.description() ) );
+  emit constraint_update( _constraint );
+  emit constraint_update( _constraint, _constraint_index );
+  return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+_line_edit_metadata_text_changed( const QString& text ){
+  _constraint.metadata() = _line_edit_metadata->text().toStdString();
+  emit constraint_update( _constraint );
+  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
 void
 Qt4_Widget_Constraint_Editor::
 check_valid_times() {
-    QString invalid = "QDoubleSpinBox { background-color: #ff0000; color: white }";
-    QString valid = "";
-    _double_spin_box_time_start->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
-    _double_spin_box_time_end->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
+  QString invalid = "QDoubleSpinBox { background-color: #ff0000; color: white }";
+  QString valid = "";
+  _double_spin_box_time_start->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
+  _double_spin_box_time_end->setStyleSheet((_double_spin_box_time_start->value() > _double_spin_box_time_end->value()) ? invalid : valid);
 }
 
 void
@@ -200,155 +200,52 @@ _check_box_active_changed( int state ){
   switch( _check_box_active->checkState() ){
   case ( Qt::Unchecked ):
   case ( Qt::PartiallyChecked ):
-    _combo_box_type->setEnabled( false );
-    _push_button_edit->setEnabled( false );
-    _double_spin_box_time_start->setEnabled( false );
-    _double_spin_box_time_end->setEnabled( false );
     if( _constraint_editor_popup != NULL ){
       _constraint_editor_popup->close(); 
       delete _constraint_editor_popup;
       _constraint_editor_popup = NULL;
     }
-    if( _constraint != NULL ){
-      emit info_update( QString( "[<b>OK</b>] deactivating constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-      _constraint->active() = false;
-    } else {
-      emit info_update( QString( "[<b>OK</b>] deactivating constraint %1" ).arg( QString::fromStdString( _id ) ) );
-    }
+    _constraint.active() = false;
+    emit info_update( QString( "[<b>OK</b>] deactivating constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
     break;
   case ( Qt::Checked ):
-    _combo_box_type->setEnabled( true );
-    if( _constraint != NULL ){
-      _constraint->active() = true;
-      if( _constraint->type() == _combo_box_type->currentIndex() ){
-        _push_button_edit->setEnabled( true );
-        _double_spin_box_time_start->setEnabled( true );
-        _double_spin_box_time_end->setEnabled( true );
-      }
-      emit info_update( QString( "[<b>OK</b>] activating constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-    } else {
-      emit info_update( QString( "[<b>OK</b>] activating constraint %1" ).arg( QString::fromStdString( _id ) ) );
-    }
+    _constraint.active() = true;
+    emit info_update( QString( "[<b>OK</b>] activating constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
     break;
   default:
     break;
   }
-  if( _constraint != NULL ){
-    update_description( QString::fromStdString( _constraint->description() ) );
-    _double_spin_box_time_start->setValue( _constraint->start() );
-    _double_spin_box_time_end->setValue( _constraint->end() );
-  } else {
-    update_description( "N/A" );
-  }
+  update_constraint( _constraint );
   return;
 }
 
 void
 Qt4_Widget_Constraint_Editor::
-_combo_box_type_changed( int index ){
-  if( _constraint != NULL ){
-    if( _constraint->type() != _combo_box_type->currentIndex() ){
-      delete _constraint;
-      _constraint = NULL;
-      emit info_update( QString( "[<b>OK</b>] deleted constraint %1" ).arg( QString::fromStdString( _id ) ) );
-      switch( _combo_box_type->currentIndex() ){
-      case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-        _constraint = new Constraint_Task_Space_Region( _id );
-        emit info_update( QString( "[<b>OK</b>] instatiated new task space region constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-        break;
-      case ( CONSTRAINT_CONFIGURATION_TYPE ):
-        _constraint = new Constraint_Configuration( _id );
-        emit info_update( QString( "[<b>OK</b>] instatiated new configuration constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-        break;
-      case ( CONSTRAINT_UNKNOWN_TYPE ):
-      default:
-        break;
-      }
-    }    
-  } else {
-    switch( _combo_box_type->currentIndex() ){
-    case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-      _constraint = new Constraint_Task_Space_Region( _id );
-      emit info_update( QString( "[<b>OK</b>] instatiated new task space region constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-      break;
-    case ( CONSTRAINT_CONFIGURATION_TYPE ):
-      _constraint = new Constraint_Configuration( _id );
-      emit info_update( QString( "[<b>OK</b>] instatiated new configuration constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-      break;
-    case ( CONSTRAINT_UNKNOWN_TYPE ):
-    default:
-      break;
-    }
-  }
-
-  switch( _combo_box_type->currentIndex() ){
-  case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-    _push_button_edit->setEnabled( true );
-    _double_spin_box_time_start->setEnabled( true );
-    _double_spin_box_time_end->setEnabled( true );
-    break;
-  case ( CONSTRAINT_CONFIGURATION_TYPE ):
-    _push_button_edit->setEnabled( true );
-    _double_spin_box_time_start->setEnabled( true );
-    _double_spin_box_time_end->setEnabled( true );
-    break;
-  case ( CONSTRAINT_UNKNOWN_TYPE ):
-  default:
-    _push_button_edit->setEnabled( false );
-    _double_spin_box_time_start->setEnabled( false );
-    _double_spin_box_time_end->setEnabled( false );
-    break;
-  }
-  if( _constraint != NULL ){
-    update_description( QString::fromStdString( _constraint->description() ) );
-    _double_spin_box_time_start->setValue( _constraint->start() );
-    _double_spin_box_time_end->setValue( _constraint->end() );
-  } else {
-    update_description( "N/A" );
-  }
+_check_box_visible_changed( int state ){
+  _constraint.visible() = ( _check_box_visible->checkState() == Qt::Checked );
+  emit constraint_update( _constraint );
+  emit constraint_update( _constraint, _constraint_index );
   return;
-}
-void
-Qt4_Widget_Constraint_Editor::
-show_visualizer( void ){
-  if( _constraint != NULL ){
-    emit constraint_selected( QString::fromStdString( _constraint->id() ) );
-  }
 }
 
 void
 Qt4_Widget_Constraint_Editor::
 _push_button_edit_pressed( void ){
-  if( _constraint != NULL ){
-    switch( _constraint->type() ){
-    case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-      _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( dynamic_cast< Constraint_Task_Space_Region* >( _constraint ), _robot_model, _object_affordances, this );
-      connect( _constraint_editor_popup, SIGNAL( description_update( const QString& ) ), this, SLOT( update_description( const QString& ) ) );
-      connect( _constraint_editor_popup, SIGNAL( widget_selected ( void ) ), this, SLOT( show_visualizer( void ) ) );
-      connect( _constraint_editor_popup, SIGNAL( highlight_parent_link_by_name ( const QString& ) ), this, SIGNAL( highlight_link_by_name( const QString& ) ) );
-      _constraint_editor_popup->show();
-      emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-      break;
-    case ( CONSTRAINT_CONFIGURATION_TYPE ):
-      _constraint_visualizer_popup = new qt4::Qt4_Widget_GFE_Object( _urdf_xml_string );
-      _constraint_visualizer_popup->show();
-      _constraint_editor_popup = new qt4::Qt4_Widget_GFE_Control();
-      _constraint_editor_popup->show();
-      QObject::connect( _constraint_editor_popup, SIGNAL( state_update( state::State_GFE& ) ), _constraint_visualizer_popup, SLOT( update_state( state::State_GFE& ) ) );
-      emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
-      break;
-    case ( CONSTRAINT_UNKNOWN_TYPE ):
-    default:
-      break;
-    }
-  } else {
-    emit info_update( QString( "[<b>ERROR</b>] cannot edit UNKNOWN constraint type" ) );
+  switch( _constraint.type() ){
+  case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
+    _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( _constraint, _robot_model, _object_affordances, this );
+    connect( this, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), _constraint_editor_popup, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+    connect( _constraint_editor_popup, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString& ) ), this, SLOT( highlight_constraint( const QString& ) ) );
+    _constraint_editor_popup->show();
+    emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
+    break;
+  case ( CONSTRAINT_CONFIGURATION_TYPE ):
+  case ( CONSTRAINT_UNKNOWN_TYPE ):
+  default:
+    break;
   }
-  if( _constraint != NULL ){
-    update_description( QString::fromStdString( _constraint->description() ) );
-  } else {
-    update_description( "N/A" );
-  }
+  update_description( QString::fromStdString( _constraint.description() ) );
   return;
 }
 

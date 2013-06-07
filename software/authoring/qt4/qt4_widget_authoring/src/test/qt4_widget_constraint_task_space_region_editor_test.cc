@@ -19,7 +19,7 @@ main( int argc,
   Model robot_model;
   vector< AffordanceState > affordance_collection;
 
-  Qt4_Widget_Constraint_Task_Space_Region_Editor qt4_widget_constraint_task_space_region_editor( &constraint_task_space_region, robot_model, affordance_collection );
+  Qt4_Widget_Constraint_Task_Space_Region_Editor qt4_widget_constraint_task_space_region_editor( constraint_task_space_region, robot_model, affordance_collection );
   qt4_widget_constraint_task_space_region_editor.show();
 
   return app.exec();

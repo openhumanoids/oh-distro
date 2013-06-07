@@ -14,6 +14,7 @@
 #include <state/state_gfe.h>
 
 #include <authoring/opengl_object_affordance_collection.h>
+#include <authoring/opengl_object_constraint_sequence.h>
 
 namespace authoring {
   class Qt4_Widget_OpenGL_Authoring : public qt4::Qt4_Widget_OpenGL {
@@ -27,6 +28,7 @@ namespace authoring {
   public slots:
     void update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void update_opengl_object_constraint_sequence( const Constraint_Sequence& constraintSequence );
     void update_opengl_object_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_opengl_object_gfe( state::State_GFE& stateGFE );
     void update_opengl_object_gfe_ghost( state::State_GFE& stateGFE );
@@ -36,7 +38,7 @@ namespace authoring {
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
     void update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist );
     void update_opengl_object_robot_plan_visible_initial_state( int visibleTrajectoryWrist );
-    void update_constraint_visualizer( Constraint* constraint);
+    void highlight_constraint( const QString& id );
 
   protected slots:
     void _timer_update_callback( void );
@@ -44,11 +46,11 @@ namespace authoring {
   protected:
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection;
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection_ghost;
+    OpenGL_Object_Constraint_Sequence _opengl_object_constraint_sequence;
     opengl::OpenGL_Object_Trajectory_GFE _opengl_object_robot_plan;
     opengl::OpenGL_Object_GFE _opengl_object_gfe;
     opengl::OpenGL_Object_GFE _opengl_object_gfe_ghost;
-    opengl::OpenGL_Object_Box _opengl_object_constraint_visualizer;
-
+      
     QTimer* _timer_update;
 
   private:

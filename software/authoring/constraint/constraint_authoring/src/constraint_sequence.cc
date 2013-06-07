@@ -1,4 +1,3 @@
-#include <string.h>
 #include <string>
 
 #include "authoring/constraint_task_space_region.h"
@@ -14,8 +13,8 @@ using namespace affordance;
 using namespace authoring;
 
 Constraint_Sequence::
-Constraint_Sequence() : _constraints(),
-                        _q0() {
+Constraint_Sequence( unsigned int numConstraints ) : _constraints( numConstraints ),
+                                                      _q0() {
 
 }
 
@@ -40,38 +39,43 @@ operator=( const Constraint_Sequence& other ) {
 
 void
 Constraint_Sequence::
-load( string filename, 
-      vector< affordance::AffordanceState >& affordanceCollection ){
-  LogFile lFileReader( filename, "r" );
-  const LogEvent *eventFromFile = lFileReader.readNextEvent();
-  action_sequence_t msg;
-  msg.decode( eventFromFile->data,0,eventFromFile->datalen );
-  from_msg( msg, affordanceCollection );
+from_xml( const string& filename ){
+  xmlDoc * doc = NULL;
+  doc = xmlReadFile( filename.c_str(), NULL, 0 );
+  from_xml( xmlDocGetRootElement( doc ) );
+  xmlFreeDoc( doc );
   return;
 }
 
 void
 Constraint_Sequence::
-save( string filename ){
-  action_sequence_t msg;
-  to_msg( msg );
-  void * buffer = malloc(msg.getEncodedSize());
-  msg.encode(buffer,0,msg.getEncodedSize());
-  LogEvent logEvent;
-  logEvent.eventnum = 0;
-  logEvent.timestamp = 0;
-  logEvent.channel = "action_sequence_gui_io";
-  logEvent.datalen = msg.getEncodedSize();
-  logEvent.data = buffer;
-  LogFile lFileWriter( filename.c_str(), "w" );
-  lFileWriter.writeEvent( &logEvent );
-  free( buffer );
+from_xml( xmlNodePtr root ){
+  for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    it->active() = false;
+  }
+
+  vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin();
+  if( root->type == XML_ELEMENT_NODE ){
+    xmlNodePtr l1 = NULL;
+    for( l1 = root->children; l1; l1 = l1->next ){
+      if( l1->type == XML_ELEMENT_NODE ){
+        if( xmlStrcmp( l1->name, ( const xmlChar* )( "constraint_task_space_region" ) ) == 0 ){
+          cout << "found constraint task space region" << endl;
+          it->from_xml( l1 );
+          it++;
+          if( it == _constraints.end() ){
+            return;
+          }
+        }         
+      }
+    }
+  }
   return;
 }
 
 void
 Constraint_Sequence::
-to_xml( string filename )const{
+to_xml( const string& filename )const{
   ofstream out;
   out.open( filename.c_str() );
   to_xml( out );
@@ -84,9 +88,9 @@ Constraint_Sequence::
 to_xml( ofstream& out,
         unsigned int indent )const{
   out << string( indent, ' ' ) << "<constraint_sequence>" << endl;
-  for( vector< Constraint* >::const_iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
-    if( (*it) != NULL ){
-      (*it)->to_xml( out, indent + 2 );
+  for( vector< Constraint_Task_Space_Region >::const_iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    if( it->active() ){
+      it->to_xml( out, indent + 2 );
     }   
   }
   out << string( indent, ' ' ) << "</constraint_sequence>" << endl;
@@ -95,64 +99,19 @@ to_xml( ofstream& out,
 
 void
 Constraint_Sequence::
-to_msg( action_sequence_t& msg ){ 
+to_msg( action_sequence_t& msg, 
+        vector< AffordanceState >& affordanceCollection ){ 
   msg.utime = 0;
   msg.num_contact_goals = 0;
   msg.contact_goals.clear();
   msg.robot_name = "atlas";
   _q0.to_lcm( &msg.q0 );
-  for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
-    if( (*it) != NULL ){
-      cout << (*it)->id() << ": " << (*it)->active() << endl;
-    }
-  
-    if( (*it) != NULL && (*it)->active() ) {
-      (*it)->add_to_drc_action_sequence_t( msg );
+  for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    cout << it->id() << ": " << it->active() << endl;
+    if( it->active() ) {
+      it->add_to_drc_action_sequence_t( msg, affordanceCollection );
     }
   }
-  return;
-}
-
-void
-Constraint_Sequence::
-from_msg( const action_sequence_t& msg,
-          vector< AffordanceState >& affordanceCollection ){
-/*
-  _q0.from_lcm( &msg.q0 );
-  for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
-    if( (*it) != NULL ){
-      delete (*it);
-      (*it) = NULL;
-    } 
-  }
-  for( unsigned int i = 0; i < ( msg.num_contact_goals/2 ); i++ ){
-    char buffer[ 80 ];
-    sprintf( buffer, "C%03d", i );
-    Constraint_Task_Space_Region* constraint = new Constraint_Task_Space_Region( buffer, true, msg.contact_goals[2*i].lower_bound_completion_time, msg.contact_goals[2*i].upper_bound_completion_time, pair< string, string >( msg.contact_goals[2*i].object_1_name, msg.contact_goals[2*i].object_1_contact_grp ) );
-    if( msg.contact_goals[2*i].contact_type == contact_goal_t::WITHIN_REGION ){
-      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE; 
-    } else if ( msg.contact_goals[2*i].contact_type == contact_goal_t::SUPPORTED_WITHIN_REGION ){
-      constraint->contact_type() = CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE;
-    }
-    constraint->ranges()[0].first = msg.contact_goals[2*i].x_offset;
-    constraint->ranges()[1].first = msg.contact_goals[2*i].y_offset;
-    constraint->ranges()[2].first = msg.contact_goals[2*i].z_offset;
-    constraint->ranges()[0].second = msg.contact_goals[2*i+1].x_offset;
-    constraint->ranges()[1].second = msg.contact_goals[2*i+1].y_offset;
-    constraint->ranges()[2].second = msg.contact_goals[2*i+1].z_offset;
-    for( vector< AffordanceState >::iterator it = affordanceCollection.begin(); it != affordanceCollection.end(); it++ )
-      {
-        string linkName, groupObjName;
-        it->splitNameIntoLinkGroup(linkName,groupObjName);
-        if(linkName == msg.contact_goals[2*i].object_2_name &&
-           groupObjName == msg.contact_goals[2*i].object_2_contact_grp)
-          {
-            constraint->child() = &(*it);
-          }
-    }
-    _constraints[ i ] = constraint;
-  }
-*/
   return;
 }
 
