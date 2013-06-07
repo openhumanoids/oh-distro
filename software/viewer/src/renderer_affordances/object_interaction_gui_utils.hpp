@@ -1284,20 +1284,22 @@ namespace renderer_affordances_gui_utils
             KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
             if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
               cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;           
-            
-            KDL::Frame T_world_foot, T_geometry_stickyfootbase,T_geometry_foot,T_foot_stickyfootbase; 
-            std::string ee_name;
-            if(foot_it->second.foot_type==0)
-               ee_name = "l_foot";
-            else
-               ee_name = "r_foot";
+              KDL::Frame T_world_ankle, T_geometry_stickyfootbase,T_foot_stickyfootbase;
+
+            std::string joint_name;
+            if(foot_it->second.foot_type==0){
+               joint_name = "l_leg_uay";
+            }
+            else {
+               joint_name = "r_leg_uay";
+             }
+            // stickyfoot base is a dummy link at  ankle joint origin
             T_geometry_stickyfootbase = foot_it->second._gl_foot->_T_world_body;
-            foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_foot);         
-            T_foot_stickyfootbase = T_geometry_foot.Inverse()*T_geometry_stickyfootbase;
-            
-            self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_foot);
-            KDL::Frame T_geometry_foot_new = T_world_geometry.Inverse()*T_world_foot;
-            KDL::Frame T_geometry_stickyfootbase_new = T_geometry_foot_new*T_foot_stickyfootbase;
+
+            JointFrameStruct jointinfo_struct;
+            self->robotStateListener->_gl_robot->get_joint_info(joint_name,jointinfo_struct);
+            T_world_ankle =jointinfo_struct.frame;
+            KDL::Frame T_geometry_stickyfootbase_new = T_world_geometry.Inverse()*T_world_ankle;
             cout << "setting sticky foot state to current foot pose and posture " << endl;
             foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase_new, posture_msg);
           } // end if
