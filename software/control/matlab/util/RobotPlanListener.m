@@ -95,8 +95,10 @@ classdef RobotPlanListener
                 end
             end
             
-          CT.arms_control_type = msg.arms_control_type;
-          CT.legs_control_type = msg.legs_control_type;  
+          CT.left_arm_control_type = msg.left_arm_control_type;
+          CT.right_arm_control_type = msg.right_arm_control_type;
+          CT.left_leg_control_type = msg.left_leg_control_type;  
+          CT.right_leg_control_type = msg.right_leg_control_type;  
             
         end	% end function
         
