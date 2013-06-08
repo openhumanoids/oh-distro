@@ -10,7 +10,9 @@ for f = {'right', 'left'}
   for g = {'toe', 'heel'}
     grp = g{1};
     for pt_ndx = biped.foot_bodies.(foot).collision_group{strcmp(biped.foot_bodies.(foot).collision_group_name, grp)}
-      link_constraints(end+1) = struct('link_ndx', biped.findLinkInd(biped.foot_bodies.(foot).linkname), 'pt', biped.foot_bodies.(foot).contact_pts(:,pt_ndx), 'min_traj', foottraj.(foot).(grp).min, 'max_traj', foottraj.(foot).(grp).max, 'traj', []);
+      if (~isempty(foottraj.(foot).(grp).min) && ~isempty(foottraj.(foot).(grp).max))
+        link_constraints(end+1) = struct('link_ndx', biped.findLinkInd(biped.foot_bodies.(foot).linkname), 'pt', biped.foot_bodies.(foot).contact_pts(:,pt_ndx), 'min_traj', foottraj.(foot).(grp).min, 'max_traj', foottraj.(foot).(grp).max, 'traj', []);
+      end
     end
   end
 end

@@ -154,7 +154,7 @@ for f = {'right', 'left'}
     for l = {'min', 'max'}
       lim = l{1};
       if all(all(isnan(footpos.(foot).(grp).(lim))))
-        foottraj.(foot).(grp).(lim) = ConstantTrajectory(repmat(nan, size(footpos.(foot).(grp).(lim), 1), 1));
+        foottraj.(foot).(grp).(lim) = [];
       else
         foottraj.(foot).(grp).(lim) = PPTrajectory(foh(ts, footpos.(foot).(grp).(lim)));
       end
