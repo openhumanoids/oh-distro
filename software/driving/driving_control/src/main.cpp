@@ -69,7 +69,7 @@
 
 #define TLD_TIMEOUT_SEC 1.0
 
-#define STEERING_RATIO 0.063670
+#define STEERING_RATIO 0.063670 //0.125 - might be the new value 
 
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
@@ -408,24 +408,24 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
 
     self->last_driving_cmd = drc_driving_cmd_t_copy(msg);
     
-    if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE){
-        self->do_braking = 0;
-    }
-    else if(msg->drive_mode == DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE){
+    if(msg->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_B || msg->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_B || msg->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_B || msg->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_B || msg->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_B){
         self->do_braking = 1;
+    }
+    else{
+        self->do_braking = 0;
     }
 
     if(self->do_braking){
-        self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
+        self->drive_duration = msg->drive_duration/10.0 + TIME_TO_TURN + TIME_TO_BRAKE; 
     }
     else{
-        self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
+        self->drive_duration = msg->drive_duration/10.0 + TIME_TO_TURN; 
     }
     self->kp_steer = msg->kp_steer;
-    self->kd_steer = msg->kd_steer;
-    self->throttle_ratio = msg->throttle_ratio;
-    self->throttle_duration = msg->throttle_duration;
-    self->goal_distance = msg->lookahead_dist;
+    self->kd_steer = 0;//msg->kd_steer;
+    self->throttle_ratio = msg->throttle_ratio/ 100.0;
+    self->throttle_duration = msg->throttle_duration/ 10.0;
+    self->goal_distance = msg->lookahead_dist / 10.0;
     self->drive_start_time = self->utime;
     self->time_applied_to_accelerate  = 0;    
 
@@ -1466,22 +1466,23 @@ on_controller_timer (gpointer data)
     int use_tld = 0;
     int user_goal = 0;
     if(self->last_driving_cmd){
-        if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT)
+        if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_B || self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_NB){
             use_road_carrot = 1;
-        else if (self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC) {
+        }
+        else if (self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_B || self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_NB) {
             use_road_carrot = 0;
             use_road_arc = 1;
         }
-        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD){
+        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_B || self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_NB){
             use_road_carrot = 1;
             use_tld = 1;
         }
-        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD){
+        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_B || self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_NB){
             use_road_carrot = 0;
             use_road_arc = 0;
             use_tld = 1;
         }
-        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING){
+        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_B || self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_NB){
             use_road_carrot = 0;
             use_road_arc = 0;
             use_tld =0;
@@ -1603,7 +1604,7 @@ on_controller_timer (gpointer data)
         }
     }
     else if(user_goal){
-        double user_steering_angle = self->last_driving_cmd->user_steering_angle;
+        double user_steering_angle = bot_to_radians(self->last_driving_cmd->steering_angle_degrees);
         double throttle_val = 0;
         double brake_val = 0;
         
