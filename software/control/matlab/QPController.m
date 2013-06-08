@@ -232,12 +232,12 @@ classdef QPController < MIMODrakeSystem
     else
       R_ls = zeros(2);
     end
-    if typecheck(ctrl_data.C,'double')
+    if isa(ctrl_data.C,'double')
       C_ls = ctrl_data.C;
     else
-      C_ls = ctrl_data.C.eval(t);
+      C_ls = eval(ctrl_data.C,t);
     end
-    if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
+    if ~isempty(ctrl_data.D) && isa(ctrl_data.D,'double')
       D_ls = ctrl_data.D;
     else
       % assumed  ZMP system
@@ -245,22 +245,22 @@ classdef QPController < MIMODrakeSystem
       D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
       % or current height above height map
     end
-    if typecheck(ctrl_data.S,'double')
+    if isa(ctrl_data.S,'double')
       S = ctrl_data.S;
     else
-      S = ctrl_data.S.eval(t);
+      S = eval(ctrl_data.S,t);
     end
     if isfield(ctrl_data,'s1') && ~isempty(ctrl_data.s1)
-      if typecheck(ctrl_data.s1,'double')
+      if isa(ctrl_data.s1,'double')
         s1 = ctrl_data.s1;
       else
-        s1 = ctrl_data.s1.eval(t);
+        s1 = eval(ctrl_data.s1,t);
       end
     else
       s1= zeros(4,1);
     end
     if isfield(ctrl_data,'s2') && ~isempty(ctrl_data.s2)
-      if typecheck(ctrl_data.s2,'double')
+      if isa(ctrl_data.s2,'double')
         s2 = ctrl_data.s2;
       else
         s2=0;
@@ -269,20 +269,20 @@ classdef QPController < MIMODrakeSystem
     else
       s2=0;
     end
-    if typecheck(ctrl_data.x0,'double')
+    if isa(ctrl_data.x0,'double')
       x0 = ctrl_data.x0;
     else
-      x0 = ctrl_data.x0.eval(t);
+      x0 = eval(ctrl_data.x0,t);
     end
-    if typecheck(ctrl_data.u0,'double')
+    if isa(ctrl_data.u0,'double')
       u0 = ctrl_data.u0;
     else
-      u0 = ctrl_data.u0.eval(t);
+      u0 = eval(ctrl_data.u0,t);
     end
-    if typecheck(ctrl_data.y0,'double')
+    if isa(ctrl_data.y0,'double')
       y0 = ctrl_data.y0;
     else
-      y0 = ctrl_data.y0.eval(t);
+      y0 = eval(ctrl_data.y0,t);
     end
     if isfield(ctrl_data,'mu')
       mu = ctrl_data.mu;
@@ -310,7 +310,7 @@ classdef QPController < MIMODrakeSystem
       if any(supp.contact_surfaces~=0)
         error('multi-robot contact not supported by mex version yet');
       end
-      if ~isempty(setdiff(desired_supports,[obj.rfoot_idx,obj.lfoot_idx]))
+      if ~isempty(setdiff(desired_supports,[obj.rfoot_idx,obj.lfoot_idx]))  % todo: optimize this
         error('non-foot contacts are not supported by mex version yet (sorry, this is coming very soon)');
       end
     end
@@ -712,8 +712,8 @@ classdef QPController < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
-      [y,Vdotmex,as,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
-      valuecheck(as,active_supports);
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
+      valuecheck(active_supports_mex,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);

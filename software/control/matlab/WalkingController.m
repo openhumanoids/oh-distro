@@ -122,7 +122,7 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load('tmp_w.mat');
 %       obj.controller_data.setField('S',matdata.S);
-      obj.controller_data.setField('S',matdata.S.eval(0)); % S is always constant
+      obj.controller_data.setField('S',eval(matdata.S,0)); % S is always constant
 
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.s1,'uint8'),'uint8');
@@ -155,7 +155,7 @@ classdef WalkingController < DRCController
       fwrite(fid,typecast(msg_data.zmptraj,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
-      obj.controller_data.setField('x0',[matdata.zmptraj.eval(matdata.zmptraj.tspan(2));0;0]);
+      obj.controller_data.setField('x0',[eval(matdata.zmptraj,matdata.zmptraj.tspan(2));0;0]);
       obj.controller_data.setField('y0',matdata.zmptraj);
 
       fid = fopen('tmp_w.mat','w');

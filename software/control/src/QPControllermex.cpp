@@ -49,6 +49,11 @@ struct QPControllerData {
   VectorXd umin_con, umax_con;
   ArrayXd umin,umax;
   void* map_ptr;
+  
+  // preallocate memory
+  MatrixXd H;
+  VectorXd C;
+  MatrixXd J, Jdot;
 };
 
 // helper function for shuffling debugging data back into matlab
@@ -401,6 +406,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
     memcpy(mxGetData(plhs[0]),&pdata,sizeof(pdata));
+    
+    // preallocate some memory
+    pdata->H.resize(nq,nq);
+    pdata->C.resize(nq);
+  	pdata->J.resize(3,nq);
+    pdata->Jdot.resize(3,nq);
+    
     return;
   }
   
@@ -493,29 +505,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   			active_supports.insert(pdata->lfoot_idx);
   }
 
-  MatrixXd H(nq,nq);
-  VectorXd C(nq);
-  
-  pdata->r->HandC(q,qd,(MatrixXd*)NULL,H,C,(MatrixXd*)NULL,(MatrixXd*)NULL);
+  pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL);
 
   MatrixXd H_con(nq_con,nq), H_free(nq_free,nq);
   VectorXd C_con(nq_con), C_free(nq_free);
   
-  getRows(pdata->con_dof,H,H_con);
-  getRows(pdata->con_dof,C,C_con);
+  getRows(pdata->con_dof,pdata->H,H_con);
+  getRows(pdata->con_dof,pdata->C,C_con);
   
   if (nq_free>0) {
-    getRows(pdata->free_dof,H,H_free);
-    getRows(pdata->free_dof,C,C_free);
+    getRows(pdata->free_dof,pdata->H,H_free);
+    getRows(pdata->free_dof,pdata->C,C_free);
   }
   
   Vector3d xcom;
-  MatrixXd J(3,nq), Jdot(3,nq);
   // consider making all J's into row-major
   
   pdata->r->getCOM(xcom);
-  pdata->r->getCOMJac(J);
-  pdata->r->getCOMJacDot(Jdot);
+  pdata->r->getCOMJac(pdata->J);
+  pdata->r->getCOMJacDot(pdata->Jdot);
 
   Map<VectorXd> qdvec(qd,nq);
   VectorXd qd_con(nq_con);
@@ -528,7 +536,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Vector4d x_bar,xlimp;
   MatrixXd Jz_con(Jz.rows(),nq_con),Jp_con(Jp.rows(),nq_con),Jpdot_con(Jpdot.rows(),nq_con),D_con(nq_con,D.cols());
   if (nc>0) {
-    xlimp << xcom.topRows(2),J.topRows(2)*qdvec;
+    xlimp << xcom.topRows(2),pdata->J.topRows(2)*qdvec;
     x_bar << xlimp.topRows(2)-x0.topRows(2),xlimp.bottomRows(2)-x0.bottomRows(2);
     getCols(pdata->con_dof,Jz,Jz_con);
     getRows(pdata->con_dof,D,D_con);
@@ -551,8 +559,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       
       MatrixXd J_free(2,nq_free),Jdot_free(2,nq_free);
       VectorXd qd_free(nq_free);
-      getCols(pdata->free_dof,J.topRows(2),J_free);
-      getCols(pdata->free_dof,Jdot.topRows(2),Jdot_free);
+      getCols(pdata->free_dof,pdata->J.topRows(2),J_free);
+      getCols(pdata->free_dof,pdata->Jdot.topRows(2),Jdot_free);
       getRows(pdata->free_dof,qdvec,qd_free);
       
       // approximate quadratic cost for free dofs with the appropriate matrix block
@@ -606,8 +614,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       RowVectorXd fqp_con(nq_con);
       
       MatrixXd J_con(2,nq_con),Jdot_con(2,nq_con);
-      getCols(pdata->con_dof,J.topRows(2),J_con);
-      getCols(pdata->con_dof,Jdot.topRows(2),Jdot_con);
+      getCols(pdata->con_dof,pdata->J.topRows(2),J_con);
+      getCols(pdata->con_dof,pdata->Jdot.topRows(2),Jdot_con);
       
       Hqp_con = J_con.transpose()*R_DQyD_ls*J_con;
       Hqp_con += pdata->w*MatrixXd::Identity(nq_con,nq_con);
@@ -745,7 +753,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (nlhs>1) {
     double Vdot;
     if (nc>0) 
-      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(Jdot.topRows(2)*qdvec + J.topRows(2)*qdd));
+      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot.topRows(2)*qdvec + pdata->J.topRows(2)*qdd));
     else
       Vdot = 0;
     plhs[1] = mxCreateDoubleScalar(Vdot);
