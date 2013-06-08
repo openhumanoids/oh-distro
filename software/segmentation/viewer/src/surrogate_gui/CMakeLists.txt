@@ -89,6 +89,9 @@ pods_install_executables(segmentation-viewer)
 #########################################################33
 
 add_executable(testfitting perception/testfitting.cpp)
+
+#set_target_properties( testfitting PROPERTIES COMPILE_FLAGS "-O0 -DDEBUG -g ")
+
 pods_use_pkg_config_packages(testfitting
     glib-2.0
     bot2-vis
