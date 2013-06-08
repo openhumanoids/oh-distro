@@ -1,4 +1,4 @@
-function make
+function write_drc_control_setup
 
 % This file is intended to be run from the Makefile.  It assumes that the 
 % environment variable 'BUILD_PREFIX' has been set.
@@ -47,14 +47,8 @@ fprintf(fptr,'addpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
 
 fclose(fptr);
 
-run([BUILD_PREFIX,'/config/drc_control_setup']);
 
-p = cd('drake');
-options.autoconfig=1;
-system(['touch ',fullfile(strtok(userpath,':'),'pathdef.m')]);
-
-%% configure drake
-configure(options);
+%%%%%%%%%%%%%%%
 
 %% build drake
 system('make');
