@@ -18,6 +18,11 @@
       </joint>
 
     <link name="chassis">
+		  <inertial>
+		    <mass value="720.0"/>
+		    <origin rpy="0 0 0" xyz="0.1 0 0.4"/>
+		    <inertia ixx="140" ixy="0" ixz="0" iyy="550" iyz="0" izz="550"/>
+		  </inertial>
       <collision group="chassis_bottom">
          <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
          <geometry>
