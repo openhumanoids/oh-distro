@@ -66,12 +66,15 @@
 
 #define PARAM_UPDATE_MANIP_MAP "Update Manip Map"
 
+#define PARAM_ENABLE_STEERING_ANGLE_OFFSET "Enable Steering Offset"
 #define PARAM_STEERING_ANGLE_OFFSET "Steering Offset"
 
 #define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
 
 #define PARAM_FULL_ACCELERATION "Vehicle Full Acceleration"
+
+#define PARAM_DO_BRAKING "Do Active Braking"
 
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
 #define PARAM_GOAL_TYPE "Goal Type"
@@ -1175,6 +1178,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       bot_gtk_param_widget_set_enabled(pw, PARAM_THROTTLE_DURATION, 1);
     }
 
+    if(bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE_STEERING_ANGLE_OFFSET)){        
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE_OFFSET, 1);
+    }
+    else{
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE_OFFSET, 0);
+    }
+
     if (goal_type_temp == USE_ROAD_CARROT) {
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_P_GAIN, 1);
         bot_gtk_param_widget_set_enabled (self->pw, PARAM_D_GAIN, 1);
@@ -1309,77 +1319,118 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.drive_duration = 0;
         msg.throttle_ratio = 0;
         msg.throttle_duration = 0;
-	if(bot_gtk_param_widget_get_bool (self->pw, PARAM_FULL_ACCELERATION)){
-	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE;
-	}
-	else{
-	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE;
-	}
+
+        int do_braking = 0;
+        if(bot_gtk_param_widget_get_bool (self->pw, PARAM_DO_BRAKING)){
+            do_braking = 1;
+        }
+
         msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
-        msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
-        msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
-        msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
-        msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+        //msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
+        //msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
+        msg.lookahead_dist = 10 * bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
+        msg.steering_angle_degrees = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
-        if(goal_type == USE_ROAD_CARROT){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT;
+        
+        if(do_braking){
+            if(goal_type == USE_ROAD_CARROT){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_B;
+            }
+            if(goal_type == USE_ROAD_ARC){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_B;
+            }
+            else if(goal_type == USE_TLD_WITH_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_B;
+            }
+            else if(goal_type == USE_TLD_IGNORE_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_B;
+            }
+            else if(goal_type == USE_USER_GOAL){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_B;
+            }    
+        }  
+        else{
+            if(goal_type == USE_ROAD_CARROT){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_NB;
+            }
+            if(goal_type == USE_ROAD_ARC){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_NB;
+            }
+            else if(goal_type == USE_TLD_WITH_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_NB;
+            }
+            else if(goal_type == USE_TLD_IGNORE_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_NB;
+            }
+            else if(goal_type == USE_USER_GOAL){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_NB;
+            }
         }
-        if(goal_type == USE_ROAD_ARC){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC;
-        }
-        else if(goal_type == USE_TLD_WITH_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD;
-        }
-        else if(goal_type == USE_TLD_IGNORE_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD;
-        }
-        else if(goal_type == USE_USER_GOAL){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING;
-        }       
         
         drc_driving_cmd_t_publish(self->lc, "DRIVING_CONTROLLER_COMMAND", &msg);        
     }
     else if(!strcmp(name, PARAM_SEND_DRIVE_COMMAND)){
         drc_driving_cmd_t msg;
         msg.utime = bot_timestamp_now();
-        msg.drive_duration = bot_gtk_param_widget_get_double(self->pw, PARAM_DRIVE_TIME);
-        msg.throttle_ratio = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_RATIO);
+        msg.drive_duration = (bot_gtk_param_widget_get_double(self->pw, PARAM_DRIVE_TIME)) * 10;
+        msg.throttle_ratio = (bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_RATIO)) * 100;
 
 	if(bot_gtk_param_widget_get_bool (self->pw, PARAM_FULL_ACCELERATION)){
 	  msg.throttle_duration = msg.drive_duration;
-	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_AUTO_BRAKE;
 	}
 	else{
-	  msg.drive_mode = DRC_DRIVING_CMD_T_MODE_ACTIVE_BRAKE;
-	  msg.throttle_duration = fmin(bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_DURATION), msg.drive_duration);
+	  msg.throttle_duration = fmin(bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_DURATION)*10, msg.drive_duration);
 	}
 
-	fprintf(stderr, "Drive duration : %f Acceleration duration : %f\n",msg.drive_duration, msg.throttle_duration);
+        int do_braking = 0;
+        if(bot_gtk_param_widget_get_bool (self->pw, PARAM_DO_BRAKING)){
+            do_braking = 1;
+        }
+
+	fprintf(stderr, "Drive duration : %f Acceleration duration : %f\n", (msg.drive_duration) / 10.0, (msg.throttle_duration)/10.0);
 
         msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
-        msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
-        msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
-        msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
-        msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+        //msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
+        //msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
+        msg.lookahead_dist = (bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD)) * 10;
+        msg.steering_angle_degrees = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
-        if(goal_type == USE_ROAD_CARROT){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT;
-        }
-        if(goal_type == USE_ROAD_ARC){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC;
-        }
-        else if(goal_type == USE_TLD_WITH_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD;
-        }
-        else if(goal_type == USE_TLD_IGNORE_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD;
-        }
-        else if(goal_type == USE_USER_GOAL){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING;
+        if(do_braking){
+            if(goal_type == USE_ROAD_CARROT){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_B;
+            }
+            if(goal_type == USE_ROAD_ARC){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_B;
+            }
+            else if(goal_type == USE_TLD_WITH_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_B;
+            }
+            else if(goal_type == USE_TLD_IGNORE_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_B;
+            }
+            else if(goal_type == USE_USER_GOAL){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_B;
+            }
         }       
-        
+        else{
+            if(goal_type == USE_ROAD_CARROT){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT_NB;
+            }
+            if(goal_type == USE_ROAD_ARC){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC_NB;
+            }
+            else if(goal_type == USE_TLD_WITH_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD_NB;
+            }
+            else if(goal_type == USE_TLD_IGNORE_ROAD){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD_NB;
+            }
+            else if(goal_type == USE_USER_GOAL){
+                msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING_NB;
+            }
+        }
         drc_driving_cmd_t_publish(self->lc, "DRIVING_CONTROLLER_COMMAND", &msg);
     }
     
@@ -1690,8 +1741,16 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_double(self->pw, PARAM_D_GAIN, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 10.0, 0.01, 0);
 
+    bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_DO_BRAKING, 0, NULL);
+    
+    bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ENABLE_STEERING_ANGLE_OFFSET, 0, NULL);
+
     bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE_OFFSET, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, -20, 20, PARAM_STEERING_DELTA, 0);
+
+    bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE_OFFSET, 0);
+
+    bot_gtk_param_widget_add_separator (self->pw, "Driving Controller");
 
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
