@@ -132,6 +132,30 @@
         <sphere radius="0.01"/>
       </geometry>
     </visual>
+    <collision group="nail">
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="nail">
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="default">
       <origin rpy="0 0 0" xyz="0.048 0 -0.056119"/>
       <geometry>
@@ -860,6 +884,30 @@
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="nail">
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="nail">
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.031119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.031119"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
