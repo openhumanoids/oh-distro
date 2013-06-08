@@ -248,13 +248,17 @@ int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
 }
 
 ////// Camera handlers:
+int counter_cam=0;
 void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  bot_core::image_t* msg){
   utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
   
   if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG){
-    std::cout << "mjepg rxd\n"; 
+    if (counter_cam % 10 ==0){
+      std::cout << channel << " "<< msg->utime << " frame:"<< counter_cam << " MJPEG received\n"; 
+    }
+    counter_cam++;
     imgutils_->decodeStereoImage(msg, left_buf_, right_buf_);
    
   }else{
