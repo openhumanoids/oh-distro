@@ -371,7 +371,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     
         //this part could be done upon msg also 
         //get the wheel arcs from the steering angle
-        double wheel_angle = (self->controller_values->hand_steer) * STEERING_RATIO ;
+        double wheel_angle = (bot_to_radians(self->controller_values->hand_steer)) * STEERING_RATIO ;
                 
         BotTrans pt_to_car;
         double rpy[3];
@@ -398,8 +398,8 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0.05);
         glRotatef(rpy_car[2]*180/M_PI , 0, 0, 1.0);
 
-        double goal_heading = self->controller_values->goal_heading_angle;
-        double goal_distance = self->controller_values->goal_distance;
+        double goal_heading = bot_to_radians(self->controller_values->goal_heading_angle);
+        double goal_distance = 10 * self->controller_values->goal_distance;
 
         double gs, gc;
         bot_fasttrig_sincos(goal_heading, &gs, &gc);
@@ -628,28 +628,24 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
 
-
-    if (self->controller_status)
-        sprintf (line1, "Time rem: %.2f\n", ((double) self->controller_status->time_to_drive)*1E-6);
-    else
-        sprintf (line1, "Time rem: ???\n");
-
     if (self->controller_values) {
+        sprintf (line1, "Time rem: %.1f\n", ((double) self->controller_values->time_to_drive)/10.0);
         if (self->ground_truth_status) {
-            sprintf (line2, "Throttle: %.2f [%.2f]\n", self->controller_values->throttle_value, 
+            sprintf (line2, "Throttle: %.2f [%.2f]\n", (self->controller_values->throttle_value) / 100.0, 
                      self->ground_truth_status->gas_pedal);
-            sprintf (line3, "   Brake: %.2f [%.2f]\n", self->controller_values->brake_value,
+            sprintf (line3, "   Brake: %.2f [%.2f]\n", (self->controller_values->brake_value) / 100.0,
                      self->ground_truth_status->brake_pedal);
-            sprintf (line4, "Steer(d): %3.0f [%3.0f]\n", bot_to_degrees(self->controller_values->hand_steer),
+            sprintf (line4, "Steer(d): %3.0f [%3.0f]\n", self->controller_values->hand_steer,
                      bot_to_degrees(self->ground_truth_status->hand_wheel));
         }
         else {
-            sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value);
-            sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value);
-            sprintf (line4, "Steer(d): %3.0f\n", bot_to_degrees(self->controller_values->hand_steer));
+            sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value/ 100.0);
+            sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value/100.0);
+            sprintf (line4, "Steer(d): %3.0f\n", self->controller_values->hand_steer);
         }
     }
     else {
+        sprintf (line1, "Time rem: ???\n");
        if (self->ground_truth_status) {
             sprintf (line2, "Throttle: ??? [%.2f]\n", self->ground_truth_status->gas_pedal);
             sprintf (line3, "   Brake: ??? [%.2f]\n", self->ground_truth_status->brake_pedal);
@@ -1710,7 +1706,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     // Status messages
     drc_driving_controller_values_t_subscribe(self->lc, "DRIVING_CONTROLLER_COMMAND_VALUES", on_controller_values, self);
     drc_driving_status_t_subscribe (self->lc, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_driving_ground_truth_status, self);
-    drc_driving_controller_status_t_subscribe (self->lc, "DRC_DRIVING_CONTROLLER_STATUS", on_driving_controller_status, self);
+    //drc_driving_controller_status_t_subscribe (self->lc, "DRC_DRIVING_CONTROLLER_STATUS", on_driving_controller_status, self);
 
     // Actuation manipulation status messages
     drc_driving_affordance_status_t_subscribe (self->lc, "DRIVING_STEERING_ACTUATION_STATUS", on_driving_affordance_status, self);
