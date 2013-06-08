@@ -9,7 +9,7 @@ default_target: all
 SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
 
 # drake-related build variables
-PKG_CONFIG_PATH := ${PKG_CONFIG_PATH}:$(shell pwd)/drake/thirdParty
+#PKG_CONFIG_PATH := ${PKG_CONFIG_PATH}:$(shell pwd)/drake/thirdParty
 
 # NOTE:  this will fail if somebody has never run configure in drake, but the dependencies get more complicated
 MATLABROOT = $(strip $(shell cat drake/.matlabroot))
@@ -17,8 +17,8 @@ MEX = $(MATLABROOT)/bin/mex
 MEXEXT = $(shell $(MATLABROOT)/bin/mexext)
 MATLABCPU = $(shell cat drake/.matlabcpu)
 
-MAPS_FLAGS = $(subst -lpthread,,$(shell pkg-config --cflags --libs maps eigen3 lcm opencv))
-QP_FLAGS = $(subst -lpthread,,$(shell pkg-config --cflags --libs eigen3 gurobi))
+MAPS_FLAGS = $(subst -pthread,,$(shell pkg-config --cflags-only-I --libs maps eigen3 lcm opencv))
+QP_FLAGS = $(subst -pthread,,$(shell export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:./drake/thirdParty/; pkg-config --cflags --libs eigen3 gurobi))
 BULLET_FLAGS = $(shell pkg-config --cflags --libs-only-L bullet) -DBULLET_COLLISION -lBulletCollision -lLinearMath
 
 # Figure out where to build the software.
@@ -31,7 +31,6 @@ BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/$$pfx/build; \
 SRC_BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/src/../$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
-PWD = $(shell pwd)
 
 .PHONY : drake
 
@@ -39,7 +38,7 @@ ifeq ($(MATLABCPU),maci64)
 MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT)
 else
 MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) \
-	$(BUILD_PREFIX)/matlab/HeightMap.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/HeightMapWrapper.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT)
 
 endif
