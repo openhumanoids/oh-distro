@@ -4,6 +4,7 @@ import lcm.lcm.*;
 
 public class AffordanceFullStateCoder implements drake.util.LCMCoder
 {
+    String m_otdf_type;
     int m_uid;
     int m_num_floating_joints;
     int m_num_states;
@@ -15,9 +16,14 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
     drc.robot_state_t msg;
     //-----------------------------------------------------------------------------
 
-    public AffordanceFullStateCoder(int uid, String[] state_names)
+    public AffordanceFullStateCoder(String otdf_type,Integer uid, String[] state_names)
     {
-      m_uid = uid;
+      m_otdf_type = otdf_type;
+      if(uid != null) {
+        m_uid = uid;
+      } else {
+        m_uid = -1;
+      }
       m_num_floating_joints = 6;
       m_state_map = new java.util.TreeMap<String,Integer>();
       m_num_states = 0;
@@ -37,7 +43,7 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {
-        drc.affordance_t msg = new drc.affordance_t(data);
+        drc.affordance_collection_t msg = new drc.affordance_collection_t(data);
         return decode(msg);
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
@@ -45,32 +51,34 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
       return null;
     }
  
-    public drake.util.CoordinateFrameData decode(drc.affordance_t msg)
+    public drake.util.CoordinateFrameData decode(drc.affordance_collection_t msg)
     {
-      if (msg.uid == m_uid) {
-        drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
+      for (int i=0;i<msg.naffs;i++) {
+        if (msg.affs[i].otdf_type.equals(m_otdf_type) && (m_uid == -1 || m_uid == msg.affs[i].uid)) {
+          drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
 
-        fdata.val = new double[(m_num_floating_joints+m_num_states)];
-        fdata.t = (double)msg.utime / 1000000.0;
+          fdata.val = new double[(m_num_floating_joints+m_num_states)];
+          fdata.t = (double)msg.utime / 1000000.0;
 
-        fdata.val[0] = msg.origin_xyz[0];
-        fdata.val[1] = msg.origin_xyz[1];
-        fdata.val[2] = msg.origin_xyz[2];
-        fdata.val[3] = msg.origin_rpy[0];
-        fdata.val[4] = msg.origin_rpy[1];
-        fdata.val[5] = msg.origin_rpy[2];
+          fdata.val[0] = msg.affs[i].origin_xyz[0];
+          fdata.val[1] = msg.affs[i].origin_xyz[1];
+          fdata.val[2] = msg.affs[i].origin_xyz[2];
+          fdata.val[3] = msg.affs[i].origin_rpy[0];
+          fdata.val[4] = msg.affs[i].origin_rpy[1];
+          fdata.val[5] = msg.affs[i].origin_rpy[2];
 
-        Integer j;
-        int index;
-        for (int i=0; i<msg.nstates; i++) {
-          j = m_state_map.get(msg.state_names[i]);
-          if (j!=null) {
-            index = j.intValue();
-            fdata.val[index+m_num_floating_joints] = msg.states[i];
-            fdata.val[index+m_num_states+2*m_num_floating_joints] = 0.0;
+          Integer k;
+          int index;
+          for (int j=0; j<m_num_states; j++) {
+            k = m_state_map.get(msg.affs[j].state_names[j]);
+            if (k!=null) {
+              index = k.intValue();
+              fdata.val[index+m_num_floating_joints] = msg.affs[j].states[j];
+              fdata.val[index+m_num_states+2*m_num_floating_joints] = 0.0;
+            }
           }
+          return fdata;
         }
-        return fdata;
       }
       return null;
     }
