@@ -14,6 +14,7 @@
 
 #include "LegOdometry_LCM_Handler.hpp"
 #include "QuaternionLib.h"
+#include "data_fusion_parameters.hpp"
 
 using namespace TwoLegs;
 using namespace std;
@@ -52,7 +53,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	rate_changer.setDesiredPeriod_us(0,4500);
 
 	// Tuning parameters for data fusion
-	fusion_rate.setDesiredPeriod_us(0,40000-500);
+	fusion_rate.setDesiredPeriod_us(0,DATA_FUSION_PERIOD-500);
 	df_feedback_gain = -0.5;
 	df_events = 0;
 
@@ -319,8 +320,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 		for (int i=0;i<3;i++) {
 			//db_a[i] = df_feedback_gain * err_b(i) - 0.15 * errv_b(i);
-			db_a[i] = -0.5 * err_b(i) - 0.3 * errv_b(i);
-			//db_a[i] = -0.6 * err_b(i);
+			db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
 		}
 
 		//inert_odo.imu_compensator.UpdateAccelBiases(b_a);
@@ -334,8 +334,8 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		a = 1/(1 + 1000*err_b.norm());
 		b = 1/(1 + 100*errv_b.norm());
 
-		inert_odo.setPositionState(0.7*InerO.P + 0.3*LeggO.P);
-		inert_odo.setVelocityState(0.9*InerO.V + 0.1*LeggO.V);
+		inert_odo.setPositionState(INS_POS_WINDUP_BALANCE*InerO.P + (1.-INS_POS_WINDUP_BALANCE)*LeggO.P);
+		inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*LeggO.V);
 
 		// Dynamic wind up reset
 		//inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
