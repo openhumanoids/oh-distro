@@ -501,9 +501,11 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
     T_world_body.M =  KDL::Rotation::RPY(otdf_instance->getParam("roll"),
                                          otdf_instance->getParam("pitch"),
                                          otdf_instance->getParam("yaw"));
-                                         
+   
+   update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists       
+                                   
    _T_world_body  = T_world_body; 
-                         
+                    
 
   _current_jointpos.clear();
   _current_jointpos = jointpos_in;
@@ -543,12 +545,10 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
   T_world_body.p[1]= msg.origin_position.translation.y;
   T_world_body.p[2]= msg.origin_position.translation.z;		    
   T_world_body.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
+  
+   update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists  
   _T_world_body  = T_world_body;  
 
-
-  
-
-  
   
   run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
   if(future_display_active)
@@ -562,6 +562,7 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
 
 void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
 {
+   update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists  
   _T_world_body  = T_world_body;
 
   std::map<std::string, double> jointpos_in;
@@ -594,6 +595,7 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint
 
 void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in)
 {
+   update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists  
   _T_world_body  = T_world_body;
 
   _current_jointpos.clear();

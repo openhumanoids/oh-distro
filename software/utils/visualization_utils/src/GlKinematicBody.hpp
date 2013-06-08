@@ -253,6 +253,22 @@ class GlKinematicBody
         draw_motion_trail(c,alpha,T_drawFrame_accumulationFrame);
     };
     
+    void update_motion_trail(KDL::Frame &T_world_body_old,const KDL::Frame &T_world_body_new)
+    {
+      //Accumulated in
+      //T_accumulationFrame_body = T_accumulationFrame_WorldFrame*_T_world_body;
+      if(_desired_body_motion_history.size()>0) // 
+      {
+        KDL::Frame T_accumulationFrame_body_old,T_accumulationFrame_WorldFrame,T_accumulationFrame_body_new;
+       for (size_t j=0;j<_desired_body_motion_history.size();j++){
+          T_accumulationFrame_body_old = _desired_body_motion_history[j];
+          T_accumulationFrame_WorldFrame = T_accumulationFrame_body_old*(T_world_body_old).Inverse();
+          T_accumulationFrame_body_new = T_accumulationFrame_WorldFrame*T_world_body_new;
+           _desired_body_motion_history[j] = T_accumulationFrame_body_new;
+        }// end for
+      }// end if    
+    };
+    
     void draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_accumulationFrame)
     {
         glColor4f(c[0],c[1],c[2],alpha);
