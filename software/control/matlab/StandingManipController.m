@@ -69,6 +69,10 @@ classdef StandingManipController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 2;
+      ins(4).system = 1;
+      ins(4).input = 3;
+      ins(5).system = 2;
+      ins(5).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -81,6 +85,10 @@ classdef StandingManipController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
+      ins(4).system = 2;
+      ins(4).input = 4;
+      ins(5).system = 2;
+      ins(5).input = 5;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
