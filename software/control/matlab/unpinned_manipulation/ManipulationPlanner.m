@@ -292,7 +292,7 @@ classdef ManipulationPlanner < handle
             obj.lhandT = forwardKin(obj.r,kinsol,l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,head_body,[0;0;0],1);
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
-            s = linspace(0,1,9);
+            s = linspace(0,1,4);
             s_breaks = linspace(s(1),s(end),obj.num_breaks);
             obj.s_breaks = s_breaks;
             s = unique([s(:);s_breaks(:)]);
@@ -330,11 +330,19 @@ classdef ManipulationPlanner < handle
                 xtraj(2,ind) = 0.0;
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            
+            
+
+            
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
             
             %obj.plan_pub.publish(ts,xtraj);
             utime = now() * 24 * 60 * 60;
+            
+             % ignore the first state
+             % ts = ts(2:end);
+             % xtraj=xtraj(:,2:end);
             obj.plan_pub.publish(xtraj,ts,utime);
         end
         
@@ -1596,7 +1604,7 @@ classdef ManipulationPlanner < handle
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
             
-            res = 0.1; % 10cm res
+            res = 0.15; % 20cm res
             s= linspace(0,1,round(s_total/res));
             s = unique([s(:);s_breaks(:)]);
             
@@ -1717,12 +1725,13 @@ classdef ManipulationPlanner < handle
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
             
-            
-            
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
             %obj.plan_pub.publish(ts,xtraj);
             utime = now() * 24 * 60 * 60;
+             % ignore the first state
+             % ts = ts(2:end);
+             % xtraj=xtraj(:,2:end);
             obj.plan_pub.publish(xtraj,ts,utime);
         end
         

@@ -45,9 +45,25 @@ h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
 h_ee.frame.subscribe('HEAD_GOAL');
 h_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL_CLEAR');
 h_ee_clear.frame.subscribe('HEAD_GOAL_CLEAR');
+
+
 % TODO: Incorporate constraints from these channels into the planner.
+%======================================================================================
 h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
 h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
+lh_ee_orientation = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_ORIENTATION_GOAL');
+lh_ee_orientation.frame.subscribe('LEFT_PALM_ORIENTATION_GOAL');
+rh_ee_orientation = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_ORIENTATION_GOAL');
+rh_ee_orientation.frame.subscribe('RIGHT_PALM_ORIENTATION_GOAL');
+
+h_ee_gaze = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GAZE_GOAL');
+h_ee_gaze.frame.subscribe('HEAD_GAZE_GOAL');
+lh_ee_gaze = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GAZE_GOAL');
+lh_ee_gaze.frame.subscribe('LEFT_PALM_GAZE_GOAL');
+rh_ee_gaze = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GAZE_GOAL');
+rh_ee_gaze.frame.subscribe('RIGHT_PALM_GAZE_GOAL');
+%======================================================================================
+
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
