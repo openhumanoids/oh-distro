@@ -20,6 +20,8 @@
 #include <lcmtypes/drc/affordance_mini_t.hpp>
 #include <lcmtypes/drc/affordance_mini_collection_t.hpp>
 #include <lcmtypes/drc/simple_grasp_t.hpp>
+#include <lcmtypes/drc/motionest_request_t.hpp>
+
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
@@ -61,6 +63,7 @@ protected:
   int mHeadCameraFrameRate;
   int mHandCameraFrameRate;
   int mCameraCompression;
+  bool mVOIMU; 
   int mHeadPitchAngle;
   int mLeftGraspState;
   int mRightGraspState;
@@ -331,7 +334,7 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
-
+    
     //
     // grasp
     //
@@ -381,6 +384,15 @@ public:
     
     notebook->append_page(*sensorControlBox, "Sensor");
     
+    Gtk::VBox* fusionControlBox = Gtk::manage(new Gtk::VBox());
+    addCheck("Enable VO-IMU", mVOIMU, fusionControlBox);   
+    button = Gtk::manage(new Gtk::Button("Submit Fusion Config"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onSendFusionButton));
+    fusionControlBox->pack_start(*button, false, false);
+    
+    notebook->append_page(*fusionControlBox, "Fusion");
+
     container->add(*notebook);
     container->show_all();
   }
@@ -554,6 +566,19 @@ public:
     }
   }
 
+  void onSendFusionButton() {
+    drc::motionest_request_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    if (mVOIMU){
+      msg.fusion_mode = (int8_t) drc::motionest_request_t::VO;
+    }else{
+      msg.fusion_mode = (int8_t) drc::motionest_request_t::DEFAULT;
+    }
+    getLcm()->publish("MOTIONEST_REQUEST", &msg);
+  }
+  
+  
+  
   void draw() {
     // intentionally left blank
   }
