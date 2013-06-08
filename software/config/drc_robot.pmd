@@ -125,17 +125,9 @@ group "a.3.manip" {
     }
 }
 
-group "a.4.driving" {
+group "a.4.driving.utils" {
     cmd "vehicle-groundtruth-state" {
         exec = "rosrun driving_interface groundtruth_receiver";
-        host = "robot";
-    }
-    cmd "car-vis" {
-        exec = "drc-car-quick-vis";
-        host = "robot";
-    }
-    cmd "driving_interface" {
-        exec = "rosrun driving_interface driving_interface";
         host = "robot";
     }
     cmd "affordance-tracker" {
@@ -146,29 +138,22 @@ group "a.4.driving" {
     	exec = "affordance-to-frames";
         host = "robot";
     }
-    cmd "affordance_server -r robot" {
-        exec = "affordance_server -r robot";
-        host = "robot";
-    }
-    cmd "drc-driving-control" {
-        exec = "drc-driving-control";
-        host = "robot";
-    }
     cmd "drc-terrain-classifier" {
         exec = "drc-terrain-classifier";
         host = "robot";
     }
 }
 
-group "a.4.ingress" {
-    cmd "IngressStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
+group "a.4.driving" {
+    cmd "drc-driving-control" {
+        exec = "drc-driving-control";
         host = "robot";
     }
-}
 
-# Controllers & ManipMap2Plan parsers for vrc task 1 (Driving)
-group "a.4.manipulation4driving" {
+    cmd "driving_interface" {
+        exec = "rosrun driving_interface driving_interface";
+        host = "robot";
+    }
     cmd "DrivingController" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
         host = "robot";
@@ -179,6 +164,13 @@ group "a.4.manipulation4driving" {
     } 
     cmd "ManipMapStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
+        host = "robot";
+    }
+}
+
+group "a.4.ingress" {
+    cmd "IngressStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
         host = "robot";
     }
 }
@@ -391,7 +383,7 @@ group "m.driving_utils" {
         host = "robot";
     }
    cmd "enter_car_pelvis_pinned" {
-        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.10}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.20}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
         host = "robot";
     }  
     cmd "enable_user_mode" {
@@ -467,13 +459,12 @@ script "comp.vrc_manip" {
 }
 
 script "comp.vrc_driving" {
-    start group "0.development";
     start group "a.1.core";
     stop cmd "LegOdometry";
-    start group "a.4.manipulation4driving";
+    start group "a.4.driving";
+    start group "b.1.core";
     start group "b.4.driving";
     start cmd "estdriving";
-    start group "b.1.core";
     wait ms 5000;
     start cmd "enable_gravity_when_pinned";
     wait ms 1000;
