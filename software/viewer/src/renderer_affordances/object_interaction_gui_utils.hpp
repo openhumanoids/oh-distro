@@ -680,9 +680,11 @@ namespace renderer_affordances_gui_utils
                 cout <<  joint->first << " DOF changed to " << dof_pos*(180/M_PI) << endl;
             }
         }
-        it->second._gl_object->set_future_state_changing(true);
-        it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
-        
+        if(!it->second._gl_object->is_future_state_changing()) {
+          it->second._gl_object->set_future_state_changing(true); 
+        }
+        it->second._gl_object->set_future_state(T_world_object,jointpos_in);
+  
       // set dependent bodies desired motion state to mate state
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
@@ -691,15 +693,20 @@ namespace renderer_affordances_gui_utils
          std::string hand_name = std::string(hand_it->second.object_name);
          if (hand_name == (it->first))
          {
-            hand_it->second._gl_hand->clear_desired_body_motion_history();
+            
             KDL::Frame T_world_graspgeometry;
-            it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_graspgeometry);
-            hand_it->second._gl_hand->log_motion_trail(true);
+            it->second._gl_object->get_link_geometry_future_frame(hand_it->second.geometry_name,T_world_graspgeometry);
+            //hand_it->second._gl_hand->log_motion_trail(true); // not accumulating states on draw (so why have this?)
             KDL::Frame T_accumulationFrame_body;
             //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
-            T_accumulationFrame_body = (T_world_graspgeometry.Inverse())*hand_it->second._gl_hand->_T_world_body;
+            
+            KDL::Frame T_world_object = it->second._gl_object->_T_world_body; // accumulate in current object frame not_T_world_body_future?
+            KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
+            T_accumulationFrame_body = (T_object_graspgeometry)*hand_it->second._gl_hand->_T_world_body;//T_obj_geom*T_geom_hand
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
             hand_it->second._gl_hand->_desired_body_motion_history.push_back(T_accumulationFrame_body);
-         }
+            cout << "accumulating desired_motion_history" << hand_it->second._gl_hand->_desired_body_motion_history.size() << endl;
+         }  
          hand_it++;
       }
 
@@ -712,11 +719,13 @@ namespace renderer_affordances_gui_utils
          {
             foot_it->second._gl_foot->clear_desired_body_motion_history();
             KDL::Frame T_world_geometry;
-            it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_geometry);
-            hand_it->second._gl_hand->log_motion_trail(true);
+            it->second._gl_object->get_link_geometry_future_frame(hand_it->second.geometry_name,T_world_geometry);
+            //foot_it->second._gl_hand->log_motion_trail(true);
             KDL::Frame T_accumulationFrame_body;
             //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
-            T_accumulationFrame_body = (T_world_geometry.Inverse())*hand_it->second._gl_hand->_T_world_body;
+           KDL::Frame T_world_object = it->second._gl_object->_T_world_body_future;
+            KDL::Frame T_object_geometry = T_world_object.Inverse()*T_world_geometry;
+            T_accumulationFrame_body = (T_object_geometry)*foot_it->second._gl_foot->_T_world_body;
             foot_it->second._gl_foot->_desired_body_motion_history.push_back(T_accumulationFrame_body);
             
          }
@@ -1101,14 +1110,15 @@ namespace renderer_affordances_gui_utils
           KDL::Frame T_geometry_stickyhandbase_new = T_geometry_palm_new*T_palm_stickyhandbase;
           cout << "setting sticky hand state to current hand pose and posture " << endl;
           hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase_new, posture_msg);
+          hand_it->second.T_geometry_hand = T_geometry_stickyhandbase_new;
+          
         } // end if
-        hand_it->second.is_melded = !hand_it->second.is_melded;     // 
+           // 
       } 
       else {
         cout << "resetting  sticky hand state to optimized hand pose and posture " << endl;
         hand_it->second.T_geometry_hand = hand_it->second.optimized_T_geometry_hand;
         hand_it->second.joint_position = hand_it->second.optimized_joint_position; // reset;
-        hand_it->second.is_melded = !hand_it->second.is_melded;    
         drc::joint_angles_t posture_msg;
         posture_msg.num_joints= hand_it->second.joint_name.size();
         posture_msg.joint_name = hand_it->second.joint_name;
@@ -1116,9 +1126,11 @@ namespace renderer_affordances_gui_utils
         KDL::Frame T_geometry_stickyhandbase = hand_it->second.T_geometry_hand;
         hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase, posture_msg); 
       } 
+  	  // toggle  flag
+      hand_it->second.is_melded = !hand_it->second.is_melded; 
     } // end if else
+    
   
-        
     bot_viewer_request_redraw(self->viewer);
     gtk_widget_destroy(self->dblclk_popup);
     
@@ -1304,13 +1316,12 @@ namespace renderer_affordances_gui_utils
             cout << "setting sticky foot state to current foot pose and posture " << endl;
             foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase_new, posture_msg);
           } // end if
-          foot_it->second.is_melded = !foot_it->second.is_melded;     // 
         } 
         else {
           cout << "resetting  sticky foot state to optimized foot pose and posture " << endl;
           foot_it->second.T_geometry_foot = foot_it->second.optimized_T_geometry_foot;
           foot_it->second.joint_position = foot_it->second.optimized_joint_position; // reset;
-          foot_it->second.is_melded = !foot_it->second.is_melded;    
+       
           drc::joint_angles_t posture_msg;
           posture_msg.num_joints= foot_it->second.joint_name.size();
           posture_msg.joint_name = foot_it->second.joint_name;
@@ -1318,6 +1329,9 @@ namespace renderer_affordances_gui_utils
           KDL::Frame T_geometry_stickyfootbase = foot_it->second.T_geometry_foot;
           foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase, posture_msg); 
         } 
+    	// toggle  flag
+      	foot_it->second.is_melded = !foot_it->second.is_melded; 
+     	 //foot_it->second._gl_foot->disable_future_display();   
       } // end if else
       
     else if ((!strcmp(name, PARAM_STORE))) {

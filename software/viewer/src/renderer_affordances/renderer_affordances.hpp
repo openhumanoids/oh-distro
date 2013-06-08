@@ -989,10 +989,15 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
+
+
       if(!it->second._gl_object->is_future_state_changing()) {
-        it->second._gl_object->set_future_state_changing(true);                      
+        it->second._gl_object->set_future_state_changing(true); 
+
+
+		//  leave the clearing to the user to do this via reset                     
        // clear previously accumulated motion states for all dependent bodies
-        typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      /*  typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
         sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
         while (hand_it!=self->sticky_hands.end()) 
         {
@@ -1002,6 +1007,18 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
            }
            hand_it++;
         }
+        
+        typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
+        while (foot_it!=self->sticky_feet.end()) 
+        {
+           std::string foot_name = std::string(foot_it->second.object_name);
+           if (foot_name == (it->first))
+           {
+              foot_it->second._gl_foot->clear_desired_body_motion_history();
+           }
+           foot_it++;
+        } */
        }//end if(!it->second._gl_object->is_future_state_changing())
     
       
