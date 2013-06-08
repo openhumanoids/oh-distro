@@ -167,6 +167,37 @@
     <child link="right_palm"/>
     <origin rpy="0 -1.57079 0" xyz="0 0 0.0"/>
   </joint>
+  <link name="right_hook">
+    <collision group="default">
+      <origin rpy="0 0 0" xyz="-0.045 0.015 -0.03"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.045 0.015 -0.03"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="default">
+      <origin rpy="0 0 0" xyz="-0.045 0.015 0.03"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.045 0.015 0.03"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_hook_joint" type="fixed">
+    <origin rpy="0 0 0.79" xyz="0.044 -0.04 -0.005"/>
+    <parent link="right_palm"/>
+    <child link="right_hook"/>
+  </joint>
   <link name="right_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>

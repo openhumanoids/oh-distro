@@ -17,6 +17,20 @@
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:property name="M_pi" value="3.1415926535897931" />
+  <xacro:macro name="collision_point" params="group xyz visualize">
+    <collision group="${group}"> 
+      <origin rpy="0 0 0" xyz="${xyz}"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual> 
+      <origin rpy="0 0 0" xyz="${xyz}"/>
+      <geometry>
+        <sphere radius="${visualize*0.01}"/>
+      </geometry>
+    </visual>
+  </xacro:macro>
   <xacro:macro name="finger" params="idx x y z r p yaw side reflect">
     <link name="${side}_f${idx}_base">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -771,6 +785,16 @@
       <parent link="${parent}"/>
       <child link="${side}_palm"/>
       <insert_block name="origin" />
+    </joint>
+
+    <link name="${side}_hook">
+      <xacro:collision_point group="default" xyz="-0.045 ${reflect*0.015} -0.03" visualize="1"/>
+      <xacro:collision_point group="default" xyz="-0.045 ${reflect*0.015} 0.03" visualize="1"/>
+    </link>
+    <joint name="${side}_hook_joint" type="fixed">
+      <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
+      <parent link="${side}_palm"/>
+      <child link="${side}_hook"/>
     </joint>
 
     <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
