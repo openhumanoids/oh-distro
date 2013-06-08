@@ -1,0 +1,130 @@
+<constraint_sequence>
+  <constraint_task_space_region id="C0" active="T" visible="F" start="0.1" end="1" metadata="initial contact" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="pelvis-front,utorso-front" child="/box1" offset="0,0,0">
+    <range index="X_MIN" active="F" value="0"/>
+    <range index="X_MAX" active="F" value="0"/>
+    <range index="Y_MIN" active="F" value="0"/>
+    <range index="Y_MAX" active="F" value="0"/>
+    <range index="Z_MIN" active="F" value="0"/>
+    <range index="Z_MAX" active="F" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C1" active="T" visible="F" start="0.1" end="10" metadata="bodies z > 0" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="head-default,l_clav-default,l_farm-default,l_foot-default,l_foot-heel,l_foot-toe,l_hand-default,l_larm-default,l_lglut-default,l_lleg-default,l_scap-default,l_talus-default,l_uarm-default,l_uglut-default,l_uleg-default,l_uleg-hamstring,left_palm-default,mtorso-default,pelvis-back,pelvis-butt,pelvis-default,pelvis-front,r_clav-default,r_farm-default,r_foot-default,r_foot-heel,r_foot-toe,r_hand-default,r_hand-palm,r_larm-default,r_larm-elbow,r_lglut-default,r_lleg-default,r_scap-default,r_scap-shoulder,r_talus-default,r_uarm-default,r_uglut-default,r_uleg-default,r_uleg-hamstring,right_palm-default,utorso-back,utorso-default,utorso-front" child="/box1" offset="0,0,0">
+    <range index="X_MIN" active="F" value="0"/>
+    <range index="X_MAX" active="F" value="0"/>
+    <range index="Y_MIN" active="F" value="0"/>
+    <range index="Y_MAX" active="F" value="0"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="F" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C2" active="T" visible="T" start="0.1" end="5" metadata="left knee on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="l_foot-nail" child="/box1" offset="-0.95,0.125,0">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C3" active="T" visible="T" start="0.1" end="3.5" metadata="right nail on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-nail" child="/box1" offset="-0.95,-0.125,0">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C4" active="T" visible="T" start="0.1" end="6.75" metadata="left nail on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="left_palm-knuckle" child="/box1" offset="0.4,0.4,0">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C5" active="T" visible="T" start="0.1" end="6" metadata="right hand on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="right_palm-knuckle" child="/box1" offset="0.4,-0.4,0">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C6" active="T" visible="T" start="2" end="8" metadata="pelvis up in air" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="pelvis-back" child="/box1" offset="-0.2,0,0.8">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.1"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C7" active="T" visible="T" start="4" end="4.25" metadata="move right foot forward" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="r_foot-nail" child="/box1" offset="-0.21,-0.175,0.11">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.2"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C8" active="T" visible="T" start="4.5" end="10" metadata="move right foot flat on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="-0.25,-0.125,0">
+    <range index="X_MIN" active="T" value="-0.2"/>
+    <range index="X_MAX" active="T" value="0.2"/>
+    <range index="Y_MIN" active="T" value="-0.2"/>
+    <range index="Y_MAX" active="T" value="0.2"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C9" active="T" visible="T" start="5.25" end="5.5" metadata="move left foot forward" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="l_foot-nail" child="/box1" offset="-0.21,0.175,0.11">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.2"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C10" active="T" visible="T" start="5.75" end="10" metadata="move left foot flat on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="l_foot-heel,l_foot-toe" child="/box1" offset="-0.25,0.125,0">
+    <range index="X_MIN" active="T" value="-0.2"/>
+    <range index="X_MAX" active="T" value="0.2"/>
+    <range index="Y_MIN" active="T" value="-0.2"/>
+    <range index="Y_MAX" active="T" value="0.2"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C11" active="T" visible="T" start="6" end="6.25" metadata="move right hand back" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="right_palm-knuckle" child="/box1" offset="0.24,-0.2,0.03">
+    <range index="X_MIN" active="T" value="-0.05"/>
+    <range index="X_MAX" active="T" value="0.05"/>
+    <range index="Y_MIN" active="T" value="-0.05"/>
+    <range index="Y_MAX" active="T" value="0.05"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.1"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C12" active="T" visible="T" start="6.5" end="9" metadata="move right hand flat on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="right_palm-knuckle" child="/box1" offset="0.24,-0.2,0">
+    <range index="X_MIN" active="T" value="-0.05"/>
+    <range index="X_MAX" active="T" value="0.05"/>
+    <range index="Y_MIN" active="T" value="-0.05"/>
+    <range index="Y_MAX" active="T" value="0.05"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C13" active="T" visible="T" start="7" end="7.25" metadata="move left hand back" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="left_palm-knuckle" child="/box1" offset="0.24,0.2,0.03">
+    <range index="X_MIN" active="T" value="-0.05"/>
+    <range index="X_MAX" active="T" value="0.05"/>
+    <range index="Y_MIN" active="T" value="-0.05"/>
+    <range index="Y_MAX" active="T" value="0.05"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.1"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C14" active="T" visible="T" start="7.5" end="9" metadata="move left hand flat on ground" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="left_palm-knuckle" child="/box1" offset="0.24,0.2,0">
+    <range index="X_MIN" active="T" value="-0.05"/>
+    <range index="X_MAX" active="T" value="0.05"/>
+    <range index="Y_MIN" active="T" value="-0.05"/>
+    <range index="Y_MAX" active="T" value="0.05"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C15" active="T" visible="T" start="8.5" end="9" metadata="shift pelvis back" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="pelvis-back" child="/box1" offset="-0.45,0,0.82">
+    <range index="X_MIN" active="T" value="-0.1"/>
+    <range index="X_MAX" active="T" value="0.1"/>
+    <range index="Y_MIN" active="T" value="-0.1"/>
+    <range index="Y_MAX" active="T" value="0.1"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.1"/>
+  </constraint_task_space_region>
+</constraint_sequence>
