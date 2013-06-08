@@ -117,6 +117,48 @@ to_msg( action_sequence_t& msg,
 
 void
 Constraint_Sequence::
+from_msg( const action_sequence_t& msg ){
+  _q0.from_lcm( &msg.q0 );
+  for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
+    it->active() = false;
+    it->parents().clear();
+  }
+  cout << "found " << msg.num_contact_goals << " contact_goals" << endl;
+  vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin();
+  for( unsigned int i = 0; i < msg.num_contact_goals/2; i++ ){
+    it->active() = true;
+    it->metadata() = "NA";
+    it->start() = msg.contact_goals[2*i].lower_bound_completion_time;
+    it->end() = msg.contact_goals[2*i].upper_bound_completion_time;
+    it->relation_type() = CONSTRAINT_TASK_SPACE_REGION_AFFORDANCE_RELATION_TYPE;
+    if( msg.contact_goals[2*i].contact_type == contact_goal_t::WITHIN_REGION ){
+      it->contact_type() = CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE;
+    } else {
+      it->contact_type() = CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE;
+    }
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first = ( msg.contact_goals[2*i].x_offset > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].x_offset < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first = ( msg.contact_goals[2*i].y_offset > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].y_offset < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first = ( msg.contact_goals[2*i].z_offset > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].z_offset < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second = msg.contact_goals[2*i].x_offset;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second = msg.contact_goals[2*i+1].x_offset;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second = msg.contact_goals[2*i].y_offset;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second = msg.contact_goals[2*i+1].y_offset;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second = msg.contact_goals[2*i].z_offset;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second = msg.contact_goals[2*i+1].z_offset;
+    it->parents().push_back( msg.contact_goals[2*i].object_1_name + "-" + msg.contact_goals[2*i].object_1_contact_grp );
+    it->child() = ( msg.contact_goals[2*i].object_2_name + "/" + msg.contact_goals[2*i].object_2_contact_grp );
+    it++;
+  }
+  
+
+  return;
+}
+
+void
+Constraint_Sequence::
 print_msg( const action_sequence_t& msg ){
   cout << "utime:{" << msg.utime << "} ";
   cout << "robot_name:{" << msg.robot_name << "} ";

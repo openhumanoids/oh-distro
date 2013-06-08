@@ -22,6 +22,7 @@ namespace authoring {
     void to_xml( const std::string& filename )const;
     void to_xml( std::ofstream& out, unsigned int indent = 0 )const;
     void to_msg( drc::action_sequence_t& msg, std::vector< affordance::AffordanceState >& affordanceCollection );
+    void from_msg( const drc::action_sequence_t& msg );
     static void print_msg( const drc::action_sequence_t& msg );
 
     inline std::vector< Constraint_Task_Space_Region >& constraints( void ){ return _constraints; };

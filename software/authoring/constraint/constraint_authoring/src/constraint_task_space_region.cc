@@ -277,7 +277,7 @@ add_to_drc_action_sequence_t( action_sequence_t& actionSequence,
     return;
   } else {
     string affordance_link_name = "NA";
-    string affordance_group_name = "NA";
+    string affordance_group_name = "default";
     child->splitNameIntoLinkGroup( affordance_link_name, affordance_group_name );
     for( vector< string >::iterator it_parent = _parents.begin(); it_parent != _parents.end(); it_parent++ ){
       vector< string > parent_strings;
