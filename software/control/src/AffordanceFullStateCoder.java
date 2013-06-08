@@ -9,15 +9,11 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
     int m_num_floating_joints;
     int m_num_states;
     java.util.TreeMap<String,Integer> m_state_map;
+    drc.affordance_collection_t msg;
     
-    //Old properties---------------------------------------------------------------
-    String m_robot_name;
-    java.util.TreeMap<String,Integer> m_floating_joint_map;
-    drc.robot_state_t msg;
-    //-----------------------------------------------------------------------------
-
     public AffordanceFullStateCoder(String otdf_type,Integer uid, String[] state_names)
     {
+      msg = new drc.affordance_collection_t();
       m_otdf_type = otdf_type;
       if(uid != null) {
         m_uid = uid;
@@ -87,7 +83,7 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
     {
       // don't need to go in this direction, except to determine message
       // monitor types, so return empty affordance_collection_t message.
-      return drc.affordance_collection_t();
+      return msg;
     }
     
     public String timestampName()
