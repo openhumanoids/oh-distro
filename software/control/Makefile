@@ -19,7 +19,8 @@ MATLABCPU = $(shell cat drake/.matlabcpu)
 
 MAPS_FLAGS = $(subst -pthread,,$(shell pkg-config --cflags-only-I --libs maps eigen3 lcm opencv))
 QP_FLAGS = $(subst -pthread,,$(shell export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:./drake/thirdParty/; pkg-config --cflags --libs eigen3 gurobi))
-BULLET_FLAGS = $(shell pkg-config --cflags --libs-only-L bullet) -DBULLET_COLLISION -lBulletCollision -lLinearMath
+#BULLET_FLAGS = $(shell pkg-config --cflags --libs-only-L bullet) -DBULLET_COLLISION -lBulletCollision -lLinearMath
+BULLET_FLAGS =
 
 # Figure out where to build the software.
 #   Use BUILD_PREFIX if it was passed in.
