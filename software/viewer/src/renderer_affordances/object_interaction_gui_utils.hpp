@@ -705,7 +705,7 @@ namespace renderer_affordances_gui_utils
             T_accumulationFrame_body = (T_object_graspgeometry)*hand_it->second._gl_hand->_T_world_body;//T_obj_geom*T_geom_hand
             hand_it->second._gl_hand->clear_desired_body_motion_history();
             hand_it->second._gl_hand->_desired_body_motion_history.push_back(T_accumulationFrame_body);
-            cout << "accumulating desired_motion_history" << hand_it->second._gl_hand->_desired_body_motion_history.size() << endl;
+            //cout << "accumulating desired_motion_history" << hand_it->second._gl_hand->_desired_body_motion_history.size() << endl;
          }  
          hand_it++;
       }
@@ -723,7 +723,7 @@ namespace renderer_affordances_gui_utils
             //foot_it->second._gl_hand->log_motion_trail(true);
             KDL::Frame T_accumulationFrame_body;
             //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
-           KDL::Frame T_world_object = it->second._gl_object->_T_world_body_future;
+           KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
             KDL::Frame T_object_geometry = T_world_object.Inverse()*T_world_geometry;
             T_accumulationFrame_body = (T_object_geometry)*foot_it->second._gl_foot->_T_world_body;
             foot_it->second._gl_foot->_desired_body_motion_history.push_back(T_accumulationFrame_body);
@@ -1315,6 +1315,7 @@ namespace renderer_affordances_gui_utils
             KDL::Frame T_geometry_stickyfootbase_new = T_world_geometry.Inverse()*T_world_ankle;
             cout << "setting sticky foot state to current foot pose and posture " << endl;
             foot_it->second._gl_foot->set_state(T_geometry_stickyfootbase_new, posture_msg);
+			foot_it->second.T_geometry_foot = T_geometry_stickyfootbase_new;
           } // end if
         } 
         else {
