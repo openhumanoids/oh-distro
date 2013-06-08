@@ -46,3 +46,15 @@ pods_use_pkg_config_packages(ply2pcd  lcm  affordance-utils
   pointcloud_vis
   ${PCL_LIBRARIES})
 pods_install_executables(ply2pcd)
+
+
+
+
+###################################
+# Convert Mini to regualr affordance on the robot
+add_executable (affordance_mini_rx affordance_mini_rx.cpp )
+target_link_libraries(affordance_mini_rx boost_system)
+pods_use_pkg_config_packages(affordance_mini_rx  lcm  affordance-utils
+  pointcloud_vis
+  ${PCL_LIBRARIES})
+pods_install_executables(affordance_mini_rx)

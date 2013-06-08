@@ -449,7 +449,9 @@ void Pass::doDemo(int which_publish, bool add_filename){
   }*/
   if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
-    std::vector<double> xyzrpy1 = {-2.2 , -4.7 , 1.1 , M_PI/2 , 0 , 0};  
+    //std::vector<double> xyzrpy1 = {1.95 , -0.65 , 1.3 , M_PI/2 , 0 , 0}; // vrc - ground truth
+    std::vector<double> xyzrpy1 = {1.95 , -0.65 , 0.18 , -M_PI/2 , 0 , 0}; // vrc - state estimation
+    // std::vector<double> xyzrpy1 = {-2.2 , -4.7 , 1.1 , M_PI/2 , 0 , 0};  
     string filename1 = "firehose.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
