@@ -106,6 +106,7 @@ to_msg( action_sequence_t& msg,
   msg.contact_goals.clear();
   msg.robot_name = "atlas";
   _q0.to_lcm( &msg.q0 );
+  msg.q0.robot_name = msg.robot_name;
   for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     cout << it->id() << ": " << it->active() << endl;
     if( it->active() ) {
