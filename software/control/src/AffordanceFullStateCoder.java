@@ -85,8 +85,9 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
 
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
-      // don't need to go in this direction 
-      return null;
+      // don't need to go in this direction, except to determine message
+      // monitor types, so return empty affordance_collection_t message.
+      return drc.affordance_collection_t();
     }
     
     public String timestampName()
