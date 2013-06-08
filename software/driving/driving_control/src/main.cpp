@@ -40,7 +40,7 @@
 #define TIMER_PERIOD_MSEC 50
 
 #define STATUS_TIMER_PERIOD_MSEC 1000
-#define STATE_UPDATE_TIMER_PERIOD_MSEC 250
+#define STATE_UPDATE_TIMER_PERIOD_MSEC 1000
 
 //#define TIME_TO_TURN_PER_RADIAN 1.0
 
@@ -162,11 +162,22 @@ typedef struct _state_t {
 void publish_system_state_values(state_t *self){
     drc_driving_controller_values_t msg;
     msg.utime = self->utime;
-    msg.throttle_value = self->throttle_val;
-    msg.brake_value = self->brake_val;
-    msg.hand_steer = self->hand_steer;
-    msg.goal_distance = self->actual_goal_distance;
-    msg.goal_heading_angle = self->goal_heading;
+    msg.throttle_value = (self->throttle_val) * 100;
+    msg.brake_value = (self->brake_val)*100;
+    msg.hand_steer = bot_to_degrees(self->hand_steer);
+    msg.goal_distance = self->actual_goal_distance * 10;
+    msg.goal_heading_angle = bot_to_degrees(self->goal_heading);
+    if(self->drive_duration >=0){
+        if(self->do_braking){
+            msg.time_to_drive = (self->drive_time_to_go - TIME_TO_TURN - TIME_TO_BRAKE) * 10 ;
+        }
+        else{
+            msg.time_to_drive = (self->drive_time_to_go - TIME_TO_TURN) * 10;
+        }
+    }
+    else{
+        msg.time_to_drive = 0;
+    }
     drc_driving_controller_values_t_publish(self->lcm, "DRIVING_CONTROLLER_COMMAND_VALUES", &msg);
 }
 
