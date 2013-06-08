@@ -24,6 +24,8 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
+
+#include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 ///
 
 #include <opencv/cv.h> // for disparity 
@@ -97,6 +99,10 @@ class StereoOdom{
 
     void gazeboBodyIMUHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);  
     drc::robot_state_t last_robot_state_msg_;
+    
+  
+    image_io_utils*  imgutils_;    
+    
 };    
 
 StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
@@ -154,6 +160,9 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
     cout << "will not set the z-height from ground truth\n";
   }
   
+  
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
+  
 }
 
 
@@ -201,6 +210,10 @@ void StereoOdom::updateMotion(){
   fovis::MotionEstimateStatusCode delta_status;
   vo_->getMotion(delta_camera, delta_cov, delta_status );
   vo_->fovis_stats();
+  
+  
+  return; // full estimator VO disabled for VRC competition, 8 june 2013
+  
   estimator_->voUpdate(utime_cur_, delta_camera);
   
   
@@ -239,10 +252,24 @@ void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  bot_core::image_t* msg){
   utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
-  memcpy(left_buf_,  msg->data.data() , msg->size/2);
-  memcpy(right_buf_,  msg->data.data() + msg->size/2 , msg->size/2);
+  
+  if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG){
+    std::cout << "mjepg rxd\n"; 
+    imgutils_->decodeStereoImage(msg, left_buf_, right_buf_);
+   
+  }else{
+    std::cout << "camera not MJPEG - not supported/tested\n"; 
+    exit(-1);
+    //memcpy(left_buf_,  msg->data.data() , msg->size/2);
+    //memcpy(right_buf_,  msg->data.data() + msg->size/2 , msg->size/2);
+  }
+  
+  
   vo_->doOdometry(left_buf_,right_buf_, msg->utime);
   updateMotion();
+  
+  return; // full estimator VO disabled for VRC competition, 8 june 2013
+  
   featureAnalysis();
 }
 
@@ -250,6 +277,7 @@ void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  multisense::images_t* msg){
   utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
+  
   
   int w = msg->images[0].width;
   int h = msg->images[0].height;

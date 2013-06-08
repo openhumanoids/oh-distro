@@ -165,7 +165,7 @@ void FoVision::fovis_stats(){
                 "FOVIS_REL_ODOMETRY", &update_msg);
   }
 
-  bool publish_fovis_stats=1;
+  bool publish_fovis_stats=0;
   if (estim_status !=  fovis::NO_DATA && publish_fovis_stats) {
     fovis_stats_t stats_msg;
     stats_msg.timestamp = update_msg.timestamp;
