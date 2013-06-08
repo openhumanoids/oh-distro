@@ -129,12 +129,15 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         drc::PMDInfoDiff diff, diff_out;
         diff.set_reference_time(243);
         diff.set_utime(6000000);
-        
+
         drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
         diff_cmd->set_name("FOO");
         diff_cmd->set_group("BAR");
         diff_cmd->set_pid(263);
         diff_cmd->set_auto_respawn(false);
+
+
+        diff.set_ncmds(diff.cmds_size());
         
         std::string bytes;
         dccl_->encode(&bytes, diff);

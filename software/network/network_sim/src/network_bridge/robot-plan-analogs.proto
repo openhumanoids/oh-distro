@@ -14,7 +14,7 @@ message MinimalRobotPlan
   required MinimalRobotStateDiff goal_diff = 3;
 
   required int32 num_grasp_transitions = 10 [(dccl.field) = { min: 0  max: 10 }];
-  repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 }];
+  repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 repeat_index: 10 }];
   
   required int32 left_arm_control_type = 20 [(dccl.field) = { min: 0  max: 4 }];
   required int32 right_arm_control_type = 21 [(dccl.field) = { min: 0  max: 4 }];

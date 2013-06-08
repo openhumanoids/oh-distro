@@ -37,17 +37,19 @@ message PMDOrdersDiff
 
   // set to absolute value, if different
   optional string sheriff_name = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field).max_repeat = 255];  
-  
+
+  required int32 ncmds = 4 [(dccl.field) = { min: 0 max: 100 } ];
+  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field) = { max_repeat: 100 repeat_index: 4 }];
   message PMDSheriffCmdDiff
   {
-    optional string name = 1 [(dccl.field) = { max_length: 255 codec: "presence_bit" } ];
-    optional string nickname = 2 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-    optional string group = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-    optional int32 desired_runid = 4 [(dccl.field) = { min: 0 max: 2048 codec: "presence_bit"} ];
-    optional bool force_quit = 5;
-    optional int32 sheriff_id = 6 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit" } ];
-    optional bool auto_respawn = 7;
+    optional int32 index = 1 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];
+    optional string name = 2 [(dccl.field) = { max_length: 255 codec: "presence_bit" } ];
+    optional string nickname = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+    optional string group = 4 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+    optional int32 desired_runid = 5 [(dccl.field) = { min: 0 max: 127 codec: "presence_bit"} ];
+    optional bool force_quit = 6;
+    optional int32 sheriff_id = 7 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit" } ];
+    optional bool auto_respawn = 8;
   }
 }
 
@@ -60,16 +62,17 @@ message PMDInfoDiff
   optional int64 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
 
   optional int64 utime = 2 [(dccl.field) = { min: 0 max: 604800000000 }];
-  
-  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field).max_repeat = 100];  
 
+
+  required int32 ncmds = 8 [(dccl.field) = { min: 0 max: 100 } ];
+  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field) = { max_repeat: 100 repeat_index: 8 }];
   message PMDDeputyCmdDiff
   {
     optional string name = 1 [(dccl.field) = { max_length: 255  codec: "presence_bit" } ];
     optional string nickname = 2 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
     optional string group = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
     optional int32 pid = 4 [(dccl.field) = { min: 0 max: 32768 codec: "presence_bit" }]; // cat /proc/sys/kernel/pid_max
-    optional int32 actual_runid = 5 [(dccl.field) = { min: 0 max: 2048 codec: "presence_bit"} ];
+    optional int32 actual_runid = 5 [(dccl.field) = { min: 0 max: 127 codec: "presence_bit"} ];
     optional int32 exit_code = 6 [(dccl.field) = { min: 0 max: 255 codec: "presence_bit"} ];;
     optional int32 sheriff_id = 10 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit"} ];
     optional bool auto_respawn = 11;

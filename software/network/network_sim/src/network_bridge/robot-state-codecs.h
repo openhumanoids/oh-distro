@@ -59,10 +59,11 @@ class RobotStateCodec : public CustomChannelCodec
         using namespace goby::common::logger;
 
         for(int i = 0, n = joint_pos.size(); i < n; ++i)
-            dccl_joint_pos->Add(std::numeric_limits<float>::quiet_NaN());
+            dccl_joint_pos->Add(std::numeric_limits<D2>::quiet_NaN());
     
         for(int i = 0, n = joint_pos.size(); i < n; ++i)
         {
+            
             std::map<std::string, int>::const_iterator order =
                 joint_names_to_order_.find(joint_names[i]);
 

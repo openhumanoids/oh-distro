@@ -31,23 +31,55 @@ bool PMDOrdersCodec::make_diff(const bot_procman::orders_t& orders, const bot_pr
         
         const bot_procman::sheriff_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
         
+        bool empty = true;
         if(!has_ref_cmd || cmd.name != ref_cmd->name)
+        {
             diff_cmd->set_name(cmd.name);
-        if(!has_ref_cmd || cmd.nickname != ref_cmd->nickname)
-            diff_cmd->set_nickname(cmd.nickname);
-        if(!has_ref_cmd || cmd.group != ref_cmd->group)
-            diff_cmd->set_group(cmd.group);
-        if(!has_ref_cmd || cmd.desired_runid != ref_cmd->desired_runid)
-            diff_cmd->set_desired_runid(cmd.desired_runid);
+            empty = false;
+        }
         
-        diff_cmd->set_force_quit(cmd.force_quit);
-
+        if(!has_ref_cmd || cmd.nickname != ref_cmd->nickname)
+        {
+            diff_cmd->set_nickname(cmd.nickname);
+            empty = false;
+        }
+        
+        if(!has_ref_cmd || cmd.group != ref_cmd->group)
+        {
+            diff_cmd->set_group(cmd.group);
+            empty = false;
+        }
+        
+        if(!has_ref_cmd || cmd.desired_runid != ref_cmd->desired_runid)
+        {
+            diff_cmd->set_desired_runid(cmd.desired_runid);
+            empty = false;
+        }
+        
+        if(!has_ref_cmd || cmd.force_quit != ref_cmd->force_quit)
+        {
+            diff_cmd->set_force_quit(cmd.force_quit);
+            empty = false;
+        }
+        
         if(!has_ref_cmd || cmd.sheriff_id != ref_cmd->sheriff_id)
+        {
             diff_cmd->set_sheriff_id(cmd.sheriff_id);
-
-        // set this to work around https://bugs.launchpad.net/dccl/+bug/1177415
-        diff_cmd->set_auto_respawn(cmd.auto_respawn);
+            empty = false;            
+        }
+        
+        if(!has_ref_cmd || cmd.auto_respawn != ref_cmd->auto_respawn)
+        {
+            diff_cmd->set_auto_respawn(cmd.auto_respawn);
+            empty = false;
+        }
+        
+        if(!empty)
+            diff_cmd->set_index(i);
+        else
+            diff->mutable_cmds()->RemoveLast();
     }
+    diff->set_ncmds(diff->cmds_size());
             
     glog.is(VERBOSE) && glog << "Made PMD_ORDERS diff: " << diff->ShortDebugString() << std::endl;
     return true;
@@ -59,21 +91,27 @@ bool PMDOrdersCodec::reverse_diff(bot_procman::orders_t* orders, const bot_procm
 
     
     if(((reference.utime / 100000) % 256) != diff.reference_time())
-        {
-            glog.is(WARN) && glog << "Wrong time reference, cannot reassemble diff. " << std::endl;
-            return false;
-        }
-
+    {
+        glog.is(WARN) && glog << "Wrong time reference, cannot reassemble diff. " << std::endl;
+        return false;
+    }
+    
     orders->utime = reference.utime + diff.utime();
     orders->host = reference.host;
     orders->sheriff_name = diff.has_sheriff_name() ? diff.sheriff_name() : reference.sheriff_name;
-    orders->ncmds = diff.cmds_size();
+    orders->ncmds = diff.ncmds() > 0 ? std::max(reference.ncmds, diff.cmds(diff.ncmds()-1).index()) : reference.ncmds;
     orders->nvars = 0;
 
-    for(int i = 0, n = diff.cmds_size(); i < n; ++i)
+    int j = 0;
+    for(int i = 0, n = orders->ncmds; i < n; ++i)
     {
         bot_procman::sheriff_cmd_t cmd;
-        const drc::PMDOrdersDiff::PMDSheriffCmdDiff& diff_cmd = diff.cmds(i);
+
+        if(j < diff.ncmds() && diff.cmds(j).index() < i)
+            ++j;
+        
+        drc::PMDOrdersDiff::PMDSheriffCmdDiff diff_cmd = (j < diff.ncmds() && diff.cmds(j).index() == i) ?
+            diff.cmds(j) : drc::PMDOrdersDiff::PMDSheriffCmdDiff();
         
         bool has_ref_cmd = i < reference.cmds.size();
         
@@ -102,6 +140,7 @@ bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman:
 
     diff->set_utime(info.utime - reference.utime);
 
+    diff->set_ncmds(info.ncmds);
     for(int i = 0, n = info.cmds.size(); i < n; ++i)
     {
         const bot_procman::deputy_cmd_t& cmd = info.cmds[i];
@@ -138,7 +177,7 @@ bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman:
 
 bool PMDInfoCodec::reverse_diff(bot_procman::info_t* info, const bot_procman::info_t& reference, const drc::PMDInfoDiff& diff)
 {
-    glog.is(VERBOSE) && glog << "Received PMD_INFO diff at time: << " << reference.utime + diff.utime() << "  : " << diff.ShortDebugString() << std::endl;
+    glog.is(VERBOSE) && glog << "Received PMD_INFO diff at time: " << reference.utime + diff.utime() << "  : " << diff.ShortDebugString() << std::endl;
 
 
     if(((reference.utime / 100000) % 256) != diff.reference_time())
@@ -152,9 +191,8 @@ bool PMDInfoCodec::reverse_diff(bot_procman::info_t* info, const bot_procman::in
     info->phys_mem_free_bytes = -1;
     info->swap_total_bytes = -1;
     info->swap_free_bytes = -1;
-
     
-    info->ncmds = diff.cmds_size();
+    info->ncmds = diff.ncmds();
     
     for(int i = 0, n = diff.cmds_size(); i < n; ++i)
     {

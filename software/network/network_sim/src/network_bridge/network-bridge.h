@@ -67,7 +67,7 @@ class KMCLApp{
     void utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                    const  drc::utime_t* msg); 
     void reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                   const  drc::utime_t* msg); 
+                   const drc::utime_t* msg); 
     
     BotParam * bot_param;
     
