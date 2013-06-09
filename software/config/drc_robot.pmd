@@ -12,7 +12,7 @@ group "0.development" {
         host = "localhost";
     }
     cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.25";
+        exec = "drc-set-sim-rate 0.2";
         host = "robot";
     }
 }
