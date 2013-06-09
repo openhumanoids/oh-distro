@@ -32,6 +32,7 @@ add_library(surrogate SHARED
   perception/PclSurrogateUtils.cc
 	perception/pcl_circle3d/src/sac_model_circle3d.cpp
         perception/distTransform.cpp
+        perception/PointCloudFitting.cpp
 #  otdf_renderer/renderer_otdf.cpp
 #  otdf_renderer/AffordanceCollectionListener.cpp
 #  otdf_renderer/RobotStateListener.cpp
@@ -57,6 +58,7 @@ pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h Lin
 					display_objects/DisplayInfo.h display_objects/Color.h 
 					display_objects/ObjectPoints.h display_objects/AdjustableVector.h
 					perception/ObjectTracker.h perception/Segmentation.h perception/PclSurrogateUtils.h
+                                        perception/PointCloudFitting.h
 #					otdf_renderer/AffordanceCollectionListener.hpp
 #					otdf_renderer/RobotStateListener.hpp
 #					otdf_renderer/renderer_otdf.hpp
@@ -88,7 +90,7 @@ pods_install_executables(segmentation-viewer)
 
 #########################################################33
 
-add_executable(testfitting perception/testfitting.cpp)
+add_executable(testfitting perception/testfitting.cpp perception/PointCloudFitting.cpp )
 
 #set_target_properties( testfitting PROPERTIES COMPILE_FLAGS "-O0 -DDEBUG -g ")
 
