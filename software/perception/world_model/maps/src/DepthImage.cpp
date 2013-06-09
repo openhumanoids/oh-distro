@@ -256,8 +256,8 @@ setAccumulationMethod(const AccumulationMethod iMethod) {
 
 void DepthImage::
 create(const maps::PointCloud::Ptr& iCloud) {
-  std::fill(mHelper->mData.begin(), mHelper->mData.end(),
-            getInvalidValue(TypeDisparity));
+  float invalidValue = getInvalidValue(TypeDisparity);
+  std::fill(mHelper->mData.begin(), mHelper->mData.end(), invalidValue);
   
   std::vector<std::vector<float> > lists;
   std::vector<float> sums;
@@ -291,7 +291,8 @@ create(const maps::PointCloud::Ptr& iCloud) {
       }
       break;
     case AccumulationMethodFurthest:
-      if ((mHelper->mIsOrthographic && (z > mHelper->mData[idx])) ||
+      if ((mHelper->mData[idx] == invalidValue) ||
+          (mHelper->mIsOrthographic && (z > mHelper->mData[idx])) ||
           (!mHelper->mIsOrthographic && (z < mHelper->mData[idx]))) {
         mHelper->mData[idx] = z;
       }
