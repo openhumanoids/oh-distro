@@ -12,7 +12,7 @@ group "0.development" {
         host = "localhost";
     }
     cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.2";
+        exec = "drc-set-sim-rate 0.25";
         host = "robot";
     }
 }
@@ -488,7 +488,7 @@ script "dev.quals_slope" {
     start group "a.2.walking";
     start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_quals_3"; 
     wait ms 5000;
 }
@@ -499,7 +499,7 @@ script "dev.vrc_walking" {
     start group "a.2.walking";
     start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_vrc_walking"; 
     wait ms 5000;
 }
@@ -529,7 +529,7 @@ script "dev.flat_walking" {
     start group "a.2.walking";
     start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_mit_walking";
 }
 
@@ -538,7 +538,7 @@ script "dev.ingress" {
     start group "a.1.core";
     start group "a.4.ingress";
     start group "b.2.walking";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_vrc_driving";
 }
 
@@ -548,7 +548,7 @@ script "dev.vrc_manip" {
     start group "a.3.manip";
     start group "b.3.manip";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_vrc_manip";
     start cmd "set-sim-rate";
     wait ms 10000;
@@ -561,7 +561,7 @@ script "dev.vrc_manip_mating_test" {
     start group "a.3.manip";
     start group "b.3.manip";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_vrc_task_3_mating";
     start cmd "set-sim-rate";
     wait ms 10000;
@@ -574,7 +574,7 @@ script "dev.quals_manip" {
     start group "a.3.manip";
     start group "b.3.manip";
     stop cmd "BotWalkingPlanner";
-    wait ms 25000;
+    wait ms 5000;
     start cmd "gz_quals_2";
     start cmd "set-sim-rate";
 }
