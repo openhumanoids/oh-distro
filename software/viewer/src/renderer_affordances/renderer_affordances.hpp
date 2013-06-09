@@ -131,6 +131,7 @@ struct OtdfInstanceStruc {
     OtdfInstanceStruc()
     {
      otdf_instance_viz_object_sync = true; 
+      is_melded= false;
     };
     
      ~OtdfInstanceStruc()
@@ -157,7 +158,7 @@ struct OtdfInstanceStruc {
     // otdf instance is in sync with aff server. 
     // Turn off if one needs to visualize state changes before committing to aff server.    
     bool otdf_instance_viz_object_sync;
-
+    bool is_melded; // if melded via a sticky hand, the affordance is tracked via EST_ROBOT_STATE
 
 };   
 

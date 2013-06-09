@@ -19,6 +19,7 @@
 #define PARAM_SEND_POSE_GOAL  "Get Robot Pose"
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
+#define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstBotState"
 #define PARAM_MATE     "Mate"
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
@@ -1327,7 +1328,16 @@ namespace renderer_affordances_gui_utils
   	  // toggle  flag
       hand_it->second.is_melded = !hand_it->second.is_melded; 
     } // end if else
-    
+    else if ((!strcmp(name,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE))) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      if(hand_it->second.is_melded)
+      {
+        obj_it->second.is_melded = !obj_it->second.is_melded; 
+      }
+    }
   
     bot_viewer_request_redraw(self->viewer);
     gtk_widget_destroy(self->dblclk_popup);
@@ -1384,7 +1394,11 @@ namespace renderer_affordances_gui_utils
     
     val  = hand_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
-
+    
+    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+    val  = ((hand_it->second.is_melded)&&(obj_it->second.is_melded));
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE, val, NULL);
     
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);
