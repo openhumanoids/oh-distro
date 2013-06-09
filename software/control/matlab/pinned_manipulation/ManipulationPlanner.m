@@ -19,6 +19,10 @@ classdef ManipulationPlanner < handle
         time_2_index_scale
         restrict_feet
         v_desired
+        
+        head_gaze_axis
+        lhand_gaze_axis
+        rhand_gaze_axis
     end
     
     methods
@@ -27,7 +31,7 @@ classdef ManipulationPlanner < handle
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.num_breaks = 4;
-            obj.v_desired = 0.3; % 30cm/sec seconds, hard coded for now
+            obj.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
             %obj.plan_pub = RobotPlanPublisherWKeyFrames('atlas',joint_names,true,'CANDIDATE_MANIP_PLAN',obj.num_breaks);
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
@@ -35,22 +39,14 @@ classdef ManipulationPlanner < handle
             restrict_feet=true;
         end
         
-        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint)
+        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,goal_type_flags)
             is_keyframe_constraint = true;
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,is_keyframe_constraint,[]);
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags,is_keyframe_constraint,[]);
         end
         
         function generateAndPublishManipulationPlan(obj,varargin)
+            
             switch nargin
-                case 7
-                    is_keyframe_constraint = false;
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint);
                 case 8
                     is_keyframe_constraint = false;
                     x0 = varargin{1};
@@ -59,8 +55,19 @@ classdef ManipulationPlanner < handle
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    q_desired = varargin{7};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint,q_desired);
+                    goal_type_flags =varargin{7}; 
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint);
+                case 9
+                    is_keyframe_constraint = false;
+                    x0 = varargin{1};
+                    rh_ee_goal= varargin{2};
+                    lh_ee_goal= varargin{3};
+                    rf_ee_goal= varargin{4};
+                    lf_ee_goal= varargin{5};
+                    h_ee_goal = varargin{6};
+                    goal_type_flags =varargin{7}; 
+                    q_desired = varargin{8};
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint,q_desired);
                 case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
@@ -143,7 +150,8 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 1000;
-
+            ikoptions.shrinkFactor = 0.6;
+            
             
             % Solve IK 
             timeIndices = unique(Indices);
@@ -286,7 +294,7 @@ classdef ManipulationPlanner < handle
             obj.lhandT = forwardKin(obj.r,kinsol,l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,head_body,[0;0;0],1);
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
-            s = linspace(0,1,9);
+            s = linspace(0,1,4);
             s_breaks = linspace(s(1),s(end),obj.num_breaks);
             obj.s_breaks = s_breaks;
             s = unique([s(:);s_breaks(:)]);
@@ -324,11 +332,16 @@ classdef ManipulationPlanner < handle
                 xtraj(2,ind) = 0.0;
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
             
             %obj.plan_pub.publish(ts,xtraj);
             utime = now() * 24 * 60 * 60;
+            
+             % ignore the first state
+             % ts = ts(2:end);
+             % xtraj=xtraj(:,2:end);
             obj.plan_pub.publish(xtraj,ts,utime);
         end
         
@@ -581,7 +594,7 @@ classdef ManipulationPlanner < handle
                     
                 end
                 
-                ikoptions.Q = 0*diag(cost(1:getNumDOF(obj.r)));
+                ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
                 ikoptions.q_nom = q_guess;
                 %           0,comgoal,...
                 %utorso_body,[0;0;0],utorso_pose0_relaxed,...
@@ -843,15 +856,12 @@ classdef ManipulationPlanner < handle
             rf_ee_goal= [];
             lf_ee_goal= [];
             h_ee_goal = [];
+            goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+            goal_type_flags.rh = 0;
+            goal_type_flags.h  = 0;
+            goal_type_flags.lf = 0;
+            goal_type_flags.rf = 0;
             switch nargin
-                case 8
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    is_keyframe_constraint = varargin{7};
                 case 9
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
@@ -859,8 +869,18 @@ classdef ManipulationPlanner < handle
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    is_keyframe_constraint = varargin{7};
-                    q_desired = varargin{8};
+                    goal_type_flags= varargin{7};
+                    is_keyframe_constraint = varargin{8};
+                case 10
+                    x0 = varargin{1};
+                    rh_ee_goal= varargin{2};
+                    lh_ee_goal= varargin{3};
+                    rf_ee_goal= varargin{4};
+                    lf_ee_goal= varargin{5};
+                    h_ee_goal = varargin{6};
+                    goal_type_flags= varargin{7};
+                    is_keyframe_constraint = varargin{8};
+                    q_desired = varargin{9};
                 case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
@@ -986,6 +1006,37 @@ classdef ManipulationPlanner < handle
                     headT(1:3) = T_world_head(1:3, 4);
                     headT(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
                 end
+                
+                %=========================================================================== 
+                 % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+                if(goal_type_flags.h == 1)
+                 headT(1:3)=nan(3,1);
+                end
+                if(goal_type_flags.lh == 1)
+                 lhandT(1:3)=nan(3,1);
+                end   
+                if(goal_type_flags.rh == 1)
+                 rhandT(1:3)=nan(3,1);
+                end               
+                if(goal_type_flags.h == 2)
+                % headT(1:3) is actually object pos
+                 obj.head_gaze_axis = headT(1:3)-head_pose0(1:3);
+                 obj.head_gaze_axis =obj.head_gaze_axis/norm(obj.head_gaze_axis);
+                 headT=nan(6,1); % Nullify Head Constraint
+                end
+                if(goal_type_flags.lh == 2)
+                 % lhandT(1:3) is actually object pos
+                 obj.lhand_gaze_axis = lhandT(1:3)-lhand_pose0(1:3);
+                 obj.lhand_gaze_axis =obj.lhand_gaze_axis/norm(obj.lhand_gaze_axis);
+                 lhandT=nan(6,1); % Nullify Hand Constraint
+                end   
+                if(goal_type_flags.rh == 2)
+                  % rhandT(1:3) is actually object pos
+                 obj.rhand_gaze_axis = rhandT(1:3)-rhand_pose0(1:3);
+                 obj.rhand_gaze_axis =obj.rhand_gaze_axis/norm(obj.rhand_gaze_axis);
+                 rhandT=nan(6,1); % Nullify Hand Constraint
+                end   
+                %===========================================================================                
                 
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -1409,7 +1460,7 @@ classdef ManipulationPlanner < handle
                     ks = ks.addKinematicConstraint(kc_head_intermediate);
                 end
                 
-            end
+            end %if(is_keyframe_constraint)
             
             % Solve IK at final pose and pass as input to sequence search
             
@@ -1428,6 +1479,7 @@ classdef ManipulationPlanner < handle
                 %============================
                 %       0,comgoal,...
                 q_final_quess= q0;
+            
                 if(isempty(q_desired))
 
                      q_start=q0;
@@ -1465,7 +1517,7 @@ classdef ManipulationPlanner < handle
                 qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
                 
                 
-            end
+            end % end if (~keyframe_constraint)
             
             % PERFORM IKSEQUENCE OPT
             ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
@@ -1522,7 +1574,7 @@ classdef ManipulationPlanner < handle
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
             
-            res = 0.1; % 10cm res
+            res = 0.15; % 20cm res
             s= linspace(0,1,round(s_total/res));
             s = unique([s(:);s_breaks(:)]);
             
@@ -1613,10 +1665,10 @@ classdef ManipulationPlanner < handle
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             xtraj(2,:) = 0*s;
-            if(length(s_breaks)>obj.num_breaks)                
-               keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.num_breaks)));   
+            if(length(s_breaks)>obj.num_breaks)
+                keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.num_breaks)));
             else
-               keyframe_inds =[1:length(s_breaks)];
+                keyframe_inds =[1:length(s_breaks)];
             end
             
             for l = keyframe_inds,
@@ -1631,9 +1683,12 @@ classdef ManipulationPlanner < handle
             obj.time_2_index_scale = (obj.v_desired/s_total);
             %obj.plan_pub.publish(ts,xtraj);
             utime = now() * 24 * 60 * 60;
+             % ignore the first state
+             % ts = ts(2:end);
+             % xtraj=xtraj(:,2:end);
             obj.plan_pub.publish(xtraj,ts,utime);
         end
-   
+        
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -1674,7 +1729,7 @@ classdef ManipulationPlanner < handle
             
         end
         
-  function cost = getCostVector2(obj)
+        function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;
             cost.base_y = 1;

@@ -41,9 +41,26 @@ h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
 h_ee.frame.subscribe('HEAD_GOAL');
 h_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL_CLEAR');
 h_ee_clear.frame.subscribe('HEAD_GOAL_CLEAR');
-% TODO: Incorporate constraints from these channels into the planner.
+
 h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
 h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
+lh_ee_orientation = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_ORIENTATION_GOAL');
+lh_ee_orientation.frame.subscribe('LEFT_PALM_ORIENTATION_GOAL');
+rh_ee_orientation = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_ORIENTATION_GOAL');
+rh_ee_orientation.frame.subscribe('RIGHT_PALM_ORIENTATION_GOAL');
+
+
+h_ee_gaze = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GAZE_GOAL');
+h_ee_gaze.frame.subscribe('HEAD_GAZE_GOAL');
+lh_ee_gaze = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GAZE_GOAL');
+lh_ee_gaze.frame.subscribe('LEFT_PALM_GAZE_GOAL');
+rh_ee_gaze = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GAZE_GOAL');
+rh_ee_gaze.frame.subscribe('RIGHT_PALM_GAZE_GOAL');
+
+lh_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'LEFT_PALM_GOAL_CLEAR');
+lh_ee_clear.frame.subscribe('LEFT_PALM_GOAL_CLEAR');
+rh_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'RIGHT_PALM_GOAL_CLEAR');
+rh_ee_clear.frame.subscribe('RIGHT_PALM_GOAL_CLEAR');
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
@@ -87,18 +104,29 @@ rh_ee_constraint = [];
 lf_ee_constraint = [];
 rf_ee_constraint = [];
 h_ee_constraint = [];
-msg_timeout = 1; % ms
+msg_timeout = 5; % ms
 
 % get initial state and end effector goals
 disp('Listening for goals...');
 send_status(3,0,0,'Manipulation Planner: Listening for goals...');
+
+ee_goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+ee_goal_type_flags.rh = 0;
+ee_goal_type_flags.h  = 0;
+ee_goal_type_flags.lf = 0;
+ee_goal_type_flags.rf = 0;
+ 
 while(1)
+
+  % Pose Goals
+  % ----------------------------------------
   rep = getNextMessage(rh_ee.frame,msg_timeout); 
   if (~isempty(rep))
     disp('Right hand goal received.');
     p=rep(2:4);   rpy=rep(5:7);
 %    q=rep(5:8);rpy = quat2rpy(q);
     rh_ee_goal=[p(:);rpy(:)];
+    ee_goal_type_flags.rh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL  
   end
   
   lep = getNextMessage(lh_ee.frame,msg_timeout);
@@ -107,6 +135,7 @@ while(1)
     p=lep(2:4);   rpy=lep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     lh_ee_goal=[p(:);rpy(:)];
+    ee_goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL  
   end
   
   rfep = getNextMessage(rf_ee.frame,msg_timeout); 
@@ -115,6 +144,7 @@ while(1)
     p=rfep(2:4);   rpy=rfep(5:7);
 %    q=rep(5:8);rpy = quat2rpy(q);
     rf_ee_goal=[p(:);rpy(:)];
+    ee_goal_type_flags.rf = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL 
   end
   
   lfep = getNextMessage(lf_ee.frame,msg_timeout);
@@ -123,6 +153,7 @@ while(1)
     p=lfep(2:4);   rpy=lfep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     lf_ee_goal=[p(:);rpy(:)];
+     ee_goal_type_flags.lf = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
   hep = getNextMessage(h_ee.frame,msg_timeout);
@@ -132,8 +163,69 @@ while(1)
     rpy = hep(5:7);
     %    q=lep(5:8);rpy = quat2rpy(q);
     h_ee_goal = [p(:); rpy(:)];
+     ee_goal_type_flags.h = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
+  % Orientation Goals
+  % ----------------------------------------
+  hep_orient = getNextMessage(h_ee_orientation.frame,msg_timeout);
+  if (~isempty(hep_orient))
+    disp('head goal received.');
+    p = nan(3,1);   
+    rpy = hep_orient(5:7);
+    %    q=lep(5:8);rpy = quat2rpy(q);
+    h_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.h = 1; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end
+  
+  lep_orient = getNextMessage(lh_ee_orientation.frame,msg_timeout);
+  if (~isempty(lep_orient))
+    disp('left hand orientation goal received.');
+    p = nan(3,1);   
+    rpy = lep_orient(5:7);
+    %    q=lep(5:8);rpy = quat2rpy(q);
+    lh_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.lh = 1; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end
+    
+  rep_orient = getNextMessage(rh_ee_orientation.frame,msg_timeout);
+  if (~isempty(rep_orient))
+    disp('right hand orientation goal received.');
+    p = nan(3,1);   
+    rpy = rep_orient(5:7);
+    %    q=lep(5:8);rpy = quat2rpy(q);
+    rh_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.rh = 1; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end  
+  
+  % Gaze Goals
+  % ----------------------------------------
+  hep_gaze = getNextMessage(h_ee_gaze.frame,msg_timeout);
+  if (~isempty(hep_gaze))
+    disp('head gaze goal received.');
+    p = hep_gaze(2:4);  
+    rpy = nan(3,1);
+    h_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.h = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end
+  
+  lep_gaze = getNextMessage(lh_ee_gaze.frame,msg_timeout);
+  if (~isempty(lep_gaze))
+    disp('left hand gaze goal received.');
+    p = lep_gaze(2:4);
+    rpy = nan(3,1);
+    lh_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.lh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end
+    
+  rep_gaze = getNextMessage(rh_ee_gaze.frame,msg_timeout);
+  if (~isempty(rep_gaze))
+    disp('right hand gaze goal received.');
+    p = rep_gaze(2:4);    
+    rpy = nan(3,1); 
+    rh_ee_goal = [p(:); rpy(:)];
+    ee_goal_type_flags.rh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+  end   
   
   [x,ts] = getNextMessage(state_frame,msg_timeout);
   if (~isempty(x))
@@ -165,7 +257,7 @@ while(1)
      else
          disp('Manip planner currently expects one constraint at a time') ; 
      end     
-     manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint);
+     manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,ee_goal_type_flags);
        
   end
   
@@ -177,6 +269,7 @@ while(1)
       lep = [p(:);q(:)];
       rpy = quat2rpy(q);
       lh_ee_goal=[p(:);rpy(:)];
+      ee_goal_type_flags.lh=0;% 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
   [rh_ee_traj,~]= rh_ee_motion_command_listener.getNextMessage(msg_timeout);
@@ -187,6 +280,7 @@ while(1)
       rep = [p(:);q(:)];
       rpy = quat2rpy(q);
       rh_ee_goal=[p(:);rpy(:)];
+      ee_goal_type_flags.rh=0;% 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
   [lf_ee_traj,~]= lf_ee_motion_command_listener.getNextMessage(msg_timeout);
@@ -209,10 +303,12 @@ while(1)
       rf_ee_goal=[p(:);rpy(:)];
   end
   
-  if( (~isempty(rep))|| (~isempty(lep)) ||(~isempty(rfep))||...
-      (~isempty(lfep))||(~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
+  if( (~isempty(rep))|| (~isempty(lep)) ||(~isempty(rfep))||(~isempty(lfep))||...
+      (~isempty(rep_orient))|| (~isempty(lep_orient))||...
+      (~isempty(rep_gaze))|| (~isempty(lep_gaze))||...
+      (~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
       (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
-      manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal); 
+      manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,ee_goal_type_flags); 
   end
 
   [trajoptconstraint,postureconstraint]= trajoptconstraint_listener.getNextMessage(msg_timeout);
@@ -273,7 +369,7 @@ while(1)
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
       manip_planner.generateAndPublishPosturePlan(x0,q_desired);
   end
-  
+
   posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
   if(~isempty(posture_goal))
       disp('Posture goal received .');
@@ -308,7 +404,8 @@ while(1)
           ee_loci(:,i)=[p(:);rpy(:)];
       end
       manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint);
-  end   
+  end    
+  
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
   p = committed_plan_listener.getNextMessage(msg_timeout);
@@ -345,6 +442,18 @@ while(1)
   if (~isempty(p))
       disp ('Clearing head goal pose');
       h_ee_goal = [];
+  end
+  
+  p = getNextMessage (lh_ee_clear.frame, msg_timeout);
+  if (~isempty(p))
+      disp ('Clearing left hand goal pose');
+      lh_ee_goal = [];
+  end
+  
+  p = getNextMessage (rh_ee_clear.frame, msg_timeout);
+  if (~isempty(p))
+      disp ('Clearing right hand  goal pose');
+      rh_ee_goal = [];
   end
 
 end
