@@ -23,7 +23,7 @@ classdef QPController < MIMODrakeSystem
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
     hand_ft_frame = AtlasHandForceTorque();
-    
+
     input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame,hand_ft_frame});
     output_frame = r.getInputFrame();
     obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
@@ -310,7 +310,7 @@ classdef QPController < MIMODrakeSystem
       if any(supp.contact_surfaces~=0)
         error('multi-robot contact not supported by mex version yet');
       end
-      if ~isempty(setdiff(desired_supports,[obj.rfoot_idx,obj.lfoot_idx]))  % todo: optimize this
+      if any(desired_supports ~= obj.rfoot_idx & desired_supports ~= obj.lfoot_idx)
         error('non-foot contacts are not supported by mex version yet (sorry, this is coming very soon)');
       end
     end

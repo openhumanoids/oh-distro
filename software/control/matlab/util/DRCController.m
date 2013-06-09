@@ -265,6 +265,7 @@ classdef DRCController
           % have atlas state coming at high frequency, so we can use a
           % small wait to reduce the # of function calls
           if (~isempty(x))
+%            fprintf(1,'i=%d, tsim=%f, %s\n',i,tsim,obj.controller_input_frames{i}.name);
             if (t_offset == -1)
               if obj.absolute_time
                 t_offset = 0;
@@ -282,6 +283,7 @@ classdef DRCController
               if (obj.controller_input_frames{j}.name_hash==fr.name_hash)
                 input_frame_data{j} = x;
                 input_frame_time(j) = t;
+                markAsRead(obj.controller_input_frames{j}.monitor);
               end
             end
           end

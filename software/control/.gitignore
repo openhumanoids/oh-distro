@@ -4,3 +4,5 @@ reactive_navigation_2d/pod-build
 *.class
 matlab/tmp_w.mat
 matlab/unitTests/logfile.tmp
+tmp_w.mat
+netstat.txt
