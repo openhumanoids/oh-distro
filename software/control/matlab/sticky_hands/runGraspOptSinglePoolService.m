@@ -280,8 +280,9 @@ end %end while
             
             % Modified Rigid Body Manipulator to pass in a function pointer to
             % custom collision detection code.
+            %[p,J] = obj.contactPositions(q);
             [phiC,JC] = obj.contactConstraints(q);
-            [p,J,dJ] = obj.contactPositions(q);
+            
             
             
             % ignore friction constraints for now
@@ -314,8 +315,9 @@ end %end while
         function [f,df] = myobj(q)
             q=q(1:nq);
             %[cm,J] = obj.manip.model.getCOM(q);
+            %[p,J] = obj.contactPositions(q);
             [phiC,JC] = obj.contactConstraints(q);
-            [p,J,dJ] = obj.contactPositions(q);
+            
             mask=[1:size(phiC,1)];
             if(usefingermask)
                 mask =[8 10 12 13];
@@ -440,8 +442,9 @@ end %end while
             z=qz(nq+(1:nz));
             
             [~,C,B,~,dC,~] = manip.manipulatorDynamics(q,zeros(nq,1));
+            [p,J] = manip.contactPositions(q);
             [phiC,JC] = manip.contactConstraints(q,[],@mycollisionDetect);
-            [p,J,dJ] = manip.contactPositions(q);
+            
             
             % ignore friction constraints for now
             %C(X) <= 0, Ceq(X) = 0   (nonlinear constraints)
