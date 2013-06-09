@@ -41,4 +41,8 @@ namespace InertialOdometry {
 		_out->quat = q_state;
 	}
 
+	Eigen::Quaterniond OrientationComputer::q() {
+		return q_state;
+	}
+
 }

@@ -39,6 +39,8 @@ namespace InertialOdometry {
 		void setPositionState(const Eigen::Vector3d &P_set);
 
 		void setVelocityState(const Eigen::Vector3d &V_set);
+
+		Eigen::Matrix3d C_bw();
   };
 
 }

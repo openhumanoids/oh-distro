@@ -43,6 +43,8 @@ namespace InertialOdometry {
 	  Eigen::Vector3d b_g;
 
 	  Eigen::Quaterniond q;
+
+	  unsigned long long uts;
   };
 
   struct CalibrationState

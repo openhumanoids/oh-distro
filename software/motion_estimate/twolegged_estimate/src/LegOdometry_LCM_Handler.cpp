@@ -35,6 +35,9 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
 	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
 	
+	FovisEst.P << NAN,NAN,NAN;
+	FovisEst.V << 0.,0.,0.;
+
 	body_to_head.setIdentity();
 
 	first_get_transforms = true;
@@ -105,6 +108,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	if (_switches->do_estimation) {
 		lcm_->subscribe("TORSO_IMU",&LegOdometry_Handler::torso_imu_handler,this);
 	}
+
+	lcm_->subscribe("FOVIS_REL_ODOMETRY",&LegOdometry_Handler::delta_vo_handler,this);
 
 	// TODO -- the logging of joint commands was added quickly and is therefore added as a define based inclusion. if this is to stay, then proper dynamic size coding must be done
 #ifdef LOG_28_JOINT_COMMANDS
@@ -297,7 +302,8 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 
 InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned long long &uts,
 																	const InertialOdometry::DynamicState &LeggO,
-																	const InertialOdometry::DynamicState &InerO) {
+																	const InertialOdometry::DynamicState &InerO,
+																	const InertialOdometry::DynamicState &Fovis) {
 
 	Eigen::VectorXd dummy(1);
 	dummy << 0;
@@ -307,24 +313,9 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 		df_events++;
 
-		Eigen::Vector3d err_b, errv_b;
+		Eigen::Vector3d err_b, errv_b, errv_b_VO;
 		Eigen::Matrix3d C_wb;
 
-		C_wb = q2C(InerO.q).transpose();
-
-		// Determine the error in the body frame
-		err_b = C_wb * (LeggO.P - InerO.P);
-		errv_b = C_wb * (LeggO.V - InerO.V);
-
-		double db_a[3];
-
-		for (int i=0;i<3;i++) {
-			//db_a[i] = df_feedback_gain * err_b(i) - 0.15 * errv_b(i);
-			db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
-		}
-
-		//inert_odo.imu_compensator.UpdateAccelBiases(b_a);
-		inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
 
 		// Reset inertial position offset here
 
@@ -334,8 +325,38 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		a = 1/(1 + 1000*err_b.norm());
 		b = 1/(1 + 100*errv_b.norm());
 
+
+		C_wb = q2C(InerO.q).transpose();
+
+		// Determine the error in the body frame
+		err_b = C_wb * (LeggO.P - InerO.P);
+		errv_b = C_wb * (LeggO.V - InerO.V);
+		errv_b_VO = C_wb * (Fovis.V - InerO.V);
+
+
+		double db_a[3];
+
+		if (true) {
+			for (int i=0;i<3;i++) {
+				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+			}
+		} else {
+			for (int i=0;i<3;i++) {
+				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b_VO(i);
+			}
+		}
+
+
+		// Update the bias estimates
+		inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+
 		inert_odo.setPositionState(INS_POS_WINDUP_BALANCE*InerO.P + (1.-INS_POS_WINDUP_BALANCE)*LeggO.P);
-		inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*LeggO.V);
+
+		if (true) {
+			inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*LeggO.V);
+	    } else {
+			inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*Fovis.V);
+		}
 
 		// Dynamic wind up reset
 		//inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
@@ -600,7 +621,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		//LeggO.P << 0.,0.,0.;
 		//LeggO.V << 0., 0., 0.;
 
-		datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst);
+		datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst, FovisEst);
 
 		if (_switches->OPTION_D) {
 			// This is for the computations that follow -- not directly leg odometry position
@@ -1057,6 +1078,10 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    	   ss << LeggO.V(i) << ", ";//134-136
    }
 
+   for (int i=0;i<3;i++) {
+	   ss << FovisEst.V(i) << ", ";//137-139
+   }
+
 	ss <<std::endl;
 
 	state_estimate_error_log << ss.str();
@@ -1181,6 +1206,35 @@ void LegOdometry_Handler::pose_head_true_handler(	const lcm::ReceiveBuffer* rbuf
 	
 }
 */
+
+void LegOdometry_Handler::delta_vo_handler(	const lcm::ReceiveBuffer* rbuf,
+												const std::string& channel,
+												const fovis::update_t* _msg) {
+
+
+  std::cout << "LegOdometry_Handler::delta_vo_handler is happening\n";
+
+
+  Eigen::Isometry3d motion_estimate;
+  Eigen::Vector3d vo_dtrans;
+
+  // This is still in the left camera frame and must be rotated to the pelvis frame
+  // we are gokng to do this with the forward kinematics
+  // we need camera to head -- this is going to go into a struct
+  // (all bot transforms calculated here should be moved here for better abstraction in the future)
+
+  vo_dtrans = bottransforms.lcam2pelvis( Eigen::Vector3d(_msg->translation[0],_msg->translation[1],_msg->translation[2]));
+
+  // here we need calculate velocity perceived by fovis
+  // using the time stamps of the messages and just doing the first order difference on the values
+
+
+  // need the delta translation in the world frame
+  FovisEst.V = (inert_odo.C_bw()*vo_dtrans)/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
+
+  FovisEst.uts = _msg->timestamp;
+
+}
 
 void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
 	drc::foot_contact_estimate_t msg_contact_est;
@@ -1362,6 +1416,7 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	map<string, drc::transform_t >::iterator transform_it_ll_l;
 	map<string, drc::transform_t >::iterator transform_it_ll_r;
 
+	// This should be depreciated
 	transform_it_ll_l=cartpos_out.find("l_talus");
 	transform_it_ll_r=cartpos_out.find("r_talus");
 
@@ -1374,6 +1429,15 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	body_to_head.linear() = q2C(b2head_q);
 	body_to_head.translation() << transform_it_ph->second.translation.x, transform_it_ph->second.translation.y, transform_it_ph->second.translation.z;
 
+	// get lcam to pelvis transform
+	map<string, drc::transform_t >::iterator transform_it_lcam;
+	transform_it_lcam=cartpos_out.find("left_camera_optical_frame");
+
+	Eigen::Isometry3d p2lc;
+	p2lc.setIdentity();
+	p2lc.translation() << transform_it_lcam->second.translation.x, transform_it_lcam->second.translation.y, transform_it_lcam->second.translation.z;
+	p2lc.linear() = q2C(Eigen::Quaterniond(transform_it_lcam->second.rotation.w,transform_it_lcam->second.rotation.x,transform_it_lcam->second.rotation.y,transform_it_lcam->second.rotation.z));
+	bottransforms.setLCam2Pelvis(p2lc.inverse());
 
 	//T_body_head = KDL::Frame::Identity();
 	if(transform_it_ll_l!=cartpos_out.end()){// fk cart pos exists
@@ -1400,8 +1464,8 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	left_lleg.translation() << transform_it_ll_l->second.translation.x, transform_it_ll_l->second.translation.y, transform_it_ll_l->second.translation.z;
 	right_lleg.translation() << transform_it_ll_r->second.translation.x, transform_it_ll_r->second.translation.y, transform_it_ll_r->second.translation.z;
 
-	left_lleg.rotate(q_ll_l);
-	right_lleg.rotate(q_ll_r);
+	left_lleg.rotate(q_ll_l);// DO NOT TRUST THIS IN THE DRC CONTEXT
+	right_lleg.rotate(q_ll_r);// DO NOT TRUST THIS IN THE DRC CONTEXT
 
 	left_lleg.linear() = q2C(q_ll_l);
 	right_lleg.linear() = q2C(q_ll_r);

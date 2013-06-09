@@ -27,6 +27,7 @@ public:
 	void updateOrientation(const unsigned long long &uts, const Eigen::Quaterniond &set_to_q);
 	Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &vec_b);
 	void updateOutput(InertialOdomOutput* _out);
+	Eigen::Quaterniond q();
 
 };
 

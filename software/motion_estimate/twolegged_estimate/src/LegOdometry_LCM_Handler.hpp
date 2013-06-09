@@ -41,6 +41,8 @@
 #include "TwoLegOdometry.h"
 #include "Odometry.hpp"
 
+#include <lcmtypes/fovis_bot2.hpp>
+
 // So that we can draw pretty pictures and figure out what the transforms are doing
 #include "visualization/viewer.hpp"
 #include "visualization/pointcloud.hpp"
@@ -50,10 +52,7 @@
 
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
-//#include <lcmtypes/bot_core_pose_t.h>
-
-
-//#include "OrientationConversions.hpp"
+#include "BotTransforms.hpp"
 
 #include "Filter.hpp"
 #include "HeavyLowPassFilter.hpp"
@@ -67,7 +66,7 @@
 
 #define LOG_28_JOINT_COMMANDS
 #define NUMBER_JOINTS             28
-#define PI						 3.14159265358979323
+#define PI						   3.14159265358979323
 
 #define LOG_LEG_TRANSFORMS
 
@@ -101,10 +100,12 @@ private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
 	InertialOdometry::Odometry inert_odo;
 
-	InertialOdometry::DynamicState InerOdoEst;
+	InertialOdometry::DynamicState InerOdoEst, FovisEst;
 	InertialOdometry::DynamicState LeggO;
 
-	double df_feedback_gain;
+	BotTransforms bottransforms;
+
+	double df_feedback_gain; // not presently in use
 	double df_pos_feedback_gain;
 	unsigned long df_events;
 
@@ -222,6 +223,7 @@ private:
 	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);	
 	void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
 	void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
+	void delta_vo_handler(	const lcm::ReceiveBuffer* rbuf,	const std::string& channel,	const fovis::update_t * msg);
 	
 	void getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]);
 	void joints_to_map(const double joints[], const std::string joint_name[], const int &num_joints, std::map<std::string, double> *_jointpos_in);
@@ -276,7 +278,7 @@ public:
 	~LegOdometry_Handler();
 	
 
-	InertialOdometry::DynamicState data_fusion( const unsigned long long &uts, const InertialOdometry::DynamicState &LO, const InertialOdometry::DynamicState &IO);
+	InertialOdometry::DynamicState data_fusion( const unsigned long long &uts, const InertialOdometry::DynamicState &LO, const InertialOdometry::DynamicState &IO, const InertialOdometry::DynamicState &Fovis);
 	Eigen::Vector3d getInerAccBiases();
 
 	void finish() { _finish = true; }

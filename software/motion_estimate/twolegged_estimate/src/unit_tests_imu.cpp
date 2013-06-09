@@ -49,26 +49,32 @@ int main() {
 
 	  InertialOdometry::DynamicState LegO;
 	  InertialOdometry::DynamicState IneO;
+	  InertialOdometry::DynamicState VO;
 
 	  LegO.P << 0., 0., 0.;
 	  IneO.P << 0., 0., 0.;
+	  VO.P << 0., 0., 0.;
+	  VO.V << 0., 0., 0.;
+
+
+
 	  IneO.q.setIdentity();
 
-	  loh.data_fusion(0,LegO, IneO);
+	  loh.data_fusion(0,LegO, IneO,VO);
 
 	  LegO.P << 0.2, 0., 0.;
 
-	  loh.data_fusion(0,LegO, IneO);
+	  loh.data_fusion(0,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
-	  loh.data_fusion(1E6,LegO, IneO);
+	  loh.data_fusion(1E6,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
-	  loh.data_fusion(2E6,LegO, IneO);
+	  loh.data_fusion(2E6,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
-	  loh.data_fusion(3E6,LegO, IneO);
+	  loh.data_fusion(3E6,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
-	  loh.data_fusion(4E6,LegO, IneO);
+	  loh.data_fusion(4E6,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
-	  loh.data_fusion(5E6,LegO, IneO);
+	  loh.data_fusion(5E6,LegO, IneO,VO);
 	  cout << "DATA_FUSION UNIT TEST bias result: " << loh.getInerAccBiases().transpose() << endl;
 
 	return 0;

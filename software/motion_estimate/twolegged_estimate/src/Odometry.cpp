@@ -49,13 +49,13 @@ namespace InertialOdometry {
   }
   
   // This should be moved to the QuaternionLib library
-  Eigen::Matrix<double, 3, 3> Odometry::Expmap(const Eigen::Vector3d &w)
+  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
   {
-	  Eigen::Matrix<double, 3, 3> R;
-	  Eigen::Matrix<double, 3, 3> temp;
+	  Eigen::Matrix3d R;
+	  Eigen::Matrix3d temp;
 	  
 #ifdef USE_TRIGNOMETRIC_EXMAP
-	  R.setIdentity(3,3);
+	  R.setIdentity();
 	  double mag = w.norm();
 	  Eigen::Vector3d direction = 1/mag * w;
 	  skew(direction,temp);
@@ -84,6 +84,10 @@ namespace InertialOdometry {
 		avp.setVelStates(V_set);
 
 		return;
+	}
+
+	Eigen::Matrix3d Odometry::C_bw() {
+		return q2C(orc.q()).transpose(); //Not sure about the transpose -- must test
 	}
 
 }

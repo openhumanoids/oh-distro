@@ -254,6 +254,7 @@ subplot(spa,spb,2)
 plot(t,imu_V)
 hold on
 plot(t,leg_V,'--','linewidth',2)
+plot(t,fovis_V,'+','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
