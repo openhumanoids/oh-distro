@@ -233,9 +233,10 @@ classdef QPController < MIMODrakeSystem
       sizecheck(ctrl_data.R,[2 2]);
       assert(isnumeric(ctrl_data.C));
       
-      
       assert(isnumeric(ctrl_data.S));
+      sizecheck(ctrl_data.S,[4 4]);
       assert(isnumeric(ctrl_data.x0));
+      sizecheck(ctrl_data.x0,[4 1]);
       assert(isnumeric(ctrl_data.u0));
       if ctrl_data.is_time_varying
         assert(isa(ctrl_data.s1,'Trajectory'));
@@ -247,7 +248,9 @@ classdef QPController < MIMODrakeSystem
 %        in constructors.. but doesn't get used.  would be better to
 %        enforce it.
       end       
+      sizecheck(ctrl_data.s1,[4 1]);
       assert(isnumeric(ctrl_data.s2));
+      sizecheck(ctrl_data.s2,1);
       assert(isnumeric(ctrl_data.mu));
     end
   end
