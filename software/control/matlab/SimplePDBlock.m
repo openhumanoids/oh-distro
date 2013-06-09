@@ -43,8 +43,17 @@ classdef SimplePDBlock < MIMODrakeSystem
       else
         obj.Kd = 19.0*eye(obj.nq);
  %       obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
-      end        
-        
+      end
+      
+%       % TESTING: disable ankle gains
+%       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+%       lax_idx = find(~cellfun(@isempty,strfind(state_names,'lax')));
+%       uay_idx = find(~cellfun(@isempty,strfind(state_names,'uay')));
+%       obj.Kp(uay_idx,uay_idx) = 0*eye(2);
+%       obj.Kp(lax_idx,lax_idx) = 0*eye(2);
+%       obj.Kd(uay_idx,uay_idx) = 0*eye(2);
+%       obj.Kd(lax_idx,lax_idx) = 0*eye(2);
+      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -65,7 +74,7 @@ classdef SimplePDBlock < MIMODrakeSystem
       qd = x(obj.nq+1:end);
       
 			err_q = [q_des(1:3)-q(1:3);angleDiff(q(4:end),q_des(4:end))];
-      y = obj.Kp*err_q - obj.Kd*qd;
+      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
     end
   end
   

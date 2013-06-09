@@ -30,11 +30,9 @@ bracing_controller = BracingController('bracing',r,options);
 controllers = struct(standing_controller.name,standing_controller, ...
                       walking_controller.name,walking_controller,...     
                       bracing_controller.name,bracing_controller);
-                    
+
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 
 state_machine.run(options.backup_mode);
 
 end
-
-

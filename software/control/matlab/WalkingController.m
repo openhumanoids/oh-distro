@@ -41,7 +41,7 @@ classdef WalkingController < DRCController
       if(~isfield(options,'debug')) options.debug = false; end
 
       qp = QPController(r,ctrl_data,options);
-
+      
       % cascade walking PD controller 
       pd = WalkingPDBlock(r,ctrl_data);
       ins(1).system = 1;
@@ -49,9 +49,7 @@ classdef WalkingController < DRCController
       ins(2).system = 1;
       ins(2).input = 2;
       ins(3).system = 2;
-      ins(3).input = 2;
-%      ins(4).system = 2;
-%      ins(4).input = 3;
+      ins(3).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -65,8 +63,6 @@ classdef WalkingController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
-%      ins(4).system = 2;
-%      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
@@ -84,8 +80,6 @@ classdef WalkingController < DRCController
       ins(2).input = 1;
       ins(3).system = 2;
       ins(3).input = 3;
-%      ins(4).system = 2;
-%      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection.from_output = 1;

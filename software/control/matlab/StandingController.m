@@ -54,9 +54,7 @@ classdef StandingController < DRCController
       ins(2).system = 1;
       ins(2).input = 2;
       ins(3).system = 2;
-      ins(3).input = 2;
-      ins(4).system = 2;
-      ins(4).input = 3;
+      ins(3).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -70,8 +68,6 @@ classdef StandingController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
-      ins(4).system = 2;
-      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
@@ -115,8 +111,8 @@ classdef StandingController < DRCController
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
 
       % should make this a more specific channel name
-%      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
-       obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for standing/reaching tasks
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)

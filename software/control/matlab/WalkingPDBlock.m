@@ -7,9 +7,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
     dt;
     controller_data; % pointer to shared data handle containing qtraj
     ikoptions;
-    rfoot_body_idx;
-    lfoot_body_idx;
     robot;
+    max_nrm_err;
+    contact_est_monitor;
+    l_ank;
+    r_ank;
   end
   
   methods
@@ -59,6 +61,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
       else
         obj.dt = 0.005;
       end
+     
+%       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+%       obj.l_ank = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')) | ~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
+%       obj.r_ank = find(~cellfun(@isempty,strfind(state_names,'r_leg_lax')) | ~cellfun(@isempty,strfind(state_names,'r_leg_uay')));
       
       if isfield(options,'q_nom')
         typecheck(options.q_nom,'double');
@@ -88,6 +94,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       cost.back_ubx = 100;
 
       cost = double(cost);
+      
+%      arm_idx = find(~cellfun(@isempty,strfind(state_names,'arm')));
+%      cost(arm_idx) = 0.1*ones(length(arm_idx),1);
       obj.ikoptions = struct();
       obj.ikoptions.Q = diag(cost(1:obj.nq));
       obj.ikoptions.q_nom = q_nom;
@@ -99,9 +108,13 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
-      obj.rfoot_body_idx = r.findLinkInd('r_foot');
-      obj.lfoot_body_idx = r.findLinkInd('l_foot');
       obj.robot = r;
+      obj.max_nrm_err = 1.5;
+      
+%       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
+%       lc = lcm.lcm.LCM.getSingleton();
+%       lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
+      
       
     end
    
@@ -112,6 +125,29 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj.ikoptions.q_nom = varargin{1};
       cdata = obj.controller_data.getData();
+      
+%       Kp = obj.Kp;
+%       Kd = obj.Kd;
+%       
+%       % get foot contact state over LCM
+%       contact_data = obj.contact_est_monitor.getMessage();
+%       if isempty(contact_data)
+%         lfoot_contact_state = 0;
+%         rfoot_contact_state = 0;
+%       else
+%         msg = drc.foot_contact_estimate_t(contact_data);
+%         lfoot_contact_state = msg.left_contact > 0.5;
+%         rfoot_contact_state = msg.right_contact > 0.5;
+%       end
+%       
+%       if lfoot_contact_state
+%         Kp(obj.l_ank,obj.l_ank) = 0*eye(2);
+%         Kd(obj.l_ank,obj.l_ank) = 0*eye(2);
+%       end
+%       if rfoot_contact_state
+%         Kp(obj.r_ank,obj.r_ank) = 0*eye(2);
+%         Kd(obj.r_ank,obj.r_ank) = 0*eye(2);
+%       end
       
       approx_args = {};
       for j = 1:length(cdata.link_constraints)
@@ -138,10 +174,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       err_q = q_des - q;
       nrmerr = norm(err_q,1);
-      if nrmerr > 2
-        err_q = err_q * (2/nrmerr);
+      if nrmerr > obj.max_nrm_err
+        err_q = obj.max_nrm_err * err_q / nrmerr;
       end
-      y = obj.Kp*err_q - obj.Kd*qd;
+      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
     end
   end
   
