@@ -70,12 +70,17 @@ java: $(BUILD_PREFIX)/share/java/drc_control.jar
 $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	cd src; \
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
-	cd ..; \
+	cd ..;
 
 %.class : %.java
-	javac $< -cp $(CLASSPATH); \
+	javac $< -cp $(CLASSPATH);
+
+src/RobotPlanConstraintCheckedPublisher.class : src/RobotPlanPublisher.class
 
 drake : $(BUILD_PREFIX)/config/drc_control_setup.m
+	@echo "\n-------------------------------------------"; \
+	echo "-- drake"; \
+	echo "-------------------------------------------"; \
 	$(MAKE) -C drake all || exit 2;
 
 $(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
