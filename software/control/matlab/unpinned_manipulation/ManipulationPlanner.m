@@ -19,6 +19,10 @@ classdef ManipulationPlanner < handle
         time_2_index_scale
         restrict_feet
         v_desired
+        
+        head_gaze_axis
+        lhand_gaze_axis
+        rhand_gaze_axis
     end
     
     methods
@@ -35,23 +39,14 @@ classdef ManipulationPlanner < handle
             restrict_feet=true;
         end
         
-        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint)
+        function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,goal_type_flags)
             is_keyframe_constraint = true;
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,is_keyframe_constraint,[]);
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags,is_keyframe_constraint,[]);
         end
         
         function generateAndPublishManipulationPlan(obj,varargin)
             
             switch nargin
-                case 7
-                    is_keyframe_constraint = false;
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint);
                 case 8
                     is_keyframe_constraint = false;
                     x0 = varargin{1};
@@ -60,8 +55,19 @@ classdef ManipulationPlanner < handle
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    q_desired = varargin{7};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,is_keyframe_constraint,q_desired);
+                    goal_type_flags =varargin{7}; 
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint);
+                case 9
+                    is_keyframe_constraint = false;
+                    x0 = varargin{1};
+                    rh_ee_goal= varargin{2};
+                    lh_ee_goal= varargin{3};
+                    rf_ee_goal= varargin{4};
+                    lf_ee_goal= varargin{5};
+                    h_ee_goal = varargin{6};
+                    goal_type_flags =varargin{7}; 
+                    q_desired = varargin{8};
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint,q_desired);
                 case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
@@ -75,6 +81,7 @@ classdef ManipulationPlanner < handle
                     
                     % Point wise IK, much faster, linear complexity.
                     is_manip_map =false;
+                    fprintf('EELoci function being called');
                     runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,is_manip_map);
                 otherwise
                     error('Incorrect usage of generateAndPublishManipulationPlan in Mnaip Planner. Undefined number of vargin.')
@@ -331,9 +338,6 @@ classdef ManipulationPlanner < handle
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
             
-            
-
-            
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
             
@@ -411,7 +415,7 @@ classdef ManipulationPlanner < handle
             T_palm_hand_l = inv_HT(T_hand_palm_l);
             T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
             T_palm_hand_r = inv_HT(T_hand_palm_r);
-            T_palm_grasp = HT([0.05;0;0],0,0,0); % Notional grasp point
+            T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
             T_grasp_palm = inv_HT(T_palm_grasp);
             
             ind = getActuatedJoints(obj.r);
@@ -421,7 +425,26 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 100;
+
+						%%% Honkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
+						coords = obj.r.getStateFrame();
+						[joint_min,joint_max] = obj.r.getJointLimits();
+						joint_min = Point(coords,[joint_min;0*joint_min]);
+						joint_min.back_mby = -.2;
+						joint_min = double(joint_min);
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
+           
+            %joint_max
             
+            %Setting a max joint limit on the back also 
+            
+            joint_max = Point(coords,[joint_max;0*joint_max]);
+						joint_max.back_mby = 0.2;
+						joint_max = double(joint_max);
+						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+            
+						%% Might be worth preventing leaning forward too much also 
+
             if(~is_manip_map)
                 obj.rfootT = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],1);
                 obj.lfootT = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],1);
@@ -506,10 +529,10 @@ classdef ManipulationPlanner < handle
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-                        T_world_grasp = T_world_palm_l * T_palm_grasp;
+                        T_world_grasp_l = T_world_palm_l * T_palm_grasp;
                         lgraspT = zeros(6,1);
-                        lgraspT(1:3) = T_world_grasp(1:3,4);
-                        lgraspT(4:6) =rotmat2rpy(T_world_grasp(1:3,1:3));
+                        lgraspT(1:3) = T_world_grasp_l(1:3,4);
+                        lgraspT(4:6) =rotmat2rpy(T_world_grasp_l(1:3,1:3));
                         l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];
                         lhand_const.min = l_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         lhand_const.max = l_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
@@ -537,6 +560,11 @@ classdef ManipulationPlanner < handle
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
+                        T_world_grasp_r = T_world_palm_r * T_palm_grasp;
+                        rgraspT = zeros(6,1);
+                        rgraspT(1:3) = T_world_grasp_r(1:3,4);
+                        rgraspT(4:6) =rotmat2rpy(T_world_grasp_r(1:3,1:3));
+                        r_grasp_pose = [rgraspT(1:3); rpy2quat(rgraspT(4:6))];
                         rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
                         if(is_manip_map)
@@ -546,7 +574,8 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('r_hand')];
                             plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                             plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
-                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
+                            %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
+                            plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_grasp_pose];
                         else
                             if(i==length(timeIndices))
                                 obj.rhandT = r_ee_goal;
@@ -674,7 +703,7 @@ classdef ManipulationPlanner < handle
                         T_world_m_grasp = T_world_m_hand * T_hand_palm_l * T_palm_grasp;
                         map_pose = [T_world_m_grasp(1:3,4); rpy2quat(rotmat2rpy(T_world_m_hand(1:3,1:3)))];
                         desired_pose = plan_Indices(i).dof_pose(:,j);
-                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2))
+                        pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
                         
                         if (numel(ee_temp) < j)
                             ee_temp(j).map_pose = [];
@@ -683,17 +712,21 @@ classdef ManipulationPlanner < handle
                             ee_temp(j).ee_name = ee_name;
                         end;
                         
-                        e_threshold = 0.075;
+                        if (strcmp('l_foot', ee_name) || strcmp('r_foot', ee_name))
+                            pos_dist_threshold = 100;
+                        else
+                            pos_dist_threshold = 0.025;
+                        end;
                         ee_temp(j).map_pose = [ee_temp(j).map_pose map_pose];
-                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < e_threshold)];
+                        ee_temp(j).dof_reached = [ee_temp(j).dof_reached (pos_dist < pos_dist_threshold)];
                         ee_temp(j).pos_dist = [ee_temp(j).pos_dist pos_dist];
                         
                         % Is the resulting pose sufficiently close to the
                         % desired pose?
-                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < e_threshold)];
+                        plan_Indices(i).dof_reached = [plan_Indices(i).dof_reached (pos_dist < pos_dist_threshold)];
                     end;
                 end;
-                
+                        
                 min_dof_idx = 1;
                 max_dof_idx = length(ee_temp(1).dof_reached);
                 for i=1:numel(ee_temp)
@@ -703,9 +736,9 @@ classdef ManipulationPlanner < handle
                         elseif (strcmp('r_hand',ee_temp(i).ee_name))
                             [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_hand_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2));
                         elseif (strcmp('l_foot',ee_temp(i).ee_name))
-                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(l_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2));
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(l_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2)); 
                         elseif (strcmp('r_foot',ee_temp(i).ee_name))
-                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2));
+                            [temp,jcur] = min(sum((ee_temp(i).map_pose(1:3,:)-repmat(r_foot_pose0(1:3),1,size(ee_temp(i).map_pose,2))).^2)); 
                         end;
                         
                         fprintf (1, 'Current index is %d whose distance is %.4f\n', jcur, ee_temp(i).pos_dist(jcur));
@@ -731,9 +764,13 @@ classdef ManipulationPlanner < handle
                         end;
                     end;
                 end;
-                
+
                 fprintf (1, 'Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                stat = sprintf('Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                send_status(3,0,0,stat);
+                
                 timeIndices = timeIndices(min_dof_idx:max_dof_idx);
+                
                 plan_Indices = plan_Indices(min_dof_idx:max_dof_idx);
                 q = q(:,min_dof_idx:max_dof_idx);
                 
@@ -754,11 +791,11 @@ classdef ManipulationPlanner < handle
                 
                 s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
                 
-                timeIndices
+                %timeIndices
                 
                 fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
-                
-                s
+                    
+                %s
                 
                 obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
                 
@@ -780,7 +817,7 @@ classdef ManipulationPlanner < handle
                 s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-                s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+                s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head); 
                 
                 ts = s.*(s_total/obj.v_desired); % plan timesteps
                 obj.time_2_index_scale = (obj.v_desired/s_total);
@@ -865,7 +902,7 @@ classdef ManipulationPlanner < handle
                 
             end
         end
-        
+
         function runOptimization(obj,varargin)
             is_locii = false;
             is_keyframe_constraint = false;
@@ -875,15 +912,12 @@ classdef ManipulationPlanner < handle
             rf_ee_goal= [];
             lf_ee_goal= [];
             h_ee_goal = [];
+            goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+            goal_type_flags.rh = 0;
+            goal_type_flags.h  = 0;
+            goal_type_flags.lf = 0;
+            goal_type_flags.rf = 0;
             switch nargin
-                case 8
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    is_keyframe_constraint = varargin{7};
                 case 9
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
@@ -891,8 +925,18 @@ classdef ManipulationPlanner < handle
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    is_keyframe_constraint = varargin{7};
-                    q_desired = varargin{8};
+                    goal_type_flags= varargin{7};
+                    is_keyframe_constraint = varargin{8};
+                case 10
+                    x0 = varargin{1};
+                    rh_ee_goal= varargin{2};
+                    lh_ee_goal= varargin{3};
+                    rf_ee_goal= varargin{4};
+                    lf_ee_goal= varargin{5};
+                    h_ee_goal = varargin{6};
+                    goal_type_flags= varargin{7};
+                    is_keyframe_constraint = varargin{8};
+                    q_desired = varargin{9};
                 case 6
                     x0 = varargin{1};
                     ee_names= varargin{2};
@@ -956,6 +1000,7 @@ classdef ManipulationPlanner < handle
             %======================================================================================================
             
             if(~is_keyframe_constraint)
+                
                 
                 obj.restrict_feet=true;
                 
@@ -1025,6 +1070,37 @@ classdef ManipulationPlanner < handle
                     headT(1:3) = T_world_head(1:3, 4);
                     headT(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
                 end
+                
+                %=========================================================================== 
+                 % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+                if(goal_type_flags.h == 1)
+                 headT(1:3)=nan(3,1);
+                end
+                if(goal_type_flags.lh == 1)
+                 lhandT(1:3)=nan(3,1);
+                end   
+                if(goal_type_flags.rh == 1)
+                 rhandT(1:3)=nan(3,1);
+                end               
+                if(goal_type_flags.h == 2)
+                % headT(1:3) is actually object pos
+                 obj.head_gaze_axis = headT(1:3)-head_pose0(1:3);
+                 obj.head_gaze_axis =obj.head_gaze_axis/norm(obj.head_gaze_axis);
+                 headT=nan(6,1); % Nullify Head Constraint
+                end
+                if(goal_type_flags.lh == 2)
+                 % lhandT(1:3) is actually object pos
+                 obj.lhand_gaze_axis = lhandT(1:3)-lhand_pose0(1:3);
+                 obj.lhand_gaze_axis =obj.lhand_gaze_axis/norm(obj.lhand_gaze_axis);
+                 lhandT=nan(6,1); % Nullify Hand Constraint
+                end   
+                if(goal_type_flags.rh == 2)
+                  % rhandT(1:3) is actually object pos
+                 obj.rhand_gaze_axis = rhandT(1:3)-rhand_pose0(1:3);
+                 obj.rhand_gaze_axis =obj.rhand_gaze_axis/norm(obj.rhand_gaze_axis);
+                 rhandT=nan(6,1); % Nullify Hand Constraint
+                end   
+                %===========================================================================                
                 
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -1201,6 +1277,24 @@ classdef ManipulationPlanner < handle
                 ikoptions.MajorIterationsLimit = 500;
             end
             
+            %%%%%%%%%%%%%%%%%%%% Setting the Torso max and min 
+            coords = obj.r.getStateFrame();
+            [joint_min,joint_max] = obj.r.getJointLimits();
+            joint_min = Point(coords,[joint_min;0*joint_min]);
+            joint_min.back_mby = -.2;
+            joint_min = double(joint_min);
+            ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
+           
+            %joint_max
+            
+            %Setting a max joint limit on the back also 
+            
+            joint_max = Point(coords,[joint_max;0*joint_max]);
+            joint_max.back_mby = 0.2;
+            joint_max = double(joint_max);
+            ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
             comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
             pelvis_body = findLink(obj.r,'pelvis'); % dont move pelvis
@@ -1218,8 +1312,8 @@ classdef ManipulationPlanner < handle
             
             % kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
             % ks = ks.addKinematicConstraint(kc_com);
-            
-            if(isempty(q_desired))
+        
+			if(isempty(q_desired))
                 r_hand_poseT_relaxed.min=r_hand_poseT-1e-3;
                 r_hand_poseT_relaxed.max=r_hand_poseT+1e-3;
                 l_hand_poseT_relaxed.min=l_hand_poseT-1e-3;
@@ -1559,6 +1653,8 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=true;
+            ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
+            ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
                 ikseq_options.MajorIterationsLimit = 100;
                 ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
@@ -1724,6 +1820,8 @@ classdef ManipulationPlanner < handle
                 xtraj(1,ind) = 1.0;
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            
+            
             
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
