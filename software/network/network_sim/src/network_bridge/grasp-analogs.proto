@@ -10,9 +10,6 @@ message MinimalGrasp
   
   required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
 
-  optional string object_name = 2 [(dccl.field) = { max_length: 255 codec: "presence_bit" }];
-  optional string geometry_name = 3 [(dccl.field) = { max_length: 255 codec: "presence_bit" }];
-
   required int32 unique_id = 4 [(dccl.field) = { min: 0 max: 0x7FFFFFFE }];
 
   required int32 grasp_type = 5 [(dccl.field) = {min:0 max: 5 codec: "presence_bit"}];

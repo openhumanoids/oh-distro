@@ -20,11 +20,6 @@ bool GraspCodec::encode(const std::vector<unsigned char>& lcm_data, std::vector<
     drc::MinimalGrasp dccl_grasp;
 
     dccl_grasp.set_utime(present_grasp.utime);
-
-    if(!present_grasp.object_name.empty())
-        dccl_grasp.set_object_name(present_grasp.object_name);
-    if(!present_grasp.geometry_name.empty())
-        dccl_grasp.set_geometry_name(present_grasp.geometry_name);
         
     dccl_grasp.set_unique_id(present_grasp.unique_id);
 
@@ -98,8 +93,8 @@ bool GraspCodec::decode(std::vector<unsigned char>* lcm_data, const std::vector<
     present_grasp.utime = dccl_grasp.utime();
     present_grasp.robot_name = "atlas";
 
-    present_grasp.object_name = dccl_grasp.object_name();
-    present_grasp.geometry_name = dccl_grasp.geometry_name();
+    present_grasp.object_name = "";
+    present_grasp.geometry_name = "";
     
 
     present_grasp.unique_id = dccl_grasp.unique_id();
