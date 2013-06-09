@@ -62,7 +62,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
 }
 
 void Pass::open_usage_log(){
-  string pathname = string(home + "/drc/software/config/");
+  string pathname = string(home + "/drc/data/");
 
   std::string data_usage_file_name = pathname + "vrc-score-" + to_iso_string(second_clock::universal_time()) + ".csv";
   data_usage_log_.open(data_usage_file_name.c_str()  );
