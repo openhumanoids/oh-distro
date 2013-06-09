@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/tutorial_atlas_control</url>
   <depend package="osrf_msgs"/>
+  <depend package="atlas_msgs"/>
 
 </package>
 

@@ -14,6 +14,7 @@ class Data(object):
     def __init__(self):
         self.joints=[] # joint names
         self.traj_len = 0
+        self.dt =[]
 
 def csv_parse(fname):
   d = Data()
@@ -24,6 +25,8 @@ def csv_parse(fname):
     for row in greader:
       if(init==False):
         init=True
+        for k in range(3,len(row) ):
+          d.dt.append( float(row[k]) )
       else:
         j=Joint()
         j.name = row[0]
