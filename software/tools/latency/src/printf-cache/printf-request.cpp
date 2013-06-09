@@ -119,7 +119,7 @@ void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf,
     if(msg->host == "robot"){
       if (!got_robot){
 	for(size_t i=0; i <msg->cmds.size() ; i++){
-	  std::cout << "robot " << msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
+	  std::cout << "robot " <<msg->cmds[i].group << "\t" << msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
 	}	
 	got_robot =true;
       }
@@ -128,7 +128,7 @@ void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf,
     if(msg->host == "extra"){
       if (!got_extra){
 	for(size_t i=0; i <msg->cmds.size() ; i++){
-	  std::cout << "extra "<< msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
+	  std::cout << "extra " <<msg->cmds[i].group << "\t"<< msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
 	}	
 	got_extra=true;
       }
