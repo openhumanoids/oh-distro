@@ -157,6 +157,43 @@ template<typename WireType, typename FieldType = WireType>
     };
 
 
+class DRCPresenceBitEnumFieldCodec
+: public DRCPresenceBitNumericFieldCodec<goby::int32, const google::protobuf::EnumValueDescriptor*>
+{
+  public:
+    goby::int32 pre_encode(const google::protobuf::EnumValueDescriptor* const& field_value)
+    {
+        return field_value->index();
+    }
+    
+    const google::protobuf::EnumValueDescriptor* post_decode(const goby::int32& wire_value)
+    {
+        const google::protobuf::EnumDescriptor* e = this_field()->enum_type();
+        
+        if(wire_value < e->value_count())
+        {
+            const google::protobuf::EnumValueDescriptor* return_value = e->value(wire_value);
+            return return_value;
+        }
+        else
+            throw(goby::acomms::DCCLNullValueException());
+        
+    }
+    
+    
+  private:
+    void validate() { }
+    
+    double max()
+    {
+        const google::protobuf::EnumDescriptor* e = this_field()->enum_type();
+        return e->value_count()-1;
+    }
+    double min()
+    { return 0; }
+};
+
+
 class CustomChannelCodec
 {
   public:
@@ -173,6 +210,7 @@ class CustomChannelCodec
             goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::uint64> >("presence_bit");
             goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<float> >("presence_bit");
             goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<double> >("presence_bit");
+            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitEnumFieldCodec>("presence_bit");
                 
             loaded_codecs = true;
         }

@@ -119,6 +119,12 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     const std::string& grasp_channel = "COMMITTED_GRASP";
     custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
     custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
+
+
+    const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
+    custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
+
     
     dccl_->validate<drc::ShaperHeader>();
     
@@ -193,6 +199,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         plan.set_right_arm_control_type(4);
         plan.set_right_leg_control_type(0);
 
+        plan.set_aff_num_states(0);
+        
 //        std::cout << plan.DebugString() << std::endl;
         
         std::string bytes;

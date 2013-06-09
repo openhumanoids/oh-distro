@@ -17,10 +17,13 @@ message MinimalRobotPlan
   repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 repeat_index: 10 }];
   
   required int32 left_arm_control_type = 20 [(dccl.field) = { min: 0  max: 4 }];
-  required int32 right_arm_control_type = 21 [(dccl.field) = { min: 0  max: 4 }];
+  optional int32 right_arm_control_type = 21 [(dccl.field) = { min: 0  max: 4 codec: "presence_bit" }];
   required int32 left_leg_control_type = 22 [(dccl.field) = { min: 0  max: 4 }];
-  required int32 right_leg_control_type = 23 [(dccl.field) = { min: 0  max: 4 }];
+  optional int32 right_leg_control_type = 23 [(dccl.field) = { min: 0  max: 4 codec: "presence_bit" }];
 
+  required int32 aff_num_states = 30 [(dccl.field) = { min: 0 max: 30 }];  
+  repeated AffordanceIndex aff_index = 31 [(dccl.field) = { max_repeat: 30 repeat_index: 30 }];
+  optional int32 aff_uid = 32 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit" }];
 }
 
 message GraspTransition
@@ -34,4 +37,33 @@ message GraspTransition
   required bool power_grasp = 6;
     
   repeated float joint_position = 7 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
+}
+
+message AffordanceIndex
+{
+  // utime: omit
+  // aff_type: "car"
+  // aff_uid: the same value repeated (in parent)
+
+  enum EEName 
+  {
+    l_hand = 1;
+    r_hand = 2;
+    l_foot = 3;
+    r_foot = 4;
+  }
+
+  repeated EEName ee_name = 1 [(dccl.field) = {max_repeat: 10  codec : "presence_bit"}];
+  
+  enum DOFName
+  {
+    brake_joint = 1;
+    gas_joint = 2;
+    hand_brake_joint = 3;
+    steering_joint = 4;
+  }
+
+  repeated DOFName dof_name = 2 [(dccl.field) = {max_repeat: 10  codec : "presence_bit"}];
+  
+  repeated double dof_value = 3 [(dccl.field) = { min: -10 max: 10 precision: 3 max_repeat: 10 codec : "presence_bit"}];
 }
