@@ -635,13 +635,13 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
                      self->ground_truth_status->gas_pedal);
             sprintf (line3, "   Brake: %.2f [%.2f]\n", (self->controller_values->brake_value) / 100.0,
                      self->ground_truth_status->brake_pedal);
-            sprintf (line4, "Steer(d): %3.0f [%3.0f]\n", self->controller_values->hand_steer,
+            sprintf (line4, "Steer(d): %3.0f [%3.0f]\n", (double) self->controller_values->hand_steer,
                      bot_to_degrees(self->ground_truth_status->hand_wheel));
         }
         else {
             sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value/ 100.0);
             sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value/100.0);
-            sprintf (line4, "Steer(d): %3.0f\n", self->controller_values->hand_steer);
+            sprintf (line4, "Steer(d): %3.0f\n", (double) self->controller_values->hand_steer);
         }
     }
     else {
