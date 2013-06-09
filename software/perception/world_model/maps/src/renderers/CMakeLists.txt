@@ -27,7 +27,9 @@ pods_install_pkg_config_file(renderer_data_control
 #####################################################################
 add_library(renderer_maps SHARED 
   MapsRenderer.cpp
-  MeshRenderer.cpp)
+  MeshRenderer.cpp
+  InteractiveBox.cpp
+)
   
 set_target_properties(renderer_maps PROPERTIES SOVERSION 1)
 

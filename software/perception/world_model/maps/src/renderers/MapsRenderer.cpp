@@ -16,6 +16,7 @@
 #include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/occ_map/pixel_map_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
+#include <lcmtypes/drc/map_request_bbox_t.hpp>
 
 #include <bot_vis/viewer.h>
 
@@ -28,6 +29,7 @@
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
 #include "MeshRenderer.hpp"
+#include "InteractiveBox.hpp"
 
 namespace maps {
 
@@ -117,6 +119,11 @@ protected:
   float mBaseValue;
   bool mBoxValid;
   Frustum mFrustum;
+  Gtk::ToggleButton* mAdjustRequestBoxToggle;
+  Gtk::ToggleButton* mShowRequestBoxToggle;
+  bool mShowRequestBox;
+  bool mRequestBoxInit;
+  InteractiveBox mInteractiveBox;
 
   // command parameters
   int mMacroCommand;
@@ -192,6 +199,10 @@ public:
     }
   }
 
+  void onAdjustBoxToggleChanged() {
+    getBotEventHandler()->picking = mAdjustRequestBoxToggle->get_active();
+  }
+
   void setupWidgets() {
     Gtk::Container* container = getGtkContainer();
     Gtk::Notebook* notebook = Gtk::manage(new Gtk::Notebook());
@@ -237,8 +248,45 @@ public:
       notebook->append_page(*mViewListBox, "Views");
     }
 
-    // request controls box
+    // simple request tab
     {
+      Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
+      notebook->append_page(*requestBox, "Request");
+
+      Gdk::Color color;
+      color.set_rgb_p(0.8,1.0,0.8);
+      Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+      Gtk::Button* button = Gtk::manage(new Gtk::Button("Create Box"));
+      button->signal_clicked().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onCreateBoxButton));
+      box->pack_start(*button, false, false);
+      mAdjustRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
+      mAdjustRequestBoxToggle->set_label("Adjust Box");
+      mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
+      mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
+      mAdjustRequestBoxToggle->signal_toggled().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onAdjustBoxToggleChanged));
+      box->pack_start(*mAdjustRequestBoxToggle, false, false);
+      mShowRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
+      mShowRequestBoxToggle->set_label("Show Box");
+      mShowRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
+      mShowRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
+      mShowRequestBox = false;
+      bind(mShowRequestBoxToggle, "Show Request Box", mShowRequestBox);
+      box->pack_start(*mShowRequestBoxToggle, false, false);
+
+      requestBox->pack_start(*box, false, false);
+      mRequestRawScan = false;
+      addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
+      button = Gtk::manage(new Gtk::Button("Send Request"));
+      button->signal_clicked().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onSendBoxRequestButton));
+      requestBox->pack_start(*button, false, false);
+      mRequestBoxInit = false;
+    }
+
+    // request controls box
+    if (false) {
       Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
       notebook->append_page(*requestBox, "Request");
 
@@ -283,7 +331,7 @@ public:
     }
 
     // macro command box
-    {
+    if (false) {
       Gtk::VBox* commandBox = Gtk::manage(new Gtk::VBox());
       notebook->append_page(*commandBox, "Command");
 
@@ -430,12 +478,47 @@ public:
     }
   }
 
+  void onCreateBoxButton() {
+    Eigen::Isometry3f headToLocal;
+    Eigen::Vector3f position(0,0,0);
+    if (mBotWrapper->getTransform("head", "local", headToLocal)) {
+      position = headToLocal.translation();
+      position[0] += 0.5;
+    }
+    mInteractiveBox.createBox(position, 0.5);
+    mRequestBoxInit = true;
+    requestDraw();
+  }
+
+  void onSendBoxRequestButton() {
+    drc::map_request_bbox_t msg;
+    Eigen::Vector3f position, scale;
+    Eigen::Quaternionf orientation;
+    mInteractiveBox.getBoxParameters(position, scale, orientation);
+    msg.center[0] = (int16_t)(position[0]*128 + 0.5f);
+    msg.center[1] = (int16_t)(position[1]*128 + 0.5f);
+    msg.center[2] = (int16_t)(position[2]*128 + 0.5f);
+    msg.size[0] = (uint8_t)(scale[0]*64 + 0.5f);
+    msg.size[1] = (uint8_t)(scale[1]*64 + 0.5f);
+    msg.size[2] = (uint8_t)(scale[2]*64 + 0.5f);
+    Eigen::Vector3f rpy = orientation.matrix().eulerAngles(2,1,0);
+    for (int i = 0; i < 3; ++i) msg.rpy[i] = rpy[i]*1800/acos(-1);
+    msg.flags = 0;
+    if (mRequestRawScan) msg.flags |= drc::map_request_bbox_t::RAW_MASK;
+    getLcm()->publish("MAP_REQUEST_BBOX", &msg);
+    mAdjustRequestBoxToggle->set_active(false);
+  }
+
   void onClearViewsButton() {
     mViewClient.clearAll();
   }
 
   double pickQuery(const double iRayStart[3], const double iRayDir[3]) {
     if (mInputMode == InputModeCamera) {
+      getBotEventHandler()->picking = 0;
+      return -1;
+    }
+    else if (!mAdjustRequestBoxToggle->get_active()) {
       getBotEventHandler()->picking = 0;
       return -1;
     }
@@ -446,6 +529,13 @@ public:
 
   bool mousePress(const GdkEventButton* iEvent,
                   const double iRayStart[3], const double iRayDir[3]) {
+    if (mAdjustRequestBoxToggle->get_active()) {
+      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+      Eigen::Vector2f clickPt(iEvent->x, iEvent->y);
+      return mInteractiveBox.mousePress(clickPt, iEvent->button, origin, dir);
+    }
+
     if (mInputMode == InputModeRect) {
       if (iEvent->button == 1) {
         mDragging = true;
@@ -473,6 +563,13 @@ public:
 
   bool mouseRelease(const GdkEventButton* iEvent,
                     const double iRayStart[3], const double iRayDir[3]) {
+    if (mAdjustRequestBoxToggle->get_active()) {
+      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+      Eigen::Vector2f curPt(iEvent->x, iEvent->y);
+      return mInteractiveBox.mouseRelease(curPt, iEvent->button, origin, dir);
+    }
+
     if (mInputMode == InputModeRect) {
       if (iEvent->button == 1) {
         mDragging = false;
@@ -533,7 +630,20 @@ public:
   bool mouseMotion(const GdkEventMotion* iEvent,
                    const double iRayStart[3], const double iRayDir[3]) {
     bool button1 = (iEvent->state & GDK_BUTTON1_MASK) != 0;
+    bool button2 = (iEvent->state & GDK_BUTTON2_MASK) != 0;
     bool button3 = (iEvent->state & GDK_BUTTON3_MASK) != 0;
+
+    if (mAdjustRequestBoxToggle->get_active()) {
+      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+      Eigen::Vector2f curPt(iEvent->x, iEvent->y);
+      int buttonMask = (button3 << 2) | (button2 << 1) | button1;
+      bool handled = mInteractiveBox.mouseMotion(curPt, buttonMask,
+                                                 origin, dir);
+      if (handled) requestDraw();
+      return handled;
+    }
+
     if (mInputMode == InputModeRect) {
       if (button1 && mDragging) {
         mDragPoint2 = Eigen::Vector2f(iEvent->x, iEvent->y);
@@ -580,6 +690,12 @@ public:
     std::vector<ViewClient::ViewPtr> views = mViewClient.getAllViews();
     for (size_t v = 0; v < views.size(); ++v) {
       drawView(views[v]);
+    }
+
+    if (mRequestBoxInit) {
+      getViewInfo();
+      mInteractiveBox.setBoxValid(mShowRequestBox);
+      mInteractiveBox.drawBox();
     }
 
     // draw user selection for view box
@@ -726,11 +842,11 @@ public:
   Eigen::Vector4f computePlane(const double p1x, const double p1y,
                                const double p2x, const double p2y) {
     double x,y,z;
-    gluUnProject(p1x,p1y,0,mModelViewGl,mProjectionGl,mViewportGl,&x,&y,&z);
+    gluUnProject(p1x,p1y,0,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
     Eigen::Vector3f p1(x,y,z);
-    gluUnProject(p1x,p1y,1,mModelViewGl,mProjectionGl,mViewportGl,&x,&y,&z);
+    gluUnProject(p1x,p1y,1,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
     Eigen::Vector3f p2(x,y,z);
-    gluUnProject(p2x,p2y,1,mModelViewGl,mProjectionGl,mViewportGl,&x,&y,&z);
+    gluUnProject(p2x,p2y,1,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
     Eigen::Vector3f p3(x,y,z);
     Eigen::Vector4f plane;
     Eigen::Vector3f d1(p2-p1), d2(p3-p1);
@@ -793,6 +909,10 @@ public:
       case drc::data_request_t::STEREO_MAP:
         data->mLabel = "Stereo Map";
         data->mColor = Eigen::Vector3f(0,0.5,0.5);
+        break;
+      case drc::data_request_t::DENSE_CLOUD_BOX:
+        data->mLabel = "Dense Cloud Box";
+        data->mColor = Eigen::Vector3f(1,0,1);
         break;
       case 1000:
         data->mLabel = "Heightmap Controller";
