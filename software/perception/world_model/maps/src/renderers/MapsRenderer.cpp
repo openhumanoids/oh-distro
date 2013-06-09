@@ -487,6 +487,7 @@ public:
     }
     mInteractiveBox.createBox(position, 0.5);
     mRequestBoxInit = true;
+    mShowRequestBoxToggle->set_active(true);
     requestDraw();
   }
 
