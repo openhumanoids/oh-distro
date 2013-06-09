@@ -53,7 +53,7 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
         if (msg.affs[i].otdf_type.equals(m_otdf_type) && (m_uid == -1 || m_uid == msg.affs[i].uid)) {
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
 
-          fdata.val = new double[(m_num_floating_joints+m_num_states)];
+          fdata.val = new double[2*(m_num_floating_joints+m_num_states)];
           fdata.t = (double)msg.utime / 1000000.0;
 
           fdata.val[0] = msg.affs[i].origin_xyz[0];
@@ -62,6 +62,12 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
           fdata.val[3] = msg.affs[i].origin_rpy[0];
           fdata.val[4] = msg.affs[i].origin_rpy[1];
           fdata.val[5] = msg.affs[i].origin_rpy[2];
+          fdata.val[m_num_states+m_num_floating_joints+0] = msg.affs[i].origin_xyz[0];
+          fdata.val[m_num_states+m_num_floating_joints+1] = msg.affs[i].origin_xyz[1];
+          fdata.val[m_num_states+m_num_floating_joints+2] = msg.affs[i].origin_xyz[2];
+          fdata.val[m_num_states+m_num_floating_joints+3] = msg.affs[i].origin_rpy[0];
+          fdata.val[m_num_states+m_num_floating_joints+4] = msg.affs[i].origin_rpy[1];
+          fdata.val[m_num_states+m_num_floating_joints+5] = msg.affs[i].origin_rpy[2];
 
           Integer k;
           int index;
