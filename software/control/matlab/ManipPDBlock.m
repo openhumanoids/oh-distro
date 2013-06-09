@@ -116,8 +116,8 @@ classdef ManipPDBlock < MIMODrakeSystem
       
       pause_data = getNextMessage(obj.pause_mon,0);
       if(~isempty(pause_data))
-        pause_msg = drc.COMMITTED_PLAN_PAUSE(pause_data);
-        if(pause_msg.control == drc.COMMITTED_PLAN_PAUSE.PAUSE)
+        pause_msg = drc.plan_control_t(pause_data);
+        if(pause_msg.control == drc.plan_control_t.PAUSE)
           obj.controller_data.setField('qtraj',q_des);
         end
       end
