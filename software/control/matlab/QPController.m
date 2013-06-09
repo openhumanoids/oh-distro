@@ -8,12 +8,7 @@ classdef QPController < MIMODrakeSystem
     typecheck(r,'Atlas');
     typecheck(controller_data,'SharedDataHandle');
 
-    ctrl_data = getData(controller_data);
-    if ~isfield(ctrl_data,'B') || ~isfield(ctrl_data,'Qy') || ...
-      ~isfield(ctrl_data,'C') || ~isfield(ctrl_data,'D') || ...
-      ~isfield(ctrl_data,'S')
-      error('QPController: Missing fields in controller_data');
-    end
+    QPController.check_ctrl_data(controller_data)
     
     if nargin>2
       typecheck(options,'struct');
@@ -216,16 +211,61 @@ classdef QPController < MIMODrakeSystem
       obj.num_body_contacts(i) = length(getBodyContacts(r,i));
     end
   end
+
+  end
+  
+  methods (Static)
+    function check_ctrl_data(ctrl_data)
+      if ~isfield(ctrl_data.data,'D')
+        % assumed  ZMP system
+        hddot = 0; % could use estimated comddot here
+        ctrl_data.setField('D',-0.89/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
+        % or current height above height map;
+      end
+
+      ctrl_data = ctrl_data.data;
+      
+      % i've made the following assumptions to make things fast.  we can soften
+      % them later as desired.  - Russ
+      assert(isnumeric(ctrl_data.Qy));
+      sizecheck(ctrl_data.Qy,[2 2]);
+      assert(isnumeric(ctrl_data.R));
+      sizecheck(ctrl_data.R,[2 2]);
+      assert(isnumeric(ctrl_data.C));
+      
+      
+      assert(isnumeric(ctrl_data.S));
+      assert(isnumeric(ctrl_data.x0));
+      assert(isnumeric(ctrl_data.u0));
+      if ctrl_data.is_time_varying
+        assert(isa(ctrl_data.s1,'Trajectory'));
+        assert(isa(ctrl_data.y0,'Trajectory'));
+      else
+        assert(isnumeric(ctrl_data.s1));
+        assert(isnumeric(ctrl_data.y0));
+%        sizecheck(ctrl_data.supports,1);  % this gets initialized to zero
+%        in constructors.. but doesn't get used.  would be better to
+%        enforce it.
+      end       
+      assert(isnumeric(ctrl_data.s2));
+      assert(isnumeric(ctrl_data.mu));
+    end
+  end
+  
+  methods
     
   function y=mimoOutput(obj,t,~,varargin)
 %    out_tic = tic;
-    ctrl_data = getData(obj.controller_data);
+    ctrl_data = obj.controller_data.data;
+    
+%    QPController.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
   
     q_ddot_des = varargin{1};
     hand_ft = varargin{2};
     % IMPORTANT NOTE: I'm assuming the atlas state is always the first
     % frame in a multi coordinate frame 
     x = varargin{3};
+    
     r = obj.robot;
     nq = getNumDOF(r); 
     q = x(1:nq); 
@@ -277,80 +317,30 @@ classdef QPController < MIMODrakeSystem
     A_ls = ctrl_data.A; % always TI
     B_ls = ctrl_data.B; % always TI
     Qy = ctrl_data.Qy;
-    if isfield(ctrl_data,'R')
-      R_ls = ctrl_data.R;
-    else
-      R_ls = zeros(2);
-    end
-    if isa(ctrl_data.C,'double')
-      C_ls = ctrl_data.C;
-    else
-      C_ls = eval(ctrl_data.C,t);
-    end
-    if ~isempty(ctrl_data.D) && isa(ctrl_data.D,'double')
-      D_ls = ctrl_data.D;
-    else
-      % assumed  ZMP system
-      hddot = 0; % could use estimated comddot here
-      D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
-      % or current height above height map
-    end
-    if isa(ctrl_data.S,'double')
-      S = ctrl_data.S;
-    else
-      S = eval(ctrl_data.S,t);
-    end
-    if isfield(ctrl_data,'s1') && ~isempty(ctrl_data.s1)
-      if isa(ctrl_data.s1,'double')
-        s1 = ctrl_data.s1;
-      else
-        s1 = eval(ctrl_data.s1,t);
-      end
-    else
-      s1= zeros(4,1);
-    end
-    if isfield(ctrl_data,'s2') && ~isempty(ctrl_data.s2)
-      if isa(ctrl_data.s2,'double')
-        s2 = ctrl_data.s2;
-      else
-        s2=0;
-        %         s2=ctrl_data.s2.eval(t); % this is expensive, do we really need it?
-      end
-    else
-      s2=0;
-    end
-    if isa(ctrl_data.x0,'double')
-      x0 = ctrl_data.x0;
-    else
-      x0 = eval(ctrl_data.x0,t);
-    end
-    if isa(ctrl_data.u0,'double')
-      u0 = ctrl_data.u0;
-    else
-      u0 = eval(ctrl_data.u0,t);
-    end
-    if isa(ctrl_data.y0,'double')
-      y0 = ctrl_data.y0;
-    else
+    R_ls = ctrl_data.R;
+    C_ls = ctrl_data.C;
+    D_ls = ctrl_data.D;
+    S = ctrl_data.S;
+    s2 = ctrl_data.s2;
+    x0 = ctrl_data.x0;
+    u0 = ctrl_data.u0;
+    if (ctrl_data.is_time_varying)
+      s1 = eval(ctrl_data.s1,t);
       y0 = eval(ctrl_data.y0,t);
-    end
-    if isfield(ctrl_data,'mu')
-      mu = ctrl_data.mu;
+      
+      %----------------------------------------------------------------------
+      % extract current supports
+      supp_idx = find(ctrl_data.support_times<=t,1,'last');
+      supp = ctrl_data.supports(supp_idx);
     else
-      mu = 1.0;
+      s1 = ctrl_data.s1;
+      y0 = ctrl_data.y0;
+      
+      supp = ctrl_data.supports;
     end
-    
+    mu = ctrl_data.mu;
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
-
-    %----------------------------------------------------------------------
-    % use support trajectory to get desired foot contact state
-    supp_idx = find(ctrl_data.support_times<=t,1,'last');
-    if isa(ctrl_data.supports,'cell')
-      supp = ctrl_data.supports{supp_idx};
-    else
-      supp = ctrl_data.supports(supp_idx);
-    end
     desired_supports = supp.bodies;
 
     

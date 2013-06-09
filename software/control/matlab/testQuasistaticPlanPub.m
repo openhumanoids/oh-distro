@@ -68,9 +68,10 @@ lhand_traj = PPTrajectory(spline([0 T],[lhand_pos lhand_goal]));
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    q(:,i) = approximateIK(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
+    [q(:,i),info] = approximateIK(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
       lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...
       lhand_body,[0;0;0],lhand_traj.eval(t),options);
+    if info, error('approximate IK reported an error'); end
   else
     q = q0;
   end

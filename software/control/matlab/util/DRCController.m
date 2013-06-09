@@ -360,6 +360,9 @@ classdef DRCController
             end
 
             if num_x>0
+              % note: for simulink models, this will call output again,
+              % unless I pass in my new additional flag.  try that when we
+              % get there.
               x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
             end
           end

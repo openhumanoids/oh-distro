@@ -48,10 +48,9 @@ for i=1:length(ts)
         approx_args(end+1:end+3) = {link_constraints(j).link_ndx, link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
       end
     end
-    try
-      q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
-    catch err
-      disp(err)
+    
+    [q(:,i),info] = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
+    if info
       full_IK_calls = full_IK_calls + 1
       q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
     end

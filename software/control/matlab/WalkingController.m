@@ -8,8 +8,9 @@ classdef WalkingController < DRCController
         'A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],...
         'C',[eye(2),zeros(2)],...
-        'D',[],...
         'Qy',eye(2),...
+        'R',zeros(2),...
+        'is_time_varying',false,...
         'S',[],...
         's1',[],...
         's2',[],...
@@ -124,10 +125,14 @@ classdef WalkingController < DRCController
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('s1',matdata.s1);
 
+      istv = ~(isnumeric(matdata.s1) || isa(matdata.s1,'ConstantTrajectory')); 
+      obj.controller_data.setField('is_time_varying',istv);
+      
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
+      if ~isnumeric(matdata.s2) matdata.s2 = 0; end   % we're not using it currently
       obj.controller_data.setField('s2',matdata.s2);
       
       support_times = msg_data.support_times;
@@ -137,6 +142,10 @@ classdef WalkingController < DRCController
       fwrite(fid,typecast(msg_data.supports,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
+      if iscell(matdata.supports) 
+        warning('somebody sent me a cell array of supports.  don''t do that anymore!');
+        matdata.supports = [matdata.supports{:}];
+      end
       obj.controller_data.setField('supports',matdata.supports);
 
       fid = fopen('tmp_w.mat','w');
@@ -150,7 +159,12 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('x0',[eval(matdata.zmptraj,matdata.zmptraj.tspan(2));0;0]);
-      obj.controller_data.setField('y0',matdata.zmptraj);
+      if ~istv
+        assert(isa(matdata.zmptraj,'ConstantTrajectory'));
+        obj.controller_data.setField('y0',eval(matdata.zmptraj,matdata.zmptraj.tspan(2)));
+      else
+        obj.controller_data.setField('y0',matdata.zmptraj);
+      end
 
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.link_constraints,'uint8'),'uint8');
@@ -175,6 +189,8 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('trans_drift', [0;0;0]);
 
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
+      
+      QPController.check_ctrl_data(obj.controller_data);  
     end
   end  
 end

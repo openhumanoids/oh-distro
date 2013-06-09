@@ -6,7 +6,7 @@ classdef SharedDataHandle < handle
 %    now mex_model_ptr continues to act like it did before, but
 %    will internally be accessing the shared data structure. 
 
-  properties (SetAccess=private,GetAccess=private)
+  properties (SetAccess=private,GetAccess=public)
     data
     deleteFcn=[];
   end
@@ -41,7 +41,7 @@ classdef SharedDataHandle < handle
       obj.data.(fieldname)=val;
     end
     
-    function d=getField(obj,fieldname)
+    function d=getField(obj,fieldname)  % recommend using obj.data.fieldname instead
 %      typecheck(obj.data,'struct');
       d = obj.data.(fieldname);
     end
