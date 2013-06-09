@@ -471,6 +471,7 @@ public:
                       affordances[i]->aff->_uid) == selectedIds.end()) continue;
         drc::affordance_plus_t aff;
         affordances[i]->toMsg(&aff);
+        aff.aff.aff_store_control = drc::affordance_t::UPDATE;
         msg.affs_plus.push_back(aff);
       }
       msg.naffs = msg.affs_plus.size();
