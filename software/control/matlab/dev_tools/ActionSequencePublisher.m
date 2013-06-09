@@ -22,7 +22,7 @@ classdef ActionSequencePublisher
       obj.lc = lcm.lcm.LCM.getSingleton();
 			obj.channel = channel;
       if isempty(kincons)
-        obj.robot = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_minimal_contact_point_hands.urdf',struct('floating',true));
+        obj.robot = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf',struct('floating',true));
       else
         obj.robot = kincons(1).robot;
       end
