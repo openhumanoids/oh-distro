@@ -12,6 +12,7 @@ gfe
 perception
 motion_estimate
 #action_authoring
+#authoring
 viewer
 segmentation
 control
