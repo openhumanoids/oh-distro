@@ -25,7 +25,7 @@ namespace surrogate_gui
 
 	//======geometric primitive
 	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "3. Geometric Primitive"
-	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE, CIRCLE_3D, CAR, STEERING_CYL};
+	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE, CIRCLE_3D, CAR, STEERING_CYL, STANDPIPE};
 
   #define PARAM_NAME_AFFORDANCE_SELECT "2. Select Affordance"
 

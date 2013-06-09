@@ -95,6 +95,17 @@ namespace surrogate_gui
                               Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
                               std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
 
+
+    
+    static void fitPointCloudFPC(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                          boost::shared_ptr<std::set<int> >  subcloudIndices,
+                          const FittingParams& fp,
+                          bool isInitialSet, Eigen::Vector3f initialXYZ, 
+                          Eigen::Vector3f initialYPR,
+                          pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
+                          Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
+                          std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
+ 
     struct FpfhParams{
       float gridSize;
       float normalRadius, fpfhRadius;

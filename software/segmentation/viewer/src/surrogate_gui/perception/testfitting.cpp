@@ -21,8 +21,7 @@ int main(int argc, char*argv[]){
   rc = reader.read(argv[2], *cloud);
   ASSERT_PI(rc==0);
   
-  vector<float> res_range;
-  res_range.push_back(0.01);
+  vector<float> res_range = {0.01};
   Affine3f pose = pointCloutFit(modelcloud,cloud,res_range);
 
   /*

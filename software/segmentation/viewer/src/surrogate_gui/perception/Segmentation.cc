@@ -6,6 +6,8 @@
  */
 
 #include "Segmentation.h"
+#include "PointCloudFitting.h"
+
 #include "PclSurrogateUtils.h"
 
 #include <pcl/ModelCoefficients.h>
@@ -932,6 +934,28 @@ namespace surrogate_gui
     cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
 
   }
+
+
+  void Segmentation::fitPointCloudFPC(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                      boost::shared_ptr<set<int> >  subcloudIndices,
+                                      const FittingParams& fp,
+                                      bool isInitialSet, Vector3f initialXYZ, 
+                                      Vector3f initialYPR,
+                                      pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
+                                      Vector3f& xyz, Vector3f& ypr,
+                                      vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
+  {
+    // PointCloudFitting
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
+    vector<float> res_range = {0.01};
+    Affine3f pose = PointCloudFitting::pointCloutFit(modelcloud,cloud,res_range);
+
+    xyz = pose.translation();
+    ypr = rot2ypr(pose.rotation());
+
+    
+  }
+
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr Segmentation::subSampleCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float voxel_grid_size)
 {

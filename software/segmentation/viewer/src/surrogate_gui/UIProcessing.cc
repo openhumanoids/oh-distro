@@ -95,6 +95,7 @@ namespace surrogate_gui
 					      "Plane", PLANE,
 					      "Car", CAR,
                 "Steering Cylinder", STEERING_CYL,
+                                              "Standpipe", STANDPIPE,
 					      "Line", LINE,
 					      "Torus", TORUS,
 					      "Cube", CUBE,
@@ -1024,6 +1025,7 @@ namespace surrogate_gui
       if(prim==PLANE     && otdf=="plane")    match=true;
       if(prim==CAR       && otdf=="car")      match=true;
       if(prim==STEERING_CYL && otdf=="steering_cyl") match=true;
+      if(prim==STANDPIPE && otdf=="standpipe") match=true;
       if(prim==LINE      && otdf=="TODO")     match=true;
       if(prim==TORUS     && otdf=="TODO")     match=true;
       if(prim==CUBE      && otdf=="TODO")     match=true;
@@ -1049,8 +1051,9 @@ namespace surrogate_gui
 	  case SPHERE:   handleAffordancePubButtonSphere(fp); break;
 	  case CIRCLE_3D:handleAffordancePubButtonCircle3d(fp,CIRCLE_3D); break;
 	  case PLANE:    handleAffordancePubButtonPlane(fp); break;
-	  case CAR:      handleAffordancePubButtonPointCloud(fp); break;
+	  case CAR:      handleAffordancePubButtonPointCloud(fp,"car"); break;
 	  case STEERING_CYL: handleAffordancePubButtonCircle3d(fp,STEERING_CYL); break;
+	  case STANDPIPE: handleAffordancePubButtonPointCloud(fp,"standpipe"); break;
 	  case LINE:     handleAffordancePubButtonLine(fp); break;
 	  case TORUS:    handleAffordancePubButtonTorus(fp); break;
 	  case CUBE:     handleAffordancePubButtonCube(fp); break;
@@ -1442,7 +1445,7 @@ namespace surrogate_gui
 	  handleAffordancePubButtonCylinder(fp); //placeholder TODO
 	}
     
- 	void UIProcessing::handleAffordancePubButtonPointCloud(const Segmentation::FittingParams& fp)
+  void UIProcessing::handleAffordancePubButtonPointCloud(const Segmentation::FittingParams& fp, const std::string& type)
 	{
 
     // retrieve initial pos from selected object if available
@@ -1459,7 +1462,27 @@ namespace surrogate_gui
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  affordanceMsg.aff.map_id = 0; 	  
-	  affordanceMsg.aff.otdf_type = "car";
+
+          string modelfile;
+          bool usefitPointCloudFPC;
+          if(type == "car"){
+            affordanceMsg.aff.otdf_type = "car";
+            modelfile = "car.pcd";
+            usefitPointCloudFPC = false;
+            convert3(Vector3f(0,0,1),       affordanceMsg.aff.bounding_xyz); // center of car above ground 
+            convert3(Vector3f(0,0,0),       affordanceMsg.aff.bounding_rpy);
+            convert3(Vector3f(3.0,1.7,2.2), affordanceMsg.aff.bounding_lwh); // TODO make more general, not just car
+          }else if(type == "standpipe"){
+            affordanceMsg.aff.otdf_type = "standpipe::mate::firehose";
+            modelfile = "standpipe.pcd";
+            usefitPointCloudFPC = true;
+            convert3(Vector3f(0,0,0),       affordanceMsg.aff.bounding_xyz); 
+            convert3(Vector3f(0,0,0),       affordanceMsg.aff.bounding_rpy);
+            convert3(Vector3f(0.5,0.5,0.5), affordanceMsg.aff.bounding_lwh); // TODO
+          }else{
+            cout << "UIProcessing::handleAffordancePubButtonPointCloud error: " << type << " not recognized\n";
+            exit(-1);
+          }
 
     // read in pcd
     /* TODO 
@@ -1469,7 +1492,6 @@ namespace surrogate_gui
     */
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::PCDReader reader;
-    string modelfile = "car.pcd";
     string file = getenv("HOME") + string("/drc/software/models/otdf/") + modelfile;
     reader.read(file.c_str(), *modelcloud);
     // Transform point cloud to match model
@@ -1490,11 +1512,20 @@ namespace surrogate_gui
 
 
     if(true) {
-      Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
-                                currObj->indices, fp, 
-                                isInitialSet, initialXYZ, initialYPR, 
-                                modelcloud,
-                                xyz, ypr, clouds);
+
+      if(usefitPointCloudFPC){
+        Segmentation::fitPointCloudFPC(_surrogate_renderer._display_info.cloud,
+                                    currObj->indices, fp, 
+                                    isInitialSet, initialXYZ, initialYPR, 
+                                    modelcloud,
+                                    xyz, ypr, clouds);
+      }else{
+        Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
+                                    currObj->indices, fp, 
+                                    isInitialSet, initialXYZ, initialYPR, 
+                                    modelcloud,
+                                    xyz, ypr, clouds);
+      }
     }else{
       Segmentation::FpfhParams fpfhParams;
       fpfhParams.minSampleDistance = 0.05;
@@ -1527,9 +1558,6 @@ namespace surrogate_gui
     // set origin and bounding
     convert3(xyz,                   affordanceMsg.aff.origin_xyz);
     convert3(ypr.reverse(),         affordanceMsg.aff.origin_rpy);
-    convert3(Vector3f(0,0,1),       affordanceMsg.aff.bounding_xyz); // center of car above ground 
-    convert3(Vector3f(0,0,0),       affordanceMsg.aff.bounding_rpy);
-    convert3(Vector3f(3.0,1.7,2.2), affordanceMsg.aff.bounding_lwh); // TODO make more general, not just car
 
     // set modelfile
     affordanceMsg.aff.modelfile = modelfile;
@@ -1601,6 +1629,7 @@ namespace surrogate_gui
       else if(otdf_type == "circle3d") prim = CIRCLE_3D; 
       else if(otdf_type == "steering_cyl") prim = STEERING_CYL; 
       else if(otdf_type == "car")      prim = CAR;
+      else if(otdf_type == "standpipe::mate::firehose") prim = STANDPIPE;
       else if(otdf_type == "TODO")     prim = LINE;      // TODO
       else if(otdf_type == "TODO")     prim = TORUS;     // TODO
       else if(otdf_type == "TODO")     prim = CUBE;      // TODO

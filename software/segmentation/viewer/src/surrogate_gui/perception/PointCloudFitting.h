@@ -10,8 +10,8 @@ namespace PointCloudFitting {
 ////////////////////////////////////////
 // main function
 
-  Affine3f pointCloutFit(pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud, 
-                         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+  Affine3f pointCloutFit(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr modelcloud, 
+                         pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
                          std::vector<float>& res_range);
                          
 

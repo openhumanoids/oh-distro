@@ -20,8 +20,8 @@ using namespace Eigen;
 
 namespace PointCloudFitting {
 
-Affine3f pointCloutFit(PointCloud<PointXYZRGB>::Ptr modelcloud, 
-                         PointCloud<PointXYZRGB>::Ptr cloud,
+Affine3f pointCloutFit(PointCloud<PointXYZRGB>::ConstPtr modelcloud, 
+                         PointCloud<PointXYZRGB>::ConstPtr cloud,
                          std::vector<float>& res_range)
 { 
   vector<Vector3f> modelcloudV(modelcloud->size());
@@ -234,6 +234,9 @@ Affine3f align_coarse_to_fine(
           const vector<Vector3f>& pts_data, 
           const vector<float>& res_range)
 {
+  cout << "Model size: " << pts_model.size() << endl;
+  cout << "cloud size: " << pts_data.size() << endl;
+
   /////////////////////////////
   // coarse align
   float res = res_range[0];
@@ -327,6 +330,7 @@ Affine3f align_coarse_to_fine(
     }
   }
   Affine3f pose_init = best_P;
+  return best_P;
 
   ////////////////////////////////////////////////////////////////////////////////////
   // second pass: iterate through res range
