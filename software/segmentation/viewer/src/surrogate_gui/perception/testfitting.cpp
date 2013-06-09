@@ -32,6 +32,28 @@ static Matrix3f ypr2rot(Vector3f ypr){
   return mat2.cast<float>();
 }
 
+static Vector3f rot2ypr(Matrix3f mat){
+  Matrix3d mat2 = mat.transpose().cast<double>(); //convert from col-major to row-major
+  double* mat3 = mat2.data();
+  double q[4];
+  double rpy[3];
+  bot_matrix_to_quat(mat3,q);
+
+  // in some cases, q is NaN.  Try to fix it. HACK //TODO do better fix
+  // ususally caused by numbers near 0 and 1
+  if(std::isnan(q[0])){
+    cout << "***** Warning quat is NaN, trying to fix.  Matrix:\n"<< mat << endl;
+    for(int i=0;i<9;i++) mat3[i] = round(mat3[i]);
+    bot_matrix_to_quat(mat3,q);
+    if(std::isnan(q[0])) cout << "Couldn't fix\n";
+    else            cout << "Fix seemed to work.\n";
+  }
+  
+  bot_quat_to_roll_pitch_yaw(q,rpy);
+  return Vector3f(rpy[2],rpy[1],rpy[0]);
+}
+
+
 template <typename T>
 class Cube{
 public:
@@ -47,20 +69,30 @@ public:
     return data[index(a,b,c)]; 
   }
   
+  const T& operator() (int a,int b,int c) const{ 
+    return data[index(a,b,c)]; 
+  }
+  
   T& operator[] (int index) {
     ASSERT_PI(size[0]>0 && size[1]>0 && size[2]>0); 
     ASSERT_PI(index<data.size());
     return data[index]; 
   }
 
-  int index(int a, int b, int c){ 
+  const T& operator[] (int index) const {
+    ASSERT_PI(size[0]>0 && size[1]>0 && size[2]>0); 
+    ASSERT_PI(index<data.size());
+    return data[index]; 
+  }
+
+  int index(int a, int b, int c) const{ 
     ASSERT_PI(size[0]>0 && size[1]>0 && size[2]>0); 
     ASSERT_PI(a<size[0] && b<size[1] && c<size[2]); 
     ASSERT_PI(a>=0 && b>=0 && c>=0); 
     return a*size[1]*size[2] + b*size[2] + c; 
   }
 
-  Vector3i index(int i){ 
+  Vector3i index(int i) const{ 
     ASSERT_PI(size[0]>0 && size[1]>0 && size[2]>0);
     int c = i%size[2];
     i/=size[2];
@@ -171,10 +203,13 @@ void create_voxels(const vector<Vector3f>& pts, float res, float padding,
   }
 }
 
-void point_pairs_from_dist_inds(Cube<int>& dist_inds, const vector<Vector3f>& pts, 
+void point_pairs_from_dist_inds(const Cube<int>& dist_inds, const vector<Vector3f>& pts, 
                                 Matrix3f R, Vector3f T,
                                 vector<Vector3f>& p0, vector<Vector3f>& p1)
 {
+  p0.clear();
+  p1.clear();
+
   for(int i=0;i<pts.size();i++){
     Vector3f pt_cur = R*pts[i]+T; 
     Vector3i pt_int(round(pt_cur[0]), round(pt_cur[1]), round(pt_cur[2]));
@@ -188,6 +223,37 @@ void point_pairs_from_dist_inds(Cube<int>& dist_inds, const vector<Vector3f>& pt
       p1.push_back(pt_cur);
     }
   }
+}
+              
+Affine3f optimize_pose_with_directions(const Cube<int>& dist_inds, const vector<Vector3f>& pts, Affine3f pose_init){
+  int max_iter=100;
+
+  Affine3f P = pose_init;
+
+  double err_prev = DBL_MAX;
+  vector<Vector3f> p0,p1;
+  for(int i=0;i<max_iter;i++){
+    point_pairs_from_dist_inds(dist_inds, pts, P.linear(), P.translation(), p0, p1);
+    Matrix3f R_new;
+    Vector3f T_new;
+    align_pts_3d(p0,p1,R_new,T_new);
+    Affine3f P_new;
+    P_new.linear() = R_new;
+    P_new.translation() = T_new;
+    P=P_new*P;
+
+    double err_cur=0;
+    for(int j=0;j<p0.size();j++){
+      Vector3f d = (p1[j]-p0[j]).cwiseAbs();
+      err_cur += SQ(d[0])+SQ(d[1])+SQ(d[2]);
+    }
+    if(abs(err_cur-err_prev)<1e-6) break;
+    cout << err_cur << endl;
+    err_prev = err_cur;
+  }
+
+  return P;
+    
 }
 
 void align_coarse_to_fine(
@@ -207,7 +273,7 @@ void align_coarse_to_fine(
 
   // perform distance transform on model
   Cube<int> dist_inds(dist_xform.size[0],dist_xform.size[0],dist_xform.size[2]);
-  distTransform(dist_xform.data.data(), dist_inds.data.data(), dist_xform.size[2], dist_xform.size[1], dist_xform.size[0]);
+  distTransform(dist_xform.data.data(), dist_inds.data.data(), dist_xform.size[2], dist_xform.size[1], dist_xform.size[0]); 
   float maxDist = SQ(dist_xform.size[0]) + SQ(dist_xform.size[1]) + SQ(dist_xform.size[2]);
   maxDist = sqrt(maxDist);
   for(int i=0;i<dist_xform.data.size();i++) dist_xform[i]/=maxDist;
@@ -226,7 +292,7 @@ void align_coarse_to_fine(
     cout << "Roll: " << roll << endl;
     for(float pitch=-90; pitch<90; pitch+=angle_step){
       for(float yaw=-180; yaw<180; yaw+=angle_step){
-        Matrix3f R = ypr2rot(Vector3f(yaw,pitch,roll));
+        Matrix3f R = ypr2rot(Vector3f(yaw,pitch,roll)*M_PI/180);
         //Matrix3f Rt = R.transpose();
         vector<Vector3f> pts(pts_data_dec.size());
         for(int i=0;i<pts.size();i++) pts[i] = R*pts_data_dec[i]; 
@@ -289,17 +355,38 @@ void align_coarse_to_fine(
   }
   Affine3f pose_init = best_P;
 
+  ////////////////////////////////////////////////////////////////////////////////////
+  // second pass: iterate through res range
+  Affine3f pose = pose_init;
+  for(int r=0;r<res_range.size();r++){
+      res=res_range[r];
+      //if(r!=0) //TODO: dont redo
+      create_voxels(pts_model, res, padding, dist_xform, world_to_vol);
+      distTransform(dist_xform.data.data(), dist_inds.data.data(), dist_xform.size[2], dist_xform.size[1], dist_xform.size[0]);
+      // TODO divide??
+
+      Affine3f P = pose;
+      vector<Vector3f> pts(pts_data.size());
+      for(int i=0; i<pts.size(); i++){
+        pts[i] = P*pts_data[i];
+      }
+      //TODO decimate pts
+      for(int i=0; i<pts.size(); i++){
+        pts[i] = world_to_vol*pts[i];
+      }
+      Affine3f result = optimize_pose_with_directions(dist_inds,pts,Affine3f::Identity());
+      
+      P = result;
+      P = world_to_vol.inverse() * P * world_to_vol * pose;
+      pose = P;
+  }
+
+  Vector3f xyz = pose.translation();
+  Vector3f ypr = rot2ypr(pose.linear());
+
+  cout << xyz.transpose() << " " << ypr.transpose()*180/M_PI << endl;
 
 }
-
-
-/* Notes
-   distTransform L M N: L is the inner loop
-   create_voxels: size[2] is the inner loop
-   TODO: use one convention.
-*/
-
-
 
 int main(int argc, char*argv[]){
   if(argc!=3) {
