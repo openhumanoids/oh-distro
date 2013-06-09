@@ -165,10 +165,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
       compos = [eval(cdata.comtraj,t);nan];
 
-      try
-        q_des = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
-      catch err
-        disp(err)
+      [q_des,info] = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
+      if info
+        fprintf(1,'warning: approximate IK failed.  calling IK\n');
         q_des = inverseKin(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
       end
 
