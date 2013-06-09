@@ -1,0 +1,13 @@
+package drc;
+
+// this message is for requesting a bbox of point cloud data
+struct map_request_bbox_t
+{
+  int16_t center[3];  // 1/128 meter units, range -256 to +256 meters
+  int8_t size[3];     // 1/64 meter units, range 0 to 4 meters
+  int16_t rpy[3];     // 1/10 degree units
+
+  int8_t flags;       // variants
+
+  const int8_t RAW_MASK = 0x01;
+}
