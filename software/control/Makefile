@@ -47,7 +47,7 @@ endif
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
 SRCCLASSFILES = $(CLASSFILES:src/%=%)
-CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar:$(BUILD_PREFIX)/share/java/lcmtypes_bot2-core.jar:$(PWD)/src:
+CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar:$(BUILD_PREFIX)/share/java/lcmtypes_bot2-core.jar:$(PWD)/src:$(PWD)/control/src
 ifneq "$(WORKSPACE)" ""
    CLASSPATH := $(CLASSPATH):$(WORKSPACE)/software/control/drake/drake.jar
 endif
