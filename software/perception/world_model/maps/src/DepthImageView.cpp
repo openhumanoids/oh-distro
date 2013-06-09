@@ -55,7 +55,6 @@ getType() const {
 void DepthImageView::
 set(const maps::PointCloud::Ptr& iCloud) {
   mImage->setProjector(mTransform);
-  mImage->setAccumulationMethod(DepthImage::AccumulationMethodMean);
   mImage->create(iCloud);
 }
 
