@@ -25,17 +25,20 @@ classdef QPController < MIMODrakeSystem
     hand_ft_frame = AtlasHandForceTorque();
 
     if isfield(options,'multi_robot')
-      typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
-      fr = options.multi_robot.getStateFrame;
-      % IMPORTANT NOTE: I'm assuming the atlas state is always the first
-      % frame in a multi coordinate frame
-      if typecheck(fr,'MultiCoordinateFrame')
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame.frame{:}});
-        num_state_fr = length(options.multi_robot.getStateFrame.frame);
-      else
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame});
-        num_state_fr = 1;
-      end
+      warning('Bullet contact not currently supported for efficiency reasons. Ignoring multi robot.');
+%       typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
+%       fr = options.multi_robot.getStateFrame;
+%       % IMPORTANT NOTE: I'm assuming the atlas state is always the first
+%       % frame in a multi coordinate frame
+%       if typecheck(fr,'MultiCoordinateFrame')
+%         input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame.frame{:}});
+%         num_state_fr = length(options.multi_robot.getStateFrame.frame);
+%       else
+%         input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame});
+%         num_state_fr = 1;
+%       end
+      input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
+      num_state_fr = 1;
     else
       input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
       num_state_fr = 1;
@@ -51,11 +54,12 @@ classdef QPController < MIMODrakeSystem
     obj.controller_data = controller_data;
     obj.num_state_frames = num_state_fr;
     
-    if isfield(options,'multi_robot')
-      obj.multi_robot = options.multi_robot;
-    else
-      obj.multi_robot = 0;
-    end
+%     if isfield(options,'multi_robot')
+%       obj.multi_robot = options.multi_robot;
+%     else
+%       obj.multi_robot = 0;
+%     end
+    obj.multi_robot = 0;
    
     % weight for desired qddot objective term
     if isfield(options,'w')
@@ -220,18 +224,18 @@ classdef QPController < MIMODrakeSystem
     q_ddot_des = varargin{1};
     hand_ft = varargin{2};
     % IMPORTANT NOTE: I'm assuming the atlas state is always the first
-    % frame in a multi coordinate frame
+    % frame in a multi coordinate frame 
     x = varargin{3};
     r = obj.robot;
     nq = getNumDOF(r); 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-    q_multi = [];
-    for i=1:obj.num_state_frames-1
-      xi = varargin{3+i};
-      q_multi = [q_multi; xi(1:end/2)];
-    end
+%     q_multi = [];
+%     for i=1:obj.num_state_frames-1
+%       xi = varargin{3+i};
+%       q_multi = [q_multi; xi(1:end/2)];
+%     end
     
 %     Num = [-0.0161998291483754,-0.0211451622014118,0.0207009617283916,0.125779402410861,0.247057672241705,0.301449966246763,0.247057672241705,0.125779402410861,0.0207009617283916,-0.0211451622014118,-0.0161998291483754];
 %     Num = [-0.000479358954034654,7.08339282197222e-05,0.00476272575802094,0.0184304925452958,0.0447366690382284,0.0825921917406667,0.124222528702383,0.157134664685447,0.169687809650027,0.157134664685447,0.124222528702383,0.0825921917406667,0.0447366690382284,0.0184304925452958,0.00476272575802094,7.08339282197222e-05,-0.000479358954034654];
@@ -372,10 +376,11 @@ classdef QPController < MIMODrakeSystem
       % says 'contact', but force sensors do not. when both agree, allow full
       % forces on the feet
       kinsol = doKinematics(r,q,false,true);
-    
-      if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        kinsol_multi = doKinematics(obj.multi_robot,[q;q_multi],false,true); % for now assume the same state frame
-      end
+
+%       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
+%       if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+%         kinsol_multi = doKinematics(obj.multi_robot,[q;q_multi],false,true); % for now assume the same state frame
+%       end
       
       num_desired_contacts = supp.num_contact_pts;
     
@@ -383,14 +388,15 @@ classdef QPController < MIMODrakeSystem
       phi = zeros(sum(num_desired_contacts),1);
       c_pre = 0;
       for j=1:length(supp.bodies)
-        if supp.contact_surfaces(j) == 0
+%         if supp.contact_surfaces(j) == 0
           phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
-        elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+%         elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
           % use bullet collision between bodies
-          phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
-        else
-          error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
-        end
+ %       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
+%          phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
+%         else
+%           error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
+%         end
         c_pre = c_pre + num_desired_contacts(j);
       end
 
@@ -497,31 +503,32 @@ classdef QPController < MIMODrakeSystem
       
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
-        phi = zeros(nc,1);
-        Jz = zeros(nc,nq);
-        
-        c_pre = 0;
-        for j=1:length(active_supports)
-          if active_surfaces(j) == 0
-            [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
-          elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-            % use bullet collision between bodies
-            [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
-          else
-            error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
-          end
-          c_pre = c_pre + num_desired_contacts(j);
-        
-          % kinda gross
-          if j==1
-            D_=D__;
-          else
-            for k=1:nd
-              D_{k} = [D_{k}; D__{k}];
-            end
-          end
-        
-        end
+        [~,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
+%         phi = zeros(nc,1);
+%         Jz = zeros(nc,nq);
+%         c_pre = 0;
+%         for j=1:length(active_supports)
+%           if active_surfaces(j) == 0
+%             [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
+%           % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
+%           elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+%             % use bullet collision between bodies
+%             [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+%           else
+%             error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
+%           end
+%           c_pre = c_pre + num_desired_contacts(j);
+%         
+%           % kinda gross
+%           if j==1
+%             D_=D__;
+%           else
+%             for k=1:nd
+%               D_{k} = [D_{k}; D__{k}];
+%             end
+%           end
+%         
+%         end
       else
         nc = 0;
       end
