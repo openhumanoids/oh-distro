@@ -87,7 +87,7 @@ namespace InertialOdometry {
 	}
 
 	Eigen::Matrix3d Odometry::C_bw() {
-		return q2C(orc.q()).transpose(); //Not sure about the transpose -- must test
+		return q2C(orc.q()); //Not sure about the transpose -- must test
 	}
 
 }

@@ -1212,9 +1212,7 @@ void LegOdometry_Handler::delta_vo_handler(	const lcm::ReceiveBuffer* rbuf,
 												const fovis::update_t* _msg) {
 
 
-  std::cout << "LegOdometry_Handler::delta_vo_handler is happening\n";
-
-
+  //std::cout << "LegOdometry_Handler::delta_vo_handler is happening\n";
   Eigen::Isometry3d motion_estimate;
   Eigen::Vector3d vo_dtrans;
 
@@ -1437,7 +1435,7 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	p2lc.setIdentity();
 	p2lc.translation() << transform_it_lcam->second.translation.x, transform_it_lcam->second.translation.y, transform_it_lcam->second.translation.z;
 	p2lc.linear() = q2C(Eigen::Quaterniond(transform_it_lcam->second.rotation.w,transform_it_lcam->second.rotation.x,transform_it_lcam->second.rotation.y,transform_it_lcam->second.rotation.z));
-	bottransforms.setLCam2Pelvis(p2lc.inverse());
+	bottransforms.setLCam2Pelvis(p2lc);
 
 	//T_body_head = KDL::Frame::Identity();
 	if(transform_it_ll_l!=cartpos_out.end()){// fk cart pos exists
