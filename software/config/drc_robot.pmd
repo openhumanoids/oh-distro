@@ -80,7 +80,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "logger-robot-nocams" {
-        exec = "lcm-logger -f $HOME/drc/latest_robot_log.lcm";
+        exec = "lcm-logger -f $HOME/drc/data/latest_robot_log.lcm";
         host = "extra";
     }
     cmd "drc-frequency" {
@@ -209,7 +209,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "lcm-logger-base-nocams" {
-        exec = "lcm-logger  -f $HOME/drc/latest_base_log.lcm";
+        exec = "lcm-logger  -f $HOME/drc/data/latest_base_log.lcm";
         host = "base";
     }
     cmd "drc-log-vrcscore"{
