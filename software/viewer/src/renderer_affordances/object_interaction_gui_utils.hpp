@@ -24,7 +24,7 @@
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
 
-#define PARAM_SET_GAZE "Set EE Gaze"
+#define PARAM_SET_EE_CONSTRAINT "Set EE Gaze/Orient Constraints"
 
 #define PARAM_RESEED "Re-seed"
 #define PARAM_HALT_OPT "Halt Opt"
@@ -39,6 +39,21 @@
 #define PARAM_GET_MANIP_MAP "Get Manip Map"
 #define PARAM_RESET_DESIRED_STATE "Reset"
 #define PARAM_CONTACT_MASK_SELECT "Mask"
+
+#define PARAM_EE_SELECT_EE "Select EE"
+#define PARAM_EE_HEAD "Head"
+#define PARAM_EE_RIGHT_HAND "Right hand"
+#define PARAM_EE_LEFT_HAND "Left hand"
+#define PARAM_USE_CURRENT_POSE "Use current pose"
+
+#define PARAM_EE_SPECIFY_GOAL "Select EE goal"
+#define PARAM_CURRENT_ORIENTATION "Maintain EE orientation"
+#define PARAM_GAZE_AFFORDANCE "Look at affordance"
+//#define PARAM_GAZE_SELECTION" "Look at selected point (NOT SUPPORTED)"
+#define PARAM_CURRENT_POSE "Maintain pose"
+#define PARAM_CLEAR_CURRENT_GOAL "Clear EE goal"
+
+
 
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
@@ -55,11 +70,195 @@
 using namespace renderer_affordances;
 using namespace renderer_affordances_lcm_utils;
 
+
+typedef enum _ee_type_t {
+    EE_HEAD, EE_RIGHT_HAND, EE_LEFT_HAND
+} ee_type_t;
+
+typedef enum _ee_goal_type_t {
+    CURRENT_POSE,CURRENT_ORIENTATION,GAZE,CLEAR_CURRENT_GOAL 
+} ee_goal_type_t;
+
 namespace renderer_affordances_gui_utils
 {
 //--------------------------------------------------------------------------------
 //  OTDF object dblclk popup and associated cbs.
+   static void on_ee_goal_widget_closed(BotGtkParamWidget *pw, const void *user)
+    {
+        RendererAffordances *self = (RendererAffordances*) user;
+      
+        ee_type_t ee_type = (ee_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SELECT_EE);
+        ee_goal_type_t ee_goal_type = (ee_goal_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SPECIFY_GOAL);
 
+        if (ee_goal_type == CURRENT_POSE) {
+            fprintf(stderr, "Enum : %d - Goal type : %d\n", ee_type, ee_goal_type);
+            BotTrans ee_to_local;
+            if (ee_type == EE_HEAD)
+            {
+              if(self->frames) {
+                 bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
+                 fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
+                 publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
+              }
+              else {
+                 fprintf(stderr, "BotFrames is null - Unable to find ee pose\n");
+              }
+            }
+            else if(ee_type == EE_RIGHT_HAND){
+             BotTrans temp;
+             KDL::Frame T_world_palm = KDL::Frame::Identity();
+              if(self->robotStateListener->_urdf_parsed){
+                self->robotStateListener->_gl_robot->get_link_frame("right_palm",T_world_palm);
+                double x,y,z,w;
+                T_world_palm.M.GetQuaternion(x,y,z,w);
+                temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z; 
+                temp.trans_vec[0] = T_world_palm.p[0]; temp.trans_vec[1] = T_world_palm.p[1]; temp.trans_vec[2] = T_world_palm.p[2];
+                publish_ee_goal_to_gaze(self->lcm, "right_palm", "RIGHT_PALM_GOAL", temp);  
+              }
+            }
+            else if(ee_type == EE_LEFT_HAND){
+              BotTrans temp;
+              KDL::Frame T_world_palm = KDL::Frame::Identity();
+              if(self->robotStateListener->_urdf_parsed){
+                self->robotStateListener->_gl_robot->get_link_frame("left_palm",T_world_palm);
+                double x,y,z,w;
+                T_world_palm.M.GetQuaternion(x,y,z,w);
+                temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z; 
+                temp.trans_vec[0] = T_world_palm.p[0]; temp.trans_vec[1] = T_world_palm.p[1]; temp.trans_vec[2] = T_world_palm.p[2];
+                publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_GOAL", temp);  
+              }
+            }  
+       }
+       else if (ee_goal_type == CURRENT_ORIENTATION) {
+            BotTrans temp;
+            temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
+            temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
+            
+            if (ee_type == EE_HEAD) {
+              BotTrans ee_to_local;
+              bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
+              fprintf(stderr, "Head Orientation: %f,%f,%f,%f\n", ee_to_local.rot_quat[0], ee_to_local.rot_quat[1], ee_to_local.rot_quat[2], ee_to_local.rot_quat[3]);
+              ee_to_local.trans_vec[0] = 0; ee_to_local.trans_vec[1] = 0; ee_to_local.trans_vec[2] = 0;
+              publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_ORIENTATION_GOAL", ee_to_local);
+            }
+            else if(ee_type == EE_RIGHT_HAND) {
+              KDL::Frame T_world_palm = KDL::Frame::Identity();
+              if(self->robotStateListener->_urdf_parsed)
+                self->robotStateListener->_gl_robot->get_link_frame("right_palm",T_world_palm);
+              double x,y,z,w;
+              T_world_palm.M.GetQuaternion(x,y,z,w);
+              temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z; 
+              temp.trans_vec[0] = T_world_palm.p[0]; temp.trans_vec[1] = T_world_palm.p[1]; temp.trans_vec[2] = T_world_palm.p[2];
+              publish_ee_goal_to_gaze(self->lcm, "right_palm", "RIGHT_PALM_ORIENTATION_GOAL", temp);  
+            }
+            else if(ee_type == EE_LEFT_HAND){
+              KDL::Frame T_world_palm = KDL::Frame::Identity();
+              if(self->robotStateListener->_urdf_parsed)
+                self->robotStateListener->_gl_robot->get_link_frame("left_palm",T_world_palm);
+              double x,y,z,w;
+              T_world_palm.M.GetQuaternion(x,y,z,w);
+              temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z; 
+              temp.trans_vec[0] = T_world_palm.p[0]; temp.trans_vec[1] = T_world_palm.p[1]; temp.trans_vec[2] = T_world_palm.p[2];
+              publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_ORIENTATION_GOAL", temp); 
+            }
+        }
+        else if (ee_goal_type == GAZE) {
+            BotTrans temp;
+            temp.rot_quat[0] = 1; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
+            temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
+            
+            //Get affordance origin
+            typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+            object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(self->object_selection));
+            KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+            temp.trans_vec[0] = T_world_object.p[0]; temp.trans_vec[1] = T_world_object.p[1]; temp.trans_vec[2] = T_world_object.p[2];
+            double x,y,z,w;
+            T_world_object.M.GetQuaternion(x,y,z,w);
+            temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z;  
+            
+            if (ee_type == EE_HEAD) {
+              publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GAZE_GOAL", temp);
+            }
+            else if(ee_type == EE_RIGHT_HAND)  {
+              publish_ee_goal_to_gaze(self->lcm, "right_palm", "RIGHT_PALM_GAZE_GOAL", temp);  
+            }
+            else if(ee_type == EE_LEFT_HAND) {
+              publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_GAZE_GOAL", temp);  
+            }
+        }
+        else if (ee_goal_type == CLEAR_CURRENT_GOAL) {
+            BotTrans temp;
+            temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
+            temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
+            
+            if (ee_type == EE_HEAD) {
+              publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL_CLEAR", temp);
+            }
+            else if(ee_type == EE_RIGHT_HAND) {
+              publish_ee_goal_to_gaze(self->lcm, "right_palm", "RIGHT_PALM_GOAL_CLEAR", temp); 
+            }
+            else if(ee_type == EE_LEFT_HAND) {
+              publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_GOAL_CLEAR", temp);  
+            }
+        }
+    }    
+    
+//------------------------------------------------------------------     
+   
+     static void spawn_get_ee_constraint_popup (RendererAffordances *self)
+    {
+
+        GtkWidget *window, *close_button, *vbox;
+        BotGtkParamWidget *pw;
+
+        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
+        gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+        gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+        gtk_window_stick(GTK_WINDOW(window));
+        gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+        gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+        gint pos_x, pos_y;
+        gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+        pos_x+=125;    pos_y-=75;
+        gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
+        //gtk_widget_set_size_request (window, 300, 250);
+        //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+        gtk_window_set_title(GTK_WINDOW(window), "Set EE");
+        gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+        pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+        bot_gtk_param_widget_add_enum(pw, PARAM_EE_SELECT_EE, BOT_GTK_PARAM_WIDGET_MENU, EE_HEAD, 
+                                      PARAM_EE_HEAD, EE_HEAD, 
+                                      PARAM_EE_RIGHT_HAND, EE_RIGHT_HAND, 
+                                      PARAM_EE_LEFT_HAND, EE_LEFT_HAND, 
+                                      NULL);
+    
+        bot_gtk_param_widget_add_enum(pw, PARAM_EE_SPECIFY_GOAL, BOT_GTK_PARAM_WIDGET_MENU, GAZE, 
+                                      PARAM_GAZE_AFFORDANCE, GAZE,
+                                      PARAM_CURRENT_ORIENTATION, CURRENT_ORIENTATION, 
+                                      PARAM_CURRENT_POSE, CURRENT_POSE, 
+                                      PARAM_CLEAR_CURRENT_GOAL, CLEAR_CURRENT_GOAL,
+                                      NULL);
+
+        //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_CURRENT_POSE, 1, NULL);
+
+        close_button = gtk_button_new_with_label ("Close");
+
+        g_signal_connect (G_OBJECT (close_button),
+                          "clicked",
+                          G_CALLBACK (on_popup_close),
+                          (gpointer) window);
+        g_signal_connect(G_OBJECT(pw), "destroy",
+                         G_CALLBACK(on_ee_goal_widget_closed), self); 
+
+        vbox = gtk_vbox_new (FALSE, 3);
+        gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+        gtk_container_add (GTK_CONTAINER (window), vbox);
+        gtk_widget_show_all(window); 
+    } 
+  
 
 //---------------------------------------------------------------
 // SECOND STAGE ADJUST DOFS POPUP
@@ -651,7 +850,7 @@ namespace renderer_affordances_gui_utils
       bool is_retractable = true;
       publish_EE_locii_and_get_manip_plan(self,is_retractable);
     }
-    else if(!strcmp(name,PARAM_SET_GAZE)) {
+    else if(!strcmp(name,PARAM_SET_EE_CONSTRAINT)) {
         spawn_get_ee_constraint_popup(self);
     }
     else if(!strcmp(name,PARAM_GET_MANIP_MAP)) {
@@ -825,8 +1024,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
-
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SET_GAZE, NULL);    
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SET_EE_CONSTRAINT, NULL);    
       
     }
 
@@ -1397,8 +1595,9 @@ namespace renderer_affordances_gui_utils
     gtk_widget_show_all(window); 
 
   }
-  
-  
+ //=======================================================================================
+
+ 
   
 
 }

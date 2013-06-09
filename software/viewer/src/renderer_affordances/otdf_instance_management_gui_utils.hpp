@@ -3,26 +3,6 @@
 #include "renderer_affordances.hpp"
 #include "lcm_utils.hpp"
 
-#define PARAM_EE_SELECT_EE "Select EE"
-#define PARAM_EE_HEAD "Head"
-#define PARAM_EE_RIGHT_HAND "Right hand"
-#define PARAM_EE_LEFT_HAND "Left hand"
-#define PARAM_USE_CURRENT_POSE "Use current pose"
-
-#define PARAM_EE_SPECIFY_GOAL "Select EE goal"
-#define PARAM_CURRENT_POSE "Use current pose"
-//#define PARAM_GAZE_SELECTION" "Gaze at selected point (NOT SUPPORTED)"
-//#define PARAM_GAZE_AFFORDANCE "Gaze at affordance (NOT SUPPORTED)"
-#define PARAM_CLEAR_CURRENT_GOAL "Clear current goal"
-
-typedef enum _ee_type_t {
-    EE_HEAD, EE_RIGHT_HAND, EE_LEFT_HAND
-} ee_type_t;
-
-typedef enum _ee_goal_type_t {
-    CURRENT_POSE, CLEAR_CURRENT_GOAL 
-} ee_goal_type_t;
-
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
@@ -367,49 +347,6 @@ namespace renderer_affordances_gui_utils
         bot_viewer_request_redraw(self->viewer);
     }  
 
-
-    //------------------------------------------------------------------    
-    static void on_ee_goal_widget_closed(BotGtkParamWidget *pw, const void *user)
-    {
-        RendererAffordances *self = (RendererAffordances*) user;
-      
-        ee_type_t ee_type = (ee_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SELECT_EE);
-      
-        ee_goal_type_t ee_goal_type = (ee_goal_type_t) bot_gtk_param_widget_get_enum(pw, PARAM_EE_SPECIFY_GOAL);
-
-
-        if (ee_type != EE_HEAD) {
-            fprintf (stdout, "Setting goal pose for %d is not supported\n", ee_type);
-            return;
-        }
-
-        //int use_current =  bot_gtk_param_widget_get_bool(pw, PARAM_USE_CURRENT_POSE);
-        
-
-        if (ee_goal_type == CURRENT_POSE) {
-            fprintf(stderr, "Enum : %d - Use current : %d\n", ee_type, ee_goal_type);
-
-            if(self->frames){
-                BotTrans ee_to_local;
-                
-                bot_frames_get_trans(self->frames, "head", "local", &ee_to_local);
-                
-                fprintf(stderr, "EE Pose : %f,%f,%f\n", ee_to_local.trans_vec[0], ee_to_local.trans_vec[1], ee_to_local.trans_vec[2]);
-                
-                publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL", ee_to_local);
-            }
-            else{
-                fprintf(stderr, "BotFrames is null - Unable to find ee pose\n");
-            }
-        }
-        else if (ee_goal_type == CLEAR_CURRENT_GOAL) {
-            BotTrans temp;
-            temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
-            temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
-            publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GOAL_CLEAR", temp);
-        }
-    }    
-    
   
     //------------------------------------------------------------------
     static void spawn_adjust_params_popup (RendererAffordances *self)
@@ -758,52 +695,7 @@ namespace renderer_affordances_gui_utils
         gtk_widget_show_all(window); 
     }
 
-    static void spawn_get_ee_constraint_popup (RendererAffordances *self)
-    {
 
-        GtkWidget *window, *close_button, *vbox;
-        BotGtkParamWidget *pw;
-
-        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
-        gtk_window_set_modal(GTK_WINDOW(window), FALSE);
-        gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
-        gtk_window_stick(GTK_WINDOW(window));
-        gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
-        gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
-        gint pos_x, pos_y;
-        gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
-        pos_x+=125;    pos_y-=75;
-        gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
-        //gtk_widget_set_size_request (window, 300, 250);
-        //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-        gtk_window_set_title(GTK_WINDOW(window), "Set EE");
-        gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-        pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-
-        bot_gtk_param_widget_add_enum(pw, PARAM_EE_SELECT_EE, BOT_GTK_PARAM_WIDGET_MENU, EE_HEAD, PARAM_EE_HEAD, 
-                                      EE_HEAD, PARAM_EE_RIGHT_HAND, EE_RIGHT_HAND, PARAM_EE_LEFT_HAND, EE_LEFT_HAND, NULL);
-    
-        bot_gtk_param_widget_add_enum(pw, PARAM_EE_SPECIFY_GOAL, BOT_GTK_PARAM_WIDGET_MENU, CURRENT_POSE, PARAM_CURRENT_POSE,
-                                      CURRENT_POSE, PARAM_CLEAR_CURRENT_GOAL, CLEAR_CURRENT_GOAL, NULL);
-
-        //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_CURRENT_POSE, 1, NULL);
-
-        close_button = gtk_button_new_with_label ("Close");
-
-        g_signal_connect (G_OBJECT (close_button),
-                          "clicked",
-                          G_CALLBACK (on_popup_close),
-                          (gpointer) window);
-        g_signal_connect(G_OBJECT(pw), "destroy",
-                         G_CALLBACK(on_ee_goal_widget_closed), self); 
-
-        vbox = gtk_vbox_new (FALSE, 3);
-        gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
-        gtk_container_add (GTK_CONTAINER (window), vbox);
-        gtk_widget_show_all(window); 
-    }
 
 
     // ================================================================================
