@@ -354,9 +354,15 @@ struct State {
     msg.resolution = 0.01;
     msg.frequency = 0;
     msg.quantization_max = 0.01;
-    msg.time_min = -10*1e6;
-    msg.time_max = 0;
-    msg.relative_time = true;
+    if (iMessage->time_window > 0) {
+      msg.time_min = -iMessage->time_window*1e6;
+      msg.time_max = 0;
+      msg.relative_time = true;
+    }
+    else {
+      msg.time_min = msg.time_max = -1;
+      msg.relative_time = false;
+    }
     msg.relative_location = false;
     msg.active = true;
     msg.width = msg.height = 0;

@@ -102,7 +102,7 @@ protected:
   int mRequestType;
   double mRequestFrequency;
   double mRequestResolution;
-  double mRequestTimeWindow;
+  int mRequestTimeWindow;
   bool mRequestRelativeLocation;
   bool mRequestRawScan;
   bool mDragging;
@@ -274,8 +274,10 @@ public:
       mShowRequestBox = false;
       bind(mShowRequestBoxToggle, "Show Request Box", mShowRequestBox);
       box->pack_start(*mShowRequestBoxToggle, false, false);
-
       requestBox->pack_start(*box, false, false);
+
+      mRequestTimeWindow = 0;
+      addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
       mRequestRawScan = false;
       addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
       button = Gtk::manage(new Gtk::Button("Send Request"));
@@ -414,7 +416,7 @@ public:
     spec.mResolution = mRequestResolution;
     spec.mFrequency = mRequestFrequency;
     spec.mRelativeTime = false;
-    if (mRequestTimeWindow > 1e-3) {
+    if (mRequestTimeWindow > 0) {
       spec.mTimeMin = -mRequestTimeWindow*1e6;
       spec.mTimeMax = 0;
       spec.mRelativeTime = true;
@@ -502,6 +504,7 @@ public:
     msg.size[0] = (uint8_t)(scale[0]*64 + 0.5f);
     msg.size[1] = (uint8_t)(scale[1]*64 + 0.5f);
     msg.size[2] = (uint8_t)(scale[2]*64 + 0.5f);
+    msg.time_window = mRequestTimeWindow;
     Eigen::Vector3f rpy = orientation.matrix().eulerAngles(2,1,0);
     for (int i = 0; i < 3; ++i) msg.rpy[i] = rpy[i]*1800/acos(-1);
     msg.flags = 0;
