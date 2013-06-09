@@ -169,15 +169,23 @@ void publish_system_state_values(state_t *self){
     msg.goal_heading_angle = bot_to_degrees(self->goal_heading);
     if(self->drive_duration >=0){
         if(self->do_braking){
-            msg.time_to_drive = (self->drive_time_to_go - TIME_TO_TURN - TIME_TO_BRAKE) * 10 ;
+            if(self->drive_time_to_go/1.0e6 > self->drive_duration)
+                msg.time_to_drive = self->drive_duration;
+            else
+                msg.time_to_drive = (self->drive_time_to_go/1.0e6 - TIME_TO_BRAKE) * 10 ;
         }
         else{
-            msg.time_to_drive = (self->drive_time_to_go - TIME_TO_TURN) * 10;
+            if(self->drive_time_to_go/1.0e6 > self->drive_duration)
+                msg.time_to_drive = self->drive_duration;
+            else
+                msg.time_to_drive = (self->drive_time_to_go/1.0e6) * 10;
         }
     }
     else{
         msg.time_to_drive = 0;
     }
+
+    fprintf(stderr, "Time to drive : %f => %d - %f\n", self->drive_time_to_go/1.0e6, msg.time_to_drive, msg.time_to_drive / 10.0);
     drc_driving_controller_values_t_publish(self->lcm, "DRIVING_CONTROLLER_COMMAND_VALUES", &msg);
 }
 
@@ -432,6 +440,8 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
     else{
         self->drive_duration = msg->drive_duration/10.0 + TIME_TO_TURN; 
     }
+    fprintf(stderr, " ++++ Drive duration +++ : %d -> %f\n", msg->drive_duration, self->drive_duration);
+
     self->kp_steer = msg->kp_steer;
     self->kd_steer = 0;//msg->kd_steer;
     self->throttle_ratio = msg->throttle_ratio/ 100.0;
@@ -1410,6 +1420,7 @@ perform_emergency_stop (state_t *self)
     msg.utime = bot_timestamp_now();
     msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; 
     msg.brake_value = self->brake_val;
+    msg.steering_angle = 0;
     msg.throttle_value = self->throttle_val;
     drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
 }
