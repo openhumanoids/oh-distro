@@ -30,7 +30,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         const drc::footstep_goal_t& first_lcm_goal = lcm_object.footstep_goals[0];
         first_goal->set_utime(first_lcm_goal.utime);
 
-        if(!RobotStateCodec::to_minimal_position3d(first_lcm_goal.pos, first_goal->mutable_pos(), true))
+        if(!RobotStateCodec::to_minimal_position3d(first_lcm_goal.pos, first_goal->mutable_pos(), true, true))
             return false;
         
         first_goal->set_step_speed(first_lcm_goal.step_speed);
@@ -48,7 +48,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
             goal_diff->add_utime_diff(present_lcm_goal.utime-previous_lcm_goal.utime);
 
             if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.pos, previous_lcm_goal.pos,
-                                                    goal_diff->mutable_pos_diff(), true))
+                                                    goal_diff->mutable_pos_diff(), true, true))
                 return false;
 
             

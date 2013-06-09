@@ -187,11 +187,14 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
 }
 
 bool RobotStateCodec::to_minimal_position3d(const drc::position_3d_t& lcm_pos,
-                                            drc::Position3D* dccl_pos, bool use_rpy /* = false */)
+                                            drc::Position3D* dccl_pos, bool use_rpy /* = false */,
+                                            bool omit_z /* = false */)
 {
     dccl_pos->mutable_translation()->set_x(lcm_pos.translation.x);
     dccl_pos->mutable_translation()->set_y(lcm_pos.translation.y);
-    dccl_pos->mutable_translation()->set_z(lcm_pos.translation.z);
+
+    if(!omit_z)
+        dccl_pos->mutable_translation()->set_z(lcm_pos.translation.z);
 
     if(!use_rpy)
     {
@@ -229,8 +232,11 @@ bool RobotStateCodec::from_minimal_position3d(drc::position_3d_t* lcm_pos,
 {
     lcm_pos->translation.x = dccl_pos.translation().x();
     lcm_pos->translation.y = dccl_pos.translation().y();
-    lcm_pos->translation.z = dccl_pos.translation().z();
-
+    if(dccl_pos.translation().has_z())
+        lcm_pos->translation.z = dccl_pos.translation().z();
+    else
+        lcm_pos->translation.z = std::numeric_limits<double>::quiet_NaN();
+        
     if(!use_rpy)
     {
         const drc::RotationQuaternion& rotation = dccl_pos.rotation();
@@ -265,7 +271,8 @@ bool RobotStateCodec::from_minimal_position3d(drc::position_3d_t* lcm_pos,
 bool RobotStateCodec::to_position3d_diff(const drc::position_3d_t& present_pos,
                                          const drc::position_3d_t& previous_pos,
                                          drc::Position3DDiff* pos_diff,
-                                         bool use_rpy /* = false */)
+                                         bool use_rpy /* = false */,
+                                         bool omit_z /* = false */)
 {
 
     // pre-round the values to avoid cumulative rounding errors
@@ -277,9 +284,12 @@ bool RobotStateCodec::to_position3d_diff(const drc::position_3d_t& present_pos,
         goby::util::unbiased_round(previous_pos.translation.x, TRANSLATION_X_PRECISION));
     pos_diff->mutable_translation_diff()->add_dy(present_pos.translation.y-
         goby::util::unbiased_round(previous_pos.translation.y, TRANSLATION_Y_PRECISION));
-    pos_diff->mutable_translation_diff()->add_dz(present_pos.translation.z-
-        goby::util::unbiased_round(previous_pos.translation.z, TRANSLATION_Z_PRECISION));
 
+    if(!omit_z)
+    {
+        pos_diff->mutable_translation_diff()->add_dz(present_pos.translation.z-goby::util::unbiased_round(previous_pos.translation.z, TRANSLATION_Z_PRECISION));
+    }
+    
     
     if(!use_rpy)
     {
@@ -344,9 +354,17 @@ bool RobotStateCodec::from_position3d_diff(drc::Position3D* present_pos,
         present_pos->translation().x() + pos_diff.translation_diff().dx(i));
     present_pos->mutable_translation()->set_y(
         present_pos->translation().y() + pos_diff.translation_diff().dy(i));
-    present_pos->mutable_translation()->set_z(
-        present_pos->translation().z() + pos_diff.translation_diff().dz(i));
-        
+
+    if(i < pos_diff.translation_diff().dz_size())
+    {
+        present_pos->mutable_translation()->set_z(
+            present_pos->translation().z() + pos_diff.translation_diff().dz(i));
+    }
+    else
+    {
+        present_pos->mutable_translation()->set_z(std::numeric_limits<double>::quiet_NaN());
+    }
+    
     
     if(!use_rpy)
     {

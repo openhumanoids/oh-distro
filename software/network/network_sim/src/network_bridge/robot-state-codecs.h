@@ -33,7 +33,8 @@ class RobotStateCodec : public CustomChannelCodec
                                    const drc::MinimalRobotState& dccl_state);
 
     static bool to_minimal_position3d(const drc::position_3d_t& lcm_pos,
-                                      drc::Position3D* dccl_pos, bool use_rpy = false);
+                                      drc::Position3D* dccl_pos, bool use_rpy = false,
+                                      bool omit_z = false);
     static bool from_minimal_position3d(drc::position_3d_t* lcm_pos,
                                         const drc::Position3D& dccl_pos, bool use_rpy = false);    
 
@@ -41,7 +42,8 @@ class RobotStateCodec : public CustomChannelCodec
     static bool to_position3d_diff(const drc::position_3d_t& present_pos,
                                    const drc::position_3d_t& previous_pos,
                                    drc::Position3DDiff* pos_diff,
-                                   bool use_rpy = false);
+                                   bool use_rpy = false,
+                                   bool omit_z = false);
     static bool from_position3d_diff(drc::Position3D* pos,
                                      const drc::Position3DDiff& pos_diff,
                                      int index,
