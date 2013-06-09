@@ -154,7 +154,8 @@ leg_V = data(:,(offset:(offset+2)));
 offset = 137;
 fovis_V = data(:,(offset:(offset+2)));
 
-
+offset = 140;
+biasa = data(:,(offset:(offset+2)));
 
 
 % end

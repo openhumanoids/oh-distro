@@ -276,6 +276,16 @@ plot(t,tvel-imu_V)
 grid on
 title('INS velocity errors')
 
+
+% here we plot the estimated accelerometer biases
+figure(8); clf
+subplot(spa,spb,1)
+plot(t,biasa);
+grid on
+title('Accelerometer Biases');
+
+
+
 figure(7)
 %%
 

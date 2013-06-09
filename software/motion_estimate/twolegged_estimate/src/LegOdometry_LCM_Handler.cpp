@@ -589,25 +589,21 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				stageC[1] = filtered_pelvis_vel(1);
 				stageC[2] = filtered_pelvis_vel(2);
 
-				// Median Filter
-				vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
-				vel[1] = median_filter[1].processSample(filtered_pelvis_vel(1));
-				vel[2] = median_filter[2].processSample(filtered_pelvis_vel(2));
+				if (!_switches->OPTION_D) {
 
-				for (int i=0;i<3;i++) {	filtered_pelvis_vel(i) = vel[i]; }
-				_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
+					// Median Filter
+					vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
+					vel[1] = median_filter[1].processSample(filtered_pelvis_vel(1));
+					vel[2] = median_filter[2].processSample(filtered_pelvis_vel(2));
 
+					for (int i=0;i<3;i++) {
+						filtered_pelvis_vel(i) = vel[i];
+					}
 
+					_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
+				}
 			}
-
 		}
-
-		/*if (_switches->OPTION_D) {
-
-			_leg_odo->calculateUpdateVelocityStates(_msg->utime, current_pelvis,true,true);// use direct diff
-
-		}*/
-
 
 		// At this point the pelvis position has been found from leg kinematics
 
@@ -641,6 +637,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		gettimeofday(&mid,NULL);
 		// Here the rate change is propagated into the rest of the system
+
 		if (ratechangeiter==1) {
 
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
@@ -683,6 +680,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			   measured_joint_effort[i] = _msg->measured_effort[i];
 		   }
 			#endif
+
 
 			if (_switches->log_data_files) {
 				LogAllStateData(_msg, &est_msgout);
@@ -1082,9 +1080,18 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 	   ss << FovisEst.V(i) << ", ";//137-139
    }
 
-	ss <<std::endl;
+   Eigen::Vector3d biasesa;
 
-	state_estimate_error_log << ss.str();
+   biasesa = inert_odo.imu_compensator.get_accel_biases();
+
+   for (int i=0;i<3;i++) {
+   	   ss << biasesa(i) << ", ";//140-142
+   }
+
+
+   ss <<std::endl;
+
+   state_estimate_error_log << ss.str();
 
 }
 
