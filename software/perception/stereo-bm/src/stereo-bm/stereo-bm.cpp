@@ -71,7 +71,6 @@ cv::StereoVar var;
 
 // Stereo BM params
 // Variable Parameters
-std::string vCHANNEL_LEFT, vCHANNEL_RIGHT;
 
 bool vDEBUG = false;
 
@@ -88,14 +87,12 @@ int vSPECKLE_RANGE = 4; // 0-31
 
 
 
-StereoB::StereoB(boost::shared_ptr<lcm::LCM> &lcm_): 
+StereoB::StereoB(boost::shared_ptr<lcm::LCM> &lcm_, std::string lcm_channel): 
                                lcm_(lcm_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-    vCHANNEL_LEFT = std::string("CAMERALEFT");
-    vCHANNEL_RIGHT = std::string("CAMERARIGHT");
     vSCALE = .25f;// full scale 1.f; // key scaling parameter
 
-    std::string key_prefix_str = "cameras."+vCHANNEL_LEFT+".intrinsic_cal";
+    std::string key_prefix_str = "cameras."+lcm_channel+".left";
     left_camera_params.width = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
     left_camera_params.height = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
     left_camera_params.fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
@@ -108,7 +105,7 @@ StereoB::StereoB(boost::shared_ptr<lcm::LCM> &lcm_):
     left_camera_params.p1 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p1").c_str());
     left_camera_params.p2 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p2").c_str());
 
-    key_prefix_str = "cameras."+vCHANNEL_RIGHT+".intrinsic_cal";
+    key_prefix_str = "cameras."+lcm_channel+".right";
     right_camera_params.width = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
     right_camera_params.height = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
     right_camera_params.fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());

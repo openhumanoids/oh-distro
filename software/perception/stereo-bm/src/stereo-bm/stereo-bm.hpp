@@ -17,7 +17,7 @@ class StereoB
     typedef boost::shared_ptr<StereoB> Ptr;
     typedef boost::shared_ptr<const StereoB> ConstPtr;
         
-    StereoB (boost::shared_ptr<lcm::LCM> &lcm_);
+    StereoB (boost::shared_ptr<lcm::LCM> &lcm_, std::string lcm_channel = "CAMERA");
 
     ~StereoB() {
     }
