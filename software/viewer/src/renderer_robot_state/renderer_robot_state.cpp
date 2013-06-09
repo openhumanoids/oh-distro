@@ -16,18 +16,13 @@
 
 #include "RobotStateListener.hpp"
 #include "pose_approval_gui_utils.hpp"
+#include "popup_gui_utils.hpp"
 #include "renderer_robot_state.hpp"
 
 
 
 #define RENDERER_NAME "Robot State Display"
-#define PARAM_SELECTION "Enable Selection"
-#define PARAM_WIRE "Show BBoxs For Meshes"  
-#define PARAM_COLOR_ALPHA "Alpha"
-#define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
-#define PARAM_SEND_POSTURE_GOAL "Send Posture Goal"
-#define PARAM_RESET_POSTURE "Reset"
-#define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
+
 
 using namespace std;
 using namespace boost;
@@ -259,6 +254,23 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
      self->robotStateListener->_end_pose_received = false;
      spawn_pose_approval_dock(self);
    }
+   
+  if((self->teleop_popup !=NULL))
+  {
+      // move teleop popup to account for viewer movement
+      gint root_x, root_y;
+      gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
+      gint width, height;
+      gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
+     
+     
+     gint pos_x, pos_y;
+     pos_x=root_x+0.5*width-250;    pos_y=root_y+0.9*height-100;
+     
+     gint current_pos_x, current_pos_y;
+     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
+          gtk_window_move(GTK_WINDOW(self->teleop_popup ),pos_x,pos_y);
+  } 
 
 // int64_t toc = bot_timestamp_now();
 // cout << bot_timestamp_useconds(toc-tic) << endl;
@@ -324,6 +336,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       }    
       else
         std::cerr << "Robot urdf not received, can't adjust robot posture as no robot object is created. "<< std::endl;
+  }
+  else if (! strcmp(name,PARAM_ENABLE_EE_TELEOP))
+  {
+     spawn_teleop_ee_popup(self);
+
   } 
 }
 
@@ -365,6 +382,9 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_RESET_POSTURE, NULL);
     //bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL, NULL);
     
+
+    bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
+    
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
       
@@ -377,6 +397,8 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     self->dragging = 0;  
   	self->marker_selection = new std::string(" ");
   	self->pose_approval_dock= NULL; 
+  	self->teleop_popup = NULL;
+  	self->teleop_error_entry =NULL;
     self->visualize_bbox = false;
     self->visualize_forces = false;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);

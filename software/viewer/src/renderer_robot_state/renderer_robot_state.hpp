@@ -26,6 +26,15 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include "RobotStateListener.hpp"
 
+#define PARAM_SELECTION "Enable Selection"
+#define PARAM_WIRE "Show BBoxs For Meshes"  
+#define PARAM_COLOR_ALPHA "Alpha"
+#define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
+#define PARAM_SEND_POSTURE_GOAL "Send Posture Goal"
+#define PARAM_RESET_POSTURE "Reset"
+#define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
+#define PARAM_ENABLE_EE_TELEOP "Adjust EE Teleop"
+
 using namespace std;
 using namespace boost;
 using namespace Eigen;
@@ -50,6 +59,10 @@ namespace renderer_robot_state
     bool visualize_forces;
     
     GtkWidget *pose_approval_dock;
+    GtkWidget *teleop_popup;
+    GtkWidget *teleop_error_entry;
+    double active_res;
+    int active_ee;
 
     std::string* selection;
     std::string* marker_selection;

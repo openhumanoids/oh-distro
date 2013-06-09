@@ -19,6 +19,7 @@ pods_install_libraries(renderer_robot_state )
 pods_install_headers(renderer_robot_state.hpp
   RobotStateListener.hpp
   pose_approval_gui_utils.hpp
+  popup_gui_utils.hpp
   DESTINATION renderer_robot_state )
 
 
