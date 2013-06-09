@@ -11,6 +11,7 @@
 #include <Eigen/SVD>
 #include <Eigen/Eigen>
 #include <bot_core/rotations.h>
+#include <pcl/filters/voxel_grid.h>
 
 using namespace std;
 using namespace pcl;
@@ -229,6 +230,32 @@ Affine3f optimize_pose_with_directions(const Cube<int>& dist_inds, const vector<
     
 }
 
+void decimate_points(const vector<Vector3f>& in, vector<Vector3f>& out, float res)
+{
+  // copy to cloud
+  PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+  cloud->points.resize(in.size());
+  for(int i=0;i<in.size();i++) {
+    cloud->points[i].x = in[i][0];
+    cloud->points[i].y = in[i][1];
+    cloud->points[i].z = in[i][2];
+  }
+ 
+  PointCloud<PointXYZRGB>::Ptr cloudout(new PointCloud<PointXYZRGB>);
+  pcl::VoxelGrid<PointXYZRGB> grid;
+  grid.setLeafSize (res,res,res);
+  grid.setInputCloud (cloud);
+  grid.filter (*cloudout);
+
+  // copy back
+  out.resize(cloudout->points.size());
+  for(int i=0;i<out.size();i++) {
+    out[i][0] = cloudout->points[i].x;
+    out[i][1] = cloudout->points[i].y;
+    out[i][2] = cloudout->points[i].z;
+  }
+}
+
 Affine3f align_coarse_to_fine(
           const vector<Vector3f>& pts_model, 
           const vector<Vector3f>& pts_data, 
@@ -256,9 +283,10 @@ Affine3f align_coarse_to_fine(
   Vector3f avg_model(0,0,0);
   for(int i=0;i<pts_model.size();i++) avg_model+=pts_model[i];
   avg_model/=pts_model.size();
-  //TODO pts_data_dec = decimate_points(pts_data,res);
-  vector<Vector3f> pts_data_dec = pts_data;
-  
+  vector<Vector3f> pts_data_dec;
+  decimate_points(pts_data,pts_data_dec,res);
+  cout << "cloud decimate size: " << pts_data_dec.size() << endl;
+
   // iterate through angles
   float angle_step=30;
   //TODO: allow limit to search
@@ -330,7 +358,7 @@ Affine3f align_coarse_to_fine(
     }
   }
   Affine3f pose_init = best_P;
-  return best_P;
+  //return best_P;
 
   ////////////////////////////////////////////////////////////////////////////////////
   // second pass: iterate through res range
@@ -347,7 +375,7 @@ Affine3f align_coarse_to_fine(
       for(int i=0; i<pts.size(); i++){
         pts[i] = P*pts_data[i];
       }
-      //TODO decimate pts
+      decimate_points(pts,pts,res);
       for(int i=0; i<pts.size(); i++){
         pts[i] = world_to_vol*pts[i];
       }

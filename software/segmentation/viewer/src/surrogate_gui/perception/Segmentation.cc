@@ -948,10 +948,15 @@ namespace surrogate_gui
     // PointCloudFitting
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
     vector<float> res_range = {0.01};
-    Affine3f pose = PointCloudFitting::pointCloutFit(modelcloud,cloud,res_range);
+    Affine3f pose = PointCloudFitting::pointCloutFit(modelcloud,subcloud,res_range);
 
-    xyz = pose.translation();
+    Vector3f xyz_new = pose.translation();
+    xyz[0] = -xyz_new[0];
+    xyz[1] = -xyz_new[2];
+    xyz[2] = xyz_new[1];  //TODO: why??
     ypr = rot2ypr(pose.rotation());
+    ypr[2] = ypr[2]+M_PI;
+    if(ypr[2]>M_PI) ypr[2]-=2*M_PI;
 
     
   }
