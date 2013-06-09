@@ -19,7 +19,7 @@ classdef ManipPDBlock < MIMODrakeSystem
     lhand_ind;
     rhand_pts;
     lhand_pts;
-%     private_data;
+    private_data;
     lambda;
   end
   
@@ -29,7 +29,8 @@ classdef ManipPDBlock < MIMODrakeSystem
       typecheck(controller_data,'SharedDataHandle');
       
       coords = AtlasCoordinates(r);
-      input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
+      hand_ft_frame = AtlasHandForceTorque();
+      input_frame = MultiCoordinateFrame({coords,r.getStateFrame,hand_ft_frame});
       obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,coords);
@@ -62,7 +63,7 @@ classdef ManipPDBlock < MIMODrakeSystem
         
       
       obj.Kp_stiff = eye(6);
-      obj.Kp_comp = diag([0.9 0.6 0.9 0.55 0.55 0.55]);
+      obj.Kp_comp = diag([0.95 0.7 0.95 0.7 0.7 0.7]);
       
       if isfield(options,'dt')
         typecheck(options.dt,'double');
@@ -88,13 +89,12 @@ classdef ManipPDBlock < MIMODrakeSystem
       obj.lhand_pts = [0;0;0];
       obj.lambda = 1e-6;
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
-%       obj.private_data = SharedDataHandle(struct(...
-%         'control_state',-1,...
-%         'ee_goal',[],...
-%         'arms_control_type',[],...
-%         'Kp_r_arm',[],...
-%         'Kp_l_arm',[],...
-%         'free_joint_ind',[]));
+      obj.private_data = SharedDataHandle(struct(...
+        'rhand_force_cached',[],...
+        'lhand_force_cached',[],...
+        'rhand_contact_time_cached',[],...
+        'lhand_contact_time_cached',[]));
+
       lc = lcm.lcm.LCM.getSingleton();
       obj.pause_mon = drake.util.MessageMonitor(drc.plan_control_t,'utime');
       lc.subscribe('COMMITTED_PLAN_PAUSE',obj.pause_mon);
@@ -104,6 +104,12 @@ classdef ManipPDBlock < MIMODrakeSystem
       try
       q_des = varargin{1};
       x = varargin{2};
+      hand_ft = varargin{3};
+      rhand_force = hand_ft(7:9);
+      lhand_force = hand_ft(1:3);
+      rhand_torque = hand_ft(10:12);
+      rhand_force_norm = norm(rhand_force);
+      lhand_force_norm = norm(lhand_force);
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
       r = obj.robot;
@@ -115,7 +121,11 @@ classdef ManipPDBlock < MIMODrakeSystem
           obj.controller_data.setField('qtraj',q_des);
         end
       end
-%       pri_data = getData(obj.private_data);
+      pri_data = getData(obj.private_data);
+      rhand_force_cached = pri_data.rhand_force_cached;
+      lhand_force_cached = pri_data.lhand_force_cached;
+      rhand_contact_time_cached = pri_data.rhand_contact_time_cached;
+      lhand_contact_time_cached = pri_data.lhand_contact_time_cached;
 %       control_state = pri_data.control_state;
 %       ee_goal = pri_data.ee_goal;
 %       arms_control_type = pri_data.arms_control_type;
@@ -127,6 +137,13 @@ classdef ManipPDBlock < MIMODrakeSystem
       r_arm_control_type = ctrl_data.r_arm_control_type;
       free_joint_ind = 1:obj.nq;
       constraint_joint_ind = [];
+      if(~isempty(rhand_force_cached))
+        
+%         if(rhand_force_norm-rhand_force_norm_cached>70)
+%           display('Detect contact on right hand');
+%           rhand_contact_time_cached = t;
+%         end
+      end
       if(l_arm_control_type ~= drc.robot_plan_t.NONE)
         free_joint_ind = free_joint_ind(~ismember(free_joint_ind,obj.l_arm_ind));
         constraint_joint_ind = [constraint_joint_ind obj.l_arm_ind];
@@ -158,6 +175,7 @@ classdef ManipPDBlock < MIMODrakeSystem
           if l_arm_control_type == drc.robot_plan_t.POSITION
           elseif l_arm_control_type == drc.robot_plan_t.IMPEDANCE
           elseif l_arm_control_type == drc.robot_plan_t.STIFF
+            Kp_l_arm = eye(6);
           elseif l_arm_control_type == drc.robot_plan_t.COMPLIANT
             Kp_l_arm = obj.Kp_comp;
           end
@@ -170,7 +188,10 @@ classdef ManipPDBlock < MIMODrakeSystem
           if r_arm_control_type == drc.robot_plan_t.POSITION
           elseif r_arm_control_type == drc.robot_plan_t.IMPEDANCE
           elseif r_arm_control_type == drc.robot_plan_t.STIFF
+            Kp_r_arm = eye(6);
           elseif r_arm_control_type == drc.robot_plan_t.COMPLIANT
+%             display(sprintf('%10.5f, %10.5f, %10.5f,%10.5f, %10.5f, %10.5f',...
+%               rhand_force(1),rhand_force(2),rhand_force(3),rhand_torque(1),rhand_torque(2),rhand_torque(3)));
             Kp_r_arm = obj.Kp_comp;
           end
         end
@@ -208,12 +229,10 @@ classdef ManipPDBlock < MIMODrakeSystem
           
         
       end
-%       obj.private_data.setField('control_state',control_state);
-% %       obj.private_data.setField('ee_goal',ee_goal);
-%       obj.private_data.setField('arms_control_type',arms_control_type);
-%       obj.private_data.setField('Kp_r_arm',Kp_r_arm);
-%       obj.private_data.setField('Kp_l_arm',Kp_l_arm);
-%       obj.private_data.setField('free_joint_ind',free_joint_ind);
+      obj.private_data.setField('rhand_force_cached',rhand_force);
+      obj.private_data.setField('lhand_force_cached',lhand_force);
+      obj.private_data.setField('rhand_contact_time_cached',rhand_contact_time_cached);
+      obj.private_data.setField('lhand_contact_time_cached',lhand_contact_time_cached);
       catch err
         keyboard;
       end
