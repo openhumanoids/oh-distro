@@ -92,7 +92,7 @@ classdef WalkingController < DRCController
       obj = setTimedTransition(obj,100,'standing',false); % default timeout
       
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
-      obj = addLCMTransition(obj,'STOP_WALKING',drc.utime_t(),'standing');
+      obj = addLCMTransition(obj,'STOP_WALKING',drc.plan_control_t(),'standing');
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)

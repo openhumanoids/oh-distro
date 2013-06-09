@@ -5,7 +5,7 @@ import drc
 
 lc = lcm.LCM()
 
-msg = drc.utime_t()
+msg = drc.plan_control_t()
 msg.utime = 0
 lc.publish("STOP_WALKING", msg.encode())
 

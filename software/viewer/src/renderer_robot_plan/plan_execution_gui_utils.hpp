@@ -4,6 +4,7 @@
 #define PARAM_RIGHT_ARM_CT_SELECT "Right arm  "
 #define PARAM_LEFT_LEG_CT_SELECT "Left legs  "
 #define PARAM_RIGHT_LEG_CT_SELECT "Right legs  "
+#define PARAM_STOP_WALKING "Stop walking"
 
 
 using namespace renderer_robot_plan;  
@@ -78,6 +79,16 @@ namespace renderer_robot_plan_gui_utils
       gtk_widget_show_all(window); 
   }   
  //==================================================================================================    
+  static gboolean on_stop_walking_button_clicked (GtkButton* button, void *user)
+  {
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+    cout << "Stopping walking" << endl;
+    string channel = "STOP_WALKING";
+    self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true);
+
+    return TRUE;
+  }
+
    static gboolean on_pause_button_clicked (GtkButton* button, void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -104,6 +115,11 @@ namespace renderer_robot_plan_gui_utils
     else {
       gtk_widget_destroy(self->plan_execution_dock);
       self->plan_execution_dock= NULL;
+    }
+    if(self->robotPlanListener->is_walking_plan()) {
+      string channel = "STOP_WALKING";
+      cout << "Stopping walking" << endl;
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true);
     }
     cout <<"Robot plan terminated" << endl;
     cout <<"Publishing on REJECTED_ROBOT_PLAN" << endl;
@@ -189,7 +205,7 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
 
     
-    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button;
+    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button, *stop_walking_button;
 
     if(self->robotPlanListener->is_multi_approval_plan())
      {
@@ -209,10 +225,14 @@ namespace renderer_robot_plan_gui_utils
       gtk_widget_set_tooltip_text (pause_button, "Pause");
     }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
-        
+
+    stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
+
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
     gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Plan");
+    gtk_widget_set_tooltip_text(stop_walking_button, "Stop walking NOW");
+
     
     GtkWidget *hbox;
     hbox = gtk_hbox_new (FALSE, 0);
@@ -226,7 +246,12 @@ namespace renderer_robot_plan_gui_utils
     gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
     if(self->robotPlanListener->is_manip_plan())   
       gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
-    gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
+    if(self->robotPlanListener->is_walking_plan()) {
+      gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
+      gtk_box_pack_end(GTK_BOX(hbox), stop_walking_button, FALSE, FALSE, 3);
+    } else {
+      gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
+    }
     
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
@@ -267,7 +292,14 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_pause_button_clicked),
                   self);  
-    }                  
+    } 
+    if (self->robotPlanListener->is_walking_plan()) {
+      g_signal_connect (G_OBJECT (stop_walking_button),
+                        "clicked",
+                        G_CALLBACK (on_stop_walking_button_clicked),
+                        self);
+    }
+
    /* 
     self->plan_execution_dock = window; 
     gtk_container_add (GTK_CONTAINER (window), hbox);

@@ -46,9 +46,9 @@ class FallDetector:
             self.vdot_history.append(err)
             self.vdot_errror_count += int(err)
             if self.vdot_errror_count > self.opts.count_threshold:
-                print "WARNING: Fall detected at time: {:.3f}".format(t)
-                print "Bracing NOW"
                 if time.time() - self.last_publish_time > self.opts.retransmit_delay:
+                    print "WARNING: Fall detected at time: {:.3f}".format(t)
+                    print "Bracing NOW"
                     brace_msg = drc.utime_t()
                     brace_msg.utime = 0
                     m.publish("BRACE_FOR_FALL", brace_msg.encode())
