@@ -1,4 +1,4 @@
-function [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, current_pos)
+function [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, current_pos, nom_step_width)
 % Scan out a grid of terrain along the robot's planned walking trajectory, then filter that terrain by its acceptability for stepping on. 
 % @param traj either a BezierTraj or a DirectTraj
 % @param current_pos where the center of the robot's feet currently is
@@ -7,6 +7,10 @@ function [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj
 % @retval foot_centers the center position of each foot at each lambda 
 
 debug = false;
+
+if nargin < 4
+  nom_step_width = biped.nom_step_width;
+end
 
 foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2));
 
@@ -64,8 +68,8 @@ end
 
 F = ordfilt2(Q, length(find(domain)), domain);
     
-foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1),...
-                      'left', biped.stepCenter2FootCenter(traj_poses, 0));
+foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, nom_step_width),...
+                      'left', biped.stepCenter2FootCenter(traj_poses, 0, nom_step_width));
 infeasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:)),...
    'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
 
