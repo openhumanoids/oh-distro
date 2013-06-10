@@ -423,7 +423,238 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
        param=="yaw" || param=="pitch" || param=="roll") return true;
     else return false;
   }
+
+// =================================================================================
+// affstore sync methods (TODO: can be merged into a better utility class )
+  inline static void update_mate_joints_in_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in, KDL::Frame &T_mate_start_mate_end, void *user)
+  {
   
+  RendererAffordances *self = (RendererAffordances*) user;
+   drc::affordance_t msg;
+
+   // get otdf from map
+   stringstream nameSS;
+   OtdfInstanceStruc* otdf = NULL;
+   nameSS << otdf_type << "_" << uid;
+   if(self->instantiated_objects.count(nameSS.str())){
+     otdf = &self->instantiated_objects[nameSS.str()];
+   } else{
+     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
+   }
+
+   msg.utime = 0;
+   msg.map_id = 0;
+   
+   
+   msg.otdf_type = otdf_type;
+   msg.aff_store_control = msg.UPDATE;//msg.NEW
+   msg.uid = uid; 
+   
+    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
+   msg.origin_xyz[0] =instance_in->params_map_.find("x")->second;
+   msg.origin_xyz[1] =instance_in->params_map_.find("y")->second;
+   msg.origin_xyz[2] =instance_in->params_map_.find("z")->second;
+   msg.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
+   msg.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
+   msg.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
+
+   double bounding_xyz[]={0,0,0};
+   double bounding_rpy[]={0,0,0};
+   double bounding_lwh[]={0,0,0};
+  
+   if(otdf){
+      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
+      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
+      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
+      bounding_rpy[0] = otdf->boundingBoxRPY[0];
+      bounding_rpy[1] = otdf->boundingBoxRPY[1];
+      bounding_rpy[2] = otdf->boundingBoxRPY[2];
+      bounding_lwh[0] = otdf->boundingBoxLWH[0];
+      bounding_lwh[1] = otdf->boundingBoxLWH[1];
+      bounding_lwh[2] = otdf->boundingBoxLWH[2];
+      msg.modelfile = otdf->modelfile;
+   }
+
+   // if common shape (e.g. cylinder, sphere), fill in bounding box
+   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
+
+   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
+   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
+   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
+    
+   typedef std::map<std::string, double > params_mapType;
+   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
+   { 
+      // don't copy xyz ypr
+      if(isRedundantParam(it->first)) continue;
+      // copy all other params
+      msg.param_names.push_back(it->first);
+      msg.params.push_back(it->second);
+   }
+   msg.nparams =  msg.param_names.size();
+
+  int cnt=0;
+   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
+    {     
+      if(it->second->type!=(int) otdf::Joint::FIXED) {
+        string token  = "mate::";
+        string joint_name = it->first;
+        double pos, vel;
+        size_t found = joint_name.find(token);  
+        if (found!=std::string::npos) 
+        {
+          vel=0;
+          double r,p,y;
+
+          //Mate Joints are Intrinsic XYZ (roll::pitch::yaw)
+          //Rx(1)*Ry(2)*Rz(3)	
+          //c2c3	c2s3	-s2
+          //s1s2c3-c1s3	s1s2s3+c1c3	s1c2
+          //c1s2c3+s1s3	c1s2s3-s1c3	c1c2
+
+          /*double qx,qy,qz,qw,roll_a,roll_b,pitch_sin,yaw_a,yaw_b;
+          T_mate_start_mate_end.M.GetQuaternion(qx,qy,qz,qw);
+          roll_a = 2 * (qy*qz - qw*qx);
+          roll_b = 1 - 2 * (qx*qx + qy*qy);
+          r = atan2 (-roll_a, roll_b);
+          pitch_sin = 2 * (qx*qz + qw*qy);
+          p = asin (pitch_sin);//
+          yaw_a = 2 * (qx*qy - qw*qz);
+          yaw_b = 1 - 2 * (qy*qy + qz*qz);
+          y = atan2 (-yaw_a, yaw_b);   */
+          
+          double R12,R11,R13,R23,R33;
+          R11 = T_mate_start_mate_end.M.data[0];
+          R12 = T_mate_start_mate_end.M.data[1];
+          R13 = T_mate_start_mate_end.M.data[2];
+          R23 = T_mate_start_mate_end.M.data[5];
+          R33 = T_mate_start_mate_end.M.data[8];
+          r = atan2 (-R23, R33);
+          p = asin (R13);
+          y = atan2 (-R12,R11);
+                     
+          if(joint_name=="mate::x")
+            pos = T_mate_start_mate_end.p[0];
+          else if(joint_name=="mate::y")
+            pos = T_mate_start_mate_end.p[1];          
+          else if(joint_name=="mate::z")
+            pos = T_mate_start_mate_end.p[2];
+          else if(joint_name=="mate::roll")
+            pos = r;
+          else if(joint_name=="mate::pitch")
+            pos = p;     
+          else if(joint_name=="mate::yaw")
+            pos = y;    
+        }
+        else
+        {
+          instance_in->getJointState(it->first,pos,vel);
+        }
+        cnt++;
+        msg.state_names.push_back(it->first);
+        msg.states.push_back(pos); 
+      }
+      
+     }
+   msg.nstates =  cnt;
+   //cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
+   self->lcm->publish(channel, &msg);
+  }
+  
+  
+  // ========================================== 
+  inline static void update_object_pose_in_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in, KDL::Frame &T_world_object,void *user)
+  {
+  
+   RendererAffordances *self = (RendererAffordances*) user;
+   drc::affordance_t msg;
+
+   // get otdf from map
+   stringstream nameSS;
+   OtdfInstanceStruc* otdf = NULL;
+   nameSS << otdf_type << "_" << uid;
+   if(self->instantiated_objects.count(nameSS.str())){
+     otdf = &self->instantiated_objects[nameSS.str()];
+   } else{
+     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
+   }
+
+   msg.utime = 0;
+   msg.map_id = 0;
+   
+   
+   msg.otdf_type = otdf_type;
+   msg.aff_store_control = msg.UPDATE;//msg.NEW
+   msg.uid = uid; 
+   
+    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
+   msg.origin_xyz[0] =T_world_object.p[0];
+   msg.origin_xyz[1] =T_world_object.p[1];
+   msg.origin_xyz[2] =T_world_object.p[2];
+   double r,p,y;
+   T_world_object.M.GetRPY(r,p,y);
+   msg.origin_rpy[0] =r;
+   msg.origin_rpy[1] =p;
+   msg.origin_rpy[2] =y;
+   
+
+   double bounding_xyz[]={0,0,0};
+   double bounding_rpy[]={0,0,0};
+   double bounding_lwh[]={0,0,0};
+  
+   if(otdf){
+      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
+      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
+      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
+      bounding_rpy[0] = otdf->boundingBoxRPY[0];
+      bounding_rpy[1] = otdf->boundingBoxRPY[1];
+      bounding_rpy[2] = otdf->boundingBoxRPY[2];
+      bounding_lwh[0] = otdf->boundingBoxLWH[0];
+      bounding_lwh[1] = otdf->boundingBoxLWH[1];
+      bounding_lwh[2] = otdf->boundingBoxLWH[2];
+      msg.modelfile = otdf->modelfile;
+   }
+
+   // if common shape (e.g. cylinder, sphere), fill in bounding box
+   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
+
+   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
+   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
+   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
+    
+   typedef std::map<std::string, double > params_mapType;
+   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
+   { 
+      // don't copy xyz ypr
+      if(isRedundantParam(it->first)) continue;
+      // copy all other params
+      msg.param_names.push_back(it->first);
+      msg.params.push_back(it->second);
+   }
+   msg.nparams =  msg.param_names.size();
+
+  int cnt=0;
+   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
+    {     
+      if(it->second->type!=(int) otdf::Joint::FIXED) {
+
+          double pos, vel;
+          instance_in->getJointState(it->first,pos,vel);
+          cnt++;
+          msg.state_names.push_back(it->first);
+          msg.states.push_back(pos);
+      }
+     }
+   msg.nstates =  cnt;
+   //cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
+   self->lcm->publish(channel, &msg);
+  }
+  
+  
+// ==========================================
+    
   inline static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
   {
    RendererAffordances *self = (RendererAffordances*) user;

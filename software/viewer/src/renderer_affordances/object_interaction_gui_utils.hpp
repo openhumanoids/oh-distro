@@ -19,7 +19,7 @@
 #define PARAM_SEND_POSE_GOAL  "Get Robot Pose"
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
-#define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstBotState"
+#define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
 #define PARAM_MATE     "Mate"
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)

@@ -29,6 +29,7 @@ namespace renderer_affordances
     boost::shared_ptr<lcm::LCM> _lcm;    
     RendererAffordances* _parent_renderer; 
 	int64_t _last_state_msg_system_timestamp;
+	int object_update_counter;
     
     //BotViewer *_viewer;
 
@@ -48,6 +49,11 @@ namespace renderer_affordances
     // TODO: Feature dev after VRC  (Sisir, 5th June)
     // We should have a bare bones KinematicBody class when no drawing(parsing meshes etc) is required.
     boost::shared_ptr<visualization_utils::GlKinematicBody> _gl_robot; 
+
+
+	// updates the position of objects if there are double melded (associated sticky hand is melded to true hand and object itself also melded)
+	// object tracking via FK
+	void updateGraspedObjectPosesViaFK(void);
 
     //-------------message callback
   private:

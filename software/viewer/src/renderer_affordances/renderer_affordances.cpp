@@ -1009,16 +1009,13 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);
 
-
-
 	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
 	bool optpoolready = self->graspOptStatusListener->isOptPoolReady();
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
-    bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
-    bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
+	bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
+	bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
   
- 
-    return &self->renderer;
+   return &self->renderer;
 }
 
 void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
