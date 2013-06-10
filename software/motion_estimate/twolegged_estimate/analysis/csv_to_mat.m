@@ -157,6 +157,15 @@ fovis_V = data(:,(offset:(offset+2)));
 offset = 140;
 biasa = data(:,(offset:(offset+2)));
 
+offset = 143;
+dpos_bias_fb = data(:,(offset:(offset+2)));
+
+offset = 146;
+dvel_bias_fb = data(:,(offset:(offset+2)));
+
+offset = 149;
+force_ = data(:,(offset:(offset+2)));
+
 
 % end
 

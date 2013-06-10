@@ -67,7 +67,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 		//w << 0.2,0.2,0.2,0.2,0.2;
 		//Eigen::VectorXd t(5);
 		//t << 5000, 10000, 15000, 20000, 25000;
-		SethFootPrintOut.setSize(3);
+		SFootPrintOut.setSize(3);
 		FootVelCompensation.setSize(3);
 	}
 #endif
@@ -339,12 +339,16 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		if (true) {
 			for (int i=0;i<3;i++) {
 				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+
+				feedback_loggings[i] = - INS_POS_FEEDBACK_GAIN * err_b(i);
+				feedback_loggings[i+3] = - INS_VEL_FEEDBACK_GAIN * errv_b(i);
 			}
 		} else {
 			for (int i=0;i<3;i++) {
 				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b_VO(i);
 			}
 		}
+
 
 
 		// Update the bias estimates
@@ -589,48 +593,23 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				stageC[1] = filtered_pelvis_vel(1);
 				stageC[2] = filtered_pelvis_vel(2);
 
-				if (!_switches->OPTION_D) {
+				// Median Filter
+				vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
+				vel[1] = median_filter[1].processSample(filtered_pelvis_vel(1));
+				vel[2] = median_filter[2].processSample(filtered_pelvis_vel(2));
 
-					// Median Filter
-					vel[0] = median_filter[0].processSample(filtered_pelvis_vel(0));
-					vel[1] = median_filter[1].processSample(filtered_pelvis_vel(1));
-					vel[2] = median_filter[2].processSample(filtered_pelvis_vel(2));
-
-					for (int i=0;i<3;i++) {
-						filtered_pelvis_vel(i) = vel[i];
-					}
-
-					_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
+				for (int i=0;i<3;i++) {
+					filtered_pelvis_vel(i) = vel[i];
 				}
+
+				_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
+
 			}
 		}
 
 		// At this point the pelvis position has been found from leg kinematics
 
-		InertialOdometry::DynamicState datafusion_out;
 
-		// TODO
-		LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
-		LeggO.V = _leg_odo->getPelvisVelocityStates();
-
-
-		//LeggO.P << 0.,0.,0.;
-		//LeggO.V << 0., 0., 0.;
-
-		datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst, FovisEst);
-
-		if (_switches->OPTION_D) {
-			// This is for the computations that follow -- not directly leg odometry position
-			current_pelvis.translation().x() = datafusion_out.P(0);
-			current_pelvis.translation().y() = datafusion_out.P(1);
-			current_pelvis.translation().z() = datafusion_out.P(2);
-
-			_leg_odo->overwritePelvisVelocity(datafusion_out.V);
-		}
-
-		if (isnan((float)datafusion_out.V(0)) || isnan((float)datafusion_out.V(1)) || isnan((float)datafusion_out.V(2))) {
-			std::cout << "LegOdometry_Handler::robot_state_handler -- NAN happened\n";
-		}
 
 
 		// Timing profile. This is the midway point
@@ -639,6 +618,34 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// Here the rate change is propagated into the rest of the system
 
 		if (ratechangeiter==1) {
+
+
+
+			InertialOdometry::DynamicState datafusion_out;
+
+			// TODO
+			LeggO.P << current_pelvis.translation().x(),current_pelvis.translation().y(),current_pelvis.translation().z();
+			LeggO.V = _leg_odo->getPelvisVelocityStates();
+
+
+			//LeggO.P << 0.,0.,0.;
+			//LeggO.V << 0., 0., 0.;
+
+			datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst, FovisEst);
+
+			if (_switches->OPTION_D) {
+				// This is for the computations that follow -- not directly leg odometry position
+				current_pelvis.translation().x() = datafusion_out.P(0);
+				current_pelvis.translation().y() = datafusion_out.P(1);
+				current_pelvis.translation().z() = datafusion_out.P(2);
+
+				_leg_odo->overwritePelvisVelocity(datafusion_out.V);
+			}
+
+			if (isnan((float)datafusion_out.V(0)) || isnan((float)datafusion_out.V(1)) || isnan((float)datafusion_out.V(2))) {
+				std::cout << "LegOdometry_Handler::robot_state_handler -- NAN happened\n";
+			}
+
 
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
@@ -650,7 +657,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				Eigen::VectorXd difffoot(3);
 				Eigen::Vector3d trn;
 				trn << _leg_odo->getLeftInLocal().translation().x(), _leg_odo->getLeftInLocal().translation().y(), _leg_odo->getLeftInLocal().translation().z();
-				difffoot = SethFootPrintOut.diff(_msg->utime, trn);
+				difffoot = SFootPrintOut.diff(_msg->utime, trn);
 
 				std::cout << "LEFT-FOOT subjective: " << std::fixed << difffoot.transpose() << std::endl;
 
@@ -1088,6 +1095,13 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    	   ss << biasesa(i) << ", ";//140-142
    }
 
+   for (int i=0;i<6;i++) {
+       ss << feedback_loggings[i] << ", "; //143-148
+   }
+
+   for (int i=0;i<3;i++) {
+	  ss << just_checking_imu_frame.force_(i) << ", "; //149-152
+   }
 
    ss <<std::endl;
 

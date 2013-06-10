@@ -160,7 +160,7 @@ private:
 	NumericalDiff local_to_head_rate_diff;
 	
 #ifdef DO_FOOT_SLIP_FEEDBACK
-	NumericalDiff SethFootPrintOut;
+	NumericalDiff SFootPrintOut;
 	TrapezoidalInt FootVelCompensation;
 #endif
 
@@ -199,6 +199,8 @@ private:
 	volatile double stageB[3];
 	volatile double stageC[3];
 	
+	double feedback_loggings[6];
+
 	// These filters were added separately from the joint filters
 	LowPassFilter lpfilter[FILTER_ARR];
 	//Filter* _filter[FILTER_ARR];

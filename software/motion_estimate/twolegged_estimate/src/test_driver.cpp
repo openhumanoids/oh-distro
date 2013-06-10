@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
   switches.OPTION_E = false;
   switches.grab_true_init = false;
   switches.verbose = false;
-  switches.medianlength=9;
+  switches.medianlength=5;
 
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");

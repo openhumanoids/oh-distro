@@ -11,7 +11,7 @@ cd '~/drc/software/config'
 cd '~/drc/software/motion_estimate/twolegged_estimate'
 
 %% Load the csv into matlab workspace
-
+clc
 vars = csv_to_mat('true_estimated_states.csv','');
 field_names = fieldnames(vars);
 for i = 1:numel(field_names)
@@ -243,7 +243,8 @@ figure(7);clf
 subplot(spa,spb,1)
 plot(t,imu_P)
 hold on
-plot(t,epos,'--','linewidth',2)
+plot(t,tpos,'--','linewidth',2)
+plot(t,epos,':','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
@@ -254,7 +255,7 @@ subplot(spa,spb,2)
 plot(t,imu_V)
 hold on
 plot(t,leg_V,'--','linewidth',2)
-plot(t,fovis_V,'+','linewidth',2)
+plot(t,fovis_V,'+','linewidth',1)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
@@ -279,31 +280,60 @@ title('INS velocity errors')
 
 % here we plot the estimated accelerometer biases
 figure(8); clf
+
 subplot(spa,spb,1)
+plot(t, force_)
+grid on
+title('force_ in the world frame (think so)')
+
+
+subplot(spa,spb,2)
 plot(t,biasa);
 grid on
 title('Accelerometer Biases');
 
+subplot(spa,spb,3)
+plot(t,dpos_bias_fb);
+grid on
+title('delta pos contribution to acc bias')
+axis([0 t(end) -.01 0.01])
+
+subplot(spa,spb,4)
+plot(t,dvel_bias_fb);
+grid on
+title('delta vel contribution to acc bias')
 
 
-figure(7)
-%%
+
+% figure(7)
+
 
 if (true)
-    figure(6)
+    figure(9)
 
     subplot(spa,spb,1)
 
-    plot(t,tpos-epos), grid on, xlabel('Sim time [s]'), title('position errors')
+    plot(tpos-epos), grid on, xlabel('Sim time [s]'), title('position errors')
 
     subplot(spa,spb,2)
-    plot(t,tvel-evel), grid on, title('velocity errors')
+    errv = tvel-evel;
+    plot(t,errv), grid on, title(['velocity errors, std=', num2str(norm(std(errv((floor(0.1*end)):end)))) ' m/s'])
+    
 
     subplot(spa,spb,3)
     plot(t,(tE-eE)*r2d), grid on, title('Euler angle errors [deg]')
 
+    
+%     plot(t,(trate-erate)*r2d), grid on,title('rate errors [deg/s]')
+
+    [bpx,bpy] = ginput();
+    
     subplot(spa,spb,4)
-    plot(t,(trate-erate)*r2d), grid on,title('rate errors [deg/s]')
+    f9_d = detrend((tpos-epos),'linear',floor(bpx));
+
+    plot(t(1:(length(f9_d))),f9_d)
+    grid on
+    title('detrended position state estimation errors ')
 
 end
 
