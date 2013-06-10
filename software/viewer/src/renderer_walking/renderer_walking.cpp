@@ -502,8 +502,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->ignore_terrain = false;
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
-  self->step_speed = 0.5; // m/s
-  self->step_height = 0.05; // m
+  self->step_speed = 1.5; // m/s
+  self->step_height = 0.1; // m
   self->mu = 1.0;
   self->leading_foot = LEADING_FOOT_RIGHT;
   
