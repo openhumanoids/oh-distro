@@ -433,8 +433,15 @@ while(1)
   p = committed_plan_listener.getNextMessage(msg_timeout);
   if (~isempty(p))
     disp('candidate manipulation plan was committed');
-       rh_ee_goal = [];
-       lh_ee_goal = [];
+      if(ee_goal_type_flags.h ~= 2)
+        h_ee_constraint = [];
+      end
+      if(ee_goal_type_flags.lh ~=2)
+        lh_ee_goal = [];
+      end
+      if(ee_goal_type_flags.rh ~=2)
+        rh_ee_goal = [];
+      end
        rf_ee_goal = [];
        lf_ee_goal = [];       
        lh_ee_constraint = [];
@@ -442,22 +449,27 @@ while(1)
        lf_ee_constraint = [];
        rf_ee_constraint = [];
        %h_ee_goal = [];
-       h_ee_constraint = [];
   end
   
   p = rejected_plan_listener.getNextMessage(msg_timeout);
   if (~isempty(p))
     disp('candidate manipulation plan was rejected');
-    rh_ee_goal = [];
-    lh_ee_goal = [];
-    rf_ee_goal = [];
-    lf_ee_goal = [];
-    lh_ee_constraint = [];
-    rh_ee_constraint = [];
-    lf_ee_constraint = [];
-    rf_ee_constraint = [];
-    %h_ee_goal = [];
-    h_ee_constraint = [];
+    if(ee_goal_type_flags.h ~= 2)
+      h_ee_constraint = [];
+    end
+    if(ee_goal_type_flags.lh ~=2)
+      lh_ee_goal = [];
+    end
+    if(ee_goal_type_flags.rh ~=2)
+      rh_ee_goal = [];
+    end
+     rf_ee_goal = [];
+     lf_ee_goal = [];       
+     lh_ee_constraint = [];
+     rh_ee_constraint = [];
+     lf_ee_constraint = [];
+     rf_ee_constraint = [];
+     %h_ee_goal = [];
   end
   
   p = getNextMessage (h_ee_clear.frame, msg_timeout);

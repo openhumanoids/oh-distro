@@ -20,9 +20,9 @@ classdef ManipulationPlanner < handle
         restrict_feet
         v_desired
         
-        head_gaze_axis
-        lhand_gaze_axis
-        rhand_gaze_axis
+        head_gaze_target
+        lhand_gaze_target
+        rhand_gaze_target
     end
     
     methods
@@ -444,7 +444,7 @@ classdef ManipulationPlanner < handle
 						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             
 						%% Might be worth preventing leaning forward too much also 
-
+            
             if(~is_manip_map)
                 obj.rfootT = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],1);
                 obj.lfootT = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],1);
@@ -604,7 +604,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_foot_pose];
                         else
                             if(i==length(timeIndices))
-                                obj.lfootT = lfootT;
+                                obj.lfootT = l_foot_pose;
                             end
                         end
                     end
@@ -630,7 +630,7 @@ classdef ManipulationPlanner < handle
                             plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_foot_pose];
                         else
                             if(i==length(timeIndices))
-                                obj.rfootT = rfootT;
+                                obj.rfootT = r_foot_pose;
                             end
                         end
                     end
@@ -769,6 +769,9 @@ classdef ManipulationPlanner < handle
                 stat = sprintf('Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
                 send_status(3,0,0,stat);
                 
+                stat = sprintf('Filtering manip map for reachability: Keeping %d of %d original plan\n', max_dof_idx-min_dof_idx+1, length(timeIndices));
+                send_status(3,0,0,stat);
+                
                 timeIndices = timeIndices(min_dof_idx:max_dof_idx);
                 
                 plan_Indices = plan_Indices(min_dof_idx:max_dof_idx);
@@ -795,6 +798,8 @@ classdef ManipulationPlanner < handle
                 
                 fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
                     
+                %s
+                
                 %s
                 
                 obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
@@ -1009,12 +1014,16 @@ classdef ManipulationPlanner < handle
                     rhandT  = rh_ee_goal(1:6);
                     rhandT = [nan;nan;nan;nan;nan;nan];
                 else
+                  if(goal_type_flags.rh ~=2)
                     rhandT = zeros(6,1);
                     % Desired position of palm in world frame
                     T_world_palm_r = HT(rh_ee_goal(1:3),rh_ee_goal(4),rh_ee_goal(5),rh_ee_goal(6));
                     T_world_hand_r = T_world_palm_r*T_palm_hand_r;
                     rhandT(1:3) = T_world_hand_r(1:3,4);
                     rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
+                  else
+                    rhandT = rh_ee_goal(1:6);
+                  end
                 end
                 
                 if(isempty(lh_ee_goal))
@@ -1022,12 +1031,16 @@ classdef ManipulationPlanner < handle
                     lhandT  = lh_ee_goal(1:6);
                     lhandT = [nan;nan;nan;nan;nan;nan];
                 else
-                    lhandT = zeros(6,1);
-                    % Desired position of palm in world frame
-                    T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
-                    T_world_hand_l = T_world_palm_l*T_palm_hand_l;
-                    lhandT(1:3) = T_world_hand_l(1:3,4);
-                    lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
+                    if(goal_type_flags.lh ~= 2)
+                      lhandT = zeros(6,1);
+                      % Desired position of palm in world frame
+                      T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
+                      T_world_hand_l = T_world_palm_l*T_palm_hand_l;
+                      lhandT(1:3) = T_world_hand_l(1:3,4);
+                      lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
+                    else
+                      lhandT = lh_ee_goal(1:6);
+                    end
                 end
                 
                 if(isempty(rf_ee_goal))
@@ -1073,37 +1086,37 @@ classdef ManipulationPlanner < handle
                 
                 %=========================================================================== 
                  % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-                if(goal_type_flags.h == 1)
-                 headT(1:3)=nan(3,1);
-                end
-                if(goal_type_flags.lh == 1)
-                 lhandT(1:3)=nan(3,1);
-                end   
-                if(goal_type_flags.rh == 1)
-                 rhandT(1:3)=nan(3,1);
-                end               
+                              
                 if(goal_type_flags.h == 2)
                 % headT(1:3) is actually object pos
-                 obj.head_gaze_axis = headT(1:3)-head_pose0(1:3);
-                 obj.head_gaze_axis =obj.head_gaze_axis/norm(obj.head_gaze_axis);
-                 headT=nan(6,1); % Nullify Head Constraint
+                 obj.head_gaze_target = headT(1:3);
+                else
+                  obj.head_gaze_target = [];
                 end
                 if(goal_type_flags.lh == 2)
                  % lhandT(1:3) is actually object pos
-                 obj.lhand_gaze_axis = lhandT(1:3)-lhand_pose0(1:3);
-                 obj.lhand_gaze_axis =obj.lhand_gaze_axis/norm(obj.lhand_gaze_axis);
-                 lhandT=nan(6,1); % Nullify Hand Constraint
+                 obj.lhand_gaze_target = lhandT(1:3);
+                else
+                  obj.lhand_gaze_target = [];
                 end   
                 if(goal_type_flags.rh == 2)
                   % rhandT(1:3) is actually object pos
-                 obj.rhand_gaze_axis = rhandT(1:3)-rhand_pose0(1:3);
-                 obj.rhand_gaze_axis =obj.rhand_gaze_axis/norm(obj.rhand_gaze_axis);
-                 rhandT=nan(6,1); % Nullify Hand Constraint
+                 obj.rhand_gaze_target = rhandT(1:3);
+                else
+                  obj.rhand_gaze_target = [];
                 end   
                 %===========================================================================                
                 
-                r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
-                l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
+                if(goal_type_flags.rh ~=2)
+                  r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
+                else
+                  r_hand_poseT = nan(6,1);
+                end
+                if(goal_type_flags.lh ~=2)
+                  l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
+                else
+                  l_hand_poseT = nan(6,1);
+                end
                 r_foot_poseT = [rfootT(1:3,:); repmat(rpy2quat(rfootT(4:6,1)),1,num_r_foot_pts)];
                 l_foot_poseT = [lfootT(1:3,:); repmat(rpy2quat(lfootT(4:6,1)),1,num_l_foot_pts)];
                 headT(1:3)=nan(3,1); % only orientation constraint for the head.
@@ -1118,8 +1131,20 @@ classdef ManipulationPlanner < handle
                 
                 rhandT =  obj.rhandT;
                 lhandT =  obj.lhandT;
-                rfootT =  obj.rfootT;
-                lfootT =  obj.lfootT;
+                if(size(obj.rfootT,2)~= num_r_foot_pts)
+                  T_world_foot_r = HT(obj.rfootT(1:3),obj.rfootT(4),obj.rfootT(5),obj.rfootT(6));
+                  rfootT = T_world_foot_r*[r_foot_pts;ones(1,num_r_foot_pts)];
+                  rfootT = [rfootT(1:3,:);repmat(obj.rfootT(4:6),1,num_r_foot_pts)];
+                else
+                  rfootT = obj.rfootT;
+                end
+                if(size(obj.lfootT,2)~= num_l_foot_pts)
+                  T_world_foot_l = HT(obj.lfootT(1:3),obj.lfootT(4),obj.lfootT(5),obj.lfootT(6));
+                  lfootT = T_world_foot_l*[r_foot_pts;ones(1,num_l_foot_pts)];
+                  lfootT = [lfootT(1:3,:);repmat(obj.lfootT(4:6),1,num_l_foot_pts)];
+                else
+                  lfootT = obj.lfootT;
+                end
                 headT  =  obj.headT;
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
                 l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -1271,6 +1296,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.quasiStaticFlag = true;
+            ikoptions.shrinkFactor = 0.95;
             if(is_keyframe_constraint)
                 ikoptions.MajorIterationsLimit = 300;
             else
@@ -1399,9 +1425,9 @@ classdef ManipulationPlanner < handle
                 
                 % Constraints for head
                 kc_head0 = ActionKinematicConstraint(obj.r,head_body,[0;0;0],head_pose0,[s(1),s(1)],'head0');
-                ks = ks.addKinematicConstraint(kc_head0);
+%                 ks = ks.addKinematicConstraint(kc_head0);
                 kc_headT = ActionKinematicConstraint(obj.r, head_body,[0;0;0],head_poseT_relaxed,[s(end),s(end)],'headT');
-                ks = ks.addKinematicConstraint(kc_headT);
+%                 ks = ks.addKinematicConstraint(kc_headT);
                 
             else % Motion Constraints
                 
@@ -1508,8 +1534,9 @@ classdef ManipulationPlanner < handle
                     l_foot_body,l_foot_pts,l_foot_pose0_static_contact, ...
                     r_hand_body,[0;0;0],r_hand_pose0, ...
                     l_hand_body,[0;0;0],l_hand_pose0,...
-                    head_body,[0;0;0],head_pose0,...
                     ikoptions);
+%                     head_body,[0;0;0],head_pose0,...
+%                     ikoptions);
                 %============================
                 
             end
@@ -1574,7 +1601,7 @@ classdef ManipulationPlanner < handle
                     [~,ind] = min(abs(obj.s_breaks-s_int_head));
                     s_int_head=obj.s_breaks(ind);
                     kc_head_intermediate = ActionKinematicConstraint(obj.r,head_body,[0;0;0],head_pose_int,[s_int_head,s_int_head],'head_int');
-                    ks = ks.addKinematicConstraint(kc_head_intermediate);
+%                     ks = ks.addKinematicConstraint(kc_head_intermediate);
                 end
                 
             end %if(is_keyframe_constraint)
@@ -1592,7 +1619,21 @@ classdef ManipulationPlanner < handle
                 lfoot_const.max = l_foot_poseT+1e-3;
                 head_const.min = head_poseT-1e-3;
                 head_const.max = head_poseT+1e-3;
-                
+                if(~isempty(obj.head_gaze_target))
+                  head_const.type = 'gaze';
+                  head_const.gaze_target = obj.head_gaze_target;
+                  head_const.gaze_axis = [1;0;0];
+                end
+                if(~isempty(obj.rhand_gaze_target))
+                  rhand_const.type = 'gaze';
+                  rhand_const.gaze_target = obj.rhand_gaze_target;
+                  rhand_const.gaze_axis = [1;0;0];
+                end
+                if(~isempty(obj.lhand_gaze_target))
+                  lhand_const.type = 'gaze';
+                  lhand_const.gaze_target = obj.lhand_gaze_target;
+                  lhand_const.gaze_axis = [1;0;0];
+                end
                 %============================
                 %       0,comgoal,...
                 q_final_quess= q0;
@@ -1653,6 +1694,7 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=true;
+            ikseq_options.shrinkFactor = 0.95;
             ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
             ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
@@ -1775,8 +1817,9 @@ classdef ManipulationPlanner < handle
                             l_foot_body,l_foot_pts,l_foot_pose0_static_contact,...
                             r_hand_body,[0;0;0],rhand_const, ...
                             l_hand_body,[0;0;0],lhand_const,...
-                            head_body,[0;0;0],head_const,...
                             ikoptions);
+%                             head_body,[0;0;0],head_const,...
+%                             ikoptions);
                     else
                         % utorso_body,[0;0;0],utorso_pose0_relaxed,...
                         [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
@@ -1785,8 +1828,9 @@ classdef ManipulationPlanner < handle
                             l_foot_body,l_foot_pts,lfoot_const_static_contact,...
                             r_hand_body,[0;0;0],rhand_const,...
                             l_hand_body,[0;0;0],lhand_const,...
-                            head_body,[0;0;0],head_const,...
                             ikoptions);
+%                             head_body,[0;0;0],head_const,...
+%                             ikoptions);
                     end
                     %============================
                     
@@ -1841,9 +1885,9 @@ classdef ManipulationPlanner < handle
             cost.base_roll = 100;
             cost.base_pitch = 100;
             cost.base_yaw = 100;
-            cost.back_lbz = 10000;
-            cost.back_mby = 10000;
-            cost.back_ubx = 10000;
+            cost.back_lbz = 1e4;
+            cost.back_mby = 1e4;
+            cost.back_ubx = 1e4;
             cost.neck_ay =  100;
             cost.l_arm_usy = 1;
             cost.l_arm_shx = 1;
