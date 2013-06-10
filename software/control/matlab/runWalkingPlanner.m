@@ -76,6 +76,13 @@ while true
         end
       end
 
+      if (~isempty(footsteps) && length(footsteps) <= 2)
+        msg =['Walk Plan (', location, '): no footsteps in plan']; disp(msg); send_status(status_code,0,0,msg);
+        waiting = true;
+        committed = false;
+      end
+
+
       if (~isempty(footsteps))
         % Align the first two steps to the current feet poses
         kinsol = doKinematics(r, x0(1:nq));
