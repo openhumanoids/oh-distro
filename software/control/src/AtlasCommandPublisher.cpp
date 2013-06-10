@@ -51,7 +51,7 @@ public:
     mode = 1;
 
     if (joint_name.size() != m_num_joints) {
-      mexErrMsgTxt("publishAtlasCommand: Length of joint_name wrong");
+      mexErrMsgTxt("AtlasCommandPublisher: Length of joint_name wrong");
     }
 
     // fixed ordering assumed by drcsim interface

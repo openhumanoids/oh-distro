@@ -283,7 +283,9 @@ classdef DRCController
               if (obj.controller_input_frames{j}.name_hash==fr.name_hash)
                 input_frame_data{j} = x;
                 input_frame_time(j) = t;
-                markAsRead(obj.controller_input_frames{j}.monitor);
+%                markAsRead(obj.controller_input_frames{j});  
+% the above line should not be needed
+% now that I've implemented the singleton's better
               end
             end
           end

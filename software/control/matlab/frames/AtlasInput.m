@@ -13,7 +13,9 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
       obj.setCoordinateNames(input_names);
       obj.setDefaultChannel('ATLAS_COMMAND');
       
-      obj.mex_ptr = AtlasCommandPublisher(input_names);
+      if (obj.mex_ptr==0)
+        obj.mex_ptr = AtlasCommandPublisher(input_names);
+      end
     end
     
     function publish(obj,t,x,channel)

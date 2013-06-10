@@ -128,7 +128,8 @@ echo "Error: Did not imbed 'options.sh' code"; exit 1 #imbed options.sh maci 12
             # CkeyVersion:
             # CkeyLinkerName:
             # CkeyLinkerVersion:
-            CC='xcrun  -sdk macosx10.7  clang'
+#            CC='xcrun  -sdk macosx10.7  clang'
+			CC='gcc'
 ## workaround clang defect temporarily use line below           SDKROOT='/Developer/SDKs/MacOSX10.6.sdk'
 # compute SDK root on the fly
 # target 10.7 
@@ -149,8 +150,10 @@ echo "Error: Did not imbed 'options.sh' code"; exit 1 #imbed options.sh maci 12
             # C++keyVersion:
             # C++keyLinkerName:
             # C++keyLinkerVersion:
-            CXX='xcrun  -sdk macosx10.7  clang++'
+#            CXX='xcrun  -sdk macosx10.7  clang++'
+			CXX='g++'
             CXXFLAGS="-fno-common -fexceptions -arch $ARCHS -isysroot $MW_SDKROOT -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+            CXXFLAGS="$CXXFLAGS -std=c++0x" # -stdlib=libc++"
             CXXLIBS="$MLIBS -lstdc++"
             CXXOPTIMFLAGS='-O2 -DNDEBUG'
             CXXDEBUGFLAGS='-g'
