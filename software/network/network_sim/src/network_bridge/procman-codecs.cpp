@@ -11,8 +11,7 @@ using namespace goby::common::logger;
 // PMD_ORDERS
 
 bool PMDOrdersCodec::make_diff(const bot_procman::orders_t& orders, const bot_procman::orders_t& reference, drc::PMDOrdersDiff* diff)
-{
-
+{   
     // modulus to tenth of seconds, so full messages can be resolved to ~25 seconds
     diff->set_reference_time((reference.utime / 100000) % 256);
     
@@ -27,7 +26,7 @@ bool PMDOrdersCodec::make_diff(const bot_procman::orders_t& orders, const bot_pr
 
         drc::PMDOrdersDiff::PMDSheriffCmdDiff* diff_cmd = diff->add_cmds();
         
-        bool has_ref_cmd = i < reference.cmds.size();
+        bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::sheriff_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
         
@@ -112,8 +111,8 @@ bool PMDOrdersCodec::reverse_diff(bot_procman::orders_t* orders, const bot_procm
         
         drc::PMDOrdersDiff::PMDSheriffCmdDiff diff_cmd = (j < diff.ncmds() && diff.cmds(j).index() == i) ?
             diff.cmds(j) : drc::PMDOrdersDiff::PMDSheriffCmdDiff();
-        
-        bool has_ref_cmd = i < reference.cmds.size();
+        // 
+        bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::sheriff_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
 
@@ -136,6 +135,7 @@ bool PMDOrdersCodec::reverse_diff(bot_procman::orders_t* orders, const bot_procm
 
 bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman::info_t& reference, drc::PMDInfoDiff* diff)
 {
+    
     diff->set_reference_time((reference.utime / 100000) % 256);
 
     diff->set_utime(info.utime - reference.utime);
@@ -147,7 +147,7 @@ bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman:
 
         drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff->add_cmds();
         
-        bool has_ref_cmd = i < reference.cmds.size();
+        bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::deputy_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
         
@@ -199,7 +199,7 @@ bool PMDInfoCodec::reverse_diff(bot_procman::info_t* info, const bot_procman::in
         bot_procman::deputy_cmd_t cmd;
         const drc::PMDInfoDiff::PMDDeputyCmdDiff& diff_cmd = diff.cmds(i);
         
-        bool has_ref_cmd = i < reference.cmds.size();
+        bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::deputy_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
 

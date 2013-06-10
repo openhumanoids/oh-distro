@@ -20,11 +20,9 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
     if(!to_minimal_robot_plan(lcm_object, dccl_plan))
         return false;    
 
-    dccl_plan.set_left_arm_control_type(lcm_object.left_arm_control_type);
-    dccl_plan.set_right_arm_control_type(lcm_object.right_arm_control_type);
-    dccl_plan.set_left_leg_control_type(lcm_object.left_leg_control_type);
-    dccl_plan.set_right_leg_control_type(lcm_object.right_leg_control_type);
-
+    if(!to_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
+        return false;
+    
     dccl_plan.set_aff_num_states(0);
     
     std::string encoded;
@@ -50,12 +48,8 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
     if(!from_minimal_robot_plan(lcm_object, dccl_plan))
         return false;
 
-
-    lcm_object.left_arm_control_type = dccl_plan.left_arm_control_type();
-    lcm_object.right_arm_control_type = dccl_plan.right_arm_control_type();
-    lcm_object.left_leg_control_type = dccl_plan.left_leg_control_type();
-    lcm_object.right_leg_control_type = dccl_plan.right_leg_control_type();
-
+    if(!from_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
+        return false;
     
     lcm_data->resize(lcm_object.getEncodedSize());
     lcm_object.encode(&(*lcm_data)[0], 0, lcm_data->size());
@@ -86,8 +80,8 @@ bool ManipMapCodec::encode(const std::vector<unsigned char>& lcm_data, std::vect
     if(!to_minimal_robot_plan(lcm_object, dccl_plan))
         return false;  
 
-    dccl_plan.set_left_arm_control_type(lcm_object.arms_control_type);
-    dccl_plan.set_left_leg_control_type(lcm_object.legs_control_type);
+    if(!to_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
+        return false;
 
     dccl_plan.set_aff_num_states(lcm_object.num_states);    
 
@@ -142,10 +136,10 @@ bool ManipMapCodec::decode(std::vector<unsigned char>* lcm_data, const std::vect
     
     if(!from_minimal_robot_plan(lcm_object, dccl_plan))
         return false;
-
-    lcm_object.arms_control_type = dccl_plan.left_arm_control_type();
-    lcm_object.legs_control_type = dccl_plan.left_leg_control_type();
-
+    
+    if(!from_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
+        return false;
+    
     for(int i = 0, n = dccl_plan.aff_num_states(); i < n; ++i)
     {
         drc::affordance_index_t lcm_aff_index;

@@ -28,9 +28,12 @@ class RobotStateCodec : public CustomChannelCodec
     bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
 
     static bool to_minimal_state(const drc::robot_state_t& lcm_object,
-                                 drc::MinimalRobotState* dccl_state);
+                                 drc::MinimalRobotState* dccl_state,
+                                 bool use_rpy = false);
+
     static bool from_minimal_state(drc::robot_state_t* lcm_object,
-                                   const drc::MinimalRobotState& dccl_state);
+                                   const drc::MinimalRobotState& dccl_state,
+                                   bool use_rpy = false);
 
     static bool to_minimal_position3d(const drc::position_3d_t& lcm_pos,
                                       drc::Position3D* dccl_pos, bool use_rpy = false,

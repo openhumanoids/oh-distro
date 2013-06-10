@@ -23,11 +23,11 @@ void robot2base(KMCLApp& app);
 // Structure of which channels to resent and when
 struct Resend{
   Resend(std::string channel, double max_freq, bool robot2base, int64_t last_utime):
-    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime), queued_msgs(0), queued_bytes(0) {}
-  std::string channel; // .. LCM channel
-  double max_freq; // max freq of transmission
-  int64_t last_utime; // last utime of transmission
-  bool robot2base; // true r2b | false b2r
+    channel(channel), max_freq(max_freq), last_utime(last_utime), robot2base(robot2base), queued_msgs(0), queued_bytes(0) {}
+    std::string channel; // .. LCM channel
+    double max_freq; // max freq of transmission
+    int64_t last_utime; // last utime of transmission
+    bool robot2base; // true r2b | false b2r
   
   int queued_msgs; // number of queued messaged
   int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission ... used to determine outgoing bandwidth [added by mfallon Feb 2013]

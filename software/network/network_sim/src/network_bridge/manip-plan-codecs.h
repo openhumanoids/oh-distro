@@ -47,7 +47,7 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
     
     dccl_plan.set_utime(lcm_object.utime);
 
-    RobotStateCodec::to_minimal_state(lcm_object.plan[0], dccl_plan.mutable_goal());
+    RobotStateCodec::to_minimal_state(lcm_object.plan[0], dccl_plan.mutable_goal(), true);
 
     for(int i = 1, n = lcm_object.plan.size(); i < n; ++i)
     {
@@ -55,13 +55,14 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
         const drc::robot_state_t& present_lcm_goal = lcm_object.plan[i];
         
         drc::MinimalRobotState present_goal;
-        RobotStateCodec::to_minimal_state(present_lcm_goal, &present_goal);
+        RobotStateCodec::to_minimal_state(present_lcm_goal, &present_goal, true);
 
         drc::MinimalRobotStateDiff* present_goal_diff = dccl_plan.mutable_goal_diff();
         present_goal_diff->add_utime_diff(present_lcm_goal.utime - previous_lcm_goal.utime);
         if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.origin_position,
                                                 previous_lcm_goal.origin_position,
-                                                present_goal_diff->mutable_pos_diff()))
+                                                present_goal_diff->mutable_pos_diff(),
+                                                true))
            return false;
 
 
@@ -106,7 +107,48 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
         glog << "MinimalRobotPlan: " << dccl_plan_debug << std::endl;
     }
 
+    return true;
 }
+
+template<class LCMRobotPlan>
+bool to_minimal_robot_plan_control_type_new(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan& dccl_plan)
+{
+    dccl_plan.set_left_arm_control_type(lcm_object.left_arm_control_type);
+    dccl_plan.set_right_arm_control_type(lcm_object.right_arm_control_type);
+    dccl_plan.set_left_leg_control_type(lcm_object.left_leg_control_type);
+    dccl_plan.set_right_leg_control_type(lcm_object.right_leg_control_type);    
+
+    return true;
+}
+
+template<class LCMRobotPlan>
+bool to_minimal_robot_plan_control_type_old(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan& dccl_plan)
+{
+    dccl_plan.set_left_arm_control_type(lcm_object.arms_control_type);
+    dccl_plan.set_left_leg_control_type(lcm_object.legs_control_type);
+    return true;
+}
+
+
+template<class LCMRobotPlan>
+bool from_minimal_robot_plan_control_type_new(LCMRobotPlan& lcm_object, const drc::MinimalRobotPlan& dccl_plan)
+{    
+    lcm_object.left_arm_control_type = dccl_plan.left_arm_control_type();
+    lcm_object.right_arm_control_type = dccl_plan.right_arm_control_type();
+    lcm_object.left_leg_control_type = dccl_plan.left_leg_control_type();
+    lcm_object.right_leg_control_type = dccl_plan.right_leg_control_type();
+    return true;
+}
+
+template<class LCMRobotPlan>
+bool from_minimal_robot_plan_control_type_old(LCMRobotPlan& lcm_object, const drc::MinimalRobotPlan& dccl_plan)
+{
+    lcm_object.arms_control_type = dccl_plan.left_arm_control_type();
+    lcm_object.legs_control_type = dccl_plan.left_leg_control_type();
+    return true;
+}
+
+
 
 template<class LCMRobotPlan>
 bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPlan& dccl_plan)
@@ -130,7 +172,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
 
     drc::robot_state_t first_lcm_goal;
 
-    if(!RobotStateCodec::from_minimal_state(&first_lcm_goal, dccl_plan.goal()))
+    if(!RobotStateCodec::from_minimal_state(&first_lcm_goal, dccl_plan.goal(), true))
         return false;
 
     lcm_object.plan.push_back(first_lcm_goal);
@@ -145,7 +187,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
          present_goal.mutable_joint_position()->CopyFrom(dccl_plan.goal_diff().joint_pos_diff(i).jp_diff_val());
 
          if(!RobotStateCodec::from_position3d_diff(present_goal.mutable_origin_position(),
-                                                   dccl_plan.goal_diff().pos_diff(), i))
+                                                   dccl_plan.goal_diff().pos_diff(), i, true))
             return false;
 
          if(!RobotStateCodec::from_minimal_state(&lcm_goal, present_goal))
@@ -185,9 +227,8 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
     }
     
     lcm_object.num_bytes = 0;    
+    return true;
 }
-
-
 
 
 #endif

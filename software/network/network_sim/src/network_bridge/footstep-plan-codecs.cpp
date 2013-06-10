@@ -82,7 +82,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
     return true;
 }
 
-      
+
 bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data)
 {
     using goby::glog;

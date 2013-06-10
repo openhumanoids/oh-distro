@@ -16,8 +16,8 @@ enum { NO_CHANGE_PERIOD = 5 }; // seconds between no-change messages
 template<typename LCMType, typename DiffType>
 struct State
 {
-State() : need_to_send_ack_(false),
-        has_last_full_(false),
+State() : has_last_full_(false),
+        need_to_send_ack_(false),
         has_last_diff_(false),
         last_no_change_time_(0)
         { }
@@ -66,8 +66,9 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             {
                 glog.is(VERBOSE) && glog << "Not sending BASE procman messages to other nodes" << std::endl;
                 return false;
-            }            
-
+            }
+            
+            
             wrapper.set_host(host);
             
             State<LCMType, DiffType>& host_info = Codec::host_info_[lcm_object.host];
@@ -85,9 +86,13 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             {
                 if(!OtherCodec::host_info_[lcm_object.host].has_last_full_)
                     wrapper.set_request_full(true);
-                    
-                host_info.last_full_ = lcm_object;
-                host_info.has_last_full_ = true;
+                
+                // don't count empty messages as a proper "full"
+                if(lcm_object.ncmds > 0)
+                {
+                    host_info.last_full_ = lcm_object;
+                    host_info.has_last_full_ = true;
+                }
                 
                 wrapper.set_type(drc::ProcManWrapper::FULL);
                 
@@ -275,7 +280,11 @@ class PMDOrdersCodec : public PMDWrapperCodec<bot_procman::orders_t, drc::PMDOrd
       : PMDWrapperCodec(node)
     {
         static bool only = true;
-        assert(only);
+        if(!only)
+        {
+            assert(only);
+        }
+        
         only = false;
     }
 
@@ -298,7 +307,10 @@ class PMDInfoCodec : public PMDWrapperCodec<bot_procman::info_t, drc::PMDInfoDif
       : PMDWrapperCodec(node)
     {
         static bool only = true;
-        assert(only);
+        if(!only)
+        {
+            assert(only);
+        }
         only = false;
     }
 

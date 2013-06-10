@@ -43,11 +43,11 @@ message RotationQuaternion
 message RotationRPY
 {
   // 80 degrees, +/- one degree 
-  optional double roll = 1 [(dccl.field) = {min: -1.397 max: 1.397 precision: 2 codec: "presence_bit" }];
-  optional double pitch = 2 [(dccl.field) = {min: -1.397 max: 1.397 precision: 2 codec: "presence_bit" }];
+  optional double roll = 1 [(dccl.field) = {min: -1.397 max: 1.397 precision: 3 codec: "presence_bit" }];
+  optional double pitch = 2 [(dccl.field) = {min: -1.397 max: 1.397 precision: 3 codec: "presence_bit" }];
 
   // 360 degrees, +/- one degree
-  optional double yaw = 3 [(dccl.field) = {min: -3.142 max: 3.142 precision: 2 codec: "presence_bit" }];
+  optional double yaw = 3 [(dccl.field) = {min: -3.142 max: 3.142 precision: 3 codec: "presence_bit" }];
 }
 
 
@@ -91,7 +91,7 @@ message RotationQuaternionDiff
 
 message RotationRPYDiff
 {
-  repeated double droll = 1 [(dccl.field) = {min: -2.794 max: 2.794 precision: 2 max_repeat: 100 codec: "presence_bit" }];
-  repeated double dpitch = 2 [(dccl.field) = {min: -2.794 max: 2.794 precision: 2 max_repeat: 100 codec: "presence_bit" }];
-  repeated double dyaw = 3 [(dccl.field) = {min: -6.283 max: 6.283 precision: 2 max_repeat: 100 codec: "presence_bit" }];
+  repeated double droll = 1 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
+  repeated double dpitch = 2 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
+  repeated double dyaw = 3 [(dccl.field) = {min: -6.283 max: 6.283 precision: 3 max_repeat: 100 codec: "presence_bit" }];
 }

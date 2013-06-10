@@ -121,11 +121,12 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
 }      
 
 bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
-                                              drc::MinimalRobotState* dccl_state)
+                                       drc::MinimalRobotState* dccl_state,
+                                       bool use_rpy /* = false */)
 {
     dccl_state->set_utime(lcm_object.utime);
 
-    if(!to_minimal_position3d(lcm_object.origin_position, dccl_state->mutable_origin_position()))
+    if(!to_minimal_position3d(lcm_object.origin_position, dccl_state->mutable_origin_position(), use_rpy))
         return false;
 
 
@@ -140,13 +141,14 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 
     
 bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
-                                         const drc::MinimalRobotState& dccl_state)
+                                         const drc::MinimalRobotState& dccl_state,
+                                         bool use_rpy /* = false */)
 {
 
     lcm_object->utime = dccl_state.utime();
     lcm_object->robot_name = "atlas";
 
-    if(!from_minimal_position3d(&lcm_object->origin_position,dccl_state.origin_position()))
+    if(!from_minimal_position3d(&lcm_object->origin_position,dccl_state.origin_position(), use_rpy))
         return false;    
     
     lcm_object->num_joints = dccl_state.joint_position_size();
