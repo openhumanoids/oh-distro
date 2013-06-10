@@ -232,7 +232,7 @@ classdef DRCController
 %       missed_frames = 0;
 %       max_state_delay = 0;
 %       ttprev = [];
-      persistent count;  if isempty(count), count=0; end
+%       persistent count;  if isempty(count), count=0; end
       t_offset = -1;
       lcm_check_tic = tic;
       status_tic = tic;
@@ -269,7 +269,7 @@ classdef DRCController
 
         [x,tsim] = getNextMessage(obj.controller_input_frames{obj.input_frame_which_triggers_update},10);  % timeout is in msec - should be safely bigger than e.g. a 200Hz input rate
         if isempty(x) continue; end
-        count = count+1; fprintf(1,'count=%d\n',count);
+%         count = count+1; fprintf(1,'count=%d\n',count);
         
         input_frame_data{obj.input_frame_which_triggers_update} = x;
 %        input_frame_time(obj.input_frame_which_triggers_update) = t;
