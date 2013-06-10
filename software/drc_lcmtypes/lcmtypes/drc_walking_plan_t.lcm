@@ -42,5 +42,6 @@ struct walking_plan_t
   byte qnom[n_qnom_bytes];
 
   float mu; // friction coef
+  boolean ignore_terrain; 
 }
 
