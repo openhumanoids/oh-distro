@@ -68,8 +68,10 @@ classdef StandingManipController < DRCController
       ins(1).input = 1;
       ins(2).system = 1;
       ins(2).input = 2;
-      ins(3).system = 2;
+      ins(3).system = 1;
       ins(3).input = 3;
+      ins(4).system = 2;
+      ins(4).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -83,6 +85,8 @@ classdef StandingManipController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
+      ins(4).system = 2;
+      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;
@@ -217,7 +221,7 @@ classdef StandingManipController < DRCController
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
 %         zfeet = mean(foot_pos(3,:));
 %         robot_z = com(3)-zfeet;
-
+  
 %         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
