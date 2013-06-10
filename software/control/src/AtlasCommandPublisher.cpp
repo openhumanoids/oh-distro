@@ -24,7 +24,7 @@ private:
 
   // Atlas plugin has a fixed order for joints, 
   // so number of joints here is fixed
-  const int m_num_joints = 28;
+  static const int m_num_joints = 28;
 
   vector<int> drake_to_atlas_joint_map;
 
@@ -33,21 +33,7 @@ private:
     
   drc::atlas_command_t msg;
 
-public:
-
-  AtlasCommand(const vector<string>& joint_name, const VectorXd& Kp, const VectorXd& Kd) :
-    AtlasCommand(joint_name)
-	{
-    mode = 2;
-    int j;
-    for (int i=0; i<msg.num_joints; i++) {
-      j = drake_to_atlas_joint_map[i];
-      msg.kp_position[j] = Kp[i];
-      msg.kd_position[j] = Kd[i];
-    }
-  }
-
-  AtlasCommand(const vector<string>& joint_name) {
+  void init(const vector<string>& joint_name) {
     mode = 1;
 
     if (joint_name.size() != m_num_joints) {
@@ -123,6 +109,24 @@ public:
       msg.i_effort_max[i] = 0.0;
       msg.effort[i] = 0.0;
       msg.k_effort[i] = (uint8_t)255; // take complete control of joints (remove BDI control)
+    }
+  }
+
+public:
+  AtlasCommand(const vector<string>& joint_name)
+  {
+    init(joint_name);
+  }
+
+  AtlasCommand(const vector<string>& joint_name, const VectorXd& Kp, const VectorXd& Kd) {
+    init(joint_name);
+
+    mode = 2;
+    int j;
+    for (int i=0; i<msg.num_joints; i++) {
+      j = drake_to_atlas_joint_map[i];
+      msg.kp_position[j] = Kp[i];
+      msg.kd_position[j] = Kd[i];
     }
   }
 

@@ -123,10 +123,10 @@ $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/sy
 endif
 
 $(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) : src/RobotStateMonitor.cpp
-	$(MEX) -g src/RobotStateMonitor.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(shell pkg-config --cflags --libs lcm eigen3) -I$(BUILD_PREFIX)/include
+	$(MEX) -g src/RobotStateMonitor.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
 
 $(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) : src/AtlasCommandPublisher.cpp
-	$(MEX) -g src/AtlasCommandPublisher.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(shell pkg-config --cflags --libs lcm eigen3) -I$(BUILD_PREFIX)/include
+	$(MEX) -g src/AtlasCommandPublisher.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
 
 clean:
 	-rm $(CLASSFILES)
