@@ -31,85 +31,86 @@ classdef WalkingPlanListener
     function walking_data = decode(msg)
         % do we have to save to file to convert a byte stream to a
         % matlab binary?
-        
-        fid = fopen('tmp_w.mat','w');
+        tmp_fname = ['tmp_w_', num2str(feature('getpid')), '.mat'];
+
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.qtraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         qtraj=matdata.qtraj;
         
-%         fid = fopen('tmp_w.mat','w');
+%         fid = fopen(tmp_fname,'w');
 %         fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
 %         fclose(fid);
-%         matdata = load('tmp_w.mat');
+%         matdata = load(tmp_fname);
 %         htraj=matdata.htraj;
 % 
-%         fid = fopen('tmp_w.mat','w');
+%         fid = fopen(tmp_fname,'w');
 %         fwrite(fid,typecast(msg.hddtraj,'uint8'),'uint8');
 %         fclose(fid);
-%         matdata = load('tmp_w.mat');
+%         matdata = load(tmp_fname);
 %         hddtraj=matdata.hddtraj;
 
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.S,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         S=matdata.S;
  
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.s1,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         s1=matdata.s1;
 
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.s2,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         s2=matdata.s2;
 
         support_times=msg.support_times;
 
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.supports,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         supports=matdata.supports;
         
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.comtraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         comtraj=matdata.comtraj;
 
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.zmptraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         zmptraj=matdata.zmptraj;
 
-        % fid = fopen('tmp_w.mat','w');
+        % fid = fopen(tmp_fname,'w');
         % fwrite(fid,typecast(msg.lfoottraj,'uint8'),'uint8');
         % fclose(fid);
-        % matdata = load('tmp_w.mat');
+        % matdata = load(tmp_fname);
         % lfoottraj=matdata.lfoottraj;
 
-        % fid = fopen('tmp_w.mat','w');
+        % fid = fopen(tmp_fname,'w');
         % fwrite(fid,typecast(msg.rfoottraj,'uint8'),'uint8');
         % fclose(fid);
-        % matdata = load('tmp_w.mat');
+        % matdata = load(tmp_fname);
         % foottraj=matdata.rfoottraj;
 
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.link_constraints,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         link_constraints=matdata.link_constraints;
         
-        fid = fopen('tmp_w.mat','w');
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.qnom,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('tmp_w.mat');
+        matdata = load(tmp_fname);
         qnom = matdata.qnom;
         
         mu = msg.mu;

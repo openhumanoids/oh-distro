@@ -108,56 +108,57 @@ classdef WalkingController < DRCController
     function obj = initialize(obj,data)
             
       % TODO: put some error handling in here
+      tmp_fname = ['tmp_w_', num2str(feature('getpid')), '.mat'];
       
       msg_data = data.WALKING_PLAN;
       % do we have to save to file to convert a byte stream to a
       % matlab binary?
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.S,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
 %       obj.controller_data.setField('S',matdata.S);
       obj.controller_data.setField('S',eval(matdata.S,0)); % S is always constant
 
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.s1,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       obj.controller_data.setField('s1',matdata.s1);
 
       istv = ~(isnumeric(matdata.s1) || isa(matdata.s1,'ConstantTrajectory')); 
       obj.controller_data.setField('is_time_varying',istv);
       
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       if ~isnumeric(matdata.s2) matdata.s2 = 0; end   % we're not using it currently
       obj.controller_data.setField('s2',matdata.s2);
       
       support_times = msg_data.support_times;
       obj.controller_data.setField('support_times',support_times);
 
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.supports,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       if iscell(matdata.supports) 
         warning('somebody sent me a cell array of supports.  don''t do that anymore!');
         matdata.supports = [matdata.supports{:}];
       end
       obj.controller_data.setField('supports',matdata.supports);
 
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.comtraj,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       obj.controller_data.setField('comtraj',matdata.comtraj);
 
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.zmptraj,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       obj.controller_data.setField('x0',[eval(matdata.zmptraj,matdata.zmptraj.tspan(2));0;0]);
       if ~istv
         assert(isa(matdata.zmptraj,'ConstantTrajectory'));
@@ -166,10 +167,10 @@ classdef WalkingController < DRCController
         obj.controller_data.setField('y0',matdata.zmptraj);
       end
 
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.link_constraints,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       obj.controller_data.setField('link_constraints',matdata.link_constraints);
       if ~isempty(matdata.link_constraints(1).traj)
         tspan_end = matdata.link_constraints(1).traj.tspan(end);
@@ -177,10 +178,10 @@ classdef WalkingController < DRCController
         tspan_end = matdata.link_constraints(1).min.tspan(end);
       end
       
-      fid = fopen('tmp_w.mat','w');
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.qnom,'uint8'),'uint8');
       fclose(fid);
-      matdata = load('tmp_w.mat');
+      matdata = load(tmp_fname);
       obj.controller_data.setField('qtraj',matdata.qnom);
 
       obj.controller_data.setField('mu',msg_data.mu);
