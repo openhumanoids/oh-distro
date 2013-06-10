@@ -45,14 +45,18 @@ classdef SimplePDBlock < MIMODrakeSystem
  %       obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
       end
       
-%       % TESTING: disable ankle gains
-%       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-%       lax_idx = find(~cellfun(@isempty,strfind(state_names,'lax')));
-%       uay_idx = find(~cellfun(@isempty,strfind(state_names,'uay')));
-%       obj.Kp(uay_idx,uay_idx) = 0*eye(2);
-%       obj.Kp(lax_idx,lax_idx) = 0*eye(2);
-%       obj.Kd(uay_idx,uay_idx) = 0*eye(2);
-%       obj.Kd(lax_idx,lax_idx) = 0*eye(2);
+      if isfield(options,'soft_ankles')
+        typecheck(options.soft_ankles,'logical');
+        if options.soft_ankles
+          state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+          lax_idx = find(~cellfun(@isempty,strfind(state_names,'lax')));
+          uay_idx = find(~cellfun(@isempty,strfind(state_names,'uay')));
+          obj.Kp(uay_idx,uay_idx) = 5*eye(2);
+          obj.Kp(lax_idx,lax_idx) = 5*eye(2);
+          obj.Kd(uay_idx,uay_idx) = 0.01*eye(2);
+          obj.Kd(lax_idx,lax_idx) = 0.01*eye(2);
+        end
+      end
       
       if isfield(options,'dt')
         typecheck(options.dt,'double');
