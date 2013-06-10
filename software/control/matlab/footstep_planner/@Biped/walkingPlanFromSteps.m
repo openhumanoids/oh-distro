@@ -8,8 +8,9 @@ kinsol = doKinematics(biped,q0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 %% construct ZMP feedback controller
 com = getCOM(biped,kinsol);
-zmap = getTerrainHeight(biped,com(1:2));
+foot_pos = contactPositions(biped,kinsol,biped.foot_bodies_idx);
+zfeet = mean(foot_pos(3,:));
 
 % get COM traj from desired ZMP traj
 options.com0 = com(1:2);
-[c,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zmap,zmptraj,options);
+[c,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zfeet,zmptraj,options);

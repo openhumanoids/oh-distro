@@ -151,9 +151,10 @@ classdef StandingController < DRCController
         foot_pos = contactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state])); 
         ch = convhull(foot_pos(1:2,:)');
         comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
-%         zmap = getTerrainHeight(r,com(1:2));
-%         robot_z = com(3)-zmap;
-  
+%         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
+%         zfeet = mean(foot_pos(3,:));
+%         robot_z = com(3)-zfeet;
+
 %         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
@@ -183,8 +184,9 @@ classdef StandingController < DRCController
         foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
         ch = convhull(foot_pos(1:2,:)');
         comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
-%         zmap = getTerrainHeight(r,com(1:2));
-%         robot_z = com(3)-zmap;
+%         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
+%         zfeet = mean(foot_pos(3,:));
+%         robot_z = com(3)-zfeet;
   
 %         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);

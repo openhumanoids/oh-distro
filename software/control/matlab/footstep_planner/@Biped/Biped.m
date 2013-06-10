@@ -14,6 +14,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     r_foot_name
     l_foot_name
     foot_bodies
+    foot_bodies_idx
     next_step_id
     lc
   end
@@ -53,6 +54,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj.foot_contact_offsets = obj.findContactOffsets();
       obj.foot_bodies = struct('right', findLink(obj, obj.r_foot_name),...
                             'left', findLink(obj, obj.l_foot_name));
+      obj.foot_bodies_idx = [findLinkInd(obj, obj.r_foot_name),findLinkInd(obj, obj.l_foot_name)];
     end
     
     function X = planFootsteps(obj, x0, navgoal, options)

@@ -170,7 +170,7 @@ while true
     plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
     plan_pub.publish(ts,xtraj);
     if debug
-      tt = 0:0.04:ts(end);
+      tt = 0:0.05:ts(end);
       compoints = zeros(3,length(tt));
       for i=1:length(tt)
         compoints(1:2,i) = comtraj.eval(tt(i));
