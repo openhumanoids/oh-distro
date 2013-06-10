@@ -226,8 +226,8 @@ namespace renderer_robot_plan_gui_utils
     }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
 
-    //stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
-    stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
+    stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
+    //stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
 
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
     gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
