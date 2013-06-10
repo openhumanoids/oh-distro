@@ -26,8 +26,8 @@ foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),..
   'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
 
 function pos = feetCenter(rfootpos,lfootpos)
-  rcen = biped.footOrig2Contact(rfootpos, 'center', 1);
-  lcen = biped.footOrig2Contact(lfootpos, 'center', 0);
+  rcen = biped.footOrig2Contact(rfootpos, 'inner', 1);
+  lcen = biped.footOrig2Contact(lfootpos, 'inner', 0);
   pos = mean([rcen(1:3,:),lcen(1:3,:)],2);
 end
 
