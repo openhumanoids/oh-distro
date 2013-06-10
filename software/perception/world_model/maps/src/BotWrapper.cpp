@@ -27,7 +27,9 @@ void BotWrapper::
 setDefaults() {
   mLcm.reset(new lcm::LCM());
   mBotParam = bot_param_get_global(mLcm->getUnderlyingLCM(),0);
-  mBotFrames = bot_frames_get_global(mLcm->getUnderlyingLCM(), mBotParam);
+  if (mBotParam != NULL) {
+    mBotFrames = bot_frames_get_global(mLcm->getUnderlyingLCM(), mBotParam);
+  }
 }
 
 void BotWrapper::

@@ -408,6 +408,10 @@ public:
 
   State() {
     mBotWrapper.reset(new BotWrapper());
+    while (mBotWrapper->getBotParam() == NULL) {
+      std::cout << "Couldn't get BotParam; trying again..." << std::endl;
+      mBotWrapper->set(mBotWrapper->getLcm());
+    }
     drc::Clock::instance()->setLcm(mBotWrapper->getLcm());
     drc::Clock::instance()->setVerbose(false);
     mCollector.reset(new Collector());
