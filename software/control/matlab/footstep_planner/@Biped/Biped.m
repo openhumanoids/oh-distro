@@ -62,11 +62,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
 
-    function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
+    function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot, nom_step_width)
+      if nargin < 4
+        nom_step_width = obj.nom_step_width;
+      end
       if is_right_foot
-        offs = [0; -obj.nom_step_width/2; 0];
+        offs = [0; -nom_step_width/2; 0];
       else
-        offs = [0; obj.nom_step_width/2; 0];
+        offs = [0; nom_step_width/2; 0];
       end
       for j = 1:length(Xc(1,:))
         M = makehgtform('xrotate', Xc(4, j), 'yrotate', Xc(5, j), 'zrotate', Xc(6, j));
@@ -75,11 +78,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
     end
 
-    function Xc = footCenter2StepCenter(obj, Xo, is_right_foot)
+    function Xc = footCenter2StepCenter(obj, Xo, is_right_foot, nom_step_width)
+      if nargin < 4
+        nom_step_width = obj.nom_step_width;
+      end
       if is_right_foot
-        offs = [0; -obj.nom_step_width/2; 0];
+        offs = [0; -nom_step_width/2; 0];
       else
-        offs = [0; obj.nom_step_width/2; 0];
+        offs = [0; nom_step_width/2; 0];
       end
       for j = 1:length(Xo(1,:))
         M = makehgtform('xrotate', Xo(4, j), 'yrotate', Xo(5, j), 'zrotate', Xo(6, j));
