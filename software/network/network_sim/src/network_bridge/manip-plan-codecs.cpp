@@ -20,7 +20,7 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
     if(!to_minimal_robot_plan(lcm_object, dccl_plan))
         return false;    
 
-    if(!to_minimal_robot_plan_control_type_new(lcm_object, dccl_plan))
+    if(!to_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
         return false;
     
     dccl_plan.set_aff_num_states(0);
@@ -48,7 +48,7 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
     if(!from_minimal_robot_plan(lcm_object, dccl_plan))
         return false;
 
-    if(!from_minimal_robot_plan_control_type_new(lcm_object, dccl_plan))
+    if(!from_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
         return false;
     
     lcm_data->resize(lcm_object.getEncodedSize());
