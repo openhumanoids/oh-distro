@@ -33,7 +33,7 @@
 #define PARAM_SEND_POSTURE_GOAL "Send Posture Goal"
 #define PARAM_RESET_POSTURE "Reset"
 #define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
-#define PARAM_ENABLE_EE_TELEOP "Adjust EE Teleop"
+#define PARAM_ENABLE_EE_TELEOP "FineGrained EE Teleop"
 
 using namespace std;
 using namespace boost;
@@ -63,6 +63,7 @@ namespace renderer_robot_state
     GtkWidget *teleop_error_entry;
     double active_res;
     int active_ee;
+    double active_angres;
 
     std::string* selection;
     std::string* marker_selection;
