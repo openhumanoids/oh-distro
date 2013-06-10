@@ -103,11 +103,16 @@ while true
         end
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
           fixed_links = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          % with fixed joint hands, the link name is huge.
+          %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
           fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
           fixed_links(2) = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
+          %fixed_links(2) = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         else
           fixed_links = [];
         end

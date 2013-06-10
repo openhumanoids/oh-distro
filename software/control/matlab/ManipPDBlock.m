@@ -83,8 +83,15 @@ classdef ManipPDBlock < MIMODrakeSystem
 %         cellfun(@isempty,strfind(obj.joint_names,'shx')));
       obj.r_arm_ind = find(~cellfun(@isempty,strfind(obj.joint_names,'r_arm')));
       obj.l_arm_ind = find(~cellfun(@isempty,strfind(obj.joint_names,'l_arm')));
+      
       obj.rhand_ind = obj.robot.findLinkInd('r_hand+r_hand_point_mass');
       obj.lhand_ind = obj.robot.findLinkInd('l_hand+l_hand_point_mass');
+      
+      % NOTE: with fixed joint hands, the link name is huge. hence using r.findLinkInd('r_foot')+1
+      % fixedjoint hands does not work, reverting to point hands
+      % obj.rhand_ind = r.findLinkInd('r_foot')+1; %obj.robot.findLinkInd('r_hand+r_hand_point_mass');
+      % obj.lhand_ind = r.findLinkInd('l_foot')+1; %obj.robot.findLinkInd('l_hand+l_hand_point_mass');
+      
       obj.rhand_pts = [0;0;0];
       obj.lhand_pts = [0;0;0];
       obj.lambda = 1e-6;
