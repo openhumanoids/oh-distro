@@ -20,7 +20,7 @@ options.floating = true;
 options.dt = 0.001;
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-r = removeCollisionGroupsExcept(r,{'heel','toe'});
+r = removeCollisionGroupsExcept(r,{'heel','toe','inner'});
 r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
 r = compile(r);
 state_frame = getStateFrame(r);
@@ -77,19 +77,34 @@ while true
       end
 
       if (~isempty(footsteps))
+        % Align the first two steps to the current feet poses
+        kinsol = doKinematics(r, x0(1:nq));
+        rpos = forwardKin(r, kinsol, r.foot_bodies.right, [0;0;0], 1);
+        lpos = forwardKin(r, kinsol, r.foot_bodies.left, [0;0;0], 1);
+        if footsteps(1).is_right_foot
+          footsteps(1).pos = rpos; footsteps(2).pos = lpos;
+        else
+          footsteps(1).pos = lpos; footsteps(2).pos = rpos;
+        end
+
+        % Align the remianing steps to the terrain, or to the walking plane
         if footstep_opts.ignore_terrain
-          kinsol = doKinematics(r, x0(1:nq));
-          p0 = forwardKin(r, kinsol, r.foot_bodies.right,...
-                          [0;0;0], 1);
+          p0 = rpos;
           normal = rpy2rotmat(p0(4:6)) * [0;0;1];
-          for j = 1:length(footsteps)
+          for j = 3:length(footsteps)
             footsteps(j).pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (footsteps(j).pos(1) - p0(1)) + normal(2) * (footsteps(j).pos(2) - p0(2)));
             footsteps(j).pos = fitPoseToNormal(footsteps(j).pos, normal);
           end
         else
-          for j = 1:length(footsteps)
+          for j = 3:length(footsteps)
             footsteps(j).pos = fitStepToTerrain(r, footsteps(j).pos, 'orig');
           end
+        end
+
+        % Slow down the first and last steps, if necessary
+        for j = [length(footsteps)-1,length(footsteps)]
+          footsteps(j).step_speed = min([footsteps(j).step_speed, 1.5]);
+        end
       end
       
       qnom_data = qnom_mon.getNextMessage(0);

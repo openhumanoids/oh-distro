@@ -18,7 +18,7 @@ else
 end
 
 r = Atlas(urdf,options);
-r = removeCollisionGroupsExcept(r,{'heel','toe'});
+r = removeCollisionGroupsExcept(r,{'inner'});
 r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
 r = compile(r);
 
