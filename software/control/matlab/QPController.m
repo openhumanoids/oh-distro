@@ -252,6 +252,7 @@ classdef QPController < MIMODrakeSystem
       assert(isnumeric(ctrl_data.s2));
       sizecheck(ctrl_data.s2,1);
       assert(isnumeric(ctrl_data.mu));
+      assert(islogical(ctrl_data.ignore_terrain));
     end
   end
   
@@ -393,22 +394,24 @@ classdef QPController < MIMODrakeSystem
         c_pre = c_pre + num_desired_contacts(j);
       end
 
-      % check foot contacts via kinematics
       lfoot_contact_state_kin = 0;
       rfoot_contact_state_kin = 0;
-      if any(obj.lfoot_idx==desired_supports)
-        lfoot_desired_idx = find(obj.lfoot_idx==desired_supports);
-        c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
-        if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
-          lfoot_contact_state_kin = 1;
+      if ~ctrl_data.ignore_terrain
+        % check foot contacts via kinematics
+        if any(obj.lfoot_idx==desired_supports)
+          lfoot_desired_idx = find(obj.lfoot_idx==desired_supports);
+          c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
+          if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
+            lfoot_contact_state_kin = 1;
+          end
         end
-      end
-    
-      if any(obj.rfoot_idx==desired_supports)
-        rfoot_desired_idx = find(obj.rfoot_idx==desired_supports);
-        c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
-        if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
-          rfoot_contact_state_kin = 1;
+
+        if any(obj.rfoot_idx==desired_supports)
+          rfoot_desired_idx = find(obj.rfoot_idx==desired_supports);
+          c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
+          if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
+            rfoot_contact_state_kin = 1;
+          end
         end
       end
       
@@ -743,8 +746,11 @@ classdef QPController < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-       [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
-       V = 0; % don't compute V for mex yet (will we ever use this?)
+      if ctrl_data.ignore_terrain
+        contact_threshold =-1;       
+      end
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
+      V = 0; % don't compute V for mex yet (will we ever use this?)
     end
 
     if ~isempty(active_supports)

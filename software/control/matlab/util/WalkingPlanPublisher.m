@@ -116,6 +116,7 @@ classdef WalkingPlanPublisher
       msg.n_qnom_bytes = length(msg.qnom);
       
       msg.mu = data.mu;
+      msg.ignore_terrain = data.ignore_terrain;
 
       obj.lc.publish(obj.channel, msg);
       delete(tmp_fname);
