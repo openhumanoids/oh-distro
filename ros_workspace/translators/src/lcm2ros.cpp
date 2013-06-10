@@ -192,7 +192,7 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 		atlas_command_msg.i_effort_min.resize(msg->num_joints);
 		atlas_command_msg.i_effort_max.resize(msg->num_joints);
 
-	//  atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
+	        atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
 		for (int i=0; i<msg->num_joints; i++) {
 		  //atlas_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
