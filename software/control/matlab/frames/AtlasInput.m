@@ -4,14 +4,18 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
     function obj=AtlasInput(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
-      input_names = r.getInputFrame().coordinates;
-      input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
-      
-      coder = AtlasCommandCoder(input_names);
-      
-      obj = obj@LCMCoordinateFrameWCoder('AtlasInput',r.getNumInputs(),'x',JLCMCoder(coder));
-      obj.setCoordinateNames(input_names);
-      obj.setDefaultChannel('ATLAS_COMMAND');
+      obj = obj@LCMCoordinateFrameWCoder('AtlasInput',r.getNumInputs(),'x');
+      obj = obj@Singleton();
+      if isempty(obj.lcmcoder)
+        input_names = r.getInputFrame().coordinates;
+        input_names = regexprep(input_names,'_motor',''); % remove motor suffix
+        
+        coder = AtlasCommandCoder(input_names);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+        
+        obj.setCoordinateNames(input_names);
+        obj.setDefaultChannel('ATLAS_COMMAND');
+      end
       
       if (obj.mex_ptr==0)
         obj.mex_ptr = AtlasCommandPublisher(input_names);

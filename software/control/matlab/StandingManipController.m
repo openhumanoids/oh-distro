@@ -104,7 +104,7 @@ classdef StandingManipController < DRCController
 % 			outs(1).output = 1;
 % 			sys = mimoCascade(sys,ee_control,[],ins,outs);
 
-      obj = obj@DRCController(name,sys);
+      obj = obj@DRCController(name,sys,AtlasState(r));
  
       obj.robot = r;
       obj.controller_data = ctrl_data;

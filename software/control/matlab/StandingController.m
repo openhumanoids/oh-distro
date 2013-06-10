@@ -77,7 +77,7 @@ classdef StandingController < DRCController
       connection(2).to_input = 2;
       sys = mimoCascade(neck,sys,connection,ins,outs);
       
-      obj = obj@DRCController(name,sys);
+      obj = obj@DRCController(name,sys,AtlasState(r));
  
       obj.robot = r;
       obj.controller_data = ctrl_data;

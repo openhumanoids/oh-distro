@@ -4,12 +4,17 @@ classdef AtlasState < LCMCoordinateFrameWCoder & Singleton
     function obj=AtlasState(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
-      joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      coder = RobotStateCoder('atlas', joint_names);
+      obj = obj@LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x');
+      obj = obj@Singleton();
+
+      if isempty(obj.lcmcoder)  % otherwise I had a singleton
+        joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+        coder = RobotStateCoder('atlas', joint_names);
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(coder));
-      obj.setCoordinateNames(r.getStateFrame.coordinates);
-      obj.setDefaultChannel('EST_ROBOT_STATE');
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+        obj.setCoordinateNames(r.getStateFrame.coordinates);
+        obj.setDefaultChannel('EST_ROBOT_STATE');
+      end      
       
 %      if (obj.mex_ptr==0)
 %        obj.mex_ptr = RobotStateMonitor('atlas',joint_names);

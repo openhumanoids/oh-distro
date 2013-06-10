@@ -71,7 +71,7 @@ classdef HarnessController < DRCController
         sys = mimoCascade(neck,sys,connection,ins,outs);
       end
 
-      obj = obj@DRCController(name,sys);
+      obj = obj@DRCController(name,sys,AtlasState(r));
 
       obj.robot = r;
       obj.controller_data = ctrl_data;

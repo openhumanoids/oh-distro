@@ -87,7 +87,7 @@ classdef WalkingController < DRCController
       connection.to_input = 2;
       sys = mimoCascade(fs,sys,connection,ins,outs);
       
-      obj = obj@DRCController(name,sys);
+      obj = obj@DRCController(name,sys,AtlasState(r));
 
       obj.controller_data = ctrl_data;
       obj = setTimedTransition(obj,100,'standing',false); % default timeout

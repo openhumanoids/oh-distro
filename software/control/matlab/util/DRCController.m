@@ -10,6 +10,8 @@ classdef DRCController
     
     controller_input_frames; % lcm frames w/coders for controller inputs
     n_input_frames;
+    input_frame_which_triggers_update=-1;  % index into controller_input_frames
+    controller_input_duplicate;   % index into preceding input frame to duplicate data from (or 0)
     controller_output_frame;
     
     transition_coders; % lcm coders for transition events
@@ -41,7 +43,7 @@ classdef DRCController
   end
 
   methods
-    function obj = DRCController(name,sys)
+    function obj = DRCController(name,sys,input_subframe_which_triggers_update)
       typecheck(name,'char');
       if ~(isa(sys,'DrakeSystem') || isa(sys,'SimulinkModel'))
         error('DRCController::Argument sys should be a DrakeSystem or SimulinkModel');
@@ -49,6 +51,7 @@ classdef DRCController
       if ~isDT(sys)
         error('DRCController: only supports discrete time systems');
       end
+      typecheck(input_subframe_which_triggers_update,'CoordinateFrame');
         
       obj.name = name;
       obj.controller = sys;
@@ -62,8 +65,21 @@ classdef DRCController
       end
       obj.controller_output_frame = obj.controller.getOutputFrame();
       
+      name_hash = inf*ones(obj.n_input_frames,1); % no name_hash can be inf
+      obj.controller_input_duplicate = zeros(obj.n_input_frames,1);
       for i=1:obj.n_input_frames
         obj.controller_input_frames{i}.subscribe(defaultChannel(obj.controller_input_frames{i}));
+        name_hash(i) = obj.controller_input_frames{i}.name_hash;
+        if (obj.input_frame_which_triggers_update < 0 && name_hash(i)==input_subframe_which_triggers_update.name_hash)
+          obj.input_frame_which_triggers_update = i;
+        end
+        d = find(name_hash(i)==name_hash(1:i-1),1);
+        if ~isempty(d)
+          obj.controller_input_duplicate(i) = d;
+        end
+      end
+      if (obj.input_frame_which_triggers_update<0)
+        error('couldn''t find input_frame_which_triggers_update in the input frames of sys');
       end
       
       obj.lc = lcm.lcm.LCM.getSingleton();
@@ -216,7 +232,7 @@ classdef DRCController
 %       missed_frames = 0;
 %       max_state_delay = 0;
 %       ttprev = [];
-      
+      persistent count;  if isempty(count), count=0; end
       t_offset = -1;
       lcm_check_tic = tic;
       status_tic = tic;
@@ -251,42 +267,30 @@ classdef DRCController
           end
         end
 
-        input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
-        checked_frames = inf*ones(obj.n_input_frames,1); % no name_hash can be inf
-        % for each input subframe, get next message
-        for i=1:obj.n_input_frames
-          fr = obj.controller_input_frames{i};
-          if any(fr.name_hash==checked_frames)
-            continue;
+        [x,tsim] = getNextMessage(obj.controller_input_frames{obj.input_frame_which_triggers_update},10);  % timeout is in msec - should be safely bigger than e.g. a 200Hz input rate
+        if isempty(x) continue; end
+        count = count+1; fprintf(1,'count=%d\n',count);
+        
+        input_frame_data{obj.input_frame_which_triggers_update} = x;
+%        input_frame_time(obj.input_frame_which_triggers_update) = t;
+        if (t_offset == -1)
+          if obj.absolute_time
+            t_offset = 0;
+          else
+            t_offset = tsim;
           end
-%          [x,tsim] = getNextMessage(fr,0);
-          [x,tsim] = getNextMessage(fr,2); % in principle this should be 0 so we don't delay gets
-          % on other input frames, but in our case most controllers just
-          % have atlas state coming at high frequency, so we can use a
-          % small wait to reduce the # of function calls
-          if (~isempty(x))
-%            fprintf(1,'i=%d, tsim=%f, %s\n',i,tsim,obj.controller_input_frames{i}.name);
-            if (t_offset == -1)
-              if obj.absolute_time
-                t_offset = 0;
-              else
-                t_offset = tsim;
-              end
-            end
-            t=tsim-t_offset;
-
-            input_frame_data{i} = x;
-            input_frame_time(i) = t;
-            % copy data to other subframes
-            checked_frames(i) = fr.name_hash;
-            for j=1:obj.n_input_frames
-              if (obj.controller_input_frames{j}.name_hash==fr.name_hash)
-                input_frame_data{j} = x;
-                input_frame_time(j) = t;
-%                markAsRead(obj.controller_input_frames{j});  
-% the above line should not be needed
-% now that I've implemented the singleton's better
-              end
+        end
+        tt=tsim-t_offset;
+        
+        % for each input subframe, get most recent message
+        for i=[1:obj.input_frame_which_triggers_update-1,obj.input_frame_which_triggers_update+1:obj.n_input_frames]
+          if obj.controller_input_duplicate(i)
+            input_frame_data{i} = input_frame_data{obj.controller_input_duplicate(i)};
+%            input_frame_time{i} = input_frame_time{obj.controller_input_duplicate(i)};
+          else
+            x = getMessage(obj.controller_input_frames{i});
+            if ~isempty(x)
+              input_frame_data{i} = x;
             end
           end
         end
@@ -300,11 +304,6 @@ classdef DRCController
 %             end
 %           end
 %           precompute_tic=tic;
-%         end
-        
-        tt = max(input_frame_time);
-%         if isempty(ttprev)
-%           ttprev=tt;
 %         end
         
         if any(tt >= obj.t_final)
@@ -327,51 +326,42 @@ classdef DRCController
           break;
         end
         
-%         if all(input_frame_time == -1)
-%           missed_frames = missed_frames +1;
-%         end
-        
-        if any(input_frame_time >=0) % could also do 'all' here
-%           max_state_delay = max(max_state_delay,tt-ttprev);
-%           ttprev=tt;
+        if backup_mode  % backup_mode logic
+          % tt+t_offset is the timestamp of the message that I should be
+          % sending.  if I haven't seen that message for 10msec, then come
+          % out of backup_mode
+          t_heartbeat = getLastTimestamp(obj.controller_output_frame) / 1e6;
 
-          if backup_mode  % backup_mode logic
-            % tt+t_offset is the timestamp of the message that I should be
-            % sending.  if I haven't seen that message for 10msec, then come
-            % out of backup_mode
-            t_heartbeat = getLastTimestamp(obj.controller_output_frame) / 1e6;
-
-            if t_heartbeat>0 && tt+t_offset - t_heartbeat > 0.1
-              backup_mode = false;
-              disp('HEARTBEAT MISSED.  TRANSITIONING OUT OF BACKUP MODE.');
-            elseif toc(status_tic)>0.2
-              % send the backup status message
-              msg = status_message(obj,tt+t_offset,tt);
-              obj.lc.publish('BACKUP_CONTROLLER_STATUS',msg);
-              status_tic=tic;
-            end
-          else
-            u = obj.controller.output(tt,x,vertcat(input_frame_data{:}));
-            obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
-
-            % publish controller status
-            if toc(status_tic)>0.2
-              msg = status_message(obj,tt+t_offset,tt);
-              obj.lc.publish('CONTROLLER_STATUS',msg);
-              status_tic=tic;
-            end
-
-            if num_x>0
-              % note: for simulink models, this will call output again,
-              % unless I pass in my new additional flag.  try that when we
-              % get there.
-              x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
-            end
+          if t_heartbeat>0 && tsim - t_heartbeat > 0.1
+            backup_mode = false;
+            disp('HEARTBEAT MISSED.  TRANSITIONING OUT OF BACKUP MODE.');
+          elseif toc(status_tic)>0.2
+            % send the backup status message
+            msg = status_message(obj,tsim,tt);
+            obj.lc.publish('BACKUP_CONTROLLER_STATUS',msg);
+            status_tic=tic;
           end
-  %         fprintf('Num missed frames: %d \n',missed_frames);
-  %         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);
-  %         toc
+        else
+          u = obj.controller.output(tt,x,vertcat(input_frame_data{:}));
+          obj.controller_output_frame.publish(tsim,u,defaultChannel(obj.controller_output_frame));
+
+          % publish controller status
+          if toc(status_tic)>0.2
+            msg = status_message(obj,tt+t_offset,tt);
+            obj.lc.publish('CONTROLLER_STATUS',msg);
+            status_tic=tic;
+          end
+          
+          if num_x>0
+            % note: for simulink models, this will call output again,
+            % unless I pass in my new additional flag.  try that when we
+            % get there.
+            x = obj.controller.update(tt,x,vertcat(input_frame_data{:}));
+          end
         end
+        %         fprintf('Num missed frames: %d \n',missed_frames);
+        %         fprintf('Max state delay: %2.3f sim secs \n',max_state_delay);
+        %         toc
       end
     end
   end

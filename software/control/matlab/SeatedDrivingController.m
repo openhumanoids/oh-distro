@@ -85,7 +85,7 @@ classdef SeatedDrivingController < DRCController
 %       sys = mimoCascade(neck,sys,connection,ins,outs);
 %       clear ins outs;
       
-      obj = obj@DRCController(name,sys);
+      obj = obj@DRCController(name,sys,AtlasState(r));
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
