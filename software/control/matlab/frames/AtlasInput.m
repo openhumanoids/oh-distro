@@ -12,6 +12,21 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('AtlasInput',r.getNumInputs(),'x',JLCMCoder(coder));
       obj.setCoordinateNames(input_names);
       obj.setDefaultChannel('ATLAS_COMMAND');
+      
+      obj.mex_ptr = AtlasCommandPublisher(input_names);
     end
+    
+    function publish(obj,t,x,channel)
+      % short-cut java publish with a faster mex version
+      AtlasCommandPublisher(obj.mex_ptr,channel,t,x);
+    end
+    
+    function delete(obj)
+      AtlasCommandPublisher(obj.mex_ptr);
+    end
+  end
+  
+  properties
+    mex_ptr=0
   end
 end

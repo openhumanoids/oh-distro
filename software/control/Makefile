@@ -36,10 +36,14 @@ endif
 .PHONY : drake
 
 ifeq ($(MATLABCPU),maci64)
-MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT)
+MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT)
 else
 MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/HeightMapWrapper.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT)
 
 endif
@@ -88,7 +92,7 @@ $(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
 
 ifeq ($(MATLABCPU),maci64)
 
-$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake src/QPControllermex.cpp
+$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h src/QPControllermex.cpp
 	$(MEX) -O src/QPControllermex.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
@@ -107,7 +111,7 @@ $(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT) : src/bot_timestamp_now.cpp
 		-outdir $(BUILD_PREFIX)/matlab \
 		$(MAPS_FLAGS)
 
-$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
+$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h drake/systems/plants drake/systems/plants/RigidBody.h src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
 	$(MEX) -O src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
@@ -117,6 +121,12 @@ $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake src/QPControllermex.cpp
 		$(QP_FLAGS)
 
 endif
+
+$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) : src/RobotStateMonitor.cpp
+	$(MEX) -g -v src/RobotStateMonitor.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(shell pkg-config --cflags --libs lcm eigen3) -I$(BUILD_PREFIX)/include
+
+$(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) : src/AtlasCommandPublisher.cpp
+	$(MEX) -g -v src/AtlasCommandPublisher.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(shell pkg-config --cflags --libs lcm eigen3) -I$(BUILD_PREFIX)/include
 
 clean:
 	-rm $(CLASSFILES)
