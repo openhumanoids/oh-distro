@@ -49,7 +49,7 @@ classdef StandingController < DRCController
 
       % cascade PD qtraj controller 
       options.soft_ankles = true;
-      pd = SimplePDBlock(r,ctrl_data);
+      pd = SimplePDBlock(r,ctrl_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
