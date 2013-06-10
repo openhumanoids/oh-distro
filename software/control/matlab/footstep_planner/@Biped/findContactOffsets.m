@@ -8,10 +8,7 @@ function offset = findContactOffsets(biped)
 	foot_cen0 = struct();
   for f = {'right', 'left'}
     foot = f{1};
-	  gc = foot_body.(foot).contact_pts;
-	  k = convhull(gc(1:2,:)');
-	  offset.(foot).center = mean(gc(1:3, k(1:end-1)),2);
-	  for g = {'toe', 'heel'}
+	  for g = {'toe', 'heel', 'inner'}
 	    grp = g{1};
       gc = foot_body.(foot).contact_pts(:,...
         foot_body.(foot).collision_group{...
@@ -19,5 +16,6 @@ function offset = findContactOffsets(biped)
              foot_body.(foot).collision_group_name)});
       offset.(foot).(grp) = mean(gc(1:3,:), 2);
     end
+    offset.(foot).center = mean([offset.(foot).toe, offset.(foot).heel], 2);
   end
 end
