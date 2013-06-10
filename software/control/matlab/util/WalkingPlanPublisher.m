@@ -118,8 +118,9 @@ classdef WalkingPlanPublisher
       msg.mu = data.mu;
 
       obj.lc.publish(obj.channel, msg);
-		end
-
+      delete(tmp_fname);
 	end
+
+end
 
 end

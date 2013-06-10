@@ -119,6 +119,7 @@ classdef WalkingPlanListener
           'comtraj',comtraj,'zmptraj',zmptraj,'link_constraints',link_constraints,...
           'S',S,'s1',s1,'s2',s2,...
           'support_times',support_times,'supports',supports,'qnom',qnom);
+        delete(tmp_fname);
 
     end
   end

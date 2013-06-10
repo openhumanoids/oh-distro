@@ -192,6 +192,7 @@ classdef WalkingController < DRCController
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
       
       QPController.check_ctrl_data(obj.controller_data);  
+      delete(tmp_fname);
     end
   end  
 end
