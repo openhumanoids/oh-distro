@@ -136,6 +136,7 @@ class GlKinematicBody
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3i> triangles;
     bool isShowMeshSelected;
+    bool isMateable;
 
     // state can be set via robot_state_t, or urdf::Model,  or affordance_state_t,  or otdf::ModelInterface;
     void set_state(const drc::robot_state_t &msg);
@@ -327,6 +328,10 @@ class GlKinematicBody
     bool is_future_state_changing()
     {
        return future_state_changing;
+    };
+    bool is_mateable()
+    {
+       return isMateable;
     };
 
     void set_future_state_changing(bool value)

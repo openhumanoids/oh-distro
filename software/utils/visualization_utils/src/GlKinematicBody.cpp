@@ -53,7 +53,7 @@ using namespace visualization_utils;
 } */
 
 //constructor
-GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false),isShowMeshSelected(false)
+GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false),isShowMeshSelected(false),isMateable(false)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -75,10 +75,12 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
       size_t found = joint_name.find("mate::start"); 
       if (found!=std::string::npos){
        _mate_start_link = it->second->parent_link_name;
+       isMateable = true;
        }
       found = joint_name.find("mate::end"); 
       if (found!=std::string::npos){
        _mate_end_link = it->second->child_link_name;
+        isMateable = true;
        } 
   
   
@@ -228,7 +230,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
 }
 
-GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false), isShowMeshSelected(false)
+GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false), isShowMeshSelected(false),isMateable(false)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -271,10 +273,12 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
     size_t found = joint_name.find("mate::start"); 
     if (found!=std::string::npos){
      _mate_start_link = it->second->parent_link_name;  
+      isMateable = true;
      }
     found = joint_name.find("mate::end"); 
     if (found!=std::string::npos){
-     _mate_end_link = it->second->child_link_name;    
+     _mate_end_link = it->second->child_link_name;  
+      isMateable = true;  
      } 
     
     if(it->second->type!=otdf::Joint::FIXED){ // All joints that not of the type FIXED.
