@@ -6,7 +6,7 @@ import carry_out_sequence
 
 if __name__ == '__main__':
   if len(sys.argv) < 2:
-    print "usage: traj_yaml.py crawling_gains.csv"
+    print "usage: traj_yaml.py crawling_gains.csv integer"
     print "  where crawling_gains.csv is the gains and positions file"
     sys.exit(1)
 
