@@ -85,7 +85,12 @@ template<typename WireType, typename FieldType = WireType>
           for(int i = 0, n = min(wire_values.size(), goby::acomms::DCCLFieldCodecBase::dccl_field_options().max_repeat()); i < n; ++i)
           {
               WireType wire_value = wire_values[i];
-                
+
+              // pre-round before checking bounds
+              if(precision() >= 0)
+                  wire_value = goby::util::unbiased_round(wire_value, precision());
+                  
+                  
               if(wire_value < min() || wire_value > max())
                   break;
               
