@@ -157,7 +157,7 @@ while true
   if committed
     walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
         'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',[],'mu',mu,...
-        'link_constraints',link_constraints,'zmptraj',zmptraj,'qnom',qstar)
+        'link_constraints',link_constraints,'zmptraj',zmptraj,'qnom',qstar,'ignore_terrain',footstep_opts.ignore_terrain)
     msg =['Walk Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
     walking_pub.publish(0,walking_plan);
