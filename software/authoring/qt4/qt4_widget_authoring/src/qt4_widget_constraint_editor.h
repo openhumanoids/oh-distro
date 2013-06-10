@@ -30,12 +30,14 @@ namespace authoring {
     void constraint_update( const Constraint_Task_Space_Region& constraint, unsigned int constraintIndex );
     void highlight_link_by_name( const QString& linkName ); 
     void constraint_visible( bool visible, unsigned int constraintIndex );
-    void constraint_highlight( const QString& id );
+    void constraint_highlight( const QString& id, bool highlight );
+    void child_highlight( const QString& id, const QString& child, bool highlight );
 
   public slots:
     void update_constraint( const Constraint_Task_Space_Region& constraint );
     void update_description( const QString& description );
-    void highlight_constraint( const QString& id );
+    void highlight_constraint( const QString& id, bool highlight );
+    void highlight_child( const QString& id, const QString& child, bool highlight );
 
   protected slots:
     void _double_spin_box_time_start_value_changed( double start );

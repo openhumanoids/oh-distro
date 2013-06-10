@@ -44,7 +44,6 @@ namespace authoring {
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_state_gfe( state::State_GFE& stateGFE );
-    void highlight_constraint( const QString& id );
 
   protected slots:
     void _push_button_grab_pressed( void );

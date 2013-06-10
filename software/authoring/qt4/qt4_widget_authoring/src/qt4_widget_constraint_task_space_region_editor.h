@@ -27,13 +27,15 @@ namespace authoring {
 
   signals:
     void constraint_update( const Constraint_Task_Space_Region& constraint );
-    void constraint_highlight( const QString& id );
-  
+    void constraint_highlight( const QString& id, bool highlight );
+    void child_highlight( const QString& id, const QString& child, bool highlight ); 
+ 
   public slots:
     void update_constraint( const Constraint_Task_Space_Region& constraint );
 
   protected slots: 
     virtual void enterEvent( QEvent* event );
+    virtual void leaveEvent( QEvent* event );
     void _constraint_changed( void );
     void _constraint_changed( double value );
     void _constraint_changed( int index );
@@ -54,6 +56,8 @@ namespace authoring {
     std::vector< QDoubleSpinBox * > _double_spin_box_ranges;
     std::vector< QCheckBox * > _check_box_ranges;
     std::vector< QDoubleSpinBox * > _double_spin_box_offsets;
+
+    bool _publish_highlights;
 
   private:
 

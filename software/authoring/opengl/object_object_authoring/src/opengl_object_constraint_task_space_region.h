@@ -19,11 +19,14 @@ namespace authoring {
     virtual void set( const Constraint_Task_Space_Region& constraint );
     virtual void set_transparency( double transparency );
     virtual void set_color( Eigen::Vector3f color );
-    
+    virtual void set_affordance( affordance::AffordanceState& affordanceState );  
+  
     virtual void draw( void );
 
   protected:
     opengl::OpenGL_Object_Box _opengl_object_box;
+    affordance::AffordanceState _affordance_state;
+
   private:
 
   };

@@ -21,11 +21,13 @@ namespace authoring {
     virtual void draw( void );
     virtual void set_color( Eigen::Vector3f color );
     virtual void set_transparency( double transparency );
+    virtual void set_highlight( const std::vector< std::string >& highlightIds );
 
   protected:
     OpenGL_Object_Affordance _opengl_object_affordance;
     std::vector< affordance::AffordanceState > _affordance_collection;
-
+    std::vector< std::string > _highlight_ids;
+  
   private:
 
   };

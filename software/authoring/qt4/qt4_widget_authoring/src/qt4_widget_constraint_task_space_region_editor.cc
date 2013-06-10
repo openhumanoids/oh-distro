@@ -27,7 +27,8 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( const Constraint_Task_Space_Regi
                                                                     _combo_box_contact_type( new QComboBox( this ) ),
                                                                     _double_spin_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ),
                                                                     _check_box_ranges( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES, NULL ),
-                                                                    _double_spin_box_offsets( 3, NULL ) {
+                                                                    _double_spin_box_offsets( 3, NULL ),
+                                                                    _publish_highlights( false ) {
   for( unsigned int i = 0; i < NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES; i++ ){
     _double_spin_box_ranges[ i ] = new QDoubleSpinBox( this );
     _check_box_ranges[ i ] = new QCheckBox( this );
@@ -233,8 +234,11 @@ _constraint_changed( void ){
     _constraint.ranges()[ i ].first = _check_box_ranges[ i ]->isChecked();
     _constraint.ranges()[ i ].second = _double_spin_box_ranges[ i ]->value();
   }
-  _constraint.offset().p = Vector( _double_spin_box_offsets[ 0 ]->value(), _double_spin_box_offsets[ 1 ]->value(), _double_spin_box_offsets[ 2 ]->value() ); 
+  _constraint.offset().p = Vector( _double_spin_box_offsets[ 0 ]->value(), _double_spin_box_offsets[ 1 ]->value(), _double_spin_box_offsets[ 2 ]->value() );
   emit constraint_update( _constraint );
+  if( _publish_highlights ){
+    emit child_highlight( QString::fromStdString( _constraint.id() ), QString::fromStdString( _constraint.child() ), true );
+  }
   return;
 }
 
@@ -275,7 +279,18 @@ _mark_invalid_spin_boxes() {
 void 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 enterEvent( QEvent* event ){
-  emit constraint_highlight( QString::fromStdString( _constraint.id() ) ); 
+  emit constraint_highlight( QString::fromStdString( _constraint.id() ), true );
+  emit child_highlight( QString::fromStdString( _constraint.id() ), QString::fromStdString( _constraint.child() ), true );
+  _publish_highlights = true; 
+  return;
+}
+
+void
+Qt4_Widget_Constraint_Task_Space_Region_Editor::
+leaveEvent( QEvent* event ){
+  emit constraint_highlight( QString::fromStdString( _constraint.id() ), false );
+  emit child_highlight( QString::fromStdString( _constraint.id() ), QString::fromStdString( _constraint.child() ), false );
+  _publish_highlights = false;
   return;
 }
 

@@ -63,6 +63,7 @@ Qt4_Widget_OpenGL_Authoring::
 update_opengl_object_affordance_collection( vector< affordance::AffordanceState >& affordanceCollection ){
   _opengl_object_affordance_collection.set_visible( true );
   _opengl_object_affordance_collection.set( affordanceCollection );
+  _opengl_object_constraint_sequence.set_affordance_collection( affordanceCollection );
   return;
 }
 
@@ -172,9 +173,26 @@ update_opengl_object_robot_plan_visible_initial_state( int visibleInitialState )
 
 void
 Qt4_Widget_OpenGL_Authoring::
-highlight_constraint( const QString& id ){
-  _opengl_object_constraint_sequence.set_highlight( vector< string >( 1, id.toStdString() ) );
+highlight_constraint( const QString& id,
+                      bool highlight ){
+  if( highlight ){
+    _opengl_object_constraint_sequence.set_highlight( vector< string >( 1, id.toStdString() ) );
+  } else {
+    _opengl_object_constraint_sequence.set_highlight( vector< string >() );
+  }
   return;
+}
+
+void
+Qt4_Widget_OpenGL_Authoring::
+highlight_child( const QString& id,
+                  const QString& child,
+                  bool highlight ){
+  if( highlight ){
+    _opengl_object_affordance_collection.set_highlight( vector< string >( 1, child.toStdString() ) );
+  } else {
+    _opengl_object_affordance_collection.set_highlight( vector< string >() );
+  }
 }
 
 /*

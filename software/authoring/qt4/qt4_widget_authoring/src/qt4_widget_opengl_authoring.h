@@ -38,7 +38,8 @@ namespace authoring {
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
     void update_opengl_object_robot_plan_visible_trajectory_wrist( int visibleTrajectoryWrist );
     void update_opengl_object_robot_plan_visible_initial_state( int visibleTrajectoryWrist );
-    void highlight_constraint( const QString& id );
+    void highlight_constraint( const QString& id, bool highlight );
+    void highlight_child( const QString& id, const QString& child, bool highlight );
 
   protected slots:
     void _timer_update_callback( void );

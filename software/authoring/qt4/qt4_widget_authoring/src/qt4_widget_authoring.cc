@@ -46,6 +46,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   for( unsigned int i = 0; i < numConstraints; i++ ){
     _constraint_sequence.constraints()[ i ].id() = QString( "C%1" ).arg( i ).toStdString();
     _constraint_sequence.constraints()[ i ].active() = false;
+    _constraint_sequence.constraints()[ i ].visible() = false;
     _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, i, this ) );
   }
 
@@ -143,7 +144,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
     connect( *it, SIGNAL( constraint_update( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
-    connect( *it, SIGNAL( constraint_highlight ( const QString& ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString& ) ) );
+    connect( *it, SIGNAL( constraint_highlight ( const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString&, bool ) ) );
+    connect( *it, SIGNAL( child_highlight ( const QString&, const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_child( const QString&, const QString&, bool ) ) );
   }
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
@@ -211,13 +213,6 @@ update_state_gfe( State_GFE& stateGFE ){
   _state_gfe_ghost = stateGFE;
   return;
 } 
-
-void
-Qt4_Widget_Authoring::
-highlight_constraint( const QString& id ){
-  cout << "Qt4_Widget_Authoring::highlight_constraint: " << id.toStdString() << endl;
-  return;
-}
 
 void
 Qt4_Widget_Authoring::

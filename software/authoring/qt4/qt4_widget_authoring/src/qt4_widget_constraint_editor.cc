@@ -53,7 +53,7 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
   _check_box_active->setFixedWidth( 25 );
   _check_box_active->setEnabled( true );
   _check_box_visible->setFixedWidth( 25 );
-  _check_box_visible->setEnabled( true );
+  _check_box_visible->setEnabled( false );
   _push_button_edit->setFixedWidth( 50 );
   _double_spin_box_time_start->setFixedWidth( 70 );
   _double_spin_box_time_start->setRange( 0.1, 1000000.0 );
@@ -149,9 +149,19 @@ update_description( const QString& description ){
 
 void
 Qt4_Widget_Constraint_Editor::
-highlight_constraint( const QString& id ){
-  emit constraint_highlight( id );
+highlight_constraint( const QString& id,
+                      bool highlight ){
+  emit constraint_highlight( id, highlight );
   return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+highlight_child( const QString& id,
+                  const QString& child,
+                  bool highlight ){
+  emit child_highlight( id, child, highlight );
+  return; 
 }
 
 void
@@ -236,7 +246,8 @@ _push_button_edit_pressed( void ){
     _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( _constraint, _robot_model, _object_affordances, this );
     connect( this, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), _constraint_editor_popup, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
     connect( _constraint_editor_popup, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
-    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString& ) ), this, SLOT( highlight_constraint( const QString& ) ) );
+    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString&, bool ) ), this, SLOT( highlight_constraint( const QString&, bool ) ) );
+    connect( _constraint_editor_popup, SIGNAL( child_highlight( const QString&, const QString&, bool ) ), this, SLOT( highlight_child( const QString&, const QString&,  bool ) ) );
     _constraint_editor_popup->show();
     emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
     break;

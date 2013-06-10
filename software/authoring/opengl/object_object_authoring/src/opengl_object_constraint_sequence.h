@@ -31,12 +31,14 @@ namespace authoring {
     OpenGL_Object_Constraint_Sequence& operator=( const OpenGL_Object_Constraint_Sequence& other );
 
     virtual void set( const Constraint_Sequence& constraintSequence );
+    virtual void set_affordance_collection( const std::vector< affordance::AffordanceState >& affordanceCollection );
     virtual void set_transparency( double transparency );
     virtual void set_highlight( const std::vector< std::string >& highlightIds );
     virtual void draw( void );
 
   protected:
     Constraint_Sequence _constraint_sequence;
+    std::vector< affordance::AffordanceState > _affordance_collection;
     OpenGL_Object_Constraint_Task_Space_Region _opengl_object_constraint_task_space_region;
     std::vector< std::string > _highlight_ids;
 

@@ -16,7 +16,7 @@ main( int argc,
   
   QApplication app( argc, argv );
 
-  string xml_string = Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + string( "/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf" ) );
+  string xml_string = Kinematics_Model_GFE::urdf_filename_to_xml_string( getModelsPath() + string( "/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf" ) );
 
   if ( argc >= 2 ) {
       xml_string = Kinematics_Model_GFE::urdf_filename_to_xml_string( argv[1] ); 

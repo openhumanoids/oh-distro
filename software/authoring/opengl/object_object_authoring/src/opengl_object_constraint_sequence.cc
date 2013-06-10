@@ -16,6 +16,7 @@
 
 using namespace std;
 using namespace opengl;
+using namespace affordance;
 using namespace authoring;
 
 OpenGL_Object_Constraint_Sequence::
@@ -55,6 +56,13 @@ set( const Constraint_Sequence& constraintSequence ){
   return;
 }
 
+void 
+OpenGL_Object_Constraint_Sequence::
+set_affordance_collection( const vector< AffordanceState >& affordanceCollection ){
+  _affordance_collection = affordanceCollection;
+  return;
+}
+
 void
 OpenGL_Object_Constraint_Sequence::
 set_transparency( double transparency ){
@@ -74,19 +82,26 @@ OpenGL_Object_Constraint_Sequence::
 draw( void ){
   if( visible() ){
     for( vector< Constraint_Task_Space_Region >::const_iterator it = _constraint_sequence.constraints().begin(); it != _constraint_sequence.constraints().end(); it++ ){
-      _opengl_object_constraint_task_space_region.set( *it );
-      bool is_highlighted = false;
-      for( unsigned int i = 0; i < _highlight_ids.size(); i++ ){
-        if( _highlight_ids[ i ] == it->id() ){
-          is_highlighted = true;
+      if( it->visible() ){
+        for( unsigned int i = 0; i < _affordance_collection.size(); i++ ){
+          if( _affordance_collection[ i ].getName() == it->child() ){
+            _opengl_object_constraint_task_space_region.set_affordance( _affordance_collection[ i ] );
+          }
         }
+        _opengl_object_constraint_task_space_region.set( *it );
+        bool is_highlighted = false;
+        for( unsigned int i = 0; i < _highlight_ids.size(); i++ ){
+          if( _highlight_ids[ i ] == it->id() ){
+            is_highlighted = true;
+          }
+        }
+        if( is_highlighted ){
+          _opengl_object_constraint_task_space_region.set_color( Eigen::Vector3f( 0.0, 1.0, 1.0 ) );
+        } else {
+          _opengl_object_constraint_task_space_region.set_color( Eigen::Vector3f( 1.0, 1.0, 0.0 ) );
+        }
+        _opengl_object_constraint_task_space_region.draw();
       }
-      if( is_highlighted ){
-        _opengl_object_constraint_task_space_region.set_color( Eigen::Vector3f( 0.0, 1.0, 1.0 ) );
-      } else {
-        _opengl_object_constraint_task_space_region.set_color( Eigen::Vector3f( 1.0, 1.0, 0.0 ) );
-      }
-      _opengl_object_constraint_task_space_region.draw();
     }
   }
   return;
