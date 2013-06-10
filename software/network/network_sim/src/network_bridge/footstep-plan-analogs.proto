@@ -8,7 +8,7 @@ message MinimalFootStepPlan
   option (dccl.msg).max_bytes = 3000;
   option (dccl.msg).id = 0xD4C0005;
   
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
+  required double utime = 1 [(dccl.field) = { min: 0 max: 3600e6 precision: -3}];
   required MinimalFootStepGoal first_goal = 2;
   required MinimalFootStepGoalDiff goal_diff = 3;
   required bool is_new_plan = 4;
@@ -18,11 +18,11 @@ message MinimalFootStepPlan
 
 message MinimalFootStepGoal
 {
-  required uint64 utime = 1 [(dccl.field) = { min: 0 max: 3600e6 }];
+  required double utime = 1 [(dccl.field) = { min: 0 max: 3600e6 precision: -3 }];
 
   required Position3D pos = 2;
 
-  required double step_speed = 5 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 }];
+  required double step_speed = 5 [(dccl.field) = { min: 0.0 max: 5.1 precision: 1 }];
   required double step_height = 6 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 }];
 
   required int32 id = 7 [(dccl.field) = { min: 0 max: 0xFFFF }];
@@ -41,7 +41,7 @@ message MinimalFootStepGoal
 
 message MinimalFootStepGoalDiff
 {
-  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 max_repeat: 100 codec: "presence_bit"}];
+  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 precision: -3 max_repeat: 100 codec: "presence_bit"}];
 
   required Position3DDiff pos_diff = 2;
   
@@ -58,7 +58,7 @@ message MinimalFootStepGoalDiff
   // 7: fixed_yaw
   repeated int32 bool_mask = 10 [(dccl.field) = { min: 0 max: 0xFF max_repeat: 100 codec: "presence_bit" } ];
 
-  repeated double step_speed = 20 [(dccl.field) = { min: 0.05 max: 1.50 precision: 2 max_repeat: 100 codec: "presence_bit" }];
+  repeated double step_speed = 20 [(dccl.field) = { min: 0.0 max: 5.1 precision: 1 max_repeat: 100 codec: "presence_bit" }];
   repeated double step_height = 21 [(dccl.field) = { min: 0.05 max: 0.50 precision: 2 max_repeat: 100 codec: "presence_bit"}];
 
 }
