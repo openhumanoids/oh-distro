@@ -85,6 +85,10 @@
     <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 0.0624435 -0.031119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 -0.0624435 -0.031119" visualize="1"/>
 
     <xacro:collision_box group="default" xyz="0.048 0 -0.056119" rpy="0 0 0" 
       size="0.26 0.124887 0.05" visualize="1"/>
@@ -115,6 +119,8 @@
     <xacro:collision_box group="default"
       rpy="0 0 0" xyz="0.001 0.051 0.0"
       size="0.135 0.15 0.06" visualize="1"/>
+    <xacro:collision_point group="wrist"
+      xyz="0 0.246 -0.013" visualize="1"/>
   </link>
   <link name="l_lglut">
     <inertial>
@@ -395,6 +401,11 @@
     <xacro:collision_point group="front" xyz="0.156 0.0 -0.02" visualize="1"/>
     <xacro:collision_point group="butt" xyz="-0.15 0.075 -0.15" visualize="1"/>
     <xacro:collision_point group="butt" xyz="-0.15 -0.075 -0.15" visualize="1"/>
+
+    <xacro:collision_point group="butt_left" xyz="-0.15 0.075 -0.15" visualize="1"/>
+    <xacro:collision_point group="butt_left" xyz="-0.05 0.075 -0.15" visualize="1"/>
+    <xacro:collision_point group="butt_right" xyz="-0.15 -0.075 -0.15" visualize="1"/>
+    <xacro:collision_point group="butt_right" xyz="-0.05 -0.075 -0.15" visualize="1"/>
     <visual group="default">
       <origin rpy="0 0 0" xyz="-0.1 0 -0.05"/>
       <geometry>
@@ -542,6 +553,10 @@
     <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 0.0624435 -0.031119" visualize="1"/>
+    <xacro:collision_point group="nail" xyz="0.178 -0.0624435 -0.031119" visualize="1"/>
 
     <visual group="default">
       <origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>
@@ -632,6 +647,8 @@
         <box size="0.135 0.15 0.06"/>
       </geometry>
     </collision>
+    <xacro:collision_point group="wrist"
+      xyz="0 -0.246 -0.013" visualize="1"/>
   </link>
   <link name="r_lglut">
     <inertial>
