@@ -66,14 +66,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         return false;
     }
     
-    if(glog.is(VERBOSE))
-    {
-        google::protobuf::TextFormat::Printer printer;
-        printer.SetUseShortRepeatedPrimitives(true);
-        std::string dccl_plan_debug;
-        printer.PrintToString(dccl_plan, &dccl_plan_debug);
-        glog << "MinimalFootStepPlan: " << dccl_plan_debug << std::endl;
-    }
+    glog.is(VERBOSE) && glog << "MinimalFootStepPlan: " << pb_to_short_string(dccl_plan) << std::endl;
     
     std::string encoded;
     dccl_->encode(&encoded, dccl_plan);
@@ -93,14 +86,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
 
     dccl_->decode(encoded, &dccl_plan);
 
-    if(glog.is(VERBOSE))
-    {
-        google::protobuf::TextFormat::Printer printer;
-        printer.SetUseShortRepeatedPrimitives(true);
-        std::string dccl_plan_debug;
-        printer.PrintToString(dccl_plan, &dccl_plan_debug);
-        glog << "MinimalFootStepPlan: " << dccl_plan_debug << std::endl;
-    }
+    glog.is(VERBOSE) && glog << "MinimalFootStepPlan: " << pb_to_short_string(dccl_plan) << std::endl;
     
     drc::footstep_plan_t lcm_object;
     lcm_object.utime = dccl_plan.utime();

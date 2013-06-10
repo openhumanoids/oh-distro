@@ -13,6 +13,15 @@
 
 enum Node { BASE = 0, ROBOT = 1};
 
+inline std::string pb_to_short_string(const google::protobuf::Message& msg)
+{
+    google::protobuf::TextFormat::Printer printer;
+    printer.SetUseShortRepeatedPrimitives(true);
+    std::string s;
+    printer.PrintToString(msg, &s);
+    return s;
+}
+
 
 class DRCEmptyIdentifierCodec : public goby::acomms::DCCLTypedFixedFieldCodec<goby::uint32>
 {

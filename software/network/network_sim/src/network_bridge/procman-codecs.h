@@ -129,6 +129,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     diff_acked.set_utime(host_info.diff_waiting_ack_.utime());
 
                     glog.is(VERBOSE) && glog << "diff_waiting_ack: " << host_info.diff_waiting_ack_.ShortDebugString() << std::endl;
+
                     glog.is(VERBOSE) && glog << "diff_acked: " << diff_acked.ShortDebugString() << std::endl;
                     
                     if(diff_acked.SerializeAsString() == host_info.diff_waiting_ack_.SerializeAsString())
