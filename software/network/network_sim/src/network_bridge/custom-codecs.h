@@ -13,10 +13,12 @@
 
 enum Node { BASE = 0, ROBOT = 1};
 
-inline std::string pb_to_short_string(const google::protobuf::Message& msg)
+inline std::string pb_to_short_string(const google::protobuf::Message& msg, bool single_line = false)
 {
     google::protobuf::TextFormat::Printer printer;
     printer.SetUseShortRepeatedPrimitives(true);
+    printer.SetSingleLineMode(single_line);
+
     std::string s;
     printer.PrintToString(msg, &s);
     return s;

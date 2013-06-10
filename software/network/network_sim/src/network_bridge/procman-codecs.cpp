@@ -80,13 +80,13 @@ bool PMDOrdersCodec::make_diff(const bot_procman::orders_t& orders, const bot_pr
     }
     diff->set_ncmds(diff->cmds_size());
             
-    glog.is(VERBOSE) && glog << "Made PMD_ORDERS diff: " << diff->ShortDebugString() << std::endl;
+    glog.is(VERBOSE) && glog << "Made PMD_ORDERS diff: " << pb_to_short_string(*diff,true) << std::endl;
     return true;
 }
 
 bool PMDOrdersCodec::reverse_diff(bot_procman::orders_t* orders, const bot_procman::orders_t& reference, const drc::PMDOrdersDiff& diff)
 {
-    glog.is(VERBOSE) && glog << "Received PMD_ORDERS diff: " << diff.ShortDebugString() << std::endl;
+    glog.is(VERBOSE) && glog << "Received PMD_ORDERS diff: " << pb_to_short_string(diff,true) << std::endl;
 
     
     if(((reference.utime / 100000) % 256) != diff.reference_time())
@@ -140,7 +140,6 @@ bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman:
 
     diff->set_utime(info.utime - reference.utime);
 
-    diff->set_ncmds(info.ncmds);
     for(int i = 0, n = info.cmds.size(); i < n; ++i)
     {
         const bot_procman::deputy_cmd_t& cmd = info.cmds[i];
@@ -150,34 +149,67 @@ bool PMDInfoCodec::make_diff(const bot_procman::info_t& info, const bot_procman:
         bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::deputy_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;
-        
+
+        bool empty = true;        
         if(!has_ref_cmd || cmd.name != ref_cmd->name)
+        {
             diff_cmd->set_name(cmd.name);
+            empty = false;            
+        }
+        
         if(!has_ref_cmd || cmd.nickname != ref_cmd->nickname)
+        {
             diff_cmd->set_nickname(cmd.nickname);
+            empty = false;            
+        }
         if(!has_ref_cmd || cmd.group != ref_cmd->group)
+        {
             diff_cmd->set_group(cmd.group);
+            empty = false;            
+        }
         if(!has_ref_cmd || cmd.pid != ref_cmd->pid)
+        {
             diff_cmd->set_pid(cmd.pid);
+            empty = false;            
+        }
         if(!has_ref_cmd || cmd.actual_runid != ref_cmd->actual_runid)
+        {
             diff_cmd->set_actual_runid(cmd.actual_runid);
+            empty = false;            
+        }
         if(!has_ref_cmd || cmd.exit_code != ref_cmd->exit_code)
+        {
             diff_cmd->set_exit_code(cmd.exit_code);
+            empty = false;            
+        }
         if(!has_ref_cmd || cmd.sheriff_id != ref_cmd->sheriff_id)
+        {
             diff_cmd->set_sheriff_id(cmd.sheriff_id);
+            empty = false;            
+        }
 
-        // set this to work around https://bugs.launchpad.net/dccl/+bug/1177415
-        diff_cmd->set_auto_respawn(cmd.auto_respawn);
-
+        if(!has_ref_cmd || cmd.auto_respawn != ref_cmd->auto_respawn)
+        {
+            diff_cmd->set_auto_respawn(cmd.auto_respawn);
+            empty = false;            
+        }
+        
+        if(!empty)
+            diff_cmd->set_index(i);
+        else
+            diff->mutable_cmds()->RemoveLast();
+        
+        
     }       
-    glog.is(VERBOSE) && glog << "Made PMD_INFO diff: " << diff->ShortDebugString() << std::endl;
-
+    diff->set_ncmds(diff->cmds_size());
+    glog.is(VERBOSE) && glog << "Made PMD_INFO diff: " << pb_to_short_string(*diff,true) << std::endl;
+    
     return true;
 }
 
 bool PMDInfoCodec::reverse_diff(bot_procman::info_t* info, const bot_procman::info_t& reference, const drc::PMDInfoDiff& diff)
 {
-    glog.is(VERBOSE) && glog << "Received PMD_INFO diff at time: " << reference.utime + diff.utime() << "  : " << diff.ShortDebugString() << std::endl;
+    glog.is(VERBOSE) && glog << "Received PMD_INFO diff at time: " << reference.utime + diff.utime() << "  : " << pb_to_short_string(diff,true) << std::endl;
 
 
     if(((reference.utime / 100000) % 256) != diff.reference_time())
@@ -192,13 +224,20 @@ bool PMDInfoCodec::reverse_diff(bot_procman::info_t* info, const bot_procman::in
     info->swap_total_bytes = -1;
     info->swap_free_bytes = -1;
     
-    info->ncmds = diff.ncmds();
-    
-    for(int i = 0, n = diff.cmds_size(); i < n; ++i)
+    info->ncmds = diff.ncmds() > 0 ? std::max(reference.ncmds, diff.cmds(diff.ncmds()-1).index()) : reference.ncmds;
+
+    int j = 0;
+    for(int i = 0, n = info->ncmds; i < n; ++i)
     {
         bot_procman::deputy_cmd_t cmd;
-        const drc::PMDInfoDiff::PMDDeputyCmdDiff& diff_cmd = diff.cmds(i);
+
+        if(j < diff.ncmds() && diff.cmds(j).index() < i)
+            ++j;
         
+        drc::PMDInfoDiff::PMDDeputyCmdDiff diff_cmd = (j < diff.ncmds() && diff.cmds(j).index() == i) ?
+            diff.cmds(j) : drc::PMDInfoDiff::PMDDeputyCmdDiff();
+        // 
+
         bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
         
         const bot_procman::deputy_cmd_t* ref_cmd = has_ref_cmd ? &reference.cmds[i] : 0;

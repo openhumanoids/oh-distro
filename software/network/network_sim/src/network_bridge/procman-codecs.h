@@ -128,9 +128,9 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     // needing to send a new diff.
                     diff_acked.set_utime(host_info.diff_waiting_ack_.utime());
 
-                    glog.is(VERBOSE) && glog << "diff_waiting_ack: " << host_info.diff_waiting_ack_.ShortDebugString() << std::endl;
+//                    glog.is(VERBOSE) && glog << "diff_waiting_ack: " << host_info.diff_waiting_ack_.ShortDebugString() << std::endl;
 
-                    glog.is(VERBOSE) && glog << "diff_acked: " << diff_acked.ShortDebugString() << std::endl;
+//                    glog.is(VERBOSE) && glog << "diff_acked: " << diff_acked.ShortDebugString() << std::endl;
                     
                     if(diff_acked.SerializeAsString() == host_info.diff_waiting_ack_.SerializeAsString())
                     {
@@ -179,7 +179,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             drc::ProcManWrapper wrapper;
             wrapper.ParseFromArray(&transmit_data[0], transmit_data.size());
 
-            glog.is(VERBOSE) && glog << "Decoding message: " << wrapper.ShortDebugString() << std::endl;
+//            glog.is(VERBOSE) && glog << "Decoding message: " << pb_to_short_string(wrapper) << std::endl;
             
             LCMType lcm_object;
 
@@ -235,7 +235,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             }
             else if(wrapper.type() == drc::ProcManWrapper::ACK)
             {
-                glog.is(VERBOSE) && glog << "Received ACK for last DIFF: " <<  OtherCodec::host_info_[host].diff_waiting_ack_.ShortDebugString() << std::endl;
+                glog.is(VERBOSE) && glog << "Received ACK for last DIFF" << std::endl; //: " <<  pb_to_short_string(OtherCodec::host_info_[host].diff_waiting_ack_) << std::endl;
                 if(OtherCodec::host_info_[host].diff_waiting_ack_.IsInitialized())
                 {
                     OtherCodec::host_info_[host].last_diff_ = OtherCodec::host_info_[host].diff_waiting_ack_;
