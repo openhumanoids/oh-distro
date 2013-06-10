@@ -29,11 +29,14 @@ classdef FootstepPlanner < DRCPlanner
     function X = updatePlan(obj, X, data, changed, changelist)
       if changelist.goal || isempty(X)
         msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu'}
-          obj.options.(x{1}) = data.goal.(x{1});
+        info = struct(data.goal);
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu'}
+          if isfield(info, x{1})
+            obj.options.(x{1}) = info.(x{1});
+          elseif isfield(obj.biped, x{1})
+            obj.options.(x{1}) = obj.biped.(x{1});
+          end
         end
-        % obj.options.time_per_step = obj.options.time_per_step / 1e9;
-        obj.options.timeout = obj.options.timeout / 1e6;
       end
       if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X)
         msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);

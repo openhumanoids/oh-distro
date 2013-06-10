@@ -39,11 +39,14 @@
 #define PARAM_LEADING_FOOT "Leading foot"
 // #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
 // #define PARAM_STEP_TIME "Time per step (s)"
-#define PARAM_STEP_SPEED "Foot speed (m/s)"
-#define PARAM_STEP_HEIGHT "Step clearance (m)"
-#define PARAM_MU "Coeff. of friction (mu)"
+#define PARAM_STEP_SPEED "Foot speed (1.5 m/s)"
+#define PARAM_STEP_HEIGHT "Step clearance (0.1 m)"
+#define PARAM_MU "Coeff. of friction (1.00)"
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
+#define PARAM_NOM_FORWARD_STEP "Nominal forward step (0.25 m)"
+#define PARAM_MAX_FORWARD_STEP "Max forward step (0.5 m)"
+#define PARAM_NOM_STEP_WIDTH "Nominal step width (0.26 m)"
 
 typedef enum _leading_foot_t {
   LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
@@ -176,6 +179,9 @@ typedef struct _RendererWalking {
   // int64_t time_per_step_ns;
   double step_speed;
   double step_height;
+  double nom_forward_step;
+  double max_forward_step;
+  double nom_step_width;
   double mu;
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
@@ -338,6 +344,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     msg.allow_optimization = self->allow_optimization;
     // msg.time_per_step = self->time_per_step_ns;
     msg.step_speed = self->step_speed;
+    msg.nom_step_width = self->nom_step_width;
+    msg.nom_forward_step = self->nom_forward_step;
+    msg.max_forward_step = self->max_forward_step;
     msg.step_height = self->step_height;
     msg.mu = self->mu;
     msg.follow_spline = self->follow_spline;
@@ -404,6 +413,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
+  self->nom_step_width = bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_STEP_WIDTH);
+  self->nom_forward_step = bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP);
+    self->max_forward_step = bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP);
   self->step_height = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_HEIGHT);
   self->mu = bot_gtk_param_widget_get_double(self->pw, PARAM_MU);
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
@@ -419,6 +431,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->last_walking_msg.follow_spline = self->follow_spline;
       self->last_walking_msg.ignore_terrain = self->ignore_terrain;
       self->last_walking_msg.step_speed = self->step_speed;
+      self->last_walking_msg.nom_step_width = self->nom_step_width;
+      self->last_walking_msg.nom_forward_step = self->nom_forward_step;
+      self->last_walking_msg.max_forward_step = self->max_forward_step;
       self->last_walking_msg.step_height = self->step_height;
       self->last_walking_msg.mu = self->mu;
       self->last_walking_msg.allow_optimization = self->allow_optimization;
@@ -503,7 +518,11 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
   self->step_speed = 1.5; // m/s
+  self->nom_step_width = 0.26; // m
+  self->nom_forward_step = 0.25; // m
+  self->max_forward_step = 0.5; // m
   self->step_height = 0.1; // m
+
   self->mu = 1.0;
   self->leading_foot = LEADING_FOOT_RIGHT;
   
@@ -518,11 +537,14 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_UPDATE, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 30.0);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 0.0);  
   // bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 1.0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->nom_forward_step);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
