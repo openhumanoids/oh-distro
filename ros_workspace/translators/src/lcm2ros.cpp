@@ -24,6 +24,8 @@ class LCM2ROS{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
+
+		int last_command_timestamp;
     
     // DRCSIM 2.0 joint command API
     void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
@@ -100,6 +102,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/brake_pedal/cmd", 1000);
   
 
+	last_command_timestamp = -1;
+
   rosnode = new ros::NodeHandle();
 }
 
@@ -131,67 +135,82 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
   
 void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
-  osrf_msgs::JointCommands joint_command_msg;
-  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   
-  joint_command_msg.ki_position.resize(msg->num_joints);
-  joint_command_msg.kp_velocity.resize(msg->num_joints);
-  joint_command_msg.i_effort_min.resize(msg->num_joints);
-  joint_command_msg.i_effort_max.resize(msg->num_joints);
+//	if (msg->utime > last_command_timestamp) {
+//    ROS_WARN("NEW COMMAND: %d > %d", msg->utime, last_command_timestamp);
+//		last_command_timestamp = msg->utime;
+		osrf_msgs::JointCommands joint_command_msg;
+		joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+		
+		joint_command_msg.ki_position.resize(msg->num_joints);
+		joint_command_msg.kp_velocity.resize(msg->num_joints);
+		joint_command_msg.i_effort_min.resize(msg->num_joints);
+		joint_command_msg.i_effort_max.resize(msg->num_joints);
 
-  for (int i=0; i<msg->num_joints; i++) {
-    joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
-    joint_command_msg.position.push_back(msg->position[i]);
-    joint_command_msg.velocity.push_back(msg->velocity[i]);
-    joint_command_msg.effort.push_back(msg->effort[i]);
+		for (int i=0; i<msg->num_joints; i++) {
+		  joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
+		  joint_command_msg.position.push_back(msg->position[i]);
+		  joint_command_msg.velocity.push_back(msg->velocity[i]);
+		  joint_command_msg.effort.push_back(msg->effort[i]);
 
-    joint_command_msg.kp_position.push_back(msg->kp_position[i]);
-    joint_command_msg.kd_position.push_back(msg->kd_position[i]);
+		  joint_command_msg.kp_position.push_back(msg->kp_position[i]);
+		  joint_command_msg.kd_position.push_back(msg->kd_position[i]);
 
-    // NOTE: This slows things down significantly, just set to zero instead
-    // for now never change i gains or clamps
-//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/p", joint_command_msg.kp_position[i]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/d", joint_command_msg.kd_position[i]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
-//    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
-  }
-  if(ros::ok()) {
-    joint_cmd_pub_.publish(joint_command_msg);
-  } 
-}  
+		  // NOTE: This slows things down significantly, just set to zero instead
+		  // for now never change i gains or clamps
+	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/p", joint_command_msg.kp_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/d", joint_command_msg.kd_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
+	//    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
+		}
+		if(ros::ok()) {
+		  joint_cmd_pub_.publish(joint_command_msg);
+		} 
+//	}
+//	else {
+//    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
+//	}
+} 
 
 
 
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
-  if (msg->effort[0] == 0){ // assume this is enough to trigger
-    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
-  }
+//  if (msg->effort[0] == 0){ // assume this is enough to trigger
+//    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
+//  }
   
-  atlas_msgs::AtlasCommand atlas_command_msg;
-  atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-  
-  atlas_command_msg.ki_position.resize(msg->num_joints);
-  atlas_command_msg.kp_velocity.resize(msg->num_joints);
-  atlas_command_msg.i_effort_min.resize(msg->num_joints);
-  atlas_command_msg.i_effort_max.resize(msg->num_joints);
+//	if (msg->utime > last_command_timestamp) {
+//    ROS_ERROR("NEW COMMAND: %d > %d", msg->utime, last_command_timestamp);
+//		last_command_timestamp = msg->utime;
 
-//  atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
+		atlas_msgs::AtlasCommand atlas_command_msg;
+		atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+		
+		atlas_command_msg.ki_position.resize(msg->num_joints);
+		atlas_command_msg.kp_velocity.resize(msg->num_joints);
+		atlas_command_msg.i_effort_min.resize(msg->num_joints);
+		atlas_command_msg.i_effort_max.resize(msg->num_joints);
 
-  for (int i=0; i<msg->num_joints; i++) {
-    //atlas_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
-    atlas_command_msg.position.push_back(msg->position[i]);
-    atlas_command_msg.velocity.push_back(msg->velocity[i]);
-    atlas_command_msg.effort.push_back(msg->effort[i]);
-    atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
+	//  atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
-    atlas_command_msg.kp_position.push_back(msg->kp_position[i]);
-    atlas_command_msg.kd_position.push_back(msg->kd_position[i]);
-  }
-  if(ros::ok()) {
-    atlas_cmd_pub_.publish(atlas_command_msg);
-    
-  } 
+		for (int i=0; i<msg->num_joints; i++) {
+		  //atlas_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
+		  atlas_command_msg.position.push_back(msg->position[i]);
+		  atlas_command_msg.velocity.push_back(msg->velocity[i]);
+		  atlas_command_msg.effort.push_back(msg->effort[i]);
+		  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
+
+		  atlas_command_msg.kp_position.push_back(msg->kp_position[i]);
+		  atlas_command_msg.kd_position.push_back(msg->kd_position[i]);
+		}
+		if(ros::ok()) {
+		  atlas_cmd_pub_.publish(atlas_command_msg);
+		} 
+//	}
+//	else {
+//    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
+//	}
 }  
 
 void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
