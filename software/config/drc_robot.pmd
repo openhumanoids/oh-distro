@@ -430,7 +430,6 @@ group "m.hose_task_utils" {
         exec = "affordance_init -e 4";
         host = "base";
     } 
-
     cmd "affordance_init_valve" {
         exec = "affordance_init -e 6";
         host = "base";
