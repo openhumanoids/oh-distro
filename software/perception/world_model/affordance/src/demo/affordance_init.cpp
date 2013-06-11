@@ -356,10 +356,16 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   a.params.push_back(0.0); a.param_names.push_back("x_offset_cyl_2_2");
   a.params.push_back(0.0); a.param_names.push_back("y_offset_cyl_2_2");
   a.params.push_back(0.11); a.param_names.push_back("z_offset_cyl_2_2");
-
   
   a.nparams =a.params.size();
-  a.nstates =0;
+  
+  a.states.push_back(0.33); a.state_names.push_back("mate::x");
+  a.states.push_back(0.1357); a.state_names.push_back("mate::y");
+  a.states.push_back(-1.411); a.state_names.push_back("mate::z");
+  a.states.push_back(-3.155); a.state_names.push_back("mate::roll");
+  a.states.push_back(0.1); a.state_names.push_back("mate::pitch");
+  a.states.push_back(0); a.state_names.push_back("mate::yaw");
+  a.nstates =a.states.size();
 
   a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
   a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
@@ -424,8 +430,9 @@ void Pass::doDemo(int which_publish, bool add_filename){
   
   if ((which_publish==4) || (which_publish==0)){
     int uid1 = 15;
-    std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  
-    
+
+    //std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  //ground truth
+    std::vector<double> xyzrpy1 = {1.202 , -2.628 , 0.265 , -M_PI/2 , 0 , M_PI};  //with state estimation, starting close to table for dev
     
     string filename1 = "standpipe.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
@@ -471,7 +478,8 @@ void Pass::doDemo(int which_publish, bool add_filename){
   
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
-    std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, 0};  
+    // std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, -M_PI};  //ground truth
+    std::vector<double> xyzrpy1 = {1.696, -2.785, 0.277, 0, 0, -M_PI};  //with state estimation, starting close to table for dev
     string filename1 = "valve.ply";
     drc::affordance_plus_t a1 = getDynamicMeshSteeringCylAffordancePlus(filename1, xyzrpy1, uid1);
     set_param(a1,"radius",0.15);
