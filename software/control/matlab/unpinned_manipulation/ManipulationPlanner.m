@@ -329,7 +329,7 @@ classdef ManipulationPlanner < handle
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
-            
+            s_total = max(s_total,0.01);
             
             for l =1:length(s_breaks),
                 ind = find(abs(s - s_breaks(l))<1e-3);
@@ -823,6 +823,7 @@ classdef ManipulationPlanner < handle
                 s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
                 s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head); 
+                s_total = max(s_total,0.01);
                 
                 ts = s.*(s_total/obj.v_desired); % plan timesteps
                 obj.time_2_index_scale = (obj.v_desired/s_total);
@@ -1741,9 +1742,10 @@ classdef ManipulationPlanner < handle
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+            s_total = max(s_total,0.01);
             
             res = 0.15; % 20cm res
-            s= linspace(0,1,round(s_total/res));
+            s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
             
             do_second_stage_IK_verify =  false; % fine grained verification of COM constraints of fixed resolution.
