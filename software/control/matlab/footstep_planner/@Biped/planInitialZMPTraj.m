@@ -14,7 +14,6 @@ typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
 
-
 kinsol = doKinematics(biped,q0);
 
 foot_body = struct('right', findLink(biped, biped.r_foot_name),...
@@ -25,8 +24,8 @@ foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),..
   'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
 
 function pos = feetCenter(rfootpos,lfootpos)
-  rcen = biped.footOrig2Contact(rfootpos, 'inner', 1);
-  lcen = biped.footOrig2Contact(lfootpos, 'inner', 0);
+  rcen = biped.footOrig2Contact(rfootpos, 'center', 1);
+  lcen = biped.footOrig2Contact(lfootpos, 'center', 0);
   pos = mean([rcen(1:3,:),lcen(1:3,:)],2);
 end
 
@@ -106,7 +105,7 @@ while 1
   % step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
   % zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
   % zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.0; % shift ZMP toward instep 
-  s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'inner', strcmp(s_foot, 'right'));
+  s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
   s_foot_heel = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'heel', strcmp(s_foot, 'right'));
   zmp_shift = (s_foot_heel(1:3) - s_foot_center(1:3)) * 0.0;
   stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...

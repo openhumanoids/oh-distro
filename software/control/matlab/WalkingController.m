@@ -186,7 +186,7 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('qtraj',matdata.qnom);
 
       obj.controller_data.setField('mu',msg_data.mu);
-      obj.controller_data.setField('ignore_terrain',msg_data.ignore_terrain);
+      %obj.controller_data.setField('ignore_terrain',msg_data.ignore_terrain);
 
       % Reset the translational offset
       obj.controller_data.setField('trans_drift', [0;0;0]);
