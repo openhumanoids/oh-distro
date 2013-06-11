@@ -380,20 +380,22 @@ classdef QPController < MIMODrakeSystem
       num_desired_contacts = supp.num_contact_pts;
     
       % get active contacts
-      phi = zeros(sum(num_desired_contacts),1);
-      c_pre = 0;
-      for j=1:length(supp.bodies)
+      phi = contactConstraints(r,kinsol,desired_supports,supp.contact_pts);
+
+%       phi = zeros(sum(num_desired_contacts),1);
+%       c_pre = 0;
+%       for j=1:length(supp.bodies)
 %         if supp.contact_surfaces(j) == 0
-          phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
+%           phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
 %         elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-          % use bullet collision between bodies
- %       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
+%         % use bullet collision between bodies
+%       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
 %          phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
 %         else
 %           error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
 %         end
-        c_pre = c_pre + num_desired_contacts(j);
-      end
+%         c_pre = c_pre + num_desired_contacts(j);
+%       end
 
       lfoot_contact_state_kin = 0;
       rfoot_contact_state_kin = 0;
