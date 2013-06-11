@@ -341,7 +341,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.step_height = 0.1;
     msg.mu = 1.00;
     msg.follow_spline = false;
-    msg.ignore_terrain = false;
+    msg.ignore_terrain = true;
     msg.right_foot_lead = true;
 
     cout << "Sending WALKING_GOAL\n";
