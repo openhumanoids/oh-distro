@@ -194,6 +194,14 @@ while (1)
 %         end
       end
       if action_options.generate_implicit_constraints_from_q0
+        if isfield(action_options,'initial_contact_groups')
+          for i = 1:length(action_options.initial_contact_groups.linknames)
+            B = findLink(r,action_options.initial_contact_groups.linknames{i});
+            if ~isempty(B)
+              action_options.initial_contact_groups.linknames{i} = B.linkname;
+            end
+          end
+        end
         action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
         n_kincons_new = length(action_sequence.kincons);
         if n_kincons_new > n_kincons
