@@ -28,3 +28,10 @@ group "spy" {
         host = "extra";
     }
 }
+
+group "matlab" {
+    cmd "matlab1" {
+        exec = "matlab";
+        host = "base";
+    }
+}
