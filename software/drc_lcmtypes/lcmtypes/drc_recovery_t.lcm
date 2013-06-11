@@ -2,6 +2,7 @@ package drc;
 
 struct recovery_t
 {
+    int64_t utime;
     int8_t mode;
     const int8_t PROJECTILE_LEAP      = 0;
     const int8_t FACEUP_TO_FACE_DOWN  = 1;
