@@ -17,7 +17,7 @@ home_dir =os.getenv("HOME")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
-from drc.joint_command_t import joint_command_t
+from drc.atlas_command_t import atlas_command_t
 from drc.utime_t import utime_t
 ########################################################################################
 def timestamp_now (): return int (time.time () * 1000000)
@@ -71,7 +71,7 @@ s = State(0, 0)
 
 # Gazebo Simulated IMU:
 def on_joint_commands(channel, data):
-  m = joint_command_t.decode(data)
+  m = atlas_command_t.decode(data)
   s.counter=s.counter+1
   #print "got %d" %(s.counter)
 
@@ -119,7 +119,7 @@ plt.plot()
 plt.draw()
 
 def lcm_thread():
-  sub = lc.subscribe("ATLAS_COMMANDS", on_joint_commands)
+  sub = lc.subscribe("ATLAS_COMMAND", on_joint_commands)
   sub1 = lc.subscribe("ROBOT_UTIME", on_utime)
 
   while True:
