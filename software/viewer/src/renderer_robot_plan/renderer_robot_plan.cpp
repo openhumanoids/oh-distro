@@ -31,6 +31,7 @@
 #define PARAM_SSE_KD_LEFT "Kd_L"  
 #define PARAM_SSE_KP_RIGHT "Kp_R"  
 #define PARAM_SSE_KD_RIGHT "Kd_R"
+#define PARAM_MANIP_PLAN_MODE "ManipPlnr Mode"
 
 using namespace std;
 using namespace boost;
@@ -576,6 +577,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->lcm->publish("VICON_GET_PLAN", &msg);
     bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec] @ %lld",msg.n_plan_samples, msg.sample_period, msg.utime);    
   }
+  else if(! strcmp(name, PARAM_MANIP_PLAN_MODE)){
+    drc::manip_plan_control_t msg;
+    msg.utime = self->robot_utime;
+    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_MANIP_PLAN_MODE);
+    self->lcm->publish("MANIP_PLANNER_MODE_CONTROL", &msg);
+  }
 
   bot_viewer_request_redraw(self->viewer);
   
@@ -633,6 +640,11 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
+
+    bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
+                                       "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
+                                       "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
+                                        "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
     
    /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,

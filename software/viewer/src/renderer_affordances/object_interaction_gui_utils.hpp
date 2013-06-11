@@ -1069,8 +1069,8 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
-      if(it->second._gl_object->is_future_state_changing())
-        bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
+      //if(it->second._gl_object->is_future_display_active())
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
    }
     bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
     //cout <<self->selection << endl; // otdf_type::geom_name
@@ -1413,8 +1413,8 @@ namespace renderer_affordances_gui_utils
   
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL3, NULL);
     
-    if(obj_it->second._gl_object->is_future_state_changing())
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
+    //if(obj_it->second._gl_object->is_future_display_active())
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
 
     val  = hand_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
