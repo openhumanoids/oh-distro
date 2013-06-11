@@ -26,6 +26,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_status
         renderer_data_control
         renderer_drcgrid
-        tracker-renderer)
+        tracker-renderer
+        renderer_recovery)
 #scrollingplots_renderer
 pods_install_executables(drc-viewer)

@@ -27,9 +27,8 @@
 #include <renderer_drc/renderer_driving.hpp>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_status.hpp>
-
-// new grid renderer:
 #include <renderer_drc/renderer_drcgrid.h>
+#include <renderer_drc/renderer_recovery.hpp>
 
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
@@ -37,6 +36,7 @@
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
 #include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
+
 #include <tracker-renderer/TrackerRenderer.hpp>
 
 
@@ -335,6 +335,8 @@ int main(int argc, char *argv[])
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
 
   tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+
+  setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
   
   
   //--------------    Toolbar Additions
