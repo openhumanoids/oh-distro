@@ -505,13 +505,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     VectorXd phi;
     if (desired_supports.find(pdata->rfoot_idx)!=desired_supports.end()) {
       contactPhi(pdata,pdata->rfoot_idx,phi,terrain_height);
-      std::cout << "contacts right: " << phi << std::endl;
+//      std::cout << "contacts right: " << phi << std::endl;
       if (phi.maxCoeff()<contact_threshold || rfoot_contact_state)
           active_supports.insert(pdata->rfoot_idx);
     }
     if (desired_supports.find(pdata->lfoot_idx)!=desired_supports.end()) {
       contactPhi(pdata,pdata->lfoot_idx,phi,terrain_height);
-      std::cout << "contacts left: " << phi << std::endl;
+//      std::cout << "contacts left: " << phi << std::endl;
       if (phi.maxCoeff()<contact_threshold || lfoot_contact_state)
           active_supports.insert(pdata->lfoot_idx);
     }
