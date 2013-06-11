@@ -386,6 +386,8 @@ while(1)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.PROJECTILE) 
+        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_projectile.mat'));%atlas
       end
       q_desired = d.xstar(1:getNumDOF(r));
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
