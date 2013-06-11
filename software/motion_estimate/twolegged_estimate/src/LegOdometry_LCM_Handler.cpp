@@ -52,6 +52,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	rate_changer.setSize(3);
 	fusion_rate.setSize(1);
+	bias_publishing_rate.setSize(1);
 
 	acc_bias_est.setSize(3);
 
@@ -59,6 +60,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	// Tuning parameters for data fusion
 	fusion_rate.setDesiredPeriod_us(0,DATA_FUSION_PERIOD-500);
+	bias_publishing_rate.setDesiredPeriod_us(0,BIAS_PUBLISH_PERIOD-500);
 	df_feedback_gain = -0.5;
 	df_events = 0;
 
@@ -711,6 +713,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				UpdateHeadStates(&est_msgout, &est_headmsg);
 				PublishHeadStateMsgs(&est_headmsg);
 				PublishH2B((unsigned long long)_msg->utime, body_to_head.inverse());
+
+				// publishing of the estimated biases
+				publishAccBiasEst((unsigned long long)_msg->utime);
+
 			}
 
 			#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
@@ -779,6 +785,28 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		gettimeofday(&spare,NULL);
    }
 
+
+}
+
+void LegOdometry_Handler::publishAccBiasEst(const unsigned long long &uts) {
+	Eigen::VectorXd dummy(1);
+
+	//std::cout << "wanting to publish\n";
+
+	if (bias_publishing_rate.genericRateChange(uts,dummy,dummy)) {
+
+		drc::estimated_biases_t msg;
+
+		Eigen::Vector3d biases;
+		biases = inert_odo.imu_compensator.get_accel_biases();
+
+		msg.utime = uts;
+		msg.x = (float)biases(0);
+		msg.y = (float)biases(1);
+		msg.z = (float)biases(2);
+
+		lcm_->publish("ESTIMATED_ACCEL_BIASES" + _channel_extension, &msg);
+	}
 
 }
 

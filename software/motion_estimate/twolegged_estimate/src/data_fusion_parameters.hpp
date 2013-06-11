@@ -21,5 +21,7 @@
 #define DATA_FUSION_PERIOD      40000
 #define ZU_SPEED_THRES            0.01
 
+#define BIAS_PUBLISH_PERIOD   1000000
+
 
 #endif /* DATA_FUSION_PARAMETERS_HPP_ */

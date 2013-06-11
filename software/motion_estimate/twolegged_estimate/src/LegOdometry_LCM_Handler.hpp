@@ -155,6 +155,7 @@ private:
 	
 	RateChange rate_changer;
 	RateChange fusion_rate;
+	RateChange bias_publishing_rate;
 
 	NumericalDiff local_to_head_vel_diff;
 	NumericalDiff local_to_head_acc_diff;
@@ -274,7 +275,7 @@ private:
 	void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
 
 	void FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg);
-
+	void publishAccBiasEst(const unsigned long long &uts);
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
