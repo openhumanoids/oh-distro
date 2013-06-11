@@ -127,7 +127,7 @@ while(1)
 
   modeset=manip_plan_mode_listener.getNextMessage(msg_timeout);
   if(~isempty(modeset))
-      disp('Preset Posture goal received .');
+      disp('Manip Planner mode control msg received .');
       if(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_ON)
         manip_planner.enableFineGrainedPlanning(false);
       elseif(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_OFF)

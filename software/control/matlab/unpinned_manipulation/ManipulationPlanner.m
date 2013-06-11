@@ -1732,9 +1732,11 @@ classdef ManipulationPlanner < handle
                 qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
                 obj.qtraj_guess = qtraj_guess; % cache
             else
+              if (~is_keyframe_constraint)
                 obj.s_breaks = s_breaks;
                 obj.q_breaks = q_breaks;
                 obj.qtraj_guess = qtraj_guess; % cache
+              end
             end
             
             
