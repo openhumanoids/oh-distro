@@ -5,7 +5,6 @@ debug = true;
 if ~isfield(options, 'ignore_terrain') options.ignore_terrain = false; end
 
 Xpos = [X.pos];
-% time_ndx = 2;
 step_locations.right = Xpos(:, [X.is_right_foot] == 1);
 step_locations.left = Xpos(:, [X.is_right_foot] == 0);
 
@@ -102,12 +101,14 @@ while 1
                          landing_time, landing_time + (2/3) * (step_duration - landing_time),...
                          step_duration];
 
-  % Shift the ZMP by 2cm closer to the center of the feet
-  foot_center = biped.footOrig2Contact(step_locations.(s_foot)(1:6,istep.(s_foot)), 'center', strcmp(s_foot, 'right'));
-  step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
-  zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
-  zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.0; % shift ZMP toward instep 
+  % % Shift the ZMP by 2cm closer to the center of the feet
+  % foot_center = biped.footOrig2Contact(step_locations.(s_foot)(1:6,istep.(s_foot)), 'center', strcmp(s_foot, 'right'));
+  % step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
+  % zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
+  % zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.0; % shift ZMP toward instep 
   s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'inner', strcmp(s_foot, 'right'));
+  s_foot_heel = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'heel', strcmp(s_foot, 'right'));
+  zmp_shift = (s_foot_heel(1:3) - s_foot_center(1:3)) * 0.0;
   stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...
              repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
   
