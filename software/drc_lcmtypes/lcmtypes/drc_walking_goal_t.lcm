@@ -32,6 +32,8 @@ struct walking_goal_t
 
 	boolean ignore_terrain;
 
+    boolean crawling;
+
 	double mu;
 
 	// whether to allow optimization of the foostep plan
