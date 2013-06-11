@@ -14,7 +14,7 @@ end
 
 foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2));
 
-lambdas = linspace(0, 1);
+lambdas = linspace(0, 1, 200);
 traj_poses = traj.eval(lambdas);
 if any(any(isnan(traj_poses)))
   error(['Got bad footstep trajectory data (NaN) at time: ', datestr(now())]);
