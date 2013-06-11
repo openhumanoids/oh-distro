@@ -111,15 +111,15 @@ group "a.2.walking" {
 
 # Controllers for vrc task 3 (hose manipulation)
 group "a.3.manip" {
-    cmd "mWalkingManipStateMachine" {
+    cmd "WalkingManipStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
         host = "robot";
     }
-    cmd "mGraspController" {
+    cmd "GraspController" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
-    cmd "mBotWalkingPlanner" {
+    cmd "BotWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
@@ -549,6 +549,15 @@ script "dev.vrc_manip" {
     start cmd "set-sim-rate";
     wait ms 10000;
     start group "m.hose_task_utils";    
+}
+
+script "dev.vrc_flying_ingress" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.3.manip";
+    start group "b.3.manip";
+    stop cmd "BotWalkingPlanner";
+    start cmd "set-sim-rate";
 }
 
 script "dev.vrc_manip_mating_test" { 
