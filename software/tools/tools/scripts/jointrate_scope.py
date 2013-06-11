@@ -38,7 +38,7 @@ class SensorData(object):
         self.v = np.vstack((self.v , np_v ))
     def reset(self):
         # no sure how to support initialising a Nx0 array, so I'm initing a Nx1 array and skipping 1st row:
-        self.utimes=np.array([0]) 
+        self.utimes=np.array([0])
         self.v=np.zeros((1, self.nfields))
 
 
@@ -91,7 +91,7 @@ def on_utime(channel, data):
   if (s.first_utime==0):
     s.first_utime= m.utime
   s.prev_utime = m.utime
-  s.last_utime = m.utime  
+  s.last_utime = m.utime
 
 ####################################################################
 lc = lcm.LCM()
@@ -119,7 +119,7 @@ plt.plot()
 plt.draw()
 
 def lcm_thread():
-  sub = lc.subscribe("JOINT_COMMANDS", on_joint_commands)
+  sub = lc.subscribe("ATLAS_COMMANDS", on_joint_commands)
   sub1 = lc.subscribe("ROBOT_UTIME", on_utime)
 
   while True:
