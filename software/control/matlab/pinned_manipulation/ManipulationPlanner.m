@@ -20,9 +20,9 @@ classdef ManipulationPlanner < handle
         restrict_feet
         v_desired
         
-        head_gaze_axis
-        lhand_gaze_axis
-        rhand_gaze_axis
+        head_gaze_target
+        lhand_gaze_target
+        rhand_gaze_target
     end
     
     methods
@@ -324,7 +324,7 @@ classdef ManipulationPlanner < handle
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
-            
+            s_total = max(s_total,0.01);
             
             for l =1:length(s_breaks),
                 ind = find(abs(s - s_breaks(l))<1e-3);
@@ -762,6 +762,7 @@ classdef ManipulationPlanner < handle
                 s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
                 s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
                 s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head); 
+                s_total = max(s_total,0.01);
                 
                 ts = s.*(s_total/obj.v_desired); % plan timesteps
                 obj.time_2_index_scale = (obj.v_desired/s_total);
@@ -1009,45 +1010,45 @@ classdef ManipulationPlanner < handle
                 
                 %=========================================================================== 
                  % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-                if(goal_type_flags.h == 1)
-                 headT(1:3)=nan(3,1);
-                end
-                if(goal_type_flags.lh == 1)
-                 lhandT(1:3)=nan(3,1);
-                end   
-                if(goal_type_flags.rh == 1)
-                 rhandT(1:3)=nan(3,1);
-                end               
+                              
                 if(goal_type_flags.h == 2)
                 % headT(1:3) is actually object pos
-                 obj.head_gaze_axis = headT(1:3)-head_pose0(1:3);
-                 obj.head_gaze_axis =obj.head_gaze_axis/norm(obj.head_gaze_axis);
-                 headT=nan(6,1); % Nullify Head Constraint
+                 obj.head_gaze_target = headT(1:3);
+                else
+                  obj.head_gaze_target = [];
                 end
                 if(goal_type_flags.lh == 2)
                  % lhandT(1:3) is actually object pos
-                 obj.lhand_gaze_axis = lhandT(1:3)-lhand_pose0(1:3);
-                 obj.lhand_gaze_axis =obj.lhand_gaze_axis/norm(obj.lhand_gaze_axis);
-                 lhandT=nan(6,1); % Nullify Hand Constraint
+                 obj.lhand_gaze_target = lhandT(1:3);
+                else
+                  obj.lhand_gaze_target = [];
                 end   
                 if(goal_type_flags.rh == 2)
                   % rhandT(1:3) is actually object pos
-                 obj.rhand_gaze_axis = rhandT(1:3)-rhand_pose0(1:3);
-                 obj.rhand_gaze_axis =obj.rhand_gaze_axis/norm(obj.rhand_gaze_axis);
-                 rhandT=nan(6,1); % Nullify Hand Constraint
+                 obj.rhand_gaze_target = rhandT(1:3);
+                else
+                  obj.rhand_gaze_target = [];
                 end   
                 %===========================================================================                
                 
-                r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
-                l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-                r_foot_poseT = [rfootT(1:3); rpy2quat(rfootT(4:6))];
-                l_foot_poseT = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                if(goal_type_flags.rh ~=2)
+                  r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
+                else
+                  r_hand_poseT = nan(6,1);
+                end
+                if(goal_type_flags.lh ~=2)
+                  l_hand_poseT = [lhandT(1:3); rpy2quat(lhandT(4:6))];
+                else
+                  l_hand_poseT = nan(6,1);
+                end
+                r_foot_poseT = [rfootT(1:3,:); repmat(rpy2quat(rfootT(4:6,1)),1,num_r_foot_pts)];
+                l_foot_poseT = [lfootT(1:3,:); repmat(rpy2quat(lfootT(4:6,1)),1,num_l_foot_pts)];
                 headT(1:3)=nan(3,1); % only orientation constraint for the head.
                 head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
                 obj.rhandT = rhandT;
                 obj.lhandT = lhandT;
                 obj.rfootT = rfootT;
-                obj.lfootT = lfootT;               
+                obj.lfootT = lfootT;
                 obj.headT = headT;
                 
             elseif((is_keyframe_constraint)&&(~is_locii))
@@ -1573,9 +1574,10 @@ classdef ManipulationPlanner < handle
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+            s_total = max(s_total,0.01);
             
             res = 0.15; % 20cm res
-            s= linspace(0,1,round(s_total/res));
+            s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
             
             do_second_stage_IK_verify =  false; % fine grained verification of COM constraints of fixed resolution.

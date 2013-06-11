@@ -23,6 +23,8 @@ classdef ManipulationPlanner < handle
         head_gaze_target
         lhand_gaze_target
         rhand_gaze_target
+
+        finegrained_planning
     end
     
     methods
@@ -37,6 +39,11 @@ classdef ManipulationPlanner < handle
             obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             restrict_feet=true;
+            obj.finegrained_planning = false;
+        end
+
+        function enableFineGrainedPlanning(obj,val)
+              obj.finegrained_planning  = val;
         end
         
         function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,goal_type_flags)
@@ -57,7 +64,7 @@ classdef ManipulationPlanner < handle
                     h_ee_goal = varargin{6};
                     goal_type_flags =varargin{7}; 
                     runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint);
-                case 9
+               case 9
                     is_keyframe_constraint = false;
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
@@ -1638,7 +1645,7 @@ classdef ManipulationPlanner < handle
                 %============================
                 %       0,comgoal,...
                 q_final_quess= q0;
-            
+
                 if(isempty(q_desired))
                     q_start=q0;
                     r_foot_pose0_static_contact = struct('max',r_foot_pose0,...
@@ -1684,45 +1691,52 @@ classdef ManipulationPlanner < handle
                 q_breaks=[q0 q_final_guess];
                 qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
                 
-                
             end % end if (~keyframe_constraint)
             
-            % PERFORM IKSEQUENCE OPT
-            ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
-            ikseq_options.Qa = eye(getNumDOF(obj.r));
-            ikseq_options.Qv = eye(getNumDOF(obj.r));
-            ikseq_options.nSample = obj.num_breaks-1;
-            ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
-            ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
-            ikseq_options.quasiStaticFlag=true;
-            ikseq_options.shrinkFactor = 0.95;
-            ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
-            ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
-            if(is_keyframe_constraint)
-                ikseq_options.MajorIterationsLimit = 100;
-                ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
-                q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
+            
+            if(~obj.finegrained_planning)
+                % PERFORM IKSEQUENCE OPT
+                ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
+                ikseq_options.Qa = eye(getNumDOF(obj.r));
+                ikseq_options.Qv = eye(getNumDOF(obj.r));
+                ikseq_options.nSample = obj.num_breaks-1;
+                ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
+                ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
+                ikseq_options.quasiStaticFlag=true;
+                ikseq_options.shrinkFactor = 0.95;
+                ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
+                ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
+                if(is_keyframe_constraint)
+                    ikseq_options.MajorIterationsLimit = 100;
+                    ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
+                    q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
+                else
+                    ikseq_options.MajorIterationsLimit = 100;
+                    ikseq_options.qtraj0 = qtraj_guess;
+                end
+                ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
+                %============================
+                [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
+                if(snopt_info == 13)
+                    warning('The IK sequence fails');
+                    send_status(3,0,0,'snopt_info == 13. The IK sequence fails.');
+                end
+                %============================
+                xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
+                xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
+                
+                obj.s_breaks = s_breaks;
+                obj.q_breaks = q_breaks;
+                obj.qdos_breaks = qdos_breaks;
+                
+                qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
+                obj.qtraj_guess = qtraj_guess; % cache
             else
-                ikseq_options.MajorIterationsLimit = 100;
-                ikseq_options.qtraj0 = qtraj_guess;
+                obj.s_breaks = s_breaks;
+                obj.q_breaks = q_breaks;
+                obj.qtraj_guess = qtraj_guess; % cache
             end
-            ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
-            %============================
-            [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
-            if(snopt_info == 13)
-                warning('The IK sequence fails');
-                send_status(3,0,0,'snopt_info == 13. The IK sequence fails.');
-            end
-            %============================
-            xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
-            xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
             
-            obj.s_breaks = s_breaks;
-            obj.q_breaks = q_breaks;
-            obj.qdos_breaks = qdos_breaks;
-            
-            qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
-            obj.qtraj_guess = qtraj_guess; % cache
             
             % calculate end effectors breaks via FK.
             for brk =1:length(s_breaks),
@@ -1747,6 +1761,8 @@ classdef ManipulationPlanner < handle
             res = 0.15; % 20cm res
             s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
+            
+            
             
             do_second_stage_IK_verify =  false; % fine grained verification of COM constraints of fixed resolution.
             for i=2:length(s)
