@@ -133,7 +133,7 @@
       <uri>model://gate</uri>
       <name>gate_0</name>
       <static>true</static>
-      <pose>-10 -2 2.0 0 0 -1.5707</pose>
+      <pose>-10 1 2.0 0 0 -1.5707</pose>
     </include>
     <include>
       <uri>model://gate_number_1</uri>
@@ -185,7 +185,7 @@
     </include>
     <include>
       <uri>model://drc_vehicle</uri>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>-9.35 -0.7 0 0 0 3.142</pose>
     </include>
     <include>
       <uri>model://house_1</uri>

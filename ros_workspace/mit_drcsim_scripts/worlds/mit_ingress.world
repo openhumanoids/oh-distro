@@ -74,15 +74,21 @@
 
 
 
-    <!-- DRC specific components -->
-    <include><uri>model://mit_robot</uri><pose>0.3 -0.88 0.93 0 0 -1.571</pose></include>
+    <!-- beside passanger seat -->
+    <include><uri>model://mit_robot</uri><pose>-0.15 0.97 0.93 0 0 1.571</pose></include>
+
+<!-- beside the steering wheel-->
+<!--    <include><uri>model://mit_robot</uri><pose>-0.15  -0.97 0.93 0 0 -1.571</pose></include> -->
+
+
+<!--    <include><uri>model://mit_robot</uri><pose>0.35 -1.93 0.60 0 0 1.571</pose></include> -->
     <!--<include><uri>model://mit_robot</uri><pose>-0.8795 -0.2973 0.93 0 0 -1.5708</pose></include>-->
     <!--<include><uri>model://atlas_sandia_hands</uri><pose>-0.8795 -0.2973 0.93 0 0 -1.5708</pose></include>-->
     <!--<include><uri>model://mit_robot</uri><pose>-2 1 0.93 0 0 -1.5708</pose></include>-->
     <!--<include><uri>model://mit_robot_nohands</uri><pose>0.4173 -0.8795 0.93 0 0 0</pose></include>-->
 
     <!--<include><uri>model://drc_vehicle</uri><pose>0 0 0 0 0 -1.571</pose></include>-->
-    <include><uri>model://drc_vehicle</uri><pose>0.25 0 0 0 0 0</pose></include>
+    <include><uri>model://drc_vehicle</uri><pose>0 0 0 0 0 3.142</pose></include>
     <!--<include><uri>model://mit_simple_vehicle</uri><static>true</static><pose>0 0 0 0 0 -1.571</pose></include>-->
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
