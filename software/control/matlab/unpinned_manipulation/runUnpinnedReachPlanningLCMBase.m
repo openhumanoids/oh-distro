@@ -71,6 +71,7 @@ rh_ee_clear.frame.subscribe('RIGHT_PALM_GOAL_CLEAR');
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
 pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
+manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
@@ -123,6 +124,18 @@ ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
  
 while(1)
+
+  modeset=manip_plan_mode_listener.getNextMessage(msg_timeout);
+  if(~isempty(modeset))
+      disp('Preset Posture goal received .');
+      if(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_ON)
+        manip_planner.enableFineGrainedPlanning(false);
+      elseif(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_OFF)
+        manip_planner.enableFineGrainedPlanning(true);
+      elseif(modeset.mode==drc.manip_plan_control_t.TELEOP)
+       send_status(3,0,0,'Manipulation Planner:TELEOP MODE (Not Yet Implemented)');
+      end
+  end
 
   % Pose Goals
   % ----------------------------------------
