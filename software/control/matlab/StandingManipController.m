@@ -145,7 +145,7 @@ classdef StandingManipController < DRCController
 
       % should make this a more specific channel name
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
-      obj = addLCMTransition(obj,'PROJECTILE_LEAP',drc.utime_t(),'i_dont_exist_i_crash_this controller'); % for quitting to do backward leap
+      obj = addLCMTransition(obj,'RECOVERY_CMD',drc.recovery_t(),'i_dont_exist_i_crash_this_controller'); % for quitting to do recovery procedure
 
     end
     
