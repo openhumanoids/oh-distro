@@ -829,7 +829,7 @@ namespace renderer_affordances_lcm_utils
   
 //==================================
 
-  static void publish_pose_goal (void *user, string channel,KDL::Frame& T_world_body_desired,bool to_future_handstate)
+  static void publish_pose_goal (void *user, string channel,KDL::Frame& T_world_body_desired,bool to_future_state)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -874,7 +874,7 @@ namespace renderer_affordances_lcm_utils
 
                   KDL::Frame T_world_object = KDL::Frame::Identity();
                   KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
-                  if(!to_future_handstate){
+                  if(!to_future_state){
                       T_world_object = it->second._gl_object->_T_world_body;
                     // the object might have moved.
                      if(!it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
@@ -925,7 +925,7 @@ namespace renderer_affordances_lcm_utils
      
               } // end if (host_name == (it->first))
       } // end for sticky hands
-      
+        
       // Publish time indexed ee motion constraints from associated sticky feet 
       typedef map<string, StickyFootStruc > sticky_feet_map_type_;
       for(sticky_feet_map_type_::const_iterator foot_it = self->sticky_feet.begin(); foot_it!=self->sticky_feet.end(); foot_it++)
@@ -958,7 +958,7 @@ namespace renderer_affordances_lcm_utils
 
                   KDL::Frame T_world_object = KDL::Frame::Identity();
                   KDL::Frame T_world_geometry = KDL::Frame::Identity();
-                  if(!to_future_handstate){
+                  if(!to_future_state){
                       T_world_object = it->second._gl_object->_T_world_body;
                     // the object might have moved.
                      if(!it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
@@ -1000,7 +1000,7 @@ namespace renderer_affordances_lcm_utils
       publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
   } 
   
-  static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired)
+  static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired, bool to_future_state)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -1040,11 +1040,20 @@ namespace renderer_affordances_lcm_utils
           cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
       KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
 
-      KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
-
-      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
-      if(!it->second._gl_object->get_link_geometry_frame(string(handstruc.geometry_name),T_world_graspgeometry))
+      KDL::Frame T_world_object = KDL::Frame::Identity();
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
+      if(!to_future_state){
+        T_world_object = it->second._gl_object->_T_world_body;
+        // the object might have moved.
+        if(!it->second._gl_object->get_link_geometry_frame(string(handstruc.geometry_name),T_world_graspgeometry))
             cerr << " failed to retrieve " << handstruc.geometry_name<<" in object " << handstruc.object_name <<endl;
+        }
+        else {
+          T_world_object = it->second._gl_object->_T_world_body_future;
+          // the object might have moved.
+          if(!it->second._gl_object->get_link_geometry_future_frame(string(handstruc.geometry_name),T_world_graspgeometry))
+            cerr << " failed to retrieve " << handstruc.geometry_name<<" in object " << handstruc.object_name <<endl;        
+      }
 
       int num_frames = 1;
       vector<KDL::Frame> T_world_ee_frames;

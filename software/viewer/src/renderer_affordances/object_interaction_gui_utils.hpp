@@ -16,8 +16,10 @@
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
-#define PARAM_SEND_POSE_GOAL  "Get Robot Pose @ CurHndState"
-#define PARAM_SEND_POSE_GOAL2  "Get Robot Pose @ DesHndStat"
+#define PARAM_SEND_POSE_GOAL   "Get Robot Pose @CurAffState"
+#define PARAM_SEND_POSE_GOAL2  "Get Robot Pose @DesAffState"
+#define PARAM_SEND_POSE_GOAL3  "Get Robot Pose @CurState"
+#define PARAM_SEND_POSE_GOAL4  "Get Robot Pose @DesState"
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
@@ -1067,7 +1069,8 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
+      if(it->second._gl_object->is_future_state_changing())
+        bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
    }
     bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
     //cout <<self->selection << endl; // otdf_type::geom_name
@@ -1223,13 +1226,22 @@ namespace renderer_affordances_gui_utils
         }*/      
     }
   
-    else if(!strcmp(name,PARAM_SEND_POSE_GOAL)){
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL3)){
       string channel = "POSE_GOAL";
        // only orientation is considered as seed in pose optimization
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
-      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired);  
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,false);  
+    }
+
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
+      string channel = "POSE_GOAL";
+       // only orientation is considered as seed in pose optimization
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,true);  
     }
 
     else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
@@ -1396,14 +1408,18 @@ namespace renderer_affordances_gui_utils
 
     bot_gtk_param_widget_add_separator(pw, "Partial Grasp");
     bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
+    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+  
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL3, NULL);
     
-    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL, NULL);
-    
+    if(obj_it->second._gl_object->is_future_state_changing())
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
+
     val  = hand_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
     
-    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+
     val  = ((hand_it->second.is_melded)&&(obj_it->second.is_melded));
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE, val, NULL);
     
