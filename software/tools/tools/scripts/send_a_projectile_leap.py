@@ -6,12 +6,19 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 import lcm
-from drc.utime_t import utime_t
+from drc.recovery_t import recovery_t
 import time
 
-msg = utime_t()
-msg.utime = 12345
+if len(sys.argv)>1:
+  msg = recovery_t() 
+  msg.mode = int(sys.argv[1])
+  lc = lcm.LCM()
+  lc.publish("RECOVERY_CMD", msg.encode())
+  print "One small leap for a robot..."
+else:
+  print 'No mode specified!'
+  times= 1.0
 
-lc = lcm.LCM()
-lc.publish("PROJECTILE_LEAP", msg.encode())
-print "One small leap for a robot..."
+
+
+
