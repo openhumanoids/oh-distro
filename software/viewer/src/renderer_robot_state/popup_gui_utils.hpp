@@ -227,8 +227,8 @@ namespace renderer_robot_state_gui_utils
         gtk_window_set_title(GTK_WINDOW(window), "Teleop EE");
         gtk_container_set_border_width(GTK_CONTAINER(window), 5);
         pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-        self->active_ee = 0;
-        self->active_res =0.005;
+        self->active_ee = 1;
+        self->active_res =0.002;
         self->active_angres=1;
         bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
                                        "Left hand", 0, "Right Hand", 1, NULL);
