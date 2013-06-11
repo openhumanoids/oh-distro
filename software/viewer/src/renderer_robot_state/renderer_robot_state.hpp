@@ -330,6 +330,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.goal_pos.rotation.x = quat_out[1];
     msg.goal_pos.rotation.y = quat_out[2];
     msg.goal_pos.rotation.z = quat_out[3];
+    msg.crawling = false;
     
     msg.nom_step_width = 0.26;
     msg.nom_forward_step = 0.25;
