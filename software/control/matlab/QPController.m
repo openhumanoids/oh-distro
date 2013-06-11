@@ -210,6 +210,13 @@ classdef QPController < MIMODrakeSystem
     for i=1:getNumBodies(r)
       obj.num_body_contacts(i) = length(getBodyContacts(r,i));
     end
+    
+    
+    if isa(getTerrain(r),'DRCFlatTerrainMap')
+      obj.using_flat_terrain = true;      
+    else
+      obj.using_flat_terrain = false;
+    end
   end
 
   end
@@ -752,7 +759,12 @@ classdef QPController < MIMODrakeSystem
       if ctrl_data.ignore_terrain
         contact_threshold =-1;       
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
+      if obj.using_flat_terrain
+        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
+      else
+        height = 0;
+      end
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold,height);
       V = 0; % don't compute V for mex yet (will we ever use this?)
     end
 
@@ -767,7 +779,15 @@ classdef QPController < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold);
+      if ctrl_data.ignore_terrain
+        contact_threshold =-1;       
+      end
+      if obj.using_flat_terrain
+        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
+      else
+        height = 0;
+      end
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,desired_supports,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,rfoot_contact_state,lfoot_contact_state,contact_threshold,height);
       valuecheck(active_supports_mex,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
@@ -937,5 +957,6 @@ classdef QPController < MIMODrakeSystem
     num_body_contacts; % vector of num contacts for each body
     multi_robot;
     num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
+    using_flat_terrain; % true if using DRCFlatTerrain
   end
 end

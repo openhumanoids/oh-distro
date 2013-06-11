@@ -147,7 +147,7 @@ void getCols(set<int> &cols, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB>
     Msub.col(i++) = M.col(*iter);
 }
 
-void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d *normal)
+void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d *normal, double terrain_height)
 {
   if (map_ptr) {
 #ifdef USE_MAPS    
@@ -166,7 +166,7 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
 #endif      
   } else {
 //    mexPrintf("Warning: using 0,0,1 as normal\n");
-    pos << contact_pos.topRows(2), 0;
+    pos << contact_pos.topRows(2), terrain_height;
     if (normal) *normal << 0,0,1;
   }
   // just assume mu = 1 for now
@@ -192,7 +192,7 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
   }
 }
 
-int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi)
+int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi,double terrain_height)
 {
   RigidBody* b = &(pdata->r->bodies[body_idx]);
 	int nc = b->contact_pts.cols();
@@ -203,7 +203,7 @@ int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi)
 	for (int i=0; i<nc; i++) {
 		tmp = b->contact_pts.col(i);
 		pdata->r->forwardKin(body_idx,tmp,0,contact_pos);
-		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL);
+		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
 
 		pos -= contact_pos;  // now -rel_pos in matlab version
 		phi(i) = pos.norm();
@@ -213,7 +213,7 @@ int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi)
 	return nc;
 }
 
-int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot)
+int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
 {
   int i, j, k=0, nc = pdata->r->getNumContacts(body_idx), nq = pdata->r->num_dof;
 
@@ -237,7 +237,7 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
         pdata->r->forwardKin(*iter,tmp,0,contact_pos);
         pdata->r->forwardJac(*iter,tmp,0,J);
 
-        collisionDetect(pdata->map_ptr,contact_pos,pos,&normal);
+        collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
         
 // phi not being used right now
 //        pos -= contact_pos;  // now -rel_pos in matlab version
@@ -485,6 +485,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   bool rfoot_contact_state = (bool) mxGetScalar(prhs[narg++]),
   		lfoot_contact_state = (bool) mxGetScalar(prhs[narg++]);
   double contact_threshold = mxGetScalar(prhs[narg++]);
+  double terrain_height = mxGetScalar(prhs[narg++]); // nonzero if we're using DRCFlatTerrainMap
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
@@ -503,12 +504,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   else {
     VectorXd phi;
     if (desired_supports.find(pdata->rfoot_idx)!=desired_supports.end()) {
-      contactPhi(pdata,pdata->rfoot_idx,phi);
+      contactPhi(pdata,pdata->rfoot_idx,phi,terrain_height);
+      std::cout << "contacts right: " << phi << std::endl;
       if (phi.maxCoeff()<contact_threshold || rfoot_contact_state)
           active_supports.insert(pdata->rfoot_idx);
     }
     if (desired_supports.find(pdata->lfoot_idx)!=desired_supports.end()) {
-      contactPhi(pdata,pdata->lfoot_idx,phi);
+      contactPhi(pdata,pdata->lfoot_idx,phi,terrain_height);
+      std::cout << "contacts left: " << phi << std::endl;
       if (phi.maxCoeff()<contact_threshold || lfoot_contact_state)
           active_supports.insert(pdata->lfoot_idx);
     }
@@ -539,7 +542,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   getRows(pdata->con_dof,qdvec,qd_con);
   
   MatrixXd Jz,Jp,Jpdot,D;
-  int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot);
+  int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector4d x_bar,xlimp;
