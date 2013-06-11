@@ -75,7 +75,7 @@ classdef WalkingPlanListener
         fwrite(fid,typecast(msg.supports,'uint8'),'uint8');
         fclose(fid);
         matdata = load(tmp_fname);
-        supports={matdata.supports};
+        supports=matdata.supports;
         
         fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.comtraj,'uint8'),'uint8');

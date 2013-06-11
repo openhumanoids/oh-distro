@@ -15,8 +15,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     l_foot_name
     foot_bodies
     foot_bodies_idx
-    paw_bodies
-    paw_bodies_idx
     next_step_id
     lc
   end
@@ -61,11 +59,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     
     function X = planFootsteps(obj, x0, navgoal, options)
       planner = FootstepPlanner(obj);
-      X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
-    end
-
-    function X = planPawsteps(obj, x0, navgoal, options)
-      planner = PawstepPlanner(obj);
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
 

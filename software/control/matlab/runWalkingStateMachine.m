@@ -8,7 +8,7 @@ options.floating = true;
 
 if ~isfield(options,'backup_mode') options.backup_mode = false; end
 if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end
-if(~isfield(options,'use_mex')) options.use_mex = false; end
+if(~isfield(options,'use_mex')) options.use_mex = true; end
 if(~isfield(options,'debug')) options.debug = false; end
 
 if (options.use_hand_ft)
@@ -30,16 +30,10 @@ end
 standing_controller = StandingController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
-crawling_controller = CrawlingController('crawling',r,options);
-pre_crawling_controller = PreCrawlingController('pre_crawling',r,options);
-all_fours_controller = AllFoursController('all_fours',r,options);
 
 controllers = struct(standing_controller.name,standing_controller, ...
                       walking_controller.name,walking_controller,...     
-                      bracing_controller.name,bracing_controller,...
-                      pre_crawling_controller.name,pre_crawling_controller,...
-                      all_fours_controller.name,all_fours_controller,...
-                      crawling_controller.name,crawling_controller);
+                      bracing_controller.name,bracing_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 
