@@ -257,7 +257,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
 
     Eigen::Isometry3d foot_to_sole;
     foot_to_sole.setIdentity();
-    foot_to_sole.translation()  << 0.0,0.,-0.08; //distance between foot link and sole of foot
+    foot_to_sole.translation()  << 0.0,0.,-0.0811; //distance between foot link and sole of foot
     
     Eigen::Isometry3d world_to_l_sole = world_to_body * body_to_l_foot * foot_to_sole;
     Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
