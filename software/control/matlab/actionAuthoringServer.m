@@ -57,16 +57,20 @@ end
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
-%r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf', [],[],struct('floating',true));
-r_Atlas = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake_no_mass.urdf',[0;0;0],[0;0;0]);
+r = r.addRobotFromURDF(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf'), [],[],struct('floating',true));
+%r = r.addRobotFromURDF(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_objects/mit_vehicle/model_drake_no_mass.urdf'),car_pose(1:3),car_pose(4:6));
+r = addRobotFromURDF(r,strcat(fullfile(getDrakePath,'systems','plants','test'),'/ground_plane.urdf'),zeros(3,1),zeros(3,1),struct('floating',false));
+r_Atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
+
 warning(s);
 
 nq = r.getNumDOF();
 % load the "zero position"
-load('data/atlas_fp.mat');
-q_standing = xstar(1:nq);
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crawling.mat'));
+% load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+
+q_standing = x_nom(1:nq);
+% q_standing = xstar(1:nq);
 q = q_standing;
 options.q_traj_nom = ConstantTrajectory(q);
 
@@ -85,7 +89,7 @@ cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
 cost.base_y = 0;
 cost.base_z = 0;
-arm_cost = 1e2;
+arm_cost = 1;
 cost.l_arm_usy = arm_cost;
 cost.l_arm_shx = arm_cost;
 cost.l_arm_ely = arm_cost;
@@ -103,6 +107,7 @@ cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);
 options = struct();
+options.robotnum = 0;
 options.q_nom = q_standing;
 options.Q = diag(cost(1:r.getNumDOF));
 [jointLimitMin, jointLimitMax] = r.getJointLimits();
@@ -118,7 +123,7 @@ hip_ind = find( ...
 
 jointLimitShrink = ones(size(jointLimitMin));
 % jointLimitShrink(back_ind) = 0.4;
-%jointLimitShrink(hip_ind) = 0.6;
+% jointLimitShrink(hip_ind) = 0.6;
 jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
 jointLimitMid = (jointLimitMax + jointLimitMin)/2;
 
@@ -128,7 +133,7 @@ options.jointLimitMax = jointLimitMid + jointLimitHalfLength;
 options.jointLimitMax(isnan(options.jointLimitMax)) = Inf;
 
 
-options.jointLimitMin(knee_ind) = 0.6;
+options.jointLimitMin(knee_ind) = 0.7;
 % options.jointLimitMin(hip_ind) = 0.0;
 
 options.use_mex = action_options.use_mex;
@@ -164,8 +169,13 @@ while (1)
     try
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
-        if ~action_options.generate_implicit_constraints_from_q0 && roundn(goal.lower_bound_completion_time,-6) == 0.1
-          goal.lower_bound_completion_time = 0;
+        if ~action_options.generate_implicit_constraints_from_q0
+          if roundn(goal.lower_bound_completion_time,-6) == 0.1
+            goal.lower_bound_completion_time = 0;
+          end
+          if roundn(goal.upper_bound_completion_time,-6) == 0.1
+            goal.upper_bound_completion_time = 0;
+          end
         end
         kc = getConstraintFromGoal(r,goal);
         action_sequence = action_sequence.addKinematicConstraint(kc);
@@ -194,14 +204,6 @@ while (1)
 %         end
       end
       if action_options.generate_implicit_constraints_from_q0
-        if isfield(action_options,'initial_contact_groups')
-          for i = 1:length(action_options.initial_contact_groups.linknames)
-            B = findLink(r,action_options.initial_contact_groups.linknames{i});
-            if ~isempty(B)
-              action_options.initial_contact_groups.linknames{i} = B.linkname;
-            end
-          end
-        end
         action_sequence = generateImplicitConstraints(action_sequence,r,q,action_options);
         n_kincons_new = length(action_sequence.kincons);
         if n_kincons_new > n_kincons
@@ -211,13 +213,15 @@ while (1)
           n_kincons = n_kincons_new;
         end
       end
-      action_sequence = action_sequence.addStaticContactConstraint(r,q,action_sequence.key_time_samples(1));
-      n_kincons_new = length(action_sequence.kincons);
-      if n_kincons_new > n_kincons
-        for i = (n_kincons+1):n_kincons_new
-          fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
+      if ~action_options.ignore_q0
+        action_sequence = action_sequence.addStaticContactConstraint(r,q,action_sequence.key_time_samples(1));
+        n_kincons_new = length(action_sequence.kincons);
+        if n_kincons_new > n_kincons
+          for i = (n_kincons+1):n_kincons_new
+            fprintfVerb(action_options,'Added constraint %d: %s\n',i,action_sequence.kincons{i}.name);
+          end
+          n_kincons = n_kincons_new;
         end
-        n_kincons = n_kincons_new;
       end
 
 
@@ -242,8 +246,10 @@ while (1)
       q_key_time_samples(:,1) = q;
       kinsol = doKinematics(r,q_key_time_samples(:,1));
       com_key_time_samples(:,1) = getCOM(r,kinsol);
-      options.quasiStaticFlag = true;
-      options.shrinkFactor = 0.5;
+      if action_options.QS
+        options.quasiStaticFlag = true;
+        options.shrinkFactor = 0.5;
+      end
       options.q_nom = q_standing;
       if(action_options.ignore_q0)
         ind_first_time= 1;
@@ -259,26 +265,29 @@ while (1)
       contact_surface_ind = [];
       support_states = {};
       for i = 1:num_key_time_samples 
-        if(i==num_key_time_samples)
+        if(i==1 && ~action_options.generate_implicit_constraints_from_q0)
           for j=1:length(action_sequence.kincons)
-              %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
-              %           contact_state0 = action_sequence.kincons{i}.contact_state0 ;
-              %           contact_statei = action_sequence.kincons{i}.contact_statei ;
-              %           for j = 1:length(contact_state0)
-              %             ind_make = contact_state0{j}==ActionKinematicConstraint.MAKE_CONTACT;
-              %             contact_state0{j}(ind_make) = contact_statei{j}(ind_make);
-              %           end
-              %           action_sequence.kincons{i}.contact_state0 = contact_state0;
-              %         end
-              if(action_sequence.kincons{j}.tspan(2) == action_sequence.tspan(2))
-                  contact_statef = action_sequence.kincons{j}.contact_statef ;
-                  contact_statei = action_sequence.kincons{j}.contact_statei ;
-                  for k = 1:length(contact_statef)
-                      ind_break = contact_statef{k}==ActionKinematicConstraint.BREAK_CONTACT;
-                      contact_statef{k}(ind_break) = contact_statei{k}(ind_break);
-                  end
-                  action_sequence.kincons{j}.contact_statef = contact_statef;
+            if(action_sequence.kincons{j}.tspan(1) == action_sequence.tspan(1))
+              contact_state0 = action_sequence.kincons{j}.contact_state0 ;
+              contact_statei = action_sequence.kincons{j}.contact_statei ;
+              for k = 1:length(contact_state0)
+                ind_make = contact_state0{k}==ActionKinematicConstraint.MAKE_CONTACT;
+                contact_state0{k}(ind_make) = contact_statei{k}(ind_make);
               end
+              action_sequence.kincons{j}.contact_state0 = contact_state0;
+            end
+          end
+        elseif(i==num_key_time_samples)
+          for j=1:length(action_sequence.kincons)
+            if(action_sequence.kincons{j}.tspan(2) == action_sequence.tspan(2))
+              contact_statef = action_sequence.kincons{j}.contact_statef ;
+              contact_statei = action_sequence.kincons{j}.contact_statei ;
+              for k = 1:length(contact_statef)
+                ind_break = contact_statef{k}==ActionKinematicConstraint.BREAK_CONTACT;
+                contact_statef{k}(ind_break) = contact_statei{k}(ind_break);
+              end
+              action_sequence.kincons{j}.contact_statef = contact_statef;
+            end
           end
         end
         ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
@@ -329,7 +338,7 @@ while (1)
             body_contact_points = r_Atlas.getBodyContacts(support_body_ind(end));
             [~,support_point_ind_j] = ismember(action_sequence.kincons{j}.body_pts',body_contact_points','rows');
             support_point_ind = [support_point_ind, support_point_ind_j];
-            surface_body_ind = [surface_body_ind, 1];
+            surface_body_ind = [surface_body_ind, -1];
           end
         end
         [support_body_ind_unique,ia,ic] = unique(support_body_ind,'stable');
@@ -636,9 +645,11 @@ while (1)
           [t_zmp_breaks, q_zmp_plan, qdot_zmp_plan, qddot_zmp_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
 
           % Drake gui playback
-          xtraj = PPTrajectory(pchipDeriv(t_zmp_breaks,[q_zmp_plan;qdot_zmp_plan],[qdot_zmp_plan;0*qdot_zmp_plan]));
-          xtraj = xtraj.setOutputFrame(r.getStateFrame());
-          v.playback(xtraj,struct('slider',true));
+          if action_options.drake_vis
+            xtraj = PPTrajectory(pchipDeriv(t_zmp_breaks,[q_zmp_plan;qdot_zmp_plan],[qdot_zmp_plan;0*qdot_zmp_plan]));
+            xtraj = xtraj.setOutputFrame(r.getStateFrame());
+            v.playback(xtraj,struct('slider',true));
+          end
 
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
           constraints_satisfied = ones(max(1,msg.num_contact_goals), ...

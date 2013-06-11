@@ -1,7 +1,7 @@
 function drakeWalking(use_mex)
 
 
-use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
+use_bullet = true; % test walking with the controller computing pairwise contacts using bullet
 use_state_corrupter = false;
 
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));

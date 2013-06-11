@@ -25,7 +25,7 @@ classdef BracingController < DRCController
             obj.robot = r;
             obj.controller_data = ctrl_data;
             
-            obj = setTimedTransition(obj,20,name,false); % should transition to prone controller
+            obj = setTimedTransition(obj,20,'crawling',false); % should transition to prone controller
             
         end
         
