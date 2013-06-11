@@ -153,17 +153,20 @@ classdef WalkingPDBlock < MIMODrakeSystem
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
           pos = eval(cdata.link_constraints(j).traj,t);
-          pos(3) = pos(3) - cdata.trans_drift(3);
+%           pos(3) = pos(3) - cdata.trans_drift(3);
+          pos(1:3) = pos(1:3) - cdata.trans_drift;
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
         else
           pos_min = eval(cdata.link_constraints(j).min_traj,t);
-          pos_min(3) = pos_min(3) - cdata.trans_drift(3);
+%           pos_min(3) = pos_min(3) - cdata.trans_drift(3);
+          pos_min(1:3) = pos_min(1:3) - cdata.trans_drift;
           pos_max = eval(cdata.link_constraints(j).max_traj,t);
-          pos_max(3) = pos_max(3) - cdata.trans_drift(3);
+%           pos_max(3) = pos_max(3) - cdata.trans_drift(3);
+          pos_max(1:3) = pos_max(1:3) - cdata.trans_drift;
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         end
       end
-      compos = [eval(cdata.comtraj,t);nan];
+      compos = [eval(cdata.comtraj,t) - cdata.trans_drift(1:2);nan];
 
       [q_des,info] = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
       if info

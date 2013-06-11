@@ -334,11 +334,11 @@ classdef QPController < MIMODrakeSystem
     D_ls = ctrl_data.D;
     S = ctrl_data.S;
     s2 = ctrl_data.s2;
-    x0 = ctrl_data.x0;
+    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % TESTING, ADDED BY SCOTT
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
       s1 = eval(ctrl_data.s1,t);
-      y0 = eval(ctrl_data.y0,t);
+      y0 = eval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
       
       %----------------------------------------------------------------------
       % extract current supports
@@ -346,7 +346,7 @@ classdef QPController < MIMODrakeSystem
       supp = ctrl_data.supports(supp_idx);
     else
       s1 = ctrl_data.s1;
-      y0 = ctrl_data.y0;
+      y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
       
       supp = ctrl_data.supports;
     end
