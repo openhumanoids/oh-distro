@@ -12,7 +12,7 @@ group "0.development" {
         host = "localhost";
     }
     cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.2";
+        exec = "drc-set-sim-rate 0.15";
         host = "robot";
     }
 }
@@ -426,14 +426,11 @@ group "m.driving_utils" {
 }
 
 group "m.hose_task_utils" {
-    cmd "affordance_init_standpipe" {
+    cmd "affordance_init_standpipe_firehose_assembly" {
         exec = "affordance_init -e 4";
         host = "base";
     } 
-    cmd "affordance_init_firehose" {
-        exec = "affordance_init -e 5";
-        host = "base";
-    } 
+
     cmd "affordance_init_valve" {
         exec = "affordance_init -e 6";
         host = "base";
