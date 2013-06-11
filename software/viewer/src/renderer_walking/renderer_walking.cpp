@@ -36,6 +36,7 @@
 #define PARAM_GOAL_UPDATE "Update Current Goal"
 #define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
 #define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
+#define PARAM_CRAWLING "Crawling"
 #define PARAM_LEADING_FOOT "Leading foot"
 // #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
 // #define PARAM_STEP_TIME "Time per step (s)"
@@ -155,6 +156,7 @@ typedef struct _RendererWalking {
   bool has_walking_msg;
   bool follow_spline;
   bool ignore_terrain;
+  bool crawling;
   bool allow_optimization;
   drc_walking_goal_t last_walking_msg;
   
@@ -351,6 +353,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     msg.mu = self->mu;
     msg.follow_spline = self->follow_spline;
     msg.ignore_terrain = self->ignore_terrain;
+    msg.crawling = self->crawling;
     if (self->leading_foot == LEADING_FOOT_RIGHT) {
       msg.right_foot_lead = true;
     } else {
@@ -420,6 +423,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->mu = bot_gtk_param_widget_get_double(self->pw, PARAM_MU);
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
+  self->crawling = bot_gtk_param_widget_get_bool(self->pw, PARAM_CRAWLING);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
 
   // if (msg_changed) {
@@ -430,6 +434,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->last_walking_msg.is_new_goal = false;
       self->last_walking_msg.follow_spline = self->follow_spline;
       self->last_walking_msg.ignore_terrain = self->ignore_terrain;
+      self->last_walking_msg.crawling = self->crawling;
       self->last_walking_msg.step_speed = self->step_speed;
       self->last_walking_msg.nom_step_width = self->nom_step_width;
       self->last_walking_msg.nom_forward_step = self->nom_forward_step;
@@ -515,6 +520,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->has_walking_msg = false;
   self->follow_spline = true;
   self->ignore_terrain = false;
+  self->crawling = false;
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
   self->step_speed = 1.5; // m/s
@@ -548,9 +554,13 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_CRAWLING, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_IGNORE_TERRAIN, self->ignore_terrain);
+  bot_gtk_param_widget_set_bool(self->pw, PARAM_CRAWLING, self->crawling);
   
+
+
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
 
