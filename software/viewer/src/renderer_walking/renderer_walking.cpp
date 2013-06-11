@@ -30,7 +30,7 @@
 
 #include <maps/ViewClient.hpp>
 #include <maps/BotWrapper.hpp>
-
+#include <string>
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "Place New Walking Goal"
 #define PARAM_GOAL_UPDATE "Update Current Goal"
@@ -361,9 +361,11 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     }
     self->has_walking_msg = true;
     self->last_walking_msg = msg;
-    fprintf(stderr, "Sending WALKING_GOAL\n");
-    drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &msg);
-    bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+
+    std::string channel = msg.crawling ? "CRAWLING_NAV_GOAL" : "WALKING_GOAL";
+    fprintf(stderr, ("Sending " + channel + "\n").c_str());
+    drc_walking_goal_t_publish(self->lc, channel.c_str(), &msg);
+    bot_viewer_set_status_bar_message(self->viewer, ("Sent " + channel).c_str());
     
     self->active = false;
 
