@@ -228,7 +228,8 @@ classdef QPController < MIMODrakeSystem
       % i've made the following assumptions to make things fast.  we can soften
       % them later as desired.  - Russ
       assert(isnumeric(ctrl_data.Qy));
-      sizecheck(ctrl_data.Qy,[2 2]);
+%       sizecheck(ctrl_data.Qy,[2 2]); % commented out by sk--some of the
+%       quasistatic systems pass 4x4 Qs
       assert(isnumeric(ctrl_data.R));
       sizecheck(ctrl_data.R,[2 2]);
       assert(isnumeric(ctrl_data.C));
