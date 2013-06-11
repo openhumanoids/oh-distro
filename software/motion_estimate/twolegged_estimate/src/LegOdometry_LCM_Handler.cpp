@@ -41,10 +41,12 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	body_to_head.setIdentity();
 
 	first_get_transforms = true;
+	zvu_flag = false;
 	ratecounter = 0;
 	local_to_head_vel_diff.setSize(3);
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
+	zvu_timetrigger.setParameters(0.4,0.6,50000);
 	
 	stageA_test_vel.setSize(3);
 
@@ -325,6 +327,10 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		a = 1/(1 + 1000*err_b.norm());
 		b = 1/(1 + 100*errv_b.norm());
 
+		// test for zero velocity
+		double speed;
+
+		speed = LeggO.V.norm();
 
 		C_wb = q2C(InerO.q).transpose();
 
@@ -334,15 +340,43 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		errv_b_VO = C_wb * (Fovis.V - InerO.V);
 
 
+		// We should force velocity back to zero if we are confident that robot is standing still
+		// Do that here
+		//TODO
+
+
 		double db_a[3];
 
 		if (true) {
-			for (int i=0;i<3;i++) {
-				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+			//std::cout << "double value is: " << uts << " | " << ((speed < ZU_SPEED_THRES)) << ", " << ((double)(speed < ZU_SPEED_THRES)) << std::endl;
+			zvu_timetrigger.UpdateState(uts,((double)(speed < ZU_SPEED_THRES)));
+			//std::cout << "ST state is: " << zvu_timetrigger.getState() << std::endl;
 
-				feedback_loggings[i] = - INS_POS_FEEDBACK_GAIN * err_b(i);
-				feedback_loggings[i+3] = - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+			for (int i=0;i<3;i++) {
+				if (zvu_timetrigger.getState() >= 0.5 ) {
+					// This is the zero velocity update step
+					//std::cout << "ZVU is happening\n";
+					zvu_flag = true;
+
+					db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+
+					feedback_loggings[i] = - INS_POS_FEEDBACK_GAIN * err_b(i);
+					feedback_loggings[i+3] = - INS_VEL_FEEDBACK_GAIN * errv_b(i);
+				}
+				else
+				{
+					zvu_flag = false;
+
+					db_a[i] = - 0 * INS_POS_FEEDBACK_GAIN * err_b(i) - 0 * INS_VEL_FEEDBACK_GAIN * errv_b(i);
+
+					feedback_loggings[i] = - 0 * INS_POS_FEEDBACK_GAIN * err_b(i);
+					feedback_loggings[i+3] = - 0 * INS_VEL_FEEDBACK_GAIN * errv_b(i);
+				}
+
 			}
+
+
+
 		} else {
 			for (int i=0;i<3;i++) {
 				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b_VO(i);
@@ -659,9 +693,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				trn << _leg_odo->getLeftInLocal().translation().x(), _leg_odo->getLeftInLocal().translation().y(), _leg_odo->getLeftInLocal().translation().z();
 				difffoot = SFootPrintOut.diff(_msg->utime, trn);
 
-				std::cout << "LEFT-FOOT subjective: " << std::fixed << difffoot.transpose() << std::endl;
+				//std::cout << "LEFT-FOOT subjective: " << std::fixed << difffoot.transpose() << std::endl;
 
-				//FootVelCompensation
+
+
 
 				break;
 			}
@@ -1100,8 +1135,10 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    }
 
    for (int i=0;i<3;i++) {
-	  ss << just_checking_imu_frame.force_(i) << ", "; //149-152
+	  ss << just_checking_imu_frame.force_(i) << ", "; //149-151
    }
+
+   ss << zvu_flag << ", "; //152
 
    ss <<std::endl;
 

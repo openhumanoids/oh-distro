@@ -146,6 +146,7 @@ private:
 	volatile bool stillbusy;
 	volatile bool first_get_transforms;
 	volatile bool filter_joints_vector_size_set;
+	bool zvu_flag;
 	bool imu_msg_received;
 	int poseplotcounter;
 	int collectionindex;
@@ -178,6 +179,8 @@ private:
 	DataFileLogger state_estimate_error_log;
 	DataFileLogger joint_data_log;
 	
+	SchmittTrigger zvu_timetrigger;
+
 	int time_avg_counter;
 	volatile long long elapsed_us, spare_us;
 	volatile long long spare_time;

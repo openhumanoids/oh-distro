@@ -41,7 +41,9 @@ private:
 	bool first_call;
 	
 public:
+	SchmittTrigger();
 	SchmittTrigger(double lt, double ht, long delay);
+	void setParameters(double lt, double ht, long delay);
 	void UpdateState(long present_time, double value);
 	void Reset();
 	float getState();

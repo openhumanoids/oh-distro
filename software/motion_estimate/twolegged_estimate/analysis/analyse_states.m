@@ -21,6 +21,10 @@ end
 
 %% Plotting
 
+q = [1/sqrt(2) 0 0 -1/sqrt(2)]';
+C = q2C(q);
+
+
 % close all
 
 spa=4;
@@ -33,7 +37,7 @@ figure(1); clf
 subplot(spa,spb,1)
 
 plot(t,tpos), hold on, grid on, xlabel('Sim time [s]'), title('positions'),
-plot(t,epos,'--')
+plot(t,epos+tpos(1,3),'--')
 plot(t,left_con,':m','linewidth',2)
 plot(t,right_con,':c','linewidth',2)
 legend('true x','true y','true z','est x','est y','est z','left c','righ c')
@@ -255,7 +259,7 @@ subplot(spa,spb,2)
 plot(t,imu_V)
 hold on
 plot(t,leg_V,'--','linewidth',2)
-plot(t,fovis_V,'+','linewidth',1)
+ plot(t,tvel,':','linewidth',3)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
@@ -263,13 +267,13 @@ title('Vel States - Leg Odo')
 grid on
 
 subplot(spa,spb,3)
-plot(t,imu_V)
+plot(t,tpos-imu_P)
 hold on
-plot(t,tvel,'--','linewidth',2)
+ plot(t,tpos-epos,'--','linewidth',2)
 plot(t,left_con*0.1,':m','linewidth',2.5)
 plot(t,right_con*0.1,':c','linewidth',2.5)
 grid on
-title('Vel States - Truth')
+title('Pos States - Truth')
 grid on
 
 subplot(spa,spb,4)
@@ -291,6 +295,8 @@ subplot(spa,spb,2)
 plot(t,biasa);
 grid on
 title('Accelerometer Biases');
+hold on
+plot(t, zvu_flag,'m:','linewidth',2);
 
 subplot(spa,spb,3)
 plot(t,dpos_bias_fb);

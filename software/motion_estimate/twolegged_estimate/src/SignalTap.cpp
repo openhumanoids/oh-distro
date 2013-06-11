@@ -44,8 +44,15 @@ void DataFileLogger::operator<<(std::string to_log) {
   }
 }
 
+SchmittTrigger::SchmittTrigger() {
+	Reset();
+}
 
 SchmittTrigger::SchmittTrigger(double lt, double ht, long delay) {
+	setParameters(lt,ht,delay);
+}
+
+void SchmittTrigger::setParameters(double lt, double ht, long delay) {
 	low_threshold = lt;
 	high_threshold = ht;
 	time_delay = delay;

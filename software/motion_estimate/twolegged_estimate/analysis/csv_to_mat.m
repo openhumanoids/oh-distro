@@ -166,6 +166,8 @@ dvel_bias_fb = data(:,(offset:(offset+2)));
 offset = 149;
 force_ = data(:,(offset:(offset+2)));
 
+offset = 152;
+zvu_flag = data(:,offset);
 
 % end
 
