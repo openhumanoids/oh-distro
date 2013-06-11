@@ -28,8 +28,6 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   else
     traj = DirectTraj([p0, goal_pos]);
   end
-  ls = linspace(0, 1);
-  xy = traj.eval(ls);
 
   [~, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0, options.nom_step_width);
   if options.ignore_terrain
@@ -52,6 +50,8 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   end
 
   if debug
+    ls = linspace(0, 1);
+    xy = traj.eval(ls);
     plot_lcm_points([xy(1,:)', xy(2,:)', xy(3,:)'], repmat([0, 0, 1], length(ls), 1), 50, 'Foostep Spline', 2, 1);
   end
   
