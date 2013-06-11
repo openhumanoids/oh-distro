@@ -16,7 +16,8 @@
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
 #define PARAM_POWER_GRASP     "PowerGrasp"
-#define PARAM_SEND_POSE_GOAL  "Get Robot Pose"
+#define PARAM_SEND_POSE_GOAL  "Get Robot Pose @ CurHndState"
+#define PARAM_SEND_POSE_GOAL2  "Get Robot Pose @ DesHndStat"
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
@@ -862,7 +863,13 @@ namespace renderer_affordances_gui_utils
       string channel = "POSE_GOAL";
        // only orientation is considered as seed in pose optimization
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
-      publish_pose_goal(self,channel,T_world_body_desired);  
+      publish_pose_goal(self,channel,T_world_body_desired,false);  
+    }
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL2)){
+      string channel = "POSE_GOAL";
+       // only orientation is considered as seed in pose optimization
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      publish_pose_goal(self,channel,T_world_body_desired,true);  
     }
     else if(!strcmp(name,PARAM_MATE)){
         // get desired state from popup sliders
@@ -1060,7 +1067,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
-
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
    }
     bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
     //cout <<self->selection << endl; // otdf_type::geom_name
