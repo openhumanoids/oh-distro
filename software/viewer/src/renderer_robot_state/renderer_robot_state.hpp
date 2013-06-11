@@ -316,6 +316,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.max_num_steps = (int32_t) 15;
     msg.min_num_steps = (int32_t) 2;
     msg.robot_name = self->robotStateListener->_robot_name; 
+    msg.timeout=0;
 
     msg.goal_pos.translation.x = self->robotStateListener->_gl_robot->_T_world_body_future.p[0];
     msg.goal_pos.translation.y = self->robotStateListener->_gl_robot->_T_world_body_future.p[1];
@@ -329,10 +330,14 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.goal_pos.rotation.x = quat_out[1];
     msg.goal_pos.rotation.y = quat_out[2];
     msg.goal_pos.rotation.z = quat_out[3];
+    
+    msg.nom_step_width = 0.26;
+    msg.nom_forward_step = 0.35;
+    msg.max_forward_step = 0.5;
     msg.is_new_goal = true;
     msg.allow_optimization = false;
-    msg.step_speed = 0.50;
-    msg.step_height = 0.05;
+    msg.step_speed = 1.0;
+    msg.step_height = 0.1;
     msg.mu = 1.00;
     msg.follow_spline = false;
     msg.ignore_terrain = false;
