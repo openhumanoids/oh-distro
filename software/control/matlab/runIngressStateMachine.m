@@ -3,10 +3,24 @@ function runIngressStateMachine(options)
 addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-robot_options.floating = true;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),robot_options);
-%r = setTerrain(r,DRCTerrainMap(true,struct('name','IngressStateMachine','fill',true))); 
-r = setTerrain(r,DRCFlatTerrainMap()); 
+options.namesuffix = '';
+options.floating = true;
+
+if ~isfield(options,'backup_mode') options.backup_mode = false; end
+if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end
+if(~isfield(options,'use_mex')) options.use_mex = true; end
+if(~isfield(options,'debug')) options.debug = false; end
+
+if (options.use_hand_ft)
+  urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf');
+else
+  urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
+end
+
+r = Atlas(urdf,options);
+r = removeCollisionGroupsExcept(r,{'toe','heel'});
+r = setTerrain(r,DRCTerrainMap(true,struct('name','IngressStateMachine','fill',true)));
+%r = setTerrain(r,DRCFlatTerrainMap()); 
 r = compile(r);
 
 % robot_with_car = RigidBodyManipulator();
@@ -17,10 +31,7 @@ r = compile(r);
 % robot_with_car = TimeSteppingRigidBodyManipulator(robot_with_car,0.001,robot_options);
 % % robot_with_car = setStateFrame(robot_with_car,MultiCoordinateFrame({getStateFrame(r),VehicleState}));
 
-if(nargin<1) options = struct(); end
 % options.multi_robot = robot_with_car;
-if(~isfield(options,'use_mex')) options.use_mex = true; end
-if(~isfield(options,'debug')) options.debug = false; end
 
 standing_controller = StandingController('standing',r,options);
 quasistatic_controller = QuasistaticMotionController('qs_motion',r,options);
@@ -33,8 +44,6 @@ controllers = struct(standing_controller.name,standing_controller, ...
                      bracing_controller.name,bracing_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
-state_machine.run();
+state_machine.run(options.backup_mode);
 
 end
-
-
