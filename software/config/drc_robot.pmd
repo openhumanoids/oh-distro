@@ -316,6 +316,10 @@ group "m.simple-control" {
 }
 
 group "m.dev_tools" {
+    cmd "recovery" {
+        exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
+        host = "robot";
+    }
     cmd "enable_gravity_when_pinned" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
