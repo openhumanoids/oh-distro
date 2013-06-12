@@ -178,66 +178,70 @@ classdef ManipPDBlock < MIMODrakeSystem
         end
       end
       
-      ee_teleop_data = getNextMessage(obj.ee_teleop_mon,0);
-      if(~isempty(ee_teleop_data))
-        display('ManipPDBlock: receive ee teleop command');
-        ee_teleop_msg = drc.ee_cartesian_adjust_t(ee_teleop_data);
-        ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.z;ee_teleop_msg.pos_delta.y];
-        ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.z;ee_teleop_msg.rpy_delta.y];
-        kinsol_curr = doKinematics(r,q);
-        rpalm_curr = forwardKin(r,kinsol_curr,obj.rhand_ind,obj.rpalm_pts,1);
-        lpalm_curr = forwardKin(r,kinsol_curr,obj.lhand_ind,obj.lpalm_pts,1);
-        rpalm_goal = rpalm_curr;
-        lpalm_goal = lpalm_curr;
-        if(ee_teleop_msg.RIGHT_HAND)
-          rpalm_goal(1:3) = rpalm_goal(1:3)+ee_delta_pos;
-          rpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(rpalm_goal(4:6)));
-        elseif(ee_teleop_msg.LEFT_HAND)
-          lpalm_goal = lpalm_goal(1:3)+ee_delta_pos;
-          lpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(lpalm_goal(4:6)));
-        end
-        head_curr = forwardKin(r,kinsol_curr,obj.head_ind,obj.head_pts,1);
-        rf_curr = forwardKin(r,kinsol_curr,obj.rfoot_ind,obj.rfoot_pts,0);
-        lf_curr = forwardKin(r,kinsol_curr,obj.lfoot_ind,obj.lfoot_pts,0);
-        com_curr = getCOM(r,kinsol_curr);
-        com_const = struct('max',com_curr+1e-3*ones(3,1),'min',com_curr-1e-3*ones(3,1));
-        obj.controller_data.setField('qtraj',q_des);
-        obj.private_data.setField('plan_state',1);
-        obj.private_data.setField('lpalm_goal',lpalm_goal);
-        obj.private_data.setField('rpalm_goal',rpalm_goal);
-        obj.private_data.setField('h_goal',head_curr);
-        obj.private_data.setField('rf_goal',rf_curr);
-        obj.private_data.setField('lf_goal',lf_curr);
-        obj.private_data.setField('com_const',com_const);
-      end
-      plan_data = getNextMessage(obj.plan_mon,0);
-      if(~isempty(plan_data))
-        obj.private_data.setField('plan_state',0);
-      end
-      
-      pri_data = getData(obj.private_data);
-      plan_state = pri_data.plan_state;
-      if(plan_state == 1)
-        rpalm_goal = pri_data.rpalm_goal;
-        lpalm_goal = pri_data.lpalm_goal;
-        lf_goal = pri_data.lf_goal;
-        rf_goal = pri_data.rf_goal;
-        h_goal = pri_data.h_goal;
-        com_const = pri_data.com_const;
-        ikargs = {obj.rhand_ind,obj.rpalm_pts,rpalm_goal,...
-          obj.lhand_ind,obj.lpalm_pts,lpalm_goal,obj.head_ind,obj.head_pts,h_goal,...
-          obj.rfoot_ind,obj.rfoot_pts,rf_goal,obj.lfoot_ind,obj.lfoot_pts,lf_goal,...
-          0,com_const};
-        [q_des,info] = approximateIK(r,q,ikargs{:},struct('q_nom',q));
-        if info
-          fprintf(1,'warning: approximate IK failed.  calling IK\n');
-          [q_des,info] = inverseKin(r,q,ikargs{:},struct('q_nom',q));
-          if(info <10)
-            obj.controller_data.setField('qtraj',q_des);
-            obj.private_data.setField('plan_state',2);
-          end
-        end
-      end
+%       ee_teleop_data = getNextMessage(obj.ee_teleop_mon,0);
+%       if(~isempty(ee_teleop_data))
+%         display('ManipPDBlock: receive ee teleop command');
+%         ee_teleop_msg = drc.ee_cartesian_adjust_t(ee_teleop_data);
+%         ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.z;ee_teleop_msg.pos_delta.y];
+%         ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.z;ee_teleop_msg.rpy_delta.y];
+%         kinsol_curr = doKinematics(r,q);
+%         rpalm_curr = forwardKin(r,kinsol_curr,obj.rhand_ind,obj.rpalm_pts,1);
+%         lpalm_curr = forwardKin(r,kinsol_curr,obj.lhand_ind,obj.lpalm_pts,1);
+%         rpalm_goal = rpalm_curr;
+%         lpalm_goal = lpalm_curr;
+%         if(ee_teleop_msg.RIGHT_HAND)
+%           rpalm_goal(1:3) = rpalm_goal(1:3)+ee_delta_pos;
+%           rpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(rpalm_goal(4:6)));
+%         elseif(ee_teleop_msg.LEFT_HAND)
+%           lpalm_goal = lpalm_goal(1:3)+ee_delta_pos;
+%           lpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(lpalm_goal(4:6)));
+%         end
+%         head_curr = forwardKin(r,kinsol_curr,obj.head_ind,obj.head_pts,1);
+%         rf_curr = forwardKin(r,kinsol_curr,obj.rfoot_ind,obj.rfoot_pts,0);
+%         lf_curr = forwardKin(r,kinsol_curr,obj.lfoot_ind,obj.lfoot_pts,0);
+%         com_curr = getCOM(r,kinsol_curr);
+%         com_const = struct('max',com_curr+1e-3*ones(3,1),'min',com_curr-1e-3*ones(3,1));
+%         obj.controller_data.setField('qtraj',q_des);
+%         obj.private_data.setField('plan_state',1);
+%         obj.private_data.setField('lpalm_goal',lpalm_goal);
+%         obj.private_data.setField('rpalm_goal',rpalm_goal);
+%         obj.private_data.setField('h_goal',head_curr);
+%         obj.private_data.setField('rf_goal',rf_curr);
+%         obj.private_data.setField('lf_goal',lf_curr);
+%         obj.private_data.setField('com_const',com_const);
+%       end
+%       plan_data = getNextMessage(obj.plan_mon,0);
+%       if(~isempty(plan_data))
+%         obj.private_data.setField('plan_state',0);
+%       end
+%       
+%       pri_data = getData(obj.private_data);
+%       plan_state = pri_data.plan_state;
+%       if(plan_state == 1)
+%         rpalm_goal = pri_data.rpalm_goal;
+%         lpalm_goal = pri_data.lpalm_goal;
+%         lf_goal = pri_data.lf_goal;
+%         rf_goal = pri_data.rf_goal;
+%         h_goal = pri_data.h_goal;
+%         com_const = pri_data.com_const;
+%         ikargs = {obj.rhand_ind,obj.rpalm_pts,rpalm_goal,...
+%           obj.lhand_ind,obj.lpalm_pts,lpalm_goal,obj.head_ind,obj.head_pts,h_goal,...
+%           obj.rfoot_ind,obj.rfoot_pts,rf_goal,obj.lfoot_ind,obj.lfoot_pts,lf_goal,...
+%           0,com_const};
+%         [q_des,info] = approximateIK(r,q,ikargs{:},struct('q_nom',q));
+%         if info
+%           fprintf(1,'warning: approximate IK failed.  calling IK\n');
+%           [q_des,info] = inverseKin(r,q,ikargs{:},struct('q_nom',q));
+%           if(info <10)
+%             obj.controller_data.setField('qtraj',q_des);
+%             obj.private_data.setField('plan_state',2);
+%           end
+%         end
+%       end
+
+
+
+
 %       contact_flag = obj.contact_detect.update(rhand_torque(1));
 %       if(contact_flag)
 %         display(sprintf('Detect contact at time %7.4f',t));
