@@ -93,6 +93,9 @@ classdef FootstepPlanner < DRCPlanner
           planning = false;
           msg ='Foot Plan : Committed'; disp(msg); send_status(6,0,0,msg);
         end
+        if data.goal.crawling
+          planning = false;
+        end
         if planning
 %           profile on
           X = obj.updatePlan(X_old, data, changed, changelist);
@@ -107,7 +110,7 @@ classdef FootstepPlanner < DRCPlanner
         end
 
         % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
-        if modified || changelist.goal
+        if (modified || changelist.goal) && (~data.goal.crawling)
           Xout = X;
           % Convert from foot center to foot origin
           for j = 1:length(X)
