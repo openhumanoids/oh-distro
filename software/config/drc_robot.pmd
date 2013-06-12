@@ -561,6 +561,7 @@ script "dev.vrc_flying_ingress" {
     start group "b.3.manip";
     stop cmd "BotWalkingPlanner";
     start cmd "set-sim-rate";
+    start cmd "recovery";
 }
 
 script "dev.vrc_manip_mating_test" { 
