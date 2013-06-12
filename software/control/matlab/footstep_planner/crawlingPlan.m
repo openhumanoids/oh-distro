@@ -17,6 +17,7 @@ function [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,x0,b
 % @option ignore_terrain
 % @options direction - 0 for forward, <0 for left, >0 for right 
 % @options gait - 0 for quasi-static walk, 1 for zmp-walk, 2 for zmp-trot
+% @options duty_factor fraction of total stride time that each foot is in stance
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 sizecheck(x0,[getNumStates(r) 1]);
@@ -40,6 +41,7 @@ end
 
 if nargin<3 || isempty(options), options=struct(); end
 if ~isfield(options,'num_steps') options.num_steps = 20; end
+if ~isfield(options,'duty_factor') options.duty_factor = 2/3; end
 if ~isfield(options,'step_length') options.step_length = .3; end
 if ~isfield(options,'step_speed') options.step_speed = .5; end  
 if ~isfield(options,'step_height') options.step_height = .2; end
@@ -52,8 +54,11 @@ if ~isfield(options,'draw') options.draw = true; end
 if ~isfield(options,'debug') options.debug = false; end
 
 % always take 4 steps at a time
-options.num_steps = 4*ceil(options.num_steps/4);
-step_time = abs(options.step_length/options.step_speed);
+options.num_strides = ceil(options.num_steps/4);
+options.num_steps = 4*options.num_strides;
+swing_duration = abs(options.step_length/options.step_speed);
+stride_duration = swing_duration/(1-options.duty_factor);
+stance_duration = stride_duration*options.duty_factor;
 actuated = getActuatedJoints(r);
 
 persistent mex_ptr;
@@ -124,11 +129,13 @@ end
   end
 
 % ActionSequence crawl;
+crawl_sequence = ActionSequence();
 
 q = q_nom;
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
+fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
 com = [mean(fpos(1:2,:),2);options.com_height];
 q = crawlIK(q,com,fpos);
@@ -173,6 +180,176 @@ if (options.gait==0) % quasi-static
   end
 elseif (options.gait ==2) % trot
   zmp = com(1:2);
+  t_start = stride_duration/2 - swing_duration;
+  for i=1:4
+    body = getLink(r,foot_spec(i).body_ind);
+    body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
+    fpos = fpos_initial;
+    if any(i == [1,3])
+      % Initial stance constraints
+      tspan = [0,t_start];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.BREAK_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'s-');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'bo');
+      end
+      fpos(1,i) = fpos(1,i) + options.step_length/2;
+
+      % Intermediate stance constraints
+      for j = 1:options.num_strides-1
+        tspan = t_start + (j-1)*stride_duration + [swing_duration,stride_duration];
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
+          ActionKinematicConstraint.MAKE_CONTACT, ...
+          ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+          ActionKinematicConstraint.BREAK_CONTACT);
+        crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+        if options.draw
+          sfigure(7); hold on; grid on;
+          plot(tspan,[i i],'s-');
+          sfigure(8); hold on; grid on;
+          plot(fpos(1,i),fpos(2,i),'bo');
+        end
+        fpos(1,i) = fpos(1,i) + options.step_length;
+      end
+      % Final stance constraints
+      j = options.num_strides;
+      tspan = t_start + (j-1)*stride_duration + [swing_duration,stride_duration];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
+        ActionKinematicConstraint.MAKE_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'s-');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'bo');
+      end
+
+      % Apex constraints
+      fpos = fpos_initial;
+      fpos(1,i) = fpos(1,i) + options.step_length/4;
+      j = 1;
+      tspan = t_start + (j-1)*stride_duration + [swing_duration/2,swing_duration/2];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i),tspan,'', ...
+        ActionKinematicConstraint.NOT_IN_CONTACT, ...
+        ActionKinematicConstraint.NOT_IN_CONTACT, ...
+        ActionKinematicConstraint.NOT_IN_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'xr');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'xr');
+      end
+      fpos(1,i) = fpos(1,i) + 3*options.step_length/4;
+
+      for j = 2:options.num_strides
+        tspan = t_start + (j-1)*stride_duration + [swing_duration/2,swing_duration/2];
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i),tspan,'', ...
+          ActionKinematicConstraint.NOT_IN_CONTACT, ...
+          ActionKinematicConstraint.NOT_IN_CONTACT, ...
+          ActionKinematicConstraint.NOT_IN_CONTACT);
+        crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+        if options.draw
+          sfigure(7); hold on; grid on;
+          plot(tspan,[i i],'xr');
+          sfigure(8); hold on; grid on;
+          plot(fpos(1,i),fpos(2,i),'xr');
+        end
+        fpos(1,i) = fpos(1,i) + options.step_length;
+      end
+      
+    elseif any(i == [2,4])
+      % Initial stance constraints
+      tspan = [0,t_start+stride_duration/2];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.BREAK_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'s-');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'bo');
+      end
+      fpos(1,i) = fpos(1,i) + options.step_length/2;
+
+      % Intermediate stance constraints
+      for j = 1:options.num_strides-1
+        tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration,stride_duration], ...
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+          ActionKinematicConstraint.MAKE_CONTACT, ...
+          ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+          ActionKinematicConstraint.BREAK_CONTACT);
+        crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+        if options.draw
+          sfigure(7); hold on; grid on;
+          plot(tspan,[i i],'s-');
+          sfigure(8); hold on; grid on;
+          plot(fpos(1,i),fpos(2,i),'bo');
+        end
+        fpos(1,i) = fpos(1,i) + options.step_length;
+      end
+
+      % Final stance constraints
+      j = options.num_strides;
+      tspan = t_start + [((j-1)+1/2)*stride_duration + swing_duration, j*stride_duration];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+        ActionKinematicConstraint.MAKE_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
+        ActionKinematicConstraint.STATIC_PLANAR_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'s-');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'bo');
+      end
+
+      % Apex constraints
+      fpos = fpos_initial;
+      fpos(1,i) = fpos(1,i) + options.step_length/4;
+      j = 1;
+      tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration/2,swing_duration/2];
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+        ActionKinematicConstraint.NOT_IN_CONTACT, ...
+        ActionKinematicConstraint.NOT_IN_CONTACT, ...
+        ActionKinematicConstraint.NOT_IN_CONTACT);
+      crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+      if options.draw
+        sfigure(7); hold on; grid on;
+        plot(tspan,[i i],'xr');
+        sfigure(8); hold on; grid on;
+        plot(fpos(1,i),fpos(2,i),'xr');
+      end
+      fpos(1,i) = fpos(1,i) + 3*options.step_length/4;
+
+      for j = 1:options.num_strides
+        tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration/2,swing_duration/2];
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+          ActionKinematicConstraint.NOT_IN_CONTACT, ...
+          ActionKinematicConstraint.NOT_IN_CONTACT, ...
+          ActionKinematicConstraint.NOT_IN_CONTACT);
+        crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+        if options.draw
+          sfigure(7); hold on; grid on;
+          plot(tspan,[i i],'xr');
+          sfigure(8); hold on; grid on;
+          plot(fpos(1,i),fpos(2,i),'xr');
+        end
+        fpos(1,i) = fpos(1,i) + options.step_length;
+      end
+    end
+  end
+
   for step=1:2:options.num_steps
     for swing_legs= [[1;3],[2;4]]
       stance_legs = 1:4; stance_legs(swing_legs)=[];
