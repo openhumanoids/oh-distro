@@ -75,10 +75,10 @@
 
 
     <!-- beside passanger seat -->
-    <include><uri>model://mit_robot</uri><pose>-0.15 0.97 0.93 0 0 1.571</pose></include>
+    <include><uri>model://mit_robot</uri><pose>-0.15 1.1 0.93 0 0 1.571</pose></include>
 
 <!-- beside the steering wheel-->
-<!--    <include><uri>model://mit_robot</uri><pose>-0.15  -0.97 0.93 0 0 -1.571</pose></include> -->
+<!--    <include><uri>model://mit_robot</uri><pose>-0.15  -1.1 0.93 0 0 -1.571</pose></include> -->
 
 
 <!--    <include><uri>model://mit_robot</uri><pose>0.35 -1.93 0.60 0 0 1.571</pose></include> -->

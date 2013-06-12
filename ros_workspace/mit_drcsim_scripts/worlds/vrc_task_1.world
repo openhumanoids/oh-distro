@@ -185,7 +185,8 @@
     </include>
     <include>
       <uri>model://drc_vehicle</uri>
-      <pose>-9.35 -0.7 0 0 0 3.142</pose>
+<!--      <pose>-9.35 -0.7 0 0 0 3.142</pose> -->
+      <pose>0 0 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://house_1</uri>
