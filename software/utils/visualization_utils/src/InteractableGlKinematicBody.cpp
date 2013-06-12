@@ -934,6 +934,8 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           pos[1] = T_world_link.p[1];
           pos[2] = T_world_link.p[2];
        }    
+      
+       
     }
    joint_axis.normalize();
    int type = jointInfo.type;
@@ -996,6 +998,14 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
             p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
             q << x,y,z,w;
           }
+          
+           string token  = "back_";
+           size_t found = jointInfo.name.find(token); 
+           if ((found!=std::string::npos)&&(!is_otdf_instance)) {
+             Eigen::Vector3f whole_body_span_dims,offset;
+              get_whole_body_span_dims(whole_body_span_dims,offset); 
+              p[2] += 0.65*whole_body_span_dims[2];
+          }         
          
           std::stringstream oss;
           oss << "markers::" <<  jointInfo.name;
@@ -1043,6 +1053,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
   //        gluDisk(quadric,0.05,0.1,36,1);
             JointAxisOffset.p[2] =-2*arrow_length/3;          
             JointAxisFrame = JointAxisFrame*JointAxisOffset;
+            
             double x,y,z,w;
             JointAxisFrame.M.GetQuaternion(x,y,z,w);
             p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
@@ -1061,6 +1072,14 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
             q << x,y,z,w;
           }
           
+  
+           string token  = "back_";
+           size_t found = jointInfo.name.find(token); 
+           if ((found!=std::string::npos)&&(!is_otdf_instance)) {
+             Eigen::Vector3f whole_body_span_dims,offset;
+              get_whole_body_span_dims(whole_body_span_dims,offset); 
+              p[2] += 0.65*whole_body_span_dims[2];
+          }         
           
           std::stringstream oss;
           oss << "markers::" <<  jointInfo.name;
@@ -1128,7 +1147,13 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
     }
     joint_axis.normalize();
     
-
+    string token  = "back_";
+    size_t found_back = jointInfo.name.find(token); 
+     if ((found_back!=std::string::npos)&&(!is_otdf_instance)) {
+       Eigen::Vector3f whole_body_span_dims,offset;
+        get_whole_body_span_dims(whole_body_span_dims,offset); 
+        pos[2] += 0.65*whole_body_span_dims[2];
+    }
     
     int type = jointInfo.type;
     //jointInfo.name in filter list?
