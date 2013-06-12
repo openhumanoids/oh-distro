@@ -108,5 +108,10 @@
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141461 1.5048 1.19234 -0.00233591 1.49839 1.19802 0.0140151 1.49235 1.20214 1.37502 1.18981 0.0880066 " />
     </grasp_seed>
-  
+    <grasp_seed>
+        <geometry name="cylinder2_0" />
+        <relative_pose rpy="0.841319 0.000165842 0.834536" xyz="-0.035557 0.0947824 -0.0805669" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0139195 1.4587 1.20664 -0.00825068 1.48503 1.20377 0.0141702 1.50643 1.19952 0.0303292 1.12349 0.288603 " />
+    </grasp_seed>
 </object>
