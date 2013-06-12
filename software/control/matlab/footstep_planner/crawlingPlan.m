@@ -362,7 +362,7 @@ elseif (options.gait ==2) % trot
       pause(2);
     end
   end
-  qdtraj = PPTrajectory(zoh(t,q));
+  qdtraj = PPTrajectory(spline(t,q));
   %for step=1:2:options.num_steps
     %for swing_legs= [[1;3],[2;4]]
       %stance_legs = 1:4; stance_legs(swing_legs)=[];
