@@ -1,4 +1,4 @@
-function [support_times,supports,V,comtraj,zmptraj,qtraj] = crawlingPlan(r,x0,body_spec,foot_spec,options)
+function [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 %
 % @param r the robot 
 % @param x0 initial state
@@ -36,8 +36,8 @@ if nargin<3 || isempty(options), options=struct(); end
 if ~isfield(options,'num_steps') options.num_steps = 20; end
 if ~isfield(options,'step_length') options.step_length = .3; end
 if ~isfield(options,'step_speed') options.step_speed = .5; end  
-if ~isfield(options,'step_height') options.step_height = .2; end
-if ~isfield(options,'com_height') options.com_height = .25; end
+if ~isfield(options,'step_height') options.step_height = .6; end
+if ~isfield(options,'com_height') options.com_height = .35; end
 if ~isfield(options,'comfortable_footpos') options.comfortable_footpos = [-.7 -.7 .6 .6; .3 -.3 -.3 .3]; end
 if ~isfield(options,'ignore_terrain') options.ignore_terrain = true; end  % todo: make this default to false
 if ~isfield(options,'direction') options.direction = 0; end
@@ -154,9 +154,13 @@ cost.base_yaw = 0;
 cost = double(cost);
 %options = struct();
 options.Q = diag(cost(1:nq));
+options.q_nom = q0;
 
 q = q0;
-for t=0:.025:support_times(end)-eps
+actuated = getActuatedJoints(r);
+tt = 0:.05:support_times(end)
+qd = q(actuated);
+for t=tt(2:end)
   args = {0, [eval(comtraj,t);options.com_height]}; % com
   supp_tind = find(t>=support_times,1,'last');
   if (supp_tind>1 && supp_tind<length(support_times)-1)
@@ -174,11 +178,14 @@ for t=0:.025:support_times(end)-eps
 %  args = horzcat(args,find_link(');
   
   q = inverseKin(r,q,args{:});
-  
+  qd(:,end+1) = q(actuated);
+
   if (options.draw)
     v.draw(t,[q;0*q]); drawnow;
   end
 end
+
+qdtraj = PPTrajectory(spline(tt,qd));
 
 end
 
