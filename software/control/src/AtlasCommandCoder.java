@@ -9,16 +9,25 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     final int m_num_joints = 28;
 		int[] drake_to_atlas_joint_map;
 
-    int mode = 1; // mode==1: torque-only, mode==2: position-only, fixed gains
+    int mode = 1; 
+    // mode==1: torque-only, 
+    // mode==2: position-only, fixed gains
+    // mode==3: position and velocity, fixed gains
+    // mode==4: position, velocity, torque, fixed pd gains
     // TODO: add additional modes (e.g., position w/variable gains, mixed torque-position control
     
     drc.atlas_command_t msg;
 
     public AtlasCommandCoder(String[] joint_name, double[] Kp, double[] Kd) throws Exception
     {
+      this(joint_name,Kp,Kd,2);
+    }
+    
+    public AtlasCommandCoder(String[] joint_name, double[] Kp, double[] Kd, int send_mode) throws Exception
+    {
       this(joint_name);
       
-      mode = 2;
+      mode = send_mode;
       int j;
       for (int i=0; i<msg.num_joints; i++) {
         j = drake_to_atlas_joint_map[i];
@@ -107,7 +116,14 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     
     public int dim()
     {
-      return m_num_joints;
+    	if (mode==1 || mode==2)
+    		return m_num_joints;
+    	else if (mode==3)
+    		return 2*m_num_joints;
+    	else if (mode==4)
+    		return 3*m_num_joints;
+    	else
+    		return -1;
     }
     
     public drake.util.CoordinateFrameData decode(byte[] data)
@@ -122,10 +138,18 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
       int j;
       for (int i=0; i<m_num_joints; i++) {
         j = drake_to_atlas_joint_map[i];
-        if (mode==1)
+        if (mode==1) {
           msg.effort[j] = d.val[i];
-        else if (mode==2)
+        } else if (mode==2) {
           msg.position[j] = d.val[i];
+        } else if (mode==3) {
+          msg.position[j] = d.val[i];
+          msg.velocity[j] = d.val[m_num_joints+i];
+        } else if (mode==4) {
+        	msg.position[j] = d.val[i];
+        	msg.velocity[j] = d.val[m_num_joints+i];
+        	msg.effort[j] = d.val[2*m_num_joints+i];
+        }        
       }
       return msg;
     }

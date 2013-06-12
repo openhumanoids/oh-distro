@@ -28,13 +28,17 @@ private:
 
   vector<int> drake_to_atlas_joint_map;
 
-  int mode; // mode==1: torque-only, mode==2: position-only, fixed gains
+  int mode;
+  // mode==1: torque-only,
+  // mode==2: position-only, fixed gains
+  // mode==3: position and velocity, fixed gains
+  // mode==4: position, velocity, torque, fixed pd gains
   // TODO: add additional modes (e.g., position w/variable gains, mixed torque-position control
     
   drc::atlas_command_t msg;
 
-  void init(const vector<string>& joint_name) {
-    mode = 1;
+  void init(const vector<string>& joint_name, int send_mode, const Map<VectorXd>* Kp=NULL, const Map<VectorXd>* Kd=NULL) {
+    mode = send_mode;
 
     if (joint_name.size() != m_num_joints) {
       mexErrMsgTxt("AtlasCommandPublisher: Length of joint_name wrong");
@@ -110,24 +114,43 @@ private:
       msg.effort[i] = 0.0;
       msg.k_effort[i] = (uint8_t)255; // take complete control of joints (remove BDI control)
     }
+
+    if (send_mode>2 && Kp && Kd) {
+    	int j;
+    	for (int i=0; i<msg.num_joints; i++) {
+    		j = drake_to_atlas_joint_map[i];
+    		msg.kp_position[j] = (*Kp)[i];
+    		msg.kd_position[j] = (*Kd)[i];
+    	}
+    }
   }
 
 public:
   AtlasCommand(const vector<string>& joint_name)
   {
-    init(joint_name);
+    init(joint_name,1);
   }
 
-  AtlasCommand(const vector<string>& joint_name, const VectorXd& Kp, const VectorXd& Kd) {
-    init(joint_name);
+  AtlasCommand(const vector<string>& joint_name, const Map <VectorXd>* Kp, const Map<VectorXd>* Kd)
+  {
+    init(joint_name,2,Kp,Kd);
+  }
 
-    mode = 2;
-    int j;
-    for (int i=0; i<msg.num_joints; i++) {
-      j = drake_to_atlas_joint_map[i];
-      msg.kp_position[j] = Kp[i];
-      msg.kd_position[j] = Kd[i];
-    }
+  AtlasCommand(const vector<string>& joint_name, const Map< VectorXd >* Kp, const Map< VectorXd >* Kd, int send_mode)
+  {
+    init(joint_name,send_mode,Kp,Kd);
+  }
+
+  int dim(void)
+  {
+  	if (mode==1 || mode==2)
+  		return m_num_joints;
+  	else if (mode==3)
+  		return 2*m_num_joints;
+  	else if (mode==4)
+  		return 3*m_num_joints;
+  	else
+  		return -1;
   }
 
   void publish(const string& channel, double t, const VectorXd& x) {
@@ -187,14 +210,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   	return;
   }
 
-  if (nrhs==3 && mxGetNumberOfElements(prhs[1]) > 1) { // init2()
+  if ((nrhs==3 || nrhs==4) && mxGetNumberOfElements(prhs[0]) > 1) { // init2()
   	if (nlhs<1) return;
+
+  	int send_mode=2;
+  	if (nrhs>3) send_mode = (int) mxGetScalar(prhs[3]);
 
   	vector<string> joint_name = get_strings(prhs[0]);
   	Map<VectorXd> Kp(mxGetPr(prhs[1]), mxGetNumberOfElements(prhs[1]));
   	Map<VectorXd> Kd(mxGetPr(prhs[2]), mxGetNumberOfElements(prhs[2]));
 
-  	AtlasCommand *ac = new AtlasCommand(joint_name,Kp,Kd);
+  	AtlasCommand *ac = new AtlasCommand(joint_name,&Kp,&Kd,send_mode);
   	mxClassID cid;
   	if (sizeof(ac)==4) cid = mxUINT32_CLASS;
   	else if (sizeof(ac)==8) cid = mxUINT64_CLASS;
@@ -224,9 +250,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     char* str = mxArrayToString(prhs[1]);
     string channel(str);
     mxFree(str);
-    double *t = mxGetPr(prhs[2]);
-    Map<VectorXd> x(mxGetPr(prhs[3]), mxGetNumberOfElements(prhs[3]));
-    ac->publish(channel, *t, x);
+    double t = mxGetScalar(prhs[2]);
+    int n = mxGetNumberOfElements(prhs[3]);
+    if (n != ac->dim()) mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:BadInputs","the dimension of x is wrong");
+    Map<VectorXd> x(mxGetPr(prhs[3]), n);
+    ac->publish(channel, t, x);
 
   } else {
 
