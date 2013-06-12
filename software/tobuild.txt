@@ -15,7 +15,6 @@ motion_estimate
 #authoring
 viewer
 segmentation
-control
 network
 gazebo_plugins
 plan
@@ -23,6 +22,8 @@ driving
 
 # various scripts and tools e.g. BW plotting
 tools
+
+control
 
 # disabled for now:
 #teleop
