@@ -117,8 +117,8 @@ classdef ManipulationPlanner < handle
             runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,affIndices,[],is_manip_map);
         end
         
-        function generateAndPublishPosturePlan(obj,x0,q_desired)
-            runOptimizationForPosturePlan(obj,x0,q_desired);
+        function generateAndPublishPosturePlan(obj,x0,q_desired,useIKflag)
+            runOptimizationForPosturePlan(obj,x0,q_desired,useIKflag);
         end
         
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint) %#ok<INUSD>
@@ -288,10 +288,11 @@ classdef ManipulationPlanner < handle
            obj.pose_pub.publish(xtraj,utime);
         end 
          
-        function runOptimizationForPosturePlan(obj,x0,q_desired)
+        function runOptimizationForPosturePlan(obj,x0,q_desired,useIKflag)
             disp('Generating posture plan...');
             q0 = x0(1:getNumDOF(obj.r));
             s = [0 1];
+            nq = obj.r.getNumDOF();
             
             kinsol = doKinematics(obj.r,q_desired);
             
@@ -308,6 +309,20 @@ classdef ManipulationPlanner < handle
             obj.rhandT = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
             obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
+            if(useIKflag)
+              kinsol0 = doKinematics(obj.r,q0);
+              rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],1);
+              lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],1);
+              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0,...
+                obj.r_hand_body,[0;0;0],obj.rhandT,obj.l_hand_body,[0;0;0],obj.lhandT,...
+                obj.head_body,[0;0;0],obj.headT};
+              cost = diag(obj.getCostVector);
+              cost = cost(1:nq,1:nq);
+              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},struct('Q',cost));
+              if(info>10)
+                fprintf('IK info = %d in posture plan optimization\n',info);
+              end
+            end
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
             s = linspace(0,1,4);
             s_breaks = linspace(s(1),s(end),obj.num_breaks);
@@ -324,14 +339,27 @@ classdef ManipulationPlanner < handle
             
             
             % calculate end effectors breaks via FK.
+            q_break = zeros(nq,length(s_breaks));
+            rhand_breaks = zeros(7,length(s_breaks));
+            lhand_breaks = zeros(7,length(s_breaks));
+            head_breaks = zeros(7,length(s_breaks));
+            rfoot_breaks = zeros(7,length(s_breaks));
+            lfoot_breaks = zeros(7,length(s_breaks));
             for brk =1:length(s_breaks),
-                q_break = obj.qtraj_guess_fine.eval(s_breaks(brk));
-                kinsol_tmp = doKinematics(obj.r,q_break);
+                q_break(:,brk) = obj.qtraj_guess_fine.eval(s_breaks(brk));
+                kinsol_tmp = doKinematics(obj.r,q_break(:,brk));
                 rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
                 lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
                 lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+%                 if(brk>1)
+%                   ikargs_break = {obj.r_hand_body,[0;0;0],rhand_breaks(:,brk),obj.l_hand_body,[0;0;0],lhand_breaks(:,brk),...
+%                     obj.r_foot_body,[0;0;0],obj.rfootT,obj.l_foot_body,[0;0;0],obj.lfootT,obj.head_body,[0;0;0],head_breaks(:,brk)};
+%                   cost = diag(obj.getCostVector());
+%                   cost = cost(1:nq,1:nq);
+%                   q_break(:,brk) = inverseKin(obj.r,q_break(:,brk-1),ikargs_break{:},struct('Q',cost));
+%                 end
             end
             s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
@@ -339,6 +367,7 @@ classdef ManipulationPlanner < handle
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+%             s_total = max(max(s_total_lh,s_total_rh),s_total_head);
             s_total = max(s_total,0.01);
             
             for l =1:length(s_breaks),
@@ -346,7 +375,7 @@ classdef ManipulationPlanner < handle
                 xtraj(1,ind) = 1.0;
                 xtraj(2,ind) = 0.0;
             end
-            xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            xtraj(2+(1:nq),:) = q_break;
             
             ts = s.*(s_total/obj.v_desired); % plan timesteps
             obj.time_2_index_scale = (obj.v_desired/s_total);
@@ -429,7 +458,7 @@ classdef ManipulationPlanner < handle
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 100;
 
-						%%% Honkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
+						%%% Hongkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
 						coords = obj.r.getStateFrame();
 						[joint_min,joint_max] = obj.r.getJointLimits();
 						joint_min = Point(coords,[joint_min;0*joint_min]);
@@ -1684,42 +1713,42 @@ classdef ManipulationPlanner < handle
             
             
             if(~obj.finegrained_planning)
-                % PERFORM IKSEQUENCE OPT
-                ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
-                ikseq_options.Qa = eye(getNumDOF(obj.r));
-                ikseq_options.Qv = eye(getNumDOF(obj.r));
-                ikseq_options.nSample = obj.num_breaks-1;
-                ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
-                ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
-                ikseq_options.quasiStaticFlag=true;
-                ikseq_options.shrinkFactor = 0.95;
-                ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
-                ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
-                if(is_keyframe_constraint)
-                    ikseq_options.MajorIterationsLimit = 100;
-                    ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
-                    q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
-                else
+            % PERFORM IKSEQUENCE OPT
+            ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
+            ikseq_options.Qa = eye(getNumDOF(obj.r));
+            ikseq_options.Qv = eye(getNumDOF(obj.r));
+            ikseq_options.nSample = obj.num_breaks-1;
+            ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
+            ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
+            ikseq_options.quasiStaticFlag=true;
+            ikseq_options.shrinkFactor = 0.95;
+            ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
+            ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
+            if(is_keyframe_constraint)
+                ikseq_options.MajorIterationsLimit = 100;
+                ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
+                q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
+            else
                     ikseq_options.MajorIterationsLimit = 100;
                     ikseq_options.qtraj0 = qtraj_guess;
-                end
+              end
                 ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
                 %============================
                 [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
                 if(snopt_info == 13)
                     warning('The IK sequence fails');
                     send_status(3,0,0,'snopt_info == 13. The IK sequence fails.');
-                end
+            end
                 %============================
                 xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
-                
+            
                 obj.s_breaks = s_breaks;
                 obj.q_breaks = q_breaks;
                 obj.qdos_breaks = qdos_breaks;
-                
-                qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
-                obj.qtraj_guess = qtraj_guess; % cache
+            
+            qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
+            obj.qtraj_guess = qtraj_guess; % cache
             else
               if (~is_keyframe_constraint)
                 obj.s_breaks = s_breaks;

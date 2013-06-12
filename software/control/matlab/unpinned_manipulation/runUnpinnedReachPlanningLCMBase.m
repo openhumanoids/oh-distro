@@ -98,7 +98,7 @@ rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_name
 % Listens to teleop commands
 lc = lcm.lcm.LCM.getSingleton();
 teleop_mon = drake.util.MessageMonitor(drc.ee_cartesian_adjust_t,'utime');
-lc.subscribe('COMMITTED_EE_ADJUSTMENT',teleop_mon);
+lc.subscribe('CANDIDATE_EE_ADJUSTMENT',teleop_mon);
 % 
 x0 = getInitialState(r); 
 q0 = x0(1:getNumDOF(r));
@@ -394,12 +394,15 @@ while(1)
   
 
   posture_goal =preset_posture_goal_listener.getNextMessage(msg_timeout);  
+  useIKflag = false;
   if(~isempty(posture_goal))
       disp('Preset Posture goal received .');
       if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));%standing hands down
+       useIKflag = true;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_UP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
+       useIKflag = true;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
@@ -411,7 +414,7 @@ while(1)
       end
       q_desired = d.xstar(1:getNumDOF(r));
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
-      manip_planner.generateAndPublishPosturePlan(x0,q_desired);
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIKflag);
   end
 
   posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
@@ -426,7 +429,7 @@ while(1)
         q_desired(dofnum) = joint_positions(i);
       end
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
-      manip_planner.generateAndPublishPosturePlan(x0,q_desired);
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired,false);
   end  
   
   [posegoal,postureconstraint]= pose_goal_listener.getNextMessage(msg_timeout);
@@ -454,8 +457,8 @@ while(1)
   if(~isempty(ee_teleop_data))
     display('receive ee teleop command');
     ee_teleop_msg = drc.ee_cartesian_adjust_t(ee_teleop_data);
-    ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.z;ee_teleop_msg.pos_delta.y];
-    ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.z;ee_teleop_msg.rpy_delta.y];
+    ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.y;ee_teleop_msg.pos_delta.z];
+    ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.y;ee_teleop_msg.rpy_delta.z];
     q0 = x0(1:getNumDOF(r));
     manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND);
   end
