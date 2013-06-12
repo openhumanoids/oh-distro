@@ -1,4 +1,4 @@
-function [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,x0,body_spec,foot_spec,options)
+function [qdtraj,support_times,supports,V,comtraj,zmptraj] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 %
 % @param r the robot 
 % @param x0 initial state
@@ -18,6 +18,8 @@ function [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,x0,b
 % @options direction - 0 for forward, <0 for left, >0 for right 
 % @options gait - 0 for quasi-static walk, 1 for zmp-walk, 2 for zmp-trot
 % @options duty_factor fraction of total stride time that each foot is in stance
+addpath(fullfile(pwd,'frames'));
+addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 sizecheck(x0,[getNumStates(r) 1]);
@@ -179,8 +181,9 @@ if (options.gait==0) % quasi-static
     end
   end
 elseif (options.gait ==2) % trot
-  zmp = com(1:2);
   t_start = stride_duration/2 - swing_duration;
+  zmptraj = PPTrajectory(foh([0,t_start,t_start+options.num_strides*stride_duration], ...
+                         [com(1:2),com(1:2),com(1:2)+[options.num_strides*options.step_length;0]]));
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
@@ -234,36 +237,29 @@ elseif (options.gait ==2) % trot
 
       % Apex constraints
       fpos = fpos_initial;
-      fpos(1,i) = fpos(1,i) + options.step_length/4;
       j = 1;
-      tspan = t_start + (j-1)*stride_duration + [swing_duration/2,swing_duration/2];
-      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i),tspan,'', ...
+      tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
+      x0_foot = fpos(:,i);
+      fpos(1,i) = fpos(1,i) + options.step_length/2;
+      xf_foot = fpos(:,i);
+      f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline,tspan,'', ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT);
       crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
-      if options.draw
-        sfigure(7); hold on; grid on;
-        plot(tspan,[i i],'xr');
-        sfigure(8); hold on; grid on;
-        plot(fpos(1,i),fpos(2,i),'xr');
-      end
-      fpos(1,i) = fpos(1,i) + 3*options.step_length/4;
 
       for j = 2:options.num_strides
-        tspan = t_start + (j-1)*stride_duration + [swing_duration/2,swing_duration/2];
-        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i),tspan,'', ...
+        tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
+        x0_foot = fpos(:,i);
+        fpos(1,i) = fpos(1,i) + options.step_length;
+        xf_foot = fpos(:,i);
+        f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline,tspan,'', ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT);
         crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
-        if options.draw
-          sfigure(7); hold on; grid on;
-          plot(tspan,[i i],'xr');
-          sfigure(8); hold on; grid on;
-          plot(fpos(1,i),fpos(2,i),'xr');
-        end
-        fpos(1,i) = fpos(1,i) + options.step_length;
       end
       
     elseif any(i == [2,4])
@@ -316,74 +312,91 @@ elseif (options.gait ==2) % trot
 
       % Apex constraints
       fpos = fpos_initial;
-      fpos(1,i) = fpos(1,i) + options.step_length/4;
       j = 1;
-      tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration/2,swing_duration/2];
-      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+      tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
+      x0_foot = fpos(:,i);
+      fpos(1,i) = fpos(1,i) + options.step_length/2;
+      xf_foot = fpos(:,i);
+      f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
+      kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, tspan,'', ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT);
       crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
-      if options.draw
-        sfigure(7); hold on; grid on;
-        plot(tspan,[i i],'xr');
-        sfigure(8); hold on; grid on;
-        plot(fpos(1,i),fpos(2,i),'xr');
-      end
-      fpos(1,i) = fpos(1,i) + 3*options.step_length/4;
 
-      for j = 1:options.num_strides
-        tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration/2,swing_duration/2];
-        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
+      for j = 1:options.num_strides-1
+        tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
+        x0_foot = fpos(:,i);
+        fpos(1,i) = fpos(1,i) + options.step_length;
+        xf_foot = fpos(:,i);
+        f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
+        kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, tspan,'', ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT);
         crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
-        if options.draw
-          sfigure(7); hold on; grid on;
-          plot(tspan,[i i],'xr');
-          sfigure(8); hold on; grid on;
-          plot(fpos(1,i),fpos(2,i),'xr');
-        end
-        fpos(1,i) = fpos(1,i) + options.step_length;
       end
     end
   end
 
-  for step=1:2:options.num_steps
-    for swing_legs= [[1;3],[2;4]]
-      stance_legs = 1:4; stance_legs(swing_legs)=[];
+  zmptraj = setOutputFrame(zmptraj,desiredZMP);
+  options.com0 = com(1:2);
+  [~,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(options.com_height,zmptraj,options);
+  comtraj = [comtraj;ConstantTrajectory(options.com_height)];
+  
+  % COM constraint
+  kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'COM_constraint');
+  crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-      % todo: add constraints to crawl sequence
-      
-      % apex of swing leg
-      if (step==1 || step==options.num_steps)
-        zmp(1) = zmp(1)+ options.step_length/8;
-        fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/4;
-      else
-        zmp(1) = zmp(1) + options.step_length/4;
-        fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/2;
-      end
-      fpos(3,swing_legs) = options.step_height;
-      com = [zmp;options.com_height]; % note just set com=zmp here to get started 
-      q = crawlIK(q,com,fpos,swing_legs);  
-      display(q,com,fpos,swing_legs);
-      
-      % end of step
-      if (step==1 || step==options.num_steps)
-        zmp(1) = zmp(1)+ options.step_length/8;
-        fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/4;
-      else
-        zmp(1) = zmp(1) + options.step_length/4;
-        fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/2;
-      end
-      fpos(3,swing_legs) = 0;
-      com = [zmp;options.com_height]; % note just set com=zmp here to get started 
-      q = crawlIK(q,com,fpos);  
-      display(q,com,fpos,swing_legs);
-      step=step+1;
+  t = 0:0.05:comtraj.tspan(2);
+  nt = numel(t);
+  q = zeros(nq,nt);
+  q0 = x0(1:nq);
+  for i = 1:nt
+    ikargs = getIKArguments(crawl_sequence,t(i));
+    q(:,i) = inverseKin(r,q0,ikargs{:},options);
+    q0 = q(:,i);
+    if options.draw
+      v.draw(t(i),[q(:,i);0*q(:,i)]);
+      AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
+      pause(2);
     end
   end
+  qdtraj = PPTrajectory(zoh(t,q));
+  %for step=1:2:options.num_steps
+    %for swing_legs= [[1;3],[2;4]]
+      %stance_legs = 1:4; stance_legs(swing_legs)=[];
+
+      %% todo: add constraints to crawl sequence
+      
+      %% apex of swing leg
+      %if (step==1 || step==options.num_steps)
+        %zmp(1) = zmp(1)+ options.step_length/8;
+        %fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/4;
+      %else
+        %zmp(1) = zmp(1) + options.step_length/4;
+        %fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/2;
+      %end
+      %fpos(3,swing_legs) = options.step_height;
+      %com = [zmp;options.com_height]; % note just set com=zmp here to get started 
+      %q = crawlIK(q,com,fpos,swing_legs);  
+      %display(q,com,fpos,swing_legs);
+      
+      %% end of step
+      %if (step==1 || step==options.num_steps)
+        %zmp(1) = zmp(1)+ options.step_length/8;
+        %fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/4;
+      %else
+        %zmp(1) = zmp(1) + options.step_length/4;
+        %fpos(1,swing_legs) = fpos(1,swing_legs) + options.step_length/2;
+      %end
+      %fpos(3,swing_legs) = 0;
+      %com = [zmp;options.com_height]; % note just set com=zmp here to get started 
+      %q = crawlIK(q,com,fpos);  
+      %display(q,com,fpos,swing_legs);
+      %step=step+1;
+    %end
+  %end
 end
 
 return;
