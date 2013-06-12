@@ -367,7 +367,7 @@ classdef QPController < MIMODrakeSystem
       end
     end
     
-    contact_threshold = 0.0005; % m
+    contact_threshold = 0.001; % m
     if (obj.use_mex==0 || obj.use_mex==2)
 
       % Change in logic here due to recent tests with heightmap noise
