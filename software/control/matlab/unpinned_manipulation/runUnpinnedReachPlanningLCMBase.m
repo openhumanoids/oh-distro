@@ -95,6 +95,11 @@ plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_names);
 rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_names);
 
+% Listens to teleop commands
+lc = lcm.lcm.LCM.getSingleton();
+teleop_mon = drake.util.MessageMonitor(drc.ee_cartesian_adjust_t,'utime');
+lc.subscribe('COMMITTED_EE_ADJUSTMENT',teleop_mon);
+% 
 x0 = getInitialState(r); 
 q0 = x0(1:getNumDOF(r));
 
@@ -443,6 +448,15 @@ while(1)
       manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint);
   end    
   
+  ee_teleop_data = getNextMessage(teleop_mon,0);
+  if(~isempty(ee_teleop_data))
+    display('receive ee teleop command');
+    ee_teleop_msg = drc.ee_cartesian_adjust_t(ee_teleop_data);
+    ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.z;ee_teleop_msg.pos_delta.y];
+    ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.z;ee_teleop_msg.rpy_delta.y];
+    q0 = x0(1:getNumDOF(r));
+    manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND);
+  end
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
   p = committed_plan_listener.getNextMessage(msg_timeout);
