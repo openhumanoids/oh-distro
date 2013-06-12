@@ -19,9 +19,11 @@ function testCrawling()
   
   options.direction = 0;
   options.step_length = -.2;
-  options.gait = 0;
+  options.gait = 2;
   
-  [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
+%  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
+  crawlingPlan(r,d.x0,body_spec,foot_spec,options)
+return;
   
   qdtraj = setOutputFrame(qdtraj,AtlasPositionRef(r,'crawling'));
   
