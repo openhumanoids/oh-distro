@@ -587,6 +587,15 @@ script "dev.quals_manip" {
     start cmd "gz_quals_2";
     start cmd "set-sim-rate";
 }
+
+script "dev.russ.crawling" {
+    start group "0.development";
+    start group "a.1.core";
+    stop cmd "viewer-REMOVEFORCOMP";
+    start cmd "gz_mit_walking";
+}
+
+
 ############ System Tests ############
 
 script "systest-main" {
