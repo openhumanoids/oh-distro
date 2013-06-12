@@ -124,13 +124,13 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
 
   BotEventHandler *ehandler = &self->ehandler;
   ehandler->name = (char*) RENDERER_NAME;
-  ehandler->enabled = 1;
+  ehandler->enabled = 0;
   ehandler->pick_query = NULL;
-  ehandler->key_press = key_press;
+  ehandler->key_press = NULL;
   ehandler->hover_query = NULL;
-  ehandler->mouse_press = mouse_press;
-  ehandler->mouse_release = mouse_release;
-  ehandler->mouse_motion = mouse_motion;
+  ehandler->mouse_press = NULL;
+  ehandler->mouse_release = NULL;
+  ehandler->mouse_motion = NULL;
   ehandler->user = self;
 
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
