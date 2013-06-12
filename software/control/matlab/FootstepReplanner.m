@@ -52,24 +52,25 @@ classdef FootstepReplanner < DrakeSystem
     end
     
     function y=output(obj,t,~,x)
-      persistent lfoot_contact_state rfoot_contact_state last_t;
+      persistent last_t;
+%       persistent lfoot_contact_state rfoot_contact_state last_t;
 
       if (isempty(last_t) || last_t > t)
         last_t = 0;
       end
       if (t - last_t >= obj.dt)
         last_t = t;
-        if isempty(lfoot_contact_state)
-          lfoot_contact_state = false;
-        end
-        if isempty(rfoot_contact_state)
-          rfoot_contact_state = false;
-        end
+%         if isempty(lfoot_contact_state)
+%           lfoot_contact_state = false;
+%         end
+%         if isempty(rfoot_contact_state)
+%           rfoot_contact_state = false;
+%         end
         contact_data = obj.contact_est_monitor.getNextMessage(0);
         if ~isempty(contact_data)
           msg = drc.foot_contact_estimate_t(contact_data);
 
-          if msg.left_contact>0.5 && ~lfoot_contact_state
+          if msg.left_contact>0.5 %&& ~lfoot_contact_state
             % left foot coming into contact
             cdata = obj.controller_data.getData();
             q = x(1:obj.nq); 
@@ -82,7 +83,7 @@ classdef FootstepReplanner < DrakeSystem
 
             fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
-          elseif msg.right_contact>0.5 && ~rfoot_contact_state
+          elseif msg.right_contact>0.5% && ~rfoot_contact_state
             % right foot coming into contact
             cdata = obj.controller_data.getData();
             q = x(1:obj.nq); 
@@ -97,8 +98,8 @@ classdef FootstepReplanner < DrakeSystem
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           end
 
-          lfoot_contact_state = msg.left_contact>0.5;
-          rfoot_contact_state = msg.right_contact>0.5;
+%           lfoot_contact_state = msg.left_contact>0.5;
+%           rfoot_contact_state = msg.right_contact>0.5;
         end
       end
       y=x;
