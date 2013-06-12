@@ -266,38 +266,37 @@ group "b.4.driving" {
 
 group "g.0.gazebo" {
     cmd "gz_mit_ingress" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
     cmd "gz_mit_walking" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
     cmd "gz_quals_2" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "robot";
     }
     cmd "gz_quals_3" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
         host = "robot";
     }
     cmd "gz_vrc_driving" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
         host = "robot";
     }
     cmd "gz_vrc_walking" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
     cmd "gz_vrc_manip" {
-        exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
-    
-   cmd "gz_vrc_manip_mating_test" {
-      exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
+    cmd "gz_vrc_manip_mating_test" {
+      exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
       host = "robot";
-   }
+    }
 }
 
 group "m.simple-control" {
