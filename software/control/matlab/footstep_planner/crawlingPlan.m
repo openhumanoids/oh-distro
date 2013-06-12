@@ -324,7 +324,7 @@ elseif (options.gait ==2) % trot
         ActionKinematicConstraint.NOT_IN_CONTACT);
       crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-      for j = 1:options.num_strides-1
+      for j = 2:options.num_strides
         tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
         x0_foot = fpos(:,i);
         fpos(1,i) = fpos(1,i) + options.step_length;
@@ -348,7 +348,7 @@ elseif (options.gait ==2) % trot
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-  t = 0:0.05:comtraj.tspan(2);
+  t = 0:0.025:comtraj.tspan(2);
   nt = numel(t);
   q = zeros(nq,nt);
   q0 = x0(1:nq);
