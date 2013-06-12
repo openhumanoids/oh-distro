@@ -494,6 +494,10 @@ public:
   }
 
   void onSendBoxRequestButton() {
+    if (!mShowRequestBox) {
+      std::cout << "No box shown, so request not sent" << std::endl;
+      return;
+    }
     drc::map_request_bbox_t msg;
     Eigen::Vector3f position, scale;
     Eigen::Quaternionf orientation;
