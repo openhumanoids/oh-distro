@@ -121,7 +121,7 @@ classdef ManipulationPlanner < handle
             runOptimizationForPosturePlan(obj,x0,q_desired);
         end
         
-        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint)
+        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint) %#ok<INUSD>
             runPoseOptimization(obj,x0,ee_names,ee_loci,timeIndices);
         end
         
@@ -1684,32 +1684,42 @@ classdef ManipulationPlanner < handle
             
             
             if(~obj.finegrained_planning)
-            % PERFORM IKSEQUENCE OPT
-            ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
-            ikseq_options.Qa = eye(getNumDOF(obj.r));
-            ikseq_options.Qv = eye(getNumDOF(obj.r));
-            ikseq_options.nSample = obj.num_breaks-1;
-            ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
-            ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
-            ikseq_options.quasiStaticFlag=true;
-            ikseq_options.shrinkFactor = 0.95;
-            ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
-            ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
-            if(is_keyframe_constraint)
-                ikseq_options.MajorIterationsLimit = 100;
-                ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
-                q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
-            else
-              if (~is_keyframe_constraint)
+                % PERFORM IKSEQUENCE OPT
+                ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
+                ikseq_options.Qa = eye(getNumDOF(obj.r));
+                ikseq_options.Qv = eye(getNumDOF(obj.r));
+                ikseq_options.nSample = obj.num_breaks-1;
+                ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
+                ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
+                ikseq_options.quasiStaticFlag=true;
+                ikseq_options.shrinkFactor = 0.95;
+                ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
+                ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
+                if(is_keyframe_constraint)
+                    ikseq_options.MajorIterationsLimit = 100;
+                    ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
+                    q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
+                else
+                    ikseq_options.MajorIterationsLimit = 100;
+                    ikseq_options.qtraj0 = qtraj_guess;
+                end
+                ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
+                %============================
+                [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
+                if(snopt_info == 13)
+                    warning('The IK sequence fails');
+                    send_status(3,0,0,'snopt_info == 13. The IK sequence fails.');
+                end
+                %============================
+                xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
+                xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
+                
                 obj.s_breaks = s_breaks;
                 obj.q_breaks = q_breaks;
+                obj.qdos_breaks = qdos_breaks;
+                
+                qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
                 obj.qtraj_guess = qtraj_guess; % cache
-              end
-            end
-            
-            
-            qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
-            obj.qtraj_guess = qtraj_guess; % cache
             else
               if (~is_keyframe_constraint)
                 obj.s_breaks = s_breaks;
