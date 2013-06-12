@@ -113,7 +113,9 @@ def carry_out_sequence(filename, which_steps, real_time_percent):
       #print "ros_delta %f" % (ros_delta)
       #print "ros_sleep_amount %f" % (ros_sleep_amount)
 
-      lcm_sleep_amount = dtPublish * 100/ real_time_percent 
+      lcm_sleep_amount = dtPublish * 100/ real_time_percent  + 0.011 
+      # this is required for the alienware machines - working on removing it
+      # lower might be the best number
       lcm_tic =timestamp_now ()
       time.sleep(lcm_sleep_amount)
       lcm_delta = timestamp_now () - lcm_tic
