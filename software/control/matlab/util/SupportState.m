@@ -50,6 +50,15 @@ classdef SupportState
       sizecheck(contact_surfaces,length(obj.bodies));
       obj.contact_surfaces = contact_surfaces;
     end
+    
+    function pts = contactPositions(obj,r,kinsol)
+      pts=[];
+      for i=1:length(obj.bodies)
+        bp = getBodyContacts(r,obj.bodies(i));
+        pts = [pts,forwardKin(r,kinsol,obj.bodies(i),bp(:,obj.contact_pts{i}))];
+      end
+    end
+    
   end
   
 end
