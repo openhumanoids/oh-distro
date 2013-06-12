@@ -327,12 +327,12 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_1</name>
-      <pose>8.000000 11.000000 0.000000 0.000000 1.57 -1.300000</pose>
+      <pose>8.000000 11.000000 0.217475 0.000000 1.57 -1.300000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_2</name>
-      <pose>6.000000 11.000000 0.000000 0.000000 1.57 0.200000</pose>
+      <pose>6.000000 11.000000 0.217475 0.000000 1.57 0.200000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -342,7 +342,7 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_4</name>
-      <pose>7.443130 15.000000 0.000000 0.000000 1.57 0.800000</pose>
+      <pose>7.443130 15.000000 0.217475 0.000000 1.57 0.800000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -357,12 +357,12 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_7</name>
-      <pose>5.000000 8.000000 0.000000 0.000000 1.57 -2.00000</pose>
+      <pose>5.000000 8.000000 0.217475 0.000000 1.57 -2.00000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_8</name>
-      <pose>5.000000 14.000000 0.000000 1.57 0.000000 -0.500000</pose>
+      <pose>5.000000 14.500000 0.118530 1.57 0.000000 -0.500000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -407,7 +407,7 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_17</name>
-      <pose>5.700000 16.594800 0.000000 0.000000 1.57 -0.800000</pose>
+      <pose>5.700000 16.594800 0.217475 0.000000 1.57 -0.800000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -417,7 +417,7 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_19</name>
-      <pose>8.000000 7.586660 0.000000 0.000000 1.57 0.50000</pose>
+      <pose>8.000000 7.586660 0.217475 0.000000 1.57 0.50000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -427,7 +427,7 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_21</name>
-      <pose>9.000000 8.598240 0.000000 0.000000 1.57 2.300000</pose>
+      <pose>9.000000 8.598240 0.217475 0.000000 1.57 2.300000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -437,7 +437,7 @@
     <include>
       <uri>model://cinder_block</uri>
       <name>cinder_block_23</name>
-      <pose>5.000000 14.000000 0.000000 0.000000 1.57 -1.900000</pose>
+      <pose>5.000000 14.000000 0.217475 0.000000 1.57 -1.900000</pose>
     </include>
     <include>
       <uri>model://cinder_block</uri>
@@ -565,7 +565,7 @@
     <include>
       <uri>model://mit_robot</uri>
 <!--			starting gate-->
-<!--      <pose>-3 -38 0.97 0 0 0</pose>-->
+      <pose>-3 -38 1.1 0 0 0</pose>
 <!--			flat part off of the course-->
 <!--      <pose>-14 -38 0.96 0 0 1.57</pose>-->
 <!--			facing the mud-->
@@ -573,7 +573,7 @@
 <!--			middle of mud-->
 <!--      <pose>0 -19 0.35 0 0 1.57</pose>-->
 <!--			rough terrain-->
-      <pose>0 -11 0.95 0 0 1.57</pose>
+<!--      <pose>0 -11 0.95 0 0 1.57</pose> -->
 <!--			rubble pile-->
 <!--      <pose>5.5 6.75 0.95 0 0 1.57</pose>-->
     </include>
