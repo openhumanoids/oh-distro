@@ -11,6 +11,7 @@ function [support_times,supports,V,comtraj,zmptraj,qdtraj] = crawlingPlan(r,x0,b
 % @option num_steps will be rounded up to be a multiple of 4
 % @option step_speed in m/s
 % @option step_height in m
+% @option step_length in m
 % @option com_height in m
 % @option front_right_foot  xy vector from body to nominal front right foot 
 % @option ignore_terrain
@@ -99,17 +100,22 @@ end
       args = horzcat(args,{foot_spec(i).body_ind,foot_spec(i).contact_pt,p});
     end
 
-    q = inverseKin(r,q0,args{:},struct());
+    q = inverseKin(r,q0,args{:},options);
     
   end
 
   function display(q,com,fpos,swing_legs)
     if options.draw
       stance_legs = 1:4; stance_legs(swing_legs)=[];
-      sfigure(1); clf; hold on; axis([-2,2,-2,2]); axis equal;
+      kinsol = doKinematics(r,q);
+      com_real = getCOM(r,kinsol);
+      pelvis_origin = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
+      sfigure(1);hold on; axis([-2,2,-2,2]); axis equal; grid on;
       plot([fpos(1,stance_legs),fpos(1,stance_legs(1))],[fpos(2,stance_legs),fpos(2,stance_legs(1))],'go--',...
         fpos(1,swing_legs),fpos(2,swing_legs),'go',...
         com(1),com(2),'rx',...
+        com_real(1),com_real(2),'bo',...
+        pelvis_origin(1),pelvis_origin(2),'ms',...
         'MarkerSize',4);
       v.draw(0,[q;0*q]);
       AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated));
@@ -162,8 +168,8 @@ if (options.gait==0) % quasi-static
       fpos(3,swing_leg)=0;
       q = crawlIK(q,com,fpos);
       display(q,com,fpos,swing_leg);
+      step=step+1;
     end
-    step=step+1;
   end
 elseif (options.gait ==2) % trot
   zmp = com(1:2);
@@ -198,8 +204,8 @@ elseif (options.gait ==2) % trot
       com = [zmp;options.com_height]; % note just set com=zmp here to get started 
       q = crawlIK(q,com,fpos);  
       display(q,com,fpos,swing_legs);
+      step=step+1;
     end
-    step=step+1;
   end
 end
 
