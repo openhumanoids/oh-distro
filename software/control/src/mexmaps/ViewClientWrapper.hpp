@@ -20,6 +20,7 @@ namespace maps {
 namespace mexmaps {
 
 class MapHandle;
+class FillMethods;
 
 struct ViewClientWrapper {
   struct Listener;
@@ -29,6 +30,7 @@ struct ViewClientWrapper {
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<maps::BotWrapper> mBotWrapper;
   std::shared_ptr<Listener> mListener;
+  std::shared_ptr<FillMethods> mFillMethods;
   int mHeightMapViewId;
   std::shared_ptr<MapHandle> mHandle;
   int64_t mLastReceiptTime;

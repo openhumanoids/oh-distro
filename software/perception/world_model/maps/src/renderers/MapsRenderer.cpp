@@ -927,11 +927,11 @@ public:
         data->mColor = Eigen::Vector3f(0.1,1,0.1);
         break;
       case drc::data_request_t::STEREO_MAP_LHAND:
-        data->mLabel = "Stereo L.Hand";
+        data->mLabel = "Stereo Left Hand";
         data->mColor = Eigen::Vector3f(0.1,0.7,0.1);
         break;
       case drc::data_request_t::STEREO_MAP_RHAND:
-        data->mLabel = "Stereo R.Hand";
+        data->mLabel = "Stereo Right Hand";
         data->mColor = Eigen::Vector3f(0.1,0.4,0.1);
         break;
       case drc::data_request_t::DENSE_CLOUD_BOX:
@@ -941,6 +941,10 @@ public:
       case 1000:
         data->mLabel = "Heightmap Controller";
         data->mColor = Eigen::Vector3f(0.5,0,0);
+        break;
+      case 9999:
+        data->mLabel = "Debug";
+        data->mColor = Eigen::Vector3f(0,0,0);
         break;
       default:
         data->mLabel = static_cast<std::ostringstream*>

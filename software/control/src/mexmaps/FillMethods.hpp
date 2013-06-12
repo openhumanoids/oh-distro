@@ -6,6 +6,8 @@
 #include <set>
 #include <Eigen/Geometry>
 
+#include <lcmtypes/bot_core/pose_t.hpp>
+
 namespace maps {
   class BotWrapper;
   class DepthImageView;
@@ -13,6 +15,10 @@ namespace maps {
 
 namespace cv {
   class Mat;
+}
+
+namespace lcm {
+  class ReceiveBuffer;
 }
 
 namespace mexmaps {
@@ -57,7 +63,14 @@ public:
                      const int iMaxPasses=-1);
 
 protected:
+  void onGround(const lcm::ReceiveBuffer* iBuf,
+                const std::string& iChannel,
+                const bot_core::pose_t* iMessage);
+
+protected:
   std::shared_ptr<maps::BotWrapper> mBotWrapper;
+  Eigen::Vector4d mLatestGroundPlane;
+  bool mDebug;
 };
 
 }

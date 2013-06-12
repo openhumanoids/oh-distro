@@ -4,9 +4,14 @@
 
 #include <Eigen/Sparse>
 
+#include <lcm/lcm-cpp.hpp>
+
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImage.hpp>
 #include <maps/DepthImageView.hpp>
+#include <maps/LcmTranslator.hpp>
+
+#include <lcmtypes/drc/map_image_t.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <fstream>
@@ -18,7 +23,22 @@ using namespace mexmaps;
 FillMethods::
 FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
+  mDebug = true;
+  mLatestGroundPlane << 0,0,0,0;
+  mBotWrapper->getLcm()->subscribe("POSE_GROUND", &FillMethods::onGround, this);
 }
+
+void FillMethods::
+onGround(const lcm::ReceiveBuffer* iBuf,
+         const std::string& iChannel,
+         const bot_core::pose_t* iMessage) {
+  Eigen::Quaterniond q(iMessage->orientation[0], iMessage->orientation[1],
+                       iMessage->orientation[2], iMessage->orientation[3]);
+  Eigen::Vector3d pos(iMessage->pos[0], iMessage->pos[1], iMessage->pos[2]);
+  mLatestGroundPlane.head<3>() = q.matrix().col(2);
+  mLatestGroundPlane[3] = -mLatestGroundPlane.head<3>().dot(pos);
+}
+
 
 float FillMethods::
 computeMedian(const Eigen::VectorXf& iData) {
@@ -390,15 +410,29 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
       points.push_back(Eigen::Vector3f(j,i,z));
     }
   }
-  if (points.size() < 10) return;
 
-  // solve for plane
   Eigen::Vector3f sol;
-  if (iMethod == MethodRobust) {
-    sol = fitHorizontalPlaneRobust(points);
+  if (points.size() >= 10) {
+    // solve for plane
+    if (iMethod == MethodRobust) {
+      sol = fitHorizontalPlaneRobust(points);
+    }
+    else {
+      sol = fitHorizontalPlaneRansac(points);
+    }
   }
+
+  // try to get ground estimate from message
   else {
-    sol = fitHorizontalPlaneRansac(points);
+    if (mLatestGroundPlane.norm() < 1e-6) return;
+    Eigen::Vector4f plane = mLatestGroundPlane.cast<float>();
+    Eigen::Matrix4f planeTransform =
+      iView->getTransform().inverse().matrix().transpose();
+    plane = planeTransform*plane;
+    sol << plane[0],plane[1],plane[3];
+    sol /= plane[2];
+    fprintf(stderr,"Filled in using ground plane message %f %f %f\n",
+            sol[0], sol[1], sol[2]);
   }
 
   // fill in invalid values
@@ -413,9 +447,17 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
     }
   }
   img->setData(depths, type);
+  if (mDebug) {
+    drc::map_image_t msg;
+    maps::LcmTranslator::toLcm(*iView, msg);
+    msg.map_id = 1;
+    msg.view_id = 9999;
+    msg.blob.utime = msg.utime;
+    mBotWrapper->getLcm()->publish("MAP_DEBUG", &msg);
+  }
 }
 
-
+/*
 void FillMethods::
 fillContours(maps::DepthImageView::Ptr& iView) {
   // get view data
@@ -522,6 +564,7 @@ fillContours(maps::DepthImageView::Ptr& iView) {
   // fill in all values
   // TODO
 }
+*/
 
 void FillMethods::
 fillConnected(maps::DepthImageView::Ptr& iView) {

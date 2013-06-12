@@ -28,10 +28,9 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
       view->setNormalRadius(mWrapper->mNormalRadius);
       if (mWrapper->mShouldFill) {
         auto startTime = std::chrono::high_resolution_clock::now();
-        FillMethods fillMethods(mWrapper->mBotWrapper);
-        fillMethods.fillUnderRobot(view, FillMethods::MethodRansac);
-        fillMethods.fillIterative(view);
-        fillMethods.fillConnected(view);
+        mWrapper->mFillMethods->fillUnderRobot(view, FillMethods::MethodRansac);
+        mWrapper->mFillMethods->fillIterative(view);
+        mWrapper->mFillMethods->fillConnected(view);
         auto endTime = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime-startTime);
         //fprintf(stderr, " elapsed time: %d ms\n", duration.count());
@@ -48,6 +47,7 @@ ViewClientWrapper(const int iId, const std::shared_ptr<lcm::LCM>& iLcm) {
   mLcm = iLcm;
   mLastReceiptTime = -1;
   mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
+  mFillMethods.reset(new FillMethods(mBotWrapper));
   mNormalRadius = 0;
   mShouldFill = false;
   mViewClient.reset(new maps::ViewClient());
