@@ -525,9 +525,9 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->crawling = false;
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
-  self->step_speed = 1.5; // m/s
+  self->step_speed = 1.0; // m/s
   self->nom_step_width = 0.26; // m
-  self->nom_forward_step = 0.25; // m
+  self->nom_forward_step = 0.20; // m
   self->max_forward_step = 0.5; // m
   self->step_height = 0.1; // m
 
