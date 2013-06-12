@@ -15,6 +15,7 @@
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
 #include <affordance/AffordanceUpWrapper.h>
+#include <maps/BotWrapper.hpp>
 
 using namespace std;
 
@@ -24,6 +25,7 @@ struct Worker {
   bool mActive;
   drc::data_request_t mRequest;
   std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<maps::BotWrapper> mBotWrapper;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
   std::thread mThread;
 
@@ -147,6 +149,26 @@ struct Worker {
     const Eigen::Vector3f maxPt(5, 5, 0.3);
     drc::map_request_t msg =
       prepareHeightRequestMessage(minPt, maxPt, 0.05, 0.05);
+    Eigen::Isometry3f headPose, pelvisPose;
+    bool isProne = true;
+    if (mBotWrapper->getTransform("head","local",headPose) &&
+        mBotWrapper->getTransform("body","local",pelvisPose)) {
+      Eigen::Vector3f poseDiff =
+        (headPose.translation() - pelvisPose.translation());
+      float xDist = poseDiff.head<2>().norm();
+      float zDist = fabs(poseDiff[2]);
+      float angleToHorizontal = atan2(zDist,xDist);
+      const float kPi = acos(-1);
+      isProne = angleToHorizontal < 15*kPi/180;
+    }
+    if (isProne) {
+      msg.clip_planes[5][3] = 0;
+    }
+    else {
+      Eigen::Vector4f plane(0.1, 0, -1, -0.4);
+      plane /= plane.head<3>().norm();
+      for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
+    }
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.time_min = -8*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
@@ -298,13 +320,15 @@ struct Worker {
 };
 
 struct State {
-  std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm; 
+  std::shared_ptr<maps::BotWrapper> mBotWrapper;
   typedef std::unordered_map<int,Worker::Ptr> WorkerMap;
   WorkerMap mWorkers;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
 
   State() {
     mLcm.reset(new lcm::LCM());
+    mBotWrapper.reset(new maps::BotWrapper(mLcm));
     drc::Clock::instance()->setLcm(mLcm->getUnderlyingLCM());
     drc::Clock::instance()->setVerbose(false);
 
@@ -327,6 +351,7 @@ struct State {
         Worker::Ptr worker(new Worker());
         worker->mActive = false;
         worker->mLcm = mLcm;
+        worker->mBotWrapper = mBotWrapper;
         worker->mAffordanceWrapper = mAffordanceWrapper;
         mWorkers[req.type] = worker;
         item = mWorkers.find(req.type);
