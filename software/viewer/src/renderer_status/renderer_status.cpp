@@ -135,6 +135,8 @@ typedef struct
     
     drc_score_t *score;
     
+    float estimated_biases[3];
+    
 } RendererSystemStatus;
 
 enum {
@@ -186,6 +188,14 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
     cout << ss.str() <<"\n";*/
 }
 
+
+static void
+on_estimated_bias(const lcm_recv_buf_t * buf, const char *channel, const drc_estimated_biases_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    self->estimated_biases[0] = msg->x;
+    self->estimated_biases[1] = msg->y;
+    self->estimated_biases[2] = msg->z;
+}
 
 static void
 on_pose_body(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pose_t *msg, void *user_data){
@@ -478,7 +488,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
-    sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
+    sprintf(line6, "bias %.3f %.3f %.3f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
     if ((self->left_contact==1)&& (self->right_contact==1) ){
       sprintf(line7, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
@@ -810,7 +820,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     drc_foot_contact_estimate_t_subscribe(self->lcm,"FOOT_CONTACT_ESTIMATE",on_foot_contact,self);
     drc_score_t_subscribe(self->lcm,"VRC_SCORE",on_score,self);
     drc_controller_status_t_subscribe(self->lcm,"CONTROLLER_STATUS",on_controller_status,self);
-
+    drc_estimated_biases_t_subscribe(self->lcm,"ESTIMATED_ACCEL_BIASES",on_estimated_bias,self);
+    
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);
 
     self->driving_status = NULL; 
