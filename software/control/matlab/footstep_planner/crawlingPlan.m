@@ -83,7 +83,7 @@ if (options.gait==0) %
       startpos = fpos(:,leg);
       if (step<=4 || options.num_steps-step<=4)
         support_times(step+1) = support_times(step)+step_time/2;
-        if (step<=4)
+        if (0) %step<=4)
           % move to comfortable fpos described by foot_right_foot
           fpos(1:2,leg) = center0 + options.comfortable_footpos(:,leg) + [options.step_length/2;0];
         else

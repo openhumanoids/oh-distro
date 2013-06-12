@@ -2,8 +2,8 @@ function runCrawlingPlanner()
   options.floating = true;
   options.dt = 0.001;
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-  d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crawling.mat'));
-  
+  d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/suppine_crawl.mat'));
+
   body_spec.body_ind = findLinkInd(r,'pelvis');
   body_spec.pt = zeros(3,1);
   
@@ -21,5 +21,5 @@ function runCrawlingPlanner()
   options.step_length = -.2;
   options.gait = 0;
   
-  [support_times,supports,V,comtraj,zmptraj] = crawlingPlan(r,d.x_nom,body_spec,foot_spec,options)
+  [support_times,supports,V,comtraj,zmptraj] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
 end
