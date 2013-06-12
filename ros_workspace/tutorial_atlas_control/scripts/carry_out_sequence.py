@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # Filename: carry_out_sequence.py
+
 import rospy, yaml, sys
 import csv_parse
+import time
 
 from atlas_msgs.msg import AtlasCommand
 from sensor_msgs.msg import JointState
@@ -13,8 +15,10 @@ def jointStatesCallback(msg):
   global currentJointState
   currentJointState = msg
 
+def timestamp_now (): return int (time.time () * 1000000)
 
-def carry_out_sequence(filename, which_steps):
+
+def carry_out_sequence(filename, which_steps, real_time_percent):
   # Setup subscriber to atlas states
   rospy.Subscriber("/atlas/joint_states", JointState, jointStatesCallback)
 
@@ -71,6 +75,13 @@ def carry_out_sequence(filename, which_steps):
   command.i_effort_min = tuple(i_effort_min)
   pub2 = rospy.Publisher('/atlas/atlas_command', AtlasCommand)
 
+# 0.1 it sleeps by 100,000
+
+# 0.1 === > 
+
+# sleeps 0.01 simulated time
+# if operating at 0.1
+# sleeps 0.1 wall time =  0.01 / 0.1
 
   # for each trajectory
   print traj_steps
@@ -94,8 +105,20 @@ def carry_out_sequence(filename, which_steps):
       interpCommand = (1-ratio)*initialPosition + ratio * commandPosition
       command.position = [ float(x) for x in interpCommand ]
       pub2.publish(command)
-      rospy.sleep(dt / float(n))
+      
+      #ros_sleep_amount =  dt / float(n)
+      #ros_tic =timestamp_now ()
+      #rospy.sleep( ros_sleep_amount )
+      #ros_delta = timestamp_now () - ros_tic
+      #print "ros_delta %f" % (ros_delta)
+      #print "ros_sleep_amount %f" % (ros_sleep_amount)
 
+      lcm_sleep_amount = dtPublish * 100/ real_time_percent 
+      lcm_tic =timestamp_now ()
+      time.sleep(lcm_sleep_amount)
+      lcm_delta = timestamp_now () - lcm_tic
+      #print "lcm_delta %f [%d]" % (lcm_delta, real_time_percent)
+      #print "lcm_sleep_amount %f" % (lcm_sleep_amount)
 
 
 
