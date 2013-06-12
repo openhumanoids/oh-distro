@@ -55,8 +55,10 @@
     </visual>
     <xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="heel_mid" xyz="-0.082 0 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="toe_mid" xyz="0.178 0 -0.081119" visualize="1"/>
 <!--    <xacro:collision_point group="inner" xyz="-0.08 0.055 -0.081119" visualize="1"/>-->
 <!--    <xacro:collision_point group="inner" xyz="-0.08 -0.055 -0.081119" visualize="1"/>-->
 <!--    <xacro:collision_point group="inner" xyz="0.06 0.055 -0.081119" visualize="1"/>-->
@@ -274,8 +276,10 @@
     </visual>
     <xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="heel_mid" xyz="-0.082 0 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
     <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <xacro:collision_point group="toe_mid" xyz="0.178 0 -0.081119" visualize="1"/>
 <!--    <xacro:collision_point group="inner" xyz="-0.08 0.055 -0.081119" visualize="1"/>-->
 <!--    <xacro:collision_point group="inner" xyz="-0.08 -0.055 -0.081119" visualize="1"/>-->
 <!--    <xacro:collision_point group="inner" xyz="0.06 0.055 -0.081119" visualize="1"/>-->

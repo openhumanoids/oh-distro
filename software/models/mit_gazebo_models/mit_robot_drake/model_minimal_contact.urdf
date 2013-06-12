@@ -66,6 +66,18 @@
         <sphere radius="0.01"/>
       </geometry>
     </visual>
+    <collision group="heel_mid">
+      <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="toe">
       <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
       <geometry>
@@ -86,6 +98,18 @@
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe_mid">
+      <origin rpy="0 0 0" xyz="0.178 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 0 -0.081119"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
@@ -494,6 +518,18 @@
         <sphere radius="0.01"/>
       </geometry>
     </visual>
+    <collision group="heel_mid">
+      <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="toe">
       <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
       <geometry>
@@ -514,6 +550,18 @@
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe_mid">
+      <origin rpy="0 0 0" xyz="0.178 0 -0.081119"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.178 0 -0.081119"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
