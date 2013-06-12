@@ -24,6 +24,10 @@
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
 #define PARAM_MATE     "Mate"
+#define PARAM_SELECT_EE_TYPE "EE :"
+#define PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP "Mate Axis (FemaleEnd):"
+#define PARAM_ENGAGE_EE_TELEOP "Engage EE Teleop"
+
 #define PARAM_PARTIAL_GRASP_UNGRASP   "G"
 // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
 #define PARAM_MOVE_EE "Move"
@@ -873,6 +877,77 @@ namespace renderer_affordances_gui_utils
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal(self,channel,T_world_body_desired,true);  
     }
+    else if(!strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP))
+    {
+      self->active_mate_axis =  bot_gtk_param_widget_get_enum(pw,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP);
+    } 
+    else if(!strcmp(name,PARAM_SELECT_EE_TYPE))
+    {
+      self->active_ee = bot_gtk_param_widget_get_enum(pw,PARAM_SELECT_EE_TYPE);
+    }
+    else if(!strcmp(name,PARAM_ENGAGE_EE_TELEOP))
+    {
+      std::string ee_name;
+      if(self->active_ee==drc::ee_teleop_transform_t::LEFT_HAND)
+         ee_name = "left_palm";
+      else if(self->active_ee==drc::ee_teleop_transform_t::RIGHT_HAND)
+         ee_name = "right_palm";  
+              
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+        std::string hand_name = std::string(hand_it->second.object_name);
+        if ((hand_name == (it->first))&&(hand_it->second.is_melded))
+        {
+
+          
+          int ee_type= hand_it->second.hand_type;   
+          if(ee_type==0)
+            self->active_ee=drc::ee_teleop_transform_t::LEFT_HAND;
+          else if(ee_type==1)
+            self->active_ee=drc::ee_teleop_transform_t::RIGHT_HAND;
+          else{
+            cerr<< "ERROR: unknown handtype" << ee_type 
+            << ". To engage EE teleop the object must have a valid melded sticky hand\n";  
+             return;
+            }
+            KDL::Frame T_world_mate_female_end;
+           
+            double r,p,y;
+            string link_name;
+            link_name= it->second._gl_object->_mate_start_link;
+            it->second._gl_object->get_link_frame(link_name,T_world_mate_female_end);        
+             T_world_mate_female_end.M.GetRPY(r,p,y);
+            cout << "link_name" << link_name << " " << r << " "<< p << " "<<y << endl;
+                                       
+            KDL::Vector worldframe_mateaxis,ux,uy,uz;
+            ux[0]=1;ux[1]=0;ux[2]=0;
+            uy[0]=0;uy[1]=1;uy[2]=0;
+            uz[0]=0;uz[1]=0;uz[2]=1;
+ 
+            if(self->active_mate_axis==0)
+               worldframe_mateaxis = T_world_mate_female_end*ux;
+            else if(self->active_mate_axis==1)
+               worldframe_mateaxis = T_world_mate_female_end*uy;
+            else if(self->active_mate_axis==2)
+               worldframe_mateaxis = T_world_mate_female_end*uz;
+            worldframe_mateaxis.Normalize();
+            KDL::Frame T_world_palm,T_world_link,T_link_palm;
+            link_name= it->second._gl_object->_mate_end_link;//hand_it->second.geometry_name;
+            it->second._gl_object->get_link_frame(link_name,T_world_link);
+            //KDL::Frame T_world_object = it->second._gl_object->_T_world_body; // 
+            self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_palm);
+            T_link_palm = T_world_link.Inverse()*T_world_palm;   
+            string channel = "PALM_TELEOP_TRANSFORM";
+            publish_ee_transform_to_engage_ee_teleop(channel, self->active_ee,
+            worldframe_mateaxis,T_link_palm, self); 
+            return;  
+          
+        } 
+        hand_it++;
+      }// end while
+    }
     else if(!strcmp(name,PARAM_MATE)){
         // get desired state from popup sliders
         KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
@@ -946,7 +1021,7 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS))
+    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -1038,12 +1113,11 @@ namespace renderer_affordances_gui_utils
       
     }
 
-
+      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
    //has_seeds = true;
    if((has_seeds)&&(!self->selection_hold_on))  
    {
-      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
       bool val,val2;
       val = false;
       val2 = false;
@@ -1072,7 +1146,31 @@ namespace renderer_affordances_gui_utils
       //if(it->second._gl_object->is_future_display_active())
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
    }
+    
     bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
+    
+    // If affordance is mateable SHOW ee teleop settings.
+    
+    //To engage EE teleop the object must have a valid melded sticky hand, and it must be melded to robot state as well
+    if((it->second._gl_object->is_mateable())&&(it->second.is_melded) ) {
+      //bool has_melded_seeds = object_has_melded_sticky_hands(it->first);
+        bot_gtk_param_widget_add_separator (pw,"EE Teleop Settings");
+
+          /*bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, 
+                               BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
+                              "Left hand", drc::ee_teleop_transform_t::LEFT_HAND,
+                              "Right Hand", drc::ee_teleop_transform_t::RIGHT_HAND, NULL);*/
+          bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP,
+                               BOT_GTK_PARAM_WIDGET_MENU,self->active_mate_axis,
+                               "MATE::X",0,
+                               "MATE::Y",1,
+                               "MATE::Z",2, NULL);
+          bot_gtk_param_widget_add_buttons(pw,PARAM_ENGAGE_EE_TELEOP, NULL);
+     
+
+    }
+    
+    
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
 

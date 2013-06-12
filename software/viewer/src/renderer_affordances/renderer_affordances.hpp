@@ -268,6 +268,9 @@ struct RendererAffordances {
     
     free_running_sticky_hand_cnt = 0;
     free_running_sticky_foot_cnt = 0;
+    
+    active_mate_axis = 2; //MATE_X=0,MATE_Y=1,MATE_Z=2;
+    active_ee= drc::ee_teleop_transform_t::RIGHT_HAND; //RIGHT by default
   }
   
   ~RendererAffordances(){   
@@ -324,6 +327,8 @@ struct RendererAffordances {
   
   int lhand_urdf_id;
   int rhand_urdf_id;
+  int active_mate_axis;
+  int active_ee;
   
   // hand models
   int num_urdfs;
@@ -891,8 +896,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
     return false;
     
   }
-  
 
+  
 //===============================================================================
 // MISC. UTILS
 

@@ -42,7 +42,8 @@ namespace renderer_robot_state_gui_utils
     msg.rpy_delta.y=dir[1]*self->active_angres*(M_PI/180);
     msg.rpy_delta.z=dir[2]*self->active_angres*(M_PI/180);
    }
-    self->lcm->publish("COMMITTED_EE_ADJUSTMENT", &msg);
+    //self->lcm->publish("COMMITTED_EE_ADJUSTMENT", &msg);
+    self->lcm->publish("CANDIDATE_EE_ADJUSTMENT", &msg);
   }  
   static gboolean on_popup_close (GtkButton* button, GtkWidget* pWindow)
   {
@@ -58,15 +59,15 @@ namespace renderer_robot_state_gui_utils
     std::string id(gtk_tool_button_get_stock_id (button));
     if(id=="gtk-go-up") {
       std::stringstream oss;
-      oss << "+y:" << self->active_res << " m";
+      oss << "+z:" << self->active_res << " m";
       gtk_entry_set_text(GTK_ENTRY(self->teleop_error_entry),(oss.str()).c_str()); 
-      dir << 0,1,0;
+      dir << 0,0,1;
     }
     else if (id=="gtk-go-down") { 
       std::stringstream oss;
-      oss << "-y:" << self->active_res << " m";
+      oss << "-z:" << self->active_res << " m";
       gtk_entry_set_text(GTK_ENTRY(self->teleop_error_entry),(oss.str()).c_str()); 
-      dir << 0,-1,0;
+      dir << 0,0,-1;
      }
     else if (id=="gtk-go-forward") {
       std::stringstream oss;
@@ -86,7 +87,7 @@ namespace renderer_robot_state_gui_utils
   }
   
   
-  static void on_z_teleop_button_clicked(GtkToolButton* button, RobotStateRendererStruc *self)
+  static void on_y_teleop_button_clicked(GtkToolButton* button, RobotStateRendererStruc *self)
   {
    
     Eigen::Vector3f dir;
@@ -94,15 +95,15 @@ namespace renderer_robot_state_gui_utils
     std::string id(gtk_tool_button_get_stock_id (button));
     if(id=="gtk-go-up") {
       std::stringstream oss;
-      oss << "+z:" << self->active_res << " m";
+      oss << "+y:" << self->active_res << " m";
       gtk_entry_set_text(GTK_ENTRY(self->teleop_error_entry),(oss.str()).c_str()); 
-      dir << 0,0,1;
+      dir << 0,1,0;
     }
     else if (id=="gtk-go-down") { 
       std::stringstream oss;
-      oss << "-z:" << self->active_res << " m";
+      oss << "-y:" << self->active_res << " m";
       gtk_entry_set_text(GTK_ENTRY(self->teleop_error_entry),(oss.str()).c_str()); 
-      dir << 0,0,-1;
+      dir << 0,-1,0;
      }
       
      publish_teleop_cmd(dir,self,false);  
@@ -150,7 +151,7 @@ namespace renderer_robot_state_gui_utils
      publish_teleop_cmd(dir,self,true);  
   }  
   
-  static void on_y_teleop_button_clicked(GtkToolButton* button, RobotStateRendererStruc *self)
+  static void on_yaw_teleop_button_clicked(GtkToolButton* button, RobotStateRendererStruc *self)
   {
    
     Eigen::Vector3f dir;
@@ -227,11 +228,11 @@ namespace renderer_robot_state_gui_utils
         gtk_window_set_title(GTK_WINDOW(window), "Teleop EE");
         gtk_container_set_border_width(GTK_CONTAINER(window), 5);
         pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-        self->active_ee = 1;
+        self->active_ee = drc::ee_cartesian_adjust_t::RIGHT_HAND;
         self->active_res =0.002;
         self->active_angres=1;
         bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
-                                       "Left hand", 0, "Right Hand", 1, NULL);
+                                       "Left hand", drc::ee_cartesian_adjust_t::LEFT_HAND, "Right Hand", drc::ee_cartesian_adjust_t::RIGHT_HAND, NULL);
         bot_gtk_param_widget_add_double(pw, PARAM_SELECT_RES, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.001, 0.05, .001, self->active_res);                                
         bot_gtk_param_widget_add_double(pw, PARAM_SELECT_ANG_RES, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 10, 1, self->active_angres);                                          
         close_button = gtk_button_new_with_label ("Close");
@@ -241,10 +242,10 @@ namespace renderer_robot_state_gui_utils
 
        px_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);//gtk_button_new_with_label ("+x");
        mx_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);//gtk_button_new_with_label ("-x");
-       py_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+y");
-       my_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);//gtk_button_new_with_label ("-y");
-       pz_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+z");
-       mz_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);//gtk_button_new_with_label ("-z");
+       py_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+z");
+       my_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);//gtk_button_new_with_label ("-z");
+       pz_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+y");
+       mz_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);//gtk_button_new_with_label ("-y");
        pr_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+r");
        mr_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);//gtk_button_new_with_label ("-r");
        pp_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);//gtk_button_new_with_label ("+r");
@@ -263,11 +264,11 @@ namespace renderer_robot_state_gui_utils
    
       
       GtkWidget *vbox;
-      GtkWidget * xy_label = gtk_label_new ("XY");
+      GtkWidget * xz_label = gtk_label_new ("XZ");
       vbox = gtk_vbox_new(TRUE, 3);
-      gtk_box_pack_start (GTK_BOX (vbox), py_button, FALSE, FALSE, 0);
-      gtk_box_pack_start (GTK_BOX (vbox), xy_label, FALSE, FALSE, 0);
-      gtk_box_pack_start (GTK_BOX (vbox), my_button, FALSE, FALSE, 0);
+      gtk_box_pack_start (GTK_BOX (vbox), pz_button, FALSE, FALSE, 0);
+      gtk_box_pack_start (GTK_BOX (vbox), xz_label, FALSE, FALSE, 0);
+      gtk_box_pack_start (GTK_BOX (vbox), mz_button, FALSE, FALSE, 0);
       
       GtkWidget *hbox;
       hbox = gtk_hbox_new(FALSE, 0);
@@ -276,11 +277,11 @@ namespace renderer_robot_state_gui_utils
       gtk_box_pack_start (GTK_BOX (hbox), px_button, FALSE, FALSE, 0);
       
       GtkWidget *vbox2;
-      GtkWidget * null_label2 = gtk_label_new ("Z");
+      GtkWidget * null_label2 = gtk_label_new ("Y");
       vbox2 = gtk_vbox_new(TRUE, 3);
-      gtk_box_pack_start (GTK_BOX (vbox2), pz_button, FALSE, FALSE, 0);
+      gtk_box_pack_start (GTK_BOX (vbox2), py_button, FALSE, FALSE, 0);
       gtk_box_pack_start (GTK_BOX (vbox2), null_label2, FALSE, FALSE, 0);
-      gtk_box_pack_start (GTK_BOX (vbox2), mz_button, FALSE, FALSE, 0);
+      gtk_box_pack_start (GTK_BOX (vbox2), my_button, FALSE, FALSE, 0);
       
       GtkWidget *vbox3;
       GtkWidget * null_label3 = gtk_label_new ("R");
@@ -325,16 +326,16 @@ namespace renderer_robot_state_gui_utils
                          G_CALLBACK(on_teleop_ee_popup_close), self); 
       g_signal_connect (G_OBJECT (mx_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);
       g_signal_connect (G_OBJECT (px_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);
-      g_signal_connect (G_OBJECT (my_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);
-      g_signal_connect (G_OBJECT (py_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);      
-      g_signal_connect (G_OBJECT (pz_button),"clicked",G_CALLBACK (on_z_teleop_button_clicked),self);                              
-      g_signal_connect (G_OBJECT (mz_button),"clicked",G_CALLBACK (on_z_teleop_button_clicked),self);    
+      g_signal_connect (G_OBJECT (mz_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);
+      g_signal_connect (G_OBJECT (pz_button),"clicked",G_CALLBACK (on_teleop_button_clicked),self);      
+      g_signal_connect (G_OBJECT (py_button),"clicked",G_CALLBACK (on_y_teleop_button_clicked),self);                              
+      g_signal_connect (G_OBJECT (my_button),"clicked",G_CALLBACK (on_y_teleop_button_clicked),self);    
       g_signal_connect (G_OBJECT (pr_button),"clicked",G_CALLBACK (on_r_teleop_button_clicked),self);                              
       g_signal_connect (G_OBJECT (mr_button),"clicked",G_CALLBACK (on_r_teleop_button_clicked),self); 
       g_signal_connect (G_OBJECT (pp_button),"clicked",G_CALLBACK (on_p_teleop_button_clicked),self);                              
       g_signal_connect (G_OBJECT (mp_button),"clicked",G_CALLBACK (on_p_teleop_button_clicked),self); 
-      g_signal_connect (G_OBJECT (pyaw_button),"clicked",G_CALLBACK (on_y_teleop_button_clicked),self);                              
-      g_signal_connect (G_OBJECT (myaw_button),"clicked",G_CALLBACK (on_y_teleop_button_clicked),self);       
+      g_signal_connect (G_OBJECT (pyaw_button),"clicked",G_CALLBACK (on_yaw_teleop_button_clicked),self);                              
+      g_signal_connect (G_OBJECT (myaw_button),"clicked",G_CALLBACK (on_yaw_teleop_button_clicked),self);       
       
       vbox_outer = gtk_vbox_new (FALSE, 3);
       gtk_box_pack_start (GTK_BOX (vbox_outer), GTK_WIDGET(pw), FALSE, FALSE, 5);

@@ -1102,17 +1102,38 @@ namespace renderer_affordances_lcm_utils
       publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
   }  
 //==================================
-  static void publish_mate_cmd (void *user, string channel)
+//  static void publish_mate_cmd (void *user, string channel)
+//  {
+//      RendererAffordances *self = (RendererAffordances*) user;
+//        msg..utime = self->last_state_msg_timestamp;
+//        msg.robot_name = self->robot_name;*/
+
+//        //self->lcm->publish(channel, &msg.);
+
+//  } 
+//  
+//===============================================
+  static void publish_ee_transform_to_engage_ee_teleop(const string& channel,int ee_selection,KDL::Vector worldframe_mateaxis,KDL::Frame &T_aff_ee,void* user)
   {
-      RendererAffordances *self = (RendererAffordances*) user;
-
-        /*drc::hongkai_is_awesome_t msg.;
-        msg..utime = self->last_state_msg_timestamp;
-        msg.robot_name = self->robot_name;*/
-
-        //self->lcm->publish(channel, &msg.);
-
-  } 
+     RendererAffordances *self = (RendererAffordances*) user;
+     drc::ee_teleop_transform_t msg;
+     drc::position_3d_t hand2aff_offset;
+     double x,y,z,w;
+     T_aff_ee.M.GetQuaternion(x,y,z,w);
+     hand2aff_offset.translation.x = T_aff_ee.p[0];
+     hand2aff_offset.translation.y = T_aff_ee.p[1];
+     hand2aff_offset.translation.z = T_aff_ee.p[2];
+     hand2aff_offset.rotation.x = x;
+     hand2aff_offset.rotation.y = y;
+     hand2aff_offset.rotation.z = z;
+     hand2aff_offset.rotation.w = w; 
+     msg.hand2aff_offset = hand2aff_offset;
+     msg.mate_axis.x=worldframe_mateaxis[0]; 
+     msg.mate_axis.y=worldframe_mateaxis[1];
+     msg.mate_axis.z=worldframe_mateaxis[2];
+     msg.ee_type=ee_selection;   
+     self->lcm->publish(channel, &msg); 
+  }  
       
 
 }// end namespace
