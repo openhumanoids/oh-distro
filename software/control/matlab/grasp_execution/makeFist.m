@@ -7,7 +7,7 @@ function makeFist
 lc = lcm.lcm.LCM.getSingleton();
 
 Kp = repmat([80 80 80],1,4);
-Kd = repmat([10 10 10],1,4);
+Kd = repmat([.1 .1 .1],1,4);
 
 t = 0;
 q = [0 pi/2 pi/2   0 pi/2 pi/2  0 pi/2 pi/2  0 1.3 0];

@@ -291,10 +291,10 @@ elseif strcmpi(mode,'bracing')
   Kd.back_ubx = 1.0; 
   
 elseif strcmpi(mode,'crawling')
-  Kp.l_arm_usy = 2000.0; 
-  Kp.l_arm_shx = 2000.0; 
-  Kp.l_arm_ely = 2000.0; 
-  Kp.l_arm_elx = 2000.0; 
+  Kp.l_arm_usy = 4000.0; 
+  Kp.l_arm_shx = 4000.0; 
+  Kp.l_arm_ely = 4000.0; 
+  Kp.l_arm_elx = 4000.0; 
   Kp.l_arm_uwy = 1000.0; 
   Kp.l_arm_mwx = 1000.0; 
   Kp.l_leg_uhz = 1000.0; 

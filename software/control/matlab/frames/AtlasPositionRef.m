@@ -11,18 +11,18 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       elseif (send_mode==4) dim=3*getNumInputs(r);
       end
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',dim,'x');
-      obj = obj@Singleton(['AtlasPositionRef_sendmode=',num2str(send_mode)]);
-      if isempty(obj.lcmcoder)
-        input_names = r.getInputFrame().coordinates;
-        input_names = regexprep(input_names,'_motor',''); % remove motor suffix
-      
         if nargin<2
           [Kp,Kd] = getPDGains(r,'gazebo');
         else
           typecheck(gains_id,'char');
           [Kp,Kd] = getPDGains(r,gains_id);
         end
+      
+      obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',dim,'x');
+      obj = obj@Singleton(['AtlasPositionRef_sendmode=',num2str(send_mode)]);
+      if isempty(obj.lcmcoder)
+        input_names = r.getInputFrame().coordinates;
+        input_names = regexprep(input_names,'_motor',''); % remove motor suffix
       
         coder = AtlasCommandCoder(input_names,diag(Kp),diag(Kd),send_mode);
         obj = setLCMCoder(obj,JLCMCoder(coder));
@@ -43,14 +43,14 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       end
     end
     
-    function publish(obj,t,x,channel)
-      % short-cut java publish with a faster mex version
-      AtlasCommandPublisher(obj.mex_ptr,channel,t,x);
-    end
-    
-    function delete(obj)
-      AtlasCommandPublisher(obj.mex_ptr);
-    end
+%    function publish(obj,t,x,channel)
+%      % short-cut java publish with a faster mex version
+%      AtlasCommandPublisher(obj.mex_ptr,channel,t,x);
+%    end
+%    
+%    function delete(obj)
+%      AtlasCommandPublisher(obj.mex_ptr);
+%    end
   end
   
   properties
