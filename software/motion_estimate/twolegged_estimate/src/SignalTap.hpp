@@ -224,5 +224,11 @@ public:
   VecType getValue(const VecType& iSample);
 };
 
+/*
+class CumulativeAverage {
+
+
+}
+*/
 
 #endif /*SIGNALTAP_HPP_*/

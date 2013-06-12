@@ -31,13 +31,14 @@ spa=4;
 spb=1;
 r2d = 180/pi;
 
+
 figure(1); clf
 
 
 subplot(spa,spb,1)
 
 plot(t,tpos), hold on, grid on, xlabel('Sim time [s]'), title('positions'),
-plot(t,epos+tpos(1,3),'--')
+plot(t,epos,'--')
 plot(t,left_con,':m','linewidth',2)
 plot(t,right_con,':c','linewidth',2)
 legend('true x','true y','true z','est x','est y','est z','left c','righ c')
@@ -53,10 +54,6 @@ plot(t,eE*r2d,'--')
 subplot(spa,spb,4)
 plot(t,trate*r2d), hold on, grid on,title('rates [deg/s]')
 plot(t,erate*r2d,'--')
-
-
-
-
 
 
 % knees and ankles
@@ -314,7 +311,6 @@ title('delta vel contribution to acc bias')
 % figure(7)
 
 
-if (true)
     figure(9)
 
     subplot(spa,spb,1)
@@ -331,7 +327,7 @@ if (true)
 
     
 %     plot(t,(trate-erate)*r2d), grid on,title('rate errors [deg/s]')
-
+if (true)
     [bpx,bpy] = ginput();
     
     subplot(spa,spb,4)
@@ -390,33 +386,6 @@ for k=1:length(figs)
 
     end
 end
-
-%% Plot TRUE/LEG/INERT
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

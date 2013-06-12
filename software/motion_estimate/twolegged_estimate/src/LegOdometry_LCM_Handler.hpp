@@ -69,6 +69,7 @@
 #define PI						   3.14159265358979323
 
 #define LOG_LEG_TRANSFORMS
+#define DO_FOOT_SLIP_FEEDBACK
 
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
@@ -148,6 +149,7 @@ private:
 	volatile bool filter_joints_vector_size_set;
 	bool zvu_flag;
 	bool imu_msg_received;
+	bool persistlegchangeflag;
 	int poseplotcounter;
 	int collectionindex;
 	int firstpass;//was bool
@@ -162,8 +164,8 @@ private:
 	NumericalDiff local_to_head_rate_diff;
 	
 #ifdef DO_FOOT_SLIP_FEEDBACK
-	NumericalDiff SFootPrintOut;
-	TrapezoidalInt FootVelCompensation;
+	//NumericalDiff SFootPrintOut;
+	//TrapezoidalInt FootVelCompensation;
 #endif
 
 	NumericalDiff stageA_test_vel;
@@ -215,9 +217,14 @@ private:
 	HeavyFiltering::HeavyLowPassFilter lefthandforcesfilters[6];
 	HeavyFiltering::HeavyLowPassFilter righthandforcesfilters[6];
 
+	Eigen::Isometry3d footslidetriad;
+	Eigen::Isometry3d compensated_foot_states;
+	Eigen::Vector3d slide_err_at_step;
 
 	double pulse_time_;
 	int pulse_counter;
+
+	int checkforzero;
 
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };

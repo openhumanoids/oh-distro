@@ -576,7 +576,7 @@ Eigen::VectorXd TrapezoidalInt::integrate(const unsigned long long &u_ts, const 
 	// TODO -- This function should use the u_time stamp from zero. Then it can also be used as an integral time counter and makes best possible use of the available time variable dynamic range
 
 	if (u_ts < u_stime) {
-		std::cout << "TrapezoidalInt::integrate is jumping back in time. This is not supposed to happen -- behavior will be unpredictable.\n";
+		std::cout << "TrapezoidalInt::integrate is jumping back in time. This was not expected -- behavior will be unpredictable.\n";
 		u_stime = u_ts;
 	}
 	if (first_pass) {

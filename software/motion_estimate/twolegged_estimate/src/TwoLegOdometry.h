@@ -64,6 +64,8 @@ class TwoLegOdometry {
 		
 		double temp_max_testing[3];
 		
+		Eigen::Vector3d accrued_sliding;
+
 		
 
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
@@ -94,7 +96,6 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d getPelvisFromStep();
 		Eigen::Isometry3d getSecondaryFootToPelvis();
-		
 
 		// This has been moved to QuaternionLib
 		//Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
@@ -162,6 +163,8 @@ class TwoLegOdometry {
 		void calculateUpdateVelocityStates(int64_t current_time, const Eigen::Isometry3d &current_pelvis, const bool &usedirectdiff, const bool &applyfiltering);
 		void overwritePelvisVelocity(const Eigen::Vector3d &set_velocity);
 
+		void AccruedPelvisPosition(const Eigen::Vector3d &delta);
+		void setAccruedOffset(const Eigen::Vector3d &offset);
 
 		// TODO -- remove this, only for testing
 		Eigen::Vector3d truth_E;

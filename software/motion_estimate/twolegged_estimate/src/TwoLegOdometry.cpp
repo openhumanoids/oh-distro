@@ -76,6 +76,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	
 	for (int i=0;i<3;i++) {temp_max_testing[i] = 0.;}
 	
+	accrued_sliding.setZero();
 }
 
 TwoLegOdometry::~TwoLegOdometry() {
@@ -334,6 +335,11 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
 	  //std::cout << "THIS HAPPENED\n";
 	  //newstep.footprintlocation.setIdentity();
 
+	  Eigen::Vector3d alias;
+	  alias = newstep.footprintlocation.translation() + accrued_sliding;
+	  newstep.footprintlocation.translation() = alias;
+	  accrued_sliding.setZero();
+
 	  footsteps.newFootstep(newstep);
 	  return true;
   }
@@ -493,17 +499,19 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 	
 	switch (foot_id) {
 	case LEFTFOOT:
-		/*std::cout << "LEFT Comp: " << from.translation().transpose() << " + " << left_to_pelvis.translation().transpose() << " + " << pelvis_to_right.translation().transpose() << std::endl
-		<< "from E: " << C2e(from.linear()).transpose() << std::endl
-		<< "l2p  E: " << C2e(left_to_pelvis.linear()).transpose() <<std::endl
-		<< "p2r  E: " << C2e(pelvis_to_right.linear()).transpose() << std::endl;*/
 		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
+
+		//returnval = getPelvisFromStep() * pelvis_to_right;
+
 		break;
 	case RIGHTFOOT:
-		//std::cout << "RIGHT Comp: " << from.translation().transpose() << " + " << right_to_pelvis.translation().transpose() << " + " << pelvis_to_left.translation().transpose() << std::endl;
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
+
+		//returnval = getPelvisFromStep() * pelvis_to_left;
+
 		break;
 	default:
+
 		std::cerr << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::AccumulateFootPosition()" << std::endl;
 		break;
 	}
@@ -665,4 +673,18 @@ void TwoLegOdometry::overwritePelvisVelocity(const Eigen::Vector3d &set_velocity
 
 void TwoLegOdometry::setTruthE(const Eigen::Vector3d &tE) {
 	truth_E = tE;
+}
+
+void TwoLegOdometry::AccruedPelvisPosition(const Eigen::Vector3d &delta) {
+
+	//std::cout << "TwoLegOdometry::AcruedPelvisPosition -- adjusting the pelvis translation state by: " << delta.transpose() << std::endl;
+
+	Eigen::Vector3d alias,alias1;
+
+	alias = local_to_pelvis.translation() + delta;
+	local_to_pelvis.translation() = alias;
+}
+
+void TwoLegOdometry::setAccruedOffset(const Eigen::Vector3d &offset) {
+	accrued_sliding = offset;
 }

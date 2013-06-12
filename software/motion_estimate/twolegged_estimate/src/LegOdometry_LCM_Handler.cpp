@@ -40,6 +40,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	body_to_head.setIdentity();
 
+	slide_err_at_step.setZero();
+
 	first_get_transforms = true;
 	zvu_flag = false;
 	ratecounter = 0;
@@ -56,6 +58,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	acc_bias_est.setSize(3);
 
+	persistlegchangeflag = false;
+
 	rate_changer.setDesiredPeriod_us(0,4500);
 
 	// Tuning parameters for data fusion
@@ -64,6 +68,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	df_feedback_gain = -0.5;
 	df_events = 0;
 
+	checkforzero = 0;
+
 #ifdef DO_FOOT_SLIP_FEEDBACK
 	{
 		// TODO -- remove this -- used to subjectively measure the foot velocity
@@ -71,8 +77,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 		//w << 0.2,0.2,0.2,0.2,0.2;
 		//Eigen::VectorXd t(5);
 		//t << 5000, 10000, 15000, 20000, 25000;
-		SFootPrintOut.setSize(3);
-		FootVelCompensation.setSize(3);
+		//SFootPrintOut.setSize(3);
+		//FootVelCompensation.setSize(3);
 	}
 #endif
 
@@ -530,6 +536,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		// This must be broken into separate position and velocity states
 		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here
+		if (legchangeflag) {
+			persistlegchangeflag = true; // this is to bridge the rate change gap
+		}
+
 		current_pelvis = _leg_odo->getPelvisState();
 
 
@@ -622,6 +632,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 			store_vel_state = _leg_odo->getPelvisVelocityStates();
 			ratechangeiter = rate_changer.genericRateChange(_msg->utime,store_vel_state,filtered_pelvis_vel);
+
+
+
 			_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
 
 			if (ratechangeiter==1) {
@@ -655,8 +668,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		if (ratechangeiter==1) {
 
-
-
 			InertialOdometry::DynamicState datafusion_out;
 
 			// TODO
@@ -671,37 +682,74 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 			if (_switches->OPTION_D) {
 				// This is for the computations that follow -- not directly leg odometry position
+				/*
 				current_pelvis.translation().x() = datafusion_out.P(0);
 				current_pelvis.translation().y() = datafusion_out.P(1);
 				current_pelvis.translation().z() = datafusion_out.P(2);
+				 */
 
 				_leg_odo->overwritePelvisVelocity(datafusion_out.V);
 			}
 
 			if (isnan((float)datafusion_out.V(0)) || isnan((float)datafusion_out.V(1)) || isnan((float)datafusion_out.V(2))) {
 				std::cout << "LegOdometry_Handler::robot_state_handler -- NAN happened\n";
+
 			}
 
 
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
 			// TODO -- remove the foot velocity measurement
-#ifdef DO_FOOT_SLIP_FEEDBACK
+#ifdef DO_FOOT_SLIP_FEEDBACK_
+
+			Eigen::Vector3d slideerr,slidedelta;
+
+			Eigen::Isometry3d levelpelvis;
+			levelpelvis.setIdentity();
+			levelpelvis = _leg_odo->getPelvisState();
+
+			Eigen::Vector3d tempEul;
+			tempEul = C2e(levelpelvis.linear());
+
+			tempEul(0) = 0.;
+			tempEul(1) = 0.;
+			levelpelvis.linear() = e2C(tempEul);
+
 			switch (_leg_odo->getActiveFoot()) {
 			case LEFTFOOT:
-
-				Eigen::VectorXd difffoot(3);
-				Eigen::Vector3d trn;
-				trn << _leg_odo->getLeftInLocal().translation().x(), _leg_odo->getLeftInLocal().translation().y(), _leg_odo->getLeftInLocal().translation().z();
-				difffoot = SFootPrintOut.diff(_msg->utime, trn);
-
-				//std::cout << "LEFT-FOOT subjective: " << std::fixed << difffoot.transpose() << std::endl;
-
-
-
-
+				footslidetriad = levelpelvis*_leg_odo->pelvis_to_left;
 				break;
+			case RIGHTFOOT:
+				footslidetriad = levelpelvis*_leg_odo->pelvis_to_right;
+				break;
+
 			}
+
+			slideerr = footslidetriad.translation() - _leg_odo->getPrimaryInLocal().translation();
+
+			if (persistlegchangeflag) {
+				// first event
+				persistlegchangeflag = false;
+				std::cout << "slide_offset_change: " << slide_err_at_step.transpose() << " | ";
+				slide_err_at_step = slideerr;
+				std::cout << slide_err_at_step.transpose() << std::endl;
+				checkforzero = 3;
+
+				_leg_odo->setAccruedOffset(slideerr);
+			}
+
+			slidedelta = - slideerr + slide_err_at_step;
+
+			if (checkforzero > 0) {
+
+				std::cout << "bezero - " << checkforzero << " | " << slidedelta.transpose() << std::endl;
+				checkforzero--;
+			}
+
+			//std::cout << "norm: " << slidedelta.norm() << std::endl;
+
+			_leg_odo->AccruedPelvisPosition(slidedelta);
+
 #endif
 
 			//clock_gettime(CLOCK_REALTIME, &threequat);
@@ -867,6 +915,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
     Eigen::Vector3d E_true;
     Eigen::Vector3d E_est;
     bot_core::pose_t pose;
+
 	
 	Eigen::Isometry3d currentPelvis   = _leg_odo->getPelvisState();
 	Eigen::Vector3d   velocity_states = _leg_odo->getPelvisVelocityStates();
@@ -889,8 +938,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
       pose.rotation_rate[i] = local_rates(i);
     }
   
+    /*
   // True or estimated position
   if (_switches->use_true_z) {
+
 	pose.pos[0] = msg->origin_position.translation.x;
 	pose.pos[1] = msg->origin_position.translation.y;
 	pose.pos[2] = msg->origin_position.translation.z;
@@ -916,7 +967,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
 	twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
 	twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
-  } else {
+  } else {*/
 	pose.pos[0] =currentPelvis.translation().x();
 	pose.pos[1] =currentPelvis.translation().y();
 	pose.pos[2] =currentPelvis.translation().z();
@@ -945,7 +996,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.angular_velocity.x = local_rates(0);
 	twist.angular_velocity.y = local_rates(1);
 	twist.angular_velocity.z = local_rates(2);
-  }
+  //}
 
   // EST is TRUE with sensor estimated position
   
@@ -954,7 +1005,60 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
   est_msgout->origin_twist = twist;
 
   lcm_->publish("EST_ROBOT_STATE" + _channel_extension, est_msgout);
-  lcm_->publish("POSE_BODY" + _channel_extension,&pose);
+
+
+  // TODO -- This must be converted to a permanent foot triad
+  // this is to draw the foot position
+  pose.pos[0] = footslidetriad.translation().x();
+  pose.pos[1] = footslidetriad.translation().y();
+  pose.pos[2] = footslidetriad.translation().z();
+
+  Eigen::Quaterniond footslideq;
+  footslideq = C2q(footslidetriad.linear());
+
+  pose.orientation[0] =footslideq.w();
+  pose.orientation[1] =footslideq.x();
+  pose.orientation[2] =footslideq.y();
+  pose.orientation[3] =footslideq.z();
+
+  lcm_->publish("POSE_BODY",&pose);
+
+  bot_core::pose_t static_foot;
+
+  static_foot.pos[0] = _leg_odo->getPrimaryInLocal().translation().x();
+  static_foot.pos[1] = _leg_odo->getPrimaryInLocal().translation().y();
+  static_foot.pos[2] = _leg_odo->getPrimaryInLocal().translation().z();
+
+  Eigen::Quaterniond staticfootq;
+  staticfootq = C2q(_leg_odo->getPrimaryInLocal().linear());
+
+  //std::cout << "static_foot: " << staticfootq.w() << ", " << staticfootq.x() << ", " << staticfootq.y() << ", " << staticfootq.z() << std::endl;
+
+  static_foot.orientation[0] =staticfootq.w();
+  static_foot.orientation[1] =staticfootq.x();
+  static_foot.orientation[2] =staticfootq.y();
+  static_foot.orientation[3] =staticfootq.z();
+
+  lcm_->publish("STATIC_FOOT",&static_foot);
+
+  	bot_core::pose_t compensated_foot;
+
+  	compensated_foot.pos[0] = compensated_foot_states.translation().x();
+  	compensated_foot.pos[1] = compensated_foot_states.translation().y();
+  	compensated_foot.pos[2] = compensated_foot_states.translation().z();
+
+	Eigen::Quaterniond compensatedfootq;
+	compensatedfootq = C2q(compensated_foot_states.linear());
+
+	//std::cout << "static_foot: " << staticfootq.w() << ", " << staticfootq.x() << ", " << staticfootq.y() << ", " << staticfootq.z() << std::endl;
+
+	compensated_foot.orientation[0] =compensatedfootq.w();
+	compensated_foot.orientation[1] =compensatedfootq.x();
+	compensated_foot.orientation[2] =compensatedfootq.y();
+	compensated_foot.orientation[3] =compensatedfootq.z();
+
+	lcm_->publish("COMPENSATED_FOOT",&compensated_foot);
+
 
 	/*
 	// TODO -- remove this pulse train, only for testing
