@@ -18,4 +18,5 @@ struct robot_posture_preset_t
   const int16_t SITTING_HNDS_DWN=6;
   const int16_t SITTING_HNDS_UP=7; 
   const int16_t PROJECTILE=8; // FUCK YEAH BABY!
+  const int16_t CROUCHING_HNDS_DWN=9;
 }
