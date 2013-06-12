@@ -33,6 +33,7 @@
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
+#include <renderer_crawling_plan/renderer_crawling_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
 #include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
@@ -335,9 +336,8 @@ int main(int argc, char *argv[])
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
 
   tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-
   setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
-  
+  setup_renderer_crawling_plan(viewer,0, lcm, 0);
   
   //--------------    Toolbar Additions
   // add custom TOP VIEW button

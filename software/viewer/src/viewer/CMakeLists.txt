@@ -14,6 +14,7 @@ pods_use_pkg_config_packages(drc-viewer
         lcmtypes_drc_lcmtypes
         renderer_robot_state
         renderer_robot_plan
+        renderer_crawling_plan
         renderer_affordances
         renderer_sticky_feet
         renderer_end_effector_goal
