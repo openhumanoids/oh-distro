@@ -75,6 +75,7 @@
       </geometry>
     </visual>
     <xacro:collision_point group="default" xyz="0.0 0.115 0.0" visualize="1"/>
+    <xacro:collision_point group="knuckle" xyz="0 0.26 0.0" visualize="1"/>
   </link>
   <link name="l_larm">
     <inertial>
@@ -293,6 +294,7 @@
       </geometry>
     </visual>
     <xacro:collision_point group="palm" xyz="0.0 -0.115 0.0" visualize="1"/>
+    <xacro:collision_point group="knuckle" xyz="0 -0.26 0.0" visualize="1"/>
   </link>
   <link name="r_larm">
     <inertial>

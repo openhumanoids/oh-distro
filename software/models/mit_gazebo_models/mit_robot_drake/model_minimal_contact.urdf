@@ -119,6 +119,18 @@
         <sphere radius="0.01"/>
       </geometry>
     </visual>
+    <collision group="knuckle">
+      <origin rpy="0 0 0" xyz="0 0.26 0.0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0.26 0.0"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
   </link>
   <link name="l_larm">
     <inertial>
@@ -531,6 +543,18 @@
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0.0 -0.115 0.0"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="knuckle">
+      <origin rpy="0 0 0" xyz="0 -0.26 0.0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 -0.26 0.0"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
