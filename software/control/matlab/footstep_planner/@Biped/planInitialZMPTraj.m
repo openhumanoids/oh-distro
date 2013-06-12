@@ -175,7 +175,12 @@ support_times = zmp_ts;
 foot_supports = [footsupport.right * rfoot_body_idx; footsupport.left * lfoot_body_idx];
 supports = cell(length(zmp_ts),1);
 for i=1:length(zmp_ts)
-  supports{i} = SupportState(biped,foot_supports(:,i));
+  if all(foot_supports(:,i)~=0)
+    cpts = {1:4,1:4};
+  else
+    cpts = {1:4};
+  end
+  supports{i} = SupportState(biped,foot_supports(:,i),cpts);
 end
 
 if debug
