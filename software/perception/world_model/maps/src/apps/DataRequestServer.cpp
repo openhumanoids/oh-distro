@@ -346,14 +346,34 @@ struct State {
                     const std::string& iChannel,
                     const drc::map_request_bbox_t* iMessage) {
     drc::map_request_t msg;
-    bool rawPoints = iMessage->flags & drc::map_request_bbox_t::RAW_MASK;
+    bool rawPoints = iMessage->params & drc::map_request_bbox_t::RAW_MASK;
+    int dataSource = (iMessage->params & drc::map_request_bbox_t::SOURCE_MASK);
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.map_id = rawPoints ? 2 : 1;
-    msg.view_id = drc::data_request_t::DENSE_CLOUD_BOX;
-    msg.type = drc::map_request_t::POINT_CLOUD;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.resolution = 0.01;
-    msg.frequency = 0;
     msg.quantization_max = 0.01;
+    switch (dataSource) {
+    case drc::map_request_bbox_t::LASER:
+      msg.type = drc::map_request_t::POINT_CLOUD;
+      msg.resolution = 0.005;
+      msg.quantization_max = 0.005;
+      msg.view_id = drc::data_request_t::DENSE_CLOUD_BOX;
+      break;
+    case drc::map_request_bbox_t::STEREO_HEAD:
+      msg.view_id = drc::data_request_t::STEREO_MAP_HEAD;
+      break;
+    case drc::map_request_bbox_t::STEREO_LHAND:
+      msg.view_id = drc::data_request_t::STEREO_MAP_LHAND;
+      break;
+    case drc::map_request_bbox_t::STEREO_RHAND:
+      msg.view_id = drc::data_request_t::STEREO_MAP_RHAND;
+      break;
+    default:
+      std::cout << "Warning: bad data source in box request" << std::endl;
+      break;
+    }
+    msg.frequency = 0;
     if (iMessage->time_window > 0) {
       msg.time_min = -iMessage->time_window*1e6;
       msg.time_max = 0;

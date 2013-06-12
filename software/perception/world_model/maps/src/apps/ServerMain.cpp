@@ -52,7 +52,8 @@ struct StereoHandler {
   std::string mCameraFrame;
   float mDisparityFactor;
 
-  StereoHandler(const BotWrapper::Ptr& iBotWrapper) {
+  StereoHandler(const BotWrapper::Ptr& iBotWrapper,
+                const std::string& iCameraBaseName) {
     mBotWrapper = iBotWrapper;
     auto lcm = mBotWrapper->getLcm();
     auto boostLcm = drc::PointerUtils::boostPtr(lcm);
@@ -60,7 +61,7 @@ struct StereoHandler {
     mStereoMatcher->setScale(1.0);
     mLatestImage.size = 0;
 
-    std::string cameraName = "CAMERALEFT";
+    std::string cameraName = iCameraBaseName + "LEFT";
     mCamTrans = bot_param_get_new_camtrans
       (mBotWrapper->getBotParam(), cameraName.c_str());
     double k00 = bot_camtrans_get_focal_length_x(mCamTrans);
@@ -78,10 +79,11 @@ struct StereoHandler {
     }
 
     // TODO: can derive the 7cm baseline from camera config
-    double baseline = 0.07;
+    double baseline = 0.04;
+    if (iCameraBaseName == "CAMERA") baseline = 0.07;
     mDisparityFactor = 1/k00/baseline;
 
-    lcm->subscribe("CAMERA", &StereoHandler::onImage, this);
+    lcm->subscribe(iCameraBaseName, &StereoHandler::onImage, this);
   }
 
   ~StereoHandler() {
@@ -170,6 +172,9 @@ struct StereoHandler {
     calib(1,2) -= minPt[1];
     depthImage.setCalib(calib);
 
+    // scale down if necessary
+    // TODO
+
     // crop and copy disparity data
     cv::Rect bounds(minPt[0], minPt[1], newSize[0], newSize[1]);
     cv::Mat disparitySub = disparityMat(bounds);
@@ -206,7 +211,9 @@ struct ViewWorker {
   bool mActive;
   drc::map_request_t mRequest;
   std::shared_ptr<Collector> mCollector;
-  std::shared_ptr<StereoHandler> mStereoHandler;
+  std::shared_ptr<StereoHandler> mStereoHandlerHead;
+  std::shared_ptr<StereoHandler> mStereoHandlerLeft;
+  std::shared_ptr<StereoHandler> mStereoHandlerRight;
   std::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
@@ -247,9 +254,22 @@ struct ViewWorker {
       LcmTranslator::fromLcm(mRequest, spec);
 
       // TODO: HACK for stereo data; need to think about cleaner approach
-      if (mRequest.view_id == drc::data_request_t::STEREO_MAP) {
-        DepthImageView::Ptr view =
-          mStereoHandler->getDepthImageView(spec.mClipPlanes);
+      if ((mRequest.view_id == drc::data_request_t::STEREO_MAP_HEAD) ||
+          (mRequest.view_id == drc::data_request_t::STEREO_MAP_LHAND) ||
+          (mRequest.view_id == drc::data_request_t::STEREO_MAP_RHAND)) {
+        DepthImageView::Ptr view;
+        switch (mRequest.view_id) {
+        case drc::data_request_t::STEREO_MAP_HEAD:
+          view = mStereoHandlerHead->getDepthImageView(spec.mClipPlanes);
+          break;
+        case drc::data_request_t::STEREO_MAP_LHAND:
+          view = mStereoHandlerLeft->getDepthImageView(spec.mClipPlanes);
+          break;
+        case drc::data_request_t::STEREO_MAP_RHAND:
+          view = mStereoHandlerRight->getDepthImageView(spec.mClipPlanes);
+          break;
+        default: break;
+        }
         if (view != NULL) {
           view->setId(mRequest.view_id);
           drc::map_image_t msg;
@@ -266,7 +286,7 @@ struct ViewWorker {
         }
       }
 
-      if (localMap != NULL) {
+      else if (localMap != NULL) {
         // do not send if there is not enough data
         // TODO: should make this cleaner; for now, 3 seconds
         int64_t timeMin = localMap->getPointData()->getTimeMin();
@@ -396,7 +416,9 @@ public:
   BotWrapper::Ptr mBotWrapper;
   std::shared_ptr<Collector> mCollector;
   ViewWorkerMap mViewWorkers;
-  std::shared_ptr<StereoHandler> mStereoHandler;
+  std::shared_ptr<StereoHandler> mStereoHandlerHead;
+  std::shared_ptr<StereoHandler> mStereoHandlerLeft;
+  std::shared_ptr<StereoHandler> mStereoHandlerRight;
 
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
@@ -416,7 +438,9 @@ public:
     drc::Clock::instance()->setVerbose(false);
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
-    mStereoHandler.reset(new StereoHandler(mBotWrapper));
+    mStereoHandlerHead.reset(new StereoHandler(mBotWrapper, "CAMERA"));
+    mStereoHandlerLeft.reset(new StereoHandler(mBotWrapper, "CAMERA_LHAND"));
+    mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERA_RHAND"));
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
@@ -571,7 +595,9 @@ public:
       worker->mBotWrapper = mBotWrapper;
       worker->mActive = false;
       worker->mCollector = mCollector;
-      worker->mStereoHandler = mStereoHandler;
+      worker->mStereoHandlerHead = mStereoHandlerHead;
+      worker->mStereoHandlerLeft = mStereoHandlerLeft;
+      worker->mStereoHandlerRight = mStereoHandlerRight;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
       mBotWrapper->getTransform("head", "local", worker->mInitialPose,

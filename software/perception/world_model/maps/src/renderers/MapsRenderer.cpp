@@ -123,6 +123,7 @@ protected:
   Gtk::ToggleButton* mShowRequestBoxToggle;
   bool mShowRequestBox;
   bool mRequestBoxInit;
+  int mRequestBoxDataSource;
   InteractiveBox mInteractiveBox;
 
   // command parameters
@@ -158,6 +159,7 @@ public:
     mViewClient.setBotWrapper(mBotWrapper);
     mViewClient.addListener(this);
     mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
+    mViewClient.addViewChannel("MAP_DEBUG");
 
     // set callback for pixel maps
     // TODO: temporary channel
@@ -277,6 +279,12 @@ public:
       requestBox->pack_start(*box, false, false);
 
       mRequestTimeWindow = 0;
+      labels = { "Laser", "Stereo Head", "Stereo L.Hand", "Stereo R.Hand" };
+      ids = { drc::map_request_bbox_t::LASER,
+              drc::map_request_bbox_t::STEREO_HEAD,
+              drc::map_request_bbox_t::STEREO_LHAND,
+              drc::map_request_bbox_t::STEREO_RHAND };
+      addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
       addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
       mRequestRawScan = false;
       addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
@@ -408,7 +416,7 @@ public:
     // TODO: HACK for stereo depth
     if (mRequestType == ViewBase::TypeDepthImage+1) {
       spec.mType = ViewBase::TypeDepthImage;
-      spec.mViewId = drc::data_request_t::STEREO_MAP;
+      spec.mViewId = drc::data_request_t::STEREO_MAP_HEAD;
     }
     else {
       spec.mType = ViewBase::Type(mRequestType);
@@ -511,8 +519,8 @@ public:
     msg.time_window = mRequestTimeWindow;
     Eigen::Vector3f rpy = orientation.matrix().eulerAngles(2,1,0);
     for (int i = 0; i < 3; ++i) msg.rpy[i] = rpy[i]*1800/acos(-1);
-    msg.flags = 0;
-    if (mRequestRawScan) msg.flags |= drc::map_request_bbox_t::RAW_MASK;
+    msg.params = mRequestBoxDataSource;
+    if (mRequestRawScan) msg.params |= drc::map_request_bbox_t::RAW_MASK;
     getLcm()->publish("MAP_REQUEST_BBOX", &msg);
     mAdjustRequestBoxToggle->set_active(false);
   }
@@ -914,9 +922,17 @@ public:
         data->mLabel = "Depthmap Workspace";
         data->mColor = Eigen::Vector3f(0,0,1);
         break;
-      case drc::data_request_t::STEREO_MAP:
-        data->mLabel = "Stereo Map";
-        data->mColor = Eigen::Vector3f(0,0.5,0.5);
+      case drc::data_request_t::STEREO_MAP_HEAD:
+        data->mLabel = "Stereo Head";
+        data->mColor = Eigen::Vector3f(0.1,1,0.1);
+        break;
+      case drc::data_request_t::STEREO_MAP_LHAND:
+        data->mLabel = "Stereo L.Hand";
+        data->mColor = Eigen::Vector3f(0.1,0.7,0.1);
+        break;
+      case drc::data_request_t::STEREO_MAP_RHAND:
+        data->mLabel = "Stereo R.Hand";
+        data->mColor = Eigen::Vector3f(0.1,0.4,0.1);
         break;
       case drc::data_request_t::DENSE_CLOUD_BOX:
         data->mLabel = "Dense Cloud Box";
