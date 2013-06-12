@@ -12,18 +12,18 @@ function testCrawling()
   foot_spec(3).body_ind = findLinkInd(r,'r_foot');
   foot_spec(4).body_ind = findLinkInd(r,'l_foot');
 
-  foot_spec(1).contact_pt_ind = 1;
-  foot_spec(2).contact_pt_ind = 1;
-  [~,foot_spec(3).contact_pt_ind] = getContactPoints(findLink(r,'r_foot'),'heel');
-  [~,foot_spec(4).contact_pt_ind] = getContactPoints(findLink(r,'l_foot'),'heel');
+  [~,foot_spec(1).contact_pt_ind] = getContactPoints(findLink(r,'l_hand'),'knuckle');
+  [~,foot_spec(2).contact_pt_ind] = getContactPoints(findLink(r,'r_hand'),'knuckle');
+  [~,foot_spec(3).contact_pt_ind] = getContactPoints(findLink(r,'r_foot'),'heel_mid');
+  [~,foot_spec(4).contact_pt_ind] = getContactPoints(findLink(r,'l_foot'),'heel_mid');
   
   options.direction = 0;
   options.step_length = -.2;
   options.gait = 2;
+  options.draw = false;
   
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
-  crawlingPlan(r,d.x0,body_spec,foot_spec,options)
-return;
+  qdtraj = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
   
   qdtraj = setOutputFrame(qdtraj,AtlasPositionRef(r,'crawling'));
   
