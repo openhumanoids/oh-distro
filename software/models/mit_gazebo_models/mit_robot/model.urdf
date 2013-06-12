@@ -2468,7 +2468,7 @@
   <link name="right_palm_left_camera_optical_frame"/>
   <gazebo reference="right_palm_left_camera_frame">
     <sensor name="right_palm_stereo_camera" type="multicamera">
-      <update_rate>30.0</update_rate>
+      <update_rate>1.0</update_rate>
       <camera name="left">
         <horizontal_fov>1.25663706144</horizontal_fov>
         <image>
@@ -4040,7 +4040,7 @@
   <link name="left_palm_left_camera_optical_frame"/>
   <gazebo reference="left_palm_left_camera_frame">
     <sensor name="left_palm_stereo_camera" type="multicamera">
-      <update_rate>30.0</update_rate>
+      <update_rate>1.0</update_rate>
       <camera name="left">
         <horizontal_fov>1.25663706144</horizontal_fov>
         <image>
