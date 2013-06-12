@@ -1,6 +1,6 @@
 package drc;
 
-// Published on COMMITTED_EE_ADJUSTMENT via a cartesian teleop interface 
+// Published on CANDIDATE/COMMITTED_EE_ADJUSTMENT via a cartesian teleop interface 
 struct ee_cartesian_adjust_t 
 {
   // timestamp of this message
