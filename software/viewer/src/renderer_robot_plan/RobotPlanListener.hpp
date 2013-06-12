@@ -87,7 +87,7 @@ namespace renderer_robot_plan
     void commit_manip_map(int64_t utime,std::string &channel);
     void commit_footstep_plan(int64_t utime,std::string &channel);    
     void commit_desired_grasp_state(int64_t utime, std::string &channel,std::vector<int> &received_plan_grasp_indices);
-    void commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate);
+    void commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate, bool revert);
 
     void set_in_motion_hands_state(int index)
     {

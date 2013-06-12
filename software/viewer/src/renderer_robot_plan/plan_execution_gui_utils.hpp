@@ -84,7 +84,7 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout << "Stopping walking" << endl;
     string channel = "STOP_WALKING";
-    self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true);
+    self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true,false);
 
     return TRUE;
   }
@@ -96,10 +96,22 @@ namespace renderer_robot_plan_gui_utils
     if(self->robotPlanListener->is_manip_plan()){
       cout <<"Pausing manip plan" << endl;
       string channel = "COMMITTED_PLAN_PAUSE";
-      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,true,false);
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,true,false,false);
     }
 
-    
+   return TRUE;
+  }
+  
+   static gboolean on_rewind_button_clicked (GtkButton* button, void *user)
+  {
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+
+    if(self->robotPlanListener->is_manip_plan()){
+      cout <<"Pausing manip plan and reverting to original pose" << endl;
+      string channel = "COMMITTED_PLAN_PAUSE";
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,false,true);
+    }
+
    return TRUE;
   }
    
@@ -119,7 +131,7 @@ namespace renderer_robot_plan_gui_utils
     if(self->robotPlanListener->is_walking_plan()) {
       string channel = "STOP_WALKING";
       cout << "Stopping walking" << endl;
-      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true);
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,true,false);
     }
     cout <<"Robot plan terminated" << endl;
     cout <<"Publishing on REJECTED_ROBOT_PLAN" << endl;
@@ -139,7 +151,7 @@ namespace renderer_robot_plan_gui_utils
     if(self->robotPlanListener->is_plan_paused()){
       cout <<"Unpausing manip plan" << endl;
       string channel = "COMMITTED_PLAN_PAUSE";
-      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,false);
+      self->robotPlanListener->commit_plan_control(self->robot_utime,channel,false,false,false);
       return TRUE;
     }
 
@@ -205,7 +217,7 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
 
     
-    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button, *stop_walking_button;
+    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button, *stop_walking_button, *rewind_button;
 
     if(self->robotPlanListener->is_multi_approval_plan())
      {
@@ -223,6 +235,8 @@ namespace renderer_robot_plan_gui_utils
     {
       pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
       gtk_widget_set_tooltip_text (pause_button, "Pause");
+      rewind_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_REWIND);
+      gtk_widget_set_tooltip_text (rewind_button, "Revert (Do Prev QuasiStatic Plan In Reverse)");
     }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
 
@@ -245,15 +259,18 @@ namespace renderer_robot_plan_gui_utils
     if(self->robotPlanListener->is_multi_approval_plan())
       gtk_box_pack_start (GTK_BOX (hbox), self->breakpoint_entry, FALSE, FALSE,3);
     gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
-    if(self->robotPlanListener->is_manip_plan())   
+    if(self->robotPlanListener->is_manip_plan())   {
       gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
+      gtk_box_pack_start (GTK_BOX (hbox), rewind_button, FALSE, FALSE, 3);     
+    }   
     if(self->robotPlanListener->is_walking_plan()) {
       gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
       gtk_box_pack_end(GTK_BOX(hbox), stop_walking_button, FALSE, FALSE, 3);
     } else {
       gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     }
-    
+      if(self->robotPlanListener->is_manip_plan())   
+      gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);  
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
     gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
@@ -293,6 +310,10 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_pause_button_clicked),
                   self);  
+     g_signal_connect (G_OBJECT (rewind_button),
+              "clicked",
+              G_CALLBACK (on_rewind_button_clicked),
+              self);                
     } 
     if (self->robotPlanListener->is_walking_plan()) {
       g_signal_connect (G_OBJECT (stop_walking_button),

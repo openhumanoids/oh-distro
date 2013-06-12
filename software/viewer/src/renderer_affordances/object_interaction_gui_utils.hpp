@@ -919,7 +919,7 @@ namespace renderer_affordances_gui_utils
             link_name= it->second._gl_object->_mate_start_link;
             it->second._gl_object->get_link_frame(link_name,T_world_mate_female_end);        
              T_world_mate_female_end.M.GetRPY(r,p,y);
-            cout << "link_name" << link_name << " " << r << " "<< p << " "<<y << endl;
+            //cout << "link_name" << link_name << " " << r << " "<< p << " "<<y << endl;
                                        
             KDL::Vector worldframe_mateaxis,ux,uy,uz;
             ux[0]=1;ux[1]=0;ux[2]=0;
@@ -927,11 +927,11 @@ namespace renderer_affordances_gui_utils
             uz[0]=0;uz[1]=0;uz[2]=1;
  
             if(self->active_mate_axis==0)
-               worldframe_mateaxis = T_world_mate_female_end*ux;
+               worldframe_mateaxis = T_world_mate_female_end.M*ux;
             else if(self->active_mate_axis==1)
-               worldframe_mateaxis = T_world_mate_female_end*uy;
+               worldframe_mateaxis = T_world_mate_female_end.M*uy;
             else if(self->active_mate_axis==2)
-               worldframe_mateaxis = T_world_mate_female_end*uz;
+               worldframe_mateaxis = T_world_mate_female_end.M*uz;
             worldframe_mateaxis.Normalize();
             KDL::Frame T_world_palm,T_world_link,T_link_palm;
             link_name= it->second._gl_object->_mate_end_link;//hand_it->second.geometry_name;
@@ -961,7 +961,7 @@ namespace renderer_affordances_gui_utils
             if ((found!=std::string::npos)&&(joint->second->type!=(int) otdf::Joint::FIXED)) {
                 dof_pos =  0;
                 jointpos_in.find(joint->first)->second =  dof_pos; 
-                cout <<  joint->first << " DOF changed to " << dof_pos*(180/M_PI) << endl;
+                //cout <<  joint->first << " DOF changed to " << dof_pos*(180/M_PI) << endl;
             }
         }
         if(!it->second._gl_object->is_future_state_changing()) {

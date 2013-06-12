@@ -647,16 +647,20 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _lcm->publish(channel, &msg);
   }
   
-  void RobotPlanListener::commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate)
+  void RobotPlanListener::commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate,bool revert)
   {
   
     drc::plan_control_t  msg;
     msg.utime = utime;
-    if((pause)&&(!terminate)){
+    if((pause)&&(!terminate)&&(!revert)){
       msg.control = msg.PAUSE;
       _plan_paused = true;
     }
-    else if((!pause)&&(!terminate)){
+    else if((!pause)&&(!terminate)&&(revert)){
+      msg.control = msg.REVERT;
+      _plan_paused = false;
+    }
+    else if((!pause)&&(!terminate)&&(!revert)){
       msg.control = msg.UNPAUSE;
       _plan_paused = false;
     }
