@@ -41,7 +41,7 @@ classdef SupportState
       if nargin>3
         obj = setContactSurfaces(obj,contact_surfaces);
       else
-        obj.contact_surfaces = zeros(length(bodies),1);
+        obj.contact_surfaces = zeros(length(obj.bodies),1);
       end
     end
     
