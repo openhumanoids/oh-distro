@@ -56,10 +56,19 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	fusion_rate.setSize(1);
 	bias_publishing_rate.setSize(1);
 
+
 	acc_bias_est.setSize(3);
 
 	persistlegchangeflag = false;
 
+	// let the biases be averaged and estimated during the first portion of the task
+	allowbiasestimation = false; // Do not include initial trasients to the bias averaging process
+	acc_bias_avg.setSize(3);
+	trigger_bias_averaging.setParameters(0.003,0.01,1000000);
+	trigger_bias_averaging.forceHigh(); // Only trip low when the bias update values have reduced to acceptable levels for averaging
+	expire_bias_avg_process.setDesiredPeriod_us(10000000);
+
+	// Publish EST_ROBOT_STATE and other messages at 200 Hz
 	rate_changer.setDesiredPeriod_us(0,4500);
 
 	// Tuning parameters for data fusion
@@ -315,6 +324,10 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 																	const InertialOdometry::DynamicState &InerO,
 																	const InertialOdometry::DynamicState &Fovis) {
 
+
+	InertialOdometry::DynamicState retstate;
+	retstate = LeggO;
+
 	Eigen::VectorXd dummy(1);
 	dummy << 0;
 
@@ -355,6 +368,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 		double db_a[3];
 
+		// ZERO VELOCITY UPDATE BLOCK
 		if (true) {
 			//std::cout << "double value is: " << uts << " | " << ((speed < ZU_SPEED_THRES)) << ", " << ((double)(speed < ZU_SPEED_THRES)) << std::endl;
 			zvu_timetrigger.UpdateState(uts,((double)(speed < ZU_SPEED_THRES)));
@@ -383,31 +397,79 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 			}
 
-
-
 		} else {
 			for (int i=0;i<3;i++) {
 				db_a[i] = - INS_POS_FEEDBACK_GAIN * err_b(i) - INS_VEL_FEEDBACK_GAIN * errv_b_VO(i);
 			}
 		}
 
-
+		retstate = InerO;
+		retstate.P = LeggO.P;
 
 		// Update the bias estimates
-		inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+
+		// if not expiration timer
+		//std::cout << "before " << expire_bias_avg_process.getState() << " | " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl;
+		if (!expire_bias_avg_process.getState()) {
+			inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+
+			double norm = sqrt(db_a[0]*db_a[0]+db_a[1]*db_a[1]+db_a[2]*db_a[2]);
+
+			if (speed > ZU_SPEED_THRES) {
+				// reset the trigger
+				trigger_bias_averaging.Reset();
+				trigger_bias_averaging.forceHigh();
+				std::cout << "reseting trigger_bias_averaging ST" <<std::endl;
+			}
+
+			trigger_bias_averaging.UpdateState(uts,norm);
+			std::cout << "triggerstate: " << trigger_bias_averaging.getState() << " | " << norm  << " | " << !(speed > ZU_SPEED_THRES) << std::endl;
+
+			//determine whether we can start to average the bias estimate
+			if (trigger_bias_averaging.getState() <= 0.5) {
+				// new we can start the averaging process
+				std:: cout << "Triggering the start of bias estimation at uts: " << uts << std::endl;
+				allowbiasestimation = true;
+				// We should used this same logic to restrict the initial conditions for the velocity states - -by slaing to the leg odoemtry during th initialization phase
+				retstate.V = LeggO.V;
+			}
+		}
+
+		if (allowbiasestimation) {
+			std::cout << "Bias averaging is being allowed.\n";
+
+			acc_bias_avg.processSamples(inert_odo.imu_compensator.get_accel_biases());
+			std::cout << "bias is: " << acc_bias_avg.getCA().transpose() << std::endl;
+
+			// we should run run the expire counter here
+			std::cout << "expirecounter: " << expire_bias_avg_process.getRemainingTime_us() << std::endl;
+
+			if (expire_bias_avg_process.processSample(uts)) {
+				// bias averaging period has expired
+				allowbiasestimation = false;
+
+				double avgbiases[3];
+				Eigen::Vector3d cabias;
+
+				cabias = acc_bias_avg.getCA();
+
+				for (int i=0;i<3;i++) {
+					avgbiases[i] = cabias(i);
+				}
+
+				std::cout << "SettingAccelBiases on timer expire to: " << cabias.transpose() << std::endl;
+				inert_odo.imu_compensator.UpdateAccelBiases(avgbiases);
+			}
+
+		}
 
 		inert_odo.setPositionState(INS_POS_WINDUP_BALANCE*InerO.P + (1.-INS_POS_WINDUP_BALANCE)*LeggO.P);
 
 		if (true) {
 			inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*LeggO.V);
 	    } else {
-			inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*Fovis.V);
+			//inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*Fovis.V);
 		}
-
-		// Dynamic wind up reset
-		//inert_odo.setPositionState((0.5+0.4*(a))*InerO.P + (0.4*(1-a)+0.1)*LeggO.P);
-		//inert_odo.setVelocityState((0.8+0.1*(b))*InerO.V + (0.1*(1-b)+0.1)*LeggO.V);
-
 
 		if (_switches->verbose) {
 			std::cout << "LeggO: " << LeggO.P.transpose() << std::endl
@@ -427,9 +489,6 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 	}
 
-	InertialOdometry::DynamicState retstate;
-	retstate = InerO;
-	retstate.P = LeggO.P;
 
 	return retstate;
 

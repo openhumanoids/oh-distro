@@ -48,6 +48,7 @@ public:
 	void Reset();
 	float getState();
 	double getCurrentValue();
+	void forceHigh();
 };
 
 class BipolarSchmittTrigger {
@@ -224,11 +225,43 @@ public:
   VecType getValue(const VecType& iSample);
 };
 
-/*
+
 class CumulativeAverage {
+private:
+	Eigen::VectorXd CA;
+	int size;
+	int elementcounter;
 
+	void reset();
 
-}
-*/
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	CumulativeAverage();
+
+	void setSize(const int &s);
+	Eigen::VectorXd processSamples(const Eigen::VectorXd &val);
+	Eigen::VectorXd getCA();
+
+};
+
+class ExpireTimer {
+private:
+	unsigned long desired_uper;
+	unsigned long uperiod;
+	unsigned long long previous_uts;
+	bool firstpass;
+
+public:
+	ExpireTimer();
+
+	void setDesiredPeriod_us(const unsigned long &uts);
+	void reset();
+
+	bool processSample(const unsigned long long &uper);
+	bool getState();
+	unsigned long getRemainingTime_us();
+};
+
 
 #endif /*SIGNALTAP_HPP_*/

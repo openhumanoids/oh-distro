@@ -151,6 +151,7 @@ private:
 	bool zvu_flag;
 	bool imu_msg_received;
 	bool persistlegchangeflag;
+	bool allowbiasestimation;
 	int poseplotcounter;
 	int collectionindex;
 	int firstpass;//was bool
@@ -164,6 +165,10 @@ private:
 	NumericalDiff local_to_head_acc_diff;
 	NumericalDiff local_to_head_rate_diff;
 	
+	CumulativeAverage acc_bias_avg;
+	SchmittTrigger trigger_bias_averaging;
+	ExpireTimer expire_bias_avg_process;
+
 #ifdef DO_FOOT_SLIP_FEEDBACK
 	//NumericalDiff SFootPrintOut;
 	//TrapezoidalInt FootVelCompensation;

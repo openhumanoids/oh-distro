@@ -68,6 +68,9 @@ void SchmittTrigger::Reset() {
 	// first call flag is used to intialize the timer, to enable delay measuring
 	first_call = true;
 }
+void SchmittTrigger::forceHigh() {
+	current_status = true;
+}
 
 void SchmittTrigger::UpdateState(long present_time, double value) {
 	if (first_call) {
@@ -75,11 +78,13 @@ void SchmittTrigger::UpdateState(long present_time, double value) {
 		previous_time = present_time;
 	}
 	if (present_time < previous_time) {
-		std::cout << "Warning SchmittTrigger object is jumping back in time -- behaviour unpredictable.\n";
+		std::cout << "SchmittTrigger::UpdateState -- Warning object is jumping back in time -- behavior unpredictable.\n";
 	}
 	
 	storedvalue = value;
 	//std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
+
+	// The timing logic should be rewritten with ExireTimer at the next opportune moment
 	if (current_status)
 		{
 			if (value <= low_threshold)
@@ -753,3 +758,92 @@ getValue(const VecType& iSample) {
 // explicit instantiations of BlipFilter
 template class BlipFilter<3>;
 template class BlipFilter<6>;
+
+
+CumulativeAverage::CumulativeAverage() {
+	setSize(1);
+}
+
+void CumulativeAverage::setSize(const int &s) {
+	size = s;
+	CA.resize(size);
+	reset();
+}
+
+void CumulativeAverage::reset() {
+
+	CA.setZero();
+	elementcounter = 0;
+}
+
+Eigen::VectorXd CumulativeAverage::processSamples(const Eigen::VectorXd &val) {
+	Eigen::VectorXd alias(size);
+
+	elementcounter++;
+	alias = (val + (elementcounter-1)*CA)/(elementcounter);
+	CA = alias;
+
+	return CA;
+}
+
+Eigen::VectorXd CumulativeAverage::getCA() {
+	return CA;
+}
+
+ExpireTimer::ExpireTimer() {
+	desired_uper = 0;
+	uperiod = 0;
+}
+
+void ExpireTimer::setDesiredPeriod_us(const unsigned long &uper) {
+	desired_uper = uper;
+	reset();
+}
+
+
+void ExpireTimer::reset() {
+	uperiod = desired_uper;
+	firstpass = true;
+}
+
+bool ExpireTimer::processSample(const unsigned long long &uts) {
+	if (firstpass) {
+		// we need to grab the first timestamp here
+		firstpass = false;
+		previous_uts = uts;
+	}
+
+	if (uts < previous_uts) {
+		std::cout << "ExpireTimer::processSample -- Jumping back in time, behavior unpredictable.\n";
+		previous_uts = uts;
+	}
+
+	unsigned long delta;
+	delta = (unsigned long)(uts - previous_uts);
+
+
+	if (delta > uperiod) {
+		// this would make the counter negative, so just saturate low
+		delta = uperiod;
+	}
+
+	uperiod = uperiod - delta;
+	previous_uts = uts;
+
+	return getState();
+}
+
+unsigned long ExpireTimer::getRemainingTime_us() {
+	return uperiod;
+}
+
+bool ExpireTimer::getState() {
+	if (uperiod==0)
+	{
+		// negative values are not handled by this class. We check zero only
+		return true;
+	}
+	return false;
+}
+
+
