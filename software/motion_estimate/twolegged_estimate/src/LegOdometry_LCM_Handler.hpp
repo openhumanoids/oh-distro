@@ -93,6 +93,7 @@ struct command_switches {
   bool grab_true_init;
   bool verbose;
   int medianlength;
+  bool slide_compensation;
 };
 
 

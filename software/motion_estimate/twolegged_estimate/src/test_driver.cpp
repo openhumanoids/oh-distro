@@ -50,6 +50,7 @@ int main(int argc, char ** argv) {
   switches.OPTION_E = false;
   switches.grab_true_init = false;
   switches.verbose = false;
+  switches.slide_compensation = false;
   switches.medianlength=5;
 
   ConciseArgs opt(argc, (char**)argv);
@@ -68,6 +69,7 @@ int main(int argc, char ** argv) {
   opt.add(switches.grab_true_init,"y","Initializing the state with TRUE_ROBOT_STATE message");
   opt.add(switches.medianlength, "m", "Casually challenged median filter length");
   opt.add(switches.verbose,"v","Enable verbose debug printouts");
+  opt.add(switches.slide_compensation,"s","Incorporate foot sliding compensation");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;

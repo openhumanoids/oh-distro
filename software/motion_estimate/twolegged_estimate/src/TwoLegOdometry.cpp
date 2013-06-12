@@ -338,6 +338,7 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
 	  Eigen::Vector3d alias;
 	  alias = newstep.footprintlocation.translation() + accrued_sliding;
 	  newstep.footprintlocation.translation() = alias;
+	  std::cout << "TwoLegOdometry::FootLogic -- is adding sliding accrued offset of: " << accrued_sliding.transpose() << std::endl;
 	  accrued_sliding.setZero();
 
 	  footsteps.newFootstep(newstep);

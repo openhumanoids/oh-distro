@@ -48,7 +48,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	local_to_head_vel_diff.setSize(3);
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
-	zvu_timetrigger.setParameters(0.4,0.6,50000);
+	zvu_timetrigger.setParameters(0.4,0.6,40000);
 	
 	stageA_test_vel.setSize(3);
 
@@ -361,7 +361,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 			//std::cout << "ST state is: " << zvu_timetrigger.getState() << std::endl;
 
 			for (int i=0;i<3;i++) {
-				if (zvu_timetrigger.getState() >= 0.5 ) {
+				if (zvu_timetrigger.getState() >= 0.5 && !(speed > ZU_SPEED_THRES)) {
 					// This is the zero velocity update step
 					//std::cout << "ZVU is happening\n";
 					zvu_flag = true;
@@ -700,55 +700,56 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
 			// TODO -- remove the foot velocity measurement
-#ifdef DO_FOOT_SLIP_FEEDBACK_
+#ifdef DO_FOOT_SLIP_FEEDBACK
+			if (_switches->slide_compensation) {
 
-			Eigen::Vector3d slideerr,slidedelta;
+				Eigen::Vector3d slideerr,slidedelta;
 
-			Eigen::Isometry3d levelpelvis;
-			levelpelvis.setIdentity();
-			levelpelvis = _leg_odo->getPelvisState();
+				Eigen::Isometry3d levelpelvis;
+				levelpelvis.setIdentity();
+				levelpelvis = _leg_odo->getPelvisState();
 
-			Eigen::Vector3d tempEul;
-			tempEul = C2e(levelpelvis.linear());
+				Eigen::Vector3d tempEul;
+				tempEul = C2e(levelpelvis.linear());
 
-			tempEul(0) = 0.;
-			tempEul(1) = 0.;
-			levelpelvis.linear() = e2C(tempEul);
+				tempEul(0) = 0.;
+				tempEul(1) = 0.;
+				levelpelvis.linear() = e2C(tempEul);
 
-			switch (_leg_odo->getActiveFoot()) {
-			case LEFTFOOT:
-				footslidetriad = levelpelvis*_leg_odo->pelvis_to_left;
-				break;
-			case RIGHTFOOT:
-				footslidetriad = levelpelvis*_leg_odo->pelvis_to_right;
-				break;
+				switch (_leg_odo->getActiveFoot()) {
+				case LEFTFOOT:
+					footslidetriad = levelpelvis*_leg_odo->pelvis_to_left;
+					break;
+				case RIGHTFOOT:
+					footslidetriad = levelpelvis*_leg_odo->pelvis_to_right;
+					break;
 
+				}
+
+				slideerr = footslidetriad.translation() - _leg_odo->getPrimaryInLocal().translation();
+
+				if (persistlegchangeflag) {
+					// first event
+					persistlegchangeflag = false;
+					std::cout << "slide_offset_change: " << slide_err_at_step.transpose() << " | ";
+					slide_err_at_step = slideerr;
+					std::cout << slide_err_at_step.transpose() << std::endl;
+					//checkforzero = 3;
+
+					_leg_odo->setAccruedOffset(slideerr);
+				}
+
+				slidedelta = - slideerr + slide_err_at_step;
+
+				//if (checkforzero > 0) {
+					//std::cout << "bezero - " << checkforzero << " | " << slidedelta.transpose() << std::endl;
+					//checkforzero--;
+				//}
+
+				//std::cout << "norm: " << slidedelta.norm() << std::endl;
+
+				_leg_odo->AccruedPelvisPosition(slidedelta);
 			}
-
-			slideerr = footslidetriad.translation() - _leg_odo->getPrimaryInLocal().translation();
-
-			if (persistlegchangeflag) {
-				// first event
-				persistlegchangeflag = false;
-				std::cout << "slide_offset_change: " << slide_err_at_step.transpose() << " | ";
-				slide_err_at_step = slideerr;
-				std::cout << slide_err_at_step.transpose() << std::endl;
-				checkforzero = 3;
-
-				_leg_odo->setAccruedOffset(slideerr);
-			}
-
-			slidedelta = - slideerr + slide_err_at_step;
-
-			if (checkforzero > 0) {
-
-				std::cout << "bezero - " << checkforzero << " | " << slidedelta.transpose() << std::endl;
-				checkforzero--;
-			}
-
-			//std::cout << "norm: " << slidedelta.norm() << std::endl;
-
-			_leg_odo->AccruedPelvisPosition(slidedelta);
 
 #endif
 
