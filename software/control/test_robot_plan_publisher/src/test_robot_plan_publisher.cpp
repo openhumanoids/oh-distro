@@ -40,13 +40,22 @@ public:
 	   
 	   
 	   plan_msg.plan.push_back(state_msg);
+	   plan_msg.num_grasp_transitions=0;
+
+  //information for the controller. Flexibility to do mixed pos/impedance control for hands and feet
+  plan_msg.left_arm_control_type=plan_msg.POSITION; 
+  plan_msg.right_arm_control_type=plan_msg.POSITION;  
+  plan_msg.left_leg_control_type=plan_msg.POSITION;  
+  plan_msg.right_leg_control_type=plan_msg.POSITION;  
+
+	   
 	 }
 	
 	  cnt++;
 	  if(cnt>=100){
      //publish at 1/100 the rate of robot state. 
      cnt=0;
- 		 lcm.publish("CANDIDATE_ROBOT_PLAN", &plan_msg);
+ 		 lcm.publish("CANDIDATE_CRAWLING_PLAN", &plan_msg);
 	  }
 	
 	}
