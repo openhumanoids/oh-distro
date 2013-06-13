@@ -19,7 +19,7 @@ end
 
 r = Atlas(urdf,options);
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
-%r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
+r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
 r = compile(r);
 
 if nargin > 1
