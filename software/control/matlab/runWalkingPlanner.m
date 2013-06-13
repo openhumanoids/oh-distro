@@ -117,7 +117,7 @@ while true
       qnom_data = qnom_mon.getNextMessage(0);
       
       if(~isempty(qnom_data))
-        disp('got new committed posture preset')
+        send_status(3,0,0,'Got new committed posture preset')
         qnom_msg = drc.robot_posture_preset_t(qnom_data);
         qnom_msg.preset
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
