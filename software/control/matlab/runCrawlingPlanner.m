@@ -16,7 +16,7 @@ end
 
 %addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-addpath(strcat(getenv('DRC_PATH'),'/control/matlab/grasp_execution');
+addpath(strcat(getenv('DRC_PATH'),'/control/matlab/grasp_execution'));
 
 
 options.floating = true;
