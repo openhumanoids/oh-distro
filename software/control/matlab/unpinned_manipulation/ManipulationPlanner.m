@@ -221,6 +221,11 @@ classdef ManipulationPlanner < handle
                     pelvis_const.max(3) = pelvis_pose(3)+0.1;
                     pelvis_const.min(4:7) = pelvis_pose(4:7)-0.1*ones(4,1);
                     pelvis_const.max(4:7) = pelvis_pose(4:7)+0.1*ones(4,1);
+%                     pelvis_const.type = 'gaze';
+%                     pelvis_const.gaze_orientation = pelvisT(4:6);
+% %                     pelvis_const.gaze_dir = rpy2rotmat(pelvisT(4:6))'*[0;0;1];
+%                     pelvis_const.gaze_axis = [0;0;1];
+                    pelvis_const.gaze_threshold = pi/4;
                 elseif(strcmp('left_palm',ee_names{ind(k)}))
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
@@ -265,7 +270,10 @@ classdef ManipulationPlanner < handle
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
 
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
-            ikoptions.q_nom = q_guess;
+            nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+            qstar = nomdata.xstar(1:obj.r.getNumDOF());
+%             ikoptions.q_nom = q_guess;
+            ikoptions.q_nom = qstar;
 						
             ikoptions.quasiStaticFlag = true;
             [q_out,snopt_info] = inverseKin(obj.r,q_guess,...
@@ -2023,7 +2031,7 @@ classdef ManipulationPlanner < handle
             cost.base_roll = 100;
             cost.base_pitch = 100;
             cost.base_yaw = 1;
-            cost.back_lbz = 10000;
+            cost.back_lbz = 10;
             cost.back_mby = 10000;
             cost.back_ubx = 10000;
             cost.neck_ay =  100;
