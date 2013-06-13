@@ -76,6 +76,9 @@ struct Worker {
       case drc::data_request_t::HEIGHT_MAP_COARSE:
         sendHeightMapCoarseRequest();
         break;
+      case drc::data_request_t::HEIGHT_MAP_DENSE:
+        sendHeightMapDenseRequest();
+        break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
         sendDepthMapSceneRequest();
         break;
@@ -187,6 +190,16 @@ struct Worker {
     drc::map_request_t msg =
       prepareHeightRequestMessage(minPt, maxPt, 0.5, 0.5);
     msg.view_id = drc::data_request_t::HEIGHT_MAP_COARSE;
+    msg.time_min = -10*1e6;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendHeightMapDenseRequest() {
+    const Eigen::Vector3f minPt(-5, -20, -3);
+    const Eigen::Vector3f maxPt(30, 20, 0.3);
+    drc::map_request_t msg =
+      prepareHeightRequestMessage(minPt, maxPt, 0.1, 0.1);
+    msg.view_id = drc::data_request_t::HEIGHT_MAP_DENSE;
     msg.time_min = -10*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
   }

@@ -914,6 +914,10 @@ public:
         data->mLabel = "Heightmap Coarse";
         data->mColor = Eigen::Vector3f(1,0.5,0);
         break;
+      case drc::data_request_t::HEIGHT_MAP_DENSE:
+        data->mLabel = "Heightmap Dense";
+        data->mColor = Eigen::Vector3f(1,0.5,0);
+        break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
         data->mLabel = "Depthmap Scene";
         data->mColor = Eigen::Vector3f(0.5,0,0.5);

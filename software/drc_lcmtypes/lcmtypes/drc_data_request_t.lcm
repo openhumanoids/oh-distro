@@ -18,9 +18,10 @@ struct data_request_t {
   const int8_t HEIGHT_MAP_SCENE       = 22;
   const int8_t HEIGHT_MAP_CORRIDOR    = 23;
   const int8_t HEIGHT_MAP_COARSE      = 24;
-  const int8_t DEPTH_MAP_SCENE        = 25;
-  const int8_t DEPTH_MAP_WORKSPACE    = 26;
-  const int8_t DENSE_CLOUD_BOX        = 27;
+  const int8_t HEIGHT_MAP_DENSE       = 25;
+  const int8_t DEPTH_MAP_SCENE        = 26;
+  const int8_t DEPTH_MAP_WORKSPACE    = 27;
+  const int8_t DENSE_CLOUD_BOX        = 28;
   const int8_t STEREO_MAP_HEAD        = 30;
   const int8_t STEREO_MAP_LHAND       = 31;
   const int8_t STEREO_MAP_RHAND       = 32;
