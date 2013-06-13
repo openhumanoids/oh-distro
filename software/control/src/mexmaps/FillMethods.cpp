@@ -413,7 +413,6 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
 
   Eigen::Vector3f sol;
   if (points.size() >= 10) {
-    // solve for plane
     if (iMethod == MethodRobust) {
       sol = fitHorizontalPlaneRobust(points);
     }
@@ -424,7 +423,17 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
 
   // try to get ground estimate from message
   else {
+    // check that ground pose exists
     if (mLatestGroundPlane.norm() < 1e-6) return;
+
+    // check that robot is (mostly) upright
+    float zPelvis = robotPose(2,2);
+    zPelvis = std::min(std::max(-1.0f,zPelvis),1.0f);  // clamp to [-1,1]
+    const float kPi = acos(-1);
+    const float angleThresh = 45;
+    if (acos(zPelvis) > angleThresh*kPi/180) return;
+
+    // use ground plane from ground pose message
     Eigen::Vector4f plane = mLatestGroundPlane.cast<float>();
     Eigen::Matrix4f planeTransform =
       iView->getTransform().inverse().matrix().transpose();

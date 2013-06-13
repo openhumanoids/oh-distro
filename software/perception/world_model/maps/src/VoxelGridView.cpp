@@ -49,6 +49,8 @@ set(const maps::PointCloud::Ptr& iCloud) {
 maps::PointCloud::Ptr VoxelGridView::
 getAsPointCloud(const bool iTransform) const {
   maps::PointCloud::Ptr cloud(new maps::PointCloud());
+  // TODO: find max min extents
+  
   // TODO: get cloud and transform
   return cloud;
 }

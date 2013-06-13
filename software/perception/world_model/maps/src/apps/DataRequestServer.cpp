@@ -149,17 +149,14 @@ struct Worker {
     const Eigen::Vector3f maxPt(5, 5, 0.3);
     drc::map_request_t msg =
       prepareHeightRequestMessage(minPt, maxPt, 0.05, 0.05);
-    Eigen::Isometry3f headPose, pelvisPose;
+    Eigen::Isometry3f pelvisPose;
     bool isProne = true;
-    if (mBotWrapper->getTransform("head","local",headPose) &&
-        mBotWrapper->getTransform("body","local",pelvisPose)) {
-      Eigen::Vector3f poseDiff =
-        (headPose.translation() - pelvisPose.translation());
-      float xDist = poseDiff.head<2>().norm();
-      float zDist = fabs(poseDiff[2]);
-      float angleToHorizontal = atan2(zDist,xDist);
+    if (mBotWrapper->getTransform("body","local",pelvisPose)) {
+      float zPelvis = pelvisPose(2,2);
+      zPelvis = std::min(std::max(-1.0f,zPelvis),1.0f);  // clamp to [-1,1]
       const float kPi = acos(-1);
-      isProne = angleToHorizontal < 15*kPi/180;
+      const float angleThresh = 45;
+      isProne = (acos(zPelvis) > angleThresh*kPi/180);
     }
     if (isProne) {
       msg.clip_planes[5][3] = 0;
