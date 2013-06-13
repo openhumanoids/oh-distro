@@ -33,6 +33,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         j = drake_to_atlas_joint_map[i];
         msg.kp_position[j] = Kp[i];
         msg.kd_position[j] = Kd[i];
+        if (send_mode>2) msg.kp_velocity[j] = Kd[i];
       }
     }
     
