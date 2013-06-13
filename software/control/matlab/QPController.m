@@ -76,12 +76,15 @@ classdef QPController < MIMODrakeSystem
     
     nu = getNumInputs(r);
     % input cost term: u'Ru
-    if ~isfield(options,'R')
-      obj.R = 1e-6*eye(nu);
+    if ~isfield(options,'Rdiag')
+      obj.Rdiag = 1e-6*ones(nu,1);
     else
       typecheck(options.R,'double');
       sizecheck(options.R,[nu,nu]);
-      obj.R = options.R;
+      obj.Rdiag = diag(options.R);
+      if any(any(options.R - obj.Rdiag))
+        error('we require R to be diagonal now (to make the QP solve faster)');
+      end
     end
     
     if ~isfield(options,'lcm_foot_contacts')
@@ -704,7 +707,7 @@ classdef QPController < MIMODrakeSystem
       end
       
       % quadratic input cost
-      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
+      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = diag(obj.R(obj.con_inputs));
       
 
       %----------------------------------------------------------------------

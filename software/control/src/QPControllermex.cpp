@@ -42,7 +42,8 @@ struct QPControllerData {
   RigidBodyManipulator* multi_robot;
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
-  int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
+//  int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
+  VectorXd Rdiag;
   MatrixXd B, B_con, B_free;
   set<int> free_dof, con_dof, free_inputs, con_inputs; 
   int rfoot_idx, lfoot_idx;
@@ -66,35 +67,7 @@ mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
   return pm;
 }
 
-template <typename DerivedA,typename DerivedB>
-int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<DerivedB> const & b, char sense, double sparseness_threshold = 1e-10)
-{
-  int i,j,nnz,error;
-/*
-  // todo: it seems like I should just be able to do something like this:
-  SparseMatrix<double,RowMajor> sparseAeq(Aeq.sparseView());
-  sparseAeq.makeCompressed();
-  error = GRBaddconstrs(model,nq_con,sparseAeq.nonZeros(),sparseAeq.InnerIndices(),sparseAeq.OuterStarts(),sparseAeq.Values(),beq.data(),NULL);
-*/
 
-  int *cind = new int[A.cols()];
-  double* cval = new double[A.cols()];
-  for (i=0; i<A.rows(); i++) {
-    nnz=0;
-    for (j=0; j<A.cols(); j++) {
-      if (abs(A(i,j))>sparseness_threshold) {
-        cval[nnz] = A(i,j);
-        cind[nnz++] = j;
-      }
-    }
-    error = GRBaddconstr(model,nnz,cind,cval,sense,b(i),NULL);
-    if (error) break;
-  }
-
-  delete[] cind;
-  delete[] cval;
-  return error;
-}
 
 mxArray* myGetProperty(const mxArray* pobj, const char* propname)
 {
@@ -103,23 +76,6 @@ mxArray* myGetProperty(const mxArray* pobj, const char* propname)
   return pm;
 }
 
-// comment out the #define to disable error checking
-#define CHECK_GUROBI_ERRORS
-
-#ifndef CHECK_GUROBI_ERRORS
-
-#define CGE( call, env ) { call ;}
-
-#else
-
-void PGE ( GRBenv *env )
-{
-  mexPrintf ("Gurobi error %s\n", GRBgeterrormsg( env ));
-}
-
-#define CGE( call, env ) {int gerror; gerror = call; if (gerror) PGE ( env );}
-
-#endif
 
 
 template <typename DerivedA, typename DerivedB>
@@ -346,8 +302,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     {
-      pm = myGetProperty(pobj,"R");
-      Map<MatrixXd> R(mxGetPr(pm),mxGetM(pm),mxGetN(pm));
+      pm = myGetProperty(pobj,"Rdiag");
+      pdata->Rdiag = Map<VectorXd>(mxGetPr(pm),mxGetNumberOfElements(pm));
+/*
       MatrixXd R_con(nu_con,nu_con), tmp(nu,nu_con);
       getCols(pdata->con_inputs,R,tmp);
       getRows(pdata->con_inputs,tmp,R_con);
@@ -368,6 +325,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             pdata->Rind2[nnz] = j+nq_con;
             pdata->Rval[nnz++] = R_con(i,j);
           }
+ */
     }    
 
      // get the map ptr back from matlab
@@ -392,13 +350,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     error = GRBloadenv(&(pdata->env),NULL);
 
     // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
-    error = GRBsetintparam(pdata->env,"outputflag",0);
-    error = GRBsetintparam(pdata->env,"method",2);
-    error = GRBsetintparam(pdata->env,"presolve",0);
-    error = GRBsetintparam(pdata->env,"bariterlimit",20);
-    error = GRBsetintparam(pdata->env,"barhomogenous",0);
-    error = GRBsetdblparam(pdata->env,"barconvtol",0.0005);
-  
+    mxArray* psolveropts = myGetProperty(pobj,"solver_options");
+    int method = (int) mxGetScalar(myGetProperty(psolveropts,"method"));
+    error = GRBsetintparam(pdata->env,"outputflag",(int)mxGetScalar(myGetProperty(psolveropts,"outputflag")));
+    error = GRBsetintparam(pdata->env,"method",method);
+    error = GRBsetintparam(pdata->env,"presolve",(int) mxGetScalar(myGetProperty(psolveropts,"presolve")));
+    if (method==2) {
+    	error = GRBsetintparam(pdata->env,"bariterlimit",(int) mxGetScalar(myGetProperty(psolveropts,"bariterlimit")));
+    	error = GRBsetintparam(pdata->env,"barhomogenous",(int) mxGetScalar(myGetProperty(psolveropts,"barhomogenous")));
+    	error = GRBsetdblparam(pdata->env,"barconvtol",mxGetScalar(myGetProperty(psolveropts,"barconvtol")));
+    }
+
     mxClassID cid;
     if (sizeof(pdata)==4) cid = mxUINT32_CLASS;
     else if (sizeof(pdata)==8) cid = mxUINT64_CLASS;
@@ -597,8 +559,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nf = nc+nc*nd; // number of contact force variables
   int nparams = nq_con+nu_con+nf+neps;
   
-  GRBmodel *model = NULL;
-
   // set obj,lb,up
   VectorXd lb(nparams), ub(nparams);
   lb.topRows(nq_con) = -1e3*VectorXd::Ones(nq_con);
@@ -610,18 +570,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.bottomRows(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.bottomRows(neps) = pdata->slack_limit*VectorXd::Ones(neps);
   
-  CGE (GRBnewmodel(pdata->env,&model,"QPController",nparams,NULL,lb.data(),ub.data(),NULL,NULL), pdata->env);
-  
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
   //
   //  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
+  vector< MatrixXd* > QblkDiag(nc>0 ? 4 : 2);  // nq, nu, nf, neps
+  MatrixXd Qnq;  VectorXd Qnfdiag = VectorXd::Zero(nf), Qneps = VectorXd::Constant(neps,.001);
+  QblkDiag[0] = &Qnq;
+  QblkDiag[1] = &(pdata->Rdiag);      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+  if (nc>0) {
+  	QblkDiag[2] = &Qnfdiag;
+  	QblkDiag[3] = &Qneps;    // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+  }
+  VectorXd f(nparams);
 
   {      
     VectorXd q_ddot_des_con(nq_con);
     getRows(pdata->con_dof,q_ddot_des,q_ddot_des_con);
     if (nc > 0) {
-      MatrixXd Hqp_con(nq_con,nq_con);
       RowVectorXd fqp_con(nq_con);
       
       MatrixXd J_con(2,nq_con),Jdot_con(2,nq_con);
@@ -639,34 +605,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       fqp_con -= pdata->w*q_ddot_des_con.transpose();
 
       // Q(1:nq_con,1:nq_con) = Hqp_con
-      for (i=0; i<nq_con; i++)
-        for (j=0; j<nq_con; j++)
-          if (abs(Hqp_con(i,j))>1e-10) 
-            CGE (GRBaddqpterms(model,1,&i,&j,&(Hqp_con(i,j))), pdata->env);
+      Qnq = Hqp_con;
 
       // obj(1:nq_con) = 2*fqp_con
-      fqp_con *= 2;
-      CGE (GRBsetdblattrarray(model,"Obj",0,nq_con,fqp_con.data()), pdata->env);
-      
-      // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
-      double cost = .001;
-      for (i=nparams-neps; i<nparams; i++) {
-        CGE (GRBaddqpterms(model,1,&i,&i,&cost), pdata->env);
-      }
-    } else {
+      f.topRows(nq_con) = 2*fqp_con.transpose();
+     } else {
       // Q(1:nq_con,1:nq_con) = eye(nq_con)
-      double cost = 1;
-      for (i=0; i<nq_con; i++) {  
-        CGE (GRBaddqpterms(model,1,&i,&i,&cost), pdata->env);
-      }
+    	Qnq = VectorXd::Ones(nq_con);
+
       // obj(1:nq_con) = -qddot_des_con
-//      q_ddot_des_con *= -1;
-      q_ddot_des_con *= -2;  // NOTE:  This is very strange, and appears to be related to a bug we've found in gurobi.  the linear term in the objective seems to be off by a factor of 2 in the unconstrained case.
-      CGE (GRBsetdblattrarray(model,"Obj",0,nq_con,q_ddot_des_con.data()), pdata->env);
+      f.topRows(nq_con) = -qddot_des_con;
+      //      q_ddot_des_con *= -2;  // NOTE:  This is very strange, and appears to be related to a bug we've found in gurobi.  the linear term in the objective seems to be off by a factor of 2 in the unconstrained case.
     } 
-    
-    // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
-    CGE (GRBaddqpterms(model,pdata->Rnnz,pdata->Rind1,pdata->Rind2,pdata->Rval), pdata->env);
   }      
   
   { // constrained dynamics

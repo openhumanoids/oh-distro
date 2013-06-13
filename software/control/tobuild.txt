@@ -3,7 +3,7 @@
 
 # mypod1
 #pd_chain_control
-reactive_navigation_2d
+#reactive_navigation_2d
 #gaze_control
 #drc_controller_manager
-fall_detector
+#fall_detector
