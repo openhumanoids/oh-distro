@@ -8,7 +8,7 @@ struct ee_teleop_transform_t
   int8_t ee_type;
 	
   // T_aff_hand (transform from ee frame to affordance frame)
-	position_3d_t hand2aff_offset; // the transform between the hand and the male mate affordance geometry
+	position_3d_t hand2aff_offset; // the transform between the hand and the male mate affordance geometry, gives the pose of the tip relative to the hand.
 	vector_3d_t mate_axis; //desired world frame axis of the female mate affordance geometry 
 	
 	const int8_t LEFT_HAND   = 0;
