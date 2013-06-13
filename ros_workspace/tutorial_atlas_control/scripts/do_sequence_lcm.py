@@ -21,7 +21,7 @@ from drc.recovery_t import recovery_t
 from drc.system_status_t import system_status_t
 from drc.frequency_t import frequency_t
 
-filenames = ['projectial_ingress','faceup_to_facedown_wriggle','flat_out', 
+filenames = ['projectial_ingress_ready','projectial_ingress','faceup_to_facedown_wriggle','flat_out', 
              'knee_rise_set','knee_rise','knee_rise_finish']
 
 real_time_percent_ma = 50
