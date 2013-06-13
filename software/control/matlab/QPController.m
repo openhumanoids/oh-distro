@@ -118,6 +118,16 @@ classdef QPController < MIMODrakeSystem
     else
       obj.use_hand_ft = false;
     end
+
+    if (isfield(options,'ignore_states'))
+      % specifies what dimensions of the state we should ignore 
+      assert(isnumeric(options.ignore_states));
+      assert(isfield(controller_data.data,'xtraj'));
+      assert(isa(controller_data.data.xtraj,'Trajectory'));
+      obj.ignore_states = options.ignore_states;
+    else
+      obj.ignore_states = [];
+    end
     
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
@@ -278,6 +288,11 @@ classdef QPController < MIMODrakeSystem
     % frame in a multi coordinate frame 
     x = varargin{3};
     
+    if ~isempty(obj.ignore_states)
+      xt=eval(ctrl_data.xtraj,t);
+      x(obj.ignore_states) = xt(obj.ignore_states);
+    end
+    
     r = obj.robot;
     nq = getNumDOF(r); 
     q = x(1:nq); 
@@ -410,6 +425,7 @@ classdef QPController < MIMODrakeSystem
           c_pre = sum(num_desired_contacts(1:lfoot_desired_idx-1));
           if any(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx)))<=contact_threshold)
             lfoot_contact_state_kin = 1;
+%             fprintf('left active phi = %2.3f\n',min(phi(c_pre+(1:num_desired_contacts(lfoot_desired_idx))))); 
           end
         end
 
@@ -418,10 +434,18 @@ classdef QPController < MIMODrakeSystem
           c_pre = sum(num_desired_contacts(1:rfoot_desired_idx-1));
           if any(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx)))<=contact_threshold)
             rfoot_contact_state_kin = 1;
+%             fprintf('right active phi = %2.3f\n',min(phi(c_pre+(1:num_desired_contacts(rfoot_desired_idx))))); 
           end
         end
       end
-      
+%       
+%       if lfoot_contact_state
+%         fprintf('left foot force active\n');
+%       end        
+%       if rfoot_contact_state
+%         fprintf('right foot force active\n');
+%       end        
+%       
       lfoot_contact_state = lfoot_contact_state || lfoot_contact_state_kin;
       rfoot_contact_state = rfoot_contact_state || rfoot_contact_state_kin;
       
@@ -448,7 +472,8 @@ classdef QPController < MIMODrakeSystem
       c_pre = 0;
       for i=1:length(desired_supports)
         if desired_supports(i)~=obj.lfoot_idx && desired_supports(i)~=obj.rfoot_idx
-          if any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
+          if ctrl_data.ignore_terrain || any(phi(c_pre+(1:num_desired_contacts(i)))<=contact_threshold)
+            % if ignore_terrain is on for other body contacts, we just follow the desired support trajectory 
             active_supports = [active_supports; desired_supports(i)];
             active_surfaces = [active_surfaces; supp.contact_surfaces(i)];
             active_contact_pts{length(active_supports)} = supp.contact_pts{i};
@@ -955,5 +980,6 @@ classdef QPController < MIMODrakeSystem
     multi_robot;
     num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain
+    ignore_states; % array if state indices we want to ignore (and substitute with planned values)
   end
 end
