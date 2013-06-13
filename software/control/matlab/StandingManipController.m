@@ -223,10 +223,10 @@ classdef StandingManipController < DRCController
       else
         % first initialization should come here... wait for state
         state_frame = getStateFrame(obj.robot);
-        state_frame.subscribe('EST_ROBOT_STATE');
+        state_frame.subscribe(state_frame.channel);
         while true
-          [x,~] = getNextMessage(state_frame,10);
-          if (~isempty(x))
+          [x,t] = getNextMessage(state_frame,10);
+          if (~isempty(x) && t>6.0) % wait for 6 seconds at startup
             data = struct();
             data.AtlasState = x;
             break;
