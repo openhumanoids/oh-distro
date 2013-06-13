@@ -167,17 +167,13 @@ classdef WalkingController < DRCController
       else
         obj.controller_data.setField('y0',matdata.zmptraj);
       end
+      tspan_end = matdata.zmptraj.tspan(end);
 
       fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.link_constraints,'uint8'),'uint8');
       fclose(fid);
       matdata = load(tmp_fname);
       obj.controller_data.setField('link_constraints',matdata.link_constraints);
-      if ~isempty(matdata.link_constraints) && ~isempty(matdata.link_constraints(1).traj)
-        tspan_end = matdata.link_constraints(1).traj.tspan(end);
-      else
-        tspan_end = matdata.link_constraints(1).min.tspan(end);
-      end
       
       fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.qnom,'uint8'),'uint8');
