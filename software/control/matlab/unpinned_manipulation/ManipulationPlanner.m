@@ -1958,6 +1958,7 @@ classdef ManipulationPlanner < handle
           [q_des,info] = inverseKin(obj.r,q0,ikargs{:},struct('q_nom',q0,'Q',cost));
           if(info>10)
             warning(['Info = ',num2str(info),' IK fails for teleoperation']);
+            send_status(3,0,0,['Info = ',num2str(info),' IK fails for teleoperation']);
           end
           qtraj = [q0 q_des];
           xtraj = [qtraj;0*qtraj];
