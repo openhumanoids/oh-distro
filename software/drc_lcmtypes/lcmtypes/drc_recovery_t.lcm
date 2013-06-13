@@ -11,4 +11,9 @@ struct recovery_t
     const int8_t KNEE_RISE_SET        = 4;
     const int8_t KNEE_RISE            = 5;
     const int8_t KNEE_FINISH          = 6;
+    const int8_t CRAWL                = 7;
+    const int8_t CRAWL_LEFT           = 8;
+    const int8_t CRAWL_LEFT_LARGE     = 9;
+    const int8_t CRAWL_RIGHT          = 10;
+    const int8_t CRAWL_RIGHT_LARGE    = 11;
 }
