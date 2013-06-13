@@ -217,6 +217,10 @@ classdef ManipulationPlanner < handle
                     pelvis_pose = [nan(2,1);pelvisT(3); rpy2quat(pelvisT(4:6))];
                     pelvis_const.min = pelvis_pose-1e-4*[zeros(3,1);ones(4,1)];
                     pelvis_const.max = pelvis_pose+1e-4*[zeros(3,1);ones(4,1)];
+                    pelvis_const.min(3) = pelvis_pose(3)-0.1;
+                    pelvis_const.max(3) = pelvis_pose(3)+0.1;
+                    pelvis_const.min(4:7) = pelvis_pose(4:7)-0.1*ones(4,1);
+                    pelvis_const.max(4:7) = pelvis_pose(4:7)+0.1*ones(4,1);
                 elseif(strcmp('left_palm',ee_names{ind(k)}))
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
@@ -281,6 +285,9 @@ classdef ManipulationPlanner < handle
 
            % publish robot pose
            disp('Publishing candidate endpose ...');
+           kinsol_out = doKinematics(obj.r,q_out);
+           [~,J_rh] = forwardKin(obj.r,kinsol_out,obj.r_hand_body,[0;0;0],1);
+           fprintf('The condition number of Jacobian matrix of the right hand is %10.4f\n',cond(J_rh));
            send_status(3,0,0,'Publishing candidate endpose...');
            utime = now() * 24 * 60 * 60;
            xtraj = zeros(getNumStates(obj.r),1);
