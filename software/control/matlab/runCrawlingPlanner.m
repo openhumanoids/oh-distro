@@ -121,7 +121,7 @@ while true
     % Plan first turn
     options.direction = firstTurn.direction;
     display('Getting qtraj ...');
-    [qtraj{1},support_times{1},supports{1},V{1},comtraj{1},zmptraj{1}] = crawlingPlan(r,x0,body_spec,foot_spec,options)
+    [qtraj{1},support_times{1},supports{1},V{1},comtraj{1},zmptraj{1},link_constraints{1}] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 
     % Plan forward crawling
     %options.direction = FORWARD;
@@ -169,7 +169,7 @@ while true
     mu = goal.mu;
     crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full(actuated),'mu',mu,...
-      'link_constraints',link_constraints,'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',goal.ignore_terrain)
+      'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',goal.ignore_terrain)
     msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     makeFist;
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
