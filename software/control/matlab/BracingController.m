@@ -26,6 +26,8 @@ classdef BracingController < DRCController
             obj.controller_data = ctrl_data;
             
             obj = setTimedTransition(obj,20,name,false); % should transition to prone controller
+
+            obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');  % for crawling
             
         end
         
