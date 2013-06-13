@@ -539,7 +539,11 @@ while (1)
           'support_times',support_times,'supports',{support_states},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
           'link_constraints',[],'zmptraj',[],'qnom',[]);
 
-        robot_plan_publisher_viewer.publish(0,data);
+        if(action_options.debug)
+          uisave('data','data/aa_plan.mat');
+        else
+          robot_plan_publisher_viewer.publish(0,data);
+        end
 
         % Drake gui playback
         if(action_options.drake_vis)
