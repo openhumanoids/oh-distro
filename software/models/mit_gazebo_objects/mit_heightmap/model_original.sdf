@@ -39,7 +39,7 @@
               <min_height>2.2</min_height>
               <fade_dist>1</fade_dist>
             </blend>
-            <uri>model://mit_heightmap/materials/textures/heightmap_inverted_blur_gauss_5.png</uri>
+            <uri>model://mit_heightmap/materials/textures/heightmap.png</uri>
             <size>100 100 3.5</size>
             <pos>0 0 -0.6</pos>
           </heightmap>

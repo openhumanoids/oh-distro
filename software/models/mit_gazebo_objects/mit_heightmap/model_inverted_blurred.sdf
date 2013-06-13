@@ -6,9 +6,9 @@
       <collision name="collision">
         <geometry>
           <heightmap>
-            <uri>model://mit_heightmap/materials/textures/heightmap.png</uri>
+            <uri>model://mit_heightmap/materials/textures/heightmap_inverted_blur_gauss_5.png</uri>
             <size>100 100 3.5</size>
-            <pos>0 0 -0.6</pos>
+            <pos>0 0 -2.9</pos>
           </heightmap>
         </geometry>
       </collision>
@@ -41,7 +41,7 @@
             </blend>
             <uri>model://mit_heightmap/materials/textures/heightmap_inverted_blur_gauss_5.png</uri>
             <size>100 100 3.5</size>
-            <pos>0 0 -0.6</pos>
+            <pos>0 0 -2.9</pos>
           </heightmap>
         </geometry>
       </visual>
