@@ -421,6 +421,8 @@ while(1)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_projectile.mat'));%atlas
       elseif(posture_goal.preset==drc.robot_posture_preset_t.CROUCHING_HNDS_DWN)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crouching_fp.mat'));
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_RGTHND_REACH)
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));  
       end
       q_desired = d.xstar(1:getNumDOF(r));
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
