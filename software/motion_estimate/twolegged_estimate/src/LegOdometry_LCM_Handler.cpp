@@ -777,12 +777,11 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 				switch (_leg_odo->getActiveFoot()) {
 				case LEFTFOOT:
-					footslidetriad = levelpelvis*_leg_odo->pelvis_to_left;
+					footslidetriad = levelpelvis * _leg_odo->pelvis_to_left;
 					break;
 				case RIGHTFOOT:
-					footslidetriad = levelpelvis*_leg_odo->pelvis_to_right;
+					footslidetriad = levelpelvis * _leg_odo->pelvis_to_right;
 					break;
-
 				}
 
 				slideerr = footslidetriad.translation() - _leg_odo->getPrimaryInLocal().translation();
@@ -793,23 +792,16 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 					std::cout << "slide_offset_change: " << slide_err_at_step.transpose() << " | ";
 					slide_err_at_step = slideerr;
 					std::cout << slide_err_at_step.transpose() << std::endl;
-					//checkforzero = 3;
 
 					_leg_odo->setAccruedOffset(slideerr);
 				}
 
 				slidedelta = - slideerr + slide_err_at_step;
 
-				//if (checkforzero > 0) {
-					//std::cout << "bezero - " << checkforzero << " | " << slidedelta.transpose() << std::endl;
-					//checkforzero--;
-				//}
+				//_leg_odo->AccruedPelvisPosition(slidedelta);
+				_leg_odo->AccruedPrimaryFootOffset(slidedelta);
 
-				//std::cout << "norm: " << slidedelta.norm() << std::endl;
-
-				_leg_odo->AccruedPelvisPosition(slidedelta);
 			}
-
 #endif
 
 			//clock_gettime(CLOCK_REALTIME, &threequat);

@@ -51,6 +51,8 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	rightforces.y = 0.f;
 	rightforces.z = 0.f;
 	
+	slidecorrection.setIdentity();
+
 	lcmutime = 0;
 	deltautime = 0;
 	transition_timespan = 0;
@@ -338,8 +340,11 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
 	  Eigen::Vector3d alias;
 	  alias = newstep.footprintlocation.translation() + accrued_sliding;
 	  newstep.footprintlocation.translation() = alias;
-	  std::cout << "TwoLegOdometry::FootLogic -- is adding sliding accrued offset of: " << accrued_sliding.transpose() << std::endl;
+	  //std::cout << "TwoLegOdometry::FootLogic -- is adding sliding accrued offset of: " << accrued_sliding.transpose() << std::endl;
 	  accrued_sliding.setZero();
+
+	  // Reset the offset if we are applying the correction to the footstep location
+	  slidecorrection.setIdentity();
 
 	  footsteps.newFootstep(newstep);
 	  return true;
@@ -351,6 +356,15 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   return false;
 }
 
+void TwoLegOdometry::AccruedPrimaryFootOffset(const Eigen::Vector3d &delta) {
+	Eigen::Vector3d alias;
+
+	alias = slidecorrection.translation() + delta;
+	slidecorrection.translation() = alias;
+
+	//std::cout << "slide translation offset by: " << delta.transpose() << " to: " << slidecorrection.translation() << std::endl;
+}
+
 float TwoLegOdometry::getPrimaryFootZforce() {
   if (standing_foot == LEFTFOOT)
     return leftforces.z;
@@ -358,9 +372,9 @@ float TwoLegOdometry::getPrimaryFootZforce() {
 }
 
 float TwoLegOdometry::getSecondaryFootZforce() {
-	if (standing_foot == LEFTFOOT)
-	    return rightforces.z;
-	  return leftforces.z;
+  if (standing_foot == LEFTFOOT)
+	return rightforces.z;
+  return leftforces.z;
 }
 
 void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right) {
@@ -487,7 +501,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	returnval.setIdentity();
 
 	Eigen::Isometry3d lhs;// this is just to test
-	lhs = footsteps.getLastStep();
+	lhs = slidecorrection * footsteps.getLastStep(); // TODO
 	returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
 	returnval.linear() = q2C(local_frame_orientation);
 
@@ -532,6 +546,7 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
 
 	return footsteps.getLastStep();
 	
+	//return slidecorrection * footsteps.getLastStep();
 }
 
 Eigen::Isometry3d TwoLegOdometry::getLeftInLocal() {

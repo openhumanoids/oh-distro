@@ -65,7 +65,7 @@ class TwoLegOdometry {
 		double temp_max_testing[3];
 		
 		Eigen::Vector3d accrued_sliding;
-
+		Eigen::Isometry3d slidecorrection;
 		
 
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
@@ -165,6 +165,7 @@ class TwoLegOdometry {
 
 		void AccruedPelvisPosition(const Eigen::Vector3d &delta);
 		void setAccruedOffset(const Eigen::Vector3d &offset);
+		void AccruedPrimaryFootOffset(const Eigen::Vector3d &delta);
 
 		// TODO -- remove this, only for testing
 		Eigen::Vector3d truth_E;
