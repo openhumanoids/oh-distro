@@ -54,7 +54,8 @@
       </attenuation>
     </light>
     <include>
-      <uri>model://vrc_heightmap_2</uri>
+<!--      <uri>model://vrc_heightmap_2</uri> -->
+      <uri>model://mit_heightmap</uri>
     </include>
     <include>
       <uri>model://starting_pen</uri>
