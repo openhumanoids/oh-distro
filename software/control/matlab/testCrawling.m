@@ -19,13 +19,6 @@ function testCrawling()
   [~,foot_spec(3).contact_pt_ind] = getContactPoints(findLink(r,'r_foot'),'heel_mid');
   [~,foot_spec(4).contact_pt_ind] = getContactPoints(findLink(r,'l_foot'),'heel_mid');
   
-  q0 = d.x0(1:nq); 
-  q0(3)=-10; % artificially put the robot below the ground so that all supports are active
-  [u0,r] = inverseDynamics(r,q0,0*q0,0*q0,SupportState(r,[foot_spec.body_ind],{foot_spec.contact_pt_ind}));  
-  actuated = getActuatedJoints(r);
-  fr = AtlasPositionRef(r,'crawling',4);
-  publish(fr,0,[q0(actuated);zeros(nu,1);u0],defaultChannel(fr));
-  
   options.direction = 0;
   options.step_length = -.2;
   options.gait = 2;
@@ -33,29 +26,9 @@ function testCrawling()
   
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
   [q_traj,support_times,supports] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
-  qdot_traj = fnder(q_traj);
-  qddot_traj = fnder(qdot_traj);
-  
-  breaks = getBreaks(q_traj);
-  u = zeros(getNumInputs(r),length(breaks));
-  for i=1:length(breaks)
-    t = breaks(i);
-    supp_idx = find(support_times<=t,1,'last');
-    active_supports = supports(supp_idx);
-    u(:,i) = inverseDynamics(r,eval(q_traj,t),eval(qdot_traj,t),eval(qddot_traj,t),active_supports);
-  end
-  q_actuated_traj = q_traj(actuated);
-  qdot_actuated_traj = qdot_traj(actuated);
-  u_traj = PPTrajectory(spline(breaks,u));
-  
-  command_traj = setOutputFrame([q_actuated_traj;qdot_actuated_traj;u_traj],fr);
-  
-  save crawling_traj.mat command_traj;
-  
-  % you'll need this to run from the command line again
-  %command_traj = setOutputFrame(command_traj,AtlasPositionRef(r,'crawling',4)); 
-  options.realtime_factor = .12;
-  options.tspan = command_traj.tspan;
-  runLCM(command_traj,[],options);
+  save crawling_traj.mat q_traj support_times supports
+
+  simrate = .65;
+  playbackPDFFTrajectory(q_traj,support_times,supports,simrate);
   
 end
