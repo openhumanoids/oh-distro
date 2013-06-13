@@ -99,6 +99,14 @@ rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_name
 lc = lcm.lcm.LCM.getSingleton();
 teleop_mon = drake.util.MessageMonitor(drc.ee_cartesian_adjust_t,'utime');
 lc.subscribe('CANDIDATE_EE_ADJUSTMENT',teleop_mon);
+
+lc = lcm.lcm.LCM.getSingleton();
+teleop_transform_mon = drake.util.MessageMonitor(drc.ee_teleop_transform_t,'utime');
+lc.subscribe('PALM_TELEOP_TRANSFORM',teleop_transform_mon);
+aff2hand_offset = [0;0;0];
+mate_axis = [0;0;0];
+T_hand_palm_l = HT([0;0.1;0],pi/2,0,pi/2);
+T_hand_palm_r = HT([0;-0.1;0],-pi/2,0,-pi/2);
 % 
 x0 = getInitialState(r); 
 q0 = x0(1:getNumDOF(r));
@@ -454,7 +462,28 @@ while(1)
       end
       manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint);
   end    
-  
+  teleop_transform_data = getNextMessage(teleop_transform_mon,0);
+  if(~isempty(teleop_transform_data))
+    display('receive teleop transformation data');
+    teleop_transform_msg = drc.ee_teleop_transform_t(teleop_transform_data);
+    hand2aff_translation = [teleop_transform_msg.hand2aff_offset.translation.x;...
+      teleop_transform_msg.hand2aff_offset.translation.y;...
+      teleop_transform_msg.hand2aff_offset.translation.z];
+    hand2aff_quaternion = [teleop_transform_msg.hand2aff_offset.rotation.w;...
+      teleop_transform_msg.hand2aff_offset.rotation.x;...
+      teleop_transform_msg.hand2aff_offset.rotation.y;...
+      teleop_transform_msg.hand2aff_offset.rotation.z];
+    T_aff_palm = [quat2rotmat(hand2aff_quaternion) hand2aff_translation;0 0 0 1];
+    T_palm_aff = inv_HT(T_aff_palm);
+    if(teleop_transform_msg.ee_type == drc.ee_teleop_transform_t.LEFT_HAND)
+      T_hand_aff = T_hand_palm_l*T_palm_aff;
+    elseif(teleop_transform_msg.ee_type == drc.ee_teleop_transform_t.RIGHT_HAND)
+      T_hand_aff = T_hand_palm_r*T_palm_aff;
+    end
+    aff2hand_offset = T_hand_aff*[0;0;0;1];
+    aff2hand_offset = aff2hand_offset(1:3);
+    mate_axis = [teleop_transform_msg.mate_axis.x;teleop_transform_msg.mate_axis.y;teleop_transform_msg.mate_axis.z];
+  end
   ee_teleop_data = getNextMessage(teleop_mon,0);
   if(~isempty(ee_teleop_data))
     display('receive ee teleop command');
@@ -462,7 +491,11 @@ while(1)
     ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.y;ee_teleop_msg.pos_delta.z];
     ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.y;ee_teleop_msg.rpy_delta.z];
     q0 = x0(1:getNumDOF(r));
-    manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND);
+    if(isempty(aff2hand_offset)||isempty(mate_axis))
+      display('The teleop transformation is not set yet');
+    else
+      manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND,aff2hand_offset,mate_axis);
+    end
   end
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    

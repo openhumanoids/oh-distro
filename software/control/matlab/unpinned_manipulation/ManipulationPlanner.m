@@ -1915,9 +1915,15 @@ classdef ManipulationPlanner < handle
             obj.plan_pub.publish(xtraj,ts,utime);
         end
         
-        function generateAndPublishTeleopPlan(obj,q0,ee_delta_pos,ee_delta_rpy,ee_rhand,ee_lhand)
-          rpalm_pts = [0;-0.1;0];
-          lpalm_pts = [0;0.1;0];
+        function generateAndPublishTeleopPlan(obj,q0,ee_delta_pos,ee_delta_rpy,ee_rhand,ee_lhand,aff2hand_offset,mate_axis)
+          mate_axis_angle = acos(mate_axis'*[0;1;0]);
+          mate_rotmat = quat2rotmat(axis2quat([cross(mate_axis,[0;1;0]);mate_axis_angle]));
+          local_x_axis = mate_rotmat*[1;0;0];
+          local_y_axis = mate_rotmat*[0;1;0];
+          local_z_axis = mate_rotmat*[0;0;1];
+          mate_rotmat = eye(3);
+          rpalm_pts = [[0;-0.1;0] aff2hand_offset];
+          lpalm_pts = [[0;0.1;0] aff2hand_offset];
           rfoot_pts = obj.r_foot_body.getContactPoints();
           lfoot_pts = obj.l_foot_body.getContactPoints();
           head_pts = [0;0;0];
@@ -1929,14 +1935,20 @@ classdef ManipulationPlanner < handle
           head_curr = forwardKin(obj.r,kinsol0,obj.head_body,head_pts,1);
           com_curr = getCOM(obj.r,kinsol0);
           com_const = struct('max',com_curr+3e-3*ones(3,1),'min',com_curr-3e-3*ones(3,1));
-          rpalm_goal = rpalm_curr;
-          lpalm_goal = lpalm_curr;
+          rpalm_goal = rpalm_curr(:,1);
+          lpalm_goal = lpalm_curr(:,1);
           if(ee_lhand)
-            lpalm_goal(1:3) = lpalm_goal(1:3)+ee_delta_pos;
-            lpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(lpalm_curr(4:6)));
+            lpalm_pts = lpalm_pts(:,2);
+            rpalm_pts = rpalm_pts(:,1);
+            lpalm_goal(1:3) = lpalm_curr(1:3,2)+ee_delta_pos;
+            delta_rotmat = axis2rotmat([local_z_axis;ee_delta_rpy(3)])*axis2rotmat([local_y_axis;ee_delta_rpy(2)])*axis2rotmat([local_x_axis;ee_delta_rpy(1)]);
+            lpalm_goal(4:6) = rotmat2rpy(delta_rotmat*rpy2rotmat(lpalm_curr(4:6)));
           elseif(ee_rhand)
-            rpalm_goal(1:3) = rpalm_goal(1:3)+ee_delta_pos;
-            rpalm_goal(4:6) = rotmat2rpy(rpy2rotmat(ee_delta_rpy)*rpy2rotmat(rpalm_curr(4:6)));
+            lpalm_pts = lpalm_pts(:,1);
+            rpalm_pts = rpalm_pts(:,2);
+            rpalm_goal(1:3) = rpalm_curr(1:3,2)+ee_delta_pos;
+            delta_rotmat = axis2rotmat([local_z_axis;ee_delta_rpy(3)])*axis2rotmat([local_y_axis;ee_delta_rpy(2)])*axis2rotmat([local_x_axis;ee_delta_rpy(1)]);
+            rpalm_goal(4:6) = rotmat2rpy(delta_rotmat*rpy2rotmat(rpalm_curr(4:6)));
           end
           ikargs = {obj.r_hand_body,rpalm_pts,rpalm_goal,obj.l_hand_body,lpalm_pts,lpalm_goal,...
             obj.r_foot_body,rfoot_pts,rf_curr,obj.l_foot_body,lfoot_pts,lf_curr,...
@@ -1945,7 +1957,7 @@ classdef ManipulationPlanner < handle
           cost = cost(1:obj.r.getNumDOF,1:obj.r.getNumDOF);
           [q_des,info] = inverseKin(obj.r,q0,ikargs{:},struct('q_nom',q0,'Q',cost));
           if(info>10)
-            display(sprintf('Info = %d,IK fails for teleoperation',info));
+            warning(['Info = ',num2str(info),' IK fails for teleoperation']);
           end
           qtraj = [q0 (q0+q_des)/2 q_des];
           xtraj = [qtraj;0*qtraj];
