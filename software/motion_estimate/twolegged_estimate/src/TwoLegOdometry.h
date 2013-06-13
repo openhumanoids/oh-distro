@@ -35,7 +35,7 @@ class TwoLegOdometry {
 		int64_t standing_delay;
 		int stepcount;
 		
-		Eigen::Quaterniond imu_orientation_estimate;
+		//Eigen::Quaterniond imu_orientation_estimate;
 		Eigen::Quaterniond local_frame_orientation;
 		Eigen::Vector3d local_frame_rates;
 		Eigen::Vector3d local_velocities;
@@ -102,7 +102,11 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id);
 		
+		// To be depreciated
 		Eigen::Quaterniond MergePitchRollYaw(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs);
+
+		Eigen::Isometry3d getLastStep_w_IMUq();
+
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		

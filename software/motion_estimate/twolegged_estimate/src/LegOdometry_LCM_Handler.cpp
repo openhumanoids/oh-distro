@@ -575,7 +575,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 		getJoints(_msg, alljoints, jointnames);
 		joints_to_map(alljoints,jointnames, _msg->num_joints, &jointpos_in);
-		getTransforms_FK(_msg->utime, jointpos_in, left,right);
+		getTransforms_FK(_msg->utime, jointpos_in, left,right);// FK, translations in body frame with no rotation (I)
 
 		// TODO -- Initialization before the VRC..
 		if (firstpass>0)
@@ -587,14 +587,17 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 
 			} else {
+
 				Eigen::Isometry3d init_state;
 				init_state.setIdentity();
+
 				_leg_odo->ResetWithLeftFootStates(left,right,init_state);
+
 			}
 		}
 
 		// This must be broken into separate position and velocity states
-		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here
+		legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
 		if (legchangeflag) {
 			persistlegchangeflag = true; // this is to bridge the rate change gap
 		}
@@ -759,7 +762,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
 			// TODO -- remove the foot velocity measurement
-#ifdef DO_FOOT_SLIP_FEEDBACK
+#ifdef DO_FOOT_SLIP_FEEDBACK_
 			if (_switches->slide_compensation) {
 
 				Eigen::Vector3d slideerr,slidedelta;
@@ -1741,92 +1744,71 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	// quaternion scale and vector ordering seems to be correct
 	Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
 	Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
-	  
 
-	  //Eigen::Quaterniond tempq;
-	  //Eigen::Matrix<double,3,3> leftC, rightC;
-	  //tempq.setIdentity();
-	  
-	  // TODO -- clear this if your are happy with it working
-	  if (false) {
-		  // TODO -- Depreciate this soon -- lack of trust in Isometry3d::rotate(), many hours lost to this function -- may be a successive vs fixed frame rotation scheme
-		  left.setIdentity();
-		  right.setIdentity();
+	left.setIdentity();
+	right.setIdentity();
 
-		  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
-		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
+	left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
+	right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
-		  left.rotate(leftq); // with quaternion
-		  right.rotate(rightq);
-
-		  //left.rotate(leftC); // with rotation matrix
-	  } else {
-
-		  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
-		  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
-
-		  // TODO -- confirm the use of transpose() convert the rotation matrix into the correct frae, as this may be in the q2C function..
-		  //left.linear() = InertialOdometry::QuaternionLib::q2C(leftq).transpose(); // note Isometry3d.rotation() is still marked as "experimental"
-		  //right.linear() = InertialOdometry::QuaternionLib::q2C(rightq).transpose();
-		  left.linear() = q2C(leftq); // note Isometry3d.rotation() is still marked as "experimental"
-		  right.linear() = q2C(rightq);
-
-	  }
-
-	  // level out foot position from IMU
-	  Eigen::Isometry3d IMU_rp;
-	  IMU_rp.setIdentity();
-	  Eigen::Vector3d imu_E;
-
-	  //std::cout << "Bangles: " <<_leg_odo->getLocalOrientation().w() << ", " <<_leg_odo->getLocalOrientation().x() << ", " <<_leg_odo->getLocalOrientation().y() << ", " <<_leg_odo->getLocalOrientation().z() << std::endl;
-	  imu_E = q2e_new(_leg_odo->getLocalOrientation());
-	  imu_E(2) = 0.;
-	  //std::cout << "Aangles: " << imu_E.transpose() << std::endl << q2C(e2q(imu_E)) << std::endl;
+	// We ignore rotations
+	//left.linear() = q2C(leftq);
+	//right.linear() = q2C(rightq);
 
 
-	  IMU_rp.linear() = e2C(imu_E);
+#ifdef	MATTS_HELP
 
-	  Eigen::Isometry3d temptransform;
-	  Eigen::Isometry3d tempright, templeft;
+		// level out foot position from IMU
+		Eigen::Isometry3d IMU_rp;
+		IMU_rp.setIdentity();
+		Eigen::Vector3d imu_E;
+
+		//std::cout << "Bangles: " <<_leg_odo->getLocalOrientation().w() << ", " <<_leg_odo->getLocalOrientation().x() << ", " <<_leg_odo->getLocalOrientation().y() << ", " <<_leg_odo->getLocalOrientation().z() << std::endl;
+		imu_E = q2e_new(_leg_odo->getLocalOrientation());
+		imu_E(2) = 0.;
+		//std::cout << "Aangles: " << imu_E.transpose() << std::endl << q2C(e2q(imu_E)) << std::endl;
 
 
-	  temptransform.setIdentity();
-	  temptransform = (IMU_rp)*left;
-	  left = temptransform;
-	  temptransform = (IMU_rp)*right;
-	  right = temptransform;
+		IMU_rp.linear() = e2C(imu_E);
+
+		Eigen::Isometry3d temptransform;
+		Eigen::Isometry3d tempright, templeft;
+
+
+		temptransform.setIdentity();
+		temptransform = (IMU_rp)*left;
+		left = temptransform;
+		temptransform = (IMU_rp)*right;
+		right = temptransform;
 
 
 
-	  // now we strip out the influence of the ankle joints.
-	  // We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
-	  Eigen::Vector3d stripRP;
+		// now we strip out the influence of the ankle joints.
+		// We do not need to know the slope of the terrain. Assuming all footsteps are flat at the contact point
+		Eigen::Vector3d stripRP;
 
-	  //stripRP = q2e_new(InertialOdometry::QuaternionLib::C2q(left.linear()));
-	  stripRP = q2e_new(C2q(left.linear()));
-	  //std::cout << "Stripping left angles: " << stripRP.transpose() << std::endl;
-	  stripRP(0) = 0.;
-	  stripRP(1) = 0.;
+		//stripRP = q2e_new(InertialOdometry::QuaternionLib::C2q(left.linear()));
+		stripRP = q2e_new(C2q(left.linear()));
+		//std::cout << "Stripping left angles: " << stripRP.transpose() << std::endl;
+		stripRP(0) = 0.;
+		stripRP(1) = 0.;
 
-	  templeft.setIdentity();
-	  templeft.translation() = left.translation();
-	  templeft.linear() = e2C(stripRP);
-
-
-	  stripRP = q2e_new(C2q(right.linear()));
-	  stripRP(0) = 0.;
-	  stripRP(1) = 0.;
-
-	  tempright.setIdentity();
-	  tempright.translation() = right.translation();
-	  tempright.linear() = e2C(stripRP);
-
-	  left = templeft;
-	  right = tempright;
+		templeft.setIdentity();
+		templeft.translation() = left.translation();
+		templeft.linear() = e2C(stripRP);
 
 
-	  //std::cout << "LEFT: " << left.translation().transpose() << " | RIGHT " << right.translation().transpose() << "\n";
-	  //std::cout << std::endl;
+		stripRP = q2e_new(C2q(right.linear()));
+		stripRP(0) = 0.;
+		stripRP(1) = 0.;
+
+		tempright.setIdentity();
+		tempright.translation() = right.translation();
+		tempright.linear() = e2C(stripRP);
+
+		left = templeft;
+		right = tempright;
+#endif
 
 
 
@@ -1858,12 +1840,6 @@ void LegOdometry_Handler::getTransforms_FK(const unsigned long long &u_ts, const
 	  }
 
 #endif
-
-	  // Matt A says
-	  // try sysprof (apt-get install sysprof) system profiler
-	  // valgrind (memory leaks, memory bounds checking)
-	  // valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt
-	  
 
 }
 
