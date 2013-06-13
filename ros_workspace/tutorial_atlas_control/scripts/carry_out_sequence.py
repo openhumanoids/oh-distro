@@ -106,19 +106,19 @@ def carry_out_sequence(filename, which_steps, real_time_percent):
       command.position = [ float(x) for x in interpCommand ]
       pub2.publish(command)
       
-      #ros_sleep_amount =  dt / float(n)
-      #ros_tic =timestamp_now ()
-      #rospy.sleep( ros_sleep_amount )
-      #ros_delta = timestamp_now () - ros_tic
+      ros_sleep_amount =  dt / float(n)
+      ros_tic =timestamp_now ()
+      rospy.sleep( ros_sleep_amount )
+      ros_delta = timestamp_now () - ros_tic
       #print "ros_delta %f" % (ros_delta)
       #print "ros_sleep_amount %f" % (ros_sleep_amount)
 
-      lcm_sleep_amount = dtPublish * 100/ real_time_percent  + 0.011 
       # this is required for the alienware machines - working on removing it
       # lower might be the best number
-      lcm_tic =timestamp_now ()
-      time.sleep(lcm_sleep_amount)
-      lcm_delta = timestamp_now () - lcm_tic
+      #lcm_sleep_amount = dtPublish * 100/ real_time_percent  + 0.011 
+      #lcm_tic =timestamp_now ()
+      #time.sleep(lcm_sleep_amount)
+      #lcm_delta = timestamp_now () - lcm_tic
       #print "lcm_delta %f [%d]" % (lcm_delta, real_time_percent)
       #print "lcm_sleep_amount %f" % (lcm_sleep_amount)
 
