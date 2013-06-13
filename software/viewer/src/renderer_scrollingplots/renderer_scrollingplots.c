@@ -30,7 +30,6 @@
 #define PARAM_NAME_RENDER_PITCH "Pitch"
 #define PARAM_NAME_RENDER_ROLL "Roll"
 #define PARAM_NAME_RENDER_HEIGHT "Height"
-#define PARAM_NAME_RENDER_STATS "BW"
 #define PARAM_NAME_RENDER_SPEED "Speed"
 #define PARAM_NAME_SHOW_LEGEND "Show Legends"
 
@@ -55,7 +54,6 @@ struct _RendererScrollingPlots {
     BotGlScrollPlot2d *pitch_plot;
     BotGlScrollPlot2d *roll_plot;
     BotGlScrollPlot2d *height_plot;
-    BotGlScrollPlot2d *bandwidth_plot;
     BotGlScrollPlot2d *speed_plot;
 
     uint64_t      max_utime;
@@ -89,7 +87,6 @@ static void scrolling_plots_draw (BotViewer *viewer, BotRenderer *renderer)
     bot_gl_scrollplot2d_set_xlim (self->pitch_plot, gs_ts_min, gs_ts_max);
     bot_gl_scrollplot2d_set_xlim (self->roll_plot, gs_ts_min, gs_ts_max);
     bot_gl_scrollplot2d_set_xlim (self->height_plot, gs_ts_min, gs_ts_max); 
-    bot_gl_scrollplot2d_set_xlim (self->bandwidth_plot, gs_ts_min, gs_ts_max);
     bot_gl_scrollplot2d_set_xlim (self->speed_plot, gs_ts_min, gs_ts_max);
 
     int plot_width = bot_gtk_param_widget_get_int (self->pw, PARAM_NAME_SIZE);
@@ -112,12 +109,6 @@ static void scrolling_plots_draw (BotViewer *viewer, BotRenderer *renderer)
 
     if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_HEIGHT)) {
         bot_gl_scrollplot2d_gl_render_at_window_pos (self->height_plot, 
-                x, y, plot_width, plot_height);
-        y += plot_height;
-    }
-
-    if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_STATS)) {
-        bot_gl_scrollplot2d_gl_render_at_window_pos (self->bandwidth_plot, 
                 x, y, plot_width, plot_height);
         y += plot_height;
     }
@@ -154,30 +145,6 @@ on_save_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data)
     bot_gtk_param_widget_save_to_key_file (self->pw, keyfile, RENDERER_NAME);
 }
 
-static void
-on_bw_stats(const lcm_recv_buf_t * buf, const char *channel, const drc_bandwidth_stats_t *msg, void *user_data){
-  RendererScrollingPlots *self = (RendererScrollingPlots*) user_data;
-  update_xaxis(self,msg->utime);
-  if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
-
-  double elapsed_time = (double) (msg->utime - msg->previous_utime)/1E6 ;
-  // 1024 is also used in bot spy:
-  double bw_base2robot =  0; 
-  double bw_robot2base=  0; 
-  
-  bot_gl_scrollplot2d_add_point (self->bandwidth_plot, "To Robot", 
-                                msg->utime * 1.0e-6,
-                                bw_base2robot);
-  bot_gl_scrollplot2d_add_point (self->bandwidth_plot, "From Robot", 
-                                msg->utime * 1.0e-6,
-                                bw_robot2base);
-  
-  bot_gl_scrollplot2d_add_point (self->bandwidth_plot, "32KB",  
-                                 msg->utime * 1.0e-6, 
-                                 32.0);  
-  //printf("got bw_stats msg\n");
-  //printf("%f and %f \n", bw_base2robot, bw_robot2base);
-}
 
 static void
 on_pose_body(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pose_t *msg, void *user_data){
@@ -213,9 +180,9 @@ on_pose_head(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pos
     bot_gl_scrollplot2d_add_point (self->height_plot, "height_head",
                                 msg->utime * 1.0e-6, msg->pos[2]);
 
-    double speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
-    bot_gl_scrollplot2d_add_point (self->speed_plot, "speed_head",
-                                msg->utime * 1.0e-6, speed);  
+    //double speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
+    //bot_gl_scrollplot2d_add_point (self->speed_plot, "speed_head",
+    //                            msg->utime * 1.0e-6, speed);  
 }
 
 
@@ -251,11 +218,9 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
       BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_NAME_FREEZE, 0, NULL);
   bot_gtk_param_widget_add_booleans (self->pw, 0,
       PARAM_NAME_RENDER_PITCH, 1,
+      PARAM_NAME_RENDER_HEIGHT, 1,      
+      PARAM_NAME_RENDER_SPEED, 1,      
       PARAM_NAME_RENDER_ROLL, 1, NULL);
-  bot_gtk_param_widget_add_booleans (self->pw, 0,
-      PARAM_NAME_RENDER_HEIGHT, 1,
-      PARAM_NAME_RENDER_STATS, 1,
-      PARAM_NAME_RENDER_SPEED, 1, NULL);  
   bot_gtk_param_widget_add_booleans (self->pw, 0,
       PARAM_NAME_SHOW_LEGEND, 0, NULL);
 
@@ -304,20 +269,6 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gl_scrollplot2d_add_plot    (self->height_plot, "height_head", MAX_POINTS);
   bot_gl_scrollplot2d_set_color   (self->height_plot, "height_head", 0, 1, 0, 1);
 
-  // PF Stats plot
-  self->bandwidth_plot = bot_gl_scrollplot2d_new ();
-  bot_gl_scrollplot2d_set_title        (self->bandwidth_plot, "BW Stats");
-  bot_gl_scrollplot2d_set_text_color   (self->bandwidth_plot, 0.7, 0.7, 0.7, 1);
-  bot_gl_scrollplot2d_set_border_color (self->bandwidth_plot, 1, 1, 1, 0.7);
-  bot_gl_scrollplot2d_set_bgcolor (self->bandwidth_plot, 0.1, 0.1, 0.1, 0.7);
-  bot_gl_scrollplot2d_set_ylim    (self->bandwidth_plot, 0, 200.0); // was -1 to 1
-  bot_gl_scrollplot2d_add_plot    (self->bandwidth_plot, "To Robot", MAX_POINTS);//0.1);
-  bot_gl_scrollplot2d_set_color   (self->bandwidth_plot, "To Robot", 0, 0, 1, 1);
-  bot_gl_scrollplot2d_add_plot    (self->bandwidth_plot, "From Robot", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->bandwidth_plot, "From Robot", 1, 1, 0, 1);
-  bot_gl_scrollplot2d_add_plot    (self->bandwidth_plot, "32KB", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->bandwidth_plot, "32KB", 0, 1, 0, 1);
-
   // speed plot
   self->speed_plot = bot_gl_scrollplot2d_new ();
   bot_gl_scrollplot2d_set_title        (self->speed_plot, "Speed [m/s]");
@@ -340,12 +291,10 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gl_scrollplot2d_set_show_legend (self->speed_plot, legloc);
   bot_gl_scrollplot2d_set_show_legend (self->pitch_plot, legloc);
   bot_gl_scrollplot2d_set_show_legend (self->roll_plot, legloc);
-  bot_gl_scrollplot2d_set_show_legend (self->bandwidth_plot, legloc);
 
 
   // subscribe to LC messages
   //self->can_decode = can_decode_new (self->lcm);
-  drc_bandwidth_stats_t_subscribe(self->lcm,"BW_STATS",on_bw_stats,self);
 
   bot_core_pose_t_subscribe(self->lcm,"POSE_BODY",on_pose_body,self);
   bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
@@ -376,7 +325,6 @@ on_param_widget_changed (BotGtkParamWidget *pw, const char *name,
         bot_gl_scrollplot2d_set_show_legend (self->pitch_plot, legloc);
         bot_gl_scrollplot2d_set_show_legend (self->roll_plot, legloc);
         bot_gl_scrollplot2d_set_show_legend (self->height_plot, legloc);
-        bot_gl_scrollplot2d_set_show_legend (self->bandwidth_plot, legloc);
     }
     bot_viewer_request_redraw(self->viewer);
 }
