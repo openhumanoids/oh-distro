@@ -18,7 +18,6 @@ function [qdtraj,support_times,supports,V,comtraj,zmptraj] = crawlingPlan(r,x0,b
 % @options direction - 0 for forward, <0 for left, >0 for right 
 % @options gait - 0 for quasi-static walk, 1 for zmp-walk, 2 for zmp-trot
 % @options duty_factor fraction of total stride time that each foot is in stance
-addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
@@ -51,7 +50,7 @@ if ~isfield(options,'com_height') options.com_height = .35; end
 if ~isfield(options,'comfortable_footpos') options.comfortable_footpos = [-.7 -.7 .6 .6; .3 -.3 -.3 .3]; end
 if ~isfield(options,'ignore_terrain') options.ignore_terrain = true; end  % todo: make this default to false
 if ~isfield(options,'direction') options.direction = 0; end
-if ~isfield(options,'gait') options.gait = 0; end
+if ~isfield(options,'gait') options.gait = 2; end
 if ~isfield(options,'draw') options.draw = true; end
 if ~isfield(options,'debug') options.debug = false; end
 
@@ -113,6 +112,7 @@ end
 
   function display(q,com,fpos,swing_legs)
     if options.draw
+      error('No display function!');
       stance_legs = 1:4; stance_legs(swing_legs)=[];
       kinsol = doKinematics(r,q);
       com_real = getCOM(r,kinsol);
@@ -142,7 +142,7 @@ fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
 com = [mean(fpos(1:2,:),2);options.com_height];
 q = crawlIK(q,com,fpos);
-display(q,com,fpos,[]); pause(5);
+%display(q,com,fpos,[]); pause(5);
 
 if (options.gait==0) % quasi-static
   order = [4 2 3 1];
@@ -354,6 +354,7 @@ elseif (options.gait ==2) % trot
     supports((i-1)*4+4) = SupportState(r,[foot_spec(1:4).body_ind], ...
                                   {foot_spec(1:4).contact_pt_ind},zeros(4,1));
   end
+  
   support_times = [0, support_times];
   supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];

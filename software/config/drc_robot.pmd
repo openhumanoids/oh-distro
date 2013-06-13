@@ -102,6 +102,10 @@ group "a.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
+    cmd "BotCrawlingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runCrawlingPlanner('robot');\"";
+       host = "extra";
+    }
     cmd "fall-detector" {
         exec = "drc-fall-detector --vdot_threshold 0.5 --count_threshold 3 --memory 10";
         host = "robot";
@@ -221,6 +225,10 @@ group "b.2.walking" {
     }
     cmd "BaseWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
+       host = "base";
+    }
+    cmd "BaseCrawlingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runCrawlingPlanner('base');\"";
        host = "base";
     }
 }
