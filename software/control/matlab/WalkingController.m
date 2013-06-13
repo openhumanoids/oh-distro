@@ -173,7 +173,7 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load(tmp_fname);
       obj.controller_data.setField('link_constraints',matdata.link_constraints);
-      if ~isempty(matdata.link_constraints(1).traj)
+      if ~isempty(matdata.link_constraints) && ~isempty(matdata.link_constraints(1).traj)
         tspan_end = matdata.link_constraints(1).traj.tspan(end);
       else
         tspan_end = matdata.link_constraints(1).min.tspan(end);
