@@ -503,18 +503,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
   else {
     VectorXd phi;
-    if (desired_supports.find(pdata->rfoot_idx)!=desired_supports.end()) {
-      contactPhi(pdata,pdata->rfoot_idx,phi,terrain_height);
-//      std::cout << "contacts right: " << phi << std::endl;
-      if (phi.maxCoeff()<contact_threshold || rfoot_contact_state)
-          active_supports.insert(pdata->rfoot_idx);
-    }
-    if (desired_supports.find(pdata->lfoot_idx)!=desired_supports.end()) {
-      contactPhi(pdata,pdata->lfoot_idx,phi,terrain_height);
-//      std::cout << "contacts left: " << phi << std::endl;
-      if (phi.maxCoeff()<contact_threshold || lfoot_contact_state)
-          active_supports.insert(pdata->lfoot_idx);
-    }
+    for (set<int>::iterator iter=desired_supports.begin(); iter!=desired_supports.end(); iter++) {
+      contactPhi(pdata,*iter,phi,terrain_height);
+      if (phi.minCoeff()<contact_threshold)
+          active_supports.insert(*iter);
+    }      
+    if (rfoot_contact_state) active_supports.insert(pdata->rfoot_idx);
+    if (lfoot_contact_state) active_supports.insert(pdata->lfoot_idx);
   }
 
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL);

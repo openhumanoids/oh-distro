@@ -51,7 +51,7 @@ function testCrawling()
   command_traj = setOutputFrame([q_actuated_traj;qdot_actuated_traj;u_traj],fr);
   
   options.realtime_factor = .12;
-  options.tspan = qd_actuated_traj.tspan;
+  options.tspan = q_actuated_traj.tspan;
   runLCM(command_traj,[],options);
   
 end

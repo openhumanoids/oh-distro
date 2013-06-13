@@ -110,7 +110,7 @@ classdef QPController < MIMODrakeSystem
         error('can''t find QPControllermex.  did you build it?');
       end
     else
-      obj.use_mex = 0;
+      obj.use_mex = 1;
     end
 
     if isfield(options,'use_hand_ft')
@@ -361,9 +361,6 @@ classdef QPController < MIMODrakeSystem
     if (obj.use_mex~=0)  
       if any(supp.contact_surfaces~=0)
         error('multi-robot contact not supported by mex version yet');
-      end
-      if any(desired_supports ~= obj.rfoot_idx & desired_supports ~= obj.lfoot_idx)
-        error('non-foot contacts are not supported by mex version yet (sorry, this is coming very soon)');
       end
     end
     
