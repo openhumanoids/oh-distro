@@ -37,9 +37,9 @@
 
 
 typedef enum _recovery_mode_t {
-    MODE_PROJECTILE_READY, MODE_PROJECTILE, MODE_UP_TO_DOWN, MODE_FLAT_OUT, MODE_KNEE_SET, MODE_KNEE_RISE, MODE_KNEE_FINISH
+    MODE_PROJECTILE_READY, MODE_PROJECTILE, MODE_UP_TO_DOWN, MODE_FLAT_OUT, MODE_KNEE_SET, MODE_KNEE_RISE, MODE_KNEE_FINISH,
+    MODE_CRAWL, MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE, MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE
 } recovery_mode_t;
-
 
 ////////////////////////////// END OF CODE COPIED IN FROM COMMON_UTILS
 typedef struct _RendererRecovery {
@@ -141,7 +141,9 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
   bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Proj. Ready", MODE_PROJECTILE_READY,
 				 "Projectile", MODE_PROJECTILE, 
                                 "Up-to-Down", MODE_UP_TO_DOWN, "Flat Out", MODE_FLAT_OUT, "Knee Set", MODE_KNEE_SET,
-                                "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH, NULL);
+                                "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH,  "Crawl", MODE_CRAWL, 
+                                "Crawl Left", MODE_CRAWL_LEFT, "Crawl Left Large", MODE_CRAWL_LEFT_LARGE, 
+                                "Crawl Right", MODE_CRAWL_RIGHT, "Crawl Right Large", MODE_CRAWL_RIGHT_LARGE, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_RECOVERY, NULL);
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
