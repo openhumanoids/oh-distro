@@ -134,6 +134,9 @@ end
 crawl_sequence = ActionSequence();
 link_constraints = struct('link_ndx', {}, 'pt', {}, 'min_traj', [], 'max_traj', [], 'traj', {});
 
+% Determine forward crawling direction
+z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
+
 q = q_nom;
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
@@ -245,7 +248,7 @@ elseif (options.gait ==2) % trot
       fpos(1,i) = fpos(1,i) + options.step_length/2;
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
-      link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
+      link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline,tspan,'', ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
@@ -258,7 +261,7 @@ elseif (options.gait ==2) % trot
         fpos(1,i) = fpos(1,i) + options.step_length;
         xf_foot = fpos(:,i);
         f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
-        link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
+        link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
         kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline,tspan,'', ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
@@ -322,7 +325,7 @@ elseif (options.gait ==2) % trot
       fpos(1,i) = fpos(1,i) + options.step_length/2;
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
-      link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
+      link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, tspan,'', ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
         ActionKinematicConstraint.NOT_IN_CONTACT, ...
@@ -335,7 +338,7 @@ elseif (options.gait ==2) % trot
         fpos(1,i) = fpos(1,i) + options.step_length;
         xf_foot = fpos(:,i);
         f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
-        link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
+        link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
         kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, tspan,'', ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
           ActionKinematicConstraint.NOT_IN_CONTACT, ...
