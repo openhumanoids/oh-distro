@@ -31,9 +31,20 @@ standing_controller = StandingController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
 
-controllers = struct(standing_controller.name,standing_controller, ...
-                      walking_controller.name,walking_controller,...     
-                      bracing_controller.name,bracing_controller);
+% crawl_opts = options;
+% crawl_opts.bipedal = false;
+% crawl_opts.lcm_foot_contacts = false;
+% crawl_opts.full_body_opt = true;
+% crawl_opts.use_walking_pd = false;
+% crawl_opts.ignore_states = 1:getNumStates(r);%[1 2 3 getNumDOF(r)+(1:6)];
+% crawling_controller = WalkingController('crawling',r,crawl_opts);
+
+crawling_controller = CrawlingController('crawling',r,options);
+
+controllers = struct(standing_controller.name,standing_controller,...
+                     walking_controller.name,walking_controller,...     
+                     bracing_controller.name,bracing_controller,...
+                     crawling_controller.name,crawling_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 

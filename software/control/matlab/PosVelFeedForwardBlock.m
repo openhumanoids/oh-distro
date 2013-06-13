@@ -13,15 +13,13 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       obj = obj@DrakeSystem(0,0,nx,3*nu,true,false);
       
       % check for the required fields in controller data
-      fieldcheck(controller_data,'qtraj');
-      fieldcheck(controller_data,'qdtraj');
-      fieldcheck(controller_data,'qddtraj');
-      fieldcheck(controller_data,'support_times');
-      fieldcheck(controller_data,'supports');
-      fieldcheck(controller_data,'ignore_terrain');
-      fieldcheck(controller_data,'
-      
-      
+      fieldcheck(controller_data.data,'qtraj');
+      fieldcheck(controller_data.data,'qdtraj');
+      fieldcheck(controller_data.data,'qddtraj');
+      fieldcheck(controller_data.data,'support_times');
+      fieldcheck(controller_data.data,'supports');
+      fieldcheck(controller_data.data,'ignore_terrain');
+     
       % set controller data for QP controller
       setField(controller_data,'A',zeros(4));
       setField(controller_data,'B',zeros(4,2));
@@ -30,20 +28,20 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       setField(controller_data,'R',zeros(2));
       setField(controller_data,'is_time_varying',true);
       setField(controller_data,'S',zeros(4));
-      setField(controller_data,'s1',zeros(4,1));
+      setField(controller_data,'s1',ConstantTrajectory(zeros(4,1)));
       setField(controller_data,'s2',0);
       setField(controller_data,'x0',zeros(4,1));
       setField(controller_data,'u0',zeros(2,1));
       setField(controller_data,'trans_drift',zeros(3,1));
       setField(controller_data,'mu',1);
-      setField(controller_data,'y0',zeros(2,1));
+      setField(controller_data,'y0',ConstantTrajectory(zeros(2,1)));
         
       obj.ctrl_data = controller_data;
       
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.01;
-      options.R = 1e-12*eye(getNumInputs(obj));
+      options.R = 1e-12*eye(nu);
       options.lcm_foot_contacts = false;
       options.full_body_opt = true;
       options.debug = false;
@@ -63,14 +61,15 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       obj = setOutputFrame(obj,AtlasPositionRef(r,'crawling',4));
     end
     
-    function u = output(obj,t,~,x)
-      q = eval(obj.ctrl_data.qtraj,t);
-      qdot = eval(obj.ctrl_data.qdtraj,t);
-      qddot = eval(obj.ctrl_data,qdtraj,t);
+    function y = output(obj,t,~,x)
+      q = eval(obj.ctrl_data.data.qtraj,t);
+      qdot = eval(obj.ctrl_data.data.qdtraj,t);
+      qddot = eval(obj.ctrl_data.data.qddtraj,t);
       
       xt=[q;qdot];
       x(obj.ignore_states)=xt(obj.ignore_states);
-      u = obj.qp_controller.mimoOutput(0,[],qddot_des,zeros(12,1),x);
+      u = obj.qp_controller.mimoOutput(0,[],qddot,zeros(12,1),x);
+      y = [q;qdot;u];
     end
     
   end
