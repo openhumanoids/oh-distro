@@ -37,7 +37,7 @@
 
 
 typedef enum _recovery_mode_t {
-    MODE_PROJECTILE, MODE_UP_TO_DOWN, MODE_FLAT_OUT, MODE_KNEE_SET, MODE_KNEE_RISE, MODE_KNEE_FINISH
+    MODE_PROJECTILE_READY, MODE_PROJECTILE, MODE_UP_TO_DOWN, MODE_FLAT_OUT, MODE_KNEE_SET, MODE_KNEE_RISE, MODE_KNEE_FINISH
 } recovery_mode_t;
 
 
@@ -138,7 +138,8 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Projectile", MODE_PROJECTILE, 
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Proj. Ready", MODE_PROJECTILE_READY,
+				 "Projectile", MODE_PROJECTILE, 
                                 "Up-to-Down", MODE_UP_TO_DOWN, "Flat Out", MODE_FLAT_OUT, "Knee Set", MODE_KNEE_SET,
                                 "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_RECOVERY, NULL);
