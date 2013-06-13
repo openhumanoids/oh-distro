@@ -14,7 +14,7 @@ else
   status_code = 7;
 end
 
-addpath(fullfile(pwd,'frames'));
+%addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 
@@ -84,7 +84,7 @@ while true
   while waiting
     [x,~] = getNextMessage(state_frame,10);
     if (~isempty(x))
-      x0=x;
+      x0(1:6)=x(1:6);
     end
     data = committed_goal_mon.getNextMessage(10);
     if (~isempty(data))
@@ -115,6 +115,7 @@ while true
 
     [firstTurn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
     options.gait = ZMP_TROT;
+    options.num_steps = forwardSegment.num_steps;
 
     % Plan first turn
     options.direction = firstTurn.direction;
