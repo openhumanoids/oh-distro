@@ -157,11 +157,11 @@ kinsol = doKinematics(r,q);
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
+com0 = getCOM(r,kinsol);
 z_foot_nom = mean(fpos(3,:));
-fpos(3,:) = z_foot_nom;
 fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
-com = [mean(fpos(1:2,:),2);options.com_height+mean(fpos_initial(3,:))];
+com = [mean(fpos(1:2,:),2);options.com_height+mean(z_foot_nom)];
 q = crawlIK(q,com,fpos);
 %display(q,com,fpos,[]); pause(5);
 
@@ -205,8 +205,8 @@ if (options.gait==0) % quasi-static
   %end
 elseif (options.gait ==2) % trot
   t_start = stride_duration/2 - swing_duration;
-  zmptraj = PPTrajectory(foh([0,t_start,t_start+options.num_strides*stride_duration], ...
-                         [com(1:2),com(1:2),com(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
+  zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
+                         [com(1:2),com(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
@@ -389,6 +389,10 @@ elseif (options.gait ==2) % trot
                                   {foot_spec(1:4).contact_pt_ind},zeros(4,1));
   end
   
+  %for i = 1:numel(crawl_sequence.key_time_samples)
+    %support_vert = getSupportPolygon(crawl_sequence,crawl_sequence.key_time_samples(i));
+    %zmp_pts = 
+  %end
   support_times = [0, support_times];
   supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
@@ -399,17 +403,26 @@ elseif (options.gait ==2) % trot
   comtraj = [comtraj;ConstantTrajectory(com(3))];
   
   % COM constraint
-  kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'COM_constraint');
+  kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'crawling_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+
+  comtraj_initial = PPTrajectory(foh([0, t_start],[com0, eval(comtraj,comtraj.tspan(1))]));
+  kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
 
   t = 0:0.025:comtraj.tspan(2);
   nt = numel(t);
   q = zeros(nq,nt);
-  q0 = x0(1:nq);
-  for i = 1:nt
+  q(:,1) = x0(1:nq);
+  qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),q_nom]));
+  for i = 2:nt
     ikargs = getIKArguments(crawl_sequence,t(i));
+    if t(i) < t_start
+      options.q_nom = eval(qtraj_initial,t(i));
+    else
+      options.q_nom = q_nom;
+    end
+    q0 = q(:,i-1);
     q(:,i) = inverseKin(r,q0,ikargs{:},options);
-    q0 = q(:,i);
     if options.draw
       v.draw(t(i),[q(:,i);0*q(:,i)]);
       AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
@@ -519,6 +532,17 @@ return;
 
 end
 
+function support_vert = getSupportPolygon(action_sequence, t)
+  support_vert = [];
+  for j = 1:length(action_sequence.kincons)
+    if t >= action_sequence.kincons{j}.tspan(1) && ...
+       t <= action_sequence.kincons{j}.tspan(2) && ...
+        any(any(cell2mat(action_sequence.kincons{j}.getContactState(t)') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
+        any(cell2mat(action_sequence.kincons{j}.getContactState(t)') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1)
+      support_vert = [support_vert, action_sequence.kincons{j}.posmin];
+    end
+  end
+end
 
 function f_spline = swing_foot_spline(x0,xf,step_height,swing_duration,start_time)
 % one of the swing foot splines from littledog 
