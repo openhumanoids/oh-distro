@@ -184,9 +184,6 @@ elseif (options.gait ==2) % trot
   t_start = stride_duration/2 - swing_duration;
   zmptraj = PPTrajectory(foh([0,t_start,t_start+options.num_strides*stride_duration], ...
                          [com(1:2),com(1:2),com(1:2)+[options.num_strides*options.step_length;0]]));
-  support_times = [];
-  support_body_inds = [];
-  support_pt_inds = {};
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
@@ -194,9 +191,6 @@ elseif (options.gait ==2) % trot
     if any(i == [1,3])
       % Initial stance constraints
       tspan = [0,t_start];
-      support_times = [support_times; tspan(1)];
-      support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-      support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -213,9 +207,6 @@ elseif (options.gait ==2) % trot
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
         tspan = t_start + (j-1)*stride_duration + [swing_duration,stride_duration];
-        support_times = [support_times; tspan(1)];
-        support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-        support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
         kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
           ActionKinematicConstraint.MAKE_CONTACT, ...
           ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -232,9 +223,6 @@ elseif (options.gait ==2) % trot
       % Final stance constraints
       j = options.num_strides;
       tspan = t_start + (j-1)*stride_duration + [swing_duration,stride_duration];
-      support_times = [support_times; tspan(1)];
-      support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-      support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
         ActionKinematicConstraint.MAKE_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -277,9 +265,6 @@ elseif (options.gait ==2) % trot
     elseif any(i == [2,4])
       % Initial stance constraints
       tspan = [0,t_start+stride_duration/2];
-      support_times = [support_times; tspan(1)];
-      support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-      support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -296,9 +281,6 @@ elseif (options.gait ==2) % trot
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
         tspan = t_start + ((j-1)+1/2)*stride_duration + [swing_duration,stride_duration];
-        support_times = [support_times; tspan(1)];
-        support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-        support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
         kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
           ActionKinematicConstraint.MAKE_CONTACT, ...
           ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -316,9 +298,6 @@ elseif (options.gait ==2) % trot
       % Final stance constraints
       j = options.num_strides;
       tspan = t_start + [((j-1)+1/2)*stride_duration + swing_duration, j*stride_duration];
-      support_times = [support_times; tspan(1)];
-      support_body_inds = [support_body_inds; foot_spec(i).body_ind];
-      support_pt_inds = [support_pt_inds; {foot_spec(i).contact_pt_ind}];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
         ActionKinematicConstraint.MAKE_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -360,11 +339,23 @@ elseif (options.gait ==2) % trot
     end
   end
 
-  [support_times, ia, ic] = unique(support_times);
-  for i = 1:length(support_times)
-    inds = (ic == i);
-    supports(i) = SupportState(r,support_body_inds(inds),support_pt_inds(inds),zeros(sum(inds),1));
+  for i = 1:options.num_strides
+    support_times((i-1)*4+1) = t_start + (i-1)*stride_duration;
+    support_times((i-1)*4+2) = t_start + (i-1)*stride_duration + swing_duration;
+    support_times((i-1)*4+3) = t_start + ((i-1)+0.5)*stride_duration;
+    support_times((i-1)*4+4) = t_start + ((i-1)+0.5)*stride_duration + swing_duration;
+    supports((i-1)*4+1) = SupportState(r,[foot_spec([2,4]).body_ind], ...
+                                  {foot_spec([2,4]).contact_pt_ind},zeros(2,1));
+    supports((i-1)*4+2) = SupportState(r,[foot_spec(1:4).body_ind], ...
+                                  {foot_spec(1:4).contact_pt_ind},zeros(4,1));
+    supports((i-1)*4+3) = SupportState(r,[foot_spec([1,3]).body_ind], ...
+                                  {foot_spec([1,3]).contact_pt_ind},zeros(2,1));
+    supports((i-1)*4+4) = SupportState(r,[foot_spec(1:4).body_ind], ...
+                                  {foot_spec(1:4).contact_pt_ind},zeros(4,1));
   end
+  support_times = [0, support_times];
+  supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
+                              {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
 
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
   options.com0 = com(1:2);
