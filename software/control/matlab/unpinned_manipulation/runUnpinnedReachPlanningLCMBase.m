@@ -142,12 +142,13 @@ while(1)
   if(~isempty(modeset))
       disp('Manip Planner mode control msg received .');
       if(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_ON)
-        manip_planner.enableFineGrainedPlanning(false);
+        manip_planner.setPlanningMode(1);
         send_status(3,0,0,'Manipulation Planner:IKSEQUENCE_ON MODE');
       elseif(modeset.mode==drc.manip_plan_control_t.IKSEQUENCE_OFF)
-        manip_planner.enableFineGrainedPlanning(true);
+        manip_planner.setPlanningMode(2);
         send_status(3,0,0,'Manipulation Planner:IKSEQUENCE_OFF MODE');
       elseif(modeset.mode==drc.manip_plan_control_t.TELEOP)
+        manip_planner.setPlanningMode(3);
        send_status(3,0,0,'Manipulation Planner:TELEOP MODE (Not Yet Implemented)');
       end
   end

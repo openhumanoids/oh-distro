@@ -31,7 +31,7 @@ classdef ManipulationPlanner < handle
         lhand_gaze_target
         rhand_gaze_target
 
-        finegrained_planning
+        planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
     end
     
     methods
@@ -46,7 +46,7 @@ classdef ManipulationPlanner < handle
             obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             obj.restrict_feet=true;
-            obj.finegrained_planning = false;
+            obj.planning_mode = 1;
             obj.r_hand_body = findLink(obj.r,'r_hand');
             obj.l_hand_body = findLink(obj.r,'l_hand');
             obj.r_foot_body = obj.r.findLink('r_foot');
@@ -56,8 +56,8 @@ classdef ManipulationPlanner < handle
             obj.utorso_body = findLink(obj.r,'utorso');
         end
 
-        function enableFineGrainedPlanning(obj,val)
-              obj.finegrained_planning  = val;
+        function setPlanningMode(obj,val)
+              obj.planning_mode  = val;
         end
 
 
@@ -1000,7 +1000,7 @@ classdef ManipulationPlanner < handle
                     % joint_names = {postureconstraint.name};
                     % joint_positions = [postureconstraint.joint_position];
                     is_locii = true;
-                otherwise
+                otherwiseinverseKin
                     error('Incorrect usage of runOptimization in Manip Planner. Undefined number of vargin.')
             end
             
@@ -1690,7 +1690,53 @@ classdef ManipulationPlanner < handle
                       'min',l_foot_pose0,...
                       'contact_state',{ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
                       'contact_dist',{struct('min',zeros(1,num_l_foot_pts),'max',zeros(1,num_l_foot_pts))},...
-                      'contact_affs',{ContactAffordance()});    
+                      'contact_affs',{ContactAffordance()});
+                    if(obj.planning_mode == 3)
+                      kinsol = doKinematics(obj.r,q0);
+                      rhand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
+                      lhand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
+                      head_pose = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
+                      pelvis_pose = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
+                      if(all(isnan(pelvis_pose0)))
+                        pelvis_pose0 = pelvis_pose;
+                      end
+                      if(isstruct(rhand_const))
+                        if(isfield(rhand_const,'max'))
+                          if(all(isnan(rhand_const.max))&&all(isnan(rhand_const.min)))
+                            rhand_const.max = rhand_pose;
+                            rhand_const.min = rhand_pose;
+                          end
+                        end
+                      else
+                        if(all(isnan(rhand_const)))
+                          rhand_const = rhand_pose;
+                        end
+                      end
+                      if(isstruct(lhand_const))
+                        if(isfield(lhand_const,'max'))
+                          if(all(isnan(lhand_const.max))&&all(isnan(lhand_const.min)))
+                            lhand_const.max = lhand_pose;
+                            lhand_const.min = lhand_pose;
+                          end
+                        end
+                      else
+                        if(all(isnan(lhand_const)))
+                          lhand_const = lhand_pose;
+                        end
+                      end
+                      if(isstruct(head_const))
+                        if(isfield(head_const,'max'))
+                          if(all(isnan(head_const.max))&&all(isnan(head_const.min)))
+                            head_const.max = head_pose;
+                            head_const.min = head_pose;
+                          end
+                        end
+                      else
+                        if(all(isnan(head_const)))
+                          head_const = head_pose;
+                        end
+                      end
+                    end
                     if(obj.restrict_feet)
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
                             obj.pelvis_body,[0;0;0],pelvis_pose0,...
@@ -1727,7 +1773,7 @@ classdef ManipulationPlanner < handle
             end % end if (~keyframe_constraint)
             
             
-            if(~obj.finegrained_planning)
+            if(obj.planning_mode == 1)
             % PERFORM IKSEQUENCE OPT
             ikseq_options.Q = diag(cost(1:getNumDOF(obj.r)));
             ikseq_options.Qa = eye(getNumDOF(obj.r));
