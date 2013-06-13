@@ -53,6 +53,7 @@ if ~isfield(options,'direction') options.direction = 0; end
 if ~isfield(options,'gait') options.gait = 2; end
 if ~isfield(options,'draw') options.draw = true; end
 if ~isfield(options,'debug') options.debug = false; end
+if ~isfield(options,'x_nom') options.x_nom = x0; end
 
 % always take 4 steps at a time
 options.num_strides = ceil(options.num_steps/4);
@@ -142,10 +143,10 @@ q = q_nom;
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
-fpos(3,:) = 0;
+fpos(3,:) = mean(fpos(3,:));
 fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
-com = [mean(fpos(1:2,:),2);options.com_height];
+com = [mean(fpos(1:2,:),2);options.com_height+mean(fpos_initial(3,:))];
 q = crawlIK(q,com,fpos);
 %display(q,com,fpos,[]); pause(5);
 
@@ -372,7 +373,7 @@ elseif (options.gait ==2) % trot
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
   options.com0 = com(1:2);
   [~,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(options.com_height,zmptraj,options);
-  comtraj = [comtraj;ConstantTrajectory(options.com_height)];
+  comtraj = [comtraj;ConstantTrajectory(com(3))];
   
   % COM constraint
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'COM_constraint');
