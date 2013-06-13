@@ -58,6 +58,26 @@ classdef DRCStateMachine
         data = transition_data.(obj.active_controller);
       end
     end
+    
+    function drawGraph(obj)
+      node_labels = vertcat(fieldnames(obj.controllers),{'THIS WILL CRASH'});
+      adj={};
+      for i=1:length(node_labels)-1
+        c = obj.controllers.(node_labels{i});
+        if ~isinf(getDuration(c))
+          tt = getTimedTransition(c);
+          j = find(strcmp(tt,node_labels));
+          adj{i,j} = 't>=t_final';
+        end
+        [targets,channels] = getLCMTransitions(c);
+        for k=1:length(targets)
+          j = find(strcmp(targets{k},node_labels));
+          if isempty(j), j=length(node_labels); end
+          adj{i,j} = channels{k}; 
+        end
+      end
+      drawGraph(adj,node_labels);
+    end
   end
   
 end

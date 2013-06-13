@@ -102,7 +102,7 @@ classdef DRCController
       obj.timed_transition = transition_to_controller;
       obj.absolute_time = absolute_time;
     end
-
+    
     function obj = setDuration(obj,t_final,absolute_time)
       typecheck(t_final,'double');
       if nargin > 2
@@ -118,6 +118,10 @@ classdef DRCController
     function tf = getDuration(obj)
       tf = obj.t_final;
     end
+    function target = getTimedTransition(obj)
+      target = obj.timed_transition;
+    end
+
     
     function obj = addLCMTransition(obj,channel,lcmtype_or_lcmcoder,transition_to_controller)
       typecheck(channel,'char');
@@ -140,6 +144,11 @@ classdef DRCController
       obj.transition_targets{n} = transition_to_controller;
     end
 
+    function [targets,channels] = getLCMTransitions(obj)
+      targets = obj.transition_targets;
+      channels = obj.transition_channels;
+    end
+    
     function obj = addPrecomputeResponseHandler(obj,response_channel,transition_to_controller)
       typecheck(response_channel,'char');
       typecheck(transition_to_controller,'char');
