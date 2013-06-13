@@ -137,6 +137,7 @@ q = q_nom;
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
+fpos(3,:) = 0;
 fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
 com = [mean(fpos(1:2,:),2);options.com_height];
