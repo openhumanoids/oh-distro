@@ -329,7 +329,7 @@ while (1)
             body_contact_points = r_Atlas.getBodyContacts(support_body_ind(end));
             [~,support_point_ind_j] = ismember(action_sequence.kincons{j}.body_pts',body_contact_points','rows');
             support_point_ind = [support_point_ind, support_point_ind_j];
-            surface_body_ind = [surface_body_ind, 1];
+            surface_body_ind = [surface_body_ind, 0];
           end
         end
         [support_body_ind_unique,ia,ic] = unique(support_body_ind,'stable');
