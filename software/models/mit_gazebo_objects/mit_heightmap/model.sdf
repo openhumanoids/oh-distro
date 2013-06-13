@@ -1,0 +1,51 @@
+<?xml version="1.0" ?>
+<sdf version="1.3">
+  <model name="heightmap">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <heightmap>
+            <uri>model://mit_heightmap/materials/textures/heightmap_inverted.png</uri>
+            <size>100 100 3.5</size>
+            <pos>0 0 -2.9</pos>
+          </heightmap>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <heightmap>
+            <texture>
+              <diffuse>file://media/materials/textures/dirt_diffusespecular.png</diffuse>
+              <normal>file://media/materials/textures/flat_normal.png</normal>
+              <size>2.5</size>
+            </texture>
+            <texture>
+              <diffuse>file://media/materials/textures/grass_diffusespecular.png</diffuse>
+              <normal>file://media/materials/textures/flat_normal.png</normal>
+              <size>2.5</size>
+            </texture>
+            <texture>
+              <diffuse>file://media/materials/textures/fungus_diffusespecular.png</diffuse>
+              <normal>file://media/materials/textures/flat_normal.png</normal>
+              <size>2.5</size>
+            </texture>
+            <blend>
+              <min_height>0.48</min_height>
+              <fade_dist>0.4</fade_dist>
+            </blend>
+            <blend>
+              <min_height>2.2</min_height>
+              <fade_dist>1</fade_dist>
+            </blend>
+            <uri>model://mit_heightmap/materials/textures/heightmap_inverted.png</uri>
+            <size>100 100 3.5</size>
+            <pos>0 0 -2.9</pos>
+          </heightmap>
+        </geometry>
+      </visual>
+
+    </link>
+  </model>
+</sdf>
