@@ -23,8 +23,6 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 sizecheck(x0,[getNumStates(r) 1]);
 nq = getNumDOF(r);
-q_nom = x0(1:nq);
-kinsol = doKinematics(r,q_nom);
 
 fieldcheck(body_spec,'body_ind');
 fieldcheck(body_spec,'pt');
@@ -54,6 +52,7 @@ if ~isfield(options,'gait') options.gait = 2; end
 if ~isfield(options,'draw') options.draw = true; end
 if ~isfield(options,'debug') options.debug = false; end
 if ~isfield(options,'x_nom') options.x_nom = x0; end
+q_nom = options.x_nom(1:nq);
 
 % always take 4 steps at a time
 options.num_strides = ceil(options.num_steps/4);
@@ -138,12 +137,28 @@ link_constraints = struct('link_ndx', {}, 'pt', {}, 'min_traj', [], 'max_traj', 
 % Determine forward crawling direction
 z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
 forward_dir = [z_proj(1:2);0];
+left_dir = rotz(pi/2)*forward_dir;
 
-q = q_nom;
+% Determine nominal forward crawling direction
+z_proj_nom = rpy2rotmat(options.x_nom(4:6))*[0;0;1];
+forward_dir_nom = [z_proj_nom(1:2);0];
+left_dir_nom = rotz(pi/2)*forward_dir;
+
+kinsol = doKinematics(r,q_nom);
+for i = 1:4
+  fpos_nom(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
+  fpos_rel_nom(:,i) = fpos_nom(:,i) - q_nom(1:3);
+  forward_coord_nom = fpos_rel_nom'*forward_dir_nom;
+  left_coord_nom = -fpos_rel_nom'*left_dir_nom;
+end
+
+q = x0(1:nq);
+kinsol = doKinematics(r,q);
 for i=1:4
   fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
-fpos(3,:) = mean(fpos(3,:));
+z_foot_nom = mean(fpos(3,:));
+fpos(3,:) = z_foot_nom;
 fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
 com = [mean(fpos(1:2,:),2);options.com_height+mean(fpos_initial(3,:))];
@@ -210,7 +225,9 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length/2;
+      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length/2) ...
+                  + left_dir*left_coord_nom(i);
+      fpos(3,i) = z_foot_nom;
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -248,7 +265,9 @@ elseif (options.gait ==2) % trot
       j = 1;
       tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
-      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length/2;
+      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length/2) ...
+                  + left_dir*left_coord_nom(i);
+      fpos(3,i) = z_foot_nom;
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
       link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
@@ -286,7 +305,9 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length/2;
+      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length) ...
+                  + left_dir*left_coord_nom(i);
+      fpos(3,i) = z_foot_nom;
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -325,7 +346,9 @@ elseif (options.gait ==2) % trot
       j = 1;
       tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
-      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length/2;
+      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length) ...
+                  + left_dir*left_coord_nom(i);
+      fpos(3,i) = z_foot_nom;
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
       link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);

@@ -29,8 +29,8 @@ else
   r = removeCollisionGroupsExcept(r,{'toe','knuckle'});
 end
 
-%r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',status_code,'fill', true,'normal_radius',2)));
-r = setTerrain(r,DRCFlatTerrainMap());
+r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',status_code,'fill', true,'normal_radius',2)));
+%r = setTerrain(r,DRCFlatTerrainMap());
 r = compile(r);
 
 state_frame = getStateFrame(r);
@@ -68,6 +68,7 @@ else
   qstar = d.x_nom(1:nq);
   x0 = d.x_nom;
 end
+options.x_nom = x0;
 
 lc = lcm.lcm.LCM.getSingleton();
 
@@ -85,7 +86,7 @@ while true
   while waiting
     [x,~] = getNextMessage(state_frame,10);
     if (~isempty(x))
-      x0(1:6)=x(1:6);
+      x0=x;
     end
     data = committed_goal_mon.getNextMessage(10);
     if (~isempty(data))
@@ -94,7 +95,7 @@ while true
       waiting = false;
       committed = true;
     else
-      data = goal_mon.getNextMessage(10)
+      data = goal_mon.getNextMessage(10);
       if (~isempty(data))
         goal = drc.walking_goal_t(data);
         if (goal.crawling)
@@ -207,4 +208,5 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
   turn.direction = 1;
   turn.num_steps = 0;
   forwardSegment.num_steps = ceil(target_distance/options.step_length);
+  forwardSegment.num_steps = max(min(forwardSegment.num_steps,options.max_num_steps),options.min_num_steps);
 end
