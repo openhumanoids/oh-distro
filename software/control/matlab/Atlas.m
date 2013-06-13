@@ -135,7 +135,7 @@ classdef Atlas < Biped
       end
     end
     
-    function u = inverseDynamics(obj,q,qdot,qddot_des,active_supports)
+    function [u,obj] = inverseDynamics(obj,q,qdot,qddot_des,active_supports)
       if isempty(obj.inverse_dyn_qp_controller)
         ctrl_data = SharedDataHandle(struct(...
           'A',zeros(4),...

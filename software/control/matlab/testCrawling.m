@@ -21,7 +21,7 @@ function testCrawling()
   
   q0 = d.x0(1:nq); 
   q0(3)=-10; % artificially put the robot below the ground so that all supports are active
-  u0 = inverseDynamics(r,q0,0*q0,0*q0,SupportState(r,[foot_spec.body_ind],{foot_spec.contact_pt_ind}));  
+  [u0,r] = inverseDynamics(r,q0,0*q0,0*q0,SupportState(r,[foot_spec.body_ind],{foot_spec.contact_pt_ind}));  
   actuated = getActuatedJoints(r);
   fr = AtlasPositionRef(r,'crawling',4);
   publish(fr,0,[q0(actuated);zeros(nu,1);u0],defaultChannel(fr));
@@ -50,8 +50,12 @@ function testCrawling()
   
   command_traj = setOutputFrame([q_actuated_traj;qdot_actuated_traj;u_traj],fr);
   
+  save crawling_traj.mat command_traj;
+  
+  % you'll need this to run from the command line again
+  %command_traj = setOutputFrame(command_traj,AtlasPositionRef(r,'crawling',4)); 
   options.realtime_factor = .12;
-  options.tspan = q_actuated_traj.tspan;
+  options.tspan = command_traj.tspan;
   runLCM(command_traj,[],options);
   
 end
