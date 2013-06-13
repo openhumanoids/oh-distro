@@ -180,10 +180,6 @@ group "b.1.core" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "base";
     }
-    cmd "segmentation_viewer" {
-        exec = "segmentation-viewer -r base";
-        host = "base";
-    }
     cmd "modelpub" {
         exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "base";
@@ -315,6 +311,10 @@ group "m.simple-control" {
 }
 
 group "m.dev_tools" {
+    cmd "segmentation_viewer" {
+        exec = "segmentation-viewer -r base";
+        host = "base";
+    }
     cmd "recovery" {
         exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
         host = "robot";
