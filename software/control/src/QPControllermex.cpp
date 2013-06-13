@@ -504,9 +504,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   else {
     VectorXd phi;
     for (set<int>::iterator iter=desired_supports.begin(); iter!=desired_supports.end(); iter++) {
-      contactPhi(pdata,*iter,phi,terrain_height);
-      if (phi.minCoeff()<contact_threshold)
+      if (contact_threshold == -1 && *iter != pdata->rfoot_idx && *iter != pdata->lfoot_idx) {
+        // ignore terrain, just use support traj
+        active_supports.insert(*iter);
+      }
+      else {
+        contactPhi(pdata,*iter,phi,terrain_height);
+        if (phi.minCoeff()<contact_threshold)
           active_supports.insert(*iter);
+      }
     }      
     if (rfoot_contact_state) active_supports.insert(pdata->rfoot_idx);
     if (lfoot_contact_state) active_supports.insert(pdata->lfoot_idx);
