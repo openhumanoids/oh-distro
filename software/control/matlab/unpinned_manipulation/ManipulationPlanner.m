@@ -1959,10 +1959,10 @@ classdef ManipulationPlanner < handle
           if(info>10)
             warning(['Info = ',num2str(info),' IK fails for teleoperation']);
           end
-          qtraj = [q0 (q0+q_des)/2 q_des];
+          qtraj = [q0 q_des];
           xtraj = [qtraj;0*qtraj];
-          xtraj = [zeros(2,3);xtraj];
-          ts = [0 0.25 0.5];
+          xtraj = [zeros(2,2);xtraj];
+          ts = [0 1];
           utime = now() * 24 * 60 * 60;
           obj.plan_pub.publish(xtraj,ts,utime);
         end

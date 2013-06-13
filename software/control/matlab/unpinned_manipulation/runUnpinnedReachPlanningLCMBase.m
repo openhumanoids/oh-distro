@@ -103,8 +103,8 @@ lc.subscribe('CANDIDATE_EE_ADJUSTMENT',teleop_mon);
 lc = lcm.lcm.LCM.getSingleton();
 teleop_transform_mon = drake.util.MessageMonitor(drc.ee_teleop_transform_t,'utime');
 lc.subscribe('PALM_TELEOP_TRANSFORM',teleop_transform_mon);
-aff2hand_offset = [0;0;0];
-mate_axis = [0;0;0];
+aff2hand_offset = [];
+mate_axis = [];
 T_hand_palm_l = HT([0;0.1;0],pi/2,0,pi/2);
 T_hand_palm_r = HT([0;-0.1;0],-pi/2,0,-pi/2);
 % 
@@ -492,7 +492,7 @@ while(1)
     ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.y;ee_teleop_msg.rpy_delta.z];
     q0 = x0(1:getNumDOF(r));
     if(isempty(aff2hand_offset)||isempty(mate_axis))
-      display('The teleop transformation is not set yet');
+      warning('The teleop transformation is not set yet');
     else
       manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND,aff2hand_offset,mate_axis);
     end
