@@ -41,7 +41,7 @@ namespace renderer_crawling_plan
 				       this);  
     _urdf_subscription_on =  true;
     lcm->subscribe("CANDIDATE_CRAWLING_PLAN", &renderer_crawling_plan::RobotPlanListener::handleRobotPlanMsg, this); //&this
-    lcm->subscribe("CRAWLING_NAV_GOAL", &renderer_crawling_plan::RobotPlanListener::handleAprvWalkingGoalMsg, this);  
+    lcm->subscribe("CRAWLING_GOAL", &renderer_crawling_plan::RobotPlanListener::handleAprvWalkingGoalMsg, this);  
     lcm->subscribe("CONTROLLER_STATUS", &renderer_crawling_plan::RobotPlanListener::handleControllerStatusMsg, this);  
 
 

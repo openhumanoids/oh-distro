@@ -362,7 +362,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     self->has_walking_msg = true;
     self->last_walking_msg = msg;
 
-    std::string channel = msg.crawling ? "CRAWLING_NAV_GOAL" : "WALKING_GOAL";
+    std::string channel = msg.crawling ? "CRAWLING_GOAL" : "WALKING_GOAL";
     fprintf(stderr, ("Sending " + channel + "\n").c_str());
     drc_walking_goal_t_publish(self->lc, channel.c_str(), &msg);
     bot_viewer_set_status_bar_message(self->viewer, ("Sent " + channel).c_str());

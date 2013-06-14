@@ -76,8 +76,8 @@ namespace renderer_crawling_plan_gui_utils
       return TRUE;
     }
 
-    cout <<"Publishing on COMMITTED_WALKING_GOAL" << endl;
-    string channel = "COMMITTED_WALKING_GOAL";
+    cout <<"Publishing on COMMITTED_CRAWLING_GOAL" << endl;
+    string channel = "COMMITTED_CRAWLING_GOAL";
     self->robotPlanListener->commit_walking_goal(self->robot_utime,channel);
 
 		
