@@ -144,7 +144,7 @@ static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
  // std::cout << "posture presets combo_box changed to " << (int)active << "\n";
 }
 
-int current_active_controller_mode=0;
+int current_active_controller_mode=1;
 static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
 {
   BotViewer *self = (BotViewer*) user_data;
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
   GtkWidget* controller_mode_combo_box=gtk_combo_box_new_text();
   gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "BDI" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "MIT" );
-  gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) 0);
+  gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) current_active_controller_mode);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(controller_mode_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( controller_mode_combo_box ), "changed", G_CALLBACK(on_controller_mode_combo_box_changed), viewer);
   
