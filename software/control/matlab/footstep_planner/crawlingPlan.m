@@ -52,6 +52,8 @@ if ~isfield(options,'gait') options.gait = 2; end
 if ~isfield(options,'draw') options.draw = true; end
 if ~isfield(options,'debug') options.debug = false; end
 if ~isfield(options,'x_nom') options.x_nom = x0; end
+if ~isfield(options,'delta_yaw') options.delta_yaw = 10*pi/180; end
+delta_yaw = options.direction*options.delta_yaw;
 q_nom = options.x_nom(1:nq);
 
 % always take 4 steps at a time
@@ -161,7 +163,7 @@ for i=1:4
   fpos_initial(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
 com_initial = getCOM(r,kinsol);
-z_foot_nom = min(fpos_initial(3,:));
+z_foot_nom = mean(fpos_initial(3,:));
 pelvis_ind = r.findLinkInd('pelvis');
 pelvis_pos_initial = forwardKin(r,kinsol,pelvis_ind,[0;0;0]);
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
@@ -210,22 +212,29 @@ elseif (options.gait ==2) % trot
   t_start = stride_duration;
 
   fpos = zeros(3,4);
-  fpos(:,1) = x0(1:3) + forward_dir*forward_coord_nom(1) + left_dir*left_coord_nom(1);
-  fpos(:,2) = x0(1:3) + forward_dir*forward_coord_nom(2) + left_dir*left_coord_nom(2);
-  fpos(:,3) = x0(1:3) + forward_dir*forward_coord_nom(3) + left_dir*left_coord_nom(3);
-  fpos(:,4) = x0(1:3) + forward_dir*forward_coord_nom(4) + left_dir*left_coord_nom(4);
-  fpos(3,:) = z_foot_nom;
-  fpos_start = fpos;
-  com_start = [mean(fpos(1:2,:),2);options.com_height+z_foot_nom];
-  zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
-                         [com_start(1:2),com_start(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
+  fpos_rel = bsxfun(@times,forward_dir,forward_coord_nom') + bsxfun(@times,left_dir,left_coord_nom');
+  fpos_start = bsxfun(@plus,x0(1:3),fpos_rel);
+  %fpos_start(:,1) = x0(1:3) + forward_dir*forward_coord_nom(1) + left_dir*left_coord_nom(1);
+  %fpos_start(:,2) = x0(1:3) + forward_dir*forward_coord_nom(2) + left_dir*left_coord_nom(2);
+  %fpos_start(:,3) = x0(1:3) + forward_dir*forward_coord_nom(3) + left_dir*left_coord_nom(3);
+  %fpos_start(:,4) = x0(1:3) + forward_dir*forward_coord_nom(4) + left_dir*left_coord_nom(4);
+  fpos_start(3,:) = z_foot_nom;
+  fpos_all{1} = fpos_start;
+  for i = 2:options.num_strides+1
+    if options.direction ~= 0
+      fpos_all{i} = rotz(options.delta_yaw)*fpos_all{i-1};
+    end
+  end
+  com_start = [mean(fpos_start(1:2,:),2);options.com_height+z_foot_nom];
 
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
     if any(i == [1,3])
+      fpos = fpos_start;
       % Initial stance constraints
-      tspan = [t_start/2,t_start];
+      %tspan = [t_start/2,t_start];
+      tspan = [0,t_start];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -237,7 +246,11 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = fpos(:,i) + forward_dir* options.step_length/2;
+      if options.direction == 0
+        fpos(:,i) = fpos(:,i) + forward_dir* options.step_length/2;
+      else
+        fpos(:,i) = fpos_all{2}(:,i);
+      end
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -253,7 +266,11 @@ elseif (options.gait ==2) % trot
           sfigure(8); hold on; grid on;
           plot(fpos(1,i),fpos(2,i),'bo');
         end
-        fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        if options.direction == 0
+          fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        else
+          fpos(:,i) = fpos_all{j+2}(:,i);
+        end
       end
       % Final stance constraints
       j = options.num_strides;
@@ -275,9 +292,11 @@ elseif (options.gait ==2) % trot
       j = 1;
       tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
-      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length/2) ...
-                  + left_dir*left_coord_nom(i);
-      fpos(3,i) = z_foot_nom;
+      if options.direction == 0
+        fpos(:,i) = fpos(:,i) + forward_dir* options.step_length/2;
+      else
+        fpos(:,i) = fpos_all{2}(:,i);
+      end
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
       link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
@@ -290,7 +309,11 @@ elseif (options.gait ==2) % trot
       for j = 2:options.num_strides
         tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
         x0_foot = fpos(:,i);
-        fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        if options.direction == 0
+          fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        else
+          fpos(:,i) = fpos_all{j+1}(:,i);
+        end
         xf_foot = fpos(:,i);
         f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
         link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
@@ -302,8 +325,10 @@ elseif (options.gait ==2) % trot
       end
       
     elseif any(i == [2,4])
+      fpos = fpos_start;
       % Initial stance constraints
-      tspan = [t_start/2,t_start+stride_duration/2];
+      %tspan = [t_start/2,t_start+stride_duration/2];
+      tspan = [0,t_start+stride_duration/2];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -315,7 +340,11 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+      if options.direction == 0
+        fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+      else
+        fpos(:,i) = fpos_all{2}(:,i);
+      end
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -331,7 +360,11 @@ elseif (options.gait ==2) % trot
           sfigure(8); hold on; grid on;
           plot(fpos(1,i),fpos(2,i),'bo');
         end
-        fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        if options.direction == 0
+          fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        else
+          fpos(:,i) = fpos_all{j+2}(:,i);
+        end
       end
 
       % Final stance constraints
@@ -354,9 +387,11 @@ elseif (options.gait ==2) % trot
       j = 1;
       tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
-      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length) ...
-                  + left_dir*left_coord_nom(i);
-      fpos(3,i) = z_foot_nom;
+      if options.direction == 0
+        fpos(:,i) = fpos(:,i) + forward_dir* options.step_length;
+      else
+        fpos(:,i) = fpos_all{2}(:,i);
+      end
       xf_foot = fpos(:,i);
       f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
       link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
@@ -369,7 +404,11 @@ elseif (options.gait ==2) % trot
       for j = 2:options.num_strides
         tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
         x0_foot = fpos(:,i);
-        fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        if options.direction == 0
+          fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
+        else
+          fpos(:,i) = fpos_all{j+1}(:,i);
+        end
         xf_foot = fpos(:,i);
         f_spline = PPTrajectory(swing_foot_spline(x0_foot,xf_foot,options.step_height,tspan(2)-tspan(1),tspan(1)));
         link_constraints(end+1) = struct('link_ndx', foot_spec(i).body_ind, 'pt', body.contact_pts(:,foot_spec(i).contact_pt_ind), 'min_traj', f_spline, 'max_traj', f_spline, 'traj', f_spline);
@@ -397,10 +436,29 @@ elseif (options.gait ==2) % trot
                                   {foot_spec(1:4).contact_pt_ind},zeros(4,1));
   end
   
-  %for i = 1:numel(crawl_sequence.key_time_samples)
-    %support_vert = getSupportPolygon(crawl_sequence,crawl_sequence.key_time_samples(i));
-    %zmp_pts = 
-  %end
+  for i = 1:numel(crawl_sequence.key_time_samples)
+    support_vert{i} = getSupportPolygon(crawl_sequence,crawl_sequence.key_time_samples(i));
+  end
+  zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
+  [com_start(1:2),mean(fpos_all{end}(1:2,:),2)]));
+%   for i = 2:numel(crawl_sequence.key_time_samples)-1
+  for i = 1:numel(support_times)-1
+    %p1 = support_vert{i}(1:2,1);
+    %p2 = support_vert{i}(1:2,2);
+    %q1 = support_vert{i+1}(1:2,1);
+    %q2 = support_vert{i+1}(1:2,2);
+    %zmp_coeff = [(p1-p2), (q2-q1)]\(q2-p2);
+%     zmp(:,i) = zmp_coeff(1)*p1 + (1-zmp_coeff(1))*p2;
+%     assert(all(zmp(:,i) == zmp_coeff(2)*q1 + (1-zmp_coeff(2))*q2), ...
+%       'Computed intersection points are inconsistent in zmp generation');
+    zmp(:,i) = mean(support_vert{i}(1:2,:),2);
+    %zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
+%     sfigure(8); hold on; grid on;
+    sfigure(8); ; grid on; axis equal;
+    plot(zmp(1,i),zmp(2,i),'gd',support_vert{i}(1,1:2),support_vert{i}(2,1:2),'-rs',support_vert{i+1}(1,1:2),support_vert{i+1}(2,1:2),'-ks');
+  end
+  zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
+  zmptraj = PPTrajectory(foh(support_times,zmp));
   support_times = [0, support_times];
   supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
@@ -424,12 +482,12 @@ elseif (options.gait ==2) % trot
 
   % Initial end-effector trajectories
   for i = 1:4
-    f_spline = PPTrajectory(swing_foot_spline(fpos_initial(:,i),fpos_start(:,i),options.step_height,t_start/2,0));
-    kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, [0,t_start/2],'', ...
-      ActionKinematicConstraint.NOT_IN_CONTACT, ...
-      ActionKinematicConstraint.NOT_IN_CONTACT, ...
-      ActionKinematicConstraint.NOT_IN_CONTACT);
-    crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+    %f_spline = PPTrajectory(swing_foot_spline(fpos_initial(:,i),fpos_start(:,i),options.step_height,t_start/2,0));
+    %kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, [0,t_start/2],'', ...
+      %ActionKinematicConstraint.NOT_IN_CONTACT, ...
+      %ActionKinematicConstraint.NOT_IN_CONTACT, ...
+      %ActionKinematicConstraint.NOT_IN_CONTACT);
+    %crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
   end
   
   t = 0:0.025:comtraj.tspan(2);
@@ -570,7 +628,7 @@ function support_vert = getSupportPolygon(action_sequence, t)
        t <= action_sequence.kincons{j}.tspan(2) && ...
         any(any(cell2mat(action_sequence.kincons{j}.getContactState(t)') == ActionKinematicConstraint.STATIC_PLANAR_CONTACT,1) | ...
         any(cell2mat(action_sequence.kincons{j}.getContactState(t)') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1))
-      support_vert = [support_vert, action_sequence.kincons{j}.posmin];
+      support_vert = [support_vert, eval(action_sequence.kincons{j}.pos_min,t)];
     end
   end
 end
