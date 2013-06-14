@@ -134,7 +134,6 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
                              lcm_object.joint_position,
                              dccl_state->mutable_joint_position()))
         return false;
-    
 
     return true;
 }
@@ -338,10 +337,15 @@ bool RobotStateCodec::to_position3d_diff(const drc::position_3d_t& present_pos,
         pos_diff->mutable_rpy_rotation_diff()->add_droll(present_rpy[0] - goby::util::unbiased_round(previous_rpy[0], ROTATION_ROLL_PRECISION));
         pos_diff->mutable_rpy_rotation_diff()->add_dpitch(present_rpy[1] - goby::util::unbiased_round(previous_rpy[1], ROTATION_PITCH_PRECISION));
 
+        
         wrap_minus_pi_to_pi(present_rpy[2]);
         wrap_minus_pi_to_pi(previous_rpy[2]);
         
         pos_diff->mutable_rpy_rotation_diff()->add_dyaw(present_rpy[2] - goby::util::unbiased_round(previous_rpy[2], ROTATION_YAW_PRECISION));
+
+
+//        std::cout << pos_diff->rpy_rotation_diff().droll(pos_diff->rpy_rotation_diff().droll_size()-1) << "," << pos_diff->rpy_rotation_diff().dpitch(pos_diff->rpy_rotation_diff().dpitch_size()-1) << "," <<  pos_diff->rpy_rotation_diff().dyaw(pos_diff->rpy_rotation_diff().dyaw_size()-1)  << std::endl;
+
     }
     
     return true;

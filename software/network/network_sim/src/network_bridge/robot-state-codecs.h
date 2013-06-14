@@ -79,11 +79,12 @@ class RobotStateCodec : public CustomChannelCodec
             }
 
             double position = joint_pos[i];
-            wrap_minus_pi_to_pi(position);        
 
+//            std::cout << "joint: " << joint_names[i] <<  " pos: " << position << " index: " << order->second - offset << std::endl;
+            
             dccl_joint_pos->Set(order->second - offset, position);
         }
-    
+        
         return true;
     }
     

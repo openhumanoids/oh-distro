@@ -1,4 +1,6 @@
 import "goby/acomms/protobuf/dccl_option_extensions.proto";
+import "goby/acomms/protobuf/arithmetic_extensions.proto";
+
 
 package drc;
 
@@ -55,13 +57,74 @@ message MinimalRobotStateDiff
 {
   repeated double utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 precision: -3 max_repeat: 100 codec: "presence_bit" }];
   required Position3DDiff pos_diff = 2;
+ 
+  // repeated float joint_pos_diff_back_lbz = 3 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_back_mby = 4 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_back_ubx = 5 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_neck_ay = 6 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_uhz = 7 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_mhx = 8 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_lhy = 9 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_kny = 10 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_uay = 11 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_leg_lax = 12 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_uhz = 13 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_mhx = 14 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_lhy = 15 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_kny = 16 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_uay = 17 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_leg_lax = 18 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_usy = 19 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_shx = 20 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_ely = 21 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_elx = 22 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_uwy = 23 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_l_arm_mwx = 24 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_usy = 25 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_shx = 26 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_ely = 27 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_elx = 28 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_uwy = 29 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
+  // repeated float joint_pos_diff_r_arm_mwx = 30 [(dccl.field) = { max_repeat: 100 min: -6.284 max: 6.284 precision: 3 codec: "presence_bit"} ];
 
-  repeated JointPositionDiff joint_pos_diff = 3 [(dccl.field) = { max_repeat: 100 }];
 
-  message JointPositionDiff
-  {
-    repeated float jp_diff_val= 3 [(dccl.field) = { min: -3.142 max: 3.142 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
-  }
+  // all must have the same precision
+  repeated float joint_pos_diff_back_lbz = 3 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_0" } }  ];
+  repeated float joint_pos_diff_back_mby = 4 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_1" } } ];
+  repeated float joint_pos_diff_back_ubx = 5 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_2" } } ];
+  repeated float joint_pos_diff_neck_ay = 6 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_3" } } ];
+  repeated float joint_pos_diff_l_leg_uhz = 7 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_4" } } ];
+  repeated float joint_pos_diff_l_leg_mhx = 8 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_5" } } ];
+  repeated float joint_pos_diff_l_leg_lhy = 9 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_6" } } ];
+  repeated float joint_pos_diff_l_leg_kny = 10 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_7" } } ];
+  repeated float joint_pos_diff_l_leg_uay = 11 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_8" } } ];
+  repeated float joint_pos_diff_l_leg_lax = 12 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_9" } } ];
+  repeated float joint_pos_diff_r_leg_uhz = 13 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_10" } } ];
+  repeated float joint_pos_diff_r_leg_mhx = 14 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_11" } } ];
+  repeated float joint_pos_diff_r_leg_lhy = 15 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_12" } } ];
+  repeated float joint_pos_diff_r_leg_kny = 16 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_13" } } ];
+  repeated float joint_pos_diff_r_leg_uay = 17 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_14" } } ];
+  repeated float joint_pos_diff_r_leg_lax = 18 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_15" } } ];
+  repeated float joint_pos_diff_l_arm_usy = 19 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_16" } } ];
+  repeated float joint_pos_diff_l_arm_shx = 20 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_17" } } ];
+  repeated float joint_pos_diff_l_arm_ely = 21 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_18" } } ];
+  repeated float joint_pos_diff_l_arm_elx = 22 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_19" } } ];
+  repeated float joint_pos_diff_l_arm_uwy = 23 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_20" } } ];
+  repeated float joint_pos_diff_l_arm_mwx = 24 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_21" } } ];
+  repeated float joint_pos_diff_r_arm_usy = 25 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_22" } } ];
+  repeated float joint_pos_diff_r_arm_shx = 26 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_23" } } ];
+  repeated float joint_pos_diff_r_arm_ely = 27 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_24" } } ];
+  repeated float joint_pos_diff_r_arm_elx = 28 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_25" } } ];
+  repeated float joint_pos_diff_r_arm_uwy = 29 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_26" } } ];
+  repeated float joint_pos_diff_r_arm_mwx = 30 [(dccl.field) = { max_repeat: 100 codec: "_arithmetic" [arithmetic] { model: "joint_pos_27" } } ];
+
+  
+  // repeated JointPositionDiff joint_pos_diff = 3 [(dccl.field) = { max_repeat: 100 }];
+  
+  // message JointPositionDiff
+  // {
+  //   repeated float jp_diff_val= 3 [(dccl.field) = { min: -3.142 max: 3.142 precision: 3 max_repeat: 53 codec: "presence_bit" } ];
+  // }
   
 }
 
@@ -91,7 +154,11 @@ message RotationQuaternionDiff
 
 message RotationRPYDiff
 {
-  repeated double droll = 1 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
-  repeated double dpitch = 2 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
+  // repeated double droll = 1 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
+  // repeated double dpitch = 2 [(dccl.field) = {min: -2.794 max: 2.794 precision: 3 max_repeat: 100 codec: "presence_bit" }];
+
+  repeated double droll = 1 [(dccl.field) = { precision: 3 max_repeat: 100  codec: "_arithmetic" [arithmetic] { model: "rollpitch" } }];
+  repeated double dpitch = 2 [(dccl.field) = { precision: 3 max_repeat: 100  codec: "_arithmetic" [arithmetic] { model: "rollpitch" } }];
+  
   repeated double dyaw = 3 [(dccl.field) = {min: -6.283 max: 6.283 precision: 3 max_repeat: 100 codec: "presence_bit" }];
 }

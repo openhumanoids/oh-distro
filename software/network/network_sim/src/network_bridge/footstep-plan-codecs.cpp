@@ -1,10 +1,75 @@
 #include "footstep-plan-codecs.h"
 #include "robot-state-codecs.h"
+#include "goby/acomms/dccl/dccl_field_codec_arithmetic.h"
 
 FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
     : CustomChannelCodec(loopback_channel),
       dccl_(goby::acomms::DCCLCodec::get())
 {
+
+    goby_dccl_load(dccl_);    
+
+    using goby::glog;
+    using namespace goby::common::logger;
+
+//    const float RP_MAX = 2.794;
+//    const float RP_MIN = -MAX;    
+    const int RP_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("droll")->options().GetExtension(dccl::field).precision();
+    
+    goby::acomms::protobuf::ArithmeticModel rp_model;
+    
+    glog.is(VERBOSE) && glog << "Making rollpitch model" << std::endl;
+        
+    std::string rp_model_file_path = getenv ("HOME");
+    rp_model_file_path += "/drc/software/network/network_sim/src/network_bridge/rollpitch_frequencies.csv";
+    std::ifstream rp_model_file(rp_model_file_path.c_str());
+    if(!rp_model_file.is_open())
+        glog.is(DIE) && glog << "Could not open " << rp_model_file_path << " for reading." << std::endl;
+
+    std::string line;
+    std::getline(rp_model_file, line);
+
+    std::vector<std::string> xs;
+    boost::split(xs, line, boost::is_any_of(","));
+
+    std::vector<double> x;
+    for(int i = 0; i < xs.size(); ++i)
+        x.push_back(goby::util::as<double>(xs[i]));
+    
+    
+    std::getline(rp_model_file, line);
+    std::vector<std::string> ys;
+    boost::split(ys, line, boost::is_any_of(","));
+    
+    std::vector<double> y;
+    for(int i = 0; i < xs.size(); ++i)
+        y.push_back(goby::util::as<double>(ys[i]));
+    
+    int total_frequency = 0;        
+    for(int i = 0, n = x.size(); i <= n; ++i)
+    {
+        if(i != n)
+        {
+            int freq = y[i];
+            rp_model.add_value_bound(x[i]);
+            rp_model.add_frequency(freq);
+            total_frequency += freq;
+            }
+        else
+        {
+            rp_model.add_value_bound(x[i-1] + 1/pow(10.0, RP_PRECISION));
+        }            
+    }
+    
+    const double eof_fraction = 0.1; // 10% of total frequency
+    rp_model.set_eof_frequency(total_frequency*eof_fraction/(1-eof_fraction)); 
+    rp_model.set_out_of_range_frequency(0);    
+    
+    rp_model.set_name("rollpitch");
+    glog.is(VERBOSE) && glog << "Setting rollpitch model" << std::endl;
+    goby::acomms::ModelManager::set_model(rp_model);        
+//        std::cout << pb_to_short_string(rp_model) << std::endl;
+
     dccl_->validate<drc::MinimalFootStepPlan>();
 }
 
@@ -71,6 +136,9 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
     std::string encoded;
     dccl_->encode(&encoded, dccl_plan);
     transmit_data->resize(encoded.size());
+
+    std::cout << encoded.size() << "," << std::flush;
+
     std::copy(encoded.begin(), encoded.end(), transmit_data->begin());
     return true;
 }
