@@ -231,6 +231,10 @@ group "b.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runCrawlingPlanner('base');\"";
        host = "base";
     }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
 }
 
 group "b.3.grasping" {
