@@ -32,14 +32,28 @@
 #include <maps/BotWrapper.hpp>
 
 #define RENDERER_NAME "Recovery"
-#define PARAM_SEND_RECOVERY "Send Command"
 #define PARAM_RECOVERY_MODE "Mode"
+#define PARAM_SEND_RECOVERY "Send Recovery"
 
+#define PARAM_CONTROLLER_MODE "Transition to"
+#define PARAM_SEND_CONTROLLER "Send Controller"
 
 typedef enum _recovery_mode_t {
-    MODE_PROJECTILE_READY, MODE_PROJECTILE, MODE_UP_TO_DOWN, MODE_FLAT_OUT, MODE_KNEE_SET, MODE_KNEE_RISE, MODE_KNEE_FINISH,
-    MODE_CRAWL, MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE, MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE
+    MODE_PROJECTILE_READY, MODE_PROJECTILE, 
+    MODE_UP_TO_DOWN, MODE_FLAT_OUT, 
+    MODE_KNEE_SET, MODE_KNEE_RISE, 
+    MODE_KNEE_FINISH, MODE_CRAWL, 
+    MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE, 
+    MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE
 } recovery_mode_t;
+
+typedef enum _control_mode_t {
+    CONTROL_UKNOWN, CONTROL_STANDING, 
+    CONTROL_WALKING, CONTROL_HARNESSED, 
+    CONTROL_QUASISTATIC, CONTROL_BRACING
+} control_mode_t;
+
+
 
 ////////////////////////////// END OF CODE COPIED IN FROM COMMON_UTILS
 typedef struct _RendererRecovery {
@@ -50,6 +64,7 @@ typedef struct _RendererRecovery {
   BotGtkParamWidget *pw;
   
   int mode;
+  int controller;
 }RendererRecovery;
 
 static void
@@ -95,14 +110,33 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   
   self->mode = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_RECOVERY_MODE);
   std::cout << "Recovery Mode: "<<self->mode <<"\n";
+  self->controller = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CONTROLLER_MODE);
+  std::cout << "Controller Mode: "<<self->controller <<" [zero paired with recovery button]\n";
 
   if(!strcmp(name, PARAM_SEND_RECOVERY)) {
     fprintf(stderr,"\nSending Recovery\n");
+    std::cout << "Recovery Mode: "<<self->mode <<"\n";
     drc_recovery_t msg;
     msg.mode = (int8_t) self->mode;
+    msg.controller = (int8_t) 0; // Controller zero means csv-control
+    msg.utime = bot_timestamp_now();
     drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
-    
   }
+  if(!strcmp(name, PARAM_SEND_CONTROLLER)) {
+    if (self->controller==0){
+      fprintf(stderr,"\nRefusing to send unknown controller\n");
+      return;
+    }
+    
+    fprintf(stderr,"\nSending Controller Transition\n");
+    std::cout << "Controller Mode: "<<self->controller <<"\n";
+    drc_recovery_t msg;
+    msg.mode = (int8_t) -1; // ie none - which means - no csv file referenced
+    msg.controller = (int8_t) self->controller;
+    msg.utime = bot_timestamp_now();
+    drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
+  } 
+  
 }
 
 static void
@@ -145,6 +179,13 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
                                 "Crawl Left", MODE_CRAWL_LEFT, "Crawl Left Large", MODE_CRAWL_LEFT_LARGE, 
                                 "Crawl Right", MODE_CRAWL_RIGHT, "Crawl Right Large", MODE_CRAWL_RIGHT_LARGE, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_RECOVERY, NULL);
+
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_CONTROLLER_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Unknown [Not Sent]", CONTROL_UKNOWN,
+                                 "Standing", CONTROL_STANDING, 
+                                "Walking", CONTROL_WALKING, "Harnessed", CONTROL_HARNESSED, "Quasistatic", CONTROL_QUASISTATIC,
+                                "Bracing", CONTROL_BRACING, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_CONTROLLER, NULL);
+  
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
