@@ -151,25 +151,27 @@ static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
   gint active;
   active = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
   current_active_controller_mode = (int)active;
- std::cout << "CONTROLLER MODE changed to " << (int)active << "\n";
+  std::cout << "CONTROLLER MODE variable changed to " << (int)active << "\n";
 }
 
 
 static void on_controller_mode_clicked(GtkToggleToolButton *tb, void *user_data)
 {
   lcm_t * lcm = (lcm_t *) user_data;
-  std::cout << "CONTROLLER MODE changed to " << current_active_controller_mode << "\n";
+  std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << "\n";
    
   drc_controller_mode_t msg;
   msg.utime = bot_timestamp_now();
   switch (current_active_controller_mode)                                      
   {
     case 0:
-      msg.mode = DRC_CONTROLLER_MODE_T_HEIGHTMAP;
+      std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << " [BDI]\n";
+      msg.mode = DRC_CONTROLLER_MODE_T_BDI;
       drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE",&msg);
       break;
     case 1:
-      msg.mode = DRC_CONTROLLER_MODE_T_NOHEIGHTMAP;
+      std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << " [MIT]\n";
+      msg.mode = DRC_CONTROLLER_MODE_T_MIT;
       drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE", &msg);
       break;
     default:
@@ -464,8 +466,8 @@ int main(int argc, char *argv[])
   GtkWidget * hbox2 = gtk_hbox_new (FALSE, 5);
   GtkWidget* vseparator2 = gtk_vseparator_new ();
   GtkWidget* controller_mode_combo_box=gtk_combo_box_new_text();
-  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "HeightMap" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "NoHeightMap" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "BDI" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "MIT" );
   gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) 0);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(controller_mode_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( controller_mode_combo_box ), "changed", G_CALLBACK(on_controller_mode_combo_box_changed), viewer);

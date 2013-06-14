@@ -465,26 +465,12 @@ script "comp.vrc_manip" {
     start group "b.3.manip";
 }
 
-script "comp.vrc_driving" {
-    start group "a.1.core";
-    stop cmd "LegOdometry";
-    start group "a.4.driving";
-    start group "b.1.core";
-    start group "b.4.driving";
-    start cmd "estdriving";
-    wait ms 5000;
-    start cmd "enable_gravity_when_pinned";
-    wait ms 1000;
-    start cmd "enable_user_mode";
-    wait ms 15000;
-    start cmd "enter_car_pelvis_pinned";
-}
-
 script "comp.vrc_ingress" {
     start group "a.1.core";
     start group "b.1.core";
-    start group "a.4.ingress";
-    start group "b.2.walking";
+    start group "a.3.manip";
+    start group "b.3.manip";
+    start cmd "recovery";
 }
 
 ######################################
