@@ -289,6 +289,42 @@ elseif strcmpi(mode,'bracing')
   Kd.back_lbz = 1.0; 
   Kd.back_mby = 2.0; 
   Kd.back_ubx = 1.0; 
+
+
+elseif strcmpi(mode,'sit_up')
+  Kp.l_arm_usy = 30000.0; 
+  Kp.l_arm_shx = 30000.0; 
+  Kp.l_arm_ely = 30000.0; 
+  Kp.l_arm_elx = 30000.0; 
+  Kp.l_arm_uwy = 30000.0; 
+  Kp.l_arm_mwx = 30000.0; 
+  Kp.l_leg_uhz = 30000.0; 
+  Kp.l_leg_mhx = 30000.0; 
+  Kp.l_leg_lhy = 30000.0; 
+  Kp.l_leg_kny = 30000.0; 
+  Kp.l_leg_uay = 30000.0;
+  Kp.l_leg_lax = 30000.0;
+  Kp.neck_ay = 60000.0; 
+  Kp.back_lbz = 60000.0;  
+  Kp.back_mby = 60000.0; 
+  Kp.back_ubx = 60000.0; 
+
+  Kd.l_arm_usy = 5.0; 
+  Kd.l_arm_shx = 5.0; 
+  Kd.l_arm_ely = 3.0; 
+  Kd.l_arm_elx = 3.0; 
+  Kd.l_arm_uwy = 0.1; 
+  Kd.l_arm_mwx = 0.1; 
+  Kd.l_leg_uhz = 5.0; 
+  Kd.l_leg_mhx = 5.0; 
+  Kd.l_leg_lhy = 10.0; 
+  Kd.l_leg_kny = 10.0; 
+  Kd.l_leg_uay = 8.0;
+  Kd.l_leg_lax = 2.0;
+  Kd.neck_ay = 1.0; 
+  Kd.back_lbz = 1.0; 
+  Kd.back_mby = 2.0; 
+  Kd.back_ubx = 1.0; 
   
 elseif strcmpi(mode,'crawling')
   Kp.l_arm_usy = 4000.0; 
