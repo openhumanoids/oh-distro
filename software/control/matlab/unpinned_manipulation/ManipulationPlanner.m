@@ -286,30 +286,30 @@ classdef ManipulationPlanner < handle
              q_guess(3)=q_guess(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
              q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(25*pi/180);%+-25degrees from current pose
              ikoptions.q_nom = q_guess;
-
-              ikoptions.quasiStaticFlag = true;
-             %obj.pelvis_body,[0;0;0],pelvis_const,...
-             %   obj.head_body,[0;0;0],head_pose0_relaxed,...
-             %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
+				
+            ikoptions.quasiStaticFlag = true;
+               %obj.pelvis_body,[0;0;0],pelvis_const,...
+               %   obj.head_body,[0;0;0],head_pose0_relaxed,...
+	               %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
               [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
-              obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-              obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-              obj.r_hand_body,[0;0;0],rhand_const,...
-              obj.l_hand_body,[0;0;0],lhand_const,...
-              ikoptions);
+                obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+                obj.r_hand_body,[0;0;0],rhand_const,...
+                obj.l_hand_body,[0;0;0],lhand_const,...
+                ikoptions);
 
-             if(snopt_info == 13)
-              warning(['poseOpt IK fails']);
-              send_status(3,0,0,'snopt_info == 13...');
-             end
-            if(snopt_info < 10)
-               sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
-            else
+	             if(snopt_info > 10)
+		          warning(['poseOpt IK fails']);
+		          send_status(3,0,0,sprintf('snopt_info = %d...',snopt_info));
+	             end
+	          if(snopt_info < 10)
+	             sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
+	          else
                send_status(3,0,0,'Bad candidate startpose...');
-               sample_cost(:,k) =  Inf;
-            end
-            disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
-          end
+	             sample_cost(:,k) =  Inf;
+	          end
+	          disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
+           end
            [~,k_best] = min(sample_cost);
            disp(['sample_cost(:,k): ' num2str(sample_cost(:,k_best))]);
            q_out = q_sample(:,k_best); % take the least cost pose
@@ -748,7 +748,7 @@ classdef ManipulationPlanner < handle
                 
                 q_guess =q(:,i);
                 toc;
-                if(snopt_info == 13)
+                if(snopt_info > 10)
                     warning(['The IK fails at ',num2str(i)]);
                 end
                 %q_d(:,i) = q(ind,i);
@@ -1037,7 +1037,7 @@ classdef ManipulationPlanner < handle
                     % joint_names = {postureconstraint.name};
                     % joint_positions = [postureconstraint.joint_position];
                     is_locii = true;
-                otherwiseinverseKin
+              otherwise
                     error('Incorrect usage of runOptimization in Manip Planner. Undefined number of vargin.')
             end
             
@@ -1700,16 +1700,19 @@ classdef ManipulationPlanner < handle
                 if(~isempty(obj.head_gaze_target))
                   head_const.type = 'gaze';
                   head_const.gaze_target = obj.head_gaze_target;
+                  head_const.gaze_conethreshold = pi/12;
                   head_const.gaze_axis = [1;0;0];
                 end
                 if(~isempty(obj.rhand_gaze_target))
                   rhand_const.type = 'gaze';
                   rhand_const.gaze_target = obj.rhand_gaze_target;
+                  rhand_const.gaze_conethreshold = pi/12;
                   rhand_const.gaze_axis = [1;0;0];
                 end
                 if(~isempty(obj.lhand_gaze_target))
                   lhand_const.type = 'gaze';
                   lhand_const.gaze_target = obj.lhand_gaze_target;
+                  lhand_const.gaze_conethreshold = pi/12;
                   lhand_const.gaze_axis = [1;0;0];
                 end
                 %============================
@@ -1794,9 +1797,9 @@ classdef ManipulationPlanner < handle
                             ikoptions);
                     end
                     
-                    if(snopt_info == 13)
+                    if(snopt_info >10)
                         warning('The IK fails at the end');
-                        send_status(3,0,0,'snopt_info == 13. Manip plan initial IK is not very good.');
+                        send_status(3,0,0,sprintf('snopt_info = %d. Manip plan initial IK is not very good.',snopt_info));
                     end
                 else
                     q_final_guess =q_desired;
@@ -1833,10 +1836,10 @@ classdef ManipulationPlanner < handle
                 ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
                 %============================
                 [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
-                if(snopt_info == 13)
+                if(snopt_info > 10)
                     warning('The IK sequence fails');
-                    send_status(3,0,0,'snopt_info == 13. The IK sequence fails.');
-            end
+                    send_status(3,0,0,sprintf('snopt_info == %d. The IK sequence fails.',snopt_info));
+                end
                 %============================
                 xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
@@ -1971,9 +1974,9 @@ classdef ManipulationPlanner < handle
                     %============================
                     
                     %toc;
-                    if(snopt_info == 13)
+                    if(snopt_info > 10)
                         warning(['The IK fails at ',num2str(s(i))]);
-                        send_status(3,0,0,['snopt_info == 13: The IK fails at ',num2str(s(i))]);
+                        send_status(3,0,0,sprintf('snopt_info = %d: The IK fails at %10.4f',snopt_info,num2str(s(i))));
                     end
                     
                 else
