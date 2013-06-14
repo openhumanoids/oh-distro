@@ -404,6 +404,14 @@ classdef ManipulationPlanner < handle
               if(info>10)
                 fprintf('IK info = %d in posture plan optimization\n',info);
               end
+            elseif(useIK_state == 3) % copy the left arm joint angles from the mat file
+              coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+              l_arm_ind = ~cellfun(@isempty,strfind(coords,'l_arm'));
+              q_desired(~l_arm_ind) = q0(~l_arm_ind);
+            elseif(useIK_state == 4) % copy the right arm joint angles from the at file
+              coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+              r_arm_ind = ~cellfun(@isempty,strfind(coords,'r_arm'));
+              q_desired(~r_arm_ind) = q0(~r_arm_ind);
             end
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
             s = linspace(0,1,4);
