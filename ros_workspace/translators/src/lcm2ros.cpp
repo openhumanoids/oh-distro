@@ -54,8 +54,8 @@ class LCM2ROS{
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
     
-		// for swapping between BDI and MIT control
-		bool use_bdi;
+    // for swapping between BDI and MIT control
+    bool use_bdi;
     void controllerModeHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::controller_mode_t* msg);
     
     ros::NodeHandle* rosnode;
@@ -65,6 +65,8 @@ class LCM2ROS{
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   have_set_multisense_rate_= false;
+  
+  lcm_->subscribe("CONTROLLER_MODE",&LCM2ROS::controllerModeHandler, this);
 	     
   /// DRCSIM 2.0 joint command API
   lcm_->subscribe("JOINT_COMMANDS",&LCM2ROS::jointCommandHandler,this);  
@@ -76,8 +78,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   lcm_->subscribe("ATLAS_COMMAND_HANGUP",&LCM2ROS::atlasCommandHandler,this);  
   atlas_cmd_pub_ = nh_.advertise<atlas_msgs::AtlasCommand>("/atlas/atlas_command",10, true);
 
-	// by default use MIT control 100%
-	use_bdi = false;
+  // by default use MIT control 100%
+  use_bdi = false;
 
   /// Spinning Laser control:
   lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
@@ -205,7 +207,7 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 		  atlas_command_msg.velocity.push_back(msg->velocity[i]);
 		  atlas_command_msg.effort.push_back(msg->effort[i]);
 
-			if (use_bdi)
+			if (use_bdi) // use the bdi controller, but this does set though the message
 			  atlas_command_msg.k_effort.push_back(0);
 			else
 			  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
@@ -224,30 +226,32 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
 
 void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::controller_mode_t* msg) {
-		if (msg->mode == msg->BDI) {
-	    drc::system_status_t m;
-	    m.utime = msg->utime;
-	    m.system = drc::system_status_t::MESSAGING;
-	    m.importance = drc::system_status_t::VERY_IMPORTANT;
-	    m.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-	    m.value = "lcm2ros: Switching to BDI control.";	
-	    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+  if (msg->mode == msg->BDI) {
+    ROS_ERROR("LCM2ROS switching to BDI control");
+    drc::system_status_t m;
+    m.utime = msg->utime;
+    m.system = drc::system_status_t::MESSAGING;
+    m.importance = drc::system_status_t::VERY_IMPORTANT;
+    m.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-			use_bdi = true;
-  	}
-		else {
-	    drc::system_status_t m;
-	    m.utime = msg->utime;
-	    m.system = drc::system_status_t::MESSAGING;
-	    m.importance = drc::system_status_t::VERY_IMPORTANT;
-	    m.frequency = drc::system_status_t::LOW_FREQUENCY;
+    m.value = "lcm2ros: Switching to BDI control.";	
+    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
 
-	    m.value = "lcm2ros: Switching to MIT control.";	
-	    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+    use_bdi = true;
+  } else {
+    ROS_ERROR("LCM2ROS switching to MIT control");
+    drc::system_status_t m;
+    m.utime = msg->utime;
+    m.system = drc::system_status_t::MESSAGING;
+    m.importance = drc::system_status_t::VERY_IMPORTANT;
+    m.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-			use_bdi = false;
-		}
+    m.value = "lcm2ros: Switching to MIT control.";	
+    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+
+    use_bdi = false;
+  }
 }  
 
 void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
