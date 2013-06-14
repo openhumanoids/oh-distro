@@ -122,11 +122,11 @@ classdef ManipulationPlanner < handle
             runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state);
         end
         
-        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint) %#ok<INUSD>
-            runPoseOptimization(obj,x0,ee_names,ee_loci,timeIndices);
+        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
+            runPoseOptimization(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags);
         end
         
-        function runPoseOptimization(obj,x0,ee_names,ee_loci,Indices)
+        function runPoseOptimization(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags)
 
             disp('Generating candidate endpose...');
             send_status(3,0,0,'Generating candidate endpose...');
@@ -193,7 +193,27 @@ classdef ManipulationPlanner < handle
             lhand_const.min = nan(7,1);
             lhand_const.max = nan(7,1); 
             rhand_const.min = nan(7,1);
-            rhand_const.max = nan(7,1);    
+            rhand_const.max = nan(7,1);
+            if(goal_type_flags.rh == 2)
+              rhand_const.type = 'gaze';
+              rhand_const.gaze_axis = [1;0;0];
+              rhand_const.gaze_target = rh_ee_goal(1:3);
+              rhand_const.gaze_conethreshold = pi/12;
+            end
+            if(goal_type_flags.lh == 2)
+              lhand_const.type = 'gaze';
+              lhand_const.gaze_axis = [1;0;0];
+              lhand_const.gaze_target = lh_ee_goal(1:3);
+              lhand_const.gaze_conethreshold = pi/12;
+            end
+            if(goal_type_flags.h == 2)
+              head_const.type = 'gaze';
+              head_const.gaze_axis = [1;0;0];
+              head_const.gaze_target = h_ee_goal(1:3);
+              head_const.gaze_conethreshold = pi/12;
+            else
+              head_const = [];
+            end
             lfoot_const.min = l_foot_pose0(1:3,:)-1e-4*ones(3,num_l_foot_pts);
             lfoot_const.max = l_foot_pose0(1:3,:)+1e-4*ones(3,num_l_foot_pts);
             rfoot_const.min = r_foot_pose0(1:3,:)-1e-4*ones(3,num_r_foot_pts);
@@ -281,7 +301,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
             qstar = nomdata.xstar(1:obj.r.getNumDOF());
- 			ikoptions.q_nom = qstar;
+%  			ikoptions.q_nom = qstar;
           NSamples = 10;
           for k=1:NSamples,
              %q_guess = qstar;
@@ -292,12 +312,22 @@ classdef ManipulationPlanner < handle
                %obj.pelvis_body,[0;0;0],pelvis_const,...
                %   obj.head_body,[0;0;0],head_pose0_relaxed,...
 	               %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
-              [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
-                obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-                obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-                obj.r_hand_body,[0;0;0],rhand_const,...
-                obj.l_hand_body,[0;0;0],lhand_const,...
-                ikoptions);
+                 if(~isempty(head_const))
+                    [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
+                    obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                    obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+                    obj.r_hand_body,[0;0;0],rhand_const,...
+                    obj.l_hand_body,[0;0;0],lhand_const,...
+                    obj.head_body,[0;0;0],head_const,...
+                    ikoptions);
+                 else
+                   [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
+                      obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                      obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+                      obj.r_hand_body,[0;0;0],rhand_const,...
+                      obj.l_hand_body,[0;0;0],lhand_const,...
+                      ikoptions);
+                 end
 
 	             if(snopt_info > 10)
 		          warning(['poseOpt IK fails']);
@@ -1853,11 +1883,11 @@ classdef ManipulationPlanner < handle
             ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
             ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
-                ikseq_options.MajorIterationsLimit = 100;
+                ikseq_options.MajorIterationsLimit = 200;
                 ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
                 q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
             else
-                    ikseq_options.MajorIterationsLimit = 100;
+                    ikseq_options.MajorIterationsLimit = 200;
                     ikseq_options.qtraj0 = qtraj_guess;
               end
                 ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used

@@ -464,7 +464,7 @@ while(1)
           rpy = quat2rpy(q);
           ee_loci(:,i)=[p(:);rpy(:)];
       end
-      manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint);
+      manip_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,ee_goal_type_flags);
   end    
   teleop_transform_data = getNextMessage(teleop_transform_mon,0);
   if(~isempty(teleop_transform_data))
@@ -549,18 +549,21 @@ while(1)
   if (~isempty(p))
       disp ('Clearing head goal pose');
       h_ee_goal = [];
+      ee_goal_type_flags.h = -1;
   end
   
   p = getNextMessage (lh_ee_clear.frame, msg_timeout);
   if (~isempty(p))
       disp ('Clearing left hand goal pose');
       lh_ee_goal = [];
+      ee_goal_type_flags.lh = -1;
   end
   
   p = getNextMessage (rh_ee_clear.frame, msg_timeout);
   if (~isempty(p))
       disp ('Clearing right hand  goal pose');
       rh_ee_goal = [];
+      ee_goal_type_flags.rh = -1;
   end
 
 end
