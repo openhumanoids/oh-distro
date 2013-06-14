@@ -20,4 +20,5 @@ struct robot_posture_preset_t
   const int16_t PROJECTILE=8; // FUCK YEAH BABY!
   const int16_t CROUCHING_HNDS_DWN=9;
   const int16_t STANDING_RGTHND_REACH=10;
+  const int16_t STANDING_BDI_FP=11;
 }
