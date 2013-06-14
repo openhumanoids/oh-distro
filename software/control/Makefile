@@ -21,6 +21,8 @@ MAPS_FLAGS = $(subst -pthread,,$(shell pkg-config --cflags-only-I --libs maps ei
 QP_FLAGS = $(subst -pthread,,$(shell export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:./drake/thirdParty/; pkg-config --cflags --libs eigen3 gurobi))
 #BULLET_FLAGS = $(shell pkg-config --cflags --libs-only-L bullet) -DBULLET_COLLISION -lBulletCollision -lLinearMath
 BULLET_FLAGS =
+DEBUG = all
+
 
 # Figure out where to build the software.
 #   Use BUILD_PREFIX if it was passed in.
@@ -59,15 +61,28 @@ endif
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
 
-all: drake $(BUILD_PREFIX)/config/drc_control_setup.m $(BUILD_PREFIX)/share/java/drc_control.jar $(MEXFILES)
+all: CXX += -O3
+all: CC += -O3
+all: MEX += -O
+all: everything
+
+debug: CXX += -g
+debug: CC += -g
+debug: MEX += -g
+debug: DEBUG = debug
+debug: everything
+
+
+everything: drake $(BUILD_PREFIX)/config/drc_control_setup.m $(BUILD_PREFIX)/share/java/drc_control.jar $(MEXFILES)
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
 		echo "-------------------------------------------"; \
-		$(MAKE) -C $$subdir all || exit 2; \
+		$(MAKE) -C $$subdir $(DEBUG) all || exit 2; \
 	done
 	@# Place additional commands here if you have any
+
 
 java: $(BUILD_PREFIX)/share/java/drc_control.jar
 
@@ -76,7 +91,7 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
 	cd ..;
 
-%.class : %.java
+%.class : %.java drake
 	javac $< -cp $(CLASSPATH);
 
 src/RobotPlanConstraintCheckedPublisher.class : src/RobotPlanPublisher.class
@@ -85,7 +100,7 @@ drake : $(BUILD_PREFIX)/config/drc_control_setup.m
 	@echo "\n-------------------------------------------"; \
 	echo "-- drake"; \
 	echo "-------------------------------------------"; \
-	$(MAKE) -C drake all || exit 2;
+	$(MAKE) -C drake $(DEBUG) || exit 2;
 
 $(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
 	matlab -nosplash -nodesktop -r "setenv('BUILD_PREFIX','$(BUILD_PREFIX)'); write_drc_control_setup;exit";
@@ -93,7 +108,7 @@ $(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
 ifeq ($(MATLABCPU),maci64)
 
 $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h src/QPControllermex.cpp
-	$(MEX) -O src/QPControllermex.cpp \
+	$(MEX) src/QPControllermex.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
 		-Idrake/systems/plants drake/systems/plants/RigidBodyManipulator.o \
@@ -102,17 +117,17 @@ $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/sy
 else
 
 $(BUILD_PREFIX)/matlab/HeightMapWrapper.$(MEXEXT) : src/HeightMapWrapper.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
-	$(MEX) -O -v src/HeightMapWrapper.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
+	$(MEX) -v src/HeightMapWrapper.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		$(MAPS_FLAGS)
 
 $(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT) : src/bot_timestamp_now.cpp
-	$(MEX) -O -v src/bot_timestamp_now.cpp \
+	$(MEX) -v src/bot_timestamp_now.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		$(MAPS_FLAGS)
 
 $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h drake/systems/plants drake/systems/plants/RigidBody.h src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
-	$(MEX) -O src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
+	$(MEX) src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
 		-Idrake/systems/plants drake/systems/plants/RigidBodyManipulator.o \
@@ -123,10 +138,10 @@ $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/sy
 endif
 
 $(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) : src/RobotStateMonitor.cpp
-	$(MEX) -g src/RobotStateMonitor.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
+	$(MEX) src/RobotStateMonitor.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
 
 $(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) : src/AtlasCommandPublisher.cpp
-	$(MEX) -g src/AtlasCommandPublisher.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
+	$(MEX) src/AtlasCommandPublisher.cpp -outdir $(BUILD_PREFIX)/matlab -largeArrayDims $(subst -pthread,,$(shell pkg-config --cflags --libs lcm eigen3)) -I$(BUILD_PREFIX)/include
 
 clean:
 	-rm $(CLASSFILES)

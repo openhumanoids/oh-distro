@@ -508,7 +508,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       }
       else {
         contactPhi(pdata,*iter,phi,terrain_height);
-        if (phi.minCoeff()<contact_threshold)
+        if (phi.rows()>0 && phi.minCoeff()<contact_threshold)
           active_supports.insert(*iter);
       }
     }      

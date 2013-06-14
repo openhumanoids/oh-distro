@@ -68,6 +68,7 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       
       xt=[q;qdot];
       x(obj.ignore_states)=xt(obj.ignore_states);
+      x(3)=-100;
       u = obj.qp_controller.mimoOutput(0,[],qddot,zeros(12,1),x);
       y = [q;qdot;u];
     end
