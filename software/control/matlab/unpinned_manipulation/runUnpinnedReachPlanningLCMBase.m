@@ -441,7 +441,7 @@ while(1)
         dofnum = strcmp(r.getStateFrame.coordinates,joint_names{i});
         q_desired(dofnum) = joint_positions(i);
       end
-      q_desired(1:6) = x0(1:6); % fix pelvis pose to current
+      q_desired(1:6) = x0(1:6); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
       manip_planner.generateAndPublishPosturePlan(x0,q_desired,false);
   end  
   

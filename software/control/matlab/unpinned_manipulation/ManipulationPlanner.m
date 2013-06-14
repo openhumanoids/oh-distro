@@ -214,11 +214,12 @@ classdef ManipulationPlanner < handle
             for k=1:length(ind),
                 if(strcmp('pelvis',ee_names{ind(k)}))
                     pelvisT = ee_loci(:,ind(k));
-                    pelvis_pose = [nan(2,1);pelvisT(3); rpy2quat(pelvisT(4:6))];
+                    %pelvis_pose = [nan(2,1);pelvisT(3); rpy2quat(pelvisT(4:6))];
+		    pelvis_pose = [nan(3,1); rpy2quat(pelvisT(4:6))];
                     pelvis_const.min = pelvis_pose-1e-4*[zeros(3,1);ones(4,1)];
                     pelvis_const.max = pelvis_pose+1e-4*[zeros(3,1);ones(4,1)];
-                    pelvis_const.min(3) = pelvis_pose(3)-0.1;
-                    pelvis_const.max(3) = pelvis_pose(3)+0.1;
+                    %pelvis_const.min(3) = pelvis_pose(3)+0.1;
+                    %pelvis_const.max(3) = pelvis_pose(3)+0.3;
                     pelvis_const.min(4:7) = pelvis_pose(4:7)-0.1*ones(4,1);
                     pelvis_const.max(4:7) = pelvis_pose(4:7)+0.1*ones(4,1);
 %                     pelvis_const.type = 'gaze';
@@ -269,27 +270,40 @@ classdef ManipulationPlanner < handle
             lfoot_const_static_contact.contact_state = ...
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
 
-            ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
-            nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
-            qstar = nomdata.xstar(1:obj.r.getNumDOF());
-%             ikoptions.q_nom = q_guess;
-            ikoptions.q_nom = qstar;
-						
-            ikoptions.quasiStaticFlag = true;
-            [q_out,snopt_info] = inverseKin(obj.r,qstar,...
-                obj.pelvis_body,[0;0;0],pelvis_const,...
-                obj.head_body,[0;0;0],head_pose0_relaxed,...
-                obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
-                obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-                obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-                obj.r_hand_body,[0;0;0],rhand_const,...
-                obj.l_hand_body,[0;0;0],lhand_const,...
-                ikoptions);
+	NSamples = 10;
+	for k=1:NSamples,
+	 	   ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+		    nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+		    qstar = nomdata.xstar(1:obj.r.getNumDOF());
+	%             ikoptions.q_nom = q_guess;
+		    ikoptions.q_nom = qstar;
 
-           if(snopt_info == 13)
-                warning(['poseOpt IK fails']);
-                send_status(3,0,0,'snopt_info == 13...');
-           end
+		   qstar(3)=qstar(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
+		   qstar(6)=qstar(6)+2*(rand(1,1)-0.5)*(45*pi/180);
+						
+		    ikoptions.quasiStaticFlag = true;
+		    [q_sample(:,k),snopt_info] = inverseKin(obj.r,qstar,...
+		        obj.pelvis_body,[0;0;0],pelvis_const,...
+		        obj.head_body,[0;0;0],head_pose0_relaxed,...
+		        obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
+		        obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+		        obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+		        obj.r_hand_body,[0;0;0],rhand_const,...
+		        obj.l_hand_body,[0;0;0],lhand_const,...
+		        ikoptions);
+
+		   if(snopt_info == 13)
+		        warning(['poseOpt IK fails']);
+		        send_status(3,0,0,'snopt_info == 13...');
+		   end
+		if(snopt_info < 10)
+		   sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
+		else
+		   sample_cost(:,k) =  Inf;
+		end
+	 end
+	 [~,k_best] = min(sample_cost);
+          q_out = q_sample(:,k_best); % take the least cost pose
 
            % publish robot pose
            disp('Publishing candidate endpose ...');
