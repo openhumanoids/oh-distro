@@ -63,9 +63,9 @@ lh_ee_gaze.frame.subscribe('LEFT_PALM_GAZE_GOAL');
 rh_ee_gaze = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GAZE_GOAL');
 rh_ee_gaze.frame.subscribe('RIGHT_PALM_GAZE_GOAL');
 
-lh_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'LEFT_PALM_GOAL_CLEAR');
+lh_ee_clear = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GOAL_CLEAR');
 lh_ee_clear.frame.subscribe('LEFT_PALM_GOAL_CLEAR');
-rh_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'RIGHT_PALM_GOAL_CLEAR');
+rh_ee_clear = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GOAL_CLEAR');
 rh_ee_clear.frame.subscribe('RIGHT_PALM_GOAL_CLEAR');
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');

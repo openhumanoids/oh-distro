@@ -281,12 +281,12 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
             qstar = nomdata.xstar(1:obj.r.getNumDOF());
+ 			ikoptions.q_nom = qstar;
           NSamples = 10;
           for k=1:NSamples,
              %q_guess = qstar;
              q_guess(3)=q_guess(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
-             q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(25*pi/180);%+-25degrees from current pose
-             ikoptions.q_nom = q_guess;
+             q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(25*pi/180);%+-10degrees from current pose
 				
             ikoptions.quasiStaticFlag = true;
                %obj.pelvis_body,[0;0;0],pelvis_const,...
@@ -1401,7 +1401,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.quasiStaticFlag = true;
-            ikoptions.shrinkFactor = 0.8;
+            ikoptions.shrinkFactor = 0.95;
             if(is_keyframe_constraint)
                 ikoptions.MajorIterationsLimit = 300;
             else
@@ -1849,7 +1849,7 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=true;
-            ikseq_options.shrinkFactor = 0.8;
+            ikseq_options.shrinkFactor = 0.95;
             ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
             ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
