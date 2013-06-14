@@ -110,6 +110,10 @@ group "a.2.walking" {
         exec = "drc-fall-detector --vdot_threshold 0.5 --count_threshold 3 --memory 10";
         host = "robot";
     }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "extra";
+    } 
 }
 
 
@@ -233,6 +237,10 @@ group "b.2.walking" {
     }
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
 }
