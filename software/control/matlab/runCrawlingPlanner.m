@@ -7,6 +7,8 @@ if nargin < 1; location = 'base'; end
 if nargin < 2; options = struct(); end
 if ~isfield(options,'draw'); options.draw = false; end
 if ~isfield(options,'faceup'); options.faceup = true; end
+if ~isfield(options,'delta_yaw'); options.delta_yaw = 10*180/pi; end
+
 
 if strcmp(location, 'base')
   status_code = 6;
@@ -19,6 +21,7 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/grasp_execution'));
 
 
+options.ignore_terrain = true;
 options.floating = true;
 options.dt = 0.001;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
@@ -73,10 +76,10 @@ options.x_nom = x0;
 lc = lcm.lcm.LCM.getSingleton();
 
 committed_goal_mon = drake.util.MessageMonitor(drc.walking_goal_t(),'utime');
-lc.subscribe('COMMITTED_WALKING_GOAL',committed_goal_mon);
+lc.subscribe('COMMITTED_CRAWLING_GOAL',committed_goal_mon);
 
 goal_mon = drake.util.MessageMonitor(drc.walking_goal_t(),'utime');
-lc.subscribe('CRAWLING_NAV_GOAL',goal_mon);
+lc.subscribe('CRAWLING_GOAL',goal_mon);
 
 while true
   msg =['Crawl Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
@@ -107,12 +110,12 @@ while true
     end
   end
   if (~isempty(data))
-    options.step_speed = goal.step_speed;
-    options.step_height = goal.step_height;
-    options.step_length = goal.nom_forward_step;
-    options.ignore_terrain = goal.ignore_terrain;
-    options.max_num_steps = goal.max_num_steps;
-    options.min_num_steps = goal.min_num_steps;
+    %options.step_speed = goal.step_speed;
+    %options.step_height = goal.step_height;
+    %options.step_length = goal.nom_forward_step;
+    %options.ignore_terrain = goal.ignore_terrain;
+    %options.max_num_steps = goal.max_num_steps;
+    %options.min_num_steps = goal.min_num_steps;
     target_xy = [goal.goal_pos.translation.x;goal.goal_pos.translation.y];
 
     [firstTurn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
@@ -167,10 +170,11 @@ while true
   %ts = 0;
   %
   if committed
-    mu = goal.mu;
+    %mu = goal.mu;
+    %options.ignore_terrain = goal.ignore_terrain;
     crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full(actuated),'mu',mu,...
-      'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',goal.ignore_terrain)
+      'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',options.ignore_terrain)
     msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     makeFist;
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
@@ -205,8 +209,9 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
     line(target_distance*[0 cos(target_heading)],target_distance*[0 sin(target_heading)],'Color','g');
   end
 
-  turn.direction = 1;
-  turn.num_steps = 0;
+  turn.direction = sign(delta_heading);
+  turn.num_steps = 4*ceil(delta_heading/options.delta_yaw);
+  forwardSegment.direction = 0;
   forwardSegment.num_steps = ceil(target_distance/options.step_length);
   forwardSegment.num_steps = max(min(forwardSegment.num_steps,options.max_num_steps),options.min_num_steps);
 end
