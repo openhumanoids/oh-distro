@@ -36,16 +36,21 @@ def on_frequency_lcm(channel, data):
   print "got real_time: %f | moving average: %f" % (real_time_percent, real_time_percent_ma) 
 
 def on_recovery(channel, data):
+  m = recovery_t.decode(data)  
+  mode = int(m.mode)
+  controller = int(m.controller)
+  if (controller!=0):
+    print "this recovery message is not for me, returning"
+    return
+
   global real_time_percent_ma
   print "rtp ma: %f" %( real_time_percent_ma)
-  
+
   msg = system_status_t() 
   msg.system=3
   msg.importance=0
   msg.frequency=0
 
-  m = recovery_t.decode(data)  
-  mode = int(m.mode)
   print "Reading [%d]" %(mode)
   filename = filenames[mode] 
   print "Doing [%d: %s]" %(mode, filename)
