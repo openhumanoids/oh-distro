@@ -149,7 +149,7 @@ while(1)
         send_status(3,0,0,'Manipulation Planner:IKSEQUENCE_OFF MODE');
       elseif(modeset.mode==drc.manip_plan_control_t.TELEOP)
         manip_planner.setPlanningMode(3);
-       send_status(3,0,0,'Manipulation Planner:TELEOP MODE (Not Yet Implemented)');
+       send_status(3,0,0,'Manipulation Planner:TELEOP MODE');
       end
   end
 

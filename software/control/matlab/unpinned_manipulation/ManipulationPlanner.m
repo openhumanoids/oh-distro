@@ -198,13 +198,13 @@ classdef ManipulationPlanner < handle
               rhand_const.type = 'gaze';
               rhand_const.gaze_axis = [1;0;0];
               rhand_const.gaze_target = rh_ee_goal(1:3);
-              rhand_const.gaze_conethreshold = pi/12;
+              rhand_const.gaze_conethreshold = pi/18;
             end
             if(goal_type_flags.lh == 2)
               lhand_const.type = 'gaze';
               lhand_const.gaze_axis = [1;0;0];
               lhand_const.gaze_target = lh_ee_goal(1:3);
-              lhand_const.gaze_conethreshold = pi/12;
+              lhand_const.gaze_conethreshold = pi/18;
             end
             if(goal_type_flags.h == 2)
               head_const.type = 'gaze';
@@ -594,7 +594,7 @@ classdef ManipulationPlanner < handle
                   lhand_const.type = 'gaze';
                   lhand_const.gaze_target = ee_loci(1:3,i);
                   lhand_const.gaze_axis = [1;0;0];
-                  lhand_const.gaze_conethreshold = pi/12;
+                  lhand_const.gaze_conethreshold = pi/18;
                 end
                 %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
                 if(goal_type_flags.rh ~=2)
@@ -604,13 +604,15 @@ classdef ManipulationPlanner < handle
                   rhand_const.type = 'gaze';
                   rhand_const.gaze_target = ee_loci(1:3,i);
                   rhand_const.gaze_axis = [1;0;0];
-                  rhand_const.gaze_conethreshold = pi/12;
+                  rhand_const.gaze_conethreshold = pi/18;
                 end
                 if(goal_type_flags.h ==2)
                   head_const.type = 'gaze';
                   head_const.gaze_target = ee_loci(1:3,i);
                   head_const.gaze_axis = [1;0;0];
                   head_const.gaze_conethreshold = pi/12;
+                else
+                  head_const = [];
                 end
                 %l_foot_pose0= [nan;nan;nan;nan;nan;nan;nan];
 %                 lfoot_const.min = l_foot_pose0-1e-2*[ones(3,1);ones(4,1)];
@@ -792,13 +794,23 @@ classdef ManipulationPlanner < handle
                      %obj.pelvis_body,[0;0;0],pelvis_pose0,...
                      %obj.head_body,[0;0;0],head_pose0_relaxed,...
                      % Hongkai to investigate this.$$$$#!%%%%#$#%#$%^%$^%$^%$^%$6546546 HONGKAI  
-                    [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
-                        obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-                        obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
-                        obj.r_hand_body,[0;0;0],rhand_const, ...
-                        obj.l_hand_body,[0;0;0],lhand_const,...
-                        obj.head_body,[0;0;0],head_const,...
-                        ikoptions);
+                     if(isempty(head_const))
+                       [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
+                          obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                          obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
+                          obj.r_hand_body,[0;0;0],rhand_const, ...
+                          obj.l_hand_body,[0;0;0],lhand_const,...
+                          ikoptions);
+
+                     else
+                       [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
+                          obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                          obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
+                          obj.r_hand_body,[0;0;0],rhand_const, ...
+                          obj.l_hand_body,[0;0;0],lhand_const,...
+                          obj.head_body,[0;0;0],head_const,...
+                          ikoptions);
+                     end
                 end
                 
                 q_guess =q(:,i);
@@ -1762,13 +1774,13 @@ classdef ManipulationPlanner < handle
                 if(~isempty(obj.rhand_gaze_target))
                   rhand_const.type = 'gaze';
                   rhand_const.gaze_target = obj.rhand_gaze_target;
-                  rhand_const.gaze_conethreshold = pi/12;
+                  rhand_const.gaze_conethreshold = pi/18;
                   rhand_const.gaze_axis = [1;0;0];
                 end
                 if(~isempty(obj.lhand_gaze_target))
                   lhand_const.type = 'gaze';
                   lhand_const.gaze_target = obj.lhand_gaze_target;
-                  lhand_const.gaze_conethreshold = pi/12;
+                  lhand_const.gaze_conethreshold = pi/18;
                   lhand_const.gaze_axis = [1;0;0];
                 end
                 %============================
