@@ -68,6 +68,7 @@ protected:
   int mLeftGraspState;
   int mRightGraspState;
   bool mMinimalAffordances;
+  int mControllerHeightMapMode;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -336,6 +337,17 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
+
+    mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
+    labels = {"Flat Ground", "Full Heights"};
+    ids = {drc::map_controller_command_t::FLAT_GROUND,
+           drc::map_controller_command_t::FULL_HEIGHTMAP};
+    addCombo("Controller Height Mode", mControllerHeightMapMode,
+             labels, ids, sensorControlBox);
+    button = Gtk::manage(new Gtk::Button("Submit Height Mode"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onControllerHeightMapMode));
+    sensorControlBox->pack_start(*button, false, false);
     
     //
     // grasp
@@ -557,6 +569,12 @@ public:
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.pitch = mHeadPitchAngle*degreesToRadians;
     getLcm()->publish("DESIRED_NECK_PITCH", &msg);
+  }
+
+  void onControllerHeightMapMode() {
+    drc::map_controller_command_t msg;
+    msg.command = mControllerHeightMapMode;
+    getLcm()->publish("MAP_CONTROLLER_COMMAND", &msg);
   }
 
   void onGraspButton() {
