@@ -277,7 +277,6 @@ classdef ManipulationPlanner < handle
             lfoot_const_static_contact.contact_state = ...
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
 
-<<<<<<< .mine
           NSamples = 10;
           for k=1:NSamples,
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
