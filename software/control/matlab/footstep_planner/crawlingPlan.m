@@ -457,8 +457,8 @@ elseif (options.gait ==2) % trot
     sfigure(8); ; grid on; axis equal;
     plot(zmp(1,i),zmp(2,i),'gd',support_vert{i}(1,1:2),support_vert{i}(2,1:2),'-rs',support_vert{i+1}(1,1:2),support_vert{i+1}(2,1:2),'-ks');
   end
-  %zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
-  %zmptraj = PPTrajectory(foh(support_times,zmp));
+  zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
+  zmptraj = PPTrajectory(foh(support_times,zmp));
   support_times = [0, support_times];
   supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
@@ -477,7 +477,7 @@ elseif (options.gait ==2) % trot
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-  % Pelvis constraint
+  % COM constraint
   kc = ActionKinematicConstraint(r,pelvis_ind,[0;0;0],ConstantTrajectory([NaN;NaN;com_start(3)]),comtraj.tspan,'crawling_pelvis_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
