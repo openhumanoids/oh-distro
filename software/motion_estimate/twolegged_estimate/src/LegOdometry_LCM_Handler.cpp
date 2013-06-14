@@ -44,6 +44,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	first_get_transforms = true;
 	zvu_flag = false;
+	biasmessagesent = false;
 	ratecounter = 0;
 	local_to_head_vel_diff.setSize(3);
 	local_to_head_acc_diff.setSize(3);
@@ -55,7 +56,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	rate_changer.setSize(3);
 	fusion_rate.setSize(1);
 	bias_publishing_rate.setSize(1);
-
+	estimating_biases = 0;
 
 	acc_bias_est.setSize(3);
 
@@ -459,6 +460,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 				std::cout << "SettingAccelBiases on timer expire to: " << cabias.transpose() << std::endl;
 				inert_odo.imu_compensator.UpdateAccelBiases(avgbiases);
+				estimating_biases = 1;
 			}
 
 		}
@@ -691,11 +693,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			stageB[2] = _leg_odo->getPelvisVelocityStates()(2);
 
 			// Rate change
-
 			store_vel_state = _leg_odo->getPelvisVelocityStates();
 			ratechangeiter = rate_changer.genericRateChange(_msg->utime,store_vel_state,filtered_pelvis_vel);
-
-
 
 			_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
 
@@ -721,8 +720,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// At this point the pelvis position has been found from leg kinematics
 
 
-
-
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		gettimeofday(&mid,NULL);
@@ -737,10 +734,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			LeggO.V = _leg_odo->getPelvisVelocityStates();
 
 
-			//LeggO.P << 0.,0.,0.;
-			//LeggO.V << 0., 0., 0.;
-
 			datafusion_out = data_fusion(_msg->utime, LeggO, InerOdoEst, FovisEst);
+
 
 			if (_switches->OPTION_D) {
 				// This is for the computations that follow -- not directly leg odometry position
@@ -756,8 +751,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			if (isnan((float)datafusion_out.V(0)) || isnan((float)datafusion_out.V(1)) || isnan((float)datafusion_out.V(2))) {
 				std::cout << "LegOdometry_Handler::robot_state_handler -- NAN happened\n";
 
-			}
+				std::cout << "LeggO.P: " << LeggO.P.transpose() << std::endl
+						  << "LeggO.V: " << LeggO.V.transpose() << std::endl
+						  << "InerOdoEst.P: " << InerOdoEst.P.transpose() << std::endl
+						  << "InerOdoEst.V: " << InerOdoEst.V.transpose() << std::endl;
 
+			}
 
 			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
 
@@ -824,7 +823,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 			#ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
 			// True state messages will ont be available during the VRC and must be removed accordingly
-			PublishPoseBodyTrue(_msg);
+			//PublishPoseBodyTrue(_msg);
 			#endif
 			#ifdef LOG_28_JOINT_COMMANDS
 		   for (int i=0;i<16;i++) {
@@ -908,9 +907,14 @@ void LegOdometry_Handler::publishAccBiasEst(const unsigned long long &uts) {
 		msg.y = (float)biases(1);
 		msg.z = (float)biases(2);
 
-		lcm_->publish("ESTIMATED_ACCEL_BIASES" + _channel_extension, &msg);
+		msg.mode = (char)estimating_biases;
+		if (estimating_biases == 0 || !biasmessagesent) {
+			lcm_->publish("ESTIMATED_ACCEL_BIASES" + _channel_extension, &msg);
+		}
+		if (estimating_biases == 1) {
+			biasmessagesent = true;
+		}
 	}
-
 }
 
 void LegOdometry_Handler::DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag) {
@@ -1064,6 +1068,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 
   // TODO -- This must be converted to a permanent foot triad
   // this is to draw the foot position
+  /*
   pose.pos[0] = footslidetriad.translation().x();
   pose.pos[1] = footslidetriad.translation().y();
   pose.pos[2] = footslidetriad.translation().z();
@@ -1075,9 +1080,11 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
   pose.orientation[1] =footslideq.x();
   pose.orientation[2] =footslideq.y();
   pose.orientation[3] =footslideq.z();
+  */
 
   lcm_->publish("POSE_BODY",&pose);
 
+  /*
   bot_core::pose_t static_foot;
 
   static_foot.pos[0] = _leg_odo->getPrimaryInLocal().translation().x();
@@ -1113,6 +1120,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	compensated_foot.orientation[3] =compensatedfootq.z();
 
 	lcm_->publish("COMPENSATED_FOOT",&compensated_foot);
+	*/
 
 
 	/*
@@ -1371,6 +1379,8 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	double accels[3];
 	double angles[3];
 
+
+
 	if (isnan((float)msg->angular_velocity[0]) || isnan((float)msg->angular_velocity[1]) || isnan((float)msg->angular_velocity[2]) || isnan((float)msg->linear_acceleration[0]) || isnan((float)msg->linear_acceleration[1]) || isnan((float)msg->linear_acceleration[2])) {
 		std::cerr << "torso_imu_handler -- NAN encountered, skipping this frame\n";
 		return;
@@ -1397,6 +1407,10 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 		for (int i=0;i<3;i++) {
 			rates[i] = msg->angular_velocity[i]; // +2 since the foot force values use the first two filters
 			accels[i] = msg->linear_acceleration[i];
+
+			if (isnan((float)accels[i])) {
+				std::cout << "LegOdometry_Handler::torso_imu_handler -- NAN in accel, so ignoring this frame.\n";
+			}
 		}
 	}
 	

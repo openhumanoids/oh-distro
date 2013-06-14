@@ -168,6 +168,8 @@ private:
 	CumulativeAverage acc_bias_avg;
 	SchmittTrigger trigger_bias_averaging;
 	ExpireTimer expire_bias_avg_process;
+	int estimating_biases;
+	bool biasmessagesent;
 
 #ifdef DO_FOOT_SLIP_FEEDBACK
 	//NumericalDiff SFootPrintOut;

@@ -14,7 +14,7 @@
 #define INS_POS_WINDUP_BALANCE    0.5
 
 //0.3, 0.9
-#define INS_VEL_FEEDBACK_GAIN     0.18
+#define INS_VEL_FEEDBACK_GAIN     0.2
 
 #define INS_VEL_WINDUP_BALANCE    0.9
 

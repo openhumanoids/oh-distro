@@ -98,9 +98,9 @@ Eigen::Matrix3d q2C(const Eigen::Quaterniond q_) {
 		quat[3] = q_.z();*/
 
 		double norm = w*w + x*x + y*y + z*z;
-		if (fabs(norm) < 1e-10) {
+		if (fabs(norm) < 0.8) {
 			std::cerr << "QuaternionLib::q2C -- not a unit quaternion\n";
-
+			return Eigen::Matrix3d::Identity();
 		}
 
 		norm = 1./norm;
