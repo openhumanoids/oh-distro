@@ -144,6 +144,40 @@ static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
  // std::cout << "posture presets combo_box changed to " << (int)active << "\n";
 }
 
+int current_active_controller_mode=0;
+static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
+{
+  BotViewer *self = (BotViewer*) user_data;
+  gint active;
+  active = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+  current_active_controller_mode = (int)active;
+ std::cout << "CONTROLLER MODE changed to " << (int)active << "\n";
+}
+
+
+static void on_controller_mode_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  lcm_t * lcm = (lcm_t *) user_data;
+  std::cout << "CONTROLLER MODE changed to " << current_active_controller_mode << "\n";
+   
+  drc_controller_mode_t msg;
+  msg.utime = bot_timestamp_now();
+  switch (current_active_controller_mode)                                      
+  {
+    case 0:
+      msg.mode = DRC_CONTROLLER_MODE_T_HEIGHTMAP;
+      drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE",&msg);
+      break;
+    case 1:
+      msg.mode = DRC_CONTROLLER_MODE_T_NOHEIGHTMAP;
+      drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE", &msg);
+      break;
+    default:
+     std::cout << "Unknown preset. Not found in lcmtype";
+     break;
+  }// end switch case
+}
+
 static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
 {
   lcm_t * lcm = (lcm_t *) user_data;
@@ -408,7 +442,7 @@ int main(int argc, char *argv[])
   gtk_combo_box_set_active(GTK_COMBO_BOX( posture_presets_combo_box ),(gint) 0);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(posture_presets_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( posture_presets_combo_box ), "changed", G_CALLBACK(on_posture_presets_combo_box_changed ), viewer);
-  
+
   gtk_box_pack_start (GTK_BOX (hbox), vseparator, FALSE, FALSE, 0);
   gtk_box_pack_end (GTK_BOX (hbox), posture_presets_combo_box, FALSE, FALSE, 0);
   GtkToolItem * toolitem = gtk_tool_item_new ();
@@ -416,8 +450,37 @@ int main(int argc, char *argv[])
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem), viewer->tips, "Posture Presets", NULL);
   gtk_widget_show_all (GTK_WIDGET (toolitem));
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem, -1);
-  //--------------             
+  
+    
+// TODO: this will moved to somewhere else  
+ GtkWidget *controller_mode_button;
+  controller_mode_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_EXECUTE);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(controller_mode_button), "Controller_Mode");
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(controller_mode_button), viewer->tips, "Set Controller Mode", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(controller_mode_button), -1);
+  gtk_widget_show(controller_mode_button);
+  g_signal_connect(G_OBJECT(controller_mode_button), "clicked", G_CALLBACK(on_controller_mode_clicked), lcm);
+  
+  GtkWidget * hbox2 = gtk_hbox_new (FALSE, 5);
+  GtkWidget* vseparator2 = gtk_vseparator_new ();
+  GtkWidget* controller_mode_combo_box=gtk_combo_box_new_text();
+  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "HeightMap" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "NoHeightMap" );
+  gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) 0);
+  gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(controller_mode_combo_box), (gint) 1) ;
+  g_signal_connect( G_OBJECT( controller_mode_combo_box ), "changed", G_CALLBACK(on_controller_mode_combo_box_changed), viewer);
+  
 
+  gtk_box_pack_start (GTK_BOX (hbox2), vseparator2, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (hbox2), controller_mode_combo_box, FALSE, FALSE, 0);
+  GtkToolItem * toolitem2 = gtk_tool_item_new ();
+  gtk_container_add (GTK_CONTAINER (toolitem2), hbox2);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem2), viewer->tips, "Cntroller Mode Selection", NULL);
+  gtk_widget_show_all (GTK_WIDGET (toolitem2));
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem2, -1);  
+
+    
+  //--------------             
 
   // add custom renderer groups menu
   RendererGroupUtil groupUtil(viewer, bot_param);
