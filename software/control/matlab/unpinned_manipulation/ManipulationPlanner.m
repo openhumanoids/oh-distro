@@ -90,12 +90,13 @@ classdef ManipulationPlanner < handle
                     goal_type_flags =varargin{7}; 
                     q_desired = varargin{8};
                     runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,is_keyframe_constraint,q_desired);
-                case 6
+                case 7
                     x0 = varargin{1};
                     ee_names= varargin{2};
                     ee_loci = varargin{3};
                     timeIndices = varargin{4};
                     postureconstraint = varargin{5};
+                    goal_type_flags = varargin{6};
                     % runs IK sequence but its  slow.
                     % Given N constraitns, iksequence needs atleast N break points
                     % which is slow.
@@ -104,7 +105,7 @@ classdef ManipulationPlanner < handle
                     % Point wise IK, much faster, linear complexity.
                     is_manip_map =false;
                     fprintf('EELoci function being called');
-                    runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,is_manip_map);
+                    runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,is_manip_map,goal_type_flags);
                 otherwise
                     error('Incorrect usage of generateAndPublishManipulationPlan in Mnaip Planner. Undefined number of vargin.')
             end
@@ -440,7 +441,7 @@ classdef ManipulationPlanner < handle
             obj.plan_pub.publish(xtraj,ts,utime);
         end
         
-        function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,is_manip_map)
+        function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,is_manip_map,goal_type_flags)
             if(is_manip_map)
                 disp('Generating manip map...');
                 send_status(3,0,0,'Generating manip map...');
@@ -468,6 +469,7 @@ classdef ManipulationPlanner < handle
             head_pose0(1:3)=nan(3,1); % only set head orientation not position
             head_pose0_relaxed.min=head_pose0-[1e-2*ones(3,1);1e-2*ones(4,1)];
             head_pose0_relaxed.max=head_pose0+[1e-2*ones(3,1);1e-2*ones(4,1)];
+            
             
             
             % compute fixed COM goal
@@ -555,11 +557,31 @@ classdef ManipulationPlanner < handle
                 tic;
                 
                 %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
-                lhand_const.min = l_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
-                lhand_const.max = l_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                if(goal_type_flags.lh ~=2)
+                  lhand_const.min = l_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
+                  lhand_const.max = l_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                else
+                  lhand_const.type = 'gaze';
+                  lhand_const.gaze_target = ee_loci(1:3,i);
+                  lhand_const.gaze_axis = [1;0;0];
+                  lhand_const.gaze_conethreshold = pi/12;
+                end
                 %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
-                rhand_const.min = r_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
-                rhand_const.max = r_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                if(goal_type_flags.rh ~=2)
+                  rhand_const.min = r_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
+                  rhand_const.max = r_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                else
+                  rhand_const.type = 'gaze';
+                  rhand_const.gaze_target = ee_loci(1:3,i);
+                  rhand_const.gaze_axis = [1;0;0];
+                  rhand_const.gaze_conethreshold = pi/12;
+                end
+                if(goal_type_flags.h ==2)
+                  head_const.type = 'gaze';
+                  head_const.gaze_target = ee_loci(1:3,i);
+                  head_const.gaze_axis = [1;0;0];
+                  head_const.gaze_conethreshold = pi/12;
+                end
                 %l_foot_pose0= [nan;nan;nan;nan;nan;nan;nan];
 %                 lfoot_const.min = l_foot_pose0-1e-2*[ones(3,1);ones(4,1)];
 %                 lfoot_const.max = l_foot_pose0+1e-2*[ones(3,1);ones(4,1)]; 
@@ -648,8 +670,10 @@ classdef ManipulationPlanner < handle
                         rgraspT(1:3) = T_world_grasp_r(1:3,4);
                         rgraspT(4:6) =rotmat2rpy(T_world_grasp_r(1:3,1:3));
                         r_grasp_pose = [rgraspT(1:3); rpy2quat(rgraspT(4:6))];
+                        if(goal_type_flags.rh ~= 2)
                         rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
                         rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
+                        end
                         if(is_manip_map)
                             plan_Indices(i).aff_type=Indices(ind(k)).aff_type;
                             plan_Indices(i).aff_uid=Indices(ind(k)).aff_uid;
@@ -743,6 +767,7 @@ classdef ManipulationPlanner < handle
                         obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
                         obj.r_hand_body,[0;0;0],rhand_const, ...
                         obj.l_hand_body,[0;0;0],lhand_const,...
+                        obj.head_body,[0;0;0],head_const,...
                         ikoptions);
                 end
                 

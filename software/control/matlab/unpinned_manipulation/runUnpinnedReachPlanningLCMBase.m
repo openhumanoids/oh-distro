@@ -380,7 +380,7 @@ while(1)
           rpy = quat2rpy(q);
           ee_loci(:,i)=[p(:);rpy(:)];
       end
-      manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps,postureconstraint);
+      manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
   end    
   
   
@@ -400,7 +400,7 @@ while(1)
           rpy = quat2rpy(q);
           ee_loci(:,i)=[p(:);rpy(:)];
       end      
-      manip_planner.generateAndPublishManipulationMap(x0,ee_names,ee_loci,affIndices);
+      manip_planner.generateAndPublishManipulationMap(x0,ee_names,ee_loci,affIndices,ee_goal_type_flags);
   end
   
 
