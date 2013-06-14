@@ -65,7 +65,7 @@ actuated = getActuatedJoints(r);
 persistent mex_ptr;
 
 if options.draw
-  v = r.constructVisualizer();
+  %v = r.constructVisualizer();
 
   if isempty(mex_ptr)
     input_names = r.getInputFrame().coordinates;
@@ -136,20 +136,23 @@ link_constraints = struct('link_ndx', {}, 'pt', {}, 'min_traj', [], 'max_traj', 
 
 % Determine forward crawling direction
 z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
+up_dir = [0;0;1];
 forward_dir = [z_proj(1:2);0];
-left_dir = rotz(pi/2)*forward_dir;
+forward_dir = forward_dir/norm(forward_dir);
+left_dir = cross(up_dir,forward_dir);
 
 % Determine nominal forward crawling direction
 z_proj_nom = rpy2rotmat(options.x_nom(4:6))*[0;0;1];
 forward_dir_nom = [z_proj_nom(1:2);0];
-left_dir_nom = rotz(pi/2)*forward_dir;
+forward_dir_nom = forward_dir_nom/norm(forward_dir_nom);
+left_dir_nom = rotz(pi/2)*forward_dir_nom;
 
 kinsol = doKinematics(r,q_nom);
 for i = 1:4
   fpos_nom(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
   fpos_rel_nom(:,i) = fpos_nom(:,i) - q_nom(1:3);
   forward_coord_nom = fpos_rel_nom'*forward_dir_nom;
-  left_coord_nom = -fpos_rel_nom'*left_dir_nom;
+  left_coord_nom = fpos_rel_nom'*left_dir_nom;
 end
 
 q = x0(1:nq);
@@ -159,10 +162,7 @@ for i=1:4
 end
 com0 = getCOM(r,kinsol);
 z_foot_nom = mean(fpos(3,:));
-fpos_initial = fpos;
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
-com = [mean(fpos(1:2,:),2);options.com_height+mean(z_foot_nom)];
-q = crawlIK(q,com,fpos);
 %display(q,com,fpos,[]); pause(5);
 
 if (options.gait==0) % quasi-static
@@ -205,12 +205,20 @@ if (options.gait==0) % quasi-static
   %end
 elseif (options.gait ==2) % trot
   t_start = stride_duration/2 - swing_duration;
+
+  fpos(:,1) = x0(1:3) + forward_dir*forward_coord_nom(1) + left_dir*left_coord_nom(1);
+  fpos(:,2) = x0(1:3) + forward_dir*forward_coord_nom(2) + left_dir*left_coord_nom(2);
+  fpos(:,3) = x0(1:3) + forward_dir*forward_coord_nom(3) + left_dir*left_coord_nom(3);
+  fpos(:,4) = x0(1:3) + forward_dir*forward_coord_nom(4) + left_dir*left_coord_nom(4);
+  fpos(3,:) = z_foot_nom;
+  fpos_initial = fpos;
+  com = [mean(fpos(1:2,:),2);options.com_height+mean(z_foot_nom)];
   zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
                          [com(1:2),com(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
+
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
-    fpos = fpos_initial;
     if any(i == [1,3])
       % Initial stance constraints
       tspan = [0,t_start];
@@ -225,9 +233,7 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length/2) ...
-                  + left_dir*left_coord_nom(i);
-      fpos(3,i) = z_foot_nom;
+      fpos(:,i) = fpos(:,i) + forward_dir* options.step_length/2;
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -305,9 +311,7 @@ elseif (options.gait ==2) % trot
         sfigure(8); hold on; grid on;
         plot(fpos(1,i),fpos(2,i),'bo');
       end
-      fpos(:,i) = x0(1:3) + forward_dir*(forward_coord_nom(i) + options.step_length) ...
-                  + left_dir*left_coord_nom(i);
-      fpos(3,i) = z_foot_nom;
+      fpos(:,i) = fpos(:,i) + forward_dir*options.step_length;
 
       % Intermediate stance constraints
       for j = 1:options.num_strides-1
@@ -424,9 +428,9 @@ elseif (options.gait ==2) % trot
     q0 = q(:,i-1);
     q(:,i) = inverseKin(r,q0,ikargs{:},options);
     if options.draw
-      v.draw(t(i),[q(:,i);0*q(:,i)]);
-      AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
-      pause(2);
+      %v.draw(t(i),[q(:,i);0*q(:,i)]);
+      %AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
+      %pause(2);
     end
   end
   qdtraj = PPTrajectory(spline(t,q));
