@@ -360,7 +360,7 @@ classdef QPController < MIMODrakeSystem
       if ~isempty(contact_data)
         msg = drc.foot_contact_estimate_t(contact_data);
         contact_sensor(find(supp.bodies==obj.lfoot_idx)) = msg.left_contact;
-        contact_sensor(find(supp.bodies==obj.rfoot_idx)) = msg.rfoot_contact;
+        contact_sensor(find(supp.bodies==obj.rfoot_idx)) = msg.right_contact;
       end
     end
     
