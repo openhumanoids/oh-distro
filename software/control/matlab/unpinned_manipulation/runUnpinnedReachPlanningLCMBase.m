@@ -424,7 +424,7 @@ while(1)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crouching_fp.mat'));
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_RGTHND_REACH)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));  
-      elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_BDI_FP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));%bdi fp
       end
       q_desired = d.xstar(1:getNumDOF(r));
