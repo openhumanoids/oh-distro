@@ -59,6 +59,19 @@ classdef SupportState
       end
     end
     
+    function obj = removeBody(obj,index_into_bodies_not_body_idx)
+      obj.bodies(index_into_bodies_not_body_idx)=[];
+      obj.contact_pts(index_into_bodies_not_body_idx)=[]; % note: this is correct, even though it's a cell array
+      obj.num_contact_pts(index_into_bodies_not_body_idx)=[];
+      obj.contact_surfaces(index_into_bodies_not_body_idx)=[];
+    end
+    
+    function obj = removeBodyIdx(obj,body_idx)
+      ind = find(obj.bodies==body_idx);
+      if ~isempty(idx)
+        obj = removeBody(obj,ind);
+      end
+    end
   end
   
 end

@@ -13,7 +13,6 @@ nu = getNumInputs(r);
 
 % first put it in the intiial condition, and wait
 q0 = eval(q_traj,q_traj.tspan(1));
-q0(3)=-10; % artificially put the robot below the ground so that all supports are active
 [u0,r] = inverseDynamics(r,q0,0*q0,0*q0,supports(1));
 actuated = getActuatedJoints(r);
 fr = AtlasPositionRef(r,'crawling',4);

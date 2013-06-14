@@ -7,21 +7,26 @@ classdef CrawlingController < DRCController
   methods
     function obj = CrawlingController(name,r,options)
       typecheck(r,'Atlas');
-    
-        ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
-              'qdtraj',zeros(getNumDOF(r),1),...
-              'qddtraj',zeros(getNumDOF(r),1),...
-              'support_times',[],...
-              'supports',[],...
-              'ignore_terrain',false));
 
-        sys = PosVelFeedForwardBlock(r,ctrl_data,options);
-        obj = obj@DRCController(name,sys,AtlasState(r));
-        obj.robot = r;
-        obj.controller_data = ctrl_data;
-
-        obj = setTimedTransition(obj,inf,name,false);
-        obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
+      %  NOTE: this should only be required for setting the normals to
+      %  [0;0;1], and should be removed if we start trusting/using the
+      %  terrain
+      r = setTerrain(r,RigidBodyTerrain);
+      
+      ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
+        'qdtraj',zeros(getNumDOF(r),1),...
+        'qddtraj',zeros(getNumDOF(r),1),...
+        'support_times',[],...
+        'supports',[],...
+        'ignore_terrain',true));
+      
+      sys = PosVelFeedForwardBlock(r,ctrl_data,options);
+      obj = obj@DRCController(name,sys,AtlasState(r));
+      obj.robot = r;
+      obj.controller_data = ctrl_data;
+      
+      obj = setTimedTransition(obj,inf,name,false);
+      obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
     end
         
     function msg = status_message(obj,t_sim,t_ctrl)

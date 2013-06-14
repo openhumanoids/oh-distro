@@ -45,7 +45,6 @@ struct QPControllerData {
   int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
   MatrixXd B, B_con, B_free;
   set<int> free_dof, con_dof, free_inputs, con_inputs; 
-  int rfoot_idx, lfoot_idx;
   VectorXd umin_con, umax_con;
   ArrayXd umin,umax;
   void* map_ptr;
@@ -121,6 +120,12 @@ void PGE ( GRBenv *env )
 
 #endif
 
+typedef struct _support_state_element
+{
+  int body_idx;
+  set<int> contact_pt_inds;
+} SupportStateElement;
+
 
 template <typename DerivedA, typename DerivedB>
 void getRows(set<int> &rows, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB> &Msub)
@@ -192,17 +197,17 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
   }
 }
 
-int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi,double terrain_height)
+int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, VectorXd &phi,double terrain_height)
 {
-  RigidBody* b = &(pdata->r->bodies[body_idx]);
-	int nc = b->contact_pts.cols();
+  RigidBody* b = &(pdata->r->bodies[supp.body_idx]);
+	int nc = supp.contact_pt_inds.size();
 	phi.resize(nc);
 
   Vector3d contact_pos,pos,normal; Vector4d tmp;
 
 	for (int i=0; i<nc; i++) {
 		tmp = b->contact_pts.col(i);
-		pdata->r->forwardKin(body_idx,tmp,0,contact_pos);
+		pdata->r->forwardKin(supp.body_idx,tmp,0,contact_pos);
 		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
 
 		pos -= contact_pos;  // now -rel_pos in matlab version
@@ -213,9 +218,9 @@ int contactPhi(struct QPControllerData* pdata, int body_idx, VectorXd &phi,doubl
 	return nc;
 }
 
-int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
+int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportStateElement>& supp, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
 {
-  int i, j, k=0, nc = pdata->r->getNumContacts(body_idx), nq = pdata->r->num_dof;
+  int i, j, k=0, nq = pdata->r->num_dof;
 
 //  phi.resize(nc);
   n.resize(nc,nq);
@@ -227,15 +232,13 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
   MatrixXd J(3,nq);
   Matrix<double,3,m_surface_tangents> d;
   
-  for (set<int>::iterator iter = body_idx.begin(); iter!=body_idx.end(); iter++) {
-    RigidBody* b = &(pdata->r->bodies[*iter]);
-    nc = b->contact_pts.cols();
-//    mexPrintf("****** body %d has %d contact points ********\n", *iter, nc);
+  for (vector<SupportStateElement>::iterator iter = supp.begin(); iter!=supp.end(); iter++) {
+    RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
     if (nc>0) {
-      for (i=0; i<nc; i++) {
-        tmp = b->contact_pts.col(i);
-        pdata->r->forwardKin(*iter,tmp,0,contact_pos);
-        pdata->r->forwardJac(*iter,tmp,0,J);
+      for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
+        tmp = b->contact_pts.col(*pt_iter);
+        pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
+        pdata->r->forwardJac(iter->body_idx,tmp,0,J);
 
         collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
         
@@ -255,7 +258,7 @@ int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, Matrix
         // store away kin sols into Jp and Jpdot
         // NOTE: I'm cheating and using a slightly different ordering of J and Jdot here
         Jp.block(3*k,0,3,nq) = J;
-        pdata->r->forwardJacDot(*iter,tmp,J);
+        pdata->r->forwardJacDot(iter->body_idx,tmp,J);
         Jpdot.block(3*k,0,3,nq) = J;
         
         k++;
@@ -384,10 +387,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the map ptr");
     memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
 
-    pdata->rfoot_idx = (int) mxGetScalar(prhs[8]) - 1;
-    pdata->lfoot_idx = (int) mxGetScalar(prhs[9]) - 1;
-
-
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
 
@@ -442,11 +441,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
   
-  set<int> desired_supports, active_supports;
-  pr = mxGetPr(prhs[narg]);
-  for (i=0; i<mxGetNumberOfElements(prhs[narg]); i++)
-    desired_supports.insert((int)pr[i] - 1);
-  narg++;
+  int desired_support_argid = narg++;
   
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==4);
   Map< Matrix4d > A_ls(mxGetPr(prhs[narg++]));
@@ -482,8 +477,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map< Vector2d > y0(mxGetPr(prhs[narg++]));
 
   double mu = mxGetScalar(prhs[narg++]);
-  bool rfoot_contact_state = (bool) mxGetScalar(prhs[narg++]),
-  		lfoot_contact_state = (bool) mxGetScalar(prhs[narg++]);
+
+  double* double_contact_sensor = mxGetPr(prhs[narg]); int len = mxGetNumberOfElements(prhs[narg++]);
+  VectorXi contact_sensor(len);  
+  for (i=0; i<len; i++)
+    contact_sensor(i)=(int)double_contact_sensor[i];
   double contact_threshold = mxGetScalar(prhs[narg++]);
   double terrain_height = mxGetScalar(prhs[narg++]); // nonzero if we're using DRCFlatTerrainMap
 
@@ -494,26 +492,38 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
 
-  if (contact_threshold == -1) {
-    // ignore terrain
-  	active_supports = desired_supports;
-    if (!rfoot_contact_state) active_supports.erase(pdata->rfoot_idx);
-    if (!lfoot_contact_state) active_supports.erase(pdata->lfoot_idx);
-  } else {
+  vector<SupportStateElement> active_supports;
+  int num_active_contact_pts=0;
+  {
     VectorXd phi;
-    for (set<int>::iterator iter=desired_supports.begin(); iter!=desired_supports.end(); iter++) {
-      if (contact_threshold == -1 && *iter != pdata->rfoot_idx && *iter != pdata->lfoot_idx) {
-        // ignore terrain, just use support traj
-        active_supports.insert(*iter);
+    mxArray* mxBodies = mxGetProperty(prhs[narg],0,"bodies");
+    double* pBodies = mxGetPr(mxBodies);
+    mxArray* mxContactPts = mxGetProperty(prhs[narg],0,"contact_pts");
+    for (i=0; i<mxGetNumberOfElements(mxBodies);i++) {
+      int nc = mxGetNumberOfElements(mxContactPts); 
+      if (nc<1) continue;
+      
+      SupportStateElement se;
+      se.body_idx = (int) pBodies[i]-1;
+      mxArray* mxBodyContactPts = mxGetCell(mxContactPts,i);
+      pr = mxGetPr(mxBodyContactPts); 
+      for (j=0; j<nc; j++) {
+        se.contact_pt_inds.insert((int)pr[i]-1);
       }
-      else {
-        contactPhi(pdata,*iter,phi,terrain_height);
-        if (phi.rows()>0 && phi.minCoeff()<contact_threshold)
-          active_supports.insert(*iter);
+      
+      if (contact_threshold == -1) { // ignore terrain
+        if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
+          active_supports.push_back(se);
+          num_active_contact_pts += nc;
+        }
+      } else {
+        contactPhi(pdata,se,phi,terrain_height);
+        if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
+          active_supports.push_back(se);
+          num_active_contact_pts += nc;
+        }
       }
-    }      
-    if (rfoot_contact_state && desired_supports.find(pdata->rfoot_idx)!=desired_supports.end()) active_supports.insert(pdata->rfoot_idx);
-    if (lfoot_contact_state && desired_supports.find(pdata->lfoot_idx)!=desired_supports.end()) active_supports.insert(pdata->lfoot_idx);
+    }
   }
 
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL);
@@ -541,7 +551,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   getRows(pdata->con_dof,qdvec,qd_con);
   
   MatrixXd Jz,Jp,Jpdot,D;
-  int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot,terrain_height);
+  int nc = contactConstraints(pdata,num_active_contact_pts,active_supports,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector4d x_bar,xlimp;
@@ -774,8 +784,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       plhs[2] = mxCreateDoubleMatrix(active_supports.size(),1,mxREAL);
       pr = mxGetPr(plhs[2]);
       int i=0;
-      for (set<int>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
-          pr[i++] = (double) (*iter + 1);
+      for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
+          pr[i++] = (double) (iter->body_idx + 1);
       }
   }
   

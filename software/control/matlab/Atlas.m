@@ -153,7 +153,7 @@ classdef Atlas < Biped
           'support_times',0,...
           'supports',active_supports,...
           'mu',1,...
-          'ignore_terrain',false,...
+          'ignore_terrain',true,...
           'y0',zeros(2,1)));
         
         % instantiate QP controller
@@ -163,7 +163,7 @@ classdef Atlas < Biped
         options.lcm_foot_contacts = false;
         options.full_body_opt = true;
         options.debug = false;
-        options.use_mex = true;
+        options.use_mex = 2;
       
         obj.inverse_dyn_qp_controller = QPController(obj,ctrl_data,options);
       else
