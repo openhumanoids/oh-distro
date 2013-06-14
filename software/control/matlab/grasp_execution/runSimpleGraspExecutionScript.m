@@ -23,7 +23,7 @@ l_jointNames = r_left.getStateFrame.coordinates(1:nq_l);
 r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 
 Kp = 0.25*[15  10  10   15  10  10    15  10  10 15  10  10]';
-Kd = 2*[0.75 0.45 0.45 0.75 0.45 0.45   0.75 0.45 0.45 0.75 0.45 0.45]';
+Kd = [0.75 0.45 0.45 0.75 0.45 0.45   0.75 0.45 0.45 0.75 0.45 0.45]';
 
 l_coder = JLCMCoder(SandiaJointCommandCoder('atlas',floating,'left', l_jointNames,Kp,Kd));
 l_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_left',4*nq_l,'q',l_coder);
