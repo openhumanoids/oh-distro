@@ -117,8 +117,8 @@ classdef ManipulationPlanner < handle
             runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,affIndices,[],is_manip_map);
         end
         
-        function generateAndPublishPosturePlan(obj,x0,q_desired,useIKflag)
-            runOptimizationForPosturePlan(obj,x0,q_desired,useIKflag);
+        function generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)
+            runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state);
         end
         
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint) %#ok<INUSD>
@@ -193,10 +193,10 @@ classdef ManipulationPlanner < handle
             lhand_const.max = nan(7,1); 
             rhand_const.min = nan(7,1);
             rhand_const.max = nan(7,1);    
-            lfoot_const.min = l_foot_pose0-1e-4*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
-            lfoot_const.max = l_foot_pose0+1e-4*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
-            rfoot_const.min = r_foot_pose0-1e-4*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
-            rfoot_const.max = r_foot_pose0+1e-4*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
+            lfoot_const.min = l_foot_pose0(1:3,:)-1e-4*ones(3,num_l_foot_pts);
+            lfoot_const.max = l_foot_pose0(1:3,:)+1e-4*ones(3,num_l_foot_pts);
+            rfoot_const.min = r_foot_pose0(1:3,:)-1e-4*ones(3,num_r_foot_pts);
+            rfoot_const.max = r_foot_pose0(1:3,:)+1e-4*ones(3,num_r_foot_pts);
             rfoot_const_static_contact = rfoot_const;
             rfoot_const_static_contact.contact_state = ...
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)};
@@ -277,27 +277,28 @@ classdef ManipulationPlanner < handle
             lfoot_const_static_contact.contact_state = ...
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
 
+<<<<<<< .mine
           NSamples = 10;
           for k=1:NSamples,
-           	   ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
-	              nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
-	              qstar = nomdata.xstar(1:obj.r.getNumDOF());
-          %             ikoptions.q_nom = q_guess;
-	              ikoptions.q_nom = qstar;
-
+            ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+            nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+            qstar = nomdata.xstar(1:obj.r.getNumDOF());
+%             ikoptions.q_nom = q_guess;
+            ikoptions.q_nom = qstar;
+						
 	             qstar(3)=qstar(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
 	             qstar(6)=qstar(6)+2*(rand(1,1)-0.5)*(45*pi/180);
 				
-	              ikoptions.quasiStaticFlag = true;
+            ikoptions.quasiStaticFlag = true;
                %obj.pelvis_body,[0;0;0],pelvis_const,...
                %   obj.head_body,[0;0;0],head_pose0_relaxed,...
 	               %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
 	              [q_sample(:,k),snopt_info] = inverseKin(obj.r,qstar,...
-		          obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-		          obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-		          obj.r_hand_body,[0;0;0],rhand_const,...
-		          obj.l_hand_body,[0;0;0],lhand_const,...
-		          ikoptions);
+                obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+                obj.r_hand_body,[0;0;0],rhand_const,...
+                obj.l_hand_body,[0;0;0],lhand_const,...
+                ikoptions);
 
 	             if(snopt_info == 13)
 		          warning(['poseOpt IK fails']);
@@ -326,7 +327,7 @@ classdef ManipulationPlanner < handle
            obj.pose_pub.publish(xtraj,utime);
         end 
          
-        function runOptimizationForPosturePlan(obj,x0,q_desired,useIKflag)
+        function runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
             disp('Generating posture plan...');
             q0 = x0(1:getNumDOF(obj.r));
             s = [0 1];
@@ -347,7 +348,7 @@ classdef ManipulationPlanner < handle
             obj.rhandT = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
             obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
-            if(useIKflag)
+            if(useIK_state == 1)
               kinsol0 = doKinematics(obj.r,q0);
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],1);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],1);
@@ -360,11 +361,24 @@ classdef ManipulationPlanner < handle
               if(info>10)
                 fprintf('IK info = %d in posture plan optimization\n',info);
               end
+            elseif(useIK_state ==2) % Foot in contact
+              ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
+              ikoptions.jointLimitMin = [-inf(6,1);q_desired(7:end)];
+              lfoot_const = struct();
+              kinsol0 = doKinematics(obj.r,q0);
+              rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],1);
+              lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],1);
+              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
+              ikoptions.q_nom = q0;
+              [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
+              if(info>10)
+                fprintf('IK info = %d in posture plan optimization\n',info);
+              end
             end
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
             s = linspace(0,1,4);
             s_breaks = linspace(s(1),s(end),obj.num_breaks);
-            obj.s_breaks = s_breaks;
+            obj.s_breaks = s_breaks;           
             s = unique([s(:);s_breaks(:)]);
             q = zeros(length(q0),length(s));
             for i=1:length(s),

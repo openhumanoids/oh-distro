@@ -405,15 +405,15 @@ while(1)
   
 
   posture_goal =preset_posture_goal_listener.getNextMessage(msg_timeout);  
-  useIKflag = false;
+  useIK_state = 0;
   if(~isempty(posture_goal))
       disp('Preset Posture goal received .');
       if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));%standing hands down
-       useIKflag = true;
+       useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_UP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
-       useIKflag = true;
+       useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
@@ -427,7 +427,7 @@ while(1)
       end
       q_desired = d.xstar(1:getNumDOF(r));
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
-      manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIKflag);
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end
 
   posture_goal =posture_goal_listener.getNextMessage(msg_timeout);  
@@ -442,7 +442,8 @@ while(1)
         q_desired(dofnum) = joint_positions(i);
       end
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
-      manip_planner.generateAndPublishPosturePlan(x0,q_desired,false);
+      useIK_state = 2; % Doing IK for all joints, with foot on the ground.
+      manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end  
   
   [posegoal,postureconstraint]= pose_goal_listener.getNextMessage(msg_timeout);
