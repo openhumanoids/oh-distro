@@ -215,7 +215,7 @@ classdef ManipulationPlanner < handle
                 if(strcmp('pelvis',ee_names{ind(k)}))
                     pelvisT = ee_loci(:,ind(k));
                     %pelvis_pose = [nan(2,1);pelvisT(3); rpy2quat(pelvisT(4:6))];
-		    pelvis_pose = [nan(3,1); rpy2quat(pelvisT(4:6))];
+		                pelvis_pose = [nan(3,1); rpy2quat(pelvisT(4:6))];
                     pelvis_const.min = pelvis_pose-1e-4*[zeros(3,1);ones(4,1)];
                     pelvis_const.max = pelvis_pose+1e-4*[zeros(3,1);ones(4,1)];
                     %pelvis_const.min(3) = pelvis_pose(3)+0.1;
@@ -251,14 +251,21 @@ classdef ManipulationPlanner < handle
                     %q_guess(1:3) = r_hand_pose(1:3);
                 elseif (strcmp('l_foot',ee_names{ind(k)}))
                     lfootT = ee_loci(:,ind(k));
-                    l_foot_pose = [lfootT(1:3); rpy2quat(lfootT(4:6))];
-                    lfoot_const.min = l_foot_pose-1e-6*[ones(3,1);ones(4,1)];
-                    lfoot_const.max = l_foot_pose+1e-6*[ones(3,1);ones(4,1)];
+                    %l_foot_pose = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                    %lfoot_const.min = l_foot_pose-1e-6*[ones(3,1);ones(4,1)];
+                    %lfoot_const.max = l_foot_pose+1e-6*[ones(3,1);ones(4,1)];
+                    l_foot_pose = [lfootT(1:3)];
+                    lfoot_const.min = l_foot_pose-1e-6*[ones(3,1)];
+                    lfoot_const.max = l_foot_pose+1e-6*[ones(3,1)];
+
                 elseif(strcmp('r_foot',ee_names{ind(k)}))
                     rfootT = ee_loci(:,ind(k));
-                    r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];
-                    rfoot_const.min = r_foot_pose-1e-6*[ones(3,1);ones(4,1)];
-                    rfoot_const.max = r_foot_pose+1e-6*[ones(3,1);ones(4,1)];
+                    %r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];
+                    %rfoot_const.min = r_foot_pose-1e-6*[ones(3,1);ones(4,1)];
+                    %rfoot_const.max = r_foot_pose+1e-6*[ones(3,1);ones(4,1)];
+                    r_foot_pose = [rfootT(1:3)];
+                    rfoot_const.min = r_foot_pose-1e-6*[ones(3,1)];
+                    rfoot_const.max = r_foot_pose+1e-6*[ones(3,1)];
                 else
                     disp('currently only feet/hands and pelvis are allowed');  
                 end
@@ -270,40 +277,42 @@ classdef ManipulationPlanner < handle
             lfoot_const_static_contact.contact_state = ...
                 {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
 
-	NSamples = 10;
-	for k=1:NSamples,
-	 	   ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
-		    nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
-		    qstar = nomdata.xstar(1:obj.r.getNumDOF());
-	%             ikoptions.q_nom = q_guess;
-		    ikoptions.q_nom = qstar;
+          NSamples = 10;
+          for k=1:NSamples,
+           	   ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+	              nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+	              qstar = nomdata.xstar(1:obj.r.getNumDOF());
+          %             ikoptions.q_nom = q_guess;
+	              ikoptions.q_nom = qstar;
 
-		   qstar(3)=qstar(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
-		   qstar(6)=qstar(6)+2*(rand(1,1)-0.5)*(45*pi/180);
-						
-		    ikoptions.quasiStaticFlag = true;
-		    [q_sample(:,k),snopt_info] = inverseKin(obj.r,qstar,...
-		        obj.pelvis_body,[0;0;0],pelvis_const,...
-		        obj.head_body,[0;0;0],head_pose0_relaxed,...
-		        obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
-		        obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-		        obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-		        obj.r_hand_body,[0;0;0],rhand_const,...
-		        obj.l_hand_body,[0;0;0],lhand_const,...
-		        ikoptions);
+	             qstar(3)=qstar(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
+	             qstar(6)=qstar(6)+2*(rand(1,1)-0.5)*(45*pi/180);
+				
+	              ikoptions.quasiStaticFlag = true;
+               %obj.pelvis_body,[0;0;0],pelvis_const,...
+               %   obj.head_body,[0;0;0],head_pose0_relaxed,...
+	               %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
+	              [q_sample(:,k),snopt_info] = inverseKin(obj.r,qstar,...
+		          obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+		          obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+		          obj.r_hand_body,[0;0;0],rhand_const,...
+		          obj.l_hand_body,[0;0;0],lhand_const,...
+		          ikoptions);
 
-		   if(snopt_info == 13)
-		        warning(['poseOpt IK fails']);
-		        send_status(3,0,0,'snopt_info == 13...');
-		   end
-		if(snopt_info < 10)
-		   sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
-		else
-		   sample_cost(:,k) =  Inf;
-		end
-	 end
-	 [~,k_best] = min(sample_cost);
-          q_out = q_sample(:,k_best); % take the least cost pose
+	             if(snopt_info == 13)
+		          warning(['poseOpt IK fails']);
+		          send_status(3,0,0,'snopt_info == 13...');
+	             end
+	          if(snopt_info < 10)
+	             sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
+	          else
+	             sample_cost(:,k) =  Inf;
+	          end
+	          disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
+           end
+           [~,k_best] = min(sample_cost);
+           disp(['sample_cost(:,k): ' num2str(sample_cost(:,k_best))]);
+           q_out = q_sample(:,k_best); % take the least cost pose
 
            % publish robot pose
            disp('Publishing candidate endpose ...');
