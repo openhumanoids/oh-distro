@@ -1401,7 +1401,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.quasiStaticFlag = true;
-            ikoptions.shrinkFactor = 0.95;
+            ikoptions.shrinkFactor = 0.8;
             if(is_keyframe_constraint)
                 ikoptions.MajorIterationsLimit = 300;
             else
@@ -1643,9 +1643,10 @@ classdef ManipulationPlanner < handle
                 %============================
                 
             end
-            
-            % kc_pelvis = ActionKinematicConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,[s(1),s(end)],'pelvis');
-            % ks = ks.addKinematicConstraint(kc_pelvis);
+             if(obj.restrict_feet)
+              kc_pelvis = ActionKinematicConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,[s(1),s(end)],'pelvis');
+              ks = ks.addKinematicConstraint(kc_pelvis);
+			end
             % kc_torso = ActionKinematicConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0_relaxed,[s(1),s(end)],'utorso');
             % ks = ks.addKinematicConstraint(kc_torso);
             
@@ -1812,8 +1813,9 @@ classdef ManipulationPlanner < handle
                             obj.head_body,[0;0;0],head_const,...
                             ikoptions);
                     else
-                          %obj.pelvis_body,[0;0;0],pelvis_pose0,...
+                        % if feet are not restricted then you need to add back pelvis constraint
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
+                            obj.pelvis_body,[0;0;0],pelvis_pose0,...
                             obj.r_foot_body,r_foot_pts,rfoot_const_static_contact, ...
                             obj.l_foot_body,l_foot_pts,lfoot_const_static_contact, ...
                             obj.r_hand_body,[0;0;0],rhand_const, ...
@@ -1847,7 +1849,7 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=true;
-            ikseq_options.shrinkFactor = 0.95;
+            ikseq_options.shrinkFactor = 0.8;
             ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
             ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
@@ -1985,9 +1987,9 @@ classdef ManipulationPlanner < handle
 %                             obj.head_body,[0;0;0],head_const,...
 %                             ikoptions);
                     else
-                        % obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
-                        % obj.pelvis_body,[0;0;0],pelvis_pose0,...
+                        % obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...                        
                         [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
+                            obj.pelvis_body,[0;0;0],pelvis_pose0,...
                             obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
                             obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
                             obj.r_hand_body,[0;0;0],rhand_const,...
