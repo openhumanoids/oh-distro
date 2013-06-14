@@ -29,7 +29,7 @@ else
   r = removeCollisionGroupsExcept(r,{'toe','knuckle'});
 end
 
-r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',status_code,'fill', true,'normal_radius',2)));
+r = setTerrain(r,DRCTerrainMap(false,struct('name','Crawl Plan','status_code',status_code,'fill', true,'normal_radius',2)));
 %r = setTerrain(r,DRCFlatTerrainMap());
 r = compile(r);
 
