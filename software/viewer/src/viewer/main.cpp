@@ -233,6 +233,14 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_RGTHND_REACH;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                             
+      case 11:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LFTHND_DWN;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break;
+      case 12:
+       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_DWN;
+       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+       break;
       default:
        std::cout << "Unknown preset. Not found in lcmtype";
        break;
@@ -441,6 +449,8 @@ int main(int argc, char *argv[])
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Projectile" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "CrouchHndsDn" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndRHndReach" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "LHnd_Dwn" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "RHnd_Dwn" );
   gtk_combo_box_set_active(GTK_COMBO_BOX( posture_presets_combo_box ),(gint) 0);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(posture_presets_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( posture_presets_combo_box ), "changed", G_CALLBACK(on_posture_presets_combo_box_changed ), viewer);
