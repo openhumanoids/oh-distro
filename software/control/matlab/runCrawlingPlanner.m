@@ -123,13 +123,13 @@ while true
     options.num_steps = forwardSegment.num_steps;
 
     % Plan first turn
-    options.direction = firstTurn.direction;
+    options.direction = forwardSegment.direction;
     display('Getting qtraj ...');
     [qtraj{1},support_times{1},supports{1},V{1},comtraj{1},zmptraj{1},link_constraints{1}] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 
     % Plan forward crawling
     %options.direction = FORWARD;
-    %[support_times{2},supports{2},V{2},comtraj{2},zmptraj{2},qtraj{2}] = ...
+   %[support_times{2},supports{2},V{2},comtraj{2},zmptraj{2},qtraj{2}] = ...
     %crawlingPlan(r,[eval(qtraj{1},qtraj{1}.tspan(2)); zeros(nq,1)],body_spec,foot_spec,options)
 
     % Plan second turn
@@ -170,7 +170,7 @@ while true
   %ts = 0;
   %
   if committed
-    %mu = goal.mu;
+    mu = goal.mu;
     %options.ignore_terrain = goal.ignore_terrain;
     crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full(actuated),'mu',mu,...
@@ -191,7 +191,22 @@ end
 end
 
 function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
-
+if ~isfield(options,'min_num_steps') options.min_num_steps = 20; end
+if ~isfield(options,'max_num_steps') options.max_num_steps = 20; end
+if ~isfield(options,'num_steps') options.num_steps = 20; end
+if ~isfield(options,'duty_factor') options.duty_factor = 2/3; end
+if ~isfield(options,'step_length') options.step_length = .3; end
+if ~isfield(options,'step_speed') options.step_speed = .5; end  
+if ~isfield(options,'step_height') options.step_height = .2; end
+if ~isfield(options,'com_height') options.com_height = .35; end
+if ~isfield(options,'comfortable_footpos') options.comfortable_footpos = [-.7 -.7 .6 .6; .3 -.3 -.3 .3]; end
+if ~isfield(options,'ignore_terrain') options.ignore_terrain = true; end  % todo: make this default to false
+if ~isfield(options,'direction') options.direction = 0; end
+if ~isfield(options,'gait') options.gait = 2; end
+if ~isfield(options,'draw') options.draw = true; end
+if ~isfield(options,'debug') options.debug = false; end
+if ~isfield(options,'x_nom') options.x_nom = x0; end
+if ~isfield(options,'delta_yaw') options.delta_yaw = 10*pi/180; end
   fieldcheck(options,'step_length');
 
   delta_xy = target_xy - x0(1:2);
