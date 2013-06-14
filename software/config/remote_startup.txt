@@ -4,11 +4,11 @@ drc-set-sim-rate 0.2
 
 2. on other 3 machines:
 ROBOT:
-drc-network-shaper -t manipulation -r robot -c drc_robot.cfg -l -p ~/drc/data/
-bot-procman-deputy -n robot
+drc-network-shaper -t manipulation -r robot -c drc_robot.cfg -l -p ~/drc/data/ &> ~/drc/data/shaper-out &
+bot-procman-deputy -n robot &> ~/drc/data/deputy-robot-out &
 
 EXTRA:
-bot-procman-deputy -n extra
+bot-procman-deputy -n extra &> ~/drc/data/deputy-extra-out &
 
 BASE:
 bot-procman-deputy -n base
