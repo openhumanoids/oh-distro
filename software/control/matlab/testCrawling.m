@@ -31,7 +31,7 @@ function testCrawling()
   
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
   [q_traj,support_times,supports] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
-  save crawling_traj.mat q_traj support_times supports
+  save data/crawling_traj.mat q_traj support_times supports
 
   simrate = .65;
   playbackPDFFTrajectory(q_traj,support_times,supports,simrate);

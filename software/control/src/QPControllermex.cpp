@@ -203,10 +203,14 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
 	int nc = supp.contact_pt_inds.size();
 	phi.resize(nc);
 
+	if (nc<1) return nc;
+
   Vector3d contact_pos,pos,normal; Vector4d tmp;
 
-	for (int i=0; i<nc; i++) {
-		tmp = b->contact_pts.col(i);
+  int i=0;
+  for (set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
+  	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+		tmp = b->contact_pts.col(*pt_iter);
 		pdata->r->forwardKin(supp.body_idx,tmp,0,contact_pos);
 		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
 
@@ -214,6 +218,7 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
 		phi(i) = pos.norm();
 		if (pos.dot(normal)>0)
 			phi(i)=-phi(i);
+		i++;
   }
 	return nc;
 }
@@ -236,6 +241,8 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
     RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
     if (nc>0) {
       for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
+      	int pt_iter_val = *pt_iter;
+      	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         pdata->r->forwardJac(iter->body_idx,tmp,0,J);
@@ -494,21 +501,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   vector<SupportStateElement> active_supports;
   int num_active_contact_pts=0;
-  {
+  if (!mxIsEmpty(prhs[desired_support_argid])) {
     VectorXd phi;
-    mxArray* mxBodies = mxGetProperty(prhs[narg],0,"bodies");
+    mxArray* mxBodies = mxGetProperty(prhs[desired_support_argid],0,"bodies");
+    if (!mxBodies) mexErrMsgTxt("couldn't get bodies");
     double* pBodies = mxGetPr(mxBodies);
-    mxArray* mxContactPts = mxGetProperty(prhs[narg],0,"contact_pts");
+    mxArray* mxContactPts = mxGetProperty(prhs[desired_support_argid],0,"contact_pts");
+    if (!mxContactPts) mexErrMsgTxt("couldn't get contact points");
     for (i=0; i<mxGetNumberOfElements(mxBodies);i++) {
-      int nc = mxGetNumberOfElements(mxContactPts); 
+      mxArray* mxBodyContactPts = mxGetCell(mxContactPts,i);
+      int nc = mxGetNumberOfElements(mxBodyContactPts);
       if (nc<1) continue;
       
       SupportStateElement se;
       se.body_idx = (int) pBodies[i]-1;
-      mxArray* mxBodyContactPts = mxGetCell(mxContactPts,i);
       pr = mxGetPr(mxBodyContactPts); 
       for (j=0; j<nc; j++) {
-        se.contact_pt_inds.insert((int)pr[i]-1);
+//      	mexPrintf("adding pt %d to body %d\n", (int)pr[j]-1, se.body_idx);
+        se.contact_pt_inds.insert((int)pr[j]-1);
       }
       
       if (contact_threshold == -1) { // ignore terrain
@@ -781,7 +791,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   if (nlhs>2) {
-      plhs[2] = mxCreateDoubleMatrix(active_supports.size(),1,mxREAL);
+      plhs[2] = mxCreateDoubleMatrix(1,active_supports.size(),mxREAL);
       pr = mxGetPr(plhs[2]);
       int i=0;
       for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {

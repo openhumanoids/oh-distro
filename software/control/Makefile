@@ -91,6 +91,8 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
 	cd ..;
 
+.INTERMEDIATE : $(CLASSFILES)
+
 %.class : %.java drake
 	javac $< -cp $(CLASSPATH);
 
