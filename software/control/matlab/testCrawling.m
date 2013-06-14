@@ -2,7 +2,7 @@ function testCrawling()
   options.floating = true;
   options.dt = 0.001;
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-  d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/suppine_crawl2.mat'));
+  d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/suppine_crawl.mat'));
   nq = getNumDOF(r);
   nu = getNumInputs(r);
   
@@ -32,6 +32,10 @@ function testCrawling()
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
   [q_traj,support_times,supports] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
   save data/crawling_traj.mat q_traj support_times supports
+
+  x_traj = setOutputFrame([q_traj;0*q_traj],getStateFrame(r)); 
+  v = r.constructVisualizer();
+  v.playback(x_traj,struct('slider',true));
 
   simrate = .65;
   playbackPDFFTrajectory(q_traj,support_times,supports,simrate);
