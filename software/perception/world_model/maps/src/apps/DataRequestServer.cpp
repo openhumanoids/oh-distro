@@ -200,7 +200,7 @@ struct Worker {
     drc::map_request_t msg =
       prepareHeightRequestMessage(minPt, maxPt, 0.1, 0.1);
     msg.view_id = drc::data_request_t::HEIGHT_MAP_DENSE;
-    msg.time_min = -10*1e6;
+    msg.time_min = -20*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
