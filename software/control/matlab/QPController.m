@@ -122,6 +122,7 @@ classdef QPController < MIMODrakeSystem
     if (isfield(options,'ignore_states'))
       % specifies what dimensions of the state we should ignore 
       assert(isnumeric(options.ignore_states));
+      rangecheck(options.ignore_states,1,getNumStates(r));
       assert(isfield(controller_data.data,'xtraj'));
       assert(isa(controller_data.data.xtraj,'Trajectory'));
       obj.ignore_states = options.ignore_states;

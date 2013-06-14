@@ -1,5 +1,10 @@
 classdef WalkingController < DRCController
   
+  properties (SetAccess=protected,GetAccess=protected)
+    robot;
+    ;
+  end
+  
   methods
     function obj = WalkingController(name,r,options)
       typecheck(r,'Atlas');
@@ -25,36 +30,60 @@ classdef WalkingController < DRCController
         'mu',1.0,...
         'ignore_terrain',false,...
         'qtraj',zeros(getNumDOF(r),1),...
+        'xtraj',ConstantTrajectory(zeros(getNumStates(r),1)),... % used in QP controller if we ignore some subset of states
         'V',0,... % cost to go used in controller status message
         'Vdot',0)); % time derivative of cost to go used in controller status message
+
+      if(~isfield(options,'use_mex')) options.use_mex = false; end
+      if(~isfield(options,'debug')) options.debug = false; end
+      if ~isfield(options,'lcm_foot_contacts') options.lcm_foot_contacts = true; end
+      if ~isfield(options,'full_body_opt') options.full_body_opt = false; end
+      if ~isfield(options,'bipedal') options.bipedal = true; end
+      
+      if isfield(options,'use_walking_pd')
+        typecheck(options.use_walking_pd, 'logical');
+      else
+        options.use_walking_pd = true;
+      end
 
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.01;
-      options.lcm_foot_contacts = true;
-      options.full_body_opt = false; % if false, doesn't include arms/neck in QP solve (faster)
       nu=getNumInputs(r);
       options.R = 1e-12*eye(nu);
-      input_names = r.getInputFrame.coordinates;
-      ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
-      ankle_idx = find(ankle_idx);
-      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-      if(~isfield(options,'use_mex')) options.use_mex = false; end
-      if(~isfield(options,'debug')) options.debug = false; end
+%       input_names = r.getInputFrame.coordinates;
+%       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
+%       ankle_idx = find(ankle_idx);
+%       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 
       qp = QPController(r,ctrl_data,options);
       
-      % cascade walking PD controller 
-      pd = WalkingPDBlock(r,ctrl_data);
-      ins(1).system = 1;
-      ins(1).input = 1;
-      ins(2).system = 1;
-      ins(2).input = 2;
-      ins(3).system = 2;
-      ins(3).input = 3;
-      outs(1).system = 2;
-      outs(1).output = 1;
-      sys = mimoCascade(pd,qp,[],ins,outs);
+      if options.use_walking_pd
+        % cascade walking PD controller 
+        pd = WalkingPDBlock(r,ctrl_data);
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;
+        ins(3).system = 2;
+        ins(3).input = 3;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(pd,qp,[],ins,outs);
+      else
+        if ~isfield(options,'soft_ankles') options.soft_ankles = false; end
+        % cascade simple PD controller
+        pd = SimplePDBlock(r,ctrl_data,options);
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;
+        ins(3).system = 2;
+        ins(3).input = 3;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(pd,qp,[],ins,outs);
+      end
       clear connection ins outs;
       
       % cascade neck pitch control block
@@ -91,10 +120,12 @@ classdef WalkingController < DRCController
       obj = obj@DRCController(name,sys,AtlasState(r));
 
       obj.controller_data = ctrl_data;
-      obj = setTimedTransition(obj,100,'standing',false); % default timeout
-      
-      obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
-      obj = addLCMTransition(obj,'STOP_WALKING',drc.plan_control_t(),'standing');
+
+      if options.bipedal
+        obj = setTimedTransition(obj,inf,'standing',false); % default timeout
+        obj = addLCMTransition(obj,'STOP_WALKING',drc.plan_control_t(),'standing');
+        obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
+      end
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)
@@ -176,13 +207,19 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('link_constraints',matdata.link_constraints);
       
       fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.qnom,'uint8'),'uint8');
+      fwrite(fid,typecast(msg_data.qtraj,'uint8'),'uint8');
       fclose(fid);
       matdata = load(tmp_fname);
-      obj.controller_data.setField('qtraj',matdata.qnom);
-
+      obj.controller_data.setField('qtraj',matdata.qtraj);
+%       if isa(matdata.qtraj,'Trajectory')
+%         qdtraj = fnder(matdata.qtraj,1);
+%       else
+%         qdtraj = 0*matdata.qtraj;
+%       end
+%       obj.controller_data.setField('xtraj',[matdata.qtraj;qdtraj]);
+      
       obj.controller_data.setField('mu',msg_data.mu);
-      %obj.controller_data.setField('ignore_terrain',msg_data.ignore_terrain);
+%       obj.controller_data.setField('ignore_terrain',msg_data.ignore_terrain);
 
       % Reset the translational offset
       obj.controller_data.setField('trans_drift', [0;0;0]);

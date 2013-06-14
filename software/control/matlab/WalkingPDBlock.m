@@ -102,9 +102,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       obj.ikoptions.q_nom = q_nom;
 
       % Prevent the knee from locking
-      [obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
-      joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
-      obj.ikoptions.jointLimitMin(~cellfun(@isempty,strfind(joint_names,'kny'))) = 0.6;
+      %[obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
+      %joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
+      %obj.ikoptions.jointLimitMin(~cellfun(@isempty,strfind(joint_names,'kny'))) = 0.6;
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
@@ -141,12 +141,12 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
       
       if lfoot_contact_state
-        Kp(obj.l_ank,obj.l_ank) = 5*eye(2);
-        Kd(obj.l_ank,obj.l_ank) = 0.01*eye(2);
+        Kp(obj.l_ank,obj.l_ank) = 0*eye(2);
+        Kd(obj.l_ank,obj.l_ank) = 0*eye(2);
       end
       if rfoot_contact_state
-        Kp(obj.r_ank,obj.r_ank) = 5*eye(2);
-        Kd(obj.r_ank,obj.r_ank) = 0.01*eye(2);
+        Kp(obj.r_ank,obj.r_ank) = 0*eye(2);
+        Kd(obj.r_ank,obj.r_ank) = 0*eye(2);
       end
       
       approx_args = {};
@@ -166,7 +166,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         end
       end
-      compos = [eval(cdata.comtraj,t) - cdata.trans_drift(1:2);nan];
+      com = eval(cdata.comtraj,t);
+      compos = [com(1:2) - cdata.trans_drift(1:2);nan];
 
       [q_des,info] = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
       if info

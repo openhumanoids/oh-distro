@@ -28,20 +28,6 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_qtraj_bytes = length(msg.qtraj); 
 
-%       htraj = data.htraj;
-%       save(tmp_fname,'htraj');
-%       fid = fopen(tmp_fname,'r');
-%       msg.htraj = fread(fid,inf,'*uint8'); % note: this will be stored as an int8 in the lcmtype
-%       fclose(fid);
-%       msg.n_htraj_bytes = length(msg.htraj); 
-% 
-%       hddtraj = data.hddtraj;
-%       save(tmp_fname,'hddtraj');
-%       fid = fopen(tmp_fname,'r');
-%       msg.hddtraj = fread(fid,inf,'*uint8');
-%       fclose(fid);
-%       msg.n_hddtraj_bytes = length(msg.hddtraj); 
-
       S = data.S;
       save(tmp_fname,'S');
       fid = fopen(tmp_fname,'r');
@@ -93,27 +79,6 @@ classdef WalkingPlanPublisher
       msg.link_constraints = fread(fid,inf,'*uint8');
       fclose(fid);
       msg.n_link_constraints_bytes = length(msg.link_constraints);
-
-      % lfoottraj = data.lfoottraj;
-      % save(tmp_fname,'lfoottraj');
-      % fid = fopen(tmp_fname,'r');
-      % msg.lfoottraj = fread(fid,inf,'*uint8');
-      % fclose(fid);
-      % msg.n_lfoottraj_bytes = length(msg.lfoottraj); 
-      
-      % rfoottraj = data.rfoottraj;
-      % save(tmp_fname,'rfoottraj');
-      % fid = fopen(tmp_fname,'r');
-      % msg.rfoottraj = fread(fid,inf,'*uint8');
-      % fclose(fid);
-      % msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
-      
-      qnom = data.qnom;
-      save(tmp_fname,'qnom');
-      fid = fopen(tmp_fname,'r');
-      msg.qnom = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_qnom_bytes = length(msg.qnom);
       
       msg.mu = data.mu;
       msg.ignore_terrain = data.ignore_terrain;

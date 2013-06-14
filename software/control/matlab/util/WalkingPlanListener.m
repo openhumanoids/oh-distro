@@ -38,18 +38,7 @@ classdef WalkingPlanListener
         fclose(fid);
         matdata = load(tmp_fname);
         qtraj=matdata.qtraj;
-        
-%         fid = fopen(tmp_fname,'w');
-%         fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
-%         fclose(fid);
-%         matdata = load(tmp_fname);
-%         htraj=matdata.htraj;
-% 
-%         fid = fopen(tmp_fname,'w');
-%         fwrite(fid,typecast(msg.hddtraj,'uint8'),'uint8');
-%         fclose(fid);
-%         matdata = load(tmp_fname);
-%         hddtraj=matdata.hddtraj;
+        hddtraj=matdata.hddtraj;
 
         fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.S,'uint8'),'uint8');
@@ -89,29 +78,11 @@ classdef WalkingPlanListener
         matdata = load(tmp_fname);
         zmptraj=matdata.zmptraj;
 
-        % fid = fopen(tmp_fname,'w');
-        % fwrite(fid,typecast(msg.lfoottraj,'uint8'),'uint8');
-        % fclose(fid);
-        % matdata = load(tmp_fname);
-        % lfoottraj=matdata.lfoottraj;
-
-        % fid = fopen(tmp_fname,'w');
-        % fwrite(fid,typecast(msg.rfoottraj,'uint8'),'uint8');
-        % fclose(fid);
-        % matdata = load(tmp_fname);
-        % foottraj=matdata.rfoottraj;
-
         fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.link_constraints,'uint8'),'uint8');
         fclose(fid);
         matdata = load(tmp_fname);
         link_constraints=matdata.link_constraints;
-        
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.qnom,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        qnom = matdata.qnom;
         
         mu = msg.mu;
         ignore_terrain = msg.ignore_terrain;
@@ -119,7 +90,7 @@ classdef WalkingPlanListener
         walking_data = struct('qtraj',qtraj,'mu',mu,...
           'comtraj',comtraj,'zmptraj',zmptraj,'link_constraints',link_constraints,...
           'S',S,'s1',s1,'s2',s2,'ignore_terrain',ignore_terrain,...
-          'support_times',support_times,'supports',supports,'qnom',qnom);
+          'support_times',support_times,'supports',supports);
         delete(tmp_fname);
 
     end
