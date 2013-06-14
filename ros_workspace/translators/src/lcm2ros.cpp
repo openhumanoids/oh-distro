@@ -24,6 +24,7 @@ class LCM2ROS{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
+	  lcm::LCM lcm_publish_ ;
 
 		int last_command_timestamp;
     
@@ -53,6 +54,9 @@ class LCM2ROS{
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
     
+		// for swapping between BDI and MIT control
+		bool use_bdi;
+    void controllerModeHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::controller_mode_t* msg);
     
     ros::NodeHandle* rosnode;
     bool have_set_multisense_rate_; // have you set the initial multisesne rate
@@ -71,6 +75,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   // hang up to the bdi controller:
   lcm_->subscribe("ATLAS_COMMAND_HANGUP",&LCM2ROS::atlasCommandHandler,this);  
   atlas_cmd_pub_ = nh_.advertise<atlas_msgs::AtlasCommand>("/atlas/atlas_command",10, true);
+
+	// by default use MIT control 100%
+	use_bdi = false;
 
   /// Spinning Laser control:
   lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
@@ -173,8 +180,6 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 //	}
 } 
 
-
-
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
 //  if (msg->effort[0] == 0){ // assume this is enough to trigger
 //    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
@@ -192,14 +197,18 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 		atlas_command_msg.i_effort_min.resize(msg->num_joints);
 		atlas_command_msg.i_effort_max.resize(msg->num_joints);
 
-	        atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
+    atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
 		for (int i=0; i<msg->num_joints; i++) {
 		  //atlas_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
 		  atlas_command_msg.position.push_back(msg->position[i]);
 		  atlas_command_msg.velocity.push_back(msg->velocity[i]);
 		  atlas_command_msg.effort.push_back(msg->effort[i]);
-		  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
+
+			if (use_bdi)
+			  atlas_command_msg.k_effort.push_back(0);
+			else
+			  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
 
 		  atlas_command_msg.kp_position.push_back(msg->kp_position[i]);
 		  atlas_command_msg.kd_position.push_back(msg->kd_position[i]);
@@ -211,6 +220,34 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 //	else {
 //    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
 //	}
+}  
+
+
+void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::controller_mode_t* msg) {
+		if (msg->mode == msg->BDI) {
+	    drc::system_status_t m;
+	    m.utime = msg->utime;
+	    m.system = drc::system_status_t::MESSAGING;
+	    m.importance = drc::system_status_t::VERY_IMPORTANT;
+	    m.frequency = drc::system_status_t::LOW_FREQUENCY;
+
+	    m.value = "lcm2ros: Switching to BDI control.";	
+	    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+
+			use_bdi = true;
+  	}
+		else {
+	    drc::system_status_t m;
+	    m.utime = msg->utime;
+	    m.system = drc::system_status_t::MESSAGING;
+	    m.importance = drc::system_status_t::VERY_IMPORTANT;
+	    m.frequency = drc::system_status_t::LOW_FREQUENCY;
+
+	    m.value = "lcm2ros: Switching to MIT control.";	
+	    lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
+
+			use_bdi = false;
+		}
 }  
 
 void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
