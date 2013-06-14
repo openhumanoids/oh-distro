@@ -60,8 +60,8 @@ else
   foot_spec(3).body_ind = findLinkInd(r,'l_foot');
   foot_spec(4).body_ind = findLinkInd(r,'r_foot');
 
-  [~,foot_spec(1).contact_pt_ind] = getContactPoints(findLink(r,'l_hand'),'knuckle');
-  [~,foot_spec(2).contact_pt_ind] = getContactPoints(findLink(r,'r_hand'),'knuckle');
+  [~,foot_spec(1).contact_pt_ind] = getContactPoints(findLink(r,'r_hand'),'knuckle');
+  [~,foot_spec(2).contact_pt_ind] = getContactPoints(findLink(r,'l_hand'),'knuckle');
   [~,foot_spec(3).contact_pt_ind] = getContactPoints(findLink(r,'l_foot'),'toe_mid');
   [~,foot_spec(4).contact_pt_ind] = getContactPoints(findLink(r,'r_foot'),'toe_mid');
   d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bear_crawling.mat'));

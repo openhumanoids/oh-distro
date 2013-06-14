@@ -158,10 +158,12 @@ end
 q = x0(1:nq);
 kinsol = doKinematics(r,q);
 for i=1:4
-  fpos(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
+  fpos_initial(:,i) = forwardKin(r,kinsol,foot_spec(i).body_ind,foot_spec(i).contact_pt);
 end
-com0 = getCOM(r,kinsol);
-z_foot_nom = mean(fpos(3,:));
+com_initial = getCOM(r,kinsol);
+z_foot_nom = min(fpos_initial(3,:));
+pelvis_ind = r.findLinkInd('pelvis');
+pelvis_pos_initial = forwardKin(r,kinsol,pelvis_ind,[0;0;0]);
 %hip0 = forwardKin(r,kinsol,body_spec.body_ind,body_spec.pt);
 %display(q,com,fpos,[]); pause(5);
 
@@ -204,24 +206,26 @@ if (options.gait==0) % quasi-static
     %end
   %end
 elseif (options.gait ==2) % trot
-  t_start = stride_duration/2 - swing_duration;
+  %t_start = stride_duration/2 - swing_duration;
+  t_start = stride_duration;
 
+  fpos = zeros(3,4);
   fpos(:,1) = x0(1:3) + forward_dir*forward_coord_nom(1) + left_dir*left_coord_nom(1);
   fpos(:,2) = x0(1:3) + forward_dir*forward_coord_nom(2) + left_dir*left_coord_nom(2);
   fpos(:,3) = x0(1:3) + forward_dir*forward_coord_nom(3) + left_dir*left_coord_nom(3);
   fpos(:,4) = x0(1:3) + forward_dir*forward_coord_nom(4) + left_dir*left_coord_nom(4);
   fpos(3,:) = z_foot_nom;
-  fpos_initial = fpos;
-  com = [mean(fpos(1:2,:),2);options.com_height+mean(z_foot_nom)];
+  fpos_start = fpos;
+  com_start = [mean(fpos(1:2,:),2);options.com_height+z_foot_nom];
   zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
-                         [com(1:2),com(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
+                         [com_start(1:2),com_start(1:2)+forward_dir(1:2)*options.num_strides*options.step_length]));
 
   for i=1:4
     body = getLink(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
     if any(i == [1,3])
       % Initial stance constraints
-      tspan = [0,t_start];
+      tspan = [t_start/2,t_start];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'', ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -267,7 +271,7 @@ elseif (options.gait ==2) % trot
       end
 
       % Apex constraints
-      fpos = fpos_initial;
+      fpos = fpos_start;
       j = 1;
       tspan = t_start + (j-1)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
@@ -299,7 +303,7 @@ elseif (options.gait ==2) % trot
       
     elseif any(i == [2,4])
       % Initial stance constraints
-      tspan = [0,t_start+stride_duration/2];
+      tspan = [t_start/2,t_start+stride_duration/2];
       kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,fpos(:,i), tspan,'',...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
         ActionKinematicConstraint.STATIC_PLANAR_CONTACT, ...
@@ -346,7 +350,7 @@ elseif (options.gait ==2) % trot
       end
 
       % Apex constraints
-      fpos = fpos_initial;
+      fpos = fpos_start;
       j = 1;
       tspan = t_start + ((j-1)+1/2)*stride_duration + [0,swing_duration];
       x0_foot = fpos(:,i);
@@ -402,36 +406,59 @@ elseif (options.gait ==2) % trot
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
 
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
-  options.com0 = com(1:2);
+  options.com0 = com_start(1:2);
   [~,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(options.com_height,zmptraj,options);
-  comtraj = [comtraj;ConstantTrajectory(com(3))];
+  comtraj = [comtraj;ConstantTrajectory(com_start(3))];
   
   % COM constraint
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'crawling_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-  comtraj_initial = PPTrajectory(foh([0, t_start],[com0, eval(comtraj,comtraj.tspan(1))]));
+  comtraj_initial = PPTrajectory(foh([0, t_start/2, t_start],[com_initial, com_initial, com_start]));
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
+  crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
+  %Head constraint
+  %kc = ActionKinematicConstraint(r,pelvis_ind,[0;0;0],struct('min',[-Inf;-Inf;pelvis_pos_initial(3)],'max',Inf(3,1)),[0, t_start],'initial pelvis constraint');
+  %crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+
+  % Initial end-effector trajectories
+  for i = 1:4
+    f_spline = PPTrajectory(swing_foot_spline(fpos_initial(:,i),fpos_start(:,i),options.step_height,t_start/2,0));
+    kc = ActionKinematicConstraint(r,foot_spec(i).body_ind,body_pts,f_spline, [0,t_start/2],'', ...
+      ActionKinematicConstraint.NOT_IN_CONTACT, ...
+      ActionKinematicConstraint.NOT_IN_CONTACT, ...
+      ActionKinematicConstraint.NOT_IN_CONTACT);
+    crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+  end
+  
   t = 0:0.025:comtraj.tspan(2);
   nt = numel(t);
   q = zeros(nq,nt);
   q(:,1) = x0(1:nq);
-  qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),q_nom]));
+  qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),[x0(1:3);q_nom(4:end)]]));
+  options.q_nom = q_nom;
+  q0 = q_nom;
   for i = 2:nt
-    ikargs = getIKArguments(crawl_sequence,t(i));
     if t(i) < t_start
-      options.q_nom = eval(qtraj_initial,t(i));
+      i_start = i+1;
     else
-      options.q_nom = q_nom;
+      ikargs = getIKArguments(crawl_sequence,t(i));
+      q(:,i) = inverseKin(r,q0,ikargs{:},options);
+      q0 = q(:,i);
     end
-    q0 = q(:,i-1);
-    q(:,i) = inverseKin(r,q0,ikargs{:},options);
     if options.draw
       %v.draw(t(i),[q(:,i);0*q(:,i)]);
       %AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
       %pause(2);
     end
+  end
+  qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),q(:,i_start+1)]));
+  for i = 2:i_start-1
+      ikargs = getIKArguments(crawl_sequence,t(i));
+      options.q_nom = eval(qtraj_initial,t(i));
+      q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
+      %q(:,i) = eval(qtraj_initial,t(i));
   end
   qdtraj = PPTrajectory(spline(t,q));
   %for step=1:2:options.num_steps
