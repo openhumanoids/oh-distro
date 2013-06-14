@@ -27,7 +27,7 @@ if nargin > 1
   r.getStateFrame.setDefaultChannel(state_channel);
 end
 
-standing_controller = StandingController('standing',r,options);
+standing_controller = StandingManipController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
 
