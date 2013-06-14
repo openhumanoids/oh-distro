@@ -12,6 +12,7 @@
 #include <maps/LcmTranslator.hpp>
 
 #include <lcmtypes/drc/map_image_t.hpp>
+#include <lcmtypes/drc/system_status_t.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <fstream>
@@ -25,7 +26,11 @@ FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
   mDebug = true;
   mLatestGroundPlane << 0,0,0,0;
+  mMapMode = drc::map_controller_command_t::FLAT_GROUND;
+  mLatestFeetPosition << 0,0,0;
   mBotWrapper->getLcm()->subscribe("POSE_GROUND", &FillMethods::onGround, this);
+  mBotWrapper->getLcm()->subscribe("MAP_CONTROLLER_COMMAND",
+                                   &FillMethods::onCommand, this);
 }
 
 void FillMethods::
@@ -37,8 +42,37 @@ onGround(const lcm::ReceiveBuffer* iBuf,
   Eigen::Vector3d pos(iMessage->pos[0], iMessage->pos[1], iMessage->pos[2]);
   mLatestGroundPlane.head<3>() = q.matrix().col(2);
   mLatestGroundPlane[3] = -mLatestGroundPlane.head<3>().dot(pos);
+  mLatestFeetPosition = pos;
 }
 
+void FillMethods::
+onCommand(const lcm::ReceiveBuffer* iBuf,
+          const std::string& iChannel,
+          const drc::map_controller_command_t* iMessage) {
+  mMapMode = iMessage->command;
+  drc::system_status_t msg;
+  msg.utime = 0;
+  msg.system = drc::system_status_t::CONTROL;
+  msg.importance = drc::system_status_t::VERY_IMPORTANT;
+  msg.frequency = drc::system_status_t::LOW_FREQUENCY;
+
+  switch (mMapMode) {
+  case drc::map_controller_command_t::FULL_HEIGHTMAP:
+    fprintf(stderr,"maps: switched to using full heightmap\n");
+    msg.value = "controller: switched to using full heightmap";
+    break;
+  case drc::map_controller_command_t::FLAT_GROUND:
+    fprintf(stderr,"maps: switched to using flat ground\n");
+    msg.value = "controller: switched to using flat ground";
+    break;
+  default:
+    fprintf(stderr,"maps: warning: received invalid heightmap mode\n");
+    msg.value = "controller: received invalid heightmap mode";
+    break;
+  }
+
+  mBotWrapper->getLcm()->publish("SYSTEM_STATUS", &msg);
+}
 
 float FillMethods::
 computeMedian(const Eigen::VectorXf& iData) {
@@ -236,6 +270,56 @@ extractComponentsAndOutlines(const cv::Mat& iLabels, const int iNumLabels,
   }
 }
 
+void FillMethods::
+doFill(maps::DepthImageView::Ptr& iView) {
+  if (mMapMode == drc::map_controller_command_t::FULL_HEIGHTMAP) {
+    fillUnderRobot(iView, FillMethods::MethodRansac);
+    fillIterative(iView);
+    //fillConnected(iView);
+    fprintf(stderr, "using full heightmap\n");
+  }
+  else {
+    fillLevelPlaneFromFeet(iView);
+    fprintf(stderr, "using flat ground\n");
+  }
+  if (mDebug) {
+    drc::map_image_t msg;
+    maps::LcmTranslator::toLcm(*iView, msg);
+    msg.map_id = 1;
+    msg.view_id = 9999;
+    msg.blob.utime = msg.utime;
+    mBotWrapper->getLcm()->publish("MAP_DEBUG", &msg);
+  }
+}
+
+void FillMethods::
+fillLevelPlaneFromFeet(std::shared_ptr<maps::DepthImageView>& iView) {
+  // check that ground pose exists
+  if (mLatestGroundPlane.norm() < 1e-6) return;
+
+  // use ground plane from ground pose message
+  Eigen::Vector4f feetPos(0,0,0,1);
+  feetPos.head<3>() = mLatestFeetPosition.cast<float>();
+  feetPos = iView->getTransform()*feetPos;
+  feetPos /= feetPos[3];
+  float zFeet = feetPos[2];
+
+  // get view data
+  maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
+  maps::DepthImage::Ptr img = iView->getDepthImage();
+  std::vector<float>& depths =
+    const_cast<std::vector<float>&>(img->getData(type));
+
+  // fill in
+  int w(img->getWidth()), h(img->getHeight());
+  for (int i = 0; i < h; ++i) {
+    for (int j = 0; j < w; ++j) {
+      int idx = i*w + j;
+      depths[idx] = zFeet;
+    }
+  }
+  img->setData(depths,type);
+}
 
 void FillMethods::
 fillView(maps::DepthImageView::Ptr& iView) {
@@ -456,14 +540,6 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
     }
   }
   img->setData(depths, type);
-  if (mDebug) {
-    drc::map_image_t msg;
-    maps::LcmTranslator::toLcm(*iView, msg);
-    msg.map_id = 1;
-    msg.view_id = 9999;
-    msg.blob.utime = msg.utime;
-    mBotWrapper->getLcm()->publish("MAP_DEBUG", &msg);
-  }
 }
 
 /*
