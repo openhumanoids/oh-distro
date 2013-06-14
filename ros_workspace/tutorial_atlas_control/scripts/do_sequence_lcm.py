@@ -24,7 +24,7 @@ from drc.frequency_t import frequency_t
 filenames = ['projectial_ingress_ready','projectial_ingress','faceup_to_facedown_wriggle','flat_out', 
              'knee_rise_set','knee_rise','knee_rise_finish','jaguar_crawl','jaguar_crawl_left',
              'jaguar_crawl_left_large','jaguar_crawl_right','jaguar_crawl_right_large',
-             'facedown_to_faceup.csv']
+             'facedown_to_faceup']
 
 real_time_percent_ma = 50
 
