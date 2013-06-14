@@ -39,7 +39,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         qdes=qtraj;
       else
         % pp trajectory
-        qdes = qtraj.eval(t);
+        qdes = eval(qtraj,t);
       end
     end
   end
