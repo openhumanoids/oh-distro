@@ -239,7 +239,11 @@ classdef QPController < MIMODrakeSystem
         ctrl_data.setField('D',-0.89/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
         % or current height above height map;
       end
-
+      
+      if ~isfield(ctrl_data.data,'qp_active_set')
+        ctrl_data.setField('qp_active_set',[]);
+      end
+      
       ctrl_data = ctrl_data.data;
       
       % i've made the following assumptions to make things fast.  we can soften
@@ -279,7 +283,15 @@ classdef QPController < MIMODrakeSystem
   function y=mimoOutput(obj,t,~,varargin)
 %    out_tic = tic;
     ctrl_data = obj.controller_data.data;
+%     persistent fidx qd_hist 
+    persistent call_count miss_count
     
+    if isempty(call_count) || isempty(miss_count)
+      call_count = 0;
+      miss_count = 0;
+    end
+    call_count = call_count +1;
+
 %    QPController.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
   
     q_ddot_des = varargin{1};
@@ -658,6 +670,8 @@ classdef QPController < MIMODrakeSystem
       
       % quadratic input cost
       Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
+      % quadratic cost on forces
+      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0))      
       
 
       %----------------------------------------------------------------------
@@ -668,7 +682,25 @@ classdef QPController < MIMODrakeSystem
         alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
         
       else
-        model.Q = sparse(Hqp);
+        % call fastQPmex first
+        
+        QblkDiag = {Hqp(1:nq_con,1:nq_con)+1e-8*eye(nq_con),diag(obj.R(obj.con_inputs,obj.con_inputs)+1e-8*eye(nu_con)),+1e-8*ones(nf,1),(0.001+1e-8)*ones(neps,1)};
+        lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+        IR = eye(nparams);  
+        Aeq_fqp = full(Aeq);
+        Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
+        bin_fqp = [bin; -lb(lbind); ub(ubind)];
+        
+                 
+        %% NOTE: model.obj is 2* f for fastQP!!!
+        [alpha,info,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+         
+        
+        if info<0        
+          miss_count = miss_count +1;
+        
+        %% then call gurobi only if it fails:
+        model.Q = sparse(Hqp+1e-8*eye(nparams));
         model.obj = 2*fqp;
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
@@ -690,7 +722,21 @@ classdef QPController < MIMODrakeSystem
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
+
+        qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
         
+%         if (info_fqp<0)
+%           warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
+%         else
+%           valuecheck(qp_active_set_fqp,qp_active_set);
+%           valuecheck(alpha_fqp,alpha);
+%         end
+        end
+        
+%                save(sprintf('data/qp_data_t=%2.2f.mat',t),'QblkDiag','lbind','IR','Aeq_fqp','Ain_fqp','bin_fqp',);
+
+        
+        setField(obj.controller_data,'qp_active_set',qp_active_set);        
       end
 
       %----------------------------------------------------------------------
@@ -807,13 +853,71 @@ classdef QPController < MIMODrakeSystem
       
 
       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      lax = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')));
-      uay = find(~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
+ 
+      scope('Atlas','q1',t,q(1),struct('linespec','r','scope_id',1));
+      scope('Atlas','q2',t,q(2),struct('linespec','g','scope_id',1));
+      scope('Atlas','q3',t,q(3),struct('linespec','b','scope_id',1));
+      scope('Atlas','q4',t,q(4),struct('linespec','m','scope_id',1));
+      scope('Atlas','q5',t,q(5),struct('linespec','k','scope_id',1));
+      scope('Atlas','q6',t,q(6),struct('linespec','y','scope_id',1));
 
-      scope('Atlas','lax_qdd_des',t,q_ddot_des(lax),struct('linespec','r','scope_id',1));
-      scope('Atlas','uay_qdd_des',t,q_ddot_des(uay),struct('linespec','b','scope_id',1));
-      scope('Atlas','lax_qdd',t,qdd(lax),struct('linespec','r','scope_id',2));
-      scope('Atlas','uay_qdd',t,qdd(uay),struct('linespec','b','scope_id',2));
+      scope('Atlas','q7',t,q(7),struct('linespec','r','scope_id',2));
+      scope('Atlas','q8',t,q(8),struct('linespec','g','scope_id',2));
+      scope('Atlas','q9',t,q(9),struct('linespec','b','scope_id',2));
+      scope('Atlas','q10',t,q(10),struct('linespec','m','scope_id',2));
+      scope('Atlas','q11',t,q(11),struct('linespec','k','scope_id',2));
+      scope('Atlas','q12',t,q(12),struct('linespec','y','scope_id',2));
+      scope('Atlas','q13',t,q(13),struct('linespec','r','scope_id',2));
+      scope('Atlas','q14',t,q(14),struct('linespec','g','scope_id',2));
+      scope('Atlas','q15',t,q(15),struct('linespec','b','scope_id',2));
+      scope('Atlas','q16',t,q(16),struct('linespec','m','scope_id',2));
+      scope('Atlas','q17',t,q(17),struct('linespec','k','scope_id',2));
+      
+      scope('Atlas','qd1',t,qd(1),struct('linespec','r','scope_id',3));
+      scope('Atlas','qd2',t,qd(2),struct('linespec','g','scope_id',3));
+      scope('Atlas','qd3',t,qd(3),struct('linespec','b','scope_id',3));
+      scope('Atlas','qd4',t,qd(4),struct('linespec','m','scope_id',3));
+      scope('Atlas','qd5',t,qd(5),struct('linespec','k','scope_id',3));
+      scope('Atlas','qd6',t,qd(6),struct('linespec','y','scope_id',3));
+      
+      scope('Atlas','qd7',t,qd(7),struct('linespec','r','scope_id',4));
+      scope('Atlas','qd8',t,qd(8),struct('linespec','g','scope_id',4));
+      scope('Atlas','qd9',t,qd(9),struct('linespec','b','scope_id',4));
+      scope('Atlas','qd10',t,qd(10),struct('linespec','m','scope_id',4));
+      scope('Atlas','qd11',t,qd(11),struct('linespec','k','scope_id',4));
+      scope('Atlas','qd12',t,qd(12),struct('linespec','y','scope_id',4));
+      scope('Atlas','qd13',t,qd(13),struct('linespec','r','scope_id',4));
+      scope('Atlas','qd14',t,qd(14),struct('linespec','g','scope_id',4));
+      scope('Atlas','qd15',t,qd(15),struct('linespec','b','scope_id',4));
+      scope('Atlas','qd16',t,qd(16),struct('linespec','m','scope_id',4));
+      scope('Atlas','qd17',t,qd(17),struct('linespec','k','scope_id',4));
+      
+      scope('Atlas','qdd1',t,q_ddot_des(1),struct('linespec','r','scope_id',5));
+      scope('Atlas','qdd2',t,q_ddot_des(2),struct('linespec','g','scope_id',5));
+      scope('Atlas','qdd3',t,q_ddot_des(3),struct('linespec','b','scope_id',5));
+      scope('Atlas','qdd4',t,q_ddot_des(4),struct('linespec','m','scope_id',5));
+      scope('Atlas','qdd5',t,q_ddot_des(5),struct('linespec','k','scope_id',5));
+      scope('Atlas','qdd6',t,q_ddot_des(6),struct('linespec','y','scope_id',5));
+      
+      scope('Atlas','qdd7',t,q_ddot_des(7),struct('linespec','r','scope_id',6));
+      scope('Atlas','qdd8',t,q_ddot_des(8),struct('linespec','g','scope_id',6));
+      scope('Atlas','qdd9',t,q_ddot_des(9),struct('linespec','b','scope_id',6));
+      scope('Atlas','qdd10',t,q_ddot_des(10),struct('linespec','m','scope_id',6));
+      scope('Atlas','qdd11',t,q_ddot_des(11),struct('linespec','k','scope_id',6));
+      scope('Atlas','qdd12',t,q_ddot_des(12),struct('linespec','y','scope_id',6));
+      scope('Atlas','qdd13',t,q_ddot_des(13),struct('linespec','r','scope_id',6));
+      scope('Atlas','qdd14',t,q_ddot_des(14),struct('linespec','g','scope_id',6));
+      scope('Atlas','qdd15',t,q_ddot_des(15),struct('linespec','b','scope_id',6));
+      scope('Atlas','qdd16',t,q_ddot_des(16),struct('linespec','m','scope_id',6));
+      scope('Atlas','qdd17',t,q_ddot_des(17),struct('linespec','k','scope_id',6));
+
+%       lax = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')));
+%       uay = find(~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
+% 
+%       scope('Atlas','lax_qdd_des',t,q_ddot_des(lax),struct('linespec','r','scope_id',1));
+%       scope('Atlas','uay_qdd_des',t,q_ddot_des(uay),struct('linespec','b','scope_id',1));
+%       scope('Atlas','lax_qdd',t,qdd(lax),struct('linespec','r','scope_id',2));
+%       scope('Atlas','uay_qdd',t,qdd(uay),struct('linespec','b','scope_id',2));
       
 %       m = drc.controller_zmp_status_t();
 %       m.utime = t * 1e6;
@@ -884,7 +988,11 @@ classdef QPController < MIMODrakeSystem
 %       m.objs(msg.id) = msg;
 %       
 %       obj.lc.publish('OBJ_COLLECTION', m);
+
+    
     end
+    fprintf('%d calls, %d misses: %2.2f %%\n',call_count,miss_count,miss_count/call_count);
+  
 
     if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method

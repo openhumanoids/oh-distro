@@ -186,16 +186,32 @@ classdef StandingManipController < DRCController
         
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
         % standing and reaching plan
-        sprintf('standing controller on\n');
-        msg = data.COMMITTED_ROBOT_PLAN;
-        joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-        [xtraj,ts,~,control_type] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
-        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+        %sprintf('standing controller on\n');
+        try
+          msg = data.COMMITTED_ROBOT_PLAN;
+          joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
+          [xtraj,ts,~,control_type] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+          qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
-        obj.controller_data.setField('qtraj',qtraj);
-        obj.controller_data.setField('r_arm_control_type',control_type.right_arm_control_type);
-        obj.controller_data.setField('l_arm_control_type',control_type.left_arm_control_type);
-        obj = setDuration(obj,inf,false); % set the controller timeout
+          obj.controller_data.setField('qtraj',qtraj);
+          obj.controller_data.setField('r_arm_control_type',control_type.right_arm_control_type);
+          obj.controller_data.setField('l_arm_control_type',control_type.left_arm_control_type);
+          obj = setDuration(obj,inf,false); % set the controller timeout
+        catch err
+          r = obj.robot;
+
+          x0 = data.AtlasState; % should have an atlas state
+          q0 = x0(1:getNumDOF(r));
+          kinsol = doKinematics(r,q0);
+
+          foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+          ch = convhull(foot_pos(1:2,:)');
+          comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+          obj.controller_data.setField('qtraj',q0);
+          obj.controller_data.setField('x0',[comgoal;0;0]);
+          obj.controller_data.setField('y0',comgoal);
+ 
+        end
         
       elseif isfield(data,'AtlasState')
         % transition from walking:
