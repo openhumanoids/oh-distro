@@ -432,6 +432,12 @@ while(1)
       elseif(posture_goal.preset==drc.robot_posture_preset_t.RGTHND_DWN)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.LFTHND_INHEADVIEW)
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_larm_inhead_view.mat'));
+        useIK_state = 3; % A hack, indicate using the left arm joint angles of the mat file
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.RGTHND_INHEADVIEW)
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_rarm_inhead_view.mat'));
+        useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
       end
       q_desired = d.xstar(1:getNumDOF(r));
       q_desired(1:6) = x0(1:6); % fix pelvis pose to current
