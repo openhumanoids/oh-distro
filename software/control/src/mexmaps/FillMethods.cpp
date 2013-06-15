@@ -5,6 +5,7 @@
 #include <Eigen/Sparse>
 
 #include <lcm/lcm-cpp.hpp>
+#include <drc_utils/Clock.hpp>
 
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImage.hpp>
@@ -51,22 +52,19 @@ onCommand(const lcm::ReceiveBuffer* iBuf,
           const drc::map_controller_command_t* iMessage) {
   mMapMode = iMessage->command;
   drc::system_status_t msg;
-  msg.utime = 0;
+  msg.utime = drc::Clock::instance()->getCurrentTime();
   msg.system = drc::system_status_t::CONTROL;
   msg.importance = drc::system_status_t::VERY_IMPORTANT;
   msg.frequency = drc::system_status_t::LOW_FREQUENCY;
 
   switch (mMapMode) {
   case drc::map_controller_command_t::FULL_HEIGHTMAP:
-    fprintf(stderr,"maps: switched to using full heightmap\n");
     msg.value = "controller: switched to using full heightmap";
     break;
   case drc::map_controller_command_t::FLAT_GROUND:
-    fprintf(stderr,"maps: switched to using flat ground\n");
     msg.value = "controller: switched to using flat ground";
     break;
   default:
-    fprintf(stderr,"maps: warning: received invalid heightmap mode\n");
     msg.value = "controller: received invalid heightmap mode";
     break;
   }
@@ -275,16 +273,15 @@ doFill(maps::DepthImageView::Ptr& iView) {
   if (mMapMode == drc::map_controller_command_t::FULL_HEIGHTMAP) {
     fillUnderRobot(iView, FillMethods::MethodRansac);
     fillIterative(iView);
-    //fillConnected(iView);
-    //fprintf(stderr, "using full heightmap\n");
+    fillConnected(iView);
   }
   else {
     fillLevelPlaneFromFeet(iView);
-    //fprintf(stderr, "using flat ground\n");
   }
   if (mDebug) {
     drc::map_image_t msg;
     maps::LcmTranslator::toLcm(*iView, msg);
+    msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.map_id = 1;
     msg.view_id = 9999;
     msg.blob.utime = msg.utime;
@@ -484,16 +481,21 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   int w(img->getWidth()), h(img->getHeight());
   std::vector<Eigen::Vector3f> points;
   points.reserve((2*r+1) * (2*r+1));
+  int numBadPoints = 0;
   for (int i = cy-r; i <= cy+r; ++i) {
     if ((i < 0) || (i >= h)) continue;
     for (int j = cx-r; j <= cx+r; ++j) {
       if ((j < 0) || (j >= w)) continue;
       int idx = i*w + j;
       float z = depths[idx];
-      if (z == invalidValue) continue;
+      if (z == invalidValue) {
+        ++numBadPoints;
+        continue;
+      }
       points.push_back(Eigen::Vector3f(j,i,z));
     }
   }
+  if (numBadPoints == 0) return;
 
   Eigen::Vector3f sol;
   if (points.size() >= 10) {
@@ -524,8 +526,6 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
     plane = planeTransform*plane;
     sol << plane[0],plane[1],plane[3];
     sol /= plane[2];
-    fprintf(stderr,"Filled in using ground plane message %f %f %f\n",
-            sol[0], sol[1], sol[2]);
   }
 
   // fill in invalid values
@@ -541,115 +541,6 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   }
   img->setData(depths, type);
 }
-
-/*
-void FillMethods::
-fillContours(maps::DepthImageView::Ptr& iView) {
-  // get view data
-  maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
-  maps::DepthImage::Ptr img = iView->getDepthImage();
-  std::vector<float>& depths =
-    const_cast<std::vector<float>&>(img->getData(type));
-  const float invalidValue = img->getInvalidValue(type);
-
-  // get robot position and bbox, and project into map
-  Eigen::Isometry3f robotPose;
-  if (!mBotWrapper->getTransform("body", "local", robotPose)) return;
-  Eigen::Vector3f p0 = robotPose.translation();
-  Eigen::Vector3f boundPoints[4];
-  boundPoints[0] = -0.5*Eigen::Vector3f::UnitX();
-  boundPoints[1] = +5.0*Eigen::Vector3f::UnitX();
-  boundPoints[2] = -3.0*Eigen::Vector3f::UnitY();
-  boundPoints[3] = +3.0*Eigen::Vector3f::UnitY();
-  Eigen::Vector3f mapPoints[4];
-  for (int i = 0; i < 4; ++i) {
-    mapPoints[i] = robotPose*boundPoints[i];
-    mapPoints[i] = img->project(mapPoints[i], type);
-  }
-  Eigen::Vector2i minPt(1000000,1000000), maxPt(-1000000,-1000000);
-  for (int i = 0; i < 4; ++i) {
-    minPt[0] = std::min(minPt[0], int(mapPoints[i][0]+0.5f));
-    minPt[1] = std::min(minPt[1], int(mapPoints[i][1]+0.5f));
-    maxPt[0] = std::max(maxPt[0], int(mapPoints[i][0]+0.5f));
-    maxPt[1] = std::max(maxPt[1], int(mapPoints[i][1]+0.5f));
-  }
-  int w(img->getWidth()), h(img->getHeight());
-  minPt[0] = std::max(0,minPt[0]);
-  minPt[1] = std::max(0,minPt[1]);
-  maxPt[0] = std::min(w-1,maxPt[0]);
-  maxPt[1] = std::min(h-1,maxPt[1]);
-
-  //
-  // form mask indicating where fills need to occur
-  //
-
-  // first put box around robot
-  cv::Mat validArea = cv::Mat::zeros(h,w,CV_8U);
-  for (int i = minPt[1]; i <= maxPt[1]; ++i) {
-    for (int j = minPt[0]; j <= maxPt[0]; ++j) {
-      validArea.at<uint8_t>(i,j) = 255;
-    }
-  }
-
-  // next find all inf values
-  cv::Mat depthImage(h,w,CV_32F,&depths[0]);
-  cv::Mat badMask;
-  cv::threshold(depthImage, badMask, 1e8, 255, cv::THRESH_BINARY);
-  badMask.convertTo(badMask, CV_8U);
-
-  // and the two together and dilate so that outer extrema are found
-  cv::bitwise_and(badMask, validArea, badMask);
-  {
-    std::ofstream ofs("/home/antone/badmask.txt");
-    for (int i = 0; i < badMask.rows; ++i) {
-      for (int j = 0; j < badMask.cols; ++j) {
-        ofs << int(badMask.at<uint8_t>(i,j)) << " ";
-      }
-      ofs << std::endl;
-    }
-  }
-  cv::dilate(badMask, badMask, cv::Mat());
-
-
-  // get contours
-  std::vector<std::vector<cv::Point> > contours;
-  cv::findContours(badMask,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-
-  // fit planes and label image
-  std::vector<Eigen::Vector3f> planes(contours.size());
-  cv::Mat labels = cv::Mat::zeros(h,w,CV_16U);
-  for (size_t i = 0; i < contours.size(); ++i) {
-
-    // fit plane
-    std::vector<Eigen::Vector3f> pts;
-    pts.reserve(contours[i].size());
-    for (size_t k = 0; k < contours[i].size(); ++k) {
-      int x(contours[i][k].x), y(contours[i][k].y);
-      float z = depths[y*w+x];
-      if (z != invalidValue) pts.push_back(Eigen::Vector3f(x,y,z));
-    }
-    if ((pts.size() < 3) || (pts.size() > 250)) continue;
-    planes[i] = fitHorizontalPlaneRobust(pts);
-
-    // fill in labels
-    cv::Scalar color = i+1;
-    cv::drawContours(labels, contours, i, color, CV_FILLED);
-  }
-
-  {
-    std::ofstream ofs("/home/antone/labels.txt");
-    for (int i = 0; i < labels.rows; ++i) {
-      for (int j = 0; j < labels.cols; ++j) {
-        ofs << labels.at<uint16_t>(i,j) << " ";
-      }
-      ofs << std::endl;
-    }
-  }
-
-  // fill in all values
-  // TODO
-}
-*/
 
 void FillMethods::
 fillConnected(maps::DepthImageView::Ptr& iView) {
@@ -707,15 +598,6 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
 
   // and the two together and dilate so that outer extrema are found
   cv::bitwise_and(badMask, validArea, badMask);
-  {
-    std::ofstream ofs("/home/antone/badmask.txt");
-    for (int i = 0; i < badMask.rows; ++i) {
-      for (int j = 0; j < badMask.cols; ++j) {
-        ofs << int(badMask.at<uint8_t>(i,j)) << " ";
-      }
-      ofs << std::endl;
-    }
-  }
   std::vector<uint8_t> maskData(w*h);
   cv::Mat finalMask(h,w,CV_8U,maskData.data());
   badMask.copyTo(finalMask);
@@ -724,15 +606,6 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
   std::vector<uint16_t> labelData(w*h);
   cv::Mat labels(h,w,CV_16U,labelData.data());
   int numLabels = labelImage(finalMask, labels);
-  {
-    std::ofstream ofs("/home/antone/labels.txt");
-    for (int i = 0; i < labels.rows; ++i) {
-      for (int j = 0; j < labels.cols; ++j) {
-        ofs << labels.at<uint16_t>(i,j) << " ";
-      }
-      ofs << std::endl;
-    }
-  }
 
   // extract components and outlines
   std::vector<std::vector<int> > indices;
@@ -751,7 +624,7 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
       pts.push_back(Eigen::Vector3f(idx%w, idx/w, z));
     }
     if (pts.size() < 3) continue;
-    Eigen::Vector3f plane = fitHorizontalPlaneRobust(pts);
+    Eigen::Vector3f plane = fitHorizontalPlaneRansac(pts);
 
     std::vector<int>::const_iterator it = indices[i].begin();
     for (; it != indices[i].end(); ++it) {
