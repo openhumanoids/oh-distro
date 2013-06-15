@@ -239,7 +239,10 @@ classdef QPController < MIMODrakeSystem
         ctrl_data.setField('D',-0.89/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
         % or current height above height map;
       end
-
+      if ~isfield(ctrl_data.data,'qp_active_set')
+        ctrl_data.setField('qp_active_set',[]);
+      end
+      
       ctrl_data = ctrl_data.data;
       
       % i've made the following assumptions to make things fast.  we can soften
@@ -659,6 +662,8 @@ classdef QPController < MIMODrakeSystem
       % quadratic input cost
       Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
       
+      % quadratic cost on forces
+      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0));
 
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
@@ -668,6 +673,21 @@ classdef QPController < MIMODrakeSystem
         alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
         
       else
+        % call fastQPmex first
+        
+        QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.R(obj.con_inputs,obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
+        lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+        IR = eye(nparams);  
+        Aeq_fqp = full(Aeq);
+        Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
+        bin_fqp = [bin; -lb(lbind); ub(ubind)];
+          
+        %% NOTE: model.obj is 2* f for fastQP!!!
+        [alpha_fqp,info_fqp,qp_active_set_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+        
+        
+        %%% then call gurobi only if it fails:
+        
         model.Q = sparse(Hqp);
         model.obj = 2*fqp;
         model.A = [Aeq; Ain];
@@ -686,11 +706,23 @@ classdef QPController < MIMODrakeSystem
 %       Ain = full(Ain);
 %       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
 %       qp_tic = tic;
+        tic
         result = gurobi(model,obj.solver_options);
+        toc
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
         
+        qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
+        
+        if (info_fqp<0)
+          warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
+        else
+          valuecheck(qp_active_set_fqp,qp_active_set);
+          valuecheck(alpha_fqp,alpha);
+        end
+
+        setField(obj.controller_data,'qp_active_set',qp_active_set);
       end
 
       %----------------------------------------------------------------------
