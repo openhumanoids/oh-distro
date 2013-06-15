@@ -40,6 +40,19 @@ classdef CrawlingController < DRCController
 
     function obj = initialize(obj,data)
 
+%       load('data/crawling_traj.mat');
+%       qdtraj = fnder(q_traj,1);
+%       qddtraj = fnder(qdtraj,1);
+%       obj.controller_data.setField('qtraj',q_traj);
+%       obj.controller_data.setField('qdtraj',qdtraj);
+%       obj.controller_data.setField('qddtraj',qddtraj);
+%       obj.controller_data.setField('support_times',support_times);
+%       obj.controller_data.setField('supports',supports);
+% 
+%       obj = setDuration(obj,qdtraj.tspan(end),false); % set the controller timeout
+% 
+%       return;
+%       
       % TODO: put some error handling in here
       tmp_fname = ['tmp_w_', num2str(feature('getpid')), '.mat'];
 
@@ -71,8 +84,8 @@ classdef CrawlingController < DRCController
       obj.controller_data.setField('qddtraj',qddtraj);
 
       delete(tmp_fname);
-
-      % obj = setDuration(obj,tspan_end,false); % set the controller timeout
+      
+%       obj = setDuration(obj,qdtraj.tspan(end),false); % set the controller timeout
 
 
     end
