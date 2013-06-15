@@ -845,13 +845,19 @@
         <visual name="lfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <box size="0.3 0.15 0.01 " />
+                <box size="0.25 0.15 0.01 " />
             </geometry>
         </visual>
+        <collision group="target">
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="0.25 0.15 0.01 " />
+            </geometry>
+        </collision>
     </link>
     <joint name="lfoot_target_joint" type="fixed">
-        <origin xyz="0 0.3 0.005" rpy="0 0 -1.57564" />
-        <parent link="toe_target" type="link" />
+        <origin xyz="0.215 -0.95 0.005" rpy="0 0 -1.57564" />
+        <parent link="chassis" type="link" />
         <child link="lfoot_target" type="link" />
     </joint>   
     
@@ -859,13 +865,19 @@
         <visual name="rfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <box size="0.3 0.15 0.01 " />
+                <box size="0.25 0.15 0.01 " />
             </geometry>
         </visual>
+        <collision group="target">
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="0.25 0.15 0.01 " />
+            </geometry>
+        </collision>
     </link>
     <joint name="rfoot_target_joint" type="fixed">
-        <origin xyz="0.3 0.3 0.005" rpy="0 0 -1.57564" />
-        <parent link="toe_target" type="link" />
+        <origin xyz="0.475 -0.95 0.005" rpy="0 0 -1.57564" />
+        <parent link="chassis" type="link" />
         <child link="rfoot_target" type="link" />
     </joint>  
 </object>
