@@ -683,8 +683,9 @@ classdef QPController < MIMODrakeSystem
         bin_fqp = [bin; -lb(lbind); ub(ubind)];
           
         %% NOTE: model.obj is 2* f for fastQP!!!
-        [alpha_fqp,info_fqp,qp_active_set_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+        [alpha,info,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
         
+        if info<0
         
         %%% then call gurobi only if it fails:
         
@@ -706,20 +707,19 @@ classdef QPController < MIMODrakeSystem
 %       Ain = full(Ain);
 %       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
 %       qp_tic = tic;
-        tic
         result = gurobi(model,obj.solver_options);
-        toc
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
         
         qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
         
-        if (info_fqp<0)
+%        if (info_fqp<0)
           warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
-        else
-          valuecheck(qp_active_set_fqp,qp_active_set);
-          valuecheck(alpha_fqp,alpha);
+%        else
+%          valuecheck(qp_active_set_fqp,qp_active_set);
+%          valuecheck(alpha_fqp,alpha);
+%        end
         end
 
         setField(obj.controller_data,'qp_active_set',qp_active_set);
