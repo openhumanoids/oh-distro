@@ -1,4 +1,4 @@
-function [qdtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options)
+function [qdtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_start] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 %
 % @param r the robot 
 % @param x0 initial state

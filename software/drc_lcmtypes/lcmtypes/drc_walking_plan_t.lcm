@@ -33,6 +33,9 @@ struct walking_plan_t
   byte link_constraints[n_link_constraints_bytes];
   
   float mu; // friction coef
+
+  float t_offset;
+
   boolean ignore_terrain; 
 }
 
