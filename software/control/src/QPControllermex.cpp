@@ -66,7 +66,7 @@ mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
 }
 
 template <typename DerivedA,typename DerivedB>
-int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<DerivedB> const & b, char sense, double sparseness_threshold = 1e-10)
+int myGRBaddconstrs(GRBmodel *model, MatrixBase<DerivedA> const & A, MatrixBase<DerivedB> const & b, char sense, double sparseness_threshold = 1e-18)
 {
   int i,j,nnz,error;
 /*
@@ -398,12 +398,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     error = GRBloadenv(&(pdata->env),NULL);
 
     // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
-    error = GRBsetintparam(pdata->env,"outputflag",0);
-    error = GRBsetintparam(pdata->env,"method",2);
-    error = GRBsetintparam(pdata->env,"presolve",0);
-    error = GRBsetintparam(pdata->env,"bariterlimit",20);
-    error = GRBsetintparam(pdata->env,"barhomogenous",0);
-    error = GRBsetdblparam(pdata->env,"barconvtol",0.0005);
+    CGE ( GRBsetintparam(pdata->env,"outputflag",0), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"method",2), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"presolve",0), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"bariterlimit",20), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"barhomogeneous",0), pdata->env );
+    CGE ( GRBsetdblparam(pdata->env,"barconvtol",0.0005), pdata->env );
   
     mxClassID cid;
     if (sizeof(pdata)==4) cid = mxUINT32_CLASS;
@@ -661,8 +661,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       // Q(1:nq_con,1:nq_con) = Hqp_con
       for (i=0; i<nq_con; i++)
         for (j=0; j<nq_con; j++)
-          if (abs(Hqp_con(i,j))>1e-10) 
-            CGE (GRBaddqpterms(model,1,&i,&j,&(Hqp_con(i,j))), pdata->env);
+        	CGE (GRBaddqpterms(model,1,&i,&j,&(Hqp_con(i,j))), pdata->env);
 
       // obj(1:nq_con) = 2*fqp_con
       fqp_con *= 2;
@@ -774,7 +773,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     ArrayXd tmp = pdata->umin.max(y.array());
     y = tmp.min(pdata->umax).matrix();
   } else {
-    y = alpha.block(nq,0,nu,1); 
+    y = alpha.block(nq,0,nu,1);
     qdd = alpha.block(0,0,nq,1);
   }
   

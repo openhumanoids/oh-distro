@@ -189,7 +189,7 @@ classdef QPController < MIMODrakeSystem
       %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
-      obj.solver_options.outputflag = 0; % not verbose
+%      obj.solver_options.outputflag = 0; % not verbose
       obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
       obj.solver_options.presolve = 0;
 %       obj.solver_options.prepasses = 1;
@@ -418,7 +418,7 @@ classdef QPController < MIMODrakeSystem
         end
         i=i+1;
       end
-      active_supports = supp.bodies;
+      active_supports = (supp.bodies)';
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
@@ -663,7 +663,7 @@ classdef QPController < MIMODrakeSystem
       Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
       
       % quadratic cost on forces
-      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0));
+%      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0));
 
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
@@ -675,18 +675,18 @@ classdef QPController < MIMODrakeSystem
       else
         % call fastQPmex first
         
-        QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.R(obj.con_inputs,obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
-        lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
-        IR = eye(nparams);  
-        Aeq_fqp = full(Aeq);
-        Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
-        bin_fqp = [bin; -lb(lbind); ub(ubind)];
-          
-        %% NOTE: model.obj is 2* f for fastQP!!!
-        [alpha,info,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
-        
-        if info<0
-        
+%         QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.R(obj.con_inputs,obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
+%         lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+%         IR = eye(nparams);  
+%         Aeq_fqp = full(Aeq);
+%         Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
+%         bin_fqp = [bin; -lb(lbind); ub(ubind)];
+%           
+%         %% NOTE: model.obj is 2* f for fastQP!!!
+%         [alpha,info,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+%         
+%         if info<0
+%         
         %%% then call gurobi only if it fails:
         
         model.Q = sparse(Hqp);
@@ -712,17 +712,17 @@ classdef QPController < MIMODrakeSystem
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
         
-        qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-        
-%        if (info_fqp<0)
-          warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
-%        else
-%          valuecheck(qp_active_set_fqp,qp_active_set);
-%          valuecheck(alpha_fqp,alpha);
-%        end
-        end
-
-        setField(obj.controller_data,'qp_active_set',qp_active_set);
+%         qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
+%         
+% %        if (info_fqp<0)
+%           warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
+% %        else
+% %          valuecheck(qp_active_set_fqp,qp_active_set);
+% %          valuecheck(alpha_fqp,alpha);
+% %        end
+%         end
+% 
+%         setField(obj.controller_data,'qp_active_set',qp_active_set);
       end
 
       %----------------------------------------------------------------------
@@ -803,11 +803,8 @@ classdef QPController < MIMODrakeSystem
       valuecheck(sense',model.sense);
       valuecheck(lb,model.lb);
       valuecheck(ub,model.ub);
-%       valuecheck(y,des.y,1e-4);  % they are close, but not *quite* the
-%       same. ---I don't like this, I'm seeing differences up to 5Nm in
-%       some dimensions.
-%      valuecheck(Vdotmex,Vdot,1e-4);  % this one, too. (coincidentally
-%      Vdotmex was < Vdot in the very few cases I looked at carefully)
+      valuecheck(y,des.y,1e-5);  
+      valuecheck(Vdotmex,Vdot,1e-5);  
     end
     
    
