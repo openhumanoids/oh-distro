@@ -54,6 +54,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	stageA_test_vel.setSize(3);
 
 	rate_changer.setSize(3);
+	publishvelocitiesvec.setZero();
+
 	fusion_rate.setSize(1);
 	bias_publishing_rate.setSize(1);
 	estimating_biases = 0;
@@ -74,6 +76,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 
 	// Tuning parameters for data fusion
 	fusion_rate.setDesiredPeriod_us(0,DATA_FUSION_PERIOD-500);
+
 	bias_publishing_rate.setDesiredPeriod_us(0,BIAS_PUBLISH_PERIOD-500);
 	df_feedback_gain = -0.5;
 	df_events = 0;
@@ -404,8 +407,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 			}
 		}
 
-		retstate = InerO;
-		retstate.P = LeggO.P;
+
 
 		// Update the bias estimates
 
@@ -420,30 +422,30 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 				// reset the trigger
 				trigger_bias_averaging.Reset();
 				trigger_bias_averaging.forceHigh();
-				std::cout << "reseting trigger_bias_averaging ST" <<std::endl;
+				//std::cout << "reseting trigger_bias_averaging ST" <<std::endl;
 			}
 
 			trigger_bias_averaging.UpdateState(uts,norm);
-			std::cout << "triggerstate: " << trigger_bias_averaging.getState() << " | " << norm  << " | " << !(speed > ZU_SPEED_THRES) << std::endl;
+			//std::cout << "triggerstate: " << trigger_bias_averaging.getState() << " | " << norm  << " | " << !(speed > ZU_SPEED_THRES) << std::endl;
 
 			//determine whether we can start to average the bias estimate
 			if (trigger_bias_averaging.getState() <= 0.5) {
 				// new we can start the averaging process
-				std:: cout << "Triggering the start of bias estimation at uts: " << uts << std::endl;
+				//std:: cout << "Triggering the start of bias estimation at uts: " << uts << std::endl;
 				allowbiasestimation = true;
 				// We should used this same logic to restrict the initial conditions for the velocity states - -by slaing to the leg odoemtry during th initialization phase
-				retstate.V = LeggO.V;
+				//retstate.V = LeggO.V;
 			}
 		}
 
 		if (allowbiasestimation) {
-			std::cout << "Bias averaging is being allowed.\n";
+			//std::cout << "Bias averaging is being allowed.\n";
 
 			acc_bias_avg.processSamples(inert_odo.imu_compensator.get_accel_biases());
-			std::cout << "bias is: " << acc_bias_avg.getCA().transpose() << std::endl;
+			//std::cout << "bias is: " << acc_bias_avg.getCA().transpose() << std::endl;
 
 			// we should run run the expire counter here
-			std::cout << "expirecounter: " << expire_bias_avg_process.getRemainingTime_us() << std::endl;
+			//std::cout << "expirecounter: " << expire_bias_avg_process.getRemainingTime_us() << std::endl;
 
 			if (expire_bias_avg_process.processSample(uts)) {
 				// bias averaging period has expired
@@ -458,7 +460,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 					avgbiases[i] = cabias(i);
 				}
 
-				std::cout << "SettingAccelBiases on timer expire to: " << cabias.transpose() << std::endl;
+				//std::cout << "SettingAccelBiases on timer expire to: " << cabias.transpose() << std::endl;
 				inert_odo.imu_compensator.UpdateAccelBiases(avgbiases);
 				estimating_biases = 1;
 			}
@@ -468,6 +470,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 		inert_odo.setPositionState(INS_POS_WINDUP_BALANCE*InerO.P + (1.-INS_POS_WINDUP_BALANCE)*LeggO.P);
 
 		if (true) {
+
 			inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*LeggO.V);
 	    } else {
 			//inert_odo.setVelocityState(INS_VEL_WINDUP_BALANCE*InerO.V + (1.-INS_VEL_WINDUP_BALANCE)*Fovis.V);
@@ -491,6 +494,9 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(	const unsigned 
 
 	}
 
+	retstate = InerO;
+	//std::cout << "InertOdo.V: " << InerO.V.transpose() << std::endl;
+	retstate.P = LeggO.P;
 
 	return retstate;
 
@@ -610,6 +616,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		double pos[3];
 		double vel[3];
 
+		/*
 		if (_switches->OPTION_A) {
 
 			// median filter
@@ -669,9 +676,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			if (ratechangeiter==1) {
 				_leg_odo->overwritePelvisVelocity(pelvis_velocity);
 			}
-		}
+		}*/
 
-		if (_switches->OPTION_C || _switches->OPTION_D) {
+		if (_switches->OPTION_C  || _switches->OPTION_D) {
 
 			Eigen::Vector3d store_vel_state;
 			Eigen::VectorXd filtered_pelvis_vel(3);
@@ -711,7 +718,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				for (int i=0;i<3;i++) {
 					filtered_pelvis_vel(i) = vel[i];
 				}
-
 				_leg_odo->overwritePelvisVelocity(filtered_pelvis_vel);
 
 			}
@@ -835,6 +841,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			if (_switches->log_data_files) {
 				LogAllStateData(_msg, &est_msgout);
 			}
+
 		}// end of the reduced rate portion
 
     }//do estimation
@@ -1048,6 +1055,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 	twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
 	twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
 	twist.linear_velocity.z = velocity_states(2);
+	publishvelocitiesvec(0) = twist.linear_velocity.x;
+	publishvelocitiesvec(1) = twist.linear_velocity.y;
+	publishvelocitiesvec(2) = twist.linear_velocity.z;
+
 
 	//Eigen::Vector3d wrates;
 	//wrates = InertialOdometry::QuaternionLib::q2C(output_q).transpose()*local_rates;
@@ -1334,6 +1345,11 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    }
 
    ss << zvu_flag << ", "; //152
+
+   for (int i=0;i<3;i++) {
+	   ss << publishvelocitiesvec(i) << ", ";//153-155
+   }
+
 
    ss <<std::endl;
 

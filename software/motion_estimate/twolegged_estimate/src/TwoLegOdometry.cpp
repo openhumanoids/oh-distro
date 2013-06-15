@@ -219,7 +219,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 
 	  foottransitionintermediateflag = false;
 	  
-	  std::cout << "NEW STEP ON " << ((secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT") << " stepcount: " << stepcount << " at x= " << getSecondaryInLocal().translation().x() << std::endl;
+	  //std::cout << "NEW STEP ON " << ((secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT") << " stepcount: " << stepcount << " at x= " << getSecondaryInLocal().translation().x() << std::endl;
 
 	  stepcount++;
 	  newstep.foot = secondary_foot();
@@ -318,9 +318,9 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   //std::cout << "Foot at this point is: " << newstep.foot << std::endl;
 
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
-	  std::cout << "PELVIS AT STEP: " << 57.29*(truth_E - C2e(newstep.footprintlocation.rotation())).transpose() << std::endl;
+	  //std::cout << "PELVIS AT STEP: " << 57.29*(truth_E - C2e(newstep.footprintlocation.rotation())).transpose() << std::endl;
 
-	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
+	  //std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
 
 	  Eigen::Vector3d alias;

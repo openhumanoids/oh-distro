@@ -169,6 +169,10 @@ force_ = data(:,(offset:(offset+2)));
 offset = 152;
 zvu_flag = data(:,offset);
 
+offset = 153;
+pubv = data(:,(offset:(offset+2)));
+
+
 % end
 
 

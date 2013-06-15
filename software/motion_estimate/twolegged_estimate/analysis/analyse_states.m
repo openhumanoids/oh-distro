@@ -144,7 +144,8 @@ grid on
 title('Hips Z')
 
 % If leg kinematic velcoties are available
-if (legkinvels)
+% if (legkinvels)
+
     figure(4); clf
     
     spa = 4;
@@ -202,7 +203,7 @@ if (legkinvels)
     legend({'jv r kny', 'jv r uay', 'jv r lax'})
     title('Right knee and ankle Joint Velocities')
     
-end
+% end
 
 
 figure(6); clf

@@ -160,6 +160,7 @@ private:
 	RateChange rate_changer;
 	RateChange fusion_rate;
 	RateChange bias_publishing_rate;
+	Eigen::Vector3d publishvelocitiesvec;
 
 	NumericalDiff local_to_head_vel_diff;
 	NumericalDiff local_to_head_acc_diff;
