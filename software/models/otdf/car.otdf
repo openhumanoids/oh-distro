@@ -840,4 +840,32 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
+    
+   <link name="lfoot_target">
+        <visual name="lfoot_target">
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="0.3 0.15 0.01 " />
+            </geometry>
+        </visual>
+    </link>
+    <joint name="lfoot_target_joint" type="fixed">
+        <origin xyz="0 0.3 0.005" rpy="0 0 -1.57564" />
+        <parent link="toe_target" type="link" />
+        <child link="lfoot_target" type="link" />
+    </joint>   
+    
+     <link name="rfoot_target">
+        <visual name="rfoot_target">
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="0.3 0.15 0.01 " />
+            </geometry>
+        </visual>
+    </link>
+    <joint name="rfoot_target_joint" type="fixed">
+        <origin xyz="0.3 0.3 0.005" rpy="0 0 -1.57564" />
+        <parent link="toe_target" type="link" />
+        <child link="rfoot_target" type="link" />
+    </joint>  
 </object>
