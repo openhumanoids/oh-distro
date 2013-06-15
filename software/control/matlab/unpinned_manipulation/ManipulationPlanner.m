@@ -394,6 +394,7 @@ classdef ManipulationPlanner < handle
             elseif(useIK_state ==2) % Foot in contact
               ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
               ikoptions.jointLimitMin = [-inf(6,1);q_desired(7:end)];
+              ikoptions.shrinkFactor = 0.85;
               lfoot_const = struct();
               kinsol0 = doKinematics(obj.r,q0);
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],1);
@@ -548,6 +549,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.MajorIterationsLimit = 100;
+            ikoptions.shrinkFactor = 0.8;
 
 						%%% Hongkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
 						coords = obj.r.getStateFrame();
