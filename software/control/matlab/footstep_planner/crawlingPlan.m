@@ -222,9 +222,11 @@ elseif (options.gait ==2) % trot
   fpos_all{1} = fpos_start;
   for i = 2:options.num_strides+1
     if options.direction ~= 0
-      fpos_all{i} = rotz(options.delta_yaw)*fpos_all{i-1};
+      fpos_all{i} = bsxfun(@plus,x0(1:3),(rotz(options.delta_yaw)^i)*fpos_rel);
+      fpos_all{i}(3,:) = z_foot_nom;
     else
       fpos_all{i} = bsxfun(@plus,options.step_length*forward_dir,fpos_all{i-1});
+      fpos_all{i}(3,:) = z_foot_nom;
     end
   end
   com_start = [mean(fpos_start(1:2,:),2);options.com_height+z_foot_nom];
@@ -455,16 +457,17 @@ elseif (options.gait ==2) % trot
 %     assert(all(zmp(:,i) == zmp_coeff(2)*q1 + (1-zmp_coeff(2))*q2), ...
 %       'Computed intersection points are inconsistent in zmp generation');
     zmp_mean(:,i) = mean(support_vert{i}(1:2,:),2);
-    zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
+    %zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
 %     sfigure(8); hold on; grid on;
     sfigure(8); hold on; grid on; axis equal;
-    plot(zmp(1,i),zmp(2,i),'gd',zmp_mean(1,i),zmp_mean(2,i),'rd');%,support_vert{i}(1,1:2),support_vert{i}(2,1:2),'-rs',support_vert{i+1}(1,1:2),support_vert{i+1}(2,1:2),'-ks');
+    plot(zmp_mean(1,i),zmp_mean(2,i),'gd',support_vert{i}(1,:),support_vert{i}(2,:),'rs');
   end
   %zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
-  %zmptraj = PPTrajectory(foh(support_times,zmp));
-  support_times = [0, support_times];
-  supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
-                              {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
+  zmp_mean(:,end+1) = mean(support_vert{end}(1:2,:),2);
+  %support_times = [0, support_times];
+  zmptraj = PPTrajectory(foh([0, support_times],zmp_mean));
+  %supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
+                              %{foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
 
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
   options.com0 = com_start(1:2);
@@ -476,7 +479,7 @@ elseif (options.gait ==2) % trot
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'crawling_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-  comtraj_initial = PPTrajectory(foh([0, t_start/2, t_start],[com_initial, com_initial, com_start]));
+  comtraj_initial = PPTrajectory(foh([0, t_start],[com_initial,com_start]));
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
@@ -498,7 +501,7 @@ elseif (options.gait ==2) % trot
     %crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
   end
   
-  t = 0:0.1:comtraj.tspan(2);
+  t = 0:0.05:comtraj.tspan(2);
   nt = numel(t);
   q = zeros(nq,nt);
   q(:,1) = x0(1:nq);
@@ -529,7 +532,7 @@ elseif (options.gait ==2) % trot
       %q(:,i) = eval(qtraj_initial,t(i));
   end
   qdtraj = PPTrajectory(spline(t,q));
-  t_offset = t_start + stride_duration;
+  t_offset = t_start;
   %for step=1:2:options.num_steps
     %for swing_legs= [[1;3],[2;4]]
       %stance_legs = 1:4; stance_legs(swing_legs)=[];
