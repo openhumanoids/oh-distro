@@ -276,11 +276,11 @@ doFill(maps::DepthImageView::Ptr& iView) {
     fillUnderRobot(iView, FillMethods::MethodRansac);
     fillIterative(iView);
     //fillConnected(iView);
-    fprintf(stderr, "using full heightmap\n");
+    //fprintf(stderr, "using full heightmap\n");
   }
   else {
     fillLevelPlaneFromFeet(iView);
-    fprintf(stderr, "using flat ground\n");
+    //fprintf(stderr, "using flat ground\n");
   }
   if (mDebug) {
     drc::map_image_t msg;
