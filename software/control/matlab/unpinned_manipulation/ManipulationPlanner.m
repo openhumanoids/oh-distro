@@ -394,11 +394,11 @@ classdef ManipulationPlanner < handle
             elseif(useIK_state ==2) % Foot in contact
               ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
               ikoptions.jointLimitMin = [-inf(6,1);q_desired(7:end)];
-              ikoptions.shrinkFactor = 0.85;
+              ikoptions.shrinkFactor = 0.9;
               lfoot_const = struct();
               kinsol0 = doKinematics(obj.r,q0);
-              rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],1);
-              lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],1);
+              rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
+              lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
               ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
               ikoptions.q_nom = q0;
               [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
@@ -2130,7 +2130,6 @@ classdef ManipulationPlanner < handle
           local_x_axis = mate_rotmat*[1;0;0];
           local_y_axis = mate_rotmat*[0;1;0];
           local_z_axis = mate_rotmat*[0;0;1];
-          mate_rotmat = eye(3);
           rpalm_pts = [[0;-0.1;0] aff2hand_offset];
           lpalm_pts = [[0;0.1;0] aff2hand_offset];
           rfoot_pts = obj.r_foot_body.getContactPoints();
@@ -2173,6 +2172,89 @@ classdef ManipulationPlanner < handle
           xtraj = [qtraj;0*qtraj];
           xtraj = [zeros(2,2);xtraj];
           ts = [0 1];
+          utime = now() * 24 * 60 * 60;
+          obj.plan_pub.publish(xtraj,ts,utime);
+        end
+        
+        
+        function generateAndPublishSpiralMatingPlan(obj,x0,ee_rhand,ee_lhand,aff2hand_offset,mate_axis,h_ee_goal,goal_type_flags)
+          nq = obj.r.getNumDOF();
+          q0 = x0(1:nq);
+          if(mate_axis'*[0;1;0]~=0)
+            mate_axis = mate_axis*(mate_axis'*[0;1;0]>0); % Make sure that the mate axis goes into the wall
+          end
+          mate_axis = mate_axis/norm(mate_axis);
+          mate_axis_angle = acos(mate_axis'*[0;1;0]);
+          mate_rotmat = quat2rotmat(axis2quat([cross(mate_axis,[0;1;0]);mate_axis_angle]));
+          local_x_axis = mate_rotmat*[1;0;0];
+          local_y_axis = mate_rotmat*[0;1;0];
+          local_z_axis = mate_rotmat*[0;0;1];
+          rpalm_pts = [[0;0;0] [0;-0.1;0] aff2hand_offset];
+          lpalm_pts = [[0;0;0] [0;0.1;0] aff2hand_offset];
+          rfoot_pts = obj.r_foot_body.getContactPoints();
+          lfoot_pts = obj.l_foot_body.getContactPoints();
+          head_pts = [0;0;0];
+          kinsol0 = doKinematics(obj.r,q0);
+          rpalm_curr = forwardKin(obj.r,kinsol0,obj.r_hand_body,rpalm_pts,1);
+          rhand_orig_curr = rpalm_curr(:,1);
+          rpalm_orig_curr = rpalm_curr(:,2);
+          rpalm_aff_curr = rpalm_curr(:,3);
+          rpalm_aff_arrow_curr = rpalm_aff_curr(1:3)+0.1*mate_axis;
+          T_world_rhand_curr = HT(rhand_orig_curr(1:3),rhand_orig_curr(4),rhand_orig_curr(5),rhand_orig_curr(6));
+          rpalm_aff_arrow_in_hand = inv_HT(T_world_rhand_curr)*[rpalm_aff_arrow_curr;1];
+          rpalm_aff_arrow_in_hand = rpalm_aff_arrow_in_hand(1:3);
+          rpalm_pts = [rpalm_pts rpalm_aff_arrow_in_hand];
+          lpalm_curr = forwardKin(obj.r,kinsol0,obj.l_hand_body,lpalm_pts,1);
+          lhand_orig_curr = lpalm_curr(:,1);
+          lpalm_orig_curr = lpalm_curr(:,2);
+          lpalm_aff_curr = lpalm_curr(:,3);
+          lpalm_aff_arrow_curr = lpalm_aff_curr(1:3)+0.1*mate_axis;
+          T_world_lhand_curr = HT(lhand_orig_curr(1:3),lhand_orig_curr(4),lhand_orig_curr(5),lhand_orig_curr(6));
+          lpalm_aff_arrow_in_hand = inv_HT(T_world_lhand_curr)*[lpalm_aff_arrow_curr;1];
+          lpalm_aff_arrow_in_hand = lpalm_aff_arrow_in_hand(1:3);
+          lpalm_pts = [lpalm_pts lpalm_aff_arrow_in_hand];
+          rf_curr = forwardKin(obj.r,kinsol0,obj.r_foot_body,rfoot_pts,0);
+          lf_curr = forwardKin(obj.r,kinsol0,obj.l_foot_body,lfoot_pts,0);
+          head_curr = forwardKin(obj.r,kinsol0,obj.head_body,head_pts,2);
+          if(goal_type_flags.h == 2)
+            head_const.type = 'gaze';
+            head_const.gaze_axis = [1;0;0];
+            head_const.gaze_target = h_ee_goal(1:3);
+            head_const.gaze_conethreshold = pi/12;
+          else
+            head_const.max = head_curr+1e-2*ones(7,1);
+            head_const.min = head_curr-1e-2*ones(7,1);
+          end
+          if(ee_rhand)
+            rhand_pt = [rpalm_pts(:,3) rpalm_pts(:,4)];
+            lhand_pt = lpalm_pts(:,2);
+            n_spiral_sample = 20;
+            q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
+            rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr+0.01*mate_axis,mate_axis,n_spiral_sample,struct('type','Archimedean'));
+            for sample = 1:n_spiral_sample
+              rhand_const.max = [rpalm_aff_curr(1:3)+0.02*mate_axis rpalm_aff_arrow_goal(:,sample)+0.01*ones(3,1)];
+              rhand_const.min = [rpalm_aff_curr(1:3)+0.006*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
+                obj.l_foot_body,lfoot_pts,lf_curr,obj.l_hand_body,lhand_pt,lpalm_curr(:,2),...
+                obj.r_hand_body,rhand_pt,rhand_const};
+              q_guess = q0;
+              cost = diag(obj.getCostVector());
+              cost = cost(1:nq,1:nq);
+              ikoptions.Q = cost;
+              ikoptions.shrinkFactor = 0.95;
+              [q_sample(:,sample),info] = inverseKin(obj.r,q_guess,ikargs{:},ikoptions);
+              if(info>10)
+                send_status(3,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
+              end
+              q_guess = q_sample;
+            end
+          elseif(ee_lhand)
+          end
+          qtraj = reshape([q_sample;q_sample],nq,[]);
+          xtraj = [qtraj;0*qtraj];
+          xtraj = [zeros(2,size(xtraj,2));xtraj];
+          dt = 1;
+          ts = 0:dt:(size(xtraj,2)-1)*dt;
           utime = now() * 24 * 60 * 60;
           obj.plan_pub.publish(xtraj,ts,utime);
         end

@@ -501,6 +501,7 @@ while(1)
     aff2hand_offset = T_hand_aff*[0;0;0;1];
     aff2hand_offset = aff2hand_offset(1:3);
     mate_axis = [teleop_transform_msg.mate_axis.x;teleop_transform_msg.mate_axis.y;teleop_transform_msg.mate_axis.z];
+    manip_planner.generateAndPublishSpiralMatingPlan(x0,1,0,aff2hand_offset,mate_axis,h_ee_goal,ee_goal_type_flags);
   end
   ee_teleop_data = getNextMessage(teleop_mon,0);
   if(~isempty(ee_teleop_data))
@@ -512,7 +513,7 @@ while(1)
     if(isempty(aff2hand_offset)||isempty(mate_axis))
       warning('The teleop transformation is not set yet');
     else
-      manip_planner.generateAndPublishTeleopPlan(q0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND,aff2hand_offset,mate_axis);
+      manip_planner.generateAndPublishTeleopPlan(x0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND,aff2hand_offset,mate_axis);
     end
   end
 %listen to  committed robot plan or rejected robot plan
