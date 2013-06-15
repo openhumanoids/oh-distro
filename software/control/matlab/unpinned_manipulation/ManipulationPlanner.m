@@ -783,9 +783,31 @@ classdef ManipulationPlanner < handle
                             end
                         end
                     end
-                    
                 end
+
+                %%%%%%%%%%%%%%%%%%%% Setting joint Limits to prevent singularities
+                buffer=0.05;
+                coords = obj.r.getStateFrame();
+                [joint_min,joint_max] = obj.r.getJointLimits();
+                joint_min = Point(coords,[joint_min;0*joint_min]);
+                joint_min.back_mby = -.2;
+                joint_min.l_leg_kny= joint_min.l_leg_kny+buffer;
+                joint_min.r_leg_kny= joint_min.r_leg_kny+buffer;
+                joint_min = double(joint_min);
+                ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
+               
+                %joint_max
                 
+                %Setting a max joint limit on the back also 
+                
+                joint_max = Point(coords,[joint_max;0*joint_max]);
+                joint_max.back_mby = 0.2;
+                joint_max.l_leg_kny= joint_max.l_leg_kny-buffer;
+                joint_max.r_leg_kny= joint_max.r_leg_kny-buffer;
+                joint_max = double(joint_max);
+                ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
                 ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
                 ikoptions.q_nom = q_guess;
                 if(is_manip_map)
@@ -809,6 +831,8 @@ classdef ManipulationPlanner < handle
                         obj.l_hand_body,[0;0;0],lhand_const,...
                         ikoptions);  
                     
+                    %=== Relax pelvis and introduce gaze constraint? ==
+                    % the robot falls over
                     %obj.pelvis_body,[0;0;0],pelvis_pose0,...
                     %obj.head_body,[0;0;0],head_pose0_relaxed,...
                     % if(isempty(head_const))
@@ -1076,7 +1100,7 @@ classdef ManipulationPlanner < handle
                 
             end
         end
-
+   %======== THE MAIN OPTIMIZATION OF BOUNDARY VALUE PLANNING PROBLEM GIVEN DESIRED EE LOCATIONS ==============
         function runOptimization(obj,varargin)
             is_locii = false;
             is_keyframe_constraint = false;
