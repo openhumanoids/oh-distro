@@ -51,10 +51,10 @@ classdef WalkingController < DRCController
       options.w = 0.01;
       nu=getNumInputs(r);
       options.R = 1e-12*eye(nu);
-%       input_names = r.getInputFrame.coordinates;
-%       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
-%       ankle_idx = find(ankle_idx);
-%       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
+      input_names = r.getInputFrame.coordinates;
+      ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
+      ankle_idx = find(ankle_idx);
+      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 
       qp = QPController(r,ctrl_data,options);
       
