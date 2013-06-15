@@ -463,26 +463,11 @@ group "m.hose_task_utils" {
 # pal-02 - robot
 # drc005 - base
 ############# drc102, pal-02, drc005 ######################
-script "comp.vrc_walking" {
+script "competition" {
     start group "a.1.core";
     start group "b.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
-}
-
-script "comp.vrc_manip" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.3.manip";
-    start group "b.3.manip";
-}
-
-script "comp.vrc_ingress" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.3.manip";
-    start group "b.3.manip";
-    start cmd "recovery";
 }
 
 ######################################
