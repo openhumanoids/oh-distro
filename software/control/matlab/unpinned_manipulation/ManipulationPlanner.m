@@ -1451,7 +1451,7 @@ classdef ManipulationPlanner < handle
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
             ikoptions.quasiStaticFlag = true;
-            ikoptions.shrinkFactor = 0.95;
+            ikoptions.shrinkFactor = 0.85;
             if(is_keyframe_constraint)
                 ikoptions.MajorIterationsLimit = 300;
             else
@@ -1819,8 +1819,7 @@ classdef ManipulationPlanner < handle
                       if(isstruct(rhand_const))
                         if(isfield(rhand_const,'max'))
                           if(all(isnan(rhand_const.max))&&all(isnan(rhand_const.min)))
-                            rhand_const.max = rhand_pose;
-                            rhand_const.min = rhand_pose;
+                            rhand_const = struct('max',rhand_pose,'min',rhand_pose);
                           end
                         end
                       else
@@ -1831,8 +1830,7 @@ classdef ManipulationPlanner < handle
                       if(isstruct(lhand_const))
                         if(isfield(lhand_const,'max'))
                           if(all(isnan(lhand_const.max))&&all(isnan(lhand_const.min)))
-                            lhand_const.max = lhand_pose;
-                            lhand_const.min = lhand_pose;
+                            lhand_const = struct('max',lhand_pose,'min',lhand_pose);
                           end
                         end
                       else
@@ -1899,7 +1897,7 @@ classdef ManipulationPlanner < handle
             ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
             ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
             ikseq_options.quasiStaticFlag=true;
-            ikseq_options.shrinkFactor = 0.95;
+            ikseq_options.shrinkFactor = 0.9;
             ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
             ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
             if(is_keyframe_constraint)
