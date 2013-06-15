@@ -51,6 +51,7 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       qp_options.full_body_opt = true;
       qp_options.debug = false;
       qp_options.use_mex = 2;
+      obj.robot = r;
 %      if (isfield(options,'ignore_states'))
 %        % specifies what dimensions of the state we should ignore
 %        assert(isnumeric(options.ignore_states));
@@ -78,6 +79,13 @@ classdef PosVelFeedForwardBlock < DrakeSystem
 %       x(obj.ignore_states)=xt(obj.ignore_states);
 %       x(3)=-100;
 %      u = obj.qp_controller.mimoOutput(t,[],qddot,zeros(12,1),xt);
+
+      if 0 % DEBUG MODE, PLOT COM
+        kinsol = doKinematics(obj.robot,x(1:getNumDOF(r)));
+        com = getCOM(obj.robot,kinsol);
+        plot_lcm_points(com', [1 0 0], 660, 'COM Position', 1, true);
+      end
+
       supp_idx = find(obj.ctrl_data.data.support_times<=t,1,'last');
       active_supports = obj.ctrl_data.data.supports(supp_idx);
       ctrl_data = obj.qp_controller.controller_data;
@@ -95,6 +103,6 @@ classdef PosVelFeedForwardBlock < DrakeSystem
     qp_controller;
     ignore_states;
     actuated;
-%    robot;
+   robot;
   end
 end
