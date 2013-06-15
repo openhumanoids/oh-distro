@@ -223,6 +223,8 @@ elseif (options.gait ==2) % trot
   for i = 2:options.num_strides+1
     if options.direction ~= 0
       fpos_all{i} = rotz(options.delta_yaw)*fpos_all{i-1};
+    else
+      fpos_all{i} = bsxfun(@plus,options.step_length*forward_dir,fpos_all{i-1});
     end
   end
   com_start = [mean(fpos_start(1:2,:),2);options.com_height+z_foot_nom];
@@ -439,10 +441,11 @@ elseif (options.gait ==2) % trot
   for i = 1:numel(crawl_sequence.key_time_samples)
     support_vert{i} = getSupportPolygon(crawl_sequence,crawl_sequence.key_time_samples(i));
   end
+  support_vert{end+1} = getSupportPolygon(crawl_sequence,t_start+options.num_strides*stride_duration);
   zmptraj = PPTrajectory(foh([t_start,t_start+options.num_strides*stride_duration], ...
   [com_start(1:2),mean(fpos_all{end}(1:2,:),2)]));
 %   for i = 2:numel(crawl_sequence.key_time_samples)-1
-  for i = 1:numel(support_times)-1
+  for i = 1:numel(support_times)
     %p1 = support_vert{i}(1:2,1);
     %p2 = support_vert{i}(1:2,2);
     %q1 = support_vert{i+1}(1:2,1);
@@ -451,14 +454,14 @@ elseif (options.gait ==2) % trot
 %     zmp(:,i) = zmp_coeff(1)*p1 + (1-zmp_coeff(1))*p2;
 %     assert(all(zmp(:,i) == zmp_coeff(2)*q1 + (1-zmp_coeff(2))*q2), ...
 %       'Computed intersection points are inconsistent in zmp generation');
-    zmp(:,i) = mean(support_vert{i}(1:2,:),2);
-    %zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
+    zmp_mean(:,i) = mean(support_vert{i}(1:2,:),2);
+    zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
 %     sfigure(8); hold on; grid on;
-    sfigure(8); ; grid on; axis equal;
-    plot(zmp(1,i),zmp(2,i),'gd',support_vert{i}(1,1:2),support_vert{i}(2,1:2),'-rs',support_vert{i+1}(1,1:2),support_vert{i+1}(2,1:2),'-ks');
+    sfigure(8); hold on; grid on; axis equal;
+    plot(zmp(1,i),zmp(2,i),'gd',zmp_mean(1,i),zmp_mean(2,i),'rd');%,support_vert{i}(1,1:2),support_vert{i}(2,1:2),'-rs',support_vert{i+1}(1,1:2),support_vert{i+1}(2,1:2),'-ks');
   end
-  zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
-  zmptraj = PPTrajectory(foh(support_times,zmp));
+  %zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
+  %zmptraj = PPTrajectory(foh(support_times,zmp));
   support_times = [0, support_times];
   supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
                               {foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
@@ -495,7 +498,7 @@ elseif (options.gait ==2) % trot
     %crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
   end
   
-  t = 0:0.025:comtraj.tspan(2);
+  t = 0:0.1:comtraj.tspan(2);
   nt = numel(t);
   q = zeros(nq,nt);
   q(:,1) = x0(1:nq);
@@ -508,6 +511,7 @@ elseif (options.gait ==2) % trot
     else
       ikargs = getIKArguments(crawl_sequence,t(i));
       q(:,i) = inverseKin(r,q0,ikargs{:},options);
+      %q(:,i) = approximateIK(r,q0,ikargs{:},options);
       q0 = q(:,i);
     end
     if options.draw
@@ -521,6 +525,7 @@ elseif (options.gait ==2) % trot
       ikargs = getIKArguments(crawl_sequence,t(i));
       options.q_nom = eval(qtraj_initial,t(i));
       q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
+      %q(:,i) = approximateIK(r,q(:,i-1),ikargs{:},options);
       %q(:,i) = eval(qtraj_initial,t(i));
   end
   qdtraj = PPTrajectory(spline(t,q));

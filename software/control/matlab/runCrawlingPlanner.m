@@ -110,12 +110,12 @@ while true
     end
   end
   if (~isempty(data))
-    %options.step_speed = goal.step_speed;
-    %options.step_height = goal.step_height;
-    %options.step_length = goal.nom_forward_step;
-    %options.ignore_terrain = goal.ignore_terrain;
-    %options.max_num_steps = goal.max_num_steps;
-    %options.min_num_steps = goal.min_num_steps;
+    options.step_speed = goal.step_speed;
+    options.step_height = goal.step_height;
+    options.step_length = goal.nom_forward_step;
+    options.ignore_terrain = goal.ignore_terrain;
+    options.max_num_steps = goal.max_num_steps;
+    options.min_num_steps = goal.min_num_steps;
     target_xy = [goal.goal_pos.translation.x;goal.goal_pos.translation.y];
 
     [firstTurn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
@@ -164,16 +164,16 @@ while true
     %qtraj_full = cell2mat(qtraj);
     xtraj = [qtraj_full; 0*qtraj_full];
     %xtraj = x0;
-    ts = 0:0.025:support_times_full(end)-eps; %TODO: Get real ts
+    ts = 0:0.1:support_times_full(end)-eps; %TODO: Get real ts
     x_data = eval(xtraj,ts);
   end
   %ts = 0;
   %
   if committed
     mu = goal.mu;
-    %options.ignore_terrain = goal.ignore_terrain;
+    options.ignore_terrain = goal.ignore_terrain;
     crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
-      'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full(actuated),'mu',mu,...
+      'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full,'mu',mu,...
       'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',options.ignore_terrain)
     msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     makeFist;
