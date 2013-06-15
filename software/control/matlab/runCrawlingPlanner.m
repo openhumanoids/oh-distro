@@ -118,49 +118,43 @@ while true
     options.min_num_steps = goal.min_num_steps;
     target_xy = [goal.goal_pos.translation.x;goal.goal_pos.translation.y];
 
-    [firstTurn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
+    [turn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
     options.gait = ZMP_TROT;
-    options.num_steps = forwardSegment.num_steps;
 
     % Plan first turn
-    options.direction = forwardSegment.direction;
+    options.direction = turn.direction;
+    options.num_steps = turn.num_steps;
     display('Getting qtraj ...');
-    [qtraj{1},support_times{1},supports{1},V{1},comtraj{1},zmptraj{1},link_constraints{1},t_start] = crawlingPlan(r,x0,body_spec,foot_spec,options)
-    loop_from_time = t_start + stride_duration;
+    [qtraj{1},support_times{1},supports{1},V{1},comtraj{1},zmptraj{1},link_constraints{1}] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 
     % Plan forward crawling
-    %options.direction = FORWARD;
-   %[support_times{2},supports{2},V{2},comtraj{2},zmptraj{2},qtraj{2}] = ...
-    %crawlingPlan(r,[eval(qtraj{1},qtraj{1}.tspan(2)); zeros(nq,1)],body_spec,foot_spec,options)
-
-    % Plan second turn
-    %options.direction = secondTurn.direction;
-    %[support_times{3},supports{3},V{3},comtraj{3},zmptraj{3},qtraj{3}] = ...
-    %crawlingPlan(r,[eval(qtraj{2},qtraj{2}.tspan(2)); zeros(nq,1)],body_spec,foot_spec,options)
-
+    options.direction = forwardSegment.direction;
+    options.num_steps = forwardSegment.num_steps;
+   [support_times{2},supports{2},V{2},comtraj{2},zmptraj{2},qtraj{2},t_offset] = ...
+    crawlingPlan(r,[eval(qtraj{1},qtraj{1}.tspan(2)); zeros(nq,1)],body_spec,foot_spec,options)
 
     support_times_full = cell2mat(support_times);
     supports_full = [supports{:}];
 
     s1_full = V{1}.s1;
-    %s1_full = V{1}.s1.append(V{2}.s1.shiftTime(V{1}.s1.tspan(2)));
+    s1_full = V{1}.s1.append(V{2}.s1.shiftTime(V{1}.s1.tspan(2)));
     %s1_full = s1_full.append(V{3}.s1.shiftTime(s1_full.tspan(2)));
 
     s2_full = V{1}.s2;
-    %s2_full = V{1}.s2.append(V{2}.s2.shiftTime(V{1}.s2.tspan(2)));
+    s2_full = V{1}.s2.append(V{2}.s2.shiftTime(V{1}.s2.tspan(2)));
     %s2_full = s2_full.append(V{3}.s2.shiftTime(s2_full.tspan(2)));
 
     comtraj_full = comtraj{1};
-    %comtraj_full = comtraj{1}.append(comtraj{2}.shiftTime(comtraj{1}.tspan(2)));
+    comtraj_full = comtraj{1}.append(comtraj{2}.shiftTime(comtraj{1}.tspan(2)));
     %comtraj_full = comtraj_full.append(comtraj{3}.shiftTime(comtraj_full.tspan(2)));
 
     zmptraj_full = zmptraj{1};
-    %zmptraj_full = zmptraj{1}.append(zmptraj{2}.shiftTime(zmptraj{1}.tspan(2)));
+    zmptraj_full = zmptraj{1}.append(zmptraj{2}.shiftTime(zmptraj{1}.tspan(2)));
     %zmptraj_full = zmptraj_full.append(zmptraj{3}.shiftTime(zmptraj_full.tspan(2)));
 
     % Assemble full plan
     qtraj_full = qtraj{1};
-    %qtraj_full = qtraj{1}.append(qtraj{2}.shiftTime(qtraj{1}.tspan(2)));
+    qtraj_full = qtraj{1}.append(qtraj{2}.shiftTime(qtraj{1}.tspan(2)));
     %qtraj_full = qtraj_full.append(qtraj{3}.shiftTime(qtraj_full.tspan(2)));
     %qtraj_full = cell2mat(qtraj);
     xtraj = [qtraj_full; 0*qtraj_full];
@@ -175,7 +169,7 @@ while true
     options.ignore_terrain = goal.ignore_terrain;
     crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full,'mu',mu,...
-      'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',loop_from_time)
+      'link_constraints',link_constraints{1},'zmptraj',zmptraj_full,'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
     msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     makeFist;
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');

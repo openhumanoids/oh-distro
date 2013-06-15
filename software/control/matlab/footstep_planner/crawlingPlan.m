@@ -1,4 +1,4 @@
-function [qdtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_start] = crawlingPlan(r,x0,body_spec,foot_spec,options)
+function [qdtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 %
 % @param r the robot 
 % @param x0 initial state
@@ -529,6 +529,7 @@ elseif (options.gait ==2) % trot
       %q(:,i) = eval(qtraj_initial,t(i));
   end
   qdtraj = PPTrajectory(spline(t,q));
+  t_offset = t_start + stride_duration;
   %for step=1:2:options.num_steps
     %for swing_legs= [[1;3],[2;4]]
       %stance_legs = 1:4; stance_legs(swing_legs)=[];
