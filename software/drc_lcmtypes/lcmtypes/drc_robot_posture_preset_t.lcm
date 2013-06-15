@@ -23,4 +23,6 @@ struct robot_posture_preset_t
   const int16_t STANDING_BDI_FP=11;
   const int16_t LFTHND_DWN = 12;
   const int16_t RGTHND_DWN = 13;
+  const int16_t LFTHND_INHEADVIEW = 14;
+  const int16_t RGTHND_INHEADVIEW = 15;
 }
