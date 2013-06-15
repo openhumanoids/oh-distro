@@ -82,7 +82,11 @@ classdef WalkingPlanPublisher
       
       msg.mu = data.mu;
       msg.ignore_terrain = data.ignore_terrain;
-      msg.t_offset = data.t_offset;
+      if isfield(data,'t_offset')
+        msg.t_offset = data.t_offset;
+      else
+        msg.t_offset = 0;
+      end
 
       obj.lc.publish(obj.channel, msg);
       delete(tmp_fname);
