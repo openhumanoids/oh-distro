@@ -3,13 +3,13 @@ back_lbz,20,0.1,0
 back_mby,4000,2,0
 back_ubx,2000,1,0
 neck_ay,20,1,0
-l_leg_uhz,5,0.01,0
+l_leg_uhz,300,0.01,0
 l_leg_mhx,100,1,0
 l_leg_lhy,2000,10,0
 l_leg_kny,1000,10,0
 l_leg_uay,900,8,0
 l_leg_lax,300,2,0
-r_leg_uhz,5,0.01,0
+r_leg_uhz,300,0.01,0
 r_leg_mhx,100,1,0
 r_leg_lhy,2000,10,0
 r_leg_kny,1000,10,0

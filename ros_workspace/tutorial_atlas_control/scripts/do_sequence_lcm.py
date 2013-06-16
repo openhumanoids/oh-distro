@@ -22,9 +22,10 @@ from drc.system_status_t import system_status_t
 from drc.frequency_t import frequency_t
 
 filenames = ['projectial_ingress_ready','projectial_ingress','faceup_to_facedown_wriggle','flat_out', 
-             'knee_rise_set','knee_rise','knee_rise_finish','jaguar_crawl','jaguar_crawl_left',
+             'knee_rise_set','knee_rise','knee_rise_finish',
+             'jaguar_crawl_set','jaguar_crawl','jaguar_crawl_left',
              'jaguar_crawl_left_large','jaguar_crawl_right','jaguar_crawl_right_large',
-             'facedown_to_faceup']
+             'facedown_to_faceup','flat_out_slow','flat_out_very_slow','flat_out_knees_out']
 
 real_time_percent_ma = 50
 

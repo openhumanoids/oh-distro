@@ -32,20 +32,25 @@
 #include <maps/BotWrapper.hpp>
 
 #define RENDERER_NAME "Recovery"
+
 #define PARAM_RECOVERY_MODE "Mode"
 #define PARAM_SEND_RECOVERY "Send Recovery"
+
+#define PARAM_CRAWL_MODE "Crawl"
+#define PARAM_SEND_CRAWL "Send Crawl"
 
 #define PARAM_CONTROLLER_MODE "Transition to"
 #define PARAM_SEND_CONTROLLER "Send Controller"
 
 typedef enum _recovery_mode_t {
-    MODE_PROJECTILE_READY, MODE_PROJECTILE, 
-    MODE_UP_TO_DOWN, MODE_FLAT_OUT, 
-    MODE_KNEE_SET, MODE_KNEE_RISE, 
-    MODE_KNEE_FINISH, MODE_CRAWL, 
-    MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE, 
-    MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE,
-    MODE_DOWN_TO_UP
+    MODE_PROJECTILE_READY, MODE_PROJECTILE,   // 0 1
+    MODE_UP_TO_DOWN, MODE_FLAT_OUT,           // 1 2
+    MODE_KNEE_SET, MODE_KNEE_RISE,            // 3 4
+    MODE_KNEE_FINISH,                         // 5 6
+    MODE_CRAWL_SET, MODE_CRAWL,               // 7 8
+    MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE,   // 9 10
+    MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE, // 11 12
+    MODE_DOWN_TO_UP                           // 13
 } recovery_mode_t;
 
 typedef enum _control_mode_t {
@@ -65,6 +70,7 @@ typedef struct _RendererRecovery {
   BotGtkParamWidget *pw;
   
   int mode;
+  int crawl;
   int controller;
 }RendererRecovery;
 
@@ -110,8 +116,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   RendererRecovery *self = (RendererRecovery*) user;
   
   self->mode = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_RECOVERY_MODE);
-  std::cout << "Recovery Mode: "<<self->mode <<"\n";
+  self->crawl = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CRAWL_MODE);
   self->controller = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CONTROLLER_MODE);
+
+  std::cout << "Recovery Mode: "<<self->mode <<"\n";
+  std::cout << "Crawl Mode: "<<self->crawl <<"\n";
   std::cout << "Controller Mode: "<<self->controller <<" [zero paired with recovery button]\n";
 
   if(!strcmp(name, PARAM_SEND_RECOVERY)) {
@@ -119,6 +128,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     std::cout << "Recovery Mode: "<<self->mode <<"\n";
     drc_recovery_t msg;
     msg.mode = (int8_t) self->mode;
+    msg.controller = (int8_t) 0; // Controller zero means csv-control
+    msg.utime = bot_timestamp_now();
+    drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
+  }
+  if(!strcmp(name, PARAM_SEND_CRAWL)) {
+    fprintf(stderr,"\nSending Crawl\n");
+    std::cout << "Crawl Mode: "<<self->crawl <<"\n";
+    drc_recovery_t msg;
+    msg.mode = (int8_t) self->crawl;
     msg.controller = (int8_t) 0; // Controller zero means csv-control
     msg.utime = bot_timestamp_now();
     drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
@@ -173,14 +191,18 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Proj. Ready", MODE_PROJECTILE_READY,
-				 "Projectile", MODE_PROJECTILE, 
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, 
+                                "Proj. Ready", MODE_PROJECTILE_READY, "Projectile", MODE_PROJECTILE, 
                                 "Face Up-to-Down", MODE_UP_TO_DOWN, "Flat Out", MODE_FLAT_OUT, "Knee Set", MODE_KNEE_SET,
-                                "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH,  "Crawl", MODE_CRAWL, 
-                                "Crawl Left", MODE_CRAWL_LEFT, "Crawl Left Large", MODE_CRAWL_LEFT_LARGE, 
-                                "Crawl Right", MODE_CRAWL_RIGHT, "Crawl Right Large", MODE_CRAWL_RIGHT_LARGE,
-                                "Face Down-to-Up", MODE_DOWN_TO_UP, NULL);
+                                "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH, "Face Down-to-Up", MODE_DOWN_TO_UP, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_RECOVERY, NULL);
+
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_CRAWL_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, 
+                                "Crawl Set", MODE_CRAWL_SET,  "Crawl", MODE_CRAWL, 
+                                "Crawl Left", MODE_CRAWL_LEFT, "Crawl Left Large", MODE_CRAWL_LEFT_LARGE, 
+                                "Crawl Right", MODE_CRAWL_RIGHT, "Crawl Right Large", MODE_CRAWL_RIGHT_LARGE, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_CRAWL, NULL);
+
 
   bot_gtk_param_widget_add_enum(self->pw, PARAM_CONTROLLER_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Unknown [Not Sent]", CONTROL_UKNOWN,
                                  "Standing", CONTROL_STANDING, 
