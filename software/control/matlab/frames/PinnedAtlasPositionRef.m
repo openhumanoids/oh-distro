@@ -4,17 +4,21 @@ classdef PinnedAtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
     function obj=PinnedAtlasPositionRef(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
-      input_names = r.getInputFrame().coordinates;
-      input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
+      obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',r.getNumInputs(),'x');
+      obj = obj@Singleton();
+      if isempty(obj.lcmcoder)
+        input_names = r.getInputFrame().coordinates;
+        input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
       
-      [Kp,Kd,Ki] = getPIDGains(r,'pinned2');
+        [Kp,Kd,Ki] = getPIDGains(r,'pinned2');
 %       [Kp,Kd] = getPDGains(r,'gazebo');
       
-      coder = JointCommandCoderWIntegralGains('atlas',input_names,diag(Kp),diag(Kd),diag(Ki));
-      
-      obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',r.getNumInputs(),'x',JLCMCoder(coder));
-      obj.setCoordinateNames(input_names);
-      obj.setDefaultChannel('JOINT_COMMANDS');
+        coder = JointCommandCoderWIntegralGains('atlas',input_names,diag(Kp),diag(Kd),diag(Ki));
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+        
+        obj.setCoordinateNames(input_names);
+        obj.setDefaultChannel('JOINT_COMMANDS');
+      end
     end
   end
 end

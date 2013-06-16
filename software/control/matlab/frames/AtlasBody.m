@@ -5,12 +5,17 @@ classdef AtlasBody < LCMCoordinateFrameWCoder & Singleton
     function obj=AtlasBody(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
-      link_names =  r.getLinkNames();
-      coder = RobotBodyCoder('atlas', link_names);
-      
-      obj = obj@LCMCoordinateFrameWCoder('SupportBodies',r.getNumBodies(),'x',JLCMCoder(coder));
-      obj.setCoordinateNames(link_names);
-      obj.setDefaultChannel('ACTIVE_SUPPORTS');
+      obj = obj@LCMCoordinateFrameWCoder('SupportBodies',r.getNumBodies(),'x');
+      obj = obj@Singleton();
+      if isempty(obj.lcmcoder)
+        link_names =  r.getLinkNames();
+
+        coder = RobotBodyCoder('atlas', link_names);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+        
+        obj.setCoordinateNames(link_names);
+        obj.setDefaultChannel('ACTIVE_SUPPORTS');
+      end
     end
   end
 end

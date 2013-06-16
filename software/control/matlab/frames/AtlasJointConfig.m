@@ -18,11 +18,14 @@ classdef AtlasJointConfig < LCMCoordinateFrameWCoder & Singleton
       end
       
       joint_names = r.getStateFrame.coordinates(jrange); 
-      coder = JointAnglesCoder('atlas',joint_names);
-      obj = obj@LCMCoordinateFrameWCoder('NominalPositionGoal',length(jrange),'x',JLCMCoder(coder));
-      obj.setCoordinateNames(joint_names);
-      obj.setDefaultChannel('NOMINAL_POS_GOAL');
-      
+      obj = obj@LCMCoordinateFrameWCoder('NominalPositionGoal',length(jrange),'x');
+      obj = obj@Singleton();
+      if isempty(obj.lcmcoder)
+        coder = JointAnglesCoder('atlas',joint_names);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+        obj.setCoordinateNames(joint_names);
+        obj.setDefaultChannel('NOMINAL_POS_GOAL');
+      end
     end
   end
 end

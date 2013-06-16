@@ -5,11 +5,17 @@ classdef AtlasCoordinates < LCMCoordinateFrameWCoder & Singleton
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
       nq = r.getNumDOF();
-      joint_names = r.getStateFrame.coordinates(1:nq); 
-      coder = JointAnglesCoder('atlas',joint_names);
-      obj = obj@LCMCoordinateFrameWCoder('AtlasCoordinates',nq,'x',JLCMCoder(coder));
-      obj.setCoordinateNames(joint_names);
-      obj.setDefaultChannel('DESIRED_ACCELERATION');
+      obj = obj@LCMCoordinateFrameWCoder('AtlasCoordinates',nq,'x'); 
+      obj = obj@Singleton();
+      if isempty(obj.lcmcoder)
+        joint_names = r.getStateFrame.coordinates(1:nq); 
+
+        coder = JointAnglesCoder('atlas',joint_names);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+
+        obj.setCoordinateNames(joint_names);
+        obj.setDefaultChannel('DESIRED_ACCELERATION');
+      end
     end
   end
 end
