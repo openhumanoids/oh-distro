@@ -539,11 +539,11 @@ while (1)
           'support_times',support_times,'supports',{support_states},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
           'link_constraints',[],'zmptraj',[],'qnom',[]);
 
-        if(action_options.debug)
-          uisave('data','data/aa_plan.mat');
-        else
-          robot_plan_publisher_viewer.publish(0,data);
-        end
+        %if(action_options.debug)
+          %uisave('data','data/aa_plan.mat');
+        %else
+          %robot_plan_publisher_viewer.publish(0,data);
+        %end
 
         % Drake gui playback
         if(action_options.drake_vis)
@@ -573,11 +573,9 @@ while (1)
                 q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
               end
               ref_link_str = action_options.ref_link_str;
-              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
-                'foot_support_qs','ref_link_str'},'data/aa_plan.mat');
+              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','ref_link_str','support_times','supports'},'data/aa_plan.mat');
             else
-            uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_vert_pos', ...
-              'foot_support_qs'},'data/aa_plan.mat');
+              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_times','supports'},'data/aa_plan.mat');
             end
           end
         end
