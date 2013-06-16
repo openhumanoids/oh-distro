@@ -45,8 +45,8 @@ else
 MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/HeightMapWrapper.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) \
-	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT)
+#	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
 
 endif
 
