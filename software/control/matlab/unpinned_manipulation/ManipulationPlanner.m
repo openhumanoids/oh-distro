@@ -379,7 +379,7 @@ classdef ManipulationPlanner < handle
             obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
             if(useIK_state == 1)
-              q_desired(1:6) = q0(1:6);
+              q_desired([1 2 6]) = q0([1 2 6]);
               kinsol_desired = doKinematics(obj.r,q_desired);
               rhand_desired = forwardKin(obj.r,kinsol_desired,obj.r_hand_body,[0;0;0],2);
               lhand_desired = forwardKin(obj.r,kinsol_desired,obj.l_hand_body,[0;0;0],2);
@@ -387,12 +387,17 @@ classdef ManipulationPlanner < handle
               kinsol0 = doKinematics(obj.r,q0);
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
+              ikoptions = struct();
+              [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
+              ikoptions.jointLimitMin([3,4,5]) = q_desired([3,4,5]);
+              ikoptions.jointLimitMax([3,4,5]) = q_desired([3,4,5]);
               ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0,...
                 obj.r_hand_body,[0;0;0],rhand_desired,obj.l_hand_body,[0;0;0],lhand_desired,...
                 obj.head_body,[0;0;0],head_desired};
               cost = diag(obj.getCostVector);
               cost = cost(1:nq,1:nq);
-              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},struct('Q',cost));
+              ikoptions.Q = cost;
+              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
               if(info>10)
                 fprintf('IK info = %d in posture plan optimization\n',info);
               end
@@ -1969,6 +1974,7 @@ classdef ManipulationPlanner < handle
                 obj.q_breaks = q_breaks;
                 obj.qtraj_guess = qtraj_guess; % cache
               end
+              s_breaks = obj.s_breaks;
             end
             
             
@@ -2189,11 +2195,11 @@ classdef ManipulationPlanner < handle
             mate_axis = mate_axis*(mate_axis'*[0;1;0]>0); % Make sure that the mate axis goes into the wall
           end
           mate_axis = mate_axis/norm(mate_axis);
-          mate_axis_angle = acos(mate_axis'*[0;1;0]);
-          mate_rotmat = quat2rotmat(axis2quat([cross(mate_axis,[0;1;0]);mate_axis_angle]));
-          local_x_axis = mate_rotmat*[1;0;0];
-          local_y_axis = mate_rotmat*[0;1;0];
-          local_z_axis = mate_rotmat*[0;0;1];
+%           mate_axis_angle = acos(mate_axis'*[0;1;0]);
+%           mate_rotmat = quat2rotmat(axis2quat([cross(mate_axis,[0;1;0]);mate_axis_angle]));
+%           local_x_axis = mate_rotmat*[1;0;0];
+%           local_y_axis = mate_rotmat*[0;1;0];
+%           local_z_axis = mate_rotmat*[0;0;1];
           rpalm_pts = [[0;0;0] [0;-0.1;0] aff2hand_offset];
           lpalm_pts = [[0;0;0] [0;0.1;0] aff2hand_offset];
           rfoot_pts = obj.r_foot_body.getContactPoints();
@@ -2233,9 +2239,9 @@ classdef ManipulationPlanner < handle
           if(ee_rhand)
             rhand_pt = [rpalm_pts(:,3) rpalm_pts(:,4)];
             lhand_pt = lpalm_pts(:,2);
-            n_spiral_sample = 20;
+            n_spiral_sample = 10;
             q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
-            rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr+0.01*mate_axis,mate_axis,n_spiral_sample,struct('type','Archimedean'));
+            rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr+0.02*mate_axis,mate_axis,n_spiral_sample,struct('type','Archimedean'));
             for sample = 1:n_spiral_sample
               rhand_const.max = [rpalm_aff_curr(1:3)+0.02*mate_axis rpalm_aff_arrow_goal(:,sample)+0.01*ones(3,1)];
               rhand_const.min = [rpalm_aff_curr(1:3)+0.006*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];

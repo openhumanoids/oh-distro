@@ -3,7 +3,7 @@ if(~isfield(options,'type'))
   options.type = 'Archimedean';
 end
 
-n_rotation = 2;
+n_rotation = 1.5;
 if(strcmp(options.type,'Archimedean'))
   theta = linspace(0,n_rotation*2*pi,n_sample);
   rotation_vel = 0.002;
