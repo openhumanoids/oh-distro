@@ -38,6 +38,7 @@ classdef CrawlingController < DRCController
       obj = setTimedTransition(obj,inf,name,false);
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
       obj = addLCMTransition(obj,'STOP_CRAWLING',drc.plan_control_t(),'crawling');  
+      obj = addLCMTransition(obj,'RECOVERY_CMD',drc.recovery_t(),'dummy'); % for recovery
 
     end
         
