@@ -33,25 +33,37 @@
 
 #define RENDERER_NAME "Recovery"
 
-#define PARAM_RECOVERY_MODE "Mode"
-#define PARAM_SEND_RECOVERY "Send Recovery"
+#define PARAM_RECOVERY_MODE "Recovery"
+#define PARAM_RECOVERY_SEND "Send Recovery"
+
+#define PARAM_RISE_MODE "Rise"
+#define PARAM_RISE_SEND "Send Rise"
+
 
 #define PARAM_CRAWL_MODE "Crawl"
-#define PARAM_SEND_CRAWL "Send Crawl"
+#define PARAM_CRAWL_SEND "Send Crawl"
 
-#define PARAM_CONTROLLER_MODE "Transition to"
-#define PARAM_SEND_CONTROLLER "Send Controller"
+#define PARAM_SEND_STANDING "Switch to Standing"
+#define PARAM_SEND_BRACING "Switch to Bracing"
 
 typedef enum _recovery_mode_t {
-    MODE_PROJECTILE_READY, MODE_PROJECTILE,   // 0 1
-    MODE_UP_TO_DOWN, MODE_FLAT_OUT,           // 1 2
-    MODE_KNEE_SET, MODE_KNEE_RISE,            // 3 4
-    MODE_KNEE_FINISH,                         // 5 6
-    MODE_CRAWL_SET, MODE_CRAWL,               // 7 8
-    MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE,   // 9 10
-    MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE, // 11 12
-    MODE_DOWN_TO_UP                           // 13
-} recovery_mode_t;
+    MODE_PROJECTILE_READY, MODE_PROJECTILE_LEAP,      // 0 1
+    MODE_FACEUP_TO_FACEDOWN, MODE_FACEDOWN_TO_FACEUP, // 2 3
+    MODE_FLAT_OUT, MODE_FLAT_OUT_SLOW,                // 4 5
+    MODE_FLAT_OUT_KNEES_OUT, MODE_FACEUP_TO_FACEDOWN_NEW // 6 7
+}recovery_mode_t;
+
+typedef enum _rise_mode_t {
+    MODE_KNEE_RISE_SET, MODE_KNEE_RISE,               // 10 11
+    MODE_KNEE_FINISH                                 // 12
+} rise_mode_t;
+
+typedef enum _crawl_mode_t {
+    MODE_CRAWL_SET, MODE_CRAWL,                       // 20 21
+    MODE_CRAWL_LEFT, MODE_CRAWL_LEFT_LARGE,           // 22 23
+    MODE_CRAWL_RIGHT, MODE_CRAWL_RIGHT_LARGE         // 24 25
+} crawl_mode_t;
+
 
 typedef enum _control_mode_t {
     CONTROL_UKNOWN, CONTROL_STANDING, 
@@ -71,7 +83,7 @@ typedef struct _RendererRecovery {
   
   int mode;
   int crawl;
-  int controller;
+  int rise;
 }RendererRecovery;
 
 static void
@@ -116,14 +128,14 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   RendererRecovery *self = (RendererRecovery*) user;
   
   self->mode = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_RECOVERY_MODE);
-  self->crawl = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CRAWL_MODE);
-  self->controller = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CONTROLLER_MODE);
+  self->rise = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_RISE_MODE) + 10;
+  self->crawl = (int) bot_gtk_param_widget_get_enum(self->pw, PARAM_CRAWL_MODE) + 20;
 
   std::cout << "Recovery Mode: "<<self->mode <<"\n";
   std::cout << "Crawl Mode: "<<self->crawl <<"\n";
-  std::cout << "Controller Mode: "<<self->controller <<" [zero paired with recovery button]\n";
+//  std::cout << "Controller Mode: "<<self->controller <<" [zero paired with recovery button]\n";
 
-  if(!strcmp(name, PARAM_SEND_RECOVERY)) {
+  if(!strcmp(name, PARAM_RECOVERY_SEND)) {
     fprintf(stderr,"\nSending Recovery\n");
     std::cout << "Recovery Mode: "<<self->mode <<"\n";
     drc_recovery_t msg;
@@ -132,7 +144,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.utime = bot_timestamp_now();
     drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
   }
-  if(!strcmp(name, PARAM_SEND_CRAWL)) {
+  if(!strcmp(name, PARAM_RISE_SEND)) {
+    fprintf(stderr,"\nSending Squat\n");
+    std::cout << "Squat Mode: "<<self->rise <<"\n";
+    drc_recovery_t msg;
+    msg.mode = (int8_t) self->rise;
+    msg.controller = (int8_t) 0; // Controller zero means csv-control
+    msg.utime = bot_timestamp_now();
+    drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
+  }
+  if(!strcmp(name, PARAM_CRAWL_SEND)) {
     fprintf(stderr,"\nSending Crawl\n");
     std::cout << "Crawl Mode: "<<self->crawl <<"\n";
     drc_recovery_t msg;
@@ -141,19 +162,20 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.utime = bot_timestamp_now();
     drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
   }
-  if(!strcmp(name, PARAM_SEND_CONTROLLER)) {
-    if (self->controller==0){
-      fprintf(stderr,"\nRefusing to send unknown controller\n");
-      return;
-    }
-    
-    fprintf(stderr,"\nSending Controller Transition\n");
-    std::cout << "Controller Mode: "<<self->controller <<"\n";
+  
+  if(!strcmp(name, PARAM_SEND_STANDING)) {
+    fprintf(stderr,"\nSending Standing Command\n");
     drc_recovery_t msg;
     msg.mode = (int8_t) -1; // ie none - which means - no csv file referenced
-    msg.controller = (int8_t) self->controller;
+    msg.controller = (int8_t) 1;
     msg.utime = bot_timestamp_now();
-    drc_recovery_t_publish(self->lc, "RECOVERY_CMD", &msg);
+    drc_recovery_t_publish(self->lc, "START_STANDING", &msg);
+  } 
+  if(!strcmp(name, PARAM_SEND_BRACING)) {
+    fprintf(stderr,"\nSending Brace Command\n");
+    drc_utime_t msg;
+    msg.utime = bot_timestamp_now();
+    drc_utime_t_publish(self->lc, "BRACE_FOR_FALL", &msg);
   } 
   
 }
@@ -191,24 +213,35 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, 
-                                "Proj. Ready", MODE_PROJECTILE_READY, "Projectile", MODE_PROJECTILE, 
-                                "Face Up-to-Down", MODE_UP_TO_DOWN, "Flat Out", MODE_FLAT_OUT, "Knee Set", MODE_KNEE_SET,
-                                "Knee Rise", MODE_KNEE_RISE, "Finish", MODE_KNEE_FINISH, "Face Down-to-Up", MODE_DOWN_TO_UP, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_RECOVERY, NULL);
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_RECOVERY_MODE, BOT_GTK_PARAM_WIDGET_MENU, MODE_PROJECTILE_READY, 
+                                "Proj. Ready", MODE_PROJECTILE_READY, "Projectile", MODE_PROJECTILE_LEAP, 
+                                "Face Up-to-Down", MODE_FACEUP_TO_FACEDOWN, "Face Down-to-Up", MODE_FACEDOWN_TO_FACEUP,  
+                                "Flat Out", MODE_FLAT_OUT, "Flat Out Slow", MODE_FLAT_OUT_SLOW,                                 
+                                "Flat Out Knees Out", MODE_FLAT_OUT_KNEES_OUT, "Face U2D New", MODE_FACEUP_TO_FACEDOWN_NEW,NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_RECOVERY_SEND, NULL);
 
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_CRAWL_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, 
+  bot_gtk_param_widget_add_separator (self->pw, "");
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_RISE_MODE, BOT_GTK_PARAM_WIDGET_MENU, MODE_KNEE_RISE_SET, 
+                                "Knee Set", MODE_KNEE_RISE_SET,  "Knee Rise", MODE_KNEE_RISE, 
+                                "Knee Finish", MODE_KNEE_FINISH, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_RISE_SEND, NULL);
+
+  bot_gtk_param_widget_add_separator (self->pw, "");
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_CRAWL_MODE, BOT_GTK_PARAM_WIDGET_MENU, MODE_CRAWL_SET, 
                                 "Crawl Set", MODE_CRAWL_SET,  "Crawl", MODE_CRAWL, 
                                 "Crawl Left", MODE_CRAWL_LEFT, "Crawl Left Large", MODE_CRAWL_LEFT_LARGE, 
                                 "Crawl Right", MODE_CRAWL_RIGHT, "Crawl Right Large", MODE_CRAWL_RIGHT_LARGE, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_CRAWL, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_CRAWL_SEND, NULL);
 
 
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_CONTROLLER_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Unknown [Not Sent]", CONTROL_UKNOWN,
+  bot_gtk_param_widget_add_separator (self->pw, "");
+/*  bot_gtk_param_widget_add_enum(self->pw, PARAM_CONTROLLER_MODE, BOT_GTK_PARAM_WIDGET_MENU, 0, "Unknown [Not Sent]", CONTROL_UKNOWN,
                                  "Standing", CONTROL_STANDING, 
                                 "Walking", CONTROL_WALKING, "Harnessed", CONTROL_HARNESSED, "Quasistatic", CONTROL_QUASISTATIC,
-                                "Bracing", CONTROL_BRACING, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_CONTROLLER, NULL);
+                                "Bracing", CONTROL_BRACING, NULL); */
+  
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_STANDING, NULL); 
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_BRACING, NULL); 
   
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);

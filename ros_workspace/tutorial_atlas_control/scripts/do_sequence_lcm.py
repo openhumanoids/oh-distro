@@ -21,11 +21,20 @@ from drc.recovery_t import recovery_t
 from drc.system_status_t import system_status_t
 from drc.frequency_t import frequency_t
 
-filenames = ['projectial_ingress_ready','projectial_ingress','faceup_to_facedown_wriggle','flat_out', 
-             'knee_rise_set','knee_rise','knee_rise_finish',
-             'jaguar_crawl_set','jaguar_crawl','jaguar_crawl_left',
-             'jaguar_crawl_left_large','jaguar_crawl_right','jaguar_crawl_right_large',
-             'facedown_to_faceup','flat_out_slow','flat_out_very_slow','flat_out_knees_out']
+filenames = ['projectial_ingress_ready', 'projectial_ingress',  #0 1
+             'faceup_to_facedown_wriggle', 'facedown_to_faceup',         #2 3
+             'flat_out', 'flat_out_slow', # 4 5
+             'flat_out_knees_out','faceup_to_facedown',    #67
+             'nothing','nothing', #89
+             'knee_rise_set','knee_rise', #10 11
+             'knee_rise_finish','nothing',   # 12 13
+             'nothing', 'nothing', # 14 15
+             'nothing', 'nothing', # 16 17
+             'nothing', 'nothing', # 18 19
+             'jaguar_crawl_set','jaguar_crawl', # 20 21
+             'jaguar_crawl_left','jaguar_crawl_left_large', # 22 23
+             'jaguar_crawl_right','jaguar_crawl_right_large'] # 24 25
+
 
 real_time_percent_ma = 50
 
@@ -55,6 +64,10 @@ def on_recovery(channel, data):
 
   print "Reading [%d]" %(mode)
   filename = filenames[mode] 
+  if (filename == 'nothing'):
+    print "ignoring nothing string"
+    return
+  
   print "Doing [%d: %s]" %(mode, filename)
   msg.value = "start: " + filename
   lc.publish("SYSTEM_STATUS", msg.encode())
