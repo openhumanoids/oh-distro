@@ -348,7 +348,7 @@ while (1)
       if(key_time_IK_failed)
         error('IK at key times was not successful! Publishing key time results.');
       else
-        key = input('Enter ''y''to refine trajectory. Press any other key to listen for new action sequence.');
+        key = input('Enter ''y''to refine trajectory. Press any other key to listen for new action sequence.','s');
         if ~strcmp(key,'y')
           continue;
         end
@@ -514,7 +514,7 @@ while (1)
         publish(robot_plan_publisher, t_qs_breaks, ...
           [q_qs_plan; 0*q_qs_plan]);
         
-        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.');
+        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.','s');
         if ~strcmp(key,'y')
           continue;
         end
@@ -573,9 +573,9 @@ while (1)
                 q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
               end
               ref_link_str = action_options.ref_link_str;
-              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','ref_link_str','support_times','supports'},'data/aa_plan.mat');
+              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','ref_link_str','support_times','support_states'},'data/aa_plan.mat');
             else
-              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_times','supports'},'data/aa_plan.mat');
+              uisave({'t_qs_breaks','q_qs_plan','com_qs_plan','support_times','support_states'},'data/aa_plan.mat');
             end
           end
         end
