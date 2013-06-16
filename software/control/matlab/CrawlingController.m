@@ -2,6 +2,10 @@ classdef CrawlingController < DRCController
     
   properties (SetAccess=protected,GetAccess=protected)
     robot;
+    r_foot_idx;
+    l_foot_idx;
+    r_hand_idx;
+    l_hand_idx;
   end
     
   methods
@@ -14,21 +18,27 @@ classdef CrawlingController < DRCController
       r = setTerrain(r,RigidBodyTerrain);
       
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
-        'qdtraj',zeros(getNumDOF(r),1),...
-        'qddtraj',zeros(getNumDOF(r),1),...
-        'support_times',[],...
-        'supports',[],...
-        'ignore_terrain',true,...
-        't_offset',0));
+          'qdtraj',zeros(getNumDOF(r),1),...
+          'qddtraj',zeros(getNumDOF(r),1),...
+          'support_times',[],...
+          'supports',[],...
+          'ignore_terrain',true,...
+          't_offset',0));
       
       sys = PosVelFeedForwardBlock(r,ctrl_data,options);
       obj = obj@DRCController(name,sys,AtlasState(r));
       obj.robot = r;
       obj.controller_data = ctrl_data;
+    
+      obj.r_foot_idx = findLinkInd(r,'r_foot');
+      obj.l_foot_idx = findLinkInd(r,'l_foot');
+      obj.r_hand_idx = findLinkInd(r,'r_hand');
+      obj.l_hand_idx = findLinkInd(r,'l_hand');
       
       obj = setTimedTransition(obj,inf,name,false);
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
       obj = addLCMTransition(obj,'STOP_CRAWLING',drc.plan_control_t(),'crawling');  
+
     end
         
     function msg = status_message(obj,t_sim,t_ctrl)
@@ -86,7 +96,7 @@ classdef CrawlingController < DRCController
         obj.controller_data.setField('qdtraj',qdtraj);
         obj.controller_data.setField('qddtraj',qddtraj);
 
-        t_offset = msg_data.t_offset
+        t_offset = msg_data.t_offset;
         obj.controller_data.setField('t_offset',t_offset);
 
         delete(tmp_fname);
@@ -98,6 +108,20 @@ classdef CrawlingController < DRCController
         
 
       elseif isfield(data,'STOP_CRAWLING')
+        
+        r = obj.robot;
+
+        x0 = data.AtlasState;
+        q0 = x0(1:getNumDOF(r));
+
+        obj.controller_data.setField('qtraj',ConstantTrajectory(q0));
+        obj.controller_data.setField('qdtraj',ConstantTrajectory(0*q0));
+        obj.controller_data.setField('qddtraj',ConstantTrajectory(0*q0));
+        obj.controller_data.setField('t_offset',0);
+        obj.controller_data.setField('support_times',0);
+        bodies = [obj.r_foot_idx obj.l_foot_idx obj.r_hand_idx obj.l_hand_idx];
+        obj.controller_data.setField('supports',SupportState(r,bodies));
+        
         obj = setDuration(obj,inf,false); % set the controller timeout
 
       else
