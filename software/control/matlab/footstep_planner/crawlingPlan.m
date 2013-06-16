@@ -82,8 +82,10 @@ end
   cost.base_x = 0;
   cost.base_y = 0;
   cost.base_z = 0;
-  cost.base_roll = 100;
-  cost.base_pitch = 10;
+  %cost.base_roll = 100;
+  %cost.base_pitch = 10;
+  cost.base_roll = 0;
+  cost.base_pitch = 0;
   cost.base_yaw = 0;
   cost.back_lbz = 10;
   cost.back_mby = 100;
@@ -478,9 +480,9 @@ elseif (options.gait ==2) % trot
   kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj,comtraj.tspan,'crawling_COM_constraint');
   crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
-  comtraj_initial = PPTrajectory(foh([0, t_start],[com_initial,com_start]));
-  kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
-  crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
+  %comtraj_initial = PPTrajectory(foh([0, t_start],[com_initial,com_start]));
+  %kc = ActionKinematicConstraint(r,0,[0;0;0],comtraj_initial,comtraj_initial.tspan,'transient_COM_constraint');
+  %crawl_sequence = addKinematicConstraint(crawl_sequence,kc);
 
   % COM constraint
   kc = ActionKinematicConstraint(r,pelvis_ind,[0;0;0],ConstantTrajectory([NaN;NaN;com_start(3)]),comtraj.tspan,'crawling_pelvis_constraint');
@@ -510,28 +512,33 @@ elseif (options.gait ==2) % trot
   for i = 2:nt
     if t(i) < t_start
       i_start = i+1;
+      q(:,i) = x0(1:nq);
     else
       ikargs = getIKArguments(crawl_sequence,t(i));
       q(:,i) = inverseKin(r,q0,ikargs{:},options);
       %q(:,i) = approximateIK(r,q0,ikargs{:},options);
-      q0 = q(:,i);
     end
+    q0 = q(:,i);
     if options.draw
       %v.draw(t(i),[q(:,i);0*q(:,i)]);
       %AtlasCommandPublisher(mex_ptr,'ATLAS_COMMAND',0,q(actuated,i));
       %pause(2);
     end
   end
-  qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),q(:,i_start+1)]));
-  for i = 2:i_start-1
-      %ikargs = getIKArguments(crawl_sequence,t(i));
-      %options.q_nom = eval(qtraj_initial,t(i));
-      %q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
-      %q(:,i) = approximateIK(r,q(:,i-1),ikargs{:},options);
-      q(:,i) = eval(qtraj_initial,t(i));
-  end
+  %qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),[q(1:3,i_start+1);mod(q(4:6,i_start+1),2*pi);q(7:end,i_start+1)]]));
+  %for i = 2:i_start-1
+      %%ikargs = getIKArguments(crawl_sequence,t(i));
+      %%options.q_nom = eval(qtraj_initial,t(i));
+      %%q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
+      %%q(:,i) = approximateIK(r,q(:,i-1),ikargs{:},options);
+      %q(:,i) = eval(qtraj_initial,t(i));
+  %end
   qdtraj = PPTrajectory(spline(t,q));
-  t_offset = t_start;
+  if options.direction == 0
+    t_offset = t_start+stride_duration;
+  else
+    t_offset = t_start;
+  end
   %for step=1:2:options.num_steps
     %for swing_legs= [[1;3],[2;4]]
       %stance_legs = 1:4; stance_legs(swing_legs)=[];

@@ -50,7 +50,7 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       qp_options.lcm_foot_contacts = false;
       qp_options.full_body_opt = true;
       qp_options.debug = false;
-      qp_options.use_mex = 2;
+      qp_options.use_mex = options.use_mex;
       obj.robot = r;
 %      if (isfield(options,'ignore_states'))
 %        % specifies what dimensions of the state we should ignore

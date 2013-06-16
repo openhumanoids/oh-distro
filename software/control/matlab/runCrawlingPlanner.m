@@ -9,6 +9,8 @@ if ~isfield(options,'draw'); options.draw = false; end
 if ~isfield(options,'faceup'); options.faceup = true; end
 if ~isfield(options,'delta_yaw'); options.delta_yaw = 10*pi/180; end
 if ~isfield(options,'distance_threshold'); options.distance_threshold = 1; end
+if ~isfield(options,'pre_crawl_tolerance'); options.pre_crawl_tolerance = 1.5; end %TODO: Tune this
+if ~isfield(options,'pre_crawl_duration'); options.pre_crawl_duration = 10; end %TODO: Tune this
 
 
 if strcmp(location, 'base')
@@ -29,8 +31,8 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 
 r = removeCollisionGroupsExcept(r,{'toe','heel','knuckle'});
 
-r = setTerrain(r,DRCTerrainMap(false,struct('name','Crawl Plan','status_code',status_code,'fill', true,'normal_radius',2)));
-%r = setTerrain(r,DRCFlatTerrainMap());
+%r = setTerrain(r,DRCTerrainMap(false,struct('name','Crawl Plan','status_code',status_code,'fill', true,'normal_radius',2)));
+r = setTerrain(r,DRCFlatTerrainMap());
 r = compile(r);
 
 state_frame = getStateFrame(r);
@@ -59,7 +61,7 @@ while true
     [x,~] = getNextMessage(state_frame,10);
     if (~isempty(x))
       wRb = rpy2rotmat(x(4:6));
-      if wRb(:,1)'*[0;0;1] > 0
+      if wRb(:,1)'*[0;0;1] > 0 % faceup
         foot_spec(1).body_ind = findLinkInd(r,'l_hand');
         foot_spec(2).body_ind = findLinkInd(r,'r_hand');
         foot_spec(3).body_ind = findLinkInd(r,'r_foot');
@@ -71,7 +73,7 @@ while true
         foot_spec(4).contact_pt_ind = 2;
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/suppine_crawl.mat'));
         qstar = d.x0(1:nq);
-        options.x_nom = d.x0;
+        options.x_nom = d.x0; % facedown
       else
         foot_spec(1).body_ind = findLinkInd(r,'r_hand');
         foot_spec(2).body_ind = findLinkInd(r,'l_hand');
@@ -114,54 +116,42 @@ while true
     options.max_num_steps = goal.max_num_steps;
     options.min_num_steps = goal.min_num_steps;
     target_xy = [goal.goal_pos.translation.x;goal.goal_pos.translation.y];
+    target_rpy = quat2rpy([goal.goal_pos.rotation.x;goal.goal_pos.rotation.y;goal.goal_pos.rotation.z;goal.goal_pos.rotation.w])
 
-    [turn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
-    options.gait = ZMP_TROT;
+    % DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%
+    norm(x0(7:nq) - options.x_nom(7:nq))
+    % END DEBUG%%%%%%%%%%%%%%%%%%%%%%
+    
+    if norm(x0(7:nq) - options.x_nom(7:nq)) < options.pre_crawl_tolerance
+      [turn, forwardSegment] = turnThenCrawl(target_xy,target_rpy(1),x0,options);
+      options.gait = ZMP_TROT;
 
-    if forwardSegment.num_steps*options.step_length/4 < options.distance_threshold
-      % Plan first turn
-      options.direction = turn.direction;
-      options.num_steps = turn.num_steps;
-      display('Getting qtraj ...');
-      [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+      if norm(target_xy - x0(1:2)) < options.distance_threshold
+        % Plan first turn
+        options.direction = turn.direction;
+        options.num_steps = turn.num_steps;
+        display('Getting qtraj ...');
+        [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+        t_offset = -1;
+      else
+        % Plan forward crawling
+        options.direction = forwardSegment.direction;
+        options.num_steps = forwardSegment.num_steps;
+        [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = ...
+          crawlingPlan(r,x0,body_spec,foot_spec,options);
+      end
+    else % transition to pre_crawl state
+      msg =['Crawl Plan (', location, '): transitioning to crawling posture']; disp(msg); send_status(status_code,0,0,msg);
+      qtraj = PPTrajectory(foh([0, options.pre_crawl_duration],[x0(1:nq), [x0(1:6); options.x_nom(7:nq)]]));
+      support_times = 0;
+      supports = SupportState(r,[], {},[]);
+      link_constraints = [];
       t_offset = -1;
-    else
-      % Plan forward crawling
-      options.direction = forwardSegment.direction;
-      options.num_steps = forwardSegment.num_steps;
-      [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = ...
-        crawlingPlan(r,x0,body_spec,foot_spec,options);
     end
 
-    %support_times_full = [support_times{1}, support_times{2} + qtraj{1}.tspan(2)];
-    %supports_full = [supports{:}];
-
-    %link_constraints_full = [link_constraints{1},link_constraints{2}];
-    %s1_full = V{1}.s1;
-    %s1_full = V{1}.s1.append(V{2}.s1.shiftTime(V{1}.s1.tspan(2)));
-    %s1_full = s1_full.append(V{3}.s1.shiftTime(s1_full.tspan(2)));
-
-    %s2_full = V{1}.s2;
-    %s2_full = V{1}.s2.append(V{2}.s2.shiftTime(V{1}.s2.tspan(2)));
-    %s2_full = s2_full.append(V{3}.s2.shiftTime(s2_full.tspan(2)));
-
-    %comtraj_full = comtraj{1};
-    %comtraj_full = comtraj{1}.append(comtraj{2}.shiftTime(comtraj{1}.tspan(2)));
-    %comtraj_full = comtraj_full.append(comtraj{3}.shiftTime(comtraj_full.tspan(2)));
-
-    %zmptraj_full = zmptraj{1};
-    %zmptraj_full = zmptraj{1}.append(zmptraj{2}.shiftTime(zmptraj{1}.tspan(2)));
-    %zmptraj_full = zmptraj_full.append(zmptraj{3}.shiftTime(zmptraj_full.tspan(2)));
-
-    % Assemble full plan
-    %qtraj_full = qtraj{1};
-    %qtraj_full = qtraj{1}.append(qtraj{2}.shiftTime(qtraj{1}.tspan(2)));
-    %qtraj_full = qtraj_full.append(qtraj{3}.shiftTime(qtraj_full.tspan(2)));
-    %qtraj_full = cell2mat(qtraj);
-    %xtraj = [qtraj_full; 0*qtraj_full];
     xtraj = [qtraj; 0*qtraj];
     %xtraj = x0;
-    ts = 0:0.1:support_times(end)-eps; %TODO: Get real ts
+    ts = 0:0.1:qtraj.tspan(2)-eps; %TODO: Get real ts
     x_data = squeeze(eval(xtraj,ts));
   end
   %ts = 0;
@@ -190,7 +180,7 @@ end
 
 end
 
-function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
+function [turn, forwardSegment] = turnThenCrawl(target_xy, target_heading, x0, options)
   if ~isfield(options,'min_num_steps') options.min_num_steps = 20; end
   if ~isfield(options,'max_num_steps') options.max_num_steps = 20; end
   if ~isfield(options,'num_steps') options.num_steps = 20; end
@@ -209,12 +199,12 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
   if ~isfield(options,'delta_yaw') options.delta_yaw = 10*pi/180; end
   fieldcheck(options,'step_length');
 
-  delta_xy = target_xy - x0(1:2);
-  target_heading = atan2(delta_xy(2),delta_xy(1));
   z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
   current_heading = atan2(z_proj(2),z_proj(1));
 
   delta_heading = angleDiff(current_heading,target_heading);
+
+  delta_xy = target_xy - x0(1:2);
   target_distance = norm(delta_xy);
 
   if options.draw
@@ -227,6 +217,7 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
   turn.direction = sign(delta_heading);
   turn.num_steps = 4*ceil(abs(delta_heading)/options.delta_yaw);
   forwardSegment.direction = 0;
-  forwardSegment.num_steps = 4*ceil(target_distance/options.step_length);
-  forwardSegment.num_steps = max(min(forwardSegment.num_steps,options.max_num_steps),options.min_num_steps);
+  forwardSegment.num_steps = 8; % Since forward crawling loops in the controller, we'll plan two strides and the loop over the second one.
+  %forwardSegment.num_steps = 4*ceil(target_distance/options.step_length);
+  %forwardSegment.num_steps = max(min(forwardSegment.num_steps,options.max_num_steps),options.min_num_steps);
 end
