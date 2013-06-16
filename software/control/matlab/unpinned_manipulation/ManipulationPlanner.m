@@ -379,27 +379,29 @@ classdef ManipulationPlanner < handle
             obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
             if(useIK_state == 1)
-              q_desired([1 2 6]) = q0([1 2 6]);
-              kinsol_desired = doKinematics(obj.r,q_desired);
-              rhand_desired = forwardKin(obj.r,kinsol_desired,obj.r_hand_body,[0;0;0],2);
-              lhand_desired = forwardKin(obj.r,kinsol_desired,obj.l_hand_body,[0;0;0],2);
-              head_desired = forwardKin(obj.r,kinsol_desired,obj.head_body,[0;0;0],2);
               kinsol0 = doKinematics(obj.r,q0);
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
               ikoptions = struct();
               [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
-              ikoptions.jointLimitMin([3,4,5]) = q_desired([3,4,5]);
-              ikoptions.jointLimitMax([3,4,5]) = q_desired([3,4,5]);
-              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0,...
-                obj.r_hand_body,[0;0;0],rhand_desired,obj.l_hand_body,[0;0;0],lhand_desired,...
-                obj.head_body,[0;0;0],head_desired};
+              coords = obj.r.getStateFrame.coordinates();
+              coords = coords(1:obj.r.getNumDOF());
+              lower_joint_ind = ~cellfun(@isempty,strfind(coords,'leg'));
+              upper_joint_ind = cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'pelvis'))&cellfun(@isempty,strfind(coords,'base'));
+              ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
+              ikoptions.jointLimitMin(3) = q_desired(3)-0.1;
+              ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
+              ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
+              ikoptions.jointLimitMax(3) = q_desired(3)+0.05;
+              ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
+              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
               cost = diag(obj.getCostVector);
               cost = cost(1:nq,1:nq);
               ikoptions.Q = cost;
-              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
+              ikoptions.q_nom = q0;
+              [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
               if(info>10)
-                fprintf('IK info = %d in posture plan optimization\n',info);
+                send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
               end
             elseif(useIK_state ==2) % Foot in contact
               ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
@@ -413,7 +415,7 @@ classdef ManipulationPlanner < handle
               ikoptions.q_nom = q0;
               [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
               if(info>10)
-                fprintf('IK info = %d in posture plan optimization\n',info);
+                send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
               end
             elseif(useIK_state == 3) % copy the left arm joint angles from the mat file
               coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
