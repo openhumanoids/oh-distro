@@ -144,6 +144,7 @@ static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
  // std::cout << "posture presets combo_box changed to " << (int)active << "\n";
 }
 
+/*
 int current_active_controller_mode=1;
 static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
 {
@@ -153,7 +154,6 @@ static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
   current_active_controller_mode = (int)active;
   std::cout << "CONTROLLER MODE variable changed to " << (int)active << "\n";
 }
-
 
 static void on_controller_mode_clicked(GtkToggleToolButton *tb, void *user_data)
 {
@@ -179,6 +179,7 @@ static void on_controller_mode_clicked(GtkToggleToolButton *tb, void *user_data)
      break;
   }// end switch case
 }
+*/
 
 static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
 {
@@ -490,6 +491,7 @@ int main(int argc, char *argv[])
   
     
 // TODO: this will moved to somewhere else  
+/*
  GtkWidget *controller_mode_button;
   controller_mode_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_EXECUTE);
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(controller_mode_button), "Controller_Mode");
@@ -506,7 +508,6 @@ int main(int argc, char *argv[])
   gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) current_active_controller_mode);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(controller_mode_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( controller_mode_combo_box ), "changed", G_CALLBACK(on_controller_mode_combo_box_changed), viewer);
-  
 
   gtk_box_pack_start (GTK_BOX (hbox2), vseparator2, FALSE, FALSE, 0);
   gtk_box_pack_end (GTK_BOX (hbox2), controller_mode_combo_box, FALSE, FALSE, 0);
@@ -515,6 +516,7 @@ int main(int argc, char *argv[])
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem2), viewer->tips, "Cntroller Mode Selection", NULL);
   gtk_widget_show_all (GTK_WIDGET (toolitem2));
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem2, -1);  
+*/  
 
     
   //--------------             
