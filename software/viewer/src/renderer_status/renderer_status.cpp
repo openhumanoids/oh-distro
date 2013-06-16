@@ -435,10 +435,16 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       
       if (self->score != NULL){
 	char line[80];
-	sprintf(line, "%d FALLS %d TASK %d SCORE",self->score->falls, self->score->task_type, self->score->completion_score );
-	double x = 0 ;// hind * 150 + 120;
+	sprintf(line, "TASK %d  SCORE %d  FALLS %d", 
+            self->score->task_type, self->score->completion_score, self->score->falls );
+	double x = 0 ; // hind * 150 + 120;
 	double y = gl_height + ( - self->frequency_list.size() - 11) * line_height;
-	glColor3f(  0.0, 0.0, 1.0 );
+    if ( self->score->falls <= 0 ){
+   	  glColor3f(  0.0, 0.0, 1.0 );} // blue
+    else if ( self->score->falls == 1 ){
+   	  glColor3f(  1.0, 0.5, 0.0 );} // orange
+    else // ( self->score->falls >= 2 ){
+   	  glColor3f(  1.0, 0.0, 0.0 );} // red
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
 
