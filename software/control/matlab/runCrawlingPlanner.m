@@ -9,7 +9,7 @@ if ~isfield(options,'draw'); options.draw = false; end
 if ~isfield(options,'faceup'); options.faceup = true; end
 if ~isfield(options,'delta_yaw'); options.delta_yaw = 10*pi/180; end
 if ~isfield(options,'distance_threshold'); options.distance_threshold = 1; end
-if ~isfield(options,'pre_crawl_tolerance'); options.pre_crawl_tolerance = 1.5; end %TODO: Tune this
+if ~isfield(options,'pre_crawl_tolerance'); options.pre_crawl_tolerance = 1; end %TODO: Tune this
 if ~isfield(options,'pre_crawl_duration'); options.pre_crawl_duration = 10; end %TODO: Tune this
 
 
@@ -91,14 +91,14 @@ while true
       x0=x;
     end
     data = committed_goal_mon.getNextMessage(10);
-    if (~isempty(data))
+    if (~isempty(data) && ~strcmp(location,'base'))
       goal = drc.walking_goal_t(data);
       msg = ['Crawl Plan (', location, '): committed plan received']; disp(msg); send_status(status_code,0,0,msg);
       waiting = false;
       committed = true;
     else
       data = goal_mon.getNextMessage(10);
-      if (~isempty(data))
+      if (~isempty(data) && strcmp(location,'base'))
         goal = drc.walking_goal_t(data);
         if (goal.crawling)
           msg =['Crawl Plan (', location, '): plan received']; disp(msg); send_status(status_code,0,0,msg);
@@ -135,6 +135,11 @@ while true
         t_offset = -1;
       else
         % Plan forward crawling
+        delta_xy = target_xy - x0(1:2);
+        z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
+        if abs(angleDiff(atan2(z_proj(2),z_proj(1)),atan2(delta_xy(2),delta_xy(1)))) > pi/2
+          options.step_length = -options.step_length;
+        end
         options.direction = forwardSegment.direction;
         options.num_steps = forwardSegment.num_steps;
         [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = ...
