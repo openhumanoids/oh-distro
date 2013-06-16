@@ -337,12 +337,12 @@ elseif strcmpi(mode,'crawling')
   Kp.l_leg_mhx = 3000.0; 
   Kp.l_leg_lhy = 2000.0; 
   Kp.l_leg_kny = 2000.0; 
-  Kp.l_leg_uay = 10.0;
-  Kp.l_leg_lax = 10.0;
+  Kp.l_leg_uay = 1.0;
+  Kp.l_leg_lax = 1.0;
   Kp.neck_ay = 20.0; 
-  Kp.back_lbz = 1000.0;  
-  Kp.back_mby = 4000.0; 
-  Kp.back_ubx = 2000.0; 
+  Kp.back_lbz = 2000.0;  
+  Kp.back_mby = 6000.0; 
+  Kp.back_ubx = 3000.0; 
 
   Kd.l_arm_usy = 100.0; 
   Kd.l_arm_shx = 100.0; 
@@ -354,12 +354,12 @@ elseif strcmpi(mode,'crawling')
   Kd.l_leg_mhx = 70.0; 
   Kd.l_leg_lhy = 80.0; 
   Kd.l_leg_kny = 80.0; 
-  Kd.l_leg_uay = 4.0;
-  Kd.l_leg_lax = 4.0;
+  Kd.l_leg_uay = 1.0;
+  Kd.l_leg_lax = 1.0;
   Kd.neck_ay = 2.0; 
-  Kd.back_lbz = 20.0; 
-  Kd.back_mby = 20.0; 
-  Kd.back_ubx = 10.0; 
+  Kd.back_lbz = 50.0; 
+  Kd.back_mby = 80.0; 
+  Kd.back_ubx = 50.0; 
 
 elseif strcmpi(mode,'gazebo_old')
   Kp.l_arm_usy = 750.0; 
