@@ -598,7 +598,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     msg.num_l_joints =0;
     msg.l_hand_pose.rotation.w = 1;
     msg.r_hand_pose.rotation.w = 1;
-    if(states[0].grasp_type==states[0].LEFT)
+    if(states[0].grasp_type==drc::grasp_transition_state_t::LEFT)
     {
       msg.grasp_type = msg.SANDIA_LEFT;
       msg.l_hand_pose = states[0].hand_pose;
@@ -607,7 +607,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       msg.l_joint_position=states[0].joint_position;
       
       if(num_grasps>1){
-          if(states[1].grasp_type==states[1].RIGHT){
+          if(states[1].grasp_type==drc::grasp_transition_state_t::RIGHT){
             msg.grasp_type = msg.SANDIA_BOTH;
             msg.r_hand_pose = states[1].hand_pose;
             msg.num_r_joints =states[1].num_joints;
@@ -629,7 +629,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       msg.r_joint_name  =states[0].joint_name;
       msg.r_joint_position=states[0].joint_position;
       if(num_grasps>1){
-       if(states[1].grasp_type==states[1].LEFT){
+        if(states[1].grasp_type==drc::grasp_transition_state_t::LEFT){
           msg.grasp_type = msg.SANDIA_BOTH;
           msg.l_hand_pose = states[1].hand_pose;
           msg.num_l_joints =states[1].num_joints;
