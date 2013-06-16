@@ -40,11 +40,13 @@ bracing_controller = BracingController('bracing',r,options);
 % crawling_controller = WalkingController('crawling',r,crawl_opts);
 
 crawling_controller = CrawlingController('crawling',r,options);
+dummy_controller = DummyController('dummy',r,options);
 
 controllers = struct(standing_controller.name,standing_controller,...
                      walking_controller.name,walking_controller,...     
                      bracing_controller.name,bracing_controller,...
-                     crawling_controller.name,crawling_controller);
+                     crawling_controller.name,crawling_controller,...
+                     dummy_controller.name,dummy_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 

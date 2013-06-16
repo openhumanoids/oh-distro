@@ -16,5 +16,6 @@ struct controller_status_t
   const int8_t QUASISTATIC  = 4;  
   const int8_t BRACING      = 5;
   const int8_t CRAWLING     = 6;
+  const int8_t DUMMY        = 7;
 }
 

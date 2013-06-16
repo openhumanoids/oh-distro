@@ -31,10 +31,12 @@ end
 standing_controller = StandingManipController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
+dummy_controller = DummyController('dummy',r,options);
 
 controllers = struct(standing_controller.name,standing_controller, ...
                       walking_controller.name,walking_controller,...     
-                      bracing_controller.name,bracing_controller);
+                      bracing_controller.name,bracing_controller,...
+                      dummy_controller.name,dummy_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 
