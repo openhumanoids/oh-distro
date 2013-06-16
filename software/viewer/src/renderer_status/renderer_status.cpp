@@ -435,7 +435,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       
       if (self->score != NULL){
 	char line[80];
-	sprintf(line, "TASK %d  SCORE %d  FALLS %d", 
+	sprintf(line, "TASK %d|SCORE %d|FALLS %d", 
             self->score->task_type, self->score->completion_score, self->score->falls );
 	double x = 0 ; // hind * 150 + 120;
 	double y = gl_height + ( - self->frequency_list.size() - 11) * line_height;
