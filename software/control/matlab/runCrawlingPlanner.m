@@ -119,10 +119,10 @@ while true
     target_rpy = quat2rpy([goal.goal_pos.rotation.x;goal.goal_pos.rotation.y;goal.goal_pos.rotation.z;goal.goal_pos.rotation.w])
 
     % DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%
-    norm(x0(7:nq) - options.x_nom(7:nq))
+    norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq]))
     % END DEBUG%%%%%%%%%%%%%%%%%%%%%%
     
-    if norm(x0(7:nq) - options.x_nom(7:nq)) < options.pre_crawl_tolerance
+    if norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq])) < options.pre_crawl_tolerance
       [turn, forwardSegment] = turnThenCrawl(target_xy,target_rpy(1),x0,options);
       options.gait = ZMP_TROT;
 
@@ -220,7 +220,7 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, target_heading, x0, o
   end
 
   turn.direction = sign(delta_heading);
-  turn.num_steps = 4*ceil(abs(delta_heading)/options.delta_yaw);
+  turn.num_steps = 4*round(abs(delta_heading)/options.delta_yaw);
   forwardSegment.direction = 0;
   forwardSegment.num_steps = 8; % Since forward crawling loops in the controller, we'll plan two strides and the loop over the second one.
   %forwardSegment.num_steps = 4*ceil(target_distance/options.step_length);
