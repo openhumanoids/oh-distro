@@ -257,7 +257,7 @@ while (1)
       support_body_ind = zeros(size(support_times));
       support_body_ind = [];
       contact_surface_ind = [];
-      support_states = {};
+      support_states = [];
       for i = 1:num_key_time_samples 
         if(i==num_key_time_samples)
           for j=1:length(action_sequence.kincons)
@@ -337,7 +337,7 @@ while (1)
           support_point_ind_unique{j} = unique(vertcat(support_point_ind{ic==j}));
         end
         surface_body_ind = surface_body_ind(ia);
-        support_states = [support_states; {SupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)}];
+        support_states = [support_states; SupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)];
         
         
         kinsol = doKinematics(r,q_key_time_samples(:,i));
@@ -536,7 +536,7 @@ while (1)
 
         mu=0.5;
         data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
-          'support_times',support_times,'supports',{support_states},'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
+          'support_times',support_times,'supports',support_states,'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
           'link_constraints',[],'zmptraj',[],'qnom',[]);
 
         %if(action_options.debug)
