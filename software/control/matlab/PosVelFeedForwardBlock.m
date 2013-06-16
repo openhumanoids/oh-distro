@@ -71,9 +71,9 @@ classdef PosVelFeedForwardBlock < DrakeSystem
     end
     
     function y = output(obj,t,~,x)
-      q = eval(obj.ctrl_data.data.qtraj,t);
-      qdot = eval(obj.ctrl_data.data.qdtraj,t);
-      qddot = eval(obj.ctrl_data.data.qddtraj,t);
+      q = fasteval(obj.ctrl_data.data.qtraj,t);
+      qdot = fasteval(obj.ctrl_data.data.qdtraj,t);
+      qddot = fasteval(obj.ctrl_data.data.qddtraj,t);
       
       xt=[q;qdot];
 %       x(obj.ignore_states)=xt(obj.ignore_states);

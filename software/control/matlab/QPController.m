@@ -163,7 +163,8 @@ classdef QPController < MIMODrakeSystem
     obj.lfoot_idx = findLinkInd(r,'l_foot');
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
-
+    obj.nq = getNumDOF(r);
+    
     if obj.lcm_foot_contacts
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
       obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
@@ -292,12 +293,12 @@ classdef QPController < MIMODrakeSystem
     x = varargin{3};
     
     if ~isempty(obj.ignore_states)
-      xt=eval(ctrl_data.xtraj,t);
+      xt=fasteval(ctrl_data.xtraj,t);
       x(obj.ignore_states) = xt(obj.ignore_states);
     end
     
     r = obj.robot;
-    nq = getNumDOF(r); 
+    nq = obj.nq; 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
@@ -339,8 +340,8 @@ classdef QPController < MIMODrakeSystem
     x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % TESTING, ADDED BY SCOTT
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
-      s1 = eval(ctrl_data.s1,t);
-      y0 = eval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
+      s1 = fasteval(ctrl_data.s1,t);
+      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
       
       %----------------------------------------------------------------------
       % extract current supports
@@ -776,12 +777,12 @@ classdef QPController < MIMODrakeSystem
     end
 
     if ~isempty(active_supports)
-      setField(obj.controller_data,'V',V);
+%      setField(obj.controller_data,'V',V);
       setField(obj.controller_data,'Vdot',Vdot);
 %     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
 %     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
     else
-      setField(obj.controller_data,'V',0);
+%      setField(obj.controller_data,'V',0);
       setField(obj.controller_data,'Vdot',0);
     end
     
@@ -935,6 +936,7 @@ classdef QPController < MIMODrakeSystem
 
   properties (SetAccess=private)
     robot; % to be controlled
+    nq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w; % objective function weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values

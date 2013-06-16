@@ -66,7 +66,7 @@ classdef NeckControlBlock < MIMODrakeSystem
         qdes=qtraj;
       else
         % pp trajectory
-        qdes = qtraj.eval(t);
+        qdes = fasteval(qtraj,t);
       end
       
       delta = Kp*(neckpitch-q(obj.neck_idx)) - Kd*qd(obj.neck_idx);

@@ -218,12 +218,12 @@ classdef QPImpedanceController < MIMODrakeSystem
     if typecheck(ctrl_data.lhandtraj,'double')
       lhand_goal = ctrl_data.lhandtraj;
     else
-      lhand_goal = ctral_data.lhandtraj.eval(t);
+      lhand_goal = fasteval(ctral_data.lhandtraj,t);
     end
     if typecheck(ctrl_data.rhandtraj,'double')
       rhand_goal = ctrl_data.rhandtraj;
     else
-      rhand_goal = ctral_data.rhandtraj.eval(t);
+      rhand_goal = fasteval(ctral_data.rhandtraj,t);
     end
     lhand_pts = ctrl_data.lhand_pts;
     rhand_pts = ctrl_data.rhand_pts;
@@ -242,7 +242,7 @@ classdef QPImpedanceController < MIMODrakeSystem
     if typecheck(ctrl_data.supptraj,'double')
       supp = ctrl_data.supptraj;
     else
-      supp = ctrl_data.supptraj.eval(t);
+      supp = fasteval(ctrl_data.supptraj,t);
     end
     desired_supports = find(supp);
     
@@ -268,7 +268,7 @@ classdef QPImpedanceController < MIMODrakeSystem
       if typecheck(ctrl_data.C,'double')
         C_ls = ctrl_data.C;
       else
-        C_ls = ctrl_data.C.eval(t);
+        C_ls = fasteval(ctrl_data.C,t);
       end
       if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
         D_ls = ctrl_data.D;
@@ -281,27 +281,27 @@ classdef QPImpedanceController < MIMODrakeSystem
       if typecheck(ctrl_data.S,'double')
         S = ctrl_data.S;
       else
-        S = ctrl_data.S.eval(t);
+        S = fasteval(ctrl_data.S,t);
       end
       if typecheck(ctrl_data.s1,'double')
         s1= zeros(4,1); % ctrl_data.s1;
       else
-        s1= ctrl_data.s1.eval(t);
+        s1= fasteval(ctrl_data.s1,t);
       end
       if typecheck(ctrl_data.x0,'double')
         x0 = ctrl_data.x0;
       else
-        x0 = ctrl_data.x0.eval(t); 
+        x0 = fasteval(ctrl_data.x0,t); 
       end
       if typecheck(ctrl_data.u0,'double')
         u0 = ctrl_data.u0;
       else
-        u0 = ctrl_data.u0.eval(t); 
+        u0 = fasteval(ctrl_data.u0,t); 
       end
       if typecheck(ctrl_data.y0,'double')
         y0 = ctrl_data.y0;
       else
-        y0 = ctrl_data.y0.eval(t); 
+        y0 = fasteval(ctrl_data.y0,t); 
       end
     else
       % allocate these for passing into mex

@@ -77,7 +77,7 @@ classdef FootstepReplanner < DrakeSystem
             kinsol = doKinematics(obj.robot,q,false,true);
 
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-            lfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
+            lfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
             cdata.trans_drift = lfoot_des(1:3) - lfoot_act(1:3);
 
@@ -90,7 +90,7 @@ classdef FootstepReplanner < DrakeSystem
             kinsol = doKinematics(obj.robot,q,false,true);
 
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-            rfoot_des = cdata.link_constraints(constraint_ndx).traj.eval(t);
+            rfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
             cdata.trans_drift = rfoot_des(1:3) - rfoot_act(1:3);
 
