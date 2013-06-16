@@ -337,8 +337,8 @@ elseif strcmpi(mode,'crawling')
   Kp.l_leg_mhx = 3000.0; 
   Kp.l_leg_lhy = 2000.0; 
   Kp.l_leg_kny = 2000.0; 
-  Kp.l_leg_uay = 10.0;
-  Kp.l_leg_lax = 10.0;
+  Kp.l_leg_uay = 800.0;
+  Kp.l_leg_lax = 800.0;
   Kp.neck_ay = 20.0; 
   Kp.back_lbz = 1000.0;  
   Kp.back_mby = 4000.0; 
@@ -354,8 +354,8 @@ elseif strcmpi(mode,'crawling')
   Kd.l_leg_mhx = 70.0; 
   Kd.l_leg_lhy = 80.0; 
   Kd.l_leg_kny = 80.0; 
-  Kd.l_leg_uay = 0.1;
-  Kd.l_leg_lax = 0.1;
+  Kd.l_leg_uay = 24.0;
+  Kd.l_leg_lax = 24.0;
   Kd.neck_ay = 2.0; 
   Kd.back_lbz = 20.0; 
   Kd.back_mby = 20.0; 
