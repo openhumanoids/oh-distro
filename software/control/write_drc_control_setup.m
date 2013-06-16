@@ -24,12 +24,14 @@ fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_bot2-core.jar'');\n',BUILD_PR
 fprintf(fptr,'javaaddpath(''%s/drake/drake.jar'');\n',pwd);
 fprintf(fptr,'javaaddpath(''%s/share/java/drc_control.jar'');\n',BUILD_PREFIX);
 fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_visualization.jar'');\n',BUILD_PREFIX);
+fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_scanmatch.jar'');\n',BUILD_PREFIX);
 
 % tell drake about ROS
 fprintf(fptr,'\n\n% Set environment variables\n');
 fprintf(fptr,'setenv(''DRC_PATH'',''%s'');\n',fullfile(pwd,'..'));
 fprintf(fptr,'setenv(''ROS_ROOT'',''%s'');\n',getenv('ROS_ROOT'));
 fprintf(fptr,'setenv(''ROS_PACKAGE_PATH'',''%s'');\n',[fullfile(BUILD_PREFIX,'..','..','ros_workspace'),pathsep,getenv('ROS_PACKAGE_PATH')]);
+fprintf(fptr,'setenv(''LD_LIBRARY_PATH'',''%s'');\n',fullfile(pwd,'drake','thirdParty','gurobi','linux64','lib'));
 
 % path license
 fprintf(fptr,'\n\n% Setup PATH LCP solver\n');
