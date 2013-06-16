@@ -222,7 +222,7 @@ elseif (options.gait ==2) % trot
   fpos_all{1} = fpos_start;
   for i = 2:options.num_strides+1
     if options.direction ~= 0
-      fpos_all{i} = bsxfun(@plus,x0(1:3),(rotz(options.delta_yaw)^i)*fpos_rel);
+      fpos_all{i} = bsxfun(@plus,x0(1:3),(rotz(delta_yaw)^i)*fpos_rel);
       fpos_all{i}(3,:) = z_foot_nom;
     else
       fpos_all{i} = bsxfun(@plus,options.step_length*forward_dir,fpos_all{i-1});
@@ -464,10 +464,9 @@ elseif (options.gait ==2) % trot
   end
   %zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
   zmp_mean(:,end+1) = mean(support_vert{end}(1:2,:),2);
-  %support_times = [0, support_times];
-  zmptraj = PPTrajectory(foh([0, support_times],zmp_mean));
-  %supports = [SupportState(r,[foot_spec(1:4).body_ind], ...
-                              %{foot_spec(1:4).contact_pt_ind},zeros(4,1)),supports];
+  support_times = [0, support_times];
+  zmptraj = PPTrajectory(foh(support_times,zmp_mean));
+  supports = [SupportState(r,[], {},[]),supports];
 
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
   options.com0 = com_start(1:2);
@@ -525,11 +524,11 @@ elseif (options.gait ==2) % trot
   end
   qtraj_initial = PPTrajectory(foh([0,t_start],[q(:,1),q(:,i_start+1)]));
   for i = 2:i_start-1
-      ikargs = getIKArguments(crawl_sequence,t(i));
-      options.q_nom = eval(qtraj_initial,t(i));
-      q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
+      %ikargs = getIKArguments(crawl_sequence,t(i));
+      %options.q_nom = eval(qtraj_initial,t(i));
+      %q(:,i) = inverseKin(r,q(:,i-1),ikargs{:},options);
       %q(:,i) = approximateIK(r,q(:,i-1),ikargs{:},options);
-      %q(:,i) = eval(qtraj_initial,t(i));
+      q(:,i) = eval(qtraj_initial,t(i));
   end
   qdtraj = PPTrajectory(spline(t,q));
   t_offset = t_start;

@@ -8,7 +8,7 @@ if nargin < 2; options = struct(); end
 if ~isfield(options,'draw'); options.draw = false; end
 if ~isfield(options,'faceup'); options.faceup = true; end
 if ~isfield(options,'delta_yaw'); options.delta_yaw = 10*pi/180; end
-if ~isfield(options,'yaw_threshold'); options.yaw_threshold = 45*pi/180; end
+if ~isfield(options,'distance_threshold'); options.distance_threshold = 1; end
 
 
 if strcmp(location, 'base')
@@ -118,12 +118,13 @@ while true
     [turn, forwardSegment] = turnThenCrawl(target_xy,x0,options);
     options.gait = ZMP_TROT;
 
-    if turn.num_steps*options.delta_yaw > options.yaw_threshold
+    if forwardSegment.num_steps*options.step_length/4 < options.distance_threshold
       % Plan first turn
       options.direction = turn.direction;
       options.num_steps = turn.num_steps;
       display('Getting qtraj ...');
-      [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+      [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+      t_offset = -1;
     else
       % Plan forward crawling
       options.direction = forwardSegment.direction;
@@ -173,7 +174,7 @@ while true
       %'link_constraints',link_constraints{1},'zmptraj',zmptraj,'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
     crawling_plan = struct('S',[],'s1',[],'s2',[],...
       'support_times',support_times,'supports',{supports},'comtraj',[],'qtraj',qtraj,'mu',mu,...
-      'link_constraints',link_constraints,'zmptraj',[],'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset + qtraj.tspan(2))
+      'link_constraints',link_constraints,'zmptraj',[],'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
     msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
     makeFist;
     walking_pub = WalkingPlanPublisher('WALKING_PLAN');
@@ -213,7 +214,7 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, x0, options)
   z_proj  = rpy2rotmat(x0(4:6))*[0;0;1];
   current_heading = atan2(z_proj(2),z_proj(1));
 
-  delta_heading = angleDiff(target_heading,current_heading);
+  delta_heading = angleDiff(current_heading,target_heading);
   target_distance = norm(delta_xy);
 
   if options.draw

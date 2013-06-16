@@ -86,11 +86,16 @@ classdef CrawlingController < DRCController
         obj.controller_data.setField('qdtraj',qdtraj);
         obj.controller_data.setField('qddtraj',qddtraj);
 
-        t_offset = msg_data.t_offset;
+        t_offset = msg_data.t_offset
         obj.controller_data.setField('t_offset',t_offset);
 
         delete(tmp_fname);
-        obj = setDuration(obj,qdtraj.tspan(end),false); % set the controller timeout
+        if t_offset < 0
+          obj = setDuration(obj,inf,false); % set the controller timeout
+        else
+          obj = setDuration(obj,qdtraj.tspan(end),false); % set the controller timeout
+        end
+        
 
       elseif isfield(data,'STOP_CRAWLING')
         obj = setDuration(obj,inf,false); % set the controller timeout
@@ -98,9 +103,9 @@ classdef CrawlingController < DRCController
       else
         % assume we've looped to ourself
         t_offset = obj.controller_data.data.t_offset;
-        qtraj = trim(obj.controller_data.data.qtraj,[t_offset obj.controller_data.data.qtraj.tspan(end)]);
-        qdtraj = trim(obj.controller_data.data.qdtraj,[t_offset obj.controller_data.data.qdtraj.tspan(end)]);
-        qddtraj = trim(obj.controller_data.data.qddtraj,[t_offset obj.controller_data.data.qddtraj.tspan(end)]);
+        qtraj = shiftTime(obj.controller_data.data.qtraj,-t_offset);
+        qdtraj = shiftTime(obj.controller_data.data.qdtraj,-t_offset);
+        qddtraj = shiftTime(obj.controller_data.data.qddtraj,-t_offset);
 
         obj.controller_data.setField('qtraj',qtraj);
         obj.controller_data.setField('qdtraj',qdtraj);
