@@ -6,20 +6,21 @@ struct recovery_t
 
     // these key into a csv file and should be paired with UNKNOWN controller
     int8_t mode;
-    const int8_t MODE_NONE                = -1; // defined value when transitioning to a standing controller
+    const int8_t MODE_NONE                 =-1; // defined value when transitioning to a standing controller
     const int8_t MODE_PROJECTILE_READY     = 0;
     const int8_t MODE_PROJECTILE_LEAP      = 1;
-    const int8_t MODE_FACEUP_TO_FACEDOWN  = 2;
+    const int8_t MODE_FACEUP_TO_FACEDOWN   = 2;
     const int8_t MODE_FLAT_OUT             = 3;
     const int8_t MODE_KNEE_RISE_SET        = 4;
     const int8_t MODE_KNEE_RISE            = 5;
     const int8_t MODE_KNEE_FINISH          = 6;
-    const int8_t MODE_CRAWL                = 7;
-    const int8_t MODE_CRAWL_LEFT           = 8;
-    const int8_t MODE_CRAWL_LEFT_LARGE     = 9;
-    const int8_t MODE_CRAWL_RIGHT          = 10;
-    const int8_t MODE_CRAWL_RIGHT_LARGE    = 11;
-    const int8_t MODE_FACEDOWN_TO_FACEUP   = 12;
+    const int8_t MODE_CRAWL_SET            = 7;
+    const int8_t MODE_CRAWL                = 8;
+    const int8_t MODE_CRAWL_LEFT           = 9;
+    const int8_t MODE_CRAWL_LEFT_LARGE     = 10;
+    const int8_t MODE_CRAWL_RIGHT          = 11;
+    const int8_t MODE_CRAWL_RIGHT_LARGE    = 12;
+    const int8_t MODE_FACEDOWN_TO_FACEUP   = 13;
 
     // these are paired with the fields in controller_status_t
     int8_t controller;
