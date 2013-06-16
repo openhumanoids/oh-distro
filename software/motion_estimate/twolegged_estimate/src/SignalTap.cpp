@@ -287,7 +287,7 @@ void DistributedDiff::InitializeTaps(int hist_length, const long &per, const Eig
 void DistributedDiff::ParameterFileInit() {
 	long period_;
 
-	char item[255], status;
+	char status;
 
 	FILE *fp;
 
@@ -302,7 +302,7 @@ void DistributedDiff::ParameterFileInit() {
 		exit(1);
 	}
 
-	int test1,test2;
+	//int test1,test2;
 	fscanf(fp,"%ld\n",&period_,&status);
 	std::cout << "Period was set to: " << period_ << std::endl;
 
@@ -324,7 +324,7 @@ void DistributedDiff::ParameterFileInit() {
     	timespans(j) = t[j];
     	weights(j) = w[j];
 
-    	std::cout << "Read values are: " << timespans(j) << ", " << weights(j) << std::endl;
+    	//std::cout << "Read values are: " << timespans(j) << ", " << weights(j) << std::endl;
     }
 
     // TODO
@@ -332,7 +332,7 @@ void DistributedDiff::ParameterFileInit() {
     //length_ = (int)((int)w[29]/period_+0.5);
     length_ = (int)(((int)timespans(timespans.size()-1)/period_) + 0.5);
     //std::cout << "InitializeTaps is assumed to take 30 weights at this point.\n";
-    std::cout << "Calculated length is: " << length_ << std::endl;
+    std::cout << "DistributedDiff::ParameterFileInit -- Calculated history memory length is: " << length_ << std::endl;
     InitializeTaps(length_, period_, weights, timespans);
 
 
@@ -380,8 +380,8 @@ Eigen::VectorXd DistributedDiff::findDifferentialFromLatest(const unsigned long 
 	prev_sample.resize(size);
 	prev_sample = searchHistElement(desired_hist_ut, &actual_delta_ut);
 
-	double firstval = (*_state_hist.back())(0);
-	double secondval = (prev_sample)(0);
+	//double firstval = (*_state_hist.back())(0);
+	//double secondval = (prev_sample)(0);
 	//std::cout << "period used: " << actual_delta_ut << " diff between: " << firstval << " - " << prev_sample << " = " << (firstval - prev_sample(0))/(double)actual_delta_ut*1E6;
 
 	return (*(_state_hist.back()) - prev_sample) / ((double) actual_delta_ut*1.E-6);
@@ -793,6 +793,8 @@ Eigen::VectorXd CumulativeAverage::getCA() {
 ExpireTimer::ExpireTimer() {
 	desired_uper = 0;
 	uperiod = 0;
+	firstpass = true;
+	previous_uts = 0;
 }
 
 void ExpireTimer::setDesiredPeriod_us(const unsigned long &uper) {

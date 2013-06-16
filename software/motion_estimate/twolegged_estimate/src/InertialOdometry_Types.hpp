@@ -109,6 +109,7 @@ namespace InertialOdometry {
        Eigen::Vector3d w_ie;
 
        Parameters() {
+    	   Ts = 0;
     	   orientation_propagation_approach = FastNumericalMultirate;
     	   Qimu.setZero(6,6);
     	   Qimu.setIdentity(6,6);

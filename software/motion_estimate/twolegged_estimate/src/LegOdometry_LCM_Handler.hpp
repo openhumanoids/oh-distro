@@ -71,6 +71,8 @@
 #define LOG_LEG_TRANSFORMS
 #define DO_FOOT_SLIP_FEEDBACK
 
+#define TRY_FOOT_FORCE_MAP_FIND
+
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
@@ -223,6 +225,8 @@ private:
 	std::vector<LowPassFilter> joint_lpfilters;
 	//std::vector<Filter*> _joint_filters;
 	
+	LowPassFilter head_vel_filters[3];
+
 	HeavyFiltering::HeavyLowPassFilter lefthandforcesfilters[6];
 	HeavyFiltering::HeavyLowPassFilter righthandforcesfilters[6];
 

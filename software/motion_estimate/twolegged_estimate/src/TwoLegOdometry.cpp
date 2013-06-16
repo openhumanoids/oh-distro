@@ -25,6 +25,8 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	footsteps.reset();
 	standing_foot = -1;
 
+	previous_isometry_time = 0;
+
 	//imu_orientation_estimate.setIdentity();
 	local_frame_orientation.setIdentity();
 	
@@ -536,6 +538,8 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	
 	Eigen::Isometry3d returnval;
 	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
+
+	//std::cout << "TwoLegOdometry::getSecondaryInLocal -- is making a second call to AccumulateFootPosition\n";
 
 	return returnval;
 }

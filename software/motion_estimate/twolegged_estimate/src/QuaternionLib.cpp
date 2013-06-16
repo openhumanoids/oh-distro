@@ -89,7 +89,7 @@ Eigen::Matrix3d q2C(const Eigen::Quaterniond q_) {
 
 		// DRC bot_frames
 
-		double quat[4];
+		//double quat[4];
 		double rot[9];
 
 		/*quat[0] = q_.w();
@@ -374,7 +374,7 @@ class QuaternionLib {
     double q_[4];
     v_[0] = 0.0;
 
-    int i;
+    //int i;
 
     for (int i=0;i<4;i++)
       q_[i] = q(i);

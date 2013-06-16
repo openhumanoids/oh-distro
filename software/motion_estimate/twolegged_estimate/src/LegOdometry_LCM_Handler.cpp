@@ -298,26 +298,27 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 
 	// using a map to find the forces each time is not the most efficient way, but its flexible and useful for when we need to change to using forces from the hands when climbing ladders
 	// can optimize here if required, but the overhead for this is expected to be reasonable
-	map<string, double> foot_forces;
+	map<string, drc::vector_3d_t> foot_forces;
+
 	for (int i=0;i<msg->contacts.num_contacts;i++) {
-		foot_forces.insert(make_pair(msg->contacts.id[i], msg->contact_force[i]));
+		foot_forces.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_force[i]));
 	}
 
-	map<string, double >::iterator contact_lf;
-	map<string, double >::iterator contact_rf;
+	typedef map<string, drc::vector_3d_t >  contact_map_type_;
+	contact_map_type_::iterator contact_lf,contact_rf;
 
-	contact_lf=cartpos_out.find("l_foot");
-	contact_rf=cartpos_out.find("r_foot");
+	contact_lf=foot_forces.find("l_foot");
+	contact_rf=foot_forces.find("r_foot");
 
-	left_force = lpfilter[0].processSample(contact_lf->second);
-	right_force = lpfilter[1].processSample(contact_rf->second);
+	left_force  = (double)lpfilter[0].processSample(contact_lf->second.z);
+	right_force = (double)lpfilter[1].processSample(contact_rf->second.z);
 
 #else
-
 
 	left_force  = (double)lpfilter[0].processSample(msg->contacts.contact_force[0].z);
 	right_force = (double)lpfilter[1].processSample(msg->contacts.contact_force[1].z);
 
+	std::cout << "LegOdometry_Handler::ParseFootForces -- foot contact forces read from the message directly. This method should not be used.\n";
 
 #endif
 
@@ -533,7 +534,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Isometry3d right;
 	bool legchangeflag;
 	
-	int joints_were_updated=0;
+	//int joints_were_updated=0;
 
 
 	double left_force, right_force;
@@ -616,7 +617,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		double pos[3];
 		double vel[3];
 
-		/*
+
 		if (_switches->OPTION_A) {
 
 			// median filter
@@ -676,7 +677,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			if (ratechangeiter==1) {
 				_leg_odo->overwritePelvisVelocity(pelvis_velocity);
 			}
-		}*/
+		}
 
 		if (_switches->OPTION_C  || _switches->OPTION_D) {
 
@@ -764,56 +765,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 			}
 
-			//legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force);
-
-			// TODO -- remove the foot velocity measurement
-#ifdef DO_FOOT_SLIP_FEEDBACK_
-			if (_switches->slide_compensation) {
-
-				Eigen::Vector3d slideerr,slidedelta;
-
-				Eigen::Isometry3d levelpelvis;
-				levelpelvis.setIdentity();
-				levelpelvis = _leg_odo->getPelvisState();
-
-				Eigen::Vector3d tempEul;
-				tempEul = C2e(levelpelvis.linear());
-
-				tempEul(0) = 0.;
-				tempEul(1) = 0.;
-				levelpelvis.linear() = e2C(tempEul);
-
-				switch (_leg_odo->getActiveFoot()) {
-				case LEFTFOOT:
-					footslidetriad = levelpelvis * _leg_odo->pelvis_to_left;
-					break;
-				case RIGHTFOOT:
-					footslidetriad = levelpelvis * _leg_odo->pelvis_to_right;
-					break;
-				}
-
-				slideerr = footslidetriad.translation() - _leg_odo->getPrimaryInLocal().translation();
-
-				if (persistlegchangeflag) {
-					// first event
-					persistlegchangeflag = false;
-					std::cout << "slide_offset_change: " << slide_err_at_step.transpose() << " | ";
-					slide_err_at_step = slideerr;
-					std::cout << slide_err_at_step.transpose() << std::endl;
-
-					_leg_odo->setAccruedOffset(slideerr);
-				}
-
-				slidedelta = - slideerr + slide_err_at_step;
-
-				//_leg_odo->AccruedPelvisPosition(slidedelta);
-				_leg_odo->AccruedPrimaryFootOffset(slidedelta);
-
-			}
-#endif
 
 			//clock_gettime(CLOCK_REALTIME, &threequat);
-
 			//std::cout << "Standing on: " << (_leg_odo->getActiveFoot()==LEFTFOOT ? "LEFT" : "RIGHT" ) << std::endl;
 
 			if (imu_msg_received) {
@@ -1212,8 +1165,6 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 	local_to_head = pelvis * body_to_head;
 	  //std::cout << local_to_head.translation().transpose() << " is l2h\n\n";
 
-	// now we need the linear and rotational velocity states -- velocity and accelerations are computed wiht the first order differential
-
 	local_to_head_vel = local_to_head_vel_diff.diff(msg->utime, local_to_head.translation());
 	local_to_head_acc = local_to_head_acc_diff.diff(msg->utime, local_to_head_vel);
 	local_to_head_rate = local_to_head_rate_diff.diff(msg->utime, C2e(local_to_head.linear()));
@@ -1232,9 +1183,14 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
 	l2head_msg->orientation[1] = l2head_rot.x();
 	l2head_msg->orientation[2] = l2head_rot.y();
 	l2head_msg->orientation[3] = l2head_rot.z();
-	l2head_msg->vel[0]=local_to_head_vel(0);
-	l2head_msg->vel[1]=local_to_head_vel(1);
-	l2head_msg->vel[2]=local_to_head_vel(2);
+
+	//head_vel_filters
+	for (int i=0;i<3;i++) {
+		l2head_msg->vel[i]=head_vel_filters[i].processSample(local_to_head_vel(i));
+	}
+	//l2head_msg->vel[1]=local_to_head_vel(1);
+	//l2head_msg->vel[2]=local_to_head_vel(2);
+
 	l2head_msg->rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
 	l2head_msg->rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. ypr
 	l2head_msg->rotation_rate[2]=local_to_head_rate(2);

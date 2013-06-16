@@ -16,7 +16,7 @@ class Footsteps {
 	private:
 		footstep active_step;
 		std::vector<footstep> footstep_hist;
-		int thisisatestvariable;
+		//int thisisatestvariable;
 		
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
