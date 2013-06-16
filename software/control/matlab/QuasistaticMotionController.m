@@ -36,6 +36,7 @@ classdef QuasistaticMotionController < DRCController
         'supports',[],...
         'mu',1.0,...
         'ignore_terrain',false,...
+        'trans_drift',zeros(3,1),...
         'qtraj',zeros(getNumDOF(r),1),...
         'V',0,... % cost to go used in controller status message
         'Vdot',0)); % time derivative of cost to go used in controller status message
@@ -137,6 +138,15 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('comtraj',cdata.comtraj);
         obj.controller_data.setField('supports',cdata.supports);
         obj.controller_data.setField('support_times',cdata.support_times);
+        
+        if isa(cdata.s1,'Trajectory')
+          obj.controller_data.setField('is_time_varying',true);
+          obj.controller_data.setField('y0',ConstantTrajectory(zeros(4,1)));
+        else
+          obj.controller_data.setField('is_time_varying',false);
+          obj.controller_data.setField('y0',zeros(4,1));
+        end
+
       elseif isfield(data,'AtlasState')
         % take in new nominal pose and compute quasistatic standing
         % controller
@@ -161,7 +171,9 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('supports',supports);
         obj.controller_data.setField('support_times',0);
-        
+        obj.controller_dtaa.setField('is_time_varying',false);
+        obj.controller_data.setField('y0',zeros(4,1));
+         
       else
         % ...wait for state (hopefully we don't enter here)
         warning('QuasistaticMotionController:initialize: waiting for state');

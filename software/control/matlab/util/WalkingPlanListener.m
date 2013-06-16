@@ -38,7 +38,6 @@ classdef WalkingPlanListener
         fclose(fid);
         matdata = load(tmp_fname);
         qtraj=matdata.qtraj;
-        hddtraj=matdata.hddtraj;
 
         fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.S,'uint8'),'uint8');

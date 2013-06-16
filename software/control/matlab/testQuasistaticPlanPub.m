@@ -100,9 +100,9 @@ link_constraints(1) = struct('link_ndx', r.findLinkInd('r_foot'), 'pt', [0;0;0],
 link_constraints(2) = struct('link_ndx', r.findLinkInd('l_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', lfoot_pos);
       
 mu=1.0;
-data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
+data = struct('S',V.S.eval(0),'s1',V.s1,'s2',V.s2,'ignore_terrain',false,...
         'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',qtraj,'mu',mu,...
-        'link_constraints',link_constraints,'zmptraj',[],'qnom',[]);
+        'link_constraints',link_constraints,'zmptraj',[]);
     
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 pub.publish(0,data);
