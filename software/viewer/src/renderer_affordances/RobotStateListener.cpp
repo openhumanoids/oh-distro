@@ -30,6 +30,7 @@ namespace renderer_affordances
     }
     T_body_world = KDL::Frame::Identity();
 
+    _last_state_msg_system_timestamp = 0;
     _parent_renderer->last_state_msg_timestamp = 0;
      _parent_renderer->robot_name = "atlas";//default
    //(*_parent_renderer->robot_name_ptr) = "atlas"; 

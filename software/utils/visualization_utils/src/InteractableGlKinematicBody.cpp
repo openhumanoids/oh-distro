@@ -894,6 +894,10 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
   Eigen::Vector3f p;
   Eigen::Vector4f q;
 
+  if(!_jointdof_marker_flip_check_done){
+    _jointdof_marker_flip.resize(_joint_tfs.size());
+    std::fill(_jointdof_marker_flip.begin(),_jointdof_marker_flip.end(),false);
+  }
 
   for (size_t j = 0;j < _joint_tfs.size();j++)
   {
@@ -980,7 +984,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
            flip_criteria = _jointdof_marker_flip[j];
           }
           else
-          _jointdof_marker_flip.push_back(flip_criteria);
+          _jointdof_marker_flip[j]=(flip_criteria);
           
           if(flip_criteria){
             JointAxisOffset.p[2] =-2*arrow_length/3;          
@@ -1044,7 +1048,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
            flip_criteria = _jointdof_marker_flip[j];
           }
           else
-          _jointdof_marker_flip.push_back(flip_criteria);
+          _jointdof_marker_flip[j]=(flip_criteria);
           
           if(flip_criteria){
   //        glTranslatef(pos[0],pos[1],pos[2]);
@@ -1096,6 +1100,12 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
 //----------------------------------------------------------------------------------------------------------------
 void InteractableGlKinematicBody::draw_jointdof_markers()
 {
+
+  if(!_jointdof_marker_flip_check_done){
+    _jointdof_marker_flip.resize(_joint_tfs.size());
+    std::fill(_jointdof_marker_flip.begin(),_jointdof_marker_flip.end(),false);
+  }
+
   double dof_marker_inner_radius = 0.05;
   double dof_marker_outer_radius = 0.1;
   double length =0.2;//=diff.norm();
@@ -1192,7 +1202,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
            flip_criteria = _jointdof_marker_flip[j];
           }
           else
-          _jointdof_marker_flip.push_back(flip_criteria);
+          _jointdof_marker_flip[j]=(flip_criteria);
           
           if(flip_criteria){
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
@@ -1267,10 +1277,10 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
           double flipped = acos(u_body_to_joint.dot(-joint_axis));
           bool flip_criteria = (flipped>normal+1e-1);
           if(_jointdof_marker_flip_check_done){
-            flip_criteria = _jointdof_marker_flip[j];
+           flip_criteria = _jointdof_marker_flip[j];
           }
           else
-            _jointdof_marker_flip.push_back(flip_criteria);
+          _jointdof_marker_flip[j]=(flip_criteria);
           
           if(flip_criteria){
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);

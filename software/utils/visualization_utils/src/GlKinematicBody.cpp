@@ -156,7 +156,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
           mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
           if(mesh_model_it==_mesh_model_map.end()) // does not exist
           {
-            cout <<"MESH:" << file_path << endl;
+            //cout <<"MESH:" << file_path << endl;
             BotWavefrontModel* wavefront_model;
             wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
             
@@ -369,7 +369,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
           mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
           if(mesh_model_it==_mesh_model_map.end()) // does not exist
           {
-            cout <<"MESH:" << file_path << endl;
+            //cout <<"MESH:" << file_path << endl;
             BotWavefrontModel* wavefront_model;
             wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
             
@@ -1061,10 +1061,11 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
              jointInfo.axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.axis;
               //or is axis specified in parent link frame
               // jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;   
-              jointInfo.axis.Normalize();
-              
+              jointInfo.axis.Normalize();              
               jointInfo.type=it->second->child_joints[i]->type;
-              
+
+	      jointInfo.future_axis =jointInfo.axis;
+              jointInfo.future_frame =jointInfo.frame;
               //store
               _joint_names.push_back(jointInfo.name);
               _joint_tfs.push_back(jointInfo);
@@ -1109,7 +1110,10 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               //jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis; 
               jointInfo.axis.Normalize();
               jointInfo.type=it->second->child_joints[i]->type;
-              
+
+	      // Need to initialize these
+	      jointInfo.future_axis =jointInfo.axis;
+              jointInfo.future_frame =jointInfo.frame;
               //store
               _joint_names.push_back(jointInfo.name);
               _joint_tfs.push_back(jointInfo);
