@@ -443,7 +443,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
    	  glColor3f(  0.0, 0.0, 1.0 );} // blue
     else if ( self->score->falls == 1 ){
    	  glColor3f(  1.0, 0.5, 0.0 );} // orange
-    else // ( self->score->falls >= 2 ){
+    else { // ( self->score->falls >= 2 )
    	  glColor3f(  1.0, 0.0, 0.0 );} // red
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) line);
@@ -484,7 +484,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	y = gl_height + (-3 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
-	sprintf(line, "  %%   ====  TTL ");
+	sprintf(line, " %% REM  ==  TTL ");
 	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
