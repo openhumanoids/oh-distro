@@ -273,12 +273,12 @@ elseif strcmpi(mode,'bracing')
   Kp.back_mby = 100.0; 
   Kp.back_ubx = 100.0; 
 
-  Kd.l_arm_usy = 5.0; 
-  Kd.l_arm_shx = 5.0; 
-  Kd.l_arm_ely = 3.0; 
-  Kd.l_arm_elx = 3.0; 
-  Kd.l_arm_uwy = 0.1; 
-  Kd.l_arm_mwx = 0.1; 
+  Kd.l_arm_usy = 15.0; 
+  Kd.l_arm_shx = 15.0; 
+  Kd.l_arm_ely = 13.0; 
+  Kd.l_arm_elx = 13.0; 
+  Kd.l_arm_uwy = 0.2; 
+  Kd.l_arm_mwx = 0.2; 
   Kd.l_leg_uhz = 5.0; 
   Kd.l_leg_mhx = 5.0; 
   Kd.l_leg_lhy = 10.0; 
