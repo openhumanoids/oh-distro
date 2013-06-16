@@ -114,6 +114,10 @@ group "a.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
+    cmd "recovery" {
+        exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
+        host = "robot";
+    }
 }
 
 
@@ -335,10 +339,6 @@ group "m.dev_tools" {
         exec = "segmentation-viewer -r base";
         host = "base";
     }
-    cmd "recovery" {
-        exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
-        host = "robot";
-    }
     cmd "enable_gravity_when_pinned" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
         host = "robot";
@@ -552,7 +552,6 @@ script "dev.vrc_flying_ingress" {
     start group "b.3.manip";
     stop cmd "BotWalkingPlanner";
     start cmd "set-sim-rate";
-    start cmd "recovery";
 }
 
 script "dev.vrc_manip_mating_test" { 
