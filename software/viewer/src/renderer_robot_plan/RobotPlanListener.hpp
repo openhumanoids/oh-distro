@@ -66,6 +66,7 @@ namespace renderer_robot_plan
     std::vector< int >  _breakpoint_indices;
     int _active_breakpoint;
     int _num_breakpoints;
+    int _retractable_cycle_counter;
     
     //The following are local in-motion copies that appear on doubleclk of a keyframe and can be moved around via markers
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_left_hand;
@@ -317,12 +318,14 @@ namespace renderer_robot_plan
     {
       _is_multi_approve_plan =true;
       _active_breakpoint=0;
+      _retractable_cycle_counter = 0;
 		};
 		
 		bool deactivate_multi_approval()
     {
       _is_multi_approve_plan =false;
       _active_breakpoint=0;
+      _retractable_cycle_counter = 0;
 		};
     
     

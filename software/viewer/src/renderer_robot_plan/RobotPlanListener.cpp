@@ -26,6 +26,7 @@ namespace renderer_robot_plan
 		_is_multi_approve_plan(false),
 		_active_breakpoint(0),
 		_num_breakpoints(0),
+    _retractable_cycle_counter(0),
 		_plan_paused(false)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
@@ -406,8 +407,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       msg.right_arm_control_type = right_arm_control_type;
       msg.left_leg_control_type = left_leg_control_type;
       msg.right_leg_control_type = right_leg_control_type;
-      for(uint i=0;i<msg.num_states;i++)
-        cout << msg.plan[i].utime << endl;
+     /* for(uint i=0;i<msg.num_states;i++)
+        cout << msg.plan[i].utime << endl;*/
       _lcm->publish(channel, &msg);
       //cout << msg.num_states <<" not a multi approval plan\n";
     }
@@ -432,9 +433,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       // _active_breakpoint=1; 9:10 [G-]   
       // _active_breakpoint=2; 10:19 [M-]
       // _active_breakpoint=3; [19 0] [G-,G+]
-      
-      
-      
+    
       int start_ind = _breakpoint_indices[_active_breakpoint];
       int64_t start_utime = _received_plan.plan[start_ind].utime;  
       
@@ -471,8 +470,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
             usleep(1000000);
          }
       }
-
-          
+  
       if(_active_breakpoint<_breakpoint_indices.size()-1) 
       {
       // Get plan from _breakpoint_indices[_active_breakpoint]: _breakpoint_indices[_active_breakpoint+1]
@@ -480,43 +478,46 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         {
           
           msg.plan.push_back(_received_plan.plan[i]);
-          msg.plan[num_states].utime =msg.plan[num_states].utime - start_utime;
+          msg.plan[num_states].utime =_received_plan.plan[i].utime - start_utime; 
           num_states++;
           //cout <<"i :" << i << endl;          
         }   // end for     
-        //cout <<"_active_breakpoint :" <<_active_breakpoint << "   _breakpoint_indices[_active_breakpoint] :" << _breakpoint_indices[_active_breakpoint]<< endl;
+        //cout <<"msg.plan[num_states-1].utime :" <<msg.plan[num_states-1].utime <<" start_utime :" <<start_utime <<" _active_breakpoint :" <<_active_breakpoint << "   _breakpoint_indices[_active_breakpoint] :" << _breakpoint_indices[_active_breakpoint]<< endl;
         _active_breakpoint++;
       }
       else
       {
-        //cout <<"_active_breakpoint :" <<_active_breakpoint << "   _breakpoint_indices[_active_breakpoint] :" << _breakpoint_indices[_active_breakpoint]<< endl;
-         //close the loop
+        //close the loop
         //get states until the end, and append states from beginning to the first breakpoint
         //[{_breakpoint_indices[_active_breakpoint]:_breakpoint_indices.size()-1}, {0:_breakpoint_indices[0]}] 
 
-        int counter = 0;
         for (uint i = _breakpoint_indices[_active_breakpoint]; i <= (uint)_breakpoint_indices[_breakpoint_indices.size()-1]; i++)
         {
 
           msg.plan.push_back(_received_plan.plan[i]);
-          msg.plan[num_states].utime =msg.plan[num_states].utime - start_utime;
+          msg.plan[num_states].utime =_received_plan.plan[i].utime - start_utime; 
           num_states++;
           //cout <<"i :" << i << endl;
         } // end for
-        int64_t cycle_delay_offset = msg.plan[num_states].utime + _received_plan.plan[1].utime - _received_plan.plan[0].utime;
+        
+        int64_t cycle_delay_offset = msg.plan[num_states-1].utime + _received_plan.plan[1].utime - _received_plan.plan[0].utime;
         for (uint i = 0; i <=(uint)_breakpoint_indices[0]; i++)
         {
           msg.plan.push_back(_received_plan.plan[i]);
-          msg.plan[num_states].utime =msg.plan[num_states].utime + cycle_delay_offset;
+          msg.plan[num_states].utime =_received_plan.plan[i].utime + cycle_delay_offset;
           num_states++;
           //cout <<"i :" << i << endl;
-        } // end for        
+        } // end for     
+       //cout <<"msg.plan[num_states-1].utime :" <<msg.plan[num_states-1].utime <<" start_utime :" <<start_utime <<" _active_breakpoint :" <<_active_breakpoint << "   _breakpoint_indices[_active_breakpoint] :" << _breakpoint_indices[_active_breakpoint]<< endl;
+        //cout <<"cycle complete :" << cycle_delay_offset << endl;   
         _active_breakpoint = 0; // completes the cycle.
+        _retractable_cycle_counter++;
+    
       }// end if else
       msg.num_states = num_states;
-      
+
       /*for(uint i=0;i<msg.num_states;i++)
-        cout << msg.plan[i].utime << endl;  */  
+           cout << msg.plan[i].utime << endl;  */  
       _lcm->publish(channel, &msg);
     }// end else;
   }

@@ -180,11 +180,11 @@ namespace renderer_robot_plan_gui_utils
 		
 		if(self->robotPlanListener->is_multi_approval_plan())
 		{
-		  std::stringstream oss;
-		  oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints;
+      std::stringstream oss;
+      oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints<<" "<<self->robotPlanListener->_retractable_cycle_counter;
 		  string str = oss.str();
 		  gtk_entry_set_text(GTK_ENTRY(self->breakpoint_entry),str.c_str());   
-    	} 		
+    } 		
 
  // if(!self->robotPlanListener->is_multi_approval_plan()){
  //   gtk_widget_destroy(self->plan_execution_dock);
@@ -223,10 +223,10 @@ namespace renderer_robot_plan_gui_utils
      {
       self->breakpoint_entry = (GtkWidget *) gtk_entry_new();  
       std::stringstream oss;
-      oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints;
+      oss << self->robotPlanListener->_active_breakpoint+1 << "/" << self->robotPlanListener->_num_breakpoints<<" :"<<self->robotPlanListener->_retractable_cycle_counter;
       string str = oss.str();
       gtk_entry_set_text(GTK_ENTRY(self->breakpoint_entry),str.c_str()); 
-      gtk_entry_set_width_chars(GTK_ENTRY(self->breakpoint_entry),(gint)4);  
+      gtk_entry_set_width_chars(GTK_ENTRY(self->breakpoint_entry),(gint)7);  
      }
 
     execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
