@@ -7,7 +7,7 @@ options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 load('data/atlas_fp.mat');
-load('data/aa_step_in.mat');
+load('data/atlas_ingress.mat');
 t_qs_breaks = t_qs_breaks*scale_t;
 
 if size(foot_support_qs,1) == 35
@@ -57,7 +57,6 @@ end
 qtraj = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 comtraj = PPTrajectory(spline(t_qs_breaks,com_qs_plan(1:2,:)));
 htraj = PPTrajectory(spline(t_qs_breaks,com_qs_plan(3,:)));
-foot_support=PPTrajectory(zoh(t_qs_breaks,foot_support_qs));
 
 Q = 10*eye(4);
 R = 0.001*eye(2);
@@ -78,8 +77,8 @@ warning(S);
 Kp = [];
 data = struct('qtraj',qtraj,'comtraj',comtraj,...
       'zmptraj',[],...
-      'supptraj',foot_support,'htraj',[],'hddtraj',[],...
-      'S',V.S,'s1',V.s1,'link_constraints',[]);
+      'support_times',support_times,'supports',{support_states},'htraj',[],'hddtraj',[],...
+      'S',V.S,'s1',V.s1,'link_constraints',[],'ignore_terrain');
 
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 still_going = true;
