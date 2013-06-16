@@ -136,6 +136,7 @@ typedef struct
     drc_score_t *score;
     
     float estimated_biases[3];
+    bool estimated_biases_converged;
     
 } RendererSystemStatus;
 
@@ -195,6 +196,11 @@ on_estimated_bias(const lcm_recv_buf_t * buf, const char *channel, const drc_est
     self->estimated_biases[0] = msg->x;
     self->estimated_biases[1] = msg->y;
     self->estimated_biases[2] = msg->z;
+    if (msg->mode ==0){
+      self->estimated_biases_converged = FALSE;
+    }else{
+      self->estimated_biases_converged = TRUE;
+    }
 }
 
 static void
@@ -488,7 +494,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
-    sprintf(line6, "bias %.3f %.3f %.3f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
+    sprintf(line6, "bias %.2f %.2f %.2f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
     if ((self->left_contact==1)&& (self->right_contact==1) ){
       sprintf(line7, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
@@ -553,7 +559,11 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glColor3fv(colors[1]);
     glRasterPos2f(x, y + 4 * line_height);
     glutBitmapString(font, (unsigned char*) line5);
-    glColor3fv(colors[2]);
+    if (self->estimated_biases_converged ){
+      glColor3fv(colors[2]);
+    }else{
+      glColor3f(  1.0, 0.0, 0.0 );
+    }
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
     glColor3fv(colors[0]);
@@ -797,7 +807,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
 
     self->left_contact = 0.0;
     self->right_contact = 0.0;
-    
+    self->estimated_biases_converged=0.0;
     self->controller_state= DRC_CONTROLLER_STATUS_T_UNKNOWN;
     self->controller_utime= 0;
     
