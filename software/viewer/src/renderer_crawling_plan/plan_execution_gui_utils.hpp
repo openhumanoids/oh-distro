@@ -142,7 +142,7 @@ namespace renderer_crawling_plan_gui_utils
     gtk_box_pack_start (GTK_BOX (hbox), execute_button, FALSE, FALSE, 3);
     if(self->robotPlanListener->is_multi_approval_plan())
       gtk_box_pack_start (GTK_BOX (hbox), self->breakpoint_entry, FALSE, FALSE,3);
-    gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
+    //gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
     gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     gtk_box_pack_end(GTK_BOX(hbox), stop_walking_button, FALSE, FALSE, 3);
     
