@@ -3,20 +3,25 @@
 #include <mex.h>
 #include <ctime>
 #include <memory>
-#include <thread>
 #include <vector>
 #include <string>
 #include <map>
 #include <iostream>
+#include <sys/select.h>
+
+// thread and mutex stuff
+#include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <sys/select.h>
+#include <chrono>
 
 #include <Eigen/Dense>
 //#include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/drc/robot_state_t.hpp>
+
+#include <sys/time.h>
 
 using namespace Eigen;
 using namespace std;
@@ -37,7 +42,7 @@ void lcmThreadMain(void) {
     struct timeval timeout = { 0, 200*1000 };
     int status = select(fn+1, &input_set, NULL, NULL, &timeout);
     if (status == 0) {
-      //
+
     }
     else if (status < 0) {
       mexPrintf("error in lcm pipe"); mexEvalString("drawnow");
@@ -52,6 +57,40 @@ void lcmThreadMain(void) {
   }
 }
 
+// based on drake.util.Transform
+Vector3d quat2rpy(Vector4d& q) {
+  double norm=sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
+  if (abs(norm)>1e-12) {
+    q[0] /= norm; q[1] /= norm; q[2] /= norm; q[3] /= norm;
+  }
+
+  double w=q[0], x=q[1], y=q[2], z=q[3];
+    
+  Vector3d rpy;
+  rpy[0] = atan2(2.0*(w*x + y*z), w*w + z*z -(x*x +y*y));
+  rpy[1] = asin(2*(w*y - z*x));
+  rpy[2] = atan2(2*(w*z + x*y), w*w + x*x-(y*y+z*z));
+    
+  return rpy;
+}
+
+Vector3d angularvel2rpydot(const Vector3d& rpy, const Vector3d& omega) {
+  Vector3d rpydot;
+
+  rpydot[0] = cos(rpy[2])/cos(rpy[1])*omega[0] + sin(rpy[2])/cos(rpy[1])*omega[1];
+  rpydot[1] = -sin(rpy[2])*omega[0] + cos(rpy[2])*omega[1];
+  rpydot[2] = cos(rpy[2])*tan(rpy[1])*omega[0] + tan(rpy[1])*sin(rpy[2])*omega[1] + omega[2];
+    
+  return rpydot;
+}
+
+long get_systime_ms() {
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  return t.tv_sec*1000 + t.tv_usec/1000;
+}
+
+
 class RobotStateMonitor {
 
 
@@ -59,88 +98,211 @@ private:
   string m_robot_name;
   int m_num_joints;
   int m_num_floating_joints;
-  int m_num_x=0;
 	map<string,int> m_joint_map;
 	map<string,int> m_floating_joint_map;
-  long m_last_timestamp;
-  long m_time_of_last_message;
-  long m_reset_time=1000;
-  bool m_has_new_message = false;
+  //  drc::robot_state_t msg; // kaess: doesn't seem to be needed
 
-	double* m_x=NULL;
+  long m_last_timestamp; // us
+  long m_time_of_last_message; // ms
+  const static long m_reset_time=1000; // ms
+  bool m_has_new_message;
+
+  int m_num_x;
+	double* m_x;
 
 	mutex m_mutex;
+	mutex m_received_mutex;
 	condition_variable m_received;
 
 public:
 
-  RobotStateMonitor(string robot_name, vector<string> joint_name)
+  RobotStateMonitor(string robot_name, vector<string> joint_name) : m_has_new_message(false), m_num_x(0), m_x(NULL)
 	{
     m_robot_name = robot_name;
 
-    m_num_joints = 5;
+    m_num_joints = 0;
     m_num_floating_joints = 0;
-    /*
+    string prefix("base_");
     for (int i=0; i<joint_name.size(); i++) {
-      if (joint_name[i].startsWith("base_")) {
-        m_floating_joint_map.insert(joint_name[i],i);
-        m_num_floating_joints+=1;
+      if (joint_name[i].compare(0, prefix.size(), prefix) == 0) {
+        m_floating_joint_map[joint_name[i]] = i;
+        m_num_floating_joints++;
       }
       else {
-        m_joint_map.insert(joint_name[i],i);
-        m_num_joints+=1;
+        m_joint_map[joint_name[i]] = i;
+        m_num_joints++;
       }
     }
-    */
+
+#if 0 // doesn't seem to be needed
+    msg.robot_name = robot_name;
+      
+    if (m_num_floating_joints == 0) {
+      // Atlas specific stuff
+      msg.origin_position.rotation.w = 1.0;
+      msg.origin_position.translation.z = 0.927;
+    }
+
+    msg.num_joints = m_num_joints;
+    msg.joint_name.resize(m_num_joints);
+    int j=0;
+    for (int i=0; i<joint_name.size(); i++) {
+      if (joint_name[i].compare(0, prefix.size(), prefix) == 0) {
+        msg.joint_name[j++] = joint_name[i];
+      }
+    }
+    msg.joint_position.resize(m_num_joints);
+    msg.joint_velocity.resize(m_num_joints);
+    msg.measured_effort.resize(m_num_joints);
+	
+    msg.joint_cov.resize(m_num_joints);
+
+    msg.contacts.num_contacts = 0;
+#endif
+
+    // local stuff
     m_num_x = 2*(m_num_joints+m_num_floating_joints);
     m_x = new double[m_num_x];
 	}
+
   virtual ~RobotStateMonitor(void)
   {
-  	if (m_x) delete m_x;
+    mexPrintf("rsm destructor called\n"); mexEvalString("drawnow");
+    if (m_x) delete m_x;
   }
 
   void handleMessage(const lcm::ReceiveBuffer* rbuf,
           const string& chan,
           const drc::robot_state_t* msg)
   {
-  	cout << "message received." << endl;
+//  	cout << "message received." << endl;
+    long systime = get_systime_ms();
+
   	m_mutex.lock();
+    // include a 1 second timeout
+    // NOTE: utime/timestamp is in microseconds, systime/time_of_last_message in ms
+    if (msg->utime >= m_last_timestamp || systime-m_time_of_last_message >= m_reset_time) {
+
+      m_last_timestamp = msg->utime;
+      for (int i=0; i<msg->num_joints; i++) {
+        map<string,int>::iterator it = m_joint_map.find(msg->joint_name[i]);
+        if (it!=m_joint_map.end()) {
+          int index = it->second;
+          m_x[index] = msg->joint_position[i];
+          //             if (fdata.val[index] > Math.PI)
+          //               fdata.val[index] -= 2*Math.PI;
+          m_x[index+m_num_joints+m_num_floating_joints] = msg->joint_velocity[i];
+        }
+      }
+
+      // get floating joint body position and orientation
+      // TODO: should be generalized eventually
+      map<string,int>::iterator it;
+      it = m_floating_joint_map.find("base_x");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second;
+        m_x[index] = msg->origin_position.translation.x;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.x;
+      }
+      it = m_floating_joint_map.find("base_y");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second;
+        m_x[index] = msg->origin_position.translation.y;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.y;
+      }
+      it = m_floating_joint_map.find("base_z");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second;
+        m_x[index] = msg->origin_position.translation.z;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.z;
+      }
+
+      Vector4d q;
+      q[0] = msg->origin_position.rotation.w;
+      q[1] = msg->origin_position.rotation.x;
+      q[2] = msg->origin_position.rotation.y;
+      q[3] = msg->origin_position.rotation.z;
+      Vector3d rpy = quat2rpy(q);
+
+      Vector3d omega;
+      omega[0] = msg->origin_twist.angular_velocity.x;
+      omega[1] = msg->origin_twist.angular_velocity.y;
+      omega[2] = msg->origin_twist.angular_velocity.z;
+      Vector3d rpydot = angularvel2rpydot(rpy,omega);
+
+      it = m_floating_joint_map.find("base_roll");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second;
+        m_x[index] = rpy[0];
+        //           if (m_x[index] > Math.PI)
+        //             m_x[index] -= 2*Math.PI;
+        m_x[index+m_num_joints+m_num_floating_joints] = rpydot[0];
+      }
+
+      it = m_floating_joint_map.find("base_pitch");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second; 
+        m_x[index] = rpy[1];
+        //           if (m_x[index] > Math.PI)
+        //             m_x[index] -= 2*Math.PI;
+        m_x[index+m_num_joints+m_num_floating_joints] = rpydot[1];
+      }
+
+      it = m_floating_joint_map.find("base_yaw");
+      if (it!=m_floating_joint_map.end()) {
+        int index = it->second; 
+        m_x[index] = rpy[2];
+        //           if (m_x[index] > Math.PI)
+        //             m_x[index] -= 2*Math.PI;
+        m_x[index+m_num_joints+m_num_floating_joints] = rpydot[2];
+      }
+
+      m_has_new_message = true;
+
+    }
+
+    m_time_of_last_message = systime;
   	m_mutex.unlock();
   	m_received.notify_all();
   }
 
   mxArray* getNextState(long timeout_ms)
   {
-/*
-  	m_received.wait();
-  	if (timeout) {
-  		// return null
-  	} else {
-  	*/
-    	mxArray* px = mxCreateDoubleMatrix(m_num_x,1,mxREAL);
-    	memcpy(mxGetPr(px),m_x,m_num_x*sizeof(double));
-//  	}
+    mxArray* px;
+    unique_lock<mutex> lk(m_received_mutex);
+    if (m_received.wait_for(lk, chrono::milliseconds(timeout_ms)) == std::cv_status::timeout) {
+      // time out
+  		px = mxCreateDoubleMatrix(0,0,mxREAL);
+      return px;
+    } else {
+      return getState();
+    }
   }
 
   mxArray* getState(void)
   {
   	mxArray* px = mxCreateDoubleMatrix(m_num_x,1,mxREAL);
+    m_mutex.lock();
   	memcpy(mxGetPr(px),m_x,m_num_x*sizeof(double));
+    m_mutex.unlock();
+    return px;
   }
 
   double getTime(void)
   {
-  	return 0.0;
+    m_mutex.lock();
+  	double time = (double)m_last_timestamp / 1000000.0;
+    m_mutex.unlock();
+    return time;
   }
 
   void markAsRead(void)
   {
-  	// not implemented yet
+    m_mutex.lock();
+    m_has_new_message = false;
+    m_mutex.unlock();
   }
 };
-
-
 
 // convert Matlab cell array of strings into a C++ vector of strings
 vector<string> get_strings(const mxArray *rhs) {
@@ -157,16 +319,15 @@ vector<string> get_strings(const mxArray *rhs) {
   return strings;
 }
 
-// todo: implement mexAtExit to clean up the lcm thread
 static void cleanupLCM(void) {
-	mexPrintf("interrupting thread\n"); mexEvalString("drawnow");
+//	mexPrintf("interrupting thread\n"); mexEvalString("drawnow");
 	//    pdata->lcm_thread->interrupt();
 	b_interrupt_lcm = true;
-	mexPrintf("joining thread\n"); mexEvalString("drawnow");
+//	mexPrintf("joining thread\n"); mexEvalString("drawnow");
 	lcm_thread->join();
-	mexPrintf("destroying thread\n"); mexEvalString("drawnow");
+//	mexPrintf("destroying thread\n"); mexEvalString("drawnow");
 	delete lcm_thread;
-	mexPrintf("done.\n"); mexEvalString("drawnow");
+//	mexPrintf("done.\n"); mexEvalString("drawnow");
 }
 
 
@@ -183,17 +344,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   		"   t   = RobotStateMonitor(ptr,3) - get last timestamp\n"
   		"         RobotStateMonitor(ptr,4[,timestamp]) - mark as read\n";
 
-  if (!lcm_thread) {    // create lcm instance, and fork listener thread
-    if (!mylcm.good())
-      mexErrMsgIdAndTxt("DRC:RobotStateMonitor:LCMFailed","Failed to create LCM instance");
-
-    mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
-    b_interrupt_lcm = false;
-    lcm_thread = new std::thread(lcmThreadMain);
-
-    mexAtExit(cleanupLCM);
-  }
-
   RobotStateMonitor* rsm = NULL;
 
   if (nrhs<1) mexErrMsgIdAndTxt("DRC:RobotStateMonitor:BadInputs",usage);
@@ -203,9 +353,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     string robot_name(str);
     mxFree(str);
 
-  	vector<string> joint_name = get_strings(prhs[1]);
+  	vector<string> joint_names = get_strings(prhs[1]);
 
-  	rsm = new RobotStateMonitor(robot_name, joint_name);
+    mexLock();
+  	rsm = new RobotStateMonitor(robot_name, joint_names);
 
     // return a pointer to the model
     mxClassID cid;
@@ -215,6 +366,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
     memcpy(mxGetData(plhs[0]),&rsm,sizeof(rsm));
 
+
+    if (!lcm_thread) {    // create lcm instance, and fork listener thread
+      if (!mylcm.good())
+        mexErrMsgIdAndTxt("DRC:RobotStateMonitor:LCMFailed","Failed to create LCM instance");
+
+//      mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
+      b_interrupt_lcm = false;
+      lcm_thread = new std::thread(lcmThreadMain);
+
+      mexAtExit(cleanupLCM);
+    }
+
+
     return;
   }
 
@@ -222,11 +386,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (!mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
     mexErrMsgIdAndTxt("DRC:RobotStateMonitor:BadInputs","the first argument should be the ptr");
   memcpy(&rsm,mxGetData(prhs[0]),sizeof(rsm));
-  
-  if (nrhs<2) { // then free the memory and exit
-  	if (rsm) delete rsm;
+
+  if (nrhs<2) { // delete: free the memory and exit
+    if (rsm) delete rsm;
+    mexUnlock();
     return;
-  } 
+  }
 
   int command = (int) mxGetScalar(prhs[1]);
   switch (command) {
@@ -239,7 +404,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		break;
   case 1:  // get next message
 		{
-			long timeout = 0;  // todo: get from matlab
+      long timeout = (long)mxGetScalar(prhs[2]);
 			if (nlhs>0) plhs[0] = rsm->getNextState(timeout);
 			if (nlhs>1) plhs[1] = mxCreateDoubleScalar(rsm->getTime());
 		}
@@ -265,4 +430,3 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	}
 
 }
-

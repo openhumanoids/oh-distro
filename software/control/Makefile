@@ -45,8 +45,8 @@ else
 MEXFILES = $(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/HeightMapWrapper.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/AtlasCommandPublisher.$(MEXEXT) \
+	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
 	$(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT)
-#	$(BUILD_PREFIX)/matlab/RobotStateMonitor.$(MEXEXT) \
 
 endif
 
@@ -91,7 +91,7 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
 	cd ..;
 
-.INTERMEDIATE : $(CLASSFILES)
+#.INTERMEDIATE : $(CLASSFILES)
 
 %.class : %.java drake
 	javac $< -cp $(CLASSPATH);
