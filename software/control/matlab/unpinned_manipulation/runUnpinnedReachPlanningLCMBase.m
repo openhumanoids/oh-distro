@@ -416,16 +416,22 @@ while(1)
        useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.PROJECTILE) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_projectile.mat'));%atlas
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.CROUCHING_HNDS_DWN)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crouching_fp.mat'));
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_RGTHND_REACH)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));  
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_BDI_FP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));%bdi fp
+       useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.LFTHND_DWN)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         useIK_state = 3; % A hack, indicate using the left arm joint angles of the mat file
@@ -440,7 +446,7 @@ while(1)
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
       end
       q_desired = d.xstar(1:getNumDOF(r));
-      q_desired([1,2,6]) = x0([1,2,6]); % fix pelvis pose to current
+      q_desired(1:6) = x0(1:6); % fix pelvis pose to current
       manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end
 
@@ -455,7 +461,7 @@ while(1)
         dofnum = strcmp(r.getStateFrame.coordinates,joint_names{i});
         q_desired(dofnum) = joint_positions(i);
       end
-      q_desired(1:6) = x0(1:6); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
+      q_desired([1,2,6]) = x0([1,2,6]); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
       useIK_state = 2; % Doing IK for all joints, with foot on the ground.
       manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end  
