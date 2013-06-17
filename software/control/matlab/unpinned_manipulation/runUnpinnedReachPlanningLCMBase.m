@@ -444,6 +444,9 @@ while(1)
       elseif(posture_goal.preset==drc.robot_posture_preset_t.RGTHND_INHEADVIEW)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_rarm_inhead_view.mat'));
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
+      elseif(posture_goal.preset==drc.robot_posture_preset_t.LEFT_HAND_EXTENDED)
+          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_arms_extended.mat'));
+          useIK_state = 1;
       end
       q_desired = d.xstar(1:getNumDOF(r));
       if(useIK_state ==1)

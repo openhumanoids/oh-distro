@@ -46,6 +46,8 @@
 #define PARAM_SEND_STANDING "Switch to Standing"
 #define PARAM_SEND_BRACING "Switch to Bracing"
 
+#define PARAM_SEND_SITUP "Switch to SitUp"
+
 typedef enum _recovery_mode_t {
     MODE_PROJECTILE_READY, MODE_PROJECTILE_LEAP,      // 0 1
     MODE_FACEUP_TO_FACEDOWN, MODE_FACEDOWN_TO_FACEUP, // 2 3
@@ -178,6 +180,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.utime = bot_timestamp_now();
     drc_utime_t_publish(self->lc, "BRACE_FOR_FALL", &msg);
   } 
+  if(!strcmp(name, PARAM_SEND_SITUP)) {
+    fprintf(stderr,"\nSending SitUp Command\n");
+    drc_utime_t msg;
+    msg.utime = bot_timestamp_now();
+    drc_utime_t_publish(self->lc, "START_SITUP_CONTROLLER", &msg);
+  } 
   
 }
 
@@ -244,6 +252,7 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_STANDING, NULL); 
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_BRACING, NULL); 
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_SITUP, NULL);
   
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);

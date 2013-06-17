@@ -46,6 +46,7 @@ classdef SitUpController < DRCController
             obj.controller_data = ctrl_data;
             
             obj = setTimedTransition(obj,inf,name,false); % should transition to prone controller
+            obj = addLCMTransition(obj, 'RECOVERY_CMD', drc.recovery_t(), 'dummy');
             obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % self-transition
         end
         

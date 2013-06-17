@@ -13,7 +13,8 @@ classdef DummyController < DRCController
       obj = addLCMTransition(obj,'START_STANDING',drc.recovery_t(),'standing');
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
-    end
+      obj = addLCMTransition(obj,'START_SITUP_CONTROLLER', drc.utime_t(),'sit_up');
+  end
 
     function msg = status_message(obj,t_sim,t_ctrl);
       msg = drc.controller_status_t();
