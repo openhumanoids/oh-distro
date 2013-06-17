@@ -18,8 +18,8 @@
     <param name="hand_brake_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_yaw" default_value="0" inc="0.001" min="-100" max="100" />
     
-    <param name="vault_stance_x" default_value="-0.5" inc="0.001" min="-100" max="100" />
-    <param name="vault_stance_y" default_value="-1.0" inc="0.001" min="-100" max="100" />
+    <param name="vault_stance_x" default_value="-0.007" inc="0.001" min="-100" max="100" />
+    <param name="vault_stance_y" default_value="-1.12" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_z" default_value="-0.01" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_roll" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
