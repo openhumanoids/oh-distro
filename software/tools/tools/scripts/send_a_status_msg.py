@@ -16,7 +16,7 @@ else:
   times= 400.0
 
 if len(sys.argv)>2:
-  message = int(sys.argv[2])
+  message = sys.argv[2]
 else:
   message = "calm down scott. everything will be all right"
 
