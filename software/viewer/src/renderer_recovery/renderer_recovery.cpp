@@ -50,7 +50,8 @@ typedef enum _recovery_mode_t {
     MODE_PROJECTILE_READY, MODE_PROJECTILE_LEAP,      // 0 1
     MODE_FACEUP_TO_FACEDOWN, MODE_FACEDOWN_TO_FACEUP, // 2 3
     MODE_FLAT_OUT, MODE_FLAT_OUT_SLOW,                // 4 5
-    MODE_FLAT_OUT_KNEES_OUT, MODE_FACEUP_TO_FACEDOWN_NEW // 6 7
+    MODE_FLAT_OUT_KNEES_OUT, MODE_FACEUP_TO_FACEDOWN_NEW, // 6 7
+    MODE_CAR_WIGGLE, MODE_GENTLE_FALL // 8 9
 }recovery_mode_t;
 
 typedef enum _rise_mode_t {
@@ -217,7 +218,8 @@ BotRenderer *renderer_recovery_new (BotViewer *viewer, int render_priority, lcm_
                                 "Proj. Ready", MODE_PROJECTILE_READY, "Projectile", MODE_PROJECTILE_LEAP, 
                                 "Face Up-to-Down", MODE_FACEUP_TO_FACEDOWN, "Face Down-to-Up", MODE_FACEDOWN_TO_FACEUP,  
                                 "Flat Out", MODE_FLAT_OUT, "Flat Out Slow", MODE_FLAT_OUT_SLOW,                                 
-                                "Flat Out Knees Out", MODE_FLAT_OUT_KNEES_OUT, "Face U2D New", MODE_FACEUP_TO_FACEDOWN_NEW,NULL);
+                                "Flat Out Knees Out", MODE_FLAT_OUT_KNEES_OUT, "Face U2D New", MODE_FACEUP_TO_FACEDOWN_NEW,
+                                "Car Wiggle", MODE_CAR_WIGGLE,"Lie (from Proj. Ready)", MODE_GENTLE_FALL,NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_RECOVERY_SEND, NULL);
 
   bot_gtk_param_widget_add_separator (self->pw, "");

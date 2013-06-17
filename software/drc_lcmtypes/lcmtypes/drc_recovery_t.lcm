@@ -14,6 +14,8 @@ struct recovery_t
     const int8_t MODE_FLAT_OUT_SLOW        = 5;
     const int8_t MODE_FLAT_OUT_KNEES_OUT   = 6;    
     const int8_t MODE_FACEUP_TO_FACEDOWN_NEW=7;        
+    const int8_t MODE_CAR_WIGGLE           = 8;        
+    const int8_t MODE_GENTLE_FALL           = 9; 
     const int8_t MODE_KNEE_RISE_SET        = 10;
     const int8_t MODE_KNEE_RISE            = 11;
     const int8_t MODE_KNEE_FINISH          = 12;
