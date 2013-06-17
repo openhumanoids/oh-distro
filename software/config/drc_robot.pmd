@@ -81,7 +81,7 @@ group "a.1.core" {
     }
     cmd "logger-robot-nocams" {
         exec = "lcm-logger -f $HOME/drc/data/latest_robot_log.lcm";
-        host = "extra";
+        host = "robot";
     }
     cmd "drc-frequency" {
         exec = "drc-frequency";
