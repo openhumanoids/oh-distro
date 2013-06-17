@@ -30,7 +30,11 @@ classdef AtlasState < LCMCoordinateFrameWCoder & Singleton
      end
      
       function obj = subscribe(obj,channel)
-        RobotStateMonitor(obj.mex_ptr.getData,0,channel);
+	chash = java.lang.String(channel).hashCode();
+        if ~any(chash==obj.subscriptions)  % don't subscribe multiple times to the same channel
+          RobotStateMonitor(obj.mex_ptr.getData,0,channel);
+          obj.subscriptions(end+1)=chash;
+        end
       end
       
       function [x,t] = getNextMessage(obj,timeout)   % x=t=[] if timeout
