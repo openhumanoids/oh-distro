@@ -8,12 +8,15 @@
 #include <map>
 #include <iostream>
 #include <sys/select.h>
+#include <unistd.h>
 
 // thread and mutex stuff
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+//#include <cstdatomic>
+#include <atomic>
 
 #include <Eigen/Dense>
 //#include <lcm/lcm.h>
@@ -102,17 +105,17 @@ private:
 	map<string,int> m_floating_joint_map;
   //  drc::robot_state_t msg; // kaess: doesn't seem to be needed
 
-  long m_last_timestamp; // us
+  atomic_long m_last_timestamp; // us
   long m_time_of_last_message; // ms
   const static long m_reset_time=1000; // ms
-  bool m_has_new_message;
+  atomic_bool m_has_new_message;
 
   int m_num_x;
 	double* m_x;
 
 	mutex m_mutex;
-	mutex m_received_mutex;
-	condition_variable m_received;
+  //	mutex m_received_mutex;
+  //	condition_variable m_received;
 
 public:
 
@@ -263,14 +266,36 @@ public:
 
     m_time_of_last_message = systime;
   	m_mutex.unlock();
-  	m_received.notify_all();
+    //  	m_received.notify_all();
   }
 
+#if 1
   mxArray* getNextState(long timeout_ms)
   {
+    if (m_has_new_message) {
+      return getState();
+    } else {
+      long systime = get_systime_ms();
+      while (!m_has_new_message && (get_systime_ms() - systime) < timeout_ms) {
+        usleep(20);
+      }
+      if (!m_has_new_message) {
+        // time out
+        mxArray* px;
+        px = mxCreateDoubleMatrix(0,0,mxREAL);
+        return px;
+      } else {
+        return getState();
+      }
+    }
+  }
+#else
+  mxArray* getNextState(long timeout_ms)
+  {
+
     mxArray* px;
     unique_lock<mutex> lk(m_received_mutex);
-    if (m_received.wait_for(lk, chrono::milliseconds(timeout_ms)) == std::cv_status::timeout) {
+    if (m_received.wait_for(lk, chrono::milliseconds(timeout_ms)) == 0) {
       // time out
   		px = mxCreateDoubleMatrix(0,0,mxREAL);
       return px;
@@ -278,29 +303,31 @@ public:
       return getState();
     }
   }
+#endif
 
   mxArray* getState(void)
   {
   	mxArray* px = mxCreateDoubleMatrix(m_num_x,1,mxREAL);
     m_mutex.lock();
   	memcpy(mxGetPr(px),m_x,m_num_x*sizeof(double));
+    m_has_new_message = false;
     m_mutex.unlock();
     return px;
   }
 
   double getTime(void)
   {
-    m_mutex.lock();
+    //atomic    m_mutex.lock();
   	double time = (double)m_last_timestamp / 1000000.0;
-    m_mutex.unlock();
+    //    m_mutex.unlock();
     return time;
   }
 
   void markAsRead(void)
   {
-    m_mutex.lock();
+    //atomic    m_mutex.lock();
     m_has_new_message = false;
-    m_mutex.unlock();
+    //    m_mutex.unlock();
   }
 };
 

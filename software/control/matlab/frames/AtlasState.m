@@ -16,45 +16,45 @@ classdef AtlasState < LCMCoordinateFrameWCoder & Singleton
         obj.setDefaultChannel('EST_ROBOT_STATE');
       end
 
-%     if (obj.mex_ptr==0)
-%       obj.mex_ptr = SharedDataHandle(RobotStateMonitor('atlas',joint_names));
-%     end
+    if (obj.mex_ptr==0)
+      obj.mex_ptr = SharedDataHandle(RobotStateMonitor('atlas',joint_names));
+    end
     end
 
-%      function delete(obj)
-%        % note that delete is also called on temporary objects used to
-%        % recover the actual Singleton object
-%        if (obj.mex_ptr ~= 0)
-%          RobotStateMonitor(obj.mex_ptr.getData);
-%        end
-%      end
-%      
-%       function obj = subscribe(obj,channel)
-%         RobotStateMonitor(obj.mex_ptr.getData,0,channel);
-%       end
-%       
-%       function [x,t] = getNextMessage(obj,timeout)   % x=t=[] if timeout
-%         [x,t] = RobotStateMonitor(obj.mex_ptr.getData,1,timeout);
-%       end
-%       
-%       function [x,t] = getMessage(obj)
-%         [x,t] = RobotStateMonitor(obj.mex_ptr.getData,2);
-%       end
-%       
-%       function [x,t] = getCurrentValue(obj)
-%         [x,t] = RobotStateMonitor(obj.mex_ptr.getData,2);
-%       end
-%       
-%       function t = getLastTimestamp(obj)
-%         t = RobotStateMonitor(obj.mex_ptr.getData,3);
-%       end
-%       
-%       function markAsRead(obj)
-%         RobotStateMonitor(obj.mex_ptr.getData,4);
-%       end
+     function delete(obj)
+       note that delete is also called on temporary objects used to
+       recover the actual Singleton object
+       if (obj.mex_ptr ~= 0)
+         RobotStateMonitor(obj.mex_ptr.getData);
+       end
+     end
+     
+      function obj = subscribe(obj,channel)
+        RobotStateMonitor(obj.mex_ptr.getData,0,channel);
+      end
+      
+      function [x,t] = getNextMessage(obj,timeout)   % x=t=[] if timeout
+        [x,t] = RobotStateMonitor(obj.mex_ptr.getData,1,timeout);
+      end
+      
+      function [x,t] = getMessage(obj)
+        [x,t] = RobotStateMonitor(obj.mex_ptr.getData,2);
+      end
+      
+      function [x,t] = getCurrentValue(obj)
+        [x,t] = RobotStateMonitor(obj.mex_ptr.getData,2);
+      end
+      
+      function t = getLastTimestamp(obj)
+        t = RobotStateMonitor(obj.mex_ptr.getData,3);
+      end
+      
+      function markAsRead(obj)
+        RobotStateMonitor(obj.mex_ptr.getData,4);
+      end
   end
   
-%  properties
-%   mex_ptr=0
-%  end
+ properties
+  mex_ptr=0
+ end
 end
