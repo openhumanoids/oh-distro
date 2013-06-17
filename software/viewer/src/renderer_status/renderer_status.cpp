@@ -896,9 +896,9 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_SCORE_AND_RATES, PARAM_SCORE_AND_RATES_DEFAULT, NULL);
     bot_gtk_param_widget_add_enum (self->pw, PARAM_TOTAL_KB, (BotGtkParamWidgetUIHint)0, TOTAL_KB_0, 
-	      "0 | 14KB/sec", TOTAL_KB_0 , "1 | 56B/sec", TOTAL_KB_1, 
-	      "2 | 225KB/sec", TOTAL_KB_2, "3 | 900KB/sec", TOTAL_KB_3, 	      
-	      "4 | 3600KB/sec", TOTAL_KB_4, NULL);    
+	      "5 | 14KB/sec", TOTAL_KB_0 , "4 | 56B/sec", TOTAL_KB_1, 
+	      "3 | 225KB/sec", TOTAL_KB_2, "2 | 900KB/sec", TOTAL_KB_3, 	      
+	      "1 | 3600KB/sec", TOTAL_KB_4, NULL);    
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_RESET_SHAPER_STATS, NULL);
     
     
