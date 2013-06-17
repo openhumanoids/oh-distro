@@ -122,11 +122,14 @@ public:
     }
 
     // finish off result params
+    if (result.mInliers.size() < sampleSize) {
+      result.mSuccess = false;
+    }
     result.mSuccess = success;
     result.mNumIterations = iterationCount;
 
     // refine result using all inliers if specified
-    if (mRefineUsingInliers) {
+    if (mRefineUsingInliers && result.mSuccess) {
       result.mSolution = iProblem.estimate(result.mInliers);
     }
 
