@@ -254,18 +254,24 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
 
-  collision::Collision_Object * intersected_object = NULL;
-  self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
-  if( intersected_object != NULL ){
-      //cout << self->selected_planned_footstep_index << endl;  
-      //std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
-    (*self->selection)  = self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_unique_name;
-     std::cout << "intersected sticky foot:" << (*self->selection) <<  std::endl;
-     // self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->highlight_link((*self->selection));
-   }
+  if(self->selected_planned_footstep_index>=0)
+  { 
+    collision::Collision_Object * intersected_object = NULL;
+    self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
+    if( intersected_object != NULL ){
+        //cout << self->selected_planned_footstep_index << endl;  
+        //std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
+      (*self->selection)  = self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_unique_name;
+       std::cout << "intersected sticky foot:" << (*self->selection) <<  std::endl;
+       // self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->highlight_link((*self->selection));
+     }
+  }
  
- 
-  if((((*self->selection)  != " ") || ((*self->marker_selection)  != " ")) &&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
+  if((((*self->selection)  != " ") || ((*self->marker_selection)  != " ")) &&
+     (event->button==1) &&
+     (self->selected_planned_footstep_index>=0) &&
+     (event->type==GDK_2BUTTON_PRESS)
+    )
   {
   
     if((*self->marker_selection)  == " ")// dbl clk on link then toogle
