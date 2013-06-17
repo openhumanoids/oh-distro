@@ -11,16 +11,16 @@
     <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
 
     
-    <param name="hand_brake_stance_x" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="hand_brake_stance_y" default_value="-1.0" inc="0.001" min="-100" max="100" />
-    <param name="hand_brake_stance_z" default_value="0.07" inc="0.001" min="-100" max="100" />
+    <param name="hand_brake_stance_x" default_value="0.390" inc="0.001" min="-100" max="100" />
+    <param name="hand_brake_stance_y" default_value="-1.120" inc="0.001" min="-100" max="100" />
+    <param name="hand_brake_stance_z" default_value="-0.01" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_roll" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
-    <param name="hand_brake_stance_yaw" default_value="-1.57079632679" inc="0.001" min="-100" max="100" />
+    <param name="hand_brake_stance_yaw" default_value="0" inc="0.001" min="-100" max="100" />
     
     <param name="vault_stance_x" default_value="-0.5" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_y" default_value="-1.0" inc="0.001" min="-100" max="100" />
-    <param name="vault_stance_z" default_value="0.07" inc="0.001" min="-100" max="100" />
+    <param name="vault_stance_z" default_value="-0.01" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_roll" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_yaw" default_value="-1.57079632679" inc="0.001" min="-100" max="100" />         
@@ -849,14 +849,14 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="hb_rfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="0 0 0" />
+        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="hb_lfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="0 0 0" />
+        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
@@ -906,14 +906,14 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="vault_rfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="0 0 0" />
+        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="vault_lfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="0 0 0" />
+        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
