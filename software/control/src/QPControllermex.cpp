@@ -708,6 +708,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1/(1+REG));
   	}
 
+	#ifdef TEST_FAST_QP
+  	MatrixXd Hqp_con_test(nq_con,nq_con) = (pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con + (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con)).inverse();
+  	if (((Hqp_con_test-pdata->Hqp_con).abs()).maxCoeff() > 1e-6)
+  		mexErrMsgIdAndTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
+	#endif
+
+
     Qnfdiag = MatrixXd::Constant(nf,1,1/REG);
     Qneps = MatrixXd::Constant(neps,1,1/(.001+REG));
 
@@ -750,15 +757,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	QBlkDiag[2] = &Qnfdiag;
     	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
-
-    #ifdef USE_FAST_QP
-			#ifdef TEST_FAST_QP
-    		if (info>=0) {
-    			Vector alpha2(nparams);
-    			info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha2);
-    		}
-	    #endif
-    #endif
 
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
 
