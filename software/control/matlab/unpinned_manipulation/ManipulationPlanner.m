@@ -303,6 +303,7 @@ classdef ManipulationPlanner < handle
             qstar = nomdata.xstar(1:obj.r.getNumDOF());
 %  			ikoptions.q_nom = qstar;
           NSamples = 10;
+          yaw_angles_bnd = 25;
           arm_loci_flag = ~cellfun(@(x) isempty(strfind(char(x),'palm')),ee_names);
           if(sum(arm_loci_flag) == 2)
             nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_two_hands_reaching.mat'));
@@ -322,16 +323,28 @@ classdef ManipulationPlanner < handle
             ikoptions.jointLimitMax = Point(state_frame,[ikoptions.jointLimitMax;zeros(obj.r.getNumDOF,1)]);
             ikoptions.jointLimitMin.back_mby = -0.3;
             ikoptions.jointLimitMax.back_mby = 0.3;
+            ikoptions.jointLimitMax.r_arm_usy = 0;
+            ikoptions.jointLimitMax.l_arm_usy = 0;
             ikoptions.jointLimitMin = double(ikoptions.jointLimitMin);
             ikoptions.jointLimitMax = double(ikoptions.jointLimitMax);
             ikoptions.jointLimitMin = ikoptions.jointLimitMin(1:obj.r.getNumDOF);
             ikoptions.jointLimitMax = ikoptions.jointLimitMax(1:obj.r.getNumDOF);
+            coords = obj.r.getStateFrame.coordinates();
+            coords = coords(1:obj.r.getNumDOF());
+            arm_joint_ind = ~cellfun(@isempty,strfind(coords,'arm'));
+            ikoptions.jointLimitMin(arm_joint_ind) = 0.9*ikoptions.jointLimitMin(arm_joint_ind);
+            ikoptions.jointLimitMax(arm_joint_ind) = 0.9*ikoptions.jointLimitMax(arm_joint_ind);
+            if(~isempty(h_ee_goal))
+              head_const.gaze_conethreshold = pi/4;
+            end
+            NSamples = 20;
+            yaw_samples_bnd = 60;
           end
           for k=1:NSamples,
              %q_guess = qstar;
-             q_guess(3)=q_guess(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
-             q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(25*pi/180);%+-10degrees from current pose
-				
+               q_guess(3) = q_guess(3)+2*(rand(1,1)-0.5)*(0.2);
+               q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(yaw_angles_bnd*pi/180);%+-10degrees from current pose
+
             ikoptions.quasiStaticFlag = true;
             %obj.pelvis_body,[0;0;0],pelvis_const,...
             %   obj.head_body,[0;0;0],head_pose0_relaxed,...
@@ -355,7 +368,7 @@ classdef ManipulationPlanner < handle
 
              if(snopt_info > 10)
                warning(['poseOpt IK fails']);
-               send_status(3,0,0,sprintf('snopt_info = %d...',snopt_info));
+               send_status(4,0,0,sprintf('snopt_info = %d...',snopt_info));
              end
 	           if(snopt_info < 10)
 	             sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
@@ -364,6 +377,9 @@ classdef ManipulationPlanner < handle
 	             sample_cost(:,k) =  Inf;
              end
 	           disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
+          end
+           if(all(isinf(sample_cost)))
+             send_status(3,0,0,'All samples are infeasible');
            end
            [~,k_best] = min(sample_cost);
            disp(['sample_cost(:,k): ' num2str(sample_cost(:,k_best))]);
@@ -371,9 +387,9 @@ classdef ManipulationPlanner < handle
 
            % publish robot pose
            disp('Publishing candidate endpose ...');
-           kinsol_out = doKinematics(obj.r,q_out);
-           [~,J_rh] = forwardKin(obj.r,kinsol_out,obj.r_hand_body,[0;0;0],1);
-           fprintf('The condition number of Jacobian matrix of the right hand is %10.4f\n',cond(J_rh));
+%            kinsol_out = doKinematics(obj.r,q_out);
+%            [~,J_rh] = forwardKin(obj.r,kinsol_out,obj.r_hand_body,[0;0;0],1);
+%            fprintf('The condition number of Jacobian matrix of the right hand is %10.4f\n',cond(J_rh));
            send_status(3,0,0,'Publishing candidate endpose...');
            utime = now() * 24 * 60 * 60;
            xtraj = zeros(getNumStates(obj.r),1);
