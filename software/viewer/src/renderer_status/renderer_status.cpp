@@ -66,19 +66,18 @@ typedef enum _rate_t {
 } rate_t;
 
   
-
-
-float colors[NUMBER_OF_SYSTEMS][3] = {
-        { 1.0, 0.0, 0.0 }, // red
-        { 0.7, 0.7, 0.0 }, // yellow
-        { 0.0, 1.0, 0.5 }, // green
-        { 0.0, 0.7, 0.7 }, // cyan
-        { 0.45, 0.45, 1.0 }, // blue
-        { 0.0, 0.4, 0.3 }, // dark green
-        { 1.0, 0.5, 0.0 },  // orange
-        { 1.0, 0.5, 0.5 },  // salmon
-        { 1.0, 0.15, 0.15 }, // brighter red
+float safe_colors[NUMBER_OF_SYSTEMS][3] = {
+    { 0.2000, 0.6274, 0.1725 },    // darker green
+    { 0.6509, 0.8078, 0.8901 }, // light blue
+    { 0.6980, 0.8740, 0.5411 }, // light green
+    { 0.3015, 0.6005, 0.7058 }, // dark blue ... too dark
+    { 0.9843, 0.6039, 0.6000 }, // orange
+    { 0.8901, 0.3519, 0.3598 },  // rec ... too dark
+    { 0.9921, 0.7490, 0.4352 }, // bright orange
+    { 0.6156, 0.4392, 0.7039 }, // purple
+    { 1.0, 0.5, 0.5} , // salmon  
 };
+
 
 
 const char* PARAM_SHADING = "Shading";
@@ -166,6 +165,11 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
     drc_system_status_t* recd = drc_system_status_t_copy(msg);
     // NB: overwrite the incoming timestamp as that might have come from a simulated clock
     recd->utime = bot_timestamp_now();
+    
+    if ( msg->system >= NUMBER_OF_SYSTEMS ){
+      std::cout << "status from system ["<< (int)msg->system << "] will be ignored. Code supports ["<< NUMBER_OF_SYSTEMS <<"] subsystems\n"; 
+      return;
+    }
     
     self->sys_deque->push_back(recd);
     if( self->sys_deque->size() > MAXIMUM_N_OF_LINES){
@@ -550,35 +554,35 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       glEnd();    
     }
 
-    glColor3fv(colors[0]);
+    glColor3fv(safe_colors[0]);
     glRasterPos2f(x, y);
     glutBitmapString(font, (unsigned char*) line1);
-    glColor3fv(colors[1]);
+    glColor3fv(safe_colors[1]);
     glRasterPos2f(x, y + 1 * line_height);
     glutBitmapString(font, (unsigned char*) line2);
-    glColor3fv(colors[2]);
+    glColor3fv(safe_colors[2]);
     glRasterPos2f(x, y + 2 * line_height);
     glutBitmapString(font, (unsigned char*) line3);
-    glColor3fv(colors[0]);
+    glColor3fv(safe_colors[0]);
     glRasterPos2f(x, y + 3 * line_height);
     glutBitmapString(font, (unsigned char*) line4);
-    glColor3fv(colors[1]);
+    glColor3fv(safe_colors[1]);
     glRasterPos2f(x, y + 4 * line_height);
     glutBitmapString(font, (unsigned char*) line5);
     if (self->estimated_biases_converged ){
-      glColor3fv(colors[2]);
+      glColor3fv(safe_colors[2]);
     }else{
       glColor3f(  1.0, 0.0, 0.0 );
     }
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
-    glColor3fv(colors[0]);
+    glColor3fv(safe_colors[0]);
     glRasterPos2f(x, y + 6 * line_height);
     glutBitmapString(font, (unsigned char*) line7);
-    glColor3fv(colors[1]);
+    glColor3fv(safe_colors[1]);
     glRasterPos2f(x, y + 7 * line_height);
     glutBitmapString(font, (unsigned char*) line8);
-    glColor3fv(colors[2]);
+    glColor3fv(safe_colors[2]);
     glRasterPos2f(x, y + 8 * line_height);
     glutBitmapString(font, (unsigned char*) line9);
     
@@ -616,9 +620,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          }
          y_pos = (int) line_height*msgs_onscreen;
          float colors4[4] = {0};
-         colors4[0] =colors[W_to_show][0];
-         colors4[1] =colors[W_to_show][1];
-         colors4[2] =colors[W_to_show][2];
+         colors4[0] =safe_colors[W_to_show][0];
+         colors4[1] =safe_colors[W_to_show][1];
+         colors4[2] =safe_colors[W_to_show][2];
          colors4[3] =1;
          if (msgs_onscreen >  (max_bottom_strip) ){
             if (self->visability==MODE_FULL){
@@ -661,9 +665,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
            if (self->param_status[W_to_show_comb]){
              y_pos = line_height*msgs_onscreen;
              float colors4[4] = {0};
-             colors4[0] =colors[W_to_show_comb][0];
-             colors4[1] =colors[W_to_show_comb][1];
-             colors4[2] =colors[W_to_show_comb][2];
+             colors4[0] =safe_colors[W_to_show_comb][0];
+             colors4[1] =safe_colors[W_to_show_comb][1];
+             colors4[2] =safe_colors[W_to_show_comb][2];
              colors4[3] =1.0;
              if (msgs_onscreen >  (max_bottom_strip) ){
                if (self->visability==MODE_FULL){
@@ -677,7 +681,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
              sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
              // use this for debugging:
              //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
-             //      glColor3fv(colors[1]);
+             //      glColor3fv(safe_colors[1]);
              glColor4fv(colors4);
              glRasterPos2f(x_pos, (int) gl_height -y_pos   );
              glutBitmapString(font, (unsigned char*) scroll_line);    
@@ -690,7 +694,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
      }else if (N_active_params > 1){ // if only two classes want to be shown:
        //          printf ("show multiple widgets\n");
        //   printf("refresh\n");
-       //glColor3fv(colors[1]);
+       //glColor3fv(safe_colors[1]);
        int msgs_onscreen = 0;
        for (int i=self->sys_deque->size()-1 ;i>=0;i--){
          if (y_pos > (gl_height)){ // stop of we have covered the screen:
@@ -705,9 +709,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          if (self->param_status[W_to_show_comb]){
            y_pos = line_height*((float)msgs_onscreen );
            float colors4[4] = {0.0};
-           colors4[0] =colors[W_to_show_comb][0];
-           colors4[1] =colors[W_to_show_comb][1];
-           colors4[2] =colors[W_to_show_comb][2];
+           colors4[0] =safe_colors[W_to_show_comb][0];
+           colors4[1] =safe_colors[W_to_show_comb][1];
+           colors4[2] =safe_colors[W_to_show_comb][2];
            colors4[3] =1;
            if (msgs_onscreen >  (max_bottom_strip) ){
 	      if (self->visability==MODE_FULL){
@@ -723,7 +727,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
            sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
            // use this for debugging:
            //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
-           //      glColor3fv(colors[1]);
+           //      glColor3fv(safe_colors[1]);
            glColor4fv(colors4);
            glRasterPos2f(x_pos, gl_height -y_pos  );
            glutBitmapString(font, (unsigned char*) scroll_line);    
