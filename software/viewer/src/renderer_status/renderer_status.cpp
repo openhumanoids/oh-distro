@@ -300,11 +300,11 @@ static void format_time_str (int64_t lutime, char *line)
   int hours = lutime % (int)24; lutime /= (int)24;
   int  days = lutime;
 
-//  sprintf (line, "SIM TIME: %1dd %2dh %2dm %2ds %3dms %3dus\n",
+//  snprintf (line,70, "SIM TIME: %1dd %2dh %2dm %2ds %3dms %3dus\n",
 //          days, hours, mins, secs, msecs, usecs );
-  //sprintf (line, "%2dm %2ds %3dms\n",mins, secs, msecs);
+  //snprintf (line,70, "%2dm %2ds %3dms\n",mins, secs, msecs);
   
-  sprintf(line, "%.4f SIM %2dm %2ds", ((double)lutime/1E6), mins, secs );
+  snprintf(line, 70,  "%.4f SIM %2dm %2ds", ((double)lutime/1E6), mins, secs );
   
 } 
 
@@ -409,7 +409,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
           }else if (self->channel_list[i] == DRC_FREQUENCY_T_SCAN ){ chan = "SCAN";
           }else { chan = "UNKNOWN"; }
           
-          sprintf(line, "%03d %s", self->frequency_list[i], chan.c_str());
+          snprintf(line, 70,  "%03d %s", self->frequency_list[i], chan.c_str());
           
 	  x = 0 ;// hind * 150 + 120;
    	  y = gl_height + (-i - 11) * line_height;
@@ -423,14 +423,14 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	char lineX[80];
 	float elapsed_time =  (self->last_utime - self->frequency_utime)*1E-6;
 	y = gl_height - 10 * line_height;
-	sprintf(lineX, "%.1f AGE OF FREQS", elapsed_time);
+	snprintf(lineX,70, "%.1f AGE OF FREQS", elapsed_time);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineX);
 	
 	char lineY[80];
 	y = gl_height - 9 * line_height;
-	sprintf(lineY, "%d%% GAZEBO RATE", self->real_time_percent);
+	snprintf(lineY,70, "%d%% GAZEBO RATE", self->real_time_percent);
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineY);
@@ -439,7 +439,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       
       if (self->score != NULL){
 	char line[80];
-	sprintf(line, "TASK %d|SCORE %d|FALLS %d", 
+	snprintf(line, 70,  "TASK %d|SCORE %d|FALLS %d", 
             self->score->task_type, self->score->completion_score, self->score->falls );
 	double x = 0 ; // hind * 150 + 120;
 	double y = gl_height + ( - self->frequency_list.size() - 11) * line_height;
@@ -464,7 +464,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
         int remaining_sec = floor(total_remaining_sec - remaining_min*60);
 	float percent_remaining = 100*total_remaining_sec / total_sec;
 	
-	sprintf(line, "%2.2f TIME %2d:%02d",percent_remaining, remaining_min,remaining_sec);
+	snprintf(line, 70,  "%2.2f TIME %2d:%02d",percent_remaining, remaining_min,remaining_sec);
 	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
@@ -472,23 +472,23 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	int expected_ttl_min, expected_ttl_sec;
 	if (self->score->bytes_downlink_remaining !=0){
 	  get_ttl(viewer, r, self->score->bytes_downlink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, true);
-          sprintf(line, "%2.2f DOWN %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
+          snprintf(line, 70,  "%2.2f DOWN %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
 	}else{
-          sprintf(line, "No Downlink Info");
+          snprintf(line, 70,  "No Downlink Info");
 	}
 	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 
 	if (self->score->bytes_uplink_remaining !=0){
   	  get_ttl(viewer, r, self->score->bytes_uplink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, false);
-  	  sprintf(line, "%2.2f  UP  %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
+  	  snprintf(line, 70,  "%2.2f  UP  %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
 	}else{
-          sprintf(line, "No Uplink Info");
+          snprintf(line, 70,  "No Uplink Info");
 	}
 	y = gl_height + (-3 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
-	sprintf(line, " %% REM  ==  TTL ");
+	snprintf(line, 70,  " %% REM  ==  TTL ");
 	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
 	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
 	
@@ -499,23 +499,23 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     
     // Status Block:    
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
-    sprintf(line1, "n affs %d",self->naffs);
-    sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
-    sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
-    sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
-    sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
-    sprintf(line6, "bias %.2f %.2f %.2f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
+    snprintf(line1,70, "n affs %d",self->naffs);
+    snprintf(line2,70, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
+    snprintf(line3,70, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
+    snprintf(line4,70, "height %5.1f hd %5.1f",self->height,self->head_height); 
+    snprintf(line5,70, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
+    snprintf(line6,70, "bias %.2f %.2f %.2f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
     if ((self->left_contact==1)&& (self->right_contact==1) ){
-      sprintf(line7, "  feet <--BOTH-->");
+      snprintf(line7,70, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
-      sprintf(line7, "  feet <-LEFT");
+      snprintf(line7,70, "  feet <-LEFT");
     }else if(self->right_contact==1){
-      sprintf(line7, "  feet     RIGHT->");
+      snprintf(line7,70, "  feet     RIGHT->");
     }else{
-      sprintf(line7, "  feet  **NONE**");
+      snprintf(line7,70, "  feet  **NONE**");
     }     
     //format_time_str ( self->last_utime, line8 ); 
-    sprintf(line8, "%.4f SIM", ((double)self->last_utime/1E6) );
+    snprintf(line8,70, "%.4f SIM", ((double)self->last_utime/1E6) );
 
     float elapsed_control_time =  (self->last_utime - self->controller_utime)*1E-6;
     std::string status;
@@ -527,7 +527,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_BRACING){ status ="BRACING"; 
     }else{ status ="UNKNOWNX"; // shouldnt happen
     }
-    sprintf(line9, "%s [AGE %.1f]", status.c_str() , elapsed_control_time);
+    snprintf(line9,70, "%s [AGE %.1f]", status.c_str() , elapsed_control_time);
       
      
       
@@ -590,7 +590,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     
     /// scrolling text://////////////////////////////
     int y_pos=0;
-    char scroll_line[100];
+    char scroll_line[80];
     int W_to_show=0;
     if (!self->param_status[0]){
       W_to_show=1;
@@ -637,9 +637,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          temp= self->deques[W_to_show]->at(i)->value;
          long long this_utime= self->deques[W_to_show]->at(i)->utime;
          int age_of_msg =(int) (bot_timestamp_now() - this_utime)/1000000;
-         sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
+         snprintf(scroll_line,70, "%5.d %s",age_of_msg,temp.c_str());
          // use this for debugging:
-         //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
+         //snprintf(scroll_line,70, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
          //      glColor3fv(colors[1]);
          glColor4fv(colors4);
          glRasterPos2f(x_pos,  (int)gl_height -y_pos  );
@@ -678,9 +678,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
                  colors4[3] = 0.4;
                }
              }
-             sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
+             snprintf(scroll_line,70, "%5.d %s",age_of_msg,temp.c_str());
              // use this for debugging:
-             //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
+             //snprintf(scroll_line,70, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
              //      glColor3fv(safe_colors[1]);
              glColor4fv(colors4);
              glRasterPos2f(x_pos, (int) gl_height -y_pos   );
@@ -724,9 +724,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
            	
            }
            // string str2 = temp.substr (1,temp.size()-1); // strip the first char off the string
-           sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
+           snprintf(scroll_line,70, "%5.d %s",age_of_msg,temp.c_str());
            // use this for debugging:
-           //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
+           //snprintf(scroll_line,70, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
            //      glColor3fv(safe_colors[1]);
            glColor4fv(colors4);
            glRasterPos2f(x_pos, gl_height -y_pos  );
