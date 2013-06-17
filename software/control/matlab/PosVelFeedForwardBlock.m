@@ -1,4 +1,4 @@
-classdef PosVelFeedForwardBlock < DrakeSystem
+classdef PosVelFeedForwardBlock < MIMODrakeSystem
   
   
   methods
@@ -11,7 +11,11 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       nx = getNumStates(r);
       nu = getNumInputs(r);
       
-      obj = obj@DrakeSystem(0,0,nx,3*nu,true,false);
+      input_frame = MultiCoordinateFrame({AtlasCoordinates(r),AtlasState(r)});
+      output_frame = AtlasPositionRef(r,'crawling',4);
+      obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
+      obj = setInputFrame(obj,input_frame);
+      obj = setOutputFrame(obj,output_frame);
       
       % check for the required fields in controller data
       fieldcheck(controller_data.data,'qtraj');
@@ -65,13 +69,12 @@ classdef PosVelFeedForwardBlock < DrakeSystem
       obj.qp_controller = QPController(r,qp_ctrl_data,qp_options);
       obj.actuated = getActuatedJoints(r);
       
-      obj = setInputFrame(obj,AtlasState(r));
-      obj = setOutputFrame(obj,AtlasPositionRef(r,'crawling',4));
 %      [~,obj.robot] = inverseDynamics(r,zeros(getNumDOF(r),1),zeros(getNumDOF(r),1),zeros(getNumDOF(r),1),SupportState(r,[]));
     end
     
-    function y = output(obj,t,~,x)
-      q = fasteval(obj.ctrl_data.data.qtraj,t);
+    function y = mimoOutput(obj,t,~,varargin)
+      q = varargin{1};
+      x = varargin{2};
       qdot = fasteval(obj.ctrl_data.data.qdtraj,t);
       qddot = fasteval(obj.ctrl_data.data.qddtraj,t);
       

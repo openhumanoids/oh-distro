@@ -115,15 +115,17 @@ while true
     options.ignore_terrain = goal.ignore_terrain;
     options.max_num_steps = goal.max_num_steps;
     options.min_num_steps = goal.min_num_steps;
+    % options.duty_factor = goal.max_forward_step;
+    % options.com_height = goal.nom_step_width;
     target_xy = [goal.goal_pos.translation.x;goal.goal_pos.translation.y];
     target_rpy = quat2rpy([goal.goal_pos.rotation.x;goal.goal_pos.rotation.y;goal.goal_pos.rotation.z;goal.goal_pos.rotation.w])
 
     % DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%
-    norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq]))
+    norm(x0([7:18,21:30,33]) - options.x_nom([7:18,21:30,33]))
     % END DEBUG%%%%%%%%%%%%%%%%%%%%%%
     
     publish_plan = true;
-    if norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq])) < options.pre_crawl_tolerance
+    if norm(x0([7:18,21:30,33]) - options.x_nom([7:18,21:30,33])) < options.pre_crawl_tolerance
       [turn, forwardSegment] = turnThenCrawl(target_xy,target_rpy(1),x0,options);
       options.gait = ZMP_TROT;
 

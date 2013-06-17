@@ -25,7 +25,21 @@ classdef CrawlingController < DRCController
           'ignore_terrain',true,...
           't_offset',0));
       
-      sys = PosVelFeedForwardBlock(r,ctrl_data,options);
+      ffblock = PosVelFeedForwardBlock(r,ctrl_data,options);
+      neck = NeckControlBlock(r,ctrl_data);
+      ins(1).system = 1;
+      ins(1).input = 1;
+      ins(2).system = 1;
+      ins(2).input = 2;
+      outs(1).system = 2;
+      outs(1).output = 1;
+      connection(1).from_output = 1;
+      connection(1).to_input = 1;
+      connection(2).from_output = 2;
+      connection(2).to_input = 2;
+      sys = mimoCascade(neck,ffblock,connection,ins,outs);
+      clear connection ins outs;
+
       obj = obj@DRCController(name,sys,AtlasState(r));
       obj.robot = r;
       obj.controller_data = ctrl_data;
