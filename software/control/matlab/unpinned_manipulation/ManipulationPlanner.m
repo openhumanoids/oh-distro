@@ -2265,8 +2265,8 @@ classdef ManipulationPlanner < handle
             q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
             rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr,mate_axis,n_spiral_sample,struct('type','Archimedean'));
             for sample = 1:n_spiral_sample
-              rhand_const.max = [rpalm_aff_curr(1:3)+0.005*mate_axis rpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
-              rhand_const.min = [rpalm_aff_curr(1:3)-0.005*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              rhand_const.max = [rpalm_aff_curr(1:3)+0.00*mate_axis rpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
+              rhand_const.min = [rpalm_aff_curr(1:3)-0.00*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
               ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
                 obj.l_foot_body,lfoot_pts,lf_curr,obj.l_hand_body,lhand_pt,lpalm_curr(:,2),...
                 obj.r_hand_body,rhand_pt,rhand_const};
@@ -2288,8 +2288,8 @@ classdef ManipulationPlanner < handle
             q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
             lpalm_aff_arrow_goal = spiral_sample(lpalm_aff_arrow_curr,mate_axis,n_spiral_sample,struct('type','Archimedean'));
             for sample = 1:n_spiral_sample
-              lhand_const.max = [lpalm_aff_curr(1:3)+0.005*mate_axis lpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
-              lhand_const.min = [lpalm_aff_curr(1:3)-0.005*mate_axis lpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              lhand_const.max = [lpalm_aff_curr(1:3)+0.02*mate_axis lpalm_aff_arrow_goal(:,sample)+0.02*ones(3,1)];
+              lhand_const.min = [lpalm_aff_curr(1:3)+0.005*mate_axis lpalm_aff_arrow_goal(:,sample)-0.00*ones(3,1)];
               ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
                 obj.l_foot_body,lfoot_pts,lf_curr,obj.r_hand_body,rhand_pt,rpalm_curr(:,2),...
                 obj.l_hand_body,lhand_pt,lhand_const};

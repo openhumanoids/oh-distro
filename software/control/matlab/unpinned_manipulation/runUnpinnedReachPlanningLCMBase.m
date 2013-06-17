@@ -416,7 +416,7 @@ while(1)
        useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
-        useIK_state = 0;
+        useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
         useIK_state = 0;
@@ -511,7 +511,7 @@ while(1)
     end
     aff2hand_offset = T_hand_aff*[0;0;0;1];
     aff2hand_offset = aff2hand_offset(1:3);
-    mate_axis = [teleop_transform_msg.mate_axis.x;teleop_transform_msg.mate_axis.y;teleop_transform_msg.mate_axis.z];
+    mate_axis = -[teleop_transform_msg.mate_axis.x;teleop_transform_msg.mate_axis.y;teleop_transform_msg.mate_axis.z];
     manip_planner.generateAndPublishSpiralMatingPlan(x0,1,0,aff2hand_offset,mate_axis,h_ee_goal,ee_goal_type_flags);
   end
   ee_teleop_data = getNextMessage(teleop_mon,0);
