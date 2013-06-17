@@ -419,6 +419,9 @@ classdef ManipulationPlanner < handle
             obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
             obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
             if(useIK_state == 1)
+              kinsol_des = doKinematics(obj.r,q_desired);
+              r_foot_desired = forwardKin(obj.r,kinsol_des,obj.r_foot_body,[0;0;0],0);
+              base_desired_height = q_desired(3)-r_foot_desired(3);
               kinsol0 = doKinematics(obj.r,q0);
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
@@ -428,16 +431,19 @@ classdef ManipulationPlanner < handle
               coords = coords(1:obj.r.getNumDOF());
               lower_joint_ind = ~cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'mhx'))&cellfun(@isempty,strfind(coords,'lhy'));
               upper_joint_ind = cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'pelvis'))&cellfun(@isempty,strfind(coords,'base'));
+              
 %               base_pos = q0(1:3);
 %               base_rpy = [q_desired(4:5);q0(6)];
 %               q_desired(1:6) = [base_pos;base_rpy];
 %               q_desired(lower_joint_ind) = q0(lower_joint_ind);
 %               q_desired(upper_joint_ind) = q_desired(upper_joint_ind);
               ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
-              ikoptions.jointLimitMin(1:3) = q0(1:3)-0.05;
+              ikoptions.jointLimitMin(1:2) = q0(1:2)-0.05;
+              ikoptions.jointLimitMin(3) = rfoot0(3,1)+base_desired_height-0.05;
               ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
               ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
-              ikoptions.jointLimitMax(1:3) = q0(1:3)+0.05;
+              ikoptions.jointLimitMax(1:2) = q0(1:2)+0.05;
+              ikoptions.jointLimitMax(3) = rfoot0(3,1)+base_desired_height+0.05;
               ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
               pelvis_const.type = 'gaze';
               pelvis_const.gaze_dir = [0;0;1];
