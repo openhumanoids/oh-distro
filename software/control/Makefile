@@ -73,7 +73,7 @@ debug: DEBUG = debug
 debug: everything
 
 
-everything: drake $(BUILD_PREFIX)/config/drc_control_setup.m $(BUILD_PREFIX)/share/java/drc_control.jar $(MEXFILES)
+everything: drake $(BUILD_PREFIX)/config/drc_control_setup.m $(MEXFILES) $(BUILD_PREFIX)/share/java/drc_control.jar
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
@@ -83,8 +83,7 @@ everything: drake $(BUILD_PREFIX)/config/drc_control_setup.m $(BUILD_PREFIX)/sha
 	done
 	@# Place additional commands here if you have any
 
-
-java: $(BUILD_PREFIX)/share/java/drc_control.jar
+java : $(BUILD_PREFIX)/share/java/drc_control.jar
 
 $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	cd src; \
@@ -93,12 +92,12 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 
 #.INTERMEDIATE : $(CLASSFILES)
 
-%.class : %.java drake
+%.class : %.java drake/drake.jar
 	javac $< -cp $(CLASSPATH);
 
 src/RobotPlanConstraintCheckedPublisher.class : src/RobotPlanPublisher.class
 
-drake : $(BUILD_PREFIX)/config/drc_control_setup.m
+drake drake/drake.jar drake/systems/plants/RigidBodyManipulator.o drake/algorithms/fastQP.o :
 	@echo "\n-------------------------------------------"; \
 	echo "-- drake"; \
 	echo "-------------------------------------------"; \
@@ -109,11 +108,12 @@ $(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
 
 ifeq ($(MATLABCPU),maci64)
 
-$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h src/QPControllermex.cpp
+$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants/RigidBodyManipulator.o drake/algorithms/fastQP.o src/QPControllermex.cpp
 	$(MEX) src/QPControllermex.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
 		-Idrake/systems/plants drake/systems/plants/RigidBodyManipulator.o \
+		-Idrake/algorithms drake/algorithms/fastQP.o \
 		$(QP_FLAGS)
 
 else
@@ -128,11 +128,12 @@ $(BUILD_PREFIX)/matlab/bot_timestamp_now.$(MEXEXT) : src/bot_timestamp_now.cpp
 		-outdir $(BUILD_PREFIX)/matlab \
 		$(MAPS_FLAGS)
 
-$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants drake/systems/plants/RigidBodyManipulator.o drake/systems/plants drake/systems/plants/RigidBodyManipulator.h drake/systems/plants drake/systems/plants/RigidBody.h src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
+$(BUILD_PREFIX)/matlab/QPControllermex.$(MEXEXT) : drake/systems/plants/RigidBodyManipulator.o drake/algorithms/fastQP.o src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp
 	$(MEX) src/QPControllermex.cpp src/mexmaps/ViewClientWrapper.cpp src/mexmaps/FillMethods.cpp src/mexmaps/MapLib.cpp \
 		-outdir $(BUILD_PREFIX)/matlab \
 		-largeArrayDims \
 		-Idrake/systems/plants drake/systems/plants/RigidBodyManipulator.o \
+		-Idrake/algorithms drake/algorithms/fastQP.o \
 		-DUSE_MAPS $(MAPS_FLAGS) \
 		$(BULLET_FLAGS) \
 		$(QP_FLAGS)

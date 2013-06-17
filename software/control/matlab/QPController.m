@@ -76,12 +76,15 @@ classdef QPController < MIMODrakeSystem
     
     nu = getNumInputs(r);
     % input cost term: u'Ru
-    if ~isfield(options,'R')
-      obj.R = 1e-6*eye(nu);
-    else
+    if isfield(options,'R')
       typecheck(options.R,'double');
       sizecheck(options.R,[nu,nu]);
-      obj.R = options.R;
+      obj.Rdiag = diag(options.R);
+      if any(any(options.R - diag(obj.Rdiag)))
+        error('we require R to be diagonal now (to make the QP solve faster)');
+      end
+    else      
+      obj.Rdiag = 1e-6*ones(nu,1);
     end
     
     if ~isfield(options,'lcm_foot_contacts')
@@ -190,7 +193,7 @@ classdef QPController < MIMODrakeSystem
       %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
-%      obj.solver_options.outputflag = 0; % not verbose
+      obj.solver_options.outputflag = 0; % not verbose
       obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
       obj.solver_options.presolve = 0;
 %       obj.solver_options.prepasses = 1;
@@ -661,7 +664,7 @@ classdef QPController < MIMODrakeSystem
       end
       
       % quadratic input cost
-      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
+      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = diag(obj.Rdiag(obj.con_inputs));
       
       % quadratic cost on forces
 %      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0));
@@ -669,6 +672,7 @@ classdef QPController < MIMODrakeSystem
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
       
+      REG = 1e-8;
       if obj.solver==1
         % CURRENTLY CRASHES MATLAB ON MY MACHINE -sk
         alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
@@ -676,7 +680,7 @@ classdef QPController < MIMODrakeSystem
       else
         % call fastQPmex first
         
-%         QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.R(obj.con_inputs,obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
+%         QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.Rdiag(obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
 %         lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
 %         IR = eye(nparams);  
 %         Aeq_fqp = full(Aeq);
@@ -690,13 +694,18 @@ classdef QPController < MIMODrakeSystem
 %         
         %%% then call gurobi only if it fails:
         
-        model.Q = sparse(Hqp);
-        model.obj = 2*fqp;
+        model.Q = sparse(Hqp + REG*eye(nparams));
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
         model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
         model.lb = lb;
         model.ub = ub;
+        
+        model.obj = fqp;
+        if ~isempty(model.A) && obj.solver_options.method==2
+          % see drake/algorithms/test/mygurobi.m
+          model.obj = 2*model.obj;
+        end
         
         if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
           keyboard;
@@ -712,6 +721,11 @@ classdef QPController < MIMODrakeSystem
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
+
+        if isempty(model.A) && obj.solver_options.method==2
+          % see drake/algorithms/test/mygurobi.m
+          alpha = alpha/2;
+        end
         
 %         qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
 %         
@@ -797,15 +811,15 @@ classdef QPController < MIMODrakeSystem
       end
       [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
       valuecheck(active_supports_mex,active_supports);
-      valuecheck(Q'+Q,model.Q'+model.Q);
-      valuecheck(gobj,model.obj);
-      valuecheck(A,model.A);
-      valuecheck(rhs,model.rhs);
+      valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
+      valuecheck(gobj,model.obj,1e-12);
+      valuecheck(A,model.A,1e-12);
+      valuecheck(rhs,model.rhs,1e-12);
       valuecheck(sense',model.sense);
-      valuecheck(lb,model.lb);
-      valuecheck(ub,model.ub);
-      valuecheck(y,des.y,1e-5);  
-      valuecheck(Vdotmex,Vdot,1e-5);  
+      valuecheck(lb,model.lb,1e-12);
+      valuecheck(ub,model.ub,1e-12);
+      valuecheck(y,des.y,1e-5);
+      valuecheck(Vdotmex,Vdot,1e-5);
     end
     
    
@@ -948,7 +962,7 @@ classdef QPController < MIMODrakeSystem
     lfoot_idx;
     rhand_idx;
     lhand_idx;
-    R; % quadratic input cost matrix
+    Rdiag; % quadratic input cost matrix
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug;
