@@ -218,8 +218,22 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-2.27676 0.0596343 2.52198" xyz="0.0130809 0.102302 0.0590695" />
+        <relative_pose rpy="-0.726309 0.0294808 2.81641" xyz="-0.0152849 0.084245 -0.0400155" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0.00131247 1.22165 1.14171 0.00504888 1.2781 1.05746 0.030821 1.20734 1.15999 0.537273 0.78534 0.391344 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_2_2_0" />
+        <relative_pose rpy="-0.659067 0.234071 0.622277" xyz="0.0732532 -0.0480741 -0.106876" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0140676 1.37466 0.524554 -0.010184 1.38144 1.04001 0.0138604 1.53229 1.14213 -0.985937 1.00382 -0.216271 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_2_2_0" />
+        <relative_pose rpy="0.938695 -0.0100399 2.31197" xyz="-0.10087 -0.0291841 -0.00524906" />
         <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141704 1.48354 1.05135 -0.00406471 1.49441 0.997458 0.0139645 1.50739 0.9405 0.29619 1.38549 0.61344 " />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142743 1.52039 0.976293 -0.00429892 1.50099 0.983862 0.0140799 1.47222 1.0036 0.909973 1.25818 0.718043 " />
     </grasp_seed>
 </object>
