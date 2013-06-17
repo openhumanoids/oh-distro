@@ -2158,6 +2158,12 @@ classdef ManipulationPlanner < handle
           com_const = struct('max',com_curr+3e-3*ones(3,1),'min',com_curr-3e-3*ones(3,1));
           rpalm_goal = rpalm_curr(:,1);
           lpalm_goal = lpalm_curr(:,1);
+          pelvis_curr = q0(1:6);
+          ikoptions = struct();
+          [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
+          ikoptions.jointLimitMin(1:6) = pelvis_curr-0.03*ones(6,1);
+          ikoptions.jointLimitMax(1:6) = pelvis_curr+0.03*ones(6,1);
+          
           if(ee_lhand)
             lpalm_pts = lpalm_pts(:,2);
             rpalm_pts = rpalm_pts(:,1);
@@ -2176,7 +2182,9 @@ classdef ManipulationPlanner < handle
             obj.head_body,head_pts,head_curr,0,com_const};
           cost = diag(obj.getCostVector());
           cost = cost(1:obj.r.getNumDOF,1:obj.r.getNumDOF);
-          [q_des,info] = inverseKin(obj.r,q0,ikargs{:},struct('q_nom',q0,'Q',cost));
+          ikoptions.Q = cost;
+          ikoptions.q_nom = q0;
+          [q_des,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
           if(info>10)
             warning(['Info = ',num2str(info),' IK fails for teleoperation']);
             send_status(3,0,0,['Info = ',num2str(info),' IK fails for teleoperation']);
@@ -2194,7 +2202,7 @@ classdef ManipulationPlanner < handle
           nq = obj.r.getNumDOF();
           q0 = x0(1:nq);
           if(mate_axis'*[0;1;0]~=0)
-            mate_axis = mate_axis*(mate_axis'*[0;1;0]>0); % Make sure that the mate axis goes into the wall
+            mate_axis = mate_axis*sign(mate_axis'*[0;1;0]); % Make sure that the mate axis goes into the wall
           end
           mate_axis = mate_axis/norm(mate_axis);
 %           mate_axis_angle = acos(mate_axis'*[0;1;0]);
@@ -2243,10 +2251,10 @@ classdef ManipulationPlanner < handle
             lhand_pt = lpalm_pts(:,2);
             n_spiral_sample = 10;
             q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
-            rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr+0.02*mate_axis,mate_axis,n_spiral_sample,struct('type','Archimedean'));
+            rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr,mate_axis,n_spiral_sample,struct('type','Archimedean'));
             for sample = 1:n_spiral_sample
-              rhand_const.max = [rpalm_aff_curr(1:3)+0.02*mate_axis rpalm_aff_arrow_goal(:,sample)+0.01*ones(3,1)];
-              rhand_const.min = [rpalm_aff_curr(1:3)+0.006*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              rhand_const.max = [rpalm_aff_curr(1:3)+0.005*mate_axis rpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
+              rhand_const.min = [rpalm_aff_curr(1:3)-0.005*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
               ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
                 obj.l_foot_body,lfoot_pts,lf_curr,obj.l_hand_body,lhand_pt,lpalm_curr(:,2),...
                 obj.r_hand_body,rhand_pt,rhand_const};
@@ -2262,6 +2270,28 @@ classdef ManipulationPlanner < handle
               q_guess = q_sample;
             end
           elseif(ee_lhand)
+            lhand_pt = [lpalm_pts(:,3) lpalm_pts(:,4)];
+            rhand_pt = rpalm_pts(:,2);
+            n_spiral_sample = 10;
+            q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
+            lpalm_aff_arrow_goal = spiral_sample(lpalm_aff_arrow_curr,mate_axis,n_spiral_sample,struct('type','Archimedean'));
+            for sample = 1:n_spiral_sample
+              lhand_const.max = [lpalm_aff_curr(1:3)+0.005*mate_axis lpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
+              lhand_const.min = [lpalm_aff_curr(1:3)-0.005*mate_axis lpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
+                obj.l_foot_body,lfoot_pts,lf_curr,obj.r_hand_body,rhand_pt,rpalm_curr(:,2),...
+                obj.l_hand_body,lhand_pt,lhand_const};
+              q_guess = q0;
+              cost = diag(obj.getCostVector());
+              cost = cost(1:nq,1:nq);
+              ikoptions.Q = cost;
+              ikoptions.shrinkFactor = 0.95;
+              [q_sample(:,sample),info] = inverseKin(obj.r,q_guess,ikargs{:},ikoptions);
+              if(info>10)
+                send_status(3,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
+              end
+              q_guess = q_sample;
+            end
           end
           qtraj = reshape([q_sample;q_sample],nq,[]);
           xtraj = [qtraj;0*qtraj];

@@ -446,7 +446,11 @@ while(1)
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
       end
       q_desired = d.xstar(1:getNumDOF(r));
-      q_desired(1:6) = x0(1:6); % fix pelvis pose to current
+      if(useIK_state ~=1)
+        q_desired(1:6) = x0(1:6); % fix pelvis pose to current
+      else
+        q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
+      end
       manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end
 
