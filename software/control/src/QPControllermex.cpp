@@ -595,8 +595,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // QP cost function ----------------------------------------------------
   //
   //  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
-  MatrixXd Qnfdiag = MatrixXd::Constant(nf,1,REG);  MatrixXd Qneps = MatrixXd::Constant(neps,1,.001+REG);
-//  MatrixXd Qinvnq(nq_con,nq_con);  VectorXd Qinvnfdiag = ??; Qinvneps = VectorXd::Constant(neps,1/.001);
   VectorXd f(nparams);
   {      
     getRows(pdata->con_dof,q_ddot_des,pdata->q_ddot_des_con);
@@ -604,16 +602,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       getCols(pdata->con_dof,pdata->J.topRows(2),pdata->J_con);
       getCols(pdata->con_dof,pdata->Jdot.topRows(2),pdata->Jdot_con);
 
-      // Q(1:nq_con,1:nq_con) = Hqp_con in the matlab code, Qnq here
-      pdata->Hqp_con = pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con;          // note: only needed for gurobi call (could pull it down)
-      pdata->Hqp_con += (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con);
-//    but we actually want Qinvnq, which I can compute efficiently using the
-//    matrix inversion lemma (see wikipedia):
-//    inv(A + U'CV) = inv(A) - inv(A)*U* inv([ inv(C)+ V*inv(A)*U ]) V inv(A)
-//     but inv(A) is 1/w*eye(nq_con), so I can reduce this to:
-//        = 1/w ( eye(nq_con) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
-//      double wi = 1/pdata->w;
-//      Qinvnq = wi*MatrixXd::Identity(nq_con,nq_con) - wi*wi*J_con.transpose()*(R_DQyD_ls.inverse() + wi*J_con*Jcon.trasnpose()).inverse()*J_con;
+      // Q(1:nq_con,1:nq_con) = Hqp_con in the matlab code
+
+      // NOTE: moved Hqp_con calcs below, because I compute the inverse directly for FastQP (and sparse Hqp_con for gurobi)
 
       pdata->fqp_con = (C_ls*xlimp).transpose()*Qy*D_ls*pdata->J_con;
       pdata->fqp_con += (pdata->Jdot_con*pdata->qd_con).transpose()*R_DQyD_ls*pdata->J_con;
@@ -625,27 +616,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       // obj(1:nq_con) = fqp_con
       f.topRows(nq_con) = pdata->fqp_con.transpose();
      } else {
-      // Q(1:nq_con,1:nq_con) = eye(nq_con)
-    	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1+REG);
-
       // obj(1:nq_con) = -qddot_des_con
       f.topRows(nq_con) = -pdata->q_ddot_des_con;
     } 
   }
   f.bottomRows(nu_con+nf+neps) = VectorXd::Zero(nu_con+nf+neps);
 
-  vector< MatrixXd* > QBlkDiag( nc>0 ? 4 : 2 );  // nq, nu, nf, neps   // this one is for gurobi
-//  vector< Map<MatrixXd> > QinvBlkDiag;  // nq, nu, nf, neps  // this one is for fastQP
-  QBlkDiag[0] = &pdata->Hqp_con;
-//  QinvBlkDiag[0] = Map<MatrixXd>(Qinvnq.data(),nq_con,nq_con);
-  QBlkDiag[1] = &pdata->Rdiag;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
-//  QinvBlkDiag[1] = Map<MatrixXd>(pdata->Rdiaginv.data(),nu_con,1);      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
-  if (nc>0) {
-  	QBlkDiag[2] = &Qnfdiag;
-//  	QinvBlkDiag[2] = Map<MatrixXd>(Qinvnfdiag.data(),nf,1);
-  	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
-//  	QinvBlkDiag[3] = Map<MatrixXd>(Qinvneps.data(),neps,1);     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
-  }
+  //  vector< Map<MatrixXd> > QinvBlkDiag;  // nq, nu, nf, neps  // this one is for fastQP
+  //  QinvBlkDiag[0] = Map<MatrixXd>(Qinvnq.data(),nq_con,nq_con);
+  //  QinvBlkDiag[1] = Map<MatrixXd>(pdata->Rdiaginv.data(),nu_con,1);      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+  //  	QinvBlkDiag[2] = Map<MatrixXd>(Qinvnfdiag.data(),nf,1);
+  //  	QinvBlkDiag[3] = Map<MatrixXd>(Qinvneps.data(),neps,1);     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+
 
   MatrixXd Aeq(nq_con+neps,nparams);
   Aeq.topRightCorner(nq_con+neps,neps) = MatrixXd::Zero(nq_con+neps,neps);  // note: obvious sparsity here
@@ -690,6 +672,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   GRBmodel * model = NULL;
+  int info=-1;
   
   // set obj,lb,up
   VectorXd lb(nparams), ub(nparams);
@@ -704,27 +687,67 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   VectorXd alpha(nparams);
 
-#ifdef USE_FAST_QP
-  // set up fastqp
-  MatrixXd Ain_lb_ub(nc+2*nparams,nparams);
-  VectorXd bin_lb_ub(nc+2*nparams);
-  Ain_lb_ub << Ain, 			     // note: obvious sparsity here
-    -MatrixXd::Identity(nparams,nparams), 
-    MatrixXd::Identity(nparams,nparams);
-  bin_lb_ub << bin, -lb, ub;
+  MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
+  vector< MatrixXd* > QBlkDiag( nc>0 ? 4 : 2 );  // nq, nu, nf, neps   // this one is for gurobi
 
-  int info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
+#ifdef USE_FAST_QP
+  { // set up and call fastqp
+
+  	//    We want Hqp_con inverse, which I can compute efficiently using the
+  	//    matrix inversion lemma (see wikipedia):
+  	//    inv(A + U'CV) = inv(A) - inv(A)*U* inv([ inv(C)+ V*inv(A)*U ]) V inv(A)
+  	//     but inv(A) is 1/w*eye(nq_con), so I can reduce this to:
+  	//        = 1/w ( eye(nq_con) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
+  	double wi = 1/pdata->w;
+  	pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con) - wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
+
+    Qnfdiag << MatrixXd::Constant(nf,1,1/REG);
+    Qneps << MatrixXd::Constant(neps,1,1/(.001+REG));
+
+    QBlkDiag[0] = &pdata->Hqp_con;
+    QBlkDiag[1] = &pdata->Rdiaginv;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+    if (nc>0) {
+    	QBlkDiag[2] = &Qnfdiag;
+    	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+    }
+
+    MatrixXd Ain_lb_ub(nc+2*nparams,nparams);
+    VectorXd bin_lb_ub(nc+2*nparams);
+    Ain_lb_ub << Ain, 			     // note: obvious sparsity here
+    		-MatrixXd::Identity(nparams,nparams),
+    		MatrixXd::Identity(nparams,nparams);
+    bin_lb_ub << bin, -lb, ub;
+
+    info = fastQPThatTakesQinv(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
+
+    if (info<0)  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
+  }
+#endif
 
   if (info<0) {
 		// now set up gurobi:
-  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
-#endif
+    MatrixXd Qnfdiag = MatrixXd::Constant(nf,1,REG);  MatrixXd Qneps = MatrixXd::Constant(neps,1,.001+REG);
+
+    if (nc > 0) {
+      pdata->Hqp_con = pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con;          // note: only needed for gurobi call (could pull it down)
+      pdata->Hqp_con += (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con);
+    } else {
+      // Q(1:nq_con,1:nq_con) = eye(nq_con)
+    	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1+REG);
+    }
+
+    Qnfdiag << MatrixXd::Constant(nf,1,REG);
+    Qneps << MatrixXd::Constant(neps,1,.001+REG);
+
+    QBlkDiag[0] = &pdata->Hqp_con;
+    QBlkDiag[1] = &pdata->Rdiag;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+    if (nc>0) {
+    	QBlkDiag[2] = &Qnfdiag;
+    	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+    }
 
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
-
-#ifdef USE_FAST_QP
   }
-#endif
 
   //----------------------------------------------------------------------
   // Solve for free inputs -----------------------------------------------

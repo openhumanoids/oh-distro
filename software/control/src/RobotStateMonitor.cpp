@@ -15,8 +15,13 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-#include <cstdatomic>
-//#include <atomic>
+
+#ifdef __APPLE__
+	#include <atomic>
+#else
+	#include <cstdatomic>
+#endif
+
 
 #include <Eigen/Dense>
 //#include <lcm/lcm.h>
