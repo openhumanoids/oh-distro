@@ -28,7 +28,7 @@
 
 #endif
 
-//#define USE_FAST_QP
+#define USE_FAST_QP
 
 #include "fastQP.h"
 #include "RigidBodyManipulator.h"
@@ -690,52 +690,35 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   GRBmodel * model = NULL;
-
-#ifdef USE_FAST_QP
-  // set up fastqp
-  MatrixXd Ain_lb_ub(nc+2*nparams-2*nq_con,nparams);
-  VectorXd bin_lb_ub(nc+2*nparams-2*nq_con);
-  Ain_lb_ub << Ain, 																	// note: obvious sparsity here
-  		MatrixXd::Zero(2*nparams-2*nq_con,nparams);
-  // todo:  comma initialize this all of the way through
-  bin_lb_ub << bin,
-  		VectorXd::Zero(2*nparams-2*nq_con);
-
-  Ain_lb_ub.block(nc,nq_con,nu_con,nu_con) = -MatrixXd::Identity(nu_con,nu_con);  // lower bound on u
-  bin_lb_ub.segment(nc,nu_con) = -pdata->umin_con;
-  Ain_lb_ub.block(nc+nu_con,nq_con,nu_con,nu_con) = MatrixXd::Identity(nu_con,nu_con);  // upper bound on u
-  bin_lb_ub.segment(nc+nu_con,nu_con) = pdata->umax_con;
-  Ain_lb_ub.block(nc+2*nu_con,nq_con+nu_con,nf,nf) = -MatrixXd::Identity(nf,nf);  // lower bound on nf
-  // bin for nf is lb zero
-  Ain_lb_ub.block(nc+2*nu_con+nf,nq_con+nu_con,nf,nf) = MatrixXd::Identity(nf,nf); // upper bound on nf
-  bin_lb_ub.segment(nc+2*nu_con+nf,nf) = VectorXd::Constant(nf,500);
-  Ain_lb_ub.block(nc+2*nu_con+2*nf,nparams-neps,neps,neps) = -MatrixXd::Identity(neps,neps); // lower bound on neps
-  bin_lb_ub.segment(nc+2*nu_con+2*nf,neps) = VectorXd::Constant(neps,-pdata->slack_limit);
-  Ain_lb_ub.block(nc+2*nu_con+2*nf+neps,nparams-neps,neps,neps) = MatrixXd::Identity(neps,neps);  // upper bound on neps
-  bin_lb_ub.segment(nc+2*nu_con+2*nf+neps,neps) = VectorXd::Constant(neps,pdata->slack_limit);
-
+  
+  // set obj,lb,up
+  VectorXd lb(nparams), ub(nparams);
+  lb.head(nq_con) = -1e3*VectorXd::Ones(nq_con);
+  ub.head(nq_con) = 1e3*VectorXd::Ones(nq_con);
+  lb.segment(nq_con,nu_con) = pdata->umin_con;
+  ub.segment(nq_con,nu_con) = pdata->umax_con;
+  lb.segment(nq_con+nu_con,nf) = VectorXd::Zero(nf);
+  ub.segment(nq_con+nu_con,nf) = 500*VectorXd::Ones(nf);
+  lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
+  ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
   VectorXd alpha(nparams);
 
-  int info = fastQP(QBlkDiag, f, Aeq, beq, Ain, bin, pdata->active, alpha);
+#ifdef USE_FAST_QP
+  // set up fastqp
+  MatrixXd Ain_lb_ub(nc+2*nparams,nparams);
+  VectorXd bin_lb_ub(nc+2*nparams);
+  Ain_lb_ub << Ain, 			     // note: obvious sparsity here
+    -MatrixXd::Identity(nparams,nparams), 
+    MatrixXd::Identity(nparams,nparams);
+  bin_lb_ub << bin, -lb, ub;
+
+  int info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
 
   if (info<0) {
 		// now set up gurobi:
   	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
-#else
-    VectorXd alpha(nparams);
-
 #endif
-		// set obj,lb,up
-		VectorXd lb(nparams), ub(nparams);
-		lb.head(nq_con) = -1e3*VectorXd::Ones(nq_con);
-		ub.head(nq_con) = 1e3*VectorXd::Ones(nq_con);
-		lb.segment(nq_con,nu_con) = pdata->umin_con;
-		ub.segment(nq_con,nu_con) = pdata->umax_con;
-		lb.segment(nq_con+nu_con,nf) = VectorXd::Zero(nf);
-		ub.segment(nq_con+nu_con,nf) = 500*VectorXd::Ones(nf);
-		lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
-		ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
 
