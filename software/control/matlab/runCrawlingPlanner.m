@@ -10,7 +10,7 @@ if ~isfield(options,'faceup'); options.faceup = true; end
 if ~isfield(options,'delta_yaw'); options.delta_yaw = 10*pi/180; end
 if ~isfield(options,'distance_threshold'); options.distance_threshold = 1; end
 if ~isfield(options,'pre_crawl_tolerance'); options.pre_crawl_tolerance = 1; end %TODO: Tune this
-if ~isfield(options,'pre_crawl_duration'); options.pre_crawl_duration = 10; end %TODO: Tune this
+if ~isfield(options,'pre_crawl_duration'); options.pre_crawl_duration = 5; end %TODO: Tune this
 
 
 if strcmp(location, 'base')
@@ -122,17 +122,23 @@ while true
     norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq]))
     % END DEBUG%%%%%%%%%%%%%%%%%%%%%%
     
+    publish_plan = true;
     if norm(x0([7:18,21:30,33:nq]) - options.x_nom([7:18,21:30,33:nq])) < options.pre_crawl_tolerance
       [turn, forwardSegment] = turnThenCrawl(target_xy,target_rpy(1),x0,options);
       options.gait = ZMP_TROT;
 
       if norm(target_xy - x0(1:2)) < options.distance_threshold
-        % Plan first turn
-        options.direction = turn.direction;
-        options.num_steps = turn.num_steps;
-        display('Getting qtraj ...');
-        [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
-        t_offset = -1;
+        if turn.num_steps > 0
+          % Plan first turn
+          options.direction = turn.direction;
+          options.num_steps = turn.num_steps;
+          display('Getting qtraj ...');
+          [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+          t_offset = -1;
+        else
+          publish_plan = false;
+          msg =['Crawl Plan (', location, '): Requested heading adjustment is smaller than the heading adjustment increment. No turning plan generated.']; disp(msg); send_status(status_code,0,0,msg);
+        end
       else
         % Plan forward crawling
         delta_xy = target_xy - x0(1:2);
@@ -153,32 +159,33 @@ while true
       link_constraints = [];
       t_offset = -1;
     end
-
-    xtraj = [qtraj; 0*qtraj];
-    %xtraj = x0;
-    ts = 0:0.1:qtraj.tspan(2)-eps; %TODO: Get real ts
-    x_data = squeeze(eval(xtraj,ts));
   end
   %ts = 0;
   %
-  if committed
-    mu = goal.mu;
-    options.ignore_terrain = goal.ignore_terrain;
-    %crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
+  if publish_plan
+    if committed
+      mu = goal.mu;
+      options.ignore_terrain = goal.ignore_terrain;
+      %crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       %'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full,'mu',mu,...
       %'link_constraints',link_constraints{1},'zmptraj',zmptraj,'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
-    crawling_plan = struct('S',[],'s1',[],'s2',[],...
-      'support_times',support_times,'supports',{supports},'comtraj',[],'qtraj',qtraj,'mu',mu,...
-      'link_constraints',link_constraints,'zmptraj',[],'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
-    msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
-    makeFist;
-    walking_pub = WalkingPlanPublisher('WALKING_PLAN');
-    walking_pub.publish(0,crawling_plan);
-  else
-    msg =['Crawl Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
-    joint_names = r.getStateFrame.coordinates(1:nq);
-    plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_CRAWLING_PLAN');
-    plan_pub.publish(ts,x_data);
+      crawling_plan = struct('S',[],'s1',[],'s2',[],...
+        'support_times',support_times,'supports',{supports},'comtraj',[],'qtraj',qtraj,'mu',mu,...
+        'link_constraints',link_constraints,'zmptraj',[],'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
+      msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
+      makeFist;
+      walking_pub = WalkingPlanPublisher('WALKING_PLAN');
+      walking_pub.publish(0,crawling_plan);
+    else
+      xtraj = [qtraj; 0*qtraj];
+      %xtraj = x0;
+      ts = 0:0.1:qtraj.tspan(2)-eps; %TODO: Get real ts
+      x_data = squeeze(eval(xtraj,ts));
+      msg =['Crawl Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
+      joint_names = r.getStateFrame.coordinates(1:nq);
+      plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_CRAWLING_PLAN');
+      plan_pub.publish(ts,x_data);
+    end
   end
 
 end
@@ -198,7 +205,7 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, target_heading, x0, o
   if ~isfield(options,'ignore_terrain') options.ignore_terrain = true; end  % todo: make this default to false
   if ~isfield(options,'direction') options.direction = 0; end
   if ~isfield(options,'gait') options.gait = 2; end
-  if ~isfield(options,'draw') options.draw = true; end
+  if ~isfield(options,'draw') options.draw = false; end
   if ~isfield(options,'debug') options.debug = false; end
   if ~isfield(options,'x_nom') options.x_nom = x0; end
   if ~isfield(options,'delta_yaw') options.delta_yaw = 10*pi/180; end

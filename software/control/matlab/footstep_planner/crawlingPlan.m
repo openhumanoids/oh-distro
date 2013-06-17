@@ -31,10 +31,12 @@ sizecheck(body_spec.pt,[3 1]);
 sizecheck(foot_spec,4);
 fieldcheck(foot_spec,'body_ind');
 fieldcheck(foot_spec,'contact_pt_ind');
+
 for i=1:4, 
   pts = getContactPoints(getLink(r,foot_spec(i).body_ind));
   foot_spec(i).contact_pt_ind = foot_spec(i).contact_pt_ind(1); 
   foot_spec(i).contact_pt = pts(:,foot_spec(i).contact_pt_ind);
+  foot_spec(i).support_contact_pt_ind = 1:size(r.getBodyContacts(foot_spec(i).body_ind),2);
 end
 
 
@@ -49,10 +51,10 @@ if ~isfield(options,'comfortable_footpos') options.comfortable_footpos = [-.7 -.
 if ~isfield(options,'ignore_terrain') options.ignore_terrain = true; end  % todo: make this default to false
 if ~isfield(options,'direction') options.direction = 0; end
 if ~isfield(options,'gait') options.gait = 2; end
-if ~isfield(options,'draw') options.draw = true; end
+if ~isfield(options,'draw') options.draw = false; end
 if ~isfield(options,'debug') options.debug = false; end
 if ~isfield(options,'x_nom') options.x_nom = x0; end
-if ~isfield(options,'delta_yaw') options.delta_yaw = 10*pi/180; end
+if ~isfield(options,'delta_yaw') options.delta_yaw = 5*pi/180; end
 delta_yaw = options.direction*options.delta_yaw;
 q_nom = options.x_nom(1:nq);
 
@@ -433,13 +435,13 @@ elseif (options.gait ==2) % trot
     support_times((i-1)*4+3) = t_start + ((i-1)+0.5)*stride_duration;
     support_times((i-1)*4+4) = t_start + ((i-1)+0.5)*stride_duration + swing_duration;
     supports((i-1)*4+1) = SupportState(r,[foot_spec([2,4]).body_ind], ...
-                                  {foot_spec([2,4]).contact_pt_ind},zeros(2,1));
+                                  {foot_spec([2,4]).support_contact_pt_ind},zeros(2,1));
     supports((i-1)*4+2) = SupportState(r,[foot_spec(1:4).body_ind], ...
-                                  {foot_spec(1:4).contact_pt_ind},zeros(4,1));
+                                  {foot_spec(1:4).support_contact_pt_ind},zeros(4,1));
     supports((i-1)*4+3) = SupportState(r,[foot_spec([1,3]).body_ind], ...
-                                  {foot_spec([1,3]).contact_pt_ind},zeros(2,1));
+                                  {foot_spec([1,3]).support_contact_pt_ind},zeros(2,1));
     supports((i-1)*4+4) = SupportState(r,[foot_spec(1:4).body_ind], ...
-                                  {foot_spec(1:4).contact_pt_ind},zeros(4,1));
+                                  {foot_spec(1:4).support_contact_pt_ind},zeros(4,1));
   end
   
   for i = 1:numel(crawl_sequence.key_time_samples)
@@ -461,8 +463,11 @@ elseif (options.gait ==2) % trot
     zmp_mean(:,i) = mean(support_vert{i}(1:2,:),2);
     %zmp(:,i) = eval(zmptraj,crawl_sequence.key_time_samples(i));
 %     sfigure(8); hold on; grid on;
-    sfigure(8); hold on; grid on; axis equal;
-    plot(zmp_mean(1,i),zmp_mean(2,i),'gd',support_vert{i}(1,:),support_vert{i}(2,:),'rs');
+
+    if options.draw
+      sfigure(8); hold on; grid on; axis equal;
+      plot(zmp_mean(1,i),zmp_mean(2,i),'gd',support_vert{i}(1,:),support_vert{i}(2,:),'rs');
+    end
   end
   %zmp(:,end+1) = mean(support_vert{end}(1:2,:),2);
   zmp_mean(:,end+1) = mean(support_vert{end}(1:2,:),2);
