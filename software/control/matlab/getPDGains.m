@@ -220,6 +220,8 @@ elseif strcmpi(mode,'stance_leg')
   Kd.back_mby = 65.0; %
   Kd.back_ubx = 105.0; %
     
+  
+  
 elseif strcmpi(mode,'gazebo')
   Kp.l_arm_usy = 2000.0; 
   Kp.l_arm_shx = 1000.0; 
@@ -292,11 +294,11 @@ elseif strcmpi(mode,'bracing')
 
 
 elseif strcmpi(mode,'sit_up')
-  Kp.l_arm_usy = 30000.0; 
-  Kp.l_arm_shx = 30000.0; 
-  Kp.l_arm_ely = 30000.0; 
-  Kp.l_arm_elx = 30000.0; 
-  Kp.l_arm_uwy = 30000.0; 
+  Kp.l_arm_usy = 60000.0; 
+  Kp.l_arm_shx = 60000.0; 
+  Kp.l_arm_ely = 60000.0; 
+  Kp.l_arm_elx = 60000.0; 
+  Kp.l_arm_uwy = 60000.0; 
   Kp.l_arm_mwx = 30000.0; 
   Kp.l_leg_uhz = 30000.0; 
   Kp.l_leg_mhx = 30000.0; 
