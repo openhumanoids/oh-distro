@@ -23,6 +23,7 @@ pods_install_python_script(drc-set-hose scripts/send_a_poseset.py)
 pods_install_python_script(drc-init-laser scripts/init_laser.py)
 pods_install_python_script(drc-projectile-leap scripts/send_a_projectile_leap.py)
 
+pods_install_python_script(drc-send-a-message scripts/send_a_status_msg.py)
 #
 pods_install_python_script(drc_latency scripts/drc_latency.py)
 
