@@ -33,6 +33,8 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime-startTime);
         //fprintf(stderr, " elapsed time: %d ms\n", duration.count());
       }
+      mWrapper->mCurrentView =
+        std::dynamic_pointer_cast<maps::DepthImageView>(view);
     }
   }
 
@@ -90,9 +92,7 @@ getView() {
     mLastReceiptTime = curTime;
   }
 
-  auto view = std::dynamic_pointer_cast<maps::DepthImageView>
-    (mViewClient->getView(mHeightMapViewId));
-  return view;
+  return mCurrentView;
 }
 
 void ViewClientWrapper::

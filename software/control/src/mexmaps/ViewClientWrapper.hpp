@@ -34,6 +34,7 @@ struct ViewClientWrapper {
   int mHeightMapViewId;
   std::shared_ptr<MapHandle> mHandle;
   int64_t mLastReceiptTime;
+  std::shared_ptr<maps::DepthImageView> mCurrentView;
 
   int mNormalRadius;
   bool mShouldFill;
