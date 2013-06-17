@@ -1,4 +1,4 @@
-joint,Kp,Kd,2
+joint,Kp,Kd,4
 back_lbz,20,0.1,0
 back_mby,4000,2,0
 back_ubx,2000,1,0
