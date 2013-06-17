@@ -425,7 +425,7 @@ while(1)
         useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.CROUCHING_HNDS_DWN)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_crouching_fp.mat'));
-        useIK_state = 0;
+        useIK_state = 5;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_RGTHND_REACH)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));  
         useIK_state = 0;
@@ -446,10 +446,11 @@ while(1)
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
       end
       q_desired = d.xstar(1:getNumDOF(r));
-      if(useIK_state ~=1)
-        q_desired(1:6) = x0(1:6); % fix pelvis pose to current
-      else
+      if(useIK_state ==1)
         q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
+      elseif(useIK_state == 5)
+      else
+        q_desired(1:6) = x0(1:6); % fix pelvis pose to current
       end
       manip_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
   end

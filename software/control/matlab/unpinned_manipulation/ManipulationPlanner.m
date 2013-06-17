@@ -398,8 +398,8 @@ classdef ManipulationPlanner < handle
               cost = diag(obj.getCostVector);
               cost = cost(1:nq,1:nq);
               ikoptions.Q = cost;
-              ikoptions.q_nom = q0;
-              [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
+              ikoptions.q_nom = q_desired;
+              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
               if(info>10)
                 send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
               end
@@ -425,6 +425,17 @@ classdef ManipulationPlanner < handle
               coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
               r_arm_ind = ~cellfun(@isempty,strfind(coords,'r_arm'));
               q_desired(~r_arm_ind) = q0(~r_arm_ind);
+            elseif(useIK_state == 5)
+              kinsol_des = doKinematics(obj.r,q_desired);
+              rfoot_pts = obj.r_foot_body.getContactPoints();
+              rfoot_des = forwardKin(obj.r,kinsol_des,obj.r_foot_body,rfoot_pts,0);
+              pelvis_height = q_desired(3)-rfoot_des(3,1);
+              kinsol_curr = doKinematics(obj.r,q0);
+              rfoot_curr = forwardKin(obj.r,kinsol_curr,obj.r_foot_body,rfoot_pts,0);
+              rfoot_curr_height = min(rfoot_curr(3,:));
+              pelvis_desired_height = pelvis_height+rfoot_curr_height;
+              q_desired(3) = pelvis_desired_height;
+              q_desired([1 2 6]) = q0([1 2 6]);
             end
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
             s = linspace(0,1,4);
@@ -1977,6 +1988,7 @@ classdef ManipulationPlanner < handle
                 obj.qtraj_guess = qtraj_guess; % cache
               end
               s_breaks = obj.s_breaks;
+              q_breaks = obj.q_breaks;
             end
             
             
