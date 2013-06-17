@@ -29,6 +29,7 @@
 #endif
 
 #define USE_FAST_QP
+//#define TEST_FAST_QP
 
 #include "fastQP.h"
 #include "RigidBodyManipulator.h"
@@ -698,11 +699,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	//    inv(A + U'CV) = inv(A) - inv(A)*U* inv([ inv(C)+ V*inv(A)*U ]) V inv(A)
   	//     but inv(A) is 1/w*eye(nq_con), so I can reduce this to:
   	//        = 1/w ( eye(nq_con) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
-  	double wi = 1/pdata->w;
-  	pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con) - wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
+  	if (nc>0) {
+  		double wi = 1/(pdata->w + REG);
+  		pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con) - wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
+  	} else {
+    	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1/(1+REG));
+  	}
 
-    Qnfdiag << MatrixXd::Constant(nf,1,1/REG);
-    Qneps << MatrixXd::Constant(neps,1,1/(.001+REG));
+    Qnfdiag = MatrixXd::Constant(nf,1,1/REG);
+    Qneps = MatrixXd::Constant(neps,1,1/(.001+REG));
 
     QBlkDiag[0] = &pdata->Hqp_con;
     QBlkDiag[1] = &pdata->Rdiaginv;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
@@ -726,8 +731,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   if (info<0) {
 		// now set up gurobi:
-    MatrixXd Qnfdiag = MatrixXd::Constant(nf,1,REG);  MatrixXd Qneps = MatrixXd::Constant(neps,1,.001+REG);
-
     if (nc > 0) {
       pdata->Hqp_con = pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con;          // note: only needed for gurobi call (could pull it down)
       pdata->Hqp_con += (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con);
@@ -736,8 +739,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1+REG);
     }
 
-    Qnfdiag << MatrixXd::Constant(nf,1,REG);
-    Qneps << MatrixXd::Constant(neps,1,.001+REG);
+    Qnfdiag = MatrixXd::Constant(nf,1,REG);
+    Qneps = MatrixXd::Constant(neps,1,.001+REG);
 
     QBlkDiag[0] = &pdata->Hqp_con;
     QBlkDiag[1] = &pdata->Rdiag;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
@@ -746,8 +749,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
+    #ifdef USE_FAST_QP
+			#ifdef TEST_FAST_QP
+    		if (info>=0) {
+    			Vector alpha2(nparams);
+    			info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha2);
+    		}
+	    #endif
+    #endif
+
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
   }
+
 
   //----------------------------------------------------------------------
   // Solve for free inputs -----------------------------------------------
