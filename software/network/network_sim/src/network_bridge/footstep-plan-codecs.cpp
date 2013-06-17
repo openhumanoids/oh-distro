@@ -93,7 +93,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
     {
         drc::MinimalFootStepGoal* first_goal = dccl_plan.mutable_first_goal();
         const drc::footstep_goal_t& first_lcm_goal = lcm_object.footstep_goals[0];
-        first_goal->set_utime(first_lcm_goal.utime);
+//        first_goal->set_utime(first_lcm_goal.utime);
 
         if(!RobotStateCodec::to_minimal_position3d(first_lcm_goal.pos, first_goal->mutable_pos(), true, true))
             return false;
@@ -110,7 +110,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
         {
             const drc::footstep_goal_t& previous_lcm_goal = lcm_object.footstep_goals[i-1];
             const drc::footstep_goal_t& present_lcm_goal = lcm_object.footstep_goals[i];
-            goal_diff->add_utime_diff(present_lcm_goal.utime-previous_lcm_goal.utime);
+//            goal_diff->add_utime_diff(present_lcm_goal.utime-previous_lcm_goal.utime);
 
             if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.pos, previous_lcm_goal.pos,
                                                     goal_diff->mutable_pos_diff(), true, true))
@@ -159,7 +159,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
     drc::footstep_plan_t lcm_object;
     lcm_object.utime = dccl_plan.utime();
     lcm_object.robot_name = "atlas";
-    lcm_object.num_steps = dccl_plan.goal_diff().utime_diff_size() + 1; // +1 for first_goal    
+    lcm_object.num_steps = dccl_plan.goal_diff().bool_mask_size() + 1; // +1 for first_goal    
     lcm_object.is_new_plan = dccl_plan.is_new_plan();    
     lcm_object.footstep_opts.ignore_terrain = dccl_plan.opts_ignore_terrain();
     lcm_object.footstep_opts.mu = dccl_plan.opts_mu();
@@ -169,7 +169,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
     
     drc::footstep_goal_t first_lcm_goal;
 
-    first_lcm_goal.utime = first_goal.utime();
+    first_lcm_goal.utime = 0; // first_goal.utime();
     first_lcm_goal.robot_name = "atlas";
     
     if(!RobotStateCodec::from_minimal_position3d(&first_lcm_goal.pos, first_goal.pos(), true))
@@ -187,7 +187,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
 
     const drc::MinimalFootStepGoalDiff& goal_diff = dccl_plan.goal_diff();
     drc::MinimalFootStepGoal present_goal = first_goal;    
-    for(int i = 0, n = goal_diff.utime_diff_size(); i < n; ++i)
+    for(int i = 0, n = goal_diff.bool_mask_size(); i < n; ++i)
     {
 
         drc::footstep_goal_t lcm_goal;
@@ -198,10 +198,10 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
         if(!RobotStateCodec::from_minimal_position3d(&lcm_goal.pos, present_goal.pos()))
             return false;
         
-        present_goal.set_utime(present_goal.utime() + goal_diff.utime_diff(i));
+//        present_goal.set_utime(present_goal.utime() + goal_diff.utime_diff(i));
         present_goal.set_id(present_goal.id() + goal_diff.id_diff(i));
         
-        lcm_goal.utime = present_goal.utime();
+        lcm_goal.utime = 0; // present_goal.utime();
         lcm_goal.id = present_goal.id();
         
         read_bool_mask(goal_diff.bool_mask(i), &lcm_goal);

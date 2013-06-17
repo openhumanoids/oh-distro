@@ -18,7 +18,7 @@ message MinimalFootStepPlan
 
 message MinimalFootStepGoal
 {
-  required double utime = 1 [(dccl.field) = { min: 0 max: 3600e6 precision: -3 }];
+  //  required double utime = 1 [(dccl.field) = { min: 0 max: 3600e6 precision: -3 }];
 
   required Position3D pos = 2;
 
@@ -41,7 +41,7 @@ message MinimalFootStepGoal
 
 message MinimalFootStepGoalDiff
 {
-  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 precision: -3 max_repeat: 100 codec: "presence_bit"}];
+  //  repeated uint64 utime_diff = 1 [(dccl.field) = { min: 0 max: 600e6 precision: -3 max_repeat: 100 codec: "presence_bit"}];
 
   required Position3DDiff pos_diff = 2;
   
