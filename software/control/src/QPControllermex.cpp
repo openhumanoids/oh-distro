@@ -701,7 +701,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	//        = 1/w ( eye(nq_con) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
   	if (nc>0) {
   		double wi = 1/(pdata->w + REG);
-  		pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con) - wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
+			pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con);
+  		if (R_DQyD_ls.trace()>1e-15) // R_DQyD_ls is not zero
+  			pdata->Hqp_con -=  wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
   	} else {
     	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1/(1+REG));
   	}
@@ -759,6 +761,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     #endif
 
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
+
+	  int status; CGE ( GRBgetintattr(model, "Status", &status) , pdata->env);
+	  if (status!=2) mexPrintf("gurobi reports non-optimal status = %d\n", status);
   }
 
 
