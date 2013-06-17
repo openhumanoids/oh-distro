@@ -438,7 +438,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       bot_gtk_param_widget_set_bool(self->pw, PARAM_CRAWLING, FALSE);
     }else if (mode == WALKING_MUD){
       std::cout << "Using preset mode: Mud\n";
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
+      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 6);  
       bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
