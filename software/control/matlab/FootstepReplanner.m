@@ -72,7 +72,7 @@ classdef FootstepReplanner < DrakeSystem
 
           if msg.left_contact>0.5 %&& ~lfoot_contact_state
             % left foot coming into contact
-            cdata = obj.controller_data.getData();
+            cdata = obj.controller_data.data;
             q = x(1:obj.nq); 
             kinsol = doKinematics(obj.robot,q,false,true);
 
@@ -85,7 +85,7 @@ classdef FootstepReplanner < DrakeSystem
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
           elseif msg.right_contact>0.5% && ~rfoot_contact_state
             % right foot coming into contact
-            cdata = obj.controller_data.getData();
+            cdata = obj.controller_data.data;
             q = x(1:obj.nq); 
             kinsol = doKinematics(obj.robot,q,false,true);
 

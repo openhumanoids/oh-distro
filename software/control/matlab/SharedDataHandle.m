@@ -41,6 +41,10 @@ classdef SharedDataHandle < handle
       obj.data.(fieldname)=val;
     end
     
+    function setVdot(obj,val)
+      obj.data.Vdot = val;
+    end
+    
     function d=getField(obj,fieldname)  % recommend using obj.data.fieldname instead
 %      typecheck(obj.data,'struct');
       d = obj.data.(fieldname);

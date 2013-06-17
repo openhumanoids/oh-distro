@@ -11,6 +11,7 @@ classdef DRCController
     controller_input_frames; % lcm frames w/coders for controller inputs
     n_input_frames;
     input_frame_which_triggers_update=-1;  % index into controller_input_frames
+    input_frames_which_dont_trigger_update
     controller_input_duplicate;   % index into preceding input frame to duplicate data from (or 0)
     controller_output_frame;
     
@@ -81,6 +82,7 @@ classdef DRCController
       if (obj.input_frame_which_triggers_update<0)
         error('couldn''t find input_frame_which_triggers_update in the input frames of sys');
       end
+      obj.input_frames_which_dont_trigger_update = [1:obj.input_frame_which_triggers_update-1,obj.input_frame_which_triggers_update+1:obj.n_input_frames];
       
       obj.lc = lcm.lcm.LCM.getSingleton();
       
@@ -292,7 +294,7 @@ classdef DRCController
         tt=tsim-t_offset;
         
         % for each input subframe, get most recent message
-        for i=[1:obj.input_frame_which_triggers_update-1,obj.input_frame_which_triggers_update+1:obj.n_input_frames]
+        for i=obj.input_frames_which_dont_trigger_update
           if obj.controller_input_duplicate(i)
             input_frame_data{i} = input_frame_data{obj.controller_input_duplicate(i)};
 %            input_frame_time{i} = input_frame_time{obj.controller_input_duplicate(i)};

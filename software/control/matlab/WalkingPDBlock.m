@@ -124,7 +124,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       qd = x(obj.nq+1:end);
 
       obj.ikoptions.q_nom = varargin{1};
-      cdata = obj.controller_data.getData();
+      cdata = obj.controller_data.data;
       
       Kp = obj.Kp;
       Kd = obj.Kd;

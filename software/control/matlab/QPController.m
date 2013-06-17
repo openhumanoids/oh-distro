@@ -215,7 +215,7 @@ classdef QPController < MIMODrakeSystem
       if obj.multi_robot==0
         multi_robot_ptr = 0;
       else
-        multi_robot_ptr = obj.robot.getMexModelPtr.getData();
+        multi_robot_ptr = obj.robot.getMexModelPtr.data;
       end
       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
     end
@@ -786,18 +786,20 @@ classdef QPController < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
       V = 0; % don't compute V for mex yet (will we ever use this?)
     end
 
     if ~isempty(active_supports)
 %      setField(obj.controller_data,'V',V);
-      setField(obj.controller_data,'Vdot',Vdot);
-%     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
+%      setField(obj.controller_data,'Vdot',Vdot);
+      setVdot(obj.controller_data,Vdot);
+      %     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
 %     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
     else
 %      setField(obj.controller_data,'V',0);
-      setField(obj.controller_data,'Vdot',0);
+%      setField(obj.controller_data,'Vdot',0);
+      setVdot(obj.controller_data,Vdot);
     end
     
     if (obj.use_mex==2)
@@ -809,7 +811,7 @@ classdef QPController < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
       valuecheck(active_supports_mex,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
       valuecheck(gobj,model.obj,1e-12);

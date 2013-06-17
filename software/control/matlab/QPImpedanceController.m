@@ -595,11 +595,11 @@ classdef QPImpedanceController < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-       y = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+       y = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
     end
     
     if (obj.use_mex==2)
-      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
+      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0);
       valuecheck(Q'+Q,model.Q'+model.Q);
       valuecheck(gobj,model.obj);
       valuecheck(A,model.A);

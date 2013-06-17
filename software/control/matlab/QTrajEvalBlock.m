@@ -33,7 +33,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,x)
-      cdata = obj.controller_data.getData();
+      cdata = obj.controller_data.data;
       qtraj = cdata.qtraj;
       if typecheck(qtraj,'double')
         qdes=qtraj;
