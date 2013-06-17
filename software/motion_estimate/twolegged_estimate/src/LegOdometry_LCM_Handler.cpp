@@ -72,7 +72,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	expire_bias_avg_process.setDesiredPeriod_us(10000000);
 
 	// Publish EST_ROBOT_STATE and other messages at 200 Hz
-	rate_changer.setDesiredPeriod_us(0,4500);
+	rate_changer.setDesiredPeriod_us(0,3500);
 
 	// Tuning parameters for data fusion
 	fusion_rate.setDesiredPeriod_us(0,DATA_FUSION_PERIOD-500);

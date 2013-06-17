@@ -118,14 +118,18 @@ public:
 
 		// fall detector
 
-		if (E(1) > 20*PI/180. || E(0) > 20*PI/180.) {
-			//std::cout << "Falling\n";
-			if ((msg->utime - fall_utime) > 1200000) {
-				std::cout << "Timeout.\n";				
-				fall_utime = msg->utime;
-				system("notify-send ROBOT_FELL_OVER");
+		if (false) {
+			if (E(1) > 20*PI/180. || E(0) > 20*PI/180.) {
+				//std::cout << "Falling\n";
+				if ((msg->utime - fall_utime) > 1200000) {
+					std::cout << "Timeout.\n";
+					fall_utime = msg->utime;
+					system("notify-send ROBOT_FELL_OVER");
+				}
 			}
 		}
+
+		std::cout << msg->linear_acceleration[0] << ", "  << msg->linear_acceleration[1] << ", " << msg->linear_acceleration[2] << std::endl;
 
 		check_conv(0) = __q.w() - q.w();
 		check_conv(1) = __q.x() - q.x();
