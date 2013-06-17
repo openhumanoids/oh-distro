@@ -423,31 +423,35 @@ classdef ManipulationPlanner < handle
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
               ikoptions = struct();
-%               [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
+              [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
               coords = obj.r.getStateFrame.coordinates();
               coords = coords(1:obj.r.getNumDOF());
-              lower_joint_ind = ~cellfun(@isempty,strfind(coords,'leg'));
+              lower_joint_ind = ~cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'mhx'))&cellfun(@isempty,strfind(coords,'lhy'));
               upper_joint_ind = cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'pelvis'))&cellfun(@isempty,strfind(coords,'base'));
-              base_pos = q0(1:3);
-              base_rpy = [q_desired(4:5);q0(6)];
-              q_desired(1:6) = [base_pos;base_rpy];
-              q_desired(lower_joint_ind) = q0(lower_joint_ind);
-              q_desired(upper_joint_ind) = q_desired(upper_joint_ind);
-%               ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
-%               ikoptions.jointLimitMin(3) = q_desired(3)-0.1;
-%               ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
-%               ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
-%               ikoptions.jointLimitMax(3) = q_desired(3)+0.05;
-%               ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
-%               ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
-%               cost = diag(obj.getCostVector);
-%               cost = cost(1:nq,1:nq);
-%               ikoptions.Q = cost;
-%               ikoptions.q_nom = q_desired;
-%               [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
-%               if(info>10)
-%                 send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
-%               end
+%               base_pos = q0(1:3);
+%               base_rpy = [q_desired(4:5);q0(6)];
+%               q_desired(1:6) = [base_pos;base_rpy];
+%               q_desired(lower_joint_ind) = q0(lower_joint_ind);
+%               q_desired(upper_joint_ind) = q_desired(upper_joint_ind);
+              ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
+              ikoptions.jointLimitMin(1:3) = q0(1:3)-0.05;
+              ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
+              ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
+              ikoptions.jointLimitMax(1:3) = q0(1:3)+0.05;
+              ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
+              pelvis_const.type = 'gaze';
+              pelvis_const.gaze_dir = [0;0;1];
+              pelvis_const.gaze_axis = [0;0;1];
+              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0,...
+                obj.pelvis_body,[0;0;0],pelvis_const};
+              cost = diag(obj.getCostVector);
+              cost = cost(1:nq,1:nq);
+              ikoptions.Q = cost;
+              ikoptions.q_nom = q_desired;
+              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
+              if(info>10)
+                send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
+              end
             elseif(useIK_state ==2) % Foot in contact
               ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
               ikoptions.jointLimitMin = [-inf(6,1);q_desired(7:end)];
@@ -460,7 +464,7 @@ classdef ManipulationPlanner < handle
               ikoptions.q_nom = q0;
               [q_desired,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
               if(info>10)
-                send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
+                send_status(4,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
               end
             elseif(useIK_state == 3) % copy the left arm joint angles from the mat file
               coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
@@ -1975,7 +1979,7 @@ classdef ManipulationPlanner < handle
                     
                     if(snopt_info >10)
                         warning('The IK fails at the end');
-                        send_status(3,0,0,sprintf('snopt_info = %d. Manip plan initial IK is not very good.',snopt_info));
+                        send_status(4,0,0,sprintf('snopt_info = %d. Manip plan initial IK is not very good.',snopt_info));
                     end
                 else
                     q_final_guess =q_desired;
@@ -2014,7 +2018,7 @@ classdef ManipulationPlanner < handle
               [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
               if(snopt_info > 10)
                   warning('The IK sequence fails');
-                  send_status(3,0,0,sprintf('snopt_info == %d. The IK sequence fails.',snopt_info));
+                  send_status(4,0,0,sprintf('snopt_info == %d. The IK sequence fails.',snopt_info));
               end
               %============================
               xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
@@ -2154,7 +2158,7 @@ classdef ManipulationPlanner < handle
                     %toc;
                     if(snopt_info > 10)
                         warning(['The IK fails at ',num2str(s(i))]);
-                        send_status(3,0,0,sprintf('snopt_info = %d: The IK fails at %10.4f',snopt_info,num2str(s(i))));
+                        send_status(4,0,0,sprintf('snopt_info = %d: The IK fails at %10.4f',snopt_info,num2str(s(i))));
                     end
                     
                 else
@@ -2244,7 +2248,7 @@ classdef ManipulationPlanner < handle
           [q_des,info] = inverseKin(obj.r,q0,ikargs{:},ikoptions);
           if(info>10)
             warning(['Info = ',num2str(info),' IK fails for teleoperation']);
-            send_status(3,0,0,['Info = ',num2str(info),' IK fails for teleoperation']);
+            send_status(4,0,0,['Info = ',num2str(info),' IK fails for teleoperation']);
           end
           qtraj = [q0 q_des];
           xtraj = [qtraj;0*qtraj];
@@ -2322,7 +2326,7 @@ classdef ManipulationPlanner < handle
               ikoptions.shrinkFactor = 0.95;
               [q_sample(:,sample),info] = inverseKin(obj.r,q_guess,ikargs{:},ikoptions);
               if(info>10)
-                send_status(3,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
+                send_status(4,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
               end
               q_guess = q_sample;
             end
@@ -2345,7 +2349,7 @@ classdef ManipulationPlanner < handle
               ikoptions.shrinkFactor = 0.95;
               [q_sample(:,sample),info] = inverseKin(obj.r,q_guess,ikargs{:},ikoptions);
               if(info>10)
-                send_status(3,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
+                send_status(4,0,0,sprintf('Info = %d, IK fails for spiral mating',info));
               end
               q_guess = q_sample;
             end
