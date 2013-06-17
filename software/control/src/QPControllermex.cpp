@@ -28,6 +28,8 @@
 
 #endif
 
+//#define USE_FAST_QP
+
 #include "fastQP.h"
 #include "RigidBodyManipulator.h"
 
@@ -51,6 +53,8 @@ struct QPControllerData {
   ArrayXd umin,umax;
   void* map_ptr;
   
+  set<int> active;
+
   // preallocate memory
   MatrixXd H;
   VectorXd C;
@@ -587,17 +591,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nf = nc+nc*nd; // number of contact force variables
   int nparams = nq_con+nu_con+nf+neps;
   
-  // set obj,lb,up
-  VectorXd lb(nparams), ub(nparams);
-  lb.head(nq_con) = -1e3*VectorXd::Ones(nq_con);
-  ub.head(nq_con) = 1e3*VectorXd::Ones(nq_con);
-  lb.segment(nq_con,nu_con) = pdata->umin_con;
-  ub.segment(nq_con,nu_con) = pdata->umax_con;
-  lb.segment(nq_con+nu_con,nf) = VectorXd::Zero(nf);
-  ub.segment(nq_con+nu_con,nf) = 500*VectorXd::Ones(nf);
-  lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
-  ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
-  
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
   //
@@ -694,12 +687,61 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       Ain(i,nq_con+nu_con+i) = -mu;
       for (j=0; j<nd; j++) Ain(i,nq_con+nu_con+nc+i*nd+j) = 1;
     }
-  }    
-  
-  VectorXd alpha(nparams);
-  set<int> active;
+  }
 
-  GRBmodel * model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,active,alpha);
+  GRBmodel * model = NULL;
+
+#ifdef USE_FAST_QP
+  // set up fastqp
+  MatrixXd Ain_lb_ub(nc+2*nparams-2*nq_con,nparams);
+  VectorXd bin_lb_ub(nc+2*nparams-2*nq_con);
+  Ain_lb_ub << Ain, 																	// note: obvious sparsity here
+  		MatrixXd::Zero(2*nparams-2*nq_con,nparams);
+  // todo:  comma initialize this all of the way through
+  bin_lb_ub << bin,
+  		VectorXd::Zero(2*nparams-2*nq_con);
+
+  Ain_lb_ub.block(nc,nq_con,nu_con,nu_con) = -MatrixXd::Identity(nu_con,nu_con);  // lower bound on u
+  bin_lb_ub.segment(nc,nu_con) = -pdata->umin_con;
+  Ain_lb_ub.block(nc+nu_con,nq_con,nu_con,nu_con) = MatrixXd::Identity(nu_con,nu_con);  // upper bound on u
+  bin_lb_ub.segment(nc+nu_con,nu_con) = pdata->umax_con;
+  Ain_lb_ub.block(nc+2*nu_con,nq_con+nu_con,nf,nf) = -MatrixXd::Identity(nf,nf);  // lower bound on nf
+  // bin for nf is lb zero
+  Ain_lb_ub.block(nc+2*nu_con+nf,nq_con+nu_con,nf,nf) = MatrixXd::Identity(nf,nf); // upper bound on nf
+  bin_lb_ub.segment(nc+2*nu_con+nf,nf) = VectorXd::Constant(nf,500);
+  Ain_lb_ub.block(nc+2*nu_con+2*nf,nparams-neps,neps,neps) = -MatrixXd::Identity(neps,neps); // lower bound on neps
+  bin_lb_ub.segment(nc+2*nu_con+2*nf,neps) = VectorXd::Constant(neps,-pdata->slack_limit);
+  Ain_lb_ub.block(nc+2*nu_con+2*nf+neps,nparams-neps,neps,neps) = MatrixXd::Identity(neps,neps);  // upper bound on neps
+  bin_lb_ub.segment(nc+2*nu_con+2*nf+neps,neps) = VectorXd::Constant(neps,pdata->slack_limit);
+
+
+  VectorXd alpha(nparams);
+
+  int info = fastQP(QBlkDiag, f, Aeq, beq, Ain, bin, pdata->active, alpha);
+
+  if (info<0) {
+		// now set up gurobi:
+  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
+#else
+    VectorXd alpha(nparams);
+
+#endif
+		// set obj,lb,up
+		VectorXd lb(nparams), ub(nparams);
+		lb.head(nq_con) = -1e3*VectorXd::Ones(nq_con);
+		ub.head(nq_con) = 1e3*VectorXd::Ones(nq_con);
+		lb.segment(nq_con,nu_con) = pdata->umin_con;
+		ub.segment(nq_con,nu_con) = pdata->umax_con;
+		lb.segment(nq_con+nu_con,nf) = VectorXd::Zero(nf);
+		ub.segment(nq_con+nu_con,nf) = 500*VectorXd::Ones(nf);
+		lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
+		ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
+
+		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
+
+#ifdef USE_FAST_QP
+  }
+#endif
 
   //----------------------------------------------------------------------
   // Solve for free inputs -----------------------------------------------
@@ -754,60 +796,63 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       }
   }
 
-  if (nlhs>3) {  // return model.Q (for unit testing)
-    int qnz;
-    CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
-    int *qrow = new int[qnz], *qcol = new int[qnz];
-    double* qval = new double[qnz];
-    CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
-    plhs[3] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
-    double* pm = mxGetPr(plhs[3]);
-    memset(pm,0,sizeof(double)*nparams*nparams);
-    for (i=0; i<qnz; i++)
-      pm[qrow[i]+nparams*qcol[i]] = qval[i];
-    delete[] qrow;
-    delete[] qcol;
-    delete[] qval;
+  if (model) {  // todo: return more info for fastQP
 
-    if (nlhs>4) {  // return model.obj (for unit testing)
-      plhs[4] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-      CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[4])), pdata->env);
+		if (nlhs>3) {  // return model.Q (for unit testing)
+			int qnz;
+			CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
+			int *qrow = new int[qnz], *qcol = new int[qnz];
+			double* qval = new double[qnz];
+			CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
+			plhs[3] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
+			double* pm = mxGetPr(plhs[3]);
+			memset(pm,0,sizeof(double)*nparams*nparams);
+			for (i=0; i<qnz; i++)
+				pm[qrow[i]+nparams*qcol[i]] = qval[i];
+			delete[] qrow;
+			delete[] qcol;
+			delete[] qval;
 
-      if (nlhs>5) {  // return model.A (for unit testing)
-        int numcon;
-        CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
-        plhs[5] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
-        double *pm = mxGetPr(plhs[5]);
-        for (i=0; i<numcon; i++)
-          for (j=0; j<nparams; j++)
-            CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
+			if (nlhs>4) {  // return model.obj (for unit testing)
+				plhs[4] = mxCreateDoubleMatrix(1,nparams,mxREAL);
+				CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[4])), pdata->env);
 
-        if (nlhs>6) {  // return model.rhs (for unit testing)
-          plhs[6] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-          CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[6])), pdata->env);
-        } 
-        
-        if (nlhs>7) { // return model.sense
-          char* sense = new char[numcon+1];
-          CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
-          sense[numcon]='\0';
-          plhs[7] = mxCreateString(sense);
-          // delete[] sense;  // it seems that I'm not supposed to free this
-        }
-        
-        if (nlhs>8) {
-          plhs[8] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-          CGE (GRBgetdblattrarray(model, "LB", 0, nparams, mxGetPr(plhs[8])), pdata->env);
-        }
-        if (nlhs>9) {
-          plhs[9] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-          CGE (GRBgetdblattrarray(model, "UB", 0, nparams, mxGetPr(plhs[9])), pdata->env);
-        }
-      }
-    }
+				if (nlhs>5) {  // return model.A (for unit testing)
+					int numcon;
+					CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
+					plhs[5] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
+					double *pm = mxGetPr(plhs[5]);
+					for (i=0; i<numcon; i++)
+						for (j=0; j<nparams; j++)
+							CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
+
+					if (nlhs>6) {  // return model.rhs (for unit testing)
+						plhs[6] = mxCreateDoubleMatrix(numcon,1,mxREAL);
+						CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[6])), pdata->env);
+					}
+
+					if (nlhs>7) { // return model.sense
+						char* sense = new char[numcon+1];
+						CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
+						sense[numcon]='\0';
+						plhs[7] = mxCreateString(sense);
+						// delete[] sense;  // it seems that I'm not supposed to free this
+					}
+
+					if (nlhs>8) {
+						plhs[8] = mxCreateDoubleMatrix(nparams,1,mxREAL);
+						CGE (GRBgetdblattrarray(model, "LB", 0, nparams, mxGetPr(plhs[8])), pdata->env);
+					}
+					if (nlhs>9) {
+						plhs[9] = mxCreateDoubleMatrix(nparams,1,mxREAL);
+						CGE (GRBgetdblattrarray(model, "UB", 0, nparams, mxGetPr(plhs[9])), pdata->env);
+					}
+				}
+			}
+		}
+
+		GRBfreemodel(model);
   }
   
-  GRBfreemodel(model);
-
   //  GRBfreeenv(env);
 } 
