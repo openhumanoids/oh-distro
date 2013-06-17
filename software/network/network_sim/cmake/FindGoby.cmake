@@ -47,7 +47,7 @@ endfunction()
 if(GOBY_VERSION_MAJOR GREATER "1")
   find_goby_library(GOBY_ACOMMS_LIBRARY goby_acomms ${GOBY_DIR})
   find_goby_library(GOBY_COMMON_LIBRARY goby_common ${GOBY_DIR})
-  find_goby_library(GOBY_MOOS_LIBRARY goby_moos ${GOBY_DIR})
+#  find_goby_library(GOBY_MOOS_LIBRARY goby_moos ${GOBY_DIR})
   find_goby_library(GOBY_UTIL_LIBRARY goby_util ${GOBY_DIR})
 
 
@@ -60,7 +60,7 @@ if(GOBY_VERSION_MAJOR GREATER "1")
     GOBY_DIR 
     GOBY_INCLUDE_DIR
     GOBY_ACOMMS_LIBRARY
-    GOBY_MOOS_LIBRARY
+#    GOBY_MOOS_LIBRARY
     GOBY_COMMON_LIBRARY
     GOBY_UTIL_LIBRARY
     )
@@ -69,7 +69,7 @@ if(GOBY_VERSION_MAJOR GREATER "1")
     set(GOBY_INCLUDE_DIRS ${GOBY_INCLUDE_DIR})
     set(GOBY_LIBRARIES 
       ${GOBY_ACOMMS_LIBRARY}
-      ${GOBY_MOOS_LIBRARY}
+#      ${GOBY_MOOS_LIBRARY}
       ${GOBY_COMMON_LIBRARY}
       ${GOBY_UTIL_LIBRARY}
       )

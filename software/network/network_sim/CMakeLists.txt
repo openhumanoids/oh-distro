@@ -15,8 +15,11 @@ find_package(ProtobufLocal REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 #set(GOBY_ROOT_DIR "/home/toby/goby/2.0-drc")
+#set(CMAKE_PREFIX_PATH "/home/toby/goby/2.0-drc")
+
 find_package(Goby REQUIRED)
 include_directories(${GOBY_INCLUDE_DIR})
+link_directories(${GOBY_LIBRARY_PATH})
 
 protobuf_include_dirs(${PROTOBUF_INCLUDE_DIR})
 protobuf_include_dirs(${GOBY_INCLUDE_DIR})
