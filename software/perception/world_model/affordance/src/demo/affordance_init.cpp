@@ -508,6 +508,42 @@ void Pass::doDemo(int which_publish, bool add_filename){
     a.aff_store_control = drc::affordance_t::NEW;
 
     a.param_names.push_back("radius");
+    a.params.push_back(0.02500000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.1670000);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy = {1.044 , -2.444, 0.101 , 1.64 , 0.11 , 0.90};  
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+    a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+    
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    a1.npoints=0; 
+    a1.ntriangles =0;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }  
+
+  if ((which_publish==8)){ // only send on its own
+    int uid1 = 15;
+    
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =18;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("radius");
     a.params.push_back(0.100000);
     a.param_names.push_back("length");
     a.params.push_back(0.080000);
@@ -531,7 +567,7 @@ void Pass::doDemo(int which_publish, bool add_filename){
     a1.npoints=0; 
     a1.ntriangles =0;
     lcm_->publish("AFFORDANCE_FIT",&a1);
-  }  
+  } 
 
   
 /*  
