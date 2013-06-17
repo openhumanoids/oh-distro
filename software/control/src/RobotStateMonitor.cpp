@@ -15,8 +15,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-//#include <cstdatomic>
-#include <atomic>
+#include <cstdatomic>
+//#include <atomic>
 
 #include <Eigen/Dense>
 //#include <lcm/lcm.h>
