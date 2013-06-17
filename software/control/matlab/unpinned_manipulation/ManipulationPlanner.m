@@ -303,43 +303,67 @@ classdef ManipulationPlanner < handle
             qstar = nomdata.xstar(1:obj.r.getNumDOF());
 %  			ikoptions.q_nom = qstar;
           NSamples = 10;
+          arm_loci_flag = ~cellfun(@(x) isempty(strfind(char(x),'palm')),ee_names);
+          if(sum(arm_loci_flag) == 2)
+            nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_two_hands_reaching.mat'));
+            qstar = nomdata.xstar(1:obj.r.getNumDOF());
+            ikoptions.q_nom = qstar;
+            rhand_const.min = rhand_const.min-0.03*ones(7,1);
+            rhand_const.max = rhand_const.max+0.03*ones(7,1);
+            lhand_const.min = lhand_const.min-0.03*ones(7,1);
+            lhand_const.max = lhand_const.max+0.03*ones(7,1);
+            ikoptions.shrinkFactor = 0.95;
+            cost = diag(obj.getCostVector3);
+            cost = cost(1:obj.r.getNumDOF(),1:obj.r.getNumDOF());
+            ikoptions.Q = cost;
+            [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
+            state_frame = obj.r.getStateFrame;
+            ikoptions.jointLimitMin = Point(state_frame,[ikoptions.jointLimitMin;zeros(obj.r.getNumDOF,1)]);
+            ikoptions.jointLimitMax = Point(state_frame,[ikoptions.jointLimitMax;zeros(obj.r.getNumDOF,1)]);
+            ikoptions.jointLimitMin.back_mby = -0.3;
+            ikoptions.jointLimitMax.back_mby = 0.3;
+            ikoptions.jointLimitMin = double(ikoptions.jointLimitMin);
+            ikoptions.jointLimitMax = double(ikoptions.jointLimitMax);
+            ikoptions.jointLimitMin = ikoptions.jointLimitMin(1:obj.r.getNumDOF);
+            ikoptions.jointLimitMax = ikoptions.jointLimitMax(1:obj.r.getNumDOF);
+          end
           for k=1:NSamples,
              %q_guess = qstar;
              q_guess(3)=q_guess(3)+2*(rand(1,1)-0.5)*(0.2);% +-20cm
              q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(25*pi/180);%+-10degrees from current pose
 				
             ikoptions.quasiStaticFlag = true;
-               %obj.pelvis_body,[0;0;0],pelvis_const,...
-               %   obj.head_body,[0;0;0],head_pose0_relaxed,...
-	               %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
-                 if(~isempty(head_const))
-                    [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
-                    obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-                    obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-                    obj.r_hand_body,[0;0;0],rhand_const,...
-                    obj.l_hand_body,[0;0;0],lhand_const,...
-                    obj.head_body,[0;0;0],head_const,...
-                    ikoptions);
-                 else
-                   [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
-                      obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
-                      obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
-                      obj.r_hand_body,[0;0;0],rhand_const,...
-                      obj.l_hand_body,[0;0;0],lhand_const,...
-                      ikoptions);
-                 end
+            %obj.pelvis_body,[0;0;0],pelvis_const,...
+            %   obj.head_body,[0;0;0],head_pose0_relaxed,...
+            %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
+             if(~isempty(head_const))
+              [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
+              obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+              obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+              obj.r_hand_body,[0;0;0],rhand_const,...
+              obj.l_hand_body,[0;0;0],lhand_const,...
+              obj.head_body,[0;0;0],head_const,...
+              ikoptions);
+             else
+               [q_sample(:,k),snopt_info] = inverseKin(obj.r,q_guess,...
+                obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,... 
+                obj.r_hand_body,[0;0;0],rhand_const,...
+                obj.l_hand_body,[0;0;0],lhand_const,...
+                ikoptions);
+             end
 
-	             if(snopt_info > 10)
-		          warning(['poseOpt IK fails']);
-		          send_status(3,0,0,sprintf('snopt_info = %d...',snopt_info));
-	             end
-	          if(snopt_info < 10)
+             if(snopt_info > 10)
+               warning(['poseOpt IK fails']);
+               send_status(3,0,0,sprintf('snopt_info = %d...',snopt_info));
+             end
+	           if(snopt_info < 10)
 	             sample_cost(:,k) = (q_sample(:,k)-ikoptions.q_nom)'*ikoptions.Q*(q_sample(:,k)-ikoptions.q_nom);
-	          else
+	           else
                send_status(3,0,0,'Bad candidate startpose...');
 	             sample_cost(:,k) =  Inf;
-	          end
-	          disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
+             end
+	           disp(['sample_cost(:,k): ' num2str(sample_cost(:,k))]);
            end
            [~,k_best] = min(sample_cost);
            disp(['sample_cost(:,k): ' num2str(sample_cost(:,k_best))]);
@@ -383,26 +407,31 @@ classdef ManipulationPlanner < handle
               rfoot0 = forwardKin(obj.r,kinsol0,obj.r_foot_body,[0;0;0],2);
               lfoot0 = forwardKin(obj.r,kinsol0,obj.l_foot_body,[0;0;0],2);
               ikoptions = struct();
-              [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
+%               [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
               coords = obj.r.getStateFrame.coordinates();
               coords = coords(1:obj.r.getNumDOF());
               lower_joint_ind = ~cellfun(@isempty,strfind(coords,'leg'));
               upper_joint_ind = cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'pelvis'))&cellfun(@isempty,strfind(coords,'base'));
-              ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
-              ikoptions.jointLimitMin(3) = q_desired(3)-0.1;
-              ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
-              ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
-              ikoptions.jointLimitMax(3) = q_desired(3)+0.05;
-              ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
-              ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
-              cost = diag(obj.getCostVector);
-              cost = cost(1:nq,1:nq);
-              ikoptions.Q = cost;
-              ikoptions.q_nom = q_desired;
-              [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
-              if(info>10)
-                send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
-              end
+              base_pos = q0(1:3);
+              base_rpy = [q_desired(4:5);q0(6)];
+              q_desired(1:6) = [base_pos;base_rpy];
+              q_desired(lower_joint_ind) = q0(lower_joint_ind);
+              q_desired(upper_joint_ind) = q_desired(upper_joint_ind);
+%               ikoptions.jointLimitMin([4,5]) = q_desired([4,5]);
+%               ikoptions.jointLimitMin(3) = q_desired(3)-0.1;
+%               ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
+%               ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
+%               ikoptions.jointLimitMax(3) = q_desired(3)+0.05;
+%               ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
+%               ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0};
+%               cost = diag(obj.getCostVector);
+%               cost = cost(1:nq,1:nq);
+%               ikoptions.Q = cost;
+%               ikoptions.q_nom = q_desired;
+%               [q_desired,info] = inverseKin(obj.r,q_desired,ikargs{:},ikoptions);
+%               if(info>10)
+%                 send_status(3,0,0,sprintf('IK info = %d in posture plan optimization\n',info));
+%               end
             elseif(useIK_state ==2) % Foot in contact
               ikoptions.jointLimitMax = [inf(6,1);q_desired(7:end)];
               ikoptions.jointLimitMin = [-inf(6,1);q_desired(7:end)];
@@ -2265,8 +2294,8 @@ classdef ManipulationPlanner < handle
             q_sample = zeros(obj.r.getNumDOF,n_spiral_sample);
             rpalm_aff_arrow_goal = spiral_sample(rpalm_aff_arrow_curr,mate_axis,n_spiral_sample,struct('type','Archimedean'));
             for sample = 1:n_spiral_sample
-              rhand_const.max = [rpalm_aff_curr(1:3)+0.00*mate_axis rpalm_aff_arrow_goal(:,sample)+0.005*ones(3,1)];
-              rhand_const.min = [rpalm_aff_curr(1:3)-0.00*mate_axis rpalm_aff_arrow_goal(:,sample)-0.005*ones(3,1)];
+              rhand_const.max = [rpalm_aff_curr(1:3)+0.02*mate_axis rpalm_aff_arrow_goal(:,sample)+0.02*ones(3,1)];
+              rhand_const.min = [rpalm_aff_curr(1:3)+0.0005*mate_axis rpalm_aff_arrow_goal(:,sample)+0.00*ones(3,1)];
               ikargs = {obj.head_body,[0;0;0],head_const,obj.r_foot_body,rfoot_pts,rf_curr,...
                 obj.l_foot_body,lfoot_pts,lf_curr,obj.l_hand_body,lhand_pt,lpalm_curr(:,2),...
                 obj.r_hand_body,rhand_pt,rhand_const};
@@ -2354,6 +2383,47 @@ classdef ManipulationPlanner < handle
             
         end
         
+        function cost = getCostVector3(obj)
+            cost = Point(obj.r.getStateFrame,1);
+            cost.base_x = 0;
+            cost.base_y = 0;
+            cost.base_z = 100;
+            cost.base_roll = 100;
+            cost.base_pitch = 100;
+            cost.base_yaw = 0;
+            cost.back_lbz = 10;
+            cost.back_mby = 10;
+            cost.back_ubx = 10;
+            cost.neck_ay =  10;
+            cost.l_arm_usy = 1000;
+            cost.l_arm_shx = 1000;
+            cost.l_arm_ely = 50;
+            cost.l_arm_elx = 50;
+            cost.l_arm_uwy = 1;
+            cost.l_arm_mwx = 1;
+            cost.l_leg_uhz = 1;
+            cost.l_leg_mhx = 1;
+            cost.l_leg_lhy = 1;
+            cost.l_leg_kny = 1;
+            cost.l_leg_uay = 1;
+            cost.l_leg_lax = 1;
+            cost.r_arm_usy = cost.l_arm_usy;
+            cost.r_arm_shx = cost.l_arm_shx;
+            cost.r_arm_ely = cost.l_arm_ely;
+            cost.r_arm_elx = cost.l_arm_elx;
+            cost.r_arm_uwy = cost.l_arm_uwy;
+            cost.r_arm_mwx = cost.l_arm_mwx;
+            cost.r_leg_uhz = cost.l_leg_uhz;
+            cost.r_leg_mhx = cost.l_leg_mhx;
+            cost.r_leg_lhy = cost.l_leg_lhy;
+            cost.r_leg_kny = cost.l_leg_kny;
+            cost.r_leg_uay = cost.l_leg_uay;
+            cost.r_leg_lax = cost.l_leg_lax;
+            cost = double(cost);
+            
+        end       
+        
+        
         function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;
@@ -2392,8 +2462,7 @@ classdef ManipulationPlanner < handle
             cost.r_leg_lax = cost.l_leg_lax;
             cost = double(cost);
             
-        end       
-        
+        end
     end
     
     methods (Static=true)
