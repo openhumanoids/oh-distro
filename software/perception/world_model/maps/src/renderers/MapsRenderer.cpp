@@ -284,6 +284,7 @@ public:
               drc::map_request_bbox_t::STEREO_HEAD,
               drc::map_request_bbox_t::STEREO_LHAND,
               drc::map_request_bbox_t::STEREO_RHAND };
+      mRequestBoxDataSource = drc::map_request_bbox_t::LASER;
       addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
       addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
       mRequestRawScan = false;
@@ -296,6 +297,7 @@ public:
     }
 
     // request controls box
+    mInputMode = InputModeCamera;
     if (false) {
       Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
       notebook->append_page(*requestBox, "Request");

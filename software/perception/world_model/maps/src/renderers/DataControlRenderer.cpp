@@ -399,6 +399,7 @@ public:
     notebook->append_page(*sensorControlBox, "Sensor");
     
     Gtk::VBox* fusionControlBox = Gtk::manage(new Gtk::VBox());
+    mVOIMU = false;
     addCheck("Enable VO-IMU", mVOIMU, fusionControlBox);   
     button = Gtk::manage(new Gtk::Button("Submit Fusion Config"));
     button->signal_clicked().connect
