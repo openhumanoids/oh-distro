@@ -252,7 +252,7 @@ classdef DRCController
       if (num_x>0), x = getInitialState(obj.controller); else x=[]; end
       while (1)
 %         tic;
-        if (toc(lcm_check_tic) > 0.5) % check periodically
+        if (toc(lcm_check_tic) > 0.2) % check periodically
           %obj=checkPrecomputeResponses(obj); % DISABLED
           % check termination conditions and break if any are true        
           [transition,data] = checkLCMTransitions(obj);
