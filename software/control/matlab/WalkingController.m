@@ -150,7 +150,12 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load(tmp_fname);
 %       obj.controller_data.setField('S',matdata.S);
-      obj.controller_data.setField('S',eval(matdata.S,0)); % S is always constant
+      
+      if isa(matdata.S,'Trajectory')
+        obj.controller_data.setField('S',eval(matdata.S,0)); % S is always constant
+      else
+        obj.controller_data.setField('S',matdata.S); 
+      end
 
       fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.s1,'uint8'),'uint8');
