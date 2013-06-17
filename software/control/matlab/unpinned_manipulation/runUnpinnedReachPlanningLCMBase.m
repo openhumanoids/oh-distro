@@ -416,7 +416,7 @@ while(1)
        useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
-        useIK_state = 1;
+        useIK_state = 0;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_UP) 
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%seated hands up   
         useIK_state = 0;
