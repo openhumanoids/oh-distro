@@ -197,11 +197,11 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-1.0164 0.0545954 1.77118" xyz="0.0845489 0.0883184 -0.0104183" />
+        <relative_pose rpy="-0.903867 -0.133601 1.7444" xyz="0.0823459 0.0662497 -0.0627814" />
         <grasp_type type="1" />
-        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0.141 1.201 0.968 0.002 1.307 0.813 0.018 1.284 0.856 0.261 0.516 0.613 " />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141726 1.5044 1.11495 -0.00331834 1.5057 0.9843 0.0139852 1.49783 0.88404 0.369259 1.38261 0.653276 " />
     </grasp_seed>
-   <!--set 2 -->
+   <!--set 1 -->
     <!--   <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_2_2_0" />
