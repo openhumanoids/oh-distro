@@ -457,6 +457,10 @@ group "m.hose_task_utils" {
         exec = "affordance_init -e 6";
         host = "base";
     }
+    cmd "affordance_utility_cylinder" {
+        exec = "affordance_init -e 7";
+        host = "base";
+    }
 }
 ####################################################
 # drc102 - gazebo
