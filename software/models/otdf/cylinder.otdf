@@ -1,79 +1,69 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <object name="cylinder">
-
-
-
-<!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
-<!-- World frame origin of the object -->
-<param name="x" default_value="0.0" inc="0.001" min="-100" max="100"/> 
-<param name="y" default_value="0.0" inc="0.001" min="-100" max="100"/>
-<param name="z" default_value="0.0" inc="0.001" min="-100" max="100"/>
-
-<!--roll,pitch,yaw are about Body Frame-->
-<param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/> 
-<param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
-<param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
-
-<!-- Size of the outer most bounding volume -->
-<param name="radius" default_value="0.05" inc="0.0025" min="0" max="100"/> 
-<param name="length" default_value="0.5" inc="0.0025" min="0" max="100"/>
-<!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
-<param name="mass" default_value="1.0" inc="0.01" min="0" max="100"/>
-
-
-<link name="base_link"/>
-
-<!--<link name="cylinder">-->
-<!--<inertial>-->
-<!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
-<!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
-<!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
-<!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
-<!--</inertial>-->
-<!--	<visual>-->
-<!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-<!--		<geometry>-->
-<!--			<cylinder radius="${radius}" length="${length}"/> -->
-<!--		</geometry>-->
-<!--	</visual>-->
-<!--	<collision>-->
-<!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-<!--		<geometry>-->
-<!--			<cylinder radius="${radius}" length="${length}"/> -->
-<!--		</geometry>-->
-<!--	</collision>-->
-<!--</link>-->
-
-<link name="cylinder">
-<inertial>
-   <mass value="${mass}" />
-   <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"
-            iyy="${(mass/12)*(3*(radius^2)+(length^2))}" iyz="0.0"
-            izz="${(mass/2)*(radius^2)}" />
-</inertial>
-	<visual>
-		<origin rpy="0 0 0" xyz="0 0 0"/>
-		<geometry>
-			<cylinder radius="${radius}" length="${length}"/> 
-		</geometry>
-	</visual>
-	<collision>
-		<origin rpy="0 0 0" xyz="0 0 0"/>
-		<geometry>
-			<cylinder radius="${radius}" length="${length}"/> 
-		</geometry>
-	</collision>
-</link>
-
-<joint name="base_joint" type="fixed">
-	<parent link="base_link" type="link"/>
-	<child link="cylinder" type="link"/>
-	<origin rpy="0 0 0" xyz="0 0 0"/>
-	<axis xyz="0 0 1"/>
-</joint>
-
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Size of the outer most bounding volume -->
+    <param name="radius" default_value="0.05" inc="0.0025" min="0" max="100" />
+    <param name="length" default_value="0.5" inc="0.0025" min="0" max="100" />
+    <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="base_link" />
+    <!--<link name="cylinder">-->
+    <!--<inertial>-->
+    <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
+    <!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
+    <!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
+    <!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
+    <!--</inertial>-->
+    <!--	<visual>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</visual>-->
+    <!--	<collision>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</collision>-->
+    <!--</link>-->
+    <link name="cylinder">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius^2)+(length^2))}" iyz="0.0" izz="${(mass/2)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="base_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="cylinder" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="-0.930089 -0.0109444 1.46487" xyz="0.0995748 0.0424263 -0.0701087" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141761 1.4593 0.780946 -0.00249965 1.43654 0.796186 0.0138238 1.40653 0.814208 0.840206 1.20747 0.852003 " />
+    </grasp_seed>
 </object>
-
-
-
