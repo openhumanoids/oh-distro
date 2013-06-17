@@ -61,9 +61,9 @@ namespace renderer_crawling_plan
     std::string* marker_selection;
     bool is_left_in_motion;
     bool is_hand_in_motion;
-    uint selected_plan_index;
-    uint selected_keyframe_index;
-    uint displayed_plan_index;
+    int selected_plan_index;
+    int selected_keyframe_index;
+    int displayed_plan_index;
     // Our only source of a free running clock:
     int64_t robot_utime;
     GtkWidget *plan_execution_dock;
@@ -263,7 +263,7 @@ namespace renderer_crawling_plan
         }// end if(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())        
       } //end ((..._left_hand)&&(..._right_hand)&&(..._left_foot)&&(..._right_foot)) 
 
-     if((self->robotPlanListener->_gl_robot_keyframe_list.size()>2)
+     if((self->robotPlanListener->_gl_robot_keyframe_list.size()>1)
       &&(!self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
       &&(!self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled())
       &&(!self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled())
@@ -454,10 +454,12 @@ namespace renderer_crawling_plan
       RendererRobotPlan *self = (RendererRobotPlan*) user;
       int index = self->selected_keyframe_index;
       /*int index = self->robotPlanListener->get_motion_copy_index();// gets the in motion copy's index, index can changes as plan is updated.  it no motion copy exists it returns -1, this should never happen.
-      if(index==-1){
-         cerr << "ERROR: adjust_keyframe_on_marker_motion in robot plan renderer called but no in_motion_copy exists"<< endl;
+       */
+       if(index==-1){
+         cerr << "ERROR: adjust_keyframe_on_marker_motion in robot plan renderer called but no keyframe exists"<< endl;
          return;
-      } */
+      } 
+
 
       double gain = 1;      
       // set desired state

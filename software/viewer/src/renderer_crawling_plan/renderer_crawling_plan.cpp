@@ -103,8 +103,8 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
   
 	std::string selected_keyframe_name = " ";
 	//if(self->selected_keyframe_index!=-1)
-	if((*self->selection)  != " ")
-	 selected_keyframe_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
+	if(((*self->selection)  != " ")&&(self->selected_keyframe_index!=-1))
+	  selected_keyframe_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
   self->robotPlanListener->_gl_robot_keyframe_list[i]->highlight_body(selected_keyframe_name);
   self->robotPlanListener->_gl_robot_keyframe_list[i]->draw_body(c,alpha);  
   
@@ -172,7 +172,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     { 
         draw_keyframe(viewer,super,i);
     }
-  }      
+  }
+  else
+  {
+   self->selected_keyframe_index=-1; // clear selected keyframe index
+  }            
   
   if (self->show_fullplan){
     int max_num_states = 20;
@@ -332,15 +336,20 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
      }
    }
 
-  if((self->robotPlanListener->_is_keyframe_plan)&&(((*self->selection)  != " ") || ((*self->marker_selection)  != " "))&&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
+  if((self->robotPlanListener->_is_keyframe_plan)&&
+     (((*self->selection)  != " ") || ((*self->marker_selection)  != " "))&&
+     (event->button==1) &&
+     (event->type==GDK_2BUTTON_PRESS)
+    )
   {
 
    if((*self->marker_selection)  == " ")
     cout << "DblClk: " << (*self->selection) << endl;
    else
     cout << "DblClk on Marker: " << (*self->marker_selection) << endl;
-   /* if((*self->marker_selection)  == " ")// dbl clk on keyframe then toogle
-    { */
+    // On double click create/toggle  local copies of right and left sticky hand duplicates and spawn them with markers
+    if(self->selected_keyframe_index!=-1)// dbl clk on keyframe then toogle 
+    { 
       bool toggle=true;
       if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
          toggle = !self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled();
@@ -355,7 +364,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       if(!toggle){
         (*self->marker_selection)  = " ";
       }
-   //}
+   }
         // On double click create/toggle  local copies of right and left sticky hand duplicates and spawn them with markers
    return 1;// consumed if pop up comes up.    
   }
@@ -406,7 +415,7 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     
     Eigen::Vector3f diff=self->ray_hit_drag-self->ray_hit;
     double movement = diff.norm();
-    if(((*self->marker_selection)  != " ")&&(movement>=1e-3)){
+    if(((*self->marker_selection)  != " ")&&(movement>=1e-3)&&(self->selected_keyframe_index!=-1)){
     //cout << "publishing keyframe_plan_constraint \n";
     publish_traj_opt_constraint(self,channel,self->selected_keyframe_index);
     }
@@ -528,6 +537,8 @@ setup_renderer_crawling_plan(BotViewer *viewer, int render_priority, lcm_t *lcm,
     self->visualize_bbox = false;
     self->multiapprove_plan_execution_dock= NULL; 
     self->plan_execution_dock= NULL; 
+    self->selected_plan_index= -1;
+    self->selected_keyframe_index = -1;
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
     self->show_keyframes = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_KEYFRAMES);
