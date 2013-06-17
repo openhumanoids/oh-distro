@@ -5,7 +5,7 @@ package drc;
 struct walking_goal_t
 {
 	int64_t utime;
-	string robot_name;
+	//string robot_name;
 
 	// The goal position, as the center between the two feet
 	position_3d_t goal_pos;
@@ -20,13 +20,13 @@ struct walking_goal_t
 	// int64_t time_per_step;
 
 	// speed at which the foot should move while swinging (m/s)
-	double step_speed; 
+	float step_speed; 
 
-	double nom_step_width;
-	double nom_forward_step;
-	double max_forward_step;
+	float nom_step_width;
+	float nom_forward_step;
+	float max_forward_step;
 
-	double step_height;
+	float step_height;
 
 	boolean follow_spline;
 
@@ -34,7 +34,7 @@ struct walking_goal_t
 
     boolean crawling;
 
-	double mu;
+	float mu;
 
 	// whether to allow optimization of the foostep plan
 	boolean allow_optimization;

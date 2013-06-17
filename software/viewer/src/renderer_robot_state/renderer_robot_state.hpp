@@ -315,7 +315,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp; //bot_timestamp_now();
     msg.max_num_steps = (int32_t) 15;
     msg.min_num_steps = (int32_t) 2;
-    msg.robot_name = self->robotStateListener->_robot_name; 
+    //msg.robot_name = self->robotStateListener->_robot_name; 
     msg.timeout=0;
 
     msg.goal_pos.translation.x = self->robotStateListener->_gl_robot->_T_world_body_future.p[0];

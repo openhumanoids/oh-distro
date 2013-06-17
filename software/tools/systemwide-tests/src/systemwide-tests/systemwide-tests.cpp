@@ -131,7 +131,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     ////////////////////////////////
     drc::walking_goal_t goal;
     goal.utime  = msg->utime;
-    goal.robot_name = "atlas";
+    //goal.robot_name = "atlas";
     drc::position_3d_t goal_pos;
     drc::vector_3d_t trans;// = drc_vector_3d_t();
     trans.x =  goal_pose.translation().x();

@@ -330,7 +330,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     msg.utime = self->robot_utime; //bot_timestamp_now();
     msg.max_num_steps = (int32_t) self->max_num_steps;
     msg.min_num_steps = (int32_t) self->min_num_steps;
-    msg.robot_name = "atlas"; // this should be set from robot state message
+    //msg.robot_name = "atlas"; // this should be set from robot state message
 
     msg.goal_pos.translation.x = self->click_pos.x;
     msg.goal_pos.translation.y = self->click_pos.y;
