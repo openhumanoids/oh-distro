@@ -443,7 +443,7 @@ classdef ManipulationPlanner < handle
               ikoptions.jointLimitMin(upper_joint_ind) = q_desired(upper_joint_ind);
               ikoptions.jointLimitMax([4,5]) = q_desired([4,5]);
               ikoptions.jointLimitMax(1:2) = q0(1:2)+0.05;
-              ikoptions.jointLimitMax(3) = rfoot0(3,1)+base_desired_height+0.05;
+              ikoptions.jointLimitMax(3) = rfoot0(3,1)+base_desired_height+0.0;
               ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
               pelvis_const.type = 'gaze';
               pelvis_const.gaze_dir = [0;0;1];
