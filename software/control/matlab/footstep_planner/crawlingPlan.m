@@ -539,11 +539,12 @@ elseif (options.gait ==2) % trot
       %q(:,i) = eval(qtraj_initial,t(i));
   %end
   qdtraj = PPTrajectory(spline(t,q));
-  if options.direction == 0
-    t_offset = t_start+stride_duration;
-  else
-    t_offset = t_start;
-  end
+  t_offset = t_start+stride_duration;
+  %if options.direction == 0
+    %t_offset = t_start+stride_duration;
+  %else
+    %t_offset = t_start;
+  %end
   %for step=1:2:options.num_steps
     %for swing_legs= [[1;3],[2;4]]
       %stance_legs = 1:4; stance_legs(swing_legs)=[];

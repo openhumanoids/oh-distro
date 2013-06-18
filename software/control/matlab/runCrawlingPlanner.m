@@ -135,8 +135,8 @@ while true
           options.direction = turn.direction;
           options.num_steps = turn.num_steps;
           display('Getting qtraj ...');
-          [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options);
-          t_offset = -1;
+          [qtraj,support_times,supports,V,comtraj,zmptraj,link_constraints,t_offset] = crawlingPlan(r,x0,body_spec,foot_spec,options);
+          %t_offset = -1;
         else
           publish_plan = false;
           msg =['Crawl Plan (', location, '): Requested heading adjustment is smaller than the heading adjustment increment. No turning plan generated.']; disp(msg); send_status(status_code,0,0,msg);
@@ -229,7 +229,8 @@ function [turn, forwardSegment] = turnThenCrawl(target_xy, target_heading, x0, o
   end
 
   turn.direction = sign(delta_heading);
-  turn.num_steps = 4*round(abs(delta_heading)/options.delta_yaw);
+  %turn.num_steps = 4*round(abs(delta_heading)/options.delta_yaw);
+  turn.num_steps = 8;
   forwardSegment.direction = 0;
   forwardSegment.num_steps = 8; % Since forward crawling loops in the controller, we'll plan two strides and the loop over the second one.
   %forwardSegment.num_steps = 4*ceil(target_distance/options.step_length);
