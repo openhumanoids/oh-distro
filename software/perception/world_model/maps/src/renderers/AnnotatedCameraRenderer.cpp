@@ -243,7 +243,6 @@ protected:
       glPopMatrix();
 
       // restore state
-      // TODO: stack underflow here?
       glMatrixMode(GL_PROJECTION);
       glPopMatrix();
       glMatrixMode(GL_MODELVIEW);
@@ -321,6 +320,7 @@ protected:
       glEnd();
 
       // reset state
+      // TODO: stack underflow here?
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
       glMatrixMode(GL_PROJECTION);
@@ -374,6 +374,10 @@ protected:
       mBox->pack_start(*mVisibleToggle, false, false);
       Gtk::Label* label = Gtk::manage(new Gtk::Label(mName, Gtk::ALIGN_LEFT));
       mBox->pack_start(*label, false, false);
+      Gtk::Button* button = Gtk::manage(new Gtk::Button("X"));
+      button->signal_clicked().connect
+        (sigc::mem_fun(*this, &Primitive::onDelete));
+      mBox->pack_start(*button, false, false);
       iContainer->pack_start(*mBox,false,false);
       mParent = iContainer;
       return mBox;
@@ -382,6 +386,19 @@ protected:
     void onToggleVisible() {
       mVisible = mVisibleToggle->get_active();
       mRenderer->requestDraw();
+    }
+
+    void onDelete() {
+      if (mRenderer != NULL) {
+        for (auto iter = mRenderer->mPrimitives.begin();
+             iter != mRenderer->mPrimitives.end(); ++iter) {
+          auto primitive = *iter;
+          if (primitive.get() == this) {
+            mRenderer->mPrimitives.erase(iter);
+            return;
+          }            
+        }
+      }
     }
 
     void draw() {
@@ -551,7 +568,12 @@ public:
       (sigc::mem_fun(*this, &AnnotatedCameraRenderer::onAddNewPrimitive));
     hbox->pack_start(*mAddNewPrimitiveToggle, false, false);
 
-    Gtk::Button* button = Gtk::manage(new Gtk::Button("Clear All"));
+    Gtk::Button* button = Gtk::manage(new Gtk::Button("Push LCMGL"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &AnnotatedCameraRenderer::onPushLines));
+    hbox->pack_start(*button, false, false);
+
+    button = Gtk::manage(new Gtk::Button("Clear All"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &AnnotatedCameraRenderer::onClearPrimitives));
     hbox->pack_start(*button, false, false);
@@ -563,6 +585,28 @@ public:
 
   void onClearPrimitives() {
     mPrimitives.clear();
+  }
+
+  void onPushLines() { 
+    bot_lcmgl_t* lcmgl = mLcmGl;
+
+    for (auto iter = mPrimitives.begin(); iter != mPrimitives.end(); ++iter) {
+      auto primitive = *iter;
+      bot_lcmgl_color3f(lcmgl, primitive->mColor[0], primitive->mColor[1],
+                        primitive->mColor[2]);
+      bot_lcmgl_begin(lcmgl, LCMGL_LINES);
+      Eigen::Vector3f p1 = primitive->mOrigin;
+      Eigen::Vector3f p2 = p1 + primitive->mDirection;
+      bot_lcmgl_vertex3f(lcmgl, p1[0], p1[1], p1[2]);
+      bot_lcmgl_vertex3f(lcmgl, p2[0], p2[1], p2[2]);
+      bot_lcmgl_end(lcmgl);
+      bot_lcmgl_point_size(lcmgl, 4);
+      bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+      bot_lcmgl_vertex3f(lcmgl, p1[0], p1[1], p1[2]);      
+      bot_lcmgl_end(lcmgl);
+    }
+
+    bot_lcmgl_switch_buffer(lcmgl);
   }
 
   void onAddNewPrimitive() {
@@ -635,14 +679,17 @@ public:
         primitive->mAnnotation2 = mAnnotation2;
         if (doIntersection(primitive)) {
           primitive->mName = "Unnamed";
-          primitive->mColor = mColorList[mNextColorId % mColorList.size()];
+          int colorId = mPrimitives.size();
+
+          //primitive->mColor = mColorList[mNextColorId % mColorList.size()];
+          primitive->mColor = mColorList[colorId];
           ++mNextColorId;
           primitive->mVisible = true;
           primitive->mValid = true;
           Gtk::Container* container = primitive->setupWidgets(mPrimitivesBox);
           mPrimitives.push_back(primitive);
           mAddNewPrimitiveToggle->set_active(false);
-          // TODO mAnnotation1.mValid = mAnnotation2.mValid = false;
+          mAnnotation1.mValid = mAnnotation2.mValid = false;
           container->show_all();
           requestDraw();
         }
@@ -670,8 +717,6 @@ public:
   }
 
   bool doIntersection(Primitive::Ptr& ioPrimitive) {
-    bot_lcmgl_t* lcmgl = mLcmGl;
-
     // mouse coords
     Eigen::Vector2f pix[4];
     pix[0] = ioPrimitive->mAnnotation1.mDragPoint1;
@@ -709,19 +754,6 @@ public:
     Eigen::Vector3f origin1 = cam1->mPose.translation();
     Eigen::Vector3f origin2 = cam2->mPose.translation();
 
-    bot_lcmgl_color3f(lcmgl, 0, 1, 0);
-    bot_lcmgl_begin(lcmgl, LCMGL_LINES);
-    bot_lcmgl_vertex3f(lcmgl, origin1[0], origin1[1], origin1[2]);
-    bot_lcmgl_vertex3f(lcmgl, origin1[0]+rays[0][0], origin1[1]+rays[0][1], origin1[2]+rays[0][2]);
-    bot_lcmgl_vertex3f(lcmgl, origin1[0], origin1[1], origin1[2]);
-    bot_lcmgl_vertex3f(lcmgl, origin1[0]+rays[1][0], origin1[1]+rays[1][1], origin1[2]+rays[1][2]);
-    bot_lcmgl_vertex3f(lcmgl, origin2[0], origin2[1], origin2[2]);
-    bot_lcmgl_vertex3f(lcmgl, origin2[0]+rays[2][0], origin2[1]+rays[2][1], origin2[2]+rays[2][2]);
-    bot_lcmgl_vertex3f(lcmgl, origin2[0], origin2[1], origin2[2]);
-    bot_lcmgl_vertex3f(lcmgl, origin2[0]+rays[3][0], origin2[1]+rays[3][1], origin2[2]+rays[3][2]);
-    bot_lcmgl_end(lcmgl);
-
-
     // plane of camera 2
     Eigen::Vector4f plane;
     Eigen::Vector3f planeNormal = rays[2].cross(rays[3]);
@@ -739,15 +771,8 @@ public:
 
     ioPrimitive->mOrigin = p1;
     ioPrimitive->mDirection = p2-p1;
-
-    bot_lcmgl_color3f(lcmgl, 1, 0, 0);
-    bot_lcmgl_begin(lcmgl, LCMGL_LINES);
-    bot_lcmgl_vertex3f(lcmgl, p1[0], p1[1], p1[2]);
-    bot_lcmgl_vertex3f(lcmgl, p2[0], p2[1], p2[2]);
-    bot_lcmgl_end(lcmgl);
-    
-
-    bot_lcmgl_switch_buffer(lcmgl);
+    ioPrimitive->mOrigin -= ioPrimitive->mDirection;
+    ioPrimitive->mDirection *= 2;
 
     return true;
   }
