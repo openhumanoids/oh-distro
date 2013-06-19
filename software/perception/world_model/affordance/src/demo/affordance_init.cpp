@@ -333,6 +333,7 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   a.params.push_back(1.0); a.param_names.push_back("mass");
   a.params.push_back(0.025); a.param_names.push_back("length_cyl_1");
   a.params.push_back(0.055); a.param_names.push_back("radius_cyl_1");
+
   a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_1");
   a.params.push_back(0.0); a.param_names.push_back("roll_offset_cyl_1");
   a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_1");
@@ -342,14 +343,17 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   
   a.params.push_back(0.025); a.param_names.push_back("length_cyl_2_1");
   a.params.push_back(0.055); a.param_names.push_back("radius_cyl_2_1");
+
   a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_2_1");
   a.params.push_back(M_PI); a.param_names.push_back("roll_offset_cyl_2_1");
   a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_2_1");
   a.params.push_back(0.0); a.param_names.push_back("x_offset_cyl_2_1");
   a.params.push_back(0.0); a.param_names.push_back("y_offset_cyl_2_1");
   a.params.push_back(0.0); a.param_names.push_back("z_offset_cyl_2_1");
+
   a.params.push_back(0.18); a.param_names.push_back("length_cyl_2_2");
   a.params.push_back(0.019); a.param_names.push_back("radius_cyl_2_2");
+
   a.params.push_back(0.0); a.param_names.push_back("pitch_offset_cyl_2_2");
   a.params.push_back(M_PI); a.param_names.push_back("roll_offset_cyl_2_2");
   a.params.push_back(0.0); a.param_names.push_back("yaw_offset_cyl_2_2");
@@ -432,8 +436,8 @@ void Pass::doDemo(int which_publish, bool add_filename){
     int uid1 = 15;
 
     //std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  //ground truth
-    std::vector<double> xyzrpy1 = {1.202 , -2.628 , 0.265 , -M_PI/2 , 0 , M_PI};  //with state estimation, starting close to table for dev
-    
+    //std::vector<double> xyzrpy1 = {1.202 , -2.628 , 0.265 , -M_PI/2 , 0 , M_PI};  //with state estimation, starting close to table for dev
+    std::vector<double> xyzrpy1 = {4.512, 11.640, 0.252, -M_PI/2, 0, 0}; //for comp
     string filename1 = "standpipe.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     //set_param(a1,"radius",0.055);
@@ -479,7 +483,8 @@ void Pass::doDemo(int which_publish, bool add_filename){
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
     // std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, -M_PI};  //ground truth
-    std::vector<double> xyzrpy1 = {1.696, -2.785, 0.277, 0, 0, -M_PI};  //with state estimation, starting close to table for dev
+    //std::vector<double> xyzrpy1 = {1.696, -2.785, 0.277, 0, 0, -M_PI};  //with state estimation, starting close to table for dev
+    std::vector<double> xyzrpy1 = {4.024, 11.785, 0.251, 0, 0, 0}; //for comp
     string filename1 = "valve.ply";
     drc::affordance_plus_t a1 = getDynamicMeshSteeringCylAffordancePlus(filename1, xyzrpy1, uid1);
     set_param(a1,"radius",0.15);
@@ -516,7 +521,8 @@ void Pass::doDemo(int which_publish, bool add_filename){
     a.nparams = a.params.size();
     a.nstates =0;
     
-    std::vector<double> xyzrpy = {1.044 , -2.444, 0.101 , 1.64 , 0.11 , 0.90};  
+    //std::vector<double> xyzrpy = {1.044 , -2.444, 0.101 , 1.64 , 0.11 , 0.90};  
+    std::vector<double> xyzrpy = {4.735 , 11.809, 0.033 , 1.64 , 0.11 ,-1.07};  
     a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
     a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
    
