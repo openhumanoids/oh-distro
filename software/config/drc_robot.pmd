@@ -335,6 +335,11 @@ group "m.simple-control" {
 }
 
 group "m.dev_tools" {
+    cmd "SitUpStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSitUpStateMachine;\"";
+        host = "robot";
+    }
+
     cmd "segmentation_viewer" {
         exec = "segmentation-viewer -r base";
         host = "base";
