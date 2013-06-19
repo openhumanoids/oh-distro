@@ -337,7 +337,7 @@ int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
   string lidar_channel="SCAN";
-  double radius_threshold = 0.04; // was 0.04 for a long time
+  double radius_threshold = 0.06; // was 0.04 for a long time
   parser.add(verbose, "v", "verbose", "Verbosity");
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
   parser.add(radius_threshold, "r", "radius_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
