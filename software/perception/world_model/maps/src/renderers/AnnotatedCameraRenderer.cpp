@@ -20,6 +20,8 @@
 
 #include <maps/BotWrapper.hpp>
 
+#include <bot_lcmgl_client/lcmgl.h>
+
 namespace maps {
 
 class AnnotatedCameraRenderer : public gtkmm::RendererBase {
@@ -365,9 +367,10 @@ protected:
       mVisibleToggle = Gtk::manage(new Gtk::ToggleButton("             "));
       Gdk::Color color;
       color.set_rgb_p(mColor[0], mColor[1], mColor[2]);
-      mVisibleToggle->modify_bg(Gtk::STATE_NORMAL, color);
+      mVisibleToggle->modify_bg(Gtk::STATE_ACTIVE, color);
       mVisibleToggle->signal_toggled().connect
         (sigc::mem_fun(*this, &Primitive::onToggleVisible));
+      mVisibleToggle->set_active(true);
       mBox->pack_start(*mVisibleToggle, false, false);
       Gtk::Label* label = Gtk::manage(new Gtk::Label(mName, Gtk::ALIGN_LEFT));
       mBox->pack_start(*label, false, false);
@@ -410,6 +413,8 @@ protected:
   Annotation mAnnotation2;
   std::vector<Eigen::Vector3f> mColorList;
   int mNextColorId;
+
+  bot_lcmgl_t* mLcmGl;
   
 public:
 
@@ -442,9 +447,13 @@ public:
     mColorList[5] << 0,1,1;
     mColorList[6] << 1,0.5,0;
     mColorList[7] << 0,1,0.5;
+
+    mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
+                            "image-annotation");
   }
 
   ~AnnotatedCameraRenderer() {
+    bot_lcmgl_destroy(mLcmGl);
   }
 
   void setupWidgets() {
@@ -661,17 +670,14 @@ public:
   }
 
   bool doIntersection(Primitive::Ptr& ioPrimitive) {
+    bot_lcmgl_t* lcmgl = mLcmGl;
+
     // mouse coords
     Eigen::Vector2f pix[4];
     pix[0] = ioPrimitive->mAnnotation1.mDragPoint1;
     pix[1] = ioPrimitive->mAnnotation1.mDragPoint2;
     pix[2] = ioPrimitive->mAnnotation2.mDragPoint1;
     pix[3] = ioPrimitive->mAnnotation2.mDragPoint2;
-    std::cout << "mouse" << std::endl;
-    std::cout << pix[0].transpose() << std::endl;
-    std::cout << pix[1].transpose() << std::endl;
-    std::cout << pix[2].transpose() << std::endl;
-    std::cout << pix[3].transpose() << std::endl;
 
     // pixel coords
     auto cam1 = mCameraStates[ioPrimitive->mAnnotation1.mWhichCamera];
@@ -680,11 +686,6 @@ public:
     cam1->getImageCoords(pix[1], pix[1]);
     cam2->getImageCoords(pix[2], pix[2]);
     cam2->getImageCoords(pix[3], pix[3]);
-    std::cout << "pix" << std::endl;
-    std::cout << pix[0].transpose() << std::endl;
-    std::cout << pix[1].transpose() << std::endl;
-    std::cout << pix[2].transpose() << std::endl;
-    std::cout << pix[3].transpose() << std::endl;
 
     // rays in camera space
     Eigen::Vector3f rays[4];
@@ -697,52 +698,57 @@ public:
     rays[2] << ray[0],ray[1],ray[2];
     bot_camtrans_unproject_pixel(cam2->mCamTrans, pix[3][0], pix[3][1], ray);
     rays[3] << ray[0],ray[1],ray[2];
-    std::cout << "ray cam" << std::endl;
-    std::cout << rays[0].transpose() << std::endl;
-    std::cout << rays[1].transpose() << std::endl;
-    std::cout << rays[2].transpose() << std::endl;
-    std::cout << rays[3].transpose() << std::endl;
 
     // rays in local frame
     rays[0] = cam1->mPose.linear()*rays[0];
     rays[1] = cam1->mPose.linear()*rays[1];
     rays[2] = cam2->mPose.linear()*rays[2];
     rays[3] = cam2->mPose.linear()*rays[3];
-    std::cout << "ray local" << std::endl;
-    std::cout << rays[0].transpose() << std::endl;
-    std::cout << rays[1].transpose() << std::endl;
-    std::cout << rays[2].transpose() << std::endl;
-    std::cout << rays[3].transpose() << std::endl;
 
     // origins
     Eigen::Vector3f origin1 = cam1->mPose.translation();
     Eigen::Vector3f origin2 = cam2->mPose.translation();
-    std::cout << "origins" << std::endl;
-    std::cout << origin1.transpose() << std::endl;
-    std::cout << origin2.transpose() << std::endl;
+
+    bot_lcmgl_color3f(lcmgl, 0, 1, 0);
+    bot_lcmgl_begin(lcmgl, LCMGL_LINES);
+    bot_lcmgl_vertex3f(lcmgl, origin1[0], origin1[1], origin1[2]);
+    bot_lcmgl_vertex3f(lcmgl, origin1[0]+rays[0][0], origin1[1]+rays[0][1], origin1[2]+rays[0][2]);
+    bot_lcmgl_vertex3f(lcmgl, origin1[0], origin1[1], origin1[2]);
+    bot_lcmgl_vertex3f(lcmgl, origin1[0]+rays[1][0], origin1[1]+rays[1][1], origin1[2]+rays[1][2]);
+    bot_lcmgl_vertex3f(lcmgl, origin2[0], origin2[1], origin2[2]);
+    bot_lcmgl_vertex3f(lcmgl, origin2[0]+rays[2][0], origin2[1]+rays[2][1], origin2[2]+rays[2][2]);
+    bot_lcmgl_vertex3f(lcmgl, origin2[0], origin2[1], origin2[2]);
+    bot_lcmgl_vertex3f(lcmgl, origin2[0]+rays[3][0], origin2[1]+rays[3][1], origin2[2]+rays[3][2]);
+    bot_lcmgl_end(lcmgl);
+
 
     // plane of camera 2
     Eigen::Vector4f plane;
-    Eigen::Vector3f planeNormal = (rays[2]-origin2).cross(rays[3]-origin2);
+    Eigen::Vector3f planeNormal = rays[2].cross(rays[3]);
     planeNormal.normalize();
     plane.head<3>() = planeNormal;
     plane[3] = -planeNormal.dot(origin2);
-    std::cout << "plane " << plane.transpose() << std::endl;
 
     // intersect two rays of camera 1 with plane
     float t1 = -(plane[3]+planeNormal.dot(origin1)) / planeNormal.dot(rays[0]);
-    std::cout << "t1 " << t1 << std::endl;
     //TODO if (t1 < 0) return false;
     Eigen::Vector3f p1 = origin1 + rays[0]*t1;
-    std::cout << "p1 " << p1.transpose() << std::endl;
     float t2 = -(plane[3]+planeNormal.dot(origin1)) / planeNormal.dot(rays[1]);
-    std::cout << "t2 " << t2 << std::endl;
     // TODO if (t2 < 0) return false;
     Eigen::Vector3f p2 = origin1 + rays[1]*t2;
-    std::cout << "p2 " << p2.transpose() << std::endl;
 
     ioPrimitive->mOrigin = p1;
     ioPrimitive->mDirection = p2-p1;
+
+    bot_lcmgl_color3f(lcmgl, 1, 0, 0);
+    bot_lcmgl_begin(lcmgl, LCMGL_LINES);
+    bot_lcmgl_vertex3f(lcmgl, p1[0], p1[1], p1[2]);
+    bot_lcmgl_vertex3f(lcmgl, p2[0], p2[1], p2[2]);
+    bot_lcmgl_end(lcmgl);
+    
+
+    bot_lcmgl_switch_buffer(lcmgl);
+
     return true;
   }
 
