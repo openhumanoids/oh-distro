@@ -342,8 +342,12 @@ namespace renderer_crawling_plan
     collision::Collision_Object * intersected_object = NULL;
     Eigen::Vector3f hit_pt;
     double shortest_distance = -1;
-    
-     if((self->displayed_plan_index!=-1)&&(self->robotPlanListener->_gl_robot_list.size()>0)) {
+
+     if((self->displayed_plan_index!=-1)
+         &&(self->robotPlanListener->_gl_robot_list.size()>0)
+         &&(self->displayed_plan_index < self->robotPlanListener->_gl_robot_list.size())
+        ) 
+     {
         self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
         if( intersected_object != NULL ){
             Eigen::Vector3f diff = (from-hit_pt);

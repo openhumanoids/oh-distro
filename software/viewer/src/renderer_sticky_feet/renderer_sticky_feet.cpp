@@ -254,7 +254,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
 
-  if(self->selected_planned_footstep_index>=0)
+  if((self->selected_planned_footstep_index>=0)&&(self->selected_planned_footstep_index < self->footStepPlanListener->_gl_planned_stickyfeet_list.size()))
   { 
     collision::Collision_Object * intersected_object = NULL;
     self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
@@ -270,6 +270,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   if((((*self->selection)  != " ") || ((*self->marker_selection)  != " ")) &&
      (event->button==1) &&
      (self->selected_planned_footstep_index>=0) &&
+     (self->selected_planned_footstep_index < self->footStepPlanListener->_gl_planned_stickyfeet_list.size()) &&
      (event->type==GDK_2BUTTON_PRESS)
     )
   {

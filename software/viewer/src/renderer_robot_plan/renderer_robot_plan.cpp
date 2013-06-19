@@ -365,8 +365,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   collision::Collision_Object * intersected_object = NULL;
   double shortest_distance = -1;
   self->selected_plan_index= 0;
-  
-  
+
   if(self->robotPlanListener->_is_manip_plan)  
   {
     shortest_distance = get_shortest_distance_between_keyframes_and_markers(self,from,to);
@@ -392,7 +391,12 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
   collision::Collision_Object * intersected_object = NULL;
-   if((self->robotPlanListener->_is_manip_plan)&&(self->selected_keyframe_index!=-1)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
+   if((self->robotPlanListener->_is_manip_plan) && 
+      (self->selected_keyframe_index!=-1) &&
+      (self->robotPlanListener->_gl_robot_keyframe_list.size()>0) &&
+      (self->selected_keyframe_index > 0) &&
+      (self->selected_keyframe_index < self->robotPlanListener->_gl_robot_keyframe_list.size())
+     )
    {
    // cout << "keyframe: " << self->selected_keyframe_index << " " << self->robotPlanListener->_gl_robot_keyframe_list.size()<< endl;
     self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object ); 
@@ -408,18 +412,22 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
    }
    else{
-    self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
-    if( intersected_object != NULL ){
-        std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
-        std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
-        (*self->selection)  = std::string(intersected_object->id().c_str());
-        self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
-     }
+    if(self->selected_plan_index < self->robotPlanListener->_gl_robot_list.size())
+    {
+      self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
+      if( intersected_object != NULL ){
+          std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
+          std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
+          (*self->selection)  = std::string(intersected_object->id().c_str());
+          self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
+       }// end if
+     }// end if
    }
 
   if((self->robotPlanListener->_is_manip_plan) && 
      (((*self->selection)  != " ")||((*self->marker_selection)  != " ")) &&
      (event->button==1) &&
+     (self->selected_keyframe_index< self->robotPlanListener->_gl_robot_keyframe_list.size()) &&
      (event->type==GDK_2BUTTON_PRESS) 
     )
   {
