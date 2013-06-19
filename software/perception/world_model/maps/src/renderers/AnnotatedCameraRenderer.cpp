@@ -594,6 +594,7 @@ public:
       auto primitive = *iter;
       bot_lcmgl_color3f(lcmgl, primitive->mColor[0], primitive->mColor[1],
                         primitive->mColor[2]);
+      bot_lcmgl_line_width(lcmgl, 3);
       bot_lcmgl_begin(lcmgl, LCMGL_LINES);
       Eigen::Vector3f p1 = primitive->mOrigin;
       Eigen::Vector3f p2 = p1 + primitive->mDirection;
