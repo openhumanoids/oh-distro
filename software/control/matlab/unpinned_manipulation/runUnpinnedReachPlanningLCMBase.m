@@ -413,7 +413,7 @@ while(1)
        useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_UP)
        d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
-       useIK_state = 5;
+       useIK_state = 1;
       elseif(posture_goal.preset==drc.robot_posture_preset_t.SITTING_HNDS_DWN)
         d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%seated hands down
         useIK_state = 0;
@@ -445,11 +445,11 @@ while(1)
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_rarm_inhead_view.mat'));
         useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
       elseif(posture_goal.preset==drc.robot_posture_preset_t.LEFT_HAND_EXTENDED)
-          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_arms_extended.mat'));
-          useIK_state = 1;
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_arms_extended.mat'));
+        useIK_state = 1;
       end
       q_desired = d.xstar(1:getNumDOF(r));
-      if(useIK_state ==1)
+      if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis
         q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
       elseif(useIK_state == 5)
       else
