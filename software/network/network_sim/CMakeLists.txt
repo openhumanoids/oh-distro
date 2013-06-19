@@ -27,5 +27,6 @@ protobuf_include_dirs(${GOBY_INCLUDE_DIR})
 # simple network simulator:
 add_subdirectory(src/network_bridge)
 add_subdirectory(src/log_vrcscore)
+add_subdirectory(src/analyze_network_score)
 
 
