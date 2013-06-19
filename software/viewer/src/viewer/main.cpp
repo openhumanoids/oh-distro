@@ -370,12 +370,12 @@ int main(int argc, char *argv[])
   drcgrid_add_renderer_to_viewer(viewer, 1, lcm);
 //  bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
-  laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
+//  laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+//  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+//  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
   setup_renderer_affordances(viewer, 0, lcm, bot_frames);
@@ -395,20 +395,20 @@ int main(int argc, char *argv[])
   }
   
   // Individual Renderers:
-  add_octomap_renderer_to_viewer(viewer, 1, lcm);
+//  add_octomap_renderer_to_viewer(viewer, 1, lcm);
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+//  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   //score_add_renderer_to_viewer(viewer, 0, lcm);
-  setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
+//  setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   //occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
+//  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
 
-  tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+//  tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
   setup_renderer_crawling_plan(viewer,0, lcm, 0);
   

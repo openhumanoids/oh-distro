@@ -56,7 +56,7 @@ typedef enum _leading_foot_t {
 } leading_foot_t;
 
 typedef enum _walking_mode_t {
-  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_HIGH_CRAWLING
+  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING
 } walking_mode_t;
 
 
@@ -451,23 +451,23 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       std::cout << "Using preset mode: Crawling\n";      
       bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
       bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.3);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
       bot_gtk_param_widget_set_bool(self->pw, PARAM_CRAWLING, TRUE);
-    }else if (mode == WALKING_HIGH_CRAWLING){
-      std::cout << "Using preset mode: High Crawling\n";            
+    }else if (mode == WALKING_TURN_CRAWLING){
+      std::cout << "Using preset mode: Turn Crawling\n";            
       bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
       bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.4);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.1);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
       bot_gtk_param_widget_set_bool(self->pw, PARAM_CRAWLING, TRUE);
     }
   }  
@@ -623,7 +623,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   
   bot_gtk_param_widget_add_enum(self->pw, WALKING_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->walking_settings, 
                                 "Typical", WALKING_TYPICAL, "Mud", WALKING_MUD,
-                                "Crawling", WALKING_CRAWLING, "High Crawl", WALKING_HIGH_CRAWLING , NULL);
+                                "Crawling", WALKING_CRAWLING, "Turn Crawl", WALKING_TURN_CRAWLING , NULL);
 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
