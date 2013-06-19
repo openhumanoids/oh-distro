@@ -326,8 +326,8 @@ classdef ManipulationPlanner < handle
             ikoptions.jointLimitMax.back_mby = 0.3;
             ikoptions.jointLimitMax.r_arm_usy = 0;
             ikoptions.jointLimitMax.l_arm_usy = 0;
-            ikoptions.jointLimitMin.r_leg_kny = ikoptions.jointLimitMin.r_leg_kny+0.1;
-            ikoptions.jointLimitMin.l_leg_kny = ikoptions.jointLimitMin.l_leg_kny+0.1;
+            ikoptions.jointLimitMin.r_leg_kny = 0.2;
+            ikoptions.jointLimitMin.l_leg_kny = 0.2;
             ikoptions.jointLimitMin = double(ikoptions.jointLimitMin);
             ikoptions.jointLimitMax = double(ikoptions.jointLimitMax);
             ikoptions.jointLimitMin = ikoptions.jointLimitMin(1:obj.r.getNumDOF);
@@ -355,8 +355,8 @@ classdef ManipulationPlanner < handle
             ikoptions.jointLimitMax = Point(state_frame,[ikoptions.jointLimitMax;zeros(obj.r.getNumDOF,1)]);
             ikoptions.jointLimitMin.back_mby = -0.3;
             ikoptions.jointLimitMax.back_mby = 0.3;
-            ikoptions.jointLimitMin.r_leg_kny = 0.1;
-            ikoptions.jointLimitMin.l_leg_kny = 0.1;
+            ikoptions.jointLimitMin.r_leg_kny = 0.2;
+            ikoptions.jointLimitMin.l_leg_kny = 0.2;
             ikoptions.jointLimitMin = double(ikoptions.jointLimitMin);
             ikoptions.jointLimitMax = double(ikoptions.jointLimitMax);
             ikoptions.jointLimitMin = ikoptions.jointLimitMin(1:obj.r.getNumDOF());
@@ -463,7 +463,7 @@ classdef ManipulationPlanner < handle
               ikoptions.jointLimitMax(1:2) = q0(1:2)+0.05;
               ikoptions.jointLimitMax(3) = rfoot0(3,1)+base_desired_height+0.0;
               ikoptions.jointLimitMax(upper_joint_ind) = q_desired(upper_joint_ind);
-              ikoptions.jointLimitMin(knee_joint_ind) = 0.1;
+              ikoptions.jointLimitMin(knee_joint_ind) = 0.2;
               pelvis_const.type = 'gaze';
               pelvis_const.gaze_dir = pelvis_des_dir;
               pelvis_const.gaze_axis = [0;0;1];
@@ -499,7 +499,7 @@ classdef ManipulationPlanner < handle
               [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
               ikoptions.jointLimitMin(l_arm_ind) = q_desired(l_arm_ind);
               ikoptions.jointLimitMax(l_arm_ind) = q_desired(l_arm_ind);
-              ikoptions.jointLimitMin(knee_joint_ind) = 0.1;
+              ikoptions.jointLimitMin(knee_joint_ind) = 0.2;
               kinsol_des = doKinematics(obj.r,q_desired);
               rfoot_des = forwardKin(obj.r,kinsol_des,obj.r_foot_body,[0;0;0],0);
               pelvis_des_dir = forwardKin(obj.r,kinsol_des,obj.pelvis_body,[[0;0;0] [0;0;1]],0);
@@ -535,7 +535,7 @@ classdef ManipulationPlanner < handle
               [ikoptions.jointLimitMin,ikoptions.jointLimitMax] = obj.r.getJointLimits();
               ikoptions.jointLimitMin(r_arm_ind) = q_desired(r_arm_ind);
               ikoptions.jointLimitMax(r_arm_ind) = q_desired(r_arm_ind);
-              ikoptions.jointLimitMin(knee_joint_ind) = 0.1;
+              ikoptions.jointLimitMin(knee_joint_ind) = 0.2;
               kinsol_des = doKinematics(obj.r,q_desired);
               rfoot_des = forwardKin(obj.r,kinsol_des,obj.r_foot_body,[0;0;0],0);
               pelvis_des_dir = forwardKin(obj.r,kinsol_des,obj.pelvis_body,[[0;0;0] [0;0;1]],0);
@@ -717,8 +717,8 @@ classdef ManipulationPlanner < handle
 						[joint_min,joint_max] = obj.r.getJointLimits();
 						joint_min = Point(coords,[joint_min;0*joint_min]);
 						joint_min.back_mby = -.2;
-            joint_min.l_leg_kny = 0.1;
-            joint_min.r_leg_kny = 0.1;
+            joint_min.l_leg_kny = 0.2;
+            joint_min.r_leg_kny = 0.2;
 						joint_min = double(joint_min);
 						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
            
@@ -954,8 +954,8 @@ classdef ManipulationPlanner < handle
                 [joint_min,joint_max] = obj.r.getJointLimits();
                 joint_min = Point(coords,[joint_min;0*joint_min]);
                 joint_min.back_mby = -.2;
-                joint_min.l_leg_kny= joint_min.l_leg_kny+buffer;
-                joint_min.r_leg_kny= joint_min.r_leg_kny+buffer;
+                joint_min.l_leg_kny= 0.2;
+                joint_min.r_leg_kny= 0.2;
                 joint_min = double(joint_min);
                 ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
                
@@ -1660,8 +1660,8 @@ classdef ManipulationPlanner < handle
             [joint_min,joint_max] = obj.r.getJointLimits();
             joint_min = Point(coords,[joint_min;0*joint_min]);
             joint_min.back_mby = -.2;
-            joint_min.l_leg_kny = 0.1;
-            joint_min.r_leg_kny = 0.1;
+            joint_min.l_leg_kny = 0.2;
+            joint_min.r_leg_kny = 0.2;
             joint_min = double(joint_min);
             ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
            
