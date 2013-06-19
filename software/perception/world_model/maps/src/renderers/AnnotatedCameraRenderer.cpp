@@ -771,8 +771,9 @@ public:
 
     ioPrimitive->mOrigin = p1;
     ioPrimitive->mDirection = p2-p1;
-    ioPrimitive->mOrigin -= ioPrimitive->mDirection;
-    ioPrimitive->mDirection *= 2;
+    ioPrimitive->mDirection.normalize();
+    ioPrimitive->mOrigin -= ioPrimitive->mDirection*1.0;
+    ioPrimitive->mDirection *= 5.0;
 
     return true;
   }
