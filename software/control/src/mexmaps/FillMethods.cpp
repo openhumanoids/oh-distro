@@ -82,11 +82,9 @@ computeMedian(const Eigen::VectorXf& iData) {
   float medVal = (n%2 != 0) ? data[n/2] : 0.5*(data[n/2-1] + data[n/2]);
 }
 
-bool FillMethods::
-fitHorizontalPlane(const std::vector<Eigen::Vector3f>& iPoints,
-                   Eigen::Vector3f& oPlane) {
+Eigen::Vector3f FillMethods::
+fitHorizontalPlane(const std::vector<Eigen::Vector3f>& iPoints) {
   int n = iPoints.size();
-  if (n < 3) return false;
   Eigen::VectorXf rhs(n);
   Eigen::MatrixXf lhs(n,3);
   for (int i = 0; i < n; ++i) {
@@ -95,8 +93,9 @@ fitHorizontalPlane(const std::vector<Eigen::Vector3f>& iPoints,
     lhs(i,1) = iPoints[i][1];
     lhs(i,2) = 1;
   }
-  oPlane = lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(rhs);
-  return true;
+  Eigen::Vector3f sol =
+    lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(rhs);
+  return sol;
 }
 
 
@@ -120,8 +119,7 @@ struct HorizontalPlaneFitProblem {
     for (size_t i = 0; i < iIndices.size(); ++i) {
       pts[i] = (*mPoints)[iIndices[i]];
     }
-    Solution plane(0,0,0);
-    mFillMethods->fitHorizontalPlane(pts, plane);
+    Solution plane = mFillMethods->fitHorizontalPlane(pts);
     return plane;
   }
 
@@ -140,10 +138,9 @@ struct HorizontalPlaneFitProblem {
 
 
 
-bool FillMethods::
-fitHorizontalPlaneRansac(const std::vector<Eigen::Vector3f>& iPoints,
-                         Eigen::Vector3f& oPlane) {
-  if (iPoints.size() < 3) return false;
+Eigen::Vector3f FillMethods::
+fitHorizontalPlaneRansac(const std::vector<Eigen::Vector3f>& iPoints) {
+  if (iPoints.size() < 3) return Eigen::Vector3f::Zero();
   HorizontalPlaneFitProblem problem(this);
   problem.mPoints = const_cast<std::vector<Eigen::Vector3f>*>(&iPoints);
   RansacGeneric<HorizontalPlaneFitProblem> ransacObj;
@@ -151,22 +148,16 @@ fitHorizontalPlaneRansac(const std::vector<Eigen::Vector3f>& iPoints,
   ransacObj.setRefineUsingInliers(true);
   RansacGeneric<HorizontalPlaneFitProblem>::Result result =
     ransacObj.solve(problem);
-  if (result.mSuccess) {
-    oPlane = result.mSolution;
-    return true;
-  }
-  return false;
+  if (result.mSuccess) return result.mSolution;
+  return Eigen::Vector3f(0,0,0);
 }
 
-bool FillMethods::
+Eigen::Vector3f FillMethods::
 fitHorizontalPlaneRobust(const std::vector<Eigen::Vector3f>& iPoints,
-                         Eigen::Vector3f& oPlane,
                          const Eigen::Vector4f& iInitPlane) {
 
-  int n = iPoints.size();
-  if (n < 3) return false;
-
   // set up equations
+  int n = iPoints.size();
   Eigen::VectorXf rhs(n);
   Eigen::MatrixXf lhs(n,3);
   for (int i = 0; i < n; ++i) {
@@ -214,8 +205,7 @@ fitHorizontalPlaneRobust(const std::vector<Eigen::Vector3f>& iPoints,
     sol = a.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(b);
   }
 
-  oPlane = sol;
-  return true;
+  return sol;
 }
 
 int FillMethods::
@@ -286,9 +276,11 @@ doFill(maps::DepthImageView::Ptr& iView) {
     fillUnderRobot(iView, FillMethods::MethodRansac);
     fillIterative(iView);
     //fillConnected(iView);
+    //fprintf(stderr, "using full heightmap\n");
   }
   else {
     fillLevelPlaneFromFeet(iView);
+    //fprintf(stderr, "using flat ground\n");
   }
   if (mDebug) {
     drc::map_image_t msg;
@@ -453,8 +445,7 @@ fillViewPlanar(maps::DepthImageView::Ptr& iView) {
     }
   }
 
-  Eigen::Vector3f sol;
-  if (!fitHorizontalPlaneRobust(points, sol)) return;
+  Eigen::Vector3f sol = fitHorizontalPlaneRobust(points);
 
   // fill in values
   for (int i = 0, idx = 0; i < h; ++i) {
@@ -505,18 +496,17 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   }
 
   Eigen::Vector3f sol;
-  bool success = false;
   if (points.size() >= 10) {
     if (iMethod == MethodRobust) {
-      success = fitHorizontalPlaneRobust(points, sol);
+      sol = fitHorizontalPlaneRobust(points);
     }
     else {
-      success = fitHorizontalPlaneRansac(points, sol);
+      sol = fitHorizontalPlaneRansac(points);
     }
   }
 
   // try to get ground estimate from message
-  if (!success) {
+  else {
     // check that ground pose exists
     if (mLatestGroundPlane.norm() < 1e-6) return;
 
@@ -717,6 +707,15 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
 
   // and the two together and dilate so that outer extrema are found
   cv::bitwise_and(badMask, validArea, badMask);
+  {
+    std::ofstream ofs("/home/antone/badmask.txt");
+    for (int i = 0; i < badMask.rows; ++i) {
+      for (int j = 0; j < badMask.cols; ++j) {
+        ofs << int(badMask.at<uint8_t>(i,j)) << " ";
+      }
+      ofs << std::endl;
+    }
+  }
   std::vector<uint8_t> maskData(w*h);
   cv::Mat finalMask(h,w,CV_8U,maskData.data());
   badMask.copyTo(finalMask);
@@ -725,6 +724,15 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
   std::vector<uint16_t> labelData(w*h);
   cv::Mat labels(h,w,CV_16U,labelData.data());
   int numLabels = labelImage(finalMask, labels);
+  {
+    std::ofstream ofs("/home/antone/labels.txt");
+    for (int i = 0; i < labels.rows; ++i) {
+      for (int j = 0; j < labels.cols; ++j) {
+        ofs << labels.at<uint16_t>(i,j) << " ";
+      }
+      ofs << std::endl;
+    }
+  }
 
   // extract components and outlines
   std::vector<std::vector<int> > indices;
@@ -743,8 +751,7 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
       pts.push_back(Eigen::Vector3f(idx%w, idx/w, z));
     }
     if (pts.size() < 3) continue;
-    Eigen::Vector3f plane;
-    if (!fitHorizontalPlaneRansac(pts, plane)) continue;
+    Eigen::Vector3f plane = fitHorizontalPlaneRobust(pts);
 
     std::vector<int>::const_iterator it = indices[i].begin();
     for (; it != indices[i].end(); ++it) {

@@ -36,15 +36,15 @@ public:
 
   float computeMedian(const Eigen::VectorXf& iData);
 
-  bool fitHorizontalPlaneRobust
-  (const std::vector<Eigen::Vector3f>& iPoints, Eigen::Vector3f& oPlane,
+  Eigen::Vector3f fitHorizontalPlaneRobust
+  (const std::vector<Eigen::Vector3f>& iPoints,
    const Eigen::Vector4f& iInitPlane=Eigen::Vector4f::Zero());
 
-  bool fitHorizontalPlaneRansac
-  (const std::vector<Eigen::Vector3f>& iPoints, Eigen::Vector3f& oPlane);
+  Eigen::Vector3f fitHorizontalPlaneRansac
+  (const std::vector<Eigen::Vector3f>& iPoints);
 
-  bool fitHorizontalPlane
-  (const std::vector<Eigen::Vector3f>& iPoints, Eigen::Vector3f& oPlane);
+  Eigen::Vector3f fitHorizontalPlane
+  (const std::vector<Eigen::Vector3f>& iPoints);
 
   int labelImage(cv::Mat& iMask, cv::Mat& oLabels);
   void labelRecurse(cv::Mat& iMask, const int iRow, const int iCol,
