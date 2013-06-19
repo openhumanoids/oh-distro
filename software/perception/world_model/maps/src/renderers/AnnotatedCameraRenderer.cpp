@@ -100,18 +100,26 @@ protected:
         mImage.data.resize(iMessage->height * stride);
         mImage.size = mImage.data.size();
         mImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
-        jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
-                               &mImage.data[0],
-                               iMessage->width, iMessage->height, stride);
+        if (0 != jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
+                                        &mImage.data[0], iMessage->width,
+                                        iMessage->height, stride)) {
+          std::cout << "Error decoding jpeg" << std::endl;
+        }
       }
       else if (iMessage->pixelformat == bot_core::image_t::PIXEL_FORMAT_GRAY) {
         int numBytes = mImage.data.size();
         std::vector<uint8_t> bytes(numBytes*3);
-        for (int k = 0; k < 3; ++k) {
-          std::copy(bytes.data() + k*numBytes, bytes.data() + (k+1)*numBytes,
-                    mImage.data.begin());
+        uint8_t* out = bytes.data();
+        for (int i = 0; i < mImage.height; ++i) {
+          for (int j = 0; j < mImage.width; ++j) {
+            uint8_t val = mImage.data[i*mImage.width+j];
+            for (int k = 0; k < 3; ++k, ++out) {
+              *out = val;
+            }
+          }
         }
         mImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
+        mImage.row_stride = 3*mImage.width;
         mImage.size = bytes.size();
         mImage.data = bytes;
       }
@@ -178,7 +186,7 @@ protected:
       default:  break;
       }
       glPushMatrix();
-      glTranslatef(corner[0], corner[1], 1);
+      glTranslatef(corner[0], corner[1], 0.99);  // TODO: better way than .99?
 
       // flip to upright if necessary
       if (mUpright) {
@@ -199,13 +207,20 @@ protected:
       glGetIntegerv(GL_VIEWPORT, mViewportGl);
 
       // draw texture
-      glColor3ub(255,255,255);
+      glColor3f(1,1,1);
       if (!mTextureValid) {
         glBindTexture(GL_TEXTURE_2D, mTextureId);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, mImage.width, mImage.height,
-                     0, GL_RGB, GL_UNSIGNED_BYTE, mImage.data.data());
+        if (mImage.pixelformat == bot_core::image_t::PIXEL_FORMAT_RGB) {
+          glTexImage2D(GL_TEXTURE_2D, 0, 3, mImage.width, mImage.height,
+                       0, GL_RGB, GL_UNSIGNED_BYTE, mImage.data.data());
+        }
+        else {
+          glTexImage2D(GL_TEXTURE_2D, 0, 1, mImage.width, mImage.height,
+                       0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mImage.data.data());
+        }
+
         mTextureValid = true;
       }
       glEnable(GL_TEXTURE_2D);
@@ -296,11 +311,11 @@ protected:
       glPointSize(5);
       glLineWidth(3);
       glBegin(GL_POINTS);
-      glVertex2f(mDragPoint1[0], vpHeight-mDragPoint1[1]);
+      glVertex3f(mDragPoint1[0], vpHeight-mDragPoint1[1],1);
       glEnd();
       glBegin(GL_LINES);
-      glVertex2f(mDragPoint1[0], vpHeight-mDragPoint1[1]);
-      glVertex2f(mDragPoint2[0], vpHeight-mDragPoint2[1]);
+      glVertex3f(mDragPoint1[0], vpHeight-mDragPoint1[1],1);
+      glVertex3f(mDragPoint2[0], vpHeight-mDragPoint2[1],1);
       glEnd();
 
       // reset state
@@ -336,13 +351,17 @@ protected:
       mValid = false;
       mVisible = false;
       mBox = Gtk::manage(new Gtk::HBox());
+      mParent = NULL;
     }
 
     ~Primitive() {
-      if (mParent != NULL) mParent->remove(*mBox);
+      if (mParent != NULL) {
+        mParent->remove(*mBox);
+        mParent->show_all();
+      }
     }
 
-    Gtk::Container* setupWidgets() {
+    Gtk::Container* setupWidgets(Gtk::Box* iContainer) {
       mVisibleToggle = Gtk::manage(new Gtk::ToggleButton("             "));
       Gdk::Color color;
       color.set_rgb_p(mColor[0], mColor[1], mColor[2]);
@@ -352,6 +371,8 @@ protected:
       mBox->pack_start(*mVisibleToggle, false, false);
       Gtk::Label* label = Gtk::manage(new Gtk::Label(mName, Gtk::ALIGN_LEFT));
       mBox->pack_start(*label, false, false);
+      iContainer->pack_start(*mBox,false,false);
+      mParent = iContainer;
       return mBox;
     }
 
@@ -361,7 +382,7 @@ protected:
     }
 
     void draw() {
-      if (!mValid) return;
+      if (!mVisible || !mValid) return;
       glColor3f(mColor[0], mColor[1], mColor[2]);
       glPointSize(3);
       glLineWidth(mWidth);
@@ -370,6 +391,7 @@ protected:
       glEnd();
       glBegin(GL_LINES);
       Eigen::Vector3f endPoint = mOrigin + mDirection;
+      glVertex3fv(mOrigin.data());
       glVertex3fv(endPoint.data());
       glEnd();
     }
@@ -600,16 +622,21 @@ public:
       if (mAnnotation1.mValid && mAnnotation2.mValid &&
           (mAnnotation1.mWhichCamera != mAnnotation2.mWhichCamera)) {
         Primitive::Ptr primitive(new Primitive(this));
-        primitive->mName = "Unnamed";
-        primitive->mColor = mColorList[mNextColorId % mColorList.size()];
-        ++mNextColorId;
         primitive->mAnnotation1 = mAnnotation1;
         primitive->mAnnotation2 = mAnnotation2;
-        Gtk::Container* container = primitive->setupWidgets();
-        mPrimitivesBox->pack_start(*container,false,false);
-        doIntersection(primitive);
-        mPrimitives.push_back(primitive);
-        mAddNewPrimitiveToggle->set_active(false);
+        if (doIntersection(primitive)) {
+          primitive->mName = "Unnamed";
+          primitive->mColor = mColorList[mNextColorId % mColorList.size()];
+          ++mNextColorId;
+          primitive->mVisible = true;
+          primitive->mValid = true;
+          Gtk::Container* container = primitive->setupWidgets(mPrimitivesBox);
+          mPrimitives.push_back(primitive);
+          mAddNewPrimitiveToggle->set_active(false);
+          // TODO mAnnotation1.mValid = mAnnotation2.mValid = false;
+          container->show_all();
+          requestDraw();
+        }
       }
     }
     return handled;
@@ -640,6 +667,11 @@ public:
     pix[1] = ioPrimitive->mAnnotation1.mDragPoint2;
     pix[2] = ioPrimitive->mAnnotation2.mDragPoint1;
     pix[3] = ioPrimitive->mAnnotation2.mDragPoint2;
+    std::cout << "mouse" << std::endl;
+    std::cout << pix[0].transpose() << std::endl;
+    std::cout << pix[1].transpose() << std::endl;
+    std::cout << pix[2].transpose() << std::endl;
+    std::cout << pix[3].transpose() << std::endl;
 
     // pixel coords
     auto cam1 = mCameraStates[ioPrimitive->mAnnotation1.mWhichCamera];
@@ -648,6 +680,11 @@ public:
     cam1->getImageCoords(pix[1], pix[1]);
     cam2->getImageCoords(pix[2], pix[2]);
     cam2->getImageCoords(pix[3], pix[3]);
+    std::cout << "pix" << std::endl;
+    std::cout << pix[0].transpose() << std::endl;
+    std::cout << pix[1].transpose() << std::endl;
+    std::cout << pix[2].transpose() << std::endl;
+    std::cout << pix[3].transpose() << std::endl;
 
     // rays in camera space
     Eigen::Vector3f rays[4];
@@ -660,16 +697,29 @@ public:
     rays[2] << ray[0],ray[1],ray[2];
     bot_camtrans_unproject_pixel(cam2->mCamTrans, pix[3][0], pix[3][1], ray);
     rays[3] << ray[0],ray[1],ray[2];
+    std::cout << "ray cam" << std::endl;
+    std::cout << rays[0].transpose() << std::endl;
+    std::cout << rays[1].transpose() << std::endl;
+    std::cout << rays[2].transpose() << std::endl;
+    std::cout << rays[3].transpose() << std::endl;
 
     // rays in local frame
     rays[0] = cam1->mPose.linear()*rays[0];
     rays[1] = cam1->mPose.linear()*rays[1];
     rays[2] = cam2->mPose.linear()*rays[2];
     rays[3] = cam2->mPose.linear()*rays[3];
+    std::cout << "ray local" << std::endl;
+    std::cout << rays[0].transpose() << std::endl;
+    std::cout << rays[1].transpose() << std::endl;
+    std::cout << rays[2].transpose() << std::endl;
+    std::cout << rays[3].transpose() << std::endl;
 
     // origins
     Eigen::Vector3f origin1 = cam1->mPose.translation();
     Eigen::Vector3f origin2 = cam2->mPose.translation();
+    std::cout << "origins" << std::endl;
+    std::cout << origin1.transpose() << std::endl;
+    std::cout << origin2.transpose() << std::endl;
 
     // plane of camera 2
     Eigen::Vector4f plane;
@@ -677,14 +727,19 @@ public:
     planeNormal.normalize();
     plane.head<3>() = planeNormal;
     plane[3] = -planeNormal.dot(origin2);
+    std::cout << "plane " << plane.transpose() << std::endl;
 
     // intersect two rays of camera 1 with plane
     float t1 = -(plane[3]+planeNormal.dot(origin1)) / planeNormal.dot(rays[0]);
-    if (t1 < 0) return false;
+    std::cout << "t1 " << t1 << std::endl;
+    //TODO if (t1 < 0) return false;
     Eigen::Vector3f p1 = origin1 + rays[0]*t1;
+    std::cout << "p1 " << p1.transpose() << std::endl;
     float t2 = -(plane[3]+planeNormal.dot(origin1)) / planeNormal.dot(rays[1]);
-    if (t2 < 0) return false;
+    std::cout << "t2 " << t2 << std::endl;
+    // TODO if (t2 < 0) return false;
     Eigen::Vector3f p2 = origin1 + rays[1]*t2;
+    std::cout << "p2 " << p2.transpose() << std::endl;
 
     ioPrimitive->mOrigin = p1;
     ioPrimitive->mDirection = p2-p1;
@@ -692,19 +747,25 @@ public:
   }
 
   void draw() {
-    // draw each camera view
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glPushClientAttrib(GL_ALL_ATTRIB_BITS);
+
+    // draw each camera image
     for (auto iter = mCameraStates.begin();
          iter != mCameraStates.end(); ++iter) {
-      auto cam = *iter;
-      cam->draw();
+      (*iter)->draw();
     }
 
     mAnnotation1.draw();
     mAnnotation2.draw();
 
+    glPopClientAttrib();
+    glPopAttrib();
+
     for (auto iter = mPrimitives.begin(); iter != mPrimitives.end(); ++iter) {
       (*iter)->draw();
     }
+
   }
 
 };
