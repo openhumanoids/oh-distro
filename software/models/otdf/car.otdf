@@ -9,23 +9,18 @@
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-
-    
     <param name="hand_brake_stance_x" default_value="0.390" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_y" default_value="-1.120" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_z" default_value="-0.01" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_roll" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="hand_brake_stance_yaw" default_value="0" inc="0.001" min="-100" max="100" />
-    
     <param name="vault_stance_x" default_value="-0.007" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_y" default_value="-1.12" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_z" default_value="-0.01" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_roll" default_value="0" inc="0.001" min="-100" max="100" />
     <param name="vault_stance_pitch" default_value="0" inc="0.001" min="-100" max="100" />
-    <param name="vault_stance_yaw" default_value="-1.57079632679" inc="0.001" min="-100" max="100" />         
-
-
+    <param name="vault_stance_yaw" default_value="-1.57079632679" inc="0.001" min="-100" max="100" />
     <link name="base_link" />
     <link name="chassis">
         <inertial>
@@ -843,9 +838,7 @@
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142226 1.52346 1.37803 -0.00293375 1.53692 1.32742 0.0140219 1.54334 1.31305 0.875808 1.29825 -0.251281 " />
     </grasp_seed>
-
-<!--HAND BRAKE STANCE-->
-
+    <!--HAND BRAKE STANCE-->
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="hb_rfoot_target_0" />
@@ -860,8 +853,7 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
-
-   <link name="hb_lfoot_target">
+    <link name="hb_lfoot_target">
         <visual name="hb_lfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
@@ -876,11 +868,10 @@
         </collision>
     </link>
     <joint name="hb_lfoot_target_joint" type="fixed">
-      <origin xyz="${hand_brake_stance_x} ${hand_brake_stance_y} ${hand_brake_stance_z}" rpy="${hand_brake_stance_roll} ${hand_brake_stance_pitch} ${hand_brake_stance_yaw}" />
-      <parent link="chassis" type="link" />
-      <child link="hb_lfoot_target" type="link" />
-    </joint>   
-    
+        <origin xyz="${hand_brake_stance_x} ${hand_brake_stance_y} ${hand_brake_stance_z}" rpy="${hand_brake_stance_roll} ${hand_brake_stance_pitch} ${hand_brake_stance_yaw}" />
+        <parent link="chassis" type="link" />
+        <child link="hb_lfoot_target" type="link" />
+    </joint>
     <link name="hb_rfoot_target">
         <visual name="hb_rfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -896,13 +887,11 @@
         </collision>
     </link>
     <joint name="hb_rfoot_target_joint" type="fixed">
-      <origin xyz="${hand_brake_stance_x} ${hand_brake_stance_y + 0.25} ${hand_brake_stance_z}" rpy="${hand_brake_stance_roll} ${hand_brake_stance_pitch} ${hand_brake_stance_yaw}" />
-      <parent link="chassis" type="link" />
-      <child link="hb_rfoot_target" type="link" />
-    </joint>  
-
-
-<!--VAULT STANCE-->
+        <origin xyz="${hand_brake_stance_x} ${hand_brake_stance_y + 0.25} ${hand_brake_stance_z}" rpy="${hand_brake_stance_roll} ${hand_brake_stance_pitch} ${hand_brake_stance_yaw}" />
+        <parent link="chassis" type="link" />
+        <child link="hb_rfoot_target" type="link" />
+    </joint>
+    <!--VAULT STANCE-->
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="vault_rfoot_target_0" />
@@ -917,8 +906,7 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
-
-   <link name="vault_lfoot_target">
+    <link name="vault_lfoot_target">
         <visual name="vault_lfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
@@ -933,11 +921,10 @@
         </collision>
     </link>
     <joint name="vault_lfoot_target_joint" type="fixed">
-      <origin xyz="${vault_stance_x} ${vault_stance_y} ${vault_stance_z}" rpy="${vault_stance_roll} ${vault_stance_pitch} ${vault_stance_yaw}" />
-      <parent link="chassis" type="link" />
-      <child link="vault_lfoot_target" type="link" />
-    </joint>   
-    
+        <origin xyz="${vault_stance_x} ${vault_stance_y} ${vault_stance_z}" rpy="${vault_stance_roll} ${vault_stance_pitch} ${vault_stance_yaw}" />
+        <parent link="chassis" type="link" />
+        <child link="vault_lfoot_target" type="link" />
+    </joint>
     <link name="vault_rfoot_target">
         <visual name="vault_rfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -953,9 +940,15 @@
         </collision>
     </link>
     <joint name="vault_rfoot_target_joint" type="fixed">
-      <origin xyz="${vault_stance_x + 0.25} ${vault_stance_y} ${vault_stance_z}" rpy="${vault_stance_roll} ${vault_stance_pitch} ${vault_stance_yaw}" />
-      <parent link="chassis" type="link" />
-      <child link="vault_rfoot_target" type="link" />
-    </joint>  
-  </object>
-  
+        <origin xyz="${vault_stance_x + 0.25} ${vault_stance_y} ${vault_stance_z}" rpy="${vault_stance_roll} ${vault_stance_pitch} ${vault_stance_yaw}" />
+        <parent link="chassis" type="link" />
+        <child link="vault_rfoot_target" type="link" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="hand_brake_0" />
+        <relative_pose rpy="-2.27432 0.243726 0.107955" xyz="0.0637521 -0.0851439 0.0544072" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141419 1.52632 1.28637 -0.00445307 1.52155 1.08055 0.0139409 1.52092 0.897526 0.225121 1.4314 0.499761 " />
+    </grasp_seed>
+</object>
