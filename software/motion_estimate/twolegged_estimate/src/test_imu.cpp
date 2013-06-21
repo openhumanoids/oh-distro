@@ -60,6 +60,7 @@ public:
 		max = 0;
 		_lcm->subscribe("TRUE_ROBOT_STATE",&HandleIMU::true_state_handler,this);
 		_lcm->subscribe("TORSO_IMU",&HandleIMU::torso_state_handler,this);
+		_lcm->subscribe("HEAD_IMU",&HandleIMU::head_imu_handler,this);
 
 		prev_msg_utime = 0;
 		fall_utime = 0;
@@ -98,6 +99,34 @@ public:
 
 		//cout << "num_joints: " << msg->num_joints << endl;
 
+
+
+
+		if (false) {
+			// This is for printing the feet and had forces and torques to screen
+			std::cout << "vals, " << msg->utime << ", ";
+
+			for (int i=0;i<msg->contacts.num_contacts;i++) {
+				std::cout << msg->contacts.contact_force[i].x << ", " << msg->contacts.contact_force[i].y << ", " << msg->contacts.contact_force[i].z << ", ";
+			}
+
+			for (int i=0;i<msg->contacts.num_contacts;i++) {
+				std::cout << msg->contacts.contact_torque[i].x << ", " << msg->contacts.contact_torque[i].y << ", " << msg->contacts.contact_torque[i].z << ", ";
+			}
+
+			std::cout << std::endl;
+
+		}
+
+
+
+	}
+
+	void head_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg) {
+
+		std::cout << "himu, " << msg->utime << ", ";
+		std::cout << msg->linear_acceleration[0] << ", "  << msg->linear_acceleration[1] << ", " << msg->linear_acceleration[2] << std::endl;
+
 	}
 
 	void torso_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg) {
@@ -129,7 +158,7 @@ public:
 			}
 		}
 
-		std::cout << msg->linear_acceleration[0] << ", "  << msg->linear_acceleration[1] << ", " << msg->linear_acceleration[2] << std::endl;
+		//std::cout << msg->linear_acceleration[0] << ", "  << msg->linear_acceleration[1] << ", " << msg->linear_acceleration[2] << std::endl;
 
 		check_conv(0) = __q.w() - q.w();
 		check_conv(1) = __q.x() - q.x();

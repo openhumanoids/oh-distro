@@ -9,7 +9,9 @@ t = data(:,25);
 
 Ts = mean(diff(t))*1E-9/5;
 
-t = linspace(0,(t(end)-t(1))*Ts,length(t));
+% t = linspace(0,(t(end)-t(1))*Ts,length(t));
+
+t = t/1E6;
 
 tpos = data(:,1:3);
 tvel = data(:,4:6);
