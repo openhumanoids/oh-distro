@@ -60,7 +60,8 @@ namespace InertialOdometry {
 	  Eigen::Vector3d direction = 1/mag * w;
 	  skew(direction,temp);
 	  R += sin(mag) * temp + (1- cos(mag))*(temp*temp);
-	  
+	  //  TODO -- confirm that we do not have to divide by mag -- if then do the numerical fix to second order Taylor
+
 #endif
 	  
 	  /*
