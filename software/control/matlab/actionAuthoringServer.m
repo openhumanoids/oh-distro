@@ -107,18 +107,18 @@ options.q_nom = q_standing;
 options.Q = diag(cost(1:r.getNumDOF));
 [jointLimitMin, jointLimitMax] = r.getJointLimits();
 joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
-knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
-elbow_ind = find(~cellfun(@isempty,strfind(joint_names,'elx')));
-back_ind = find(~cellfun(@isempty,strfind(joint_names,'ubx')) | ~cellfun(@isempty,strfind(joint_names,'mby')));
-hip_ind = find( ...
+knee_idx = find(~cellfun(@isempty,strfind(joint_names,'kny')));
+elbow_idx = find(~cellfun(@isempty,strfind(joint_names,'elx')));
+back_idx = find(~cellfun(@isempty,strfind(joint_names,'ubx')) | ~cellfun(@isempty,strfind(joint_names,'mby')));
+hip_idx = find( ...
                 ~cellfun(@isempty,strfind(joint_names,'l_leg_uhz')) ...
               );
                 %| ~cellfun(@isempty,strfind(joint_names,'mhx')) ...
                 %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...
 
 jointLimitShrink = ones(size(jointLimitMin));
-% jointLimitShrink(back_ind) = 0.4;
-%jointLimitShrink(hip_ind) = 0.6;
+% jointLimitShrink(back_idx) = 0.4;
+%jointLimitShrink(hip_idx) = 0.6;
 jointLimitHalfLength = jointLimitShrink.*(jointLimitMax - jointLimitMin)/2;
 jointLimitMid = (jointLimitMax + jointLimitMin)/2;
 
@@ -128,8 +128,8 @@ options.jointLimitMax = jointLimitMid + jointLimitHalfLength;
 options.jointLimitMax(isnan(options.jointLimitMax)) = Inf;
 
 
-options.jointLimitMin(knee_ind) = 0.6;
-% options.jointLimitMin(hip_ind) = 0.0;
+options.jointLimitMin(knee_idx) = 0.6;
+% options.jointLimitMin(hip_idx) = 0.0;
 
 options.use_mex = action_options.use_mex;
 
@@ -140,7 +140,7 @@ if(action_options.drake_vis)
   v.draw(0,q);
 end
 
-clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid jointLimitMin jointLimitMax knee_ind elbow_ind back_ind hip_ind joint_names cost arm_cost IK ustar zstar xstar;
+clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid jointLimitMin jointLimitMax knee_idx elbow_idx back_idx hip_idx joint_names cost arm_cost IK ustar zstar xstar;
 
 timeout=10;
 display('Listening ...');
@@ -196,9 +196,9 @@ while (1)
       if action_options.generate_implicit_constraints_from_q0
         if isfield(action_options,'initial_contact_groups')
           for i = 1:length(action_options.initial_contact_groups.linknames)
-            B = findLink(r,action_options.initial_contact_groups.linknames{i});
-            if ~isempty(B)
-              action_options.initial_contact_groups.linknames{i} = B.linkname;
+            body_idx = findLinkInd(r,action_options.initial_contact_groups.linknames{i});
+            if body_idx ~= 0
+              action_options.initial_contact_groups.linknames{i} = getLinkName(r,body_idx);
             end
           end
         end
@@ -223,10 +223,10 @@ while (1)
 
       % Above ground constraints
       %tspan = action_sequence.tspan;
-      %for body_ind = 1:length(r.body)
-        %body_contact_pts = r.body(body_ind).getContactPoints();
+      %for body_idx = 1:length(r.body)
+        %body_contact_pts = r.body(body_idx).getContactPoints();
         %if(~isempty(body_contact_pts))
-          %above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          %above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_idx,body_contact_pts,tspan,[r.body(body_idx).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           %action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
         %end 
       %end
@@ -254,9 +254,9 @@ while (1)
       key_time_IK_failed = false;
       
       support_times = action_sequence.key_time_samples;
-      support_body_ind = zeros(size(support_times));
-      support_body_ind = [];
-      contact_surface_ind = [];
+      support_body_idx = zeros(size(support_times));
+      support_body_idx = [];
+      contact_surface_idx = [];
       support_states = [];
       for i = 1:num_key_time_samples 
         if(i==num_key_time_samples)
@@ -313,10 +313,10 @@ while (1)
             end
           end
         end
-        support_body_ind = [];
-        surface_body_ind = [];
-        support_point_ind = {};
-        support_point_ind_unique = {};
+        support_body_idx = [];
+        surface_body_idx = [];
+        support_point_idx = {};
+        support_point_idx_unique = {};
         for j = 1:length(action_sequence.kincons)
           if action_sequence.key_time_samples(i) >= action_sequence.kincons{j}.tspan(1) && ...
               action_sequence.key_time_samples(i) <= action_sequence.kincons{j}.tspan(2) && ...
@@ -324,20 +324,20 @@ while (1)
               any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.STATIC_GRIP_CONTACT,1)|...
               any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.MAKE_CONTACT,1)|...
               any(cell2mat(action_sequence.kincons{j}.getContactState(action_sequence.key_time_samples(i))') == ActionKinematicConstraint.BREAK_CONTACT,1))
-            support_body_ind = [support_body_ind, action_sequence.kincons{j}.body_ind];
-            B = r.body(support_body_ind(end));
-            body_contact_points = r_Atlas.getBodyContacts(support_body_ind(end));
-            [~,support_point_ind_j] = ismember(action_sequence.kincons{j}.body_pts',body_contact_points','rows');
-            support_point_ind = [support_point_ind, support_point_ind_j];
-            surface_body_ind = [surface_body_ind, 0];
+            support_body_idx = [support_body_idx, action_sequence.kincons{j}.body_ind];
+            %B = r.body(support_body_idx(end));
+            body_contact_points = r_Atlas.getBodyContacts(support_body_idx(end));
+            [~,support_point_idx_j] = ismember(action_sequence.kincons{j}.body_pts',body_contact_points','rows');
+            support_point_idx = [support_point_idx, support_point_idx_j];
+            surface_body_idx = [surface_body_idx, 0];
           end
         end
-        [support_body_ind_unique,ia,ic] = unique(support_body_ind,'stable');
-        for j = 1:length(support_body_ind_unique)
-          support_point_ind_unique{j} = unique(vertcat(support_point_ind{ic==j}));
+        [support_body_idx_unique,ia,ic] = unique(support_body_idx,'stable');
+        for j = 1:length(support_body_idx_unique)
+          support_point_idx_unique{j} = unique(vertcat(support_point_idx{ic==j}));
         end
-        surface_body_ind = surface_body_ind(ia);
-        support_states = [support_states; SupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)];
+        surface_body_idx = surface_body_idx(ia);
+        support_states = [support_states; SupportState(r_Atlas,support_body_idx_unique,support_point_idx_unique,surface_body_idx)];
         
         
         kinsol = doKinematics(r,q_key_time_samples(:,i));
@@ -449,17 +449,18 @@ while (1)
           end
           j = 1;
           n = 1;
+          body_idx = {};
           while j<length(ikargs)
             if(isa(ikargs{j},'RigidBody'))
-              ikargs{j} = find(r.body==ikargs{j},1);
+              error('ikargs should not contain RigidBody objects');
             end
-            body_ind{i}(n) = ikargs{j};
-            if(body_ind{i}(n) == 0)
+            body_idx{i}(n) = ikargs{j};
+            if(body_idx{i}(n) == 0)
               j = j+2;
             else
               body_pos{i}{n} = ikargs{j+1};
               if(ischar(body_pos{i}{n})||numel(body_pos{i}{n})==1)
-                body_pos{i}{n} = getContactPoints(r.body(body_ind{i}(n)),body_pos{i}{n});
+                body_pos{i}{n} = getContactPoints(r.body(body_idx{i}(n)),body_pos{i}{n});
               end
               if(i == 1)
                 support_polygon_flags{i}{n} = ...
@@ -483,7 +484,7 @@ while (1)
               [rows,mi] = size(body_pos{i}{n});
               if(rows~=3) error('bodypos must be 3xmi');end
               num_sequence_support_vertices{i}(n) = sum(support_polygon_flags{i}{n});
-              foot_support_qs(body_ind{i}(n),i) = any(support_polygon_flags{i}{n});
+              foot_support_qs(body_idx{i}(n),i) = any(support_polygon_flags{i}{n});
             end
             n = n+1;
           end
@@ -492,9 +493,9 @@ while (1)
           total_body_support_vert = 0;
           com_qs_plan(:,i) = getCOM(r,kinsol);
           support_vert_pos{i} = zeros(2,num_sample_support_vertices(i));
-          for j = 1:length(body_ind{i})
-            if(body_ind{i}(j) ~= 0)
-              [x,J] = forwardKin(r,kinsol,body_ind{i}(j),body_pos{i}{j},0); 
+          for j = 1:length(body_idx{i})
+            if(body_idx{i}(j) ~= 0)
+              [x,J] = forwardKin(r,kinsol,body_idx{i}(j),body_pos{i}{j},0); 
               support_vert_pos{i}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j)))...
                 = x(1:2,support_polygon_flags{i}{j});
               total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
@@ -558,17 +559,19 @@ while (1)
             % action_options.ref_link_str, if present.
             if(isfield(action_options,'ref_link_str'))
               typecheck(action_options.ref_link_str,'char');
-              ref_link = findLink(r,action_options.ref_link_str);
-              pelvis = r.findLink('pelvis');
+              ref_link_idx = findLinkInd(r,action_options.ref_link_str);
+              pelvis_idx = findLinkInd(r,'pelvis');
               for i = 1:length(t_qs_breaks)
                 kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
                 com_i = getCOM(r,kinsol);
                 if i == 1
-                  wTf = ref_link.T;
+                  wTf = kinsol.T{ref_link_idx};
+                  % TODO This should use invHT once that function gets pushed
+                  % into trunk
                   fTw = [ [wTf(1:3,1:3)'; zeros(1,3)], [-wTf(1:3,1:3)'*wTf(1:3,4); 1] ];
                 end
                 com_qs_plan(:,i) = homogTransMult(fTw,com_i);
-                wTr_i = pelvis.T;
+                wTr_i = kinsol.T{pelvis_idx};
                 fTr_i = fTw*wTr_i;
                 q_qs_plan(1:6,i) = [fTr_i(1:3,4); rotmat2rpy(fTr_i(1:3,1:3))];
               end
@@ -600,8 +603,8 @@ while (1)
                   if(ikargs{j} == 0)
                     j = j+2;
                   else
-                      contact_pos_ind = (all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
-                      contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_ind)];
+                      contact_pos_idx = (all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
+                      contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_idx)];
                       j = j+3;
                   end
               end
@@ -687,54 +690,55 @@ function fprintfVerb(options,varargin)
   if(options.verbose) fprintf(varargin{:}); end
 end
 
-function body = findLinkContaining(r,linkname,robot,throw_error)  
-  % @param robot can be the robot number or the name of a robot
-  % robot=0 means look at all robots
-  if nargin<3 || isempty(robot), robot=0; end
-  if ischar(robot) robot = strmatch(lower(robot),lower({r.name})); end
-  linkname=regexprep(linkname,'\+','\\\+');
-  ind = find(cellfun(@(x)~isempty(x),regexp(lower({r.body.linkname}),[lower(linkname) '\+?'])));
-  if (robot~=0), ind = ind([r.body(ind).robotnum]==robot); end
-  if (length(ind)>1)
-    if (nargin<4 || throw_error)
-      body = r.body(ind(1));
-      warning('Couldn''t find unique link %s. Returning first match: %s', ...
-        linkname,body.linkname);
-    else 
-      body=[];
-    end
-  elseif (length(ind)<1)
-    if (nargin<4 || throw_error)
-      error(['couldn''t find link ' ,linkname]);
-    else 
-      body=[];
-    end
-  else
-    body = r.body(ind);
-  end
-end
+%function body = findLinkContaining(r,linkname,robot,throw_error)  
+  %% @param robot can be the robot number or the name of a robot
+  %% robot=0 means look at all robots
+  %if nargin<3 || isempty(robot), robot=0; end
+  %if ischar(robot) robot = strmatch(lower(robot),lower({r.name})); end
+  %linkname=regexprep(linkname,'\+','\\\+');
+  %ind = find(cellfun(@(x)~isempty(x),regexp(lower({r.body.linkname}),[lower(linkname) '\+?'])));
+  %if (robot~=0), ind = ind([r.body(ind).robotnum]==robot); end
+  %if (length(ind)>1)
+    %if (nargin<4 || throw_error)
+      %body = r.body(ind(1));
+      %warning('Couldn''t find unique link %s. Returning first match: %s', ...
+        %linkname,body.linkname);
+    %else 
+      %body=[];
+    %end
+  %elseif (length(ind)<1)
+    %if (nargin<4 || throw_error)
+      %error(['couldn''t find link ' ,linkname]);
+    %else 
+      %body=[];
+    %end
+  %else
+    %body = r.body(ind);
+  %end
+%end
 
 function kc = getConstraintFromGoal(r,goal)
   if(goal.contact_type ~= goal.SUPPORTED_WITHIN_REGION) && (goal.contact_type ~= goal.WITHIN_REGION) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
     error('The contact type is not supported yet');
   end
-  body_ind = findLink(r,char(goal.object_1_name));
+  body_idx = findLinkInd(r,char(goal.object_1_name));
+  body = getBody(r,body_idx);
   t_prec = 1e6;
   tspan = round([goal.lower_bound_completion_time goal.upper_bound_completion_time]*t_prec)/t_prec;
-  kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
+  kc_name = [body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
   if(goal.contact_type == goal.COLLISION_AVOIDANCE)
     collision_group_pts = [0;0;0];
     pos = struct();
     pos.max = inf(3,1);
     pos.min = -inf(3,1);
-    obstacle = findLink(r,char(goal.object_2_name));
-    kc = CollisionAvoidanceConstraint(r,body_ind,tspan,kc_name,obstacle);
+    obstacle_idx = findLinkInd(r,char(goal.object_2_name));
+    kc = CollisionAvoidanceConstraint(r,body_idx,tspan,kc_name,obstacle_idx);
   else
-    child = findLink(r,char(goal.object_2_name));
+    child_idx = findLinkInd(r,char(goal.object_2_name));
     groupname = regexprep(char(goal.object_2_contact_grp),'\/.*','');
-    contact_aff = {ContactShapeAffordance(r,child,groupname)};
+    contact_aff = {ContactShapeAffordance(r,child_idx,groupname)};
     collision_group_name = char(goal.object_1_contact_grp);
-    collision_group = find(strcmpi(collision_group_name,body_ind.collision_group_name));
+    collision_group = find(strcmpi(collision_group_name,body.collision_group_name));
     if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
     p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
     offset = [goal.x_offset; goal.y_offset; goal.z_offset];
@@ -781,7 +785,7 @@ function kc = getConstraintFromGoal(r,goal)
       pos.min(3) = -inf;
       pos.max(3) = inf;
     end
-    collision_group_pts = body_ind.getContactPoints(collision_group);
+    collision_group_pts = body.getContactPoints(collision_group);
     % If we have multiple contact points in the contact group, we
     % would also constrain that all those contact points are in
     % contact
@@ -816,7 +820,7 @@ function kc = getConstraintFromGoal(r,goal)
     contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
 
     %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
-    kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
+    kc = ActionKinematicConstraint(r,body_idx,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
   end
 
 end
