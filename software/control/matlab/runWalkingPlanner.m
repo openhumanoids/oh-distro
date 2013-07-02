@@ -85,18 +85,16 @@ while true
 
       if (~isempty(footsteps))
         % Align the first two steps to the current feet poses
-        kinsol = doKinematics(r, x0(1:nq));
-        rpos = forwardKin(r, kinsol, r.foot_bodies.right, [0;0;0], 1);
-        lpos = forwardKin(r, kinsol, r.foot_bodies.left, [0;0;0], 1);
+        feet_pos = feetPosition(r, x0(1:nq));
         if footsteps(1).is_right_foot
-          footsteps(1).pos = rpos; footsteps(2).pos = lpos;
+          footsteps(1).pos = feet_pos.right; footsteps(2).pos = feet_pos.left;
         else
-          footsteps(1).pos = lpos; footsteps(2).pos = rpos;
+          footsteps(1).pos = feet_pos.left; footsteps(2).pos = feet_pos.right;
         end
 
         % Align the remianing steps to the terrain, or to the walking plane
         if footstep_opts.ignore_terrain
-          p0 = rpos;
+          p0 = feet_pos.right;
           normal = rpy2rotmat(p0(4:6)) * [0;0;1];
           for j = 3:length(footsteps)
             footsteps(j).pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (footsteps(j).pos(1) - p0(1)) + normal(2) * (footsteps(j).pos(2) - p0(2)));
