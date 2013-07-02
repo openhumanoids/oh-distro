@@ -58,6 +58,14 @@ ifneq "$(WORKSPACE)" ""
    CLASSPATH := $(CLASSPATH):$(WORKSPACE)/drc/software/control/drake/drake.jar
 endif
 
+# Build doxygen docs, if doxygen is available
+DOX := $(shell which doxygen)
+ifneq (,$(findstring doxygen,$(DOX)))
+DOXYCOMMAND := echo -n "Looks like you have doxygen installed, so I will build the documentation now...\n"; doxygen Doxyfile > /dev/null 2> /dev/null; echo -n "Done.\n"
+else
+DOXYCOMMAND := echo -n "Sorry, you do not appear to have doxygen installed, so I am not going to create the doxygen files.\n"
+endif
+
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
 
@@ -94,6 +102,9 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 
 %.class : %.java drake/drake.jar
 	javac $< -cp $(CLASSPATH);
+
+doxygen:
+	$(DOXYCOMMAND);
 
 src/RobotPlanConstraintCheckedPublisher.class : src/RobotPlanPublisher.class
 
