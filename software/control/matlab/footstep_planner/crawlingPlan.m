@@ -33,7 +33,7 @@ fieldcheck(foot_spec,'body_ind');
 fieldcheck(foot_spec,'contact_pt_ind');
 
 for i=1:4, 
-  pts = getContactPoints(getLink(r,foot_spec(i).body_ind));
+  pts = getContactPoints(getBody(r,foot_spec(i).body_ind));
   foot_spec(i).contact_pt_ind = foot_spec(i).contact_pt_ind(1); 
   foot_spec(i).contact_pt = pts(:,foot_spec(i).contact_pt_ind);
   foot_spec(i).support_contact_pt_ind = 1:size(r.getBodyContacts(foot_spec(i).body_ind),2);
@@ -236,7 +236,7 @@ elseif (options.gait ==2) % trot
   com_start = [mean(fpos_start(1:2,:),2);options.com_height+z_foot_nom];
 
   for i=1:4
-    body = getLink(r,foot_spec(i).body_ind);
+    body = getBody(r,foot_spec(i).body_ind);
     body_pts = body.contact_pts(:,foot_spec(i).contact_pt_ind);
     if any(i == [1,3])
       fpos = fpos_start;

@@ -43,6 +43,7 @@ options.direction = 0;
 options.step_length = .2;
 options.gait = 2;
 options.draw = false;
+options.use_mex = false;
 
 [q_traj,support_times,supports,V,comtraj,zmptraj,link_constraints] = crawlingPlan(r,x0,body_spec,foot_spec,options)
 %qdot_traj = fnder(q_traj);

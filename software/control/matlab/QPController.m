@@ -217,7 +217,7 @@ classdef QPController < MIMODrakeSystem
       else
         multi_robot_ptr = obj.robot.getMexModelPtr.data;
       end
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
     end
 
     obj.num_body_contacts=zeros(getNumBodies(r),1);
@@ -799,7 +799,7 @@ classdef QPController < MIMODrakeSystem
     else
 %      setField(obj.controller_data,'V',0);
 %      setField(obj.controller_data,'Vdot',0);
-      setVdot(obj.controller_data,Vdot);
+      setVdot(obj.controller_data,0);
     end
     
     if (obj.use_mex==2)

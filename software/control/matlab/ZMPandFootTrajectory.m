@@ -21,14 +21,12 @@ sizecheck(step_length,1);
 sizecheck(step_time,1);
 
 kinsol = doKinematics(r,q0);
-rfoot_body = findLink(r,'r_foot');
-lfoot_body = findLink(r,'l_foot');
 rfoot_body_idx = findLinkInd(r,'r_foot');
 lfoot_body_idx = findLinkInd(r,'l_foot');
 
 com0 = getCOM(r,q0);
-rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);
-lfoot0 = forwardKin(r,kinsol,lfoot_body,[0;0;0],true);
+rfoot0 = forwardKin(r,kinsol,rfoot_body_idx,[0;0;0],true);
+lfoot0 = forwardKin(r,kinsol,lfoot_body_idx,[0;0;0],true);
 
 gc = r.contactPositions(q0);
 
