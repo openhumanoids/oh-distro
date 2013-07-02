@@ -14,14 +14,8 @@ typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
 
-kinsol = doKinematics(biped,q0);
-
-foot_body = struct('right', findLink(biped, biped.r_foot_name),...
-  'left', findLink(biped, biped.l_foot_name));
-
 com0 = getCOM(biped,q0);
-foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),...
-  'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
+foot0 = feetPosition(biped, q0);
 
 function pos = feetCenter(rfootpos,lfootpos)
   rcen = biped.footOrig2Contact(rfootpos, 'center', 1);

@@ -51,9 +51,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       obj.next_step_id = 0;
       obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.foot_bodies = struct('right', getBody(obj, findLinkInd(obj, obj.r_foot_name)),...
+                            'left', getBody(obj, findLinkInd(obj, obj.l_foot_name)));
       obj.foot_contact_offsets = obj.findContactOffsets();
-      obj.foot_bodies = struct('right', findLink(obj, obj.r_foot_name),...
-                            'left', findLink(obj, obj.l_foot_name));
       obj.foot_bodies_idx = [findLinkInd(obj, obj.r_foot_name),findLinkInd(obj, obj.l_foot_name)];
     end
     
@@ -101,8 +101,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
       kinsol = doKinematics(obj,q0);
 
-      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies.right,[0;0;0],true);
-      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies.left,[0;0;0],true);
+      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx(1),[0;0;0],true);
+      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx(2),[0;0;0],true);
 
       foot_orig = struct('right', rfoot0, 'left', lfoot0);
     end
