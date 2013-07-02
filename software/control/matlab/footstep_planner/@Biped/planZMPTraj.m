@@ -1,4 +1,4 @@
-function [zmptraj, foottraj, support_times, supports] = planInitialZMPTraj(biped, q0, X, options)
+function [zmptraj, foottraj, support_times, supports] = planZMPTraj(biped, q0, X, options)
 
 debug = true;
 

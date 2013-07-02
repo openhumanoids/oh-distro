@@ -128,7 +128,7 @@ classdef FootstepPlanner < DRCPlanner
 
       function publish(X)
         if length(X) > 2
-          [~, foottraj, ~] = obj.biped.planInitialZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
+          [~, foottraj, ~] = obj.biped.planZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
           ts = foottraj.right.orig.getBreaks();
           pts.right = foottraj.right.orig.eval(ts);
           pts.left = foottraj.left.orig.eval(ts);
