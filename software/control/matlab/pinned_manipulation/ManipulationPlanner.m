@@ -115,13 +115,13 @@ classdef ManipulationPlanner < handle
             % get current hand and foot positions
             kinsol = doKinematics(obj.r,q0);
                         
-            r_hand_body = findLink(obj.r,'r_hand');
-            l_hand_body = findLink(obj.r,'l_hand');
-            r_foot_body = obj.r.findLink('r_foot');
-            l_foot_body = obj.r.findLink('l_foot');
-            head_body = obj.r.findLink('head');
-            pelvis_body = findLink(obj.r,'pelvis');
-            utorso_body = findLink(obj.r,'utorso'); 
+            r_hand_body = findLinkInd(obj.r,'r_hand');
+            l_hand_body = findLinkInd(obj.r,'l_hand');
+            r_foot_body = obj.r.findLinkInd('r_foot');
+            l_foot_body = obj.r.findLinkInd('l_foot');
+            head_body = obj.r.findLinkInd('head');
+            pelvis_body = findLinkInd(obj.r,'pelvis');
+            utorso_body = findLinkInd(obj.r,'utorso'); 
             r_foot_pts = r_foot_body.getContactPoints();
             l_foot_pts = l_foot_body.getContactPoints();
             num_r_foot_pts = size(r_foot_pts,2);
@@ -274,11 +274,11 @@ classdef ManipulationPlanner < handle
             s = [0 1];
             
             kinsol = doKinematics(obj.r,q_desired);
-            r_foot_body = obj.r.findLink('r_foot');
-            l_foot_body = obj.r.findLink('l_foot');
-            r_hand_body = findLink(obj.r,'r_hand');
-            l_hand_body = findLink(obj.r,'l_hand');
-            head_body = findLink(obj.r,'head');
+            r_foot_body = obj.r.findLinkInd('r_foot');
+            l_foot_body = obj.r.findLinkInd('l_foot');
+            r_hand_body = findLinkInd(obj.r,'r_hand');
+            l_hand_body = findLinkInd(obj.r,'l_hand');
+            head_body = findLinkInd(obj.r,'head');
             
             %             rf_ee_goal = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],1);
             %             lf_ee_goal = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],1);
@@ -359,9 +359,9 @@ classdef ManipulationPlanner < handle
             
             % get current hand and foot positions
             kinsol = doKinematics(obj.r,q0);
-            r_foot_body = obj.r.findLink('r_foot');
-            l_foot_body = obj.r.findLink('l_foot');
-            head_body = obj.r.findLink('head');
+            r_foot_body = obj.r.findLinkInd('r_foot');
+            l_foot_body = obj.r.findLinkInd('l_foot');
+            head_body = obj.r.findLinkInd('head');
             
             r_foot_pose0 = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],2);
@@ -380,16 +380,16 @@ classdef ManipulationPlanner < handle
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
             comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
             
-            r_hand_body = findLink(obj.r,'r_hand');
-            l_hand_body = findLink(obj.r,'l_hand');
+            r_hand_body = findLinkInd(obj.r,'r_hand');
+            l_hand_body = findLinkInd(obj.r,'l_hand');
             
             % compute EE trajectories
             r_hand_pose0 = forwardKin(obj.r,kinsol,r_hand_body,[0;0;0],2);
             l_hand_pose0 = forwardKin(obj.r,kinsol,l_hand_body,[0;0;0],2);
             
-            pelvis_body = findLink(obj.r,'pelvis'); % dont move pelvis
+            pelvis_body = findLinkInd(obj.r,'pelvis'); % dont move pelvis
             pelvis_pose0 = forwardKin(obj.r,kinsol,pelvis_body,[0;0;0],2);
-            utorso_body = findLink(obj.r,'utorso'); % dont move pelvis
+            utorso_body = findLinkInd(obj.r,'utorso'); % dont move pelvis
             utorso_pose0 = forwardKin(obj.r,kinsol,utorso_body,[0;0;0],2);
             utorso_pose0_relaxed = utorso_pose0;
             utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-2*ones(4,1)];
@@ -905,8 +905,8 @@ classdef ManipulationPlanner < handle
             
             % get foot positions
             kinsol = doKinematics(obj.r,q0);
-            r_foot_body = obj.r.findLink('r_foot');
-            l_foot_body = obj.r.findLink('l_foot');
+            r_foot_body = obj.r.findLinkInd('r_foot');
+            l_foot_body = obj.r.findLinkInd('l_foot');
             r_foot_pose0 = forwardKin(obj.r,kinsol,r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,l_foot_body,[0;0;0],2);
             
@@ -918,8 +918,8 @@ classdef ManipulationPlanner < handle
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
             
             % get hand positions
-            r_hand_body = findLink(obj.r,'r_hand');
-            l_hand_body = findLink(obj.r,'l_hand');
+            r_hand_body = findLinkInd(obj.r,'r_hand');
+            l_hand_body = findLinkInd(obj.r,'l_hand');
             
             % compute EE trajectories
             r_hand_pose0 = forwardKin(obj.r,kinsol,r_hand_body,[0;0;0],2);
@@ -935,7 +935,7 @@ classdef ManipulationPlanner < handle
             
             
             % Get head position
-            head_body = findLink (obj.r, 'head');
+            head_body = findLinkInd (obj.r, 'head');
             
             head_pose0 = forwardKin(obj.r,kinsol,head_body,[0;0;0],2);
             %======================================================================================================
@@ -1227,10 +1227,10 @@ classdef ManipulationPlanner < handle
             
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
             comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
-            pelvis_body = findLink(obj.r,'pelvis'); % dont move pelvis
+            pelvis_body = findLinkInd(obj.r,'pelvis'); % dont move pelvis
             pelvis_pose0 = forwardKin(obj.r,kinsol,pelvis_body,[0;0;0],2);
             
-            utorso_body = findLink(obj.r,'utorso'); % dont move pelvis
+            utorso_body = findLinkInd(obj.r,'utorso'); % dont move pelvis
             utorso_pose0 = forwardKin(obj.r,kinsol,utorso_body,[0;0;0],2);
             utorso_pose0_relaxed = utorso_pose0;
             %       utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-1*ones(4,1)];

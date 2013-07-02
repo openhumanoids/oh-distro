@@ -37,7 +37,7 @@ q_nom = xstar(1:nq);
 q0_nom = q_qs_plan(1:nq,1);
 x0_nom = [q0,zeros(size(q0))];
 
-ref_link = r.findLink(ref_link_str);
+ref_link = r.findLinkInd(ref_link_str);
 
 %kinsol = doKinematics(r,q0_nom);
 %r_foot_xyz_nom = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
@@ -45,7 +45,7 @@ ref_link = r.findLink(ref_link_str);
             %'x: %5.3f\n\t' ...
             %'y: %5.3f\n'], r_foot_xyz_nom(1:2))
 kinsol = doKinematics(r,q0,false,false);
-wTf = ref_link.T;
+wTf = kinsol.T{ref_link};
 
 com_qs_plan = homogTransMult(wTf,com_qs_plan);
 for i = 1:nt

@@ -43,12 +43,12 @@ options = struct();
 options.Q = diag(cost(1:r.getNumDOF));
 
   
-rhand_body = r.findLink('r_hand');
-lhand_body = r.findLink('l_hand');
+rhand_body = r.findLinkInd('r_hand');
+lhand_body = r.findLinkInd('l_hand');
 rhand_pos = forwardKin(r,kinsol,rhand_body,[0;0;0],false);
 lhand_pos = forwardKin(r,kinsol,lhand_body,[0;0;0],false);
 
-pelvis_body = r.findLink('pelvis');
+pelvis_body = r.findLinkINd('pelvis');
 pelvis_pos = forwardKin(r,kinsol,pelvis_body,[0;0;0],true);  
 
 q_nom(1:6) = pelvis_pos;
@@ -57,8 +57,8 @@ options.q_nom = q_nom;
 rhand_goal = pelvis_pos(1:3) + [-0.4; -0.25; 0.35];
 lhand_goal = pelvis_pos(1:3) + [0.4; -0.25; 0.35];
 
-rfoot_body = r.findLink('r_foot');
-lfoot_body = r.findLink('l_foot');
+rfoot_body = r.findLinkInd('r_foot');
+lfoot_body = r.findLinkInd('l_foot');
 rfoot_pos = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);
 lfoot_pos = forwardKin(r,kinsol,lfoot_body,[0;0;0],true);
 

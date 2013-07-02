@@ -47,13 +47,13 @@ classdef ManipulationPlanner < handle
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             obj.restrict_feet=true;
             obj.planning_mode = 1;
-            obj.r_hand_body = findLink(obj.r,'r_hand');
-            obj.l_hand_body = findLink(obj.r,'l_hand');
-            obj.r_foot_body = obj.r.findLink('r_foot');
-            obj.l_foot_body = obj.r.findLink('l_foot');
-            obj.head_body = obj.r.findLink('head');
-            obj.pelvis_body = findLink(obj.r,'pelvis');
-            obj.utorso_body = findLink(obj.r,'utorso');
+            obj.r_hand_body = findLinkInd(obj.r,'r_hand');
+            obj.l_hand_body = findLinkINd(obj.r,'l_hand');
+            obj.r_foot_body = obj.r.findLinkInd('r_foot');
+            obj.l_foot_body = obj.r.findLinkInd('l_foot');
+            obj.head_body = obj.r.findLinkInd('head');
+            obj.pelvis_body = findLinkInd(obj.r,'pelvis');
+            obj.utorso_body = findLinkInd(obj.r,'utorso');
         end
 
         function setPlanningMode(obj,val)

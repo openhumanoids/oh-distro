@@ -35,11 +35,11 @@ classdef DRCManipMapStateMachine< handle
         float_offset=6;
         obj.qbreaks =xmap(1:getNumDOF(obj.robot),:);
         obj.mapindices =  linspace(0,1,length(obj.affinds));
-        l_hand_body = findLink(obj.robot,'l_hand+l_hand_point_mass');
-        r_hand_body = findLink(obj.robot,'r_hand+r_hand_point_mass');
-        l_foot_body = findLink(obj.robot,'l_foot');
-        r_foot_body = findLink(obj.robot,'r_foot');
-        pelvis_body = findLink(obj.robot,'pelvis');
+        l_hand_body = findLinkInd(obj.robot,'l_hand+l_hand_point_mass');
+        r_hand_body = findLinkInd(obj.robot,'r_hand+r_hand_point_mass');
+        l_foot_body = findLinkInd(obj.robot,'l_foot');
+        r_foot_body = findLinkInd(obj.robot,'r_foot');
+        pelvis_body = findLinkInd(obj.robot,'pelvis');
         obj.l_hand_breaks=zeros(7,length(obj.mapindices));
         obj.r_hand_breaks=zeros(7,length(obj.mapindices));
         obj.l_foot_breaks=zeros(7,length(obj.mapindices));
@@ -140,11 +140,11 @@ classdef DRCManipMapStateMachine< handle
      % larm_index = argminimize ((qmap.getBreaks(larm)-qcurrent(larm))'(qmap.getBreaks(larm)-qcurrent(larm))) 
       if(obj.manip_map_received),  
           kinsol = doKinematics(obj.robot,obj.qcurrent); 
-          l_hand_body = findLink(obj.robot,'l_hand+l_hand_point_mass');
-          r_hand_body = findLink(obj.robot,'r_hand+r_hand_point_mass');
-          l_foot_body = findLink(obj.robot,'l_foot');
-          r_foot_body = findLink(obj.robot,'r_foot');
-          pelvis_body = findLink(obj.robot,'pelvis');
+          l_hand_body = findLinkInd(obj.robot,'l_hand+l_hand_point_mass');
+          r_hand_body = findLinkInd(obj.robot,'r_hand+r_hand_point_mass');
+          l_foot_body = findLinkInd(obj.robot,'l_foot');
+          r_foot_body = findLinkInd(obj.robot,'r_foot');
+          pelvis_body = findLinkInd(obj.robot,'pelvis');
           
           current_l_hand_pose_worldframe= forwardKin(obj.robot,kinsol,l_hand_body,[0;0;0],2);
           current_r_hand_pose_worldframe= forwardKin(obj.robot,kinsol,r_hand_body,[0;0;0],2);

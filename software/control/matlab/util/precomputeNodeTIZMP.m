@@ -51,8 +51,8 @@ function controller_data = precomputeNodeTIZMP(r,req)
       t_f = matdata.comtraj.tspan(2);
     end
     
-    rfoot_body = r.findLink(r.r_foot_name);
-    lfoot_body = r.findLink(r.l_foot_name);
+    rfoot_body = r.findLinkInd(r.r_foot_name);
+    lfoot_body = r.findLinkInd(r.l_foot_name);
 
     q=q0;
     for t=0:0.1:t_f

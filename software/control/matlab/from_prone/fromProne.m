@@ -28,13 +28,13 @@ options.Q = diag(cost(1:r.getNumDOF));
 options.q_nom = q;
 
 % find the relevant links:
-r_hand = findLink(r,'r_hand');
-l_hand = findLink(r,'l_hand');
-r_foot = findLink(r,'r_foot');
-l_foot = findLink(r,'l_foot');
-r_knee = findLink(r,'r_lleg');
-l_knee = findLink(r,'l_lleg');
-head = findLink(r,'head');
+r_hand = findLinkInd(r,'r_hand');
+l_hand = findLinkInd(r,'l_hand');
+r_foot = findLinkInd(r,'r_foot');
+l_foot = findLinkInd(r,'l_foot');
+r_knee = findLinkInd(r,'r_lleg');
+l_knee = findLinkInd(r,'l_lleg');
+head = findLinkInd(r,'head');
 
 function ps=addbox(p)
   ps = p;

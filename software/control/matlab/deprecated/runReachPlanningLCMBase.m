@@ -37,8 +37,8 @@ x0 = getInitialState(r);
 q0 = x0(1:getNumDOF(r));
 
 kinsol = doKinematics(r,q0);
-r_hand_body = findLink(r,'r_hand');
-l_hand_body = findLink(r,'l_hand');
+r_hand_body = findLinkInd(r,'r_hand');
+l_hand_body = findLinkInd(r,'l_hand');
 rep_goal = [1;forwardKin(r,kinsol,r_hand_body,[0;0;0],true)];
 lep_goal = [1;forwardKin(r,kinsol,l_hand_body,[0;0;0],true)];
 
@@ -79,8 +79,8 @@ q0 = x0(1:getNumDOF(r));
 
 % get foot positions
 kinsol = doKinematics(r,q0);
-rfoot_body = r.findLink('r_foot');
-lfoot_body = r.findLink('l_foot');
+rfoot_body = r.findLinkInd('r_foot');
+lfoot_body = r.findLinkInd('l_foot');
 
 rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);
 lfoot0 = forwardKin(r,kinsol,lfoot_body,[0;0;0],true);

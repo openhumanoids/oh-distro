@@ -6,8 +6,8 @@ sizecheck(q0,[r.getNumDOF,1]);
 sizecheck(step_time,1);
 
 kinsol = doKinematics(r,q0);
-rfoot_body = findLink(r, r.r_foot_name);
-lfoot_body = findLink(r, r.l_foot_name);
+rfoot_body = findLinkInd(r, r.r_foot_name);
+lfoot_body = findLinkInd(r, r.l_foot_name);
 
 com0 = getCOM(r,q0);
 rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);

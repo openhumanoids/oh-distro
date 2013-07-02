@@ -30,8 +30,8 @@ q0 = x0(1:getNumDOF(r));
 
 % get foot positions
 kinsol = doKinematics(r,q0);
-rfoot_body = r.findLink('r_foot');
-lfoot_body = r.findLink('l_foot');
+rfoot_body = r.findLinkInd('r_foot');
+lfoot_body = r.findLinkInd('l_foot');
 
 rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0]);
 lfoot0 = forwardKin(r,kinsol,lfoot_body,[0;0;0]);
