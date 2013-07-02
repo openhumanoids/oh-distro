@@ -122,8 +122,8 @@ classdef ManipulationPlanner < handle
             head_body = obj.r.findLinkInd('head');
             pelvis_body = findLinkInd(obj.r,'pelvis');
             utorso_body = findLinkInd(obj.r,'utorso'); 
-            r_foot_pts = r_foot_body.getContactPoints();
-            l_foot_pts = l_foot_body.getContactPoints();
+            r_foot_pts = getContactPoints(getBody(obj.r,r_foot_body));
+            l_foot_pts = getContactPoints(getBody(obj.r,l_foot_body));
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
                         
