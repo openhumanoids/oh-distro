@@ -20,15 +20,11 @@ cost.back_ubx = 100;
 cost = double(cost);
 options = struct();
 options.Q = diag(cost(1:biped.getNumDOF));
-%   options.q_nom = q0;
 options.q_nom = qstar;
 % [options.jointLimitMin, options.jointLimitMax] = biped.getJointLimits();
 % joint_names = biped.getStateFrame.coordinates(1:biped.getNumDOF());
 % knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
 % options.jointLimitMin(knee_ind) = 0.6;
-
-rfoot_body = biped.findLink(biped.r_foot_name);
-lfoot_body = biped.findLink(biped.l_foot_name);
 
 msg ='Walk Plan : Computing robot plan...'; disp(msg); send_status(6,0,0,msg);
 % v = r.constructVisualizer;
