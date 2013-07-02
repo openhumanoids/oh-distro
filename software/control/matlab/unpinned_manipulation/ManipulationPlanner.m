@@ -48,7 +48,7 @@ classdef ManipulationPlanner < handle
             obj.restrict_feet=true;
             obj.planning_mode = 1;
             obj.r_hand_body = findLinkInd(obj.r,'r_hand');
-            obj.l_hand_body = findLinkINd(obj.r,'l_hand');
+            obj.l_hand_body = findLinkInd(obj.r,'l_hand');
             obj.r_foot_body = obj.r.findLinkInd('r_foot');
             obj.l_foot_body = obj.r.findLinkInd('l_foot');
             obj.head_body = obj.r.findLinkInd('head');
