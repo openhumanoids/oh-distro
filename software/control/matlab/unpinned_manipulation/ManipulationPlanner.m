@@ -139,8 +139,8 @@ classdef ManipulationPlanner < handle
             kinsol = doKinematics(obj.r,q0);
                         
              
-            r_foot_pts = obj.r_foot_body.getContactPoints();
-            l_foot_pts = obj.l_foot_body.getContactPoints();
+            r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+            l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
                         
@@ -565,7 +565,7 @@ classdef ManipulationPlanner < handle
               end
             elseif(useIK_state == 5)
               kinsol_des = doKinematics(obj.r,q_desired);
-              rfoot_pts = obj.r_foot_body.getContactPoints();
+              rfoot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
               rfoot_des = forwardKin(obj.r,kinsol_des,obj.r_foot_body,rfoot_pts,0);
               pelvis_height = q_desired(3)-rfoot_des(3,1);
               kinsol_curr = doKinematics(obj.r,q0);
@@ -659,8 +659,8 @@ classdef ManipulationPlanner < handle
             r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,[0;0;0],2);
             
-            r_foot_pts = obj.r_foot_body.getContactPoints();
-            l_foot_pts = obj.l_foot_body.getContactPoints();
+            r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+            l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
             
@@ -1321,8 +1321,8 @@ classdef ManipulationPlanner < handle
             
             % get foot positions
             kinsol = doKinematics(obj.r,q0);
-            r_foot_pts = obj.r_foot_body.getContactPoints();
-            l_foot_pts = obj.l_foot_body.getContactPoints();
+            r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+            l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
             r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
@@ -2300,8 +2300,8 @@ classdef ManipulationPlanner < handle
           local_z_axis = mate_rotmat*[0;0;1];
           rpalm_pts = [[0;-0.1;0] aff2hand_offset];
           lpalm_pts = [[0;0.1;0] aff2hand_offset];
-          rfoot_pts = obj.r_foot_body.getContactPoints();
-          lfoot_pts = obj.l_foot_body.getContactPoints();
+          rfoot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+          lfoot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
           head_pts = [0;0;0];
           kinsol0 = doKinematics(obj.r,q0);
           rpalm_curr = forwardKin(obj.r,kinsol0,obj.r_hand_body,rpalm_pts,1);
@@ -2367,8 +2367,8 @@ classdef ManipulationPlanner < handle
 %           local_z_axis = mate_rotmat*[0;0;1];
           rpalm_pts = [[0;0;0] [0;-0.1;0] aff2hand_offset];
           lpalm_pts = [[0;0;0] [0;0.1;0] aff2hand_offset];
-          rfoot_pts = obj.r_foot_body.getContactPoints();
-          lfoot_pts = obj.l_foot_body.getContactPoints();
+          rfoot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+          lfoot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
           head_pts = [0;0;0];
           kinsol0 = doKinematics(obj.r,q0);
           rpalm_curr = forwardKin(obj.r,kinsol0,obj.r_hand_body,rpalm_pts,1);
