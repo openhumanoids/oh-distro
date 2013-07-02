@@ -3,6 +3,7 @@ classdef QPController < MIMODrakeSystem
   methods
   function obj = QPController(r,controller_data,options)
     % @param r atlas instance
+    % @param controller_data shared data handle containing linear system, zmp trajectories, Riccati solution, etc
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit), and input cost (R)
     typecheck(r,'Atlas');
@@ -20,18 +21,17 @@ classdef QPController < MIMODrakeSystem
     hand_ft_frame = AtlasHandForceTorque();
 
     if isfield(options,'multi_robot')
-      warning('Bullet contact not currently supported for efficiency reasons. Ignoring multi robot.');
-%       typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
-%       fr = options.multi_robot.getStateFrame;
-%       % IMPORTANT NOTE: I'm assuming the atlas state is always the first
-%       % frame in a multi coordinate frame
-%       if typecheck(fr,'MultiCoordinateFrame')
-%         input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame.frame{:}});
-%         num_state_fr = length(options.multi_robot.getStateFrame.frame);
-%       else
-%         input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame});
-%         num_state_fr = 1;
-%       end
+      typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
+      fr = options.multi_robot.getStateFrame;
+      % IMPORTANT NOTE: I'm assuming the atlas state is always the first
+      % frame in a multi coordinate frame
+      if typecheck(fr,'MultiCoordinateFrame')
+        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame.frame{:}});
+        num_state_fr = length(options.multi_robot.getStateFrame.frame);
+      else
+        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame});
+        num_state_fr = 1;
+      end
       input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
       num_state_fr = 1;
     else
@@ -49,12 +49,11 @@ classdef QPController < MIMODrakeSystem
     obj.controller_data = controller_data;
     obj.num_state_frames = num_state_fr;
     
-%     if isfield(options,'multi_robot')
-%       obj.multi_robot = options.multi_robot;
-%     else
-%       obj.multi_robot = 0;
-%     end
-    obj.multi_robot = 0;
+    if isfield(options,'multi_robot')
+      obj.multi_robot = options.multi_robot;
+    else
+      obj.multi_robot = 0;
+    end
    
     % weight for desired qddot objective term
     if isfield(options,'w')
@@ -305,31 +304,12 @@ classdef QPController < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-%     q_multi = [];
-%     for i=1:obj.num_state_frames-1
-%       xi = varargin{3+i};
-%       q_multi = [q_multi; xi(1:end/2)];
-%     end
-    
-%     Num = [-0.0161998291483754,-0.0211451622014118,0.0207009617283916,0.125779402410861,0.247057672241705,0.301449966246763,0.247057672241705,0.125779402410861,0.0207009617283916,-0.0211451622014118,-0.0161998291483754];
-%     Num = [-0.000479358954034654,7.08339282197222e-05,0.00476272575802094,0.0184304925452958,0.0447366690382284,0.0825921917406667,0.124222528702383,0.157134664685447,0.169687809650027,0.157134664685447,0.124222528702383,0.0825921917406667,0.0447366690382284,0.0184304925452958,0.00476272575802094,7.08339282197222e-05,-0.000479358954034654];
-%     Num = [-0.00708947721498600,-0.0109352396875095,-0.0122908847163248,-0.00497044418042090,0.0151465638562752,0.0486147429458304,0.0909443688764279,0.133146505097372,0.164402269282922,0.175940834823367,0.164402269282922,0.133146505097372,0.0909443688764279,0.0486147429458304,0.0151465638562752,-0.00497044418042090,-0.0122908847163248,-0.0109352396875095,-0.00708947721498645];
-%     Num = [-0.00106596876350730,0.000783329836666458,0.00290044773164991,0.00683518271911500,0.0129147048037398,0.0212675134522692,0.0317156030692218,0.0437274552796116,0.0564299663108208,0.0687073812494054,0.0793356376662851,0.0871721639053985,0.0913335369454345,0.0913335369454345,0.0871721639053985,0.0793356376662851,0.0687073812494054,0.0564299663108208,0.0437274552796116,0.0317156030692218,0.0212675134522692,0.0129147048037398,0.00683518271911500,0.00290044773164991,0.000783329836666458,-0.00106596876350730];
-%     Num = [0.00299756178194235,0.00293543517245433,0.00426411360001696,0.00588940605349714,0.00782107025494986,0.0100568052901440,0.0125823027484534,0.0153709358339710,0.0183830321637842,0.0215687053490253,0.0248626313438620,0.0281954486790890,0.0314834849720075,0.0346493764787068,0.0376052528255108,0.0402698968175043,0.0425680172486468,0.0444304351178032,0.0458028723509376,0.0466440635635022,0.0469283423025935,0.0466440635635022,0.0458028723509376,0.0444304351178032,0.0425680172486468,0.0402698968175043,0.0376052528255108,0.0346493764787068,0.0314834849720075,0.0281954486790890,0.0248626313438620,0.0215687053490253,0.0183830321637842,0.0153709358339710,0.0125823027484534,0.0100568052901440,0.00782107025494986,0.00588940605349714,0.00426411360001696,0.00293543517245433,0.00299756178194235];
-%     if isempty(fidx)
-%       fidx = 1;
-%     else
-%       fidx = mod(fidx,length(Num))+1;
-%     end
-% 
-%     if isempty(qd_hist)
-%       qd_hist = zeros(nq,length(Num));
-%     end
-%     
-%     qd_hist(:,fidx) = qd;
-%     res = filter(Num,1,qd_hist(:,[fidx+1:length(Num),1:fidx])');
-%     qd_filt = res(end,:)';
-        
+    q_multi = [];
+    for i=1:obj.num_state_frames-1
+      xi = varargin{3+i};
+      q_multi = [q_multi; xi(1:end/2)];
+    end
+            
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
     A_ls = ctrl_data.A; % always TI
@@ -379,7 +359,7 @@ classdef QPController < MIMODrakeSystem
       end
     end
     
-    contact_threshold = 0.001; % m
+    contact_threshold = 0.001; % a point is considered to be in contact if within this distance
     if (obj.use_mex==0 || obj.use_mex==2)
 
       % Change in logic here due to recent tests with heightmap noise
@@ -391,13 +371,10 @@ classdef QPController < MIMODrakeSystem
       % forces on the feet
       kinsol = doKinematics(r,q,false,true);
 
-%       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
-%       if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-%         kinsol_multi = doKinematics(obj.multi_robot,[q;q_multi],false,true); % for now assume the same state frame
-%       end
+      if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+        kinsol_multi = doKinematics(obj.multi_robot,[q;q_multi],false,true); % for now assume the same state frame
+      end
       
-%      num_desired_contacts = supp.num_contact_pts;
-    
       % get active contacts
       i=1;
       while i<=length(supp.bodies)
@@ -410,7 +387,12 @@ classdef QPController < MIMODrakeSystem
           end
         else
           % check kinematic contact
-          phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
+          if supp.contact_surfaces(i) == 0
+            phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
+          else
+            % use bullet collision between bodies
+            phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
+          end
           contact_state_kin = any(phi<=contact_threshold);
           
           if (~contact_state_kin && contact_sensor(i)<1) 
@@ -427,22 +409,6 @@ classdef QPController < MIMODrakeSystem
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
         
-%       phi = zeros(sum(num_desired_contacts),1);
-%       c_pre = 0;
-%       for j=1:length(supp.bodies)
-%         if supp.contact_surfaces(j) == 0
-%           phi(c_pre+(1:num_desired_contacts(j))) = contactConstraints(r,kinsol,desired_supports(j),supp.contact_pts{j});
-%         elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-%         % use bullet collision between bodies
-%       % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
-%          phi(c_pre+(1:num_desired_contacts(j))) = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,desired_supports(j),supp.contact_surfaces(j),supp.contact_pts{j});
-%         else
-%           error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
-%         end
-%         c_pre = c_pre + num_desired_contacts(j);
-%       end
-
-
       %----------------------------------------------------------------------
       % Disable hand force/torque contribution to dynamics as necessary
       if (~obj.use_hand_ft)
@@ -491,46 +457,37 @@ classdef QPController < MIMODrakeSystem
       
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
-        [~,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
-%         phi = zeros(nc,1);
-%         Jz = zeros(nc,nq);
-%         c_pre = 0;
-%         for j=1:length(active_supports)
-%           if active_surfaces(j) == 0
-%             [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
-%           % REMOVING SUPPORT FOR MULTI ROBOTS FOR NOW
-%           elseif isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-%             % use bullet collision between bodies
-%             [phi(c_pre+(1:num_desired_contacts(j))),Jz(c_pre+(1:num_desired_contacts(j)),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
-%           else
-%             error('QPController: multi_robot not defined, cannot call pairwise contact constraints');
-%           end
-%           c_pre = c_pre + num_desired_contacts(j);
-%         
-%           % kinda gross
-%           if j==1
-%             D_=D__;
-%           else
-%             for k=1:nd
-%               D_{k} = [D_{k}; D__{k}];
-%             end
-%           end
-%         
-%         end
+
+        % [~,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
+
+        Jz = zeros(nc,nq);
+        c_pre = 0;
+        for j=1:length(active_supports)
+          if active_surfaces(j) == 0
+            [~,Jz(c_pre+(1:length(active_contact_pts{j})),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
+          else
+            % use bullet collision between bodies
+            [~,Jz(c_pre+(1:length(active_contact_pts{j})),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+          end
+          c_pre = c_pre + length(active_contact_pts{j});
+        
+          % kinda gross
+          if j==1
+            D_=D__;
+          else
+            for k=1:nd
+              D_{k} = [D_{k}; D__{k}];
+            end
+          end
+        
+        end
       else
         nc = 0;
       end
       neps = nc*dim;
-      %     neps = length(active_supports)*2*dim;
       
       if nc > 0
         [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
-        %       Jp=zeros(neps,nq);
-        %       Jpdot=zeros(neps,nq);
-        %       for k=1:length(active_supports)
-        %         [~,Jp((k-1)*2*dim+(1:2*dim),:)] = forwardKin(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]],0);
-        %         Jpdot((k-1)*2*dim+(1:2*dim),:) = forwardJacDot(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]]);
-        %       end
         Jp = sparse(Jp(:,obj.con_dof));
         Jpdot = sparse(Jpdot(:,obj.con_dof));
         
@@ -791,14 +748,8 @@ classdef QPController < MIMODrakeSystem
     end
 
     if ~isempty(active_supports)
-%      setField(obj.controller_data,'V',V);
-%      setField(obj.controller_data,'Vdot',Vdot);
       setVdot(obj.controller_data,Vdot);
-      %     scope('Atlas','V',t,V,struct('linespec','b','scope_id',1));
-%     scope('Atlas','Vdot',t,Vdot,struct('linespec','g','scope_id',1));
     else
-%      setField(obj.controller_data,'V',0);
-%      setField(obj.controller_data,'Vdot',0);
       setVdot(obj.controller_data,0);
     end
     
@@ -841,17 +792,6 @@ classdef QPController < MIMODrakeSystem
 %       end
 %       plot_lcm_points([zmppos', mean(cpos(3,:))], color, 660, 'Commanded ZMP', 1, true);
 
-%       foot_dot = Jp*qd(obj.con_dof);
-%       scope('Atlas','lfoot_dot_x',t,foot_dot(1),struct('linespec','r','scope_id',1));
-%       scope('Atlas','lfoot_dot_y',t,foot_dot(2),struct('linespec','g','scope_id',1));
-%       scope('Atlas','lfoot_dot_z',t,foot_dot(3),struct('linespec','b','scope_id',1));
-% 
-%       ffoot_dot = Jp*qd_filt(obj.con_dof);
-%       scope('Atlas','lfoot_dot_fx',t,ffoot_dot(1),struct('linespec','r','scope_id',2));
-%       scope('Atlas','lfoot_dot_fy',t,ffoot_dot(2),struct('linespec','g','scope_id',2));
-%       scope('Atlas','lfoot_dot_fz',t,ffoot_dot(3),struct('linespec','b','scope_id',2));
-      
-
       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
       lax = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')));
       uay = find(~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
@@ -860,11 +800,6 @@ classdef QPController < MIMODrakeSystem
       scope('Atlas','uay_qdd_des',t,q_ddot_des(uay),struct('linespec','b','scope_id',1));
       scope('Atlas','lax_qdd',t,qdd(lax),struct('linespec','r','scope_id',2));
       scope('Atlas','uay_qdd',t,qdd(uay),struct('linespec','b','scope_id',2));
-      
-%       m = drc.controller_zmp_status_t();
-%       m.utime = t * 1e6;
-%       m.zmp_ok = zmp_ok;
-%       obj.lc.publish('CONTROLLER_ZMP_STATUS', m);
       
       [~,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
@@ -882,54 +817,6 @@ classdef QPController < MIMODrakeSystem
           plot_lcm_points(zeros(2,3), [1 0 0;1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
         end
       end
-
-%       % plot body coordinate frames
-%       m=vs.obj_collection_t();
-%       m.objs = javaArray('vs.obj_t', size(1, 1));
-%       m.id=13300;
-%       m.type=5; % rgb triad
-%       m.name='Drake Body Coords';
-%       m.reset=true;
-%       m.nobjs=5; 
-%       
-%       pelvis = findLinkInd(r,'pelvis');
-%       xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
-%       msg=vs.obj_t();
-%       msg.id=1;
-%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-%       m.objs(msg.id) = msg;
-% 
-%       head = findLinkInd(r,'head');
-%       xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
-%       msg=vs.obj_t();
-%       msg.id=2;
-%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-%       m.objs(msg.id) = msg;
-% 
-%       xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
-%       msg=vs.obj_t();
-%       msg.id=3;
-%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-%       m.objs(msg.id) = msg;
-% 
-%       xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
-%       msg=vs.obj_t();
-%       msg.id=4;
-%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-%       m.objs(msg.id) = msg;
-% 
-%       xzyrpy = x(1:6); 
-%       msg=vs.obj_t();
-%       msg.id=5;
-%       msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
-%       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
-%       m.objs(msg.id) = msg;
-%       
-%       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
     if (0)     % simple timekeeping for performance optimization
