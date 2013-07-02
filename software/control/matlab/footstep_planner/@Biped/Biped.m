@@ -107,12 +107,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       foot_orig = struct('right', rfoot0, 'left', lfoot0);
     end
 
-    function ndx = getStepNdx(obj, total_steps)
-      % Lead with the right foot, for no particular reason
-      ndx = struct('right', int32([1, 2, 4:2:(total_steps-1), total_steps]),...
-                   'left', int32([1:2:(total_steps-1), total_steps]));
-    end
-
     function apex_pos = findApexPos(obj, last_pos, next_pos, apex_height)
       next_pos = last_pos + angleDiff(last_pos, next_pos);
       apex_pos = mean([last_pos, next_pos], 2);
