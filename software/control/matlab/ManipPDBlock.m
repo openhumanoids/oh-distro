@@ -119,8 +119,8 @@ classdef ManipPDBlock < MIMODrakeSystem
       obj.lhand_pts = [0;0;0];
       obj.rpalm_pts = [0;-0.1;0];
       obj.lpalm_pts = [0;0.1;0];
-      obj.rfoot_pts = obj.robot.findLink('r_foot').getContactPoints();
-      obj.lfoot_pts = obj.robot.findLink('l_foot').getContactPoints();
+      obj.rfoot_pts = obj.robot.foot_bodies.right.getContactPoints();
+      obj.lfoot_pts = obj.robot.foot_bodies.left.getContactPoints();
       obj.head_pts = [0;0;0];
       
       obj.lambda = 1e-6;
