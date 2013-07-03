@@ -20,7 +20,6 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   if ~options.ignore_terrain
     goal_pos = fitStepToTerrain(biped, goal_pos);
   end
-  % foot_goals = struct('right', biped.stepCenter2FootCenter(goal_pos(1:6,end), 1, options.nom_step_width), 'left', biped.stepCenter2FootCenter(goal_pos(1:6,end), 0, options.nom_step_width));
 
   if options.follow_spline
     traj = BezierTraj([p0, goal_pos]);
@@ -34,18 +33,14 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
     normal = rpy2rotmat(p0(4:6)) * [0;0;1];
     foot_centers.right(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.right(1,:) - p0(1)) + normal(2) * (foot_centers.right(2,:) - p0(2)));
     foot_centers.left(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.left(1,:) - p0(1)) + normal(2) * (foot_centers.left(2,:) - p0(2)));
-    for j = 1:size(foot_centers.right, 2)
-      foot_centers.right(:,j) = fitPoseToNormal(foot_centers.right(:,j), normal);
-      foot_centers.left(:,j) = fitPoseToNormal(foot_centers.left(:,j), normal);
-    end
+    foot_centers.right = fitPoseToNormal(foot_centers.right, repmat(normal, 1, length(foot_centers.right(1,:))));
+    foot_centers.left = fitPoseToNormal(foot_centers.left, repmat(normal, 1, length(foot_centers.right(1,:))));
     feasibility.right = ones(size(feasibility.right));
     feasibility.left = ones(size(feasibility.left));
   else
     for f = {'right', 'left'}
       foot = f{1};
-      for j = 1:length(foot_centers.(foot))
-        foot_centers.(foot)(:,j) = fitStepToTerrain(biped, foot_centers.(foot)(:,j));
-      end
+      foot_centers.(foot) = fitStepToTerrain(biped, foot_centers.(foot));
     end
   end
 
@@ -62,6 +57,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   
 stall = struct('right', 0, 'left', 0);
 aborted = false;
+min_progress = [0.05;0.05;1;0.4;0.4;0.4];
 % n = 0;
   
   while (1)
@@ -73,7 +69,7 @@ aborted = false;
       m_foot = 'left';
       s_foot = 'right';
     end
-    lambda_n = 1;
+    goal = foot_goals.(m_foot);
 
     potential_poses = foot_centers.(m_foot)(:, last_ndx.(m_foot):end);
     feas_opts = struct('forward_step', options.nom_forward_step,...
@@ -86,12 +82,14 @@ aborted = false;
       novalid = true;
     else
       novalid = false;
-      next_ndx = valid_pose_ndx(end);
-      noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
+      if (all(abs(X(end).pos - foot_goals.(s_foot)) < 0.05) || (length(X) - 2) >= options.max_num_steps - 1)
+        [~, j] = min(abs(valid_pose_ndx - last_ndx.(s_foot)));
+        next_ndx = valid_pose_ndx(j);
+      else
+        next_ndx = valid_pose_ndx(end);
+      end
+      noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < min_progress);
     end
-    % n = n + 1
-    % novalid
-    % noprogress
 
     if (novalid || noprogress)
       % Try again with a longer maximum step
@@ -103,18 +101,24 @@ aborted = false;
       if isempty(valid_pose_ndx)
         novalid = true;
       else
+        if novalid
+          next_ndx = valid_pose_ndx(1);
+        else
+          n = find(valid_pose_ndx > next_ndx, 1, 'first');
+          if ~isempty(n)
+            next_ndx = valid_pose_ndx(n);
+          else
+            next_ndx = valid_pose_ndx(end);
+          end
+        end
         novalid = false;
-        next_ndx = valid_pose_ndx(end);
-        noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < [0.01;0.01;1;0.1;0.1;0.1]);
+        noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < min_progress);
       end      
     end
-    % disp('after extending')
-    % novalid
-    % noprogress
     
     if (novalid || noprogress)
       stall.(m_foot) = stall.(m_foot) + 1;
-      if novalid || stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)
+      if (novalid || stall.(m_foot) >= 2 || (stall.(m_foot) > 0 && stall.(s_foot) > 0)) && (length(X) - 3 >= options.min_num_steps)
         aborted = true;
         break
       end
@@ -125,19 +129,9 @@ aborted = false;
     pos_n = foot_centers.(m_foot)(:, next_ndx);
     last_ndx.(m_foot) = next_ndx;
 
-    if is_right_foot
-      last_lambda.right = lambda_n;
-    else
-      last_lambda.left = lambda_n;
-    end
     X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
-    if X(end).is_right_foot
-      goal = foot_goals.right;
-    else
-      goal = foot_goals.left;
-    end
-    if (all(abs(X(end).pos - goal) < 0.05) || (length(X) - 2) >= options.max_num_steps - 1) && ((length(X) - 2) >= options.min_num_steps - 1)
+    if ((all(abs(X(end).pos - goal) < 0.05) && all(abs(X(end-1).pos - foot_goals.(s_foot)) < 0.05)) || (length(X) - 2) >= options.max_num_steps) && ((length(X) - 2) >= options.min_num_steps)
       break
     end
   end
@@ -145,27 +139,6 @@ aborted = false;
   if aborted && length(X) > 3
     % If we had to give up, then lose the last (unproductive) step
     X = X(1:end-1);
-  end
-
-  % Add final step (and multiple steps in place, if necessary to meet min number of steps)
-  if length(X) > 2 || (length(X) - 2) < options.min_num_steps
-    while (1)
-      final_center = biped.footCenter2StepCenter(X(end).pos, X(end).is_right_foot, options.nom_step_width);
-
-      is_right_foot = ~X(end).is_right_foot;
-      final_pos = biped.stepCenter2FootCenter(final_center, is_right_foot, options.nom_step_width);
-      if ~options.ignore_terrain
-        final_pos = fitStepToTerrain(biped, final_pos);
-      else
-        normal = rpy2rotmat(p0(4:6)) * [0;0;1];
-        final_pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (final_pos(1) - p0(1)) + normal(2) * (final_pos(2) - p0(2)));
-        final_pos = fitPoseToNormal(final_pos, normal);
-      end
-      X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
-      if (length(X) - 2) >= options.min_num_steps
-        break
-      end
-    end
   end
  
   biped.getNextStepID(true); % reset the counter

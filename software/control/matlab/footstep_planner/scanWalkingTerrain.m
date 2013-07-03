@@ -12,7 +12,7 @@ if nargin < 4
   nom_step_width = biped.nom_step_width;
 end
 
-foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2));
+foot_radius = sqrt(sum((biped.foot_contact_offsets.right.toe - biped.foot_contact_offsets.right.center).^2)) + 0.01;
 
 lambdas = linspace(0, 1, 200);
 traj_poses = traj.eval(lambdas);
@@ -34,7 +34,7 @@ dy = sample_y(2) - sample_y(1);
 [X , Y] = meshgrid(sample_x, sample_y);
 X = reshape(X, 1, []);
 Y = reshape(Y, 1, []);
-[Z, normals] = biped.getTerrainHeight([X; Y]);
+[Z, ~] = biped.getTerrainHeight([X; Y]);
 
 % HACK: we don't know the terrain height under the robot
 Z(isnan(Z)) = current_pos(3);
@@ -43,7 +43,6 @@ X = reshape(X, length(sample_y), length(sample_x));
 Y = reshape(Y, length(sample_y), length(sample_x));
 Z = reshape(Z, length(sample_y), length(sample_x));
 Z = medfilt2(Z);
-normals = reshape(normals, length(sample_y), length(sample_x), []);
 
 Q = zeros(size(Z));
 Q = bsxfun(@max, Q, abs(imfilter(Z, [1, -1])) - 0.03);
@@ -68,10 +67,11 @@ end
 
 F = ordfilt2(Q, length(find(domain)), domain);
     
+% traj_poses = traj.eval(linspace(0, 1, 2*max([length(sample_x), length(sample_y)])));
 foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, nom_step_width),...
                       'left', biped.stepCenter2FootCenter(traj_poses, 0, nom_step_width));
-feasibility = struct('right', ~griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:)),...
-   'left', ~griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
+feasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:),'nearest') < 0.5,...
+   'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:), 'nearest')< 0.5);
 
 
  
@@ -85,8 +85,8 @@ if debug
   clf
   mesh(X, Y, F)
   hold on
-  plot3(foot_centers.right(1,:), foot_centers.right(2,:), infeasibility.right, 'g')
-  plot3(foot_centers.left(1,:), foot_centers.left(2,:), infeasibility.left, 'b')
+  plot3(foot_centers.right(1,:), foot_centers.right(2,:), ~feasibility.right, 'g.-')
+  plot3(foot_centers.left(1,:), foot_centers.left(2,:), ~feasibility.left, 'b.-')
   axis equal
 end
 

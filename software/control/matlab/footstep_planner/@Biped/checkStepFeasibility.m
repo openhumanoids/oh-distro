@@ -38,16 +38,17 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, options)
 
   c = zeros(4, size(p0, 2));
   for j = 1:size(p0, 2)
-    u = rotz(-p0(6, j)) * (pf(1:3, j) - p0(1:3, j));
+    sn = sin(-p0(6,j));
+    cs = cos(-p0(6,j));
+    M = [cs,-sn,0; sn,cs,0; 0,0,1];
+    u = M * (pf(1:3,j) - p0(1:3,j));
     if ~p0_is_right_foot(j)
       u(2) = -u(2);
     end
     if u(1) >= 0
       c(1, j) = u(1) - x_max;
-%       x_feas_frac = max(0, 1 - u(1) / x_max);
     else
       c(1, j) = x_min - u(1);
-%       x_feas_frac = max(0, 1 - u(1) / x_min);
     end
     if u(2) >= options.nom_step_width
       c(2, j) = u(2) - options.max_step_width;
@@ -57,11 +58,10 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, options)
         c(2, j) = c(2, j) * 10;
       end
     end
-    phi = angleDiff(pf(6, j), p0(6, j));
-    c(3, j) = abs(phi) - options.max_step_rot;
-
-    c(4, j) = abs(pf(3, j) - p0(3, j)) - options.max_step_dz;
   end
+  phi = angleDiff(pf(6,:), p0(6,:));
+  c(3,:) = abs(phi) - options.max_step_rot;
+  c(4,:) = abs(pf(3,:) - p0(3,:)) - options.max_step_dz;
   c = reshape(c, [], 1);
 end
 
