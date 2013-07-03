@@ -15,13 +15,12 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   end
   
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
-  unwrapped = unwrap([p0(6), goal_pos(6)]);
-  goal_pos(6) = unwrapped(2);
+  goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
   goal_pos(3,:) = p0(3);
   if ~options.ignore_terrain
     goal_pos = fitStepToTerrain(biped, goal_pos);
   end
-  foot_goals = struct('right', biped.stepCenter2FootCenter(goal_pos(1:6,end), 1, options.nom_step_width), 'left', biped.stepCenter2FootCenter(goal_pos(1:6,end), 0, options.nom_step_width));
+  % foot_goals = struct('right', biped.stepCenter2FootCenter(goal_pos(1:6,end), 1, options.nom_step_width), 'left', biped.stepCenter2FootCenter(goal_pos(1:6,end), 0, options.nom_step_width));
 
   if options.follow_spline
     traj = BezierTraj([p0, goal_pos]);
@@ -29,8 +28,9 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
     traj = DirectTraj([p0, goal_pos]);
   end
 
-  [~, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0, options.nom_step_width);
+  [~, feasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0, options.nom_step_width);
   if options.ignore_terrain
+    % use position of the right foot to set the height and orientation of the steps
     normal = rpy2rotmat(p0(4:6)) * [0;0;1];
     foot_centers.right(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.right(1,:) - p0(1)) + normal(2) * (foot_centers.right(2,:) - p0(2)));
     foot_centers.left(3,:) = p0(3) - (1 / normal(3)) * (normal(1) * (foot_centers.left(1,:) - p0(1)) + normal(2) * (foot_centers.left(2,:) - p0(2)));
@@ -38,8 +38,8 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
       foot_centers.right(:,j) = fitPoseToNormal(foot_centers.right(:,j), normal);
       foot_centers.left(:,j) = fitPoseToNormal(foot_centers.left(:,j), normal);
     end
-    infeasibility.right = zeros(size(infeasibility.right));
-    infeasibility.left = zeros(size(infeasibility.left));
+    feasibility.right = ones(size(feasibility.right));
+    feasibility.left = ones(size(feasibility.left));
   else
     for f = {'right', 'left'}
       foot = f{1};
@@ -48,6 +48,9 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
       end
     end
   end
+
+  last_safe_idx = find(feasibility.right & feasibility.left, 1, 'last');
+  foot_goals = struct('right', foot_centers.right(:, last_safe_idx), 'left', foot_centers.left(:, last_safe_idx));
 
   if debug
     ls = linspace(0, 1);
@@ -78,7 +81,7 @@ aborted = false;
     reach = biped.checkStepFeasibility(repmat(X(end).pos, 1, size(potential_poses, 2)),...
       potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), feas_opts);
     reach = reshape(reach, [], size(potential_poses, 2));
-    valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + (last_ndx.(m_foot) - 1);
+    valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + (last_ndx.(m_foot) - 1);
     if isempty(valid_pose_ndx)
       novalid = true;
     else
@@ -96,7 +99,7 @@ aborted = false;
       reach = biped.checkStepFeasibility(repmat(X(end).pos, 1, size(potential_poses, 2)),...
         potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), feas_opts);
       reach = reshape(reach, [], size(potential_poses, 2));
-      valid_pose_ndx = find(max(reach, [], 1) <= 0 & ~infeasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
+      valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
       if isempty(valid_pose_ndx)
         novalid = true;
       else

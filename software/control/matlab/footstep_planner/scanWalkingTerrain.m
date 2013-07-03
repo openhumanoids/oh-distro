@@ -1,9 +1,9 @@
-function [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, current_pos, nom_step_width)
+function [lambdas, feasibility, foot_centers] = scanWalkingTerrain(biped, traj, current_pos, nom_step_width)
 % Scan out a grid of terrain along the robot's planned walking trajectory, then filter that terrain by its acceptability for stepping on. 
 % @param traj either a BezierTraj or a DirectTraj
 % @param current_pos where the center of the robot's feet currently is
 % @retval lambdas linearly spaced points between 0 and 1 representing positions along the trajectory
-% @retval infeasibility a struct with 'right' and 'left' fields. If infeasibility.right(n) == 0, then the right foot can be safely placed at the location along the trajectory given by lambdas(n)
+% @retval feasibility a struct with 'right' and 'left' fields. If feasibility.right(n) == 1, then the right foot can be safely placed at the location along the trajectory given by lambdas(n)
 % @retval foot_centers the center position of each foot at each lambda 
 
 debug = false;
@@ -70,8 +70,8 @@ F = ordfilt2(Q, length(find(domain)), domain);
     
 foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, nom_step_width),...
                       'left', biped.stepCenter2FootCenter(traj_poses, 0, nom_step_width));
-infeasibility = struct('right', griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:)),...
-   'left', griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
+feasibility = struct('right', ~griddata(X, Y, F, foot_centers.right(1,:), foot_centers.right(2,:)),...
+   'left', ~griddata(X, Y, F, foot_centers.left(1,:), foot_centers.left(2,:)));
 
 
  
