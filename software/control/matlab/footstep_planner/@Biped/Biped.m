@@ -67,14 +67,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         nom_step_width = obj.nom_step_width;
       end
       if is_right_foot
-        offs = [0; -nom_step_width/2; 0];
-      else
         offs = [0; nom_step_width/2; 0];
+      else
+        offs = [0; -nom_step_width/2; 0];
       end
       for j = 1:length(Xc(1,:))
-        M = makehgtform('xrotate', Xc(4, j), 'yrotate', Xc(5, j), 'zrotate', Xc(6, j));
-        d = M * [offs; 1];
-        Xo(:,j) = [Xc(1:3,j) + d(1:3); Xc(4:end, j)];
+        M = rpy2rotmat(Xc(4:6,j));
+        d = M * offs;
+        Xo(:,j) = [Xc(1:3,j) - d(1:3); Xc(4:end,j)];
       end
     end
 
@@ -83,14 +83,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         nom_step_width = obj.nom_step_width;
       end
       if is_right_foot
-        offs = [0; -nom_step_width/2; 0];
-      else
         offs = [0; nom_step_width/2; 0];
+      else
+        offs = [0; -nom_step_width/2; 0];
       end
       for j = 1:length(Xo(1,:))
-        M = makehgtform('xrotate', Xo(4, j), 'yrotate', Xo(5, j), 'zrotate', Xo(6, j));
-        d = M * [offs; 1];
-        Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end, j)];
+        M = rpy2rotmat(Xo(4:6,j));
+        d = M * offs;
+        Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end,j)];
       end
     end
 
