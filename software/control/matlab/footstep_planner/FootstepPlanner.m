@@ -97,7 +97,7 @@ classdef FootstepPlanner < DRCPlanner
           planning = false;
         end
         if planning
-%           profile on
+          % profile on
           X = obj.updatePlan(X_old, data, changed, changelist);
           if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
             modified = false;
@@ -119,7 +119,7 @@ classdef FootstepPlanner < DRCPlanner
             Xout(j).pos(3) = Xout(j).pos(3) + obj.z_adjust;
           end
           publish(Xout);
-%           profile viewer
+          % profile viewer
         else
           pause(1)
         end
@@ -127,19 +127,6 @@ classdef FootstepPlanner < DRCPlanner
 
 
       function publish(X)
-        if length(X) > 2
-          [~, foottraj, ~] = obj.biped.planZMPTraj(data.x0(1:obj.biped.getNumDOF), X, obj.options);
-          ts = foottraj.right.orig.getBreaks();
-          pts.right = foottraj.right.orig.eval(ts);
-          pts.left = foottraj.left.orig.eval(ts);
-%           pts.right = obj.biped.footOrig2Contact(pts.right, 'center', 1);
-%           pts.left = obj.biped.footOrig2Contact(pts.left, 'center', 0);
-          plot_lcm_points(pts.right', repmat([224/255, 116/255, 27/255], size(pts.right, 2), 1), 30, 'Right Foot Trajectory', 2, 1);
-          plot_lcm_points(pts.left', repmat([27/255, 148/255, 224/255], size(pts.left, 2), 1), 31, 'Left Foot Trajectory', 2, 1);
-        else
-          plot_lcm_points([nan nan nan], [0 0 0], 30, 'Right Foot Trajectory', 2, 1);
-          plot_lcm_points([nan nan nan], [0 0 0], 31, 'Left Foot Trajectory', 2, 1);
-        end
         obj.biped.publish_footstep_plan(X, data.utime, isnew, obj.options);
         msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
       end

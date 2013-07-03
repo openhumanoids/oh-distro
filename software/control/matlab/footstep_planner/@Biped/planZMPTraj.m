@@ -178,12 +178,16 @@ for i=1:length(zmp_ts)
 end
 
 if debug
+  ts = foottraj.right.orig.getBreaks();
+  pts.right = foottraj.right.orig.eval(ts);
+  pts.left = foottraj.left.orig.eval(ts);
+  plot_lcm_points(pts.right', repmat([224/255, 116/255, 27/255], size(pts.right, 2), 1), 30, 'Right Foot Trajectory', 2, 1);
+  plot_lcm_points(pts.left', repmat([27/255, 148/255, 224/255], size(pts.left, 2), 1), 31, 'Left Foot Trajectory', 2, 1);
   tt = zmp_ts;
   zmppoints = zeros(3,length(tt));
   zmppoints(1:2,:) = zmptraj.eval(tt);
   zmppoints(3,:) = getTerrainHeight(biped,zmppoints(1:2,:));
   plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',2,true);
-  % biped.plot_step_clearance_lcm(footpos);
 end
 
 end
