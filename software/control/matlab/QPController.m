@@ -26,14 +26,12 @@ classdef QPController < MIMODrakeSystem
       % IMPORTANT NOTE: I'm assuming the atlas state is always the first
       % frame in a multi coordinate frame
       if typecheck(fr,'MultiCoordinateFrame')
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame.frame{:}});
+        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,fr.frame{:}});
         num_state_fr = length(options.multi_robot.getStateFrame.frame);
       else
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,options.multi_robot.getStateFrame});
+        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,fr});
         num_state_fr = 1;
       end
-      input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
-      num_state_fr = 1;
     else
       input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
       num_state_fr = 1;
@@ -73,17 +71,8 @@ classdef QPController < MIMODrakeSystem
       obj.slack_limit = 10;
     end
     
-    nu = getNumInputs(r);
-    % input cost term: u'Ru
     if isfield(options,'R')
-      typecheck(options.R,'double');
-      sizecheck(options.R,[nu,nu]);
-      obj.Rdiag = diag(options.R);
-      if any(any(options.R - diag(obj.Rdiag)))
-        error('we require R to be diagonal now (to make the QP solve faster)');
-      end
-    else      
-      obj.Rdiag = 1e-6*ones(nu,1);
+      warning('input cost no longer supported');
     end
     
     if ~isfield(options,'lcm_foot_contacts')
@@ -135,31 +124,9 @@ classdef QPController < MIMODrakeSystem
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
     if (isfield(options,'full_body_opt'))
-      typecheck(options.full_body_opt,'logical');
-    else
-      options.full_body_opt = true;
+      warning('full_body_opt option no longer supported --- controller is always full body.')
     end
-    
-    if ~options.full_body_opt
-      % perform unconstrained minimization to compute accelerations for a 
-      % subset of atlas DOF, then solve for inputs (then threshold).
-      % generally these should be the joints for which the columns of the 
-      % contact jacobian are zero. The remaining dofs are indexed in con_dof.
-      state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      obj.free_dof = find(~cellfun(@isempty,strfind(state_names,'arm')) + ...
-                    ~cellfun(@isempty,strfind(state_names,'neck')));
-      obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
-      
-      input_names = r.getInputFrame.coordinates;
-      obj.free_inputs = find(~cellfun(@isempty,strfind(input_names,'arm')) | ~cellfun(@isempty,strfind(input_names,'neck')));
-      obj.con_inputs = setdiff(1:getNumInputs(r),obj.free_inputs)';
-    else
-      obj.free_dof = [];
-      obj.con_dof = 1:getNumDOF(r);
-      obj.free_inputs = [];
-      obj.con_inputs = 1:getNumInputs(r);
-    end
-    
+
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -172,37 +139,21 @@ classdef QPController < MIMODrakeSystem
       obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
     end % else estimate contact via kinematics
     
-    if obj.solver==1 % use cplex
-      obj.solver_options = cplexoptimset('cplex');
-      obj.solver_options.diagnostics = 'on';
-      obj.solver_options.maxtime = 0.01;
-      % QP method: 
-      %   0 	Automatic (default)
-      %   1 	Primal Simplex
-      %   2 	Dual Simplex
-      %   3 	Network Simplex
-      %   4 	Barrier
-      %   5 	Sifting
-      %   6 	Concurrent
-      obj.solver_options.qpmethod = 4; 
-      
-    else % use gurobi
 
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
-      obj.solver_options.outputflag = 0; % not verbose
-      obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
-      obj.solver_options.presolve = 0;
-%       obj.solver_options.prepasses = 1;
+    obj.solver_options.outputflag = 0; % not verbose
+    obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+    obj.solver_options.presolve = 0;
+    % obj.solver_options.prepasses = 1;
 
-      if obj.solver_options.method == 2
-        obj.solver_options.bariterlimit = 20; % iteration limit
-        obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
-        obj.solver_options.barconvtol = 5e-4;
-      end
-    end  
+    if obj.solver_options.method == 2
+      obj.solver_options.bariterlimit = 20; % iteration limit
+      obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
+      obj.solver_options.barconvtol = 5e-4;
+    end
     
     if (obj.use_mex>0)
       terrain = getTerrain(r);
@@ -283,7 +234,7 @@ classdef QPController < MIMODrakeSystem
   methods
     
   function y=mimoOutput(obj,t,~,varargin)
-%    out_tic = tic;
+    out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
 %    QPController.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
@@ -320,11 +271,11 @@ classdef QPController < MIMODrakeSystem
     D_ls = ctrl_data.D;
     S = ctrl_data.S;
     s2 = ctrl_data.s2;
-    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % TESTING, ADDED BY SCOTT
+    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
       s1 = fasteval(ctrl_data.s1,t);
-      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
+      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       
       %----------------------------------------------------------------------
       % extract current supports
@@ -332,7 +283,7 @@ classdef QPController < MIMODrakeSystem
       supp = ctrl_data.supports(supp_idx);
     else
       s1 = ctrl_data.s1;
-      y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % TESTING, ADDED BY SCOTT
+      y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       
       supp = ctrl_data.supports;
     end
@@ -428,28 +379,24 @@ classdef QPController < MIMODrakeSystem
       nq = getNumDOF(r);
       dim = 3; % 3D
       nd = 4; % for friction cone approx, hard coded for now
-      nq_free = length(obj.free_dof);
-      nq_con = length(obj.con_dof);
-      nu_con = length(obj.con_inputs);
+      float_idx = 1:6; % indices for floating base dofs
+      act_idx = 7:nq; % indices for actuated dofs
 
       kinsol = doKinematics(r,q,false,true,qd);
       
       [H,C,B] = manipulatorDynamics(r,q,qd);
-      
+
       [~,Jlhand] = forwardKin(r,kinsol,obj.lhand_idx,zeros(3,1),1);
       [~,Jrhand] = forwardKin(r,kinsol,obj.rhand_idx,zeros(3,1),1);
       C = C + Jlhand'*hand_ft(1:6) + Jrhand'*hand_ft(7:12);
       
-      H_con = H(obj.con_dof,:);
-      C_con = C(obj.con_dof);
-      B_con = B(obj.con_dof,obj.con_inputs);
-      
-      if nq_free > 0
-        H_free = H(obj.free_dof,:);
-        C_free = C(obj.free_dof);
-        B_free = B(obj.free_dof,obj.free_inputs);
-      end
-      
+      H_float = H(float_idx,:);
+      C_float = C(float_idx);
+
+      H_act = H(act_idx,:);
+      C_act = C(act_idx);
+      B_act = B(act_idx,:);
+
       [xcom,J] = getCOM(r,kinsol);
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
@@ -479,112 +426,93 @@ classdef QPController < MIMODrakeSystem
               D_{k} = [D_{k}; D__{k}];
             end
           end
-        
         end
-      else
-        nc = 0;
-      end
-      neps = nc*dim;
-      
-      if nc > 0
-        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
-        Jp = sparse(Jp(:,obj.con_dof));
-        Jpdot = sparse(Jpdot(:,obj.con_dof));
-        
-        Jz = sparse(Jz(:,obj.con_dof)); % only care about active contacts
-        
+
+        Jz = sparse(Jz); 
+        Jz_float = Jz(:,float_idx);
+        Jz_act = Jz(:,act_idx);
+
         % D_ is the parameterization of the polyhedral approximation of the
         %    friction cone, in joint coordinates (figure 1 from Stewart96)
         %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
         % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for
         % the kth contact point
         %
-        % OPT---this isn't necessary
+        % OPT---this could be made cleaner
         D = cell(1,nc);
         for k=1:nc
           for i=1:nd
-            D{k}(:,i) = D_{i}(k,obj.con_dof)';
+            D{k}(:,i) = D_{i}(k,:)';
           end
         end
         Dbar = sparse([D{:}]);
-      end      
+        Dbar_float = Dbar(float_idx,:);
+        Dbar_act = Dbar(act_idx,:);
+
+        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+        Jp = sparse(Jp);
+        Jpdot = sparse(Jpdot);
         
-      if (nc>0)
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
         x_bar = xlimp - x0;      
+      else
+        nc = 0;
       end
-      
-      
-      %----------------------------------------------------------------------
-      % Free DOF cost function ----------------------------------------------
+      neps = nc*dim;
 
-      if nq_free > 0
-        if nc > 0
-          % approximate quadratic cost for free dofs with the appropriate matrix block
-          Hqp = J(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
-          Hqp = Hqp + obj.w*eye(nq_free);
-
-          fqp = xlimp'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
-          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
-          fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J(:,obj.free_dof);
-          fqp = fqp - u0'*R_ls*J(:,obj.free_dof);
-          fqp = fqp - y0'*Qy*D_ls*J(:,obj.free_dof);
-          fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
-        else
-          Hqp = eye(nq_free);
-          fqp = -q_ddot_des(obj.free_dof)';
-        end
-
-        % solve for qdd_free unconstrained
-        qdd_free = -Hqp\fqp';
-      end      
-        
-    
+         
       %----------------------------------------------------------------------
       % Build handy index matrices ------------------------------------------
       
       nf = nc+nc*nd; % number of contact force variables
-      nparams = nq_con+nu_con+nf+neps;
-      Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
-      Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
-      Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
-      Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
+      nparams = nq+nf+neps;
+      Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
+      Iz = zeros(nc,nparams); Iz(:,nq+(1:nc)) = eye(nc);
+      Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq+nc+(1:nc*nd)) = eye(nc*nd);
       Ieps = zeros(neps,nparams);
-      Ieps(:,nq_con+nu_con+nc+nc*nd+(1:neps)) = eye(neps);
+      Ieps(:,nq+nc+nc*nd+(1:neps)) = eye(neps);
       
       
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
       
-      lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/input/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
+      ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
       
       Aeq_ = cell(1,2);
       beq_ = cell(1,2);
-      Ain_ = cell(1,nc);
-      bin_ = cell(1,nc);
+      Ain_ = cell(1,2+nc);
+      bin_ = cell(1,2+nc);
       
       % constrained dynamics
       if nc>0
-        Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu - Jz'*Iz - Dbar*Ibeta;
+        Aeq_{1} = H_float*Iqdd - Jz_float'*Iz - Dbar_float*Ibeta;
       else
-        Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu;
+        Aeq_{1} = H_float*Iqdd;
       end
-      if nq_free > 0
-        beq_{1} = -C_con - H_con(:,obj.free_dof)*qdd_free;
+      beq_{1} = -C_float;
+
+      % input saturation constraints
+      % u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
+
+      if nc>0
+        Ain_{1} = B_act'*(H_act*Iqdd - Jz_act'*Iz - Dbar_act*Ibeta);
       else
-        beq_{1} = -C_con;
+        Ain_{1} = B_act'*H_act*Iqdd;
       end
-      
+      bin_{1} = -B_act'*C_act + r.umax;
+      Ain_{2} = -Ain_{1};
+      bin_{2} = B_act'*C_act - r.umin;
+
       if nc > 0
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
-        beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
+        beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
         
         % linear friction constraints
         for i=1:nc
-          Ain_{i} = -mu*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
-          bin_{i} = 0;
+          Ain_{2+i} = -mu*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
+          bin_{2+i} = 0;
         end
       end
       
@@ -603,118 +531,98 @@ classdef QPController < MIMODrakeSystem
       %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x_bar+D*(Jdot*qd + J*qdd),Qy) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd-u0)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
       
       if nc > 0
-        Hqp = Iqdd'*J(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
-        Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
+        Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
+        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
-        fqp = xlimp'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp - u0'*R_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp - y0'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
+        fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
+        fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
+        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J*Iqdd;
+        fqp = fqp - u0'*R_ls*J*Iqdd;
+        fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
+        fqp = fqp - obj.w*q_ddot_des'*Iqdd;
 
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
-        fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
+        fqp = -q_ddot_des'*Iqdd;
       end
-      
-      % quadratic input cost
-      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = diag(obj.Rdiag(obj.con_inputs));
-      
-      % quadratic cost on forces
-%      Hqp(nq_con+nu_con+(1:nf),nq_con+nu_con+(1:nf)) = 1e-7*eye(nf); %min(obj.R(obj.R(:)>0));
 
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
       
       REG = 1e-8;
-      if obj.solver==1
-        % CURRENTLY CRASHES MATLAB ON MY MACHINE -sk
-        alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
+      % call fastQPmex first
         
-      else
-        % call fastQPmex first
+      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
+      lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+      IR = eye(nparams);  
+      Aeq_fqp = full(Aeq);
+      Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
+      bin_fqp = [bin; -lb(lbind); ub(ubind)];
         
-%         QblkDiag = {Hqp(1:nq_con,1:nq_con),diag(obj.Rdiag(obj.con_inputs)),zeros(nf,1),0.001*ones(neps,1)};
-%         lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
-%         IR = eye(nparams);  
-%         Aeq_fqp = full(Aeq);
-%         Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
-%         bin_fqp = [bin; -lb(lbind); ub(ubind)];
-%           
-%         %% NOTE: model.obj is 2* f for fastQP!!!
-%         [alpha,info,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
-%         
-%         if info<0
-%         
-        %%% then call gurobi only if it fails:
+      %% NOTE: model.obj is 2* f for fastQP!!!
+      [alpha,info_fqp,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+      
+      if info_fqp<0
+         
+      %%% then call gurobi only if it fails:
         
-        model.Q = sparse(Hqp + REG*eye(nparams));
-        model.A = [Aeq; Ain];
-        model.rhs = [beq; bin];
-        model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
-        model.lb = lb;
-        model.ub = ub;
+      model.Q = sparse(Hqp + REG*eye(nparams));
+      model.A = [Aeq; Ain];
+      model.rhs = [beq; bin];
+      model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
+      model.lb = lb;
+      model.ub = ub;
         
-        model.obj = fqp;
-        if ~isempty(model.A) && obj.solver_options.method==2
-          % see drake/algorithms/test/mygurobi.m
-          model.obj = 2*model.obj;
-        end
-        
-        if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
-          keyboard;
-        end
-
-%       Q=full(Hqp);
-%       c=2*fqp;
-%       Aeq = full(Aeq);
-%       Ain = full(Ain);
-%       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
-%       qp_tic = tic;
-        result = gurobi(model,obj.solver_options);
-%       qp_toc = toc(qp_tic);
-%       fprintf('QP solve: %2.4f\n',qp_toc);
-        alpha = result.x;
-
-        if isempty(model.A) && obj.solver_options.method==2
-          % see drake/algorithms/test/mygurobi.m
-          alpha = alpha/2;
-        end
-        
-%         qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-%         
-% %        if (info_fqp<0)
-%           warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
-% %        else
-% %          valuecheck(qp_active_set_fqp,qp_active_set);
-% %          valuecheck(alpha_fqp,alpha);
-% %        end
-%         end
-% 
-%         setField(obj.controller_data,'qp_active_set',qp_active_set);
-      end
-
-      %----------------------------------------------------------------------
-      % Solve for free inputs -----------------------------------------------
-      if nq_free > 0
-        qdd = zeros(nq,1);
-        qdd(obj.free_dof) = qdd_free;
-        qdd(obj.con_dof) = alpha(1:nq_con);
-        
-        u_free = B_free\(H_free*qdd + C_free);
-        u = zeros(nu,1);
-        u(obj.free_inputs) = u_free;
-        u(obj.con_inputs) = alpha(nq_con+(1:nu_con));
-        
-        % saturate inputs
-        y = max(r.umin,min(r.umax,u));
-      else
-        y = alpha(nq+(1:nu));
+      model.obj = fqp;
+      if ~isempty(model.A) && obj.solver_options.method==2
+        % see drake/algorithms/test/mygurobi.m
+        model.obj = 2*model.obj;
       end
       
+      if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
+        keyboard;
+      end
+
+%       qp_tic = tic;
+      result = gurobi(model,obj.solver_options);
+%       qp_toc = toc(qp_tic);
+%       fprintf('QP solve: %2.4f\n',qp_toc);
+      
+      alpha = result.x;
+
+      if isempty(model.A) && obj.solver_options.method==2
+        % see drake/algorithms/test/mygurobi.m
+        alpha = alpha/2;
+      end
+      end
+        
+      qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
+        
+%       if (info_fqp<0)
+%         warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
+      % else
+      %   valuecheck(qp_active_set_fqp,qp_active_set);
+      %   valuecheck(alpha_fqp,alpha);
+      % end
+%       end
+      
+      setField(obj.controller_data,'qp_active_set',qp_active_set);
+      
+      %----------------------------------------------------------------------
+      % Solve for inputs ----------------------------------------------------
+
+      qdd = alpha(1:nq);
+      if nc>0
+        z = alpha(nq+(1:nc));
+        beta = alpha(nq+nc+(1:nc*nd));
+        u = B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta);
+      else
+        u = B_act'*(H_act*qdd + C_act);
+      end
+      y = u;
+ 
       if (obj.use_mex==2)
         des.y = y;
       end
@@ -722,13 +630,6 @@ classdef QPController < MIMODrakeSystem
       % compute V,Vdot for controller status updates
       if (nc>0)
         V = x_bar'*S*x_bar + s1'*x_bar + s2;
-        if nq_free > 0
-          qdd = zeros(nq,1);
-          qdd(obj.free_dof) = qdd_free;
-          qdd(obj.con_dof) = alpha(1:nq_con);
-        else
-          qdd = alpha(1:nq);
-        end
         Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
       end
       
@@ -819,7 +720,7 @@ classdef QPController < MIMODrakeSystem
       end
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
@@ -843,15 +744,10 @@ classdef QPController < MIMODrakeSystem
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w; % objective function weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
-    free_dof % dofs for which we perform unconstrained minimization
-    con_dof 
-    free_inputs
-    con_inputs
     rfoot_idx;
     lfoot_idx;
     rhand_idx;
     lhand_idx;
-    Rdiag; % quadratic input cost matrix
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug;

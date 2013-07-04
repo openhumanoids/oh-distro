@@ -62,13 +62,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.01;
-options.R = 1e-12*eye(nu);
-input_names = r.getInputFrame.coordinates;
-ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
-ankle_idx = find(ankle_idx);
-options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
-options.full_body_opt = false;
 options.use_mex = true;
 qp = QPController(r,ctrl_data,options);
 clear options;

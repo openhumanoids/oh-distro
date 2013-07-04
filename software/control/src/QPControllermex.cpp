@@ -9,8 +9,6 @@
  *   some matrices might be better off using RowMajor
  */
 
-
-
 #include <mex.h>
 
 #define _USE_MATH_DEFINES
@@ -46,33 +44,19 @@ struct QPControllerData {
   RigidBodyManipulator* multi_robot;
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
-//  int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
-  MatrixXd Rdiag, Rdiaginv;  // these are really vectors, but I need to pass MatrixXd* to the block diagonal solvers
-  MatrixXd B, B_con, B_free;
-  set<int> free_dof, con_dof, free_inputs, con_inputs; 
-  VectorXd umin_con, umax_con;
-  ArrayXd umin,umax;
+  VectorXd umin,umax;
   void* map_ptr;
   
   set<int> active;
 
   // preallocate memory
-  MatrixXd H;
-  VectorXd C;
+  MatrixXd H, H_float, H_act;
+  VectorXd C, C_float, C_act;
+  MatrixXd B, B_act;
   MatrixXd J, Jdot;
-  MatrixXd H_con, H_free;
-  VectorXd C_con, C_free;
-  VectorXd qdd_free;
-  VectorXd q_ddot_des_free;
-  VectorXd qd_con;
-  MatrixXd Hqp_free;
-  RowVectorXd fqp_free;
-  MatrixXd J_free, Jdot_free;
-  VectorXd qd_free;
-  VectorXd q_ddot_des_con;
-  MatrixXd Hqp_con;
-  RowVectorXd fqp_con;
-  MatrixXd J_con, Jdot_con;
+  MatrixXd J_xy, Jdot_xy;
+  MatrixXd Hqp;
+  RowVectorXd fqp;
 //  MatrixXd Ain_lb_ub, bin_lb_ub;
 };
 
@@ -277,32 +261,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const mxArray* pobj = prhs[1];
     
     pm= myGetProperty(pobj,"w");
-    pdata->w = mxGetScalar(pm);
+    pdata->w = mxGetScalar(pm);    
     
     pm = myGetProperty(pobj,"slack_limit");
     pdata->slack_limit = mxGetScalar(pm);
-
-    pm = myGetProperty(pobj,"free_dof");
-    pr = mxGetPr(pm);
-    for (i=0; i<mxGetNumberOfElements(pm); i++)
-      pdata->free_dof.insert((int)pr[i] - 1);
-    
-    pm = myGetProperty(pobj,"con_dof");
-    pr = mxGetPr(pm);
-    for (i=0; i<mxGetNumberOfElements(pm); i++)
-      pdata->con_dof.insert((int)pr[i] - 1);
-    int nq_con = pdata->con_dof.size();
-
-    pm = myGetProperty(pobj,"free_inputs");
-    pr = mxGetPr(pm);
-    for (i=0; i<mxGetNumberOfElements(pm); i++)
-      pdata->free_inputs.insert((int)pr[i] - 1);
-
-    pm = myGetProperty(pobj,"con_inputs");
-    pr = mxGetPr(pm);
-    for (i=0; i<mxGetNumberOfElements(pm); i++)
-      pdata->con_inputs.insert((int)pr[i] - 1);
-    int nu_con = pdata->con_inputs.size();
     
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
@@ -318,33 +280,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->umax.resize(nu);
     memcpy(pdata->umin.data(),mxGetPr(prhs[4]),sizeof(double)*nu);
     memcpy(pdata->umax.data(),mxGetPr(prhs[5]),sizeof(double)*nu);
-    pdata->umin_con.resize(nu_con);
-    pdata->umax_con.resize(nu_con);
-    getRows(pdata->con_inputs,pdata->umin.matrix(),pdata->umin_con);
-    getRows(pdata->con_inputs,pdata->umax.matrix(),pdata->umax_con);
 
-    {
-      pdata->B_con.resize(pdata->con_dof.size(),pdata->con_inputs.size());
-      MatrixXd tmp(nq,pdata->con_inputs.size());
-      getCols(pdata->con_inputs,pdata->B,tmp);
-      getRows(pdata->con_dof,tmp,pdata->B_con);
-    
-      if (pdata->free_dof.size()>0 && pdata->free_inputs.size()>0) {
-        pdata->B_free.resize(pdata->free_dof.size(),pdata->free_inputs.size());
-        tmp.resize(nq,pdata->free_inputs.size());
-        getCols(pdata->free_inputs,pdata->B,tmp);
-        getRows(pdata->free_dof,tmp,pdata->B_free);
-      }
-    }
-
-    {
-      pm = myGetProperty(pobj,"Rdiag");
-      pdata->Rdiag.resize(pdata->con_inputs.size(),1);
-      Map<VectorXd> Rdiagfull(mxGetPr(pm),mxGetNumberOfElements(pm));
-      getRows(pdata->con_inputs,Rdiagfull,pdata->Rdiag);
-      pdata->Rdiag += VectorXd::Constant(pdata->con_inputs.size(),1,REG);
-      pdata->Rdiaginv = pdata->Rdiag.cwiseInverse();
-    }    
+    pdata->B_act.resize(nu,nu);
+    pdata->B_act = pdata->B.bottomRows(nu);
 
      // get the map ptr back from matlab
      if (!mxIsNumeric(prhs[6]) || mxGetNumberOfElements(prhs[6])!=1)
@@ -383,30 +321,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
     memcpy(mxGetData(plhs[0]),&pdata,sizeof(pdata));
     
-    int nq_free = pdata->free_dof.size();
-
     // preallocate some memory
     pdata->H.resize(nq,nq);
+    pdata->H_float.resize(6,nq);
+    pdata->H_act.resize(nu,nq);
+
     pdata->C.resize(nq);
-  	pdata->J.resize(3,nq);
+    pdata->C_float.resize(6);
+    pdata->C_act.resize(nu);
+
+    pdata->J.resize(3,nq);
     pdata->Jdot.resize(3,nq);
-    pdata->H_con.resize(nq_con,nq);
-    pdata->H_free.resize(nq_free,nq);
-    pdata->C_con.resize(nq_con);
-    pdata->C_free.resize(nq_free);
-    pdata->qdd_free.resize(nq_free);
-    pdata->q_ddot_des_free.resize(nq_free);
-    pdata->qd_con.resize(nq_con);
-    pdata->Hqp_free.resize(nq_free,nq_free);
-    pdata->fqp_free.resize(nq_free);
-    pdata->J_free.resize(2,nq_free);
-    pdata->Jdot_free.resize(2,nq_free);
-    pdata->qd_free.resize(nq_free);
-    pdata->q_ddot_des_con.resize(nq_con);
-    pdata->Hqp_con.resize(nq_con,nq_con);
-    pdata->fqp_con.resize(nq_con);
-    pdata->J_con.resize(2,nq_con);
-    pdata->Jdot_con.resize(2,nq_con);
+    pdata->J_xy.resize(2,nq);
+    pdata->Jdot_xy.resize(2,nq);
+    pdata->Hqp.resize(nq,nq);
+    pdata->fqp.resize(nq);
     return;
   }
   
@@ -418,16 +347,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 //  for (i=0; i<pdata->r->num_bodies; i++)
 //  	mexPrintf("body %d (%s) has %d contact points\n", i, pdata->r->bodies[i].linkname.c_str(), pdata->r->bodies[i].contact_pts.cols());
 
-  int nu = pdata->B.cols(), 
-      nq = pdata->r->num_dof,
-      nq_free = pdata->free_dof.size(),
-      nq_con = pdata->con_dof.size(),
-      nu_con = pdata->con_inputs.size();
+  int nu = pdata->B.cols(), nq = pdata->r->num_dof;
   const int dim = 3, // 3D
       nd = 2*m_surface_tangents; // for friction cone approx, hard coded for now
   
-  assert(nq_con+nq_free == nq);
-  assert(nu_con+pdata->free_inputs.size() == nu);
+  assert(nu+6 == nq);
 
   int narg=1;
 
@@ -513,7 +437,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
           active_supports.push_back(se);
           num_active_contact_pts += nc;
-      }
+        }
       } else {
         contactPhi(pdata,se,phi,terrain_height);
         if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
@@ -525,72 +449,41 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL);
-  getRows(pdata->con_dof,pdata->H,pdata->H_con);
-  getRows(pdata->con_dof,pdata->C,pdata->C_con);
-  if (nq_free>0) {
-    getRows(pdata->free_dof,pdata->H,pdata->H_free);
-    getRows(pdata->free_dof,pdata->C,pdata->C_free);
-  }
-  
+  pdata->H_float = pdata->H.topRows(6);
+  pdata->H_act = pdata->H.bottomRows(nu);
+  pdata->C_float = pdata->C.head(6);
+  pdata->C_act = pdata->C.tail(nu);
+ 
   Vector3d xcom;
   // consider making all J's into row-major
   
   pdata->r->getCOM(xcom);
   pdata->r->getCOMJac(pdata->J);
   pdata->r->getCOMJacDot(pdata->Jdot);
+  // copy to xy versions for computations below (avoid doing topRows a bunch of times)
+  pdata->J_xy = pdata->J.topRows(2);
+  pdata->Jdot_xy = pdata->Jdot.topRows(2);
 
   Map<VectorXd> qdvec(qd,nq);
-  getRows(pdata->con_dof,qdvec,pdata->qd_con);
   
   MatrixXd Jz,Jp,Jpdot,D;
   int nc = contactConstraints(pdata,num_active_contact_pts,active_supports,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector4d x_bar,xlimp;
-  MatrixXd Jz_con(Jz.rows(),nq_con),Jp_con(Jp.rows(),nq_con),Jpdot_con(Jpdot.rows(),nq_con),D_con(nq_con,D.cols());
+  MatrixXd Jz_float(Jz.rows(),6),Jz_act(Jz.rows(),nu), D_float(6,D.cols()), D_act(nu,D.cols());
   if (nc>0) {
-    xlimp << xcom.topRows(2),pdata->J.topRows(2)*qdvec;
-    x_bar << xlimp.topRows(2)-x0.topRows(2),xlimp.bottomRows(2)-x0.bottomRows(2);
-    getCols(pdata->con_dof,Jz,Jz_con);
-    getRows(pdata->con_dof,D,D_con);
-    getCols(pdata->con_dof,Jp,Jp_con);
-    getCols(pdata->con_dof,Jpdot,Jpdot_con);
-  }
-  
-  //---------------------------------------------------------------------
-  // Free DOF cost function ----------------------------------------------
-  
-  if (nq_free > 0) {
+    xlimp << xcom.topRows(2),pdata->J_xy*qdvec;
+    x_bar = xlimp-x0;
 
-    if (nc > 0) {
-      getRows(pdata->free_dof,q_ddot_des,pdata->q_ddot_des_free);
-      
-      getCols(pdata->free_dof,pdata->J.topRows(2),pdata->J_free);
-      getCols(pdata->free_dof,pdata->Jdot.topRows(2),pdata->Jdot_free);
-      getRows(pdata->free_dof,qdvec,pdata->qd_free);
-      
-      // approximate quadratic cost for free dofs with the appropriate matrix block
-      pdata->Hqp_free = pdata->J_free.transpose()*R_DQyD_ls*pdata->J_free;
-      pdata->Hqp_free += pdata->w*MatrixXd::Identity(nq_free,nq_free);
-              
-      pdata->fqp_free = (C_ls*xlimp).transpose()*Qy*D_ls*pdata->J_free;
-      pdata->fqp_free += (pdata->Jdot_free*pdata->qd_free).transpose()*R_DQyD_ls*pdata->J_free;
-      pdata->fqp_free += (S*x_bar + 0.5*s1).transpose()*B_ls*pdata->J_free;
-      pdata->fqp_free -= u0.transpose()*R_DQyD_ls*pdata->J_free;
-      pdata->fqp_free -= y0.transpose()*Qy*D_ls*pdata->J_free;
-      pdata->fqp_free -= pdata->w*pdata->q_ddot_des_free.transpose();
-      
-      // solve for qdd_free unconstrained
-      pdata->qdd_free = -pdata->Hqp_free.ldlt().solve(pdata->fqp_free.transpose());
-    } else {
-      // qdd_free = q_ddot_des_free;
-      getRows(pdata->free_dof,q_ddot_des,pdata->qdd_free);
-    }        
-    
+    Jz_float = Jz.leftCols(6);
+    Jz_act = Jz.rightCols(nu);
+    D_float = D.topRows(6);
+    D_act = D.bottomRows(nu);
   }
 
   int nf = nc+nc*nd; // number of contact force variables
-  int nparams = nq_con+nu_con+nf+neps;
+  int nparams = nq+nf+neps;
   
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
@@ -598,77 +491,68 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
   VectorXd f(nparams);
   {      
-    getRows(pdata->con_dof,q_ddot_des,pdata->q_ddot_des_con);
     if (nc > 0) {
-      getCols(pdata->con_dof,pdata->J.topRows(2),pdata->J_con);
-      getCols(pdata->con_dof,pdata->Jdot.topRows(2),pdata->Jdot_con);
+      // NOTE: moved Hqp calcs below, because I compute the inverse directly for FastQP (and sparse Hqp for gurobi)
 
-      // Q(1:nq_con,1:nq_con) = Hqp_con in the matlab code
+      pdata->fqp = (C_ls*xlimp).transpose()*Qy*D_ls*pdata->J_xy;
+      pdata->fqp += (pdata->Jdot_xy*qdvec).transpose()*R_DQyD_ls*pdata->J_xy;
+      pdata->fqp += (S*x_bar + 0.5*s1).transpose()*B_ls*pdata->J_xy;
+      pdata->fqp -= u0.transpose()*R_DQyD_ls*pdata->J_xy;
+      pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
+      pdata->fqp -= pdata->w*q_ddot_des.transpose();
 
-      // NOTE: moved Hqp_con calcs below, because I compute the inverse directly for FastQP (and sparse Hqp_con for gurobi)
-
-      pdata->fqp_con = (C_ls*xlimp).transpose()*Qy*D_ls*pdata->J_con;
-      pdata->fqp_con += (pdata->Jdot_con*pdata->qd_con).transpose()*R_DQyD_ls*pdata->J_con;
-      pdata->fqp_con += (S*x_bar + 0.5*s1).transpose()*B_ls*pdata->J_con;
-      pdata->fqp_con -= u0.transpose()*R_DQyD_ls*pdata->J_con;
-      pdata->fqp_con -= y0.transpose()*Qy*D_ls*pdata->J_con;
-      pdata->fqp_con -= pdata->w*pdata->q_ddot_des_con.transpose();
-
-      // obj(1:nq_con) = fqp_con
-      f.topRows(nq_con) = pdata->fqp_con.transpose();
+      // obj(1:nq) = fqp
+      f.head(nq) = pdata->fqp.transpose();
      } else {
-      // obj(1:nq_con) = -qddot_des_con
-      f.topRows(nq_con) = -pdata->q_ddot_des_con;
+      // obj(1:nq) = -qddot_des
+      f.head(nq) = -q_ddot_des;
     } 
   }
-  f.bottomRows(nu_con+nf+neps) = VectorXd::Zero(nu_con+nf+neps);
+  f.tail(nf+neps) = VectorXd::Zero(nf+neps);
 
-  //  vector< Map<MatrixXd> > QinvBlkDiag;  // nq, nu, nf, neps  // this one is for fastQP
-  //  QinvBlkDiag[0] = Map<MatrixXd>(Qinvnq.data(),nq_con,nq_con);
-  //  QinvBlkDiag[1] = Map<MatrixXd>(pdata->Rdiaginv.data(),nu_con,1);      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
-  //  	QinvBlkDiag[2] = Map<MatrixXd>(Qinvnfdiag.data(),nf,1);
-  //  	QinvBlkDiag[3] = Map<MatrixXd>(Qinvneps.data(),neps,1);     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
-
-
-  MatrixXd Aeq(nq_con+neps,nparams);
-  Aeq.topRightCorner(nq_con+neps,neps) = MatrixXd::Zero(nq_con+neps,neps);  // note: obvious sparsity here
-  VectorXd beq(nq_con+neps);
+  MatrixXd Aeq(6+neps,nparams);
+  Aeq.topRightCorner(6+neps,neps) = MatrixXd::Zero(6+neps,neps);  // note: obvious sparsity here
+  VectorXd beq(6+neps);
   
-  { // constrained dynamics
-    //  H*qdd - B*u - J*lambda - Dbar*beta = -C
-    MatrixXd H_con_con(nq_con,nq_con), H_con_free(nq_con,nq_free);
-    getCols(pdata->con_dof,pdata->H_con,H_con_con);
-    Aeq.topLeftCorner(nq_con,nq_con) = H_con_con;  // Aeq(1:nq_con,1:nq_con) = H_con_con
-    Aeq.block(0,nq_con,nq_con,nu_con) = -pdata->B_con;
-    beq.topRows(nq_con) = -pdata->C_con;
+  // constrained floating base dynamics
+  //  H_float*qdd - J_float'*lambda - Dbar_float*beta = -C_float
+  Aeq.topLeftCorner(6,nq) = pdata->H_float;
+  beq.topRows(6) = -pdata->C_float;
     
-    if (nc>0) {
-      Aeq.block(0,nq_con+nu_con,nq_con,nc) = -Jz_con.transpose();
-      Aeq.block(0,nq_con+nu_con+nc,nq_con,nc*nd) = -D_con;
-    }
-    if (nq_free>0) {
-      getCols(pdata->free_dof,pdata->H_con,H_con_free);
-      beq.topRows(nq_con) -= H_con_free*pdata->qdd_free;
-    }      
+  if (nc>0) {
+    Aeq.block(0,nq,6,nc) = -Jz_float.transpose();
+    Aeq.block(0,nq+nc,6,nc*nd) = -D_float;
   }
-
+  
   if (nc > 0) {
     // relative acceleration constraint
-    Aeq.bottomLeftCorner(neps,nq_con) = Jp_con;
-    Aeq.block(nq_con,nq_con,neps,nu_con+nf) = MatrixXd::Zero(neps,nu_con+nf);  // note: obvious sparsity here
+    Aeq.bottomLeftCorner(neps,nq) = Jp;
+    Aeq.block(6,nq,neps,nf) = MatrixXd::Zero(neps,nf);  // note: obvious sparsity here
     Aeq.bottomRightCorner(neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
-    beq.bottomRows(neps) = (-Jpdot_con - 1.0*Jp_con)*pdata->qd_con;
+    beq.bottomRows(neps) = (-Jpdot - 1.0*Jp)*qdvec;
   }    
 
-  MatrixXd Ain = MatrixXd::Zero(nc,nparams);  // note: obvious sparsity here
-  VectorXd bin = VectorXd::Zero(nc);
+  MatrixXd Ain = MatrixXd::Zero(2*nu+nc,nparams);  // note: obvious sparsity here
+  VectorXd bin = VectorXd::Zero(2*nu+nc);
+  
+  // linear input saturation constraints
+  // u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
+  // using transpose instead of inverse because B is orthogonal
+  Ain.topLeftCorner(nu,nq) = pdata->B_act.transpose()*pdata->H_act;
+  Ain.block(0,nq,nu,nc) = -pdata->B_act.transpose()*Jz_act.transpose();
+  Ain.block(0,nq+nc,nu,nc*nd) = -pdata->B_act.transpose()*D_act;
+  bin.head(nu) = -pdata->B_act.transpose()*pdata->C_act + pdata->umax;
+
+  Ain.block(nu,0,nu,nparams) = -1*Ain.block(0,0,nu,nparams);
+  bin.segment(nu,nu) = pdata->B_act.transpose()*pdata->C_act - pdata->umin;
+
   if (nc>0) {
     // linear friction constraints
     int cind[1+nd];
     for (i=0; i<nc; i++) {
       // -mu*lambda[i] + sum(beta[i]s) <= 0
-      Ain(i,nq_con+nu_con+i) = -mu;
-      for (j=0; j<nd; j++) Ain(i,nq_con+nu_con+nc+i*nd+j) = 1;
+      Ain(2*nu+i,nq+i) = -mu;
+      for (j=0; j<nd; j++) Ain(2*nu+i,nq+nc+i*nd+j) = 1;
     }
   }
 
@@ -677,56 +561,52 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   // set obj,lb,up
   VectorXd lb(nparams), ub(nparams);
-  lb.head(nq_con) = -1e3*VectorXd::Ones(nq_con);
-  ub.head(nq_con) = 1e3*VectorXd::Ones(nq_con);
-  lb.segment(nq_con,nu_con) = pdata->umin_con;
-  ub.segment(nq_con,nu_con) = pdata->umax_con;
-  lb.segment(nq_con+nu_con,nf) = VectorXd::Zero(nf);
-  ub.segment(nq_con+nu_con,nf) = 500*VectorXd::Ones(nf);
+  lb.head(nq) = -1e3*VectorXd::Ones(nq);
+  ub.head(nq) = 1e3*VectorXd::Ones(nq);
+  lb.segment(nq,nf) = VectorXd::Zero(nf);
+  ub.segment(nq,nf) = 500*VectorXd::Ones(nf);
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
   VectorXd alpha(nparams);
 
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
-  vector< MatrixXd* > QBlkDiag( nc>0 ? 4 : 2 );  // nq, nu, nf, neps   // this one is for gurobi
+  vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
 #ifdef USE_FAST_QP
   { // set up and call fastqp
 
-  	//    We want Hqp_con inverse, which I can compute efficiently using the
+  	//    We want Hqp inverse, which I can compute efficiently using the
   	//    matrix inversion lemma (see wikipedia):
   	//    inv(A + U'CV) = inv(A) - inv(A)*U* inv([ inv(C)+ V*inv(A)*U ]) V inv(A)
-  	//     but inv(A) is 1/w*eye(nq_con), so I can reduce this to:
-  	//        = 1/w ( eye(nq_con) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
+  	//     but inv(A) is 1/w*eye(nq), so I can reduce this to:
+  	//        = 1/w ( eye(nq) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
   	if (nc>0) {
   		double wi = 1/(pdata->w + REG);
-			pdata->Hqp_con = wi*MatrixXd::Identity(nq_con,nq_con);
+			pdata->Hqp = wi*MatrixXd::Identity(nq,nq);
   		if (R_DQyD_ls.trace()>1e-15) // R_DQyD_ls is not zero
-  			pdata->Hqp_con -=  wi*wi*pdata->J_con.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_con*pdata->J_con.transpose()).inverse()*pdata->J_con;
+  			pdata->Hqp -=  wi*wi*pdata->J_xy.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_xy*pdata->J_xy.transpose()).inverse()*pdata->J_xy;
   	} else {
-    	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1/(1+REG));
+    	pdata->Hqp = MatrixXd::Constant(nq,1,1/(1+REG));
   	}
 
 	#ifdef TEST_FAST_QP
-  	MatrixXd Hqp_con_test(nq_con,nq_con) = (pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con + (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con)).inverse();
-  	if (((Hqp_con_test-pdata->Hqp_con).abs()).maxCoeff() > 1e-6)
+  	MatrixXd Hqp_test(nq,nq) = (pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy + (pdata->w+REG)*MatrixXd::Identity(nq,nq)).inverse();
+  	if (((Hqp_test-pdata->Hqp).abs()).maxCoeff() > 1e-6)
   		mexErrMsgIdAndTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
 	#endif
-
 
     Qnfdiag = MatrixXd::Constant(nf,1,1/REG);
     Qneps = MatrixXd::Constant(neps,1,1/(.001+REG));
 
-    QBlkDiag[0] = &pdata->Hqp_con;
-    QBlkDiag[1] = &pdata->Rdiaginv;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+    QBlkDiag[0] = &pdata->Hqp;
     if (nc>0) {
-    	QBlkDiag[2] = &Qnfdiag;
-    	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+    	QBlkDiag[1] = &Qnfdiag;
+    	QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
-    MatrixXd Ain_lb_ub(nc+2*nparams,nparams);
-    VectorXd bin_lb_ub(nc+2*nparams);
+    MatrixXd Ain_lb_ub(2*nu+nc+2*nparams,nparams);
+    VectorXd bin_lb_ub(2*nu+nc+2*nparams);
     Ain_lb_ub << Ain, 			     // note: obvious sparsity here
     		-MatrixXd::Identity(nparams,nparams),
     		MatrixXd::Identity(nparams,nparams);
@@ -741,21 +621,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (info<0) {
 		// now set up gurobi:
     if (nc > 0) {
-      pdata->Hqp_con = pdata->J_con.transpose()*R_DQyD_ls*pdata->J_con;          // note: only needed for gurobi call (could pull it down)
-      pdata->Hqp_con += (pdata->w+REG)*MatrixXd::Identity(nq_con,nq_con);
+      pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;          // note: only needed for gurobi call (could pull it down)
+      pdata->Hqp += (pdata->w+REG)*MatrixXd::Identity(nq,nq);
     } else {
-      // Q(1:nq_con,1:nq_con) = eye(nq_con)
-    	pdata->Hqp_con = MatrixXd::Constant(nq_con,1,1+REG);
+      // Q(1:nq,1:nq) = eye(nq)
+    	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
     }
 
     Qnfdiag = MatrixXd::Constant(nf,1,REG);
     Qneps = MatrixXd::Constant(neps,1,.001+REG);
 
-    QBlkDiag[0] = &pdata->Hqp_con;
-    QBlkDiag[1] = &pdata->Rdiag;      // quadratic input cost Q(nq_con+(1:nu_con),nq_con+(1:nu_con))=R
+    QBlkDiag[0] = &pdata->Hqp;
     if (nc>0) {
-    	QBlkDiag[2] = &Qnfdiag;
-    	QBlkDiag[3] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+    	QBlkDiag[1] = &Qnfdiag;
+    	QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
@@ -766,44 +645,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 
   //----------------------------------------------------------------------
-  // Solve for free inputs -----------------------------------------------
+  // Solve for inputs ----------------------------------------------------
   VectorXd y(nu);
-  VectorXd qdd(nq);
-  if (nq_free > 0) {
-    set<int>::iterator iter;
-    i=0;
-    for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++)
-      qdd(*iter) = pdata->qdd_free(i++);
-    i=0;
-    for (iter=pdata->con_dof.begin(); iter!=pdata->con_dof.end(); iter++)
-      qdd(*iter) = alpha(i++);
-  
-    VectorXd u_free = pdata->B_free.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_free*qdd + pdata->C_free);
+  VectorXd qdd = alpha.head(nq);
+  VectorXd lambda = alpha.segment(nq,nc);
+  VectorXd beta = alpha.segment(nq+nc,nc*nd);
 
-    i=0;
-    for (iter=pdata->free_inputs.begin(); iter!=pdata->free_inputs.end(); iter++)
-      y(*iter) = u_free(i++);
-    i=0;
-    for (iter=pdata->con_inputs.begin(); iter!=pdata->con_inputs.end(); iter++) {
-      y(*iter) = alpha(nq_con + i);
-      i++;
-    }    
-    
-    // saturate inputs
-    ArrayXd tmp = pdata->umin.max(y.array());
-    y = tmp.min(pdata->umax).matrix();
-  } else {
-    y = alpha.segment(nq,nu);
-    qdd = alpha.segment(0,nq);
-  }
-
+  // use transpose because B_act is orthogonal
+  y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
+  //y = pdata->B_act.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
   
   if (nlhs>0) plhs[0] = eigenToMatlab(y);
 
   if (nlhs>1) {
     double Vdot;
     if (nc>0) 
-      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot.topRows(2)*qdvec + pdata->J.topRows(2)*qdd));
+      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd));
     else
       Vdot = 0;
     plhs[1] = mxCreateDoubleScalar(Vdot);
