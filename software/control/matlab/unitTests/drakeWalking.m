@@ -1,6 +1,5 @@
 function drakeWalking(use_mex)
 
-
 use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
 use_state_corrupter = false;
 

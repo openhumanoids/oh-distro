@@ -39,13 +39,6 @@ classdef StandingManipController < DRCController
       options.slack_limit = 30.0;
       options.w = 0.01;
       options.lcm_foot_contacts = true;
-      options.full_body_opt = false; % if false, doesn't include arms/neck in QP solve (faster)
-      nu=getNumInputs(r);
-      options.R = 1e-12*eye(nu);
-      input_names = r.getInputFrame.coordinates;
-      ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
-      ankle_idx = find(ankle_idx);
-      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
       

@@ -2,7 +2,6 @@ classdef WalkingController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
-    ;
   end
   
   methods
@@ -37,7 +36,6 @@ classdef WalkingController < DRCController
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
       if ~isfield(options,'lcm_foot_contacts') options.lcm_foot_contacts = true; end
-      if ~isfield(options,'full_body_opt') options.full_body_opt = false; end
       if ~isfield(options,'bipedal') options.bipedal = true; end
       
       if isfield(options,'use_walking_pd')
@@ -49,13 +47,6 @@ classdef WalkingController < DRCController
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.01;
-      nu=getNumInputs(r);
-      options.R = 1e-12*eye(nu);
-      input_names = r.getInputFrame.coordinates;
-      ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
-      ankle_idx = find(ankle_idx);
-      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
-
       qp = QPController(r,ctrl_data,options);
       
       if options.use_walking_pd
@@ -170,7 +161,6 @@ classdef WalkingController < DRCController
       fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
       fclose(fid);
       matdata = load(tmp_fname);
-      if ~isnumeric(matdata.s2) matdata.s2 = 0; end   % we're not using it currently
       obj.controller_data.setField('s2',matdata.s2);
       
       support_times = msg_data.support_times;

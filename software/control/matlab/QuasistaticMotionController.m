@@ -44,7 +44,6 @@ classdef QuasistaticMotionController < DRCController
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.01;
-      options.R = 1e-50*eye(getNumInputs(r));
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
 
@@ -133,7 +132,7 @@ classdef QuasistaticMotionController < DRCController
         
         obj.controller_data.setField('S',cdata.S);
         obj.controller_data.setField('s1',cdata.s1);
-        obj.controller_data.setField('s2',0);
+        obj.controller_data.setField('s2',cdata.s1);
         obj.controller_data.setField('qtraj',cdata.qtraj);
         obj.controller_data.setField('comtraj',cdata.comtraj);
         obj.controller_data.setField('supports',cdata.supports);
