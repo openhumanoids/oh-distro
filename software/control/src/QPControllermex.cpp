@@ -33,7 +33,6 @@
 #include "RigidBodyManipulator.h"
 
 const int m_surface_tangents = 2;  // number of faces in the friction cone approx
-//const double mu = 1.0;  // coefficient of friction
 const double REG = 1e-8;
 
 using namespace std;
@@ -41,7 +40,7 @@ using namespace std;
 struct QPControllerData {
   GRBenv *env;
   RigidBodyManipulator* r;
-  RigidBodyManipulator* multi_robot;
+  void* multi_robot; // optional multi rigid body system
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
   VectorXd umin,umax;
@@ -70,8 +69,6 @@ mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
   return pm;
 }
 
-
-
 mxArray* myGetProperty(const mxArray* pobj, const char* propname)
 {
   mxArray* pm = mxGetProperty(pobj,0,propname);
@@ -90,6 +87,7 @@ typedef struct _support_state_element
 {
   int body_idx;
   set<int> contact_pt_inds;
+  int contact_surface;
 } SupportStateElement;
 
 
@@ -140,7 +138,6 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
     pos << contact_pos.topRows(2), terrain_height;
     if (normal) *normal << 0,0,1;
   }
-  // just assume mu = 1 for now
 }
 
 void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents> & d)
@@ -163,7 +160,7 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
   }
 }
 
-int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, VectorXd &phi,double terrain_height)
+int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, VectorXd &phi, double terrain_height)
 {
   RigidBody* b = &(pdata->r->bodies[supp.body_idx]);
 	int nc = supp.contact_pt_inds.size();
@@ -171,16 +168,35 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
 
 	if (nc<1) return nc;
 
-  Vector3d contact_pos,pos,normal; Vector4d tmp;
+  Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
 
   int i=0;
   for (set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
   	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
-		tmp = b->contact_pts.col(*pt_iter);
-		pdata->r->forwardKin(supp.body_idx,tmp,0,contact_pos);
-		collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
 
-		pos -= contact_pos;  // now -rel_pos in matlab version
+    if (supp.contact_surface!=-1 && pdata->multi_robot) {
+      // do bullet rigid body collision check
+
+      auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
+      
+      if (supp.contact_surface < -1) {
+        // check entire world
+        multi_robot->getPointCollision(supp.body_idx,*pt_iter,pos,posB,normal);
+      }
+      else {
+        // do pairwise check with specified contact surface
+        multi_robot->getPairwisePointCollision(supp.body_idx,supp.contact_surface,*pt_iter,pos,posB,normal);
+      }
+      
+      pos = posB-pos; // now -rel_pos in matlab version
+    }
+    else {
+      tmp = b->contact_pts.col(*pt_iter);
+      pdata->r->forwardKin(supp.body_idx,tmp,0,contact_pos);
+      collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
+      pos -= contact_pos;  // now -rel_pos in matlab version
+    }
+  
 		phi(i) = pos.norm();
 		if (pos.dot(normal)>0)
 			phi(i)=-phi(i);
@@ -193,13 +209,12 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
 {
   int i, j, k=0, nq = pdata->r->num_dof;
 
-//  phi.resize(nc);
   n.resize(nc,nq);
   D.resize(nq,nc*2*m_surface_tangents);
   Jp.resize(3*nc,nq);
   Jpdot.resize(3*nc,nq);
   
-  Vector3d contact_pos,pos,normal; Vector4d tmp;
+  Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
   MatrixXd J(3,nq);
   Matrix<double,3,m_surface_tangents> d;
   
@@ -207,18 +222,27 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
     RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
     if (nc>0) {
       for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
-      	int pt_iter_val = *pt_iter;
       	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         pdata->r->forwardJac(iter->body_idx,tmp,0,J);
 
-        collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
-        
-// phi not being used right now
-//        pos -= contact_pos;  // now -rel_pos in matlab version
-//        phi(k) = pos.norm();
-//        if (pos.dot(normal)>0) phi(k)=-phi(k);
+        if (iter->contact_surface!=-1 && pdata->multi_robot) {
+          // do bullet rigid body collision check
+          auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
+
+          if (iter->contact_surface < -1) {
+            // check entire world
+            multi_robot->getPointCollision(iter->body_idx,(int)*pt_iter,pos,posB,normal);
+          }
+          else {
+            // do pairwise check with specified contact surface
+            multi_robot->getPairwisePointCollision(iter->body_idx,iter->contact_surface,*pt_iter,pos,posB,normal);
+          }
+        }
+        else {
+          collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
+        }
 
         surfaceTangents(normal,d);
 
@@ -295,7 +319,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     // get the multi-robot ptr back from matlab
     if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
-    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the map ptr");
+    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
     memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
 
     // create gurobi environment
@@ -359,6 +383,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
+  double *q_multi = mxGetPr(prhs[narg++]);
   
   int desired_support_argid = narg++;
   
@@ -385,7 +410,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==1);
   Map< Vector4d > s1(mxGetPr(prhs[narg++]));
-  
+
+  assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==1);
+  Map< Vector4d > s1dot(mxGetPr(prhs[narg++]));
+
+  double s2dot = mxGetScalar(prhs[narg++]);
+
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==1);
   Map< Vector4d > x0(mxGetPr(prhs[narg++]));
 
@@ -407,6 +437,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
   pdata->r->doKinematics(q,false,qd);
+
+  if (pdata->multi_robot) {
+    auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
+    multi_robot->doKinematics(q_multi,false);
+  }
   
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
@@ -420,6 +455,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double* pBodies = mxGetPr(mxBodies);
     mxArray* mxContactPts = mxGetProperty(prhs[desired_support_argid],0,"contact_pts");
     if (!mxContactPts) mexErrMsgTxt("couldn't get contact points");
+    mxArray* mxContactSurfaces = mxGetProperty(prhs[desired_support_argid],0,"contact_surfaces");
+    if (!mxContactSurfaces) mexErrMsgTxt("couldn't get contact surfaces");
+    double* pContactSurfaces = mxGetPr(mxContactSurfaces);
+    
     for (i=0; i<mxGetNumberOfElements(mxBodies);i++) {
       mxArray* mxBodyContactPts = mxGetCell(mxContactPts,i);
       int nc = mxGetNumberOfElements(mxBodyContactPts);
@@ -432,6 +471,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 //      	mexPrintf("adding pt %d to body %d\n", (int)pr[j]-1, se.body_idx);
         se.contact_pt_inds.insert((int)pr[j]-1);
       }
+      se.contact_surface = (int) pContactSurfaces[i]-1;
       
       if (contact_threshold == -1) { // ignore terrain
         if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
@@ -660,7 +700,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (nlhs>1) {
     double Vdot;
     if (nc>0) 
-      Vdot = (2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd));
+      // note: Sdot is 0 for ZMP/double integrator dynamics, so we omit that term here
+      Vdot = ((2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd)) + s1dot.transpose()*x_bar)(0) + s2dot;
     else
       Vdot = 0;
     plhs[1] = mxCreateDoubleScalar(Vdot);

@@ -162,10 +162,10 @@ classdef QPController < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      if obj.multi_robot==0
-        multi_robot_ptr = 0;
+      if isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+        multi_robot_ptr = obj.multi_robot.getMexModelPtr.ptr;
       else
-        multi_robot_ptr = obj.robot.getMexModelPtr.data;
+        multi_robot_ptr = 0;
       end
       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
     end
@@ -215,16 +215,17 @@ classdef QPController < MIMODrakeSystem
       assert(isnumeric(ctrl_data.u0));
       if ctrl_data.is_time_varying
         assert(isa(ctrl_data.s1,'Trajectory'));
+        assert(isa(ctrl_data.s2,'Trajectory'));
         assert(isa(ctrl_data.y0,'Trajectory'));
       else
         assert(isnumeric(ctrl_data.s1));
+        assert(isnumeric(ctrl_data.s2));
         assert(isnumeric(ctrl_data.y0));
 %        sizecheck(ctrl_data.supports,1);  % this gets initialized to zero
 %        in constructors.. but doesn't get used.  would be better to
 %        enforce it.
       end       
       sizecheck(ctrl_data.s1,[4 1]);
-      assert(isnumeric(ctrl_data.s2));
       sizecheck(ctrl_data.s2,1);
       assert(isnumeric(ctrl_data.mu));
       assert(islogical(ctrl_data.ignore_terrain));
@@ -255,7 +256,7 @@ classdef QPController < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-    q_multi = [];
+    q_multi = q;
     for i=1:obj.num_state_frames-1
       xi = varargin{3+i};
       q_multi = [q_multi; xi(1:end/2)];
@@ -270,11 +271,16 @@ classdef QPController < MIMODrakeSystem
     C_ls = ctrl_data.C;
     D_ls = ctrl_data.D;
     S = ctrl_data.S;
-    s2 = ctrl_data.s2;
+    Sdot = 0*S; % constant for ZMP/double integrator dynamics
     x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
       s1 = fasteval(ctrl_data.s1,t);
+%       s2 = fasteval(ctrl_data.s2,t);
+%       s1dot = ctrl_data.s1.deriv(t); % deriv not implemented yet
+%       s2dot = ctrl_data.s2.deriv(t); % deriv not implemented yet
+      s1dot = 0*s1;
+      s2dot = 0;
       y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       
       %----------------------------------------------------------------------
@@ -283,6 +289,9 @@ classdef QPController < MIMODrakeSystem
       supp = ctrl_data.supports(supp_idx);
     else
       s1 = ctrl_data.s1;
+%       s2 = ctrl_data.s2;
+      s1dot = 0*s1;
+      s2dot = 0;
       y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       
       supp = ctrl_data.supports;
@@ -302,14 +311,6 @@ classdef QPController < MIMODrakeSystem
       end
     end
     
-    %----------------------------------------------------------------------
-    % check for cases that I haven't implemented yet in mex
-    if (obj.use_mex~=0)  
-      if any(supp.contact_surfaces~=0)
-        error('multi-robot contact not supported by mex version yet');
-      end
-    end
-    
     contact_threshold = 0.001; % a point is considered to be in contact if within this distance
     if (obj.use_mex==0 || obj.use_mex==2)
 
@@ -323,7 +324,7 @@ classdef QPController < MIMODrakeSystem
       kinsol = doKinematics(r,q,false,true);
 
       if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        kinsol_multi = doKinematics(obj.multi_robot,[q;q_multi],false,true); % for now assume the same state frame
+        kinsol_multi = doKinematics(obj.multi_robot,q_multi,false,true); % for now assume the same state frame
       end
       
       % get active contacts
@@ -629,8 +630,9 @@ classdef QPController < MIMODrakeSystem
       
       % compute V,Vdot for controller status updates
       if (nc>0)
-        V = x_bar'*S*x_bar + s1'*x_bar + s2;
-        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd));
+        %V = x_bar'*S*x_bar + s1'*x_bar + s2;
+        % note for ZMP dynamics, S is constant so Sdot=0
+        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
       end
       
     end
@@ -644,8 +646,7 @@ classdef QPController < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
-      V = 0; % don't compute V for mex yet (will we ever use this?)
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
     end
 
     if ~isempty(active_supports)
@@ -663,7 +664,7 @@ classdef QPController < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
       valuecheck(active_supports_mex,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
       valuecheck(gobj,model.obj,1e-12);
