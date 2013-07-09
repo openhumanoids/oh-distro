@@ -174,6 +174,7 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
   for (set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
   	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
 
+    #ifdef BULLET_COLLISION
     if (supp.contact_surface!=-1 && pdata->multi_robot) {
       // do bullet rigid body collision check
 
@@ -191,11 +192,14 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
       pos = posB-pos; // now -rel_pos in matlab version
     }
     else {
+    #endif
       tmp = b->contact_pts.col(*pt_iter);
       pdata->r->forwardKin(supp.body_idx,tmp,0,contact_pos);
       collisionDetect(pdata->map_ptr,contact_pos,pos,NULL,terrain_height);
       pos -= contact_pos;  // now -rel_pos in matlab version
+    #ifdef BULLET_COLLISION
     }
+    #endif
   
 		phi(i) = pos.norm();
 		if (pos.dot(normal)>0)
@@ -227,6 +231,7 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
         pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         pdata->r->forwardJac(iter->body_idx,tmp,0,J);
 
+        #ifdef BULLET_COLLISION
         if (iter->contact_surface!=-1 && pdata->multi_robot) {
           // do bullet rigid body collision check
           auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
@@ -241,8 +246,11 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
           }
         }
         else {
+        #endif
           collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
+        #ifdef BULLET_COLLISION
         }
+        #endif
 
         surfaceTangents(normal,d);
 
@@ -438,10 +446,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   pdata->r->doKinematics(q,false,qd);
 
+  #ifdef BULLET_COLLISION
   if (pdata->multi_robot) {
     auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
     multi_robot->doKinematics(q_multi,false);
   }
+  #endif
   
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
