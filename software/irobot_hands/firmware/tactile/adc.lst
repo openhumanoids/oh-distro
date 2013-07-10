@@ -1,0 +1,416 @@
+   1               		.file	"adc.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  13               	.global	captureSweep
+  15               	captureSweep:
+  16               	.LFB5:
+  17               		.file 1 "adc.c"
+   1:adc.c         **** /****************************************************
+   2:adc.c         **** 
+   3:adc.c         ****  // Author:            Zachary Clifford
+   4:adc.c         ****  // File Name:        C1482-SRC-TACMCU-0_adc.c
+   5:adc.c         ****  // Creation Date:    24 February, 2012
+   6:adc.c         ****  // Revision:        00
+   7:adc.c         ****  // Hardware:        ATxmega32A4U
+   8:adc.c         ****  // Description:    ADC driver
+   9:adc.c         **** 
+  10:adc.c         **** ****************************************************/
+  11:adc.c         **** 
+  12:adc.c         **** /******************************************************************************
+  13:adc.c         ****     File Revision History:
+  14:adc.c         **** -------------------------------------------------------------------------------
+  15:adc.c         **** Revision    Date        Engineer    Description
+  16:adc.c         **** --------    --------    --------    -------------------------------------------
+  17:adc.c         **** 00            MM/DD/YY    ZAC            Initial Release
+  18:adc.c         **** -------------------------------------------------------------------------------
+  19:adc.c         **** 
+  20:adc.c         **** ******************************************************************************/
+  21:adc.c         **** 
+  22:adc.c         **** #include <avr/io.h>
+  23:adc.c         **** #include <avr/interrupt.h>
+  24:adc.c         **** #include <stddef.h>
+  25:adc.c         **** #include <avr/pgmspace.h>
+  26:adc.c         **** #include <math.h>
+  27:adc.c         **** 
+  28:adc.c         **** static void calibrateADC(void);
+  29:adc.c         **** static uint8_t ReadCalibrationByte(uint8_t index);
+  30:adc.c         **** 
+  31:adc.c         **** static int16_t ADCCurrentCalibration;
+  32:adc.c         **** 
+  33:adc.c         **** 
+  34:adc.c         **** 
+  35:adc.c         **** /************************************************************************
+  36:adc.c         **** * ReadCalibrationByte
+  37:adc.c         **** *
+  38:adc.c         **** * Library code from Atmel for reading the ADC calibration byte from the
+  39:adc.c         **** * production signature row.  This is required for the ADC to achieve
+  40:adc.c         **** * its full specification.
+  41:adc.c         **** ************************************************************************/
+  42:adc.c         **** static uint8_t ReadCalibrationByte(uint8_t index)
+  43:adc.c         **** {
+  44:adc.c         ****     uint8_t result;
+  45:adc.c         **** 
+  46:adc.c         ****     // Load the NVM Command register to read the calibration row.
+  47:adc.c         ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+  48:adc.c         ****     result = pgm_read_byte(index);
+  49:adc.c         **** 
+  50:adc.c         ****     //Clean up NVM Command register.
+  51:adc.c         ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+  52:adc.c         **** 
+  53:adc.c         ****     return result;
+  54:adc.c         **** }
+  55:adc.c         **** 
+  56:adc.c         **** /************************************************************************
+  57:adc.c         **** * calibrateCurrentADC
+  58:adc.c         **** *
+  59:adc.c         **** * Assumes that the motor is inactive.
+  60:adc.c         **** * Captures a few samples of the ADC, averages them, and stores an
+  61:adc.c         **** * appropriate offset estimation for calibration
+  62:adc.c         **** ************************************************************************/
+  63:adc.c         **** static void calibrateADC(void)
+  64:adc.c         **** {
+  65:adc.c         ****     int i=0;
+  66:adc.c         ****     int32_t calibrationAccumulator=0;
+  67:adc.c         ****     while(i<16)
+  68:adc.c         ****     {
+  69:adc.c         ****         if(ADCA.INTFLAGS & ADC_CH1IF_bm)
+  70:adc.c         ****         {
+  71:adc.c         ****             ADCA.INTFLAGS = ADC_CH1IF_bm;
+  72:adc.c         ****             calibrationAccumulator += ADCA.CH1RES;
+  73:adc.c         ****             i++;
+  74:adc.c         ****         }
+  75:adc.c         ****     }
+  76:adc.c         ****     ADCCurrentCalibration = round((float) calibrationAccumulator / 16.0);
+  77:adc.c         ****     return;
+  78:adc.c         **** }
+  79:adc.c         **** 
+  80:adc.c         **** void captureSweep(int16_t *outputData)
+  81:adc.c         **** {
+  18               		.loc 1 81 0
+  19               		.cfi_startproc
+  20               	.LVL0:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	/* stack size = 0 */
+  24               	.L__stack_usage = 0
+  25 0000 FC01      		movw r30,r24
+  82:adc.c         ****     ADCA.CTRLA |= ADCA.CTRLA & (ADC_CH3START_bm | ADC_CH2START_bm | ADC_CH1START_bm | ADC_CH0START_
+  26               		.loc 1 82 0
+  27 0002 9091 0002 		lds r25,512
+  28 0006 8091 0002 		lds r24,512
+  29               	.LVL1:
+  30 000a 8D73      		andi r24,lo8(61)
+  31 000c 892B      		or r24,r25
+  32 000e 8093 0002 		sts 512,r24
+  33               	.L2:
+  83:adc.c         **** 
+  84:adc.c         ****     //Now wait for the conclusion of the sampling
+  85:adc.c         ****     while(!(ADCA.INTFLAGS & ADC_CH3IF_bm));
+  34               		.loc 1 85 0 discriminator 1
+  35 0012 8091 0602 		lds r24,518
+  36 0016 83FF      		sbrs r24,3
+  37 0018 00C0      		rjmp .L2
+  38               	.L8:
+  86:adc.c         ****     while(!(ADCA.INTFLAGS & ADC_CH2IF_bm));
+  39               		.loc 1 86 0 discriminator 1
+  40 001a 8091 0602 		lds r24,518
+  41 001e 82FF      		sbrs r24,2
+  42 0020 00C0      		rjmp .L8
+  43               	.L7:
+  87:adc.c         ****     while(!(ADCA.INTFLAGS & ADC_CH1IF_bm));
+  44               		.loc 1 87 0 discriminator 1
+  45 0022 8091 0602 		lds r24,518
+  46 0026 81FF      		sbrs r24,1
+  47 0028 00C0      		rjmp .L7
+  48               	.L6:
+  88:adc.c         ****     while(!(ADCA.INTFLAGS & ADC_CH0IF_bm));
+  49               		.loc 1 88 0 discriminator 1
+  50 002a 8091 0602 		lds r24,518
+  51 002e 80FF      		sbrs r24,0
+  52 0030 00C0      		rjmp .L6
+  89:adc.c         **** 
+  90:adc.c         ****     //Sampling complete
+  91:adc.c         ****     outputData[0] = ADCA.CH0RES;
+  53               		.loc 1 91 0
+  54 0032 8091 1002 		lds r24,528
+  55 0036 9091 1102 		lds r25,528+1
+  56 003a 8083      		st Z,r24
+  57 003c 9183      		std Z+1,r25
+  92:adc.c         ****     outputData[1] = ADCA.CH1RES;
+  58               		.loc 1 92 0
+  59 003e 8091 1202 		lds r24,530
+  60 0042 9091 1302 		lds r25,530+1
+  61 0046 8283      		std Z+2,r24
+  62 0048 9383      		std Z+3,r25
+  93:adc.c         ****     outputData[2] = ADCA.CH2RES;
+  63               		.loc 1 93 0
+  64 004a 8091 1402 		lds r24,532
+  65 004e 9091 1502 		lds r25,532+1
+  66 0052 8483      		std Z+4,r24
+  67 0054 9583      		std Z+5,r25
+  94:adc.c         ****     outputData[3] = ADCA.CH3RES;
+  68               		.loc 1 94 0
+  69 0056 8091 1602 		lds r24,534
+  70 005a 9091 1702 		lds r25,534+1
+  71 005e 8683      		std Z+6,r24
+  72 0060 9783      		std Z+7,r25
+  95:adc.c         **** 
+  96:adc.c         ****     ADCA.INTFLAGS = ADC_CH3IF_bm | ADC_CH2IF_bm | ADC_CH1IF_bm | ADC_CH0IF_bm;
+  73               		.loc 1 96 0
+  74 0062 8FE0      		ldi r24,lo8(15)
+  75 0064 E0E0      		ldi r30,lo8(512)
+  76 0066 F2E0      		ldi r31,hi8(512)
+  77               	.LVL2:
+  78 0068 8683      		std Z+6,r24
+  79               	/* epilogue start */
+  97:adc.c         ****     return;
+  98:adc.c         **** }
+  80               		.loc 1 98 0
+  81 006a 0895      		ret
+  82               		.cfi_endproc
+  83               	.LFE5:
+  85               	.global	configureADC
+  87               	configureADC:
+  88               	.LFB6:
+  99:adc.c         **** 
+ 100:adc.c         **** /************************************************************************
+ 101:adc.c         **** * configureADC
+ 102:adc.c         **** *
+ 103:adc.c         **** * Configure the ADC to capture the four analog inputs we care about
+ 104:adc.c         **** * in free-running sweep mode with no interrupts.
+ 105:adc.c         **** * When the PID loop is evaluated, the most recent acquisition is placed into
+ 106:adc.c         **** * a buffer for later use.
+ 107:adc.c         **** *
+ 108:adc.c         **** * Note that an internal reference is being used in this test setup.
+ 109:adc.c         **** * The production system will have an external one available.
+ 110:adc.c         **** ************************************************************************/
+ 111:adc.c         **** void configureADC(void)
+ 112:adc.c         **** {
+  89               		.loc 1 112 0
+  90               		.cfi_startproc
+  91 006c CF93      		push r28
+  92               	.LCFI0:
+  93               		.cfi_def_cfa_offset 3
+  94               		.cfi_offset 28, -2
+  95 006e DF93      		push r29
+  96               	.LCFI1:
+  97               		.cfi_def_cfa_offset 4
+  98               		.cfi_offset 29, -3
+  99               	/* prologue: function */
+ 100               	/* frame size = 0 */
+ 101               	/* stack size = 2 */
+ 102               	.L__stack_usage = 2
+ 103               	.LVL3:
+ 104               	.LBB8:
+ 105               	.LBB9:
+  47:adc.c         ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+ 106               		.loc 1 47 0
+ 107 0070 CAEC      		ldi r28,lo8(458)
+ 108 0072 D1E0      		ldi r29,hi8(458)
+ 109 0074 82E0      		ldi r24,lo8(2)
+ 110 0076 8883      		st Y,r24
+ 111               	.LVL4:
+ 112               	.LBB10:
+  48:adc.c         ****     result = pgm_read_byte(index);
+ 113               		.loc 1 48 0
+ 114 0078 E0E2      		ldi r30,lo8(32)
+ 115 007a F0E0      		ldi r31,hi8(32)
+ 116               	/* #APP */
+ 117               	 ;  48 "adc.c" 1
+ 118 007c E491      		lpm r30, Z
+ 119               		
+ 120               	 ;  0 "" 2
+ 121               	.LVL5:
+ 122               	/* #NOAPP */
+ 123               	.LBE10:
+  51:adc.c         ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+ 124               		.loc 1 51 0
+ 125 007e 1882      		st Y,__zero_reg__
+ 126               	.LBE9:
+ 127               	.LBE8:
+ 113:adc.c         ****     ADCA.CALL = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL0) );
+ 128               		.loc 1 113 0
+ 129 0080 A0E0      		ldi r26,lo8(512)
+ 130 0082 B2E0      		ldi r27,hi8(512)
+ 131 0084 1C96      		adiw r26,12
+ 132 0086 EC93      		st X,r30
+ 133 0088 1C97      		sbiw r26,12
+ 134               	.LVL6:
+ 135               	.LBB11:
+ 136               	.LBB12:
+  47:adc.c         ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+ 137               		.loc 1 47 0
+ 138 008a 8883      		st Y,r24
+ 139               	.LVL7:
+ 140               	.LBB13:
+  48:adc.c         ****     result = pgm_read_byte(index);
+ 141               		.loc 1 48 0
+ 142 008c E1E2      		ldi r30,lo8(33)
+ 143 008e F0E0      		ldi r31,hi8(33)
+ 144               	.LVL8:
+ 145               	/* #APP */
+ 146               	 ;  48 "adc.c" 1
+ 147 0090 E491      		lpm r30, Z
+ 148               		
+ 149               	 ;  0 "" 2
+ 150               	.LVL9:
+ 151               	/* #NOAPP */
+ 152               	.LBE13:
+  51:adc.c         ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+ 153               		.loc 1 51 0
+ 154 0092 1882      		st Y,__zero_reg__
+ 155               	.LBE12:
+ 156               	.LBE11:
+ 114:adc.c         ****     ADCA.CALH = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL1) );
+ 157               		.loc 1 114 0
+ 158 0094 1D96      		adiw r26,13
+ 159 0096 EC93      		st X,r30
+ 160 0098 1D97      		sbiw r26,13
+ 115:adc.c         **** 
+ 116:adc.c         ****     //CURRENT_ADC.EVCTRL = ADC_SWEEP_0123_gc | ADC_EVACT_NONE_gc;
+ 117:adc.c         **** 
+ 118:adc.c         ****     //Use the Event System to actuate sweeps
+ 119:adc.c         **** 
+ 120:adc.c         ****     EVSYS.CH3MUX = EVSYS_CHMUX_PRESCALER_8192_gc;
+ 161               		.loc 1 120 0
+ 162 009a E0E8      		ldi r30,lo8(384)
+ 163 009c F1E0      		ldi r31,hi8(384)
+ 164               	.LVL10:
+ 165 009e 9DE8      		ldi r25,lo8(-115)
+ 166 00a0 9383      		std Z+3,r25
+ 121:adc.c         ****     EVSYS.CH3CTRL = EVSYS_DIGFILT_1SAMPLE_gc;
+ 167               		.loc 1 121 0
+ 168 00a2 1386      		std Z+11,__zero_reg__
+ 122:adc.c         **** 
+ 123:adc.c         ****     ADCA.EVCTRL = ADC_SWEEP_0123_gc | ADC_EVSEL_3456_gc | ADC_EVACT_SWEEP_gc;
+ 169               		.loc 1 123 0
+ 170 00a4 9DED      		ldi r25,lo8(-35)
+ 171 00a6 1396      		adiw r26,3
+ 172 00a8 9C93      		st X,r25
+ 173 00aa 1397      		sbiw r26,3
+ 124:adc.c         **** 
+ 125:adc.c         ****     //Maximum ADC clock is 2 MHz.  This requires a prescaler of 16 on a CPU clock of 32 MHz
+ 126:adc.c         ****     ADCA.PRESCALER = ADC_PRESCALER_DIV16_gc;
+ 174               		.loc 1 126 0
+ 175 00ac 1496      		adiw r26,4
+ 176 00ae 8C93      		st X,r24
+ 177 00b0 1497      		sbiw r26,4
+ 127:adc.c         ****     //CURRENT_ADC.PRESCALER = ADC_PRESCALER_DIV256_gc;
+ 128:adc.c         **** 
+ 129:adc.c         **** #ifdef USE_INTERNAL_REF
+ 130:adc.c         ****     ADCA.REFCTRL = ADC_REFSEL_VCC_gc;
+ 131:adc.c         **** #else
+ 132:adc.c         ****     ADCA.REFCTRL = ADC_REFSEL_AREFA_gc;
+ 178               		.loc 1 132 0
+ 179 00b2 20E2      		ldi r18,lo8(32)
+ 180 00b4 1296      		adiw r26,2
+ 181 00b6 2C93      		st X,r18
+ 182 00b8 1297      		sbiw r26,2
+ 133:adc.c         **** #endif
+ 134:adc.c         **** 
+ 135:adc.c         **** #warning The ADC.CH structure is wrong in AU parts.  Just use the ADC_CH0_MUXCTRL, etc. defines ins
+ 136:adc.c         **** 
+ 137:adc.c         ****     //CH0 is Dynamic 1
+ 138:adc.c         ****     ADCA_CH0_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 183               		.loc 1 138 0
+ 184 00ba 81E0      		ldi r24,lo8(1)
+ 185 00bc 8093 2002 		sts 544,r24
+ 139:adc.c         ****     ADCA_CH0_MUXCTRL = ADC_CH_MUXPOS_PIN1_gc;
+ 186               		.loc 1 139 0
+ 187 00c0 98E0      		ldi r25,lo8(8)
+ 188 00c2 9093 2102 		sts 545,r25
+ 140:adc.c         ****     ADCA_CH0_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 189               		.loc 1 140 0
+ 190 00c6 1092 2202 		sts 546,__zero_reg__
+ 141:adc.c         **** 
+ 142:adc.c         ****     //CH1 is Dynamic 2
+ 143:adc.c         ****     ADCA_CH1_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 191               		.loc 1 143 0
+ 192 00ca 8093 2802 		sts 552,r24
+ 144:adc.c         ****     ADCA_CH1_MUXCTRL = ADC_CH_MUXPOS_PIN2_gc;
+ 193               		.loc 1 144 0
+ 194 00ce 90E1      		ldi r25,lo8(16)
+ 195 00d0 9093 2902 		sts 553,r25
+ 145:adc.c         ****     ADCA_CH1_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 196               		.loc 1 145 0
+ 197 00d4 1092 2A02 		sts 554,__zero_reg__
+ 146:adc.c         **** 
+ 147:adc.c         ****     //CH2 is Dynamic 3
+ 148:adc.c         ****     ADCA_CH2_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 198               		.loc 1 148 0
+ 199 00d8 8093 3002 		sts 560,r24
+ 149:adc.c         ****     ADCA_CH2_MUXCTRL = ADC_CH_MUXPOS_PIN3_gc;
+ 200               		.loc 1 149 0
+ 201 00dc 38E1      		ldi r19,lo8(24)
+ 202 00de 3093 3102 		sts 561,r19
+ 150:adc.c         ****     ADCA_CH2_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 203               		.loc 1 150 0
+ 204 00e2 1092 3202 		sts 562,__zero_reg__
+ 151:adc.c         **** 
+ 152:adc.c         ****     //CH3 is Dynamic 4
+ 153:adc.c         ****     ADCA_CH3_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 205               		.loc 1 153 0
+ 206 00e6 8093 3802 		sts 568,r24
+ 154:adc.c         ****     ADCA_CH3_MUXCTRL = ADC_CH_MUXPOS_PIN4_gc;
+ 207               		.loc 1 154 0
+ 208 00ea 2093 3902 		sts 569,r18
+ 155:adc.c         ****     ADCA_CH3_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 209               		.loc 1 155 0
+ 210 00ee 1092 3A02 		sts 570,__zero_reg__
+ 156:adc.c         **** 
+ 157:adc.c         ****     //Configure for Signed operation
+ 158:adc.c         ****     ADCA.CTRLB = ADC_RESOLUTION_12BIT_gc | ADC_CONMODE_bm;
+ 211               		.loc 1 158 0
+ 212 00f2 1196      		adiw r26,1
+ 213 00f4 9C93      		st X,r25
+ 214 00f6 1197      		sbiw r26,1
+ 159:adc.c         ****     ADCA.CTRLA = ADC_ENABLE_bm;
+ 215               		.loc 1 159 0
+ 216 00f8 8C93      		st X,r24
+ 217               	/* epilogue start */
+ 160:adc.c         **** 
+ 161:adc.c         ****     //Calibrate the ADC
+ 162:adc.c         ****     //calibrateADC();
+ 163:adc.c         **** 
+ 164:adc.c         ****     //Just use manual triggering for now
+ 165:adc.c         ****     //ADC_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 166:adc.c         ****     //ADC_TC.CTRLC = 0x00;
+ 167:adc.c         ****     //ADC_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 168:adc.c         ****     //ADC_TC.CTRLE = 0x00;
+ 169:adc.c         ****     //ADC_TC.PERBUF = 3125;
+ 170:adc.c         ****     //ADC_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 171:adc.c         ****     //ADC_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 172:adc.c         **** 
+ 173:adc.c         **** }
+ 218               		.loc 1 173 0
+ 219 00fa DF91      		pop r29
+ 220 00fc CF91      		pop r28
+ 221 00fe 0895      		ret
+ 222               		.cfi_endproc
+ 223               	.LFE6:
+ 225               	.Letext0:
+ 226               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 227               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+DEFINED SYMBOLS
+                            *ABS*:00000000 adc.c
+     /tmp/ccE67BmN.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccE67BmN.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccE67BmN.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccE67BmN.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccE67BmN.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccE67BmN.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccE67BmN.s:15     .text:00000000 captureSweep
+     /tmp/ccE67BmN.s:87     .text:0000006c configureADC
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

@@ -1,0 +1,14 @@
+<package>
+  <description brief="handle_description">
+
+     urdf description of the HANDLE hand
+
+  </description>
+  <author>KGENA</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_description</url>
+
+</package>
+
+

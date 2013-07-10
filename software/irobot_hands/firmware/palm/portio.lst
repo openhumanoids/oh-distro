@@ -1,0 +1,263 @@
+   1               		.file	"portio.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  13               	.global	configurePortIO
+  15               	configurePortIO:
+  16               	.LFB0:
+  17               		.file 1 "portio.c"
+   1:portio.c      **** /****************************************************
+   2:portio.c      **** 
+   3:portio.c      ****  // Author:            Zachary Clifford
+   4:portio.c      ****  // File Name:        C1482-SRC-PLMMCU-0_portio.c
+   5:portio.c      ****  // Creation Date:    24 February, 2012
+   6:portio.c      ****  // Revision:        00
+   7:portio.c      ****  // Hardware:        ATxmega128A1
+   8:portio.c      ****  // Description:    Input/Output configuration for Palm board
+   9:portio.c      **** 
+  10:portio.c      **** ****************************************************/
+  11:portio.c      **** 
+  12:portio.c      **** /******************************************************************************
+  13:portio.c      ****     File Revision History:
+  14:portio.c      **** -------------------------------------------------------------------------------
+  15:portio.c      **** Revision    Date        Engineer    Description
+  16:portio.c      **** --------    --------    --------    -------------------------------------------
+  17:portio.c      **** 00            03/06/12    ZAC            Initial Release
+  18:portio.c      **** -------------------------------------------------------------------------------
+  19:portio.c      **** 
+  20:portio.c      **** ******************************************************************************/
+  21:portio.c      **** 
+  22:portio.c      **** #include <avr/io.h>
+  23:portio.c      **** 
+  24:portio.c      **** #include "portio.h"
+  25:portio.c      **** 
+  26:portio.c      **** /************************************************************************
+  27:portio.c      **** * configurePortIO()
+  28:portio.c      **** * This function configures the peripheral I/O ports.  The direction,
+  29:portio.c      **** * default out state, and drivers are set up here.
+  30:portio.c      **** ************************************************************************/
+  31:portio.c      **** void configurePortIO(void)
+  32:portio.c      **** {
+  18               		.loc 1 32 0
+  19               		.cfi_startproc
+  20               	/* prologue: function */
+  21               	/* frame size = 0 */
+  22               	/* stack size = 0 */
+  23               	.L__stack_usage = 0
+  33:portio.c      ****     //First setup the GPIOs by port.
+  34:portio.c      **** 
+  35:portio.c      ****     //PA0 - VREF
+  36:portio.c      ****     //PA1 - 3.3VMON
+  37:portio.c      ****     //PA2 - NC
+  38:portio.c      ****     //PA3 - 12VMON
+  39:portio.c      ****     //PA4 - EXTMP_MON
+  40:portio.c      ****     //PA5 - NC
+  41:portio.c      ****     //PA6 - NC
+  42:portio.c      ****     //PA7 - 48VMON
+  43:portio.c      ****     PORTA.OUT = 0x00;
+  24               		.loc 1 43 0
+  25 0000 E0E0      		ldi r30,lo8(1536)
+  26 0002 F6E0      		ldi r31,hi8(1536)
+  27 0004 1482      		std Z+4,__zero_reg__
+  44:portio.c      ****     PORTA.DIR = 0x00;
+  28               		.loc 1 44 0
+  29 0006 1082      		st Z,__zero_reg__
+  45:portio.c      **** 
+  46:portio.c      ****     //PB0 - NC
+  47:portio.c      ****     //PB1 - NC
+  48:portio.c      ****     //PB2 - DAC1
+  49:portio.c      ****     //PB3 - NC
+  50:portio.c      ****     //PB4 - NC
+  51:portio.c      ****     //PB5 - SPARE6
+  52:portio.c      ****     //PB6 - SPARE1
+  53:portio.c      ****     //PB7 - SPARE2
+  54:portio.c      ****     PORTB.OUT = 0x00;
+  30               		.loc 1 54 0
+  31 0008 E0E2      		ldi r30,lo8(1568)
+  32 000a F6E0      		ldi r31,hi8(1568)
+  33 000c 1482      		std Z+4,__zero_reg__
+  55:portio.c      ****     PORTB.DIR = 0x04;
+  34               		.loc 1 55 0
+  35 000e 84E0      		ldi r24,lo8(4)
+  36 0010 8083      		st Z,r24
+  56:portio.c      **** 
+  57:portio.c      **** //For both TX_EN and RX_EN lines, set HIGH to TX and LOW to RX
+  58:portio.c      **** //Wake-up state is RX on both lines
+  59:portio.c      **** 
+  60:portio.c      ****     //PC0 - RX_TAC4_EN
+  61:portio.c      ****     //PC1 - TX_TAC4_EN
+  62:portio.c      ****     //PC2 - RX_TAC4
+  63:portio.c      ****     //PC3 - TX_TAC4
+  64:portio.c      ****     //PC4 - RX_PROX2_EN
+  65:portio.c      ****     //PC5 - TX_PROX2_EN
+  66:portio.c      ****     //PC6 - RX_PROX2
+  67:portio.c      ****     //PC7 - TX_PROX2
+  68:portio.c      ****     PORTC.OUT = 0x22;
+  37               		.loc 1 68 0
+  38 0012 E0E4      		ldi r30,lo8(1600)
+  39 0014 F6E0      		ldi r31,hi8(1600)
+  40 0016 92E2      		ldi r25,lo8(34)
+  41 0018 9483      		std Z+4,r25
+  69:portio.c      ****     PORTC.DIR = 0xBB;
+  42               		.loc 1 69 0
+  43 001a 8BEB      		ldi r24,lo8(-69)
+  44 001c 8083      		st Z,r24
+  70:portio.c      **** 
+  71:portio.c      **** 
+  72:portio.c      ****     //PD0 - RX_PROX3_EN
+  73:portio.c      ****     //PD1 - TX_PROX3_EN
+  74:portio.c      ****     //PD2 - RX_PROX3
+  75:portio.c      ****     //PD3 - TX_PROX3
+  76:portio.c      ****     //PD4 - RX_PROX1_EN
+  77:portio.c      ****     //PD5 - TX_PROX1_EN
+  78:portio.c      ****     //PD6 - RX_PROX1
+  79:portio.c      ****     //PD7 - TX_PROX1
+  80:portio.c      ****     PORTD.OUT = 0x22;
+  45               		.loc 1 80 0
+  46 001e E0E6      		ldi r30,lo8(1632)
+  47 0020 F6E0      		ldi r31,hi8(1632)
+  48 0022 9483      		std Z+4,r25
+  81:portio.c      ****     PORTD.DIR = 0xBB;
+  49               		.loc 1 81 0
+  50 0024 8083      		st Z,r24
+  82:portio.c      **** 
+  83:portio.c      ****     //PE0 - RX_MTR5_EN
+  84:portio.c      ****     //PE1 - TX_MTR5_EN
+  85:portio.c      ****     //PE2 - RX_MTR5
+  86:portio.c      ****     //PE3 - TX_MTR5
+  87:portio.c      ****     //PE4 - RX_MTR6_EN
+  88:portio.c      ****     //PE5 - TX_MTR6_EN
+  89:portio.c      ****     //PE6 - RX_MTR6
+  90:portio.c      ****     //PE7 - TX_MTR6
+  91:portio.c      ****     PORTE.OUT = 0x22;
+  51               		.loc 1 91 0
+  52 0026 E0E8      		ldi r30,lo8(1664)
+  53 0028 F6E0      		ldi r31,hi8(1664)
+  54 002a 9483      		std Z+4,r25
+  92:portio.c      ****     PORTE.DIR = 0xBB;
+  55               		.loc 1 92 0
+  56 002c 8083      		st Z,r24
+  93:portio.c      **** 
+  94:portio.c      ****     //PF0 - MOTOR_DIR
+  95:portio.c      ****     //PF1 - MOTOR_nDIR
+  96:portio.c      ****     //PF2 - COMM_RX
+  97:portio.c      ****     //PF3 - COMM_TX
+  98:portio.c      ****     //PF4 - nCS
+  99:portio.c      ****     //PF5 - MOSI
+ 100:portio.c      ****     //PF6 - MISO
+ 101:portio.c      ****     //PF7 - SCK
+ 102:portio.c      ****     PORTF.OUT = 0x00;
+  57               		.loc 1 102 0
+  58 002e E0EA      		ldi r30,lo8(1696)
+  59 0030 F6E0      		ldi r31,hi8(1696)
+  60 0032 1482      		std Z+4,__zero_reg__
+ 103:portio.c      ****     PORTF.DIR = 0xDB;
+  61               		.loc 1 103 0
+  62 0034 8BED      		ldi r24,lo8(-37)
+  63 0036 8083      		st Z,r24
+ 104:portio.c      **** 
+ 105:portio.c      ****     //PH0 - SPARE3
+ 106:portio.c      ****     //PH1 - SPARE4
+ 107:portio.c      ****     //PH2 - SPARE5
+ 108:portio.c      ****     //PH3 - NC
+ 109:portio.c      ****     //PH4 - NC
+ 110:portio.c      ****     //PH5 - NC
+ 111:portio.c      ****     //PH6 - NC
+ 112:portio.c      ****     //PH7 - NC
+ 113:portio.c      ****     PORTH.OUT = 0x00;
+  64               		.loc 1 113 0
+  65 0038 E0EE      		ldi r30,lo8(1760)
+  66 003a F6E0      		ldi r31,hi8(1760)
+  67 003c 1482      		std Z+4,__zero_reg__
+ 114:portio.c      ****     PORTH.DIR = 0x00;
+  68               		.loc 1 114 0
+  69 003e 1082      		st Z,__zero_reg__
+ 115:portio.c      **** 
+ 116:portio.c      ****     //PJ0 - NC
+ 117:portio.c      ****     //PJ1 - NC
+ 118:portio.c      ****     //PJ2 - NC
+ 119:portio.c      ****     //PJ3 - NC
+ 120:portio.c      ****     //PJ4 - NC
+ 121:portio.c      ****     //PJ5 - NC
+ 122:portio.c      ****     //PJ6 - NC
+ 123:portio.c      ****     //PJ7 - NC
+ 124:portio.c      ****     PORTJ.OUT = 0x00;
+  70               		.loc 1 124 0
+  71 0040 E0E0      		ldi r30,lo8(1792)
+  72 0042 F7E0      		ldi r31,hi8(1792)
+  73 0044 1482      		std Z+4,__zero_reg__
+ 125:portio.c      ****     PORTJ.DIR = 0x00;
+  74               		.loc 1 125 0
+  75 0046 1082      		st Z,__zero_reg__
+ 126:portio.c      **** 
+ 127:portio.c      ****     //PK0 - NC
+ 128:portio.c      ****     //PK1 - NC
+ 129:portio.c      ****     //PK2 - NC
+ 130:portio.c      ****     //PK3 - LEDC
+ 131:portio.c      ****     //PK4 - NC
+ 132:portio.c      ****     //PK5 - NC
+ 133:portio.c      ****     //PK6 - NC
+ 134:portio.c      ****     //PK7 - NC
+ 135:portio.c      ****     PORTK.OUT = 0x00;
+  76               		.loc 1 135 0
+  77 0048 E0E2      		ldi r30,lo8(1824)
+  78 004a F7E0      		ldi r31,hi8(1824)
+  79 004c 1482      		std Z+4,__zero_reg__
+ 136:portio.c      ****     PORTK.DIR = 0x08;
+  80               		.loc 1 136 0
+  81 004e 88E0      		ldi r24,lo8(8)
+  82 0050 8083      		st Z,r24
+ 137:portio.c      **** 
+ 138:portio.c      ****     //PQ0 - NC
+ 139:portio.c      ****     //PQ1 - NC
+ 140:portio.c      ****     //PQ2 - NC
+ 141:portio.c      ****     //PQ3 - NC
+ 142:portio.c      ****     PORTQ.OUT = 0x00;
+  83               		.loc 1 142 0
+  84 0052 E0EC      		ldi r30,lo8(1984)
+  85 0054 F7E0      		ldi r31,hi8(1984)
+  86 0056 1482      		std Z+4,__zero_reg__
+ 143:portio.c      ****     PORTQ.DIR = 0x00;
+  87               		.loc 1 143 0
+  88 0058 1082      		st Z,__zero_reg__
+ 144:portio.c      **** 
+ 145:portio.c      ****     //PR0 - NC
+ 146:portio.c      ****     //PR1 - NC
+ 147:portio.c      ****     PORTR.OUT = 0x00;
+  89               		.loc 1 147 0
+  90 005a E0EE      		ldi r30,lo8(2016)
+  91 005c F7E0      		ldi r31,hi8(2016)
+  92 005e 1482      		std Z+4,__zero_reg__
+ 148:portio.c      ****     PORTR.DIR = 0x00;
+  93               		.loc 1 148 0
+  94 0060 1082      		st Z,__zero_reg__
+  95               	/* epilogue start */
+ 149:portio.c      **** 
+ 150:portio.c      **** }
+  96               		.loc 1 150 0
+  97 0062 0895      		ret
+  98               		.cfi_endproc
+  99               	.LFE0:
+ 101               	.Letext0:
+ 102               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+DEFINED SYMBOLS
+                            *ABS*:00000000 portio.c
+     /tmp/ccYu0Cyc.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccYu0Cyc.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccYu0Cyc.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccYu0Cyc.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccYu0Cyc.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccYu0Cyc.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccYu0Cyc.s:15     .text:00000000 configurePortIO
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

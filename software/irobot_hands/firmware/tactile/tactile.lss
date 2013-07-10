@@ -1,0 +1,3074 @@
+
+tactile.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000faa  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00802000  00000faa  0000103e  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          000002f5  00802000  00802000  0000103e  2**0
+                  ALLOC
+  3 .stab         000006cc  00000000  00000000  00001040  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  4 .stabstr      00000085  00000000  00000000  0000170c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 000000a8  00000000  00000000  00001791  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   00003ab2  00000000  00000000  00001839  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000a37  00000000  00000000  000052eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   00000968  00000000  00000000  00005d22  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  00000418  00000000  00000000  0000668c  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    00003632  00000000  00000000  00006aa4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000d08  00000000  00000000  0000a0d6  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000018  00000000  00000000  0000adde  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 bc 00 	jmp	0x178	; 0x178 <__ctors_end>
+   4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+   8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+   c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  10:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  14:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  18:	0c 94 20 02 	jmp	0x440	; 0x440 <__vector_6>
+  1c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  20:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  24:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  28:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  2c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  30:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  34:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  38:	0c 94 cc 01 	jmp	0x398	; 0x398 <__vector_14>
+  3c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  40:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  44:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  48:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  4c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  50:	0c 94 5c 05 	jmp	0xab8	; 0xab8 <__vector_20>
+  54:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  58:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  5c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  60:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  64:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  68:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  6c:	0c 94 4b 02 	jmp	0x496	; 0x496 <__vector_27>
+  70:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  74:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  78:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  7c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  80:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  84:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  88:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  8c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  90:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  94:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  98:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  9c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  a0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  a4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  a8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  ac:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  b0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  b4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  b8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  bc:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  c0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  c4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  c8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  cc:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  d0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  d4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  d8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  dc:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  e0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  e4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  e8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  ec:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  f0:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  f4:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  f8:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+  fc:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 100:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 104:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 108:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 10c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 110:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 114:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 118:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 11c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 120:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 124:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 128:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 12c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 130:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 134:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 138:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 13c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 140:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 144:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 148:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 14c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 150:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 154:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 158:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 15c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 160:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 164:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 168:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 16c:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 170:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+ 174:	0c 94 d9 00 	jmp	0x1b2	; 0x1b2 <__bad_interrupt>
+
+00000178 <__ctors_end>:
+ 178:	11 24       	eor	r1, r1
+ 17a:	1f be       	out	0x3f, r1	; 63
+ 17c:	cf ef       	ldi	r28, 0xFF	; 255
+ 17e:	df e2       	ldi	r29, 0x2F	; 47
+ 180:	de bf       	out	0x3e, r29	; 62
+ 182:	cd bf       	out	0x3d, r28	; 61
+
+00000184 <__do_copy_data>:
+ 184:	10 e2       	ldi	r17, 0x20	; 32
+ 186:	a0 e0       	ldi	r26, 0x00	; 0
+ 188:	b0 e2       	ldi	r27, 0x20	; 32
+ 18a:	ea ea       	ldi	r30, 0xAA	; 170
+ 18c:	ff e0       	ldi	r31, 0x0F	; 15
+ 18e:	02 c0       	rjmp	.+4      	; 0x194 <__do_copy_data+0x10>
+ 190:	05 90       	lpm	r0, Z+
+ 192:	0d 92       	st	X+, r0
+ 194:	a0 30       	cpi	r26, 0x00	; 0
+ 196:	b1 07       	cpc	r27, r17
+ 198:	d9 f7       	brne	.-10     	; 0x190 <__do_copy_data+0xc>
+
+0000019a <__do_clear_bss>:
+ 19a:	12 e2       	ldi	r17, 0x22	; 34
+ 19c:	a0 e0       	ldi	r26, 0x00	; 0
+ 19e:	b0 e2       	ldi	r27, 0x20	; 32
+ 1a0:	01 c0       	rjmp	.+2      	; 0x1a4 <.do_clear_bss_start>
+
+000001a2 <.do_clear_bss_loop>:
+ 1a2:	1d 92       	st	X+, r1
+
+000001a4 <.do_clear_bss_start>:
+ 1a4:	a5 3f       	cpi	r26, 0xF5	; 245
+ 1a6:	b1 07       	cpc	r27, r17
+ 1a8:	e1 f7       	brne	.-8      	; 0x1a2 <.do_clear_bss_loop>
+ 1aa:	0e 94 16 07 	call	0xe2c	; 0xe2c <main>
+ 1ae:	0c 94 d3 07 	jmp	0xfa6	; 0xfa6 <_exit>
+
+000001b2 <__bad_interrupt>:
+ 1b2:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+000001b6 <captureSweep>:
+    ADCCurrentCalibration = round((float) calibrationAccumulator / 16.0);
+    return;
+}
+
+void captureSweep(int16_t *outputData)
+{
+ 1b6:	fc 01       	movw	r30, r24
+    ADCA.CTRLA |= ADCA.CTRLA & (ADC_CH3START_bm | ADC_CH2START_bm | ADC_CH1START_bm | ADC_CH0START_bm | ADC_ENABLE_bm);
+ 1b8:	90 91 00 02 	lds	r25, 0x0200
+ 1bc:	80 91 00 02 	lds	r24, 0x0200
+ 1c0:	8d 73       	andi	r24, 0x3D	; 61
+ 1c2:	89 2b       	or	r24, r25
+ 1c4:	80 93 00 02 	sts	0x0200, r24
+
+    //Now wait for the conclusion of the sampling
+    while(!(ADCA.INTFLAGS & ADC_CH3IF_bm));
+ 1c8:	80 91 06 02 	lds	r24, 0x0206
+ 1cc:	83 ff       	sbrs	r24, 3
+ 1ce:	fc cf       	rjmp	.-8      	; 0x1c8 <captureSweep+0x12>
+    while(!(ADCA.INTFLAGS & ADC_CH2IF_bm));
+ 1d0:	80 91 06 02 	lds	r24, 0x0206
+ 1d4:	82 ff       	sbrs	r24, 2
+ 1d6:	fc cf       	rjmp	.-8      	; 0x1d0 <captureSweep+0x1a>
+    while(!(ADCA.INTFLAGS & ADC_CH1IF_bm));
+ 1d8:	80 91 06 02 	lds	r24, 0x0206
+ 1dc:	81 ff       	sbrs	r24, 1
+ 1de:	fc cf       	rjmp	.-8      	; 0x1d8 <captureSweep+0x22>
+    while(!(ADCA.INTFLAGS & ADC_CH0IF_bm));
+ 1e0:	80 91 06 02 	lds	r24, 0x0206
+ 1e4:	80 ff       	sbrs	r24, 0
+ 1e6:	fc cf       	rjmp	.-8      	; 0x1e0 <captureSweep+0x2a>
+
+    //Sampling complete
+    outputData[0] = ADCA.CH0RES;
+ 1e8:	80 91 10 02 	lds	r24, 0x0210
+ 1ec:	90 91 11 02 	lds	r25, 0x0211
+ 1f0:	80 83       	st	Z, r24
+ 1f2:	91 83       	std	Z+1, r25	; 0x01
+    outputData[1] = ADCA.CH1RES;
+ 1f4:	80 91 12 02 	lds	r24, 0x0212
+ 1f8:	90 91 13 02 	lds	r25, 0x0213
+ 1fc:	82 83       	std	Z+2, r24	; 0x02
+ 1fe:	93 83       	std	Z+3, r25	; 0x03
+    outputData[2] = ADCA.CH2RES;
+ 200:	80 91 14 02 	lds	r24, 0x0214
+ 204:	90 91 15 02 	lds	r25, 0x0215
+ 208:	84 83       	std	Z+4, r24	; 0x04
+ 20a:	95 83       	std	Z+5, r25	; 0x05
+    outputData[3] = ADCA.CH3RES;
+ 20c:	80 91 16 02 	lds	r24, 0x0216
+ 210:	90 91 17 02 	lds	r25, 0x0217
+ 214:	86 83       	std	Z+6, r24	; 0x06
+ 216:	97 83       	std	Z+7, r25	; 0x07
+
+    ADCA.INTFLAGS = ADC_CH3IF_bm | ADC_CH2IF_bm | ADC_CH1IF_bm | ADC_CH0IF_bm;
+ 218:	8f e0       	ldi	r24, 0x0F	; 15
+ 21a:	e0 e0       	ldi	r30, 0x00	; 0
+ 21c:	f2 e0       	ldi	r31, 0x02	; 2
+ 21e:	86 83       	std	Z+6, r24	; 0x06
+    return;
+}
+ 220:	08 95       	ret
+
+00000222 <configureADC>:
+*
+* Note that an internal reference is being used in this test setup.
+* The production system will have an external one available.
+************************************************************************/
+void configureADC(void)
+{
+ 222:	cf 93       	push	r28
+ 224:	df 93       	push	r29
+static uint8_t ReadCalibrationByte(uint8_t index)
+{
+    uint8_t result;
+
+    // Load the NVM Command register to read the calibration row.
+    NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+ 226:	ca ec       	ldi	r28, 0xCA	; 202
+ 228:	d1 e0       	ldi	r29, 0x01	; 1
+ 22a:	82 e0       	ldi	r24, 0x02	; 2
+ 22c:	88 83       	st	Y, r24
+    result = pgm_read_byte(index);
+ 22e:	e0 e2       	ldi	r30, 0x20	; 32
+ 230:	f0 e0       	ldi	r31, 0x00	; 0
+ 232:	e4 91       	lpm	r30, Z
+
+    //Clean up NVM Command register.
+    NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+ 234:	18 82       	st	Y, r1
+* Note that an internal reference is being used in this test setup.
+* The production system will have an external one available.
+************************************************************************/
+void configureADC(void)
+{
+    ADCA.CALL = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL0) );
+ 236:	a0 e0       	ldi	r26, 0x00	; 0
+ 238:	b2 e0       	ldi	r27, 0x02	; 2
+ 23a:	1c 96       	adiw	r26, 0x0c	; 12
+ 23c:	ec 93       	st	X, r30
+ 23e:	1c 97       	sbiw	r26, 0x0c	; 12
+static uint8_t ReadCalibrationByte(uint8_t index)
+{
+    uint8_t result;
+
+    // Load the NVM Command register to read the calibration row.
+    NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+ 240:	88 83       	st	Y, r24
+    result = pgm_read_byte(index);
+ 242:	e1 e2       	ldi	r30, 0x21	; 33
+ 244:	f0 e0       	ldi	r31, 0x00	; 0
+ 246:	e4 91       	lpm	r30, Z
+
+    //Clean up NVM Command register.
+    NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+ 248:	18 82       	st	Y, r1
+* The production system will have an external one available.
+************************************************************************/
+void configureADC(void)
+{
+    ADCA.CALL = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL0) );
+    ADCA.CALH = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL1) );
+ 24a:	1d 96       	adiw	r26, 0x0d	; 13
+ 24c:	ec 93       	st	X, r30
+ 24e:	1d 97       	sbiw	r26, 0x0d	; 13
+
+    //CURRENT_ADC.EVCTRL = ADC_SWEEP_0123_gc | ADC_EVACT_NONE_gc;
+
+    //Use the Event System to actuate sweeps
+
+    EVSYS.CH3MUX = EVSYS_CHMUX_PRESCALER_8192_gc;
+ 250:	e0 e8       	ldi	r30, 0x80	; 128
+ 252:	f1 e0       	ldi	r31, 0x01	; 1
+ 254:	9d e8       	ldi	r25, 0x8D	; 141
+ 256:	93 83       	std	Z+3, r25	; 0x03
+    EVSYS.CH3CTRL = EVSYS_DIGFILT_1SAMPLE_gc;
+ 258:	13 86       	std	Z+11, r1	; 0x0b
+
+    ADCA.EVCTRL = ADC_SWEEP_0123_gc | ADC_EVSEL_3456_gc | ADC_EVACT_SWEEP_gc;
+ 25a:	9d ed       	ldi	r25, 0xDD	; 221
+ 25c:	13 96       	adiw	r26, 0x03	; 3
+ 25e:	9c 93       	st	X, r25
+ 260:	13 97       	sbiw	r26, 0x03	; 3
+
+    //Maximum ADC clock is 2 MHz.  This requires a prescaler of 16 on a CPU clock of 32 MHz
+    ADCA.PRESCALER = ADC_PRESCALER_DIV16_gc;
+ 262:	14 96       	adiw	r26, 0x04	; 4
+ 264:	8c 93       	st	X, r24
+ 266:	14 97       	sbiw	r26, 0x04	; 4
+    //CURRENT_ADC.PRESCALER = ADC_PRESCALER_DIV256_gc;
+
+#ifdef USE_INTERNAL_REF
+    ADCA.REFCTRL = ADC_REFSEL_VCC_gc;
+#else
+    ADCA.REFCTRL = ADC_REFSEL_AREFA_gc;
+ 268:	20 e2       	ldi	r18, 0x20	; 32
+ 26a:	12 96       	adiw	r26, 0x02	; 2
+ 26c:	2c 93       	st	X, r18
+ 26e:	12 97       	sbiw	r26, 0x02	; 2
+#endif
+
+#warning The ADC.CH structure is wrong in AU parts.  Just use the ADC_CH0_MUXCTRL, etc. defines instead
+
+    //CH0 is Dynamic 1
+    ADCA_CH0_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 270:	81 e0       	ldi	r24, 0x01	; 1
+ 272:	80 93 20 02 	sts	0x0220, r24
+    ADCA_CH0_MUXCTRL = ADC_CH_MUXPOS_PIN1_gc;
+ 276:	98 e0       	ldi	r25, 0x08	; 8
+ 278:	90 93 21 02 	sts	0x0221, r25
+    ADCA_CH0_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 27c:	10 92 22 02 	sts	0x0222, r1
+
+    //CH1 is Dynamic 2
+    ADCA_CH1_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 280:	80 93 28 02 	sts	0x0228, r24
+    ADCA_CH1_MUXCTRL = ADC_CH_MUXPOS_PIN2_gc;
+ 284:	90 e1       	ldi	r25, 0x10	; 16
+ 286:	90 93 29 02 	sts	0x0229, r25
+    ADCA_CH1_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 28a:	10 92 2a 02 	sts	0x022A, r1
+
+    //CH2 is Dynamic 3
+    ADCA_CH2_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 28e:	80 93 30 02 	sts	0x0230, r24
+    ADCA_CH2_MUXCTRL = ADC_CH_MUXPOS_PIN3_gc;
+ 292:	38 e1       	ldi	r19, 0x18	; 24
+ 294:	30 93 31 02 	sts	0x0231, r19
+    ADCA_CH2_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 298:	10 92 32 02 	sts	0x0232, r1
+
+    //CH3 is Dynamic 4
+    ADCA_CH3_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 29c:	80 93 38 02 	sts	0x0238, r24
+    ADCA_CH3_MUXCTRL = ADC_CH_MUXPOS_PIN4_gc;
+ 2a0:	20 93 39 02 	sts	0x0239, r18
+    ADCA_CH3_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 2a4:	10 92 3a 02 	sts	0x023A, r1
+
+    //Configure for Signed operation
+    ADCA.CTRLB = ADC_RESOLUTION_12BIT_gc | ADC_CONMODE_bm;
+ 2a8:	11 96       	adiw	r26, 0x01	; 1
+ 2aa:	9c 93       	st	X, r25
+ 2ac:	11 97       	sbiw	r26, 0x01	; 1
+    ADCA.CTRLA = ADC_ENABLE_bm;
+ 2ae:	8c 93       	st	X, r24
+    //ADC_TC.CTRLE = 0x00;
+    //ADC_TC.PERBUF = 3125;
+    //ADC_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+    //ADC_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+
+}
+ 2b0:	df 91       	pop	r29
+ 2b2:	cf 91       	pop	r28
+ 2b4:	08 95       	ret
+
+000002b6 <prepareDMAChannel.constprop.0>:
+* This should be called before fireDMAChannel()
+************************************************************************/
+static void prepareDMAChannel(DMA_CH_t *selectedChannel, uint8_t usartTrigger, USART_t *targetUSART, volatile uint8_t *targetBuffer, uint8_t isOutbound)
+{
+    //Configure the chosen channel to read from a fixed UART into a linear array
+    if(isOutbound)
+ 2b6:	44 23       	and	r20, r20
+ 2b8:	11 f0       	breq	.+4      	; 0x2be <prepareDMAChannel.constprop.0+0x8>
+    {
+        selectedChannel->ADDRCTRL = DMA_CH_SRCRELOAD_TRANSACTION_gc | DMA_CH_SRCDIR_INC_gc | \
+ 2ba:	98 ed       	ldi	r25, 0xD8	; 216
+ 2bc:	01 c0       	rjmp	.+2      	; 0x2c0 <prepareDMAChannel.constprop.0+0xa>
+                       DMA_CH_DESTRELOAD_BURST_gc | DMA_CH_DESTDIR_FIXED_gc;
+    } else {
+        selectedChannel->ADDRCTRL = DMA_CH_SRCRELOAD_BURST_gc | DMA_CH_SRCDIR_FIXED_gc | \
+ 2be:	9d e8       	ldi	r25, 0x8D	; 141
+ 2c0:	e0 e1       	ldi	r30, 0x10	; 16
+ 2c2:	f1 e0       	ldi	r31, 0x01	; 1
+ 2c4:	92 83       	std	Z+2, r25	; 0x02
+                       DMA_CH_DESTRELOAD_TRANSACTION_gc | DMA_CH_DESTDIR_INC_gc;
+    }
+
+    //Set to perform one block transfer corresponding to one command packet
+    //Technically not necessary because REPEAT will not be set in CTRLA
+    selectedChannel->REPCNT = 0x01;
+ 2c6:	e0 e1       	ldi	r30, 0x10	; 16
+ 2c8:	f1 e0       	ldi	r31, 0x01	; 1
+ 2ca:	91 e0       	ldi	r25, 0x01	; 1
+ 2cc:	96 83       	std	Z+6, r25	; 0x06
+    //This part has 16 bit pointers, so cast appropriately.
+    //Memory addresses are 24 bits to allow for external memory to be mapped into one address space
+    //Same with internal EEPROM Data memory.
+    //Since these locations are in lower memory, fix the high order address bits to zero.
+    //Mapping external memory will require more care.
+    if(isOutbound)
+ 2ce:	44 23       	and	r20, r20
+ 2d0:	41 f0       	breq	.+16     	; 0x2e2 <prepareDMAChannel.constprop.0+0x2c>
+    {
+        selectedChannel->DESTADDR0 = (uint16_t) &targetUSART->DATA & 0x00FF;
+ 2d2:	90 ea       	ldi	r25, 0xA0	; 160
+ 2d4:	94 87       	std	Z+12, r25	; 0x0c
+        selectedChannel->DESTADDR1 = (uint16_t) &targetUSART->DATA >> 8;
+ 2d6:	98 e0       	ldi	r25, 0x08	; 8
+ 2d8:	95 87       	std	Z+13, r25	; 0x0d
+        selectedChannel->DESTADDR2 = 0;
+ 2da:	16 86       	std	Z+14, r1	; 0x0e
+
+        selectedChannel->SRCADDR0 = (uint16_t)targetBuffer & 0x00FF;
+ 2dc:	60 87       	std	Z+8, r22	; 0x08
+        selectedChannel->SRCADDR1 = (uint16_t)targetBuffer >> 8;
+ 2de:	71 87       	std	Z+9, r23	; 0x09
+ 2e0:	07 c0       	rjmp	.+14     	; 0x2f0 <prepareDMAChannel.constprop.0+0x3a>
+        selectedChannel->SRCADDR2 = 0;
+    } else {
+        selectedChannel->DESTADDR0 = (uint16_t)targetBuffer & 0x00FF;
+ 2e2:	64 87       	std	Z+12, r22	; 0x0c
+        selectedChannel->DESTADDR1 = (uint16_t)targetBuffer >> 8;
+ 2e4:	75 87       	std	Z+13, r23	; 0x0d
+        selectedChannel->DESTADDR2 = 0;
+ 2e6:	16 86       	std	Z+14, r1	; 0x0e
+
+        selectedChannel->SRCADDR0 = (uint16_t) &targetUSART->DATA & 0x00FF;
+ 2e8:	90 ea       	ldi	r25, 0xA0	; 160
+ 2ea:	90 87       	std	Z+8, r25	; 0x08
+        selectedChannel->SRCADDR1 = (uint16_t) &targetUSART->DATA >> 8;
+ 2ec:	98 e0       	ldi	r25, 0x08	; 8
+ 2ee:	91 87       	std	Z+9, r25	; 0x09
+        selectedChannel->SRCADDR2 = 0;
+ 2f0:	12 86       	std	Z+10, r1	; 0x0a
+    }
+
+    //Trigger on received data
+    selectedChannel->TRIGSRC = usartTrigger;
+ 2f2:	e0 e1       	ldi	r30, 0x10	; 16
+ 2f4:	f1 e0       	ldi	r31, 0x01	; 1
+ 2f6:	83 83       	std	Z+3, r24	; 0x03
+
+    //Interrupt on this channel when the transaction is complete, and clear any pending flags
+    if(isOutbound)
+ 2f8:	44 23       	and	r20, r20
+ 2fa:	49 f0       	breq	.+18     	; 0x30e <prepareDMAChannel.constprop.0+0x58>
+    {
+        selectedChannel->CTRLB = DMA_CH_TRNINTLVL_OFF_gc | DMA_CH_TRNIF_bm;
+ 2fc:	80 e1       	ldi	r24, 0x10	; 16
+ 2fe:	81 83       	std	Z+1, r24	; 0x01
+        targetUSART->STATUS = USART_TXCIF_bm;
+ 300:	e0 ea       	ldi	r30, 0xA0	; 160
+ 302:	f8 e0       	ldi	r31, 0x08	; 8
+ 304:	80 e4       	ldi	r24, 0x40	; 64
+ 306:	81 83       	std	Z+1, r24	; 0x01
+        targetUSART->CTRLA = USART_TXCINTLVL_LO_gc | USART_RXCINTLVL_OFF_gc;
+ 308:	84 e0       	ldi	r24, 0x04	; 4
+ 30a:	83 83       	std	Z+3, r24	; 0x03
+ 30c:	08 95       	ret
+    } else
+    {
+        selectedChannel->CTRLB = DMA_CH_TRNINTLVL_LO_gc | DMA_CH_TRNIF_bm;
+ 30e:	81 e1       	ldi	r24, 0x11	; 17
+ 310:	81 83       	std	Z+1, r24	; 0x01
+ 312:	08 95       	ret
+
+00000314 <configureHalfDuplexLink.constprop.1>:
+ * Configures hardware and DMA channels to support the requested stream configuration
+ ************************************************************************/
+
+static void configureHalfDuplexLink(SERIAL_STREAM_t selectedStream, SERIAL_DIRECTION_t selectedDirection)
+{
+    cli();
+ 314:	f8 94       	cli
+            }
+            break;
+#endif
+        case UPSTREAM:
+            //Abort any pending DMA transfers
+            if(UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm)
+ 316:	90 91 11 01 	lds	r25, 0x0111
+ 31a:	97 ff       	sbrs	r25, 7
+ 31c:	06 c0       	rjmp	.+12     	; 0x32a <configureHalfDuplexLink.constprop.1+0x16>
+            {
+                UPSTREAM_DMA.CTRLA &= ~DMA_CH_ENABLE_bm;
+ 31e:	90 91 10 01 	lds	r25, 0x0110
+ 322:	9f 77       	andi	r25, 0x7F	; 127
+ 324:	e0 e0       	ldi	r30, 0x00	; 0
+ 326:	f1 e0       	ldi	r31, 0x01	; 1
+ 328:	90 8b       	std	Z+16, r25	; 0x10
+            }
+
+            upstreamRxDone = 0;
+ 32a:	10 92 04 20 	sts	0x2004, r1
+ 32e:	10 92 05 20 	sts	0x2005, r1
+            //upstreamTxDone = 0;
+            upstreamBusy = 0;
+ 332:	10 92 01 20 	sts	0x2001, r1
+
+            //Configure the transceivers and prepare DMA
+            if(selectedDirection == INBOUND)
+ 336:	88 23       	and	r24, r24
+ 338:	c1 f4       	brne	.+48     	; 0x36a <configureHalfDuplexLink.constprop.1+0x56>
+            {
+                SET_UPSTREAM_INBOUND();
+ 33a:	80 91 44 06 	lds	r24, 0x0644
+ 33e:	8e 7f       	andi	r24, 0xFE	; 254
+ 340:	e0 e4       	ldi	r30, 0x40	; 64
+ 342:	f6 e0       	ldi	r31, 0x06	; 6
+ 344:	84 83       	std	Z+4, r24	; 0x04
+                prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, inbound_upstream_data,0);
+ 346:	8b e4       	ldi	r24, 0x4B	; 75
+ 348:	6f ec       	ldi	r22, 0xCF	; 207
+ 34a:	70 e2       	ldi	r23, 0x20	; 32
+ 34c:	40 e0       	ldi	r20, 0x00	; 0
+ 34e:	0e 94 5b 01 	call	0x2b6	; 0x2b6 <prepareDMAChannel.constprop.0>
+ * with prepareDMAChannel().
+ ************************************************************************/
+static void activateDMAChannel(DMA_CH_t *selectedChannel,int numBytes)
+{
+    //Set block size to packet size
+    selectedChannel->TRFCNT = numBytes;
+ 352:	87 e0       	ldi	r24, 0x07	; 7
+ 354:	90 e0       	ldi	r25, 0x00	; 0
+ 356:	e0 e1       	ldi	r30, 0x10	; 16
+ 358:	f1 e0       	ldi	r31, 0x01	; 1
+ 35a:	84 83       	std	Z+4, r24	; 0x04
+ 35c:	95 83       	std	Z+5, r25	; 0x05
+    //Enable the channel on single shot mode with a burst length of one.  Whenever the trigger arrives,
+    //only one burst will be performed.
+    selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 35e:	84 e8       	ldi	r24, 0x84	; 132
+ 360:	80 93 10 01 	sts	0x0110, r24
+            if(selectedDirection == INBOUND)
+            {
+                SET_UPSTREAM_INBOUND();
+                prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, inbound_upstream_data,0);
+                activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+                UPSTREAM_CONFIG = INBOUND;
+ 364:	10 92 06 20 	sts	0x2006, r1
+ 368:	15 c0       	rjmp	.+42     	; 0x394 <configureHalfDuplexLink.constprop.1+0x80>
+
+            } else {
+                SET_UPSTREAM_OUTBOUND();
+ 36a:	80 91 44 06 	lds	r24, 0x0644
+ 36e:	82 60       	ori	r24, 0x02	; 2
+ 370:	e0 e4       	ldi	r30, 0x40	; 64
+ 372:	f6 e0       	ldi	r31, 0x06	; 6
+ 374:	84 83       	std	Z+4, r24	; 0x04
+                UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 376:	e0 ea       	ldi	r30, 0xA0	; 160
+ 378:	f8 e0       	ldi	r31, 0x08	; 8
+ 37a:	80 e4       	ldi	r24, 0x40	; 64
+ 37c:	81 83       	std	Z+1, r24	; 0x01
+                UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc | USART_RXCINTLVL_OFF_gc;
+ 37e:	84 e0       	ldi	r24, 0x04	; 4
+ 380:	83 83       	std	Z+3, r24	; 0x03
+                //Do not send all data through DMA.  Instead send outbound upstream data + 1.  This allows for the insertion of a small delay between size and data
+                prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_OUTBOUND_TRIGGER, &UPSTREAM_USART, outbound_upstream_data + 1,1);
+ 382:	8c e4       	ldi	r24, 0x4C	; 76
+ 384:	68 e0       	ldi	r22, 0x08	; 8
+ 386:	70 e2       	ldi	r23, 0x20	; 32
+ 388:	41 e0       	ldi	r20, 0x01	; 1
+ 38a:	0e 94 5b 01 	call	0x2b6	; 0x2b6 <prepareDMAChannel.constprop.0>
+                UPSTREAM_CONFIG = OUTBOUND;
+ 38e:	81 e0       	ldi	r24, 0x01	; 1
+ 390:	80 93 06 20 	sts	0x2006, r24
+            break;
+        default:
+            break;
+    }
+
+    sei();
+ 394:	78 94       	sei
+    return;
+
+}
+ 396:	08 95       	ret
+
+00000398 <__vector_14>:
+#endif
+
+#define DOWNSTREAM_TIMEOUT_MS 15
+
+ISR(DAISY_TC_vect)
+{
+ 398:	1f 92       	push	r1
+ 39a:	0f 92       	push	r0
+ 39c:	0f b6       	in	r0, 0x3f	; 63
+ 39e:	0f 92       	push	r0
+ 3a0:	11 24       	eor	r1, r1
+ 3a2:	2f 93       	push	r18
+ 3a4:	3f 93       	push	r19
+ 3a6:	4f 93       	push	r20
+ 3a8:	5f 93       	push	r21
+ 3aa:	6f 93       	push	r22
+ 3ac:	7f 93       	push	r23
+ 3ae:	8f 93       	push	r24
+ 3b0:	9f 93       	push	r25
+ 3b2:	af 93       	push	r26
+ 3b4:	bf 93       	push	r27
+ 3b6:	ef 93       	push	r30
+ 3b8:	ff 93       	push	r31
+    //Check if the DMA is busy and waiting on incoming data
+    if(UPSTREAM_CONFIG == OUTBOUND)
+ 3ba:	80 91 06 20 	lds	r24, 0x2006
+ 3be:	81 30       	cpi	r24, 0x01	; 1
+ 3c0:	19 f4       	brne	.+6      	; 0x3c8 <__vector_14+0x30>
+    {
+        //No need to reset DMA
+        upstreamBusy = 0;
+ 3c2:	10 92 01 20 	sts	0x2001, r1
+ 3c6:	2b c0       	rjmp	.+86     	; 0x41e <__vector_14+0x86>
+    }
+    else
+    {
+        if((UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm) || !(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm))
+ 3c8:	80 91 11 01 	lds	r24, 0x0111
+ 3cc:	87 fd       	sbrc	r24, 7
+ 3ce:	04 c0       	rjmp	.+8      	; 0x3d8 <__vector_14+0x40>
+ 3d0:	80 91 10 01 	lds	r24, 0x0110
+ 3d4:	87 fd       	sbrc	r24, 7
+ 3d6:	05 c0       	rjmp	.+10     	; 0x3e2 <__vector_14+0x4a>
+        {
+            upstreamBusy++;
+ 3d8:	80 91 01 20 	lds	r24, 0x2001
+ 3dc:	8f 5f       	subi	r24, 0xFF	; 255
+ 3de:	80 93 01 20 	sts	0x2001, r24
+        }
+
+        if(upstreamBusy > 2)
+ 3e2:	80 91 01 20 	lds	r24, 0x2001
+ 3e6:	83 30       	cpi	r24, 0x03	; 3
+ 3e8:	d0 f0       	brcs	.+52     	; 0x41e <__vector_14+0x86>
+        {
+            //Cancel and rearm the incoming DMA
+            UPSTREAM_DMA.CTRLA = 0x00;
+ 3ea:	e0 e0       	ldi	r30, 0x00	; 0
+ 3ec:	f1 e0       	ldi	r31, 0x01	; 1
+ 3ee:	10 8a       	std	Z+16, r1	; 0x10
+            //Wait for it to disable
+            while(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm);
+ 3f0:	80 91 10 01 	lds	r24, 0x0110
+ 3f4:	87 fd       	sbrc	r24, 7
+ 3f6:	fc cf       	rjmp	.-8      	; 0x3f0 <__vector_14+0x58>
+
+            //Issue a reset
+            UPSTREAM_DMA.CTRLA = DMA_CH_RESET_bm;
+ 3f8:	80 e4       	ldi	r24, 0x40	; 64
+ 3fa:	e0 e0       	ldi	r30, 0x00	; 0
+ 3fc:	f1 e0       	ldi	r31, 0x01	; 1
+ 3fe:	80 8b       	std	Z+16, r24	; 0x10
+
+            //Re-arm
+            prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, inbound_upstream_data,0);
+ 400:	8b e4       	ldi	r24, 0x4B	; 75
+ 402:	6f ec       	ldi	r22, 0xCF	; 207
+ 404:	70 e2       	ldi	r23, 0x20	; 32
+ 406:	40 e0       	ldi	r20, 0x00	; 0
+ 408:	0e 94 5b 01 	call	0x2b6	; 0x2b6 <prepareDMAChannel.constprop.0>
+ * with prepareDMAChannel().
+ ************************************************************************/
+static void activateDMAChannel(DMA_CH_t *selectedChannel,int numBytes)
+{
+    //Set block size to packet size
+    selectedChannel->TRFCNT = numBytes;
+ 40c:	87 e0       	ldi	r24, 0x07	; 7
+ 40e:	90 e0       	ldi	r25, 0x00	; 0
+ 410:	e0 e1       	ldi	r30, 0x10	; 16
+ 412:	f1 e0       	ldi	r31, 0x01	; 1
+ 414:	84 83       	std	Z+4, r24	; 0x04
+ 416:	95 83       	std	Z+5, r25	; 0x05
+    //Enable the channel on single shot mode with a burst length of one.  Whenever the trigger arrives,
+    //only one burst will be performed.
+    selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 418:	84 e8       	ldi	r24, 0x84	; 132
+ 41a:	80 93 10 01 	sts	0x0110, r24
+            //downstreamXmitDone = 0;
+            downstreamSizeReceived = 0;
+        }
+    }
+#endif
+}
+ 41e:	ff 91       	pop	r31
+ 420:	ef 91       	pop	r30
+ 422:	bf 91       	pop	r27
+ 424:	af 91       	pop	r26
+ 426:	9f 91       	pop	r25
+ 428:	8f 91       	pop	r24
+ 42a:	7f 91       	pop	r23
+ 42c:	6f 91       	pop	r22
+ 42e:	5f 91       	pop	r21
+ 430:	4f 91       	pop	r20
+ 432:	3f 91       	pop	r19
+ 434:	2f 91       	pop	r18
+ 436:	0f 90       	pop	r0
+ 438:	0f be       	out	0x3f, r0	; 63
+ 43a:	0f 90       	pop	r0
+ 43c:	1f 90       	pop	r1
+ 43e:	18 95       	reti
+
+00000440 <__vector_6>:
+/************************************************************************
+ * ISRs for the DMA engines.
+ * Set flags for the Daisy Chain Task
+ ************************************************************************/
+ISR(UPSTREAM_USART_DMA_vect)
+{
+ 440:	1f 92       	push	r1
+ 442:	0f 92       	push	r0
+ 444:	0f b6       	in	r0, 0x3f	; 63
+ 446:	0f 92       	push	r0
+ 448:	11 24       	eor	r1, r1
+ 44a:	8f 93       	push	r24
+ 44c:	9f 93       	push	r25
+ 44e:	ef 93       	push	r30
+ 450:	ff 93       	push	r31
+    if(UPSTREAM_DMA.CTRLB & DMA_CH_ERRIF_bm)
+ 452:	80 91 11 01 	lds	r24, 0x0111
+ 456:	85 fd       	sbrc	r24, 5
+ 458:	15 c0       	rjmp	.+42     	; 0x484 <__vector_6+0x44>
+        //UPSTREAM_DMA.CTRLB = UPSTREAM_DMA.CTRLB | DMA_CH_ERRIF_bm;
+        //Cancel and rearm the incoming DMA
+        return;
+    }
+
+    if(UPSTREAM_DMA.CTRLB & DMA_CH_TRNIF_bm)
+ 45a:	80 91 11 01 	lds	r24, 0x0111
+ 45e:	84 ff       	sbrs	r24, 4
+ 460:	11 c0       	rjmp	.+34     	; 0x484 <__vector_6+0x44>
+    {
+        //The transfer is complete and should be acked
+        UPSTREAM_DMA.CTRLB = UPSTREAM_DMA.CTRLB | DMA_CH_TRNIF_bm;
+ 462:	80 91 11 01 	lds	r24, 0x0111
+ 466:	80 61       	ori	r24, 0x10	; 16
+ 468:	e0 e0       	ldi	r30, 0x00	; 0
+ 46a:	f1 e0       	ldi	r31, 0x01	; 1
+ 46c:	81 8b       	std	Z+17, r24	; 0x11
+        upstreamBusy = 0;
+ 46e:	10 92 01 20 	sts	0x2001, r1
+        notifyDaisy = 1;
+ 472:	81 e0       	ldi	r24, 0x01	; 1
+ 474:	80 93 00 20 	sts	0x2000, r24
+        //if(UPSTREAM_CONFIG == OUTBOUND)
+        //{
+        //    upstreamTxDone = 1;
+        //} else
+        //{
+            upstreamRxDone = 1;
+ 478:	81 e0       	ldi	r24, 0x01	; 1
+ 47a:	90 e0       	ldi	r25, 0x00	; 0
+ 47c:	80 93 04 20 	sts	0x2004, r24
+ 480:	90 93 05 20 	sts	0x2005, r25
+        //}
+
+    }
+}
+ 484:	ff 91       	pop	r31
+ 486:	ef 91       	pop	r30
+ 488:	9f 91       	pop	r25
+ 48a:	8f 91       	pop	r24
+ 48c:	0f 90       	pop	r0
+ 48e:	0f be       	out	0x3f, r0	; 63
+ 490:	0f 90       	pop	r0
+ 492:	1f 90       	pop	r1
+ 494:	18 95       	reti
+
+00000496 <__vector_27>:
+
+ISR(UPSTREAM_USART_TXDONE_vect)
+{
+ 496:	1f 92       	push	r1
+ 498:	0f 92       	push	r0
+ 49a:	0f b6       	in	r0, 0x3f	; 63
+ 49c:	0f 92       	push	r0
+ 49e:	11 24       	eor	r1, r1
+ 4a0:	8f 93       	push	r24
+ 4a2:	9f 93       	push	r25
+ 4a4:	ef 93       	push	r30
+ 4a6:	ff 93       	push	r31
+    upstreamBusy = 0;
+ 4a8:	10 92 01 20 	sts	0x2001, r1
+    notifyDaisy = 1;
+ 4ac:	81 e0       	ldi	r24, 0x01	; 1
+ 4ae:	80 93 00 20 	sts	0x2000, r24
+    upstreamTxDone = 1;
+ 4b2:	81 e0       	ldi	r24, 0x01	; 1
+ 4b4:	90 e0       	ldi	r25, 0x00	; 0
+ 4b6:	80 93 02 20 	sts	0x2002, r24
+ 4ba:	90 93 03 20 	sts	0x2003, r25
+    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc | USART_RXCINTLVL_OFF_gc;
+ 4be:	e0 ea       	ldi	r30, 0xA0	; 160
+ 4c0:	f8 e0       	ldi	r31, 0x08	; 8
+ 4c2:	13 82       	std	Z+3, r1	; 0x03
+    UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 4c4:	80 e4       	ldi	r24, 0x40	; 64
+ 4c6:	81 83       	std	Z+1, r24	; 0x01
+}
+ 4c8:	ff 91       	pop	r31
+ 4ca:	ef 91       	pop	r30
+ 4cc:	9f 91       	pop	r25
+ 4ce:	8f 91       	pop	r24
+ 4d0:	0f 90       	pop	r0
+ 4d2:	0f be       	out	0x3f, r0	; 63
+ 4d4:	0f 90       	pop	r0
+ 4d6:	1f 90       	pop	r1
+ 4d8:	18 95       	reti
+
+000004da <computeChecksum>:
+ * As a shortcut, feeding an entire packet to this routine should result in a return
+ * value of zero for a proper packet.
+ ************************************************************************/
+int computeChecksum(uint8_t *packetBuffer, int packetSize)
+{
+    uint8_t accumulator = 0;
+ 4da:	fc 01       	movw	r30, r24
+    for(int i=0;i<packetSize;i++)
+ 4dc:	20 e0       	ldi	r18, 0x00	; 0
+ 4de:	30 e0       	ldi	r19, 0x00	; 0
+ * As a shortcut, feeding an entire packet to this routine should result in a return
+ * value of zero for a proper packet.
+ ************************************************************************/
+int computeChecksum(uint8_t *packetBuffer, int packetSize)
+{
+    uint8_t accumulator = 0;
+ 4e0:	80 e0       	ldi	r24, 0x00	; 0
+    for(int i=0;i<packetSize;i++)
+ 4e2:	04 c0       	rjmp	.+8      	; 0x4ec <computeChecksum+0x12>
+    {
+        accumulator += packetBuffer[i];
+ 4e4:	91 91       	ld	r25, Z+
+ 4e6:	89 0f       	add	r24, r25
+ * value of zero for a proper packet.
+ ************************************************************************/
+int computeChecksum(uint8_t *packetBuffer, int packetSize)
+{
+    uint8_t accumulator = 0;
+    for(int i=0;i<packetSize;i++)
+ 4e8:	2f 5f       	subi	r18, 0xFF	; 255
+ 4ea:	3f 4f       	sbci	r19, 0xFF	; 255
+ 4ec:	26 17       	cp	r18, r22
+ 4ee:	37 07       	cpc	r19, r23
+ 4f0:	cc f3       	brlt	.-14     	; 0x4e4 <computeChecksum+0xa>
+    {
+        accumulator += packetBuffer[i];
+    }
+
+    return (0x00 - accumulator);
+ 4f2:	90 e0       	ldi	r25, 0x00	; 0
+ 4f4:	90 95       	com	r25
+ 4f6:	81 95       	neg	r24
+ 4f8:	9f 4f       	sbci	r25, 0xFF	; 255
+}
+ 4fa:	08 95       	ret
+
+000004fc <configureDaisyUSART>:
+        //COMMAND_USART.BAUDCTRLA = 34;                            //Configure for 57600 baud rate with normal baud rate generation
+        //COMMAND_USART.BAUDCTRLB = 0;
+        targetUSART->BAUDCTRLA = 33;                            //Configure for 115200 with fractional baud rate generation
+        targetUSART->BAUDCTRLB = 0xF0;
+    } else {
+        targetUSART->BAUDCTRLA = 0;                                //Configure for 2 MBaud by setting baud rate to zero
+ 4fc:	e0 ea       	ldi	r30, 0xA0	; 160
+ 4fe:	f8 e0       	ldi	r31, 0x08	; 8
+ 500:	16 82       	std	Z+6, r1	; 0x06
+        targetUSART->BAUDCTRLB = 0x00;                            //and BSEL to zero
+ 502:	17 82       	std	Z+7, r1	; 0x07
+    }
+    targetUSART->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | \
+ 504:	83 e0       	ldi	r24, 0x03	; 3
+ 506:	85 83       	std	Z+5, r24	; 0x05
+                         USART_PMODE_DISABLED_gc | \
+                          USART_CHSIZE_8BIT_gc;                //Configure port settings for 8 bits of data, 1 stop bit.
+    targetUSART->CTRLB |= USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 508:	84 81       	ldd	r24, Z+4	; 0x04
+ 50a:	88 61       	ori	r24, 0x18	; 24
+ 50c:	84 83       	std	Z+4, r24	; 0x04
+    //Now initialize the downstream
+    configureUSARTHardware(&DOWNSTREAM_USART,0,1);
+#endif
+
+    //Prepare DMA transfers
+    DMA.CTRL = DMA_ENABLE_bm;
+ 50e:	80 e8       	ldi	r24, 0x80	; 128
+ 510:	80 93 00 01 	sts	0x0100, r24
+
+    //Assume default configuration with downstream OUT and upstream IN
+#if USE_DOWNSTREAM
+    configureHalfDuplexLink(DOWNSTREAM,OUTBOUND);
+#endif
+    configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 514:	80 e0       	ldi	r24, 0x00	; 0
+ 516:	0e 94 8a 01 	call	0x314	; 0x314 <configureHalfDuplexLink.constprop.1>
+
+    //Activate the heartbeat timer for resetting inbound DMA as necessary
+    //Interrupt every half millisecond
+    //At 32 MHz internal oscillator with 1024 prescaler,
+    DAISY_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 51a:	e0 e0       	ldi	r30, 0x00	; 0
+ 51c:	f8 e0       	ldi	r31, 0x08	; 8
+ 51e:	11 82       	std	Z+1, r1	; 0x01
+    DAISY_TC.CTRLC = 0x00;
+ 520:	12 82       	std	Z+2, r1	; 0x02
+    DAISY_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 522:	13 82       	std	Z+3, r1	; 0x03
+    DAISY_TC.CTRLE = 0x00;
+ 524:	14 82       	std	Z+4, r1	; 0x04
+    DAISY_TC.PERBUF = 16;
+ 526:	80 e1       	ldi	r24, 0x10	; 16
+ 528:	90 e0       	ldi	r25, 0x00	; 0
+ 52a:	86 ab       	sts	0x56, r24
+ 52c:	97 ab       	sts	0x57, r25
+    DAISY_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 52e:	81 e0       	ldi	r24, 0x01	; 1
+ 530:	86 83       	std	Z+6, r24	; 0x06
+    DAISY_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 532:	87 e0       	ldi	r24, 0x07	; 7
+ 534:	80 83       	st	Z, r24
+
+    //Activate the Upstream DMA for a command packet of data
+    //activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+}
+ 536:	08 95       	ret
+
+00000538 <doDaisyTask>:
+ * Maintains system state and manages the transmission/reception of chained data
+ * Should be called whenever notifyDaisy is set to 1.
+ ************************************************************************/
+
+void doDaisyTask(void)
+{
+ 538:	cf 93       	push	r28
+    uint8_t packetSize;
+    //First clear the daisy notification flag
+    cli();
+ 53a:	f8 94       	cli
+    notifyDaisy = 0;
+ 53c:	10 92 00 20 	sts	0x2000, r1
+    sei();
+ 540:	78 94       	sei
+        configureHalfDuplexLink(DOWNSTREAM,INBOUND);
+    }
+#endif
+*/
+
+    switch(daisyState)
+ 542:	80 91 d6 20 	lds	r24, 0x20D6
+ 546:	88 23       	and	r24, r24
+ 548:	21 f0       	breq	.+8      	; 0x552 <doDaisyTask+0x1a>
+ 54a:	81 30       	cpi	r24, 0x01	; 1
+ 54c:	09 f0       	breq	.+2      	; 0x550 <doDaisyTask+0x18>
+ 54e:	93 c0       	rjmp	.+294    	; 0x676 <doDaisyTask+0x13e>
+ 550:	81 c0       	rjmp	.+258    	; 0x654 <doDaisyTask+0x11c>
+            }
+
+
+#endif
+
+            if(upstreamRxDone)
+ 552:	80 91 04 20 	lds	r24, 0x2004
+ 556:	90 91 05 20 	lds	r25, 0x2005
+ 55a:	00 97       	sbiw	r24, 0x00	; 0
+ 55c:	09 f4       	brne	.+2      	; 0x560 <doDaisyTask+0x28>
+ 55e:	8b c0       	rjmp	.+278    	; 0x676 <doDaisyTask+0x13e>
+            {
+                //A packet arrived from upstream.  Parse it and compute some sort of reply.
+                cli();
+ 560:	f8 94       	cli
+                upstreamRxDone = 0;
+ 562:	10 92 04 20 	sts	0x2004, r1
+ 566:	10 92 05 20 	sts	0x2005, r1
+                sei();
+ 56a:	78 94       	sei
+
+                //A data packet has arrived from upstream.  Validate it
+                if(computeChecksum((uint8_t *)inbound_upstream_data,COMMAND_PACKET_SIZE) != 0x00)
+ 56c:	8f ec       	ldi	r24, 0xCF	; 207
+ 56e:	90 e2       	ldi	r25, 0x20	; 32
+ 570:	67 e0       	ldi	r22, 0x07	; 7
+ 572:	70 e0       	ldi	r23, 0x00	; 0
+ 574:	0e 94 6d 02 	call	0x4da	; 0x4da <computeChecksum>
+ 578:	00 97       	sbiw	r24, 0x00	; 0
+ 57a:	c9 f1       	breq	.+114    	; 0x5ee <doDaisyTask+0xb6>
+                {
+                    //Invalid checksum
+                  RxCheckSumErrCnt[0]++;
+ 57c:	80 91 d9 20 	lds	r24, 0x20D9
+ 580:	90 91 da 20 	lds	r25, 0x20DA
+ 584:	01 96       	adiw	r24, 0x01	; 1
+ 586:	80 93 d9 20 	sts	0x20D9, r24
+ 58a:	90 93 da 20 	sts	0x20DA, r25
+                    outbound_upstream_data[0] = 3; //Packet size
+ 58e:	83 e0       	ldi	r24, 0x03	; 3
+ 590:	80 93 07 20 	sts	0x2007, r24
+                    outbound_upstream_data[1] = inbound_upstream_data[1]; //Reflected command byte
+ 594:	80 91 d0 20 	lds	r24, 0x20D0
+ 598:	80 93 08 20 	sts	0x2008, r24
+                    outbound_upstream_data[2] = CHECKSUM_ERROR; //Checksum error
+ 59c:	c1 e0       	ldi	r28, 0x01	; 1
+ 59e:	c0 93 09 20 	sts	0x2009, r28
+                    outbound_upstream_data[3] = computeChecksum((uint8_t *)outbound_upstream_data,3); //checksum
+ 5a2:	87 e0       	ldi	r24, 0x07	; 7
+ 5a4:	90 e2       	ldi	r25, 0x20	; 32
+ 5a6:	63 e0       	ldi	r22, 0x03	; 3
+ 5a8:	70 e0       	ldi	r23, 0x00	; 0
+ 5aa:	0e 94 6d 02 	call	0x4da	; 0x4da <computeChecksum>
+ 5ae:	80 93 0a 20 	sts	0x200A, r24
+                    configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 5b2:	81 e0       	ldi	r24, 0x01	; 1
+ 5b4:	0e 94 8a 01 	call	0x314	; 0x314 <configureHalfDuplexLink.constprop.1>
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 5b8:	e0 ea       	ldi	r30, 0xA0	; 160
+ 5ba:	f8 e0       	ldi	r31, 0x08	; 8
+ 5bc:	13 82       	std	Z+3, r1	; 0x03
+                    UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 5be:	80 91 07 20 	lds	r24, 0x2007
+ 5c2:	80 93 a0 08 	sts	0x08A0, r24
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 5c6:	8a e6       	ldi	r24, 0x6A	; 106
+ 5c8:	8a 95       	dec	r24
+ 5ca:	f1 f7       	brne	.-4      	; 0x5c8 <doDaisyTask+0x90>
+ 5cc:	00 c0       	rjmp	.+0      	; 0x5ce <doDaisyTask+0x96>
+                    //_delay_us(10);
+                    DELAY_ROUTINE();
+                    UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 5ce:	80 e4       	ldi	r24, 0x40	; 64
+ 5d0:	81 83       	std	Z+1, r24	; 0x01
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 5d2:	84 e0       	ldi	r24, 0x04	; 4
+ 5d4:	83 83       	std	Z+3, r24	; 0x03
+ * with prepareDMAChannel().
+ ************************************************************************/
+static void activateDMAChannel(DMA_CH_t *selectedChannel,int numBytes)
+{
+    //Set block size to packet size
+    selectedChannel->TRFCNT = numBytes;
+ 5d6:	83 e0       	ldi	r24, 0x03	; 3
+ 5d8:	90 e0       	ldi	r25, 0x00	; 0
+ 5da:	e0 e1       	ldi	r30, 0x10	; 16
+ 5dc:	f1 e0       	ldi	r31, 0x01	; 1
+ 5de:	84 83       	std	Z+4, r24	; 0x04
+ 5e0:	95 83       	std	Z+5, r25	; 0x05
+    //Enable the channel on single shot mode with a burst length of one.  Whenever the trigger arrives,
+    //only one burst will be performed.
+    selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 5e2:	84 e8       	ldi	r24, 0x84	; 132
+ 5e4:	80 93 10 01 	sts	0x0110, r24
+                    //_delay_us(10);
+                    DELAY_ROUTINE();
+                    UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+                    activateDMAChannel(&UPSTREAM_DMA,3);
+                    daisyState = DAISY_TRANSMITTING;
+ 5e8:	c0 93 d6 20 	sts	0x20D6, r28
+#if USE_DOWNSTREAM
+                    //No passthrough occurred, so do not wait on a downstream reply.
+                    passthroughWaiting = 0;
+#endif
+                    break;
+ 5ec:	44 c0       	rjmp	.+136    	; 0x676 <doDaisyTask+0x13e>
+                    //A downstream reply will be expected
+                    passthroughWaiting = 1;
+                }
+#endif
+
+                if(((inbound_upstream_data[0] & 0xF0) == 0xF0) || ((inbound_upstream_data[0] & 0x0F) == 0x00))
+ 5ee:	80 91 cf 20 	lds	r24, 0x20CF
+ 5f2:	80 7f       	andi	r24, 0xF0	; 240
+ 5f4:	80 3f       	cpi	r24, 0xF0	; 240
+ 5f6:	39 f0       	breq	.+14     	; 0x606 <doDaisyTask+0xce>
+ 5f8:	80 91 cf 20 	lds	r24, 0x20CF
+ 5fc:	90 e0       	ldi	r25, 0x00	; 0
+ 5fe:	8f 70       	andi	r24, 0x0F	; 15
+ 600:	90 70       	andi	r25, 0x00	; 0
+ 602:	00 97       	sbiw	r24, 0x00	; 0
+ 604:	c1 f5       	brne	.+112    	; 0x676 <doDaisyTask+0x13e>
+                {
+                    //This packet should be responded to
+                    packetSize = processCommand((uint8_t *)inbound_upstream_data,(uint8_t *)outbound_upstream_data);
+ 606:	8f ec       	ldi	r24, 0xCF	; 207
+ 608:	90 e2       	ldi	r25, 0x20	; 32
+ 60a:	67 e0       	ldi	r22, 0x07	; 7
+ 60c:	70 e2       	ldi	r23, 0x20	; 32
+ 60e:	0e 94 b6 03 	call	0x76c	; 0x76c <processCommand>
+ 612:	c8 2f       	mov	r28, r24
+
+                    //Assume the command processor handled the packetization
+                    configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 614:	81 e0       	ldi	r24, 0x01	; 1
+ 616:	0e 94 8a 01 	call	0x314	; 0x314 <configureHalfDuplexLink.constprop.1>
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 61a:	e0 ea       	ldi	r30, 0xA0	; 160
+ 61c:	f8 e0       	ldi	r31, 0x08	; 8
+ 61e:	13 82       	std	Z+3, r1	; 0x03
+                    UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 620:	80 91 07 20 	lds	r24, 0x2007
+ 624:	80 93 a0 08 	sts	0x08A0, r24
+ 628:	8a e6       	ldi	r24, 0x6A	; 106
+ 62a:	8a 95       	dec	r24
+ 62c:	f1 f7       	brne	.-4      	; 0x62a <doDaisyTask+0xf2>
+ 62e:	00 c0       	rjmp	.+0      	; 0x630 <doDaisyTask+0xf8>
+                    //_delay_us(10);
+                    DELAY_ROUTINE();
+                    UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 630:	80 e4       	ldi	r24, 0x40	; 64
+ 632:	81 83       	std	Z+1, r24	; 0x01
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 634:	84 e0       	ldi	r24, 0x04	; 4
+ 636:	83 83       	std	Z+3, r24	; 0x03
+                    activateDMAChannel(&UPSTREAM_DMA,packetSize-1);
+ 638:	8c 2f       	mov	r24, r28
+ 63a:	90 e0       	ldi	r25, 0x00	; 0
+ 63c:	01 97       	sbiw	r24, 0x01	; 1
+ * with prepareDMAChannel().
+ ************************************************************************/
+static void activateDMAChannel(DMA_CH_t *selectedChannel,int numBytes)
+{
+    //Set block size to packet size
+    selectedChannel->TRFCNT = numBytes;
+ 63e:	e0 e1       	ldi	r30, 0x10	; 16
+ 640:	f1 e0       	ldi	r31, 0x01	; 1
+ 642:	84 83       	std	Z+4, r24	; 0x04
+ 644:	95 83       	std	Z+5, r25	; 0x05
+    //Enable the channel on single shot mode with a burst length of one.  Whenever the trigger arrives,
+    //only one burst will be performed.
+    selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 646:	84 e8       	ldi	r24, 0x84	; 132
+ 648:	80 93 10 01 	sts	0x0110, r24
+                    //_delay_us(10);
+                    DELAY_ROUTINE();
+                    UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+                    UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+                    activateDMAChannel(&UPSTREAM_DMA,packetSize-1);
+                    daisyState = DAISY_TRANSMITTING;
+ 64c:	81 e0       	ldi	r24, 0x01	; 1
+ 64e:	80 93 d6 20 	sts	0x20D6, r24
+ 652:	11 c0       	rjmp	.+34     	; 0x676 <doDaisyTask+0x13e>
+                DOWNSTREAM_CONFIG = OUTBOUND;
+                DOWNSTREAM_USART.CTRLA = 0x00;
+            }
+#endif
+            //System is pushing data upstream, but it might be done
+            if(upstreamTxDone)
+ 654:	80 91 02 20 	lds	r24, 0x2002
+ 658:	90 91 03 20 	lds	r25, 0x2003
+ 65c:	00 97       	sbiw	r24, 0x00	; 0
+ 65e:	59 f0       	breq	.+22     	; 0x676 <doDaisyTask+0x13e>
+            {
+                //The upstream transmitter is loaded with data (but possibly not done)
+
+                cli();
+ 660:	f8 94       	cli
+                upstreamTxDone = 0;
+ 662:	10 92 02 20 	sts	0x2002, r1
+ 666:	10 92 03 20 	sts	0x2003, r1
+                sei();
+ 66a:	78 94       	sei
+                    //Just go back to idle.  Another notification will arrive to wake up when the downstream reply is delivered
+                    daisyState = DAISY_IDLE;
+                } else {
+                    //Nothing else is coming  Reset to idle after full transmission complete
+#endif
+                    daisyState = DAISY_IDLE;
+ 66c:	10 92 d6 20 	sts	0x20D6, r1
+                    //Now wait for the transmission to complete entirely
+                    //while(!(UPSTREAM_USART.STATUS & USART_TXCIF_bm));
+                    configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 670:	80 e0       	ldi	r24, 0x00	; 0
+ 672:	0e 94 8a 01 	call	0x314	; 0x314 <configureHalfDuplexLink.constprop.1>
+
+        default:
+            break;
+    }
+
+}
+ 676:	cf 91       	pop	r28
+ 678:	08 95       	ret
+
+0000067a <configurePortIO>:
+    //PA3 - NC
+    //PA4 - NC
+    //PA5 - NC
+    //PA6 - NC
+    //PA7 - NC
+    PORTA.OUT = 0x00;
+ 67a:	e0 e0       	ldi	r30, 0x00	; 0
+ 67c:	f6 e0       	ldi	r31, 0x06	; 6
+ 67e:	14 82       	std	Z+4, r1	; 0x04
+    PORTA.DIR = 0x00;
+ 680:	10 82       	st	Z, r1
+
+    //PB0 - SPARE2
+    //PB1 - NC
+    //PB2 - NC
+    //PB3 - LED
+    PORTB.OUT = 0x00;
+ 682:	e0 e2       	ldi	r30, 0x20	; 32
+ 684:	f6 e0       	ldi	r31, 0x06	; 6
+ 686:	14 82       	std	Z+4, r1	; 0x04
+    PORTB.DIR = 0x08;
+ 688:	88 e0       	ldi	r24, 0x08	; 8
+ 68a:	80 83       	st	Z, r24
+    //PC3 - TX_PROX1
+    //PC4 - SPARE1 -- NOTE: This is the physical SS signal.  It cannot be a general purpose input without breaking SPI.  It can be GP output
+    //PC5 - MOSI_1
+    //PC6 - MISO_1
+    //PC7 - SCK_1
+    PORTC.OUT = 0x0A;
+ 68c:	e0 e4       	ldi	r30, 0x40	; 64
+ 68e:	f6 e0       	ldi	r31, 0x06	; 6
+ 690:	8a e0       	ldi	r24, 0x0A	; 10
+ 692:	84 83       	std	Z+4, r24	; 0x04
+    PORTC.DIR = 0xBB;
+ 694:	8b eb       	ldi	r24, 0xBB	; 187
+ 696:	80 83       	st	Z, r24
+    //PD3 - nCSS1
+    //PD4 - nCSS2
+    //PD5 - MOSI_2
+    //PD6 - MISO_2
+    //PD7 - SCK_2
+    PORTD.OUT = 0x18;
+ 698:	e0 e6       	ldi	r30, 0x60	; 96
+ 69a:	f6 e0       	ldi	r31, 0x06	; 6
+ 69c:	88 e1       	ldi	r24, 0x18	; 24
+ 69e:	84 83       	std	Z+4, r24	; 0x04
+    PORTD.DIR = 0xBF;
+ 6a0:	8f eb       	ldi	r24, 0xBF	; 191
+ 6a2:	80 83       	st	Z, r24
+
+    //PE0 - nCSS3
+    //PE1 - nCSS4
+    //PE2 - nCSS5
+    //PE3 - nCSS6
+    PORTE.OUT = 0x0F;
+ 6a4:	e0 e8       	ldi	r30, 0x80	; 128
+ 6a6:	f6 e0       	ldi	r31, 0x06	; 6
+ 6a8:	8f e0       	ldi	r24, 0x0F	; 15
+ 6aa:	84 83       	std	Z+4, r24	; 0x04
+    PORTE.DIR = 0x0F;
+ 6ac:	80 83       	st	Z, r24
+
+    //PR0 - NC
+    //PR1 - SPARE3
+    PORTR.OUT = 0x00;
+ 6ae:	e0 ee       	ldi	r30, 0xE0	; 224
+ 6b0:	f7 e0       	ldi	r31, 0x07	; 7
+ 6b2:	14 82       	std	Z+4, r1	; 0x04
+    PORTR.DIR = 0x00;
+ 6b4:	10 82       	st	Z, r1
+
+}
+ 6b6:	08 95       	ret
+
+000006b8 <ReadIntFromEEPROM>:
+    for(uint8_t i=0; i<4; i++)
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+}
+
+static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination)
+{
+ 6b8:	ef 92       	push	r14
+ 6ba:	ff 92       	push	r15
+ 6bc:	0f 93       	push	r16
+ 6be:	1f 93       	push	r17
+ 6c0:	cf 93       	push	r28
+ 6c2:	df 93       	push	r29
+ 6c4:	0f 92       	push	r0
+ 6c6:	cd b7       	in	r28, 0x3d	; 61
+ 6c8:	de b7       	in	r29, 0x3e	; 62
+    for(uint8_t i=0; i<4; i++)
+        *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+ 6ca:	e8 2e       	mov	r14, r24
+ 6cc:	ff 24       	eor	r15, r15
+ 6ce:	ee 0c       	add	r14, r14
+ 6d0:	ff 1c       	adc	r15, r15
+ 6d2:	ee 0c       	add	r14, r14
+ 6d4:	ff 1c       	adc	r15, r15
+ 6d6:	8b 01       	movw	r16, r22
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+}
+
+static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination)
+{
+    for(uint8_t i=0; i<4; i++)
+ 6d8:	20 e0       	ldi	r18, 0x00	; 0
+        *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+ 6da:	c7 01       	movw	r24, r14
+ 6dc:	29 83       	std	Y+1, r18	; 0x01
+ 6de:	0e 94 a0 07 	call	0xf40	; 0xf40 <__eerd_byte_x32a4>
+ 6e2:	f8 01       	movw	r30, r16
+ 6e4:	81 93       	st	Z+, r24
+ 6e6:	8f 01       	movw	r16, r30
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+}
+
+static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination)
+{
+    for(uint8_t i=0; i<4; i++)
+ 6e8:	29 81       	ldd	r18, Y+1	; 0x01
+ 6ea:	2f 5f       	subi	r18, 0xFF	; 255
+ 6ec:	08 94       	sec
+ 6ee:	e1 1c       	adc	r14, r1
+ 6f0:	f1 1c       	adc	r15, r1
+ 6f2:	24 30       	cpi	r18, 0x04	; 4
+ 6f4:	91 f7       	brne	.-28     	; 0x6da <ReadIntFromEEPROM+0x22>
+        *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+}
+ 6f6:	0f 90       	pop	r0
+ 6f8:	df 91       	pop	r29
+ 6fa:	cf 91       	pop	r28
+ 6fc:	1f 91       	pop	r17
+ 6fe:	0f 91       	pop	r16
+ 700:	ff 90       	pop	r15
+ 702:	ef 90       	pop	r14
+ 704:	08 95       	ret
+
+00000706 <WriteIntToEEPROM>:
+    else
+        LEDoff();
+}
+
+static void WriteIntToEEPROM(uint8_t address, uint8_t* value)
+{
+ 706:	ef 92       	push	r14
+ 708:	ff 92       	push	r15
+ 70a:	0f 93       	push	r16
+ 70c:	1f 93       	push	r17
+ 70e:	cf 93       	push	r28
+ 710:	df 93       	push	r29
+ 712:	0f 92       	push	r0
+ 714:	cd b7       	in	r28, 0x3d	; 61
+ 716:	de b7       	in	r29, 0x3e	; 62
+    for(uint8_t i=0; i<4; i++)
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 718:	8b 01       	movw	r16, r22
+ 71a:	e8 2e       	mov	r14, r24
+ 71c:	ff 24       	eor	r15, r15
+ 71e:	ee 0c       	add	r14, r14
+ 720:	ff 1c       	adc	r15, r15
+ 722:	ee 0c       	add	r14, r14
+ 724:	ff 1c       	adc	r15, r15
+        LEDoff();
+}
+
+static void WriteIntToEEPROM(uint8_t address, uint8_t* value)
+{
+    for(uint8_t i=0; i<4; i++)
+ 726:	20 e0       	ldi	r18, 0x00	; 0
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 728:	f8 01       	movw	r30, r16
+ 72a:	61 91       	ld	r22, Z+
+ 72c:	8f 01       	movw	r16, r30
+ 72e:	c7 01       	movw	r24, r14
+ 730:	29 83       	std	Y+1, r18	; 0x01
+ 732:	0e 94 b0 07 	call	0xf60	; 0xf60 <__eewr_byte_x32a4>
+        LEDoff();
+}
+
+static void WriteIntToEEPROM(uint8_t address, uint8_t* value)
+{
+    for(uint8_t i=0; i<4; i++)
+ 736:	29 81       	ldd	r18, Y+1	; 0x01
+ 738:	2f 5f       	subi	r18, 0xFF	; 255
+ 73a:	08 94       	sec
+ 73c:	e1 1c       	adc	r14, r1
+ 73e:	f1 1c       	adc	r15, r1
+ 740:	24 30       	cpi	r18, 0x04	; 4
+ 742:	91 f7       	brne	.-28     	; 0x728 <WriteIntToEEPROM+0x22>
+        eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+}
+ 744:	0f 90       	pop	r0
+ 746:	df 91       	pop	r29
+ 748:	cf 91       	pop	r28
+ 74a:	1f 91       	pop	r17
+ 74c:	0f 91       	pop	r16
+ 74e:	ff 90       	pop	r15
+ 750:	ef 90       	pop	r14
+ 752:	08 95       	ret
+
+00000754 <LEDon>:
+    }
+}
+
+void LEDon(void)
+{
+    PORTB.OUT |= 0x08;
+ 754:	e0 e2       	ldi	r30, 0x20	; 32
+ 756:	f6 e0       	ldi	r31, 0x06	; 6
+ 758:	84 81       	ldd	r24, Z+4	; 0x04
+ 75a:	88 60       	ori	r24, 0x08	; 8
+ 75c:	84 83       	std	Z+4, r24	; 0x04
+}
+ 75e:	08 95       	ret
+
+00000760 <LEDoff>:
+void LEDoff(void)
+{
+    PORTB.OUT &= ~0x08;
+ 760:	e0 e2       	ldi	r30, 0x20	; 32
+ 762:	f6 e0       	ldi	r31, 0x06	; 6
+ 764:	84 81       	ldd	r24, Z+4	; 0x04
+ 766:	87 7f       	andi	r24, 0xF7	; 247
+ 768:	84 83       	std	Z+4, r24	; 0x04
+}
+ 76a:	08 95       	ret
+
+0000076c <processCommand>:
+    outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+    return 4;
+}
+
+int processCommand(uint8_t *commandPacket,uint8_t *outputBuffer)
+{
+ 76c:	cf 92       	push	r12
+ 76e:	df 92       	push	r13
+ 770:	ef 92       	push	r14
+ 772:	ff 92       	push	r15
+ 774:	0f 93       	push	r16
+ 776:	1f 93       	push	r17
+ 778:	cf 93       	push	r28
+ 77a:	df 93       	push	r29
+ 77c:	0f 92       	push	r0
+ 77e:	cd b7       	in	r28, 0x3d	; 61
+ 780:	de b7       	in	r29, 0x3e	; 62
+ 782:	8c 01       	movw	r16, r24
+ 784:	7b 01       	movw	r14, r22
+  uint8_t opcode;
+
+  opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 786:	fc 01       	movw	r30, r24
+ 788:	81 81       	ldd	r24, Z+1	; 0x01
+ 78a:	98 2f       	mov	r25, r24
+ 78c:	90 7f       	andi	r25, 0xF0	; 240
+
+  switch(opcode)
+ 78e:	90 38       	cpi	r25, 0x80	; 128
+ 790:	09 f4       	brne	.+2      	; 0x794 <processCommand+0x28>
+ 792:	5f c0       	rjmp	.+190    	; 0x852 <processCommand+0xe6>
+ 794:	91 38       	cpi	r25, 0x81	; 129
+ 796:	48 f4       	brcc	.+18     	; 0x7aa <processCommand+0x3e>
+ 798:	90 36       	cpi	r25, 0x60	; 96
+ 79a:	09 f4       	brne	.+2      	; 0x79e <processCommand+0x32>
+ 79c:	5a c0       	rjmp	.+180    	; 0x852 <processCommand+0xe6>
+ 79e:	90 37       	cpi	r25, 0x70	; 112
+ 7a0:	09 f4       	brne	.+2      	; 0x7a4 <processCommand+0x38>
+ 7a2:	57 c0       	rjmp	.+174    	; 0x852 <processCommand+0xe6>
+ 7a4:	99 23       	and	r25, r25
+ 7a6:	59 f0       	breq	.+22     	; 0x7be <processCommand+0x52>
+ 7a8:	ce c0       	rjmp	.+412    	; 0x946 <processCommand+0x1da>
+ 7aa:	90 3b       	cpi	r25, 0xB0	; 176
+ 7ac:	09 f4       	brne	.+2      	; 0x7b0 <processCommand+0x44>
+ 7ae:	9c c0       	rjmp	.+312    	; 0x8e8 <processCommand+0x17c>
+ 7b0:	90 3c       	cpi	r25, 0xC0	; 192
+ 7b2:	09 f4       	brne	.+2      	; 0x7b6 <processCommand+0x4a>
+ 7b4:	a2 c0       	rjmp	.+324    	; 0x8fa <processCommand+0x18e>
+ 7b6:	90 39       	cpi	r25, 0x90	; 144
+ 7b8:	09 f0       	breq	.+2      	; 0x7bc <processCommand+0x50>
+ 7ba:	c5 c0       	rjmp	.+394    	; 0x946 <processCommand+0x1da>
+ 7bc:	4a c0       	rjmp	.+148    	; 0x852 <processCommand+0xe6>
+static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+{
+    uint8_t responseSize = 0;
+    uint16_t collectionBitfield;
+
+    memcpy(&collectionBitfield,&commandPacket[PAYLOAD_OFFSET],2);
+ 7be:	f8 01       	movw	r30, r16
+ 7c0:	02 81       	ldd	r16, Z+2	; 0x02
+ 7c2:	13 81       	ldd	r17, Z+3	; 0x03
+
+    if(collectionBitfield & DATA_COLLECTION_DYNAMIC_BITMASK)
+ 7c4:	16 ff       	sbrs	r17, 6
+ 7c6:	06 c0       	rjmp	.+12     	; 0x7d4 <processCommand+0x68>
+    {
+        captureSweep((int16_t *)&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize]);
+ 7c8:	cb 01       	movw	r24, r22
+ 7ca:	03 96       	adiw	r24, 0x03	; 3
+ 7cc:	0e 94 db 00 	call	0x1b6	; 0x1b6 <captureSweep>
+        responseSize += 8;
+ 7d0:	28 e0       	ldi	r18, 0x08	; 8
+ 7d2:	01 c0       	rjmp	.+2      	; 0x7d6 <processCommand+0x6a>
+    }
+}
+
+static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+{
+    uint8_t responseSize = 0;
+ 7d4:	20 e0       	ldi	r18, 0x00	; 0
+    {
+        captureSweep((int16_t *)&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize]);
+        responseSize += 8;
+    }
+
+    if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 7d6:	11 ff       	sbrs	r17, 1
+ 7d8:	0c c0       	rjmp	.+24     	; 0x7f2 <processCommand+0x86>
+    {
+        memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], pressureData, NUMBER_OF_TACTILE_SENSORS*2);
+ 7da:	f7 01       	movw	r30, r14
+ 7dc:	e2 0f       	add	r30, r18
+ 7de:	f1 1d       	adc	r31, r1
+ 7e0:	33 96       	adiw	r30, 0x03	; 3
+ 7e2:	a5 ee       	ldi	r26, 0xE5	; 229
+ 7e4:	b0 e2       	ldi	r27, 0x20	; 32
+ 7e6:	80 e6       	ldi	r24, 0x60	; 96
+ 7e8:	0d 90       	ld	r0, X+
+ 7ea:	01 92       	st	Z+, r0
+ 7ec:	81 50       	subi	r24, 0x01	; 1
+ 7ee:	e1 f7       	brne	.-8      	; 0x7e8 <processCommand+0x7c>
+        responseSize += NUMBER_OF_TACTILE_SENSORS*2;
+ 7f0:	20 5a       	subi	r18, 0xA0	; 160
+    }
+    
+    if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 7f2:	01 ff       	sbrs	r16, 1
+ 7f4:	0a c0       	rjmp	.+20     	; 0x80a <processCommand+0x9e>
+    {
+        memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,2);
+ 7f6:	80 91 d9 20 	lds	r24, 0x20D9
+ 7fa:	90 91 da 20 	lds	r25, 0x20DA
+ 7fe:	f7 01       	movw	r30, r14
+ 800:	e2 0f       	add	r30, r18
+ 802:	f1 1d       	adc	r31, r1
+ 804:	83 83       	std	Z+3, r24	; 0x03
+ 806:	94 83       	std	Z+4, r25	; 0x04
+        responseSize += 2;
+ 808:	2e 5f       	subi	r18, 0xFE	; 254
+    }
+    
+    if(collectionBitfield & DATA_COLLECTION_TACTILE_TEMP_BITMASK)
+ 80a:	00 ff       	sbrs	r16, 0
+ 80c:	0c c0       	rjmp	.+24     	; 0x826 <processCommand+0xba>
+    {
+        memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], pressureTempData, NUMBER_OF_TACTILE_SENSORS*2);
+ 80e:	f7 01       	movw	r30, r14
+ 810:	e2 0f       	add	r30, r18
+ 812:	f1 1d       	adc	r31, r1
+ 814:	33 96       	adiw	r30, 0x03	; 3
+ 816:	a5 e7       	ldi	r26, 0x75	; 117
+ 818:	b1 e2       	ldi	r27, 0x21	; 33
+ 81a:	80 e6       	ldi	r24, 0x60	; 96
+ 81c:	0d 90       	ld	r0, X+
+ 81e:	01 92       	st	Z+, r0
+ 820:	81 50       	subi	r24, 0x01	; 1
+ 822:	e1 f7       	brne	.-8      	; 0x81c <processCommand+0xb0>
+        responseSize += NUMBER_OF_TACTILE_SENSORS*2;
+ 824:	20 5a       	subi	r18, 0xA0	; 160
+    }
+    
+    outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 826:	82 2f       	mov	r24, r18
+ 828:	8d 5f       	subi	r24, 0xFD	; 253
+ 82a:	f7 01       	movw	r30, r14
+ 82c:	80 83       	st	Z, r24
+    outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = DATA_COLLECTION_OPCODE;
+ 82e:	11 82       	std	Z+1, r1	; 0x01
+    outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 830:	12 82       	std	Z+2, r1	; 0x02
+    outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is the checksum
+ 832:	c2 2e       	mov	r12, r18
+ 834:	dd 24       	eor	r13, r13
+ 836:	b6 01       	movw	r22, r12
+ 838:	6d 5f       	subi	r22, 0xFD	; 253
+ 83a:	7f 4f       	sbci	r23, 0xFF	; 255
+ 83c:	87 01       	movw	r16, r14
+ 83e:	06 0f       	add	r16, r22
+ 840:	17 1f       	adc	r17, r23
+ 842:	c7 01       	movw	r24, r14
+ 844:	0e 94 6d 02 	call	0x4da	; 0x4da <computeChecksum>
+ 848:	f8 01       	movw	r30, r16
+ 84a:	80 83       	st	Z, r24
+    return 4+responseSize;
+ 84c:	c6 01       	movw	r24, r12
+ 84e:	04 96       	adiw	r24, 0x04	; 4
+
+  switch(opcode)
+    {
+
+    case DATA_COLLECTION_OPCODE:
+      return handleCollectionCommand(commandPacket,outputBuffer);
+ 850:	89 c0       	rjmp	.+274    	; 0x964 <processCommand+0x1f8>
+    uint8_t opcode;
+    uint8_t address;
+    uint8_t responseSize = 4;
+
+    opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+    address = commandPacket[COMMAND_OFFSET] & 0x1F;
+ 852:	8f 71       	andi	r24, 0x1F	; 31
+
+    switch(opcode)
+ 854:	90 37       	cpi	r25, 0x70	; 112
+ 856:	51 f0       	breq	.+20     	; 0x86c <processCommand+0x100>
+ 858:	91 37       	cpi	r25, 0x71	; 113
+ 85a:	18 f4       	brcc	.+6      	; 0x862 <processCommand+0xf6>
+ 85c:	90 36       	cpi	r25, 0x60	; 96
+ 85e:	e1 f5       	brne	.+120    	; 0x8d8 <processCommand+0x16c>
+ 860:	05 c0       	rjmp	.+10     	; 0x86c <processCommand+0x100>
+ 862:	90 38       	cpi	r25, 0x80	; 128
+ 864:	d1 f0       	breq	.+52     	; 0x89a <processCommand+0x12e>
+ 866:	90 39       	cpi	r25, 0x90	; 144
+ 868:	b9 f5       	brne	.+110    	; 0x8d8 <processCommand+0x16c>
+ 86a:	17 c0       	rjmp	.+46     	; 0x89a <processCommand+0x12e>
+    {
+        case MOTOR_PARAMETER_RE_L_OPCODE:
+        case MOTOR_PARAMETER_RE_H_OPCODE:
+            // Read 4 bytes of data
+            ReadIntFromEEPROM(address, &outputBuffer[RESPONSE_PAYLOAD_OFFSET]);
+ 86c:	b7 01       	movw	r22, r14
+ 86e:	6d 5f       	subi	r22, 0xFD	; 253
+ 870:	7f 4f       	sbci	r23, 0xFF	; 255
+ 872:	0e 94 5c 03 	call	0x6b8	; 0x6b8 <ReadIntFromEEPROM>
+            // finish up the packet
+            outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 876:	87 e0       	ldi	r24, 0x07	; 7
+ 878:	f7 01       	movw	r30, r14
+ 87a:	80 83       	st	Z, r24
+            outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 87c:	f8 01       	movw	r30, r16
+ 87e:	81 81       	ldd	r24, Z+1	; 0x01
+ 880:	f7 01       	movw	r30, r14
+ 882:	81 83       	std	Z+1, r24	; 0x01
+            outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 884:	12 82       	std	Z+2, r1	; 0x02
+            outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is the checksum
+ 886:	c7 01       	movw	r24, r14
+ 888:	67 e0       	ldi	r22, 0x07	; 7
+ 88a:	70 e0       	ldi	r23, 0x00	; 0
+ 88c:	0e 94 6d 02 	call	0x4da	; 0x4da <computeChecksum>
+ 890:	f7 01       	movw	r30, r14
+ 892:	87 83       	std	Z+7, r24	; 0x07
+            return 4+responseSize;
+ 894:	88 e0       	ldi	r24, 0x08	; 8
+ 896:	90 e0       	ldi	r25, 0x00	; 0
+ 898:	65 c0       	rjmp	.+202    	; 0x964 <processCommand+0x1f8>
+        case MOTOR_PARAMETER_WR_L_OPCODE:
+        case MOTOR_PARAMETER_WR_H_OPCODE:
+            if(address==EEPROM_ADDRESS_LED) {
+ 89a:	8f 31       	cpi	r24, 0x1F	; 31
+ 89c:	89 f4       	brne	.+34     	; 0x8c0 <processCommand+0x154>
+                if(commandPacket[PAYLOAD_OFFSET+0]
+ 89e:	f8 01       	movw	r30, r16
+ 8a0:	93 81       	ldd	r25, Z+3	; 0x03
+ 8a2:	22 81       	ldd	r18, Z+2	; 0x02
+ 8a4:	92 2b       	or	r25, r18
+ 8a6:	24 81       	ldd	r18, Z+4	; 0x04
+ 8a8:	92 2b       	or	r25, r18
+ 8aa:	25 81       	ldd	r18, Z+5	; 0x05
+ 8ac:	92 2b       	or	r25, r18
+                   |commandPacket[PAYLOAD_OFFSET+1]
+                   |commandPacket[PAYLOAD_OFFSET+2]
+                   |commandPacket[PAYLOAD_OFFSET+3]) {
+                    LEDon();
+ 8ae:	89 83       	std	Y+1, r24	; 0x01
+            outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is the checksum
+            return 4+responseSize;
+        case MOTOR_PARAMETER_WR_L_OPCODE:
+        case MOTOR_PARAMETER_WR_H_OPCODE:
+            if(address==EEPROM_ADDRESS_LED) {
+                if(commandPacket[PAYLOAD_OFFSET+0]
+ 8b0:	99 23       	and	r25, r25
+ 8b2:	19 f0       	breq	.+6      	; 0x8ba <processCommand+0x14e>
+                   |commandPacket[PAYLOAD_OFFSET+1]
+                   |commandPacket[PAYLOAD_OFFSET+2]
+                   |commandPacket[PAYLOAD_OFFSET+3]) {
+                    LEDon();
+ 8b4:	0e 94 aa 03 	call	0x754	; 0x754 <LEDon>
+ 8b8:	02 c0       	rjmp	.+4      	; 0x8be <processCommand+0x152>
+                }
+                else {
+                    LEDoff();
+ 8ba:	0e 94 b0 03 	call	0x760	; 0x760 <LEDoff>
+ 8be:	89 81       	ldd	r24, Y+1	; 0x01
+                }
+            }
+            // Write 32 bits of data
+            WriteIntToEEPROM(address, &commandPacket[PAYLOAD_OFFSET]);
+ 8c0:	b8 01       	movw	r22, r16
+ 8c2:	6e 5f       	subi	r22, 0xFE	; 254
+ 8c4:	7f 4f       	sbci	r23, 0xFF	; 255
+ 8c6:	0e 94 83 03 	call	0x706	; 0x706 <WriteIntToEEPROM>
+            // ack the command
+            outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 8ca:	83 e0       	ldi	r24, 0x03	; 3
+ 8cc:	f7 01       	movw	r30, r14
+ 8ce:	80 83       	st	Z, r24
+            outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 8d0:	f8 01       	movw	r30, r16
+ 8d2:	81 81       	ldd	r24, Z+1	; 0x01
+ 8d4:	f7 01       	movw	r30, r14
+ 8d6:	34 c0       	rjmp	.+104    	; 0x940 <processCommand+0x1d4>
+            outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+            outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+            return 4;
+        default:
+            outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 8d8:	83 e0       	ldi	r24, 0x03	; 3
+ 8da:	f7 01       	movw	r30, r14
+ 8dc:	80 83       	st	Z, r24
+            outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 8de:	f8 01       	movw	r30, r16
+ 8e0:	81 81       	ldd	r24, Z+1	; 0x01
+ 8e2:	f7 01       	movw	r30, r14
+ 8e4:	81 83       	std	Z+1, r24	; 0x01
+ 8e6:	33 c0       	rjmp	.+102    	; 0x94e <processCommand+0x1e2>
+    case MOTOR_PARAMETER_WR_H_OPCODE:
+      return handleEEPROMCommand(commandPacket,outputBuffer);
+    case BOOTLOADER_OPCODE:
+      // no reply is expected, just reset/reboot to get into bootloader
+      //wdt_enable(WDT_PER_8CLK_gc);
+      wdt_enable(0); //x32a4u include files seem broken
+ 8e8:	93 e0       	ldi	r25, 0x03	; 3
+ 8ea:	88 ed       	ldi	r24, 0xD8	; 216
+ 8ec:	08 b6       	in	r0, 0x38	; 56
+ 8ee:	84 bf       	out	0x34, r24	; 52
+ 8f0:	90 93 80 00 	sts	0x0080, r25
+ 8f4:	a8 95       	wdr
+ 8f6:	08 be       	out	0x38, r0	; 56
+ 8f8:	ff cf       	rjmp	.-2      	; 0x8f8 <processCommand+0x18c>
+
+static int handleCalibrationCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+{
+    uint16_t collectionBitfield;
+
+    memcpy(&collectionBitfield,&commandPacket[PAYLOAD_OFFSET],2);
+ 8fa:	f8 01       	movw	r30, r16
+ 8fc:	42 81       	ldd	r20, Z+2	; 0x02
+ 8fe:	53 81       	ldd	r21, Z+3	; 0x03
+
+    if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 900:	51 ff       	sbrs	r21, 1
+ 902:	10 c0       	rjmp	.+32     	; 0x924 <processCommand+0x1b8>
+ 904:	a5 ee       	ldi	r26, 0xE5	; 229
+ 906:	b0 e2       	ldi	r27, 0x20	; 32
+ 908:	e5 e3       	ldi	r30, 0x35	; 53
+ 90a:	f2 e2       	ldi	r31, 0x22	; 34
+ 90c:	60 e0       	ldi	r22, 0x00	; 0
+    {
+        // zero out pressure readings with an offset
+        for(uint8_t i=0; i<NUMBER_OF_TACTILE_SENSORS; i++)
+        {
+            pressureDataOffset[i] = pressureData[i] + pressureDataOffset[i];
+ 90e:	2d 91       	ld	r18, X+
+ 910:	3d 91       	ld	r19, X+
+ 912:	80 81       	ld	r24, Z
+ 914:	91 81       	ldd	r25, Z+1	; 0x01
+ 916:	82 0f       	add	r24, r18
+ 918:	93 1f       	adc	r25, r19
+ 91a:	81 93       	st	Z+, r24
+ 91c:	91 93       	st	Z+, r25
+    memcpy(&collectionBitfield,&commandPacket[PAYLOAD_OFFSET],2);
+
+    if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+    {
+        // zero out pressure readings with an offset
+        for(uint8_t i=0; i<NUMBER_OF_TACTILE_SENSORS; i++)
+ 91e:	6f 5f       	subi	r22, 0xFF	; 255
+ 920:	60 33       	cpi	r22, 0x30	; 48
+ 922:	a9 f7       	brne	.-22     	; 0x90e <processCommand+0x1a2>
+        {
+            pressureDataOffset[i] = pressureData[i] + pressureDataOffset[i];
+        }
+    }
+
+    if (collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 924:	41 ff       	sbrs	r20, 1
+ 926:	08 c0       	rjmp	.+16     	; 0x938 <processCommand+0x1cc>
+    {
+        RxCheckSumErrCnt[0] = 0;
+ 928:	10 92 d9 20 	sts	0x20D9, r1
+ 92c:	10 92 da 20 	sts	0x20DA, r1
+        RxCheckSumErrCnt[1] = 0;
+ 930:	10 92 db 20 	sts	0x20DB, r1
+ 934:	10 92 dc 20 	sts	0x20DC, r1
+    }
+
+    outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 938:	83 e0       	ldi	r24, 0x03	; 3
+ 93a:	f7 01       	movw	r30, r14
+ 93c:	80 83       	st	Z, r24
+    outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = CALIBRATION_OPCODE;
+ 93e:	80 ec       	ldi	r24, 0xC0	; 192
+ 940:	81 83       	std	Z+1, r24	; 0x01
+    outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 942:	12 82       	std	Z+2, r1	; 0x02
+ 944:	06 c0       	rjmp	.+12     	; 0x952 <processCommand+0x1e6>
+      while(1);  // use watchdog timer to trigger a reset
+      return 4; // to keep compiler happy
+    case CALIBRATION_OPCODE:
+      return handleCalibrationCommand(commandPacket, outputBuffer);
+    default:
+      outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 946:	83 e0       	ldi	r24, 0x03	; 3
+ 948:	f7 01       	movw	r30, r14
+ 94a:	80 83       	st	Z, r24
+      outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = opcode;
+ 94c:	91 83       	std	Z+1, r25	; 0x01
+      outputBuffer[RESPONSE_STATUSCODE_OFFSET] = UNKNOWN_COMMAND;
+ 94e:	82 e0       	ldi	r24, 0x02	; 2
+ 950:	82 83       	std	Z+2, r24	; 0x02
+      outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 952:	c7 01       	movw	r24, r14
+ 954:	63 e0       	ldi	r22, 0x03	; 3
+ 956:	70 e0       	ldi	r23, 0x00	; 0
+ 958:	0e 94 6d 02 	call	0x4da	; 0x4da <computeChecksum>
+ 95c:	f7 01       	movw	r30, r14
+ 95e:	83 83       	std	Z+3, r24	; 0x03
+      return 4;
+ 960:	84 e0       	ldi	r24, 0x04	; 4
+ 962:	90 e0       	ldi	r25, 0x00	; 0
+    }
+}
+ 964:	0f 90       	pop	r0
+ 966:	df 91       	pop	r29
+ 968:	cf 91       	pop	r28
+ 96a:	1f 91       	pop	r17
+ 96c:	0f 91       	pop	r16
+ 96e:	ff 90       	pop	r15
+ 970:	ef 90       	pop	r14
+ 972:	df 90       	pop	r13
+ 974:	cf 90       	pop	r12
+ 976:	08 95       	ret
+
+00000978 <LEDtoggle>:
+{
+    PORTB.OUT &= ~0x08;
+}
+void LEDtoggle(void)
+{
+    PORTB.OUTTGL = 0x08;
+ 978:	88 e0       	ldi	r24, 0x08	; 8
+ 97a:	e0 e2       	ldi	r30, 0x20	; 32
+ 97c:	f6 e0       	ldi	r31, 0x06	; 6
+ 97e:	87 83       	std	Z+7, r24	; 0x07
+}
+ 980:	08 95       	ret
+
+00000982 <getDoubleWord>:
+        adjustedPressure[i] = 0;
+    }
+}
+
+static void getDoubleWord(uint8_t startingOpcode, uint16_t *firstResponse, uint16_t *secondResponse)
+{
+ 982:	cf 93       	push	r28
+ 984:	df 93       	push	r29
+ 986:	fb 01       	movw	r30, r22
+ 988:	ea 01       	movw	r28, r20
+    uint8_t dummyRead;
+
+    //Send the data.
+    SPI0.DATA = startingOpcode;
+ 98a:	a0 ec       	ldi	r26, 0xC0	; 192
+ 98c:	b8 e0       	ldi	r27, 0x08	; 8
+ 98e:	13 96       	adiw	r26, 0x03	; 3
+ 990:	8c 93       	st	X, r24
+    SPI1.DATA = startingOpcode;
+ 992:	a0 ec       	ldi	r26, 0xC0	; 192
+ 994:	b9 e0       	ldi	r27, 0x09	; 9
+ 996:	13 96       	adiw	r26, 0x03	; 3
+ 998:	8c 93       	st	X, r24
+ 99a:	13 97       	sbiw	r26, 0x03	; 3
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ 99c:	90 91 c2 08 	lds	r25, 0x08C2
+ 9a0:	97 ff       	sbrs	r25, 7
+ 9a2:	fc cf       	rjmp	.-8      	; 0x99c <getDoubleWord+0x1a>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ 9a4:	90 91 c2 09 	lds	r25, 0x09C2
+ 9a8:	97 ff       	sbrs	r25, 7
+ 9aa:	fc cf       	rjmp	.-8      	; 0x9a4 <getDoubleWord+0x22>
+
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+ 9ac:	90 91 c3 08 	lds	r25, 0x08C3
+    dummyRead = SPI1.DATA;
+ 9b0:	90 91 c3 09 	lds	r25, 0x09C3
+
+    //Send the dummy byte
+    SPI0.DATA = 0x00;
+ 9b4:	a0 ec       	ldi	r26, 0xC0	; 192
+ 9b6:	b8 e0       	ldi	r27, 0x08	; 8
+ 9b8:	13 96       	adiw	r26, 0x03	; 3
+ 9ba:	1c 92       	st	X, r1
+    SPI1.DATA = 0x00;
+ 9bc:	a0 ec       	ldi	r26, 0xC0	; 192
+ 9be:	b9 e0       	ldi	r27, 0x09	; 9
+ 9c0:	13 96       	adiw	r26, 0x03	; 3
+ 9c2:	1c 92       	st	X, r1
+ 9c4:	13 97       	sbiw	r26, 0x03	; 3
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ 9c6:	90 91 c2 08 	lds	r25, 0x08C2
+ 9ca:	97 ff       	sbrs	r25, 7
+ 9cc:	fc cf       	rjmp	.-8      	; 0x9c6 <getDoubleWord+0x44>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ 9ce:	90 91 c2 09 	lds	r25, 0x09C2
+ 9d2:	97 ff       	sbrs	r25, 7
+ 9d4:	fc cf       	rjmp	.-8      	; 0x9ce <getDoubleWord+0x4c>
+
+    //Read the MSB data
+    dummyRead = SPI0.DATA;
+ 9d6:	90 91 c3 08 	lds	r25, 0x08C3
+    *firstResponse = dummyRead << 8;
+ 9da:	10 82       	st	Z, r1
+ 9dc:	91 83       	std	Z+1, r25	; 0x01
+    dummyRead = SPI1.DATA;
+ 9de:	90 91 c3 09 	lds	r25, 0x09C3
+    *secondResponse = dummyRead << 8;
+ 9e2:	18 82       	st	Y, r1
+ 9e4:	99 83       	std	Y+1, r25	; 0x01
+
+    //Send the data.
+    SPI0.DATA = startingOpcode+2;
+ 9e6:	8e 5f       	subi	r24, 0xFE	; 254
+ 9e8:	a0 ec       	ldi	r26, 0xC0	; 192
+ 9ea:	b8 e0       	ldi	r27, 0x08	; 8
+ 9ec:	13 96       	adiw	r26, 0x03	; 3
+ 9ee:	8c 93       	st	X, r24
+    SPI1.DATA = startingOpcode+2;
+ 9f0:	a0 ec       	ldi	r26, 0xC0	; 192
+ 9f2:	b9 e0       	ldi	r27, 0x09	; 9
+ 9f4:	13 96       	adiw	r26, 0x03	; 3
+ 9f6:	8c 93       	st	X, r24
+ 9f8:	13 97       	sbiw	r26, 0x03	; 3
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ 9fa:	80 91 c2 08 	lds	r24, 0x08C2
+ 9fe:	87 ff       	sbrs	r24, 7
+ a00:	fc cf       	rjmp	.-8      	; 0x9fa <getDoubleWord+0x78>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ a02:	80 91 c2 09 	lds	r24, 0x09C2
+ a06:	87 ff       	sbrs	r24, 7
+ a08:	fc cf       	rjmp	.-8      	; 0xa02 <getDoubleWord+0x80>
+
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+ a0a:	80 91 c3 08 	lds	r24, 0x08C3
+    dummyRead = SPI1.DATA;
+ a0e:	80 91 c3 09 	lds	r24, 0x09C3
+
+    //Send the dummy byte
+    SPI0.DATA = 0x00;
+ a12:	a0 ec       	ldi	r26, 0xC0	; 192
+ a14:	b8 e0       	ldi	r27, 0x08	; 8
+ a16:	13 96       	adiw	r26, 0x03	; 3
+ a18:	1c 92       	st	X, r1
+    SPI1.DATA = 0x00;
+ a1a:	a0 ec       	ldi	r26, 0xC0	; 192
+ a1c:	b9 e0       	ldi	r27, 0x09	; 9
+ a1e:	13 96       	adiw	r26, 0x03	; 3
+ a20:	1c 92       	st	X, r1
+ a22:	13 97       	sbiw	r26, 0x03	; 3
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ a24:	80 91 c2 08 	lds	r24, 0x08C2
+ a28:	87 ff       	sbrs	r24, 7
+ a2a:	fc cf       	rjmp	.-8      	; 0xa24 <getDoubleWord+0xa2>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ a2c:	80 91 c2 09 	lds	r24, 0x09C2
+ a30:	87 ff       	sbrs	r24, 7
+ a32:	fc cf       	rjmp	.-8      	; 0xa2c <getDoubleWord+0xaa>
+
+    //Read the LSB data
+    dummyRead = SPI0.DATA;
+ a34:	20 91 c3 08 	lds	r18, 0x08C3
+    *firstResponse |= dummyRead;
+ a38:	30 e0       	ldi	r19, 0x00	; 0
+ a3a:	80 81       	ld	r24, Z
+ a3c:	91 81       	ldd	r25, Z+1	; 0x01
+ a3e:	82 2b       	or	r24, r18
+ a40:	93 2b       	or	r25, r19
+ a42:	80 83       	st	Z, r24
+ a44:	91 83       	std	Z+1, r25	; 0x01
+    dummyRead = SPI1.DATA;
+ a46:	20 91 c3 09 	lds	r18, 0x09C3
+    *secondResponse |= dummyRead;
+ a4a:	30 e0       	ldi	r19, 0x00	; 0
+ a4c:	88 81       	ld	r24, Y
+ a4e:	99 81       	ldd	r25, Y+1	; 0x01
+ a50:	82 2b       	or	r24, r18
+ a52:	93 2b       	or	r25, r19
+ a54:	88 83       	st	Y, r24
+ a56:	99 83       	std	Y+1, r25	; 0x01
+
+    return;
+}
+ a58:	df 91       	pop	r29
+ a5a:	cf 91       	pop	r28
+ a5c:	08 95       	ret
+
+00000a5e <selectSensorPair>:
+//For simplicity, the Tactile sensor address pins are all on PD0 - PD2
+static void selectSensorPair(uint8_t tactAddress)
+{
+    uint8_t dummyRead;
+    //First set the address properly
+    PORTD.OUTSET = tactAddress & TACT_ADDR_MASK;
+ a5e:	98 2f       	mov	r25, r24
+ a60:	97 70       	andi	r25, 0x07	; 7
+ a62:	e0 e6       	ldi	r30, 0x60	; 96
+ a64:	f6 e0       	ldi	r31, 0x06	; 6
+ a66:	95 83       	std	Z+5, r25	; 0x05
+
+    //Now assert the proper chip selects
+    switch(tactAddress & TACT_CS_MASK)
+ a68:	90 e0       	ldi	r25, 0x00	; 0
+ a6a:	88 71       	andi	r24, 0x18	; 24
+ a6c:	90 70       	andi	r25, 0x00	; 0
+ a6e:	88 30       	cpi	r24, 0x08	; 8
+ a70:	91 05       	cpc	r25, r1
+ a72:	49 f0       	breq	.+18     	; 0xa86 <selectSensorPair+0x28>
+ a74:	80 31       	cpi	r24, 0x10	; 16
+ a76:	91 05       	cpc	r25, r1
+ a78:	51 f0       	breq	.+20     	; 0xa8e <selectSensorPair+0x30>
+ a7a:	00 97       	sbiw	r24, 0x00	; 0
+ a7c:	89 f4       	brne	.+34     	; 0xaa0 <selectSensorPair+0x42>
+    {
+        case TACT_CS1_CS4:
+            PORTD.OUTCLR = 0x08;
+ a7e:	88 e0       	ldi	r24, 0x08	; 8
+ a80:	86 83       	std	Z+6, r24	; 0x06
+            PORTE.OUTCLR = 0x02;
+ a82:	82 e0       	ldi	r24, 0x02	; 2
+ a84:	05 c0       	rjmp	.+10     	; 0xa90 <selectSensorPair+0x32>
+            break;
+        case TACT_CS2_CS5:
+            PORTD.OUTCLR = 0x10;
+ a86:	80 e1       	ldi	r24, 0x10	; 16
+ a88:	86 83       	std	Z+6, r24	; 0x06
+            PORTE.OUTCLR = 0x04;
+ a8a:	84 e0       	ldi	r24, 0x04	; 4
+ a8c:	01 c0       	rjmp	.+2      	; 0xa90 <selectSensorPair+0x32>
+            break;
+        case TACT_CS3_CS6:
+            PORTE.OUTCLR = 0x09;
+ a8e:	89 e0       	ldi	r24, 0x09	; 9
+ a90:	e0 e8       	ldi	r30, 0x80	; 128
+ a92:	f6 e0       	ldi	r31, 0x06	; 6
+ a94:	86 83       	std	Z+6, r24	; 0x06
+            PORTD.OUTCLR = TACT_ADDR_MASK;
+            return;
+    }
+
+    //Make sure transmitters are OK
+    if(SPI0.STATUS & SPI_IF_bm)
+ a96:	80 91 c2 08 	lds	r24, 0x08C2
+ a9a:	87 ff       	sbrs	r24, 7
+ a9c:	06 c0       	rjmp	.+12     	; 0xaaa <selectSensorPair+0x4c>
+ a9e:	03 c0       	rjmp	.+6      	; 0xaa6 <selectSensorPair+0x48>
+            PORTE.OUTCLR = 0x09;
+            break;
+        default:
+            //Should never get here.  Invalid address
+            //Reset address lines and get out
+            PORTD.OUTCLR = TACT_ADDR_MASK;
+ aa0:	87 e0       	ldi	r24, 0x07	; 7
+ aa2:	86 83       	std	Z+6, r24	; 0x06
+            return;
+ aa4:	08 95       	ret
+    }
+
+    //Make sure transmitters are OK
+    if(SPI0.STATUS & SPI_IF_bm)
+    {
+        dummyRead = SPI0.DATA;
+ aa6:	80 91 c3 08 	lds	r24, 0x08C3
+    }
+
+    if(SPI1.STATUS & SPI_IF_bm)
+ aaa:	80 91 c2 09 	lds	r24, 0x09C2
+ aae:	87 ff       	sbrs	r24, 7
+ ab0:	02 c0       	rjmp	.+4      	; 0xab6 <selectSensorPair+0x58>
+    {
+        dummyRead = SPI1.DATA;
+ ab2:	80 91 c3 09 	lds	r24, 0x09C3
+ ab6:	08 95       	ret
+
+00000ab8 <__vector_20>:
+static void selectSensorPair(uint8_t tactAddress);
+
+volatile uint8_t tactReady = 0;
+
+ISR(TACT_TC_vect)
+{
+ ab8:	1f 92       	push	r1
+ aba:	0f 92       	push	r0
+ abc:	0f b6       	in	r0, 0x3f	; 63
+ abe:	0f 92       	push	r0
+ ac0:	11 24       	eor	r1, r1
+ ac2:	8f 93       	push	r24
+    tactReady = 1;
+ ac4:	81 e0       	ldi	r24, 0x01	; 1
+ ac6:	80 93 d8 20 	sts	0x20D8, r24
+    TACT_TC.CTRLA = TC_CLKSEL_OFF_gc;
+ aca:	10 92 40 08 	sts	0x0840, r1
+    return;
+}
+ ace:	8f 91       	pop	r24
+ ad0:	0f 90       	pop	r0
+ ad2:	0f be       	out	0x3f, r0	; 63
+ ad4:	0f 90       	pop	r0
+ ad6:	1f 90       	pop	r1
+ ad8:	18 95       	reti
+
+00000ada <configureSPIModules>:
+
+//The system can take 8 MHz.  Peripheral clock is set to 32 MHz internally, so a divide by 4 prescaler is correct
+
+void configureSPIModules(void)
+{
+    SPI0.INTCTRL = SPI_INTLVL_OFF_gc;
+ ada:	e0 ec       	ldi	r30, 0xC0	; 192
+ adc:	f8 e0       	ldi	r31, 0x08	; 8
+ ade:	11 82       	std	Z+1, r1	; 0x01
+    SPI0.CTRL = SPI_ENABLE_bm | SPI_MASTER_bm | SPI_MODE_0_gc | SPI_PRESCALER_DIV4_gc;
+ ae0:	80 e5       	ldi	r24, 0x50	; 80
+ ae2:	80 83       	st	Z, r24
+
+    SPI1.INTCTRL = SPI_INTLVL_OFF_gc;
+ ae4:	e0 ec       	ldi	r30, 0xC0	; 192
+ ae6:	f9 e0       	ldi	r31, 0x09	; 9
+ ae8:	11 82       	std	Z+1, r1	; 0x01
+    SPI1.CTRL = SPI_ENABLE_bm | SPI_MASTER_bm | SPI_MODE_0_gc | SPI_PRESCALER_DIV4_gc;
+ aea:	80 83       	st	Z, r24
+
+}
+ aec:	08 95       	ret
+
+00000aee <initTactileModule>:
+
+//initialization
+void initTactileModule(void)
+{
+ aee:	0f 93       	push	r16
+ af0:	1f 93       	push	r17
+ af2:	cf 93       	push	r28
+ af4:	df 93       	push	r29
+ af6:	05 e4       	ldi	r16, 0x45	; 69
+ af8:	11 e2       	ldi	r17, 0x21	; 33
+ afa:	a5 ee       	ldi	r26, 0xE5	; 229
+ afc:	b0 e2       	ldi	r27, 0x20	; 32
+ afe:	c5 e3       	ldi	r28, 0x35	; 53
+ b00:	d2 e2       	ldi	r29, 0x22	; 34
+ b02:	85 e7       	ldi	r24, 0x75	; 117
+ b04:	91 e2       	ldi	r25, 0x21	; 33
+ b06:	25 ed       	ldi	r18, 0xD5	; 213
+ b08:	31 e2       	ldi	r19, 0x21	; 33
+ b0a:	45 e9       	ldi	r20, 0x95	; 149
+ b0c:	52 e2       	ldi	r21, 0x22	; 34
+ b0e:	60 e3       	ldi	r22, 0x30	; 48
+    for(uint8_t i=0; i<NUMBER_OF_TACTILE_SENSORS; i++)
+    {
+        pressureCalibrated[i] = 0;
+ b10:	f8 01       	movw	r30, r16
+ b12:	11 92       	st	Z+, r1
+ b14:	8f 01       	movw	r16, r30
+        pressureData[i] = 0;
+ b16:	1d 92       	st	X+, r1
+ b18:	1d 92       	st	X+, r1
+        pressureDataOffset[i] = 0;
+ b1a:	19 92       	st	Y+, r1
+ b1c:	19 92       	st	Y+, r1
+        pressureTempData[i] = 0;
+ b1e:	fc 01       	movw	r30, r24
+ b20:	11 92       	st	Z+, r1
+ b22:	11 92       	st	Z+, r1
+ b24:	cf 01       	movw	r24, r30
+        // b1coeff[i] = 0;
+        // b2coeff[i] = 0;
+        // c12coeff[i] = 0;
+        // rawpressure[i] = 0;
+        // rawtemp[i] = 0;
+        lastPressure[i] = 0;
+ b26:	f9 01       	movw	r30, r18
+ b28:	11 92       	st	Z+, r1
+ b2a:	11 92       	st	Z+, r1
+ b2c:	9f 01       	movw	r18, r30
+        adjustedPressure[i] = 0;
+ b2e:	fa 01       	movw	r30, r20
+ b30:	11 92       	st	Z+, r1
+ b32:	11 92       	st	Z+, r1
+ b34:	af 01       	movw	r20, r30
+ b36:	61 50       	subi	r22, 0x01	; 1
+}
+
+//initialization
+void initTactileModule(void)
+{
+    for(uint8_t i=0; i<NUMBER_OF_TACTILE_SENSORS; i++)
+ b38:	59 f7       	brne	.-42     	; 0xb10 <initTactileModule+0x22>
+        // rawpressure[i] = 0;
+        // rawtemp[i] = 0;
+        lastPressure[i] = 0;
+        adjustedPressure[i] = 0;
+    }
+}
+ b3a:	df 91       	pop	r29
+ b3c:	cf 91       	pop	r28
+ b3e:	1f 91       	pop	r17
+ b40:	0f 91       	pop	r16
+ b42:	08 95       	ret
+
+00000b44 <collectAllCalibrationValues>:
+{
+    int i=0;
+    //First set the pins to known values to tighten inner reading loops
+
+    //Set all chip selects high
+    PORTE.OUTSET = 0xFF;
+ b44:	8f ef       	ldi	r24, 0xFF	; 255
+ b46:	e0 e8       	ldi	r30, 0x80	; 128
+ b48:	f6 e0       	ldi	r31, 0x06	; 6
+ b4a:	85 83       	std	Z+5, r24	; 0x05
+    PORTD.OUTSET = 0x18;
+ b4c:	e0 e6       	ldi	r30, 0x60	; 96
+ b4e:	f6 e0       	ldi	r31, 0x06	; 6
+ b50:	88 e1       	ldi	r24, 0x18	; 24
+ b52:	85 83       	std	Z+5, r24	; 0x05
+
+    //Lower all address lines
+    PORTD.OUTCLR = TACT_ADDR_MASK;
+ b54:	27 e0       	ldi	r18, 0x07	; 7
+ b56:	26 83       	std	Z+6, r18	; 0x06
+    // {
+    //     readCoefficientPair(i);
+    // }
+
+    //Set the Tactile Timer to expire at 3 ms
+    TACT_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ b58:	e0 e4       	ldi	r30, 0x40	; 64
+ b5a:	f8 e0       	ldi	r31, 0x08	; 8
+ b5c:	11 82       	std	Z+1, r1	; 0x01
+    TACT_TC.CTRLC = 0x00;
+ b5e:	12 82       	std	Z+2, r1	; 0x02
+    TACT_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ b60:	13 82       	std	Z+3, r1	; 0x03
+    TACT_TC.CTRLE = 0x00;
+ b62:	14 82       	std	Z+4, r1	; 0x04
+    TACT_TC.PERBUF = TACT_TIMEOUT;
+ b64:	80 e6       	ldi	r24, 0x60	; 96
+ b66:	90 e0       	ldi	r25, 0x00	; 0
+ b68:	86 ab       	sts	0x56, r24
+ b6a:	97 ab       	sts	0x57, r25
+    TACT_TC.CNT = 0x0000;
+ b6c:	10 a2       	lds	r17, 0x90
+ b6e:	11 a2       	lds	r17, 0x91
+    TACT_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ b70:	81 e0       	ldi	r24, 0x01	; 1
+ b72:	86 83       	std	Z+6, r24	; 0x06
+    TACT_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ b74:	20 83       	st	Z, r18
+
+    return;
+}
+ b76:	08 95       	ret
+
+00000b78 <compensatePressure>:
+ * This routine was pulled from Freescale app note AN3785 and modified
+ * for this microprocessor.  The original code assumed two extra parameters
+ * that have now been removed.
+ ************************************************************************/
+void compensatePressure(uint16_t tempReading, uint16_t pressureReading, uint8_t sensorIndex)
+{
+ b78:	ef 92       	push	r14
+ b7a:	ff 92       	push	r15
+ b7c:	0f 93       	push	r16
+ b7e:	1f 93       	push	r17
+ b80:	cf 93       	push	r28
+ b82:	df 93       	push	r29
+    // int32_t si_a2x2,si_y1,si_a1x1,si_c12x2,si_a1;
+
+    // int16_t siPcomp;
+    // //float decPcomp;
+
+    pressureLocal=pressureReading>>6; //Note that the PressCntdec is the raw value from the MPL115A data address. Its shifted >>6 since its 10 bit.
+ b84:	36 e0       	ldi	r19, 0x06	; 6
+ b86:	76 95       	lsr	r23
+ b88:	67 95       	ror	r22
+ b8a:	3a 95       	dec	r19
+ b8c:	e1 f7       	brne	.-8      	; 0xb86 <compensatePressure+0xe>
+    tempLocal=tempReading>>6; //Note that the TempCntdec is the raw value from the MPL115A data address. Its shifted >>6 since its 10 bit.
+ b8e:	7c 01       	movw	r14, r24
+ b90:	56 e0       	ldi	r21, 0x06	; 6
+ b92:	f6 94       	lsr	r15
+ b94:	e7 94       	ror	r14
+ b96:	5a 95       	dec	r21
+ b98:	e1 f7       	brne	.-8      	; 0xb92 <compensatePressure+0x1a>
+
+    // since we are operating the sensor outside its normal range, it seems to behave as if it has 11 bytes of data.
+    // however, its range is still 10 bits, (0-1023).  So we need to track the "actual" value of the sensor across multiple overflows.
+    {
+        if (!pressureCalibrated[sensorIndex])
+ b9a:	04 2f       	mov	r16, r20
+ b9c:	10 e0       	ldi	r17, 0x00	; 0
+ b9e:	d8 01       	movw	r26, r16
+ ba0:	ab 5b       	subi	r26, 0xBB	; 187
+ ba2:	be 4d       	sbci	r27, 0xDE	; 222
+ ba4:	2c 91       	ld	r18, X
+ ba6:	c8 01       	movw	r24, r16
+ ba8:	88 0f       	add	r24, r24
+ baa:	99 1f       	adc	r25, r25
+ bac:	22 23       	and	r18, r18
+ bae:	61 f4       	brne	.+24     	; 0xbc8 <compensatePressure+0x50>
+        {
+            lastPressure[sensorIndex] = pressureLocal;
+ bb0:	fc 01       	movw	r30, r24
+ bb2:	eb 52       	subi	r30, 0x2B	; 43
+ bb4:	fe 4d       	sbci	r31, 0xDE	; 222
+ bb6:	60 83       	st	Z, r22
+ bb8:	71 83       	std	Z+1, r23	; 0x01
+            adjustedPressure[sensorIndex] = pressureLocal;
+ bba:	fc 01       	movw	r30, r24
+ bbc:	eb 56       	subi	r30, 0x6B	; 107
+ bbe:	fd 4d       	sbci	r31, 0xDD	; 221
+ bc0:	60 83       	st	Z, r22
+ bc2:	71 83       	std	Z+1, r23	; 0x01
+            pressureCalibrated[sensorIndex] = 1;
+ bc4:	21 e0       	ldi	r18, 0x01	; 1
+ bc6:	2c 93       	st	X, r18
+        }
+
+        int16_t delta = pressureLocal - lastPressure[sensorIndex];
+ bc8:	dc 01       	movw	r26, r24
+ bca:	ab 52       	subi	r26, 0x2B	; 43
+ bcc:	be 4d       	sbci	r27, 0xDE	; 222
+ bce:	4d 91       	ld	r20, X+
+ bd0:	5c 91       	ld	r21, X
+ bd2:	11 97       	sbiw	r26, 0x01	; 1
+ bd4:	9b 01       	movw	r18, r22
+ bd6:	24 1b       	sub	r18, r20
+ bd8:	35 0b       	sbc	r19, r21
+
+        if (abs(delta) < 512)
+ bda:	e9 01       	movw	r28, r18
+ bdc:	c1 50       	subi	r28, 0x01	; 1
+ bde:	de 4f       	sbci	r29, 0xFE	; 254
+ be0:	fc 01       	movw	r30, r24
+ be2:	eb 56       	subi	r30, 0x6B	; 107
+ be4:	fd 4d       	sbci	r31, 0xDD	; 221
+ be6:	83 e0       	ldi	r24, 0x03	; 3
+ be8:	cf 3f       	cpi	r28, 0xFF	; 255
+ bea:	d8 07       	cpc	r29, r24
+ bec:	30 f4       	brcc	.+12     	; 0xbfa <compensatePressure+0x82>
+        {
+            lastPressure[sensorIndex] = pressureLocal;
+ bee:	6d 93       	st	X+, r22
+ bf0:	7c 93       	st	X, r23
+ bf2:	11 97       	sbiw	r26, 0x01	; 1
+            adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] + delta;
+ bf4:	80 81       	ld	r24, Z
+ bf6:	91 81       	ldd	r25, Z+1	; 0x01
+ bf8:	11 c0       	rjmp	.+34     	; 0xc1c <compensatePressure+0xa4>
+        }
+        else
+        {
+            int16_t bottom = lastPressure[sensorIndex] + (1024 - pressureLocal);
+ bfa:	46 1b       	sub	r20, r22
+ bfc:	57 0b       	sbc	r21, r23
+ bfe:	40 50       	subi	r20, 0x00	; 0
+ c00:	5c 4f       	sbci	r21, 0xFC	; 252
+            int16_t top = pressureLocal + (1024 - lastPressure[sensorIndex]);
+ c02:	20 50       	subi	r18, 0x00	; 0
+ c04:	3c 4f       	sbci	r19, 0xFC	; 252
+            lastPressure[sensorIndex] = pressureLocal;
+ c06:	6d 93       	st	X+, r22
+ c08:	7c 93       	st	X, r23
+ c0a:	11 97       	sbiw	r26, 0x01	; 1
+            if (bottom<top) // crossing 0
+                adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] - bottom;
+ c0c:	80 81       	ld	r24, Z
+ c0e:	91 81       	ldd	r25, Z+1	; 0x01
+        else
+        {
+            int16_t bottom = lastPressure[sensorIndex] + (1024 - pressureLocal);
+            int16_t top = pressureLocal + (1024 - lastPressure[sensorIndex]);
+            lastPressure[sensorIndex] = pressureLocal;
+            if (bottom<top) // crossing 0
+ c10:	42 17       	cp	r20, r18
+ c12:	53 07       	cpc	r21, r19
+ c14:	1c f4       	brge	.+6      	; 0xc1c <compensatePressure+0xa4>
+                adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] - bottom;
+ c16:	84 1b       	sub	r24, r20
+ c18:	95 0b       	sbc	r25, r21
+ c1a:	02 c0       	rjmp	.+4      	; 0xc20 <compensatePressure+0xa8>
+            else // crossing 1024
+                adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] + top;
+ c1c:	82 0f       	add	r24, r18
+ c1e:	93 1f       	adc	r25, r19
+ c20:	80 83       	st	Z, r24
+ c22:	91 83       	std	Z+1, r25	; 0x01
+    // siPcomp = (int16_t)(lt3>>14); //&0x3FF); // goes to no fractional parts since this is an ADC count.
+    // //decPcomp is defined as a floating point number.
+    // //Conversion to Decimal value from 1023 ADC count value. ADC counts are 0 to 1023. Pressure is 50 to 115kPa correspondingly.
+    // //decPcomp = ((65.0/1023.0)*(float)siPcomp)+50.0;
+    
+    pressureTempData[sensorIndex] = tempLocal;
+ c24:	c8 01       	movw	r24, r16
+ c26:	88 0f       	add	r24, r24
+ c28:	99 1f       	adc	r25, r25
+ c2a:	fc 01       	movw	r30, r24
+ c2c:	eb 58       	subi	r30, 0x8B	; 139
+ c2e:	fe 4d       	sbci	r31, 0xDE	; 222
+ c30:	e0 82       	st	Z, r14
+ c32:	f1 82       	std	Z+1, r15	; 0x01
+    //pressureData[sensorIndex] = siPcomp - pressureDataOffset[sensorIndex];
+    pressureData[sensorIndex] = adjustedPressure[sensorIndex] - pressureDataOffset[sensorIndex];
+ c34:	dc 01       	movw	r26, r24
+ c36:	ab 51       	subi	r26, 0x1B	; 27
+ c38:	bf 4d       	sbci	r27, 0xDF	; 223
+ c3a:	fc 01       	movw	r30, r24
+ c3c:	eb 56       	subi	r30, 0x6B	; 107
+ c3e:	fd 4d       	sbci	r31, 0xDD	; 221
+ c40:	8b 5c       	subi	r24, 0xCB	; 203
+ c42:	9d 4d       	sbci	r25, 0xDD	; 221
+ c44:	20 81       	ld	r18, Z
+ c46:	31 81       	ldd	r19, Z+1	; 0x01
+ c48:	fc 01       	movw	r30, r24
+ c4a:	80 81       	ld	r24, Z
+ c4c:	91 81       	ldd	r25, Z+1	; 0x01
+ c4e:	28 1b       	sub	r18, r24
+ c50:	39 0b       	sbc	r19, r25
+ c52:	2d 93       	st	X+, r18
+ c54:	3c 93       	st	X, r19
+ c56:	11 97       	sbiw	r26, 0x01	; 1
+    return;
+}
+ c58:	df 91       	pop	r29
+ c5a:	cf 91       	pop	r28
+ c5c:	1f 91       	pop	r17
+ c5e:	0f 91       	pop	r16
+ c60:	ff 90       	pop	r15
+ c62:	ef 90       	pop	r14
+ c64:	08 95       	ret
+
+00000c66 <doTactSensors>:
+}
+
+uint8_t activeSensor = 0;
+
+void doTactSensors(void)
+{
+ c66:	4f 92       	push	r4
+ c68:	5f 92       	push	r5
+ c6a:	6f 92       	push	r6
+ c6c:	7f 92       	push	r7
+ c6e:	8f 92       	push	r8
+ c70:	9f 92       	push	r9
+ c72:	af 92       	push	r10
+ c74:	bf 92       	push	r11
+ c76:	cf 92       	push	r12
+ c78:	df 92       	push	r13
+ c7a:	ef 92       	push	r14
+ c7c:	ff 92       	push	r15
+ c7e:	0f 93       	push	r16
+ c80:	1f 93       	push	r17
+ c82:	cf 93       	push	r28
+ c84:	df 93       	push	r29
+ c86:	cd b7       	in	r28, 0x3d	; 61
+ c88:	de b7       	in	r29, 0x3e	; 62
+ c8a:	29 97       	sbiw	r28, 0x09	; 9
+ c8c:	cd bf       	out	0x3d, r28	; 61
+ c8e:	de bf       	out	0x3e, r29	; 62
+    uint8_t i;
+
+    //Set all chip selects high
+    PORTE.OUTSET = 0xFF;
+ c90:	8f ef       	ldi	r24, 0xFF	; 255
+ c92:	e0 e8       	ldi	r30, 0x80	; 128
+ c94:	f6 e0       	ldi	r31, 0x06	; 6
+ c96:	85 83       	std	Z+5, r24	; 0x05
+    PORTD.OUTSET = 0x18;
+ c98:	e0 e6       	ldi	r30, 0x60	; 96
+ c9a:	f6 e0       	ldi	r31, 0x06	; 6
+ c9c:	88 e1       	ldi	r24, 0x18	; 24
+ c9e:	85 83       	std	Z+5, r24	; 0x05
+
+    //Lower all address lines
+    PORTD.OUTCLR = TACT_ADDR_MASK;
+ ca0:	87 e0       	ldi	r24, 0x07	; 7
+ ca2:	86 83       	std	Z+6, r24	; 0x06
+
+    if(activeSensor == 24)
+ ca4:	10 91 d7 20 	lds	r17, 0x20D7
+ ca8:	18 31       	cpi	r17, 0x18	; 24
+ caa:	09 f0       	breq	.+2      	; 0xcae <doTactSensors+0x48>
+ cac:	60 c0       	rjmp	.+192    	; 0xd6e <doTactSensors+0x108>
+    {
+        //Set the Tactile Timer to expire at 3 ms and begin conversion
+        cli();
+ cae:	f8 94       	cli
+        tactReady = 0;
+ cb0:	10 92 d8 20 	sts	0x20D8, r1
+        sei();
+ cb4:	78 94       	sei
+        for(i=0;i<24;i++)
+ cb6:	90 e0       	ldi	r25, 0x00	; 0
+{
+    uint8_t dummyRead;
+    selectSensorPair(tactAddress);
+
+    //Send the data.
+    SPI0.DATA = CONVERT_OPCODE;
+ cb8:	00 ec       	ldi	r16, 0xC0	; 192
+ cba:	18 e0       	ldi	r17, 0x08	; 8
+ cbc:	f4 e2       	ldi	r31, 0x24	; 36
+ cbe:	df 2e       	mov	r13, r31
+    SPI1.DATA = CONVERT_OPCODE;
+ cc0:	a0 ec       	ldi	r26, 0xC0	; 192
+ cc2:	8a 2e       	mov	r8, r26
+ cc4:	a9 e0       	ldi	r26, 0x09	; 9
+ cc6:	9a 2e       	mov	r9, r26
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ cc8:	b0 ec       	ldi	r27, 0xC0	; 192
+ cca:	6b 2e       	mov	r6, r27
+ ccc:	b9 e0       	ldi	r27, 0x09	; 9
+ cce:	7b 2e       	mov	r7, r27
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+    dummyRead = SPI1.DATA;
+
+    //Reset the chip select and address lines
+    PORTE.OUTSET = 0xFF;
+ cd0:	80 e8       	ldi	r24, 0x80	; 128
+ cd2:	48 2e       	mov	r4, r24
+ cd4:	86 e0       	ldi	r24, 0x06	; 6
+ cd6:	58 2e       	mov	r5, r24
+ cd8:	bb 24       	eor	r11, r11
+ cda:	ba 94       	dec	r11
+    PORTD.OUTSET = 0x18;
+ cdc:	20 e6       	ldi	r18, 0x60	; 96
+ cde:	e2 2e       	mov	r14, r18
+ ce0:	26 e0       	ldi	r18, 0x06	; 6
+ ce2:	f2 2e       	mov	r15, r18
+ ce4:	38 e1       	ldi	r19, 0x18	; 24
+ ce6:	c3 2e       	mov	r12, r19
+    PORTD.OUTCLR = TACT_ADDR_MASK;
+ ce8:	47 e0       	ldi	r20, 0x07	; 7
+ cea:	a4 2e       	mov	r10, r20
+}
+
+static void convertTactSensorPair(uint8_t tactAddress)
+{
+    uint8_t dummyRead;
+    selectSensorPair(tactAddress);
+ cec:	89 2f       	mov	r24, r25
+ cee:	99 87       	std	Y+9, r25	; 0x09
+ cf0:	0e 94 2f 05 	call	0xa5e	; 0xa5e <selectSensorPair>
+
+    //Send the data.
+    SPI0.DATA = CONVERT_OPCODE;
+ cf4:	f8 01       	movw	r30, r16
+ cf6:	d3 82       	std	Z+3, r13	; 0x03
+    SPI1.DATA = CONVERT_OPCODE;
+ cf8:	f4 01       	movw	r30, r8
+ cfa:	d3 82       	std	Z+3, r13	; 0x03
+ cfc:	99 85       	ldd	r25, Y+9	; 0x09
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ cfe:	80 91 c2 08 	lds	r24, 0x08C2
+ d02:	87 ff       	sbrs	r24, 7
+ d04:	fc cf       	rjmp	.-8      	; 0xcfe <doTactSensors+0x98>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ d06:	80 91 c2 09 	lds	r24, 0x09C2
+ d0a:	87 ff       	sbrs	r24, 7
+ d0c:	fc cf       	rjmp	.-8      	; 0xd06 <doTactSensors+0xa0>
+
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+ d0e:	80 91 c3 08 	lds	r24, 0x08C3
+    dummyRead = SPI1.DATA;
+ d12:	80 91 c3 09 	lds	r24, 0x09C3
+
+    //Send the dummy byte
+    SPI0.DATA = 0x00;
+ d16:	f8 01       	movw	r30, r16
+ d18:	13 82       	std	Z+3, r1	; 0x03
+    SPI1.DATA = 0x00;
+ d1a:	f3 01       	movw	r30, r6
+ d1c:	13 82       	std	Z+3, r1	; 0x03
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ d1e:	80 91 c2 08 	lds	r24, 0x08C2
+ d22:	87 ff       	sbrs	r24, 7
+ d24:	fc cf       	rjmp	.-8      	; 0xd1e <doTactSensors+0xb8>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ d26:	80 91 c2 09 	lds	r24, 0x09C2
+ d2a:	87 ff       	sbrs	r24, 7
+ d2c:	fc cf       	rjmp	.-8      	; 0xd26 <doTactSensors+0xc0>
+
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+ d2e:	80 91 c3 08 	lds	r24, 0x08C3
+    dummyRead = SPI1.DATA;
+ d32:	80 91 c3 09 	lds	r24, 0x09C3
+
+    //Reset the chip select and address lines
+    PORTE.OUTSET = 0xFF;
+ d36:	f2 01       	movw	r30, r4
+ d38:	b5 82       	std	Z+5, r11	; 0x05
+    PORTD.OUTSET = 0x18;
+ d3a:	f7 01       	movw	r30, r14
+ d3c:	c5 82       	std	Z+5, r12	; 0x05
+    PORTD.OUTCLR = TACT_ADDR_MASK;
+ d3e:	a6 82       	std	Z+6, r10	; 0x06
+    {
+        //Set the Tactile Timer to expire at 3 ms and begin conversion
+        cli();
+        tactReady = 0;
+        sei();
+        for(i=0;i<24;i++)
+ d40:	9f 5f       	subi	r25, 0xFF	; 255
+ d42:	98 31       	cpi	r25, 0x18	; 24
+ d44:	99 f6       	brne	.-90     	; 0xcec <doTactSensors+0x86>
+        {
+            convertTactSensorPair(i);
+        }
+
+        TACT_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ d46:	e0 e4       	ldi	r30, 0x40	; 64
+ d48:	f8 e0       	ldi	r31, 0x08	; 8
+ d4a:	11 82       	std	Z+1, r1	; 0x01
+        TACT_TC.CTRLC = 0x00;
+ d4c:	12 82       	std	Z+2, r1	; 0x02
+        TACT_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ d4e:	13 82       	std	Z+3, r1	; 0x03
+        TACT_TC.CTRLE = 0x00;
+ d50:	14 82       	std	Z+4, r1	; 0x04
+        TACT_TC.PERBUF = TACT_TIMEOUT;
+ d52:	80 e6       	ldi	r24, 0x60	; 96
+ d54:	90 e0       	ldi	r25, 0x00	; 0
+ d56:	86 ab       	sts	0x56, r24
+ d58:	97 ab       	sts	0x57, r25
+        TACT_TC.CNT = 0x0000;
+ d5a:	10 a2       	lds	r17, 0x90
+ d5c:	11 a2       	lds	r17, 0x91
+        TACT_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ d5e:	81 e0       	ldi	r24, 0x01	; 1
+ d60:	86 83       	std	Z+6, r24	; 0x06
+        TACT_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ d62:	87 e0       	ldi	r24, 0x07	; 7
+ d64:	80 93 40 08 	sts	0x0840, r24
+        activeSensor = 0;
+ d68:	10 92 d7 20 	sts	0x20D7, r1
+        return;
+ d6c:	4b c0       	rjmp	.+150    	; 0xe04 <doTactSensors+0x19e>
+{
+    uint8_t dummyRead;
+    uint16_t firstPressureReading,secondPressureReading;
+    uint16_t firstTempReading,secondTempReading;
+
+    selectSensorPair(tactAddress);
+ d6e:	81 2f       	mov	r24, r17
+ d70:	0e 94 2f 05 	call	0xa5e	; 0xa5e <selectSensorPair>
+
+    getDoubleWord(READ_PRESSURE_MSB_OPCODE,&firstPressureReading,&secondPressureReading);
+ d74:	80 e8       	ldi	r24, 0x80	; 128
+ d76:	be 01       	movw	r22, r28
+ d78:	69 5f       	subi	r22, 0xF9	; 249
+ d7a:	7f 4f       	sbci	r23, 0xFF	; 255
+ d7c:	ae 01       	movw	r20, r28
+ d7e:	4b 5f       	subi	r20, 0xFB	; 251
+ d80:	5f 4f       	sbci	r21, 0xFF	; 255
+ d82:	0e 94 c1 04 	call	0x982	; 0x982 <getDoubleWord>
+
+    getDoubleWord(READ_TEMPERATURE_MSB_OPCODE,&firstTempReading,&secondTempReading);
+ d86:	84 e8       	ldi	r24, 0x84	; 132
+ d88:	be 01       	movw	r22, r28
+ d8a:	6d 5f       	subi	r22, 0xFD	; 253
+ d8c:	7f 4f       	sbci	r23, 0xFF	; 255
+ d8e:	ae 01       	movw	r20, r28
+ d90:	4f 5f       	subi	r20, 0xFF	; 255
+ d92:	5f 4f       	sbci	r21, 0xFF	; 255
+ d94:	0e 94 c1 04 	call	0x982	; 0x982 <getDoubleWord>
+
+    //Do a final dummy write
+
+    //Send the data.
+    SPI0.DATA = 0x00;
+ d98:	e0 ec       	ldi	r30, 0xC0	; 192
+ d9a:	f8 e0       	ldi	r31, 0x08	; 8
+ d9c:	13 82       	std	Z+3, r1	; 0x03
+    SPI1.DATA = 0x00;
+ d9e:	e0 ec       	ldi	r30, 0xC0	; 192
+ da0:	f9 e0       	ldi	r31, 0x09	; 9
+ da2:	13 82       	std	Z+3, r1	; 0x03
+
+    while(!(SPI0.STATUS & SPI_IF_bm));
+ da4:	80 91 c2 08 	lds	r24, 0x08C2
+ da8:	87 ff       	sbrs	r24, 7
+ daa:	fc cf       	rjmp	.-8      	; 0xda4 <doTactSensors+0x13e>
+    while(!(SPI1.STATUS & SPI_IF_bm));
+ dac:	80 91 c2 09 	lds	r24, 0x09C2
+ db0:	87 ff       	sbrs	r24, 7
+ db2:	fc cf       	rjmp	.-8      	; 0xdac <doTactSensors+0x146>
+
+    //Read the dummy data
+    dummyRead = SPI0.DATA;
+ db4:	80 91 c3 08 	lds	r24, 0x08C3
+    dummyRead = SPI1.DATA;
+ db8:	80 91 c3 09 	lds	r24, 0x09C3
+
+    //Reset the chip select and address lines
+    PORTE.OUTSET = 0xFF;
+ dbc:	8f ef       	ldi	r24, 0xFF	; 255
+ dbe:	e0 e8       	ldi	r30, 0x80	; 128
+ dc0:	f6 e0       	ldi	r31, 0x06	; 6
+ dc2:	85 83       	std	Z+5, r24	; 0x05
+    PORTD.OUTSET = 0x18;
+ dc4:	e0 e6       	ldi	r30, 0x60	; 96
+ dc6:	f6 e0       	ldi	r31, 0x06	; 6
+ dc8:	88 e1       	ldi	r24, 0x18	; 24
+ dca:	85 83       	std	Z+5, r24	; 0x05
+    PORTD.OUTCLR = TACT_ADDR_MASK;
+ dcc:	87 e0       	ldi	r24, 0x07	; 7
+ dce:	86 83       	std	Z+6, r24	; 0x06
+
+    // protect against bad data if reading accelerometer
+    if (firstPressureReading != 0)
+ dd0:	6f 81       	ldd	r22, Y+7	; 0x07
+ dd2:	78 85       	ldd	r23, Y+8	; 0x08
+ dd4:	61 15       	cp	r22, r1
+ dd6:	71 05       	cpc	r23, r1
+ dd8:	29 f0       	breq	.+10     	; 0xde4 <doTactSensors+0x17e>
+    {
+        //floatingPressureData[tactAddress] = compensatePressure(firstTempReading,firstPressureReading,tactAddress);
+        compensatePressure(firstTempReading, firstPressureReading, tactAddress);
+ dda:	8b 81       	ldd	r24, Y+3	; 0x03
+ ddc:	9c 81       	ldd	r25, Y+4	; 0x04
+ dde:	41 2f       	mov	r20, r17
+ de0:	0e 94 bc 05 	call	0xb78	; 0xb78 <compensatePressure>
+        //rawtemp[tactAddress] = firstTempReading;
+        //rawpressure[tactAddress] = firstPressureReading;
+    }
+
+    // protect against bad data if reading accelerometer
+    if (secondPressureReading != 0)
+ de4:	6d 81       	ldd	r22, Y+5	; 0x05
+ de6:	7e 81       	ldd	r23, Y+6	; 0x06
+ de8:	61 15       	cp	r22, r1
+ dea:	71 05       	cpc	r23, r1
+ dec:	31 f0       	breq	.+12     	; 0xdfa <doTactSensors+0x194>
+    {
+        //floatingPressureData[tactAddress+24] = compensatePressure(secondTempReading,secondPressureReading,tactAddress+24);
+        compensatePressure(secondTempReading, secondPressureReading, tactAddress+24);
+ dee:	41 2f       	mov	r20, r17
+ df0:	48 5e       	subi	r20, 0xE8	; 232
+ df2:	89 81       	ldd	r24, Y+1	; 0x01
+ df4:	9a 81       	ldd	r25, Y+2	; 0x02
+ df6:	0e 94 bc 05 	call	0xb78	; 0xb78 <compensatePressure>
+        return;
+    }
+
+    //readTactSensor(activeSensor, &pressureData[activeSensor]);
+    readTactSensorPair(activeSensor, &pressureData[activeSensor], &pressureData[activeSensor+24]);
+    activeSensor++;
+ dfa:	80 91 d7 20 	lds	r24, 0x20D7
+ dfe:	8f 5f       	subi	r24, 0xFF	; 255
+ e00:	80 93 d7 20 	sts	0x20D7, r24
+    //Leave tactReady asserted so that we can quickly return after giving command a chance
+}
+ e04:	29 96       	adiw	r28, 0x09	; 9
+ e06:	cd bf       	out	0x3d, r28	; 61
+ e08:	de bf       	out	0x3e, r29	; 62
+ e0a:	df 91       	pop	r29
+ e0c:	cf 91       	pop	r28
+ e0e:	1f 91       	pop	r17
+ e10:	0f 91       	pop	r16
+ e12:	ff 90       	pop	r15
+ e14:	ef 90       	pop	r14
+ e16:	df 90       	pop	r13
+ e18:	cf 90       	pop	r12
+ e1a:	bf 90       	pop	r11
+ e1c:	af 90       	pop	r10
+ e1e:	9f 90       	pop	r9
+ e20:	8f 90       	pop	r8
+ e22:	7f 90       	pop	r7
+ e24:	6f 90       	pop	r6
+ e26:	5f 90       	pop	r5
+ e28:	4f 90       	pop	r4
+ e2a:	08 95       	ret
+
+00000e2c <main>:
+*
+* This initializes the other port modules and polls a few volatile status
+* bits set in ISRs.
+************************************************************************/
+int main(void)
+{
+ e2c:	cf 93       	push	r28
+ e2e:	df 93       	push	r29
+ e30:	00 d0       	rcall	.+0      	; 0xe32 <main+0x6>
+ e32:	00 d0       	rcall	.+0      	; 0xe34 <main+0x8>
+ e34:	cd b7       	in	r28, 0x3d	; 61
+ e36:	de b7       	in	r29, 0x3e	; 62
+    cli();                                    //disable all interrupts for clock reset
+ e38:	f8 94       	cli
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ e3a:	8f e3       	ldi	r24, 0x3F	; 63
+ e3c:	9f e1       	ldi	r25, 0x1F	; 31
+ e3e:	01 97       	sbiw	r24, 0x01	; 1
+ e40:	f1 f7       	brne	.-4      	; 0xe3e <main+0x12>
+ e42:	00 c0       	rjmp	.+0      	; 0xe44 <main+0x18>
+ e44:	00 00       	nop
+* is running.  This will feed a 1.024 kHz clock to the RTC.
+* The system clock will use the onboard 32MHz oscillator
+************************************************************************/
+static void configureClocks(void)
+{
+    OSC.CTRL = OSC_RC32MEN_bm | OSC_RC32KEN_bm;            //enable the 32MHz ring oscillator and the 32kHz RTC oscillator
+ e46:	86 e0       	ldi	r24, 0x06	; 6
+ e48:	80 93 50 00 	sts	0x0050, r24
+    while(!(OSC.STATUS & OSC_RC32MRDY_bm));                //wait for 32MHz to stabilize
+ e4c:	80 91 51 00 	lds	r24, 0x0051
+ e50:	81 ff       	sbrs	r24, 1
+ e52:	fc cf       	rjmp	.-8      	; 0xe4c <main+0x20>
+    while(!(OSC.STATUS & OSC_RC32KRDY_bm));                //wait for 32kHz to stabilize
+ e54:	80 91 51 00 	lds	r24, 0x0051
+ e58:	82 ff       	sbrs	r24, 2
+ e5a:	fc cf       	rjmp	.-8      	; 0xe54 <main+0x28>
+
+    DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+ e5c:	81 e0       	ldi	r24, 0x01	; 1
+ e5e:	80 93 60 00 	sts	0x0060, r24
+    DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+ e62:	80 93 68 00 	sts	0x0068, r24
+
+    CCP = CCP_IOREG_gc;                                    //clock is protected by Configuration Change Protection - must be properly disabled to change clock source
+ e66:	98 ed       	ldi	r25, 0xD8	; 216
+ e68:	94 bf       	out	0x34, r25	; 52
+    CLK.CTRL = CLK_SCLKSEL_RC32M_gc;                    //switch to 32MHz oscillator
+ e6a:	80 93 40 00 	sts	0x0040, r24
+    CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;    //Select 1.024 kHz from internal oscillator for RTC clock source
+ e6e:	85 e0       	ldi	r24, 0x05	; 5
+ e70:	e0 e4       	ldi	r30, 0x40	; 64
+ e72:	f0 e0       	ldi	r31, 0x00	; 0
+ e74:	83 83       	std	Z+3, r24	; 0x03
+ e76:	8f e3       	ldi	r24, 0x3F	; 63
+ e78:	9f e1       	ldi	r25, 0x1F	; 31
+ e7a:	01 97       	sbiw	r24, 0x01	; 1
+ e7c:	f1 f7       	brne	.-4      	; 0xe7a <main+0x4e>
+ e7e:	00 c0       	rjmp	.+0      	; 0xe80 <main+0x54>
+ e80:	00 00       	nop
+{
+    cli();                                    //disable all interrupts for clock reset
+    _delay_ms(1); // for stability of supplies
+    configureClocks();
+    _delay_ms(1); // for stability of clocks
+    configurePortIO();
+ e82:	0e 94 3d 03 	call	0x67a	; 0x67a <configurePortIO>
+    configureSPIModules();
+ e86:	0e 94 6d 05 	call	0xada	; 0xada <configureSPIModules>
+    configureADC();
+ e8a:	0e 94 11 01 	call	0x222	; 0x222 <configureADC>
+    configureDaisyUSART();
+ e8e:	0e 94 7e 02 	call	0x4fc	; 0x4fc <configureDaisyUSART>
+}
+
+
+static void initStateFromEEPROM(void)
+{
+    uint32_t zero_check = 0;
+ e92:	19 82       	std	Y+1, r1	; 0x01
+ e94:	1a 82       	std	Y+2, r1	; 0x02
+ e96:	1b 82       	std	Y+3, r1	; 0x03
+ e98:	1c 82       	std	Y+4, r1	; 0x04
+    ReadIntFromEEPROM(EEPROM_ADDRESS_LED, (uint8_t*)&zero_check);
+ e9a:	8f e1       	ldi	r24, 0x1F	; 31
+ e9c:	be 01       	movw	r22, r28
+ e9e:	6f 5f       	subi	r22, 0xFF	; 255
+ ea0:	7f 4f       	sbci	r23, 0xFF	; 255
+ ea2:	0e 94 5c 03 	call	0x6b8	; 0x6b8 <ReadIntFromEEPROM>
+    
+    if(zero_check)
+ ea6:	89 81       	ldd	r24, Y+1	; 0x01
+ ea8:	9a 81       	ldd	r25, Y+2	; 0x02
+ eaa:	ab 81       	ldd	r26, Y+3	; 0x03
+ eac:	bc 81       	ldd	r27, Y+4	; 0x04
+ eae:	00 97       	sbiw	r24, 0x00	; 0
+ eb0:	a1 05       	cpc	r26, r1
+ eb2:	b1 05       	cpc	r27, r1
+ eb4:	19 f0       	breq	.+6      	; 0xebc <main+0x90>
+        LEDon();
+ eb6:	0e 94 aa 03 	call	0x754	; 0x754 <LEDon>
+ eba:	02 c0       	rjmp	.+4      	; 0xec0 <main+0x94>
+    else
+        LEDoff();
+ ebc:	0e 94 b0 03 	call	0x760	; 0x760 <LEDoff>
+        *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+}
+
+static void verifyVersion()
+{
+    uint32_t readversion = 0;
+ ec0:	19 82       	std	Y+1, r1	; 0x01
+ ec2:	1a 82       	std	Y+2, r1	; 0x02
+ ec4:	1b 82       	std	Y+3, r1	; 0x03
+ ec6:	1c 82       	std	Y+4, r1	; 0x04
+    ReadIntFromEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ ec8:	8d e1       	ldi	r24, 0x1D	; 29
+ eca:	be 01       	movw	r22, r28
+ ecc:	6f 5f       	subi	r22, 0xFF	; 255
+ ece:	7f 4f       	sbci	r23, 0xFF	; 255
+ ed0:	0e 94 5c 03 	call	0x6b8	; 0x6b8 <ReadIntFromEEPROM>
+    if (readversion != FIRMWARE_VERSION)
+ ed4:	89 81       	ldd	r24, Y+1	; 0x01
+ ed6:	9a 81       	ldd	r25, Y+2	; 0x02
+ ed8:	ab 81       	ldd	r26, Y+3	; 0x03
+ eda:	bc 81       	ldd	r27, Y+4	; 0x04
+ edc:	8d 32       	cpi	r24, 0x2D	; 45
+ ede:	21 e0       	ldi	r18, 0x01	; 1
+ ee0:	92 07       	cpc	r25, r18
+ ee2:	20 e0       	ldi	r18, 0x00	; 0
+ ee4:	a2 07       	cpc	r26, r18
+ ee6:	20 e0       	ldi	r18, 0x00	; 0
+ ee8:	b2 07       	cpc	r27, r18
+ eea:	71 f0       	breq	.+28     	; 0xf08 <main+0xdc>
+    {
+        readversion = FIRMWARE_VERSION;
+ eec:	8d e2       	ldi	r24, 0x2D	; 45
+ eee:	91 e0       	ldi	r25, 0x01	; 1
+ ef0:	a0 e0       	ldi	r26, 0x00	; 0
+ ef2:	b0 e0       	ldi	r27, 0x00	; 0
+ ef4:	89 83       	std	Y+1, r24	; 0x01
+ ef6:	9a 83       	std	Y+2, r25	; 0x02
+ ef8:	ab 83       	std	Y+3, r26	; 0x03
+ efa:	bc 83       	std	Y+4, r27	; 0x04
+        WriteIntToEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ efc:	8d e1       	ldi	r24, 0x1D	; 29
+ efe:	be 01       	movw	r22, r28
+ f00:	6f 5f       	subi	r22, 0xFF	; 255
+ f02:	7f 4f       	sbci	r23, 0xFF	; 255
+ f04:	0e 94 83 03 	call	0x706	; 0x706 <WriteIntToEEPROM>
+    configureSPIModules();
+    configureADC();
+    configureDaisyUSART();
+    initStateFromEEPROM();
+    verifyVersion();
+    initTactileModule(); // initialize variables of the tactile buffer
+ f08:	0e 94 77 05 	call	0xaee	; 0xaee <initTactileModule>
+    notifyDaisy = 0;
+ f0c:	10 92 00 20 	sts	0x2000, r1
+    tactReady = 0;
+ f10:	10 92 d8 20 	sts	0x20D8, r1
+
+    PMIC.CTRL |= PMIC_LOLVLEN_bm;            //tell event system to pay attention to low-priority interrupts
+ f14:	80 91 a2 00 	lds	r24, 0x00A2
+ f18:	81 60       	ori	r24, 0x01	; 1
+ f1a:	e0 ea       	ldi	r30, 0xA0	; 160
+ f1c:	f0 e0       	ldi	r31, 0x00	; 0
+ f1e:	82 83       	std	Z+2, r24	; 0x02
+    sei();
+ f20:	78 94       	sei
+
+    collectAllCalibrationValues();
+ f22:	0e 94 a2 05 	call	0xb44	; 0xb44 <collectAllCalibrationValues>
+
+    while(1){
+
+        if(notifyDaisy)
+ f26:	80 91 00 20 	lds	r24, 0x2000
+ f2a:	88 23       	and	r24, r24
+ f2c:	11 f0       	breq	.+4      	; 0xf32 <main+0x106>
+        {
+            doDaisyTask();
+ f2e:	0e 94 9c 02 	call	0x538	; 0x538 <doDaisyTask>
+        }
+
+        if(tactReady)
+ f32:	80 91 d8 20 	lds	r24, 0x20D8
+ f36:	88 23       	and	r24, r24
+ f38:	b1 f3       	breq	.-20     	; 0xf26 <main+0xfa>
+        {
+            doTactSensors();
+ f3a:	0e 94 33 06 	call	0xc66	; 0xc66 <doTactSensors>
+ f3e:	f3 cf       	rjmp	.-26     	; 0xf26 <main+0xfa>
+
+00000f40 <__eerd_byte_x32a4>:
+ f40:	03 d0       	rcall	.+6      	; 0xf48 <eeprom_mapen>
+ f42:	80 81       	ld	r24, Z
+ f44:	99 27       	eor	r25, r25
+ f46:	08 95       	ret
+
+00000f48 <eeprom_mapen>:
+ f48:	e0 ec       	ldi	r30, 0xC0	; 192
+ f4a:	f1 e0       	ldi	r31, 0x01	; 1
+ f4c:	37 85       	ldd	r19, Z+15	; 0x0f
+ f4e:	37 fd       	sbrc	r19, 7
+ f50:	fd cf       	rjmp	.-6      	; 0xf4c <eeprom_mapen+0x4>
+ f52:	34 85       	ldd	r19, Z+12	; 0x0c
+ f54:	38 60       	ori	r19, 0x08	; 8
+ f56:	34 87       	std	Z+12, r19	; 0x0c
+ f58:	fc 01       	movw	r30, r24
+ f5a:	e0 50       	subi	r30, 0x00	; 0
+ f5c:	f0 4f       	sbci	r31, 0xF0	; 240
+ f5e:	08 95       	ret
+
+00000f60 <__eewr_byte_x32a4>:
+ f60:	26 2f       	mov	r18, r22
+
+00000f62 <__eewr_r18_x32a4>:
+ f62:	e0 ec       	ldi	r30, 0xC0	; 192
+ f64:	f1 e0       	ldi	r31, 0x01	; 1
+ f66:	37 85       	ldd	r19, Z+15	; 0x0f
+ f68:	37 fd       	sbrc	r19, 7
+ f6a:	fd cf       	rjmp	.-6      	; 0xf66 <__eewr_r18_x32a4+0x4>
+ f6c:	34 85       	ldd	r19, Z+12	; 0x0c
+ f6e:	37 7f       	andi	r19, 0xF7	; 247
+ f70:	34 87       	std	Z+12, r19	; 0x0c
+ f72:	37 85       	ldd	r19, Z+15	; 0x0f
+ f74:	31 ff       	sbrs	r19, 1
+ f76:	09 c0       	rjmp	.+18     	; 0xf8a <__eewr_r18_x32a4+0x28>
+ f78:	36 e3       	ldi	r19, 0x36	; 54
+ f7a:	32 87       	std	Z+10, r19	; 0x0a
+ f7c:	38 ed       	ldi	r19, 0xD8	; 216
+ f7e:	34 bf       	out	0x34, r19	; 52
+ f80:	31 e0       	ldi	r19, 0x01	; 1
+ f82:	33 87       	std	Z+11, r19	; 0x0b
+ f84:	37 85       	ldd	r19, Z+15	; 0x0f
+ f86:	37 fd       	sbrc	r19, 7
+ f88:	fd cf       	rjmp	.-6      	; 0xf84 <__eewr_r18_x32a4+0x22>
+ f8a:	33 e3       	ldi	r19, 0x33	; 51
+ f8c:	32 87       	std	Z+10, r19	; 0x0a
+ f8e:	80 83       	st	Z, r24
+ f90:	91 83       	std	Z+1, r25	; 0x01
+ f92:	12 82       	std	Z+2, r1	; 0x02
+ f94:	24 83       	std	Z+4, r18	; 0x04
+ f96:	25 e3       	ldi	r18, 0x35	; 53
+ f98:	22 87       	std	Z+10, r18	; 0x0a
+ f9a:	28 ed       	ldi	r18, 0xD8	; 216
+ f9c:	31 e0       	ldi	r19, 0x01	; 1
+ f9e:	24 bf       	out	0x34, r18	; 52
+ fa0:	33 87       	std	Z+11, r19	; 0x0b
+ fa2:	01 96       	adiw	r24, 0x01	; 1
+ fa4:	08 95       	ret
+
+00000fa6 <_exit>:
+ fa6:	f8 94       	cli
+
+00000fa8 <__stop_program>:
+ fa8:	ff cf       	rjmp	.-2      	; 0xfa8 <__stop_program>

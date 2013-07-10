@@ -1,0 +1,3167 @@
+   1               		.file	"palm.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  14               	ReadIntFromEEPROM:
+  15               	.LFB23:
+  16               		.file 1 "palm.c"
+   1:palm.c        **** /****************************************************
+   2:palm.c        ****  // Hardware:        ATxmega128A1
+   3:palm.c        ****  // Description:    ARM-H Palm Board Top Level Implementation
+   4:palm.c        ****  // Mostly a communications router to the other micros
+   5:palm.c        **** ******************************************************************************/
+   6:palm.c        **** 
+   7:palm.c        **** #include "palm.h"
+   8:palm.c        **** #include "portio.h"
+   9:palm.c        **** #include "router.h"
+  10:palm.c        **** #include "adc.h"
+  11:palm.c        **** #include "routerconfig.h"
+  12:palm.c        **** #include "dac.h"
+  13:palm.c        **** #include "encoder.h"
+  14:palm.c        **** 
+  15:palm.c        **** #include <avr/io.h>
+  16:palm.c        **** #include <avr/interrupt.h>
+  17:palm.c        **** #include <math.h>
+  18:palm.c        **** #include <string.h>
+  19:palm.c        **** #include <stdlib.h>
+  20:palm.c        **** #include <util/delay.h>
+  21:palm.c        **** #include <avr/eeprom.h>
+  22:palm.c        **** 
+  23:palm.c        **** #define FIRMWARE_VERSION 301
+  24:palm.c        **** 
+  25:palm.c        **** volatile uint8_t freerun_flag = 0;
+  26:palm.c        **** 
+  27:palm.c        **** SPREAD_CONTROL_MODE_t spreadMotorMode = SPREAD_MODE_NONE;
+  28:palm.c        **** int16_t targetEncoder = 0;
+  29:palm.c        **** int16_t spreadDeadband = 0;
+  30:palm.c        **** int16_t spreadP = 0;
+  31:palm.c        **** 
+  32:palm.c        **** /************************************************************************
+  33:palm.c        **** * Private function definitions
+  34:palm.c        **** ************************************************************************/
+  35:palm.c        **** static void configureClocks(void);
+  36:palm.c        **** static int handleFingerCommand(uint8_t *commandPacket, uint8_t *outputBuffer);
+  37:palm.c        **** static int handleSetSamplePeriodCommand(uint8_t *commandPacket, uint8_t *outputBuffer);
+  38:palm.c        **** static int handleSetSampleArgumentCommand(uint8_t *commandPacket, uint8_t *outputBuffer);
+  39:palm.c        **** static int handleStartCollectionCommand(uint8_t *outputBuffer);
+  40:palm.c        **** static int handleStopCollectionCommand(uint8_t *outputBuffer);
+  41:palm.c        **** static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer);
+  42:palm.c        **** static int handleSetChainMaskCommand(uint8_t *commandPacket, uint8_t *outputBuffer);
+  43:palm.c        **** static void WriteIntToEEPROM(uint8_t address, uint8_t* value);
+  44:palm.c        **** static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination);
+  45:palm.c        **** static void verifyVersion(void);
+  46:palm.c        **** static void initStateFromEEPROM(void);
+  47:palm.c        **** static void spreadMotorStop(void);
+  48:palm.c        **** static void spreadMotorForward(uint16_t dac);
+  49:palm.c        **** static void spreadMotorReverse(uint16_t dac);
+  50:palm.c        **** 
+  51:palm.c        **** /************************************************************************
+  52:palm.c        **** * configureClocks()
+  53:palm.c        **** *
+  54:palm.c        **** * Configure system clocks
+  55:palm.c        **** * The RTC is being used to generate PID ticks, so ensure that the 32 kHz oscillator
+  56:palm.c        **** * is running.  This will feed a 1.024 kHz clock to the RTC.
+  57:palm.c        **** * The system clock will use the onboard 32MHz oscillator
+  58:palm.c        **** ************************************************************************/
+  59:palm.c        **** static void configureClocks(void)
+  60:palm.c        **** {
+  61:palm.c        ****     OSC.CTRL = OSC_RC32MEN_bm | OSC_RC32KEN_bm;    //enable the 32MHz ring oscillator and the 32kHz
+  62:palm.c        ****     while(!(OSC.STATUS & OSC_RC32MRDY_bm));        //wait for 32MHz to stabilize
+  63:palm.c        ****     while(!(OSC.STATUS & OSC_RC32KRDY_bm));        //wait for 32kHz to stabilize
+  64:palm.c        **** 
+  65:palm.c        ****     DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+  66:palm.c        ****     DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+  67:palm.c        **** 
+  68:palm.c        ****     CCP = CCP_IOREG_gc;                //clock is protected by Configuration Change Protection - mu
+  69:palm.c        ****     CLK.CTRL = CLK_SCLKSEL_RC32M_gc;        //switch to 32MHz oscillator
+  70:palm.c        ****     CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;    //Select 1.024 kHz from internal oscillato
+  71:palm.c        **** }
+  72:palm.c        **** 
+  73:palm.c        **** ISR(FREERUN_TC_vect)
+  74:palm.c        **** {
+  75:palm.c        ****     freerun_flag = 1;
+  76:palm.c        **** }
+  77:palm.c        **** 
+  78:palm.c        **** static void spreadMotorStop(void)
+  79:palm.c        **** {
+  80:palm.c        ****     //MOTOR_EN_PORT.OUTCLR = MOTOR_EN_BITMASK;
+  81:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK | MOTOR_nDIR_BITMASK;
+  82:palm.c        **** }
+  83:palm.c        **** 
+  84:palm.c        **** static void spreadMotorForward(uint16_t dac)
+  85:palm.c        **** {
+  86:palm.c        ****     DACB.CH0DATA = dac;
+  87:palm.c        ****     
+  88:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK;
+  89:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_nDIR_BITMASK;
+  90:palm.c        ****     //MOTOR_EN_PORT.OUTSET = MOTOR_EN_BITMASK;   
+  91:palm.c        **** }
+  92:palm.c        **** 
+  93:palm.c        **** static void spreadMotorReverse(uint16_t dac)
+  94:palm.c        **** {
+  95:palm.c        ****     DACB.CH0DATA = dac;
+  96:palm.c        ****     
+  97:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_nDIR_BITMASK;
+  98:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_DIR_BITMASK;
+  99:palm.c        ****     //MOTOR_EN_PORT.OUTSET = MOTOR_EN_BITMASK;   
+ 100:palm.c        **** }
+ 101:palm.c        **** 
+ 102:palm.c        **** 
+ 103:palm.c        **** 
+ 104:palm.c        **** /************************************************************************
+ 105:palm.c        **** * handleFingerCommand(commandPacket,outputBuffer)
+ 106:palm.c        **** *
+ 107:palm.c        **** * Handles a command to drive the Finger Motor either Forward, Reverse,
+ 108:palm.c        **** * or Stopped.  Generates a proper reply in outputBuffer
+ 109:palm.c        **** ************************************************************************/
+ 110:palm.c        **** static int handleFingerCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 111:palm.c        **** {
+ 112:palm.c        ****     uint8_t status = STATUS_OK;
+ 113:palm.c        ****     uint16_t dac = 0;
+ 114:palm.c        **** 
+ 115:palm.c        ****     // position control
+ 116:palm.c        ****     if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_SCHEME_BITMASK) == MOTOR_COMMAND_POSITION)
+ 117:palm.c        ****     {
+ 118:palm.c        ****         // don't go into position mode if stop direction
+ 119:palm.c        ****         if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK) == MOTOR_COMMAND_STOP
+ 120:palm.c        ****         {
+ 121:palm.c        ****             spreadMotorStop();
+ 122:palm.c        ****             spreadMotorMode = SPREAD_MODE_NONE;
+ 123:palm.c        ****         }
+ 124:palm.c        ****         else
+ 125:palm.c        ****         {
+ 126:palm.c        ****             memcpy(&targetEncoder, &commandPacket[PAYLOAD_OFFSET], 2);
+ 127:palm.c        ****             
+ 128:palm.c        ****             if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK) == MOTOR_COMMAND_
+ 129:palm.c        ****                 targetEncoder = -targetEncoder;
+ 130:palm.c        ****             
+ 131:palm.c        ****             spreadMotorMode = SPREAD_MODE_POSITION;
+ 132:palm.c        ****         }
+ 133:palm.c        ****     }
+ 134:palm.c        ****     else
+ 135:palm.c        ****     {
+ 136:palm.c        ****         spreadMotorMode = SPREAD_MODE_NONE;
+ 137:palm.c        ****         
+ 138:palm.c        ****         switch(commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK)
+ 139:palm.c        ****         {
+ 140:palm.c        ****             case MOTOR_COMMAND_STOP:
+ 141:palm.c        ****                 spreadMotorStop();
+ 142:palm.c        ****                 break;
+ 143:palm.c        ****             case MOTOR_COMMAND_REVERSE:
+ 144:palm.c        ****                 memcpy(&dac, &commandPacket[PAYLOAD_OFFSET], 2);
+ 145:palm.c        ****                 spreadMotorReverse(dac);
+ 146:palm.c        ****                 break;
+ 147:palm.c        ****             case MOTOR_COMMAND_FORWARD:
+ 148:palm.c        ****                 memcpy(&dac, &commandPacket[PAYLOAD_OFFSET], 2);
+ 149:palm.c        ****                 spreadMotorForward(dac);
+ 150:palm.c        ****                 break;
+ 151:palm.c        ****             default:
+ 152:palm.c        ****                 status = UNKNOWN_COMMAND;
+ 153:palm.c        ****                 break;
+ 154:palm.c        ****         }
+ 155:palm.c        ****     }
+ 156:palm.c        ****     
+ 157:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 158:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 159:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = FINGER_COMMAND_OPCODE;
+ 160:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = status;
+ 161:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 162:palm.c        ****     return 5;
+ 163:palm.c        **** }
+ 164:palm.c        **** 
+ 165:palm.c        **** static void upstreamTX(volatile uint8_t *targetBuffer, int numBytes)
+ 166:palm.c        **** {
+ 167:palm.c        ****   int16_t i;
+ 168:palm.c        **** 
+ 169:palm.c        ****   for(i=0;i<numBytes;i++)
+ 170:palm.c        ****     {
+ 171:palm.c        ****       while(!(UPSTREAM_USART.STATUS & USART_DREIF_bm));
+ 172:palm.c        ****       UPSTREAM_USART.DATA = targetBuffer[i];
+ 173:palm.c        ****     }
+ 174:palm.c        **** }
+ 175:palm.c        **** 
+ 176:palm.c        **** void BootRelay(USART_t *targetUSART, uint8_t *commandPacket)
+ 177:palm.c        **** {
+ 178:palm.c        ****   // overview: 1)send a bootload command to the target
+ 179:palm.c        ****   // overview: 2)configure for 115200 baud passthrough
+ 180:palm.c        ****   // overview: 3)start a 20 second timer
+ 181:palm.c        ****   // overview: 4)do the serial passthrough, blink LED
+ 182:palm.c        ****   // overview: 5)wait for timer to finish, then reset/reboot
+ 183:palm.c        **** 
+ 184:palm.c        ****   cli(); // disable all interrupts, nothing else going on
+ 185:palm.c        ****   DMA.CTRL = 0; // disable the DMA controller
+ 186:palm.c        ****   
+ 187:palm.c        ****   // repeat the command to the target
+ 188:palm.c        ****   targetUSART->CTRLA = 0x00; // disable interrupts
+ 189:palm.c        ****   targetUSART->CTRLB |= USART_RXEN_bm | USART_TXEN_bm; //enable RX and TX
+ 190:palm.c        ****   for(int i=0;i<COMMAND_PACKET_SIZE;i++)
+ 191:palm.c        ****     {
+ 192:palm.c        ****       while(!(targetUSART->STATUS & USART_DREIF_bm));
+ 193:palm.c        ****       targetUSART->DATA = commandPacket[i];
+ 194:palm.c        ****     }
+ 195:palm.c        ****   // dont bother waiting for a response verification
+ 196:palm.c        ****   while(!(targetUSART->STATUS & USART_DREIF_bm)); // wait for the data to be read
+ 197:palm.c        ****   targetUSART->STATUS = USART_TXCIF_bm; // clear the TX done flag
+ 198:palm.c        ****   while(!(targetUSART->STATUS & USART_TXCIF_bm)); // wait for the TX to be done
+ 199:palm.c        ****   
+ 200:palm.c        ****   // Reconfigure the serial ports
+ 201:palm.c        ****   //int bsel = 1047;       // 115200 @ 32Mhz as calculated from ProtoTalk.net
+ 202:palm.c        ****   //uint8_t bscale = 10;      // 115200 @ 32Mhz as calculated from ProtoTalk.net
+ 203:palm.c        ****   int bsel = 3269;       // 38,400 @ 32Mhz as calculated from ProtoTalk.net
+ 204:palm.c        ****   uint8_t bscale = -6;      // 38,400 @ 32Mhz as calculated from ProtoTalk.net
+ 205:palm.c        ****   UPSTREAM_USART.CTRLA = 0x00; // disable interrupts
+ 206:palm.c        ****   UPSTREAM_USART.BAUDCTRLA = (uint8_t) bsel;
+ 207:palm.c        ****   UPSTREAM_USART.BAUDCTRLB = (bscale << 4) | (bsel >> 8);
+ 208:palm.c        ****   UPSTREAM_USART.CTRLB = USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 209:palm.c        ****   targetUSART->CTRLA = 0x00; // disable interrupts
+ 210:palm.c        ****   targetUSART->BAUDCTRLA = (uint8_t) bsel;
+ 211:palm.c        ****   targetUSART->BAUDCTRLB = (bscale << 4) | (bsel >> 8);
+ 212:palm.c        ****   targetUSART->CTRLB = USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 213:palm.c        ****   
+ 214:palm.c        ****   int sec_cnt=0;
+ 215:palm.c        ****   uint32_t loop_cnt=0;
+ 216:palm.c        ****   uint8_t up_fifo[16];
+ 217:palm.c        ****   uint8_t up_head = 0;
+ 218:palm.c        ****   uint8_t up_tail = 0;
+ 219:palm.c        ****   uint8_t down_fifo[16];
+ 220:palm.c        ****   uint8_t down_head = 0;
+ 221:palm.c        ****   uint8_t down_tail = 0;
+ 222:palm.c        **** 
+ 223:palm.c        ****   // relay chars while waiting for timeout
+ 224:palm.c        ****   while(sec_cnt < 200) {
+ 225:palm.c        ****     loop_cnt++;
+ 226:palm.c        ****     if(loop_cnt > 90000L) { // approximately 0.1sec experimentally
+ 227:palm.c        ****       loop_cnt=0;
+ 228:palm.c        ****       sec_cnt++;
+ 229:palm.c        ****       if((sec_cnt&0x03)==0x03)
+ 230:palm.c        **** 	PORTK.OUTSET = 0x08; //LED debug
+ 231:palm.c        ****       else
+ 232:palm.c        **** 	PORTK.OUTCLR = 0x08; //LED debug
+ 233:palm.c        ****     }
+ 234:palm.c        ****     if (targetUSART->STATUS & USART_RXCIF_bm) {
+ 235:palm.c        ****       up_fifo[up_head++] = targetUSART->DATA;
+ 236:palm.c        ****       up_head %= sizeof(up_fifo);
+ 237:palm.c        ****     }
+ 238:palm.c        ****     if (UPSTREAM_USART.STATUS & USART_RXCIF_bm) {
+ 239:palm.c        ****       down_fifo[down_head++] = UPSTREAM_USART.DATA;
+ 240:palm.c        ****       down_head %= sizeof(down_fifo);
+ 241:palm.c        ****     }
+ 242:palm.c        ****     if (up_head != up_tail && (UPSTREAM_USART.STATUS & USART_DREIF_bm)) {
+ 243:palm.c        ****       UPSTREAM_USART.DATA = up_fifo[up_tail++];
+ 244:palm.c        ****       up_tail %= sizeof(up_fifo);
+ 245:palm.c        ****     }
+ 246:palm.c        ****     if (down_head != down_tail && (targetUSART->STATUS & USART_DREIF_bm)) {
+ 247:palm.c        ****       targetUSART->DATA = down_fifo[down_tail++];
+ 248:palm.c        ****       down_tail %= sizeof(down_fifo);
+ 249:palm.c        ****     }
+ 250:palm.c        ****   }
+ 251:palm.c        **** 
+ 252:palm.c        ****   // 30sec timer finished, reset/reboot
+ 253:palm.c        ****   wdt_enable(WDT_PER_256CLK_gc);
+ 254:palm.c        ****   while(1);  // use watchdog timer to trigger a reset
+ 255:palm.c        **** 
+ 256:palm.c        **** #if 0 // a less reliable medthod to kick off the app and skip the bootloader
+ 257:palm.c        ****   CCP = CCP_IOREG_gc; // make sure interrupt vectors are configured for app
+ 258:palm.c        ****   PMIC.CTRL = 0;      // disable the interrupt controller
+ 259:palm.c        ****   // Jump into main code                                                       
+ 260:palm.c        ****   asm("jmp 0");
+ 261:palm.c        **** #endif
+ 262:palm.c        **** 
+ 263:palm.c        **** }
+ 264:palm.c        **** 
+ 265:palm.c        **** static int handleBootloaderCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 266:palm.c        **** {
+ 267:palm.c        ****   // prepare to echo back the command for verify
+ 268:palm.c        ****   outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 4;
+ 269:palm.c        ****   outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 270:palm.c        ****   outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = BOOTLOADER_OPCODE;
+ 271:palm.c        ****   outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 272:palm.c        ****   outputBuffer[4] = commandPacket[PAYLOAD_OFFSET];
+ 273:palm.c        ****   outputBuffer[5] = computeChecksum(outputBuffer,5); //this is the checksum
+ 274:palm.c        ****   upstreamTX(outputBuffer, 6);
+ 275:palm.c        **** 
+ 276:palm.c        ****   switch(0xf0 & commandPacket[PAYLOAD_OFFSET])
+ 277:palm.c        ****   {
+ 278:palm.c        ****   case PALM_CHAINADDRESS:
+ 279:palm.c        ****     // self bootload
+ 280:palm.c        ****     wdt_enable(WDT_PER_256CLK_gc);
+ 281:palm.c        ****     while(1);  // use watchdog timer to trigger a reset                                     
+ 282:palm.c        ****     break;
+ 283:palm.c        ****   case FINGER1_CHAINADDRESS:
+ 284:palm.c        ****     BootRelay(&PROX1_USART,commandPacket);
+ 285:palm.c        ****     break;
+ 286:palm.c        ****   case FINGER2_CHAINADDRESS:
+ 287:palm.c        ****     BootRelay(&PROX2_USART,commandPacket);
+ 288:palm.c        ****     break;
+ 289:palm.c        ****   case FINGER3_CHAINADDRESS:
+ 290:palm.c        ****     BootRelay(&PROX3_USART,commandPacket);
+ 291:palm.c        ****     break;
+ 292:palm.c        ****   case MOTOR1_CHAINADDRESS:
+ 293:palm.c        ****     BootRelay(&MTR1_USART,commandPacket);
+ 294:palm.c        ****     break;
+ 295:palm.c        ****   case MOTOR2_CHAINADDRESS:
+ 296:palm.c        ****     BootRelay(&MTR2_USART,commandPacket);
+ 297:palm.c        ****     break;
+ 298:palm.c        ****   case TACTILE_CHAINADDRESS:
+ 299:palm.c        ****     BootRelay(&TACT_USART,commandPacket);
+ 300:palm.c        ****     break;
+ 301:palm.c        ****   default:
+ 302:palm.c        ****     //do nothing
+ 303:palm.c        ****     break;
+ 304:palm.c        ****   }
+ 305:palm.c        ****   return 5;
+ 306:palm.c        **** }
+ 307:palm.c        **** 
+ 308:palm.c        **** /************************************************************************
+ 309:palm.c        **** * handleSetSamplePeriodCommand(commandPacket,outputBuffer)
+ 310:palm.c        **** *
+ 311:palm.c        **** * Handles a command to set the untriggered roll period.
+ 312:palm.c        **** * Generates a proper reply in outputBuffer
+ 313:palm.c        **** ************************************************************************/
+ 314:palm.c        **** static int handleSetSamplePeriodCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 315:palm.c        **** {
+ 316:palm.c        ****     memcpy(&samplePeriod, &commandPacket[PAYLOAD_OFFSET], 2);
+ 317:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 318:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 319:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = SET_SAMPLE_PERIOD_OPCODE;
+ 320:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 321:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 322:palm.c        ****     return 5;
+ 323:palm.c        **** }
+ 324:palm.c        **** 
+ 325:palm.c        **** /************************************************************************
+ 326:palm.c        **** * handleSetSampleArgumentCommand(commandPacket,outputBuffer)
+ 327:palm.c        **** *
+ 328:palm.c        **** * Handles a command to set the untriggered roll argument.
+ 329:palm.c        **** * Generates a proper reply in outputBuffer
+ 330:palm.c        **** ************************************************************************/
+ 331:palm.c        **** static int handleSetSampleArgumentCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 332:palm.c        **** {
+ 333:palm.c        ****     memcpy(&sampleArgument,&commandPacket[PAYLOAD_OFFSET],2);
+ 334:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 335:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 336:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = SET_SAMPLE_ARGS_OPCODE;
+ 337:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 338:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 339:palm.c        ****     return 5;
+ 340:palm.c        **** }
+ 341:palm.c        **** 
+ 342:palm.c        **** /************************************************************************
+ 343:palm.c        **** * handleStartCollectionCommand(outputBuffer)
+ 344:palm.c        **** *
+ 345:palm.c        **** * Handles a command to begin an untriggered roll
+ 346:palm.c        **** * Generates a proper reply in outputBuffer
+ 347:palm.c        **** ************************************************************************/
+ 348:palm.c        **** static int handleStartCollectionCommand(uint8_t *outputBuffer)
+ 349:palm.c        **** {
+ 350:palm.c        ****     //Activate the freerun timer for generating data collection packets
+ 351:palm.c        ****     //At 32 MHz internal oscillator with 64 prescaler, each tick of the clock is half a microsecond
+ 352:palm.c        **** 
+ 353:palm.c        ****     freerun_flag = 1;
+ 354:palm.c        **** 
+ 355:palm.c        ****     FREERUN_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 356:palm.c        ****     FREERUN_TC.CTRLC = 0x00;
+ 357:palm.c        ****     FREERUN_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 358:palm.c        ****     FREERUN_TC.CTRLE = 0x00;
+ 359:palm.c        ****     FREERUN_TC.PERBUF = samplePeriod >> 1; //BA: fix bit shift direction
+ 360:palm.c        ****     FREERUN_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 361:palm.c        ****     FREERUN_TC.CTRLA = TC_CLKSEL_DIV64_gc;
+ 362:palm.c        **** 
+ 363:palm.c        **** 
+ 364:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 365:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 366:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = START_COLLECTION_OPCODE;
+ 367:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 368:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 369:palm.c        ****     return 5;
+ 370:palm.c        **** }
+ 371:palm.c        **** 
+ 372:palm.c        **** /************************************************************************
+ 373:palm.c        **** * handleStopCollectionCommand(outputBuffer)
+ 374:palm.c        **** *
+ 375:palm.c        **** * Handles a command to stop the untriggered roll.
+ 376:palm.c        **** * Generates a proper reply in outputBuffer
+ 377:palm.c        **** ************************************************************************/
+ 378:palm.c        **** static int handleStopCollectionCommand(uint8_t *outputBuffer)
+ 379:palm.c        **** {
+ 380:palm.c        ****     //Shutdown the freerun timer for generating data collection packets
+ 381:palm.c        ****     FREERUN_TC.INTCTRLA = TC_OVFINTLVL_OFF_gc;
+ 382:palm.c        ****     FREERUN_TC.CTRLA = TC_CLKSEL_OFF_gc;
+ 383:palm.c        **** 
+ 384:palm.c        ****     freerun_flag = 0;
+ 385:palm.c        **** 
+ 386:palm.c        **** 
+ 387:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 388:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 389:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = STOP_COLLECTION_OPCODE;
+ 390:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 391:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 392:palm.c        ****     return 5;
+ 393:palm.c        **** }
+ 394:palm.c        **** 
+ 395:palm.c        **** /************************************************************************
+ 396:palm.c        **** * handleCollectionCommand(commandPacket,outputBuffer)
+ 397:palm.c        **** *
+ 398:palm.c        **** * Handles a command to poll this device's sensors.
+ 399:palm.c        **** * For the Palm this just consists of some ADCs.
+ 400:palm.c        **** * Generates a proper reply in outputBuffer
+ 401:palm.c        **** ************************************************************************/
+ 402:palm.c        **** static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 403:palm.c        **** {
+ 404:palm.c        ****     uint16_t collectionBitfield;
+ 405:palm.c        ****     float thermistorVoltage;
+ 406:palm.c        ****     float thermistorTemperature;
+ 407:palm.c        ****     uint8_t responseSize = 0;
+ 408:palm.c        **** 
+ 409:palm.c        ****     int16_t adcData[6];
+ 410:palm.c        ****     uint16_t roundedTemperature;
+ 411:palm.c        **** 
+ 412:palm.c        ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 413:palm.c        **** 
+ 414:palm.c        ****     if (collectionBitfield & (DATA_COLLECTION_EXTERNALSUPPLY_BITMASK
+ 415:palm.c        ****                               //| DATA_COLLECTION_MOTORSTATORTEMP_BITMASK
+ 416:palm.c        ****                               //| DATA_COLLECTION_MOTORCURRENT_BITMASK
+ 417:palm.c        ****                               | DATA_COLLECTION_AIRTEMPERATURE_BITMASK))
+ 418:palm.c        **** 
+ 419:palm.c        ****     {
+ 420:palm.c        ****       captureSweep(adcData); // gather all the adc data, then pick out the specifics below
+ 421:palm.c        ****     }
+ 422:palm.c        **** 
+ 423:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_FINGERROTATION_BITMASK)
+ 424:palm.c        ****     {
+ 425:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &adjustedEncoder, 2);
+ 426:palm.c        ****         responseSize += 2;
+ 427:palm.c        ****     }
+ 428:palm.c        **** 
+ 429:palm.c        ****     // if(collectionBitfield & DATA_COLLECTION_MOTORCURRENT_BITMASK)
+ 430:palm.c        ****     // {
+ 431:palm.c        ****     //     memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &adcData[MOTORCURRENT_M
+ 432:palm.c        ****     //     responseSize += 2;
+ 433:palm.c        ****     // }
+ 434:palm.c        **** 
+ 435:palm.c        ****     // if(collectionBitfield & DATA_COLLECTION_MOTORSTATORTEMP_BITMASK)
+ 436:palm.c        ****     // {
+ 437:palm.c        ****     //     thermistorVoltage = ADC_CODES_TO_VOLTS_SIGNED(adcData[MOTORTEMP_MONITOR_OFFSET]);
+ 438:palm.c        ****     //     thermistorTemperature = Thermistor_RtoT(Thermistor_VtoR(thermistorVoltage));
+ 439:palm.c        ****     //     roundedTemperature = round(thermistorTemperature * 100.0);
+ 440:palm.c        **** 
+ 441:palm.c        ****     //     memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &roundedTemperature, 2)
+ 442:palm.c        ****     //     responseSize += 2;
+ 443:palm.c        ****     // }
+ 444:palm.c        **** 
+ 445:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_EXTERNALSUPPLY_BITMASK)
+ 446:palm.c        ****     {
+ 447:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize],&adcData[EXTERNAL_MONITOR_O
+ 448:palm.c        ****         responseSize += 6;
+ 449:palm.c        ****     }
+ 450:palm.c        **** 
+ 451:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_AIRTEMPERATURE_BITMASK)
+ 452:palm.c        ****     {
+ 453:palm.c        ****         thermistorVoltage = ADC_CODES_TO_VOLTS_SIGNED(adcData[EXTERNALTEMP_MONITOR_OFFSET]);
+ 454:palm.c        ****         thermistorTemperature = Thermistor_RtoT(Thermistor_VtoR(thermistorVoltage));
+ 455:palm.c        ****         roundedTemperature = round(thermistorTemperature * 100.0);
+ 456:palm.c        ****         
+ 457:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize],&roundedTemperature, 2);
+ 458:palm.c        ****         responseSize += 2;
+ 459:palm.c        ****     }
+ 460:palm.c        **** 
+ 461:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 462:palm.c        ****     {
+ 463:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &RxCheckSumErrCnt, 14);
+ 464:palm.c        ****         responseSize += 14;
+ 465:palm.c        ****     }
+ 466:palm.c        **** 
+ 467:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3+responseSize;
+ 468:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 469:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = DATA_COLLECTION_OPCODE;
+ 470:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 471:palm.c        ****     outputBuffer[4+responseSize] = computeChecksum(outputBuffer, 4+responseSize); //this is the che
+ 472:palm.c        ****     return 5+responseSize;
+ 473:palm.c        **** 
+ 474:palm.c        **** }
+ 475:palm.c        **** 
+ 476:palm.c        **** static int handleCalibrationCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 477:palm.c        **** {
+ 478:palm.c        ****     uint16_t collectionBitfield;
+ 479:palm.c        ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 480:palm.c        **** 
+ 481:palm.c        ****     if (collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 482:palm.c        ****     {
+ 483:palm.c        ****         RxCheckSumErrCnt[0] = 0;
+ 484:palm.c        ****         RxCheckSumErrCnt[1] = 0;
+ 485:palm.c        ****         RxCheckSumErrCnt[2] = 0;
+ 486:palm.c        ****         RxCheckSumErrCnt[3] = 0;
+ 487:palm.c        ****         RxCheckSumErrCnt[4] = 0;
+ 488:palm.c        ****         RxCheckSumErrCnt[5] = 0;
+ 489:palm.c        ****         RxCheckSumErrCnt[6] = 0;
+ 490:palm.c        ****     }
+ 491:palm.c        ****     
+ 492:palm.c        ****     if (collectionBitfield & DATA_COLLECTION_FINGERROTATION_BITMASK)
+ 493:palm.c        ****     {
+ 494:palm.c        ****         uint32_t temp = rawEncoder;
+ 495:palm.c        ****         WriteIntToEEPROM(EEPROM_ADDRESS_ENCODER_OFFSET, (uint8_t*)&temp);
+ 496:palm.c        ****         lastEncoder = rawEncoder;
+ 497:palm.c        ****         adjustedEncoder = 0;
+ 498:palm.c        ****         encoderInitialized = 1;
+ 499:palm.c        ****         targetEncoder = 0;
+ 500:palm.c        ****     }
+ 501:palm.c        ****     
+ 502:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 503:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 504:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = CALIBRATION_OPCODE;
+ 505:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 506:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer, 4); //this is the checksum
+ 507:palm.c        ****     return 5;
+ 508:palm.c        **** }
+ 509:palm.c        **** 
+ 510:palm.c        **** static int handleSetChainMaskCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 511:palm.c        **** {
+ 512:palm.c        ****     memcpy(&chainMask, &commandPacket[PAYLOAD_OFFSET], 1);
+ 513:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 514:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 515:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = SET_CHAIN_MASK_OPCODE;
+ 516:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 517:palm.c        ****     outputBuffer[4] = computeChecksum(outputBuffer,4); //this is the checksum
+ 518:palm.c        ****     return 5;
+ 519:palm.c        **** }
+ 520:palm.c        **** 
+ 521:palm.c        **** static void WriteIntToEEPROM(uint8_t address, uint8_t* value)
+ 522:palm.c        **** {
+ 523:palm.c        ****     for(uint8_t i=0; i<4; i++)
+ 524:palm.c        ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 525:palm.c        ****     //eeprom_write_dword((uint32_t *) (address*4), *(value));
+ 526:palm.c        **** }
+ 527:palm.c        **** 
+ 528:palm.c        **** static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination)
+ 529:palm.c        **** {
+  17               		.loc 1 529 0
+  18               		.cfi_startproc
+  19               	.LVL0:
+  20 0000 EF92      		push r14
+  21               	.LCFI0:
+  22               		.cfi_def_cfa_offset 4
+  23               		.cfi_offset 14, -3
+  24 0002 FF92      		push r15
+  25               	.LCFI1:
+  26               		.cfi_def_cfa_offset 5
+  27               		.cfi_offset 15, -4
+  28 0004 0F93      		push r16
+  29               	.LCFI2:
+  30               		.cfi_def_cfa_offset 6
+  31               		.cfi_offset 16, -5
+  32 0006 1F93      		push r17
+  33               	.LCFI3:
+  34               		.cfi_def_cfa_offset 7
+  35               		.cfi_offset 17, -6
+  36 0008 CF93      		push r28
+  37               	.LCFI4:
+  38               		.cfi_def_cfa_offset 8
+  39               		.cfi_offset 28, -7
+  40 000a DF93      		push r29
+  41               	.LCFI5:
+  42               		.cfi_def_cfa_offset 9
+  43               		.cfi_offset 29, -8
+  44 000c 0F92      		push __tmp_reg__
+  45               	.LCFI6:
+  46               		.cfi_def_cfa_offset 10
+  47 000e CDB7      		in r28,__SP_L__
+  48 0010 DEB7      		in r29,__SP_H__
+  49               	.LCFI7:
+  50               		.cfi_def_cfa_register 28
+  51               	/* prologue: function */
+  52               	/* frame size = 1 */
+  53               	/* stack size = 7 */
+  54               	.L__stack_usage = 7
+  55               	.LVL1:
+  56               	.LBB51:
+ 530:palm.c        ****     for(uint8_t i=0; i<4; i++)
+ 531:palm.c        ****         *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+  57               		.loc 1 531 0
+  58 0012 E82E      		mov r14,r24
+  59 0014 FF24      		clr r15
+  60 0016 EE0C      		lsl r14
+  61 0018 FF1C      		rol r15
+  62 001a EE0C      		lsl r14
+  63 001c FF1C      		rol r15
+  64               	.LVL2:
+  65 001e 8B01      		movw r16,r22
+ 530:palm.c        ****     for(uint8_t i=0; i<4; i++)
+  66               		.loc 1 530 0
+  67 0020 20E0      		ldi r18,lo8(0)
+  68               	.LVL3:
+  69               	.L2:
+  70               		.loc 1 531 0 discriminator 2
+  71 0022 C701      		movw r24,r14
+  72 0024 2983      		std Y+1,r18
+  73 0026 0E94 0000 		call __eerd_byte_x128a1
+  74 002a F801      		movw r30,r16
+  75 002c 8193      		st Z+,r24
+  76 002e 8F01      		movw r16,r30
+ 530:palm.c        ****     for(uint8_t i=0; i<4; i++)
+  77               		.loc 1 530 0 discriminator 2
+  78 0030 2981      		ldd r18,Y+1
+  79 0032 2F5F      		subi r18,lo8(-(1))
+  80               	.LVL4:
+  81 0034 0894      		sec
+  82 0036 E11C      		adc r14,__zero_reg__
+  83 0038 F11C      		adc r15,__zero_reg__
+  84 003a 2430      		cpi r18,lo8(4)
+  85 003c 01F4      		brne .L2
+  86               	/* epilogue start */
+  87               	.LBE51:
+ 532:palm.c        ****     //*destination = eeprom_read_dword((uint32_t *) (address*4));
+ 533:palm.c        **** }
+  88               		.loc 1 533 0
+  89 003e 0F90      		pop __tmp_reg__
+  90 0040 DF91      		pop r29
+  91 0042 CF91      		pop r28
+  92 0044 1F91      		pop r17
+  93 0046 0F91      		pop r16
+  94 0048 FF90      		pop r15
+  95 004a EF90      		pop r14
+  96 004c 0895      		ret
+  97               		.cfi_endproc
+  98               	.LFE23:
+ 101               	initStateFromEEPROM:
+ 102               	.LFB25:
+ 534:palm.c        **** 
+ 535:palm.c        **** static void verifyVersion(void)
+ 536:palm.c        **** {
+ 537:palm.c        ****     uint32_t temp = 0;
+ 538:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&temp);
+ 539:palm.c        ****     if (temp != FIRMWARE_VERSION)
+ 540:palm.c        ****     {
+ 541:palm.c        ****         temp = FIRMWARE_VERSION;
+ 542:palm.c        ****         WriteIntToEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&temp);
+ 543:palm.c        ****     }
+ 544:palm.c        **** }
+ 545:palm.c        **** 
+ 546:palm.c        **** static void initStateFromEEPROM(void)
+ 547:palm.c        **** {
+ 103               		.loc 1 547 0
+ 104               		.cfi_startproc
+ 105 004e CF93      		push r28
+ 106               	.LCFI8:
+ 107               		.cfi_def_cfa_offset 4
+ 108               		.cfi_offset 28, -3
+ 109 0050 DF93      		push r29
+ 110               	.LCFI9:
+ 111               		.cfi_def_cfa_offset 5
+ 112               		.cfi_offset 29, -4
+ 113 0052 00D0      		rcall .
+ 114 0054 0F92      		push __tmp_reg__
+ 115               	.LCFI10:
+ 116               		.cfi_def_cfa_offset 9
+ 117 0056 CDB7      		in r28,__SP_L__
+ 118 0058 DEB7      		in r29,__SP_H__
+ 119               	.LCFI11:
+ 120               		.cfi_def_cfa_register 28
+ 121               	/* prologue: function */
+ 122               	/* frame size = 4 */
+ 123               	/* stack size = 6 */
+ 124               	.L__stack_usage = 6
+ 548:palm.c        ****     uint32_t temp = 0;
+ 125               		.loc 1 548 0
+ 126 005a 1982      		std Y+1,__zero_reg__
+ 127 005c 1A82      		std Y+2,__zero_reg__
+ 128 005e 1B82      		std Y+3,__zero_reg__
+ 129 0060 1C82      		std Y+4,__zero_reg__
+ 130               	.LVL5:
+ 549:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_LED, (uint8_t*)&temp);
+ 131               		.loc 1 549 0
+ 132 0062 8FE1      		ldi r24,lo8(31)
+ 133 0064 BE01      		movw r22,r28
+ 134 0066 6F5F      		subi r22,lo8(-(1))
+ 135 0068 7F4F      		sbci r23,hi8(-(1))
+ 136 006a 0E94 0000 		call ReadIntFromEEPROM
+ 550:palm.c        ****     if (temp)
+ 137               		.loc 1 550 0
+ 138 006e 8981      		ldd r24,Y+1
+ 139 0070 9A81      		ldd r25,Y+2
+ 140 0072 AB81      		ldd r26,Y+3
+ 141 0074 BC81      		ldd r27,Y+4
+ 142 0076 0097      		sbiw r24,0
+ 143 0078 A105      		cpc r26,__zero_reg__
+ 144 007a B105      		cpc r27,__zero_reg__
+ 145 007c 01F0      		breq .L5
+ 146               	.LBB52:
+ 147               	.LBB53:
+ 551:palm.c        ****         LEDon();
+ 552:palm.c        ****     else
+ 553:palm.c        ****         LEDoff();
+ 554:palm.c        ****     
+ 555:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_ENCODER_OFFSET, (uint8_t*)&temp);
+ 556:palm.c        ****     lastEncoder = (int16_t)temp;
+ 557:palm.c        ****     
+ 558:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_SPREAD_DEADBAND, (uint8_t*)&temp);
+ 559:palm.c        ****     spreadDeadband = (int16_t)temp;
+ 560:palm.c        **** 
+ 561:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_SPREAD_P, (uint8_t*)&temp);
+ 562:palm.c        ****     spreadP = (int16_t)temp;
+ 563:palm.c        **** }
+ 564:palm.c        **** 
+ 565:palm.c        **** static int handleEEPROMCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 566:palm.c        **** {
+ 567:palm.c        ****     uint8_t responseSize = 4;
+ 568:palm.c        **** 
+ 569:palm.c        ****     uint8_t opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 570:palm.c        ****     uint8_t address = commandPacket[COMMAND_OFFSET] & 0x1F;
+ 571:palm.c        **** 
+ 572:palm.c        ****     switch(opcode)
+ 573:palm.c        ****     {
+ 574:palm.c        ****         case MOTOR_PARAMETER_RE_L_OPCODE:
+ 575:palm.c        ****         case MOTOR_PARAMETER_RE_H_OPCODE:
+ 576:palm.c        ****             // Read 4 bytes of data
+ 577:palm.c        ****             ReadIntFromEEPROM(address, &outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM]);
+ 578:palm.c        ****             // finish up the packet
+ 579:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3+responseSize;
+ 580:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 581:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 582:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 583:palm.c        ****             outputBuffer[4+responseSize] = computeChecksum(outputBuffer, 4+responseSize); //this is
+ 584:palm.c        ****             return 5+responseSize;
+ 585:palm.c        ****         case MOTOR_PARAMETER_WR_L_OPCODE:
+ 586:palm.c        ****         case MOTOR_PARAMETER_WR_H_OPCODE:
+ 587:palm.c        ****             
+ 588:palm.c        ****             // Write 32 bits of data
+ 589:palm.c        ****             WriteIntToEEPROM(address, &commandPacket[PAYLOAD_OFFSET]);
+ 590:palm.c        ****             
+ 591:palm.c        ****             // re-init state
+ 592:palm.c        ****             initStateFromEEPROM();
+ 593:palm.c        ****             
+ 594:palm.c        ****             // ack the command
+ 595:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 596:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 597:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 598:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 599:palm.c        ****             outputBuffer[4] = computeChecksum(outputBuffer, 4); //this is the checksum
+ 600:palm.c        ****             return 5;
+ 601:palm.c        ****         default:
+ 602:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 603:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 604:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 605:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = UNKNOWN_COMMAND;
+ 606:palm.c        ****             outputBuffer[4] = computeChecksum(outputBuffer, 4); //this is the checksum
+ 607:palm.c        ****             return 5;
+ 608:palm.c        ****     }
+ 609:palm.c        **** }
+ 610:palm.c        **** 
+ 611:palm.c        **** int processCommand(uint8_t *commandPacket,uint8_t *outputBuffer)
+ 612:palm.c        **** {
+ 613:palm.c        ****     uint8_t opcode;
+ 614:palm.c        **** 
+ 615:palm.c        ****     opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 616:palm.c        **** 
+ 617:palm.c        ****     switch(opcode)
+ 618:palm.c        ****     {
+ 619:palm.c        **** 
+ 620:palm.c        ****         case DATA_COLLECTION_OPCODE:
+ 621:palm.c        ****             return handleCollectionCommand(commandPacket,outputBuffer);
+ 622:palm.c        **** 
+ 623:palm.c        ****         case SET_SAMPLE_PERIOD_OPCODE:
+ 624:palm.c        ****             return handleSetSamplePeriodCommand(commandPacket,outputBuffer);
+ 625:palm.c        **** 
+ 626:palm.c        ****         case SET_SAMPLE_ARGS_OPCODE:
+ 627:palm.c        ****             return handleSetSampleArgumentCommand(commandPacket,outputBuffer);
+ 628:palm.c        **** 
+ 629:palm.c        ****         case START_COLLECTION_OPCODE:
+ 630:palm.c        ****             return handleStartCollectionCommand(outputBuffer);
+ 631:palm.c        **** 
+ 632:palm.c        ****         case STOP_COLLECTION_OPCODE:
+ 633:palm.c        ****             return handleStopCollectionCommand(outputBuffer);
+ 634:palm.c        **** 
+ 635:palm.c        ****         case FINGER_COMMAND_OPCODE:
+ 636:palm.c        ****             return handleFingerCommand(commandPacket,outputBuffer);
+ 637:palm.c        **** 
+ 638:palm.c        ****         case BOOTLOADER_OPCODE:
+ 639:palm.c        ****             return handleBootloaderCommand(commandPacket,outputBuffer);
+ 640:palm.c        **** 
+ 641:palm.c        ****         case CALIBRATION_OPCODE:
+ 642:palm.c        ****             return handleCalibrationCommand(commandPacket, outputBuffer);
+ 643:palm.c        ****             
+ 644:palm.c        ****         case MOTOR_PARAMETER_RE_L_OPCODE:
+ 645:palm.c        ****         case MOTOR_PARAMETER_RE_H_OPCODE:
+ 646:palm.c        ****         case MOTOR_PARAMETER_WR_L_OPCODE:
+ 647:palm.c        ****         case MOTOR_PARAMETER_WR_H_OPCODE:
+ 648:palm.c        ****             return handleEEPROMCommand(commandPacket, outputBuffer);
+ 649:palm.c        **** 
+ 650:palm.c        ****         case SET_CHAIN_MASK_OPCODE:
+ 651:palm.c        ****             return handleSetChainMaskCommand(commandPacket, outputBuffer);
+ 652:palm.c        **** 
+ 653:palm.c        ****         default:
+ 654:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 655:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 656:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = opcode;
+ 657:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = UNKNOWN_COMMAND;
+ 658:palm.c        ****             outputBuffer[4] = computeChecksum(outputBuffer, 4); //this is the checksum
+ 659:palm.c        ****             return 5;
+ 660:palm.c        ****     }
+ 661:palm.c        **** }
+ 662:palm.c        **** 
+ 663:palm.c        **** void LEDon()
+ 664:palm.c        **** {
+ 665:palm.c        ****   PORTK.OUTSET = 0x08; //LED
+ 148               		.loc 1 665 0
+ 149 007e 88E0      		ldi r24,lo8(8)
+ 150 0080 E0E2      		ldi r30,lo8(1824)
+ 151 0082 F7E0      		ldi r31,hi8(1824)
+ 152 0084 8583      		std Z+5,r24
+ 153 0086 00C0      		rjmp .L6
+ 154               	.L5:
+ 155               	.LBE53:
+ 156               	.LBE52:
+ 157               	.LBB54:
+ 158               	.LBB55:
+ 666:palm.c        **** }
+ 667:palm.c        **** void LEDoff()
+ 668:palm.c        **** {
+ 669:palm.c        ****   PORTK.OUTCLR = 0x08; //LED
+ 159               		.loc 1 669 0
+ 160 0088 88E0      		ldi r24,lo8(8)
+ 161 008a E0E2      		ldi r30,lo8(1824)
+ 162 008c F7E0      		ldi r31,hi8(1824)
+ 163 008e 8683      		std Z+6,r24
+ 164               	.L6:
+ 165               	.LBE55:
+ 166               	.LBE54:
+ 555:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_ENCODER_OFFSET, (uint8_t*)&temp);
+ 167               		.loc 1 555 0
+ 168 0090 8CE1      		ldi r24,lo8(28)
+ 169 0092 BE01      		movw r22,r28
+ 170 0094 6F5F      		subi r22,lo8(-(1))
+ 171 0096 7F4F      		sbci r23,hi8(-(1))
+ 172 0098 0E94 0000 		call ReadIntFromEEPROM
+ 556:palm.c        ****     lastEncoder = (int16_t)temp;
+ 173               		.loc 1 556 0
+ 174 009c 8981      		ldd r24,Y+1
+ 175 009e 9A81      		ldd r25,Y+2
+ 176 00a0 8093 0000 		sts lastEncoder,r24
+ 177 00a4 9093 0000 		sts lastEncoder+1,r25
+ 558:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_SPREAD_DEADBAND, (uint8_t*)&temp);
+ 178               		.loc 1 558 0
+ 179 00a8 8BE1      		ldi r24,lo8(27)
+ 180 00aa BE01      		movw r22,r28
+ 181 00ac 6F5F      		subi r22,lo8(-(1))
+ 182 00ae 7F4F      		sbci r23,hi8(-(1))
+ 183 00b0 0E94 0000 		call ReadIntFromEEPROM
+ 559:palm.c        ****     spreadDeadband = (int16_t)temp;
+ 184               		.loc 1 559 0
+ 185 00b4 8981      		ldd r24,Y+1
+ 186 00b6 9A81      		ldd r25,Y+2
+ 187 00b8 8093 0000 		sts spreadDeadband,r24
+ 188 00bc 9093 0000 		sts spreadDeadband+1,r25
+ 561:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_SPREAD_P, (uint8_t*)&temp);
+ 189               		.loc 1 561 0
+ 190 00c0 8AE1      		ldi r24,lo8(26)
+ 191 00c2 BE01      		movw r22,r28
+ 192 00c4 6F5F      		subi r22,lo8(-(1))
+ 193 00c6 7F4F      		sbci r23,hi8(-(1))
+ 194 00c8 0E94 0000 		call ReadIntFromEEPROM
+ 562:palm.c        ****     spreadP = (int16_t)temp;
+ 195               		.loc 1 562 0
+ 196 00cc 8981      		ldd r24,Y+1
+ 197 00ce 9A81      		ldd r25,Y+2
+ 198 00d0 8093 0000 		sts spreadP,r24
+ 199 00d4 9093 0000 		sts spreadP+1,r25
+ 200               	/* epilogue start */
+ 563:palm.c        **** }
+ 201               		.loc 1 563 0
+ 202 00d8 2496      		adiw r28,4
+ 203 00da CDBF      		out __SP_L__,r28
+ 204 00dc DEBF      		out __SP_H__,r29
+ 205 00de DF91      		pop r29
+ 206 00e0 CF91      		pop r28
+ 207 00e2 0895      		ret
+ 208               		.cfi_endproc
+ 209               	.LFE25:
+ 212               	WriteIntToEEPROM:
+ 213               	.LFB22:
+ 522:palm.c        **** {
+ 214               		.loc 1 522 0
+ 215               		.cfi_startproc
+ 216               	.LVL6:
+ 217 00e4 EF92      		push r14
+ 218               	.LCFI12:
+ 219               		.cfi_def_cfa_offset 4
+ 220               		.cfi_offset 14, -3
+ 221 00e6 FF92      		push r15
+ 222               	.LCFI13:
+ 223               		.cfi_def_cfa_offset 5
+ 224               		.cfi_offset 15, -4
+ 225 00e8 0F93      		push r16
+ 226               	.LCFI14:
+ 227               		.cfi_def_cfa_offset 6
+ 228               		.cfi_offset 16, -5
+ 229 00ea 1F93      		push r17
+ 230               	.LCFI15:
+ 231               		.cfi_def_cfa_offset 7
+ 232               		.cfi_offset 17, -6
+ 233 00ec CF93      		push r28
+ 234               	.LCFI16:
+ 235               		.cfi_def_cfa_offset 8
+ 236               		.cfi_offset 28, -7
+ 237 00ee DF93      		push r29
+ 238               	.LCFI17:
+ 239               		.cfi_def_cfa_offset 9
+ 240               		.cfi_offset 29, -8
+ 241 00f0 0F92      		push __tmp_reg__
+ 242               	.LCFI18:
+ 243               		.cfi_def_cfa_offset 10
+ 244 00f2 CDB7      		in r28,__SP_L__
+ 245 00f4 DEB7      		in r29,__SP_H__
+ 246               	.LCFI19:
+ 247               		.cfi_def_cfa_register 28
+ 248               	/* prologue: function */
+ 249               	/* frame size = 1 */
+ 250               	/* stack size = 7 */
+ 251               	.L__stack_usage = 7
+ 252               	.LVL7:
+ 253               	.LBB56:
+ 524:palm.c        ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 254               		.loc 1 524 0
+ 255 00f6 8B01      		movw r16,r22
+ 256 00f8 E82E      		mov r14,r24
+ 257 00fa FF24      		clr r15
+ 258 00fc EE0C      		lsl r14
+ 259 00fe FF1C      		rol r15
+ 260 0100 EE0C      		lsl r14
+ 261 0102 FF1C      		rol r15
+ 523:palm.c        ****     for(uint8_t i=0; i<4; i++)
+ 262               		.loc 1 523 0
+ 263 0104 20E0      		ldi r18,lo8(0)
+ 264               	.LVL8:
+ 265               	.L8:
+ 524:palm.c        ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 266               		.loc 1 524 0 discriminator 2
+ 267 0106 F801      		movw r30,r16
+ 268 0108 6191      		ld r22,Z+
+ 269 010a 8F01      		movw r16,r30
+ 270 010c C701      		movw r24,r14
+ 271 010e 2983      		std Y+1,r18
+ 272 0110 0E94 0000 		call __eewr_byte_x128a1
+ 523:palm.c        ****     for(uint8_t i=0; i<4; i++)
+ 273               		.loc 1 523 0 discriminator 2
+ 274 0114 2981      		ldd r18,Y+1
+ 275 0116 2F5F      		subi r18,lo8(-(1))
+ 276               	.LVL9:
+ 277 0118 0894      		sec
+ 278 011a E11C      		adc r14,__zero_reg__
+ 279 011c F11C      		adc r15,__zero_reg__
+ 280 011e 2430      		cpi r18,lo8(4)
+ 281 0120 01F4      		brne .L8
+ 282               	/* epilogue start */
+ 283               	.LBE56:
+ 526:palm.c        **** }
+ 284               		.loc 1 526 0
+ 285 0122 0F90      		pop __tmp_reg__
+ 286 0124 DF91      		pop r29
+ 287 0126 CF91      		pop r28
+ 288 0128 1F91      		pop r17
+ 289 012a 0F91      		pop r16
+ 290 012c FF90      		pop r15
+ 291 012e EF90      		pop r14
+ 292 0130 0895      		ret
+ 293               		.cfi_endproc
+ 294               	.LFE22:
+ 296               	.global	__vector_14
+ 298               	__vector_14:
+ 299               	.LFB7:
+  74:palm.c        **** {
+ 300               		.loc 1 74 0
+ 301               		.cfi_startproc
+ 302 0132 1F92      		push r1
+ 303               	.LCFI20:
+ 304               		.cfi_def_cfa_offset 4
+ 305               		.cfi_offset 1, -3
+ 306 0134 0F92      		push r0
+ 307               	.LCFI21:
+ 308               		.cfi_def_cfa_offset 5
+ 309               		.cfi_offset 0, -4
+ 310 0136 0FB6      		in r0,__SREG__
+ 311 0138 0F92      		push r0
+ 312 013a 08B6      		in r0,56-0
+ 313 013c 0F92      		push r0
+ 314 013e 1124      		clr __zero_reg__
+ 315 0140 8F93      		push r24
+ 316               	.LCFI22:
+ 317               		.cfi_def_cfa_offset 6
+ 318               		.cfi_offset 24, -5
+ 319               	/* prologue: Signal */
+ 320               	/* frame size = 0 */
+ 321               	/* stack size = 5 */
+ 322               	.L__stack_usage = 5
+  75:palm.c        ****     freerun_flag = 1;
+ 323               		.loc 1 75 0
+ 324 0142 81E0      		ldi r24,lo8(1)
+ 325 0144 8093 0000 		sts freerun_flag,r24
+ 326               	/* epilogue start */
+  76:palm.c        **** }
+ 327               		.loc 1 76 0
+ 328 0148 8F91      		pop r24
+ 329 014a 0F90      		pop r0
+ 330 014c 08BE      		out 56-0,r0
+ 331 014e 0F90      		pop r0
+ 332 0150 0FBE      		out __SREG__,r0
+ 333 0152 0F90      		pop r0
+ 334 0154 1F90      		pop r1
+ 335 0156 1895      		reti
+ 336               		.cfi_endproc
+ 337               	.LFE7:
+ 339               	.global	BootRelay
+ 341               	BootRelay:
+ 342               	.LFB13:
+ 177:palm.c        **** {
+ 343               		.loc 1 177 0
+ 344               		.cfi_startproc
+ 345               	.LVL10:
+ 346 0158 CF93      		push r28
+ 347               	.LCFI23:
+ 348               		.cfi_def_cfa_offset 4
+ 349               		.cfi_offset 28, -3
+ 350 015a DF93      		push r29
+ 351               	.LCFI24:
+ 352               		.cfi_def_cfa_offset 5
+ 353               		.cfi_offset 29, -4
+ 354 015c CDB7      		in r28,__SP_L__
+ 355 015e DEB7      		in r29,__SP_H__
+ 356 0160 A097      		sbiw r28,32
+ 357               	.LCFI25:
+ 358               		.cfi_def_cfa 28, 37
+ 359 0162 CDBF      		out __SP_L__,r28
+ 360 0164 DEBF      		out __SP_H__,r29
+ 361               	/* prologue: function */
+ 362               	/* frame size = 32 */
+ 363               	/* stack size = 34 */
+ 364               	.L__stack_usage = 34
+ 365 0166 FC01      		movw r30,r24
+ 184:palm.c        ****   cli(); // disable all interrupts, nothing else going on
+ 366               		.loc 1 184 0
+ 367               	/* #APP */
+ 368               	 ;  184 "palm.c" 1
+ 369 0168 F894      		cli
+ 370               	 ;  0 "" 2
+ 185:palm.c        ****   DMA.CTRL = 0; // disable the DMA controller
+ 371               		.loc 1 185 0
+ 372               	/* #NOAPP */
+ 373 016a 1092 0001 		sts 256,__zero_reg__
+ 188:palm.c        ****   targetUSART->CTRLA = 0x00; // disable interrupts
+ 374               		.loc 1 188 0
+ 375 016e 1382      		std Z+3,__zero_reg__
+ 189:palm.c        ****   targetUSART->CTRLB |= USART_RXEN_bm | USART_TXEN_bm; //enable RX and TX
+ 376               		.loc 1 189 0
+ 377 0170 8481      		ldd r24,Z+4
+ 378               	.LVL11:
+ 379 0172 8861      		ori r24,lo8(24)
+ 380 0174 8483      		std Z+4,r24
+ 381               	.LVL12:
+ 382 0176 DB01      		movw r26,r22
+ 190:palm.c        ****   for(int i=0;i<COMMAND_PACKET_SIZE;i++)
+ 383               		.loc 1 190 0
+ 384 0178 80E0      		ldi r24,lo8(0)
+ 385 017a 90E0      		ldi r25,hi8(0)
+ 386               	.LVL13:
+ 387               	.L30:
+ 388               	.LBB57:
+ 192:palm.c        ****       while(!(targetUSART->STATUS & USART_DREIF_bm));
+ 389               		.loc 1 192 0 discriminator 1
+ 390 017c 2181      		ldd r18,Z+1
+ 391 017e 25FF      		sbrs r18,5
+ 392 0180 00C0      		rjmp .L30
+ 193:palm.c        ****       targetUSART->DATA = commandPacket[i];
+ 393               		.loc 1 193 0
+ 394 0182 2D91      		ld r18,X+
+ 395 0184 2083      		st Z,r18
+ 190:palm.c        ****   for(int i=0;i<COMMAND_PACKET_SIZE;i++)
+ 396               		.loc 1 190 0
+ 397 0186 0196      		adiw r24,1
+ 398               	.LVL14:
+ 399 0188 8730      		cpi r24,7
+ 400 018a 9105      		cpc r25,__zero_reg__
+ 401 018c 01F4      		brne .L30
+ 402               	.LVL15:
+ 403               	.L25:
+ 404               	.LBE57:
+ 196:palm.c        ****   while(!(targetUSART->STATUS & USART_DREIF_bm)); // wait for the data to be read
+ 405               		.loc 1 196 0 discriminator 1
+ 406 018e 8181      		ldd r24,Z+1
+ 407 0190 85FF      		sbrs r24,5
+ 408 0192 00C0      		rjmp .L25
+ 197:palm.c        ****   targetUSART->STATUS = USART_TXCIF_bm; // clear the TX done flag
+ 409               		.loc 1 197 0
+ 410 0194 80E4      		ldi r24,lo8(64)
+ 411 0196 8183      		std Z+1,r24
+ 412               	.L15:
+ 198:palm.c        ****   while(!(targetUSART->STATUS & USART_TXCIF_bm)); // wait for the TX to be done
+ 413               		.loc 1 198 0 discriminator 1
+ 414 0198 8181      		ldd r24,Z+1
+ 415 019a 86FF      		sbrs r24,6
+ 416 019c 00C0      		rjmp .L15
+ 417               	.LVL16:
+ 205:palm.c        ****   UPSTREAM_USART.CTRLA = 0x00; // disable interrupts
+ 418               		.loc 1 205 0
+ 419 019e A0EA      		ldi r26,lo8(2976)
+ 420 01a0 BBE0      		ldi r27,hi8(2976)
+ 421 01a2 1396      		adiw r26,3
+ 422 01a4 1C92      		st X,__zero_reg__
+ 423 01a6 1397      		sbiw r26,3
+ 206:palm.c        ****   UPSTREAM_USART.BAUDCTRLA = (uint8_t) bsel;
+ 424               		.loc 1 206 0
+ 425 01a8 25EC      		ldi r18,lo8(-59)
+ 426 01aa 1696      		adiw r26,6
+ 427 01ac 2C93      		st X,r18
+ 428 01ae 1697      		sbiw r26,6
+ 207:palm.c        ****   UPSTREAM_USART.BAUDCTRLB = (bscale << 4) | (bsel >> 8);
+ 429               		.loc 1 207 0
+ 430 01b0 9CEA      		ldi r25,lo8(-84)
+ 431 01b2 1796      		adiw r26,7
+ 432 01b4 9C93      		st X,r25
+ 433 01b6 1797      		sbiw r26,7
+ 208:palm.c        ****   UPSTREAM_USART.CTRLB = USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 434               		.loc 1 208 0
+ 435 01b8 88E1      		ldi r24,lo8(24)
+ 436 01ba 1496      		adiw r26,4
+ 437 01bc 8C93      		st X,r24
+ 438 01be 1497      		sbiw r26,4
+ 209:palm.c        ****   targetUSART->CTRLA = 0x00; // disable interrupts
+ 439               		.loc 1 209 0
+ 440 01c0 1382      		std Z+3,__zero_reg__
+ 210:palm.c        ****   targetUSART->BAUDCTRLA = (uint8_t) bsel;
+ 441               		.loc 1 210 0
+ 442 01c2 2683      		std Z+6,r18
+ 211:palm.c        ****   targetUSART->BAUDCTRLB = (bscale << 4) | (bsel >> 8);
+ 443               		.loc 1 211 0
+ 444 01c4 9783      		std Z+7,r25
+ 212:palm.c        ****   targetUSART->CTRLB = USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 445               		.loc 1 212 0
+ 446 01c6 8483      		std Z+4,r24
+ 447               	.LVL17:
+ 221:palm.c        ****   uint8_t down_tail = 0;
+ 448               		.loc 1 221 0
+ 449 01c8 20E0      		ldi r18,lo8(0)
+ 220:palm.c        ****   uint8_t down_head = 0;
+ 450               		.loc 1 220 0
+ 451 01ca 30E0      		ldi r19,lo8(0)
+ 218:palm.c        ****   uint8_t up_tail = 0;
+ 452               		.loc 1 218 0
+ 453 01cc 10E0      		ldi r17,lo8(0)
+ 217:palm.c        ****   uint8_t up_head = 0;
+ 454               		.loc 1 217 0
+ 455 01ce 00E0      		ldi r16,lo8(0)
+ 215:palm.c        ****   uint32_t loop_cnt=0;
+ 456               		.loc 1 215 0
+ 457 01d0 40E0      		ldi r20,lo8(0)
+ 458 01d2 50E0      		ldi r21,hi8(0)
+ 459 01d4 BA01      		movw r22,r20
+ 214:palm.c        ****   int sec_cnt=0;
+ 460               		.loc 1 214 0
+ 461 01d6 EE24      		clr r14
+ 462 01d8 FF24      		clr r15
+ 232:palm.c        **** 	PORTK.OUTCLR = 0x08; //LED debug
+ 463               		.loc 1 232 0
+ 464 01da 80E2      		ldi r24,lo8(1824)
+ 465 01dc A82E      		mov r10,r24
+ 466 01de 87E0      		ldi r24,hi8(1824)
+ 467 01e0 B82E      		mov r11,r24
+ 468 01e2 98E0      		ldi r25,lo8(8)
+ 469 01e4 D92E      		mov r13,r25
+ 470               	.LVL18:
+ 471               	.L22:
+ 225:palm.c        ****     loop_cnt++;
+ 472               		.loc 1 225 0
+ 473 01e6 4F5F      		subi r20,lo8(-(1))
+ 474 01e8 5F4F      		sbci r21,hi8(-(1))
+ 475 01ea 6F4F      		sbci r22,hlo8(-(1))
+ 476 01ec 7F4F      		sbci r23,hhi8(-(1))
+ 477               	.LVL19:
+ 226:palm.c        ****     if(loop_cnt > 90000L) { // approximately 0.1sec experimentally
+ 478               		.loc 1 226 0
+ 479 01ee 4139      		cpi r20,lo8(90001)
+ 480 01f0 8FE5      		ldi r24,hi8(90001)
+ 481 01f2 5807      		cpc r21,r24
+ 482 01f4 81E0      		ldi r24,hlo8(90001)
+ 483 01f6 6807      		cpc r22,r24
+ 484 01f8 80E0      		ldi r24,hhi8(90001)
+ 485 01fa 7807      		cpc r23,r24
+ 486 01fc 00F0      		brlo .L16
+ 487               	.LVL20:
+ 228:palm.c        ****       sec_cnt++;
+ 488               		.loc 1 228 0
+ 489 01fe 0894      		sec
+ 490 0200 E11C      		adc r14,__zero_reg__
+ 491 0202 F11C      		adc r15,__zero_reg__
+ 492               	.LVL21:
+ 229:palm.c        ****       if((sec_cnt&0x03)==0x03)
+ 493               		.loc 1 229 0
+ 494 0204 C701      		movw r24,r14
+ 495 0206 8370      		andi r24,lo8(3)
+ 496 0208 9070      		andi r25,hi8(3)
+ 230:palm.c        **** 	PORTK.OUTSET = 0x08; //LED debug
+ 497               		.loc 1 230 0
+ 498 020a D501      		movw r26,r10
+ 229:palm.c        ****       if((sec_cnt&0x03)==0x03)
+ 499               		.loc 1 229 0
+ 500 020c 8330      		cpi r24,3
+ 501 020e 9105      		cpc r25,__zero_reg__
+ 502 0210 01F4      		brne .L17
+ 230:palm.c        **** 	PORTK.OUTSET = 0x08; //LED debug
+ 503               		.loc 1 230 0
+ 504 0212 1596      		adiw r26,5
+ 505 0214 DC92      		st X,r13
+ 506 0216 1597      		sbiw r26,5
+ 507 0218 00C0      		rjmp .L31
+ 508               	.L17:
+ 232:palm.c        **** 	PORTK.OUTCLR = 0x08; //LED debug
+ 509               		.loc 1 232 0
+ 510 021a 1696      		adiw r26,6
+ 511 021c DC92      		st X,r13
+ 512 021e 1697      		sbiw r26,6
+ 513               	.L31:
+ 227:palm.c        ****       loop_cnt=0;
+ 514               		.loc 1 227 0
+ 515 0220 40E0      		ldi r20,lo8(0)
+ 516 0222 50E0      		ldi r21,hi8(0)
+ 517 0224 BA01      		movw r22,r20
+ 518               	.LVL22:
+ 519               	.L16:
+ 234:palm.c        ****     if (targetUSART->STATUS & USART_RXCIF_bm) {
+ 520               		.loc 1 234 0
+ 521 0226 8181      		ldd r24,Z+1
+ 522 0228 87FF      		sbrs r24,7
+ 523 022a 00C0      		rjmp .L18
+ 235:palm.c        ****       up_fifo[up_head++] = targetUSART->DATA;
+ 524               		.loc 1 235 0
+ 525 022c 8081      		ld r24,Z
+ 526 022e A1E1      		ldi r26,lo8(17)
+ 527 0230 B0E0      		ldi r27,hi8(17)
+ 528 0232 AC0F      		add r26,r28
+ 529 0234 BD1F      		adc r27,r29
+ 530 0236 A00F      		add r26,r16
+ 531 0238 B11D      		adc r27,__zero_reg__
+ 532 023a 8C93      		st X,r24
+ 533 023c 0F5F      		subi r16,lo8(-(1))
+ 534               	.LVL23:
+ 236:palm.c        ****       up_head %= sizeof(up_fifo);
+ 535               		.loc 1 236 0
+ 536 023e 0F70      		andi r16,lo8(15)
+ 537               	.LVL24:
+ 538               	.L18:
+ 238:palm.c        ****     if (UPSTREAM_USART.STATUS & USART_RXCIF_bm) {
+ 539               		.loc 1 238 0
+ 540 0240 8091 A10B 		lds r24,2977
+ 541 0244 87FF      		sbrs r24,7
+ 542 0246 00C0      		rjmp .L19
+ 239:palm.c        ****       down_fifo[down_head++] = UPSTREAM_USART.DATA;
+ 543               		.loc 1 239 0
+ 544 0248 8091 A00B 		lds r24,2976
+ 545 024c A1E0      		ldi r26,lo8(1)
+ 546 024e B0E0      		ldi r27,hi8(1)
+ 547 0250 AC0F      		add r26,r28
+ 548 0252 BD1F      		adc r27,r29
+ 549 0254 A30F      		add r26,r19
+ 550 0256 B11D      		adc r27,__zero_reg__
+ 551 0258 8C93      		st X,r24
+ 552 025a 3F5F      		subi r19,lo8(-(1))
+ 553               	.LVL25:
+ 240:palm.c        ****       down_head %= sizeof(down_fifo);
+ 554               		.loc 1 240 0
+ 555 025c 3F70      		andi r19,lo8(15)
+ 556               	.LVL26:
+ 557               	.L19:
+ 242:palm.c        ****     if (up_head != up_tail && (UPSTREAM_USART.STATUS & USART_DREIF_bm)) {
+ 558               		.loc 1 242 0
+ 559 025e 0117      		cp r16,r17
+ 560 0260 01F0      		breq .L20
+ 242:palm.c        ****     if (up_head != up_tail && (UPSTREAM_USART.STATUS & USART_DREIF_bm)) {
+ 561               		.loc 1 242 0 is_stmt 0 discriminator 1
+ 562 0262 8091 A10B 		lds r24,2977
+ 563 0266 85FF      		sbrs r24,5
+ 564 0268 00C0      		rjmp .L20
+ 243:palm.c        ****       UPSTREAM_USART.DATA = up_fifo[up_tail++];
+ 565               		.loc 1 243 0 is_stmt 1
+ 566 026a A1E1      		ldi r26,lo8(17)
+ 567 026c B0E0      		ldi r27,hi8(17)
+ 568 026e AC0F      		add r26,r28
+ 569 0270 BD1F      		adc r27,r29
+ 570 0272 A10F      		add r26,r17
+ 571 0274 B11D      		adc r27,__zero_reg__
+ 572 0276 8C91      		ld r24,X
+ 573 0278 8093 A00B 		sts 2976,r24
+ 574 027c 1F5F      		subi r17,lo8(-(1))
+ 575               	.LVL27:
+ 244:palm.c        ****       up_tail %= sizeof(up_fifo);
+ 576               		.loc 1 244 0
+ 577 027e 1F70      		andi r17,lo8(15)
+ 578               	.LVL28:
+ 579               	.L20:
+ 246:palm.c        ****     if (down_head != down_tail && (targetUSART->STATUS & USART_DREIF_bm)) {
+ 580               		.loc 1 246 0
+ 581 0280 3217      		cp r19,r18
+ 582 0282 01F0      		breq .L21
+ 246:palm.c        ****     if (down_head != down_tail && (targetUSART->STATUS & USART_DREIF_bm)) {
+ 583               		.loc 1 246 0 is_stmt 0 discriminator 1
+ 584 0284 8181      		ldd r24,Z+1
+ 585 0286 85FF      		sbrs r24,5
+ 586 0288 00C0      		rjmp .L21
+ 247:palm.c        ****       targetUSART->DATA = down_fifo[down_tail++];
+ 587               		.loc 1 247 0 is_stmt 1
+ 588 028a A1E0      		ldi r26,lo8(1)
+ 589 028c B0E0      		ldi r27,hi8(1)
+ 590 028e AC0F      		add r26,r28
+ 591 0290 BD1F      		adc r27,r29
+ 592 0292 A20F      		add r26,r18
+ 593 0294 B11D      		adc r27,__zero_reg__
+ 594 0296 8C91      		ld r24,X
+ 595 0298 8083      		st Z,r24
+ 596 029a 2F5F      		subi r18,lo8(-(1))
+ 597               	.LVL29:
+ 248:palm.c        ****       down_tail %= sizeof(down_fifo);
+ 598               		.loc 1 248 0
+ 599 029c 2F70      		andi r18,lo8(15)
+ 600               	.LVL30:
+ 601               	.L21:
+ 224:palm.c        ****   while(sec_cnt < 200) {
+ 602               		.loc 1 224 0 discriminator 1
+ 603 029e B8EC      		ldi r27,lo8(200)
+ 604 02a0 EB16      		cp r14,r27
+ 605 02a2 F104      		cpc r15,__zero_reg__
+ 606 02a4 04F4      		brge .+2
+ 607 02a6 00C0      		rjmp .L22
+ 253:palm.c        ****   wdt_enable(WDT_PER_256CLK_gc);
+ 608               		.loc 1 253 0
+ 609 02a8 97E1      		ldi r25,lo8(23)
+ 610 02aa 88ED      		ldi r24,lo8(-40)
+ 611               	/* #APP */
+ 612               	 ;  253 "palm.c" 1
+ 613 02ac 08B6      		in __tmp_reg__, 56
+ 614 02ae 84BF      		out 52, r24
+ 615 02b0 9093 8000 		sts 128, r25
+ 616 02b4 A895      		wdr
+ 617 02b6 08BE      		out 56, __tmp_reg__
+ 618               		
+ 619               	 ;  0 "" 2
+ 620               	/* #NOAPP */
+ 621               	.L23:
+ 622 02b8 00C0      		rjmp .L23
+ 623               		.cfi_endproc
+ 624               	.LFE13:
+ 626               	.global	processCommand
+ 628               	processCommand:
+ 629               	.LFB27:
+ 612:palm.c        **** {
+ 630               		.loc 1 612 0
+ 631               		.cfi_startproc
+ 632               	.LVL31:
+ 633 02ba AF92      		push r10
+ 634               	.LCFI26:
+ 635               		.cfi_def_cfa_offset 4
+ 636               		.cfi_offset 10, -3
+ 637 02bc BF92      		push r11
+ 638               	.LCFI27:
+ 639               		.cfi_def_cfa_offset 5
+ 640               		.cfi_offset 11, -4
+ 641 02be CF92      		push r12
+ 642               	.LCFI28:
+ 643               		.cfi_def_cfa_offset 6
+ 644               		.cfi_offset 12, -5
+ 645 02c0 DF92      		push r13
+ 646               	.LCFI29:
+ 647               		.cfi_def_cfa_offset 7
+ 648               		.cfi_offset 13, -6
+ 649 02c2 EF92      		push r14
+ 650               	.LCFI30:
+ 651               		.cfi_def_cfa_offset 8
+ 652               		.cfi_offset 14, -7
+ 653 02c4 FF92      		push r15
+ 654               	.LCFI31:
+ 655               		.cfi_def_cfa_offset 9
+ 656               		.cfi_offset 15, -8
+ 657 02c6 0F93      		push r16
+ 658               	.LCFI32:
+ 659               		.cfi_def_cfa_offset 10
+ 660               		.cfi_offset 16, -9
+ 661 02c8 1F93      		push r17
+ 662               	.LCFI33:
+ 663               		.cfi_def_cfa_offset 11
+ 664               		.cfi_offset 17, -10
+ 665 02ca CF93      		push r28
+ 666               	.LCFI34:
+ 667               		.cfi_def_cfa_offset 12
+ 668               		.cfi_offset 28, -11
+ 669 02cc DF93      		push r29
+ 670               	.LCFI35:
+ 671               		.cfi_def_cfa_offset 13
+ 672               		.cfi_offset 29, -12
+ 673 02ce CDB7      		in r28,__SP_L__
+ 674 02d0 DEB7      		in r29,__SP_H__
+ 675 02d2 6097      		sbiw r28,16
+ 676               	.LCFI36:
+ 677               		.cfi_def_cfa 28, 29
+ 678 02d4 CDBF      		out __SP_L__,r28
+ 679 02d6 DEBF      		out __SP_H__,r29
+ 680               	/* prologue: function */
+ 681               	/* frame size = 16 */
+ 682               	/* stack size = 26 */
+ 683               	.L__stack_usage = 26
+ 684 02d8 8C01      		movw r16,r24
+ 685 02da 6B01      		movw r12,r22
+ 615:palm.c        ****     opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 686               		.loc 1 615 0
+ 687 02dc FC01      		movw r30,r24
+ 688 02de 8181      		ldd r24,Z+1
+ 689               	.LVL32:
+ 690 02e0 282F      		mov r18,r24
+ 691 02e2 207F      		andi r18,lo8(-16)
+ 692               	.LVL33:
+ 617:palm.c        ****     switch(opcode)
+ 693               		.loc 1 617 0
+ 694 02e4 2036      		cpi r18,lo8(96)
+ 695 02e6 01F4      		brne .+2
+ 696 02e8 00C0      		rjmp .L40
+ 697               	.LVL34:
+ 698 02ea 2136      		cpi r18,lo8(97)
+ 699 02ec 00F4      		brsh .L44
+ 700 02ee 2032      		cpi r18,lo8(32)
+ 701 02f0 01F4      		brne .+2
+ 702 02f2 00C0      		rjmp .L36
+ 703 02f4 2132      		cpi r18,lo8(33)
+ 704 02f6 00F4      		brsh .L45
+ 705 02f8 2223      		tst r18
+ 706 02fa 01F0      		breq .L34
+ 707 02fc 2031      		cpi r18,lo8(16)
+ 708 02fe 01F0      		breq .+2
+ 709 0300 00C0      		rjmp .L33
+ 710 0302 00C0      		rjmp .L98
+ 711               	.L45:
+ 712 0304 2034      		cpi r18,lo8(64)
+ 713 0306 01F4      		brne .+2
+ 714 0308 00C0      		rjmp .L38
+ 715 030a 2035      		cpi r18,lo8(80)
+ 716 030c 01F4      		brne .+2
+ 717 030e 00C0      		rjmp .L39
+ 718 0310 2033      		cpi r18,lo8(48)
+ 719 0312 01F0      		breq .+2
+ 720 0314 00C0      		rjmp .L33
+ 721 0316 00C0      		rjmp .L99
+ 722               	.L44:
+ 723 0318 2039      		cpi r18,lo8(-112)
+ 724 031a 01F4      		brne .+2
+ 725 031c 00C0      		rjmp .L40
+ 726 031e 2139      		cpi r18,lo8(-111)
+ 727 0320 00F4      		brsh .L46
+ 728 0322 2037      		cpi r18,lo8(112)
+ 729 0324 01F4      		brne .+2
+ 730 0326 00C0      		rjmp .L40
+ 731 0328 2038      		cpi r18,lo8(-128)
+ 732 032a 01F0      		breq .+2
+ 733 032c 00C0      		rjmp .L33
+ 734 032e 00C0      		rjmp .L40
+ 735               	.L46:
+ 736 0330 203C      		cpi r18,lo8(-64)
+ 737 0332 01F4      		brne .+2
+ 738 0334 00C0      		rjmp .L42
+ 739 0336 203D      		cpi r18,lo8(-48)
+ 740 0338 01F4      		brne .+2
+ 741 033a 00C0      		rjmp .L43
+ 742 033c 203B      		cpi r18,lo8(-80)
+ 743 033e 01F0      		breq .+2
+ 744 0340 00C0      		rjmp .L33
+ 745 0342 00C0      		rjmp .L100
+ 746               	.L34:
+ 747               	.LVL35:
+ 748               	.LBB89:
+ 749               	.LBB90:
+ 412:palm.c        ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 750               		.loc 1 412 0
+ 751 0344 F801      		movw r30,r16
+ 752 0346 A280      		ldd r10,Z+2
+ 753 0348 B380      		ldd r11,Z+3
+ 754               	.LVL36:
+ 414:palm.c        ****     if (collectionBitfield & (DATA_COLLECTION_EXTERNALSUPPLY_BITMASK
+ 755               		.loc 1 414 0
+ 756 034a C501      		movw r24,r10
+ 757 034c 8073      		andi r24,lo8(48)
+ 758 034e 9070      		andi r25,hi8(48)
+ 759 0350 0097      		sbiw r24,0
+ 760 0352 01F0      		breq .L47
+ 420:palm.c        ****       captureSweep(adcData); // gather all the adc data, then pick out the specifics below
+ 761               		.loc 1 420 0
+ 762 0354 CE01      		movw r24,r28
+ 763 0356 0596      		adiw r24,5
+ 764 0358 0E94 0000 		call captureSweep
+ 765               	.LVL37:
+ 766               	.L47:
+ 423:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_FINGERROTATION_BITMASK)
+ 767               		.loc 1 423 0
+ 768 035c B2FE      		sbrs r11,2
+ 769 035e 00C0      		rjmp .L80
+ 425:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &adjustedEncoder, 2);
+ 770               		.loc 1 425 0
+ 771 0360 8091 0000 		lds r24,adjustedEncoder
+ 772 0364 9091 0000 		lds r25,adjustedEncoder+1
+ 773 0368 F601      		movw r30,r12
+ 774 036a 8483      		std Z+4,r24
+ 775 036c 9583      		std Z+5,r25
+ 776               	.LVL38:
+ 426:palm.c        ****         responseSize += 2;
+ 777               		.loc 1 426 0
+ 778 036e 02E0      		ldi r16,lo8(2)
+ 779               	.LVL39:
+ 780 0370 00C0      		rjmp .L48
+ 781               	.LVL40:
+ 782               	.L80:
+ 407:palm.c        ****     uint8_t responseSize = 0;
+ 783               		.loc 1 407 0
+ 784 0372 00E0      		ldi r16,lo8(0)
+ 785               	.LVL41:
+ 786               	.L48:
+ 445:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_EXTERNALSUPPLY_BITMASK)
+ 787               		.loc 1 445 0
+ 788 0374 A5FE      		sbrs r10,5
+ 789 0376 00C0      		rjmp .L49
+ 447:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize],&adcData[EXTERNAL_MONITOR_O
+ 790               		.loc 1 447 0
+ 791 0378 E02F      		mov r30,r16
+ 792 037a F0E0      		ldi r31,lo8(0)
+ 793 037c 3496      		adiw r30,4
+ 794 037e EC0D      		add r30,r12
+ 795 0380 FD1D      		adc r31,r13
+ 796 0382 DE01      		movw r26,r28
+ 797 0384 1596      		adiw r26,5
+ 798 0386 86E0      		ldi r24,lo8(6)
+ 799               	.L50:
+ 800 0388 0D90      		ld r0,X+
+ 801 038a 0192      		st Z+,r0
+ 802 038c 8150      		subi r24,lo8(-(-1))
+ 803 038e 01F4      		brne .L50
+ 448:palm.c        ****         responseSize += 6;
+ 804               		.loc 1 448 0
+ 805 0390 0A5F      		subi r16,lo8(-(6))
+ 806               	.LVL42:
+ 807               	.L49:
+ 451:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_AIRTEMPERATURE_BITMASK)
+ 808               		.loc 1 451 0
+ 809 0392 A4FE      		sbrs r10,4
+ 810 0394 00C0      		rjmp .L51
+ 811               	.LVL43:
+ 453:palm.c        ****         thermistorVoltage = ADC_CODES_TO_VOLTS_SIGNED(adcData[EXTERNALTEMP_MONITOR_OFFSET]);
+ 812               		.loc 1 453 0
+ 813 0396 6D85      		ldd r22,Y+13
+ 814 0398 7E85      		ldd r23,Y+14
+ 815 039a 8827      		clr r24
+ 816 039c 77FD      		sbrc r23,7
+ 817 039e 8095      		com r24
+ 818 03a0 982F      		mov r25,r24
+ 819 03a2 0E94 0000 		call __floatsisf
+ 820               	.LVL44:
+ 821 03a6 20E0      		ldi r18,lo8(0x40200000)
+ 822 03a8 30E0      		ldi r19,hi8(0x40200000)
+ 823 03aa 40E2      		ldi r20,hlo8(0x40200000)
+ 824 03ac 50E4      		ldi r21,hhi8(0x40200000)
+ 825 03ae 0E94 0000 		call __mulsf3
+ 826 03b2 20E0      		ldi r18,lo8(0x3a000000)
+ 827 03b4 30E0      		ldi r19,hi8(0x3a000000)
+ 828 03b6 40E0      		ldi r20,hlo8(0x3a000000)
+ 829 03b8 5AE3      		ldi r21,hhi8(0x3a000000)
+ 830 03ba 0E94 0000 		call __mulsf3
+ 454:palm.c        ****         thermistorTemperature = Thermistor_RtoT(Thermistor_VtoR(thermistorVoltage));
+ 831               		.loc 1 454 0
+ 832 03be 0E94 0000 		call Thermistor_VtoR
+ 833 03c2 0E94 0000 		call Thermistor_RtoT
+ 834               	.LVL45:
+ 455:palm.c        ****         roundedTemperature = round(thermistorTemperature * 100.0);
+ 835               		.loc 1 455 0
+ 836 03c6 20E0      		ldi r18,lo8(0x42c80000)
+ 837 03c8 30E0      		ldi r19,hi8(0x42c80000)
+ 838 03ca 48EC      		ldi r20,hlo8(0x42c80000)
+ 839 03cc 52E4      		ldi r21,hhi8(0x42c80000)
+ 840 03ce 0E94 0000 		call __mulsf3
+ 841               	.LVL46:
+ 842 03d2 0E94 0000 		call round
+ 843               	.LVL47:
+ 457:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize],&roundedTemperature, 2);
+ 844               		.loc 1 457 0
+ 845 03d6 7601      		movw r14,r12
+ 846 03d8 E00E      		add r14,r16
+ 847 03da F11C      		adc r15,__zero_reg__
+ 455:palm.c        ****         roundedTemperature = round(thermistorTemperature * 100.0);
+ 848               		.loc 1 455 0
+ 849 03dc 0E94 0000 		call __fixunssfsi
+ 850               	.LVL48:
+ 851 03e0 DC01      		movw r26,r24
+ 852 03e2 CB01      		movw r24,r22
+ 853 03e4 F701      		movw r30,r14
+ 854 03e6 8483      		std Z+4,r24
+ 855 03e8 9583      		std Z+5,r25
+ 458:palm.c        ****         responseSize += 2;
+ 856               		.loc 1 458 0
+ 857 03ea 0E5F      		subi r16,lo8(-(2))
+ 858               	.LVL49:
+ 859               	.L51:
+ 461:palm.c        ****     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 860               		.loc 1 461 0
+ 861 03ec A1FE      		sbrs r10,1
+ 862 03ee 00C0      		rjmp .L52
+ 463:palm.c        ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM+responseSize], &RxCheckSumErrCnt, 14);
+ 863               		.loc 1 463 0
+ 864 03f0 F601      		movw r30,r12
+ 865 03f2 E00F      		add r30,r16
+ 866 03f4 F11D      		adc r31,__zero_reg__
+ 867 03f6 3496      		adiw r30,4
+ 868 03f8 A0E0      		ldi r26,lo8(RxCheckSumErrCnt)
+ 869 03fa B0E0      		ldi r27,hi8(RxCheckSumErrCnt)
+ 870 03fc 8EE0      		ldi r24,lo8(14)
+ 871               	.L53:
+ 872 03fe 0D90      		ld r0,X+
+ 873 0400 0192      		st Z+,r0
+ 874 0402 8150      		subi r24,lo8(-(-1))
+ 875 0404 01F4      		brne .L53
+ 464:palm.c        ****         responseSize += 14;
+ 876               		.loc 1 464 0
+ 877 0406 025F      		subi r16,lo8(-(14))
+ 878               	.LVL50:
+ 879               	.L52:
+ 467:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3+responseSize;
+ 880               		.loc 1 467 0
+ 881 0408 802F      		mov r24,r16
+ 882 040a 8D5F      		subi r24,lo8(-(3))
+ 883 040c F601      		movw r30,r12
+ 884 040e 8083      		st Z,r24
+ 468:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 885               		.loc 1 468 0
+ 886 0410 1182      		std Z+1,__zero_reg__
+ 469:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = DATA_COLLECTION_OPCODE;
+ 887               		.loc 1 469 0
+ 888 0412 1282      		std Z+2,__zero_reg__
+ 470:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 889               		.loc 1 470 0
+ 890 0414 1382      		std Z+3,__zero_reg__
+ 471:palm.c        ****     outputBuffer[4+responseSize] = computeChecksum(outputBuffer, 4+responseSize); //this is the che
+ 891               		.loc 1 471 0
+ 892 0416 10E0      		ldi r17,lo8(0)
+ 893 0418 B801      		movw r22,r16
+ 894 041a 6C5F      		subi r22,lo8(-(4))
+ 895 041c 7F4F      		sbci r23,hi8(-(4))
+ 896 041e 7601      		movw r14,r12
+ 897 0420 E60E      		add r14,r22
+ 898 0422 F71E      		adc r15,r23
+ 899 0424 C601      		movw r24,r12
+ 900 0426 0E94 0000 		call computeChecksum
+ 901 042a F701      		movw r30,r14
+ 902 042c 8083      		st Z,r24
+ 472:palm.c        ****     return 5+responseSize;
+ 903               		.loc 1 472 0
+ 904 042e C801      		movw r24,r16
+ 905 0430 0596      		adiw r24,5
+ 906               	.LBE90:
+ 907               	.LBE89:
+ 621:palm.c        ****             return handleCollectionCommand(commandPacket,outputBuffer);
+ 908               		.loc 1 621 0
+ 909 0432 00C0      		rjmp .L54
+ 910               	.LVL51:
+ 911               	.L98:
+ 912               	.LBB91:
+ 913               	.LBB92:
+ 316:palm.c        ****     memcpy(&samplePeriod, &commandPacket[PAYLOAD_OFFSET], 2);
+ 914               		.loc 1 316 0
+ 915 0434 F801      		movw r30,r16
+ 916 0436 8281      		ldd r24,Z+2
+ 917 0438 9381      		ldd r25,Z+3
+ 918 043a 8093 0000 		sts samplePeriod,r24
+ 919 043e 9093 0000 		sts samplePeriod+1,r25
+ 920 0442 00C0      		rjmp .L93
+ 921               	.LVL52:
+ 922               	.L36:
+ 923               	.LBE92:
+ 924               	.LBE91:
+ 925               	.LBB93:
+ 926               	.LBB94:
+ 333:palm.c        ****     memcpy(&sampleArgument,&commandPacket[PAYLOAD_OFFSET],2);
+ 927               		.loc 1 333 0
+ 928 0444 F801      		movw r30,r16
+ 929 0446 8281      		ldd r24,Z+2
+ 930 0448 9381      		ldd r25,Z+3
+ 931 044a 8093 0000 		sts sampleArgument,r24
+ 932 044e 9093 0000 		sts sampleArgument+1,r25
+ 933 0452 00C0      		rjmp .L93
+ 934               	.LVL53:
+ 935               	.L99:
+ 936               	.LBE94:
+ 937               	.LBE93:
+ 938               	.LBB95:
+ 939               	.LBB96:
+ 353:palm.c        ****     freerun_flag = 1;
+ 940               		.loc 1 353 0
+ 941 0454 31E0      		ldi r19,lo8(1)
+ 942 0456 3093 0000 		sts freerun_flag,r19
+ 355:palm.c        ****     FREERUN_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 943               		.loc 1 355 0
+ 944 045a E0E0      		ldi r30,lo8(2048)
+ 945 045c F8E0      		ldi r31,hi8(2048)
+ 946 045e 1182      		std Z+1,__zero_reg__
+ 356:palm.c        ****     FREERUN_TC.CTRLC = 0x00;
+ 947               		.loc 1 356 0
+ 948 0460 1282      		std Z+2,__zero_reg__
+ 357:palm.c        ****     FREERUN_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 949               		.loc 1 357 0
+ 950 0462 1382      		std Z+3,__zero_reg__
+ 358:palm.c        ****     FREERUN_TC.CTRLE = 0x00;
+ 951               		.loc 1 358 0
+ 952 0464 1482      		std Z+4,__zero_reg__
+ 359:palm.c        ****     FREERUN_TC.PERBUF = samplePeriod >> 1; //BA: fix bit shift direction
+ 953               		.loc 1 359 0
+ 954 0466 8091 0000 		lds r24,samplePeriod
+ 955 046a 9091 0000 		lds r25,samplePeriod+1
+ 956 046e 9695      		lsr r25
+ 957 0470 8795      		ror r24
+ 958 0472 86AB      		std Z+54,r24
+ 959 0474 97AB      		std Z+55,r25
+ 360:palm.c        ****     FREERUN_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 960               		.loc 1 360 0
+ 961 0476 3683      		std Z+6,r19
+ 361:palm.c        ****     FREERUN_TC.CTRLA = TC_CLKSEL_DIV64_gc;
+ 962               		.loc 1 361 0
+ 963 0478 85E0      		ldi r24,lo8(5)
+ 964 047a 8093 0008 		sts 2048,r24
+ 965               	.LVL54:
+ 966               	.L93:
+ 364:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 967               		.loc 1 364 0
+ 968 047e 83E0      		ldi r24,lo8(3)
+ 969 0480 F601      		movw r30,r12
+ 970 0482 8083      		st Z,r24
+ 365:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 971               		.loc 1 365 0
+ 972 0484 1182      		std Z+1,__zero_reg__
+ 366:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = START_COLLECTION_OPCODE;
+ 973               		.loc 1 366 0
+ 974 0486 2283      		std Z+2,r18
+ 975               	.LVL55:
+ 976               	.L94:
+ 367:palm.c        ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 977               		.loc 1 367 0
+ 978 0488 1382      		std Z+3,__zero_reg__
+ 979 048a 00C0      		rjmp .L92
+ 980               	.LVL56:
+ 981               	.L38:
+ 982               	.LBE96:
+ 983               	.LBE95:
+ 984               	.LBB97:
+ 985               	.LBB98:
+ 381:palm.c        ****     FREERUN_TC.INTCTRLA = TC_OVFINTLVL_OFF_gc;
+ 986               		.loc 1 381 0
+ 987 048c E0E0      		ldi r30,lo8(2048)
+ 988 048e F8E0      		ldi r31,hi8(2048)
+ 989 0490 1682      		std Z+6,__zero_reg__
+ 382:palm.c        ****     FREERUN_TC.CTRLA = TC_CLKSEL_OFF_gc;
+ 990               		.loc 1 382 0
+ 991 0492 1092 0008 		sts 2048,__zero_reg__
+ 384:palm.c        ****     freerun_flag = 0;
+ 992               		.loc 1 384 0
+ 993 0496 1092 0000 		sts freerun_flag,__zero_reg__
+ 994 049a 00C0      		rjmp .L93
+ 995               	.LVL57:
+ 996               	.L39:
+ 997               	.LBE98:
+ 998               	.LBE97:
+ 999               	.LBB99:
+ 1000               	.LBB100:
+ 116:palm.c        ****     if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_SCHEME_BITMASK) == MOTOR_COMMAND_POSITION)
+ 1001               		.loc 1 116 0
+ 1002 049c 90E0      		ldi r25,lo8(0)
+ 1003 049e 9C01      		movw r18,r24
+ 1004               	.LVL58:
+ 1005 04a0 2370      		andi r18,lo8(3)
+ 1006 04a2 3070      		andi r19,hi8(3)
+ 1007 04a4 8C70      		andi r24,lo8(12)
+ 1008 04a6 9070      		andi r25,hi8(12)
+ 1009 04a8 2115      		cp r18,__zero_reg__
+ 1010 04aa 3105      		cpc r19,__zero_reg__
+ 1011 04ac 01F4      		brne .L55
+ 119:palm.c        ****         if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK) == MOTOR_COMMAND_STOP
+ 1012               		.loc 1 119 0
+ 1013 04ae 0097      		sbiw r24,0
+ 1014 04b0 01F4      		brne .L56
+ 1015               	.LBB101:
+ 1016               	.LBB102:
+  81:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK | MOTOR_nDIR_BITMASK;
+ 1017               		.loc 1 81 0
+ 1018 04b2 83E0      		ldi r24,lo8(3)
+ 1019 04b4 E0EA      		ldi r30,lo8(1696)
+ 1020 04b6 F6E0      		ldi r31,hi8(1696)
+ 1021 04b8 8683      		std Z+6,r24
+ 1022               	.LBE102:
+ 1023               	.LBE101:
+ 122:palm.c        ****             spreadMotorMode = SPREAD_MODE_NONE;
+ 1024               		.loc 1 122 0
+ 1025 04ba 1092 0000 		sts spreadMotorMode,__zero_reg__
+ 1026 04be 00C0      		rjmp .L90
+ 1027               	.L56:
+ 126:palm.c        ****             memcpy(&targetEncoder, &commandPacket[PAYLOAD_OFFSET], 2);
+ 1028               		.loc 1 126 0
+ 1029 04c0 F801      		movw r30,r16
+ 1030 04c2 8281      		ldd r24,Z+2
+ 1031 04c4 9381      		ldd r25,Z+3
+ 1032 04c6 8093 0000 		sts targetEncoder,r24
+ 1033 04ca 9093 0000 		sts targetEncoder+1,r25
+ 128:palm.c        ****             if ((commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK) == MOTOR_COMMAND_
+ 1034               		.loc 1 128 0
+ 1035 04ce 2181      		ldd r18,Z+1
+ 1036 04d0 2C70      		andi r18,lo8(12)
+ 1037 04d2 2430      		cpi r18,lo8(4)
+ 1038 04d4 01F4      		brne .L58
+ 129:palm.c        ****                 targetEncoder = -targetEncoder;
+ 1039               		.loc 1 129 0
+ 1040 04d6 9095      		com r25
+ 1041 04d8 8195      		neg r24
+ 1042 04da 9F4F      		sbci r25,lo8(-1)
+ 1043 04dc 8093 0000 		sts targetEncoder,r24
+ 1044 04e0 9093 0000 		sts targetEncoder+1,r25
+ 1045               	.L58:
+ 131:palm.c        ****             spreadMotorMode = SPREAD_MODE_POSITION;
+ 1046               		.loc 1 131 0
+ 1047 04e4 81E0      		ldi r24,lo8(1)
+ 1048 04e6 8093 0000 		sts spreadMotorMode,r24
+ 1049 04ea 00C0      		rjmp .L90
+ 1050               	.L55:
+ 136:palm.c        ****         spreadMotorMode = SPREAD_MODE_NONE;
+ 1051               		.loc 1 136 0
+ 1052 04ec 1092 0000 		sts spreadMotorMode,__zero_reg__
+ 138:palm.c        ****         switch(commandPacket[COMMAND_OFFSET] & MOTOR_COMMAND_DIRECTION_BITMASK)
+ 1053               		.loc 1 138 0
+ 1054 04f0 8430      		cpi r24,4
+ 1055 04f2 9105      		cpc r25,__zero_reg__
+ 1056 04f4 01F0      		breq .L60
+ 1057 04f6 8830      		cpi r24,8
+ 1058 04f8 9105      		cpc r25,__zero_reg__
+ 1059 04fa 01F0      		breq .L61
+ 1060 04fc 0097      		sbiw r24,0
+ 1061 04fe 01F4      		brne .L88
+ 1062               	.LBB103:
+ 1063               	.LBB104:
+  81:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK | MOTOR_nDIR_BITMASK;
+ 1064               		.loc 1 81 0
+ 1065 0500 83E0      		ldi r24,lo8(3)
+ 1066 0502 E0EA      		ldi r30,lo8(1696)
+ 1067 0504 F6E0      		ldi r31,hi8(1696)
+ 1068 0506 8683      		std Z+6,r24
+ 1069 0508 00C0      		rjmp .L90
+ 1070               	.L60:
+ 1071               	.LBE104:
+ 1072               	.LBE103:
+ 144:palm.c        ****                 memcpy(&dac, &commandPacket[PAYLOAD_OFFSET], 2);
+ 1073               		.loc 1 144 0
+ 1074 050a F801      		movw r30,r16
+ 1075 050c 8281      		ldd r24,Z+2
+ 1076 050e 9381      		ldd r25,Z+3
+ 1077               	.LVL59:
+ 1078               	.LBB105:
+ 1079               	.LBB106:
+  95:palm.c        ****     DACB.CH0DATA = dac;
+ 1080               		.loc 1 95 0
+ 1081 0510 E0E2      		ldi r30,lo8(800)
+ 1082 0512 F3E0      		ldi r31,hi8(800)
+ 1083 0514 808F      		std Z+24,r24
+ 1084 0516 918F      		std Z+25,r25
+  97:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_nDIR_BITMASK;
+ 1085               		.loc 1 97 0
+ 1086 0518 E0EA      		ldi r30,lo8(1696)
+ 1087 051a F6E0      		ldi r31,hi8(1696)
+ 1088 051c 82E0      		ldi r24,lo8(2)
+ 1089 051e 8683      		std Z+6,r24
+  98:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_DIR_BITMASK;
+ 1090               		.loc 1 98 0
+ 1091 0520 81E0      		ldi r24,lo8(1)
+ 1092 0522 00C0      		rjmp .L89
+ 1093               	.LVL60:
+ 1094               	.L61:
+ 1095               	.LBE106:
+ 1096               	.LBE105:
+ 148:palm.c        ****                 memcpy(&dac, &commandPacket[PAYLOAD_OFFSET], 2);
+ 1097               		.loc 1 148 0
+ 1098 0524 F801      		movw r30,r16
+ 1099 0526 8281      		ldd r24,Z+2
+ 1100 0528 9381      		ldd r25,Z+3
+ 1101               	.LVL61:
+ 1102               	.LBB107:
+ 1103               	.LBB108:
+  86:palm.c        ****     DACB.CH0DATA = dac;
+ 1104               		.loc 1 86 0
+ 1105 052a E0E2      		ldi r30,lo8(800)
+ 1106 052c F3E0      		ldi r31,hi8(800)
+ 1107 052e 808F      		std Z+24,r24
+ 1108 0530 918F      		std Z+25,r25
+  88:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK;
+ 1109               		.loc 1 88 0
+ 1110 0532 E0EA      		ldi r30,lo8(1696)
+ 1111 0534 F6E0      		ldi r31,hi8(1696)
+ 1112 0536 81E0      		ldi r24,lo8(1)
+ 1113 0538 8683      		std Z+6,r24
+  89:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_nDIR_BITMASK;
+ 1114               		.loc 1 89 0
+ 1115 053a 82E0      		ldi r24,lo8(2)
+ 1116               	.LVL62:
+ 1117               	.L89:
+ 1118 053c 8583      		std Z+5,r24
+ 1119               	.L90:
+ 112:palm.c        ****     uint8_t status = STATUS_OK;
+ 1120               		.loc 1 112 0
+ 1121 053e 80E0      		ldi r24,lo8(0)
+ 1122 0540 00C0      		rjmp .L57
+ 1123               	.LVL63:
+ 1124               	.L88:
+ 1125               	.LBE108:
+ 1126               	.LBE107:
+ 152:palm.c        ****                 status = UNKNOWN_COMMAND;
+ 1127               		.loc 1 152 0
+ 1128 0542 82E0      		ldi r24,lo8(2)
+ 1129               	.LVL64:
+ 1130               	.L57:
+ 157:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 1131               		.loc 1 157 0
+ 1132 0544 93E0      		ldi r25,lo8(3)
+ 1133 0546 F601      		movw r30,r12
+ 1134 0548 9083      		st Z,r25
+ 158:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1135               		.loc 1 158 0
+ 1136 054a 1182      		std Z+1,__zero_reg__
+ 159:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = FINGER_COMMAND_OPCODE;
+ 1137               		.loc 1 159 0
+ 1138 054c 90E5      		ldi r25,lo8(80)
+ 1139 054e 9283      		std Z+2,r25
+ 1140 0550 00C0      		rjmp .L96
+ 1141               	.LVL65:
+ 1142               	.L100:
+ 1143               	.LBE100:
+ 1144               	.LBE99:
+ 1145               	.LBB109:
+ 1146               	.LBB110:
+ 268:palm.c        ****   outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 4;
+ 1147               		.loc 1 268 0
+ 1148 0552 84E0      		ldi r24,lo8(4)
+ 1149 0554 FB01      		movw r30,r22
+ 1150 0556 8083      		st Z,r24
+ 269:palm.c        ****   outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1151               		.loc 1 269 0
+ 1152 0558 1182      		std Z+1,__zero_reg__
+ 270:palm.c        ****   outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = BOOTLOADER_OPCODE;
+ 1153               		.loc 1 270 0
+ 1154 055a 2283      		std Z+2,r18
+ 271:palm.c        ****   outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 1155               		.loc 1 271 0
+ 1156 055c 1382      		std Z+3,__zero_reg__
+ 272:palm.c        ****   outputBuffer[4] = commandPacket[PAYLOAD_OFFSET];
+ 1157               		.loc 1 272 0
+ 1158 055e F801      		movw r30,r16
+ 1159 0560 8281      		ldd r24,Z+2
+ 1160 0562 FB01      		movw r30,r22
+ 1161 0564 8483      		std Z+4,r24
+ 273:palm.c        ****   outputBuffer[5] = computeChecksum(outputBuffer,5); //this is the checksum
+ 1162               		.loc 1 273 0
+ 1163 0566 CB01      		movw r24,r22
+ 1164 0568 65E0      		ldi r22,lo8(5)
+ 1165 056a 70E0      		ldi r23,hi8(5)
+ 1166 056c 0E94 0000 		call computeChecksum
+ 1167               	.LVL66:
+ 1168 0570 F601      		movw r30,r12
+ 1169 0572 8583      		std Z+5,r24
+ 1170               	.LVL67:
+ 169:palm.c        ****   for(i=0;i<numBytes;i++)
+ 1171               		.loc 1 169 0
+ 1172 0574 80E0      		ldi r24,lo8(0)
+ 1173 0576 90E0      		ldi r25,hi8(0)
+ 1174               	.LVL68:
+ 1175               	.L87:
+ 1176               	.LBB111:
+ 1177               	.LBB112:
+ 171:palm.c        ****       while(!(UPSTREAM_USART.STATUS & USART_DREIF_bm));
+ 1178               		.loc 1 171 0
+ 1179 0578 2091 A10B 		lds r18,2977
+ 1180 057c 25FF      		sbrs r18,5
+ 1181 057e 00C0      		rjmp .L87
+ 611:palm.c        **** int processCommand(uint8_t *commandPacket,uint8_t *outputBuffer)
+ 1182               		.loc 1 611 0
+ 1183 0580 F601      		movw r30,r12
+ 1184 0582 E80F      		add r30,r24
+ 1185 0584 F91F      		adc r31,r25
+ 172:palm.c        ****       UPSTREAM_USART.DATA = targetBuffer[i];
+ 1186               		.loc 1 172 0
+ 1187 0586 2081      		ld r18,Z
+ 1188 0588 2093 A00B 		sts 2976,r18
+ 169:palm.c        ****   for(i=0;i<numBytes;i++)
+ 1189               		.loc 1 169 0
+ 1190 058c 0196      		adiw r24,1
+ 1191               	.LVL69:
+ 1192 058e 8630      		cpi r24,6
+ 1193 0590 9105      		cpc r25,__zero_reg__
+ 1194 0592 01F4      		brne .L87
+ 1195               	.LBE112:
+ 1196               	.LBE111:
+ 276:palm.c        ****   switch(0xf0 & commandPacket[PAYLOAD_OFFSET])
+ 1197               		.loc 1 276 0
+ 1198 0594 F801      		movw r30,r16
+ 1199 0596 8281      		ldd r24,Z+2
+ 1200               	.LVL70:
+ 1201 0598 90E0      		ldi r25,lo8(0)
+ 1202 059a 807F      		andi r24,lo8(240)
+ 1203 059c 9070      		andi r25,hi8(240)
+ 1204 059e 8033      		cpi r24,48
+ 1205 05a0 9105      		cpc r25,__zero_reg__
+ 1206 05a2 01F0      		breq .L67
+ 1207 05a4 8133      		cpi r24,49
+ 1208 05a6 9105      		cpc r25,__zero_reg__
+ 1209 05a8 04F4      		brge .L71
+ 1210 05aa 8031      		cpi r24,16
+ 1211 05ac 9105      		cpc r25,__zero_reg__
+ 1212 05ae 01F0      		breq .L65
+ 1213 05b0 8032      		cpi r24,32
+ 1214 05b2 9105      		cpc r25,__zero_reg__
+ 1215 05b4 01F0      		breq .L66
+ 1216 05b6 0097      		sbiw r24,0
+ 1217 05b8 01F0      		breq .L64
+ 1218 05ba 00C0      		rjmp .L82
+ 1219               	.L71:
+ 1220 05bc 8035      		cpi r24,80
+ 1221 05be 9105      		cpc r25,__zero_reg__
+ 1222 05c0 01F0      		breq .L69
+ 1223 05c2 8036      		cpi r24,96
+ 1224 05c4 9105      		cpc r25,__zero_reg__
+ 1225 05c6 01F0      		breq .L70
+ 1226 05c8 8034      		cpi r24,64
+ 1227 05ca 9105      		cpc r25,__zero_reg__
+ 1228 05cc 01F0      		breq .+2
+ 1229 05ce 00C0      		rjmp .L82
+ 1230 05d0 00C0      		rjmp .L101
+ 1231               	.L64:
+ 280:palm.c        ****     wdt_enable(WDT_PER_256CLK_gc);
+ 1232               		.loc 1 280 0
+ 1233 05d2 97E1      		ldi r25,lo8(23)
+ 1234 05d4 88ED      		ldi r24,lo8(-40)
+ 1235               	/* #APP */
+ 1236               	 ;  280 "palm.c" 1
+ 1237 05d6 08B6      		in __tmp_reg__, 56
+ 1238 05d8 84BF      		out 52, r24
+ 1239 05da 9093 8000 		sts 128, r25
+ 1240 05de A895      		wdr
+ 1241 05e0 08BE      		out 56, __tmp_reg__
+ 1242               		
+ 1243               	 ;  0 "" 2
+ 1244               	/* #NOAPP */
+ 1245               	.L72:
+ 1246 05e2 00C0      		rjmp .L72
+ 1247               	.L65:
+ 284:palm.c        ****     BootRelay(&PROX1_USART,commandPacket);
+ 1248               		.loc 1 284 0
+ 1249 05e4 80EB      		ldi r24,lo8(2480)
+ 1250 05e6 99E0      		ldi r25,hi8(2480)
+ 1251 05e8 00C0      		rjmp .L91
+ 1252               	.L66:
+ 287:palm.c        ****     BootRelay(&PROX2_USART,commandPacket);
+ 1253               		.loc 1 287 0
+ 1254 05ea 80EB      		ldi r24,lo8(2224)
+ 1255 05ec 98E0      		ldi r25,hi8(2224)
+ 1256               	.L91:
+ 1257 05ee B801      		movw r22,r16
+ 1258 05f0 0E94 0000 		call BootRelay
+ 1259               	.L67:
+ 290:palm.c        ****     BootRelay(&PROX3_USART,commandPacket);
+ 1260               		.loc 1 290 0
+ 1261 05f4 80EA      		ldi r24,lo8(2464)
+ 1262 05f6 99E0      		ldi r25,hi8(2464)
+ 1263 05f8 00C0      		rjmp .L91
+ 1264               	.L101:
+ 293:palm.c        ****     BootRelay(&MTR1_USART,commandPacket);
+ 1265               		.loc 1 293 0
+ 1266 05fa 80EA      		ldi r24,lo8(2720)
+ 1267 05fc 9AE0      		ldi r25,hi8(2720)
+ 1268 05fe 00C0      		rjmp .L91
+ 1269               	.L69:
+ 296:palm.c        ****     BootRelay(&MTR2_USART,commandPacket);
+ 1270               		.loc 1 296 0
+ 1271 0600 80EB      		ldi r24,lo8(2736)
+ 1272 0602 9AE0      		ldi r25,hi8(2736)
+ 1273 0604 00C0      		rjmp .L91
+ 1274               	.L70:
+ 299:palm.c        ****     BootRelay(&TACT_USART,commandPacket);
+ 1275               		.loc 1 299 0
+ 1276 0606 80EA      		ldi r24,lo8(2208)
+ 1277 0608 98E0      		ldi r25,hi8(2208)
+ 1278 060a 00C0      		rjmp .L91
+ 1279               	.LVL71:
+ 1280               	.L42:
+ 1281               	.LBE110:
+ 1282               	.LBE109:
+ 1283               	.LBB114:
+ 1284               	.LBB115:
+ 479:palm.c        ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 1285               		.loc 1 479 0
+ 1286 060c F801      		movw r30,r16
+ 1287 060e 8281      		ldd r24,Z+2
+ 1288 0610 9381      		ldd r25,Z+3
+ 1289               	.LVL72:
+ 481:palm.c        ****     if (collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 1290               		.loc 1 481 0
+ 1291 0612 81FF      		sbrs r24,1
+ 1292 0614 00C0      		rjmp .L73
+ 483:palm.c        ****         RxCheckSumErrCnt[0] = 0;
+ 1293               		.loc 1 483 0
+ 1294 0616 1092 0000 		sts RxCheckSumErrCnt,__zero_reg__
+ 1295 061a 1092 0000 		sts RxCheckSumErrCnt+1,__zero_reg__
+ 484:palm.c        ****         RxCheckSumErrCnt[1] = 0;
+ 1296               		.loc 1 484 0
+ 1297 061e 1092 0000 		sts RxCheckSumErrCnt+2,__zero_reg__
+ 1298 0622 1092 0000 		sts RxCheckSumErrCnt+2+1,__zero_reg__
+ 485:palm.c        ****         RxCheckSumErrCnt[2] = 0;
+ 1299               		.loc 1 485 0
+ 1300 0626 1092 0000 		sts RxCheckSumErrCnt+4,__zero_reg__
+ 1301 062a 1092 0000 		sts RxCheckSumErrCnt+4+1,__zero_reg__
+ 486:palm.c        ****         RxCheckSumErrCnt[3] = 0;
+ 1302               		.loc 1 486 0
+ 1303 062e 1092 0000 		sts RxCheckSumErrCnt+6,__zero_reg__
+ 1304 0632 1092 0000 		sts RxCheckSumErrCnt+6+1,__zero_reg__
+ 487:palm.c        ****         RxCheckSumErrCnt[4] = 0;
+ 1305               		.loc 1 487 0
+ 1306 0636 1092 0000 		sts RxCheckSumErrCnt+8,__zero_reg__
+ 1307 063a 1092 0000 		sts RxCheckSumErrCnt+8+1,__zero_reg__
+ 488:palm.c        ****         RxCheckSumErrCnt[5] = 0;
+ 1308               		.loc 1 488 0
+ 1309 063e 1092 0000 		sts RxCheckSumErrCnt+10,__zero_reg__
+ 1310 0642 1092 0000 		sts RxCheckSumErrCnt+10+1,__zero_reg__
+ 489:palm.c        ****         RxCheckSumErrCnt[6] = 0;
+ 1311               		.loc 1 489 0
+ 1312 0646 1092 0000 		sts RxCheckSumErrCnt+12,__zero_reg__
+ 1313 064a 1092 0000 		sts RxCheckSumErrCnt+12+1,__zero_reg__
+ 1314               	.L73:
+ 492:palm.c        ****     if (collectionBitfield & DATA_COLLECTION_FINGERROTATION_BITMASK)
+ 1315               		.loc 1 492 0
+ 1316 064e 92FF      		sbrs r25,2
+ 1317 0650 00C0      		rjmp .L74
+ 1318               	.LBB116:
+ 494:palm.c        ****         uint32_t temp = rawEncoder;
+ 1319               		.loc 1 494 0
+ 1320 0652 8091 0000 		lds r24,rawEncoder
+ 1321 0656 9091 0000 		lds r25,rawEncoder+1
+ 1322 065a AA27      		clr r26
+ 1323 065c 97FD      		sbrc r25,7
+ 1324 065e A095      		com r26
+ 1325 0660 BA2F      		mov r27,r26
+ 1326 0662 8983      		std Y+1,r24
+ 1327 0664 9A83      		std Y+2,r25
+ 1328 0666 AB83      		std Y+3,r26
+ 1329 0668 BC83      		std Y+4,r27
+ 1330               	.LVL73:
+ 495:palm.c        ****         WriteIntToEEPROM(EEPROM_ADDRESS_ENCODER_OFFSET, (uint8_t*)&temp);
+ 1331               		.loc 1 495 0
+ 1332 066a 8CE1      		ldi r24,lo8(28)
+ 1333 066c BE01      		movw r22,r28
+ 1334 066e 6F5F      		subi r22,lo8(-(1))
+ 1335 0670 7F4F      		sbci r23,hi8(-(1))
+ 1336 0672 0E94 0000 		call WriteIntToEEPROM
+ 1337               	.LVL74:
+ 496:palm.c        ****         lastEncoder = rawEncoder;
+ 1338               		.loc 1 496 0
+ 1339 0676 8091 0000 		lds r24,rawEncoder
+ 1340 067a 9091 0000 		lds r25,rawEncoder+1
+ 1341 067e 8093 0000 		sts lastEncoder,r24
+ 1342 0682 9093 0000 		sts lastEncoder+1,r25
+ 497:palm.c        ****         adjustedEncoder = 0;
+ 1343               		.loc 1 497 0
+ 1344 0686 1092 0000 		sts adjustedEncoder,__zero_reg__
+ 1345 068a 1092 0000 		sts adjustedEncoder+1,__zero_reg__
+ 498:palm.c        ****         encoderInitialized = 1;
+ 1346               		.loc 1 498 0
+ 1347 068e 81E0      		ldi r24,lo8(1)
+ 1348 0690 8093 0000 		sts encoderInitialized,r24
+ 499:palm.c        ****         targetEncoder = 0;
+ 1349               		.loc 1 499 0
+ 1350 0694 1092 0000 		sts targetEncoder,__zero_reg__
+ 1351 0698 1092 0000 		sts targetEncoder+1,__zero_reg__
+ 1352               	.L74:
+ 1353               	.LBE116:
+ 502:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 1354               		.loc 1 502 0
+ 1355 069c 83E0      		ldi r24,lo8(3)
+ 1356 069e F601      		movw r30,r12
+ 1357 06a0 8083      		st Z,r24
+ 503:palm.c        ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1358               		.loc 1 503 0
+ 1359 06a2 1182      		std Z+1,__zero_reg__
+ 504:palm.c        ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = CALIBRATION_OPCODE;
+ 1360               		.loc 1 504 0
+ 1361 06a4 80EC      		ldi r24,lo8(-64)
+ 1362 06a6 00C0      		rjmp .L97
+ 1363               	.LVL75:
+ 1364               	.L40:
+ 1365               	.LBE115:
+ 1366               	.LBE114:
+ 1367               	.LBB117:
+ 1368               	.LBB118:
+ 570:palm.c        ****     uint8_t address = commandPacket[COMMAND_OFFSET] & 0x1F;
+ 1369               		.loc 1 570 0
+ 1370 06a8 8F71      		andi r24,lo8(31)
+ 1371               	.LVL76:
+ 572:palm.c        ****     switch(opcode)
+ 1372               		.loc 1 572 0
+ 1373 06aa 2037      		cpi r18,lo8(112)
+ 1374 06ac 01F0      		breq .L76
+ 1375 06ae 2137      		cpi r18,lo8(113)
+ 1376 06b0 00F4      		brsh .L78
+ 1377 06b2 2036      		cpi r18,lo8(96)
+ 1378 06b4 01F4      		brne .L75
+ 1379 06b6 00C0      		rjmp .L76
+ 1380               	.L78:
+ 1381 06b8 2038      		cpi r18,lo8(-128)
+ 1382 06ba 01F0      		breq .L77
+ 1383 06bc 2039      		cpi r18,lo8(-112)
+ 1384 06be 01F4      		brne .L75
+ 1385 06c0 00C0      		rjmp .L77
+ 1386               	.L76:
+ 577:palm.c        ****             ReadIntFromEEPROM(address, &outputBuffer[RESPONSE_PAYLOAD_OFFSET_PALM]);
+ 1387               		.loc 1 577 0
+ 1388 06c2 B601      		movw r22,r12
+ 1389 06c4 6C5F      		subi r22,lo8(-(4))
+ 1390 06c6 7F4F      		sbci r23,hi8(-(4))
+ 1391 06c8 0E94 0000 		call ReadIntFromEEPROM
+ 1392               	.LVL77:
+ 579:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3+responseSize;
+ 1393               		.loc 1 579 0
+ 1394 06cc 87E0      		ldi r24,lo8(7)
+ 1395 06ce F601      		movw r30,r12
+ 1396 06d0 8083      		st Z,r24
+ 580:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1397               		.loc 1 580 0
+ 1398 06d2 1182      		std Z+1,__zero_reg__
+ 581:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 1399               		.loc 1 581 0
+ 1400 06d4 F801      		movw r30,r16
+ 1401 06d6 8181      		ldd r24,Z+1
+ 1402 06d8 F601      		movw r30,r12
+ 1403 06da 8283      		std Z+2,r24
+ 582:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = STATUS_OK;
+ 1404               		.loc 1 582 0
+ 1405 06dc 1382      		std Z+3,__zero_reg__
+ 583:palm.c        ****             outputBuffer[4+responseSize] = computeChecksum(outputBuffer, 4+responseSize); //this is
+ 1406               		.loc 1 583 0
+ 1407 06de C601      		movw r24,r12
+ 1408 06e0 68E0      		ldi r22,lo8(8)
+ 1409 06e2 70E0      		ldi r23,hi8(8)
+ 1410 06e4 0E94 0000 		call computeChecksum
+ 1411 06e8 F601      		movw r30,r12
+ 1412 06ea 8087      		std Z+8,r24
+ 584:palm.c        ****             return 5+responseSize;
+ 1413               		.loc 1 584 0
+ 1414 06ec 89E0      		ldi r24,lo8(9)
+ 1415 06ee 90E0      		ldi r25,hi8(9)
+ 1416 06f0 00C0      		rjmp .L54
+ 1417               	.LVL78:
+ 1418               	.L77:
+ 589:palm.c        ****             WriteIntToEEPROM(address, &commandPacket[PAYLOAD_OFFSET]);
+ 1419               		.loc 1 589 0
+ 1420 06f2 B801      		movw r22,r16
+ 1421 06f4 6E5F      		subi r22,lo8(-(2))
+ 1422 06f6 7F4F      		sbci r23,hi8(-(2))
+ 1423 06f8 0E94 0000 		call WriteIntToEEPROM
+ 1424               	.LVL79:
+ 592:palm.c        ****             initStateFromEEPROM();
+ 1425               		.loc 1 592 0
+ 1426 06fc 0E94 0000 		call initStateFromEEPROM
+ 595:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 1427               		.loc 1 595 0
+ 1428 0700 83E0      		ldi r24,lo8(3)
+ 1429 0702 F601      		movw r30,r12
+ 1430 0704 8083      		st Z,r24
+ 596:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1431               		.loc 1 596 0
+ 1432 0706 1182      		std Z+1,__zero_reg__
+ 597:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 1433               		.loc 1 597 0
+ 1434 0708 F801      		movw r30,r16
+ 1435 070a 8181      		ldd r24,Z+1
+ 1436 070c F601      		movw r30,r12
+ 1437               	.LVL80:
+ 1438               	.L97:
+ 1439 070e 8283      		std Z+2,r24
+ 1440 0710 00C0      		rjmp .L94
+ 1441               	.LVL81:
+ 1442               	.L75:
+ 602:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 1443               		.loc 1 602 0
+ 1444 0712 83E0      		ldi r24,lo8(3)
+ 1445               	.LVL82:
+ 1446 0714 F601      		movw r30,r12
+ 1447 0716 8083      		st Z,r24
+ 603:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1448               		.loc 1 603 0
+ 1449 0718 1182      		std Z+1,__zero_reg__
+ 604:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = commandPacket[COMMAND_OFFSET];
+ 1450               		.loc 1 604 0
+ 1451 071a F801      		movw r30,r16
+ 1452 071c 8181      		ldd r24,Z+1
+ 1453 071e F601      		movw r30,r12
+ 1454 0720 8283      		std Z+2,r24
+ 1455 0722 00C0      		rjmp .L95
+ 1456               	.LVL83:
+ 1457               	.L43:
+ 1458               	.LBE118:
+ 1459               	.LBE117:
+ 1460               	.LBB119:
+ 1461               	.LBB120:
+ 512:palm.c        ****     memcpy(&chainMask, &commandPacket[PAYLOAD_OFFSET], 1);
+ 1462               		.loc 1 512 0
+ 1463 0724 F801      		movw r30,r16
+ 1464 0726 8281      		ldd r24,Z+2
+ 1465 0728 8093 0000 		sts chainMask,r24
+ 1466 072c 00C0      		rjmp .L93
+ 1467               	.LVL84:
+ 1468               	.L33:
+ 1469               	.LBE120:
+ 1470               	.LBE119:
+ 654:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_LSB] = 3;
+ 1471               		.loc 1 654 0
+ 1472 072e 83E0      		ldi r24,lo8(3)
+ 1473 0730 F601      		movw r30,r12
+ 1474 0732 8083      		st Z,r24
+ 655:palm.c        ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET_PALM_MSB] = 0;
+ 1475               		.loc 1 655 0
+ 1476 0734 1182      		std Z+1,__zero_reg__
+ 656:palm.c        ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET_PALM] = opcode;
+ 1477               		.loc 1 656 0
+ 1478 0736 2283      		std Z+2,r18
+ 1479               	.L95:
+ 657:palm.c        ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET_PALM] = UNKNOWN_COMMAND;
+ 1480               		.loc 1 657 0
+ 1481 0738 82E0      		ldi r24,lo8(2)
+ 1482               	.LVL85:
+ 1483               	.L96:
+ 1484 073a 8383      		std Z+3,r24
+ 1485               	.LVL86:
+ 1486               	.L92:
+ 658:palm.c        ****             outputBuffer[4] = computeChecksum(outputBuffer, 4); //this is the checksum
+ 1487               		.loc 1 658 0
+ 1488 073c C601      		movw r24,r12
+ 1489 073e 64E0      		ldi r22,lo8(4)
+ 1490 0740 70E0      		ldi r23,hi8(4)
+ 1491 0742 0E94 0000 		call computeChecksum
+ 1492 0746 F601      		movw r30,r12
+ 1493 0748 8483      		std Z+4,r24
+ 1494               	.L82:
+ 1495               	.LBB121:
+ 1496               	.LBB113:
+ 639:palm.c        ****             return handleBootloaderCommand(commandPacket,outputBuffer);
+ 1497               		.loc 1 639 0
+ 1498 074a 85E0      		ldi r24,lo8(5)
+ 1499 074c 90E0      		ldi r25,hi8(5)
+ 1500               	.LVL87:
+ 1501               	.L54:
+ 1502               	/* epilogue start */
+ 1503               	.LBE113:
+ 1504               	.LBE121:
+ 661:palm.c        **** }
+ 1505               		.loc 1 661 0
+ 1506 074e 6096      		adiw r28,16
+ 1507 0750 CDBF      		out __SP_L__,r28
+ 1508 0752 DEBF      		out __SP_H__,r29
+ 1509 0754 DF91      		pop r29
+ 1510 0756 CF91      		pop r28
+ 1511 0758 1F91      		pop r17
+ 1512 075a 0F91      		pop r16
+ 1513 075c FF90      		pop r15
+ 1514 075e EF90      		pop r14
+ 1515 0760 DF90      		pop r13
+ 1516 0762 CF90      		pop r12
+ 1517               	.LVL88:
+ 1518 0764 BF90      		pop r11
+ 1519 0766 AF90      		pop r10
+ 1520 0768 0895      		ret
+ 1521               		.cfi_endproc
+ 1522               	.LFE27:
+ 1524               	.global	LEDon
+ 1526               	LEDon:
+ 1527               	.LFB28:
+ 664:palm.c        **** {
+ 1528               		.loc 1 664 0
+ 1529               		.cfi_startproc
+ 1530               	/* prologue: function */
+ 1531               	/* frame size = 0 */
+ 1532               	/* stack size = 0 */
+ 1533               	.L__stack_usage = 0
+ 665:palm.c        ****   PORTK.OUTSET = 0x08; //LED
+ 1534               		.loc 1 665 0
+ 1535 076a 88E0      		ldi r24,lo8(8)
+ 1536 076c E0E2      		ldi r30,lo8(1824)
+ 1537 076e F7E0      		ldi r31,hi8(1824)
+ 1538 0770 8583      		std Z+5,r24
+ 1539               	/* epilogue start */
+ 666:palm.c        **** }
+ 1540               		.loc 1 666 0
+ 1541 0772 0895      		ret
+ 1542               		.cfi_endproc
+ 1543               	.LFE28:
+ 1545               	.global	LEDoff
+ 1547               	LEDoff:
+ 1548               	.LFB29:
+ 668:palm.c        **** {
+ 1549               		.loc 1 668 0
+ 1550               		.cfi_startproc
+ 1551               	/* prologue: function */
+ 1552               	/* frame size = 0 */
+ 1553               	/* stack size = 0 */
+ 1554               	.L__stack_usage = 0
+ 1555               		.loc 1 669 0
+ 1556 0774 88E0      		ldi r24,lo8(8)
+ 1557 0776 E0E2      		ldi r30,lo8(1824)
+ 1558 0778 F7E0      		ldi r31,hi8(1824)
+ 1559 077a 8683      		std Z+6,r24
+ 1560               	/* epilogue start */
+ 670:palm.c        **** }
+ 1561               		.loc 1 670 0
+ 1562 077c 0895      		ret
+ 1563               		.cfi_endproc
+ 1564               	.LFE29:
+ 1566               	.global	LEDtoggle
+ 1568               	LEDtoggle:
+ 1569               	.LFB30:
+ 671:palm.c        **** void LEDtoggle()
+ 672:palm.c        **** {
+ 1570               		.loc 1 672 0
+ 1571               		.cfi_startproc
+ 1572               	/* prologue: function */
+ 1573               	/* frame size = 0 */
+ 1574               	/* stack size = 0 */
+ 1575               	.L__stack_usage = 0
+ 673:palm.c        ****   PORTK.OUTTGL = 0x08; //LED
+ 1576               		.loc 1 673 0
+ 1577 077e 88E0      		ldi r24,lo8(8)
+ 1578 0780 E0E2      		ldi r30,lo8(1824)
+ 1579 0782 F7E0      		ldi r31,hi8(1824)
+ 1580 0784 8783      		std Z+7,r24
+ 1581               	/* epilogue start */
+ 674:palm.c        **** }
+ 1582               		.loc 1 674 0
+ 1583 0786 0895      		ret
+ 1584               		.cfi_endproc
+ 1585               	.LFE30:
+ 1587               		.section	.text.startup,"ax",@progbits
+ 1588               	.global	main
+ 1590               	main:
+ 1591               	.LFB31:
+ 675:palm.c        **** 
+ 676:palm.c        **** 
+ 677:palm.c        **** 
+ 678:palm.c        **** /************************************************************************
+ 679:palm.c        **** * MAIN function.
+ 680:palm.c        **** *
+ 681:palm.c        **** * This initializes the other port modules and polls a few volatile status
+ 682:palm.c        **** * bits set in ISRs.
+ 683:palm.c        **** ************************************************************************/
+ 684:palm.c        **** int main(void)
+ 685:palm.c        **** {
+ 1592               		.loc 1 685 0
+ 1593               		.cfi_startproc
+ 1594 0000 CF93      		push r28
+ 1595               	.LCFI37:
+ 1596               		.cfi_def_cfa_offset 4
+ 1597               		.cfi_offset 28, -3
+ 1598 0002 DF93      		push r29
+ 1599               	.LCFI38:
+ 1600               		.cfi_def_cfa_offset 5
+ 1601               		.cfi_offset 29, -4
+ 1602 0004 00D0      		rcall .
+ 1603 0006 0F92      		push __tmp_reg__
+ 1604               	.LCFI39:
+ 1605               		.cfi_def_cfa_offset 9
+ 1606 0008 CDB7      		in r28,__SP_L__
+ 1607 000a DEB7      		in r29,__SP_H__
+ 1608               	.LCFI40:
+ 1609               		.cfi_def_cfa_register 28
+ 1610               	/* prologue: function */
+ 1611               	/* frame size = 4 */
+ 1612               	/* stack size = 6 */
+ 1613               	.L__stack_usage = 6
+ 686:palm.c        ****     configurePortIO();
+ 1614               		.loc 1 686 0
+ 1615 000c 0E94 0000 		call configurePortIO
+ 1616               	.LBB122:
+ 1617               	.LBB123:
+ 665:palm.c        ****   PORTK.OUTSET = 0x08; //LED
+ 1618               		.loc 1 665 0
+ 1619 0010 88E0      		ldi r24,lo8(8)
+ 1620 0012 E0E2      		ldi r30,lo8(1824)
+ 1621 0014 F7E0      		ldi r31,hi8(1824)
+ 1622 0016 8583      		std Z+5,r24
+ 1623               	.LBE123:
+ 1624               	.LBE122:
+ 687:palm.c        ****     LEDon();
+ 688:palm.c        ****     cli(); //disable all interrupts for clock reset
+ 1625               		.loc 1 688 0
+ 1626               	/* #APP */
+ 1627               	 ;  688 "palm.c" 1
+ 1628 0018 F894      		cli
+ 1629               	 ;  0 "" 2
+ 1630               	.LVL89:
+ 1631               	/* #NOAPP */
+ 1632               	.LBB124:
+ 1633               	.LBB125:
+ 1634               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+   1:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    All rights reserved.
+   5:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   6:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   9:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  12:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      distribution.
+  16:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  17:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  21:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  33:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* $Id: delay.h.in 2251 2011-09-14 08:20:33Z joerg_wunsch $ */
+  34:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  35:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  38:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  41:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  42:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <inttypes.h>
+  43:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <math.h>
+  45:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  46:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \file */
+  47:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \code
+  49:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \endcode
+  53:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  54:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     used.
+  58:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  59:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  68:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     routines linked into the application.
+  76:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  77:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  81:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** */
+  82:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  83:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  87:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  88:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef F_CPU
+  89:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  93:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  94:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  97:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  98:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #  include <math.h>
+ 102:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+ 103:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 104:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /**
+ 105:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 107:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 109:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 112:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 114:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 120:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 125:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 129:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 132:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 140:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****  */
+ 141:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** void
+ 142:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** {
+ 144:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint16_t __ticks;
+ 145:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	double __tmp ; 
+ 146:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 147:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 148:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 149:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 150:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 151:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 152:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 153:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 154:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 155:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 156:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 157:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 158:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 159:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#else
+ 160:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		//round up by default
+ 161:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 162:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#endif
+ 163:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 164:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 1635               		.loc 2 164 0
+ 1636 001a 8FE3      		 ldi r24,lo8(7999)
+ 1637 001c 9FE1      	    ldi r25,hi8(7999)
+ 1638 001e 0197      	    1:sbiw r24,1
+ 1639 0020 01F4      	    brne 1b
+ 1640 0022 00C0      		rjmp .
+ 1641 0024 0000      		nop
+ 1642               	.LBE125:
+ 1643               	.LBE124:
+ 1644               	.LBB126:
+ 1645               	.LBB127:
+  61:palm.c        ****     OSC.CTRL = OSC_RC32MEN_bm | OSC_RC32KEN_bm;    //enable the 32MHz ring oscillator and the 32kHz
+ 1646               		.loc 1 61 0
+ 1647 0026 86E0      		ldi r24,lo8(6)
+ 1648 0028 8093 5000 		sts 80,r24
+ 1649               	.L106:
+  62:palm.c        ****     while(!(OSC.STATUS & OSC_RC32MRDY_bm));        //wait for 32MHz to stabilize
+ 1650               		.loc 1 62 0
+ 1651 002c 8091 5100 		lds r24,81
+ 1652 0030 81FF      		sbrs r24,1
+ 1653 0032 00C0      		rjmp .L106
+ 1654               	.L120:
+  63:palm.c        ****     while(!(OSC.STATUS & OSC_RC32KRDY_bm));        //wait for 32kHz to stabilize
+ 1655               		.loc 1 63 0
+ 1656 0034 8091 5100 		lds r24,81
+ 1657 0038 82FF      		sbrs r24,2
+ 1658 003a 00C0      		rjmp .L120
+  65:palm.c        ****     DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+ 1659               		.loc 1 65 0
+ 1660 003c 01E0      		ldi r16,lo8(1)
+ 1661 003e 0093 6000 		sts 96,r16
+  66:palm.c        ****     DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+ 1662               		.loc 1 66 0
+ 1663 0042 0093 6800 		sts 104,r16
+  68:palm.c        ****     CCP = CCP_IOREG_gc;                //clock is protected by Configuration Change Protection - mu
+ 1664               		.loc 1 68 0
+ 1665 0046 88ED      		ldi r24,lo8(-40)
+ 1666 0048 84BF      		out 52-0,r24
+  69:palm.c        ****     CLK.CTRL = CLK_SCLKSEL_RC32M_gc;        //switch to 32MHz oscillator
+ 1667               		.loc 1 69 0
+ 1668 004a 0093 4000 		sts 64,r16
+  70:palm.c        ****     CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;    //Select 1.024 kHz from internal oscillato
+ 1669               		.loc 1 70 0
+ 1670 004e 85E0      		ldi r24,lo8(5)
+ 1671 0050 E0E4      		ldi r30,lo8(64)
+ 1672 0052 F0E0      		ldi r31,hi8(64)
+ 1673 0054 8383      		std Z+3,r24
+ 1674               	.LVL90:
+ 1675               	.LBE127:
+ 1676               	.LBE126:
+ 1677               	.LBB128:
+ 1678               	.LBB129:
+ 1679               		.loc 2 164 0
+ 1680 0056 AFE3      		 ldi r26,lo8(7999)
+ 1681 0058 BFE1      	    ldi r27,hi8(7999)
+ 1682 005a 1197      	    1:sbiw r26,1
+ 1683 005c 01F4      	    brne 1b
+ 1684 005e 00C0      		rjmp .
+ 1685 0060 0000      		nop
+ 1686               	.LBE129:
+ 1687               	.LBE128:
+ 689:palm.c        ****     _delay_ms(1); // for stability of supplies
+ 690:palm.c        ****     configureClocks();
+ 691:palm.c        ****     _delay_ms(1); // for stability of clocks
+ 692:palm.c        ****     configureADC();
+ 1688               		.loc 1 692 0
+ 1689 0062 0E94 0000 		call configureADC
+ 693:palm.c        ****     configureRouterUSARTs();
+ 1690               		.loc 1 693 0
+ 1691 0066 0E94 0000 		call configureRouterUSARTs
+ 694:palm.c        ****     configureDAC();
+ 1692               		.loc 1 694 0
+ 1693 006a 0E94 0000 		call configureDAC
+ 695:palm.c        **** 
+ 696:palm.c        ****     // i don't know why a dummy read is required, but it is
+ 697:palm.c        ****     readEncoder(); //dummy read
+ 1694               		.loc 1 697 0
+ 1695 006e 0E94 0000 		call readEncoder
+ 698:palm.c        ****     encoderInitialized = 0; // re-initialize
+ 1696               		.loc 1 698 0
+ 1697 0072 1092 0000 		sts encoderInitialized,__zero_reg__
+ 1698               	.LVL91:
+ 1699               	.LBB130:
+ 1700               	.LBB131:
+ 1701               		.loc 2 164 0
+ 1702 0076 8FEF      		 ldi r24,lo8(639999)
+ 1703 0078 93EC      	    ldi r25,hi8(639999)
+ 1704 007a A9E0      	    ldi r26,hlo8(639999)
+ 1705 007c 8150      	    1:subi r24,1
+ 1706 007e 9040      	    sbci r25,0
+ 1707 0080 A040      	    sbci r26,0
+ 1708 0082 01F4      	    brne 1b
+ 1709 0084 00C0      		rjmp .
+ 1710 0086 0000      		nop
+ 1711               	.LBE131:
+ 1712               	.LBE130:
+ 1713               	.LBB132:
+ 1714               	.LBB133:
+ 669:palm.c        ****   PORTK.OUTCLR = 0x08; //LED
+ 1715               		.loc 1 669 0
+ 1716 0088 88E0      		ldi r24,lo8(8)
+ 1717 008a E0E2      		ldi r30,lo8(1824)
+ 1718 008c F7E0      		ldi r31,hi8(1824)
+ 1719 008e 8683      		std Z+6,r24
+ 1720               	.LBE133:
+ 1721               	.LBE132:
+ 699:palm.c        **** 
+ 700:palm.c        ****     _delay_ms(100); // for stability of inputs
+ 701:palm.c        ****     //calibrateIMON_ADCOffset();
+ 702:palm.c        ****     LEDoff();
+ 703:palm.c        ****   
+ 704:palm.c        ****     initStateFromEEPROM();
+ 1722               		.loc 1 704 0
+ 1723 0090 0E94 0000 		call initStateFromEEPROM
+ 705:palm.c        ****     encoderInitialized = 1;
+ 1724               		.loc 1 705 0
+ 1725 0094 0093 0000 		sts encoderInitialized,r16
+ 1726               	.LBB134:
+ 1727               	.LBB135:
+ 537:palm.c        ****     uint32_t temp = 0;
+ 1728               		.loc 1 537 0
+ 1729 0098 1982      		std Y+1,__zero_reg__
+ 1730 009a 1A82      		std Y+2,__zero_reg__
+ 1731 009c 1B82      		std Y+3,__zero_reg__
+ 1732 009e 1C82      		std Y+4,__zero_reg__
+ 1733               	.LVL92:
+ 538:palm.c        ****     ReadIntFromEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&temp);
+ 1734               		.loc 1 538 0
+ 1735 00a0 8DE1      		ldi r24,lo8(29)
+ 1736 00a2 BE01      		movw r22,r28
+ 1737 00a4 6F5F      		subi r22,lo8(-(1))
+ 1738 00a6 7F4F      		sbci r23,hi8(-(1))
+ 1739 00a8 0E94 0000 		call ReadIntFromEEPROM
+ 539:palm.c        ****     if (temp != FIRMWARE_VERSION)
+ 1740               		.loc 1 539 0
+ 1741 00ac 8981      		ldd r24,Y+1
+ 1742 00ae 9A81      		ldd r25,Y+2
+ 1743 00b0 AB81      		ldd r26,Y+3
+ 1744 00b2 BC81      		ldd r27,Y+4
+ 1745 00b4 8D32      		cpi r24,lo8(301)
+ 1746 00b6 E1E0      		ldi r30,hi8(301)
+ 1747 00b8 9E07      		cpc r25,r30
+ 1748 00ba E0E0      		ldi r30,hlo8(301)
+ 1749 00bc AE07      		cpc r26,r30
+ 1750 00be E0E0      		ldi r30,hhi8(301)
+ 1751 00c0 BE07      		cpc r27,r30
+ 1752 00c2 01F0      		breq .L108
+ 541:palm.c        ****         temp = FIRMWARE_VERSION;
+ 1753               		.loc 1 541 0
+ 1754 00c4 8DE2      		ldi r24,lo8(301)
+ 1755 00c6 91E0      		ldi r25,hi8(301)
+ 1756 00c8 A0E0      		ldi r26,hlo8(301)
+ 1757 00ca B0E0      		ldi r27,hhi8(301)
+ 1758 00cc 8983      		std Y+1,r24
+ 1759 00ce 9A83      		std Y+2,r25
+ 1760 00d0 AB83      		std Y+3,r26
+ 1761 00d2 BC83      		std Y+4,r27
+ 542:palm.c        ****         WriteIntToEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&temp);
+ 1762               		.loc 1 542 0
+ 1763 00d4 8DE1      		ldi r24,lo8(29)
+ 1764 00d6 BE01      		movw r22,r28
+ 1765 00d8 6F5F      		subi r22,lo8(-(1))
+ 1766 00da 7F4F      		sbci r23,hi8(-(1))
+ 1767 00dc 0E94 0000 		call WriteIntToEEPROM
+ 1768               	.L108:
+ 1769               	.LBE135:
+ 1770               	.LBE134:
+ 706:palm.c        ****     
+ 707:palm.c        ****     verifyVersion();
+ 708:palm.c        **** 
+ 709:palm.c        ****     //tell event system to pay attention to low-priority and high-priority interrupts
+ 710:palm.c        ****     PMIC.CTRL |= PMIC_LOLVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_HILVLEN_bm;
+ 1771               		.loc 1 710 0
+ 1772 00e0 E0EA      		ldi r30,lo8(160)
+ 1773 00e2 F0E0      		ldi r31,hi8(160)
+ 1774 00e4 8091 A200 		lds r24,162
+ 1775 00e8 8760      		ori r24,lo8(7)
+ 1776 00ea 8283      		std Z+2,r24
+ 711:palm.c        ****     PMIC.CTRL |= PMIC_RREN_bm; // enable round robin for low level interrupts
+ 1777               		.loc 1 711 0
+ 1778 00ec 8091 A200 		lds r24,162
+ 1779 00f0 8068      		ori r24,lo8(-128)
+ 1780 00f2 8283      		std Z+2,r24
+ 712:palm.c        ****     sei();
+ 1781               		.loc 1 712 0
+ 1782               	/* #APP */
+ 1783               	 ;  712 "palm.c" 1
+ 1784 00f4 7894      		sei
+ 1785               	 ;  0 "" 2
+ 1786               	/* #NOAPP */
+ 1787               	.LBB136:
+ 1788               	.LBB137:
+  81:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK | MOTOR_nDIR_BITMASK;
+ 1789               		.loc 1 81 0
+ 1790 00f6 00EA      		ldi r16,lo8(1696)
+ 1791 00f8 16E0      		ldi r17,hi8(1696)
+ 1792 00fa 53E0      		ldi r21,lo8(3)
+ 1793 00fc B52E      		mov r11,r21
+ 1794               	.LBE137:
+ 1795               	.LBE136:
+ 1796               	.LBB139:
+ 1797               	.LBB140:
+ 1798               	.LBB141:
+  95:palm.c        ****     DACB.CH0DATA = dac;
+ 1799               		.loc 1 95 0
+ 1800 00fe 60E2      		ldi r22,lo8(800)
+ 1801 0100 C62E      		mov r12,r22
+ 1802 0102 63E0      		ldi r22,hi8(800)
+ 1803 0104 D62E      		mov r13,r22
+  97:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_nDIR_BITMASK;
+ 1804               		.loc 1 97 0
+ 1805 0106 72E0      		ldi r23,lo8(2)
+ 1806 0108 F72E      		mov r15,r23
+  98:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_DIR_BITMASK;
+ 1807               		.loc 1 98 0
+ 1808 010a EE24      		clr r14
+ 1809 010c E394      		inc r14
+ 1810               	.L124:
+ 1811               	.LBE141:
+ 1812               	.LBE140:
+ 1813               	.LBE139:
+ 713:palm.c        **** 
+ 714:palm.c        ****     while(1)
+ 715:palm.c        ****     {
+ 716:palm.c        ****         readEncoder();
+ 1814               		.loc 1 716 0
+ 1815 010e 0E94 0000 		call readEncoder
+ 717:palm.c        ****         
+ 718:palm.c        ****         // position mode for spread motor
+ 719:palm.c        ****         if (spreadMotorMode == SPREAD_MODE_POSITION)
+ 1816               		.loc 1 719 0
+ 1817 0112 8091 0000 		lds r24,spreadMotorMode
+ 1818 0116 8130      		cpi r24,lo8(1)
+ 1819 0118 01F0      		breq .+2
+ 1820 011a 00C0      		rjmp .L109
+ 720:palm.c        ****         {
+ 721:palm.c        ****             if (targetEncoder - adjustedEncoder > spreadDeadband)
+ 1821               		.loc 1 721 0
+ 1822 011c 2091 0000 		lds r18,targetEncoder
+ 1823 0120 3091 0000 		lds r19,targetEncoder+1
+ 1824 0124 8091 0000 		lds r24,adjustedEncoder
+ 1825 0128 9091 0000 		lds r25,adjustedEncoder+1
+ 1826 012c A901      		movw r20,r18
+ 1827 012e 481B      		sub r20,r24
+ 1828 0130 590B      		sbc r21,r25
+ 1829 0132 6091 0000 		lds r22,spreadDeadband
+ 1830 0136 7091 0000 		lds r23,spreadDeadband+1
+ 1831 013a 6417      		cp r22,r20
+ 1832 013c 7507      		cpc r23,r21
+ 1833 013e 04F4      		brge .L110
+ 1834               	.LBB144:
+ 722:palm.c        ****             {
+ 723:palm.c        ****                 uint16_t speed = abs(targetEncoder - adjustedEncoder) * spreadP;
+ 1835               		.loc 1 723 0
+ 1836 0140 CA01      		movw r24,r20
+ 1837 0142 57FF      		sbrs r21,7
+ 1838 0144 00C0      		rjmp .L111
+ 1839 0146 9095      		com r25
+ 1840 0148 8195      		neg r24
+ 1841 014a 9F4F      		sbci r25,lo8(-1)
+ 1842               	.L111:
+ 1843 014c 4091 0000 		lds r20,spreadP
+ 1844 0150 5091 0000 		lds r21,spreadP+1
+ 1845 0154 849F      		mul r24,r20
+ 1846 0156 9001      		movw r18,r0
+ 1847 0158 859F      		mul r24,r21
+ 1848 015a 300D      		add r19,r0
+ 1849 015c 949F      		mul r25,r20
+ 1850 015e 300D      		add r19,r0
+ 1851 0160 1124      		clr r1
+ 1852 0162 F0E1      		ldi r31,hi8(4096)
+ 1853 0164 2030      		cpi r18,lo8(4096)
+ 1854 0166 3F07      		cpc r19,r31
+ 1855 0168 00F0      		brlo .L112
+ 1856 016a 2FEF      		ldi r18,lo8(4095)
+ 1857 016c 3FE0      		ldi r19,hi8(4095)
+ 1858               	.L112:
+ 1859               	.LVL93:
+ 1860               	.LBB145:
+ 1861               	.LBB146:
+  86:palm.c        ****     DACB.CH0DATA = dac;
+ 1862               		.loc 1 86 0
+ 1863 016e D601      		movw r26,r12
+ 1864 0170 5896      		adiw r26,24
+ 1865 0172 2D93      		st X+,r18
+ 1866 0174 3C93      		st X,r19
+ 1867 0176 5997      		sbiw r26,24+1
+  88:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK;
+ 1868               		.loc 1 88 0
+ 1869 0178 F801      		movw r30,r16
+ 1870 017a E682      		std Z+6,r14
+  89:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_nDIR_BITMASK;
+ 1871               		.loc 1 89 0
+ 1872 017c F582      		std Z+5,r15
+ 1873 017e 00C0      		rjmp .L109
+ 1874               	.LVL94:
+ 1875               	.L110:
+ 1876               	.LBE146:
+ 1877               	.LBE145:
+ 1878               	.LBE144:
+ 724:palm.c        ****                 if (speed > 4095) // 12 bit DAC
+ 725:palm.c        ****                     speed = 4095;
+ 726:palm.c        ****                 spreadMotorForward(speed);
+ 727:palm.c        ****             }
+ 728:palm.c        ****             else if (adjustedEncoder - targetEncoder > spreadDeadband)
+ 1879               		.loc 1 728 0
+ 1880 0180 821B      		sub r24,r18
+ 1881 0182 930B      		sbc r25,r19
+ 1882 0184 6817      		cp r22,r24
+ 1883 0186 7907      		cpc r23,r25
+ 1884 0188 04F4      		brge .L113
+ 1885               	.LBB147:
+ 729:palm.c        ****             {
+ 730:palm.c        ****                 uint16_t speed = abs(targetEncoder - adjustedEncoder) * spreadP;
+ 1886               		.loc 1 730 0
+ 1887 018a CA01      		movw r24,r20
+ 1888 018c 57FF      		sbrs r21,7
+ 1889 018e 00C0      		rjmp .L114
+ 1890 0190 9095      		com r25
+ 1891 0192 8195      		neg r24
+ 1892 0194 9F4F      		sbci r25,lo8(-1)
+ 1893               	.L114:
+ 1894 0196 4091 0000 		lds r20,spreadP
+ 1895 019a 5091 0000 		lds r21,spreadP+1
+ 1896 019e 849F      		mul r24,r20
+ 1897 01a0 9001      		movw r18,r0
+ 1898 01a2 859F      		mul r24,r21
+ 1899 01a4 300D      		add r19,r0
+ 1900 01a6 949F      		mul r25,r20
+ 1901 01a8 300D      		add r19,r0
+ 1902 01aa 1124      		clr r1
+ 1903 01ac F0E1      		ldi r31,hi8(4096)
+ 1904 01ae 2030      		cpi r18,lo8(4096)
+ 1905 01b0 3F07      		cpc r19,r31
+ 1906 01b2 00F0      		brlo .L115
+ 1907 01b4 2FEF      		ldi r18,lo8(4095)
+ 1908 01b6 3FE0      		ldi r19,hi8(4095)
+ 1909               	.L115:
+ 1910               	.LVL95:
+ 1911               	.LBB143:
+ 1912               	.LBB142:
+  95:palm.c        ****     DACB.CH0DATA = dac;
+ 1913               		.loc 1 95 0
+ 1914 01b8 D601      		movw r26,r12
+ 1915 01ba 5896      		adiw r26,24
+ 1916 01bc 2D93      		st X+,r18
+ 1917 01be 3C93      		st X,r19
+ 1918 01c0 5997      		sbiw r26,24+1
+  97:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_nDIR_BITMASK;
+ 1919               		.loc 1 97 0
+ 1920 01c2 F801      		movw r30,r16
+ 1921 01c4 F682      		std Z+6,r15
+  98:palm.c        ****     MOTOR_DIR_PORT.OUTSET = MOTOR_DIR_BITMASK;
+ 1922               		.loc 1 98 0
+ 1923 01c6 E582      		std Z+5,r14
+ 1924 01c8 00C0      		rjmp .L109
+ 1925               	.LVL96:
+ 1926               	.L113:
+ 1927               	.LBE142:
+ 1928               	.LBE143:
+ 1929               	.LBE147:
+ 1930               	.LBB148:
+ 1931               	.LBB138:
+  81:palm.c        ****     MOTOR_DIR_PORT.OUTCLR = MOTOR_DIR_BITMASK | MOTOR_nDIR_BITMASK;
+ 1932               		.loc 1 81 0
+ 1933 01ca D801      		movw r26,r16
+ 1934 01cc 1696      		adiw r26,6
+ 1935 01ce BC92      		st X,r11
+ 1936 01d0 1697      		sbiw r26,6
+ 1937               	.L109:
+ 1938               	.LBE138:
+ 1939               	.LBE148:
+ 731:palm.c        ****                 if (speed > 4095) // 12 bit DAC
+ 732:palm.c        ****                     speed = 4095;
+ 733:palm.c        ****                 spreadMotorReverse(speed);
+ 734:palm.c        ****             }
+ 735:palm.c        ****             else
+ 736:palm.c        ****             {
+ 737:palm.c        ****                 spreadMotorStop();
+ 738:palm.c        ****             }
+ 739:palm.c        ****         }
+ 740:palm.c        ****         
+ 741:palm.c        ****         if(commandReady)
+ 1940               		.loc 1 741 0
+ 1941 01d2 8091 0000 		lds r24,commandReady
+ 1942 01d6 8823      		tst r24
+ 1943 01d8 01F0      		breq .L116
+ 742:palm.c        ****         {
+ 743:palm.c        ****             doRouterTask();
+ 1944               		.loc 1 743 0
+ 1945 01da 0E94 0000 		call doRouterTask
+ 1946               	.L116:
+ 744:palm.c        ****         }
+ 745:palm.c        **** 
+ 746:palm.c        ****         if(freerun_flag)
+ 1947               		.loc 1 746 0
+ 1948 01de 8091 0000 		lds r24,freerun_flag
+ 1949 01e2 8823      		tst r24
+ 1950 01e4 01F4      		brne .+2
+ 1951 01e6 00C0      		rjmp .L124
+ 747:palm.c        ****         {
+ 748:palm.c        ****             freerun_flag = 0;
+ 1952               		.loc 1 748 0
+ 1953 01e8 1092 0000 		sts freerun_flag,__zero_reg__
+ 749:palm.c        ****             doFreerunTask();
+ 1954               		.loc 1 749 0
+ 1955 01ec 0E94 0000 		call doFreerunTask
+ 1956 01f0 00C0      		rjmp .L124
+ 1957               		.cfi_endproc
+ 1958               	.LFE31:
+ 1960               	.global	spreadP
+ 1961               	.global	spreadP
+ 1962               		.section .bss
+ 1965               	spreadP:
+ 1966 0000 0000      		.skip 2,0
+ 1967               	.global	spreadDeadband
+ 1968               	.global	spreadDeadband
+ 1971               	spreadDeadband:
+ 1972 0002 0000      		.skip 2,0
+ 1973               	.global	targetEncoder
+ 1974               	.global	targetEncoder
+ 1977               	targetEncoder:
+ 1978 0004 0000      		.skip 2,0
+ 1979               	.global	spreadMotorMode
+ 1980               	.global	spreadMotorMode
+ 1983               	spreadMotorMode:
+ 1984 0006 00        		.skip 1,0
+ 1985               	.global	freerun_flag
+ 1986               	.global	freerun_flag
+ 1989               	freerun_flag:
+ 1990 0007 00        		.skip 1,0
+ 1991               		.text
+ 1992               	.Letext0:
+ 1993               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1994               		.file 4 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1995               		.file 5 "palm.h"
+ 1996               		.file 6 "router.h"
+ 1997               		.file 7 "encoder.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 palm.c
+     /tmp/ccJcyEWI.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccJcyEWI.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccJcyEWI.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccJcyEWI.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccJcyEWI.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccJcyEWI.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccJcyEWI.s:14     .text:00000000 ReadIntFromEEPROM
+     /tmp/ccJcyEWI.s:101    .text:0000004e initStateFromEEPROM
+     /tmp/ccJcyEWI.s:1971   .bss:00000002 spreadDeadband
+     /tmp/ccJcyEWI.s:1965   .bss:00000000 spreadP
+     /tmp/ccJcyEWI.s:212    .text:000000e4 WriteIntToEEPROM
+     /tmp/ccJcyEWI.s:298    .text:00000132 __vector_14
+     /tmp/ccJcyEWI.s:1989   .bss:00000007 freerun_flag
+     /tmp/ccJcyEWI.s:341    .text:00000158 BootRelay
+     /tmp/ccJcyEWI.s:628    .text:000002ba processCommand
+     /tmp/ccJcyEWI.s:1983   .bss:00000006 spreadMotorMode
+     /tmp/ccJcyEWI.s:1977   .bss:00000004 targetEncoder
+     /tmp/ccJcyEWI.s:1526   .text:0000076a LEDon
+     /tmp/ccJcyEWI.s:1547   .text:00000774 LEDoff
+     /tmp/ccJcyEWI.s:1568   .text:0000077e LEDtoggle
+     /tmp/ccJcyEWI.s:1590   .text.startup:00000000 main
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__eerd_byte_x128a1
+lastEncoder
+__eewr_byte_x128a1
+captureSweep
+adjustedEncoder
+__floatsisf
+__mulsf3
+Thermistor_VtoR
+Thermistor_RtoT
+round
+__fixunssfsi
+RxCheckSumErrCnt
+computeChecksum
+samplePeriod
+sampleArgument
+rawEncoder
+encoderInitialized
+chainMask
+configurePortIO
+configureADC
+configureRouterUSARTs
+configureDAC
+readEncoder
+commandReady
+doRouterTask
+doFreerunTask

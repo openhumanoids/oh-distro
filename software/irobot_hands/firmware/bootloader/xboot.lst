@@ -1,0 +1,3482 @@
+   1               		.file	"xboot.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 438               		.section	.text._crc16_update,"ax",@progbits
+ 443               	_crc16_update:
+ 445               	.Ltext1:
+   1:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** /* Copyright (c) 2002, 2003, 2004  Marek Michalkiewicz
+   2:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    Copyright (c) 2005, 2007 Joerg Wunsch
+   3:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    All rights reserved.
+   4:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+   5:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    Redistribution and use in source and binary forms, with or without
+   6:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    modification, are permitted provided that the following conditions are met:
+   7:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+   8:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    * Redistributions of source code must retain the above copyright
+   9:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      notice, this list of conditions and the following disclaimer.
+  10:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  11:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    * Redistributions in binary form must reproduce the above copyright
+  12:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      notice, this list of conditions and the following disclaimer in
+  13:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      the documentation and/or other materials provided with the
+  14:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      distribution.
+  15:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  16:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****    * Neither the name of the copyright holders nor the names of
+  17:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      contributors may be used to endorse or promote products derived
+  18:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****      from this software without specific prior written permission.
+  19:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  20:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  32:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** /* $Id: crc16.h 2136 2010-06-08 12:03:38Z joerg_wunsch $ */
+  33:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  34:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** #ifndef _UTIL_CRC16_H_
+  35:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** #define _UTIL_CRC16_H_
+  36:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  37:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** #include <stdint.h>
+  38:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  39:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** /** \file */
+  40:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** /** \defgroup util_crc <util/crc16.h>: CRC Computations
+  41:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \code#include <util/crc16.h>\endcode
+  42:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  43:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     This header file provides a optimized inline functions for calculating
+  44:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     cyclic redundancy checks (CRC) using common polynomials.
+  45:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  46:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \par References:
+  47:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  48:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \par
+  49:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  50:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     See the Dallas Semiconductor app note 27 for 8051 assembler example and
+  51:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     general CRC optimization suggestions. The table on the last page of the
+  52:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     app note is the key to understanding these implementations.
+  53:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  54:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \par
+  55:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  56:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     Jack Crenshaw's "Implementing CRCs" article in the January 1992 isue of \e
+  57:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     Embedded \e Systems \e Programming. This may be difficult to find, but it
+  58:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     explains CRC's in very clear and concise terms. Well worth the effort to
+  59:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     obtain a copy.
+  60:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  61:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     A typical application would look like:
+  62:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  63:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \code
+  64:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     // Dallas iButton test vector.
+  65:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     uint8_t serno[] = { 0x02, 0x1c, 0xb8, 0x01, 0, 0, 0, 0xa2 };
+  66:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  67:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     int
+  68:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     checkcrc(void)
+  69:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     {
+  70:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	uint8_t crc = 0, i;
+  71:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  72:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	for (i = 0; i < sizeof serno / sizeof serno[0]; i++)
+  73:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	    crc = _crc_ibutton_update(crc, serno[i]);
+  74:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  75:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	return crc; // must be 0
+  76:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     }
+  77:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \endcode
+  78:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** */
+  79:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  80:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** /** \ingroup util_crc
+  81:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     Optimized CRC-16 calculation.
+  82:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  83:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     Polynomial: x^16 + x^15 + x^2 + 1 (0xa001)<br>
+  84:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     Initial value: 0xffff
+  85:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  86:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     This CRC is normally used in disk-drive controllers.
+  87:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  88:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     The following is the equivalent functionality written in C.
+  89:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  90:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \code
+  91:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     uint16_t
+  92:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     crc16_update(uint16_t crc, uint8_t a)
+  93:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     {
+  94:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	int i;
+  95:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+  96:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	crc ^= a;
+  97:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	for (i = 0; i < 8; ++i)
+  98:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	{
+  99:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	    if (crc & 1)
+ 100:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		crc = (crc >> 1) ^ 0xA001;
+ 101:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	    else
+ 102:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		crc = (crc >> 1);
+ 103:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	}
+ 104:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+ 105:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	return crc;
+ 106:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     }
+ 107:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+ 108:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h ****     \endcode */
+ 109:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+ 110:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** static __inline__ uint16_t
+ 111:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** _crc16_update(uint16_t __crc, uint8_t __data)
+ 112:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** {
+ 447               	.LM0:
+ 448               	.LFBB1:
+ 449               	/* prologue: function */
+ 450               	/* frame size = 0 */
+ 451               	/* stack size = 0 */
+ 452               	.L__stack_usage = 0
+ 113:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	uint8_t __tmp;
+ 114:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	uint16_t __ret;
+ 115:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 
+ 116:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	__asm__ __volatile__ (
+ 454               	.LM1:
+ 455               	/* #APP */
+ 456               	 ;  116 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr
+ 457 0000 8627      		eor r24,r22
+ 458 0002 682F      		mov r22,r24
+ 459 0004 6295      		swap r22
+ 460 0006 6827      		eor r22,r24
+ 461 0008 062E      		mov __tmp_reg__,r22
+ 462 000a 6695      		lsr r22
+ 463 000c 6695      		lsr r22
+ 464 000e 6025      		eor r22,__tmp_reg__
+ 465 0010 062E      		mov __tmp_reg__,r22
+ 466 0012 6695      		lsr r22
+ 467 0014 6025      		eor r22,__tmp_reg__
+ 468 0016 6770      		andi r22,0x07
+ 469 0018 082E      		mov __tmp_reg__,r24
+ 470 001a 892F      		mov r24,r25
+ 471 001c 6695      		lsr r22
+ 472 001e 0794      		ror __tmp_reg__
+ 473 0020 6795      		ror r22
+ 474 0022 902D      		mov r25,__tmp_reg__
+ 475 0024 8627      		eor r24,r22
+ 476 0026 0694      		lsr __tmp_reg__
+ 477 0028 6795      		ror r22
+ 478 002a 9025      		eor r25,__tmp_reg__
+ 479 002c 8627      		eor r24,r22
+ 480               	 ;  0 "" 2
+ 481               	/* epilogue start */
+ 117:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %A0,%2" "\n\t"
+ 118:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov %1,%A0" "\n\t"
+ 119:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"swap %1" "\n\t"
+ 120:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %1,%A0" "\n\t"
+ 121:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov __tmp_reg__,%1" "\n\t"
+ 122:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"lsr %1" "\n\t"
+ 123:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"lsr %1" "\n\t"
+ 124:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %1,__tmp_reg__" "\n\t"
+ 125:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov __tmp_reg__,%1" "\n\t"
+ 126:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"lsr %1" "\n\t"
+ 127:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %1,__tmp_reg__" "\n\t"
+ 128:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"andi %1,0x07" "\n\t"
+ 129:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov __tmp_reg__,%A0" "\n\t"
+ 130:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov %A0,%B0" "\n\t"
+ 131:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"lsr %1" "\n\t"
+ 132:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"ror __tmp_reg__" "\n\t"
+ 133:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"ror %1" "\n\t"
+ 134:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"mov %B0,__tmp_reg__" "\n\t"
+ 135:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %A0,%1" "\n\t"
+ 136:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"lsr __tmp_reg__" "\n\t"
+ 137:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"ror %1" "\n\t"
+ 138:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %B0,__tmp_reg__" "\n\t"
+ 139:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		"eor %A0,%1"
+ 140:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		: "=r" (__ret), "=d" (__tmp)
+ 141:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		: "r" (__data), "0" (__crc)
+ 142:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 		: "r0"
+ 143:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	);
+ 144:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** 	return __ret;
+ 145:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/crc16.h **** }
+ 483               	.LM2:
+ 484               	/* #NOAPP */
+ 485 002e 0895      		ret
+ 487               	.Lscope1:
+ 488               		.section	.text.get_char,"ax",@progbits
+ 490               	.global	get_char
+ 492               	get_char:
+ 494               	.Ltext2:
+   1:xboot.c       **** /************************************************************************/
+   2:xboot.c       **** /* XBoot Extensible AVR Bootloader                                      */
+   3:xboot.c       **** /*                                                                      */
+   4:xboot.c       **** /* tested with ATXMEGA64A3, ATXMEGA128A1, ATXMEGA256A1, ATXMEGA32A4     */
+   5:xboot.c       **** /*                                                                      */
+   6:xboot.c       **** /* xboot.c                                                              */
+   7:xboot.c       **** /*                                                                      */
+   8:xboot.c       **** /* Alex Forencich <alex@alexforencich.com>                              */
+   9:xboot.c       **** /*                                                                      */
+  10:xboot.c       **** /* Copyright (c) 2010 Alex Forencich                                    */
+  11:xboot.c       **** /*                                                                      */
+  12:xboot.c       **** /* Permission is hereby granted, free of charge, to any person          */
+  13:xboot.c       **** /* obtaining a copy of this software and associated documentation       */
+  14:xboot.c       **** /* files(the "Software"), to deal in the Software without restriction,  */
+  15:xboot.c       **** /* including without limitation the rights to use, copy, modify, merge, */
+  16:xboot.c       **** /* publish, distribute, sublicense, and/or sell copies of the Software, */
+  17:xboot.c       **** /* and to permit persons to whom the Software is furnished to do so,    */
+  18:xboot.c       **** /* subject to the following conditions:                                 */
+  19:xboot.c       **** /*                                                                      */
+  20:xboot.c       **** /* The above copyright notice and this permission notice shall be       */
+  21:xboot.c       **** /* included in all copies or substantial portions of the Software.      */
+  22:xboot.c       **** /*                                                                      */
+  23:xboot.c       **** /* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,      */
+  24:xboot.c       **** /* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF   */
+  25:xboot.c       **** /* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                */
+  26:xboot.c       **** /* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS  */
+  27:xboot.c       **** /* BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN   */
+  28:xboot.c       **** /* ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN    */
+  29:xboot.c       **** /* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE     */
+  30:xboot.c       **** /* SOFTWARE.                                                            */
+  31:xboot.c       **** /*                                                                      */
+  32:xboot.c       **** /************************************************************************/
+  33:xboot.c       **** 
+  34:xboot.c       **** #include "xboot.h"
+  35:xboot.c       **** 
+  36:xboot.c       **** #ifdef USE_INTERRUPTS
+  37:xboot.c       **** volatile unsigned char comm_mode;
+  38:xboot.c       **** 
+  39:xboot.c       **** volatile unsigned char rx_buff0;
+  40:xboot.c       **** volatile unsigned char rx_buff1;
+  41:xboot.c       **** volatile unsigned char rx_char_cnt;
+  42:xboot.c       **** 
+  43:xboot.c       **** volatile unsigned char tx_buff0;
+  44:xboot.c       **** volatile unsigned char tx_char_cnt;
+  45:xboot.c       **** #else
+  46:xboot.c       **** unsigned char comm_mode;
+  47:xboot.c       **** #endif // USE_INTERRUPTS
+  48:xboot.c       **** 
+  49:xboot.c       **** unsigned char buffer[SPM_PAGESIZE];
+  50:xboot.c       **** 
+  51:xboot.c       **** #ifdef NEED_CODE_PROTECTION
+  52:xboot.c       **** unsigned char protected;
+  53:xboot.c       **** #endif // NEED_CODE_PROTECTION
+  54:xboot.c       **** 
+  55:xboot.c       **** // Main code
+  56:xboot.c       **** int main(void)
+  57:xboot.c       **** {
+  58:xboot.c       ****         ADDR_T address = 0;
+  59:xboot.c       ****         unsigned char in_bootloader = 0;
+  60:xboot.c       ****         unsigned char val = 0;
+  61:xboot.c       ****         int i = 0;
+  62:xboot.c       ****         uint32_t j;
+  63:xboot.c       ****         uint8_t k;
+  64:xboot.c       ****         uint8_t prestate = 0;
+  65:xboot.c       ****         
+  66:xboot.c       ****         #ifdef NEED_CODE_PROTECTION
+  67:xboot.c       ****         protected = 1;
+  68:xboot.c       ****         #endif // NEED_CODE_PROTECTION
+  69:xboot.c       **** 
+  70:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+  71:xboot.c       ****         unsigned short devid_bit;
+  72:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+  73:xboot.c       **** 
+  74:xboot.c       ****         comm_mode = MODE_UNDEF;
+  75:xboot.c       **** 
+  76:xboot.c       ****         #ifdef USE_INTERRUPTS
+  77:xboot.c       ****         rx_char_cnt = 0;
+  78:xboot.c       ****         tx_char_cnt = 0;
+  79:xboot.c       ****         #endif // USE_INTERRUPTS
+  80:xboot.c       **** 
+  81:xboot.c       ****         // Initialization section
+  82:xboot.c       ****         // Entry point and communication methods are initialized here
+  83:xboot.c       ****         // --------------------------------------------------
+  84:xboot.c       **** 
+  85:xboot.c       **** 
+  86:xboot.c       **** #ifdef __AVR_XMEGA__
+  87:xboot.c       **** 
+  88:xboot.c       ****         #ifdef USE_32MHZ_RC
+  89:xboot.c       ****         #if (F_CPU != 32000000L)
+  90:xboot.c       ****         #error F_CPU must match oscillator setting!
+  91:xboot.c       ****         #endif // F_CPU
+  92:xboot.c       **** 	#ifdef USE_DFLL
+  93:xboot.c       **** 	OSC.CTRL |= OSC_RC32KEN_bm; // turn on the 32 KHz oscillator
+  94:xboot.c       ****         while (!(OSC.STATUS & OSC_RC32KRDY_bm)) { }; // wait for it to start
+  95:xboot.c       **** 	#endif
+  96:xboot.c       ****         OSC.CTRL |= OSC_RC32MEN_bm; // turn on 32 MHz oscillator
+  97:xboot.c       ****         while (!(OSC.STATUS & OSC_RC32MRDY_bm)) { }; // wait for it to start
+  98:xboot.c       ****         #ifdef USE_DFLL
+  99:xboot.c       ****         DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+ 100:xboot.c       ****         DFLLRC2M.CTRL = DFLL_ENABLE_bm; // errata says use both
+ 101:xboot.c       ****         #endif // USE_DFLL
+ 102:xboot.c       ****         CCP = CCP_IOREG_gc;
+ 103:xboot.c       ****         CLK.CTRL = CLK_SCLKSEL_RC32M_gc;
+ 104:xboot.c       ****         #else // USE_32MHZ_RC
+ 105:xboot.c       ****         #if (F_CPU != 2000000L)
+ 106:xboot.c       ****         #error F_CPU must match oscillator setting!
+ 107:xboot.c       ****         #endif // F_CPU
+ 108:xboot.c       ****         #ifdef USE_DFLL
+ 109:xboot.c       **** 	OSC.CTRL |= OSC_RC32KEN_bm; // turn on the 32 KHz oscillator
+ 110:xboot.c       ****         while (!(OSC.STATUS & OSC_RC32KRDY_bm)) { }; // wait for it to start
+ 111:xboot.c       ****         DFLLRC32M.CTRL = DFLL_ENABLE_bm; // errata says use both
+ 112:xboot.c       ****         DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+ 113:xboot.c       ****         #endif // USE_DFLL
+ 114:xboot.c       ****         #endif // USE_32MHZ_RC
+ 115:xboot.c       **** 
+ 116:xboot.c       **** #else // __AVR_XMEGA__
+ 117:xboot.c       **** 
+ 118:xboot.c       ****         // nothing special for ATmega
+ 119:xboot.c       **** 
+ 120:xboot.c       **** #endif // __AVR_XMEGA__
+ 121:xboot.c       **** 
+ 122:xboot.c       ****         // interrupts
+ 123:xboot.c       **** 
+ 124:xboot.c       **** #ifdef __AVR_XMEGA__
+ 125:xboot.c       **** 
+ 126:xboot.c       ****         #ifdef NEED_INTERRUPTS
+ 127:xboot.c       ****         // remap interrupts to boot section
+ 128:xboot.c       ****         CCP = CCP_IOREG_gc;
+ 129:xboot.c       ****         #ifdef USE_INTERRUPTS
+ 130:xboot.c       ****         PMIC.CTRL = PMIC_IVSEL_bm | PMIC_LOLVLEN_bm | PMIC_MEDLVLEN_bm;
+ 131:xboot.c       ****         #else
+ 132:xboot.c       ****         PMIC.CTRL = PMIC_IVSEL_bm;
+ 133:xboot.c       ****         #endif // USE_INTERRUPTS
+ 134:xboot.c       ****         #endif // NEED_INTERRUPTS
+ 135:xboot.c       **** 
+ 136:xboot.c       **** #else // __AVR_XMEGA__
+ 137:xboot.c       **** 
+ 138:xboot.c       ****         // nothing special for ATmega
+ 139:xboot.c       **** 
+ 140:xboot.c       **** #endif // __AVR_XMEGA__
+ 141:xboot.c       **** 
+ 142:xboot.c       ****         // LED
+ 143:xboot.c       **** 
+ 144:xboot.c       **** #ifdef __AVR_XMEGA__
+ 145:xboot.c       **** 
+ 146:xboot.c       ****         #ifdef USE_LED
+ 147:xboot.c       ****         // Initialize LED pin
+ 148:xboot.c       ****         LED_PORT.DIRSET = (1 << LED_PIN);
+ 149:xboot.c       ****         #if LED_PIN_INV
+ 150:xboot.c       ****         LED_PORT.OUTCLR = (1 << LED_PIN);
+ 151:xboot.c       ****         #else
+ 152:xboot.c       ****         LED_PORT.OUTSET = (1 << LED_PIN);
+ 153:xboot.c       ****         #endif // LED_PIN_INV
+ 154:xboot.c       ****         #endif // USE_LED
+ 155:xboot.c       **** 
+ 156:xboot.c       **** #else // __AVR_XMEGA__
+ 157:xboot.c       **** 
+ 158:xboot.c       ****         #ifdef USE_LED
+ 159:xboot.c       ****         // Initialize LED pin
+ 160:xboot.c       ****         LED_PORT_DDR |= (1 << LED_PIN);
+ 161:xboot.c       ****         #if LED_PIN_INV
+ 162:xboot.c       ****         LED_PORT &= ~(1 << LED_PIN);
+ 163:xboot.c       ****         #else
+ 164:xboot.c       ****         LED_PORT |= (1 << LED_PIN);
+ 165:xboot.c       ****         #endif // LED_PIN_INV
+ 166:xboot.c       ****         #endif // USE_LED
+ 167:xboot.c       **** 
+ 168:xboot.c       **** #endif // __AVR_XMEGA__
+ 169:xboot.c       **** 
+ 170:xboot.c       ****         // I2C Attach LED_PIN
+ 171:xboot.c       **** 
+ 172:xboot.c       **** #ifdef __AVR_XMEGA__
+ 173:xboot.c       **** 
+ 174:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+ 175:xboot.c       ****         #ifdef USE_ATTACH_LED
+ 176:xboot.c       ****         // Initialize ATTACH_LED
+ 177:xboot.c       ****         ATTACH_LED_PORT.DIRSET = (1 << ATTACH_LED_PIN);
+ 178:xboot.c       ****         #if ATTACH_LED_INV
+ 179:xboot.c       ****         ATTACH_LED_PORT.OUTSET = (1 << ATTACH_LED_PIN);
+ 180:xboot.c       ****         #else
+ 181:xboot.c       ****         ATTACH_LED_PORT.OUTCLR = (1 << ATTACH_LED_PIN);
+ 182:xboot.c       ****         #endif // ATTACH_LED_INV
+ 183:xboot.c       ****         #endif // USE_ATTACH_LED
+ 184:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+ 185:xboot.c       **** 
+ 186:xboot.c       **** #else // __AVR_XMEGA__
+ 187:xboot.c       **** 
+ 188:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+ 189:xboot.c       ****         #ifdef USE_ATTACH_LED
+ 190:xboot.c       ****         // Initialize ATTACH_LED
+ 191:xboot.c       ****         ATTACH_LED_PORT_DDR |= (1 << ATTACH_LED_PIN);
+ 192:xboot.c       ****         #if ATTACH_LED_INV
+ 193:xboot.c       ****         ATTACH_LED_PORT |= (1 << ATTACH_LED_PIN);
+ 194:xboot.c       ****         #else
+ 195:xboot.c       ****         ATTACH_LED_PORT &= ~(1 << ATTACH_LED_PIN);
+ 196:xboot.c       ****         #endif // ATTACH_LED_INV
+ 197:xboot.c       ****         #endif // USE_ATTACH_LED
+ 198:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+ 199:xboot.c       **** 
+ 200:xboot.c       **** #endif // __AVR_XMEGA__
+ 201:xboot.c       **** 
+ 202:xboot.c       ****         // Enter pin
+ 203:xboot.c       **** 
+ 204:xboot.c       **** #ifdef __AVR_XMEGA__
+ 205:xboot.c       **** 
+ 206:xboot.c       ****         #ifdef USE_ENTER_PIN
+ 207:xboot.c       ****         // Make sure it's an input
+ 208:xboot.c       ****         ENTER_PORT.DIRCLR = (1 << ENTER_PIN);
+ 209:xboot.c       ****         #if ENTER_PIN_PUEN
+ 210:xboot.c       ****         // Enable bootloader entry pin pullup
+ 211:xboot.c       ****         ENTER_PIN_CTRL = 0x18;
+ 212:xboot.c       ****         #endif // ENTER_PIN_PUEN
+ 213:xboot.c       ****         #endif // USE_ENTER_PIN
+ 214:xboot.c       **** 
+ 215:xboot.c       **** #else // __AVR_XMEGA__
+ 216:xboot.c       **** 
+ 217:xboot.c       ****         #ifdef USE_ENTER_PIN
+ 218:xboot.c       ****         // Make sure it's an input
+ 219:xboot.c       ****         ENTER_PORT_DDR &= ~(1 << ENTER_PIN);
+ 220:xboot.c       ****         #if ENTER_PIN_PUEN
+ 221:xboot.c       ****         // Enable bootloader entry pin pullup
+ 222:xboot.c       ****         ENTER_PORT |= (1 << ENTER_PIN);
+ 223:xboot.c       ****         #else // ENER_PIN_PUEN
+ 224:xboot.c       ****         // Disable bootloader entry pin pullup
+ 225:xboot.c       ****         ENTER_PORT &= ~(1 << ENTER_PIN);
+ 226:xboot.c       ****         #endif // ENTER_PIN_PUEN
+ 227:xboot.c       ****         #endif // USE_ENTER_PIN
+ 228:xboot.c       **** 
+ 229:xboot.c       **** #endif // __AVR_XMEGA__
+ 230:xboot.c       **** 
+ 231:xboot.c       ****         #ifdef USE_UART
+ 232:xboot.c       ****         // Initialize UART
+ 233:xboot.c       ****         uart_init();
+ 234:xboot.c       **** 
+ 235:xboot.c       ****         // Initialize RX pin pull-up
+ 236:xboot.c       **** 
+ 237:xboot.c       **** #ifdef __AVR_XMEGA__
+ 238:xboot.c       **** 
+ 239:xboot.c       ****         #ifdef UART_RX_PUEN
+ 240:xboot.c       ****         // Enable RX pin pullup
+ 241:xboot.c       ****         UART_RX_PIN_CTRL = 0x18;
+ 242:xboot.c       ****         #endif // UART_RX_PUEN
+ 243:xboot.c       **** 
+ 244:xboot.c       **** #else // __AVR_XMEGA__
+ 245:xboot.c       **** 
+ 246:xboot.c       ****         #ifdef UART_RX_PUEN
+ 247:xboot.c       ****         // Enable RX pin pullup
+ 248:xboot.c       ****         UART_PORT |= (1 << UART_RX_PIN);
+ 249:xboot.c       ****         #endif // UART_RX_PUEN
+ 250:xboot.c       **** 
+ 251:xboot.c       **** #endif // __AVR_XMEGA__
+ 252:xboot.c       **** 
+ 253:xboot.c       ****         // Initialize UART EN pin
+ 254:xboot.c       **** 
+ 255:xboot.c       **** #ifdef __AVR_XMEGA__
+ 256:xboot.c       **** 
+ 257:xboot.c       ****         #ifdef USE_UART_EN_PIN
+ 258:xboot.c       ****         UART_EN_PIN1_PORT.DIRSET = (1 << UART_EN_PIN1);
+ 259:xboot.c       ****         #if UART_EN_INV
+ 260:xboot.c       ****         UART_EN_PIN1_PORT.OUTSET = (1 << UART_EN_PIN1);
+ 261:xboot.c       ****         #else // UART_PIN_INV
+ 262:xboot.c       ****         UART_EN_PIN1_PORT.OUTCLR = (1 << UART_EN_PIN1);
+ 263:xboot.c       ****         #endif // UART_PIN_INV
+ 264:xboot.c       ****         #endif // USE_UART_EN_PIN
+ 265:xboot.c       **** 
+ 266:xboot.c       ****         #ifdef USE_UART_EN_PINS
+ 267:xboot.c       ****         UART_EN_PIN1_PORT.DIRSET = (1 << UART_EN_PIN1);
+ 268:xboot.c       ****         UART_EN_PIN2_PORT.DIRSET = (1 << UART_EN_PIN2);
+ 269:xboot.c       ****         UART_EN_PIN1_PORT.OUTCLR = (1 << UART_EN_PIN1);
+ 270:xboot.c       ****         UART_EN_PIN2_PORT.OUTSET = (1 << UART_EN_PIN2);
+ 271:xboot.c       ****         #endif // USE_UART_EN_PIN
+ 272:xboot.c       **** 
+ 273:xboot.c       **** #else // __AVR_XMEGA__
+ 274:xboot.c       **** 
+ 275:xboot.c       ****         #ifdef USE_UART_EN_PIN
+ 276:xboot.c       ****         UART_EN_PIN1_PORT_DDR |= (1 << UART_EN_PIN1);
+ 277:xboot.c       ****         #if UART_EN_INV
+ 278:xboot.c       ****         UART_EN_PIN1_PORT |= (1 << UART_EN_PIN1);
+ 279:xboot.c       ****         #else // UART_PIN_INV
+ 280:xboot.c       ****         UART_EN_PIN1_PORT &= ~(1 << UART_EN_PIN1);
+ 281:xboot.c       ****         #endif // UART_PIN_INV
+ 282:xboot.c       ****         #endif // USE_UART_EN_PIN
+ 283:xboot.c       **** 
+ 284:xboot.c       **** #endif // __AVR_XMEGA__
+ 285:xboot.c       **** 
+ 286:xboot.c       ****         #endif // USE_UART
+ 287:xboot.c       **** 
+ 288:xboot.c       ****         #ifdef USE_I2C
+ 289:xboot.c       ****         // Initialize I2C interface
+ 290:xboot.c       ****         i2c_init();
+ 291:xboot.c       **** 
+ 292:xboot.c       **** #ifdef __AVR_XMEGA__
+ 293:xboot.c       **** 
+ 294:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+ 295:xboot.c       ****         I2C_AUTONEG_PORT.DIRCLR = (1 << I2C_AUTONEG_PIN);
+ 296:xboot.c       ****         I2C_AUTONEG_PORT.OUTCLR = (1 << I2C_AUTONEG_PIN);
+ 297:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+ 298:xboot.c       **** 
+ 299:xboot.c       **** #else // __AVR_XMEGA__
+ 300:xboot.c       **** 
+ 301:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+ 302:xboot.c       ****         I2C_AUTONEG_PORT_DDR &= ~(1 << I2C_AUTONEG_PIN);
+ 303:xboot.c       ****         I2C_AUTONEG_PORT &= ~(1 << I2C_AUTONEG_PIN);
+ 304:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+ 305:xboot.c       **** 
+ 306:xboot.c       **** #endif // __AVR_XMEGA__
+ 307:xboot.c       **** 
+ 308:xboot.c       ****         #endif // USE_I2C
+ 309:xboot.c       **** 
+ 310:xboot.c       ****         #ifdef USE_FIFO
+ 311:xboot.c       ****         // Initialize FIFO
+ 312:xboot.c       ****         fifo_init();
+ 313:xboot.c       ****         #endif // USE_FIFO
+ 314:xboot.c       **** 
+ 315:xboot.c       **** #ifndef __AVR_XMEGA__
+ 316:xboot.c       ****         // ATMEGA must reset via watchdog, so turn it off
+ 317:xboot.c       ****         MCUSR = 0;
+ 318:xboot.c       ****         wdt_disable();
+ 319:xboot.c       **** #endif
+ 320:xboot.c       **** 
+ 321:xboot.c       ****         // --------------------------------------------------
+ 322:xboot.c       ****         // End initialization section
+ 323:xboot.c       **** 
+ 324:xboot.c       ****         // One time trigger section
+ 325:xboot.c       ****         // Triggers that are checked once, regardless of
+ 326:xboot.c       ****         // whether or not USE_ENTER_DELAY is selected
+ 327:xboot.c       ****         // --------------------------------------------------
+ 328:xboot.c       **** 
+ 329:xboot.c       **** 
+ 330:xboot.c       **** 
+ 331:xboot.c       ****         // --------------------------------------------------
+ 332:xboot.c       ****         // End one time trigger section
+ 333:xboot.c       **** 
+ 334:xboot.c       **** #ifdef USE_ENTER_DELAY
+ 335:xboot.c       ****         k = ENTER_BLINK_COUNT*2;
+ 336:xboot.c       ****         j = ENTER_BLINK_WAIT;
+ 337:xboot.c       ****         while (!in_bootloader && k > 0)
+ 338:xboot.c       ****         {
+ 339:xboot.c       ****                 if (j-- <= 0)
+ 340:xboot.c       ****                 {
+ 341:xboot.c       ****                         #ifdef USE_LED
+ 342:xboot.c       **** #ifdef __AVR_XMEGA__
+ 343:xboot.c       ****                         LED_PORT.OUTTGL = (1 << LED_PIN);
+ 344:xboot.c       **** #else // __AVR_XMEGA__
+ 345:xboot.c       ****                         LED_PORT ^= (1 << LED_PIN);
+ 346:xboot.c       **** #endif // __AVR_XMEGA__
+ 347:xboot.c       ****                         #endif // USE_LED
+ 348:xboot.c       ****                         j = ENTER_BLINK_WAIT;
+ 349:xboot.c       ****                         k--;
+ 350:xboot.c       ****                 }
+ 351:xboot.c       **** #else // USE_ENTER_DELAY
+ 352:xboot.c       ****                 // Need a small delay when not running loop
+ 353:xboot.c       ****                 // so we don't accidentally enter the bootloader
+ 354:xboot.c       ****                 // on power-up with USE_ENTER_PIN selected
+ 355:xboot.c       ****                 asm("nop");
+ 356:xboot.c       ****                 asm("nop");
+ 357:xboot.c       ****                 asm("nop");
+ 358:xboot.c       ****                 asm("nop");
+ 359:xboot.c       **** #endif // USE_ENTER_DELAY
+ 360:xboot.c       **** 
+ 361:xboot.c       ****                 // Main trigger section
+ 362:xboot.c       ****                 // Set in_bootloader here to enter the bootloader
+ 363:xboot.c       ****                 // Checked when USE_ENTER_DELAY is selected
+ 364:xboot.c       ****                 // --------------------------------------------------
+ 365:xboot.c       **** 
+ 366:xboot.c       ****                 #ifdef USE_ENTER_PIN
+ 367:xboot.c       ****                 // Check entry pin state
+ 368:xboot.c       **** #ifdef __AVR_XMEGA__
+ 369:xboot.c       ****                 if ((ENTER_PORT.IN & (1 << ENTER_PIN)) == (ENTER_PIN_STATE ? (1 << ENTER_PIN) : 0))
+ 370:xboot.c       ****                         in_bootloader = 1;
+ 371:xboot.c       **** #else // __AVR_XMEGA__
+ 372:xboot.c       ****                 if ((ENTER_PORT_PIN & (1 << ENTER_PIN)) == (ENTER_PIN_STATE ? (1 << ENTER_PIN) : 0)
+ 373:xboot.c       ****                         in_bootloader = 1;
+ 374:xboot.c       **** #endif // __AVR_XMEGA__
+ 375:xboot.c       ****                 #endif // USE_ENTER_PIN
+ 376:xboot.c       **** 
+ 377:xboot.c       ****                 #ifdef USE_ENTER_UART
+ 378:xboot.c       ****                 // Check for received character
+ 379:xboot.c       ****                 #ifdef ENTER_UART_NEED_SUPER_SYNC
+ 380:xboot.c       ****                 
+ 381:xboot.c       ****                 if (uart_char_received())
+ 382:xboot.c       ****                 {
+ 383:xboot.c       ****                     val = uart_cur_char();
+ 384:xboot.c       **** 
+ 385:xboot.c       ****                     if (val != CMD_SYNC)
+ 386:xboot.c       ****                         send_char(REPLY_ERROR);
+ 387:xboot.c       ****                     
+ 388:xboot.c       ****                     if (val == CMD_SYNC || val == CMD_PROGRAM_ID)
+ 389:xboot.c       ****                     {
+ 390:xboot.c       ****                         if (prestate & 1)
+ 391:xboot.c       ****                         {
+ 392:xboot.c       ****                             if (val == CMD_PROGRAM_ID)
+ 393:xboot.c       ****                                 prestate++;
+ 394:xboot.c       ****                             else
+ 395:xboot.c       ****                                 prestate = 0;
+ 396:xboot.c       ****                         }
+ 397:xboot.c       ****                         else
+ 398:xboot.c       ****                         {
+ 399:xboot.c       ****                             if (val == CMD_SYNC)
+ 400:xboot.c       ****                                 prestate++;
+ 401:xboot.c       ****                             else
+ 402:xboot.c       ****                                 prestate = 0;
+ 403:xboot.c       ****                         }
+ 404:xboot.c       ****                     }
+ 405:xboot.c       ****                     else
+ 406:xboot.c       ****                     {
+ 407:xboot.c       ****                         prestate = 0;
+ 408:xboot.c       ****                     }
+ 409:xboot.c       ****                 }
+ 410:xboot.c       ****                 
+ 411:xboot.c       ****                 if (prestate >= ENTER_UART_SUPER_SYNC_COUNT)
+ 412:xboot.c       ****                 #else //ENTER_UART_NEED_SUPER_SYNC
+ 413:xboot.c       ****                 #ifdef ENTER_UART_NEED_SYNC
+ 414:xboot.c       ****                 if (uart_char_received() && (uart_cur_char() == CMD_SYNC))
+ 415:xboot.c       ****                 #else // ENTER_UART_NEED_SYNC
+ 416:xboot.c       ****                 if (uart_char_received())
+ 417:xboot.c       ****                 #endif // ENTER_UART_NEED_SYNC
+ 418:xboot.c       ****                 #endif // ENTER_UART_NEED_SUPER_SYNC
+ 419:xboot.c       ****                 {
+ 420:xboot.c       ****                         in_bootloader = 1;
+ 421:xboot.c       ****                         comm_mode = MODE_UART;
+ 422:xboot.c       ****                 }
+ 423:xboot.c       **** 
+ 424:xboot.c       ****                 #endif // USE_ENTER_UART
+ 425:xboot.c       **** 
+ 426:xboot.c       ****                 #ifdef USE_ENTER_I2C
+ 427:xboot.c       ****                 // Check for address match condition
+ 428:xboot.c       ****                 if (i2c_address_match())
+ 429:xboot.c       ****                 {
+ 430:xboot.c       ****                         in_bootloader = 1;
+ 431:xboot.c       ****                         comm_mode = MODE_I2C;
+ 432:xboot.c       ****                 }
+ 433:xboot.c       ****                 #endif // USE_ENTER_I2C
+ 434:xboot.c       **** 
+ 435:xboot.c       ****                 #ifdef USE_ENTER_FIFO
+ 436:xboot.c       ****                 // Check for received character
+ 437:xboot.c       ****                 #ifdef ENTER_FIFO_NEED_SYNC
+ 438:xboot.c       ****                 if (fifo_char_received() && (fifo_cur_char() == CMD_SYNC))
+ 439:xboot.c       ****                 #else // ENTER_FIFO_NEED_SYNC
+ 440:xboot.c       ****                 if (fifo_char_received())
+ 441:xboot.c       ****                 #endif // ENTER_FIFO_NEED_SYNC
+ 442:xboot.c       ****                 {
+ 443:xboot.c       ****                         in_bootloader = 1;
+ 444:xboot.c       ****                         comm_mode = MODE_FIFO;
+ 445:xboot.c       ****                 }
+ 446:xboot.c       **** 
+ 447:xboot.c       ****                 #endif // USE_ENTER_FIFO
+ 448:xboot.c       **** 
+ 449:xboot.c       ****                 // --------------------------------------------------
+ 450:xboot.c       ****                 // End main trigger section
+ 451:xboot.c       **** 
+ 452:xboot.c       **** #ifdef __AVR_XMEGA__
+ 453:xboot.c       ****                 WDT_Reset();
+ 454:xboot.c       **** #else // __AVR_XMEGA__
+ 455:xboot.c       ****                 wdt_reset();
+ 456:xboot.c       **** #endif // __AVR_XMEGA__
+ 457:xboot.c       **** 
+ 458:xboot.c       **** #ifdef USE_ENTER_DELAY
+ 459:xboot.c       ****         }
+ 460:xboot.c       **** #endif // USE_ENTER_DELAY
+ 461:xboot.c       **** 
+ 462:xboot.c       ****         #ifdef USE_INTERRUPTS
+ 463:xboot.c       ****         // Enable interrupts
+ 464:xboot.c       ****         sei();
+ 465:xboot.c       ****         #endif // USE_INTERRUPTS
+ 466:xboot.c       **** 
+ 467:xboot.c       ****         #ifdef USE_WATCHDOG
+ 468:xboot.c       ****         WDT_EnableAndSetTimeout();
+ 469:xboot.c       ****         #endif // USE_WATCHDOG
+ 470:xboot.c       **** 
+ 471:xboot.c       ****         // Main bootloader
+ 472:xboot.c       ****         while (in_bootloader) {
+ 473:xboot.c       ****                 #ifdef USE_LED
+ 474:xboot.c       **** #ifdef __AVR_XMEGA__
+ 475:xboot.c       ****                 LED_PORT.OUTTGL = (1 << LED_PIN);
+ 476:xboot.c       **** #else // __AVR_XMEGA__
+ 477:xboot.c       ****                 LED_PORT ^= (1 << LED_PIN);
+ 478:xboot.c       **** #endif // __AVR_XMEGA__
+ 479:xboot.c       ****                 #endif // USE_LED
+ 480:xboot.c       **** 
+ 481:xboot.c       ****                 val = get_char();
+ 482:xboot.c       **** 
+ 483:xboot.c       ****                 #ifdef USE_WATCHDOG
+ 484:xboot.c       ****                 WDT_Reset();
+ 485:xboot.c       ****                 #endif // USE_WATCHDOG
+ 486:xboot.c       **** 
+ 487:xboot.c       ****                 // Main bootloader parser
+ 488:xboot.c       ****                 // check autoincrement status
+ 489:xboot.c       ****                 if (val == CMD_CHECK_AUTOINCREMENT)
+ 490:xboot.c       ****                 {
+ 491:xboot.c       ****                         // yes, it is supported
+ 492:xboot.c       ****                         send_char(REPLY_YES);
+ 493:xboot.c       ****                 }
+ 494:xboot.c       ****                 // Set address
+ 495:xboot.c       ****                 else if (val == CMD_SET_ADDRESS)
+ 496:xboot.c       ****                 {
+ 497:xboot.c       ****                         // Read address high then low
+ 498:xboot.c       ****                         address = get_2bytes();
+ 499:xboot.c       ****                         // acknowledge
+ 500:xboot.c       ****                         send_char(REPLY_ACK);
+ 501:xboot.c       ****                 }
+ 502:xboot.c       ****                 // Extended address
+ 503:xboot.c       ****                 else if (val == CMD_SET_EXT_ADDRESS)
+ 504:xboot.c       ****                 {
+ 505:xboot.c       ****                         // Read address high then low
+ 506:xboot.c       ****                         address = ((ADDR_T)get_char() << 16) | get_2bytes();
+ 507:xboot.c       **** #if 0
+ 508:xboot.c       ****                         asm volatile (
+ 509:xboot.c       ****                                 "call get_char"    "\n\t"
+ 510:xboot.c       ****                                 "mov  %C0,r24"     "\n\t"
+ 511:xboot.c       ****                                 "call get_2bytes"  "\n\t"
+ 512:xboot.c       ****                                 "clr  %D0"         "\n\t"
+ 513:xboot.c       ****                                 : "=r" (address)
+ 514:xboot.c       ****                                 :
+ 515:xboot.c       ****                         );
+ 516:xboot.c       **** #endif
+ 517:xboot.c       **** 
+ 518:xboot.c       ****                         // acknowledge
+ 519:xboot.c       ****                         send_char(REPLY_ACK);
+ 520:xboot.c       ****                 }
+ 521:xboot.c       ****                 // Chip erase
+ 522:xboot.c       ****                 else if (val == CMD_CHIP_ERASE)
+ 523:xboot.c       ****                 {
+ 524:xboot.c       ****                         // Erase the application section
+ 525:xboot.c       ****                         Flash_EraseApplicationSection();
+ 526:xboot.c       ****                         // Wait for completion
+ 527:xboot.c       **** #ifdef __AVR_XMEGA__
+ 528:xboot.c       ****                         #ifdef USE_WATCHDOG
+ 529:xboot.c       ****                         while (NVM_STATUS & NVM_NVMBUSY_bp)
+ 530:xboot.c       ****                         {
+ 531:xboot.c       ****                                 // reset watchdog while waiting for erase completion
+ 532:xboot.c       ****                                 WDT_Reset();
+ 533:xboot.c       ****                         }
+ 534:xboot.c       ****                         #else // USE_WATCHDOG
+ 535:xboot.c       ****                         SP_WaitForSPM();
+ 536:xboot.c       ****                         #endif // USE_WATCHDOG
+ 537:xboot.c       **** #endif // __AVR_XMEGA__
+ 538:xboot.c       **** 
+ 539:xboot.c       ****                         // Erase EEPROM
+ 540:xboot.c       ****                         EEPROM_erase_all();
+ 541:xboot.c       **** 
+ 542:xboot.c       ****                         // turn off read protection
+ 543:xboot.c       ****                         #ifdef NEED_CODE_PROTECTION
+ 544:xboot.c       ****                         protected = 0;
+ 545:xboot.c       ****                         #endif // NEED_CODE_PROTECTION
+ 546:xboot.c       **** 
+ 547:xboot.c       ****                         // acknowledge
+ 548:xboot.c       ****                         send_char(REPLY_ACK);
+ 549:xboot.c       ****                 }
+ 550:xboot.c       ****                 #ifdef ENABLE_BLOCK_SUPPORT
+ 551:xboot.c       ****                 // Check block load support
+ 552:xboot.c       ****                 else if (val == CMD_CHECK_BLOCK_SUPPORT )
+ 553:xboot.c       ****                 {
+ 554:xboot.c       ****                         // yes, it is supported
+ 555:xboot.c       ****                         send_char(REPLY_YES);
+ 556:xboot.c       ****                         // Send block size (page size)
+ 557:xboot.c       ****                         send_char((SPM_PAGESIZE >> 8) & 0xFF);
+ 558:xboot.c       ****                         send_char(SPM_PAGESIZE & 0xFF);
+ 559:xboot.c       ****                 }
+ 560:xboot.c       ****                 // Block load
+ 561:xboot.c       ****                 else if (val == CMD_BLOCK_LOAD)
+ 562:xboot.c       ****                 {
+ 563:xboot.c       ****                         // Block size
+ 564:xboot.c       ****                         i = get_2bytes();
+ 565:xboot.c       ****                         // Memory type
+ 566:xboot.c       ****                         val = get_char();
+ 567:xboot.c       ****                         // Load it
+ 568:xboot.c       ****                         send_char(BlockLoad(i, val, &address));
+ 569:xboot.c       ****                 }
+ 570:xboot.c       ****                 // Block read
+ 571:xboot.c       ****                 else if (val == CMD_BLOCK_READ)
+ 572:xboot.c       ****                 {
+ 573:xboot.c       ****                         // Block size
+ 574:xboot.c       ****                         i = get_2bytes();
+ 575:xboot.c       ****                         // Memory type
+ 576:xboot.c       ****                         val = get_char();
+ 577:xboot.c       ****                         // Read it
+ 578:xboot.c       ****                         BlockRead(i, val, &address);
+ 579:xboot.c       ****                 }
+ 580:xboot.c       ****                 #endif // ENABLE_BLOCK_SUPPORT
+ 581:xboot.c       ****                 #ifdef ENABLE_FLASH_BYTE_SUPPORT
+ 582:xboot.c       ****                 // Read program memory byte
+ 583:xboot.c       ****                 else if (val == CMD_READ_BYTE)
+ 584:xboot.c       ****                 {
+ 585:xboot.c       ****                         unsigned int w = Flash_ReadWord((address << 1));
+ 586:xboot.c       **** 
+ 587:xboot.c       ****                         #ifdef ENABLE_CODE_PROTECTION
+ 588:xboot.c       ****                         if (protected)
+ 589:xboot.c       ****                                 w = 0xffff;
+ 590:xboot.c       ****                         #endif // ENABLE_CODE_PROTECTION
+ 591:xboot.c       **** 
+ 592:xboot.c       ****                         send_char(w >> 8);
+ 593:xboot.c       ****                         send_char(w);
+ 594:xboot.c       **** 
+ 595:xboot.c       ****                         address++;
+ 596:xboot.c       ****                 }
+ 597:xboot.c       ****                 // Write program memory low byte
+ 598:xboot.c       ****                 else if (val == CMD_WRITE_LOW_BYTE)
+ 599:xboot.c       ****                 {
+ 600:xboot.c       ****                         // get low byte
+ 601:xboot.c       ****                         i = get_char();
+ 602:xboot.c       ****                         send_char(REPLY_ACK);
+ 603:xboot.c       ****                 }
+ 604:xboot.c       ****                 // Write program memory high byte
+ 605:xboot.c       ****                 else if (val == CMD_WRITE_HIGH_BYTE)
+ 606:xboot.c       ****                 {
+ 607:xboot.c       ****                         // get high byte; combine
+ 608:xboot.c       ****                         i |= (get_char() << 8);
+ 609:xboot.c       ****                         Flash_LoadFlashWord((address << 1), i);
+ 610:xboot.c       ****                         address++;
+ 611:xboot.c       ****                         send_char(REPLY_ACK);
+ 612:xboot.c       ****                 }
+ 613:xboot.c       ****                 // Write page
+ 614:xboot.c       ****                 else if (val == CMD_WRITE_PAGE)
+ 615:xboot.c       ****                 {
+ 616:xboot.c       ****                         if (address >= (APP_SECTION_SIZE>>1))
+ 617:xboot.c       ****                         {
+ 618:xboot.c       ****                                 // don't allow bootloader overwrite
+ 619:xboot.c       ****                                 send_char(REPLY_ERROR);
+ 620:xboot.c       ****                         }
+ 621:xboot.c       ****                         else
+ 622:xboot.c       ****                         {
+ 623:xboot.c       ****                                 Flash_WriteApplicationPage( address << 1);
+ 624:xboot.c       ****                                 send_char(REPLY_ACK);
+ 625:xboot.c       ****                         }
+ 626:xboot.c       ****                 }
+ 627:xboot.c       ****                 #endif // ENABLE_FLASH_BYTE_SUPPORT
+ 628:xboot.c       ****                 #ifdef ENABLE_EEPROM_BYTE_SUPPORT
+ 629:xboot.c       ****                 // Write EEPROM memory
+ 630:xboot.c       ****                 else if (val == CMD_WRITE_EEPROM_BYTE)
+ 631:xboot.c       ****                 {
+ 632:xboot.c       ****                         EEPROM_write_byte(address, get_char());
+ 633:xboot.c       ****                         address++;
+ 634:xboot.c       ****                 }
+ 635:xboot.c       ****                 // Read EEPROM memory
+ 636:xboot.c       ****                 else if (val == CMD_READ_EEPROM_BYTE)
+ 637:xboot.c       ****                 {
+ 638:xboot.c       ****                         char c = EEPROM_read_byte(address);
+ 639:xboot.c       **** 
+ 640:xboot.c       ****                         #ifdef ENABLE_EEPROM_PROTECTION
+ 641:xboot.c       ****                         if (protected)
+ 642:xboot.c       ****                                 c = 0xff;
+ 643:xboot.c       ****                         #endif // ENABLE_EEPROM_PROTECTION
+ 644:xboot.c       **** 
+ 645:xboot.c       ****                         send_char(c);
+ 646:xboot.c       ****                         address++;
+ 647:xboot.c       ****                 }
+ 648:xboot.c       ****                 #endif // ENABLE_EEPROM_BYTE_SUPPORT
+ 649:xboot.c       ****                 #ifdef ENABLE_LOCK_BITS
+ 650:xboot.c       **** #ifdef __AVR_XMEGA__
+ 651:xboot.c       ****                 // Write lockbits
+ 652:xboot.c       ****                 else if (val == CMD_WRITE_LOCK_BITS)
+ 653:xboot.c       ****                 {
+ 654:xboot.c       ****                         SP_WriteLockBits( get_char() );
+ 655:xboot.c       ****                         send_char(REPLY_ACK);
+ 656:xboot.c       ****                 }
+ 657:xboot.c       ****                 // Read lockbits
+ 658:xboot.c       ****                 else if (val == CMD_READ_LOCK_BITS)
+ 659:xboot.c       ****                 {
+ 660:xboot.c       ****                         send_char(SP_ReadLockBits());
+ 661:xboot.c       ****                 }
+ 662:xboot.c       **** #endif // __AVR_XMEGA__
+ 663:xboot.c       ****                 #endif // ENABLE_LOCK_BITS
+ 664:xboot.c       ****                 #ifdef ENABLE_FUSE_BITS
+ 665:xboot.c       **** #ifdef __AVR_XMEGA__
+ 666:xboot.c       ****                 // Read low fuse bits
+ 667:xboot.c       ****                 else if (val == CMD_READ_LOW_FUSE_BITS)
+ 668:xboot.c       ****                 {
+ 669:xboot.c       ****                         send_char(SP_ReadFuseByte(0));
+ 670:xboot.c       ****                 }
+ 671:xboot.c       ****                 // Read high fuse bits
+ 672:xboot.c       ****                 else if (val == CMD_READ_HIGH_FUSE_BITS)
+ 673:xboot.c       ****                 {
+ 674:xboot.c       ****                         send_char(SP_ReadFuseByte(1));
+ 675:xboot.c       ****                 }
+ 676:xboot.c       ****                 // Read extended fuse bits
+ 677:xboot.c       ****                 else if (val == CMD_READ_EXT_FUSE_BITS)
+ 678:xboot.c       ****                 {
+ 679:xboot.c       ****                         send_char(SP_ReadFuseByte(2));
+ 680:xboot.c       ****                 }
+ 681:xboot.c       **** #endif // __AVR_XMEGA__
+ 682:xboot.c       ****                 #endif // ENABLE_FUSE_BITS
+ 683:xboot.c       ****                 // Enter and leave programming mode
+ 684:xboot.c       ****                 else if ((val == CMD_ENTER_PROG_MODE) || (val == CMD_LEAVE_PROG_MODE))
+ 685:xboot.c       ****                 {
+ 686:xboot.c       ****                         // just acknowledge
+ 687:xboot.c       ****                         send_char(REPLY_ACK);
+ 688:xboot.c       ****                 }
+ 689:xboot.c       ****                 // Exit bootloader
+ 690:xboot.c       ****                 else if (val == CMD_EXIT_BOOTLOADER)
+ 691:xboot.c       ****                 {
+ 692:xboot.c       ****                         in_bootloader = 0;
+ 693:xboot.c       ****                         send_char(REPLY_ACK);
+ 694:xboot.c       ****                 }
+ 695:xboot.c       ****                 // Get programmer type
+ 696:xboot.c       ****                 else if (val == CMD_PROGRAMMER_TYPE)
+ 697:xboot.c       ****                 {
+ 698:xboot.c       ****                         // serial
+ 699:xboot.c       ****                         send_char('S');
+ 700:xboot.c       ****                 }
+ 701:xboot.c       ****                 // Return supported device codes
+ 702:xboot.c       ****                 else if (val == CMD_DEVICE_CODE)
+ 703:xboot.c       ****                 {
+ 704:xboot.c       ****                         // send only this device
+ 705:xboot.c       ****                         send_char(123); // TODO
+ 706:xboot.c       ****                         // terminator
+ 707:xboot.c       ****                         send_char(0);
+ 708:xboot.c       ****                 }
+ 709:xboot.c       ****                 // Set LED, clear LED, and set device type
+ 710:xboot.c       ****                 else if ((val == CMD_SET_LED) || (val == CMD_CLEAR_LED) || (val == CMD_SET_TYPE))
+ 711:xboot.c       ****                 {
+ 712:xboot.c       ****                         // discard parameter
+ 713:xboot.c       ****                         get_char();
+ 714:xboot.c       ****                         send_char(REPLY_ACK);
+ 715:xboot.c       ****                 }
+ 716:xboot.c       ****                 // Return program identifier
+ 717:xboot.c       ****                 else if (val == CMD_PROGRAM_ID)
+ 718:xboot.c       ****                 {
+ 719:xboot.c       ****                         send_char('X');
+ 720:xboot.c       ****                         send_char('B');
+ 721:xboot.c       ****                         send_char('o');
+ 722:xboot.c       ****                         send_char('o');
+ 723:xboot.c       ****                         send_char('t');
+ 724:xboot.c       ****                         send_char('+');
+ 725:xboot.c       ****                         send_char('+');
+ 726:xboot.c       ****                 }
+ 727:xboot.c       ****                 // Read software version
+ 728:xboot.c       ****                 else if (val == CMD_VERSION)
+ 729:xboot.c       ****                 {
+ 730:xboot.c       ****                         send_char('0' + XBOOT_VERSION_MAJOR);
+ 731:xboot.c       ****                         send_char('0' + XBOOT_VERSION_MINOR);
+ 732:xboot.c       ****                 }
+ 733:xboot.c       ****                 // Read signature bytes
+ 734:xboot.c       ****                 else if (val == CMD_READ_SIGNATURE)
+ 735:xboot.c       ****                 {
+ 736:xboot.c       ****                         send_char(SIGNATURE_2);
+ 737:xboot.c       ****                         send_char(SIGNATURE_1);
+ 738:xboot.c       ****                         send_char(SIGNATURE_0);
+ 739:xboot.c       ****                 }
+ 740:xboot.c       ****                 #ifdef ENABLE_CRC_SUPPORT
+ 741:xboot.c       ****                 else if (val == CMD_CRC)
+ 742:xboot.c       ****                 {
+ 743:xboot.c       ****                         uint32_t start = 0;
+ 744:xboot.c       ****                         uint32_t length = 0;
+ 745:xboot.c       ****                         uint16_t crc;
+ 746:xboot.c       **** 
+ 747:xboot.c       ****                         val = get_char();
+ 748:xboot.c       **** 
+ 749:xboot.c       ****                         switch (val)
+ 750:xboot.c       ****                         {
+ 751:xboot.c       ****                                 case SECTION_FLASH:
+ 752:xboot.c       ****                                         length = PROGMEM_SIZE;
+ 753:xboot.c       ****                                         break;
+ 754:xboot.c       ****                                 case SECTION_APPLICATION:
+ 755:xboot.c       ****                                         length = APP_SECTION_SIZE;
+ 756:xboot.c       ****                                         break;
+ 757:xboot.c       ****                                 case SECTION_BOOT:
+ 758:xboot.c       ****                                         start = BOOT_SECTION_START;
+ 759:xboot.c       ****                                         length = BOOT_SECTION_SIZE;
+ 760:xboot.c       ****                                         break;
+ 761:xboot.c       ****                                 #ifdef ENABLE_API
+ 762:xboot.c       ****                                 case SECTION_APP:
+ 763:xboot.c       ****                                         length = XB_APP_SIZE;
+ 764:xboot.c       ****                                         break;
+ 765:xboot.c       ****                                 case SECTION_APP_TEMP:
+ 766:xboot.c       ****                                         start = XB_APP_TEMP_START;
+ 767:xboot.c       ****                                         length = XB_APP_TEMP_SIZE;
+ 768:xboot.c       ****                                         break;
+ 769:xboot.c       ****                                 #endif // ENABLE_API
+ 770:xboot.c       ****                                 default:
+ 771:xboot.c       ****                                         send_char(REPLY_ERROR);
+ 772:xboot.c       ****                                         continue;
+ 773:xboot.c       ****                         }
+ 774:xboot.c       **** 
+ 775:xboot.c       ****                         crc = crc16_block(start, length);
+ 776:xboot.c       **** 
+ 777:xboot.c       ****                         send_char((crc >> 8) & 0xff);
+ 778:xboot.c       ****                         send_char(crc & 0xff);
+ 779:xboot.c       ****                 }
+ 780:xboot.c       ****                 #endif // ENABLE_CRC_SUPPORT
+ 781:xboot.c       ****                 #ifdef USE_I2C
+ 782:xboot.c       ****                 #ifdef USE_I2C_ADDRESS_NEGOTIATION
+ 783:xboot.c       ****                 // Enter autonegotiate mode
+ 784:xboot.c       ****                 else if (val == CMD_AUTONEG_START)
+ 785:xboot.c       ****                 {
+ 786:xboot.c       ****                         // The address autonegotiation protocol is borrowed from the
+ 787:xboot.c       ****                         // OneWire address detection method.  The algorthim Utilizes
+ 788:xboot.c       ****                         // one extra shared wire, pulled up by resistors just like the
+ 789:xboot.c       ****                         // main I2C bus, a OneWire bus, or a wired-AND IRQ line.
+ 790:xboot.c       ****                         // The protocol involves intelligently guessing all of the
+ 791:xboot.c       ****                         // connected devices' 88 bit unique hardware ID numbers, stored
+ 792:xboot.c       ****                         // permanently in the production signature row during manufacture
+ 793:xboot.c       ****                         // (see XMega series datasheet for details)
+ 794:xboot.c       ****                         #ifdef __AVR_XMEGA__
+ 795:xboot.c       ****                         // k is temp
+ 796:xboot.c       ****                         // devid is pointer to current bit, init to first bit
+ 797:xboot.c       ****                         // of the hardware ID in the production signature row
+ 798:xboot.c       ****                         devid_bit = 0x08 << 3;
+ 799:xboot.c       ****                         // read first byte of hardware ID into temporary location
+ 800:xboot.c       ****                         k = SP_ReadCalibrationByte(0x08);
+ 801:xboot.c       **** 
+ 802:xboot.c       ****                         // main negotiation loop
+ 803:xboot.c       ****                         while (1)
+ 804:xboot.c       ****                         {
+ 805:xboot.c       ****                                 // wait for incoming data
+ 806:xboot.c       ****                                 while (1)
+ 807:xboot.c       ****                                 {
+ 808:xboot.c       ****                                         // check for bit read command
+ 809:xboot.c       ****                                         if (!(I2C_AUTONEG_PORT.IN & (1 << I2C_AUTONEG_PIN)))
+ 810:xboot.c       ****                                         {
+ 811:xboot.c       ****                                                 // write current bit of hardware ID
+ 812:xboot.c       ****                                                 ow_slave_write_bit(k & 1);  // write bit
+ 813:xboot.c       ****                                                 break;
+ 814:xboot.c       ****                                         }
+ 815:xboot.c       ****                                         // check for I2C bus activity
+ 816:xboot.c       ****                                         else if (I2C_DEVICE.SLAVE.STATUS & (TWI_SLAVE_APIF_bm | TWI
+ 817:xboot.c       ****                                         {
+ 818:xboot.c       ****                                                 // grab a byte
+ 819:xboot.c       ****                                                 // (there will be no I2C bus activity while
+ 820:xboot.c       ****                                                 // the autonegotiation is taking place,
+ 821:xboot.c       ****                                                 // so it's OK to block)
+ 822:xboot.c       ****                                                 val = get_char();
+ 823:xboot.c       ****                                                 // Is this an address byte for me?
+ 824:xboot.c       ****                                                 if (val == CMD_AUTONEG_DONE)
+ 825:xboot.c       ****                                                 {
+ 826:xboot.c       ****                                                         // If so, we're now attached, so light
+ 827:xboot.c       ****                                                         // the LED and update the I2C bus
+ 828:xboot.c       ****                                                         // controller accordingly
+ 829:xboot.c       **** 
+ 830:xboot.c       ****                                                         // turn on attach LED
+ 831:xboot.c       ****                                                         #ifdef USE_ATTACH_LED
+ 832:xboot.c       ****                                                         #if ATTACH_LED_INV
+ 833:xboot.c       ****                                                         ATTACH_LED_PORT.OUTCLR = (1 << ATTACH_LED_P
+ 834:xboot.c       ****                                                         #else
+ 835:xboot.c       ****                                                         ATTACH_LED_PORT.OUTSET = (1 << ATTACH_LED_P
+ 836:xboot.c       ****                                                         #endif // ATTACH_LED_INV
+ 837:xboot.c       ****                                                         #endif // USE_ATTACH_LED
+ 838:xboot.c       **** 
+ 839:xboot.c       ****                                                         // get new address
+ 840:xboot.c       ****                                                         #if I2C_AUTONEG_DIS_GC
+ 841:xboot.c       ****                                                         I2C_DEVICE.SLAVE.ADDR = get_char() << 1;
+ 842:xboot.c       ****                                                         #else
+ 843:xboot.c       ****                                                         I2C_DEVICE.SLAVE.ADDR = (get_char() << 1) |
+ 844:xboot.c       ****                                                         #endif // I2C_AUTONEG_DIS_GC
+ 845:xboot.c       **** 
+ 846:xboot.c       ****                                                         #if I2C_AUTONEG_DIS_PROMISC
+ 847:xboot.c       ****                                                         // turn off promiscuous mode
+ 848:xboot.c       ****                                                         I2C_DEVICE.SLAVE.CTRLA = TWI_SLAVE_ENABLE_b
+ 849:xboot.c       ****                                                         #endif // I2C_AUTONEG_DIS_PROMISC
+ 850:xboot.c       **** 
+ 851:xboot.c       ****                                                         // we're done here
+ 852:xboot.c       ****                                                         goto autoneg_done;
+ 853:xboot.c       ****                                                 }
+ 854:xboot.c       ****                                                 // Check for sync command
+ 855:xboot.c       ****                                                 else if (val == CMD_SYNC)
+ 856:xboot.c       ****                                                 {
+ 857:xboot.c       ****                                                         // break out to main bootloader on sync
+ 858:xboot.c       ****                                                         goto autoneg_done;
+ 859:xboot.c       ****                                                 }
+ 860:xboot.c       ****                                         }
+ 861:xboot.c       ****                                 }
+ 862:xboot.c       ****                                 // Already wrote normal bit, so write the inverted one
+ 863:xboot.c       ****                                 ow_slave_write_bit(~k & 1); // write inverted bit
+ 864:xboot.c       ****                                 // Now read master's guess
+ 865:xboot.c       ****                                 i = ow_slave_read_bit();
+ 866:xboot.c       ****                                 // Does the guess agree with the current bit?
+ 867:xboot.c       ****                                 if ((k & 1 && i) || (~k & 1 && !i))
+ 868:xboot.c       ****                                 {
+ 869:xboot.c       ****                                         // look at next bit
+ 870:xboot.c       ****                                         devid_bit++;
+ 871:xboot.c       ****                                         k >>= 1;
+ 872:xboot.c       **** 
+ 873:xboot.c       ****                                         // time for next byte?
+ 874:xboot.c       ****                                         if (!(devid_bit & 7))
+ 875:xboot.c       ****                                         {
+ 876:xboot.c       ****                                                 // Out of bits?
+ 877:xboot.c       ****                                                 if (devid_bit > (0x15 << 3))
+ 878:xboot.c       ****                                                 {
+ 879:xboot.c       ****                                                         // Can't break here (need to wait
+ 880:xboot.c       ****                                                         // to see if the master sends along
+ 881:xboot.c       ****                                                         // an address) so wrap around instead
+ 882:xboot.c       ****                                                         devid_bit = 0x08 << 3;
+ 883:xboot.c       ****                                                 }
+ 884:xboot.c       ****                                                 // there are some holes in the signature row,
+ 885:xboot.c       ****                                                 // so skip over them
+ 886:xboot.c       ****                                                 if (devid_bit == (0x0E << 3))
+ 887:xboot.c       ****                                                         devid_bit += 0x02 << 3;
+ 888:xboot.c       ****                                                 if (devid_bit == (0x11 << 3))
+ 889:xboot.c       ****                                                         devid_bit += 0x01 << 3;
+ 890:xboot.c       ****                                                 // Read next byte
+ 891:xboot.c       ****                                                 k = SP_ReadCalibrationByte(devid_bit >> 3);
+ 892:xboot.c       ****                                         }
+ 893:xboot.c       ****                                 }
+ 894:xboot.c       ****                                 else
+ 895:xboot.c       ****                                 {
+ 896:xboot.c       ****                                         // No match, we're done here
+ 897:xboot.c       ****                                         break;
+ 898:xboot.c       ****                                 }
+ 899:xboot.c       ****                         }
+ 900:xboot.c       **** 
+ 901:xboot.c       **** autoneg_done:
+ 902:xboot.c       ****                         // dummy to avoid error message
+ 903:xboot.c       ****                         // this actually produces code 4 bytes smaller than either
+ 904:xboot.c       ****                         // an asm nop, a continue, or a bare semicolon
+ 905:xboot.c       ****                         i = 0;
+ 906:xboot.c       **** 
+ 907:xboot.c       ****                         #endif // __AVR_XMEGA__
+ 908:xboot.c       ****                 }
+ 909:xboot.c       ****                 // out-of-order autonegotiate address message
+ 910:xboot.c       ****                 else if (val == CMD_AUTONEG_DONE)
+ 911:xboot.c       ****                 {
+ 912:xboot.c       ****                         // ignore it
+ 913:xboot.c       ****                         // (blocking to send a ? will cause trouble)
+ 914:xboot.c       ****                 }
+ 915:xboot.c       ****                 #endif // USE_I2C_ADDRESS_NEGOTIATION
+ 916:xboot.c       ****                 #endif // USE_I2C
+ 917:xboot.c       ****                 // ESC (0x1b) to sync
+ 918:xboot.c       ****                 // otherwise, error
+ 919:xboot.c       ****                 else if (val != CMD_SYNC)
+ 920:xboot.c       ****                 {
+ 921:xboot.c       ****                         send_char(REPLY_ERROR);
+ 922:xboot.c       ****                 }
+ 923:xboot.c       **** 
+ 924:xboot.c       ****                 // Wait for any lingering SPM instructions to finish
+ 925:xboot.c       ****                 Flash_WaitForSPM();
+ 926:xboot.c       **** 
+ 927:xboot.c       ****                 // End of bootloader main loop
+ 928:xboot.c       ****         }
+ 929:xboot.c       **** 
+ 930:xboot.c       ****         #ifdef NEED_INTERRUPTS
+ 931:xboot.c       ****         // Disable interrupts
+ 932:xboot.c       ****         cli();
+ 933:xboot.c       ****         #endif // NEED_INTERRUPTS
+ 934:xboot.c       **** 
+ 935:xboot.c       ****         // Bootloader exit section
+ 936:xboot.c       ****         // Code here runs after the bootloader has exited,
+ 937:xboot.c       ****         // but before the application code has started
+ 938:xboot.c       ****         // --------------------------------------------------
+ 939:xboot.c       **** 
+ 940:xboot.c       ****         #ifdef ENABLE_API
+ 941:xboot.c       ****         #ifdef ENABLE_API_FIRMWARE_UPDATE
+ 942:xboot.c       ****         // Update firmware if needed
+ 943:xboot.c       ****         install_firmware();
+ 944:xboot.c       ****         #endif // ENABLE_API_FIRMWARE_UPDATE
+ 945:xboot.c       ****         #endif // ENABLE_API
+ 946:xboot.c       **** 
+ 947:xboot.c       ****         #ifdef USE_FIFO
+ 948:xboot.c       ****         // Shut down FIFO
+ 949:xboot.c       ****         fifo_deinit();
+ 950:xboot.c       ****         #endif // USE_FIFO
+ 951:xboot.c       **** 
+ 952:xboot.c       ****         #ifdef USE_I2C
+ 953:xboot.c       ****         // Shut down I2C interface
+ 954:xboot.c       ****         i2c_deinit();
+ 955:xboot.c       ****         #endif // USE_I2C
+ 956:xboot.c       **** 
+ 957:xboot.c       ****         #ifdef USE_UART
+ 958:xboot.c       ****         // Shut down UART
+ 959:xboot.c       ****         uart_deinit();
+ 960:xboot.c       **** 
+ 961:xboot.c       ****         // Disable RX pin pull-up
+ 962:xboot.c       **** #ifdef __AVR_XMEGA__
+ 963:xboot.c       ****         #ifdef UART_RX_PUEN
+ 964:xboot.c       ****         // Disable RX pin pullup
+ 965:xboot.c       ****         UART_RX_PIN_CTRL = 0;
+ 966:xboot.c       ****         #endif // UART_RX_PUEN
+ 967:xboot.c       **** #else // __AVR_XMEGA__
+ 968:xboot.c       ****         #ifdef UART_RX_PUEN
+ 969:xboot.c       ****         // Disable RX pin pullup
+ 970:xboot.c       ****         UART_PORT &= ~(1 << UART_RX_PIN);
+ 971:xboot.c       ****         #endif // UART_RX_PUEN
+ 972:xboot.c       **** #endif // __AVR_XMEGA__
+ 973:xboot.c       **** 
+ 974:xboot.c       ****         // Shut down UART EN pin
+ 975:xboot.c       ****         #ifdef USE_UART_EN_PIN
+ 976:xboot.c       **** #ifdef __AVR_XMEGA__
+ 977:xboot.c       ****         UART_EN_PIN1_PORT.DIRCLR = (1 << UART_EN_PIN1);
+ 978:xboot.c       ****         UART_EN_PIN1_PORT.OUTCLR = (1 << UART_EN_PIN1);
+ 979:xboot.c       **** #else // __AVR_XMEGA__
+ 980:xboot.c       ****         UART_EN_PIN1_PORT_DDR &= ~(1 << UART_EN_PIN1);
+ 981:xboot.c       ****         UART_EN_PIN1_PORT &= ~(1 << UART_EN_PIN1);
+ 982:xboot.c       **** #endif // __AVR_XMEGA__
+ 983:xboot.c       ****         #endif // USE_UART_EN_PIN
+ 984:xboot.c       ****         #endif // USE_UART
+ 985:xboot.c       **** 
+ 986:xboot.c       **** #ifdef __AVR_XMEGA__
+ 987:xboot.c       ****         #ifdef LOCK_SPM_ON_EXIT
+ 988:xboot.c       ****         // Lock SPM writes
+ 989:xboot.c       ****         SP_LockSPM();
+ 990:xboot.c       ****         #endif // LOCK_SPM_ON_EXIT
+ 991:xboot.c       **** #endif // __AVR_XMEGA__
+ 992:xboot.c       **** 
+ 993:xboot.c       ****         // Disable bootloader entry pin
+ 994:xboot.c       **** #ifdef __AVR_XMEGA__
+ 995:xboot.c       ****         #ifdef USE_ENTER_PIN
+ 996:xboot.c       ****         #if ENTER_PIN_PUEN
+ 997:xboot.c       ****         // Disable bootloader entry pin pullup
+ 998:xboot.c       ****         ENTER_PIN_CTRL = 0;
+ 999:xboot.c       ****         #endif // ENTER_PIN_PUEN
+1000:xboot.c       ****         #endif // USE_ENTER_PIN
+1001:xboot.c       **** #else // __AVR_XMEGA__
+1002:xboot.c       ****         #ifdef USE_ENTER_PIN
+1003:xboot.c       ****         #if ENTER_PIN_PUEN
+1004:xboot.c       ****         // Disable bootloader entry pin pullup
+1005:xboot.c       ****         ENTER_PORT &= ~(1 << ENTER_PIN);
+1006:xboot.c       ****         #endif // ENTER_PIN_PUEN
+1007:xboot.c       ****         #endif // USE_ENTER_PIN
+1008:xboot.c       **** #endif // __AVR_XMEGA__
+1009:xboot.c       **** 
+1010:xboot.c       ****         // LED
+1011:xboot.c       **** #ifdef __AVR_XMEGA__
+1012:xboot.c       ****         #ifdef USE_LED
+1013:xboot.c       ****         // Turn off LED on exit
+1014:xboot.c       ****         LED_PORT.DIRCLR = (1 << LED_PIN);
+1015:xboot.c       ****         LED_PORT.OUTCLR = (1 << LED_PIN);
+1016:xboot.c       ****         #endif // USE_LED
+1017:xboot.c       **** #else // __AVR_XMEGA__
+1018:xboot.c       ****         #ifdef USE_LED
+1019:xboot.c       ****         // Turn off LED on exit
+1020:xboot.c       ****         LED_PORT_DDR &= ~(1 << LED_PIN);
+1021:xboot.c       ****         LED_PORT &= ~(1 << LED_PIN);
+1022:xboot.c       ****         #endif // USE_LED
+1023:xboot.c       **** #endif //__AVR_XMEGA__
+1024:xboot.c       **** 
+1025:xboot.c       ****         // Attach LED
+1026:xboot.c       **** #ifdef __AVR_XMEGA__
+1027:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+1028:xboot.c       ****         #ifdef USE_ATTACH_LED
+1029:xboot.c       ****         // Disable ATTACH_LED
+1030:xboot.c       ****         ATTACH_LED_PORT.DIRCLR = (1 << ATTACH_LED_PIN);
+1031:xboot.c       ****         ATTACH_LED_PORT.OUTCLR = (1 << ATTACH_LED_PIN);
+1032:xboot.c       ****         #endif // USE_ATTACH_LED
+1033:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+1034:xboot.c       **** #else // __AVR_XMEGA__
+1035:xboot.c       ****         #ifdef USE_I2C_ADDRESS_NEGOTIATION
+1036:xboot.c       ****         #ifdef USE_ATTACH_LED
+1037:xboot.c       ****         // Disable ATTACH_LED
+1038:xboot.c       ****         ATTACH_LED_PORT_DDR &= ~(1 << ATTACH_LED_PIN);
+1039:xboot.c       ****         ATTACH_LED_PORT &= ~(1 << ATTACH_LED_PIN);
+1040:xboot.c       ****         #endif // USE_ATTACH_LED
+1041:xboot.c       ****         #endif // USE_I2C_ADDRESS_NEGOTIATION
+1042:xboot.c       **** #endif // __AVR_XMEGA__
+1043:xboot.c       **** 
+1044:xboot.c       **** #ifdef __AVR_XMEGA__
+1045:xboot.c       ****         #ifdef NEED_INTERRUPTS
+1046:xboot.c       ****         // remap interrupts back to application section
+1047:xboot.c       ****         CCP = CCP_IOREG_gc;
+1048:xboot.c       ****         PMIC.CTRL = 0;
+1049:xboot.c       ****         #endif // NEED_INTERRUPTS
+1050:xboot.c       **** #endif // __AVR_XMEGA__
+1051:xboot.c       **** 
+1052:xboot.c       ****         #ifdef USE_WATCHDOG
+1053:xboot.c       ****         WDT_Disable();
+1054:xboot.c       ****         #endif // USE_WATCHDOG
+1055:xboot.c       **** 
+1056:xboot.c       ****         // --------------------------------------------------
+1057:xboot.c       ****         // End bootloader exit section
+1058:xboot.c       **** 
+1059:xboot.c       ****         // Jump into main code
+1060:xboot.c       ****         asm("jmp 0");
+1061:xboot.c       **** 
+1062:xboot.c       ****         #ifdef __builtin_unreachable
+1063:xboot.c       ****         // Size optimization as the asm jmp will not return
+1064:xboot.c       ****         // However, it seems it is not available on older versions of gcc
+1065:xboot.c       ****         __builtin_unreachable();
+1066:xboot.c       ****         #endif
+1067:xboot.c       **** }
+1068:xboot.c       **** 
+1069:xboot.c       **** #ifdef USE_I2C_ADDRESS_NEGOTIATION
+1070:xboot.c       **** 
+1071:xboot.c       **** #ifdef __AVR_XMEGA__
+1072:xboot.c       **** #define ow_assert()             I2C_AUTONEG_PORT.DIRSET = (1 << I2C_AUTONEG_PIN)
+1073:xboot.c       **** #define ow_deassert()           I2C_AUTONEG_PORT.DIRCLR = (1 << I2C_AUTONEG_PIN)
+1074:xboot.c       **** #define ow_read()               (I2C_AUTONEG_PORT.IN & (1 << I2C_AUTONEG_PIN))
+1075:xboot.c       **** #define ow_is_asserted()        (!ow_read())
+1076:xboot.c       **** #else
+1077:xboot.c       **** #define ow_assert()             I2C_AUTONEG_PORT_DDR |= (1 << 0)
+1078:xboot.c       **** #define ow_deassert()           I2C_AUTONEG_PORT_DDR &= ~(1 << 0)
+1079:xboot.c       **** #define ow_read()               (I2C_AUTONEG_PORT_PIN & (1 << 0))
+1080:xboot.c       **** #define ow_is_asserted()        (!ow_read())
+1081:xboot.c       **** #endif // __AVR_XMEGA__
+1082:xboot.c       **** 
+1083:xboot.c       **** unsigned char __attribute__ ((noinline)) ow_slave_read_bit(void)
+1084:xboot.c       **** {
+1085:xboot.c       ****         unsigned char ret;
+1086:xboot.c       ****         ow_slave_wait_bit();
+1087:xboot.c       ****         _delay_us(12);
+1088:xboot.c       ****         ret = ow_read();
+1089:xboot.c       ****         _delay_us(8);
+1090:xboot.c       ****         return ret;
+1091:xboot.c       **** }
+1092:xboot.c       **** 
+1093:xboot.c       **** void __attribute__ ((noinline)) ow_slave_write_bit(unsigned char b)
+1094:xboot.c       **** {
+1095:xboot.c       ****         ow_slave_wait_bit();
+1096:xboot.c       ****         if (!b)
+1097:xboot.c       ****         {
+1098:xboot.c       ****                 ow_assert();
+1099:xboot.c       ****         }
+1100:xboot.c       ****         _delay_us(20);
+1101:xboot.c       ****         ow_deassert();
+1102:xboot.c       **** }
+1103:xboot.c       **** 
+1104:xboot.c       **** void ow_slave_wait_bit(void)
+1105:xboot.c       **** {
+1106:xboot.c       ****         while (ow_read()) { };
+1107:xboot.c       **** }
+1108:xboot.c       **** 
+1109:xboot.c       **** #endif // USE_I2C_ADDRESS_NEGOTIATION
+1110:xboot.c       **** 
+1111:xboot.c       **** #ifdef USE_INTERRUPTS
+1112:xboot.c       **** unsigned char __attribute__ ((noinline)) get_char(void)
+1113:xboot.c       **** {
+1114:xboot.c       ****         unsigned char ret;
+1115:xboot.c       **** 
+1116:xboot.c       ****         while (rx_char_cnt == 0) { };
+1117:xboot.c       **** 
+1118:xboot.c       ****         cli();
+1119:xboot.c       **** 
+1120:xboot.c       ****         ret = rx_buff0;
+1121:xboot.c       ****         rx_buff0 = rx_buff1;
+1122:xboot.c       ****         rx_char_cnt--;
+1123:xboot.c       **** 
+1124:xboot.c       ****         sei();
+1125:xboot.c       **** 
+1126:xboot.c       ****         return ret;
+1127:xboot.c       **** }
+1128:xboot.c       **** 
+1129:xboot.c       **** void __attribute__ ((noinline)) send_char(unsigned char c)
+1130:xboot.c       **** {
+1131:xboot.c       ****         while (1)
+1132:xboot.c       ****         {
+1133:xboot.c       ****                 cli();
+1134:xboot.c       **** 
+1135:xboot.c       ****                 if (tx_char_cnt == 0)
+1136:xboot.c       ****                 {
+1137:xboot.c       ****                         tx_buff0 = c;
+1138:xboot.c       ****                         tx_char_cnt = 1;
+1139:xboot.c       **** 
+1140:xboot.c       ****                         #ifdef USE_UART
+1141:xboot.c       ****                         if (comm_mode == MODE_UART)
+1142:xboot.c       ****                         {
+1143:xboot.c       ****                                 uart_send_char(c);
+1144:xboot.c       ****                         }
+1145:xboot.c       ****                         #endif // USE_UART
+1146:xboot.c       **** 
+1147:xboot.c       ****                         #ifdef USE_I2C
+1148:xboot.c       ****                         #error I2C interrupts are not yet implemented
+1149:xboot.c       ****                         #endif
+1150:xboot.c       **** 
+1151:xboot.c       ****                         #ifdef USE_FIFO
+1152:xboot.c       ****                         if (comm_mode == MODE_FIFO)
+1153:xboot.c       ****                         {
+1154:xboot.c       ****                                 fifo_send_char(c);
+1155:xboot.c       ****                         }
+1156:xboot.c       ****                         #endif // USE_FIFO
+1157:xboot.c       **** 
+1158:xboot.c       ****                         sei();
+1159:xboot.c       ****                         return;
+1160:xboot.c       ****                 }
+1161:xboot.c       **** 
+1162:xboot.c       ****                 sei();
+1163:xboot.c       ****         }
+1164:xboot.c       **** }
+1165:xboot.c       **** 
+1166:xboot.c       **** #else
+1167:xboot.c       **** 
+1168:xboot.c       **** unsigned char __attribute__ ((noinline)) get_char(void)
+1169:xboot.c       **** {
+ 496               	.LM3:
+ 497               	.LFBB2:
+ 498               	/* prologue: function */
+ 499               	/* frame size = 0 */
+ 500               	/* stack size = 0 */
+ 501               	.L__stack_usage = 0
+1170:xboot.c       ****         unsigned char ret;
+1171:xboot.c       **** 
+1172:xboot.c       ****         while (1)
+1173:xboot.c       ****         {
+1174:xboot.c       ****                 #ifdef USE_UART
+1175:xboot.c       ****                 // Get next character
+1176:xboot.c       ****                 if (comm_mode == MODE_UNDEF || comm_mode == MODE_UART)
+ 503               	.LM4:
+ 504 0000 8091 0000 		lds r24,comm_mode
+ 505               	.L4:
+ 506 0004 8230      		cpi r24,lo8(2)
+ 507 0006 00F4      		brsh .L3
+1177:xboot.c       ****                 {
+1178:xboot.c       ****                         if (uart_char_received())
+ 509               	.LM5:
+ 510 0008 9091 A108 		lds r25,2209
+ 511 000c 97FF      		sbrs r25,7
+ 512 000e 00C0      		rjmp .L4
+1179:xboot.c       ****                         {
+1180:xboot.c       ****                                 comm_mode = MODE_UART;
+ 514               	.LM6:
+ 515 0010 81E0      		ldi r24,lo8(1)
+ 516 0012 8093 0000 		sts comm_mode,r24
+1181:xboot.c       ****                                 return uart_cur_char();
+ 518               	.LM7:
+ 519 0016 8091 A008 		lds r24,2208
+ 520               	/* epilogue start */
+1182:xboot.c       ****                         }
+1183:xboot.c       ****                 }
+1184:xboot.c       ****                 #endif // USE_UART
+1185:xboot.c       **** 
+1186:xboot.c       ****                 #ifdef USE_I2C
+1187:xboot.c       ****                 // Get next character
+1188:xboot.c       ****                 if (comm_mode == MODE_UNDEF || comm_mode == MODE_I2C)
+1189:xboot.c       ****                 {
+1190:xboot.c       **** #ifdef __AVR_XMEGA__
+1191:xboot.c       ****                         if (i2c_address_match())
+1192:xboot.c       ****                         {
+1193:xboot.c       ****                                 // Address match, send ACK
+1194:xboot.c       ****                                 i2c_send_ack();
+1195:xboot.c       ****                                 comm_mode = MODE_I2C;
+1196:xboot.c       ****                                 first_byte = 1;
+1197:xboot.c       ****                         }
+1198:xboot.c       ****                         if (i2c_char_received())
+1199:xboot.c       ****                         {
+1200:xboot.c       ****                                 // Data has arrived
+1201:xboot.c       ****                                 ret = i2c_cur_char();
+1202:xboot.c       ****                                 i2c_send_ack();
+1203:xboot.c       ****                                 return ret;
+1204:xboot.c       ****                         }
+1205:xboot.c       ****                         if (i2c_ready_data())
+1206:xboot.c       ****                         {
+1207:xboot.c       ****                                 if (!first_byte && i2c_got_ack())
+1208:xboot.c       ****                                 {
+1209:xboot.c       ****                                         i2c_end_transmission(); // end transaction
+1210:xboot.c       ****                                 }
+1211:xboot.c       ****                                 else
+1212:xboot.c       ****                                 {
+1213:xboot.c       ****                                         first_byte = 0;
+1214:xboot.c       ****                                         // Wants data, but there is no data to send...
+1215:xboot.c       ****                                         // also include NAK
+1216:xboot.c       ****                                         i2c_send_char(REPLY_ERROR);
+1217:xboot.c       ****                                         i2c_send_nak();
+1218:xboot.c       ****                                 }
+1219:xboot.c       ****                         }
+1220:xboot.c       **** #else // __AVR_XMEGA__
+1221:xboot.c       ****                         #error Not implemented!
+1222:xboot.c       **** #endif // __AVR_XMEGA__
+1223:xboot.c       ****                 }
+1224:xboot.c       ****                 #endif // USE_I2C
+1225:xboot.c       **** 
+1226:xboot.c       ****                 #ifdef USE_FIFO
+1227:xboot.c       ****                 // Get next character
+1228:xboot.c       ****                 if (comm_mode == MODE_UNDEF || comm_mode == MODE_FIFO)
+1229:xboot.c       ****                 {
+1230:xboot.c       ****                         if (fifo_char_received())
+1231:xboot.c       ****                         {
+1232:xboot.c       ****                                 comm_mode = MODE_FIFO;
+1233:xboot.c       ****                                 return fifo_cur_char();
+1234:xboot.c       ****                         }
+1235:xboot.c       ****                 }
+1236:xboot.c       ****                 #endif // USE_FIFO
+1237:xboot.c       **** 
+1238:xboot.c       ****         }
+1239:xboot.c       **** 
+1240:xboot.c       ****         return ret;
+1241:xboot.c       **** }
+ 522               	.LM8:
+ 523 001a 0895      		ret
+ 524               	.L3:
+ 525               	.L6:
+ 526 001c 00C0      		rjmp .L6
+ 528               	.Lscope2:
+ 529               		.section	.text.send_char,"ax",@progbits
+ 532               	.global	send_char
+ 534               	send_char:
+1242:xboot.c       **** 
+1243:xboot.c       **** void __attribute__ ((noinline)) send_char(unsigned char c)
+1244:xboot.c       **** {
+ 536               	.LM9:
+ 537               	.LFBB3:
+ 538               	/* prologue: function */
+ 539               	/* frame size = 0 */
+ 540               	/* stack size = 0 */
+ 541               	.L__stack_usage = 0
+1245:xboot.c       ****         #ifdef USE_I2C
+1246:xboot.c       ****         unsigned char tmp;
+1247:xboot.c       ****         #endif
+1248:xboot.c       **** 
+1249:xboot.c       ****         #ifdef USE_UART
+1250:xboot.c       ****         // Send character
+1251:xboot.c       ****         if (comm_mode == MODE_UNDEF || comm_mode == MODE_UART)
+ 543               	.LM10:
+ 544 0000 9091 0000 		lds r25,comm_mode
+ 545 0004 9230      		cpi r25,lo8(2)
+ 546 0006 00F4      		brsh .L7
+1252:xboot.c       ****         {
+1253:xboot.c       **** #ifdef __AVR_XMEGA__
+1254:xboot.c       ****                 #ifdef USE_UART_EN_PIN
+1255:xboot.c       ****                 #if UART_EN_INV
+1256:xboot.c       ****                 UART_EN_PIN1_PORT.OUTCLR = (1 << UART_EN_PIN1);
+1257:xboot.c       ****                 #else // UART_PIN_INV
+1258:xboot.c       ****                 UART_EN_PIN1_PORT.OUTSET = (1 << UART_EN_PIN1);
+1259:xboot.c       ****                 #endif // UART_PIN_INV
+1260:xboot.c       ****                 #endif // USE_UART_EN_PIN
+1261:xboot.c       **** #else // __AVR_XMEGA__
+1262:xboot.c       ****                 #ifdef USE_UART_EN_PIN
+1263:xboot.c       ****                 #if UART_EN_INV
+1264:xboot.c       ****                 UART_EN_PIN1_PORT &= ~(1 << UART_EN_PIN1);
+1265:xboot.c       ****                 #else // UART_PIN_INV
+1266:xboot.c       ****                 UART_EN_PIN1_PORT |= (1 << UART_EN_PIN1);
+1267:xboot.c       ****                 #endif // UART_PIN_INV
+1268:xboot.c       ****                 #endif // USE_UART_EN_PIN
+1269:xboot.c       **** #endif // __AVR_XMEGA__
+1270:xboot.c       ****                 uart_send_char_blocking(c);
+ 548               	.LM11:
+ 549 0008 8093 A008 		sts 2208,r24
+ 550               	.L9:
+ 552               	.LM12:
+ 553 000c 8091 A108 		lds r24,2209
+ 554 0010 86FF      		sbrs r24,6
+ 555 0012 00C0      		rjmp .L9
+ 557               	.LM13:
+ 558 0014 8091 A108 		lds r24,2209
+ 559 0018 8064      		ori r24,lo8(64)
+ 560 001a E0EA      		ldi r30,lo8(2208)
+ 561 001c F8E0      		ldi r31,hi8(2208)
+ 562 001e 8183      		std Z+1,r24
+ 563               	.L7:
+ 564 0020 0895      		ret
+ 566               	.Lscope3:
+ 567               		.section	.text.get_2bytes,"ax",@progbits
+ 569               	.global	get_2bytes
+ 571               	get_2bytes:
+1271:xboot.c       **** #ifdef __AVR_XMEGA__
+1272:xboot.c       ****                 #ifdef USE_UART_EN_PIN
+1273:xboot.c       ****                 #if UART_EN_INV
+1274:xboot.c       ****                 UART_EN_PIN1_PORT.OUTSET = (1 << UART_EN_PIN1);
+1275:xboot.c       ****                 #else // UART_PIN_INV
+1276:xboot.c       ****                 UART_EN_PIN1_PORT.OUTCLR = (1 << UART_EN_PIN1);
+1277:xboot.c       ****                 #endif // UART_PIN_INV
+1278:xboot.c       ****                 #endif // USE_UART_EN_PIN
+1279:xboot.c       **** #else // __AVR_XMEGA__
+1280:xboot.c       ****                 #ifdef USE_UART_EN_PIN
+1281:xboot.c       ****                 #if UART_EN_INV
+1282:xboot.c       ****                 UART_EN_PIN1_PORT |= (1 << UART_EN_PIN1);
+1283:xboot.c       ****                 #else // UART_PIN_INV
+1284:xboot.c       ****                 UART_EN_PIN1_PORT &= ~(1 << UART_EN_PIN1);
+1285:xboot.c       ****                 #endif // UART_PIN_INV
+1286:xboot.c       ****                 #endif // USE_UART_EN_PIN
+1287:xboot.c       **** #endif // __AVR_XMEGA__
+1288:xboot.c       **** 
+1289:xboot.c       ****         }
+1290:xboot.c       ****         #endif // USE_UART
+1291:xboot.c       **** 
+1292:xboot.c       ****         #ifdef USE_I2C
+1293:xboot.c       ****         // Send character
+1294:xboot.c       ****         if (comm_mode == MODE_UNDEF || comm_mode == MODE_I2C)
+1295:xboot.c       ****         {
+1296:xboot.c       ****                 while (1)
+1297:xboot.c       ****                 {
+1298:xboot.c       **** #ifdef __AVR_XMEGA__
+1299:xboot.c       ****                         if (i2c_address_match())
+1300:xboot.c       ****                         {
+1301:xboot.c       ****                                 // Address match, send ACK
+1302:xboot.c       ****                                 i2c_send_ack();
+1303:xboot.c       ****                                 first_byte = 1;
+1304:xboot.c       ****                         }
+1305:xboot.c       ****                         if (i2c_char_received())
+1306:xboot.c       ****                         {
+1307:xboot.c       ****                                 // Data has arrived, ignore it
+1308:xboot.c       ****                                 tmp = i2c_cur_char();
+1309:xboot.c       ****                                 i2c_send_ack();
+1310:xboot.c       ****                         }
+1311:xboot.c       ****                         if (i2c_ready_data())
+1312:xboot.c       ****                         {
+1313:xboot.c       ****                                 if (!first_byte && i2c_got_ack())
+1314:xboot.c       ****                                 {
+1315:xboot.c       ****                                         i2c_end_transmission(); // end transaction
+1316:xboot.c       ****                                 }
+1317:xboot.c       ****                                 else
+1318:xboot.c       ****                                 {
+1319:xboot.c       ****                                         first_byte = 0;
+1320:xboot.c       ****                                         // Send data along
+1321:xboot.c       ****                                         i2c_send_char(c);
+1322:xboot.c       ****                                         i2c_send_ack();
+1323:xboot.c       ****                                 }
+1324:xboot.c       ****                                 return;
+1325:xboot.c       ****                         }
+1326:xboot.c       **** #else // __AVR_XMEGA__
+1327:xboot.c       ****                         #error Not implemented!
+1328:xboot.c       **** #endif // __AVR_XMEGA__
+1329:xboot.c       ****                 }
+1330:xboot.c       ****         }
+1331:xboot.c       ****         #endif // USE_I2C
+1332:xboot.c       **** 
+1333:xboot.c       ****         #ifdef USE_FIFO
+1334:xboot.c       ****         // Send character
+1335:xboot.c       ****         if (comm_mode == MODE_UNDEF || comm_mode == MODE_FIFO)
+1336:xboot.c       ****         {
+1337:xboot.c       ****                 fifo_send_char_blocking(c);
+1338:xboot.c       **** 
+1339:xboot.c       ****         }
+1340:xboot.c       ****         #endif // USE_FIFO
+1341:xboot.c       **** 
+1342:xboot.c       **** }
+1343:xboot.c       **** 
+1344:xboot.c       **** #endif // USE_INTERRUPTS
+1345:xboot.c       **** 
+1346:xboot.c       **** unsigned int __attribute__ ((noinline)) get_2bytes()
+1347:xboot.c       **** {
+ 573               	.LM14:
+ 574               	.LFBB4:
+ 575 0000 CF93      		push r28
+ 576               	/* prologue: function */
+ 577               	/* frame size = 0 */
+ 578               	/* stack size = 1 */
+ 579               	.L__stack_usage = 1
+1348:xboot.c       ****         return ((int)get_char() << 8) | get_char();
+ 581               	.LM15:
+ 582 0002 0E94 0000 		call get_char
+ 583 0006 C82F      		mov r28,r24
+ 584 0008 0E94 0000 		call get_char
+ 585 000c 3C2F      		mov r19,r28
+ 586 000e 20E0      		ldi r18,lo8(0)
+ 587 0010 90E0      		ldi r25,lo8(0)
+ 588 0012 822B      		or r24,r18
+ 589 0014 932B      		or r25,r19
+ 590               	/* epilogue start */
+1349:xboot.c       **** #if 0
+1350:xboot.c       ****         unsigned int result;
+1351:xboot.c       ****         asm volatile (
+1352:xboot.c       ****                 "call get_char"    "\n\t"
+1353:xboot.c       ****                 "mov  %B0,r24"     "\n\t"
+1354:xboot.c       ****                 "call get_char"    "\n\t"
+1355:xboot.c       ****                 "mov  %A0,r24"     "\n\t"
+1356:xboot.c       ****                 : "=r" (result)
+1357:xboot.c       ****                 :
+1358:xboot.c       ****         );
+1359:xboot.c       ****         return result;
+1360:xboot.c       **** #endif
+1361:xboot.c       **** }
+ 592               	.LM16:
+ 593 0016 CF91      		pop r28
+ 594 0018 0895      		ret
+ 596               	.Lscope4:
+ 597               		.section	.text.clear_buffer,"ax",@progbits
+ 599               	.global	clear_buffer
+ 601               	clear_buffer:
+1362:xboot.c       **** 
+1363:xboot.c       **** void clear_buffer(void)
+1364:xboot.c       **** {
+ 603               	.LM17:
+ 604               	.LFBB5:
+ 605               	/* prologue: function */
+ 606               	/* frame size = 0 */
+ 607               	/* stack size = 0 */
+ 608               	.L__stack_usage = 0
+1365:xboot.c       ****         unsigned char *ptr = buffer;
+ 610               	.LM18:
+ 611 0000 E0E0      		ldi r30,lo8(buffer)
+ 612 0002 F0E0      		ldi r31,hi8(buffer)
+ 613               	.LBB2:
+1366:xboot.c       ****         for (long i = 0; i < SPM_PAGESIZE; i++)
+1367:xboot.c       ****         {
+1368:xboot.c       ****                 *(ptr++) = 0xff;
+ 615               	.LM19:
+ 616 0004 8FEF      		ldi r24,lo8(-1)
+ 617               	.L13:
+ 619               	.LM20:
+ 620 0006 8193      		st Z+,r24
+1366:xboot.c       ****         for (long i = 0; i < SPM_PAGESIZE; i++)
+ 622               	.LM21:
+ 623 0008 90E0      		ldi r25,hi8(buffer+256)
+ 624 000a E030      		cpi r30,lo8(buffer+256)
+ 625 000c F907      		cpc r31,r25
+ 626 000e 01F4      		brne .L13
+ 627               	/* epilogue start */
+ 628               	.LBE2:
+1369:xboot.c       ****         }
+1370:xboot.c       **** }
+ 630               	.LM22:
+ 631 0010 0895      		ret
+ 636               	.Lscope5:
+ 637               		.section	.text.BlockLoad,"ax",@progbits
+ 642               	.global	BlockLoad
+ 644               	BlockLoad:
+1371:xboot.c       **** 
+1372:xboot.c       **** unsigned char BlockLoad(unsigned int size, unsigned char mem, ADDR_T *address)
+1373:xboot.c       **** {
+ 646               	.LM23:
+ 647               	.LFBB6:
+ 648 0000 AF92      		push r10
+ 649 0002 BF92      		push r11
+ 650 0004 CF92      		push r12
+ 651 0006 DF92      		push r13
+ 652 0008 EF92      		push r14
+ 653 000a FF92      		push r15
+ 654 000c 1F93      		push r17
+ 655 000e CF93      		push r28
+ 656 0010 DF93      		push r29
+ 657               	/* prologue: function */
+ 658               	/* frame size = 0 */
+ 659               	/* stack size = 9 */
+ 660               	.L__stack_usage = 9
+ 661 0012 7C01      		movw r14,r24
+ 662 0014 162F      		mov r17,r22
+ 663 0016 5A01      		movw r10,r20
+1374:xboot.c       ****         ADDR_T tempaddress;
+1375:xboot.c       **** 
+1376:xboot.c       ****         #ifdef USE_WATCHDOG
+1377:xboot.c       ****         WDT_Reset();
+1378:xboot.c       ****         #endif // USE_WATCHDOG
+1379:xboot.c       **** 
+1380:xboot.c       ****         // fill up buffer
+1381:xboot.c       ****         for (int i = 0; i < SPM_PAGESIZE; i++)
+1382:xboot.c       ****         {
+1383:xboot.c       ****                 char c = 0xff;
+1384:xboot.c       **** 
+1385:xboot.c       ****                 if (i < size)
+1386:xboot.c       ****                         c = get_char();
+1387:xboot.c       **** 
+1388:xboot.c       ****                 buffer[i] = c;
+1389:xboot.c       ****         }
+1390:xboot.c       **** 
+1391:xboot.c       ****         // EEPROM memory type.
+1392:xboot.c       ****         if(mem == MEM_EEPROM)
+1393:xboot.c       ****         {
+1394:xboot.c       ****                 EEPROM_write_block(*address, buffer, size);
+1395:xboot.c       ****                 (*address) += size;
+1396:xboot.c       **** 
+1397:xboot.c       ****                 return REPLY_ACK; // Report programming OK
+1398:xboot.c       ****         }
+1399:xboot.c       **** 
+1400:xboot.c       ****         // Flash memory type
+1401:xboot.c       **** #ifdef __AVR_XMEGA__
+1402:xboot.c       ****         else if (mem == MEM_FLASH || mem == MEM_USERSIG)
+1403:xboot.c       **** #else // __AVR_XMEGA__
+1404:xboot.c       ****         else if (mem == MEM_FLASH)
+1405:xboot.c       **** #endif // __AVR_XMEGA__
+1406:xboot.c       ****         {
+1407:xboot.c       ****                 // NOTE: For flash programming, 'address' is given in words.
+1408:xboot.c       ****                 tempaddress = (*address) << 1;  // Store address in page.
+1409:xboot.c       **** 
+1410:xboot.c       ****                 (*address) += size >> 1;
+1411:xboot.c       **** 
+1412:xboot.c       **** #ifdef __AVR_XMEGA__
+1413:xboot.c       **** 
+1414:xboot.c       ****                 if (mem == MEM_FLASH)
+1415:xboot.c       ****                 {
+1416:xboot.c       ****                         #ifdef ENABLE_FLASH_ERASE_WRITE
+1417:xboot.c       ****                         Flash_ProgramPage(tempaddress, buffer, 1);
+1418:xboot.c       ****                         #else
+1419:xboot.c       ****                         Flash_ProgramPage(tempaddress, buffer, 0);
+1420:xboot.c       ****                         #endif
+1421:xboot.c       ****                 }
+1422:xboot.c       ****                 else if (mem == MEM_USERSIG)
+1423:xboot.c       ****                 {
+1424:xboot.c       ****                         Flash_LoadFlashPage(buffer);
+1425:xboot.c       ****                         Flash_EraseUserSignatureRow();
+1426:xboot.c       ****                         Flash_WaitForSPM();
+1427:xboot.c       ****                         Flash_WriteUserSignatureRow();
+1428:xboot.c       ****                         Flash_WaitForSPM();
+1429:xboot.c       ****                 }
+1430:xboot.c       **** 
+1431:xboot.c       **** #else // __AVR_XMEGA__
+1432:xboot.c       ****                 #ifdef ENABLE_FLASH_ERASE_WRITE
+1433:xboot.c       ****                 Flash_ProgramPage(tempaddress, buffer, 1);
+1434:xboot.c       ****                 #else
+1435:xboot.c       ****                 Flash_ProgramPage(tempaddress, buffer, 0);
+1436:xboot.c       ****                 #endif
+1437:xboot.c       **** #endif // __AVR_XMEGA__
+1438:xboot.c       **** 
+1439:xboot.c       ****                 return REPLY_ACK; // Report programming OK
+ 665               	.LM24:
+ 666 0018 60E0      		ldi r22,lo8(buffer)
+ 667 001a C62E      		mov r12,r22
+ 668 001c 60E0      		ldi r22,hi8(buffer)
+ 669 001e D62E      		mov r13,r22
+1381:xboot.c       ****         for (int i = 0; i < SPM_PAGESIZE; i++)
+ 671               	.LM25:
+ 672 0020 C0E0      		ldi r28,lo8(0)
+ 673 0022 D0E0      		ldi r29,hi8(0)
+ 674               	.L17:
+ 675               	.LBB3:
+ 676               	.LBB4:
+1385:xboot.c       ****                 if (i < size)
+ 678               	.LM26:
+ 679 0024 CE15      		cp r28,r14
+ 680 0026 DF05      		cpc r29,r15
+ 681 0028 00F4      		brsh .L22
+1386:xboot.c       ****                         c = get_char();
+ 683               	.LM27:
+ 684 002a 0E94 0000 		call get_char
+ 685 002e 00C0      		rjmp .L16
+ 686               	.L22:
+1383:xboot.c       ****                 char c = 0xff;
+ 688               	.LM28:
+ 689 0030 8FEF      		ldi r24,lo8(-1)
+ 690               	.L16:
+1388:xboot.c       ****                 buffer[i] = c;
+ 692               	.LM29:
+ 693 0032 F601      		movw r30,r12
+ 694 0034 8193      		st Z+,r24
+ 695 0036 6F01      		movw r12,r30
+ 696               	.LBE4:
+1381:xboot.c       ****         for (int i = 0; i < SPM_PAGESIZE; i++)
+ 698               	.LM30:
+ 699 0038 2196      		adiw r28,1
+ 700 003a F1E0      		ldi r31,hi8(256)
+ 701 003c C030      		cpi r28,lo8(256)
+ 702 003e DF07      		cpc r29,r31
+ 703 0040 01F4      		brne .L17
+ 704               	.LBE3:
+1392:xboot.c       ****         if(mem == MEM_EEPROM)
+ 706               	.LM31:
+ 707 0042 1534      		cpi r17,lo8(69)
+ 708 0044 01F4      		brne .L18
+1394:xboot.c       ****                 EEPROM_write_block(*address, buffer, size);
+ 710               	.LM32:
+ 711 0046 F501      		movw r30,r10
+ 712 0048 8081      		ld r24,Z
+ 713 004a 9181      		ldd r25,Z+1
+ 714 004c 60E0      		ldi r22,lo8(buffer)
+ 715 004e 70E0      		ldi r23,hi8(buffer)
+ 716 0050 A701      		movw r20,r14
+ 717 0052 0E94 0000 		call EEPROM_write_block
+1395:xboot.c       ****                 (*address) += size;
+ 719               	.LM33:
+ 720 0056 A701      		movw r20,r14
+ 721 0058 60E0      		ldi r22,lo8(0)
+ 722 005a 70E0      		ldi r23,hi8(0)
+ 723 005c F501      		movw r30,r10
+ 724 005e 8081      		ld r24,Z
+ 725 0060 9181      		ldd r25,Z+1
+ 726 0062 A281      		ldd r26,Z+2
+ 727 0064 B381      		ldd r27,Z+3
+ 728 0066 840F      		add r24,r20
+ 729 0068 951F      		adc r25,r21
+ 730 006a A61F      		adc r26,r22
+ 731 006c B71F      		adc r27,r23
+ 732 006e 8083      		st Z,r24
+ 733 0070 9183      		std Z+1,r25
+ 734 0072 A283      		std Z+2,r26
+ 735 0074 B383      		std Z+3,r27
+ 736 0076 00C0      		rjmp .L24
+ 737               	.L18:
+1402:xboot.c       ****         else if (mem == MEM_FLASH || mem == MEM_USERSIG)
+ 739               	.LM34:
+ 740 0078 1634      		cpi r17,lo8(70)
+ 741 007a 01F0      		breq .L20
+1402:xboot.c       ****         else if (mem == MEM_FLASH || mem == MEM_USERSIG)
+ 743               	.LM35:
+ 744 007c 1535      		cpi r17,lo8(85)
+ 745 007e 01F4      		brne .L23
+ 746               	.L20:
+1408:xboot.c       ****                 tempaddress = (*address) << 1;  // Store address in page.
+ 748               	.LM36:
+ 749 0080 F501      		movw r30,r10
+ 750 0082 8081      		ld r24,Z
+ 751 0084 9181      		ldd r25,Z+1
+ 752 0086 A281      		ldd r26,Z+2
+ 753 0088 B381      		ldd r27,Z+3
+1410:xboot.c       ****                 (*address) += size >> 1;
+ 755               	.LM37:
+ 756 008a F694      		lsr r15
+ 757 008c E794      		ror r14
+ 758 008e A701      		movw r20,r14
+ 759 0090 60E0      		ldi r22,lo8(0)
+ 760 0092 70E0      		ldi r23,hi8(0)
+ 761 0094 480F      		add r20,r24
+ 762 0096 591F      		adc r21,r25
+ 763 0098 6A1F      		adc r22,r26
+ 764 009a 7B1F      		adc r23,r27
+ 765 009c 4083      		st Z,r20
+ 766 009e 5183      		std Z+1,r21
+ 767 00a0 6283      		std Z+2,r22
+ 768 00a2 7383      		std Z+3,r23
+1414:xboot.c       ****                 if (mem == MEM_FLASH)
+ 770               	.LM38:
+ 771 00a4 1634      		cpi r17,lo8(70)
+ 772 00a6 01F4      		brne .L21
+1408:xboot.c       ****                 tempaddress = (*address) << 1;  // Store address in page.
+ 774               	.LM39:
+ 775 00a8 BC01      		movw r22,r24
+ 776 00aa CD01      		movw r24,r26
+ 777 00ac 660F      		lsl r22
+ 778 00ae 771F      		rol r23
+ 779 00b0 881F      		rol r24
+ 780 00b2 991F      		rol r25
+1417:xboot.c       ****                         Flash_ProgramPage(tempaddress, buffer, 1);
+ 782               	.LM40:
+ 783 00b4 40E0      		ldi r20,lo8(buffer)
+ 784 00b6 50E0      		ldi r21,hi8(buffer)
+ 785 00b8 21E0      		ldi r18,lo8(1)
+ 786 00ba 0E94 0000 		call Flash_ProgramPage
+ 787 00be 00C0      		rjmp .L24
+ 788               	.L21:
+1422:xboot.c       ****                 else if (mem == MEM_USERSIG)
+ 790               	.LM41:
+ 791 00c0 1535      		cpi r17,lo8(85)
+ 792 00c2 01F4      		brne .L24
+1424:xboot.c       ****                         Flash_LoadFlashPage(buffer);
+ 794               	.LM42:
+ 795 00c4 80E0      		ldi r24,lo8(buffer)
+ 796 00c6 90E0      		ldi r25,hi8(buffer)
+ 797 00c8 0E94 0000 		call SP_LoadFlashPage
+1425:xboot.c       ****                         Flash_EraseUserSignatureRow();
+ 799               	.LM43:
+ 800 00cc 0E94 0000 		call SP_EraseUserSignatureRow
+1426:xboot.c       ****                         Flash_WaitForSPM();
+ 802               	.LM44:
+ 803 00d0 0E94 0000 		call SP_WaitForSPM
+1427:xboot.c       ****                         Flash_WriteUserSignatureRow();
+ 805               	.LM45:
+ 806 00d4 0E94 0000 		call SP_WriteUserSignatureRow
+1428:xboot.c       ****                         Flash_WaitForSPM();
+ 808               	.LM46:
+ 809 00d8 0E94 0000 		call SP_WaitForSPM
+ 810 00dc 00C0      		rjmp .L24
+ 811               	.L23:
+1440:xboot.c       ****         }
+1441:xboot.c       **** 
+1442:xboot.c       ****         // Invalid memory type?
+1443:xboot.c       ****         else
+1444:xboot.c       ****         {
+1445:xboot.c       ****                 return REPLY_ERROR;
+ 813               	.LM47:
+ 814 00de 8FE3      		ldi r24,lo8(63)
+ 815 00e0 00C0      		rjmp .L19
+ 816               	.L24:
+1439:xboot.c       ****                 return REPLY_ACK; // Report programming OK
+ 818               	.LM48:
+ 819 00e2 8DE0      		ldi r24,lo8(13)
+ 820               	.L19:
+ 821               	/* epilogue start */
+1446:xboot.c       ****         }
+1447:xboot.c       **** }
+ 823               	.LM49:
+ 824 00e4 DF91      		pop r29
+ 825 00e6 CF91      		pop r28
+ 826 00e8 1F91      		pop r17
+ 827 00ea FF90      		pop r15
+ 828 00ec EF90      		pop r14
+ 829 00ee DF90      		pop r13
+ 830 00f0 CF90      		pop r12
+ 831 00f2 BF90      		pop r11
+ 832 00f4 AF90      		pop r10
+ 833 00f6 0895      		ret
+ 841               	.Lscope6:
+ 842               		.section	.text.BlockRead,"ax",@progbits
+ 847               	.global	BlockRead
+ 849               	BlockRead:
+1448:xboot.c       **** 
+1449:xboot.c       **** 
+1450:xboot.c       **** 
+1451:xboot.c       **** void BlockRead(unsigned int size, unsigned char mem, ADDR_T *address)
+1452:xboot.c       **** {
+ 851               	.LM50:
+ 852               	.LFBB7:
+ 853 0000 AF92      		push r10
+ 854 0002 BF92      		push r11
+ 855 0004 CF92      		push r12
+ 856 0006 DF92      		push r13
+ 857 0008 EF92      		push r14
+ 858 000a FF92      		push r15
+ 859 000c 0F93      		push r16
+ 860 000e 1F93      		push r17
+ 861 0010 CF93      		push r28
+ 862 0012 DF93      		push r29
+ 863               	/* prologue: function */
+ 864               	/* frame size = 0 */
+ 865               	/* stack size = 10 */
+ 866               	.L__stack_usage = 10
+ 867 0014 6C01      		movw r12,r24
+ 868 0016 C62F      		mov r28,r22
+ 869 0018 7A01      		movw r14,r20
+1453:xboot.c       ****         int offset = 0;
+1454:xboot.c       ****         int size2 = size;
+ 871               	.LM51:
+ 872 001a 5C01      		movw r10,r24
+1455:xboot.c       **** 
+1456:xboot.c       ****         // EEPROM memory type.
+1457:xboot.c       **** 
+1458:xboot.c       ****         if (mem == MEM_EEPROM) // Read EEPROM
+ 874               	.LM52:
+ 875 001c 6534      		cpi r22,lo8(69)
+ 876 001e 01F4      		brne .L27
+1459:xboot.c       ****         {
+1460:xboot.c       ****                 EEPROM_read_block(*address, buffer, size);
+ 878               	.LM53:
+ 879 0020 FA01      		movw r30,r20
+ 880 0022 8081      		ld r24,Z
+ 881 0024 9181      		ldd r25,Z+1
+ 882 0026 60E0      		ldi r22,lo8(buffer)
+ 883 0028 70E0      		ldi r23,hi8(buffer)
+ 884 002a A601      		movw r20,r12
+ 885 002c 0E94 0000 		call EEPROM_read_block
+1461:xboot.c       ****                 (*address) += size;
+ 887               	.LM54:
+ 888 0030 A601      		movw r20,r12
+ 889 0032 60E0      		ldi r22,lo8(0)
+ 890 0034 70E0      		ldi r23,hi8(0)
+ 891 0036 F701      		movw r30,r14
+ 892 0038 8081      		ld r24,Z
+ 893 003a 9181      		ldd r25,Z+1
+ 894 003c A281      		ldd r26,Z+2
+ 895 003e B381      		ldd r27,Z+3
+ 896 0040 840F      		add r24,r20
+ 897 0042 951F      		adc r25,r21
+ 898 0044 A61F      		adc r26,r22
+ 899 0046 B71F      		adc r27,r23
+ 900 0048 00C0      		rjmp .L42
+ 901               	.L27:
+1462:xboot.c       ****         }
+1463:xboot.c       **** 
+1464:xboot.c       ****         // Flash memory type.
+1465:xboot.c       **** #ifdef __AVR_XMEGA__
+1466:xboot.c       ****         else if (mem == MEM_FLASH || mem == MEM_USERSIG || mem == MEM_PRODSIG)
+ 903               	.LM55:
+ 904 004a 6634      		cpi r22,lo8(70)
+ 905 004c 01F0      		breq .L29
+ 907               	.LM56:
+ 908 004e 6535      		cpi r22,lo8(85)
+ 909 0050 01F0      		breq .L29
+ 910 0052 6035      		cpi r22,lo8(80)
+ 911 0054 01F0      		breq .+2
+ 912 0056 00C0      		rjmp .L26
+ 913               	.L29:
+1467:xboot.c       **** #else // __AVR_XMEGA__
+1468:xboot.c       ****         else if (mem == MEM_FLASH)
+1469:xboot.c       **** #endif // __AVR_XMEGA__
+1470:xboot.c       ****         {
+1471:xboot.c       ****                 (*address) <<= 1; // Convert address to bytes temporarily.
+ 915               	.LM57:
+ 916 0058 F701      		movw r30,r14
+ 917 005a 8081      		ld r24,Z
+ 918 005c 9181      		ldd r25,Z+1
+ 919 005e A281      		ldd r26,Z+2
+ 920 0060 B381      		ldd r27,Z+3
+ 921 0062 880F      		lsl r24
+ 922 0064 991F      		rol r25
+ 923 0066 AA1F      		rol r26
+ 924 0068 BB1F      		rol r27
+ 925 006a 8083      		st Z,r24
+ 926 006c 9183      		std Z+1,r25
+ 927 006e A283      		std Z+2,r26
+ 928 0070 B383      		std Z+3,r27
+1453:xboot.c       ****         int offset = 0;
+ 930               	.LM58:
+ 931 0072 00E0      		ldi r16,lo8(0)
+ 932 0074 10E0      		ldi r17,hi8(0)
+ 933               	.L34:
+1472:xboot.c       **** 
+1473:xboot.c       ****                 do
+1474:xboot.c       ****                 {
+1475:xboot.c       **** #ifdef __AVR_XMEGA__
+1476:xboot.c       ****                         if (mem == MEM_FLASH)
+ 935               	.LM59:
+ 936 0076 C634      		cpi r28,lo8(70)
+ 937 0078 01F4      		brne .L31
+1477:xboot.c       ****                         {
+1478:xboot.c       ****                                 buffer[offset++] = Flash_ReadByte(*address);
+ 939               	.LM60:
+ 940 007a F701      		movw r30,r14
+ 941 007c 6081      		ld r22,Z
+ 942 007e 7181      		ldd r23,Z+1
+ 943 0080 8281      		ldd r24,Z+2
+ 944 0082 9381      		ldd r25,Z+3
+ 945 0084 0E94 0000 		call SP_ReadByte
+ 946 0088 00C0      		rjmp .L41
+ 947               	.L31:
+1479:xboot.c       ****                         }
+1480:xboot.c       ****                         else if (mem == MEM_USERSIG)
+ 949               	.LM61:
+ 950 008a C535      		cpi r28,lo8(85)
+ 951 008c 01F4      		brne .L33
+1481:xboot.c       ****                         {
+1482:xboot.c       ****                                 buffer[offset++] = SP_ReadUserSignatureByte(*address);
+ 953               	.LM62:
+ 954 008e F701      		movw r30,r14
+ 955 0090 8081      		ld r24,Z
+ 956 0092 9181      		ldd r25,Z+1
+ 957 0094 0E94 0000 		call SP_ReadUserSignatureByte
+ 958 0098 00C0      		rjmp .L41
+ 959               	.L33:
+1483:xboot.c       ****                         }
+1484:xboot.c       ****                         else if (mem == MEM_PRODSIG)
+ 961               	.LM63:
+ 962 009a C035      		cpi r28,lo8(80)
+ 963 009c 01F4      		brne .L32
+1485:xboot.c       ****                         {
+1486:xboot.c       ****                                 buffer[offset++] = SP_ReadCalibrationByte(*address);
+ 965               	.LM64:
+ 966 009e F701      		movw r30,r14
+ 967 00a0 8081      		ld r24,Z
+ 968 00a2 0E94 0000 		call SP_ReadCalibrationByte
+ 969               	.L41:
+ 970 00a6 F801      		movw r30,r16
+ 971 00a8 E050      		subi r30,lo8(-(buffer))
+ 972 00aa F040      		sbci r31,hi8(-(buffer))
+ 973 00ac 8083      		st Z,r24
+ 974 00ae 0F5F      		subi r16,lo8(-(1))
+ 975 00b0 1F4F      		sbci r17,hi8(-(1))
+ 976               	.L32:
+1487:xboot.c       ****                         }
+1488:xboot.c       **** #else // __AVR_XMEGA__
+1489:xboot.c       ****                         buffer[offset++] = Flash_ReadByte(*address);
+1490:xboot.c       **** #endif // __AVR_XMEGA__
+1491:xboot.c       **** 
+1492:xboot.c       ****                         Flash_WaitForSPM();
+ 978               	.LM65:
+ 979 00b2 0E94 0000 		call SP_WaitForSPM
+1493:xboot.c       **** 
+1494:xboot.c       ****                         (*address)++;    // Select next word in memory.
+ 981               	.LM66:
+ 982 00b6 F701      		movw r30,r14
+ 983 00b8 8081      		ld r24,Z
+ 984 00ba 9181      		ldd r25,Z+1
+ 985 00bc A281      		ldd r26,Z+2
+ 986 00be B381      		ldd r27,Z+3
+ 987 00c0 0196      		adiw r24,1
+ 988 00c2 A11D      		adc r26,__zero_reg__
+ 989 00c4 B11D      		adc r27,__zero_reg__
+ 990 00c6 8083      		st Z,r24
+ 991 00c8 9183      		std Z+1,r25
+ 992 00ca A283      		std Z+2,r26
+ 993 00cc B383      		std Z+3,r27
+1495:xboot.c       ****                         size--;          // Subtract two bytes from number of bytes to read
+ 995               	.LM67:
+ 996 00ce 0894      		sec
+ 997 00d0 C108      		sbc r12,__zero_reg__
+ 998 00d2 D108      		sbc r13,__zero_reg__
+1496:xboot.c       ****                 } while (size);         // Repeat until all block has been read
+ 1000               	.LM68:
+ 1001 00d4 C114      		cp r12,__zero_reg__
+ 1002 00d6 D104      		cpc r13,__zero_reg__
+ 1003 00d8 01F4      		brne .L34
+1497:xboot.c       **** 
+1498:xboot.c       ****                 (*address) >>= 1;       // Convert address back to Flash words again.
+ 1005               	.LM69:
+ 1006 00da B695      		lsr r27
+ 1007 00dc A795      		ror r26
+ 1008 00de 9795      		ror r25
+ 1009 00e0 8795      		ror r24
+ 1010               	.L42:
+ 1011 00e2 8083      		st Z,r24
+ 1012 00e4 9183      		std Z+1,r25
+ 1013 00e6 A283      		std Z+2,r26
+ 1014 00e8 B383      		std Z+3,r27
+1499:xboot.c       ****         }
+1500:xboot.c       ****         else
+1501:xboot.c       ****         {
+1502:xboot.c       ****                 // bad memory type
+1503:xboot.c       ****                 return;
+1504:xboot.c       ****         }
+1505:xboot.c       **** 
+1506:xboot.c       ****         // code protection
+1507:xboot.c       ****         if (
+ 1016               	.LM70:
+ 1017 00ea 8091 0000 		lds r24,protected
+ 1018 00ee 8823      		tst r24
+ 1019 00f0 01F0      		breq .L35
+1508:xboot.c       ****         #ifdef ENABLE_CODE_PROTECTION
+1509:xboot.c       ****                 (protected && mem == MEM_FLASH) ||
+ 1021               	.LM71:
+ 1022 00f2 8C2F      		mov r24,r28
+ 1023 00f4 8554      		subi r24,lo8(-(-69))
+ 1024 00f6 8230      		cpi r24,lo8(2)
+ 1025 00f8 00F0      		brlo .L36
+ 1026               	.L35:
+1510:xboot.c       ****         #endif // ENABLE_CODE_PROTECTION
+1511:xboot.c       ****         #ifdef ENABLE_EEPROM_PROTECTION
+1512:xboot.c       ****                 (protected && mem == MEM_EEPROM) ||
+1513:xboot.c       ****         #endif // ENABLE_EEPROM_PROTECTION
+1514:xboot.c       ****         #ifdef ENABLE_BOOTLOADER_PROTECTION
+1515:xboot.c       ****                 (*address >= (BOOT_SECTION_START >> 1) && mem == MEM_FLASH) ||
+ 1028               	.LM72:
+ 1029 00fa F701      		movw r30,r14
+ 1030 00fc 8081      		ld r24,Z
+ 1031 00fe 9181      		ldd r25,Z+1
+ 1032 0100 A281      		ldd r26,Z+2
+ 1033 0102 B381      		ldd r27,Z+3
+ 1034 0104 8030      		cpi r24,lo8(32768)
+ 1035 0106 F0E8      		ldi r31,hi8(32768)
+ 1036 0108 9F07      		cpc r25,r31
+ 1037 010a F0E0      		ldi r31,hlo8(32768)
+ 1038 010c AF07      		cpc r26,r31
+ 1039 010e F0E0      		ldi r31,hhi8(32768)
+ 1040 0110 BF07      		cpc r27,r31
+ 1041 0112 00F0      		brlo .L37
+ 1043               	.LM73:
+ 1044 0114 C634      		cpi r28,lo8(70)
+ 1045 0116 01F4      		brne .L37
+ 1046               	.L36:
+1516:xboot.c       ****         #endif // ENABLE_BOOTLOADER_PROTECTION
+1517:xboot.c       ****                 0
+1518:xboot.c       ****         )
+1519:xboot.c       ****                 clear_buffer();
+ 1048               	.LM74:
+ 1049 0118 0E94 0000 		call clear_buffer
+ 1050               	.L37:
+ 1052               	.LM75:
+ 1053 011c 00E0      		ldi r16,lo8(buffer)
+ 1054 011e 10E0      		ldi r17,hi8(buffer)
+1453:xboot.c       ****         int offset = 0;
+ 1056               	.LM76:
+ 1057 0120 C0E0      		ldi r28,lo8(0)
+ 1058 0122 D0E0      		ldi r29,hi8(0)
+ 1059 0124 00C0      		rjmp .L38
+ 1060               	.L39:
+ 1061               	.LBB5:
+1520:xboot.c       **** 
+1521:xboot.c       ****         // send bytes
+1522:xboot.c       ****         for (int i = 0; i < size2; i++)
+1523:xboot.c       ****         {
+1524:xboot.c       ****                 send_char(buffer[i]);
+ 1063               	.LM77:
+ 1064 0126 F801      		movw r30,r16
+ 1065 0128 8191      		ld r24,Z+
+ 1066 012a 8F01      		movw r16,r30
+ 1067 012c 0E94 0000 		call send_char
+1522:xboot.c       ****         for (int i = 0; i < size2; i++)
+ 1069               	.LM78:
+ 1070 0130 2196      		adiw r28,1
+ 1071               	.L38:
+1522:xboot.c       ****         for (int i = 0; i < size2; i++)
+ 1073               	.LM79:
+ 1074 0132 CA15      		cp r28,r10
+ 1075 0134 DB05      		cpc r29,r11
+ 1076 0136 04F0      		brlt .L39
+ 1077               	.L26:
+ 1078               	/* epilogue start */
+ 1079               	.LBE5:
+1525:xboot.c       ****         }
+1526:xboot.c       **** 
+1527:xboot.c       **** }
+ 1081               	.LM80:
+ 1082 0138 DF91      		pop r29
+ 1083 013a CF91      		pop r28
+ 1084 013c 1F91      		pop r17
+ 1085 013e 0F91      		pop r16
+ 1086 0140 FF90      		pop r15
+ 1087 0142 EF90      		pop r14
+ 1088 0144 DF90      		pop r13
+ 1089 0146 CF90      		pop r12
+ 1090 0148 BF90      		pop r11
+ 1091 014a AF90      		pop r10
+ 1092 014c 0895      		ret
+ 1101               	.Lscope7:
+ 1102               		.section	.text.crc16_block,"ax",@progbits
+ 1106               	.global	crc16_block
+ 1108               	crc16_block:
+1528:xboot.c       **** 
+1529:xboot.c       **** uint16_t crc16_block(uint32_t start, uint32_t length)
+1530:xboot.c       **** {
+ 1110               	.LM81:
+ 1111               	.LFBB8:
+ 1112 0000 8F92      		push r8
+ 1113 0002 9F92      		push r9
+ 1114 0004 AF92      		push r10
+ 1115 0006 BF92      		push r11
+ 1116 0008 CF92      		push r12
+ 1117 000a DF92      		push r13
+ 1118 000c EF92      		push r14
+ 1119 000e FF92      		push r15
+ 1120 0010 0F93      		push r16
+ 1121 0012 1F93      		push r17
+ 1122 0014 CF93      		push r28
+ 1123 0016 DF93      		push r29
+ 1124               	/* prologue: function */
+ 1125               	/* frame size = 0 */
+ 1126               	/* stack size = 12 */
+ 1127               	.L__stack_usage = 12
+ 1128 0018 4B01      		movw r8,r22
+ 1129 001a 5C01      		movw r10,r24
+ 1130 001c 6901      		movw r12,r18
+ 1131 001e 7A01      		movw r14,r20
+1531:xboot.c       ****         uint16_t crc = 0;
+1532:xboot.c       **** 
+1533:xboot.c       ****         int bc = SPM_PAGESIZE;
+ 1133               	.LM82:
+ 1134 0020 C0E0      		ldi r28,lo8(256)
+ 1135 0022 D1E0      		ldi r29,hi8(256)
+1531:xboot.c       ****         uint16_t crc = 0;
+ 1137               	.LM83:
+ 1138 0024 00E0      		ldi r16,lo8(0)
+ 1139 0026 10E0      		ldi r17,hi8(0)
+1534:xboot.c       **** 
+1535:xboot.c       ****         for ( ; length > 0; length--)
+ 1141               	.LM84:
+ 1142 0028 00C0      		rjmp .L44
+ 1143               	.L46:
+1536:xboot.c       ****         {
+1537:xboot.c       ****                 if (bc == SPM_PAGESIZE)
+ 1145               	.LM85:
+ 1146 002a 81E0      		ldi r24,hi8(256)
+ 1147 002c C030      		cpi r28,lo8(256)
+ 1148 002e D807      		cpc r29,r24
+ 1149 0030 01F4      		brne .L45
+1538:xboot.c       ****                 {
+1539:xboot.c       ****                         Flash_ReadFlashPage(buffer, start);
+ 1151               	.LM86:
+ 1152 0032 80E0      		ldi r24,lo8(buffer)
+ 1153 0034 90E0      		ldi r25,hi8(buffer)
+ 1154 0036 B501      		movw r22,r10
+ 1155 0038 A401      		movw r20,r8
+ 1156 003a 0E94 0000 		call SP_ReadFlashPage
+1540:xboot.c       ****                         start += SPM_PAGESIZE;
+ 1158               	.LM87:
+ 1159 003e 80E0      		ldi r24,lo8(256)
+ 1160 0040 91E0      		ldi r25,hi8(256)
+ 1161 0042 A0E0      		ldi r26,hlo8(256)
+ 1162 0044 B0E0      		ldi r27,hhi8(256)
+ 1163 0046 880E      		add r8,r24
+ 1164 0048 991E      		adc r9,r25
+ 1165 004a AA1E      		adc r10,r26
+ 1166 004c BB1E      		adc r11,r27
+1541:xboot.c       ****                         bc = 0;
+ 1168               	.LM88:
+ 1169 004e C0E0      		ldi r28,lo8(0)
+ 1170 0050 D0E0      		ldi r29,hi8(0)
+ 1171               	.L45:
+1542:xboot.c       ****                 }
+1543:xboot.c       **** 
+1544:xboot.c       ****                 crc = _crc16_update(crc, buffer[bc]);
+ 1173               	.LM89:
+ 1174 0052 FE01      		movw r30,r28
+ 1175 0054 E050      		subi r30,lo8(-(buffer))
+ 1176 0056 F040      		sbci r31,hi8(-(buffer))
+ 1177 0058 C801      		movw r24,r16
+ 1178 005a 6081      		ld r22,Z
+ 1179 005c 0E94 0000 		call _crc16_update
+ 1180 0060 8C01      		movw r16,r24
+1545:xboot.c       **** 
+1546:xboot.c       ****                 bc++;
+ 1182               	.LM90:
+ 1183 0062 2196      		adiw r28,1
+1535:xboot.c       ****         for ( ; length > 0; length--)
+ 1185               	.LM91:
+ 1186 0064 0894      		sec
+ 1187 0066 C108      		sbc r12,__zero_reg__
+ 1188 0068 D108      		sbc r13,__zero_reg__
+ 1189 006a E108      		sbc r14,__zero_reg__
+ 1190 006c F108      		sbc r15,__zero_reg__
+ 1191               	.L44:
+1535:xboot.c       ****         for ( ; length > 0; length--)
+ 1193               	.LM92:
+ 1194 006e C114      		cp r12,__zero_reg__
+ 1195 0070 D104      		cpc r13,__zero_reg__
+ 1196 0072 E104      		cpc r14,__zero_reg__
+ 1197 0074 F104      		cpc r15,__zero_reg__
+ 1198 0076 01F4      		brne .L46
+1547:xboot.c       ****         }
+1548:xboot.c       **** 
+1549:xboot.c       ****         return crc;
+1550:xboot.c       **** }
+ 1200               	.LM93:
+ 1201 0078 C801      		movw r24,r16
+ 1202               	/* epilogue start */
+ 1203 007a DF91      		pop r29
+ 1204 007c CF91      		pop r28
+ 1205 007e 1F91      		pop r17
+ 1206 0080 0F91      		pop r16
+ 1207 0082 FF90      		pop r15
+ 1208 0084 EF90      		pop r14
+ 1209 0086 DF90      		pop r13
+ 1210 0088 CF90      		pop r12
+ 1211 008a BF90      		pop r11
+ 1212 008c AF90      		pop r10
+ 1213 008e 9F90      		pop r9
+ 1214 0090 8F90      		pop r8
+ 1215 0092 0895      		ret
+ 1221               	.Lscope8:
+ 1222               		.section	.text.install_firmware,"ax",@progbits
+ 1224               	.global	install_firmware
+ 1226               	install_firmware:
+1551:xboot.c       **** 
+1552:xboot.c       **** void install_firmware()
+1553:xboot.c       **** {
+ 1228               	.LM94:
+ 1229               	.LFBB9:
+ 1230 0000 CF92      		push r12
+ 1231 0002 DF92      		push r13
+ 1232 0004 EF92      		push r14
+ 1233 0006 FF92      		push r15
+ 1234 0008 0F93      		push r16
+ 1235 000a 1F93      		push r17
+ 1236 000c CF93      		push r28
+ 1237 000e DF93      		push r29
+ 1238               	/* prologue: function */
+ 1239               	/* frame size = 0 */
+ 1240               	/* stack size = 8 */
+ 1241               	.L__stack_usage = 8
+1554:xboot.c       ****         uint16_t crc;
+1555:xboot.c       ****         uint16_t crc2;
+1556:xboot.c       **** 
+1557:xboot.c       ****         // read last block
+1558:xboot.c       ****         Flash_ReadFlashPage(buffer, XB_APP_TEMP_START + XB_APP_TEMP_SIZE - SPM_PAGESIZE);
+ 1243               	.LM95:
+ 1244 0010 80E0      		ldi r24,lo8(buffer)
+ 1245 0012 90E0      		ldi r25,hi8(buffer)
+ 1246 0014 40E0      		ldi r20,lo8(65280)
+ 1247 0016 5FEF      		ldi r21,hi8(65280)
+ 1248 0018 60E0      		ldi r22,hlo8(65280)
+ 1249 001a 70E0      		ldi r23,hhi8(65280)
+ 1250 001c 0E94 0000 		call SP_ReadFlashPage
+1559:xboot.c       **** 
+1560:xboot.c       ****         // check for install command
+1561:xboot.c       ****         if (buffer[SPM_PAGESIZE-6] == 'X' && buffer[SPM_PAGESIZE-5] == 'B' &&
+ 1252               	.LM96:
+ 1253 0020 8091 0000 		lds r24,buffer+250
+ 1254 0024 8835      		cpi r24,lo8(88)
+ 1255 0026 01F0      		breq .+2
+ 1256 0028 00C0      		rjmp .L47
+ 1258               	.LM97:
+ 1259 002a 8091 0000 		lds r24,buffer+251
+ 1260 002e 8234      		cpi r24,lo8(66)
+ 1261 0030 01F0      		breq .+2
+ 1262 0032 00C0      		rjmp .L47
+ 1263 0034 8091 0000 		lds r24,buffer+252
+ 1264 0038 8934      		cpi r24,lo8(73)
+ 1265 003a 01F0      		breq .+2
+ 1266 003c 00C0      		rjmp .L47
+1562:xboot.c       ****                 buffer[SPM_PAGESIZE-4] == 'I' && buffer[SPM_PAGESIZE-3] == 'F')
+ 1268               	.LM98:
+ 1269 003e 8091 0000 		lds r24,buffer+253
+ 1270 0042 8634      		cpi r24,lo8(70)
+ 1271 0044 01F0      		breq .+2
+ 1272 0046 00C0      		rjmp .L47
+1563:xboot.c       ****         {
+1564:xboot.c       ****                 crc = (buffer[SPM_PAGESIZE-2] << 8) | buffer[SPM_PAGESIZE-1];
+ 1274               	.LM99:
+ 1275 0048 9091 0000 		lds r25,buffer+254
+ 1276 004c 80E0      		ldi r24,lo8(0)
+ 1277 004e C090 0000 		lds r12,buffer+255
+ 1278 0052 DD24      		clr r13
+ 1279 0054 C82A      		or r12,r24
+ 1280 0056 D92A      		or r13,r25
+1565:xboot.c       **** 
+1566:xboot.c       ****                 // skip last 6 bytes as they are the install command
+1567:xboot.c       ****                 crc2 = crc16_block(XB_APP_TEMP_START, XB_APP_TEMP_SIZE - 6);
+ 1282               	.LM100:
+ 1283 0058 60E0      		ldi r22,lo8(32768)
+ 1284 005a 70E8      		ldi r23,hi8(32768)
+ 1285 005c 80E0      		ldi r24,hlo8(32768)
+ 1286 005e 90E0      		ldi r25,hhi8(32768)
+ 1287 0060 2AEF      		ldi r18,lo8(32762)
+ 1288 0062 3FE7      		ldi r19,hi8(32762)
+ 1289 0064 40E0      		ldi r20,hlo8(32762)
+ 1290 0066 50E0      		ldi r21,hhi8(32762)
+ 1291 0068 0E94 0000 		call crc16_block
+ 1292 006c C6E0      		ldi r28,lo8(6)
+ 1293 006e D0E0      		ldi r29,hi8(6)
+ 1294               	.L49:
+ 1295               	.LBB6:
+1568:xboot.c       **** 
+1569:xboot.c       ****                 // crc last 6 bytes as empty
+1570:xboot.c       ****                 for (int i = 0; i < 6; i++)
+1571:xboot.c       ****                         crc2 = _crc16_update(crc2, 0xff);
+ 1297               	.LM101:
+ 1298 0070 6FEF      		ldi r22,lo8(-1)
+ 1299 0072 0E94 0000 		call _crc16_update
+ 1300 0076 2197      		sbiw r28,1
+1570:xboot.c       ****                 for (int i = 0; i < 6; i++)
+ 1302               	.LM102:
+ 1303 0078 01F4      		brne .L49
+ 1304               	.LBE6:
+1572:xboot.c       **** 
+1573:xboot.c       ****                 if (crc == crc2)
+ 1306               	.LM103:
+ 1307 007a C816      		cp r12,r24
+ 1308 007c D906      		cpc r13,r25
+ 1309 007e 01F0      		breq .+2
+ 1310 0080 00C0      		rjmp .L50
+ 1311 0082 CC24      		clr r12
+ 1312 0084 DD24      		clr r13
+ 1313 0086 7601      		movw r14,r12
+ 1314               	.LBB7:
+1574:xboot.c       ****                 {
+1575:xboot.c       ****                         for (uint32_t ptr = 0; ptr < XB_APP_SIZE; ptr += SPM_PAGESIZE)
+1576:xboot.c       ****                         {
+1577:xboot.c       ****                                 #ifdef USE_LED
+1578:xboot.c       **** #ifdef __AVR_XMEGA__
+1579:xboot.c       ****                                 LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1316               	.LM104:
+ 1317 0088 00E0      		ldi r16,lo8(1536)
+ 1318 008a 16E0      		ldi r17,hi8(1536)
+ 1319 008c D1E0      		ldi r29,lo8(1)
+ 1320               	.LBB8:
+1580:xboot.c       **** #else // __AVR_XMEGA__
+1581:xboot.c       ****                                 LED_PORT ^= (1 << LED_PIN);
+1582:xboot.c       **** #endif // __AVR_XMEGA__
+1583:xboot.c       ****                                 #endif // USE_LED
+1584:xboot.c       **** 
+1585:xboot.c       ****                                 Flash_ReadFlashPage(buffer, ptr + XB_APP_TEMP_START);
+1586:xboot.c       ****                                 // if it's the last page, clear out the last 6 bytes
+1587:xboot.c       ****                                 if (ptr >= XB_APP_SIZE - SPM_PAGESIZE)
+1588:xboot.c       ****                                 {
+1589:xboot.c       ****                                         for (int i = SPM_PAGESIZE-6; i < SPM_PAGESIZE; i++)
+1590:xboot.c       ****                                                 buffer[i] = 0xff;
+ 1322               	.LM105:
+ 1323 008e CFEF      		ldi r28,lo8(-1)
+ 1324               	.L52:
+ 1325               	.LBE8:
+1579:xboot.c       ****                                 LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1327               	.LM106:
+ 1328 0090 D801      		movw r26,r16
+ 1329 0092 1796      		adiw r26,7
+ 1330 0094 DC93      		st X,r29
+1552:xboot.c       **** void install_firmware()
+ 1332               	.LM107:
+ 1333 0096 B701      		movw r22,r14
+ 1334 0098 A601      		movw r20,r12
+ 1335 009a 4050      		subi r20,lo8(-(32768))
+ 1336 009c 5048      		sbci r21,hi8(-(32768))
+ 1337 009e 6F4F      		sbci r22,hlo8(-(32768))
+ 1338 00a0 7F4F      		sbci r23,hhi8(-(32768))
+1585:xboot.c       ****                                 Flash_ReadFlashPage(buffer, ptr + XB_APP_TEMP_START);
+ 1340               	.LM108:
+ 1341 00a2 80E0      		ldi r24,lo8(buffer)
+ 1342 00a4 90E0      		ldi r25,hi8(buffer)
+ 1343 00a6 0E94 0000 		call SP_ReadFlashPage
+1587:xboot.c       ****                                 if (ptr >= XB_APP_SIZE - SPM_PAGESIZE)
+ 1345               	.LM109:
+ 1346 00aa B0E0      		ldi r27,lo8(32512)
+ 1347 00ac CB16      		cp r12,r27
+ 1348 00ae BFE7      		ldi r27,hi8(32512)
+ 1349 00b0 DB06      		cpc r13,r27
+ 1350 00b2 B0E0      		ldi r27,hlo8(32512)
+ 1351 00b4 EB06      		cpc r14,r27
+ 1352 00b6 B0E0      		ldi r27,hhi8(32512)
+ 1353 00b8 FB06      		cpc r15,r27
+ 1354 00ba 01F4      		brne .L51
+ 1355               	.LBB9:
+ 1357               	.LM110:
+ 1358 00bc C093 0000 		sts buffer+250,r28
+ 1359 00c0 C093 0000 		sts buffer+251,r28
+ 1360 00c4 C093 0000 		sts buffer+252,r28
+ 1361 00c8 C093 0000 		sts buffer+253,r28
+ 1362 00cc C093 0000 		sts buffer+254,r28
+ 1363 00d0 C093 0000 		sts buffer+255,r28
+ 1364               	.L51:
+ 1365               	.LBE9:
+1591:xboot.c       ****                                 }
+1592:xboot.c       ****                                 Flash_ProgramPage(ptr, buffer, 1);
+ 1367               	.LM111:
+ 1368 00d4 C701      		movw r24,r14
+ 1369 00d6 B601      		movw r22,r12
+ 1370 00d8 40E0      		ldi r20,lo8(buffer)
+ 1371 00da 50E0      		ldi r21,hi8(buffer)
+ 1372 00dc 21E0      		ldi r18,lo8(1)
+ 1373 00de 0E94 0000 		call Flash_ProgramPage
+1575:xboot.c       ****                         for (uint32_t ptr = 0; ptr < XB_APP_SIZE; ptr += SPM_PAGESIZE)
+ 1375               	.LM112:
+ 1376 00e2 80E0      		ldi r24,lo8(256)
+ 1377 00e4 91E0      		ldi r25,hi8(256)
+ 1378 00e6 A0E0      		ldi r26,hlo8(256)
+ 1379 00e8 B0E0      		ldi r27,hhi8(256)
+ 1380 00ea C80E      		add r12,r24
+ 1381 00ec D91E      		adc r13,r25
+ 1382 00ee EA1E      		adc r14,r26
+ 1383 00f0 FB1E      		adc r15,r27
+ 1384 00f2 90E0      		ldi r25,lo8(32768)
+ 1385 00f4 C916      		cp r12,r25
+ 1386 00f6 90E8      		ldi r25,hi8(32768)
+ 1387 00f8 D906      		cpc r13,r25
+ 1388 00fa 90E0      		ldi r25,hlo8(32768)
+ 1389 00fc E906      		cpc r14,r25
+ 1390 00fe 90E0      		ldi r25,hhi8(32768)
+ 1391 0100 F906      		cpc r15,r25
+ 1392 0102 01F4      		brne .L52
+ 1393               	.L50:
+ 1394               	.LBE7:
+1593:xboot.c       ****                         }
+1594:xboot.c       ****                 }
+1595:xboot.c       **** 
+1596:xboot.c       ****                 xboot_app_temp_erase();
+ 1396               	.LM113:
+ 1397 0104 0E94 0000 		call xboot_app_temp_erase
+ 1398               	.L47:
+ 1399               	/* epilogue start */
+1597:xboot.c       ****         }
+1598:xboot.c       **** }
+ 1401               	.LM114:
+ 1402 0108 DF91      		pop r29
+ 1403 010a CF91      		pop r28
+ 1404 010c 1F91      		pop r17
+ 1405 010e 0F91      		pop r16
+ 1406 0110 FF90      		pop r15
+ 1407 0112 EF90      		pop r14
+ 1408 0114 DF90      		pop r13
+ 1409 0116 CF90      		pop r12
+ 1410 0118 0895      		ret
+ 1419               	.Lscope9:
+ 1420               		.section	.text.startup.main,"ax",@progbits
+ 1422               	.global	main
+ 1424               	main:
+  57:xboot.c       **** {
+ 1426               	.LM115:
+ 1427               	.LFBB10:
+ 1428 0000 8F92      		push r8
+ 1429 0002 9F92      		push r9
+ 1430 0004 AF92      		push r10
+ 1431 0006 BF92      		push r11
+ 1432 0008 DF92      		push r13
+ 1433 000a EF92      		push r14
+ 1434 000c FF92      		push r15
+ 1435 000e 0F93      		push r16
+ 1436 0010 1F93      		push r17
+ 1437 0012 CF93      		push r28
+ 1438 0014 DF93      		push r29
+ 1439 0016 CDB7      		in r28,__SP_L__
+ 1440 0018 DEB7      		in r29,__SP_H__
+ 1441 001a 2597      		sbiw r28,5
+ 1442 001c CDBF      		out __SP_L__,r28
+ 1443 001e DEBF      		out __SP_H__,r29
+ 1444               	/* prologue: function */
+ 1445               	/* frame size = 5 */
+ 1446               	/* stack size = 16 */
+ 1447               	.L__stack_usage = 16
+  58:xboot.c       ****         ADDR_T address = 0;
+ 1449               	.LM116:
+ 1450 0020 1982      		std Y+1,__zero_reg__
+ 1451 0022 1A82      		std Y+2,__zero_reg__
+ 1452 0024 1B82      		std Y+3,__zero_reg__
+ 1453 0026 1C82      		std Y+4,__zero_reg__
+  67:xboot.c       ****         protected = 1;
+ 1455               	.LM117:
+ 1456 0028 81E0      		ldi r24,lo8(1)
+ 1457 002a 8093 0000 		sts protected,r24
+  74:xboot.c       ****         comm_mode = MODE_UNDEF;
+ 1459               	.LM118:
+ 1460 002e 1092 0000 		sts comm_mode,__zero_reg__
+ 109:xboot.c       **** 	OSC.CTRL |= OSC_RC32KEN_bm; // turn on the 32 KHz oscillator
+ 1462               	.LM119:
+ 1463 0032 8091 5000 		lds r24,80
+ 1464 0036 8460      		ori r24,lo8(4)
+ 1465 0038 8093 5000 		sts 80,r24
+ 1466               	.L56:
+ 110:xboot.c       ****         while (!(OSC.STATUS & OSC_RC32KRDY_bm)) { }; // wait for it to start
+ 1468               	.LM120:
+ 1469 003c 8091 5100 		lds r24,81
+ 1470 0040 82FF      		sbrs r24,2
+ 1471 0042 00C0      		rjmp .L56
+ 111:xboot.c       ****         DFLLRC32M.CTRL = DFLL_ENABLE_bm; // errata says use both
+ 1473               	.LM121:
+ 1474 0044 81E0      		ldi r24,lo8(1)
+ 1475 0046 8093 6000 		sts 96,r24
+ 112:xboot.c       ****         DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+ 1477               	.LM122:
+ 1478 004a 8093 6800 		sts 104,r24
+ 148:xboot.c       ****         LED_PORT.DIRSET = (1 << LED_PIN);
+ 1480               	.LM123:
+ 1481 004e E0E0      		ldi r30,lo8(1536)
+ 1482 0050 F6E0      		ldi r31,hi8(1536)
+ 1483 0052 8183      		std Z+1,r24
+ 152:xboot.c       ****         LED_PORT.OUTSET = (1 << LED_PIN);
+ 1485               	.LM124:
+ 1486 0054 8583      		std Z+5,r24
+ 233:xboot.c       ****         uart_init();
+ 1488               	.LM125:
+ 1489 0056 0E94 0000 		call uart_init
+ 241:xboot.c       ****         UART_RX_PIN_CTRL = 0x18;
+ 1491               	.LM126:
+ 1492 005a 88E1      		ldi r24,lo8(24)
+ 1493 005c E0E4      		ldi r30,lo8(1600)
+ 1494 005e F6E0      		ldi r31,hi8(1600)
+ 1495 0060 828B      		std Z+18,r24
+ 1496 0062 2091 0000 		lds r18,comm_mode
+ 335:xboot.c       ****         k = ENTER_BLINK_COUNT*2;
+ 1498               	.LM127:
+ 1499 0066 36E0      		ldi r19,lo8(6)
+ 336:xboot.c       ****         j = ENTER_BLINK_WAIT;
+ 1501               	.LM128:
+ 1502 0068 80E3      		ldi r24,lo8(30000)
+ 1503 006a 95E7      		ldi r25,hi8(30000)
+ 1504 006c A0E0      		ldi r26,hlo8(30000)
+ 1505 006e B0E0      		ldi r27,hhi8(30000)
+ 343:xboot.c       ****                         LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1507               	.LM129:
+ 1508 0070 E0E0      		ldi r30,lo8(1536)
+ 1509 0072 F6E0      		ldi r31,hi8(1536)
+ 1510 0074 41E0      		ldi r20,lo8(1)
+ 1511               	.L62:
+ 339:xboot.c       ****                 if (j-- <= 0)
+ 1513               	.LM130:
+ 1514 0076 0097      		sbiw r24,0
+ 1515 0078 A105      		cpc r26,__zero_reg__
+ 1516 007a B105      		cpc r27,__zero_reg__
+ 1517 007c 01F0      		breq .L57
+ 1518 007e 0197      		sbiw r24,1
+ 1519 0080 A109      		sbc r26,__zero_reg__
+ 1520 0082 B109      		sbc r27,__zero_reg__
+ 1521 0084 00C0      		rjmp .L58
+ 1522               	.L57:
+ 343:xboot.c       ****                         LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1524               	.LM131:
+ 1525 0086 4783      		std Z+7,r20
+ 349:xboot.c       ****                         k--;
+ 1527               	.LM132:
+ 1528 0088 3150      		subi r19,lo8(-(-1))
+ 348:xboot.c       ****                         j = ENTER_BLINK_WAIT;
+ 1530               	.LM133:
+ 1531 008a 80E3      		ldi r24,lo8(30000)
+ 1532 008c 95E7      		ldi r25,hi8(30000)
+ 1533 008e A0E0      		ldi r26,hlo8(30000)
+ 1534 0090 B0E0      		ldi r27,hhi8(30000)
+ 1535               	.L58:
+ 416:xboot.c       ****                 if (uart_char_received())
+ 1537               	.LM134:
+ 1538 0092 5091 A108 		lds r21,2209
+ 1539 0096 57FF      		sbrs r21,7
+ 1540 0098 00C0      		rjmp .L106
+ 421:xboot.c       ****                         comm_mode = MODE_UART;
+ 1542               	.LM135:
+ 1543 009a 21E0      		ldi r18,lo8(1)
+ 420:xboot.c       ****                         in_bootloader = 1;
+ 1545               	.LM136:
+ 1546 009c 01E0      		ldi r16,lo8(1)
+ 1547 009e 00C0      		rjmp .L59
+ 1548               	.L106:
+ 416:xboot.c       ****                 if (uart_char_received())
+ 1550               	.LM137:
+ 1551 00a0 00E0      		ldi r16,lo8(0)
+ 1552               	.L59:
+ 453:xboot.c       ****                 WDT_Reset();
+ 1554               	.LM138:
+ 1555               	/* #APP */
+ 1556               	 ;  453 "xboot.c" 1
+ 1557 00a2 A895      		wdr
+ 1558               	 ;  0 "" 2
+ 337:xboot.c       ****         while (!in_bootloader && k > 0)
+ 1560               	.LM139:
+ 1561               	/* #NOAPP */
+ 1562 00a4 0023      		tst r16
+ 1563 00a6 01F0      		breq .L60
+ 1564 00a8 2093 0000 		sts comm_mode,r18
+ 1565 00ac 01E0      		ldi r16,lo8(1)
+ 1566               	.L63:
+ 1567               	.LBB10:
+ 772:xboot.c       ****                                         continue;
+ 1569               	.LM140:
+ 1570 00ae EE24      		clr r14
+ 1571 00b0 FF24      		clr r15
+ 1572               	.LBE10:
+ 475:xboot.c       ****                 LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1574               	.LM141:
+ 1575 00b2 A12C      		mov r10,__zero_reg__
+ 1576 00b4 46E0      		ldi r20,hi8(1536)
+ 1577 00b6 B42E      		mov r11,r20
+ 1578 00b8 DD24      		clr r13
+ 1579 00ba D394      		inc r13
+ 1580 00bc 00C0      		rjmp .L114
+ 1581               	.L60:
+ 337:xboot.c       ****         while (!in_bootloader && k > 0)
+ 1583               	.LM142:
+ 1584 00be 3323      		tst r19
+ 1585 00c0 01F4      		brne .L62
+ 337:xboot.c       ****         while (!in_bootloader && k > 0)
+ 1587               	.LM143:
+ 1588 00c2 2093 0000 		sts comm_mode,r18
+ 1589 00c6 00C0      		rjmp .L63
+ 1590               	.L113:
+ 475:xboot.c       ****                 LED_PORT.OUTTGL = (1 << LED_PIN);
+ 1592               	.LM144:
+ 1593 00c8 F501      		movw r30,r10
+ 1594 00ca D782      		std Z+7,r13
+ 481:xboot.c       ****                 val = get_char();
+ 1596               	.LM145:
+ 1597 00cc 0E94 0000 		call get_char
+ 489:xboot.c       ****                 if (val == CMD_CHECK_AUTOINCREMENT)
+ 1599               	.LM146:
+ 1600 00d0 8136      		cpi r24,lo8(97)
+ 1601 00d2 01F4      		brne .L64
+ 492:xboot.c       ****                         send_char(REPLY_YES);
+ 1603               	.LM147:
+ 1604 00d4 89E5      		ldi r24,lo8(89)
+ 1605 00d6 00C0      		rjmp .L116
+ 1606               	.L64:
+ 495:xboot.c       ****                 else if (val == CMD_SET_ADDRESS)
+ 1608               	.LM148:
+ 1609 00d8 8134      		cpi r24,lo8(65)
+ 1610 00da 01F4      		brne .L66
+ 498:xboot.c       ****                         address = get_2bytes();
+ 1612               	.LM149:
+ 1613 00dc 0E94 0000 		call get_2bytes
+ 1614 00e0 A0E0      		ldi r26,lo8(0)
+ 1615 00e2 B0E0      		ldi r27,hi8(0)
+ 1616 00e4 00C0      		rjmp .L122
+ 1617               	.L66:
+ 503:xboot.c       ****                 else if (val == CMD_SET_EXT_ADDRESS)
+ 1619               	.LM150:
+ 1620 00e6 8834      		cpi r24,lo8(72)
+ 1621 00e8 01F4      		brne .L67
+ 506:xboot.c       ****                         address = ((ADDR_T)get_char() << 16) | get_2bytes();
+ 1623               	.LM151:
+ 1624 00ea 0E94 0000 		call get_char
+ 1625 00ee 082F      		mov r16,r24
+ 1626 00f0 0E94 0000 		call get_2bytes
+ 1627 00f4 402F      		mov r20,r16
+ 1628 00f6 50E0      		ldi r21,lo8(0)
+ 1629 00f8 60E0      		ldi r22,lo8(0)
+ 1630 00fa 70E0      		ldi r23,hi8(0)
+ 1631 00fc BA01      		movw r22,r20
+ 1632 00fe 5527      		clr r21
+ 1633 0100 4427      		clr r20
+ 1634 0102 A0E0      		ldi r26,lo8(0)
+ 1635 0104 B0E0      		ldi r27,hi8(0)
+ 1636 0106 482B      		or r20,r24
+ 1637 0108 592B      		or r21,r25
+ 1638 010a 6A2B      		or r22,r26
+ 1639 010c 7B2B      		or r23,r27
+ 1640 010e 4983      		std Y+1,r20
+ 1641 0110 5A83      		std Y+2,r21
+ 1642 0112 6B83      		std Y+3,r22
+ 1643 0114 7C83      		std Y+4,r23
+ 1644 0116 00C0      		rjmp .L118
+ 1645               	.L67:
+ 522:xboot.c       ****                 else if (val == CMD_CHIP_ERASE)
+ 1647               	.LM152:
+ 1648 0118 8536      		cpi r24,lo8(101)
+ 1649 011a 01F4      		brne .L68
+ 525:xboot.c       ****                         Flash_EraseApplicationSection();
+ 1651               	.LM153:
+ 1652 011c 0E94 0000 		call SP_EraseApplicationSection
+ 535:xboot.c       ****                         SP_WaitForSPM();
+ 1654               	.LM154:
+ 1655 0120 0E94 0000 		call SP_WaitForSPM
+ 540:xboot.c       ****                         EEPROM_erase_all();
+ 1657               	.LM155:
+ 1658 0124 0E94 0000 		call EEPROM_erase_all
+ 544:xboot.c       ****                         protected = 0;
+ 1660               	.LM156:
+ 1661 0128 1092 0000 		sts protected,__zero_reg__
+ 1662               	.L118:
+ 548:xboot.c       ****                         send_char(REPLY_ACK);
+ 1664               	.LM157:
+ 1665 012c 8DE0      		ldi r24,lo8(13)
+ 1666 012e 00C0      		rjmp .L116
+ 1667               	.L68:
+ 552:xboot.c       ****                 else if (val == CMD_CHECK_BLOCK_SUPPORT )
+ 1669               	.LM158:
+ 1670 0130 8236      		cpi r24,lo8(98)
+ 1671 0132 01F4      		brne .L69
+ 555:xboot.c       ****                         send_char(REPLY_YES);
+ 1673               	.LM159:
+ 1674 0134 89E5      		ldi r24,lo8(89)
+ 1675 0136 0E94 0000 		call send_char
+ 557:xboot.c       ****                         send_char((SPM_PAGESIZE >> 8) & 0xFF);
+ 1677               	.LM160:
+ 1678 013a 81E0      		ldi r24,lo8(1)
+ 1679 013c 00C0      		rjmp .L119
+ 1680               	.L69:
+ 561:xboot.c       ****                 else if (val == CMD_BLOCK_LOAD)
+ 1682               	.LM161:
+ 1683 013e 8234      		cpi r24,lo8(66)
+ 1684 0140 01F4      		brne .L70
+ 564:xboot.c       ****                         i = get_2bytes();
+ 1686               	.LM162:
+ 1687 0142 0E94 0000 		call get_2bytes
+ 1688 0146 082F      		mov r16,r24
+ 1689 0148 E82E      		mov r14,r24
+ 1690 014a F92E      		mov r15,r25
+ 566:xboot.c       ****                         val = get_char();
+ 1692               	.LM163:
+ 1693 014c 9D83      		std Y+5,r25
+ 1694 014e 0E94 0000 		call get_char
+ 1695 0152 682F      		mov r22,r24
+ 568:xboot.c       ****                         send_char(BlockLoad(i, val, &address));
+ 1697               	.LM164:
+ 1698 0154 802F      		mov r24,r16
+ 1699 0156 9D81      		ldd r25,Y+5
+ 1700 0158 AE01      		movw r20,r28
+ 1701 015a 4F5F      		subi r20,lo8(-(1))
+ 1702 015c 5F4F      		sbci r21,hi8(-(1))
+ 1703 015e 0E94 0000 		call BlockLoad
+ 1704 0162 00C0      		rjmp .L116
+ 1705               	.L70:
+ 571:xboot.c       ****                 else if (val == CMD_BLOCK_READ)
+ 1707               	.LM165:
+ 1708 0164 8736      		cpi r24,lo8(103)
+ 1709 0166 01F4      		brne .L71
+ 574:xboot.c       ****                         i = get_2bytes();
+ 1711               	.LM166:
+ 1712 0168 0E94 0000 		call get_2bytes
+ 1713 016c 082F      		mov r16,r24
+ 1714 016e E82E      		mov r14,r24
+ 1715 0170 F92E      		mov r15,r25
+ 576:xboot.c       ****                         val = get_char();
+ 1717               	.LM167:
+ 1718 0172 9D83      		std Y+5,r25
+ 1719 0174 0E94 0000 		call get_char
+ 1720 0178 682F      		mov r22,r24
+ 578:xboot.c       ****                         BlockRead(i, val, &address);
+ 1722               	.LM168:
+ 1723 017a 802F      		mov r24,r16
+ 1724 017c 9D81      		ldd r25,Y+5
+ 1725 017e AE01      		movw r20,r28
+ 1726 0180 4F5F      		subi r20,lo8(-(1))
+ 1727 0182 5F4F      		sbci r21,hi8(-(1))
+ 1728 0184 0E94 0000 		call BlockRead
+ 1729 0188 00C0      		rjmp .L110
+ 1730               	.L71:
+ 583:xboot.c       ****                 else if (val == CMD_READ_BYTE)
+ 1732               	.LM169:
+ 1733 018a 8235      		cpi r24,lo8(82)
+ 1734 018c 01F4      		brne .L72
+ 1735               	.LBB11:
+ 585:xboot.c       ****                         unsigned int w = Flash_ReadWord((address << 1));
+ 1737               	.LM170:
+ 1738 018e 8981      		ldd r24,Y+1
+ 1739 0190 9A81      		ldd r25,Y+2
+ 1740 0192 AB81      		ldd r26,Y+3
+ 1741 0194 BC81      		ldd r27,Y+4
+ 1742 0196 880F      		lsl r24
+ 1743 0198 991F      		rol r25
+ 1744 019a AA1F      		rol r26
+ 1745 019c BB1F      		rol r27
+ 1746 019e BC01      		movw r22,r24
+ 1747 01a0 CD01      		movw r24,r26
+ 1748 01a2 0E94 0000 		call SP_ReadWord
+ 1749 01a6 8C01      		movw r16,r24
+ 588:xboot.c       ****                         if (protected)
+ 1751               	.LM171:
+ 1752 01a8 8091 0000 		lds r24,protected
+ 1753 01ac 8823      		tst r24
+ 1754 01ae 01F0      		breq .L73
+ 589:xboot.c       ****                                 w = 0xffff;
+ 1756               	.LM172:
+ 1757 01b0 0FEF      		ldi r16,lo8(-1)
+ 1758 01b2 1FEF      		ldi r17,hi8(-1)
+ 1759               	.L73:
+ 592:xboot.c       ****                         send_char(w >> 8);
+ 1761               	.LM173:
+ 1762 01b4 812F      		mov r24,r17
+ 1763 01b6 0E94 0000 		call send_char
+ 593:xboot.c       ****                         send_char(w);
+ 1765               	.LM174:
+ 1766 01ba 802F      		mov r24,r16
+ 1767 01bc 00C0      		rjmp .L80
+ 1768               	.L72:
+ 1769               	.LBE11:
+ 598:xboot.c       ****                 else if (val == CMD_WRITE_LOW_BYTE)
+ 1771               	.LM175:
+ 1772 01be 8336      		cpi r24,lo8(99)
+ 1773 01c0 01F4      		brne .L74
+ 601:xboot.c       ****                         i = get_char();
+ 1775               	.LM176:
+ 1776 01c2 0E94 0000 		call get_char
+ 1777 01c6 E82E      		mov r14,r24
+ 1778 01c8 FF24      		clr r15
+ 1779 01ca 00C0      		rjmp .L118
+ 1780               	.L74:
+ 605:xboot.c       ****                 else if (val == CMD_WRITE_HIGH_BYTE)
+ 1782               	.LM177:
+ 1783 01cc 8334      		cpi r24,lo8(67)
+ 1784 01ce 01F4      		brne .L75
+ 608:xboot.c       ****                         i |= (get_char() << 8);
+ 1786               	.LM178:
+ 1787 01d0 0E94 0000 		call get_char
+ 1788 01d4 982E      		mov r9,r24
+ 1789 01d6 8824      		clr r8
+ 1790 01d8 E828      		or r14,r8
+ 1791 01da F928      		or r15,r9
+ 609:xboot.c       ****                         Flash_LoadFlashWord((address << 1), i);
+ 1793               	.LM179:
+ 1794 01dc 8981      		ldd r24,Y+1
+ 1795 01de 9A81      		ldd r25,Y+2
+ 1796 01e0 880F      		lsl r24
+ 1797 01e2 991F      		rol r25
+ 1798 01e4 B701      		movw r22,r14
+ 1799 01e6 0E94 0000 		call SP_LoadFlashWord
+ 610:xboot.c       ****                         address++;
+ 1801               	.LM180:
+ 1802 01ea 8981      		ldd r24,Y+1
+ 1803 01ec 9A81      		ldd r25,Y+2
+ 1804 01ee AB81      		ldd r26,Y+3
+ 1805 01f0 BC81      		ldd r27,Y+4
+ 1806 01f2 0196      		adiw r24,1
+ 1807 01f4 A11D      		adc r26,__zero_reg__
+ 1808 01f6 B11D      		adc r27,__zero_reg__
+ 1809               	.L122:
+ 1810 01f8 8983      		std Y+1,r24
+ 1811 01fa 9A83      		std Y+2,r25
+ 1812 01fc AB83      		std Y+3,r26
+ 1813 01fe BC83      		std Y+4,r27
+ 1814 0200 00C0      		rjmp .L118
+ 1815               	.L75:
+ 614:xboot.c       ****                 else if (val == CMD_WRITE_PAGE)
+ 1817               	.LM181:
+ 1818 0202 8D36      		cpi r24,lo8(109)
+ 1819 0204 01F4      		brne .L76
+ 616:xboot.c       ****                         if (address >= (APP_SECTION_SIZE>>1))
+ 1821               	.LM182:
+ 1822 0206 8981      		ldd r24,Y+1
+ 1823 0208 9A81      		ldd r25,Y+2
+ 1824 020a AB81      		ldd r26,Y+3
+ 1825 020c BC81      		ldd r27,Y+4
+ 1826 020e 8030      		cpi r24,lo8(32768)
+ 1827 0210 F0E8      		ldi r31,hi8(32768)
+ 1828 0212 9F07      		cpc r25,r31
+ 1829 0214 F0E0      		ldi r31,hlo8(32768)
+ 1830 0216 AF07      		cpc r26,r31
+ 1831 0218 F0E0      		ldi r31,hhi8(32768)
+ 1832 021a BF07      		cpc r27,r31
+ 1833 021c 00F0      		brlo .+2
+ 1834 021e 00C0      		rjmp .L120
+ 1835               	.L77:
+ 623:xboot.c       ****                                 Flash_WriteApplicationPage( address << 1);
+ 1837               	.LM183:
+ 1838 0220 BC01      		movw r22,r24
+ 1839 0222 CD01      		movw r24,r26
+ 1840 0224 660F      		lsl r22
+ 1841 0226 771F      		rol r23
+ 1842 0228 881F      		rol r24
+ 1843 022a 991F      		rol r25
+ 1844 022c 0E94 0000 		call SP_WriteApplicationPage
+ 1845 0230 00C0      		rjmp .L118
+ 1846               	.L76:
+ 630:xboot.c       ****                 else if (val == CMD_WRITE_EEPROM_BYTE)
+ 1848               	.LM184:
+ 1849 0232 8434      		cpi r24,lo8(68)
+ 1850 0234 01F4      		brne .L78
+ 632:xboot.c       ****                         EEPROM_write_byte(address, get_char());
+ 1852               	.LM185:
+ 1853 0236 0981      		ldd r16,Y+1
+ 1854 0238 1A81      		ldd r17,Y+2
+ 1855 023a 0E94 0000 		call get_char
+ 1856 023e 682F      		mov r22,r24
+ 1857 0240 C801      		movw r24,r16
+ 1858 0242 0E94 0000 		call EEPROM_write_byte
+ 1859 0246 00C0      		rjmp .L117
+ 1860               	.L78:
+ 636:xboot.c       ****                 else if (val == CMD_READ_EEPROM_BYTE)
+ 1862               	.LM186:
+ 1863 0248 8436      		cpi r24,lo8(100)
+ 1864 024a 01F4      		brne .L79
+ 1865               	.LBB12:
+ 638:xboot.c       ****                         char c = EEPROM_read_byte(address);
+ 1867               	.LM187:
+ 1868 024c 8981      		ldd r24,Y+1
+ 1869 024e 9A81      		ldd r25,Y+2
+ 1870 0250 0E94 0000 		call EEPROM_read_byte
+ 641:xboot.c       ****                         if (protected)
+ 1872               	.LM188:
+ 1873 0254 9091 0000 		lds r25,protected
+ 1874 0258 9111      		cpse r25,__zero_reg__
+ 642:xboot.c       ****                                 c = 0xff;
+ 1876               	.LM189:
+ 1877 025a 8FEF      		ldi r24,lo8(-1)
+ 1878               	.L80:
+ 645:xboot.c       ****                         send_char(c);
+ 1880               	.LM190:
+ 1881 025c 0E94 0000 		call send_char
+ 1882               	.L117:
+ 646:xboot.c       ****                         address++;
+ 1884               	.LM191:
+ 1885 0260 8981      		ldd r24,Y+1
+ 1886 0262 9A81      		ldd r25,Y+2
+ 1887 0264 AB81      		ldd r26,Y+3
+ 1888 0266 BC81      		ldd r27,Y+4
+ 1889 0268 0196      		adiw r24,1
+ 1890 026a A11D      		adc r26,__zero_reg__
+ 1891 026c B11D      		adc r27,__zero_reg__
+ 1892 026e 8983      		std Y+1,r24
+ 1893 0270 9A83      		std Y+2,r25
+ 1894 0272 AB83      		std Y+3,r26
+ 1895 0274 BC83      		std Y+4,r27
+ 1896 0276 00C0      		rjmp .L110
+ 1897               	.L79:
+ 1898               	.LBE12:
+ 652:xboot.c       ****                 else if (val == CMD_WRITE_LOCK_BITS)
+ 1900               	.LM192:
+ 1901 0278 8C36      		cpi r24,lo8(108)
+ 1902 027a 01F4      		brne .L81
+ 654:xboot.c       ****                         SP_WriteLockBits( get_char() );
+ 1904               	.LM193:
+ 1905 027c 0E94 0000 		call get_char
+ 1906 0280 0E94 0000 		call SP_WriteLockBits
+ 1907 0284 00C0      		rjmp .L118
+ 1908               	.L81:
+ 658:xboot.c       ****                 else if (val == CMD_READ_LOCK_BITS)
+ 1910               	.LM194:
+ 1911 0286 8237      		cpi r24,lo8(114)
+ 1912 0288 01F4      		brne .L82
+ 660:xboot.c       ****                         send_char(SP_ReadLockBits());
+ 1914               	.LM195:
+ 1915 028a 0E94 0000 		call SP_ReadLockBits
+ 1916 028e 00C0      		rjmp .L116
+ 1917               	.L82:
+ 667:xboot.c       ****                 else if (val == CMD_READ_LOW_FUSE_BITS)
+ 1919               	.LM196:
+ 1920 0290 8634      		cpi r24,lo8(70)
+ 1921 0292 01F4      		brne .L83
+ 669:xboot.c       ****                         send_char(SP_ReadFuseByte(0));
+ 1923               	.LM197:
+ 1924 0294 80E0      		ldi r24,lo8(0)
+ 1925 0296 00C0      		rjmp .L121
+ 1926               	.L83:
+ 672:xboot.c       ****                 else if (val == CMD_READ_HIGH_FUSE_BITS)
+ 1928               	.LM198:
+ 1929 0298 8E34      		cpi r24,lo8(78)
+ 1930 029a 01F4      		brne .L84
+ 674:xboot.c       ****                         send_char(SP_ReadFuseByte(1));
+ 1932               	.LM199:
+ 1933 029c 81E0      		ldi r24,lo8(1)
+ 1934 029e 00C0      		rjmp .L121
+ 1935               	.L84:
+ 677:xboot.c       ****                 else if (val == CMD_READ_EXT_FUSE_BITS)
+ 1937               	.LM200:
+ 1938 02a0 8135      		cpi r24,lo8(81)
+ 1939 02a2 01F4      		brne .L85
+ 679:xboot.c       ****                         send_char(SP_ReadFuseByte(2));
+ 1941               	.LM201:
+ 1942 02a4 82E0      		ldi r24,lo8(2)
+ 1943               	.L121:
+ 1944 02a6 0E94 0000 		call SP_ReadFuseByte
+ 1945 02aa 00C0      		rjmp .L116
+ 1946               	.L85:
+ 684:xboot.c       ****                 else if ((val == CMD_ENTER_PROG_MODE) || (val == CMD_LEAVE_PROG_MODE))
+ 1948               	.LM202:
+ 1949 02ac 8035      		cpi r24,lo8(80)
+ 1950 02ae 01F4      		brne .+2
+ 1951 02b0 00C0      		rjmp .L118
+ 684:xboot.c       ****                 else if ((val == CMD_ENTER_PROG_MODE) || (val == CMD_LEAVE_PROG_MODE))
+ 1953               	.LM203:
+ 1954 02b2 8C34      		cpi r24,lo8(76)
+ 1955 02b4 01F4      		brne .+2
+ 1956 02b6 00C0      		rjmp .L118
+ 1957               	.L87:
+ 690:xboot.c       ****                 else if (val == CMD_EXIT_BOOTLOADER)
+ 1959               	.LM204:
+ 1960 02b8 8534      		cpi r24,lo8(69)
+ 1961 02ba 01F4      		brne .L88
+ 693:xboot.c       ****                         send_char(REPLY_ACK);
+ 1963               	.LM205:
+ 1964 02bc 8DE0      		ldi r24,lo8(13)
+ 1965 02be 0E94 0000 		call send_char
+ 692:xboot.c       ****                         in_bootloader = 0;
+ 1967               	.LM206:
+ 1968 02c2 00E0      		ldi r16,lo8(0)
+ 1969 02c4 00C0      		rjmp .L65
+ 1970               	.L88:
+ 696:xboot.c       ****                 else if (val == CMD_PROGRAMMER_TYPE)
+ 1972               	.LM207:
+ 1973 02c6 8037      		cpi r24,lo8(112)
+ 1974 02c8 01F4      		brne .L89
+ 699:xboot.c       ****                         send_char('S');
+ 1976               	.LM208:
+ 1977 02ca 83E5      		ldi r24,lo8(83)
+ 1978 02cc 00C0      		rjmp .L116
+ 1979               	.L89:
+ 702:xboot.c       ****                 else if (val == CMD_DEVICE_CODE)
+ 1981               	.LM209:
+ 1982 02ce 8437      		cpi r24,lo8(116)
+ 1983 02d0 01F4      		brne .L90
+ 705:xboot.c       ****                         send_char(123); // TODO
+ 1985               	.LM210:
+ 1986 02d2 8BE7      		ldi r24,lo8(123)
+ 1987               	.L119:
+ 1988 02d4 0E94 0000 		call send_char
+ 707:xboot.c       ****                         send_char(0);
+ 1990               	.LM211:
+ 1991 02d8 80E0      		ldi r24,lo8(0)
+ 1992 02da 00C0      		rjmp .L116
+ 1993               	.L90:
+ 710:xboot.c       ****                 else if ((val == CMD_SET_LED) || (val == CMD_CLEAR_LED) || (val == CMD_SET_TYPE))
+ 1995               	.LM212:
+ 1996 02dc 982F      		mov r25,r24
+ 1997 02de 9857      		subi r25,lo8(-(-120))
+ 1998 02e0 9230      		cpi r25,lo8(2)
+ 1999 02e2 00F0      		brlo .L91
+ 710:xboot.c       ****                 else if ((val == CMD_SET_LED) || (val == CMD_CLEAR_LED) || (val == CMD_SET_TYPE))
+ 2001               	.LM213:
+ 2002 02e4 8435      		cpi r24,lo8(84)
+ 2003 02e6 01F4      		brne .L92
+ 2004               	.L91:
+ 713:xboot.c       ****                         get_char();
+ 2006               	.LM214:
+ 2007 02e8 0E94 0000 		call get_char
+ 2008 02ec 00C0      		rjmp .L118
+ 2009               	.L92:
+ 717:xboot.c       ****                 else if (val == CMD_PROGRAM_ID)
+ 2011               	.LM215:
+ 2012 02ee 8335      		cpi r24,lo8(83)
+ 2013 02f0 01F4      		brne .L93
+ 719:xboot.c       ****                         send_char('X');
+ 2015               	.LM216:
+ 2016 02f2 88E5      		ldi r24,lo8(88)
+ 2017 02f4 0E94 0000 		call send_char
+ 720:xboot.c       ****                         send_char('B');
+ 2019               	.LM217:
+ 2020 02f8 82E4      		ldi r24,lo8(66)
+ 2021 02fa 0E94 0000 		call send_char
+ 721:xboot.c       ****                         send_char('o');
+ 2023               	.LM218:
+ 2024 02fe 8FE6      		ldi r24,lo8(111)
+ 2025 0300 0E94 0000 		call send_char
+ 722:xboot.c       ****                         send_char('o');
+ 2027               	.LM219:
+ 2028 0304 8FE6      		ldi r24,lo8(111)
+ 2029 0306 0E94 0000 		call send_char
+ 723:xboot.c       ****                         send_char('t');
+ 2031               	.LM220:
+ 2032 030a 84E7      		ldi r24,lo8(116)
+ 2033 030c 0E94 0000 		call send_char
+ 724:xboot.c       ****                         send_char('+');
+ 2035               	.LM221:
+ 2036 0310 8BE2      		ldi r24,lo8(43)
+ 2037 0312 0E94 0000 		call send_char
+ 725:xboot.c       ****                         send_char('+');
+ 2039               	.LM222:
+ 2040 0316 8BE2      		ldi r24,lo8(43)
+ 2041 0318 00C0      		rjmp .L116
+ 2042               	.L93:
+ 728:xboot.c       ****                 else if (val == CMD_VERSION)
+ 2044               	.LM223:
+ 2045 031a 8635      		cpi r24,lo8(86)
+ 2046 031c 01F4      		brne .L94
+ 730:xboot.c       ****                         send_char('0' + XBOOT_VERSION_MAJOR);
+ 2048               	.LM224:
+ 2049 031e 81E3      		ldi r24,lo8(49)
+ 2050 0320 0E94 0000 		call send_char
+ 731:xboot.c       ****                         send_char('0' + XBOOT_VERSION_MINOR);
+ 2052               	.LM225:
+ 2053 0324 88E3      		ldi r24,lo8(56)
+ 2054 0326 00C0      		rjmp .L116
+ 2055               	.L94:
+ 734:xboot.c       ****                 else if (val == CMD_READ_SIGNATURE)
+ 2057               	.LM226:
+ 2058 0328 8337      		cpi r24,lo8(115)
+ 2059 032a 01F4      		brne .L95
+ 736:xboot.c       ****                         send_char(SIGNATURE_2);
+ 2061               	.LM227:
+ 2062 032c 82E4      		ldi r24,lo8(66)
+ 2063 032e 0E94 0000 		call send_char
+ 737:xboot.c       ****                         send_char(SIGNATURE_1);
+ 2065               	.LM228:
+ 2066 0332 86E9      		ldi r24,lo8(-106)
+ 2067 0334 0E94 0000 		call send_char
+ 738:xboot.c       ****                         send_char(SIGNATURE_0);
+ 2069               	.LM229:
+ 2070 0338 8EE1      		ldi r24,lo8(30)
+ 2071 033a 00C0      		rjmp .L116
+ 2072               	.L95:
+ 741:xboot.c       ****                 else if (val == CMD_CRC)
+ 2074               	.LM230:
+ 2075 033c 8836      		cpi r24,lo8(104)
+ 2076 033e 01F0      		breq .+2
+ 2077 0340 00C0      		rjmp .L96
+ 2078               	.LBB13:
+ 747:xboot.c       ****                         val = get_char();
+ 2080               	.LM231:
+ 2081 0342 0E94 0000 		call get_char
+ 749:xboot.c       ****                         switch (val)
+ 2083               	.LM232:
+ 2084 0346 8634      		cpi r24,lo8(70)
+ 2085 0348 01F0      		breq .L100
+ 2086 034a 8734      		cpi r24,lo8(71)
+ 2087 034c 00F4      		brsh .L103
+ 2088 034e 8134      		cpi r24,lo8(65)
+ 2089 0350 01F0      		breq .L109
+ 2090 0352 8234      		cpi r24,lo8(66)
+ 2091 0354 01F4      		brne .L97
+ 2092 0356 00C0      		rjmp .L123
+ 2093               	.L103:
+ 2094 0358 8136      		cpi r24,lo8(97)
+ 2095 035a 01F0      		breq .L101
+ 2096 035c 8437      		cpi r24,lo8(116)
+ 2097 035e 01F4      		brne .L97
+ 2098 0360 00C0      		rjmp .L124
+ 2099               	.L123:
+ 759:xboot.c       ****                                         length = BOOT_SECTION_SIZE;
+ 2101               	.LM233:
+ 2102 0362 00E0      		ldi r16,lo8(4096)
+ 2103 0364 10E1      		ldi r17,hi8(4096)
+ 2104 0366 20E0      		ldi r18,hlo8(4096)
+ 2105 0368 30E0      		ldi r19,hhi8(4096)
+ 758:xboot.c       ****                                         start = BOOT_SECTION_START;
+ 2107               	.LM234:
+ 2108 036a 80E0      		ldi r24,lo8(65536)
+ 2109 036c 90E0      		ldi r25,hi8(65536)
+ 2110 036e A1E0      		ldi r26,hlo8(65536)
+ 2111 0370 B0E0      		ldi r27,hhi8(65536)
+ 760:xboot.c       ****                                         break;
+ 2113               	.LM235:
+ 2114 0372 00C0      		rjmp .L98
+ 2115               	.L101:
+ 763:xboot.c       ****                                         length = XB_APP_SIZE;
+ 2117               	.LM236:
+ 2118 0374 00E0      		ldi r16,lo8(32768)
+ 2119 0376 10E8      		ldi r17,hi8(32768)
+ 2120 0378 20E0      		ldi r18,hlo8(32768)
+ 2121 037a 30E0      		ldi r19,hhi8(32768)
+ 2122 037c 00C0      		rjmp .L115
+ 2123               	.L124:
+ 767:xboot.c       ****                                         length = XB_APP_TEMP_SIZE;
+ 2125               	.LM237:
+ 2126 037e 00E0      		ldi r16,lo8(32768)
+ 2127 0380 10E8      		ldi r17,hi8(32768)
+ 2128 0382 20E0      		ldi r18,hlo8(32768)
+ 2129 0384 30E0      		ldi r19,hhi8(32768)
+ 766:xboot.c       ****                                         start = XB_APP_TEMP_START;
+ 2131               	.LM238:
+ 2132 0386 80E0      		ldi r24,lo8(32768)
+ 2133 0388 90E8      		ldi r25,hi8(32768)
+ 2134 038a A0E0      		ldi r26,hlo8(32768)
+ 2135 038c B0E0      		ldi r27,hhi8(32768)
+ 768:xboot.c       ****                                         break;
+ 2137               	.LM239:
+ 2138 038e 00C0      		rjmp .L98
+ 2139               	.L97:
+ 771:xboot.c       ****                                         send_char(REPLY_ERROR);
+ 2141               	.LM240:
+ 2142 0390 8FE3      		ldi r24,lo8(63)
+ 2143 0392 0E94 0000 		call send_char
+ 772:xboot.c       ****                                         continue;
+ 2145               	.LM241:
+ 2146 0396 00C0      		rjmp .L113
+ 2147               	.L100:
+ 752:xboot.c       ****                                         length = PROGMEM_SIZE;
+ 2149               	.LM242:
+ 2150 0398 00E0      		ldi r16,lo8(69632)
+ 2151 039a 10E1      		ldi r17,hi8(69632)
+ 2152 039c 21E0      		ldi r18,hlo8(69632)
+ 2153 039e 30E0      		ldi r19,hhi8(69632)
+ 2154 03a0 00C0      		rjmp .L115
+ 2155               	.L109:
+ 755:xboot.c       ****                                         length = APP_SECTION_SIZE;
+ 2157               	.LM243:
+ 2158 03a2 00E0      		ldi r16,lo8(65536)
+ 2159 03a4 10E0      		ldi r17,hi8(65536)
+ 2160 03a6 21E0      		ldi r18,hlo8(65536)
+ 2161 03a8 30E0      		ldi r19,hhi8(65536)
+ 2162               	.L115:
+ 743:xboot.c       ****                         uint32_t start = 0;
+ 2164               	.LM244:
+ 2165 03aa 80E0      		ldi r24,lo8(0)
+ 2166 03ac 90E0      		ldi r25,hi8(0)
+ 2167 03ae DC01      		movw r26,r24
+ 2168               	.L98:
+ 775:xboot.c       ****                         crc = crc16_block(start, length);
+ 2170               	.LM245:
+ 2171 03b0 BC01      		movw r22,r24
+ 2172 03b2 CD01      		movw r24,r26
+ 2173 03b4 A901      		movw r20,r18
+ 2174 03b6 9801      		movw r18,r16
+ 2175 03b8 0E94 0000 		call crc16_block
+ 2176 03bc 082F      		mov r16,r24
+ 777:xboot.c       ****                         send_char((crc >> 8) & 0xff);
+ 2178               	.LM246:
+ 2179 03be 892F      		mov r24,r25
+ 2180 03c0 0E94 0000 		call send_char
+ 778:xboot.c       ****                         send_char(crc & 0xff);
+ 2182               	.LM247:
+ 2183 03c4 802F      		mov r24,r16
+ 2184 03c6 00C0      		rjmp .L116
+ 2185               	.L96:
+ 2186               	.LBE13:
+ 919:xboot.c       ****                 else if (val != CMD_SYNC)
+ 2188               	.LM248:
+ 2189 03c8 8B31      		cpi r24,lo8(27)
+ 2190 03ca 01F0      		breq .L110
+ 2191               	.L120:
+ 921:xboot.c       ****                         send_char(REPLY_ERROR);
+ 2193               	.LM249:
+ 2194 03cc 8FE3      		ldi r24,lo8(63)
+ 2195               	.L116:
+ 2196 03ce 0E94 0000 		call send_char
+ 2197               	.L110:
+ 919:xboot.c       ****                 else if (val != CMD_SYNC)
+ 2199               	.LM250:
+ 2200 03d2 01E0      		ldi r16,lo8(1)
+ 2201               	.L65:
+ 925:xboot.c       ****                 Flash_WaitForSPM();
+ 2203               	.LM251:
+ 2204 03d4 0E94 0000 		call SP_WaitForSPM
+ 2205               	.L114:
+ 472:xboot.c       ****         while (in_bootloader) {
+ 2207               	.LM252:
+ 2208 03d8 0023      		tst r16
+ 2209 03da 01F0      		breq .+2
+ 2210 03dc 00C0      		rjmp .L113
+ 943:xboot.c       ****         install_firmware();
+ 2212               	.LM253:
+ 2213 03de 0E94 0000 		call install_firmware
+ 959:xboot.c       ****         uart_deinit();
+ 2215               	.LM254:
+ 2216 03e2 0E94 0000 		call uart_deinit
+ 965:xboot.c       ****         UART_RX_PIN_CTRL = 0;
+ 2218               	.LM255:
+ 2219 03e6 E0E4      		ldi r30,lo8(1600)
+ 2220 03e8 F6E0      		ldi r31,hi8(1600)
+ 2221 03ea 128A      		std Z+18,__zero_reg__
+1014:xboot.c       ****         LED_PORT.DIRCLR = (1 << LED_PIN);
+ 2223               	.LM256:
+ 2224 03ec E0E0      		ldi r30,lo8(1536)
+ 2225 03ee F6E0      		ldi r31,hi8(1536)
+ 2226 03f0 81E0      		ldi r24,lo8(1)
+ 2227 03f2 8283      		std Z+2,r24
+1015:xboot.c       ****         LED_PORT.OUTCLR = (1 << LED_PIN);
+ 2229               	.LM257:
+ 2230 03f4 8683      		std Z+6,r24
+1060:xboot.c       ****         asm("jmp 0");
+ 2232               	.LM258:
+ 2233               	/* #APP */
+ 2234               	 ;  1060 "xboot.c" 1
+ 2235 03f6 0C94 0000 		jmp 0
+ 2236               	 ;  0 "" 2
+1067:xboot.c       **** }
+ 2238               	.LM259:
+ 2239               	/* #NOAPP */
+ 2240 03fa 80E0      		ldi r24,lo8(0)
+ 2241 03fc 90E0      		ldi r25,hi8(0)
+ 2242               	/* epilogue start */
+ 2243 03fe 2596      		adiw r28,5
+ 2244 0400 CDBF      		out __SP_L__,r28
+ 2245 0402 DEBF      		out __SP_H__,r29
+ 2246 0404 DF91      		pop r29
+ 2247 0406 CF91      		pop r28
+ 2248 0408 1F91      		pop r17
+ 2249 040a 0F91      		pop r16
+ 2250 040c FF90      		pop r15
+ 2251 040e EF90      		pop r14
+ 2252 0410 DF90      		pop r13
+ 2253 0412 BF90      		pop r11
+ 2254 0414 AF90      		pop r10
+ 2255 0416 9F90      		pop r9
+ 2256 0418 8F90      		pop r8
+ 2257 041a 0895      		ret
+ 2280               	.Lscope10:
+ 2281               		.comm protected,1,1
+ 2282               		.comm buffer,256,1
+ 2283               		.comm comm_mode,1,1
+ 2287               		.text
+ 2289               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 xboot.c
+     /tmp/ccZNz1Qb.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccZNz1Qb.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccZNz1Qb.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccZNz1Qb.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccZNz1Qb.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccZNz1Qb.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccZNz1Qb.s:443    .text._crc16_update:00000000 _crc16_update
+     /tmp/ccZNz1Qb.s:492    .text.get_char:00000000 get_char
+                            *COM*:00000001 comm_mode
+     /tmp/ccZNz1Qb.s:534    .text.send_char:00000000 send_char
+     /tmp/ccZNz1Qb.s:571    .text.get_2bytes:00000000 get_2bytes
+     /tmp/ccZNz1Qb.s:601    .text.clear_buffer:00000000 clear_buffer
+                            *COM*:00000100 buffer
+     /tmp/ccZNz1Qb.s:644    .text.BlockLoad:00000000 BlockLoad
+     /tmp/ccZNz1Qb.s:849    .text.BlockRead:00000000 BlockRead
+                            *COM*:00000001 protected
+     /tmp/ccZNz1Qb.s:1108   .text.crc16_block:00000000 crc16_block
+     /tmp/ccZNz1Qb.s:1226   .text.install_firmware:00000000 install_firmware
+     /tmp/ccZNz1Qb.s:1424   .text.startup.main:00000000 main
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+EEPROM_write_block
+Flash_ProgramPage
+SP_LoadFlashPage
+SP_EraseUserSignatureRow
+SP_WaitForSPM
+SP_WriteUserSignatureRow
+EEPROM_read_block
+SP_ReadByte
+SP_ReadUserSignatureByte
+SP_ReadCalibrationByte
+SP_ReadFlashPage
+xboot_app_temp_erase
+uart_init
+SP_EraseApplicationSection
+EEPROM_erase_all
+SP_ReadWord
+SP_LoadFlashWord
+SP_WriteApplicationPage
+EEPROM_write_byte
+EEPROM_read_byte
+SP_WriteLockBits
+SP_ReadLockBits
+SP_ReadFuseByte
+uart_deinit

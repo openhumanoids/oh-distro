@@ -1,0 +1,94 @@
+   1               		.file	"dac.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  13               	.global	configureDAC
+  15               	configureDAC:
+  16               	.LFB0:
+  17               		.file 1 "dac.c"
+   1:dac.c         **** /****************************************************
+   2:dac.c         **** 
+   3:dac.c         ****  // Author:            Zachary Clifford
+   4:dac.c         ****  // File Name:        C1482-SRC-PLMMCU-0_dac.c
+   5:dac.c         ****  // Creation Date:    9 March, 2012
+   6:dac.c         ****  // Revision:        00
+   7:dac.c         ****  // Hardware:        ATxmega32A4U
+   8:dac.c         ****  // Description:    DAC driver
+   9:dac.c         **** 
+  10:dac.c         **** ****************************************************/
+  11:dac.c         **** 
+  12:dac.c         **** /******************************************************************************
+  13:dac.c         ****     File Revision History:
+  14:dac.c         **** -------------------------------------------------------------------------------
+  15:dac.c         **** Revision    Date        Engineer    Description
+  16:dac.c         **** --------    --------    --------    -------------------------------------------
+  17:dac.c         **** 00            MM/DD/YY    ZAC            Initial Release
+  18:dac.c         **** -------------------------------------------------------------------------------
+  19:dac.c         **** 
+  20:dac.c         **** ******************************************************************************/
+  21:dac.c         **** 
+  22:dac.c         **** #include <avr/io.h>
+  23:dac.c         **** 
+  24:dac.c         **** void configureDAC(void)
+  25:dac.c         **** {
+  18               		.loc 1 25 0
+  19               		.cfi_startproc
+  20               	/* prologue: function */
+  21               	/* frame size = 0 */
+  22               	/* stack size = 0 */
+  23               	.L__stack_usage = 0
+  26:dac.c         ****     DACB.TIMCTRL = DAC_CONINTVAL_32CLK_gc | DAC_REFRESH_OFF_gc;
+  24               		.loc 1 26 0
+  25 0000 E0E2      		ldi r30,lo8(800)
+  26 0002 F3E0      		ldi r31,hi8(800)
+  27 0004 8FE5      		ldi r24,lo8(95)
+  28 0006 8483      		std Z+4,r24
+  27:dac.c         ****     DACB.CTRLC = DAC_REFSEL_AREFA_gc;
+  29               		.loc 1 27 0
+  30 0008 80E1      		ldi r24,lo8(16)
+  31 000a 8283      		std Z+2,r24
+  28:dac.c         ****     DACB.CTRLB = DAC_CHSEL_SINGLE_gc; // | DAC_CH0TRIG_bm;
+  32               		.loc 1 28 0
+  33 000c 1182      		std Z+1,__zero_reg__
+  29:dac.c         ****     DACB.CTRLA = DAC_CH0EN_bm | DAC_ENABLE_bm;
+  34               		.loc 1 29 0
+  35 000e 85E0      		ldi r24,lo8(5)
+  36 0010 8083      		st Z,r24
+  30:dac.c         ****     
+  31:dac.c         ****     // This is set again in handleFingerCommand()
+  32:dac.c         ****     // before the motor is enabled, but set it here just in case.
+  33:dac.c         ****     
+  34:dac.c         ****     //DACB.CH0DATA = 0x0FFF;
+  35:dac.c         ****     DACB.CH0DATA = 0x0000;
+  37               		.loc 1 35 0
+  38 0012 108E      		std Z+24,__zero_reg__
+  39 0014 118E      		std Z+25,__zero_reg__
+  40               	/* epilogue start */
+  36:dac.c         **** }
+  41               		.loc 1 36 0
+  42 0016 0895      		ret
+  43               		.cfi_endproc
+  44               	.LFE0:
+  46               	.Letext0:
+  47               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+DEFINED SYMBOLS
+                            *ABS*:00000000 dac.c
+     /tmp/ccn5alm4.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccn5alm4.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccn5alm4.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccn5alm4.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccn5alm4.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccn5alm4.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccn5alm4.s:15     .text:00000000 configureDAC
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

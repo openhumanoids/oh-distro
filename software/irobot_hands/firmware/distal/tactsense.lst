@@ -1,0 +1,1688 @@
+   1               		.file	"tactsense.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  14               	getDoubleWord:
+  15               	.LFB9:
+  16               		.file 1 "tactsense.c"
+   1:tactsense.c   **** /****************************************************
+   2:tactsense.c   **** 
+   3:tactsense.c   ****  // Author:            Zachary Clifford
+   4:tactsense.c   ****  // File Name:        C1482-SRC-PXDMCU-0_tactsense.c
+   5:tactsense.c   ****  // Creation Date:    24 February, 2012
+   6:tactsense.c   ****  // Revision:        00
+   7:tactsense.c   ****  // Hardware:        ATxmega32A4U
+   8:tactsense.c   ****  // Description:    Tactile sensor driver
+   9:tactsense.c   **** 
+  10:tactsense.c   **** ****************************************************/
+  11:tactsense.c   **** 
+  12:tactsense.c   **** /******************************************************************************
+  13:tactsense.c   ****     File Revision History:
+  14:tactsense.c   **** -------------------------------------------------------------------------------
+  15:tactsense.c   **** Revision    Date        Engineer    Description
+  16:tactsense.c   **** --------    --------    --------    -------------------------------------------
+  17:tactsense.c   **** 00            MM/DD/YY    ZAC            Initial Release
+  18:tactsense.c   **** -------------------------------------------------------------------------------
+  19:tactsense.c   **** 
+  20:tactsense.c   **** ******************************************************************************/
+  21:tactsense.c   **** 
+  22:tactsense.c   **** #include "distal.h"
+  23:tactsense.c   **** #include "tactsense.h"
+  24:tactsense.c   **** 
+  25:tactsense.c   **** #include <avr/io.h>
+  26:tactsense.c   **** #include <avr/interrupt.h>
+  27:tactsense.c   **** #include <stdlib.h>
+  28:tactsense.c   **** 
+  29:tactsense.c   **** #define SPI0 SPIC
+  30:tactsense.c   **** 
+  31:tactsense.c   **** #define TACT_PORTA_MASK 0x60
+  32:tactsense.c   **** #define TACT_PORTB_MASK 0x0F
+  33:tactsense.c   **** #define TACT_PORTC_MASK 0x1E
+  34:tactsense.c   **** #define TACT_PORTE_MASK 0x0E
+  35:tactsense.c   **** 
+  36:tactsense.c   **** #define TACT_TIMEOUT 96 //96=3ms  8.16=255us
+  37:tactsense.c   **** 
+  38:tactsense.c   **** #define CONVERT_OPCODE 0x24
+  39:tactsense.c   **** #define READ_PRESSURE_MSB_OPCODE 0x80
+  40:tactsense.c   **** #define READ_PRESSURE_LSB_OPCODE 0x82
+  41:tactsense.c   **** #define READ_TEMPERATURE_MSB_OPCODE 0x84
+  42:tactsense.c   **** #define READ_TEMPERATURE_LSB_OPCODE 0x86
+  43:tactsense.c   **** #define READ_COEFFA0_MSB_OPCODE 0x88
+  44:tactsense.c   **** #define READ_COEFFA0_LSB_OPCODE 0x8A
+  45:tactsense.c   **** #define READ_COEFFB1_MSB_OPCODE 0x8C
+  46:tactsense.c   **** #define READ_COEFFB1_LSB_OPCODE 0x8E
+  47:tactsense.c   **** #define READ_COEFFB2_MSB_OPCODE 0x90
+  48:tactsense.c   **** #define READ_COEFFB2_LSB_OPCODE 0x92
+  49:tactsense.c   **** #define READ_COEFFC12_MSB_OPCODE 0x94
+  50:tactsense.c   **** #define READ_COEFFC12_LSB_OPCODE 0x96
+  51:tactsense.c   **** 
+  52:tactsense.c   **** int16_t pressureData[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  53:tactsense.c   **** int16_t pressureDataOffset[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  54:tactsense.c   **** int16_t pressureTempData[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  55:tactsense.c   **** 
+  56:tactsense.c   **** // int16_t a0coeff[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  57:tactsense.c   **** // int16_t b1coeff[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  58:tactsense.c   **** // int16_t b2coeff[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  59:tactsense.c   **** // int16_t c12coeff[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  60:tactsense.c   **** 
+  61:tactsense.c   **** //float floatingPressureData[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  62:tactsense.c   **** // uint16_t rawpressure[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  63:tactsense.c   **** // uint16_t rawtemp[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  64:tactsense.c   **** 
+  65:tactsense.c   **** uint8_t pressureCalibrated[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  66:tactsense.c   **** uint16_t lastPressure[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  67:tactsense.c   **** int16_t adjustedPressure[MAXIMUM_NUMBER_OF_TACTILE_SENSORS];
+  68:tactsense.c   **** 
+  69:tactsense.c   **** void compensatePressure(uint16_t tempReading, uint16_t pressureReading,uint8_t sensorIndex);
+  70:tactsense.c   **** static void convertTactSensor(uint8_t tactAddress);
+  71:tactsense.c   **** static void readTactSensor(uint8_t tactAddress);
+  72:tactsense.c   **** static void selectSensor(uint8_t tactAddress);
+  73:tactsense.c   **** 
+  74:tactsense.c   **** volatile uint8_t tactReady = 0;
+  75:tactsense.c   **** 
+  76:tactsense.c   **** ISR(TACT_TC_vect)
+  77:tactsense.c   **** {
+  78:tactsense.c   ****     tactReady = 1;
+  79:tactsense.c   ****     TACT_TC.CTRLA = TC_CLKSEL_OFF_gc;
+  80:tactsense.c   ****     return;
+  81:tactsense.c   **** }
+  82:tactsense.c   **** 
+  83:tactsense.c   **** //The system can take 8 MHz.  Peripheral clock is set to 32 MHz internally, so a divide by 4 presca
+  84:tactsense.c   **** //volatile uint8_t dummyRead;
+  85:tactsense.c   **** void configureSPIModulesPressure(void)
+  86:tactsense.c   **** {
+  87:tactsense.c   ****     SPI0.INTCTRL = SPI_INTLVL_OFF_gc;
+  88:tactsense.c   ****     SPI0.CTRL = SPI_ENABLE_bm | SPI_MASTER_bm | SPI_MODE_0_gc | SPI_PRESCALER_DIV4_gc;
+  89:tactsense.c   **** }
+  90:tactsense.c   **** 
+  91:tactsense.c   **** //initialization
+  92:tactsense.c   **** void initTactileModule(void)
+  93:tactsense.c   **** {
+  94:tactsense.c   ****     for(uint8_t i=0; i<MAXIMUM_NUMBER_OF_TACTILE_SENSORS; i++)
+  95:tactsense.c   ****     {
+  96:tactsense.c   ****         pressureCalibrated[i] = 0;
+  97:tactsense.c   ****         pressureData[i] = 0;
+  98:tactsense.c   ****         pressureDataOffset[i] = 0;
+  99:tactsense.c   ****         pressureTempData[i] = 0;
+ 100:tactsense.c   ****         // a0coeff[i] = 0;
+ 101:tactsense.c   ****         // b1coeff[i] = 0;
+ 102:tactsense.c   ****         // b2coeff[i] = 0;
+ 103:tactsense.c   ****         // c12coeff[i] = 0;
+ 104:tactsense.c   ****         // rawpressure[i] = 0;
+ 105:tactsense.c   ****         // rawtemp[i] = 0;
+ 106:tactsense.c   ****         lastPressure[i] = 0;
+ 107:tactsense.c   ****         adjustedPressure[i] = 0;
+ 108:tactsense.c   ****     }
+ 109:tactsense.c   **** }
+ 110:tactsense.c   **** 
+ 111:tactsense.c   **** 
+ 112:tactsense.c   **** 
+ 113:tactsense.c   **** static void getDoubleWord(uint8_t startingOpcode, uint16_t *firstResponse)
+ 114:tactsense.c   **** {
+  17               		.loc 1 114 0
+  18               		.cfi_startproc
+  19               	.LVL0:
+  20               	/* prologue: function */
+  21               	/* frame size = 0 */
+  22               	/* stack size = 0 */
+  23               	.L__stack_usage = 0
+  24 0000 FB01      		movw r30,r22
+ 115:tactsense.c   ****     uint8_t dummyRead;
+ 116:tactsense.c   **** 
+ 117:tactsense.c   ****     //Send the data.
+ 118:tactsense.c   ****     SPI0.DATA = startingOpcode;
+  25               		.loc 1 118 0
+  26 0002 A0EC      		ldi r26,lo8(2240)
+  27 0004 B8E0      		ldi r27,hi8(2240)
+  28 0006 1396      		adiw r26,3
+  29 0008 8C93      		st X,r24
+  30 000a 1397      		sbiw r26,3
+  31               	.L2:
+ 119:tactsense.c   **** 
+ 120:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+  32               		.loc 1 120 0 discriminator 1
+  33 000c 9091 C208 		lds r25,2242
+  34 0010 97FF      		sbrs r25,7
+  35 0012 00C0      		rjmp .L2
+ 121:tactsense.c   **** 
+ 122:tactsense.c   ****     //Read the dummy data
+ 123:tactsense.c   ****     dummyRead = SPI0.DATA;
+  36               		.loc 1 123 0
+  37 0014 9091 C308 		lds r25,2243
+ 124:tactsense.c   **** 
+ 125:tactsense.c   ****     //Send the dummy byte
+ 126:tactsense.c   ****     SPI0.DATA = 0x00;
+  38               		.loc 1 126 0
+  39 0018 A0EC      		ldi r26,lo8(2240)
+  40 001a B8E0      		ldi r27,hi8(2240)
+  41 001c 1396      		adiw r26,3
+  42 001e 1C92      		st X,__zero_reg__
+  43 0020 1397      		sbiw r26,3
+  44               	.L3:
+ 127:tactsense.c   **** 
+ 128:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+  45               		.loc 1 128 0 discriminator 1
+  46 0022 9091 C208 		lds r25,2242
+  47 0026 97FF      		sbrs r25,7
+  48 0028 00C0      		rjmp .L3
+ 129:tactsense.c   **** 
+ 130:tactsense.c   ****     //Read the MSB data
+ 131:tactsense.c   ****     dummyRead = SPI0.DATA;
+  49               		.loc 1 131 0
+  50 002a 9091 C308 		lds r25,2243
+  51               	.LVL1:
+ 132:tactsense.c   ****     *firstResponse = dummyRead << 8;
+  52               		.loc 1 132 0
+  53 002e 1082      		st Z,__zero_reg__
+  54 0030 9183      		std Z+1,r25
+ 133:tactsense.c   **** 
+ 134:tactsense.c   ****     //Send the data.
+ 135:tactsense.c   ****     SPI0.DATA = startingOpcode+2;
+  55               		.loc 1 135 0
+  56 0032 8E5F      		subi r24,lo8(-(2))
+  57               	.LVL2:
+  58 0034 A0EC      		ldi r26,lo8(2240)
+  59 0036 B8E0      		ldi r27,hi8(2240)
+  60 0038 1396      		adiw r26,3
+  61 003a 8C93      		st X,r24
+  62 003c 1397      		sbiw r26,3
+  63               	.L4:
+ 136:tactsense.c   **** 
+ 137:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+  64               		.loc 1 137 0 discriminator 1
+  65 003e 8091 C208 		lds r24,2242
+  66 0042 87FF      		sbrs r24,7
+  67 0044 00C0      		rjmp .L4
+ 138:tactsense.c   **** 
+ 139:tactsense.c   ****     //Read the dummy data
+ 140:tactsense.c   ****     dummyRead = SPI0.DATA;
+  68               		.loc 1 140 0
+  69 0046 8091 C308 		lds r24,2243
+  70               	.LVL3:
+ 141:tactsense.c   **** 
+ 142:tactsense.c   ****     //Send the dummy byte
+ 143:tactsense.c   ****     SPI0.DATA = 0x00;
+  71               		.loc 1 143 0
+  72 004a A0EC      		ldi r26,lo8(2240)
+  73 004c B8E0      		ldi r27,hi8(2240)
+  74 004e 1396      		adiw r26,3
+  75 0050 1C92      		st X,__zero_reg__
+  76 0052 1397      		sbiw r26,3
+  77               	.L5:
+ 144:tactsense.c   **** 
+ 145:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+  78               		.loc 1 145 0 discriminator 1
+  79 0054 8091 C208 		lds r24,2242
+  80 0058 87FF      		sbrs r24,7
+  81 005a 00C0      		rjmp .L5
+ 146:tactsense.c   **** 
+ 147:tactsense.c   ****     //Read the LSB data
+ 148:tactsense.c   ****     dummyRead = SPI0.DATA;
+  82               		.loc 1 148 0
+  83 005c 2091 C308 		lds r18,2243
+  84               	.LVL4:
+ 149:tactsense.c   ****     *firstResponse |= dummyRead;
+  85               		.loc 1 149 0
+  86 0060 30E0      		ldi r19,lo8(0)
+  87 0062 8081      		ld r24,Z
+  88 0064 9181      		ldd r25,Z+1
+  89 0066 822B      		or r24,r18
+  90 0068 932B      		or r25,r19
+  91 006a 8083      		st Z,r24
+  92 006c 9183      		std Z+1,r25
+  93               	/* epilogue start */
+ 150:tactsense.c   **** 
+ 151:tactsense.c   ****     return;
+ 152:tactsense.c   **** }
+  94               		.loc 1 152 0
+  95 006e 0895      		ret
+  96               		.cfi_endproc
+  97               	.LFE9:
+ 100               	selectSensor:
+ 101               	.LFB11:
+ 153:tactsense.c   **** 
+ 154:tactsense.c   **** 
+ 155:tactsense.c   **** /**
+ 156:tactsense.c   ****  * readTactSensorPair(uint8_t tactAddress)
+ 157:tactsense.c   ****  * Reads a tactile sensor pair given by tactAddress.
+ 158:tactsense.c   ****  * It assumes that the pair had been previously told to begin a conversion
+ 159:tactsense.c   ****  * the lower three bits of tactAddress denote the Address line status to be used.  The next two bit
+ 160:tactsense.c   ****  * set the proper chip selects to be used according to the following table:
+ 161:tactsense.c   ****  * 00 - nCS1 and nCS4
+ 162:tactsense.c   ****  * 01 - nCS2 and nCS5
+ 163:tactsense.c   ****  * 10 - nCS3 and nCS6
+ 164:tactsense.c   ****  * 11 - Invalid
+ 165:tactsense.c   ****  *
+ 166:tactsense.c   ****  * The remaining bits are don't cares.  This means that the addressing is all adjacent and that a r
+ 167:tactsense.c   ****  * feed incrementing addresses up to decimal 24 to read all 48 tactile sensors.
+ 168:tactsense.c   ****  */
+ 169:tactsense.c   **** static void readTactSensor(uint8_t tactAddress)
+ 170:tactsense.c   **** {
+ 171:tactsense.c   ****     uint8_t dummyRead;
+ 172:tactsense.c   ****     uint16_t firstPressureReading;
+ 173:tactsense.c   ****     uint16_t firstTempReading;
+ 174:tactsense.c   **** 
+ 175:tactsense.c   ****     selectSensor(tactAddress);
+ 176:tactsense.c   **** 
+ 177:tactsense.c   ****     getDoubleWord(READ_PRESSURE_MSB_OPCODE,&firstPressureReading);
+ 178:tactsense.c   **** 
+ 179:tactsense.c   ****     getDoubleWord(READ_TEMPERATURE_MSB_OPCODE,&firstTempReading);
+ 180:tactsense.c   **** 
+ 181:tactsense.c   ****     //Do a final dummy write
+ 182:tactsense.c   **** 
+ 183:tactsense.c   ****     //Send the data.
+ 184:tactsense.c   ****     SPI0.DATA = 0x00;
+ 185:tactsense.c   **** 
+ 186:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 187:tactsense.c   **** 
+ 188:tactsense.c   ****     //Read the dummy data
+ 189:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 190:tactsense.c   **** 
+ 191:tactsense.c   ****     //Reset the chip select and address lines
+ 192:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 193:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 194:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 195:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 196:tactsense.c   **** 
+ 197:tactsense.c   ****     // protect against bad data if reading accelerometer
+ 198:tactsense.c   ****     if (firstPressureReading == 0)
+ 199:tactsense.c   ****         return;
+ 200:tactsense.c   **** 
+ 201:tactsense.c   ****     //floatingPressureData[tactAddress] = compensatePressure(firstTempReading,firstPressureReading,
+ 202:tactsense.c   ****     compensatePressure(firstTempReading, firstPressureReading, tactAddress);
+ 203:tactsense.c   ****     // rawtemp[tactAddress] = firstTempReading;
+ 204:tactsense.c   ****     // rawpressure[tactAddress] = firstPressureReading;
+ 205:tactsense.c   **** 
+ 206:tactsense.c   ****     return;
+ 207:tactsense.c   **** }
+ 208:tactsense.c   **** 
+ 209:tactsense.c   **** /**
+ 210:tactsense.c   ****  * convertTactSensorPair(uint8_t tactAddress)
+ 211:tactsense.c   ****  * Reads a tactile sensor pair given by tactAddress.
+ 212:tactsense.c   ****  * It assumes that the pair had been previously told to begin a conversion
+ 213:tactsense.c   ****  * the lower three bits of tactAddress denote the Address line status to be used.  The next two bit
+ 214:tactsense.c   ****  * set the proper chip selects to be used according to the following table:
+ 215:tactsense.c   ****  * 00 - nCS1 and nCS4
+ 216:tactsense.c   ****  * 01 - nCS2 and nCS5
+ 217:tactsense.c   ****  * 10 - nCS3 and nCS6
+ 218:tactsense.c   ****  * 11 - Invalid
+ 219:tactsense.c   ****  *
+ 220:tactsense.c   ****  * The remaining bits are don't cares.  This means that the addressing is all adjacent and that a r
+ 221:tactsense.c   ****  * feed incrementing addresses up to decimal 24 to read all 48 tactile sensors.
+ 222:tactsense.c   ****  */
+ 223:tactsense.c   **** 
+ 224:tactsense.c   **** //For simplicity, the Tactile sensor address pins are all on PD0 - PD2
+ 225:tactsense.c   **** static void selectSensor(uint8_t tactAddress)
+ 226:tactsense.c   **** {
+ 102               		.loc 1 226 0
+ 103               		.cfi_startproc
+ 104               	.LVL5:
+ 105               	/* prologue: function */
+ 106               	/* frame size = 0 */
+ 107               	/* stack size = 0 */
+ 108               	.L__stack_usage = 0
+ 227:tactsense.c   ****     uint8_t dummyRead;
+ 228:tactsense.c   **** 
+ 229:tactsense.c   ****     //Now assert the proper chip select
+ 230:tactsense.c   ****     switch(tactAddress)
+ 109               		.loc 1 230 0
+ 110 0070 8830      		cpi r24,lo8(8)
+ 111 0072 00F4      		brsh .L16
+ 112 0074 8430      		cpi r24,lo8(4)
+ 113 0076 00F4      		brsh .L13
+ 114 0078 00C0      		rjmp .L22
+ 115               	.L16:
+ 116 007a 8B30      		cpi r24,lo8(11)
+ 117 007c 00F0      		brlo .L14
+ 118 007e 8B30      		cpi r24,lo8(11)
+ 119 0080 01F4      		brne .L20
+ 120 0082 00C0      		rjmp .L23
+ 121               	.L22:
+ 231:tactsense.c   ****     {
+ 232:tactsense.c   ****         case 0x00:
+ 233:tactsense.c   ****         case 0x01:
+ 234:tactsense.c   ****         case 0x02:
+ 235:tactsense.c   ****         case 0x03:
+ 236:tactsense.c   ****             PORTB.OUTCLR = 1 << tactAddress;
+ 122               		.loc 1 236 0
+ 123 0084 21E0      		ldi r18,lo8(1)
+ 124 0086 30E0      		ldi r19,hi8(1)
+ 125 0088 00C0      		rjmp 2f
+ 126 008a 220F      	1:	lsl r18
+ 127 008c 331F      		rol r19
+ 128 008e 8A95      	2:	dec r24
+ 129 0090 02F4      		brpl 1b
+ 130 0092 E0E2      		ldi r30,lo8(1568)
+ 131 0094 F6E0      		ldi r31,hi8(1568)
+ 132 0096 00C0      		rjmp .L21
+ 133               	.L13:
+ 237:tactsense.c   ****             break;
+ 238:tactsense.c   ****         case 0x04:
+ 239:tactsense.c   ****         case 0x05:
+ 240:tactsense.c   ****         case 0x06:
+ 241:tactsense.c   ****         case 0x07:
+ 242:tactsense.c   ****             PORTC.OUTCLR = 1 << (tactAddress - 0x03);
+ 134               		.loc 1 242 0
+ 135 0098 90E0      		ldi r25,lo8(0)
+ 136 009a 0397      		sbiw r24,3
+ 137               	.LVL6:
+ 138 009c 21E0      		ldi r18,lo8(1)
+ 139 009e 30E0      		ldi r19,hi8(1)
+ 140 00a0 00C0      		rjmp 2f
+ 141 00a2 220F      	1:	lsl r18
+ 142 00a4 331F      		rol r19
+ 143 00a6 8A95      	2:	dec r24
+ 144 00a8 02F4      		brpl 1b
+ 145 00aa E0E4      		ldi r30,lo8(1600)
+ 146 00ac F6E0      		ldi r31,hi8(1600)
+ 147 00ae 00C0      		rjmp .L21
+ 148               	.LVL7:
+ 149               	.L14:
+ 243:tactsense.c   ****             break;
+ 244:tactsense.c   ****         case 0x08:
+ 245:tactsense.c   ****         case 0x09:
+ 246:tactsense.c   ****         case 0x0A:
+ 247:tactsense.c   ****             PORTE.OUTCLR = 1 << (tactAddress - 0x07);
+ 150               		.loc 1 247 0
+ 151 00b0 90E0      		ldi r25,lo8(0)
+ 152 00b2 0797      		sbiw r24,7
+ 153               	.LVL8:
+ 154 00b4 21E0      		ldi r18,lo8(1)
+ 155 00b6 30E0      		ldi r19,hi8(1)
+ 156 00b8 00C0      		rjmp 2f
+ 157 00ba 220F      	1:	lsl r18
+ 158 00bc 331F      		rol r19
+ 159 00be 8A95      	2:	dec r24
+ 160 00c0 02F4      		brpl 1b
+ 161 00c2 E0E8      		ldi r30,lo8(1664)
+ 162 00c4 F6E0      		ldi r31,hi8(1664)
+ 163               	.L21:
+ 164 00c6 2683      		std Z+6,r18
+ 248:tactsense.c   ****             break;
+ 165               		.loc 1 248 0
+ 166 00c8 00C0      		rjmp .L17
+ 167               	.LVL9:
+ 168               	.L23:
+ 249:tactsense.c   ****         case 0x0B:
+ 250:tactsense.c   ****             PORTA.OUTCLR = 0x20;
+ 169               		.loc 1 250 0
+ 170 00ca 80E2      		ldi r24,lo8(32)
+ 171               	.LVL10:
+ 172 00cc E0E0      		ldi r30,lo8(1536)
+ 173 00ce F6E0      		ldi r31,hi8(1536)
+ 174 00d0 8683      		std Z+6,r24
+ 251:tactsense.c   ****             break;
+ 175               		.loc 1 251 0
+ 176 00d2 00C0      		rjmp .L17
+ 177               	.LVL11:
+ 178               	.L20:
+ 179               	.LBB8:
+ 180               	.LBB9:
+ 252:tactsense.c   ****         default:
+ 253:tactsense.c   ****             //Should never get here.  Invalid address
+ 254:tactsense.c   ****             //Reset chip select lines and get out
+ 255:tactsense.c   ****             PORTA.OUTSET = TACT_PORTA_MASK;
+ 181               		.loc 1 255 0
+ 182 00d4 80E6      		ldi r24,lo8(96)
+ 183               	.LVL12:
+ 184 00d6 E0E0      		ldi r30,lo8(1536)
+ 185 00d8 F6E0      		ldi r31,hi8(1536)
+ 186 00da 8583      		std Z+5,r24
+ 256:tactsense.c   ****             PORTB.OUTSET = TACT_PORTB_MASK;
+ 187               		.loc 1 256 0
+ 188 00dc 8FE0      		ldi r24,lo8(15)
+ 189 00de E0E2      		ldi r30,lo8(1568)
+ 190 00e0 F6E0      		ldi r31,hi8(1568)
+ 191 00e2 8583      		std Z+5,r24
+ 257:tactsense.c   ****             PORTC.OUTSET = TACT_PORTC_MASK;
+ 192               		.loc 1 257 0
+ 193 00e4 8EE1      		ldi r24,lo8(30)
+ 194 00e6 E0E4      		ldi r30,lo8(1600)
+ 195 00e8 F6E0      		ldi r31,hi8(1600)
+ 196 00ea 8583      		std Z+5,r24
+ 258:tactsense.c   ****             PORTE.OUTSET = TACT_PORTE_MASK;
+ 197               		.loc 1 258 0
+ 198 00ec 8EE0      		ldi r24,lo8(14)
+ 199 00ee E0E8      		ldi r30,lo8(1664)
+ 200 00f0 F6E0      		ldi r31,hi8(1664)
+ 201 00f2 8583      		std Z+5,r24
+ 202 00f4 0895      		ret
+ 203               	.L17:
+ 204               	.LBE9:
+ 205               	.LBE8:
+ 259:tactsense.c   ****             return;
+ 260:tactsense.c   ****     }
+ 261:tactsense.c   **** 
+ 262:tactsense.c   ****     //Make sure transmitters are OK
+ 263:tactsense.c   ****     if(SPI0.STATUS & SPI_IF_bm)
+ 206               		.loc 1 263 0
+ 207 00f6 8091 C208 		lds r24,2242
+ 208 00fa 87FF      		sbrs r24,7
+ 209 00fc 00C0      		rjmp .L10
+ 264:tactsense.c   ****     {
+ 265:tactsense.c   ****         dummyRead = SPI0.DATA;
+ 210               		.loc 1 265 0
+ 211 00fe 8091 C308 		lds r24,2243
+ 212               	.L10:
+ 213 0102 0895      		ret
+ 214               		.cfi_endproc
+ 215               	.LFE11:
+ 217               	.global	__vector_20
+ 219               	__vector_20:
+ 220               	.LFB6:
+  77:tactsense.c   **** {
+ 221               		.loc 1 77 0
+ 222               		.cfi_startproc
+ 223 0104 1F92      		push r1
+ 224               	.LCFI0:
+ 225               		.cfi_def_cfa_offset 3
+ 226               		.cfi_offset 1, -2
+ 227 0106 0F92      		push r0
+ 228               	.LCFI1:
+ 229               		.cfi_def_cfa_offset 4
+ 230               		.cfi_offset 0, -3
+ 231 0108 0FB6      		in r0,__SREG__
+ 232 010a 0F92      		push r0
+ 233 010c 1124      		clr __zero_reg__
+ 234 010e 8F93      		push r24
+ 235               	.LCFI2:
+ 236               		.cfi_def_cfa_offset 5
+ 237               		.cfi_offset 24, -4
+ 238               	/* prologue: Signal */
+ 239               	/* frame size = 0 */
+ 240               	/* stack size = 4 */
+ 241               	.L__stack_usage = 4
+  78:tactsense.c   ****     tactReady = 1;
+ 242               		.loc 1 78 0
+ 243 0110 81E0      		ldi r24,lo8(1)
+ 244 0112 8093 0000 		sts tactReady,r24
+  79:tactsense.c   ****     TACT_TC.CTRLA = TC_CLKSEL_OFF_gc;
+ 245               		.loc 1 79 0
+ 246 0116 1092 4008 		sts 2112,__zero_reg__
+ 247               	/* epilogue start */
+  81:tactsense.c   **** }
+ 248               		.loc 1 81 0
+ 249 011a 8F91      		pop r24
+ 250 011c 0F90      		pop r0
+ 251 011e 0FBE      		out __SREG__,r0
+ 252 0120 0F90      		pop r0
+ 253 0122 1F90      		pop r1
+ 254 0124 1895      		reti
+ 255               		.cfi_endproc
+ 256               	.LFE6:
+ 258               	.global	configureSPIModulesPressure
+ 260               	configureSPIModulesPressure:
+ 261               	.LFB7:
+  86:tactsense.c   **** {
+ 262               		.loc 1 86 0
+ 263               		.cfi_startproc
+ 264               	/* prologue: function */
+ 265               	/* frame size = 0 */
+ 266               	/* stack size = 0 */
+ 267               	.L__stack_usage = 0
+  87:tactsense.c   ****     SPI0.INTCTRL = SPI_INTLVL_OFF_gc;
+ 268               		.loc 1 87 0
+ 269 0126 E0EC      		ldi r30,lo8(2240)
+ 270 0128 F8E0      		ldi r31,hi8(2240)
+ 271 012a 1182      		std Z+1,__zero_reg__
+  88:tactsense.c   ****     SPI0.CTRL = SPI_ENABLE_bm | SPI_MASTER_bm | SPI_MODE_0_gc | SPI_PRESCALER_DIV4_gc;
+ 272               		.loc 1 88 0
+ 273 012c 80E5      		ldi r24,lo8(80)
+ 274 012e 8083      		st Z,r24
+ 275               	/* epilogue start */
+  89:tactsense.c   **** }
+ 276               		.loc 1 89 0
+ 277 0130 0895      		ret
+ 278               		.cfi_endproc
+ 279               	.LFE7:
+ 281               	.global	initTactileModule
+ 283               	initTactileModule:
+ 284               	.LFB8:
+  93:tactsense.c   **** {
+ 285               		.loc 1 93 0
+ 286               		.cfi_startproc
+ 287 0132 0F93      		push r16
+ 288               	.LCFI3:
+ 289               		.cfi_def_cfa_offset 3
+ 290               		.cfi_offset 16, -2
+ 291 0134 1F93      		push r17
+ 292               	.LCFI4:
+ 293               		.cfi_def_cfa_offset 4
+ 294               		.cfi_offset 17, -3
+ 295 0136 CF93      		push r28
+ 296               	.LCFI5:
+ 297               		.cfi_def_cfa_offset 5
+ 298               		.cfi_offset 28, -4
+ 299 0138 DF93      		push r29
+ 300               	.LCFI6:
+ 301               		.cfi_def_cfa_offset 6
+ 302               		.cfi_offset 29, -5
+ 303               	/* prologue: function */
+ 304               	/* frame size = 0 */
+ 305               	/* stack size = 4 */
+ 306               	.L__stack_usage = 4
+ 307               	.LVL13:
+  93:tactsense.c   **** {
+ 308               		.loc 1 93 0
+ 309 013a 00E0      		ldi r16,lo8(pressureCalibrated)
+ 310 013c 10E0      		ldi r17,hi8(pressureCalibrated)
+ 311 013e A0E0      		ldi r26,lo8(pressureData)
+ 312 0140 B0E0      		ldi r27,hi8(pressureData)
+ 313 0142 C0E0      		ldi r28,lo8(pressureDataOffset)
+ 314 0144 D0E0      		ldi r29,hi8(pressureDataOffset)
+ 315 0146 80E0      		ldi r24,lo8(pressureTempData)
+ 316 0148 90E0      		ldi r25,hi8(pressureTempData)
+ 317 014a 20E0      		ldi r18,lo8(lastPressure)
+ 318 014c 30E0      		ldi r19,hi8(lastPressure)
+ 319 014e 40E0      		ldi r20,lo8(adjustedPressure)
+ 320 0150 50E0      		ldi r21,hi8(adjustedPressure)
+ 321 0152 6CE0      		ldi r22,lo8(12)
+ 322               	.LVL14:
+ 323               	.L27:
+ 324               	.LBB10:
+  96:tactsense.c   ****         pressureCalibrated[i] = 0;
+ 325               		.loc 1 96 0 discriminator 2
+ 326 0154 F801      		movw r30,r16
+ 327 0156 1192      		st Z+,__zero_reg__
+ 328 0158 8F01      		movw r16,r30
+  97:tactsense.c   ****         pressureData[i] = 0;
+ 329               		.loc 1 97 0 discriminator 2
+ 330 015a 1D92      		st X+,__zero_reg__
+ 331 015c 1D92      		st X+,__zero_reg__
+  98:tactsense.c   ****         pressureDataOffset[i] = 0;
+ 332               		.loc 1 98 0 discriminator 2
+ 333 015e 1992      		st Y+,__zero_reg__
+ 334 0160 1992      		st Y+,__zero_reg__
+  99:tactsense.c   ****         pressureTempData[i] = 0;
+ 335               		.loc 1 99 0 discriminator 2
+ 336 0162 FC01      		movw r30,r24
+ 337 0164 1192      		st Z+,__zero_reg__
+ 338 0166 1192      		st Z+,__zero_reg__
+ 339 0168 CF01      		movw r24,r30
+ 106:tactsense.c   ****         lastPressure[i] = 0;
+ 340               		.loc 1 106 0 discriminator 2
+ 341 016a F901      		movw r30,r18
+ 342 016c 1192      		st Z+,__zero_reg__
+ 343 016e 1192      		st Z+,__zero_reg__
+ 344 0170 9F01      		movw r18,r30
+ 107:tactsense.c   ****         adjustedPressure[i] = 0;
+ 345               		.loc 1 107 0 discriminator 2
+ 346 0172 FA01      		movw r30,r20
+ 347 0174 1192      		st Z+,__zero_reg__
+ 348 0176 1192      		st Z+,__zero_reg__
+ 349 0178 AF01      		movw r20,r30
+ 350 017a 6150      		subi r22,lo8(-(-1))
+  94:tactsense.c   ****     for(uint8_t i=0; i<MAXIMUM_NUMBER_OF_TACTILE_SENSORS; i++)
+ 351               		.loc 1 94 0 discriminator 2
+ 352 017c 01F4      		brne .L27
+ 353               	/* epilogue start */
+ 354               	.LBE10:
+ 109:tactsense.c   **** }
+ 355               		.loc 1 109 0
+ 356 017e DF91      		pop r29
+ 357 0180 CF91      		pop r28
+ 358 0182 1F91      		pop r17
+ 359 0184 0F91      		pop r16
+ 360 0186 0895      		ret
+ 361               		.cfi_endproc
+ 362               	.LFE8:
+ 364               	.global	collectAllCalibrationValues
+ 366               	collectAllCalibrationValues:
+ 367               	.LFB14:
+ 266:tactsense.c   ****     }
+ 267:tactsense.c   **** 
+ 268:tactsense.c   ****     return;
+ 269:tactsense.c   **** }
+ 270:tactsense.c   **** 
+ 271:tactsense.c   **** static void convertTactSensor(uint8_t tactAddress)
+ 272:tactsense.c   **** {
+ 273:tactsense.c   ****     uint8_t dummyRead;
+ 274:tactsense.c   ****     selectSensor(tactAddress);
+ 275:tactsense.c   **** 
+ 276:tactsense.c   ****     //Send the data.
+ 277:tactsense.c   ****     SPI0.DATA = CONVERT_OPCODE;
+ 278:tactsense.c   **** 
+ 279:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 280:tactsense.c   **** 
+ 281:tactsense.c   ****     //Read the dummy data
+ 282:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 283:tactsense.c   **** 
+ 284:tactsense.c   ****     //Send the dummy byte
+ 285:tactsense.c   ****     SPI0.DATA = 0x00;
+ 286:tactsense.c   **** 
+ 287:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 288:tactsense.c   **** 
+ 289:tactsense.c   ****     //Read the dummy data
+ 290:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 291:tactsense.c   **** 
+ 292:tactsense.c   ****     //Reset the chip select and address lines
+ 293:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 294:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 295:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 296:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 297:tactsense.c   **** 
+ 298:tactsense.c   ****     return;
+ 299:tactsense.c   **** }
+ 300:tactsense.c   **** 
+ 301:tactsense.c   **** uint8_t activeSensor = 0;
+ 302:tactsense.c   **** 
+ 303:tactsense.c   **** void doTactSensors(void)
+ 304:tactsense.c   **** {
+ 305:tactsense.c   ****     uint8_t i;
+ 306:tactsense.c   **** 
+ 307:tactsense.c   ****     //Set all chip selects high
+ 308:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 309:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 310:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 311:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 312:tactsense.c   **** 
+ 313:tactsense.c   ****     configureSPIModulesPressure();
+ 314:tactsense.c   **** 
+ 315:tactsense.c   ****     if(activeSensor >= numPressureSensors)
+ 316:tactsense.c   ****     {
+ 317:tactsense.c   ****         //Set the Tactile Timer to expire at 3 ms and begin conversion
+ 318:tactsense.c   ****         cli();
+ 319:tactsense.c   ****         tactReady = 0;
+ 320:tactsense.c   ****         for(i=0;i<numPressureSensors;i++)
+ 321:tactsense.c   ****         {
+ 322:tactsense.c   ****             convertTactSensor(i);
+ 323:tactsense.c   ****         }
+ 324:tactsense.c   ****         TACT_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 325:tactsense.c   ****         TACT_TC.CTRLC = 0x00;
+ 326:tactsense.c   ****         TACT_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 327:tactsense.c   ****         TACT_TC.CTRLE = 0x00;
+ 328:tactsense.c   ****         TACT_TC.PERBUF = TACT_TIMEOUT;
+ 329:tactsense.c   ****         TACT_TC.CNT = 0x0000;
+ 330:tactsense.c   ****         TACT_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 331:tactsense.c   ****         TACT_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 332:tactsense.c   ****         activeSensor = 0;
+ 333:tactsense.c   ****         sei();
+ 334:tactsense.c   ****         return;
+ 335:tactsense.c   ****     }
+ 336:tactsense.c   **** 
+ 337:tactsense.c   ****     readTactSensor(activeSensor);
+ 338:tactsense.c   ****     activeSensor++;
+ 339:tactsense.c   **** 
+ 340:tactsense.c   ****     //Leave tactReady asserted so that we can quickly return after giving command a chance
+ 341:tactsense.c   **** }
+ 342:tactsense.c   **** 
+ 343:tactsense.c   **** /************************************************************************
+ 344:tactsense.c   ****  * collectAllTactSensors(void)
+ 345:tactsense.c   ****  * Blocking call to read all tactile sensors right now.
+ 346:tactsense.c   ****  ***********************************************************************
+ 347:tactsense.c   **** void collectAllTactSensors(void)
+ 348:tactsense.c   **** {
+ 349:tactsense.c   ****     int i=0;
+ 350:tactsense.c   **** 
+ 351:tactsense.c   ****     //First set the pins to known values to tighten inner reading loops
+ 352:tactsense.c   ****     configureSPIModulesPressure();
+ 353:tactsense.c   **** 
+ 354:tactsense.c   ****     for(i=0;i<numPressureSensors;i++)
+ 355:tactsense.c   ****     {
+ 356:tactsense.c   ****         convertTactSensor(i);
+ 357:tactsense.c   ****     }
+ 358:tactsense.c   **** 
+ 359:tactsense.c   ****     //Each sensor takes two bytes at 8MHz, so the delay per sensor is 2 usec.
+ 360:tactsense.c   ****     //There are 24 groups receiving the conversion signals, so there are at a minimum
+ 361:tactsense.c   ****     //48 usecs of delay.  Measurement in the system will confirm how fast this really is.
+ 362:tactsense.c   ****     //For now, assume that only 50 usecs have passed since the first conversion start signal was se
+ 363:tactsense.c   ****     //
+ 364:tactsense.c   ****     //The sensors take 3 ms to convert.  This means that the system must sleep for 2.95 ms.
+ 365:tactsense.c   ****     //_delay_ms(2.95);
+ 366:tactsense.c   **** 
+ 367:tactsense.c   **** 
+ 368:tactsense.c   ****     //Now read the pressure sensors.
+ 369:tactsense.c   ****     for(i=0;i<numPressureSensors;i++)
+ 370:tactsense.c   ****     {
+ 371:tactsense.c   ****         readTactSensor(i);
+ 372:tactsense.c   ****     }
+ 373:tactsense.c   **** 
+ 374:tactsense.c   ****     return;
+ 375:tactsense.c   **** 
+ 376:tactsense.c   **** }
+ 377:tactsense.c   **** */
+ 378:tactsense.c   **** 
+ 379:tactsense.c   **** 
+ 380:tactsense.c   **** // static void readCoefficient(uint8_t tactAddress)
+ 381:tactsense.c   **** // {
+ 382:tactsense.c   **** //     uint8_t dummyRead;
+ 383:tactsense.c   **** 
+ 384:tactsense.c   **** //     selectSensor(tactAddress);
+ 385:tactsense.c   **** 
+ 386:tactsense.c   **** //     getDoubleWord(READ_COEFFA0_MSB_OPCODE,(uint16_t *)&a0coeff[tactAddress]);
+ 387:tactsense.c   **** //     getDoubleWord(READ_COEFFB1_MSB_OPCODE,(uint16_t *)&b1coeff[tactAddress]);
+ 388:tactsense.c   **** //     getDoubleWord(READ_COEFFB2_MSB_OPCODE,(uint16_t *)&b2coeff[tactAddress]);
+ 389:tactsense.c   **** //     getDoubleWord(READ_COEFFA0_MSB_OPCODE,(uint16_t *)&c12coeff[tactAddress]);
+ 390:tactsense.c   **** 
+ 391:tactsense.c   **** //     //Send the dummy byte
+ 392:tactsense.c   **** //     SPI0.DATA = 0x00;
+ 393:tactsense.c   **** 
+ 394:tactsense.c   **** //     while(!(SPI0.STATUS & SPI_IF_bm));
+ 395:tactsense.c   **** 
+ 396:tactsense.c   **** //     //Read the dummy data
+ 397:tactsense.c   **** //     dummyRead = SPI0.DATA;
+ 398:tactsense.c   **** 
+ 399:tactsense.c   **** //     //Reset the chip select and address lines
+ 400:tactsense.c   **** //     PORTB.OUTSET = TACT_PORTB_MASK;
+ 401:tactsense.c   **** //     PORTC.OUTSET = TACT_PORTC_MASK;
+ 402:tactsense.c   **** //     PORTA.OUTSET = TACT_PORTA_MASK;
+ 403:tactsense.c   **** //     PORTE.OUTSET = TACT_PORTE_MASK;
+ 404:tactsense.c   **** 
+ 405:tactsense.c   **** //     return;
+ 406:tactsense.c   **** // }
+ 407:tactsense.c   **** 
+ 408:tactsense.c   **** void collectAllCalibrationValues(void)
+ 409:tactsense.c   **** {
+ 368               		.loc 1 409 0
+ 369               		.cfi_startproc
+ 370               	/* prologue: function */
+ 371               	/* frame size = 0 */
+ 372               	/* stack size = 0 */
+ 373               	.L__stack_usage = 0
+ 410:tactsense.c   ****     //First set the pins to known values to tighten inner reading loops
+ 411:tactsense.c   **** 
+ 412:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 374               		.loc 1 412 0
+ 375 0188 8FE0      		ldi r24,lo8(15)
+ 376 018a E0E2      		ldi r30,lo8(1568)
+ 377 018c F6E0      		ldi r31,hi8(1568)
+ 378 018e 8583      		std Z+5,r24
+ 413:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 379               		.loc 1 413 0
+ 380 0190 8EE1      		ldi r24,lo8(30)
+ 381 0192 E0E4      		ldi r30,lo8(1600)
+ 382 0194 F6E0      		ldi r31,hi8(1600)
+ 383 0196 8583      		std Z+5,r24
+ 414:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 384               		.loc 1 414 0
+ 385 0198 80E6      		ldi r24,lo8(96)
+ 386 019a E0E0      		ldi r30,lo8(1536)
+ 387 019c F6E0      		ldi r31,hi8(1536)
+ 388 019e 8583      		std Z+5,r24
+ 415:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 389               		.loc 1 415 0
+ 390 01a0 8EE0      		ldi r24,lo8(14)
+ 391 01a2 E0E8      		ldi r30,lo8(1664)
+ 392 01a4 F6E0      		ldi r31,hi8(1664)
+ 393 01a6 8583      		std Z+5,r24
+ 416:tactsense.c   **** 
+ 417:tactsense.c   ****     // for(uint8_t i=0; i<numPressureSensors; i++)
+ 418:tactsense.c   ****     // {
+ 419:tactsense.c   ****     //     readCoefficient(i);
+ 420:tactsense.c   ****     // }
+ 421:tactsense.c   **** 
+ 422:tactsense.c   ****     //Set the Tactile Timer to expire at 3 ms
+ 423:tactsense.c   ****     TACT_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 394               		.loc 1 423 0
+ 395 01a8 E0E4      		ldi r30,lo8(2112)
+ 396 01aa F8E0      		ldi r31,hi8(2112)
+ 397 01ac 1182      		std Z+1,__zero_reg__
+ 424:tactsense.c   ****     TACT_TC.CTRLC = 0x00;
+ 398               		.loc 1 424 0
+ 399 01ae 1282      		std Z+2,__zero_reg__
+ 425:tactsense.c   ****     TACT_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 400               		.loc 1 425 0
+ 401 01b0 1382      		std Z+3,__zero_reg__
+ 426:tactsense.c   ****     TACT_TC.CTRLE = 0x00;
+ 402               		.loc 1 426 0
+ 403 01b2 1482      		std Z+4,__zero_reg__
+ 427:tactsense.c   ****     TACT_TC.PERBUF = TACT_TIMEOUT;
+ 404               		.loc 1 427 0
+ 405 01b4 80E6      		ldi r24,lo8(96)
+ 406 01b6 90E0      		ldi r25,hi8(96)
+ 407 01b8 86AB      		std Z+54,r24
+ 408 01ba 97AB      		std Z+55,r25
+ 428:tactsense.c   ****     TACT_TC.CNT = 0x0000;
+ 409               		.loc 1 428 0
+ 410 01bc 10A2      		std Z+32,__zero_reg__
+ 411 01be 11A2      		std Z+33,__zero_reg__
+ 429:tactsense.c   ****     TACT_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 412               		.loc 1 429 0
+ 413 01c0 81E0      		ldi r24,lo8(1)
+ 414 01c2 8683      		std Z+6,r24
+ 430:tactsense.c   ****     TACT_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 415               		.loc 1 430 0
+ 416 01c4 87E0      		ldi r24,lo8(7)
+ 417 01c6 8083      		st Z,r24
+ 418               	/* epilogue start */
+ 431:tactsense.c   **** 
+ 432:tactsense.c   ****     return;
+ 433:tactsense.c   **** }
+ 419               		.loc 1 433 0
+ 420 01c8 0895      		ret
+ 421               		.cfi_endproc
+ 422               	.LFE14:
+ 424               	.global	compensatePressure
+ 426               	compensatePressure:
+ 427               	.LFB15:
+ 434:tactsense.c   **** 
+ 435:tactsense.c   **** // typedef int16_t S16;
+ 436:tactsense.c   **** // typedef int32_t S32;
+ 437:tactsense.c   **** 
+ 438:tactsense.c   **** /************************************************************************
+ 439:tactsense.c   ****  * compensatePressure()
+ 440:tactsense.c   ****  *
+ 441:tactsense.c   ****  * This routine was pulled from Freescale app note AN3785 and modified
+ 442:tactsense.c   ****  * for this microprocessor.  The original code assumed two extra parameters
+ 443:tactsense.c   ****  * that have now been removed.
+ 444:tactsense.c   ****  ************************************************************************/
+ 445:tactsense.c   **** void compensatePressure(uint16_t tempReading, uint16_t pressureReading, uint8_t sensorIndex)
+ 446:tactsense.c   **** {
+ 428               		.loc 1 446 0
+ 429               		.cfi_startproc
+ 430               	.LVL15:
+ 431 01ca EF92      		push r14
+ 432               	.LCFI7:
+ 433               		.cfi_def_cfa_offset 3
+ 434               		.cfi_offset 14, -2
+ 435 01cc FF92      		push r15
+ 436               	.LCFI8:
+ 437               		.cfi_def_cfa_offset 4
+ 438               		.cfi_offset 15, -3
+ 439 01ce 0F93      		push r16
+ 440               	.LCFI9:
+ 441               		.cfi_def_cfa_offset 5
+ 442               		.cfi_offset 16, -4
+ 443 01d0 1F93      		push r17
+ 444               	.LCFI10:
+ 445               		.cfi_def_cfa_offset 6
+ 446               		.cfi_offset 17, -5
+ 447 01d2 CF93      		push r28
+ 448               	.LCFI11:
+ 449               		.cfi_def_cfa_offset 7
+ 450               		.cfi_offset 28, -6
+ 451 01d4 DF93      		push r29
+ 452               	.LCFI12:
+ 453               		.cfi_def_cfa_offset 8
+ 454               		.cfi_offset 29, -7
+ 455               	/* prologue: function */
+ 456               	/* frame size = 0 */
+ 457               	/* stack size = 6 */
+ 458               	.L__stack_usage = 6
+ 447:tactsense.c   ****     //===================================================
+ 448:tactsense.c   ****     //Coefficient 9 equation compensation
+ 449:tactsense.c   ****     //===================================================
+ 450:tactsense.c   ****     //
+ 451:tactsense.c   ****     //Variable sizes:
+ 452:tactsense.c   ****     //For placing high and low bytes of the Memory addresses for each of the 6 coefficients:
+ 453:tactsense.c   ****     //signed char (S8) sia0MSB, sia0LSB, sib1MSB,sib1LSB, sib2MSB,sib2LSB, sic12MSB,sic12LSB, sic11
+ 454:tactsense.c   ****     //
+ 455:tactsense.c   ****     //Variable for use in the compensation, this is the 6 coefficients in 16bit form, MSB+LSB.
+ 456:tactsense.c   ****     //signed int (S16) sia0, sib1, sib2, sic12, sic11, sic22;
+ 457:tactsense.c   ****     //
+ 458:tactsense.c   ****     //Variable used to do large calculation as 3 temp variables in the process below
+ 459:tactsense.c   ****     //signed long (S32) lt1, lt2, lt3;
+ 460:tactsense.c   ****     //
+ 461:tactsense.c   ****     //Variables used for Pressure and Temperature Raw.
+ 462:tactsense.c   ****     //unsigned int (U16) uiPadc, uiTadc.
+ 463:tactsense.c   ****     //signed (N=number of bits in coefficient, F-fractional bits)
+ 464:tactsense.c   ****     //s(N,F)
+ 465:tactsense.c   ****     //The below Pressure and Temp or uiPadc and uiTadc are shifted from the MSB+LSB values to remov
+ 466:tactsense.c   ****     // 10bit number is stored in 16 bits. i.e 0123456789XXXXXX becomes 0000000123456789
+ 467:tactsense.c   **** 
+ 468:tactsense.c   ****     // int32_t lt1,lt2,lt3;
+ 469:tactsense.c   ****     uint16_t pressureLocal;
+ 470:tactsense.c   ****     uint16_t tempLocal;
+ 471:tactsense.c   **** 
+ 472:tactsense.c   ****     //#define S32 uint32_t
+ 473:tactsense.c   ****     //#define S16 int16_t
+ 474:tactsense.c   **** 
+ 475:tactsense.c   ****     // int32_t si_a2x2,si_y1,si_a1x1,si_c12x2,si_a1;
+ 476:tactsense.c   **** 
+ 477:tactsense.c   ****     // int16_t siPcomp;
+ 478:tactsense.c   ****     //float decPcomp;
+ 479:tactsense.c   **** 
+ 480:tactsense.c   ****     pressureLocal=pressureReading>>6; //Note that the PressCntdec is the raw value from the MPL115A
+ 459               		.loc 1 480 0
+ 460 01d6 36E0      		ldi r19,6
+ 461 01d8 7695      	1:	lsr r23
+ 462 01da 6795      		ror r22
+ 463 01dc 3A95      		dec r19
+ 464 01de 01F4      		brne 1b
+ 465               	.LVL16:
+ 481:tactsense.c   ****     tempLocal=tempReading>>6; //Note that the TempCntdec is the raw value from the MPL115A data add
+ 466               		.loc 1 481 0
+ 467 01e0 7C01      		movw r14,r24
+ 468 01e2 56E0      		ldi r21,6
+ 469 01e4 F694      	1:	lsr r15
+ 470 01e6 E794      		ror r14
+ 471 01e8 5A95      		dec r21
+ 472 01ea 01F4      		brne 1b
+ 473               	.LVL17:
+ 474               	.LBB11:
+ 482:tactsense.c   **** 
+ 483:tactsense.c   ****     // since we are operating the sensor outside its normal range, it seems to behave as if it has 
+ 484:tactsense.c   ****     // however, its range is still 10 bits, (0-1023).  So we need to track the "actual" value of th
+ 485:tactsense.c   ****     {
+ 486:tactsense.c   ****         if (!pressureCalibrated[sensorIndex])
+ 475               		.loc 1 486 0
+ 476 01ec 042F      		mov r16,r20
+ 477 01ee 10E0      		ldi r17,lo8(0)
+ 478 01f0 D801      		movw r26,r16
+ 479 01f2 A050      		subi r26,lo8(-(pressureCalibrated))
+ 480 01f4 B040      		sbci r27,hi8(-(pressureCalibrated))
+ 481 01f6 2C91      		ld r18,X
+ 482 01f8 C801      		movw r24,r16
+ 483               	.LVL18:
+ 484 01fa 880F      		lsl r24
+ 485 01fc 991F      		rol r25
+ 486 01fe 2223      		tst r18
+ 487 0200 01F4      		brne .L31
+ 488               	.LVL19:
+ 487:tactsense.c   ****         {
+ 488:tactsense.c   ****             lastPressure[sensorIndex] = pressureLocal;
+ 489               		.loc 1 488 0
+ 490 0202 FC01      		movw r30,r24
+ 491 0204 E050      		subi r30,lo8(-(lastPressure))
+ 492 0206 F040      		sbci r31,hi8(-(lastPressure))
+ 493 0208 6083      		st Z,r22
+ 494 020a 7183      		std Z+1,r23
+ 489:tactsense.c   ****             adjustedPressure[sensorIndex] = pressureLocal;
+ 495               		.loc 1 489 0
+ 496 020c FC01      		movw r30,r24
+ 497 020e E050      		subi r30,lo8(-(adjustedPressure))
+ 498 0210 F040      		sbci r31,hi8(-(adjustedPressure))
+ 499 0212 6083      		st Z,r22
+ 500 0214 7183      		std Z+1,r23
+ 490:tactsense.c   ****             pressureCalibrated[sensorIndex] = 1;
+ 501               		.loc 1 490 0
+ 502 0216 21E0      		ldi r18,lo8(1)
+ 503 0218 2C93      		st X,r18
+ 504               	.L31:
+ 491:tactsense.c   ****         }
+ 492:tactsense.c   **** 
+ 493:tactsense.c   ****         int16_t delta = pressureLocal - lastPressure[sensorIndex];
+ 505               		.loc 1 493 0
+ 506 021a DC01      		movw r26,r24
+ 507 021c A050      		subi r26,lo8(-(lastPressure))
+ 508 021e B040      		sbci r27,hi8(-(lastPressure))
+ 509 0220 4D91      		ld r20,X+
+ 510 0222 5C91      		ld r21,X
+ 511 0224 1197      		sbiw r26,1
+ 512 0226 9B01      		movw r18,r22
+ 513 0228 241B      		sub r18,r20
+ 514 022a 350B      		sbc r19,r21
+ 515               	.LVL20:
+ 494:tactsense.c   **** 
+ 495:tactsense.c   ****         if (abs(delta) < 512)
+ 516               		.loc 1 495 0
+ 517 022c E901      		movw r28,r18
+ 518 022e C150      		subi r28,lo8(-(511))
+ 519 0230 DE4F      		sbci r29,hi8(-(511))
+ 520 0232 FC01      		movw r30,r24
+ 521 0234 E050      		subi r30,lo8(-(adjustedPressure))
+ 522 0236 F040      		sbci r31,hi8(-(adjustedPressure))
+ 523 0238 83E0      		ldi r24,hi8(1023)
+ 524 023a CF3F      		cpi r28,lo8(1023)
+ 525 023c D807      		cpc r29,r24
+ 526 023e 00F4      		brsh .L32
+ 496:tactsense.c   ****         {
+ 497:tactsense.c   ****             lastPressure[sensorIndex] = pressureLocal;
+ 527               		.loc 1 497 0
+ 528 0240 6D93      		st X+,r22
+ 529 0242 7C93      		st X,r23
+ 530 0244 1197      		sbiw r26,1
+ 498:tactsense.c   ****             adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] + delta;
+ 531               		.loc 1 498 0
+ 532 0246 8081      		ld r24,Z
+ 533 0248 9181      		ldd r25,Z+1
+ 534 024a 00C0      		rjmp .L34
+ 535               	.L32:
+ 536               	.LBB12:
+ 499:tactsense.c   ****         }
+ 500:tactsense.c   ****         else
+ 501:tactsense.c   ****         {
+ 502:tactsense.c   ****             int16_t bottom = lastPressure[sensorIndex] + (1024 - pressureLocal);
+ 537               		.loc 1 502 0
+ 538 024c 461B      		sub r20,r22
+ 539 024e 570B      		sbc r21,r23
+ 540 0250 4050      		subi r20,lo8(-(1024))
+ 541 0252 5C4F      		sbci r21,hi8(-(1024))
+ 542               	.LVL21:
+ 503:tactsense.c   ****             int16_t top = pressureLocal + (1024 - lastPressure[sensorIndex]);
+ 543               		.loc 1 503 0
+ 544 0254 2050      		subi r18,lo8(-(1024))
+ 545 0256 3C4F      		sbci r19,hi8(-(1024))
+ 546               	.LVL22:
+ 504:tactsense.c   ****             lastPressure[sensorIndex] = pressureLocal;
+ 547               		.loc 1 504 0
+ 548 0258 6D93      		st X+,r22
+ 549 025a 7C93      		st X,r23
+ 550 025c 1197      		sbiw r26,1
+ 505:tactsense.c   ****             if (bottom<top) // crossing 0
+ 506:tactsense.c   ****                 adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] - bottom;
+ 551               		.loc 1 506 0
+ 552 025e 8081      		ld r24,Z
+ 553 0260 9181      		ldd r25,Z+1
+ 505:tactsense.c   ****             if (bottom<top) // crossing 0
+ 554               		.loc 1 505 0
+ 555 0262 4217      		cp r20,r18
+ 556 0264 5307      		cpc r21,r19
+ 557 0266 04F4      		brge .L34
+ 558               	.LVL23:
+ 559               		.loc 1 506 0
+ 560 0268 841B      		sub r24,r20
+ 561 026a 950B      		sbc r25,r21
+ 562 026c 00C0      		rjmp .L35
+ 563               	.LVL24:
+ 564               	.L34:
+ 507:tactsense.c   ****             else // crossing 1024
+ 508:tactsense.c   ****                 adjustedPressure[sensorIndex] = adjustedPressure[sensorIndex] + top;
+ 565               		.loc 1 508 0
+ 566 026e 820F      		add r24,r18
+ 567 0270 931F      		adc r25,r19
+ 568               	.L35:
+ 569 0272 8083      		st Z,r24
+ 570 0274 9183      		std Z+1,r25
+ 571               	.LBE12:
+ 572               	.LBE11:
+ 509:tactsense.c   ****         }
+ 510:tactsense.c   ****     }
+ 511:tactsense.c   **** 
+ 512:tactsense.c   ****     // /*
+ 513:tactsense.c   ****     // // ******* STEP 1 c11x1= c11 * Padc
+ 514:tactsense.c   ****     // lt1 = (S32)sic11; // s(16,27) s(N,F+zeropad) goes from s(11,10)+11ZeroPad = s(11,22) => Left
+ 515:tactsense.c   ****     // lt2 = (S32)pressureLocal; // u(10,0) s(N,F)
+ 516:tactsense.c   ****     // lt3 = lt1 * lt2; // s(26,27) /c11*Padc
+ 517:tactsense.c   ****     // si_c11x1 = (S32)(lt3); // s(26,27)- EQ 1 =c11x1 /checked
+ 518:tactsense.c   ****     // //divide this hex number by 2^30 to get the correct decimal value.
+ 519:tactsense.c   ****     // //b1 =s(14,11) => s(16,13) Left justified
+ 520:tactsense.c   ****     // */
+ 521:tactsense.c   **** 
+ 522:tactsense.c   ****     // //si_c11x1 is zero
+ 523:tactsense.c   **** 
+ 524:tactsense.c   ****     // /*
+ 525:tactsense.c   ****     // // ******* STEP 2 a11= b1 + c11x1
+ 526:tactsense.c   ****     // lt1 = ((S32)b1coeff[sensorIndex]<<14); // s(30,27) b1=s(16,13) Shift b1 so that the F matche
+ 527:tactsense.c   ****     // lt2 = (S32)si_c11x1; // s(26,27) //ensure fractional bits are compatible
+ 528:tactsense.c   ****     // lt3 = lt1 + lt2; // s(30,27) /b1+c11x1
+ 529:tactsense.c   ****     // si_a11 = (S32)(lt3>>14); // s(16,13) - EQ 2 =a11 Convert this block back to s(16,X)
+ 530:tactsense.c   ****     // */
+ 531:tactsense.c   **** 
+ 532:tactsense.c   ****     // //si_a11 is just b1
+ 533:tactsense.c   **** 
+ 534:tactsense.c   ****     // // ******* STEP 3 c12x2= c12 * Tadc
+ 535:tactsense.c   ****     // // sic12 is s(14,13)+9zero pad = s(16,15)+9 => s(16,24) left justified
+ 536:tactsense.c   ****     // lt1 = (S32)c12coeff[sensorIndex]; // s(16,24)
+ 537:tactsense.c   ****     // lt2 = (S32)tempLocal; // u(10,0)
+ 538:tactsense.c   ****     // lt3 = lt1 * lt2; // s(26,24)
+ 539:tactsense.c   ****     // si_c12x2 = (S32)(lt3); // s(26,24) - EQ 3 =c12x2 /checked
+ 540:tactsense.c   **** 
+ 541:tactsense.c   **** 
+ 542:tactsense.c   ****     // //Changed si_a11 to b1coeff
+ 543:tactsense.c   **** 
+ 544:tactsense.c   ****     // // ******* STEP 4 a1= a11 + c12x2
+ 545:tactsense.c   ****     // lt1 = ((S32)b1coeff[sensorIndex]<<11); // s(27,24) This is done by s(16,13) <<11 goes to s(2
+ 546:tactsense.c   ****     // lt2 = (S32)si_c12x2; // s(26,24)
+ 547:tactsense.c   ****     // lt3 = lt1 + lt2; // s(27,24) /a11+c12x2
+ 548:tactsense.c   ****     // si_a1 =(S32)(lt3>>11); // s(16,13) - EQ 4 =a1 /check
+ 549:tactsense.c   **** 
+ 550:tactsense.c   ****     // /*
+ 551:tactsense.c   ****     // // ******* STEP 5 c22x2= c22 * Tadc
+ 552:tactsense.c   ****     // // c22 is s(11,10)+9zero pad = s(11,19) => s(16,24) left justified
+ 553:tactsense.c   ****     // lt1 = (S32)sic22; // s(16,30) This is done by s(11,10) + 15 zero pad goes to s(16,15)+15, to
+ 554:tactsense.c   ****     // lt2 = (S32)tempLocal; // u(10,0)
+ 555:tactsense.c   ****     // lt3 = lt1 * lt2; // s(26,30) /c22*Tadc
+ 556:tactsense.c   ****     // si_c22x2 = (S32)(lt3); // s(26,30) - EQ 5 /=c22x2
+ 557:tactsense.c   ****     // */
+ 558:tactsense.c   **** 
+ 559:tactsense.c   ****     // //si_c22x2 is zero
+ 560:tactsense.c   **** 
+ 561:tactsense.c   ****     // /*
+ 562:tactsense.c   ****     // // ******* STEP 6 a2= b2 + c22x2
+ 563:tactsense.c   ****     // //WORKS and loses the least in data. One extra execution. Note how the 31 is really a 32 due
+ 564:tactsense.c   ****     // // b2 is s(16,14) User shifted left to => s(31,29) to match c22x2 F value
+ 565:tactsense.c   ****     // lt1 = ((S32)b2coeff[sensorIndex]<<15); //s(31,29)
+ 566:tactsense.c   ****     // lt2 = ((S32)si_c22x2>>1); //s(25,29) s(26,30) goes to >>16 s(10,14) to match F from sib2
+ 567:tactsense.c   ****     // lt3 = lt1+lt2; //s(32,29) but really is a s(31,29) due to overflow the 31 becomes a 32.
+ 568:tactsense.c   ****     // si_a2 = ((S32)lt3>>16); //s(16,13)
+ 569:tactsense.c   ****     // */
+ 570:tactsense.c   **** 
+ 571:tactsense.c   ****     // //si_a2 is b2coeff shifted right by 1 bit
+ 572:tactsense.c   **** 
+ 573:tactsense.c   ****     // // ******* STEP 7 a1x1= a1 * Padc
+ 574:tactsense.c   ****     // lt1 = (S32)si_a1; // s(16,13)
+ 575:tactsense.c   ****     // lt2 = (S32)adjustedPressure[sensorIndex];  //lt2 = (S32)pressureLocal; // u(10,0)
+ 576:tactsense.c   ****     // lt3 = lt1 * lt2; // s(26,13) /a1*Padc
+ 577:tactsense.c   ****     // si_a1x1 = (S32)(lt3); // s(26,13) - EQ 7 /=a1x1 /check
+ 578:tactsense.c   **** 
+ 579:tactsense.c   ****     // // ******* STEP 8 y1= a0 + a1x1
+ 580:tactsense.c   ****     // // a0 = s(16,3)
+ 581:tactsense.c   ****     // lt1 = ((S32)a0coeff[sensorIndex]<<10); // s(26,13) This is done since has to match a1x1 F va
+ 582:tactsense.c   ****     // lt2 = (S32)si_a1x1; // s(26,13)
+ 583:tactsense.c   ****     // lt3 = lt1 + lt2; // s(26,13) /a0+a1x1
+ 584:tactsense.c   ****     // si_y1 = (S32)(lt3>>10); // s(16,3) - EQ 8 /=y1 /check
+ 585:tactsense.c   **** 
+ 586:tactsense.c   ****     // //changed si_a2 to b2coeff.
+ 587:tactsense.c   ****     // //no other changes here
+ 588:tactsense.c   **** 
+ 589:tactsense.c   ****     // // ******* STEP 9 a2x2= a2 *Tadc
+ 590:tactsense.c   ****     // lt1 = (S32)b2coeff[sensorIndex]; // s(16,13)
+ 591:tactsense.c   ****     // lt2 = (S32)tempLocal; // u(10,0)
+ 592:tactsense.c   ****     // lt3 = lt1 * lt2; // s(26,13) /a2*Tadc
+ 593:tactsense.c   ****     // si_a2x2 = (S32)(lt3); // s(26,13) - EQ 9 /=a2x2
+ 594:tactsense.c   **** 
+ 595:tactsense.c   ****     // //Since I didn't shift b2coeff right by 1 above, si_y1 needs to be shifted left by 11 instea
+ 596:tactsense.c   **** 
+ 597:tactsense.c   ****     // // ******* STEP 10 pComp = y1 +a2x2
+ 598:tactsense.c   ****     // // y1= s(16,3)
+ 599:tactsense.c   ****     // lt1 = ((S32)si_y1<<11); // s(26,13) This is done to match a2x2 F value so addition can match
+ 600:tactsense.c   ****     // lt2 = (S32)si_a2x2; // s(26,13)
+ 601:tactsense.c   ****     // lt3 = lt1 + lt2; // s(26,13) /y1+a2x2
+ 602:tactsense.c   **** 
+ 603:tactsense.c   ****     // //The above addition has an extra F bit, so round down by 14
+ 604:tactsense.c   **** 
+ 605:tactsense.c   ****     // // FIXED POINT RESULT WITH ROUNDING:
+ 606:tactsense.c   ****     // siPcomp = (int16_t)(lt3>>14); //&0x3FF); // goes to no fractional parts since this is an ADC
+ 607:tactsense.c   ****     // //decPcomp is defined as a floating point number.
+ 608:tactsense.c   ****     // //Conversion to Decimal value from 1023 ADC count value. ADC counts are 0 to 1023. Pressure 
+ 609:tactsense.c   ****     // //decPcomp = ((65.0/1023.0)*(float)siPcomp)+50.0;
+ 610:tactsense.c   ****     
+ 611:tactsense.c   ****     pressureTempData[sensorIndex] = tempLocal;
+ 573               		.loc 1 611 0
+ 574 0276 C801      		movw r24,r16
+ 575 0278 880F      		lsl r24
+ 576 027a 991F      		rol r25
+ 577 027c FC01      		movw r30,r24
+ 578 027e E050      		subi r30,lo8(-(pressureTempData))
+ 579 0280 F040      		sbci r31,hi8(-(pressureTempData))
+ 580 0282 E082      		st Z,r14
+ 581 0284 F182      		std Z+1,r15
+ 612:tactsense.c   ****     //pressureData[sensorIndex] = siPcomp - pressureDataOffset[sensorIndex];
+ 613:tactsense.c   ****     pressureData[sensorIndex] = adjustedPressure[sensorIndex] - pressureDataOffset[sensorIndex];
+ 582               		.loc 1 613 0
+ 583 0286 DC01      		movw r26,r24
+ 584 0288 A050      		subi r26,lo8(-(pressureData))
+ 585 028a B040      		sbci r27,hi8(-(pressureData))
+ 586 028c FC01      		movw r30,r24
+ 587 028e E050      		subi r30,lo8(-(adjustedPressure))
+ 588 0290 F040      		sbci r31,hi8(-(adjustedPressure))
+ 589 0292 8050      		subi r24,lo8(-(pressureDataOffset))
+ 590 0294 9040      		sbci r25,hi8(-(pressureDataOffset))
+ 591 0296 2081      		ld r18,Z
+ 592 0298 3181      		ldd r19,Z+1
+ 593 029a FC01      		movw r30,r24
+ 594 029c 8081      		ld r24,Z
+ 595 029e 9181      		ldd r25,Z+1
+ 596 02a0 281B      		sub r18,r24
+ 597 02a2 390B      		sbc r19,r25
+ 598 02a4 2D93      		st X+,r18
+ 599 02a6 3C93      		st X,r19
+ 600 02a8 1197      		sbiw r26,1
+ 601               	/* epilogue start */
+ 614:tactsense.c   ****     return;
+ 615:tactsense.c   **** }
+ 602               		.loc 1 615 0
+ 603 02aa DF91      		pop r29
+ 604 02ac CF91      		pop r28
+ 605               	.LVL25:
+ 606 02ae 1F91      		pop r17
+ 607 02b0 0F91      		pop r16
+ 608               	.LVL26:
+ 609 02b2 FF90      		pop r15
+ 610 02b4 EF90      		pop r14
+ 611               	.LVL27:
+ 612 02b6 0895      		ret
+ 613               		.cfi_endproc
+ 614               	.LFE15:
+ 616               	.global	doTactSensors
+ 618               	doTactSensors:
+ 619               	.LFB13:
+ 304:tactsense.c   **** {
+ 620               		.loc 1 304 0
+ 621               		.cfi_startproc
+ 622 02b8 2F92      		push r2
+ 623               	.LCFI13:
+ 624               		.cfi_def_cfa_offset 3
+ 625               		.cfi_offset 2, -2
+ 626 02ba 3F92      		push r3
+ 627               	.LCFI14:
+ 628               		.cfi_def_cfa_offset 4
+ 629               		.cfi_offset 3, -3
+ 630 02bc 4F92      		push r4
+ 631               	.LCFI15:
+ 632               		.cfi_def_cfa_offset 5
+ 633               		.cfi_offset 4, -4
+ 634 02be 5F92      		push r5
+ 635               	.LCFI16:
+ 636               		.cfi_def_cfa_offset 6
+ 637               		.cfi_offset 5, -5
+ 638 02c0 6F92      		push r6
+ 639               	.LCFI17:
+ 640               		.cfi_def_cfa_offset 7
+ 641               		.cfi_offset 6, -6
+ 642 02c2 7F92      		push r7
+ 643               	.LCFI18:
+ 644               		.cfi_def_cfa_offset 8
+ 645               		.cfi_offset 7, -7
+ 646 02c4 8F92      		push r8
+ 647               	.LCFI19:
+ 648               		.cfi_def_cfa_offset 9
+ 649               		.cfi_offset 8, -8
+ 650 02c6 9F92      		push r9
+ 651               	.LCFI20:
+ 652               		.cfi_def_cfa_offset 10
+ 653               		.cfi_offset 9, -9
+ 654 02c8 AF92      		push r10
+ 655               	.LCFI21:
+ 656               		.cfi_def_cfa_offset 11
+ 657               		.cfi_offset 10, -10
+ 658 02ca BF92      		push r11
+ 659               	.LCFI22:
+ 660               		.cfi_def_cfa_offset 12
+ 661               		.cfi_offset 11, -11
+ 662 02cc CF92      		push r12
+ 663               	.LCFI23:
+ 664               		.cfi_def_cfa_offset 13
+ 665               		.cfi_offset 12, -12
+ 666 02ce DF92      		push r13
+ 667               	.LCFI24:
+ 668               		.cfi_def_cfa_offset 14
+ 669               		.cfi_offset 13, -13
+ 670 02d0 EF92      		push r14
+ 671               	.LCFI25:
+ 672               		.cfi_def_cfa_offset 15
+ 673               		.cfi_offset 14, -14
+ 674 02d2 FF92      		push r15
+ 675               	.LCFI26:
+ 676               		.cfi_def_cfa_offset 16
+ 677               		.cfi_offset 15, -15
+ 678 02d4 0F93      		push r16
+ 679               	.LCFI27:
+ 680               		.cfi_def_cfa_offset 17
+ 681               		.cfi_offset 16, -16
+ 682 02d6 1F93      		push r17
+ 683               	.LCFI28:
+ 684               		.cfi_def_cfa_offset 18
+ 685               		.cfi_offset 17, -17
+ 686 02d8 CF93      		push r28
+ 687               	.LCFI29:
+ 688               		.cfi_def_cfa_offset 19
+ 689               		.cfi_offset 28, -18
+ 690 02da DF93      		push r29
+ 691               	.LCFI30:
+ 692               		.cfi_def_cfa_offset 20
+ 693               		.cfi_offset 29, -19
+ 694 02dc CDB7      		in r28,__SP_L__
+ 695 02de DEB7      		in r29,__SP_H__
+ 696 02e0 2597      		sbiw r28,5
+ 697               	.LCFI31:
+ 698               		.cfi_def_cfa 28, 25
+ 699 02e2 CDBF      		out __SP_L__,r28
+ 700 02e4 DEBF      		out __SP_H__,r29
+ 701               	/* prologue: function */
+ 702               	/* frame size = 5 */
+ 703               	/* stack size = 23 */
+ 704               	.L__stack_usage = 23
+ 308:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 705               		.loc 1 308 0
+ 706 02e6 8FE0      		ldi r24,lo8(15)
+ 707 02e8 E0E2      		ldi r30,lo8(1568)
+ 708 02ea F6E0      		ldi r31,hi8(1568)
+ 709 02ec 8583      		std Z+5,r24
+ 309:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 710               		.loc 1 309 0
+ 711 02ee 8EE1      		ldi r24,lo8(30)
+ 712 02f0 E0E4      		ldi r30,lo8(1600)
+ 713 02f2 F6E0      		ldi r31,hi8(1600)
+ 714 02f4 8583      		std Z+5,r24
+ 310:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 715               		.loc 1 310 0
+ 716 02f6 80E6      		ldi r24,lo8(96)
+ 717 02f8 E0E0      		ldi r30,lo8(1536)
+ 718 02fa F6E0      		ldi r31,hi8(1536)
+ 719 02fc 8583      		std Z+5,r24
+ 311:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 720               		.loc 1 311 0
+ 721 02fe 8EE0      		ldi r24,lo8(14)
+ 722 0300 E0E8      		ldi r30,lo8(1664)
+ 723 0302 F6E0      		ldi r31,hi8(1664)
+ 724 0304 8583      		std Z+5,r24
+ 313:tactsense.c   ****     configureSPIModulesPressure();
+ 725               		.loc 1 313 0
+ 726 0306 0E94 0000 		call configureSPIModulesPressure
+ 315:tactsense.c   ****     if(activeSensor >= numPressureSensors)
+ 727               		.loc 1 315 0
+ 728 030a 4091 0000 		lds r20,activeSensor
+ 729 030e 8091 0000 		lds r24,numPressureSensors
+ 730 0312 4817      		cp r20,r24
+ 731 0314 00F4      		brsh .+2
+ 732 0316 00C0      		rjmp .L37
+ 318:tactsense.c   ****         cli();
+ 733               		.loc 1 318 0
+ 734               	/* #APP */
+ 735               	 ;  318 "tactsense.c" 1
+ 736 0318 F894      		cli
+ 737               	 ;  0 "" 2
+ 319:tactsense.c   ****         tactReady = 0;
+ 738               		.loc 1 319 0
+ 739               	/* #NOAPP */
+ 740 031a 1092 0000 		sts tactReady,__zero_reg__
+ 741               	.LVL28:
+ 320:tactsense.c   ****         for(i=0;i<numPressureSensors;i++)
+ 742               		.loc 1 320 0
+ 743 031e 10E0      		ldi r17,lo8(0)
+ 744               	.LBB13:
+ 745               	.LBB14:
+ 277:tactsense.c   ****     SPI0.DATA = CONVERT_OPCODE;
+ 746               		.loc 1 277 0
+ 747 0320 F0EC      		ldi r31,lo8(2240)
+ 748 0322 AF2E      		mov r10,r31
+ 749 0324 F8E0      		ldi r31,hi8(2240)
+ 750 0326 BF2E      		mov r11,r31
+ 751 0328 A4E2      		ldi r26,lo8(36)
+ 752 032a CA2E      		mov r12,r26
+ 279:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 753               		.loc 1 279 0
+ 754 032c B0EC      		ldi r27,lo8(2240)
+ 755 032e 8B2E      		mov r8,r27
+ 756 0330 B8E0      		ldi r27,hi8(2240)
+ 757 0332 9B2E      		mov r9,r27
+ 293:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 758               		.loc 1 293 0
+ 759 0334 00E2      		ldi r16,lo8(1568)
+ 760 0336 602E      		mov r6,r16
+ 761 0338 06E0      		ldi r16,hi8(1568)
+ 762 033a 702E      		mov r7,r16
+ 763 033c 8FE0      		ldi r24,lo8(15)
+ 764 033e D82E      		mov r13,r24
+ 294:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 765               		.loc 1 294 0
+ 766 0340 90E4      		ldi r25,lo8(1600)
+ 767 0342 492E      		mov r4,r25
+ 768 0344 96E0      		ldi r25,hi8(1600)
+ 769 0346 592E      		mov r5,r25
+ 770 0348 2EE1      		ldi r18,lo8(30)
+ 771 034a E22E      		mov r14,r18
+ 295:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 772               		.loc 1 295 0
+ 773 034c 212C      		mov r2,__zero_reg__
+ 774 034e 36E0      		ldi r19,hi8(1536)
+ 775 0350 332E      		mov r3,r19
+ 776 0352 40E6      		ldi r20,lo8(96)
+ 777 0354 F42E      		mov r15,r20
+ 296:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 778               		.loc 1 296 0
+ 779 0356 0EE0      		ldi r16,lo8(14)
+ 780               	.LBE14:
+ 781               	.LBE13:
+ 320:tactsense.c   ****         for(i=0;i<numPressureSensors;i++)
+ 782               		.loc 1 320 0
+ 783 0358 00C0      		rjmp .L38
+ 784               	.LVL29:
+ 785               	.L41:
+ 786               	.LBB16:
+ 787               	.LBB15:
+ 274:tactsense.c   ****     selectSensor(tactAddress);
+ 788               		.loc 1 274 0
+ 789 035a 812F      		mov r24,r17
+ 790 035c 0E94 0000 		call selectSensor
+ 277:tactsense.c   ****     SPI0.DATA = CONVERT_OPCODE;
+ 791               		.loc 1 277 0
+ 792 0360 F501      		movw r30,r10
+ 793 0362 C382      		std Z+3,r12
+ 794               	.L39:
+ 279:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 795               		.loc 1 279 0
+ 796 0364 8091 C208 		lds r24,2242
+ 797 0368 87FF      		sbrs r24,7
+ 798 036a 00C0      		rjmp .L39
+ 282:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 799               		.loc 1 282 0
+ 800 036c 8091 C308 		lds r24,2243
+ 285:tactsense.c   ****     SPI0.DATA = 0x00;
+ 801               		.loc 1 285 0
+ 802 0370 F401      		movw r30,r8
+ 803 0372 1382      		std Z+3,__zero_reg__
+ 804               	.L40:
+ 287:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 805               		.loc 1 287 0
+ 806 0374 8091 C208 		lds r24,2242
+ 807 0378 87FF      		sbrs r24,7
+ 808 037a 00C0      		rjmp .L40
+ 290:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 809               		.loc 1 290 0
+ 810 037c 8091 C308 		lds r24,2243
+ 293:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 811               		.loc 1 293 0
+ 812 0380 F301      		movw r30,r6
+ 813 0382 D582      		std Z+5,r13
+ 294:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 814               		.loc 1 294 0
+ 815 0384 F201      		movw r30,r4
+ 816 0386 E582      		std Z+5,r14
+ 295:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 817               		.loc 1 295 0
+ 818 0388 F101      		movw r30,r2
+ 819 038a F582      		std Z+5,r15
+ 296:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 820               		.loc 1 296 0
+ 821 038c 0093 8506 		sts 1669,r16
+ 822               	.LBE15:
+ 823               	.LBE16:
+ 320:tactsense.c   ****         for(i=0;i<numPressureSensors;i++)
+ 824               		.loc 1 320 0
+ 825 0390 1F5F      		subi r17,lo8(-(1))
+ 826               	.LVL30:
+ 827               	.L38:
+ 320:tactsense.c   ****         for(i=0;i<numPressureSensors;i++)
+ 828               		.loc 1 320 0 is_stmt 0 discriminator 1
+ 829 0392 8091 0000 		lds r24,numPressureSensors
+ 830 0396 1817      		cp r17,r24
+ 831 0398 00F0      		brlo .L41
+ 324:tactsense.c   ****         TACT_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 832               		.loc 1 324 0 is_stmt 1
+ 833 039a E0E4      		ldi r30,lo8(2112)
+ 834 039c F8E0      		ldi r31,hi8(2112)
+ 835 039e 1182      		std Z+1,__zero_reg__
+ 325:tactsense.c   ****         TACT_TC.CTRLC = 0x00;
+ 836               		.loc 1 325 0
+ 837 03a0 1282      		std Z+2,__zero_reg__
+ 326:tactsense.c   ****         TACT_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 838               		.loc 1 326 0
+ 839 03a2 1382      		std Z+3,__zero_reg__
+ 327:tactsense.c   ****         TACT_TC.CTRLE = 0x00;
+ 840               		.loc 1 327 0
+ 841 03a4 1482      		std Z+4,__zero_reg__
+ 328:tactsense.c   ****         TACT_TC.PERBUF = TACT_TIMEOUT;
+ 842               		.loc 1 328 0
+ 843 03a6 80E6      		ldi r24,lo8(96)
+ 844 03a8 90E0      		ldi r25,hi8(96)
+ 845 03aa 86AB      		std Z+54,r24
+ 846 03ac 97AB      		std Z+55,r25
+ 329:tactsense.c   ****         TACT_TC.CNT = 0x0000;
+ 847               		.loc 1 329 0
+ 848 03ae 10A2      		std Z+32,__zero_reg__
+ 849 03b0 11A2      		std Z+33,__zero_reg__
+ 330:tactsense.c   ****         TACT_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 850               		.loc 1 330 0
+ 851 03b2 81E0      		ldi r24,lo8(1)
+ 852 03b4 8683      		std Z+6,r24
+ 331:tactsense.c   ****         TACT_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 853               		.loc 1 331 0
+ 854 03b6 87E0      		ldi r24,lo8(7)
+ 855 03b8 8093 4008 		sts 2112,r24
+ 332:tactsense.c   ****         activeSensor = 0;
+ 856               		.loc 1 332 0
+ 857 03bc 1092 0000 		sts activeSensor,__zero_reg__
+ 333:tactsense.c   ****         sei();
+ 858               		.loc 1 333 0
+ 859               	/* #APP */
+ 860               	 ;  333 "tactsense.c" 1
+ 861 03c0 7894      		sei
+ 862               	 ;  0 "" 2
+ 334:tactsense.c   ****         return;
+ 863               		.loc 1 334 0
+ 864               	/* #NOAPP */
+ 865 03c2 00C0      		rjmp .L36
+ 866               	.LVL31:
+ 867               	.L37:
+ 868               	.LBB17:
+ 869               	.LBB18:
+ 175:tactsense.c   ****     selectSensor(tactAddress);
+ 870               		.loc 1 175 0
+ 871 03c4 842F      		mov r24,r20
+ 872 03c6 4D83      		std Y+5,r20
+ 873 03c8 0E94 0000 		call selectSensor
+ 874               	.LVL32:
+ 177:tactsense.c   ****     getDoubleWord(READ_PRESSURE_MSB_OPCODE,&firstPressureReading);
+ 875               		.loc 1 177 0
+ 876 03cc 80E8      		ldi r24,lo8(-128)
+ 877 03ce BE01      		movw r22,r28
+ 878 03d0 6D5F      		subi r22,lo8(-(3))
+ 879 03d2 7F4F      		sbci r23,hi8(-(3))
+ 880 03d4 0E94 0000 		call getDoubleWord
+ 179:tactsense.c   ****     getDoubleWord(READ_TEMPERATURE_MSB_OPCODE,&firstTempReading);
+ 881               		.loc 1 179 0
+ 882 03d8 84E8      		ldi r24,lo8(-124)
+ 883 03da BE01      		movw r22,r28
+ 884 03dc 6F5F      		subi r22,lo8(-(1))
+ 885 03de 7F4F      		sbci r23,hi8(-(1))
+ 886 03e0 0E94 0000 		call getDoubleWord
+ 184:tactsense.c   ****     SPI0.DATA = 0x00;
+ 887               		.loc 1 184 0
+ 888 03e4 E0EC      		ldi r30,lo8(2240)
+ 889 03e6 F8E0      		ldi r31,hi8(2240)
+ 890 03e8 1382      		std Z+3,__zero_reg__
+ 891 03ea 4D81      		ldd r20,Y+5
+ 892               	.L43:
+ 186:tactsense.c   ****     while(!(SPI0.STATUS & SPI_IF_bm));
+ 893               		.loc 1 186 0
+ 894 03ec 8091 C208 		lds r24,2242
+ 895 03f0 87FF      		sbrs r24,7
+ 896 03f2 00C0      		rjmp .L43
+ 189:tactsense.c   ****     dummyRead = SPI0.DATA;
+ 897               		.loc 1 189 0
+ 898 03f4 8091 C308 		lds r24,2243
+ 192:tactsense.c   ****     PORTA.OUTSET = TACT_PORTA_MASK;
+ 899               		.loc 1 192 0
+ 900 03f8 80E6      		ldi r24,lo8(96)
+ 901 03fa E0E0      		ldi r30,lo8(1536)
+ 902 03fc F6E0      		ldi r31,hi8(1536)
+ 903 03fe 8583      		std Z+5,r24
+ 193:tactsense.c   ****     PORTB.OUTSET = TACT_PORTB_MASK;
+ 904               		.loc 1 193 0
+ 905 0400 8FE0      		ldi r24,lo8(15)
+ 906 0402 E0E2      		ldi r30,lo8(1568)
+ 907 0404 F6E0      		ldi r31,hi8(1568)
+ 908 0406 8583      		std Z+5,r24
+ 194:tactsense.c   ****     PORTC.OUTSET = TACT_PORTC_MASK;
+ 909               		.loc 1 194 0
+ 910 0408 8EE1      		ldi r24,lo8(30)
+ 911 040a E0E4      		ldi r30,lo8(1600)
+ 912 040c F6E0      		ldi r31,hi8(1600)
+ 913 040e 8583      		std Z+5,r24
+ 195:tactsense.c   ****     PORTE.OUTSET = TACT_PORTE_MASK;
+ 914               		.loc 1 195 0
+ 915 0410 8EE0      		ldi r24,lo8(14)
+ 916 0412 E0E8      		ldi r30,lo8(1664)
+ 917 0414 F6E0      		ldi r31,hi8(1664)
+ 918 0416 8583      		std Z+5,r24
+ 919               	.LVL33:
+ 198:tactsense.c   ****     if (firstPressureReading == 0)
+ 920               		.loc 1 198 0
+ 921 0418 6B81      		ldd r22,Y+3
+ 922 041a 7C81      		ldd r23,Y+4
+ 923 041c 6115      		cp r22,__zero_reg__
+ 924 041e 7105      		cpc r23,__zero_reg__
+ 925 0420 01F0      		breq .L44
+ 926               	.LVL34:
+ 202:tactsense.c   ****     compensatePressure(firstTempReading, firstPressureReading, tactAddress);
+ 927               		.loc 1 202 0
+ 928 0422 8981      		ldd r24,Y+1
+ 929 0424 9A81      		ldd r25,Y+2
+ 930 0426 0E94 0000 		call compensatePressure
+ 931               	.L44:
+ 932               	.LBE18:
+ 933               	.LBE17:
+ 338:tactsense.c   ****     activeSensor++;
+ 934               		.loc 1 338 0
+ 935 042a 8091 0000 		lds r24,activeSensor
+ 936 042e 8F5F      		subi r24,lo8(-(1))
+ 937 0430 8093 0000 		sts activeSensor,r24
+ 938               	.L36:
+ 939               	/* epilogue start */
+ 341:tactsense.c   **** }
+ 940               		.loc 1 341 0
+ 941 0434 2596      		adiw r28,5
+ 942 0436 CDBF      		out __SP_L__,r28
+ 943 0438 DEBF      		out __SP_H__,r29
+ 944 043a DF91      		pop r29
+ 945 043c CF91      		pop r28
+ 946 043e 1F91      		pop r17
+ 947 0440 0F91      		pop r16
+ 948 0442 FF90      		pop r15
+ 949 0444 EF90      		pop r14
+ 950 0446 DF90      		pop r13
+ 951 0448 CF90      		pop r12
+ 952 044a BF90      		pop r11
+ 953 044c AF90      		pop r10
+ 954 044e 9F90      		pop r9
+ 955 0450 8F90      		pop r8
+ 956 0452 7F90      		pop r7
+ 957 0454 6F90      		pop r6
+ 958 0456 5F90      		pop r5
+ 959 0458 4F90      		pop r4
+ 960 045a 3F90      		pop r3
+ 961 045c 2F90      		pop r2
+ 962 045e 0895      		ret
+ 963               		.cfi_endproc
+ 964               	.LFE13:
+ 966               	.global	activeSensor
+ 967               	.global	activeSensor
+ 968               		.section .bss
+ 971               	activeSensor:
+ 972 0000 00        		.skip 1,0
+ 973               	.global	tactReady
+ 974               	.global	tactReady
+ 977               	tactReady:
+ 978 0001 00        		.skip 1,0
+ 979               		.comm adjustedPressure,24,1
+ 980               		.comm lastPressure,24,1
+ 981               		.comm pressureCalibrated,12,1
+ 982               		.comm pressureTempData,24,1
+ 983               		.comm pressureDataOffset,24,1
+ 984               		.comm pressureData,24,1
+ 985               		.text
+ 986               	.Letext0:
+ 987               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 988               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 989               		.file 4 "distal.h"
+ 990               		.file 5 "tactsense.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 tactsense.c
+     /tmp/ccLGoLgA.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccLGoLgA.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccLGoLgA.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccLGoLgA.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccLGoLgA.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccLGoLgA.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccLGoLgA.s:14     .text:00000000 getDoubleWord
+     /tmp/ccLGoLgA.s:100    .text:00000070 selectSensor
+     /tmp/ccLGoLgA.s:219    .text:00000104 __vector_20
+     /tmp/ccLGoLgA.s:977    .bss:00000001 tactReady
+     /tmp/ccLGoLgA.s:260    .text:00000126 configureSPIModulesPressure
+     /tmp/ccLGoLgA.s:283    .text:00000132 initTactileModule
+                            *COM*:0000000c pressureCalibrated
+                            *COM*:00000018 pressureData
+                            *COM*:00000018 pressureDataOffset
+                            *COM*:00000018 pressureTempData
+                            *COM*:00000018 lastPressure
+                            *COM*:00000018 adjustedPressure
+     /tmp/ccLGoLgA.s:366    .text:00000188 collectAllCalibrationValues
+     /tmp/ccLGoLgA.s:426    .text:000001ca compensatePressure
+     /tmp/ccLGoLgA.s:618    .text:000002b8 doTactSensors
+     /tmp/ccLGoLgA.s:971    .bss:00000000 activeSensor
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+numPressureSensors

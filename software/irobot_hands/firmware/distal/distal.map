@@ -1,0 +1,846 @@
+Archive member included because of file (symbol)
+
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+                              /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o (exit)
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+                              accel.o (__do_copy_data)
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+                              accel.o (__do_clear_bss)
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+                              distal.o (memcpy)
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+                              distal.o (__eerd_byte_x32a4u)
+/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+                              distal.o (__eewr_byte_x32a4u)
+
+Allocating common symbols
+Common symbol       size              file
+
+testADC             0x10              distal.o
+pressureData        0x18              tactsense.o
+pressureCalibrated  0xc               tactsense.o
+pressureTempData    0x18              tactsense.o
+lastPressure        0x18              tactsense.o
+pressureDataOffset  0x18              tactsense.o
+adjustedPressure    0x18              tactsense.o
+numPressureSensors  0x1               distal.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+text             0x00000000         0x00100000         xr
+data             0x00802000         0x0000ffa0         rw !x
+eeprom           0x00810000         0x00010000         rw !x
+fuse             0x00820000         0x00000400         rw !x
+lock             0x00830000         0x00000400         rw !x
+signature        0x00840000         0x00000400         rw !x
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+LOAD accel.o
+LOAD adc.o
+LOAD daisycomm.o
+LOAD encoder.o
+LOAD portio.o
+LOAD tactsense.o
+LOAD distal.o
+LOAD /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libm.a
+LOAD /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a
+LOAD /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a
+LOAD /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a
+
+.hash
+ *(.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rel.init
+ *(.rel.init)
+
+.rela.init
+ *(.rela.init)
+
+.rel.text
+ *(.rel.text)
+ *(.rel.text.*)
+ *(.rel.gnu.linkonce.t*)
+
+.rela.text
+ *(.rela.text)
+ *(.rela.text.*)
+ *(.rela.gnu.linkonce.t*)
+
+.rel.fini
+ *(.rel.fini)
+
+.rela.fini
+ *(.rela.fini)
+
+.rel.rodata
+ *(.rel.rodata)
+ *(.rel.rodata.*)
+ *(.rel.gnu.linkonce.r*)
+
+.rela.rodata
+ *(.rela.rodata)
+ *(.rela.rodata.*)
+ *(.rela.gnu.linkonce.r*)
+
+.rel.data
+ *(.rel.data)
+ *(.rel.data.*)
+ *(.rel.gnu.linkonce.d*)
+
+.rela.data
+ *(.rela.data)
+ *(.rela.data.*)
+ *(.rela.gnu.linkonce.d*)
+
+.rel.ctors
+ *(.rel.ctors)
+
+.rela.ctors
+ *(.rela.ctors)
+
+.rel.dtors
+ *(.rel.dtors)
+
+.rela.dtors
+ *(.rela.dtors)
+
+.rel.got
+ *(.rel.got)
+
+.rela.got
+ *(.rela.got)
+
+.rel.bss
+ *(.rel.bss)
+
+.rela.bss
+ *(.rela.bss)
+
+.rel.plt
+ *(.rel.plt)
+
+.rela.plt
+ *(.rela.plt)
+
+.text           0x00000000     0x1180
+ *(.vectors)
+ .vectors       0x00000000      0x1fc /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+                0x00000000                __vectors
+                0x00000000                __vector_default
+ *(.vectors)
+ *(.progmem.gcc*)
+ *(.progmem*)
+                0x000001fc                . = ALIGN (0x2)
+                0x000001fc                __trampolines_start = .
+ *(.trampolines)
+ .trampolines   0x000001fc        0x0 linker stubs
+ *(.trampolines*)
+                0x000001fc                __trampolines_end = .
+ *(.jumptables)
+ *(.jumptables*)
+ *(.lowtext)
+ *(.lowtext*)
+                0x000001fc                __ctors_start = .
+ *(.ctors)
+                0x000001fc                __ctors_end = .
+                0x000001fc                __dtors_start = .
+ *(.dtors)
+                0x000001fc                __dtors_end = .
+ SORT(*)(.ctors)
+ SORT(*)(.dtors)
+ *(.init0)
+ .init0         0x000001fc        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+                0x000001fc                __init
+ *(.init0)
+ *(.init1)
+ *(.init1)
+ *(.init2)
+ .init2         0x000001fc        0xc /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+ *(.init2)
+ *(.init3)
+ *(.init3)
+ *(.init4)
+ .init4         0x00000208       0x16 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+                0x00000208                __do_copy_data
+ .init4         0x0000021e       0x10 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+                0x0000021e                __do_clear_bss
+ *(.init4)
+ *(.init5)
+ *(.init5)
+ *(.init6)
+ *(.init6)
+ *(.init7)
+ *(.init7)
+ *(.init8)
+ *(.init8)
+ *(.init9)
+ .init9         0x0000022e        0x8 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+ *(.init9)
+ *(.text)
+ .text          0x00000236        0x4 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+                0x00000236                __vector_38
+                0x00000236                __vector_104
+                0x00000236                __vector_22
+                0x00000236                __vector_63
+                0x00000236                __vector_28
+                0x00000236                __vector_67
+                0x00000236                __vector_1
+                0x00000236                __vector_119
+                0x00000236                __vector_32
+                0x00000236                __vector_75
+                0x00000236                __vector_71
+                0x00000236                __vector_91
+                0x00000236                __vector_34
+                0x00000236                __vector_62
+                0x00000236                __vector_77
+                0x00000236                __vector_102
+                0x00000236                __vector_24
+                0x00000236                __vector_12
+                0x00000236                __vector_55
+                0x00000236                __vector_69
+                0x00000236                __vector_81
+                0x00000236                __vector_46
+                0x00000236                __bad_interrupt
+                0x00000236                __vector_122
+                0x00000236                __vector_72
+                0x00000236                __vector_114
+                0x00000236                __vector_110
+                0x00000236                __vector_31
+                0x00000236                __vector_92
+                0x00000236                __vector_35
+                0x00000236                __vector_78
+                0x00000236                __vector_74
+                0x00000236                __vector_117
+                0x00000236                __vector_39
+                0x00000236                __vector_107
+                0x00000236                __vector_3
+                0x00000236                __vector_105
+                0x00000236                __vector_98
+                0x00000236                __vector_23
+                0x00000236                __vector_68
+                0x00000236                __vector_30
+                0x00000236                __vector_73
+                0x00000236                __vector_45
+                0x00000236                __vector_25
+                0x00000236                __vector_93
+                0x00000236                __vector_61
+                0x00000236                __vector_11
+                0x00000236                __vector_54
+                0x00000236                __vector_99
+                0x00000236                __vector_13
+                0x00000236                __vector_17
+                0x00000236                __vector_19
+                0x00000236                __vector_56
+                0x00000236                __vector_7
+                0x00000236                __vector_125
+                0x00000236                __vector_49
+                0x00000236                __vector_123
+                0x00000236                __vector_41
+                0x00000236                __vector_86
+                0x00000236                __vector_100
+                0x00000236                __vector_101
+                0x00000236                __vector_64
+                0x00000236                __vector_88
+                0x00000236                __vector_109
+                0x00000236                __vector_43
+                0x00000236                __vector_27
+                0x00000236                __vector_5
+                0x00000236                __vector_113
+                0x00000236                __vector_33
+                0x00000236                __vector_76
+                0x00000236                __vector_115
+                0x00000236                __vector_47
+                0x00000236                __vector_52
+                0x00000236                __vector_37
+                0x00000236                __vector_95
+                0x00000236                __vector_103
+                0x00000236                __vector_96
+                0x00000236                __vector_89
+                0x00000236                __vector_108
+                0x00000236                __vector_4
+                0x00000236                __vector_44
+                0x00000236                __vector_82
+                0x00000236                __vector_106
+                0x00000236                __vector_118
+                0x00000236                __vector_51
+                0x00000236                __vector_9
+                0x00000236                __vector_2
+                0x00000236                __vector_21
+                0x00000236                __vector_15
+                0x00000236                __vector_66
+                0x00000236                __vector_36
+                0x00000236                __vector_79
+                0x00000236                __vector_58
+                0x00000236                __vector_70
+                0x00000236                __vector_83
+                0x00000236                __vector_29
+                0x00000236                __vector_60
+                0x00000236                __vector_121
+                0x00000236                __vector_40
+                0x00000236                __vector_85
+                0x00000236                __vector_94
+                0x00000236                __vector_126
+                0x00000236                __vector_8
+                0x00000236                __vector_26
+                0x00000236                __vector_48
+                0x00000236                __vector_124
+                0x00000236                __vector_116
+                0x00000236                __vector_112
+                0x00000236                __vector_111
+                0x00000236                __vector_80
+                0x00000236                __vector_84
+                0x00000236                __vector_57
+                0x00000236                __vector_53
+                0x00000236                __vector_10
+                0x00000236                __vector_50
+                0x00000236                __vector_16
+                0x00000236                __vector_59
+                0x00000236                __vector_18
+                0x00000236                __vector_97
+                0x00000236                __vector_42
+                0x00000236                __vector_87
+                0x00000236                __vector_65
+                0x00000236                __vector_120
+ .text          0x0000023a       0xd2 accel.o
+                0x00000274                configureSPIModulesAccel
+                0x0000029a                configAccel
+                0x000002ac                readAxes
+ .text          0x0000030c       0xec adc.o
+                0x0000030c                captureSweep
+                0x0000038a                configureADC
+ .text          0x000003f8      0x3a8 daisycomm.o
+                0x000004c2                __vector_14
+                0x0000056a                __vector_6
+                0x000005c0                __vector_90
+                0x00000604                computeChecksum
+                0x00000626                configureDaisyUSART
+                0x00000662                doDaisyTask
+ .text          0x000007a0       0x5a encoder.o
+                0x000007a0                configureSPIModulesEncoder
+                0x000007ac                readEncoder
+ .text          0x000007fa       0x3e portio.o
+                0x000007fa                configurePortIODistal
+ .text          0x00000838      0x460 tactsense.o
+                0x0000093c                __vector_20
+                0x0000095e                configureSPIModulesPressure
+                0x0000096a                initTactileModule
+                0x000009c0                collectAllCalibrationValues
+                0x00000a02                compensatePressure
+                0x00000af0                doTactSensors
+ .text          0x00000c98      0x346 distal.o
+                0x00000d34                processCommand
+                0x00000fc0                LEDon
+                0x00000fca                LEDoff
+                0x00000fd4                LEDtoggle
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+ .text          0x00000fde        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+                0x00000fde                . = ALIGN (0x2)
+ *(.text.*)
+ .text.startup  0x00000fde      0x126 distal.o
+                0x00000fde                main
+ .text.libgcc   0x00001104        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+ .text.libgcc   0x00001104        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+ .text.libgcc   0x00001104        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+ .text.avr-libc
+                0x00001104       0x12 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+                0x00001104                memcpy
+ .text.avr-libc
+                0x00001116       0x20 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+                0x00001116                __eerd_byte_x32a4u
+                0x0000111e                eeprom_mapen
+ .text.avr-libc
+                0x00001136       0x46 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+                0x00001136                __eewr_byte_x32a4u
+                0x00001138                __eewr_r18_x32a4u
+                0x0000117c                . = ALIGN (0x2)
+ *(.fini9)
+ .fini9         0x0000117c        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+                0x0000117c                exit
+                0x0000117c                _exit
+ *(.fini9)
+ *(.fini8)
+ *(.fini8)
+ *(.fini7)
+ *(.fini7)
+ *(.fini6)
+ *(.fini6)
+ *(.fini5)
+ *(.fini5)
+ *(.fini4)
+ *(.fini4)
+ *(.fini3)
+ *(.fini3)
+ *(.fini2)
+ *(.fini2)
+ *(.fini1)
+ *(.fini1)
+ *(.fini0)
+ .fini0         0x0000117c        0x4 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+ *(.fini0)
+                0x00001180                _etext = .
+
+.data           0x00802000        0x0 load address 0x00001180
+                0x00802000                PROVIDE (__data_start, .)
+ *(.data)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+ .data          0x00802000        0x0 accel.o
+ .data          0x00802000        0x0 adc.o
+ .data          0x00802000        0x0 daisycomm.o
+ .data          0x00802000        0x0 encoder.o
+ .data          0x00802000        0x0 portio.o
+ .data          0x00802000        0x0 tactsense.o
+ .data          0x00802000        0x0 distal.o
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+ .data          0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+ *(.data*)
+ *(.rodata)
+ *(.rodata*)
+ *(.gnu.linkonce.d*)
+                0x00802000                . = ALIGN (0x2)
+                0x00802000                _edata = .
+                0x00802000                PROVIDE (__data_end, .)
+
+.bss            0x00802000      0x172
+                0x00802000                PROVIDE (__bss_start, .)
+ *(.bss)
+ .bss           0x00802000        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+ .bss           0x00802000        0x0 accel.o
+ .bss           0x00802000        0x0 adc.o
+ .bss           0x00802000       0xdb daisycomm.o
+                0x00802000                RxCheckSumErrCnt
+                0x00802004                notifyDaisy
+ .bss           0x008020db        0x0 encoder.o
+ .bss           0x008020db        0x0 portio.o
+ .bss           0x008020db        0x2 tactsense.o
+                0x008020db                activeSensor
+                0x008020dc                tactReady
+ .bss           0x008020dd        0x0 distal.o
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+ .bss           0x008020dd        0x0 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+ *(.bss*)
+ *(COMMON)
+ COMMON         0x008020dd       0x84 tactsense.o
+                0x008020dd                pressureData
+                0x008020f5                pressureCalibrated
+                0x00802101                pressureTempData
+                0x00802119                lastPressure
+                0x00802131                pressureDataOffset
+                0x00802149                adjustedPressure
+ COMMON         0x00802161       0x11 distal.o
+                0x00802161                testADC
+                0x00802171                numPressureSensors
+                0x00802172                PROVIDE (__bss_end, .)
+                0x00001180                __data_load_start = LOADADDR (.data)
+                0x00001180                __data_load_end = (__data_load_start + SIZEOF (.data))
+
+.noinit         0x00802172        0x0
+                0x00802172                PROVIDE (__noinit_start, .)
+ *(.noinit*)
+                0x00802172                PROVIDE (__noinit_end, .)
+                0x00802172                _end = .
+                0x00802172                PROVIDE (__heap_start, .)
+
+.eeprom         0x00810000        0x0
+ *(.eeprom*)
+                0x00810000                __eeprom_end = .
+
+.fuse
+ *(.fuse)
+ *(.lfuse)
+ *(.hfuse)
+ *(.efuse)
+
+.lock
+ *(.lock*)
+
+.signature
+ *(.signature*)
+
+.stab           0x00000000      0x6cc
+ *(.stab)
+ .stab          0x00000000      0x6cc /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+
+.stabstr        0x00000000       0x85
+ *(.stabstr)
+ .stabstr       0x00000000       0x85 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment
+ *(.comment)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges  0x00000000       0xe8
+ *(.debug_aranges)
+ .debug_aranges
+                0x00000000       0x20 accel.o
+ .debug_aranges
+                0x00000020       0x20 adc.o
+ .debug_aranges
+                0x00000040       0x20 daisycomm.o
+ .debug_aranges
+                0x00000060       0x20 encoder.o
+ .debug_aranges
+                0x00000080       0x20 portio.o
+ .debug_aranges
+                0x000000a0       0x20 tactsense.o
+ .debug_aranges
+                0x000000c0       0x28 distal.o
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info     0x00000000     0x3b6e
+ *(.debug_info)
+ .debug_info    0x00000000      0x363 accel.o
+ .debug_info    0x00000363      0x81f adc.o
+ .debug_info    0x00000b82     0x13c9 daisycomm.o
+ .debug_info    0x00001f4b      0x223 encoder.o
+ .debug_info    0x0000216e      0x1f9 portio.o
+ .debug_info    0x00002367      0xd21 tactsense.o
+ .debug_info    0x00003088      0xae6 distal.o
+ *(.gnu.linkonce.wi.*)
+
+.debug_abbrev   0x00000000      0xcf5
+ *(.debug_abbrev)
+ .debug_abbrev  0x00000000      0x11b accel.o
+ .debug_abbrev  0x0000011b      0x197 adc.o
+ .debug_abbrev  0x000002b2      0x2c9 daisycomm.o
+ .debug_abbrev  0x0000057b      0x139 encoder.o
+ .debug_abbrev  0x000006b4       0x80 portio.o
+ .debug_abbrev  0x00000734      0x2f1 tactsense.o
+ .debug_abbrev  0x00000a25      0x2d0 distal.o
+
+.debug_line     0x00000000      0xc80
+ *(.debug_line)
+ .debug_line    0x00000000      0x152 accel.o
+ .debug_line    0x00000152      0x166 adc.o
+ .debug_line    0x000002b8      0x295 daisycomm.o
+ .debug_line    0x0000054d      0x1ad encoder.o
+ .debug_line    0x000006fa       0xbd portio.o
+ .debug_line    0x000007b7      0x21c tactsense.o
+ .debug_line    0x000009d3      0x2ad distal.o
+
+.debug_frame    0x00000000      0x4b0
+ *(.debug_frame)
+ .debug_frame   0x00000000       0x68 accel.o
+ .debug_frame   0x00000068       0x40 adc.o
+ .debug_frame   0x000000a8      0x138 daisycomm.o
+ .debug_frame   0x000001e0       0x34 encoder.o
+ .debug_frame   0x00000214       0x24 portio.o
+ .debug_frame   0x00000238      0x154 tactsense.o
+ .debug_frame   0x0000038c      0x124 distal.o
+
+.debug_str      0x00000000     0x2a9e
+ *(.debug_str)
+ .debug_str     0x00000000      0x2b8 accel.o
+                                0x2f6 (size before relaxing)
+ .debug_str     0x000002b8      0xa79 adc.o
+                                0xb62 (size before relaxing)
+ .debug_str     0x00000d31     0x16a4 daisycomm.o
+                               0x1854 (size before relaxing)
+ .debug_str     0x000023d5       0x3c encoder.o
+                                0x26d (size before relaxing)
+ .debug_str     0x00002411       0x1f portio.o
+                                0x181 (size before relaxing)
+ .debug_str     0x00002430      0x23a tactsense.o
+                                0xac1 (size before relaxing)
+ .debug_str     0x0000266a      0x434 distal.o
+                                0x686 (size before relaxing)
+
+.debug_loc      0x00000000      0xd31
+ *(.debug_loc)
+ .debug_loc     0x00000000       0x8c accel.o
+ .debug_loc     0x0000008c       0x83 adc.o
+ .debug_loc     0x0000010f      0x3cb daisycomm.o
+ .debug_loc     0x000004da       0x26 encoder.o
+ .debug_loc     0x00000500      0x387 tactsense.o
+ .debug_loc     0x00000887      0x4aa distal.o
+
+.debug_macinfo
+ *(.debug_macinfo)
+OUTPUT(distal.elf elf32-avr)
+LOAD linker stubs
+
+.debug_ranges   0x00000000       0x60
+ .debug_ranges  0x00000000       0x30 tactsense.o
+ .debug_ranges  0x00000030       0x30 distal.o
+
+Cross Reference Table
+
+Symbol                                            File
+LEDoff                                            distal.o
+LEDon                                             distal.o
+LEDtoggle                                         distal.o
+RxCheckSumErrCnt                                  daisycomm.o
+                                                  distal.o
+__bad_interrupt                                   /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__bss_end                                         /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+__bss_start                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+__data_end                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+__data_load_start                                 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+__data_start                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+__do_clear_bss                                    /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_clear_bss.o)
+                                                  distal.o
+                                                  tactsense.o
+                                                  portio.o
+                                                  encoder.o
+                                                  daisycomm.o
+                                                  adc.o
+                                                  accel.o
+__do_copy_data                                    /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_copy_data.o)
+                                                  distal.o
+                                                  tactsense.o
+                                                  portio.o
+                                                  encoder.o
+                                                  daisycomm.o
+                                                  adc.o
+                                                  accel.o
+__eerd_byte_x32a4u                                /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+                                                  distal.o
+__eewr_byte_x32a4u                                /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+                                                  distal.o
+__eewr_r18_x32a4u                                 /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eewr_byte_atxmega32a4u.o)
+__heap_end                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__init                                            /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__stack                                           /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_1                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_10                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_100                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_101                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_102                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_103                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_104                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_105                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_106                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_107                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_108                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_109                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_11                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_110                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_111                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_112                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_113                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_114                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_115                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_116                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_117                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_118                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_119                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_12                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_120                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_121                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_122                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_123                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_124                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_125                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_126                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_13                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_14                                       daisycomm.o
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_15                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_16                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_17                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_18                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_19                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_2                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_20                                       tactsense.o
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_21                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_22                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_23                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_24                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_25                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_26                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_27                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_28                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_29                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_3                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_30                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_31                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_32                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_33                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_34                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_35                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_36                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_37                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_38                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_39                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_4                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_40                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_41                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_42                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_43                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_44                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_45                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_46                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_47                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_48                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_49                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_5                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_50                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_51                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_52                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_53                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_54                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_55                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_56                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_57                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_58                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_59                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_6                                        daisycomm.o
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_60                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_61                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_62                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_63                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_64                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_65                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_66                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_67                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_68                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_69                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_7                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_70                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_71                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_72                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_73                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_74                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_75                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_76                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_77                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_78                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_79                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_8                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_80                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_81                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_82                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_83                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_84                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_85                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_86                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_87                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_88                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_89                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_9                                        /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_90                                       daisycomm.o
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_91                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_92                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_93                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_94                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_95                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_96                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_97                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_98                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_99                                       /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vector_default                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+__vectors                                         /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+_exit                                             /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+activeSensor                                      tactsense.o
+adjustedPressure                                  tactsense.o
+captureSweep                                      adc.o
+                                                  distal.o
+collectAllCalibrationValues                       tactsense.o
+                                                  distal.o
+compensatePressure                                tactsense.o
+computeChecksum                                   daisycomm.o
+                                                  distal.o
+configAccel                                       accel.o
+                                                  distal.o
+configureADC                                      adc.o
+                                                  distal.o
+configureDaisyUSART                               daisycomm.o
+                                                  distal.o
+configurePortIODistal                             portio.o
+                                                  distal.o
+configureSPIModulesAccel                          accel.o
+                                                  distal.o
+configureSPIModulesEncoder                        encoder.o
+configureSPIModulesPressure                       tactsense.o
+                                                  distal.o
+doDaisyTask                                       daisycomm.o
+                                                  distal.o
+doTactSensors                                     tactsense.o
+                                                  distal.o
+eeprom_mapen                                      /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(eerd_byte_atxmega32a4u.o)
+exit                                              /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/avrxmega2/libgcc.a(_exit.o)
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+initTactileModule                                 tactsense.o
+                                                  distal.o
+lastPressure                                      tactsense.o
+main                                              distal.o
+                                                  /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/crtx32a4u.o
+memcpy                                            /home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/lib/avrxmega2/libc.a(memcpy.o)
+                                                  distal.o
+notifyDaisy                                       daisycomm.o
+                                                  distal.o
+numPressureSensors                                distal.o
+                                                  tactsense.o
+pressureCalibrated                                tactsense.o
+pressureData                                      distal.o
+                                                  tactsense.o
+pressureDataOffset                                distal.o
+                                                  tactsense.o
+pressureTempData                                  distal.o
+                                                  tactsense.o
+processCommand                                    distal.o
+                                                  daisycomm.o
+readAxes                                          accel.o
+                                                  distal.o
+readEncoder                                       encoder.o
+tactReady                                         tactsense.o
+                                                  distal.o
+testADC                                           distal.o

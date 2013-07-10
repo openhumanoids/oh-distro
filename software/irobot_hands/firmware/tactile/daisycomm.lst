@@ -1,0 +1,2049 @@
+   1               		.file	"daisycomm.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  14               	prepareDMAChannel.constprop.0:
+  15               	.LFB17:
+  16               		.file 1 "daisycomm.c"
+   1:daisycomm.c   **** /****************************************************
+   2:daisycomm.c   **** 
+   3:daisycomm.c   ****  // Author:            Zachary Clifford
+   4:daisycomm.c   ****  // File Name:        C1482-SRC-COMMON-0-daisycomm.c
+   5:daisycomm.c   ****  // Creation Date:    22 February, 2012
+   6:daisycomm.c   ****  // Revision:        00
+   7:daisycomm.c   ****  // Hardware:        ATxmega32A4U
+   8:daisycomm.c   ****  // Description:    Common routines for daisy chaining
+   9:daisycomm.c   **** 
+  10:daisycomm.c   **** ****************************************************/
+  11:daisycomm.c   **** 
+  12:daisycomm.c   **** /******************************************************************************
+  13:daisycomm.c   ****     File Revision History:
+  14:daisycomm.c   **** -------------------------------------------------------------------------------
+  15:daisycomm.c   **** Revision    Date        Engineer    Description
+  16:daisycomm.c   **** --------    --------    --------    -------------------------------------------
+  17:daisycomm.c   **** 00            MM/DD/YY    ZAC            Initial Release
+  18:daisycomm.c   **** -------------------------------------------------------------------------------
+  19:daisycomm.c   **** 
+  20:daisycomm.c   **** ******************************************************************************/
+  21:daisycomm.c   **** 
+  22:daisycomm.c   **** /************************************************************************
+  23:daisycomm.c   ****  * This module operates the Daisy Chain protocol in the ARM-H system.
+  24:daisycomm.c   ****  * It assumes DMA transfers will be used on a half-duplex downstream
+  25:daisycomm.c   ****  * and half-duplex upstream link to move data between various devices in
+  26:daisycomm.c   ****  * the system.  Configuration must be provided in the file
+  27:daisycomm.c   ****  * C1482-SRC-COMMON-0-daisyconfig.h for each project using this module.
+  28:daisycomm.c   ****  *
+  29:daisycomm.c   ****  * Data arrives on an interrupt-driven transfer to determine the number of additional
+  30:daisycomm.c   ****  * bytes to arrive.  A DMA transfer then captures the remaining bytes of payload.
+  31:daisycomm.c   ****  ************************************************************************/
+  32:daisycomm.c   **** 
+  33:daisycomm.c   **** #include <avr/io.h>
+  34:daisycomm.c   **** #include <avr/interrupt.h>
+  35:daisycomm.c   **** #include <string.h>
+  36:daisycomm.c   **** 
+  37:daisycomm.c   **** #define F_CPU 32000000
+  38:daisycomm.c   **** 
+  39:daisycomm.c   **** #include <util/delay.h>
+  40:daisycomm.c   **** 
+  41:daisycomm.c   **** #include "../common/daisycomm.h"
+  42:daisycomm.c   **** #include "daisyconfig.h"
+  43:daisycomm.c   **** 
+  44:daisycomm.c   **** //#define DELAY_ROUTINE() asm("nop")
+  45:daisycomm.c   **** #define DELAY_ROUTINE() _delay_us(10);
+  46:daisycomm.c   **** 
+  47:daisycomm.c   **** typedef enum SERIAL_STREAM_enum
+  48:daisycomm.c   **** {
+  49:daisycomm.c   ****     DOWNSTREAM,
+  50:daisycomm.c   ****     UPSTREAM
+  51:daisycomm.c   **** } SERIAL_STREAM_t;
+  52:daisycomm.c   **** 
+  53:daisycomm.c   **** typedef enum SERIAL_DIRECTION_enum
+  54:daisycomm.c   **** {
+  55:daisycomm.c   ****     INBOUND,
+  56:daisycomm.c   ****     OUTBOUND
+  57:daisycomm.c   **** } SERIAL_DIRECTION_t;
+  58:daisycomm.c   **** 
+  59:daisycomm.c   **** typedef enum DAISY_STATE_enum
+  60:daisycomm.c   **** {
+  61:daisycomm.c   ****     DAISY_IDLE,
+  62:daisycomm.c   ****     DAISY_TRANSMITTING
+  63:daisycomm.c   **** } DAISY_STATE_t;
+  64:daisycomm.c   **** 
+  65:daisycomm.c   **** volatile uint8_t notifyDaisy = 0;
+  66:daisycomm.c   **** 
+  67:daisycomm.c   **** static volatile uint8_t inbound_upstream_data[COMMAND_PACKET_SIZE];
+  68:daisycomm.c   **** static volatile uint8_t outbound_upstream_data[MAX_PACKET_SIZE];
+  69:daisycomm.c   **** 
+  70:daisycomm.c   **** 
+  71:daisycomm.c   **** static volatile SERIAL_DIRECTION_t UPSTREAM_CONFIG = INBOUND;
+  72:daisycomm.c   **** 
+  73:daisycomm.c   **** static volatile int upstreamRxDone = 0;
+  74:daisycomm.c   **** static volatile int upstreamTxDone = 0;
+  75:daisycomm.c   **** static volatile uint8_t upstreamBusy = 0;
+  76:daisycomm.c   **** uint16_t RxCheckSumErrCnt[2];
+  77:daisycomm.c   **** 
+  78:daisycomm.c   **** 
+  79:daisycomm.c   **** static void configureUSARTHardware(USART_t *targetUSART, int isPC, int isDownstream);
+  80:daisycomm.c   **** static void prepareDMAChannel(DMA_CH_t *targetChannel, uint8_t usartTrigger, USART_t *targetUSART, 
+  81:daisycomm.c   **** static void activateDMAChannel(DMA_CH_t *targetChannel,int numBytes);
+  82:daisycomm.c   **** static void configureHalfDuplexLink(SERIAL_STREAM_t selectedStream, SERIAL_DIRECTION_t selectedDire
+  83:daisycomm.c   **** 
+  84:daisycomm.c   **** 
+  85:daisycomm.c   **** #if USE_DOWNSTREAM
+  86:daisycomm.c   **** static void passthroughToUpstream(void);
+  87:daisycomm.c   **** //static volatile uint8_t downstreamXmitDone = 0;
+  88:daisycomm.c   **** static volatile uint8_t downstreamSizeReceived = 0;
+  89:daisycomm.c   **** static volatile SERIAL_DIRECTION_t DOWNSTREAM_CONFIG = OUTBOUND;
+  90:daisycomm.c   **** static volatile uint8_t inbound_downstream_data[MAX_PACKET_SIZE];
+  91:daisycomm.c   **** static volatile uint8_t outbound_downstream_data[COMMAND_PACKET_SIZE];
+  92:daisycomm.c   **** 
+  93:daisycomm.c   **** //This bit is set when a passthrough is to be expected from downstream
+  94:daisycomm.c   **** //It is cleared when the passed-through packet reply has been returned or timed out.
+  95:daisycomm.c   **** static volatile uint8_t passthroughWaiting = 0;
+  96:daisycomm.c   **** static volatile uint8_t downstreamBusy = 0;
+  97:daisycomm.c   **** static volatile uint8_t downstreamTimedout = 0;
+  98:daisycomm.c   **** 
+  99:daisycomm.c   **** #endif
+ 100:daisycomm.c   **** 
+ 101:daisycomm.c   **** #if USE_DOWNSTREAM
+ 102:daisycomm.c   **** /************************************************************************
+ 103:daisycomm.c   ****  * ISRs for the Downstream USART
+ 104:daisycomm.c   ****  *
+ 105:daisycomm.c   ****  * Only an RX ISRs is required on Downstream. This reads in the "packet size" field header
+ 106:daisycomm.c   ****  * and arms the DMA engines to capture the amount of data to follow.
+ 107:daisycomm.c   ****  *
+ 108:daisycomm.c   ****  * The Upstream USART only receives fixed COMMAND_PACKET_SIZE packets, so it simply needs an
+ 109:daisycomm.c   ****  * armed DMA channel
+ 110:daisycomm.c   ****  ************************************************************************/
+ 111:daisycomm.c   **** ISR(DOWNSTREAM_USART_RX_vect)
+ 112:daisycomm.c   **** {
+ 113:daisycomm.c   ****     uint8_t packetSize;
+ 114:daisycomm.c   ****     //Status bits must be polled before reading the data or they are invalidated
+ 115:daisycomm.c   ****     if(DOWNSTREAM_USART.STATUS & (USART_FERR_bm | USART_BUFOVF_bm))
+ 116:daisycomm.c   ****     {
+ 117:daisycomm.c   ****         //Framing or overflow error. Discard and do nothing else
+ 118:daisycomm.c   ****         packetSize = DOWNSTREAM_USART.DATA;
+ 119:daisycomm.c   ****         return;
+ 120:daisycomm.c   ****     }
+ 121:daisycomm.c   **** 
+ 122:daisycomm.c   ****     //Packetsize is defined as the number of additional bytes to arrive
+ 123:daisycomm.c   ****     //The buffer is of size MAX_PACKET_SIZE, so packetSize can be up to
+ 124:daisycomm.c   ****     //MAX_PACKET_SIZE - 1.  If it is equal to MAX_PACKET_SIZE or greater, reject
+ 125:daisycomm.c   **** 
+ 126:daisycomm.c   ****     packetSize = DOWNSTREAM_USART.DATA;
+ 127:daisycomm.c   ****     if((packetSize >= MAX_PACKET_SIZE) || (packetSize < MIN_PACKET_SIZE))
+ 128:daisycomm.c   ****     {
+ 129:daisycomm.c   ****         //Packet size is invalid somehow.  Reject it
+ 130:daisycomm.c   ****         return;
+ 131:daisycomm.c   ****     }
+ 132:daisycomm.c   **** 
+ 133:daisycomm.c   ****     //Packet size looks good.  Arm DMA
+ 134:daisycomm.c   **** 
+ 135:daisycomm.c   ****     prepareDMAChannel(&DOWNSTREAM_DMA,DOWNSTREAM_USART_INBOUND_TRIGGER,&DOWNSTREAM_USART,inbound_do
+ 136:daisycomm.c   ****     activateDMAChannel(&DOWNSTREAM_DMA,packetSize);
+ 137:daisycomm.c   ****     inbound_downstream_data[0] = packetSize;
+ 138:daisycomm.c   **** 
+ 139:daisycomm.c   ****     //Disable all interrupts and let the DMA take command.
+ 140:daisycomm.c   ****     DOWNSTREAM_USART.CTRLA = 0x00;
+ 141:daisycomm.c   **** 
+ 142:daisycomm.c   ****     downstreamBusy = 0;
+ 143:daisycomm.c   **** 
+ 144:daisycomm.c   ****     //Packet size looks good.  Arm DMA
+ 145:daisycomm.c   ****     //activateDMAChannel(&DOWNSTREAM_DMA,packetSize);
+ 146:daisycomm.c   ****     //inbound_downstream_data[0] = packetSize;
+ 147:daisycomm.c   **** 
+ 148:daisycomm.c   ****     //Disable the RX interrupt for now and let the DMA take control.
+ 149:daisycomm.c   ****     //DOWNSTREAM_USART.CTRLA &= ~USART_RXCINTLVL_OFF_gc;            //Clear the interrupt (assumes 
+ 150:daisycomm.c   **** }
+ 151:daisycomm.c   **** #endif
+ 152:daisycomm.c   **** 
+ 153:daisycomm.c   **** #define DOWNSTREAM_TIMEOUT_MS 15
+ 154:daisycomm.c   **** 
+ 155:daisycomm.c   **** ISR(DAISY_TC_vect)
+ 156:daisycomm.c   **** {
+ 157:daisycomm.c   ****     //Check if the DMA is busy and waiting on incoming data
+ 158:daisycomm.c   ****     if(UPSTREAM_CONFIG == OUTBOUND)
+ 159:daisycomm.c   ****     {
+ 160:daisycomm.c   ****         //No need to reset DMA
+ 161:daisycomm.c   ****         upstreamBusy = 0;
+ 162:daisycomm.c   ****     }
+ 163:daisycomm.c   ****     else
+ 164:daisycomm.c   ****     {
+ 165:daisycomm.c   ****         if((UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm) || !(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm))
+ 166:daisycomm.c   ****         {
+ 167:daisycomm.c   ****             upstreamBusy++;
+ 168:daisycomm.c   ****         }
+ 169:daisycomm.c   **** 
+ 170:daisycomm.c   ****         if(upstreamBusy > 2)
+ 171:daisycomm.c   ****         {
+ 172:daisycomm.c   ****             //Cancel and rearm the incoming DMA
+ 173:daisycomm.c   ****             UPSTREAM_DMA.CTRLA = 0x00;
+ 174:daisycomm.c   ****             //Wait for it to disable
+ 175:daisycomm.c   ****             while(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm);
+ 176:daisycomm.c   **** 
+ 177:daisycomm.c   ****             //Issue a reset
+ 178:daisycomm.c   ****             UPSTREAM_DMA.CTRLA = DMA_CH_RESET_bm;
+ 179:daisycomm.c   **** 
+ 180:daisycomm.c   ****             //Re-arm
+ 181:daisycomm.c   ****             prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, inbou
+ 182:daisycomm.c   ****             activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 183:daisycomm.c   ****         }
+ 184:daisycomm.c   ****     }
+ 185:daisycomm.c   **** #if USE_DOWNSTREAM
+ 186:daisycomm.c   ****     //Check if downstream might be stalled
+ 187:daisycomm.c   ****     if(DOWNSTREAM_CONFIG == OUTBOUND)
+ 188:daisycomm.c   ****     {
+ 189:daisycomm.c   ****         //No need
+ 190:daisycomm.c   ****         downstreamBusy = 0;
+ 191:daisycomm.c   ****     }
+ 192:daisycomm.c   ****     else
+ 193:daisycomm.c   ****     {
+ 194:daisycomm.c   ****         //if((DOWNSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm) || (passthroughWaiting == 1))
+ 195:daisycomm.c   ****         //{
+ 196:daisycomm.c   ****         //    downstreamBusy++;
+ 197:daisycomm.c   ****         //}
+ 198:daisycomm.c   **** 
+ 199:daisycomm.c   ****         if(downstreamBusy++ > (2 * DOWNSTREAM_TIMEOUT_MS))
+ 200:daisycomm.c   ****         {
+ 201:daisycomm.c   **** 
+ 202:daisycomm.c   **** 
+ 203:daisycomm.c   ****             //Notify the daisy chain task so that the upstream can potentially be fixed up.
+ 204:daisycomm.c   ****             notifyDaisy = 1;
+ 205:daisycomm.c   ****             downstreamTimedout = 1;
+ 206:daisycomm.c   ****             downstreamBusy = 0;
+ 207:daisycomm.c   ****             passthroughWaiting = 0;
+ 208:daisycomm.c   ****             //downstreamXmitDone = 0;
+ 209:daisycomm.c   ****             downstreamSizeReceived = 0;
+ 210:daisycomm.c   ****         }
+ 211:daisycomm.c   ****     }
+ 212:daisycomm.c   **** #endif
+ 213:daisycomm.c   **** }
+ 214:daisycomm.c   **** 
+ 215:daisycomm.c   **** /************************************************************************
+ 216:daisycomm.c   ****  * ISRs for the DMA engines.
+ 217:daisycomm.c   ****  * Set flags for the Daisy Chain Task
+ 218:daisycomm.c   ****  ************************************************************************/
+ 219:daisycomm.c   **** ISR(UPSTREAM_USART_DMA_vect)
+ 220:daisycomm.c   **** {
+ 221:daisycomm.c   ****     if(UPSTREAM_DMA.CTRLB & DMA_CH_ERRIF_bm)
+ 222:daisycomm.c   ****     {
+ 223:daisycomm.c   ****         //Acknowledge the error
+ 224:daisycomm.c   ****         //It may be from an aborted transfer, so just return.  Re-arm the DMA
+ 225:daisycomm.c   ****         //UPSTREAM_DMA.CTRLB = UPSTREAM_DMA.CTRLB | DMA_CH_ERRIF_bm;
+ 226:daisycomm.c   ****         //Cancel and rearm the incoming DMA
+ 227:daisycomm.c   ****         return;
+ 228:daisycomm.c   ****     }
+ 229:daisycomm.c   **** 
+ 230:daisycomm.c   ****     if(UPSTREAM_DMA.CTRLB & DMA_CH_TRNIF_bm)
+ 231:daisycomm.c   ****     {
+ 232:daisycomm.c   ****         //The transfer is complete and should be acked
+ 233:daisycomm.c   ****         UPSTREAM_DMA.CTRLB = UPSTREAM_DMA.CTRLB | DMA_CH_TRNIF_bm;
+ 234:daisycomm.c   ****         upstreamBusy = 0;
+ 235:daisycomm.c   ****         notifyDaisy = 1;
+ 236:daisycomm.c   ****         //if(UPSTREAM_CONFIG == OUTBOUND)
+ 237:daisycomm.c   ****         //{
+ 238:daisycomm.c   ****         //    upstreamTxDone = 1;
+ 239:daisycomm.c   ****         //} else
+ 240:daisycomm.c   ****         //{
+ 241:daisycomm.c   ****             upstreamRxDone = 1;
+ 242:daisycomm.c   ****         //}
+ 243:daisycomm.c   **** 
+ 244:daisycomm.c   ****     }
+ 245:daisycomm.c   **** }
+ 246:daisycomm.c   **** 
+ 247:daisycomm.c   **** ISR(UPSTREAM_USART_TXDONE_vect)
+ 248:daisycomm.c   **** {
+ 249:daisycomm.c   ****     upstreamBusy = 0;
+ 250:daisycomm.c   ****     notifyDaisy = 1;
+ 251:daisycomm.c   ****     upstreamTxDone = 1;
+ 252:daisycomm.c   ****     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc | USART_RXCINTLVL_OFF_gc;
+ 253:daisycomm.c   ****     UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 254:daisycomm.c   **** }
+ 255:daisycomm.c   **** 
+ 256:daisycomm.c   **** #if USE_DOWNSTREAM
+ 257:daisycomm.c   **** 
+ 258:daisycomm.c   **** ISR(DOWNSTREAM_USART_TXDONE_vect)
+ 259:daisycomm.c   **** {
+ 260:daisycomm.c   ****     SET_DOWNSTREAM_INBOUND();
+ 261:daisycomm.c   ****     //prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_INBOUND_TRIGGER, &DOWNSTREAM_USART, inbou
+ 262:daisycomm.c   ****     DOWNSTREAM_CONFIG = INBOUND;
+ 263:daisycomm.c   ****     //Shut down the TXC interrupt
+ 264:daisycomm.c   ****     //DOWNSTREAM_USART.CTRLA &= ~USART_TXCINTLVL_gm;
+ 265:daisycomm.c   ****     DOWNSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc | USART_RXCINTLVL_LO_gc;
+ 266:daisycomm.c   ****     downstreamBusy = 0;
+ 267:daisycomm.c   **** }
+ 268:daisycomm.c   **** 
+ 269:daisycomm.c   **** /************************************************************************
+ 270:daisycomm.c   ****  * Downstream DMA vector
+ 271:daisycomm.c   ****  * This is substantially more automated than the Upstream task
+ 272:daisycomm.c   ****  * When a OUTBOUND transfer finishes, enable the RX interrupt to capture the reply.
+ 273:daisycomm.c   ****  * When an INBOUND transfer finishes, switch back to outbound mode and notify
+ 274:daisycomm.c   ****  * userspace.
+ 275:daisycomm.c   ****  ************************************************************************/
+ 276:daisycomm.c   **** ISR(DOWNSTREAM_USART_DMA_vect)
+ 277:daisycomm.c   **** {
+ 278:daisycomm.c   ****     if(DOWNSTREAM_DMA.CTRLB & DMA_CH_ERRIF_bm)
+ 279:daisycomm.c   ****     {
+ 280:daisycomm.c   ****         //Acknowledge the error
+ 281:daisycomm.c   ****         //It may be from an aborted transfer, so just return.
+ 282:daisycomm.c   ****         DOWNSTREAM_DMA.CTRLB = DOWNSTREAM_DMA.CTRLB | DMA_CH_ERRIF_bm;
+ 283:daisycomm.c   ****         return;
+ 284:daisycomm.c   ****     }
+ 285:daisycomm.c   **** 
+ 286:daisycomm.c   ****     if(DOWNSTREAM_DMA.CTRLB & DMA_CH_TRNIF_bm)
+ 287:daisycomm.c   ****     {
+ 288:daisycomm.c   ****         //The transfer is complete and should be acked
+ 289:daisycomm.c   ****         DOWNSTREAM_DMA.CTRLB = DOWNSTREAM_DMA.CTRLB | DMA_CH_TRNIF_bm;
+ 290:daisycomm.c   ****         //
+ 291:daisycomm.c   ****         //if(DOWNSTREAM_CONFIG == INBOUND)
+ 292:daisycomm.c   ****         //{
+ 293:daisycomm.c   ****             //Just finished receiving response into singleDownstreamBuffer.  Signal userspace
+ 294:daisycomm.c   ****             //The number of bytes received is the size field plus 1 (to account for the size field 
+ 295:daisycomm.c   ****             downstreamSizeReceived = inbound_downstream_data[0] + 1;
+ 296:daisycomm.c   ****             notifyDaisy = 1;
+ 297:daisycomm.c   ****             return;
+ 298:daisycomm.c   ****         //} else
+ 299:daisycomm.c   ****         //{
+ 300:daisycomm.c   ****             //downstreamXmitDone = 1;
+ 301:daisycomm.c   ****         //    DOWNSTREAM_USART.CTRLA |= USART_TXCINTLVL_LO_gc;
+ 302:daisycomm.c   ****         //    return;
+ 303:daisycomm.c   ****         //}
+ 304:daisycomm.c   **** 
+ 305:daisycomm.c   ****         /*
+ 306:daisycomm.c   ****         switch(DOWNSTREAM_CONFIG)
+ 307:daisycomm.c   ****         {
+ 308:daisycomm.c   ****             case OUTBOUND:
+ 309:daisycomm.c   ****                 DOWNSTREAM_USART.CTRLA |= USART_RXCINTLVL_LO_gc;
+ 310:daisycomm.c   ****                 SET_DOWNSTREAM_INBOUND();
+ 311:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_INBOUND_TRIGGER, &DOWNSTREAM_US
+ 312:daisycomm.c   ****                 DOWNSTREAM_CONFIG = INBOUND;
+ 313:daisycomm.c   ****                 break;
+ 314:daisycomm.c   **** 
+ 315:daisycomm.c   ****             case INBOUND:
+ 316:daisycomm.c   ****                 SET_DOWNSTREAM_OUTBOUND();
+ 317:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_OUTBOUND_TRIGGER, &DOWNSTREAM_U
+ 318:daisycomm.c   ****                 DOWNSTREAM_CONFIG = INBOUND;
+ 319:daisycomm.c   ****                 downstreamXmitDone = 1;
+ 320:daisycomm.c   ****                 break;
+ 321:daisycomm.c   ****         }
+ 322:daisycomm.c   ****         */
+ 323:daisycomm.c   ****     }
+ 324:daisycomm.c   **** }
+ 325:daisycomm.c   **** #endif
+ 326:daisycomm.c   **** 
+ 327:daisycomm.c   **** #if USE_DOWNSTREAM
+ 328:daisycomm.c   **** /************************************************************************
+ 329:daisycomm.c   ****  * passthroughToUpstream()
+ 330:daisycomm.c   ****  *
+ 331:daisycomm.c   ****  * Pass the data directly from the downstream INBOUND buffer to the
+ 332:daisycomm.c   ****  * upstream OUTBOUND buffer.  Send a corrupt checksum error if necessary
+ 333:daisycomm.c   ****  ************************************************************************/
+ 334:daisycomm.c   **** static void passthroughToUpstream(void)
+ 335:daisycomm.c   **** {
+ 336:daisycomm.c   ****     //It is assumed that the upstream DMA is able to accept additional data at this point
+ 337:daisycomm.c   ****     //A data packet has arrived from downstream.  Validate it
+ 338:daisycomm.c   ****     //The volatile keyword can be discarded because the DMA routines are inactive while this functi
+ 339:daisycomm.c   ****     if(computeChecksum((uint8_t *)inbound_downstream_data,downstreamSizeReceived) != 0x00)
+ 340:daisycomm.c   ****     {
+ 341:daisycomm.c   ****         //Invalid checksum
+ 342:daisycomm.c   ****       RxCheckSumErrCnt[0]++;
+ 343:daisycomm.c   ****         outbound_upstream_data[0] = 3; //Packet size
+ 344:daisycomm.c   ****         outbound_upstream_data[1] = inbound_upstream_data[1]; //Reflected command byte
+ 345:daisycomm.c   ****         outbound_upstream_data[2] = CHECKSUM_ERROR; //Checksum error
+ 346:daisycomm.c   ****         outbound_upstream_data[3] = computeChecksum((uint8_t *)outbound_upstream_data,3); //checksu
+ 347:daisycomm.c   ****         //configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 348:daisycomm.c   ****         UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 349:daisycomm.c   ****         UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 350:daisycomm.c   ****         //_delay_us(10);
+ 351:daisycomm.c   ****         DELAY_ROUTINE();
+ 352:daisycomm.c   ****         UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 353:daisycomm.c   ****         UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 354:daisycomm.c   ****         prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_OUTBOUND_TRIGGER, &UPSTREAM_USART, outbound
+ 355:daisycomm.c   ****         activateDMAChannel(&UPSTREAM_DMA,3);
+ 356:daisycomm.c   ****         downstreamSizeReceived = 0;
+ 357:daisycomm.c   ****         return;
+ 358:daisycomm.c   ****     }
+ 359:daisycomm.c   ****     memcpy((uint8_t *)outbound_upstream_data,(uint8_t *)inbound_downstream_data,downstreamSizeRecei
+ 360:daisycomm.c   ****     //for(int i=0;i<inbound_downstream_data[0];i++)
+ 361:daisycomm.c   ****     //{
+ 362:daisycomm.c   ****     //    outbound_upstream_data[i] = inbound_downstream_data[i];
+ 363:daisycomm.c   ****     //}
+ 364:daisycomm.c   ****     //configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 365:daisycomm.c   ****     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 366:daisycomm.c   ****     UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 367:daisycomm.c   ****     //_delay_us(10);
+ 368:daisycomm.c   ****     DELAY_ROUTINE();
+ 369:daisycomm.c   ****     UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 370:daisycomm.c   ****     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 371:daisycomm.c   ****     prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_OUTBOUND_TRIGGER, &UPSTREAM_USART, outbound_ups
+ 372:daisycomm.c   ****     activateDMAChannel(&UPSTREAM_DMA,downstreamSizeReceived-1);
+ 373:daisycomm.c   ****     downstreamSizeReceived = 0;
+ 374:daisycomm.c   ****     return;
+ 375:daisycomm.c   **** }
+ 376:daisycomm.c   **** #endif
+ 377:daisycomm.c   **** 
+ 378:daisycomm.c   **** /************************************************************************
+ 379:daisycomm.c   **** * configureUSART(targetUSART, isPC, useDMA):
+ 380:daisycomm.c   **** * Responsible for configuring the USART module.
+ 381:daisycomm.c   **** *
+ 382:daisycomm.c   **** * targetUSART is a pointer to the USART_t struct to be configured
+ 383:daisycomm.c   **** * when isPC is 1, set to communicate at 115200 baud
+ 384:daisycomm.c   **** * using 8 data bits, 1 stop bit.
+ 385:daisycomm.c   **** *
+ 386:daisycomm.c   **** * When isPC is 0, set to communicate at 2 MBaud
+ 387:daisycomm.c   **** * using 8 data bits, 1 stop bit.
+ 388:daisycomm.c   **** *
+ 389:daisycomm.c   **** ************************************************************************/
+ 390:daisycomm.c   **** static void configureUSARTHardware(USART_t *targetUSART, int isPC, int isDownstream)
+ 391:daisycomm.c   **** {
+ 392:daisycomm.c   ****     if(isDownstream)
+ 393:daisycomm.c   ****     {
+ 394:daisycomm.c   ****         targetUSART->CTRLA = USART_RXCINTLVL_LO_gc;            //Enable RX interrupt at LO priority
+ 395:daisycomm.c   ****     }
+ 396:daisycomm.c   **** 
+ 397:daisycomm.c   **** 
+ 398:daisycomm.c   ****     if(isPC)
+ 399:daisycomm.c   ****     {
+ 400:daisycomm.c   ****         //COMMAND_USART.BAUDCTRLA = 34;                            //Configure for 57600 baud rate 
+ 401:daisycomm.c   ****         //COMMAND_USART.BAUDCTRLB = 0;
+ 402:daisycomm.c   ****         targetUSART->BAUDCTRLA = 33;                            //Configure for 115200 with fractio
+ 403:daisycomm.c   ****         targetUSART->BAUDCTRLB = 0xF0;
+ 404:daisycomm.c   ****     } else {
+ 405:daisycomm.c   ****         targetUSART->BAUDCTRLA = 0;                                //Configure for 2 MBaud by setti
+ 406:daisycomm.c   ****         targetUSART->BAUDCTRLB = 0x00;                            //and BSEL to zero
+ 407:daisycomm.c   ****     }
+ 408:daisycomm.c   ****     targetUSART->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | \
+ 409:daisycomm.c   ****                          USART_PMODE_DISABLED_gc | \
+ 410:daisycomm.c   ****                           USART_CHSIZE_8BIT_gc;                //Configure port settings for 8 bits
+ 411:daisycomm.c   ****     targetUSART->CTRLB |= USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 412:daisycomm.c   ****     return;
+ 413:daisycomm.c   **** }
+ 414:daisycomm.c   **** 
+ 415:daisycomm.c   **** /************************************************************************
+ 416:daisycomm.c   ****  * configureHalfDuplexLink(selectedStream,selectedDirection)
+ 417:daisycomm.c   ****  *
+ 418:daisycomm.c   ****  * Configures hardware and DMA channels to support the requested stream configuration
+ 419:daisycomm.c   ****  ************************************************************************/
+ 420:daisycomm.c   **** 
+ 421:daisycomm.c   **** static void configureHalfDuplexLink(SERIAL_STREAM_t selectedStream, SERIAL_DIRECTION_t selectedDire
+ 422:daisycomm.c   **** {
+ 423:daisycomm.c   ****     cli();
+ 424:daisycomm.c   ****     switch(selectedStream)
+ 425:daisycomm.c   ****     {
+ 426:daisycomm.c   **** #if USE_DOWNSTREAM
+ 427:daisycomm.c   ****         case DOWNSTREAM:
+ 428:daisycomm.c   ****             //Abort any pending DMA transfers
+ 429:daisycomm.c   ****             if(DOWNSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm)
+ 430:daisycomm.c   ****             {
+ 431:daisycomm.c   ****                 DOWNSTREAM_DMA.CTRLA &= ~DMA_CH_ENABLE_bm;
+ 432:daisycomm.c   ****             }
+ 433:daisycomm.c   **** 
+ 434:daisycomm.c   ****             //downstreamXmitDone = 0;
+ 435:daisycomm.c   ****             downstreamSizeReceived = 0;
+ 436:daisycomm.c   ****             downstreamBusy = 0;
+ 437:daisycomm.c   **** 
+ 438:daisycomm.c   ****             //Configure the transceivers and prepare DMA
+ 439:daisycomm.c   ****             if(selectedDirection == INBOUND)
+ 440:daisycomm.c   ****             {
+ 441:daisycomm.c   ****                 SET_DOWNSTREAM_INBOUND();
+ 442:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_INBOUND_TRIGGER, &DOWNSTREAM_US
+ 443:daisycomm.c   ****                 DOWNSTREAM_USART.CTRLA |= USART_RXCINTLVL_LO_gc;
+ 444:daisycomm.c   ****                 DOWNSTREAM_CONFIG = INBOUND;
+ 445:daisycomm.c   ****             } else {
+ 446:daisycomm.c   ****                 SET_DOWNSTREAM_OUTBOUND();
+ 447:daisycomm.c   ****                 DOWNSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 448:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_OUTBOUND_TRIGGER, &DOWNSTREAM_U
+ 449:daisycomm.c   **** 
+ 450:daisycomm.c   ****                 DOWNSTREAM_CONFIG = OUTBOUND;
+ 451:daisycomm.c   ****             }
+ 452:daisycomm.c   ****             break;
+ 453:daisycomm.c   **** #endif
+ 454:daisycomm.c   ****         case UPSTREAM:
+ 455:daisycomm.c   ****             //Abort any pending DMA transfers
+ 456:daisycomm.c   ****             if(UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm)
+ 457:daisycomm.c   ****             {
+ 458:daisycomm.c   ****                 UPSTREAM_DMA.CTRLA &= ~DMA_CH_ENABLE_bm;
+ 459:daisycomm.c   ****             }
+ 460:daisycomm.c   **** 
+ 461:daisycomm.c   ****             upstreamRxDone = 0;
+ 462:daisycomm.c   ****             //upstreamTxDone = 0;
+ 463:daisycomm.c   ****             upstreamBusy = 0;
+ 464:daisycomm.c   **** 
+ 465:daisycomm.c   ****             //Configure the transceivers and prepare DMA
+ 466:daisycomm.c   ****             if(selectedDirection == INBOUND)
+ 467:daisycomm.c   ****             {
+ 468:daisycomm.c   ****                 SET_UPSTREAM_INBOUND();
+ 469:daisycomm.c   ****                 prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, i
+ 470:daisycomm.c   ****                 activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 471:daisycomm.c   ****                 UPSTREAM_CONFIG = INBOUND;
+ 472:daisycomm.c   **** 
+ 473:daisycomm.c   ****             } else {
+ 474:daisycomm.c   ****                 SET_UPSTREAM_OUTBOUND();
+ 475:daisycomm.c   ****                 UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 476:daisycomm.c   ****                 UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc | USART_RXCINTLVL_OFF_gc;
+ 477:daisycomm.c   ****                 //Do not send all data through DMA.  Instead send outbound upstream data + 1.  This
+ 478:daisycomm.c   ****                 prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_OUTBOUND_TRIGGER, &UPSTREAM_USART, 
+ 479:daisycomm.c   ****                 UPSTREAM_CONFIG = OUTBOUND;
+ 480:daisycomm.c   ****             }
+ 481:daisycomm.c   ****             break;
+ 482:daisycomm.c   ****         default:
+ 483:daisycomm.c   ****             break;
+ 484:daisycomm.c   ****     }
+ 485:daisycomm.c   **** 
+ 486:daisycomm.c   ****     sei();
+ 487:daisycomm.c   ****     return;
+ 488:daisycomm.c   **** 
+ 489:daisycomm.c   **** }
+ 490:daisycomm.c   **** 
+ 491:daisycomm.c   **** /************************************************************************
+ 492:daisycomm.c   **** * prepareDMAChannel(targetChannel,usartTrigger, targetUSART,targetBuffer)
+ 493:daisycomm.c   **** *
+ 494:daisycomm.c   **** * Configures targetChannel (a DMA.CHX structure) of the DMA module
+ 495:daisycomm.c   **** * to collect data on usartTrigger signal produced by targetUSART and place
+ 496:daisycomm.c   **** * it into the buffer targetBuffer.
+ 497:daisycomm.c   **** *
+ 498:daisycomm.c   **** * This should be called before fireDMAChannel()
+ 499:daisycomm.c   **** ************************************************************************/
+ 500:daisycomm.c   **** static void prepareDMAChannel(DMA_CH_t *selectedChannel, uint8_t usartTrigger, USART_t *targetUSART
+  17               		.loc 1 500 0
+  18               		.cfi_startproc
+  19               	.LVL0:
+  20               	/* prologue: function */
+  21               	/* frame size = 0 */
+  22               	/* stack size = 0 */
+  23               	.L__stack_usage = 0
+ 501:daisycomm.c   **** {
+ 502:daisycomm.c   ****     //Configure the chosen channel to read from a fixed UART into a linear array
+ 503:daisycomm.c   ****     if(isOutbound)
+  24               		.loc 1 503 0
+  25 0000 4423      		tst r20
+  26 0002 01F0      		breq .L2
+ 504:daisycomm.c   ****     {
+ 505:daisycomm.c   ****         selectedChannel->ADDRCTRL = DMA_CH_SRCRELOAD_TRANSACTION_gc | DMA_CH_SRCDIR_INC_gc | \
+  27               		.loc 1 505 0
+  28 0004 98ED      		ldi r25,lo8(-40)
+  29 0006 00C0      		rjmp .L8
+  30               	.L2:
+ 506:daisycomm.c   ****                        DMA_CH_DESTRELOAD_BURST_gc | DMA_CH_DESTDIR_FIXED_gc;
+ 507:daisycomm.c   ****     } else {
+ 508:daisycomm.c   ****         selectedChannel->ADDRCTRL = DMA_CH_SRCRELOAD_BURST_gc | DMA_CH_SRCDIR_FIXED_gc | \
+  31               		.loc 1 508 0
+  32 0008 9DE8      		ldi r25,lo8(-115)
+  33               	.L8:
+  34 000a E0E1      		ldi r30,lo8(272)
+  35 000c F1E0      		ldi r31,hi8(272)
+  36 000e 9283      		std Z+2,r25
+ 509:daisycomm.c   ****                        DMA_CH_DESTRELOAD_TRANSACTION_gc | DMA_CH_DESTDIR_INC_gc;
+ 510:daisycomm.c   ****     }
+ 511:daisycomm.c   **** 
+ 512:daisycomm.c   ****     //Set to perform one block transfer corresponding to one command packet
+ 513:daisycomm.c   ****     //Technically not necessary because REPEAT will not be set in CTRLA
+ 514:daisycomm.c   ****     selectedChannel->REPCNT = 0x01;
+  37               		.loc 1 514 0
+  38 0010 E0E1      		ldi r30,lo8(272)
+  39 0012 F1E0      		ldi r31,hi8(272)
+  40 0014 91E0      		ldi r25,lo8(1)
+  41 0016 9683      		std Z+6,r25
+ 515:daisycomm.c   **** 
+ 516:daisycomm.c   ****     //This part has 16 bit pointers, so cast appropriately.
+ 517:daisycomm.c   ****     //Memory addresses are 24 bits to allow for external memory to be mapped into one address space
+ 518:daisycomm.c   ****     //Same with internal EEPROM Data memory.
+ 519:daisycomm.c   ****     //Since these locations are in lower memory, fix the high order address bits to zero.
+ 520:daisycomm.c   ****     //Mapping external memory will require more care.
+ 521:daisycomm.c   ****     if(isOutbound)
+  42               		.loc 1 521 0
+  43 0018 4423      		tst r20
+  44 001a 01F0      		breq .L4
+ 522:daisycomm.c   ****     {
+ 523:daisycomm.c   ****         selectedChannel->DESTADDR0 = (uint16_t) &targetUSART->DATA & 0x00FF;
+  45               		.loc 1 523 0
+  46 001c 90EA      		ldi r25,lo8(-96)
+  47 001e 9487      		std Z+12,r25
+ 524:daisycomm.c   ****         selectedChannel->DESTADDR1 = (uint16_t) &targetUSART->DATA >> 8;
+  48               		.loc 1 524 0
+  49 0020 98E0      		ldi r25,lo8(8)
+  50 0022 9587      		std Z+13,r25
+ 525:daisycomm.c   ****         selectedChannel->DESTADDR2 = 0;
+  51               		.loc 1 525 0
+  52 0024 1686      		std Z+14,__zero_reg__
+ 526:daisycomm.c   **** 
+ 527:daisycomm.c   ****         selectedChannel->SRCADDR0 = (uint16_t)targetBuffer & 0x00FF;
+  53               		.loc 1 527 0
+  54 0026 6087      		std Z+8,r22
+ 528:daisycomm.c   ****         selectedChannel->SRCADDR1 = (uint16_t)targetBuffer >> 8;
+  55               		.loc 1 528 0
+  56 0028 7187      		std Z+9,r23
+  57 002a 00C0      		rjmp .L9
+  58               	.L4:
+ 529:daisycomm.c   ****         selectedChannel->SRCADDR2 = 0;
+ 530:daisycomm.c   ****     } else {
+ 531:daisycomm.c   ****         selectedChannel->DESTADDR0 = (uint16_t)targetBuffer & 0x00FF;
+  59               		.loc 1 531 0
+  60 002c 6487      		std Z+12,r22
+ 532:daisycomm.c   ****         selectedChannel->DESTADDR1 = (uint16_t)targetBuffer >> 8;
+  61               		.loc 1 532 0
+  62 002e 7587      		std Z+13,r23
+ 533:daisycomm.c   ****         selectedChannel->DESTADDR2 = 0;
+  63               		.loc 1 533 0
+  64 0030 1686      		std Z+14,__zero_reg__
+ 534:daisycomm.c   **** 
+ 535:daisycomm.c   ****         selectedChannel->SRCADDR0 = (uint16_t) &targetUSART->DATA & 0x00FF;
+  65               		.loc 1 535 0
+  66 0032 90EA      		ldi r25,lo8(-96)
+  67 0034 9087      		std Z+8,r25
+ 536:daisycomm.c   ****         selectedChannel->SRCADDR1 = (uint16_t) &targetUSART->DATA >> 8;
+  68               		.loc 1 536 0
+  69 0036 98E0      		ldi r25,lo8(8)
+  70 0038 9187      		std Z+9,r25
+  71               	.L9:
+ 537:daisycomm.c   ****         selectedChannel->SRCADDR2 = 0;
+  72               		.loc 1 537 0
+  73 003a 1286      		std Z+10,__zero_reg__
+ 538:daisycomm.c   ****     }
+ 539:daisycomm.c   **** 
+ 540:daisycomm.c   ****     //Trigger on received data
+ 541:daisycomm.c   ****     selectedChannel->TRIGSRC = usartTrigger;
+  74               		.loc 1 541 0
+  75 003c E0E1      		ldi r30,lo8(272)
+  76 003e F1E0      		ldi r31,hi8(272)
+  77 0040 8383      		std Z+3,r24
+ 542:daisycomm.c   **** 
+ 543:daisycomm.c   ****     //Interrupt on this channel when the transaction is complete, and clear any pending flags
+ 544:daisycomm.c   ****     if(isOutbound)
+  78               		.loc 1 544 0
+  79 0042 4423      		tst r20
+  80 0044 01F0      		breq .L6
+ 545:daisycomm.c   ****     {
+ 546:daisycomm.c   ****         selectedChannel->CTRLB = DMA_CH_TRNINTLVL_OFF_gc | DMA_CH_TRNIF_bm;
+  81               		.loc 1 546 0
+  82 0046 80E1      		ldi r24,lo8(16)
+  83               	.LVL1:
+  84 0048 8183      		std Z+1,r24
+ 547:daisycomm.c   ****         targetUSART->STATUS = USART_TXCIF_bm;
+  85               		.loc 1 547 0
+  86 004a E0EA      		ldi r30,lo8(2208)
+  87 004c F8E0      		ldi r31,hi8(2208)
+  88               	.LVL2:
+  89 004e 80E4      		ldi r24,lo8(64)
+  90 0050 8183      		std Z+1,r24
+ 548:daisycomm.c   ****         targetUSART->CTRLA = USART_TXCINTLVL_LO_gc | USART_RXCINTLVL_OFF_gc;
+  91               		.loc 1 548 0
+  92 0052 84E0      		ldi r24,lo8(4)
+  93 0054 8383      		std Z+3,r24
+  94 0056 0895      		ret
+  95               	.LVL3:
+  96               	.L6:
+ 549:daisycomm.c   ****     } else
+ 550:daisycomm.c   ****     {
+ 551:daisycomm.c   ****         selectedChannel->CTRLB = DMA_CH_TRNINTLVL_LO_gc | DMA_CH_TRNIF_bm;
+  97               		.loc 1 551 0
+  98 0058 81E1      		ldi r24,lo8(17)
+  99 005a 8183      		std Z+1,r24
+ 100 005c 0895      		ret
+ 101               		.cfi_endproc
+ 102               	.LFE17:
+ 105               	configureHalfDuplexLink.constprop.1:
+ 106               	.LFB16:
+ 421:daisycomm.c   **** static void configureHalfDuplexLink(SERIAL_STREAM_t selectedStream, SERIAL_DIRECTION_t selectedDire
+ 107               		.loc 1 421 0
+ 108               		.cfi_startproc
+ 109               	.LVL4:
+ 110               	/* prologue: function */
+ 111               	/* frame size = 0 */
+ 112               	/* stack size = 0 */
+ 113               	.L__stack_usage = 0
+ 423:daisycomm.c   ****     cli();
+ 114               		.loc 1 423 0
+ 115               	/* #APP */
+ 116               	 ;  423 "daisycomm.c" 1
+ 117 005e F894      		cli
+ 118               	 ;  0 "" 2
+ 456:daisycomm.c   ****             if(UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm)
+ 119               		.loc 1 456 0
+ 120               	/* #NOAPP */
+ 121 0060 9091 1101 		lds r25,273
+ 122 0064 97FF      		sbrs r25,7
+ 123 0066 00C0      		rjmp .L11
+ 458:daisycomm.c   ****                 UPSTREAM_DMA.CTRLA &= ~DMA_CH_ENABLE_bm;
+ 124               		.loc 1 458 0
+ 125 0068 9091 1001 		lds r25,272
+ 126 006c 9F77      		andi r25,lo8(127)
+ 127 006e E0E0      		ldi r30,lo8(256)
+ 128 0070 F1E0      		ldi r31,hi8(256)
+ 129 0072 908B      		std Z+16,r25
+ 130               	.L11:
+ 461:daisycomm.c   ****             upstreamRxDone = 0;
+ 131               		.loc 1 461 0
+ 132 0074 1092 0000 		sts upstreamRxDone,__zero_reg__
+ 133 0078 1092 0000 		sts upstreamRxDone+1,__zero_reg__
+ 463:daisycomm.c   ****             upstreamBusy = 0;
+ 134               		.loc 1 463 0
+ 135 007c 1092 0000 		sts upstreamBusy,__zero_reg__
+ 466:daisycomm.c   ****             if(selectedDirection == INBOUND)
+ 136               		.loc 1 466 0
+ 137 0080 8823      		tst r24
+ 138 0082 01F4      		brne .L12
+ 468:daisycomm.c   ****                 SET_UPSTREAM_INBOUND();
+ 139               		.loc 1 468 0
+ 140 0084 8091 4406 		lds r24,1604
+ 141               	.LVL5:
+ 142 0088 8E7F      		andi r24,lo8(-2)
+ 143 008a E0E4      		ldi r30,lo8(1600)
+ 144 008c F6E0      		ldi r31,hi8(1600)
+ 145 008e 8483      		std Z+4,r24
+ 469:daisycomm.c   ****                 prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, i
+ 146               		.loc 1 469 0
+ 147 0090 8BE4      		ldi r24,lo8(75)
+ 148 0092 60E0      		ldi r22,lo8(inbound_upstream_data)
+ 149 0094 70E0      		ldi r23,hi8(inbound_upstream_data)
+ 150 0096 40E0      		ldi r20,lo8(0)
+ 151 0098 0E94 0000 		call prepareDMAChannel.constprop.0
+ 152               	.LVL6:
+ 153               	.LBB18:
+ 154               	.LBB19:
+ 552:daisycomm.c   ****     }
+ 553:daisycomm.c   **** }
+ 554:daisycomm.c   **** 
+ 555:daisycomm.c   **** /************************************************************************
+ 556:daisycomm.c   ****  * activateDMAChannel(selectedChannel,numBytes)
+ 557:daisycomm.c   ****  *
+ 558:daisycomm.c   ****  * Activates the DMA channel identified by selectedChannel (a DMA.CHX structure)
+ 559:daisycomm.c   ****  * to receive numBytes bytes.  The DMA channel must have been previously prepared
+ 560:daisycomm.c   ****  * with prepareDMAChannel().
+ 561:daisycomm.c   ****  ************************************************************************/
+ 562:daisycomm.c   **** static void activateDMAChannel(DMA_CH_t *selectedChannel,int numBytes)
+ 563:daisycomm.c   **** {
+ 564:daisycomm.c   ****     //Set block size to packet size
+ 565:daisycomm.c   ****     selectedChannel->TRFCNT = numBytes;
+ 155               		.loc 1 565 0
+ 156 009c 87E0      		ldi r24,lo8(7)
+ 157 009e 90E0      		ldi r25,hi8(7)
+ 158 00a0 E0E1      		ldi r30,lo8(272)
+ 159 00a2 F1E0      		ldi r31,hi8(272)
+ 160 00a4 8483      		std Z+4,r24
+ 161 00a6 9583      		std Z+5,r25
+ 566:daisycomm.c   ****     //Enable the channel on single shot mode with a burst length of one.  Whenever the trigger arri
+ 567:daisycomm.c   ****     //only one burst will be performed.
+ 568:daisycomm.c   ****     selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 162               		.loc 1 568 0
+ 163 00a8 84E8      		ldi r24,lo8(-124)
+ 164 00aa 8093 1001 		sts 272,r24
+ 165               	.LBE19:
+ 166               	.LBE18:
+ 471:daisycomm.c   ****                 UPSTREAM_CONFIG = INBOUND;
+ 167               		.loc 1 471 0
+ 168 00ae 1092 0000 		sts UPSTREAM_CONFIG,__zero_reg__
+ 169 00b2 00C0      		rjmp .L13
+ 170               	.LVL7:
+ 171               	.L12:
+ 474:daisycomm.c   ****                 SET_UPSTREAM_OUTBOUND();
+ 172               		.loc 1 474 0
+ 173 00b4 8091 4406 		lds r24,1604
+ 174               	.LVL8:
+ 175 00b8 8260      		ori r24,lo8(2)
+ 176 00ba E0E4      		ldi r30,lo8(1600)
+ 177 00bc F6E0      		ldi r31,hi8(1600)
+ 178 00be 8483      		std Z+4,r24
+ 475:daisycomm.c   ****                 UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 179               		.loc 1 475 0
+ 180 00c0 E0EA      		ldi r30,lo8(2208)
+ 181 00c2 F8E0      		ldi r31,hi8(2208)
+ 182 00c4 80E4      		ldi r24,lo8(64)
+ 183 00c6 8183      		std Z+1,r24
+ 476:daisycomm.c   ****                 UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc | USART_RXCINTLVL_OFF_gc;
+ 184               		.loc 1 476 0
+ 185 00c8 84E0      		ldi r24,lo8(4)
+ 186 00ca 8383      		std Z+3,r24
+ 478:daisycomm.c   ****                 prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_OUTBOUND_TRIGGER, &UPSTREAM_USART, 
+ 187               		.loc 1 478 0
+ 188 00cc 8CE4      		ldi r24,lo8(76)
+ 189 00ce 60E0      		ldi r22,lo8(outbound_upstream_data+1)
+ 190 00d0 70E0      		ldi r23,hi8(outbound_upstream_data+1)
+ 191 00d2 41E0      		ldi r20,lo8(1)
+ 192 00d4 0E94 0000 		call prepareDMAChannel.constprop.0
+ 479:daisycomm.c   ****                 UPSTREAM_CONFIG = OUTBOUND;
+ 193               		.loc 1 479 0
+ 194 00d8 81E0      		ldi r24,lo8(1)
+ 195 00da 8093 0000 		sts UPSTREAM_CONFIG,r24
+ 196               	.L13:
+ 486:daisycomm.c   ****     sei();
+ 197               		.loc 1 486 0
+ 198               	/* #APP */
+ 199               	 ;  486 "daisycomm.c" 1
+ 200 00de 7894      		sei
+ 201               	 ;  0 "" 2
+ 202               	/* epilogue start */
+ 489:daisycomm.c   **** }
+ 203               		.loc 1 489 0
+ 204               	/* #NOAPP */
+ 205 00e0 0895      		ret
+ 206               		.cfi_endproc
+ 207               	.LFE16:
+ 209               	.global	__vector_14
+ 211               	__vector_14:
+ 212               	.LFB6:
+ 156:daisycomm.c   **** {
+ 213               		.loc 1 156 0
+ 214               		.cfi_startproc
+ 215 00e2 1F92      		push r1
+ 216               	.LCFI0:
+ 217               		.cfi_def_cfa_offset 3
+ 218               		.cfi_offset 1, -2
+ 219 00e4 0F92      		push r0
+ 220               	.LCFI1:
+ 221               		.cfi_def_cfa_offset 4
+ 222               		.cfi_offset 0, -3
+ 223 00e6 0FB6      		in r0,__SREG__
+ 224 00e8 0F92      		push r0
+ 225 00ea 1124      		clr __zero_reg__
+ 226 00ec 2F93      		push r18
+ 227               	.LCFI2:
+ 228               		.cfi_def_cfa_offset 5
+ 229               		.cfi_offset 18, -4
+ 230 00ee 3F93      		push r19
+ 231               	.LCFI3:
+ 232               		.cfi_def_cfa_offset 6
+ 233               		.cfi_offset 19, -5
+ 234 00f0 4F93      		push r20
+ 235               	.LCFI4:
+ 236               		.cfi_def_cfa_offset 7
+ 237               		.cfi_offset 20, -6
+ 238 00f2 5F93      		push r21
+ 239               	.LCFI5:
+ 240               		.cfi_def_cfa_offset 8
+ 241               		.cfi_offset 21, -7
+ 242 00f4 6F93      		push r22
+ 243               	.LCFI6:
+ 244               		.cfi_def_cfa_offset 9
+ 245               		.cfi_offset 22, -8
+ 246 00f6 7F93      		push r23
+ 247               	.LCFI7:
+ 248               		.cfi_def_cfa_offset 10
+ 249               		.cfi_offset 23, -9
+ 250 00f8 8F93      		push r24
+ 251               	.LCFI8:
+ 252               		.cfi_def_cfa_offset 11
+ 253               		.cfi_offset 24, -10
+ 254 00fa 9F93      		push r25
+ 255               	.LCFI9:
+ 256               		.cfi_def_cfa_offset 12
+ 257               		.cfi_offset 25, -11
+ 258 00fc AF93      		push r26
+ 259               	.LCFI10:
+ 260               		.cfi_def_cfa_offset 13
+ 261               		.cfi_offset 26, -12
+ 262 00fe BF93      		push r27
+ 263               	.LCFI11:
+ 264               		.cfi_def_cfa_offset 14
+ 265               		.cfi_offset 27, -13
+ 266 0100 EF93      		push r30
+ 267               	.LCFI12:
+ 268               		.cfi_def_cfa_offset 15
+ 269               		.cfi_offset 30, -14
+ 270 0102 FF93      		push r31
+ 271               	.LCFI13:
+ 272               		.cfi_def_cfa_offset 16
+ 273               		.cfi_offset 31, -15
+ 274               	/* prologue: Signal */
+ 275               	/* frame size = 0 */
+ 276               	/* stack size = 15 */
+ 277               	.L__stack_usage = 15
+ 158:daisycomm.c   ****     if(UPSTREAM_CONFIG == OUTBOUND)
+ 278               		.loc 1 158 0
+ 279 0104 8091 0000 		lds r24,UPSTREAM_CONFIG
+ 280 0108 8130      		cpi r24,lo8(1)
+ 281 010a 01F4      		brne .L15
+ 161:daisycomm.c   ****         upstreamBusy = 0;
+ 282               		.loc 1 161 0
+ 283 010c 1092 0000 		sts upstreamBusy,__zero_reg__
+ 284 0110 00C0      		rjmp .L14
+ 285               	.L15:
+ 165:daisycomm.c   ****         if((UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm) || !(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm))
+ 286               		.loc 1 165 0
+ 287 0112 8091 1101 		lds r24,273
+ 288 0116 87FD      		sbrc r24,7
+ 289 0118 00C0      		rjmp .L17
+ 165:daisycomm.c   ****         if((UPSTREAM_DMA.CTRLB & DMA_CH_CHBUSY_bm) || !(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm))
+ 290               		.loc 1 165 0 is_stmt 0 discriminator 1
+ 291 011a 8091 1001 		lds r24,272
+ 292 011e 87FD      		sbrc r24,7
+ 293 0120 00C0      		rjmp .L18
+ 294               	.L17:
+ 167:daisycomm.c   ****             upstreamBusy++;
+ 295               		.loc 1 167 0 is_stmt 1
+ 296 0122 8091 0000 		lds r24,upstreamBusy
+ 297 0126 8F5F      		subi r24,lo8(-(1))
+ 298 0128 8093 0000 		sts upstreamBusy,r24
+ 299               	.L18:
+ 170:daisycomm.c   ****         if(upstreamBusy > 2)
+ 300               		.loc 1 170 0
+ 301 012c 8091 0000 		lds r24,upstreamBusy
+ 302 0130 8330      		cpi r24,lo8(3)
+ 303 0132 00F0      		brlo .L14
+ 173:daisycomm.c   ****             UPSTREAM_DMA.CTRLA = 0x00;
+ 304               		.loc 1 173 0
+ 305 0134 E0E0      		ldi r30,lo8(256)
+ 306 0136 F1E0      		ldi r31,hi8(256)
+ 307 0138 108A      		std Z+16,__zero_reg__
+ 308               	.L19:
+ 175:daisycomm.c   ****             while(UPSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm);
+ 309               		.loc 1 175 0 discriminator 1
+ 310 013a 8091 1001 		lds r24,272
+ 311 013e 87FD      		sbrc r24,7
+ 312 0140 00C0      		rjmp .L19
+ 178:daisycomm.c   ****             UPSTREAM_DMA.CTRLA = DMA_CH_RESET_bm;
+ 313               		.loc 1 178 0
+ 314 0142 80E4      		ldi r24,lo8(64)
+ 315 0144 E0E0      		ldi r30,lo8(256)
+ 316 0146 F1E0      		ldi r31,hi8(256)
+ 317 0148 808B      		std Z+16,r24
+ 181:daisycomm.c   ****             prepareDMAChannel(&UPSTREAM_DMA, UPSTREAM_USART_INBOUND_TRIGGER, &UPSTREAM_USART, inbou
+ 318               		.loc 1 181 0
+ 319 014a 8BE4      		ldi r24,lo8(75)
+ 320 014c 60E0      		ldi r22,lo8(inbound_upstream_data)
+ 321 014e 70E0      		ldi r23,hi8(inbound_upstream_data)
+ 322 0150 40E0      		ldi r20,lo8(0)
+ 323 0152 0E94 0000 		call prepareDMAChannel.constprop.0
+ 324               	.LVL9:
+ 325               	.LBB20:
+ 326               	.LBB21:
+ 565:daisycomm.c   ****     selectedChannel->TRFCNT = numBytes;
+ 327               		.loc 1 565 0
+ 328 0156 87E0      		ldi r24,lo8(7)
+ 329 0158 90E0      		ldi r25,hi8(7)
+ 330 015a E0E1      		ldi r30,lo8(272)
+ 331 015c F1E0      		ldi r31,hi8(272)
+ 332 015e 8483      		std Z+4,r24
+ 333 0160 9583      		std Z+5,r25
+ 334               		.loc 1 568 0
+ 335 0162 84E8      		ldi r24,lo8(-124)
+ 336 0164 8093 1001 		sts 272,r24
+ 337               	.LVL10:
+ 338               	.L14:
+ 339               	/* epilogue start */
+ 340               	.LBE21:
+ 341               	.LBE20:
+ 213:daisycomm.c   **** }
+ 342               		.loc 1 213 0
+ 343 0168 FF91      		pop r31
+ 344 016a EF91      		pop r30
+ 345 016c BF91      		pop r27
+ 346 016e AF91      		pop r26
+ 347 0170 9F91      		pop r25
+ 348 0172 8F91      		pop r24
+ 349 0174 7F91      		pop r23
+ 350 0176 6F91      		pop r22
+ 351 0178 5F91      		pop r21
+ 352 017a 4F91      		pop r20
+ 353 017c 3F91      		pop r19
+ 354 017e 2F91      		pop r18
+ 355 0180 0F90      		pop r0
+ 356 0182 0FBE      		out __SREG__,r0
+ 357 0184 0F90      		pop r0
+ 358 0186 1F90      		pop r1
+ 359 0188 1895      		reti
+ 360               		.cfi_endproc
+ 361               	.LFE6:
+ 363               	.global	__vector_6
+ 365               	__vector_6:
+ 366               	.LFB7:
+ 220:daisycomm.c   **** {
+ 367               		.loc 1 220 0
+ 368               		.cfi_startproc
+ 369 018a 1F92      		push r1
+ 370               	.LCFI14:
+ 371               		.cfi_def_cfa_offset 3
+ 372               		.cfi_offset 1, -2
+ 373 018c 0F92      		push r0
+ 374               	.LCFI15:
+ 375               		.cfi_def_cfa_offset 4
+ 376               		.cfi_offset 0, -3
+ 377 018e 0FB6      		in r0,__SREG__
+ 378 0190 0F92      		push r0
+ 379 0192 1124      		clr __zero_reg__
+ 380 0194 8F93      		push r24
+ 381               	.LCFI16:
+ 382               		.cfi_def_cfa_offset 5
+ 383               		.cfi_offset 24, -4
+ 384 0196 9F93      		push r25
+ 385               	.LCFI17:
+ 386               		.cfi_def_cfa_offset 6
+ 387               		.cfi_offset 25, -5
+ 388 0198 EF93      		push r30
+ 389               	.LCFI18:
+ 390               		.cfi_def_cfa_offset 7
+ 391               		.cfi_offset 30, -6
+ 392 019a FF93      		push r31
+ 393               	.LCFI19:
+ 394               		.cfi_def_cfa_offset 8
+ 395               		.cfi_offset 31, -7
+ 396               	/* prologue: Signal */
+ 397               	/* frame size = 0 */
+ 398               	/* stack size = 7 */
+ 399               	.L__stack_usage = 7
+ 221:daisycomm.c   ****     if(UPSTREAM_DMA.CTRLB & DMA_CH_ERRIF_bm)
+ 400               		.loc 1 221 0
+ 401 019c 8091 1101 		lds r24,273
+ 402 01a0 85FD      		sbrc r24,5
+ 403 01a2 00C0      		rjmp .L21
+ 230:daisycomm.c   ****     if(UPSTREAM_DMA.CTRLB & DMA_CH_TRNIF_bm)
+ 404               		.loc 1 230 0
+ 405 01a4 8091 1101 		lds r24,273
+ 406 01a8 84FF      		sbrs r24,4
+ 407 01aa 00C0      		rjmp .L21
+ 233:daisycomm.c   ****         UPSTREAM_DMA.CTRLB = UPSTREAM_DMA.CTRLB | DMA_CH_TRNIF_bm;
+ 408               		.loc 1 233 0
+ 409 01ac 8091 1101 		lds r24,273
+ 410 01b0 8061      		ori r24,lo8(16)
+ 411 01b2 E0E0      		ldi r30,lo8(256)
+ 412 01b4 F1E0      		ldi r31,hi8(256)
+ 413 01b6 818B      		std Z+17,r24
+ 234:daisycomm.c   ****         upstreamBusy = 0;
+ 414               		.loc 1 234 0
+ 415 01b8 1092 0000 		sts upstreamBusy,__zero_reg__
+ 235:daisycomm.c   ****         notifyDaisy = 1;
+ 416               		.loc 1 235 0
+ 417 01bc 81E0      		ldi r24,lo8(1)
+ 418 01be 8093 0000 		sts notifyDaisy,r24
+ 241:daisycomm.c   ****             upstreamRxDone = 1;
+ 419               		.loc 1 241 0
+ 420 01c2 81E0      		ldi r24,lo8(1)
+ 421 01c4 90E0      		ldi r25,hi8(1)
+ 422 01c6 8093 0000 		sts upstreamRxDone,r24
+ 423 01ca 9093 0000 		sts upstreamRxDone+1,r25
+ 424               	.L21:
+ 425               	/* epilogue start */
+ 245:daisycomm.c   **** }
+ 426               		.loc 1 245 0
+ 427 01ce FF91      		pop r31
+ 428 01d0 EF91      		pop r30
+ 429 01d2 9F91      		pop r25
+ 430 01d4 8F91      		pop r24
+ 431 01d6 0F90      		pop r0
+ 432 01d8 0FBE      		out __SREG__,r0
+ 433 01da 0F90      		pop r0
+ 434 01dc 1F90      		pop r1
+ 435 01de 1895      		reti
+ 436               		.cfi_endproc
+ 437               	.LFE7:
+ 439               	.global	__vector_27
+ 441               	__vector_27:
+ 442               	.LFB8:
+ 248:daisycomm.c   **** {
+ 443               		.loc 1 248 0
+ 444               		.cfi_startproc
+ 445 01e0 1F92      		push r1
+ 446               	.LCFI20:
+ 447               		.cfi_def_cfa_offset 3
+ 448               		.cfi_offset 1, -2
+ 449 01e2 0F92      		push r0
+ 450               	.LCFI21:
+ 451               		.cfi_def_cfa_offset 4
+ 452               		.cfi_offset 0, -3
+ 453 01e4 0FB6      		in r0,__SREG__
+ 454 01e6 0F92      		push r0
+ 455 01e8 1124      		clr __zero_reg__
+ 456 01ea 8F93      		push r24
+ 457               	.LCFI22:
+ 458               		.cfi_def_cfa_offset 5
+ 459               		.cfi_offset 24, -4
+ 460 01ec 9F93      		push r25
+ 461               	.LCFI23:
+ 462               		.cfi_def_cfa_offset 6
+ 463               		.cfi_offset 25, -5
+ 464 01ee EF93      		push r30
+ 465               	.LCFI24:
+ 466               		.cfi_def_cfa_offset 7
+ 467               		.cfi_offset 30, -6
+ 468 01f0 FF93      		push r31
+ 469               	.LCFI25:
+ 470               		.cfi_def_cfa_offset 8
+ 471               		.cfi_offset 31, -7
+ 472               	/* prologue: Signal */
+ 473               	/* frame size = 0 */
+ 474               	/* stack size = 7 */
+ 475               	.L__stack_usage = 7
+ 249:daisycomm.c   ****     upstreamBusy = 0;
+ 476               		.loc 1 249 0
+ 477 01f2 1092 0000 		sts upstreamBusy,__zero_reg__
+ 250:daisycomm.c   ****     notifyDaisy = 1;
+ 478               		.loc 1 250 0
+ 479 01f6 81E0      		ldi r24,lo8(1)
+ 480 01f8 8093 0000 		sts notifyDaisy,r24
+ 251:daisycomm.c   ****     upstreamTxDone = 1;
+ 481               		.loc 1 251 0
+ 482 01fc 81E0      		ldi r24,lo8(1)
+ 483 01fe 90E0      		ldi r25,hi8(1)
+ 484 0200 8093 0000 		sts upstreamTxDone,r24
+ 485 0204 9093 0000 		sts upstreamTxDone+1,r25
+ 252:daisycomm.c   ****     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc | USART_RXCINTLVL_OFF_gc;
+ 486               		.loc 1 252 0
+ 487 0208 E0EA      		ldi r30,lo8(2208)
+ 488 020a F8E0      		ldi r31,hi8(2208)
+ 489 020c 1382      		std Z+3,__zero_reg__
+ 253:daisycomm.c   ****     UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 490               		.loc 1 253 0
+ 491 020e 80E4      		ldi r24,lo8(64)
+ 492 0210 8183      		std Z+1,r24
+ 493               	/* epilogue start */
+ 254:daisycomm.c   **** }
+ 494               		.loc 1 254 0
+ 495 0212 FF91      		pop r31
+ 496 0214 EF91      		pop r30
+ 497 0216 9F91      		pop r25
+ 498 0218 8F91      		pop r24
+ 499 021a 0F90      		pop r0
+ 500 021c 0FBE      		out __SREG__,r0
+ 501 021e 0F90      		pop r0
+ 502 0220 1F90      		pop r1
+ 503 0222 1895      		reti
+ 504               		.cfi_endproc
+ 505               	.LFE8:
+ 507               	.global	computeChecksum
+ 509               	computeChecksum:
+ 510               	.LFB13:
+ 569:daisycomm.c   **** }
+ 570:daisycomm.c   **** 
+ 571:daisycomm.c   **** /************************************************************************
+ 572:daisycomm.c   ****  * Returns the appropriate checksum for the first packetSize bytes of packetBuffer
+ 573:daisycomm.c   ****  * As a shortcut, feeding an entire packet to this routine should result in a return
+ 574:daisycomm.c   ****  * value of zero for a proper packet.
+ 575:daisycomm.c   ****  ************************************************************************/
+ 576:daisycomm.c   **** int computeChecksum(uint8_t *packetBuffer, int packetSize)
+ 577:daisycomm.c   **** {
+ 511               		.loc 1 577 0
+ 512               		.cfi_startproc
+ 513               	.LVL11:
+ 514               	/* prologue: function */
+ 515               	/* frame size = 0 */
+ 516               	/* stack size = 0 */
+ 517               	.L__stack_usage = 0
+ 518               	.LBB22:
+ 578:daisycomm.c   ****     uint8_t accumulator = 0;
+ 519               		.loc 1 578 0
+ 520 0224 FC01      		movw r30,r24
+ 579:daisycomm.c   ****     for(int i=0;i<packetSize;i++)
+ 521               		.loc 1 579 0
+ 522 0226 20E0      		ldi r18,lo8(0)
+ 523 0228 30E0      		ldi r19,hi8(0)
+ 578:daisycomm.c   ****     uint8_t accumulator = 0;
+ 524               		.loc 1 578 0
+ 525 022a 80E0      		ldi r24,lo8(0)
+ 526               	.LVL12:
+ 527               		.loc 1 579 0
+ 528 022c 00C0      		rjmp .L25
+ 529               	.LVL13:
+ 530               	.L26:
+ 580:daisycomm.c   ****     {
+ 581:daisycomm.c   ****         accumulator += packetBuffer[i];
+ 531               		.loc 1 581 0 discriminator 2
+ 532 022e 9191      		ld r25,Z+
+ 533 0230 890F      		add r24,r25
+ 534               	.LVL14:
+ 579:daisycomm.c   ****     for(int i=0;i<packetSize;i++)
+ 535               		.loc 1 579 0 discriminator 2
+ 536 0232 2F5F      		subi r18,lo8(-(1))
+ 537 0234 3F4F      		sbci r19,hi8(-(1))
+ 538               	.LVL15:
+ 539               	.L25:
+ 579:daisycomm.c   ****     for(int i=0;i<packetSize;i++)
+ 540               		.loc 1 579 0 is_stmt 0 discriminator 1
+ 541 0236 2617      		cp r18,r22
+ 542 0238 3707      		cpc r19,r23
+ 543 023a 04F0      		brlt .L26
+ 544               	.LBE22:
+ 582:daisycomm.c   ****     }
+ 583:daisycomm.c   **** 
+ 584:daisycomm.c   ****     return (0x00 - accumulator);
+ 545               		.loc 1 584 0 is_stmt 1
+ 546 023c 90E0      		ldi r25,lo8(0)
+ 547 023e 9095      		com r25
+ 548 0240 8195      		neg r24
+ 549 0242 9F4F      		sbci r25,lo8(-1)
+ 550               	.LVL16:
+ 551               	/* epilogue start */
+ 585:daisycomm.c   **** }
+ 552               		.loc 1 585 0
+ 553 0244 0895      		ret
+ 554               		.cfi_endproc
+ 555               	.LFE13:
+ 557               	.global	configureDaisyUSART
+ 559               	configureDaisyUSART:
+ 560               	.LFB14:
+ 586:daisycomm.c   **** 
+ 587:daisycomm.c   **** 
+ 588:daisycomm.c   **** /************************************************************************
+ 589:daisycomm.c   ****  * configureDaisyUSART()
+ 590:daisycomm.c   ****  *
+ 591:daisycomm.c   ****  * Configures the daisy chain system based on parameters in the daisyconfig.h file
+ 592:daisycomm.c   ****  ************************************************************************/
+ 593:daisycomm.c   **** void configureDaisyUSART(void)
+ 594:daisycomm.c   **** {
+ 561               		.loc 1 594 0
+ 562               		.cfi_startproc
+ 563               	/* prologue: function */
+ 564               	/* frame size = 0 */
+ 565               	/* stack size = 0 */
+ 566               	.L__stack_usage = 0
+ 567               	.LVL17:
+ 568               	.LBB23:
+ 569               	.LBB24:
+ 405:daisycomm.c   ****         targetUSART->BAUDCTRLA = 0;                                //Configure for 2 MBaud by setti
+ 570               		.loc 1 405 0
+ 571 0246 E0EA      		ldi r30,lo8(2208)
+ 572 0248 F8E0      		ldi r31,hi8(2208)
+ 573 024a 1682      		std Z+6,__zero_reg__
+ 406:daisycomm.c   ****         targetUSART->BAUDCTRLB = 0x00;                            //and BSEL to zero
+ 574               		.loc 1 406 0
+ 575 024c 1782      		std Z+7,__zero_reg__
+ 408:daisycomm.c   ****     targetUSART->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | \
+ 576               		.loc 1 408 0
+ 577 024e 83E0      		ldi r24,lo8(3)
+ 578 0250 8583      		std Z+5,r24
+ 411:daisycomm.c   ****     targetUSART->CTRLB |= USART_RXEN_bm | USART_TXEN_bm;    //enable RX and TX
+ 579               		.loc 1 411 0
+ 580 0252 8481      		ldd r24,Z+4
+ 581 0254 8861      		ori r24,lo8(24)
+ 582 0256 8483      		std Z+4,r24
+ 583               	.LBE24:
+ 584               	.LBE23:
+ 595:daisycomm.c   ****     //First initialize the upstream
+ 596:daisycomm.c   ****     configureUSARTHardware(&UPSTREAM_USART,0,0);
+ 597:daisycomm.c   **** #if USE_DOWNSTREAM
+ 598:daisycomm.c   ****     //Now initialize the downstream
+ 599:daisycomm.c   ****     configureUSARTHardware(&DOWNSTREAM_USART,0,1);
+ 600:daisycomm.c   **** #endif
+ 601:daisycomm.c   **** 
+ 602:daisycomm.c   ****     //Prepare DMA transfers
+ 603:daisycomm.c   ****     DMA.CTRL = DMA_ENABLE_bm;
+ 585               		.loc 1 603 0
+ 586 0258 80E8      		ldi r24,lo8(-128)
+ 587 025a 8093 0001 		sts 256,r24
+ 604:daisycomm.c   **** 
+ 605:daisycomm.c   ****     //Assume default configuration with downstream OUT and upstream IN
+ 606:daisycomm.c   **** #if USE_DOWNSTREAM
+ 607:daisycomm.c   ****     configureHalfDuplexLink(DOWNSTREAM,OUTBOUND);
+ 608:daisycomm.c   **** #endif
+ 609:daisycomm.c   ****     configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 588               		.loc 1 609 0
+ 589 025e 80E0      		ldi r24,lo8(0)
+ 590 0260 0E94 0000 		call configureHalfDuplexLink.constprop.1
+ 610:daisycomm.c   **** 
+ 611:daisycomm.c   ****     //Activate the heartbeat timer for resetting inbound DMA as necessary
+ 612:daisycomm.c   ****     //Interrupt every half millisecond
+ 613:daisycomm.c   ****     //At 32 MHz internal oscillator with 1024 prescaler,
+ 614:daisycomm.c   ****     DAISY_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 591               		.loc 1 614 0
+ 592 0264 E0E0      		ldi r30,lo8(2048)
+ 593 0266 F8E0      		ldi r31,hi8(2048)
+ 594 0268 1182      		std Z+1,__zero_reg__
+ 615:daisycomm.c   ****     DAISY_TC.CTRLC = 0x00;
+ 595               		.loc 1 615 0
+ 596 026a 1282      		std Z+2,__zero_reg__
+ 616:daisycomm.c   ****     DAISY_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 597               		.loc 1 616 0
+ 598 026c 1382      		std Z+3,__zero_reg__
+ 617:daisycomm.c   ****     DAISY_TC.CTRLE = 0x00;
+ 599               		.loc 1 617 0
+ 600 026e 1482      		std Z+4,__zero_reg__
+ 618:daisycomm.c   ****     DAISY_TC.PERBUF = 16;
+ 601               		.loc 1 618 0
+ 602 0270 80E1      		ldi r24,lo8(16)
+ 603 0272 90E0      		ldi r25,hi8(16)
+ 604 0274 86AB      		std Z+54,r24
+ 605 0276 97AB      		std Z+55,r25
+ 619:daisycomm.c   ****     DAISY_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 606               		.loc 1 619 0
+ 607 0278 81E0      		ldi r24,lo8(1)
+ 608 027a 8683      		std Z+6,r24
+ 620:daisycomm.c   ****     DAISY_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 609               		.loc 1 620 0
+ 610 027c 87E0      		ldi r24,lo8(7)
+ 611 027e 8083      		st Z,r24
+ 612               	/* epilogue start */
+ 621:daisycomm.c   **** 
+ 622:daisycomm.c   ****     //Activate the Upstream DMA for a command packet of data
+ 623:daisycomm.c   ****     //activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 624:daisycomm.c   **** }
+ 613               		.loc 1 624 0
+ 614 0280 0895      		ret
+ 615               		.cfi_endproc
+ 616               	.LFE14:
+ 618               	.global	doDaisyTask
+ 620               	doDaisyTask:
+ 621               	.LFB15:
+ 625:daisycomm.c   **** 
+ 626:daisycomm.c   **** /************************************************************************
+ 627:daisycomm.c   ****  * doDaisyTask()
+ 628:daisycomm.c   ****  *
+ 629:daisycomm.c   ****  * Main routine of the daisy chain process
+ 630:daisycomm.c   ****  * Maintains system state and manages the transmission/reception of chained data
+ 631:daisycomm.c   ****  * Should be called whenever notifyDaisy is set to 1.
+ 632:daisycomm.c   ****  ************************************************************************/
+ 633:daisycomm.c   **** 
+ 634:daisycomm.c   **** void doDaisyTask(void)
+ 635:daisycomm.c   **** {
+ 622               		.loc 1 635 0
+ 623               		.cfi_startproc
+ 624 0282 CF93      		push r28
+ 625               	.LCFI26:
+ 626               		.cfi_def_cfa_offset 3
+ 627               		.cfi_offset 28, -2
+ 628               	/* prologue: function */
+ 629               	/* frame size = 0 */
+ 630               	/* stack size = 1 */
+ 631               	.L__stack_usage = 1
+ 636:daisycomm.c   ****     uint8_t packetSize;
+ 637:daisycomm.c   ****     //First clear the daisy notification flag
+ 638:daisycomm.c   ****     cli();
+ 632               		.loc 1 638 0
+ 633               	/* #APP */
+ 634               	 ;  638 "daisycomm.c" 1
+ 635 0284 F894      		cli
+ 636               	 ;  0 "" 2
+ 639:daisycomm.c   ****     notifyDaisy = 0;
+ 637               		.loc 1 639 0
+ 638               	/* #NOAPP */
+ 639 0286 1092 0000 		sts notifyDaisy,__zero_reg__
+ 640:daisycomm.c   ****     sei();
+ 640               		.loc 1 640 0
+ 641               	/* #APP */
+ 642               	 ;  640 "daisycomm.c" 1
+ 643 028a 7894      		sei
+ 644               	 ;  0 "" 2
+ 641:daisycomm.c   **** 
+ 642:daisycomm.c   ****     //This is set to IDLE when the upstream port is idle and TRANSMITTING when it is in use
+ 643:daisycomm.c   ****     static DAISY_STATE_t daisyState = DAISY_IDLE;
+ 644:daisycomm.c   **** /*
+ 645:daisycomm.c   **** #if USE_DOWNSTREAM
+ 646:daisycomm.c   ****     //First handle all events that are independent of the upstream state for the Downstream side
+ 647:daisycomm.c   ****     if(downstreamXmitDone)
+ 648:daisycomm.c   ****     {
+ 649:daisycomm.c   ****         cli();
+ 650:daisycomm.c   ****         downstreamXmitDone = 0;
+ 651:daisycomm.c   ****         downstreamBusy = 0;
+ 652:daisycomm.c   ****         sei();
+ 653:daisycomm.c   ****         while(!(DOWNSTREAM_USART.STATUS & USART_TXCIF_bm));
+ 654:daisycomm.c   ****         configureHalfDuplexLink(DOWNSTREAM,INBOUND);
+ 655:daisycomm.c   ****     }
+ 656:daisycomm.c   **** #endif
+ 657:daisycomm.c   **** */
+ 658:daisycomm.c   **** 
+ 659:daisycomm.c   ****     switch(daisyState)
+ 645               		.loc 1 659 0
+ 646               	/* #NOAPP */
+ 647 028c 8091 0000 		lds r24,daisyState.3509
+ 648 0290 8823      		tst r24
+ 649 0292 01F0      		breq .L30
+ 650 0294 8130      		cpi r24,lo8(1)
+ 651 0296 01F0      		breq .+2
+ 652 0298 00C0      		rjmp .L28
+ 653 029a 00C0      		rjmp .L34
+ 654               	.L30:
+ 660:daisycomm.c   ****     {
+ 661:daisycomm.c   ****         case DAISY_IDLE:
+ 662:daisycomm.c   **** #if USE_DOWNSTREAM
+ 663:daisycomm.c   ****             //The daisy chain module is not transmitting, though a passthrough may be waiting
+ 664:daisycomm.c   **** 
+ 665:daisycomm.c   ****             if(downstreamSizeReceived && passthroughWaiting)
+ 666:daisycomm.c   ****             {
+ 667:daisycomm.c   ****                 //Since a downstream reply was heard, pass it through to upstream
+ 668:daisycomm.c   ****                 passthroughWaiting = 0;
+ 669:daisycomm.c   ****                 daisyState = DAISY_TRANSMITTING;
+ 670:daisycomm.c   ****                 if(UPSTREAM_CONFIG == INBOUND)
+ 671:daisycomm.c   ****                 {
+ 672:daisycomm.c   ****                     configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 673:daisycomm.c   ****                 }
+ 674:daisycomm.c   ****                 passthroughToUpstream();
+ 675:daisycomm.c   **** 
+ 676:daisycomm.c   ****                 cli();
+ 677:daisycomm.c   ****                 downstreamTimedout = 0;
+ 678:daisycomm.c   ****                 sei();
+ 679:daisycomm.c   **** 
+ 680:daisycomm.c   ****             } else if(downstreamSizeReceived)
+ 681:daisycomm.c   ****             {
+ 682:daisycomm.c   ****                 //Error condition.  Just clear it out and restart
+ 683:daisycomm.c   ****                 configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 684:daisycomm.c   ****                 //activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 685:daisycomm.c   **** 
+ 686:daisycomm.c   ****                 configureHalfDuplexLink(DOWNSTREAM,OUTBOUND);
+ 687:daisycomm.c   **** 
+ 688:daisycomm.c   ****                 cli();
+ 689:daisycomm.c   ****                 downstreamTimedout = 0;
+ 690:daisycomm.c   ****                 sei();
+ 691:daisycomm.c   **** 
+ 692:daisycomm.c   ****             }
+ 693:daisycomm.c   **** 
+ 694:daisycomm.c   ****             if(downstreamTimedout)
+ 695:daisycomm.c   ****             {
+ 696:daisycomm.c   ****                 cli();
+ 697:daisycomm.c   ****                 downstreamTimedout = 0;
+ 698:daisycomm.c   ****                 sei();
+ 699:daisycomm.c   **** 
+ 700:daisycomm.c   ****                 //Cancel waiting for a downstream
+ 701:daisycomm.c   ****                 DOWNSTREAM_DMA.CTRLA = 0x00;
+ 702:daisycomm.c   ****                 //Wait for it to disable
+ 703:daisycomm.c   ****                 while(DOWNSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm);
+ 704:daisycomm.c   **** 
+ 705:daisycomm.c   ****                 //Issue a reset
+ 706:daisycomm.c   ****                 DOWNSTREAM_DMA.CTRLA = DMA_CH_RESET_bm;
+ 707:daisycomm.c   **** 
+ 708:daisycomm.c   ****                 //Now set back to outbound and wait
+ 709:daisycomm.c   ****                 SET_DOWNSTREAM_OUTBOUND();
+ 710:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_OUTBOUND_TRIGGER, &DOWNSTREAM_U
+ 711:daisycomm.c   ****                 DOWNSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 712:daisycomm.c   ****                 DOWNSTREAM_CONFIG = OUTBOUND;
+ 713:daisycomm.c   ****                 DOWNSTREAM_USART.CTRLA = 0x00;
+ 714:daisycomm.c   **** 
+ 715:daisycomm.c   ****                 //Make sure Upstream is facing the proper direction
+ 716:daisycomm.c   ****                 if(UPSTREAM_CONFIG == OUTBOUND)
+ 717:daisycomm.c   ****                 {
+ 718:daisycomm.c   ****                     //while(!(UPSTREAM_USART.STATUS & USART_TXCIF_bm));
+ 719:daisycomm.c   ****                     configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 720:daisycomm.c   ****                     //activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 721:daisycomm.c   ****                 }
+ 722:daisycomm.c   ****             }
+ 723:daisycomm.c   **** 
+ 724:daisycomm.c   **** 
+ 725:daisycomm.c   **** #endif
+ 726:daisycomm.c   **** 
+ 727:daisycomm.c   ****             if(upstreamRxDone)
+ 655               		.loc 1 727 0
+ 656 029c 8091 0000 		lds r24,upstreamRxDone
+ 657 02a0 9091 0000 		lds r25,upstreamRxDone+1
+ 658 02a4 0097      		sbiw r24,0
+ 659 02a6 01F4      		brne .+2
+ 660 02a8 00C0      		rjmp .L28
+ 728:daisycomm.c   ****             {
+ 729:daisycomm.c   ****                 //A packet arrived from upstream.  Parse it and compute some sort of reply.
+ 730:daisycomm.c   ****                 cli();
+ 661               		.loc 1 730 0
+ 662               	/* #APP */
+ 663               	 ;  730 "daisycomm.c" 1
+ 664 02aa F894      		cli
+ 665               	 ;  0 "" 2
+ 731:daisycomm.c   ****                 upstreamRxDone = 0;
+ 666               		.loc 1 731 0
+ 667               	/* #NOAPP */
+ 668 02ac 1092 0000 		sts upstreamRxDone,__zero_reg__
+ 669 02b0 1092 0000 		sts upstreamRxDone+1,__zero_reg__
+ 732:daisycomm.c   ****                 sei();
+ 670               		.loc 1 732 0
+ 671               	/* #APP */
+ 672               	 ;  732 "daisycomm.c" 1
+ 673 02b4 7894      		sei
+ 674               	 ;  0 "" 2
+ 733:daisycomm.c   **** 
+ 734:daisycomm.c   ****                 //A data packet has arrived from upstream.  Validate it
+ 735:daisycomm.c   ****                 if(computeChecksum((uint8_t *)inbound_upstream_data,COMMAND_PACKET_SIZE) != 0x00)
+ 675               		.loc 1 735 0
+ 676               	/* #NOAPP */
+ 677 02b6 80E0      		ldi r24,lo8(inbound_upstream_data)
+ 678 02b8 90E0      		ldi r25,hi8(inbound_upstream_data)
+ 679 02ba 67E0      		ldi r22,lo8(7)
+ 680 02bc 70E0      		ldi r23,hi8(7)
+ 681 02be 0E94 0000 		call computeChecksum
+ 682 02c2 0097      		sbiw r24,0
+ 683 02c4 01F0      		breq .L32
+ 736:daisycomm.c   ****                 {
+ 737:daisycomm.c   ****                     //Invalid checksum
+ 738:daisycomm.c   ****                   RxCheckSumErrCnt[0]++;
+ 684               		.loc 1 738 0
+ 685 02c6 8091 0000 		lds r24,RxCheckSumErrCnt
+ 686 02ca 9091 0000 		lds r25,RxCheckSumErrCnt+1
+ 687 02ce 0196      		adiw r24,1
+ 688 02d0 8093 0000 		sts RxCheckSumErrCnt,r24
+ 689 02d4 9093 0000 		sts RxCheckSumErrCnt+1,r25
+ 739:daisycomm.c   ****                     outbound_upstream_data[0] = 3; //Packet size
+ 690               		.loc 1 739 0
+ 691 02d8 83E0      		ldi r24,lo8(3)
+ 692 02da 8093 0000 		sts outbound_upstream_data,r24
+ 740:daisycomm.c   ****                     outbound_upstream_data[1] = inbound_upstream_data[1]; //Reflected command byte
+ 693               		.loc 1 740 0
+ 694 02de 8091 0000 		lds r24,inbound_upstream_data+1
+ 695 02e2 8093 0000 		sts outbound_upstream_data+1,r24
+ 741:daisycomm.c   ****                     outbound_upstream_data[2] = CHECKSUM_ERROR; //Checksum error
+ 696               		.loc 1 741 0
+ 697 02e6 C1E0      		ldi r28,lo8(1)
+ 698 02e8 C093 0000 		sts outbound_upstream_data+2,r28
+ 742:daisycomm.c   ****                     outbound_upstream_data[3] = computeChecksum((uint8_t *)outbound_upstream_data,3
+ 699               		.loc 1 742 0
+ 700 02ec 80E0      		ldi r24,lo8(outbound_upstream_data)
+ 701 02ee 90E0      		ldi r25,hi8(outbound_upstream_data)
+ 702 02f0 63E0      		ldi r22,lo8(3)
+ 703 02f2 70E0      		ldi r23,hi8(3)
+ 704 02f4 0E94 0000 		call computeChecksum
+ 705 02f8 8093 0000 		sts outbound_upstream_data+3,r24
+ 743:daisycomm.c   ****                     configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 706               		.loc 1 743 0
+ 707 02fc 81E0      		ldi r24,lo8(1)
+ 708 02fe 0E94 0000 		call configureHalfDuplexLink.constprop.1
+ 744:daisycomm.c   ****                     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 709               		.loc 1 744 0
+ 710 0302 E0EA      		ldi r30,lo8(2208)
+ 711 0304 F8E0      		ldi r31,hi8(2208)
+ 712 0306 1382      		std Z+3,__zero_reg__
+ 745:daisycomm.c   ****                     UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 713               		.loc 1 745 0
+ 714 0308 8091 0000 		lds r24,outbound_upstream_data
+ 715 030c 8093 A008 		sts 2208,r24
+ 716               	.LVL18:
+ 717               	.LBB25:
+ 718               	.LBB26:
+ 719               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+   1:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    All rights reserved.
+   5:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   6:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   9:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  12:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      distribution.
+  16:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  17:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  21:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  33:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* $Id: delay.h.in 2251 2011-09-14 08:20:33Z joerg_wunsch $ */
+  34:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  35:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  38:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  41:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  42:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <inttypes.h>
+  43:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <math.h>
+  45:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  46:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \file */
+  47:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \code
+  49:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \endcode
+  53:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  54:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     used.
+  58:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  59:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  68:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     routines linked into the application.
+  76:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  77:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  81:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** */
+  82:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  83:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  87:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  88:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef F_CPU
+  89:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  93:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  94:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  97:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  98:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #  include <math.h>
+ 102:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+ 103:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 104:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /**
+ 105:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 107:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 109:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 112:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 114:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 120:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 125:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 129:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 132:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 140:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****  */
+ 141:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** void
+ 142:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** {
+ 144:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint16_t __ticks;
+ 145:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	double __tmp ; 
+ 146:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 147:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 148:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 149:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 150:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 151:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 152:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 153:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 154:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 155:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 156:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 157:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 158:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 159:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#else
+ 160:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		//round up by default
+ 161:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 162:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#endif
+ 163:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 164:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 165:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 166:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #else
+ 167:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 168:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	if (__tmp < 1.0)
+ 169:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks = 1;
+ 170:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	else if (__tmp > 65535)
+ 171:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	{
+ 172:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 173:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 174:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		while(__ticks)
+ 175:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		{
+ 176:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 			// wait 1/10 ms
+ 177:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 178:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 			__ticks --;
+ 179:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		}
+ 180:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		return;
+ 181:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	}
+ 182:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	else
+ 183:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks = (uint16_t)__tmp;
+ 184:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	_delay_loop_2(__ticks);
+ 185:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+ 186:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** }
+ 187:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 188:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /**
+ 189:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    \ingroup util_delay
+ 190:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 191:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 192:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 193:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 194:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 195:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 196:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 197:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 198:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 199:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 200:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    will not be informed about this case.
+ 201:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 202:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 203:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 204:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    values greater than the maximal possible delay, overflow results in
+ 205:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    no delay i.e., 0us.
+ 206:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   
+ 207:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 208:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 209:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 210:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 211:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 212:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    to round down and round to closest integer.
+ 213:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****  
+ 214:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Note: The new implementation of _delay_us(double __us) with 
+ 215:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible.
+ 216:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 217:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Also, the backward compatible
+ 218:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 219:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 220:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 221:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 222:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****  */
+ 223:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** void
+ 224:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** _delay_us(double __us)
+ 225:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** {
+ 226:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint8_t __ticks;
+ 227:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	double __tmp ; 
+ 228:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 229:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 230:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 231:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 232:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 233:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 234:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 235:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 236:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 237:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 238:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 239:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 240:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 241:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#else
+ 242:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		//round up by default
+ 243:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 244:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#endif
+ 245:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 246:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 720               		.loc 2 246 0
+ 721 0310 8AE6      		 ldi r24,lo8(106)
+ 722 0312 8A95      	    1:dec r24
+ 723 0314 01F4      	    brne 1b
+ 724 0316 00C0      		rjmp .
+ 725               	.LBE26:
+ 726               	.LBE25:
+ 746:daisycomm.c   ****                     //_delay_us(10);
+ 747:daisycomm.c   ****                     DELAY_ROUTINE();
+ 748:daisycomm.c   ****                     UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 727               		.loc 1 748 0
+ 728 0318 80E4      		ldi r24,lo8(64)
+ 729 031a 8183      		std Z+1,r24
+ 749:daisycomm.c   ****                     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 730               		.loc 1 749 0
+ 731 031c 84E0      		ldi r24,lo8(4)
+ 732 031e 8383      		std Z+3,r24
+ 733               	.LVL19:
+ 734               	.LBB27:
+ 735               	.LBB28:
+ 565:daisycomm.c   ****     selectedChannel->TRFCNT = numBytes;
+ 736               		.loc 1 565 0
+ 737 0320 83E0      		ldi r24,lo8(3)
+ 738 0322 90E0      		ldi r25,hi8(3)
+ 739 0324 E0E1      		ldi r30,lo8(272)
+ 740 0326 F1E0      		ldi r31,hi8(272)
+ 741 0328 8483      		std Z+4,r24
+ 742 032a 9583      		std Z+5,r25
+ 568:daisycomm.c   ****     selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 743               		.loc 1 568 0
+ 744 032c 84E8      		ldi r24,lo8(-124)
+ 745 032e 8093 1001 		sts 272,r24
+ 746               	.LBE28:
+ 747               	.LBE27:
+ 750:daisycomm.c   ****                     activateDMAChannel(&UPSTREAM_DMA,3);
+ 751:daisycomm.c   ****                     daisyState = DAISY_TRANSMITTING;
+ 748               		.loc 1 751 0
+ 749 0332 C093 0000 		sts daisyState.3509,r28
+ 752:daisycomm.c   **** #if USE_DOWNSTREAM
+ 753:daisycomm.c   ****                     //No passthrough occurred, so do not wait on a downstream reply.
+ 754:daisycomm.c   ****                     passthroughWaiting = 0;
+ 755:daisycomm.c   **** #endif
+ 756:daisycomm.c   ****                     break;
+ 750               		.loc 1 756 0
+ 751 0336 00C0      		rjmp .L28
+ 752               	.LVL20:
+ 753               	.L32:
+ 757:daisycomm.c   ****                 }
+ 758:daisycomm.c   **** #if USE_DOWNSTREAM
+ 759:daisycomm.c   ****                 if((inbound_upstream_data[0] & 0x0F) != 0)
+ 760:daisycomm.c   ****                 {
+ 761:daisycomm.c   ****                     //This packet is going downstream
+ 762:daisycomm.c   **** 
+ 763:daisycomm.c   ****                     memcpy((uint8_t *)outbound_downstream_data,(uint8_t *)inbound_upstream_data,COM
+ 764:daisycomm.c   **** 
+ 765:daisycomm.c   ****                     //Adjust the Destination Header and the checksum for the new destination
+ 766:daisycomm.c   ****                     outbound_downstream_data[0]--;
+ 767:daisycomm.c   ****                     outbound_downstream_data[CHECKSUM_OFFSET]++;
+ 768:daisycomm.c   ****                     configureHalfDuplexLink(DOWNSTREAM,OUTBOUND);
+ 769:daisycomm.c   ****                     activateDMAChannel(&DOWNSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 770:daisycomm.c   **** 
+ 771:daisycomm.c   ****                     //A downstream reply will be expected
+ 772:daisycomm.c   ****                     passthroughWaiting = 1;
+ 773:daisycomm.c   ****                 }
+ 774:daisycomm.c   **** #endif
+ 775:daisycomm.c   **** 
+ 776:daisycomm.c   ****                 if(((inbound_upstream_data[0] & 0xF0) == 0xF0) || ((inbound_upstream_data[0] & 0x0F
+ 754               		.loc 1 776 0
+ 755 0338 8091 0000 		lds r24,inbound_upstream_data
+ 756 033c 807F      		andi r24,lo8(-16)
+ 757 033e 803F      		cpi r24,lo8(-16)
+ 758 0340 01F0      		breq .L33
+ 759               		.loc 1 776 0 is_stmt 0 discriminator 1
+ 760 0342 8091 0000 		lds r24,inbound_upstream_data
+ 761 0346 90E0      		ldi r25,lo8(0)
+ 762 0348 8F70      		andi r24,lo8(15)
+ 763 034a 9070      		andi r25,hi8(15)
+ 764 034c 0097      		sbiw r24,0
+ 765 034e 01F4      		brne .L28
+ 766               	.L33:
+ 777:daisycomm.c   ****                 {
+ 778:daisycomm.c   ****                     //This packet should be responded to
+ 779:daisycomm.c   ****                     packetSize = processCommand((uint8_t *)inbound_upstream_data,(uint8_t *)outboun
+ 767               		.loc 1 779 0 is_stmt 1
+ 768 0350 80E0      		ldi r24,lo8(inbound_upstream_data)
+ 769 0352 90E0      		ldi r25,hi8(inbound_upstream_data)
+ 770 0354 60E0      		ldi r22,lo8(outbound_upstream_data)
+ 771 0356 70E0      		ldi r23,hi8(outbound_upstream_data)
+ 772 0358 0E94 0000 		call processCommand
+ 773 035c C82F      		mov r28,r24
+ 774               	.LVL21:
+ 780:daisycomm.c   **** 
+ 781:daisycomm.c   ****                     //Assume the command processor handled the packetization
+ 782:daisycomm.c   ****                     configureHalfDuplexLink(UPSTREAM,OUTBOUND);
+ 775               		.loc 1 782 0
+ 776 035e 81E0      		ldi r24,lo8(1)
+ 777               	.LVL22:
+ 778 0360 0E94 0000 		call configureHalfDuplexLink.constprop.1
+ 783:daisycomm.c   ****                     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_OFF_gc;
+ 779               		.loc 1 783 0
+ 780 0364 E0EA      		ldi r30,lo8(2208)
+ 781 0366 F8E0      		ldi r31,hi8(2208)
+ 782 0368 1382      		std Z+3,__zero_reg__
+ 784:daisycomm.c   ****                     UPSTREAM_USART.DATA = outbound_upstream_data[0];
+ 783               		.loc 1 784 0
+ 784 036a 8091 0000 		lds r24,outbound_upstream_data
+ 785 036e 8093 A008 		sts 2208,r24
+ 786               	.LVL23:
+ 787               	.LBB29:
+ 788               	.LBB30:
+ 789               		.loc 2 246 0
+ 790 0372 8AE6      		 ldi r24,lo8(106)
+ 791 0374 8A95      	    1:dec r24
+ 792 0376 01F4      	    brne 1b
+ 793 0378 00C0      		rjmp .
+ 794               	.LBE30:
+ 795               	.LBE29:
+ 785:daisycomm.c   ****                     //_delay_us(10);
+ 786:daisycomm.c   ****                     DELAY_ROUTINE();
+ 787:daisycomm.c   ****                     UPSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 796               		.loc 1 787 0
+ 797 037a 80E4      		ldi r24,lo8(64)
+ 798 037c 8183      		std Z+1,r24
+ 788:daisycomm.c   ****                     UPSTREAM_USART.CTRLA = USART_TXCINTLVL_LO_gc;
+ 799               		.loc 1 788 0
+ 800 037e 84E0      		ldi r24,lo8(4)
+ 801 0380 8383      		std Z+3,r24
+ 802               	.LVL24:
+ 789:daisycomm.c   ****                     activateDMAChannel(&UPSTREAM_DMA,packetSize-1);
+ 803               		.loc 1 789 0
+ 804 0382 8C2F      		mov r24,r28
+ 805 0384 90E0      		ldi r25,lo8(0)
+ 806 0386 0197      		sbiw r24,1
+ 807               	.LBB31:
+ 808               	.LBB32:
+ 565:daisycomm.c   ****     selectedChannel->TRFCNT = numBytes;
+ 809               		.loc 1 565 0
+ 810 0388 E0E1      		ldi r30,lo8(272)
+ 811 038a F1E0      		ldi r31,hi8(272)
+ 812 038c 8483      		std Z+4,r24
+ 813 038e 9583      		std Z+5,r25
+ 568:daisycomm.c   ****     selectedChannel->CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_ENABLE_bm;
+ 814               		.loc 1 568 0
+ 815 0390 84E8      		ldi r24,lo8(-124)
+ 816 0392 8093 1001 		sts 272,r24
+ 817               	.LBE32:
+ 818               	.LBE31:
+ 790:daisycomm.c   ****                     daisyState = DAISY_TRANSMITTING;
+ 819               		.loc 1 790 0
+ 820 0396 81E0      		ldi r24,lo8(1)
+ 821 0398 8093 0000 		sts daisyState.3509,r24
+ 822 039c 00C0      		rjmp .L28
+ 823               	.LVL25:
+ 824               	.L34:
+ 791:daisycomm.c   ****                 }
+ 792:daisycomm.c   ****             }
+ 793:daisycomm.c   ****             break;
+ 794:daisycomm.c   **** 
+ 795:daisycomm.c   ****         case DAISY_TRANSMITTING:
+ 796:daisycomm.c   **** #if USE_DOWNSTREAM
+ 797:daisycomm.c   ****             if(downstreamTimedout)
+ 798:daisycomm.c   ****             {
+ 799:daisycomm.c   ****                 cli();
+ 800:daisycomm.c   ****                 downstreamTimedout = 0;
+ 801:daisycomm.c   ****                 sei();
+ 802:daisycomm.c   ****                 //Downstream timed out, so just finish transmitting upstream and take no further ac
+ 803:daisycomm.c   ****                 //Cancel waiting for a downstream
+ 804:daisycomm.c   ****                 DOWNSTREAM_DMA.CTRLA = 0x00;
+ 805:daisycomm.c   ****                 //Wait for it to disable
+ 806:daisycomm.c   ****                 while(DOWNSTREAM_DMA.CTRLA & DMA_CH_ENABLE_bm);
+ 807:daisycomm.c   **** 
+ 808:daisycomm.c   ****                 //Issue a reset
+ 809:daisycomm.c   ****                 DOWNSTREAM_DMA.CTRLA = DMA_CH_RESET_bm;
+ 810:daisycomm.c   **** 
+ 811:daisycomm.c   ****                 //Now set back to outbound and wait
+ 812:daisycomm.c   ****                 SET_DOWNSTREAM_OUTBOUND();
+ 813:daisycomm.c   ****                 prepareDMAChannel(&DOWNSTREAM_DMA, DOWNSTREAM_USART_OUTBOUND_TRIGGER, &DOWNSTREAM_U
+ 814:daisycomm.c   ****                 DOWNSTREAM_USART.STATUS = USART_TXCIF_bm;
+ 815:daisycomm.c   ****                 DOWNSTREAM_CONFIG = OUTBOUND;
+ 816:daisycomm.c   ****                 DOWNSTREAM_USART.CTRLA = 0x00;
+ 817:daisycomm.c   ****             }
+ 818:daisycomm.c   **** #endif
+ 819:daisycomm.c   ****             //System is pushing data upstream, but it might be done
+ 820:daisycomm.c   ****             if(upstreamTxDone)
+ 825               		.loc 1 820 0
+ 826 039e 8091 0000 		lds r24,upstreamTxDone
+ 827 03a2 9091 0000 		lds r25,upstreamTxDone+1
+ 828 03a6 0097      		sbiw r24,0
+ 829 03a8 01F0      		breq .L28
+ 821:daisycomm.c   ****             {
+ 822:daisycomm.c   ****                 //The upstream transmitter is loaded with data (but possibly not done)
+ 823:daisycomm.c   **** 
+ 824:daisycomm.c   ****                 cli();
+ 830               		.loc 1 824 0
+ 831               	/* #APP */
+ 832               	 ;  824 "daisycomm.c" 1
+ 833 03aa F894      		cli
+ 834               	 ;  0 "" 2
+ 825:daisycomm.c   ****                 upstreamTxDone = 0;
+ 835               		.loc 1 825 0
+ 836               	/* #NOAPP */
+ 837 03ac 1092 0000 		sts upstreamTxDone,__zero_reg__
+ 838 03b0 1092 0000 		sts upstreamTxDone+1,__zero_reg__
+ 826:daisycomm.c   ****                 sei();
+ 839               		.loc 1 826 0
+ 840               	/* #APP */
+ 841               	 ;  826 "daisycomm.c" 1
+ 842 03b4 7894      		sei
+ 843               	 ;  0 "" 2
+ 827:daisycomm.c   **** #if USE_DOWNSTREAM
+ 828:daisycomm.c   ****                 if(downstreamSizeReceived && passthroughWaiting)
+ 829:daisycomm.c   ****                 {
+ 830:daisycomm.c   ****                     //The passthrough packet has already arrived.  Just send it upstream
+ 831:daisycomm.c   ****                     passthroughWaiting = 0;
+ 832:daisycomm.c   ****                     daisyState = DAISY_TRANSMITTING;
+ 833:daisycomm.c   ****                     passthroughToUpstream();
+ 834:daisycomm.c   ****                 }
+ 835:daisycomm.c   ****                 else if(passthroughWaiting)
+ 836:daisycomm.c   ****                 {
+ 837:daisycomm.c   ****                     //Just go back to idle.  Another notification will arrive to wake up when the d
+ 838:daisycomm.c   ****                     daisyState = DAISY_IDLE;
+ 839:daisycomm.c   ****                 } else {
+ 840:daisycomm.c   ****                     //Nothing else is coming  Reset to idle after full transmission complete
+ 841:daisycomm.c   **** #endif
+ 842:daisycomm.c   ****                     daisyState = DAISY_IDLE;
+ 844               		.loc 1 842 0
+ 845               	/* #NOAPP */
+ 846 03b6 1092 0000 		sts daisyState.3509,__zero_reg__
+ 843:daisycomm.c   ****                     //Now wait for the transmission to complete entirely
+ 844:daisycomm.c   ****                     //while(!(UPSTREAM_USART.STATUS & USART_TXCIF_bm));
+ 845:daisycomm.c   ****                     configureHalfDuplexLink(UPSTREAM,INBOUND);
+ 847               		.loc 1 845 0
+ 848 03ba 80E0      		ldi r24,lo8(0)
+ 849 03bc 0E94 0000 		call configureHalfDuplexLink.constprop.1
+ 850               	.L28:
+ 851               	/* epilogue start */
+ 846:daisycomm.c   ****                     //activateDMAChannel(&UPSTREAM_DMA,COMMAND_PACKET_SIZE);
+ 847:daisycomm.c   **** 
+ 848:daisycomm.c   **** #if USE_DOWNSTREAM
+ 849:daisycomm.c   ****                 }
+ 850:daisycomm.c   **** #endif
+ 851:daisycomm.c   ****             }
+ 852:daisycomm.c   ****             break;
+ 853:daisycomm.c   **** 
+ 854:daisycomm.c   ****         default:
+ 855:daisycomm.c   ****             break;
+ 856:daisycomm.c   ****     }
+ 857:daisycomm.c   **** 
+ 858:daisycomm.c   **** }
+ 852               		.loc 1 858 0
+ 853 03c0 CF91      		pop r28
+ 854 03c2 0895      		ret
+ 855               		.cfi_endproc
+ 856               	.LFE15:
+ 858               		.comm RxCheckSumErrCnt,4,1
+ 859               		.lcomm upstreamBusy,1
+ 860               		.lcomm upstreamTxDone,2
+ 861               		.lcomm upstreamRxDone,2
+ 862               		.lcomm UPSTREAM_CONFIG,1
+ 863               		.lcomm outbound_upstream_data,200
+ 864               		.lcomm inbound_upstream_data,7
+ 865               	.global	notifyDaisy
+ 866               	.global	notifyDaisy
+ 867               		.section .bss
+ 870               	notifyDaisy:
+ 871 0000 00        		.skip 1,0
+ 872               		.lcomm daisyState.3509,1
+ 873               		.text
+ 874               	.Letext0:
+ 875               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 876               		.file 4 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 877               		.file 5 "../common/daisycomm.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 daisycomm.c
+     /tmp/ccjm9y2T.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccjm9y2T.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccjm9y2T.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccjm9y2T.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccjm9y2T.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccjm9y2T.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccjm9y2T.s:14     .text:00000000 prepareDMAChannel.constprop.0
+     /tmp/ccjm9y2T.s:105    .text:0000005e configureHalfDuplexLink.constprop.1
+     /tmp/ccjm9y2T.s:860    .bss:00000004 upstreamRxDone
+                             .bss:00000001 upstreamBusy
+     /tmp/ccjm9y2T.s:863    .bss:000000cf inbound_upstream_data
+     /tmp/ccjm9y2T.s:861    .bss:00000006 UPSTREAM_CONFIG
+     /tmp/ccjm9y2T.s:862    .bss:00000007 outbound_upstream_data
+     /tmp/ccjm9y2T.s:211    .text:000000e2 __vector_14
+     /tmp/ccjm9y2T.s:365    .text:0000018a __vector_6
+     /tmp/ccjm9y2T.s:870    .bss:00000000 notifyDaisy
+     /tmp/ccjm9y2T.s:441    .text:000001e0 __vector_27
+     /tmp/ccjm9y2T.s:859    .bss:00000002 upstreamTxDone
+     /tmp/ccjm9y2T.s:509    .text:00000224 computeChecksum
+     /tmp/ccjm9y2T.s:559    .text:00000246 configureDaisyUSART
+     /tmp/ccjm9y2T.s:620    .text:00000282 doDaisyTask
+     /tmp/ccjm9y2T.s:864    .bss:000000d6 daisyState.3509
+                            *COM*:00000004 RxCheckSumErrCnt
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+processCommand

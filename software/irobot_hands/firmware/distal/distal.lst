@@ -1,0 +1,1694 @@
+   1               		.file	"distal.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  14               	ReadIntFromEEPROM:
+  15               	.LFB11:
+  16               		.file 1 "distal.c"
+   1:distal.c      **** /****************************************************
+   2:distal.c      **** 
+   3:distal.c      ****  // Author:            Zachary Clifford
+   4:distal.c      ****  // File Name:        C1482-SRC-PXDMCU-0.c
+   5:distal.c      ****  // Creation Date:    24 February, 2012
+   6:distal.c      ****  // Revision:        00
+   7:distal.c      ****  // Hardware:        ATxmega32A4U
+   8:distal.c      ****  // Description:    Proximal/Distal Top Level Implementation
+   9:distal.c      **** 
+  10:distal.c      **** ****************************************************/
+  11:distal.c      **** 
+  12:distal.c      **** /******************************************************************************
+  13:distal.c      ****     Project Build Summary:
+  14:distal.c      **** -------------------------------------------------------------------------------
+  15:distal.c      **** Source File                                Cur. Rev. Level        Prev. Rev. Level
+  16:distal.c      **** --------------------------------        ----------------    ----------------
+  17:distal.c      **** C1482-SRC-PXDMCU-0.c                    00                    00
+  18:distal.c      **** 
+  19:distal.c      **** 
+  20:distal.c      **** -------------------------------------------------------------------------------
+  21:distal.c      **** 
+  22:distal.c      ****     Project Revision History:
+  23:distal.c      **** -------------------------------------------------------------------------------
+  24:distal.c      **** Revision    Date        Engineer    Description
+  25:distal.c      **** --------    --------    --------    -------------------------------------------
+  26:distal.c      **** 00            MM/DD/YY    ZAC            Initial Release
+  27:distal.c      **** -------------------------------------------------------------------------------
+  28:distal.c      **** 
+  29:distal.c      ****     File Revision History:
+  30:distal.c      **** -------------------------------------------------------------------------------
+  31:distal.c      **** Revision    Date        Engineer    Description
+  32:distal.c      **** --------    --------    --------    -------------------------------------------
+  33:distal.c      **** 00          MM/DD/YYYY    ZAC        Initial Release
+  34:distal.c      **** 300         03/11/2013    BA         PE0 now NC
+  35:distal.c      **** -------------------------------------------------------------------------------
+  36:distal.c      **** 
+  37:distal.c      **** ******************************************************************************/
+  38:distal.c      **** 
+  39:distal.c      **** #include "distal.h"
+  40:distal.c      **** #include "portio.h"
+  41:distal.c      **** #include "../common/daisycomm.h"
+  42:distal.c      **** #include "tactsense.h"
+  43:distal.c      **** #include "adc.h"
+  44:distal.c      **** #include "accel.h"
+  45:distal.c      **** #include "encoder.h"
+  46:distal.c      **** 
+  47:distal.c      **** #include <avr/io.h>
+  48:distal.c      **** #include <avr/interrupt.h>
+  49:distal.c      **** #include <math.h>
+  50:distal.c      **** #include <string.h>
+  51:distal.c      **** #include <avr/wdt.h>
+  52:distal.c      **** #include <avr/eeprom.h>
+  53:distal.c      **** 
+  54:distal.c      **** #define FIRMWARE_VERSION 301
+  55:distal.c      **** 
+  56:distal.c      **** //int isProximal;
+  57:distal.c      **** uint8_t numPressureSensors;
+  58:distal.c      **** 
+  59:distal.c      **** uint16_t testADC[8];
+  60:distal.c      **** 
+  61:distal.c      **** static void configureClocks(void);
+  62:distal.c      **** static void WriteIntToEEPROM(uint8_t address, uint8_t* value);
+  63:distal.c      **** static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination);
+  64:distal.c      **** static void verifyVersion(void);
+  65:distal.c      **** static void initStateFromEEPROM(void);
+  66:distal.c      **** 
+  67:distal.c      **** /************************************************************************
+  68:distal.c      **** * Private function definitions
+  69:distal.c      **** ************************************************************************/
+  70:distal.c      **** 
+  71:distal.c      **** /************************************************************************
+  72:distal.c      **** * configureClocks()
+  73:distal.c      **** *
+  74:distal.c      **** * Configure system clocks
+  75:distal.c      **** * The RTC is being used to generate PID ticks, so ensure that the 32 kHz oscillator
+  76:distal.c      **** * is running.  This will feed a 1.024 kHz clock to the RTC.
+  77:distal.c      **** * The system clock will use the onboard 32MHz oscillator
+  78:distal.c      **** ************************************************************************/
+  79:distal.c      **** static void configureClocks(void)
+  80:distal.c      **** {
+  81:distal.c      ****     OSC.CTRL = OSC_RC32MEN_bm | OSC_RC32KEN_bm;            //enable the 32MHz ring oscillator and t
+  82:distal.c      ****     while(!(OSC.STATUS & OSC_RC32MRDY_bm));                //wait for 32MHz to stabilize
+  83:distal.c      ****     while(!(OSC.STATUS & OSC_RC32KRDY_bm));                //wait for 32kHz to stabilize
+  84:distal.c      **** 
+  85:distal.c      ****     DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+  86:distal.c      ****     DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+  87:distal.c      **** 
+  88:distal.c      ****     CCP = CCP_IOREG_gc;                                    //clock is protected by Configuration Ch
+  89:distal.c      ****     CLK.CTRL = CLK_SCLKSEL_RC32M_gc;                    //switch to 32MHz oscillator
+  90:distal.c      ****     CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;    //Select 1.024 kHz from internal oscillato
+  91:distal.c      **** }
+  92:distal.c      **** 
+  93:distal.c      **** static void detectProximalDistal(void)
+  94:distal.c      **** {
+  95:distal.c      ****     //isProximal = 0;
+  96:distal.c      ****   numPressureSensors = 10;
+  97:distal.c      **** }
+  98:distal.c      **** 
+  99:distal.c      **** static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 100:distal.c      **** {
+ 101:distal.c      ****     uint8_t responseSize = 0;
+ 102:distal.c      ****     uint16_t collectionBitfield;
+ 103:distal.c      ****     int16_t adcData[7];
+ 104:distal.c      ****     uint8_t accelData[6];
+ 105:distal.c      **** 
+ 106:distal.c      ****     //collectionBitfield = (uint16_t) (commandPacket[PAYLOAD_OFFSET]);
+ 107:distal.c      ****     memcpy(&collectionBitfield,&commandPacket[PAYLOAD_OFFSET],2);
+ 108:distal.c      **** 
+ 109:distal.c      ****     if (collectionBitfield & (DATA_COLLECTION_DISTALJOINT_BITMASK | DATA_COLLECTION_DYNAMIC_BITMASK
+ 110:distal.c      ****     {
+ 111:distal.c      ****         captureSweep(adcData);
+ 112:distal.c      ****     }
+ 113:distal.c      **** 
+ 114:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_ACCELERATION_BITMASK)
+ 115:distal.c      ****       {
+ 116:distal.c      ****         readAxes(accelData);
+ 117:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&accelData,6);
+ 118:distal.c      ****         responseSize += 6;
+ 119:distal.c      ****       }
+ 120:distal.c      **** 
+ 121:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DYNAMIC_BITMASK)
+ 122:distal.c      ****     {
+ 123:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&adcData[DYNAMIC_OFFSET],6);
+ 124:distal.c      ****         responseSize += 6;
+ 125:distal.c      ****     }
+ 126:distal.c      **** 
+ 127:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DISTALJOINT_BITMASK)
+ 128:distal.c      ****     {
+ 129:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&adcData[DISTALJOINT_OFFSET],8);
+ 130:distal.c      ****         responseSize += 8;
+ 131:distal.c      ****     }
+ 132:distal.c      **** 
+ 133:distal.c      ****     // if(isProximal)
+ 134:distal.c      ****     // {
+ 135:distal.c      ****     //     if(collectionBitfield & DATA_COLLECTION_PROXIMALJOINT_BITMASK)
+ 136:distal.c      ****     //     {
+ 137:distal.c      ****     //         encoderData = readEncoder();
+ 138:distal.c      ****     //         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&encoderData,6);
+ 139:distal.c      ****     //         responseSize += 2;
+ 140:distal.c      ****     //     }
+ 141:distal.c      ****     // }
+ 142:distal.c      **** 
+ 143:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 144:distal.c      ****     {
+ 145:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], &pressureData, numPressureSenso
+ 146:distal.c      ****         responseSize += numPressureSensors*2;
+ 147:distal.c      ****     }
+ 148:distal.c      ****     
+ 149:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 150:distal.c      ****     {
+ 151:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,2);
+ 152:distal.c      ****         responseSize += 2;
+ 153:distal.c      ****     }
+ 154:distal.c      ****     
+ 155:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_TEMP_BITMASK)
+ 156:distal.c      ****     {
+ 157:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], &pressureTempData, numPressureS
+ 158:distal.c      ****         responseSize += numPressureSensors*2;
+ 159:distal.c      ****     }
+ 160:distal.c      ****     
+ 161:distal.c      ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 162:distal.c      ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = DATA_COLLECTION_OPCODE;
+ 163:distal.c      ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 164:distal.c      ****     outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is the chec
+ 165:distal.c      ****     //LEDoff();
+ 166:distal.c      ****     return 4+responseSize;
+ 167:distal.c      **** }
+ 168:distal.c      **** 
+ 169:distal.c      **** static void initStateFromEEPROM(void)
+ 170:distal.c      **** {
+ 171:distal.c      ****     uint32_t zero_check = 0;
+ 172:distal.c      ****     ReadIntFromEEPROM(EEPROM_ADDRESS_LED, (uint8_t*)&zero_check);
+ 173:distal.c      ****     
+ 174:distal.c      ****     if(zero_check)
+ 175:distal.c      ****         LEDon();
+ 176:distal.c      ****     else
+ 177:distal.c      ****         LEDoff();
+ 178:distal.c      **** }
+ 179:distal.c      **** 
+ 180:distal.c      **** static void WriteIntToEEPROM(uint8_t address, uint8_t* value)
+ 181:distal.c      **** {
+ 182:distal.c      ****     for(uint8_t i=0; i<4; i++)
+ 183:distal.c      ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 184:distal.c      **** }
+ 185:distal.c      **** 
+ 186:distal.c      **** static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination)
+ 187:distal.c      **** {
+  17               		.loc 1 187 0
+  18               		.cfi_startproc
+  19               	.LVL0:
+  20 0000 EF92      		push r14
+  21               	.LCFI0:
+  22               		.cfi_def_cfa_offset 3
+  23               		.cfi_offset 14, -2
+  24 0002 FF92      		push r15
+  25               	.LCFI1:
+  26               		.cfi_def_cfa_offset 4
+  27               		.cfi_offset 15, -3
+  28 0004 0F93      		push r16
+  29               	.LCFI2:
+  30               		.cfi_def_cfa_offset 5
+  31               		.cfi_offset 16, -4
+  32 0006 1F93      		push r17
+  33               	.LCFI3:
+  34               		.cfi_def_cfa_offset 6
+  35               		.cfi_offset 17, -5
+  36 0008 CF93      		push r28
+  37               	.LCFI4:
+  38               		.cfi_def_cfa_offset 7
+  39               		.cfi_offset 28, -6
+  40 000a DF93      		push r29
+  41               	.LCFI5:
+  42               		.cfi_def_cfa_offset 8
+  43               		.cfi_offset 29, -7
+  44 000c 0F92      		push __tmp_reg__
+  45               	.LCFI6:
+  46               		.cfi_def_cfa_offset 9
+  47 000e CDB7      		in r28,__SP_L__
+  48 0010 DEB7      		in r29,__SP_H__
+  49               	.LCFI7:
+  50               		.cfi_def_cfa_register 28
+  51               	/* prologue: function */
+  52               	/* frame size = 1 */
+  53               	/* stack size = 7 */
+  54               	.L__stack_usage = 7
+  55               	.LVL1:
+  56               	.LBB35:
+ 188:distal.c      ****     for(uint8_t i=0; i<4; i++)
+ 189:distal.c      ****         *(destination+i) = eeprom_read_byte((uint8_t *) (address*4+i));
+  57               		.loc 1 189 0
+  58 0012 E82E      		mov r14,r24
+  59 0014 FF24      		clr r15
+  60 0016 EE0C      		lsl r14
+  61 0018 FF1C      		rol r15
+  62 001a EE0C      		lsl r14
+  63 001c FF1C      		rol r15
+  64               	.LVL2:
+  65 001e 8B01      		movw r16,r22
+ 188:distal.c      ****     for(uint8_t i=0; i<4; i++)
+  66               		.loc 1 188 0
+  67 0020 20E0      		ldi r18,lo8(0)
+  68               	.LVL3:
+  69               	.L2:
+  70               		.loc 1 189 0 discriminator 2
+  71 0022 C701      		movw r24,r14
+  72 0024 2983      		std Y+1,r18
+  73 0026 0E94 0000 		call __eerd_byte_x32a4u
+  74 002a F801      		movw r30,r16
+  75 002c 8193      		st Z+,r24
+  76 002e 8F01      		movw r16,r30
+ 188:distal.c      ****     for(uint8_t i=0; i<4; i++)
+  77               		.loc 1 188 0 discriminator 2
+  78 0030 2981      		ldd r18,Y+1
+  79 0032 2F5F      		subi r18,lo8(-(1))
+  80               	.LVL4:
+  81 0034 0894      		sec
+  82 0036 E11C      		adc r14,__zero_reg__
+  83 0038 F11C      		adc r15,__zero_reg__
+  84 003a 2430      		cpi r18,lo8(4)
+  85 003c 01F4      		brne .L2
+  86               	/* epilogue start */
+  87               	.LBE35:
+ 190:distal.c      **** }
+  88               		.loc 1 190 0
+  89 003e 0F90      		pop __tmp_reg__
+  90 0040 DF91      		pop r29
+  91 0042 CF91      		pop r28
+  92 0044 1F91      		pop r17
+  93 0046 0F91      		pop r16
+  94 0048 FF90      		pop r15
+  95 004a EF90      		pop r14
+  96 004c 0895      		ret
+  97               		.cfi_endproc
+  98               	.LFE11:
+ 101               	WriteIntToEEPROM:
+ 102               	.LFB10:
+ 181:distal.c      **** {
+ 103               		.loc 1 181 0
+ 104               		.cfi_startproc
+ 105               	.LVL5:
+ 106 004e EF92      		push r14
+ 107               	.LCFI8:
+ 108               		.cfi_def_cfa_offset 3
+ 109               		.cfi_offset 14, -2
+ 110 0050 FF92      		push r15
+ 111               	.LCFI9:
+ 112               		.cfi_def_cfa_offset 4
+ 113               		.cfi_offset 15, -3
+ 114 0052 0F93      		push r16
+ 115               	.LCFI10:
+ 116               		.cfi_def_cfa_offset 5
+ 117               		.cfi_offset 16, -4
+ 118 0054 1F93      		push r17
+ 119               	.LCFI11:
+ 120               		.cfi_def_cfa_offset 6
+ 121               		.cfi_offset 17, -5
+ 122 0056 CF93      		push r28
+ 123               	.LCFI12:
+ 124               		.cfi_def_cfa_offset 7
+ 125               		.cfi_offset 28, -6
+ 126 0058 DF93      		push r29
+ 127               	.LCFI13:
+ 128               		.cfi_def_cfa_offset 8
+ 129               		.cfi_offset 29, -7
+ 130 005a 0F92      		push __tmp_reg__
+ 131               	.LCFI14:
+ 132               		.cfi_def_cfa_offset 9
+ 133 005c CDB7      		in r28,__SP_L__
+ 134 005e DEB7      		in r29,__SP_H__
+ 135               	.LCFI15:
+ 136               		.cfi_def_cfa_register 28
+ 137               	/* prologue: function */
+ 138               	/* frame size = 1 */
+ 139               	/* stack size = 7 */
+ 140               	.L__stack_usage = 7
+ 141               	.LVL6:
+ 142               	.LBB36:
+ 183:distal.c      ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 143               		.loc 1 183 0
+ 144 0060 8B01      		movw r16,r22
+ 145 0062 E82E      		mov r14,r24
+ 146 0064 FF24      		clr r15
+ 147 0066 EE0C      		lsl r14
+ 148 0068 FF1C      		rol r15
+ 149 006a EE0C      		lsl r14
+ 150 006c FF1C      		rol r15
+ 182:distal.c      ****     for(uint8_t i=0; i<4; i++)
+ 151               		.loc 1 182 0
+ 152 006e 20E0      		ldi r18,lo8(0)
+ 153               	.LVL7:
+ 154               	.L5:
+ 183:distal.c      ****         eeprom_write_byte((uint8_t *) (address*4+i), *(value+i));
+ 155               		.loc 1 183 0 discriminator 2
+ 156 0070 F801      		movw r30,r16
+ 157 0072 6191      		ld r22,Z+
+ 158 0074 8F01      		movw r16,r30
+ 159 0076 C701      		movw r24,r14
+ 160 0078 2983      		std Y+1,r18
+ 161 007a 0E94 0000 		call __eewr_byte_x32a4u
+ 182:distal.c      ****     for(uint8_t i=0; i<4; i++)
+ 162               		.loc 1 182 0 discriminator 2
+ 163 007e 2981      		ldd r18,Y+1
+ 164 0080 2F5F      		subi r18,lo8(-(1))
+ 165               	.LVL8:
+ 166 0082 0894      		sec
+ 167 0084 E11C      		adc r14,__zero_reg__
+ 168 0086 F11C      		adc r15,__zero_reg__
+ 169 0088 2430      		cpi r18,lo8(4)
+ 170 008a 01F4      		brne .L5
+ 171               	/* epilogue start */
+ 172               	.LBE36:
+ 184:distal.c      **** }
+ 173               		.loc 1 184 0
+ 174 008c 0F90      		pop __tmp_reg__
+ 175 008e DF91      		pop r29
+ 176 0090 CF91      		pop r28
+ 177 0092 1F91      		pop r17
+ 178 0094 0F91      		pop r16
+ 179 0096 FF90      		pop r15
+ 180 0098 EF90      		pop r14
+ 181 009a 0895      		ret
+ 182               		.cfi_endproc
+ 183               	.LFE10:
+ 185               	.global	processCommand
+ 187               	processCommand:
+ 188               	.LFB16:
+ 191:distal.c      **** 
+ 192:distal.c      **** static void verifyVersion()
+ 193:distal.c      **** {
+ 194:distal.c      ****     uint32_t readversion = 0;
+ 195:distal.c      ****     ReadIntFromEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ 196:distal.c      ****     if (readversion != FIRMWARE_VERSION)
+ 197:distal.c      ****     {
+ 198:distal.c      ****         readversion = FIRMWARE_VERSION;
+ 199:distal.c      ****         WriteIntToEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ 200:distal.c      ****     }
+ 201:distal.c      **** }
+ 202:distal.c      **** 
+ 203:distal.c      **** static int handleEEPROMCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 204:distal.c      **** {
+ 205:distal.c      ****     uint8_t opcode;
+ 206:distal.c      ****     uint8_t address;
+ 207:distal.c      ****     uint8_t responseSize = 4;
+ 208:distal.c      **** 
+ 209:distal.c      ****     opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 210:distal.c      ****     address = commandPacket[COMMAND_OFFSET] & 0x1F;
+ 211:distal.c      **** 
+ 212:distal.c      ****     switch(opcode)
+ 213:distal.c      ****     {
+ 214:distal.c      ****         case MOTOR_PARAMETER_RE_L_OPCODE:
+ 215:distal.c      ****         case MOTOR_PARAMETER_RE_H_OPCODE:
+ 216:distal.c      ****             // Read 4 bytes of data
+ 217:distal.c      ****             ReadIntFromEEPROM(address, &outputBuffer[RESPONSE_PAYLOAD_OFFSET]);
+ 218:distal.c      ****             // finish up the packet
+ 219:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 220:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 221:distal.c      ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 222:distal.c      ****             outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is 
+ 223:distal.c      ****             return 4+responseSize;
+ 224:distal.c      ****         case MOTOR_PARAMETER_WR_L_OPCODE:
+ 225:distal.c      ****         case MOTOR_PARAMETER_WR_H_OPCODE:
+ 226:distal.c      ****             if(address==EEPROM_ADDRESS_LED) {
+ 227:distal.c      ****                 if(commandPacket[PAYLOAD_OFFSET+0]
+ 228:distal.c      ****                    |commandPacket[PAYLOAD_OFFSET+1]
+ 229:distal.c      ****                    |commandPacket[PAYLOAD_OFFSET+2]
+ 230:distal.c      ****                    |commandPacket[PAYLOAD_OFFSET+3]) {
+ 231:distal.c      ****                     LEDon();
+ 232:distal.c      ****                 }
+ 233:distal.c      ****                 else {
+ 234:distal.c      ****                     LEDoff();
+ 235:distal.c      ****                 }
+ 236:distal.c      ****             }
+ 237:distal.c      ****             // Write 32 bits of data
+ 238:distal.c      ****             WriteIntToEEPROM(address, &commandPacket[PAYLOAD_OFFSET]);
+ 239:distal.c      ****             // ack the command
+ 240:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 241:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 242:distal.c      ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 243:distal.c      ****             outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 244:distal.c      ****             return 4;
+ 245:distal.c      ****         default:
+ 246:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 247:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 248:distal.c      ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET] = UNKNOWN_COMMAND;
+ 249:distal.c      ****             outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 250:distal.c      ****             return 4;
+ 251:distal.c      ****     }
+ 252:distal.c      **** }
+ 253:distal.c      **** 
+ 254:distal.c      **** 
+ 255:distal.c      **** static int handleCalibrationCommand(uint8_t *commandPacket, uint8_t *outputBuffer)
+ 256:distal.c      **** {
+ 257:distal.c      ****     uint16_t collectionBitfield;
+ 258:distal.c      ****     
+ 259:distal.c      ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 260:distal.c      ****     
+ 261:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 262:distal.c      ****     {
+ 263:distal.c      ****         // zero out pressure readings with an offset
+ 264:distal.c      ****         for(uint8_t i=0; i<MAXIMUM_NUMBER_OF_TACTILE_SENSORS; i++)
+ 265:distal.c      ****         {
+ 266:distal.c      ****             pressureDataOffset[i] = pressureData[i] + pressureDataOffset[i];
+ 267:distal.c      ****         }
+ 268:distal.c      ****     }
+ 269:distal.c      ****     
+ 270:distal.c      ****     if (collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 271:distal.c      ****     {
+ 272:distal.c      ****         RxCheckSumErrCnt[0] = 0;
+ 273:distal.c      ****         RxCheckSumErrCnt[1] = 0;
+ 274:distal.c      ****     }
+ 275:distal.c      ****     
+ 276:distal.c      ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 277:distal.c      ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = CALIBRATION_OPCODE;
+ 278:distal.c      ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 279:distal.c      ****     outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 280:distal.c      ****     return 4;
+ 281:distal.c      **** }
+ 282:distal.c      **** static int handleBootloaderCommand(uint8_t *commandPacket)
+ 283:distal.c      **** {
+ 284:distal.c      ****   // self bootload
+ 285:distal.c      ****   wdt_enable(WDT_PER_8CLK_gc);
+ 286:distal.c      ****   while(1);  // use watchdog timer to trigger a reset
+ 287:distal.c      **** 
+ 288:distal.c      ****   return 5; // never get here, but keep compiler happy
+ 289:distal.c      **** }
+ 290:distal.c      **** 
+ 291:distal.c      **** 
+ 292:distal.c      **** int processCommand(uint8_t *commandPacket,uint8_t *outputBuffer)
+ 293:distal.c      **** {
+ 189               		.loc 1 293 0
+ 190               		.cfi_startproc
+ 191               	.LVL9:
+ 192 009c CF92      		push r12
+ 193               	.LCFI16:
+ 194               		.cfi_def_cfa_offset 3
+ 195               		.cfi_offset 12, -2
+ 196 009e DF92      		push r13
+ 197               	.LCFI17:
+ 198               		.cfi_def_cfa_offset 4
+ 199               		.cfi_offset 13, -3
+ 200 00a0 EF92      		push r14
+ 201               	.LCFI18:
+ 202               		.cfi_def_cfa_offset 5
+ 203               		.cfi_offset 14, -4
+ 204 00a2 FF92      		push r15
+ 205               	.LCFI19:
+ 206               		.cfi_def_cfa_offset 6
+ 207               		.cfi_offset 15, -5
+ 208 00a4 0F93      		push r16
+ 209               	.LCFI20:
+ 210               		.cfi_def_cfa_offset 7
+ 211               		.cfi_offset 16, -6
+ 212 00a6 1F93      		push r17
+ 213               	.LCFI21:
+ 214               		.cfi_def_cfa_offset 8
+ 215               		.cfi_offset 17, -7
+ 216 00a8 CF93      		push r28
+ 217               	.LCFI22:
+ 218               		.cfi_def_cfa_offset 9
+ 219               		.cfi_offset 28, -8
+ 220 00aa DF93      		push r29
+ 221               	.LCFI23:
+ 222               		.cfi_def_cfa_offset 10
+ 223               		.cfi_offset 29, -9
+ 224 00ac CDB7      		in r28,__SP_L__
+ 225 00ae DEB7      		in r29,__SP_H__
+ 226 00b0 6497      		sbiw r28,20
+ 227               	.LCFI24:
+ 228               		.cfi_def_cfa 28, 30
+ 229 00b2 CDBF      		out __SP_L__,r28
+ 230 00b4 DEBF      		out __SP_H__,r29
+ 231               	/* prologue: function */
+ 232               	/* frame size = 20 */
+ 233               	/* stack size = 28 */
+ 234               	.L__stack_usage = 28
+ 235 00b6 8C01      		movw r16,r24
+ 236 00b8 6B01      		movw r12,r22
+ 294:distal.c      ****   uint8_t opcode;
+ 295:distal.c      **** 
+ 296:distal.c      ****   //LEDtoggle();
+ 297:distal.c      **** 
+ 298:distal.c      ****   opcode = commandPacket[COMMAND_OFFSET] & OPCODE_BITMASK;
+ 237               		.loc 1 298 0
+ 238 00ba FC01      		movw r30,r24
+ 239 00bc 8181      		ldd r24,Z+1
+ 240               	.LVL10:
+ 241 00be 982F      		mov r25,r24
+ 242 00c0 907F      		andi r25,lo8(-16)
+ 243               	.LVL11:
+ 299:distal.c      **** 
+ 300:distal.c      ****   switch(opcode)
+ 244               		.loc 1 300 0
+ 245 00c2 9038      		cpi r25,lo8(-128)
+ 246 00c4 01F4      		brne .+2
+ 247 00c6 00C0      		rjmp .L10
+ 248               	.LVL12:
+ 249 00c8 9138      		cpi r25,lo8(-127)
+ 250 00ca 00F4      		brsh .L13
+ 251 00cc 9036      		cpi r25,lo8(96)
+ 252 00ce 01F4      		brne .+2
+ 253 00d0 00C0      		rjmp .L10
+ 254 00d2 9037      		cpi r25,lo8(112)
+ 255 00d4 01F4      		brne .+2
+ 256 00d6 00C0      		rjmp .L10
+ 257 00d8 9923      		tst r25
+ 258 00da 01F0      		breq .L9
+ 259 00dc 00C0      		rjmp .L8
+ 260               	.L13:
+ 261 00de 903B      		cpi r25,lo8(-80)
+ 262 00e0 01F4      		brne .+2
+ 263 00e2 00C0      		rjmp .L11
+ 264 00e4 903C      		cpi r25,lo8(-64)
+ 265 00e6 01F4      		brne .+2
+ 266 00e8 00C0      		rjmp .L12
+ 267 00ea 9039      		cpi r25,lo8(-112)
+ 268 00ec 01F0      		breq .+2
+ 269 00ee 00C0      		rjmp .L8
+ 270 00f0 00C0      		rjmp .L10
+ 271               	.L9:
+ 272               	.LVL13:
+ 273               	.LBB50:
+ 274               	.LBB51:
+ 107:distal.c      ****     memcpy(&collectionBitfield,&commandPacket[PAYLOAD_OFFSET],2);
+ 275               		.loc 1 107 0
+ 276 00f2 F801      		movw r30,r16
+ 277 00f4 E280      		ldd r14,Z+2
+ 278 00f6 F380      		ldd r15,Z+3
+ 279               	.LVL14:
+ 109:distal.c      ****     if (collectionBitfield & (DATA_COLLECTION_DISTALJOINT_BITMASK | DATA_COLLECTION_DYNAMIC_BITMASK
+ 280               		.loc 1 109 0
+ 281 00f8 C701      		movw r24,r14
+ 282 00fa 8070      		andi r24,lo8(20480)
+ 283 00fc 9075      		andi r25,hi8(20480)
+ 284 00fe 0097      		sbiw r24,0
+ 285 0100 01F0      		breq .L14
+ 111:distal.c      ****         captureSweep(adcData);
+ 286               		.loc 1 111 0
+ 287 0102 CE01      		movw r24,r28
+ 288 0104 0796      		adiw r24,7
+ 289 0106 0E94 0000 		call captureSweep
+ 290               	.LVL15:
+ 291               	.L14:
+ 114:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_ACCELERATION_BITMASK)
+ 292               		.loc 1 114 0
+ 293 010a F7FE      		sbrs r15,7
+ 294 010c 00C0      		rjmp .L38
+ 116:distal.c      ****         readAxes(accelData);
+ 295               		.loc 1 116 0
+ 296 010e CE01      		movw r24,r28
+ 297 0110 0196      		adiw r24,1
+ 298 0112 0E94 0000 		call readAxes
+ 117:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&accelData,6);
+ 299               		.loc 1 117 0
+ 300 0116 F601      		movw r30,r12
+ 301 0118 3396      		adiw r30,3
+ 302 011a DE01      		movw r26,r28
+ 303 011c 1196      		adiw r26,1
+ 304 011e 86E0      		ldi r24,lo8(6)
+ 305               	.L16:
+ 306 0120 0D90      		ld r0,X+
+ 307 0122 0192      		st Z+,r0
+ 308 0124 8150      		subi r24,lo8(-(-1))
+ 309 0126 01F4      		brne .L16
+ 310               	.LVL16:
+ 118:distal.c      ****         responseSize += 6;
+ 311               		.loc 1 118 0
+ 312 0128 06E0      		ldi r16,lo8(6)
+ 313               	.LVL17:
+ 314 012a 00C0      		rjmp .L15
+ 315               	.LVL18:
+ 316               	.L38:
+ 101:distal.c      ****     uint8_t responseSize = 0;
+ 317               		.loc 1 101 0
+ 318 012c 00E0      		ldi r16,lo8(0)
+ 319               	.LVL19:
+ 320               	.L15:
+ 121:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DYNAMIC_BITMASK)
+ 321               		.loc 1 121 0
+ 322 012e F6FE      		sbrs r15,6
+ 323 0130 00C0      		rjmp .L17
+ 123:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&adcData[DYNAMIC_OFFSET],6);
+ 324               		.loc 1 123 0
+ 325 0132 E02F      		mov r30,r16
+ 326 0134 F0E0      		ldi r31,lo8(0)
+ 327 0136 3396      		adiw r30,3
+ 328 0138 EC0D      		add r30,r12
+ 329 013a FD1D      		adc r31,r13
+ 330 013c DE01      		movw r26,r28
+ 331 013e 1F96      		adiw r26,15
+ 332 0140 86E0      		ldi r24,lo8(6)
+ 333               	.L18:
+ 334 0142 0D90      		ld r0,X+
+ 335 0144 0192      		st Z+,r0
+ 336 0146 8150      		subi r24,lo8(-(-1))
+ 337 0148 01F4      		brne .L18
+ 124:distal.c      ****         responseSize += 6;
+ 338               		.loc 1 124 0
+ 339 014a 0A5F      		subi r16,lo8(-(6))
+ 340               	.LVL20:
+ 341               	.L17:
+ 127:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DISTALJOINT_BITMASK)
+ 342               		.loc 1 127 0
+ 343 014c F4FE      		sbrs r15,4
+ 344 014e 00C0      		rjmp .L19
+ 129:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&adcData[DISTALJOINT_OFFSET],8);
+ 345               		.loc 1 129 0
+ 346 0150 E02F      		mov r30,r16
+ 347 0152 F0E0      		ldi r31,lo8(0)
+ 348 0154 3396      		adiw r30,3
+ 349 0156 EC0D      		add r30,r12
+ 350 0158 FD1D      		adc r31,r13
+ 351 015a DE01      		movw r26,r28
+ 352 015c 1796      		adiw r26,7
+ 353 015e 88E0      		ldi r24,lo8(8)
+ 354               	.L20:
+ 355 0160 0D90      		ld r0,X+
+ 356 0162 0192      		st Z+,r0
+ 357 0164 8150      		subi r24,lo8(-(-1))
+ 358 0166 01F4      		brne .L20
+ 130:distal.c      ****         responseSize += 8;
+ 359               		.loc 1 130 0
+ 360 0168 085F      		subi r16,lo8(-(8))
+ 361               	.LVL21:
+ 362               	.L19:
+ 143:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 363               		.loc 1 143 0
+ 364 016a F1FE      		sbrs r15,1
+ 365 016c 00C0      		rjmp .L21
+ 145:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], &pressureData, numPressureSenso
+ 366               		.loc 1 145 0
+ 367 016e 4091 0000 		lds r20,numPressureSensors
+ 368 0172 802F      		mov r24,r16
+ 369 0174 90E0      		ldi r25,lo8(0)
+ 370 0176 0396      		adiw r24,3
+ 371 0178 8C0D      		add r24,r12
+ 372 017a 9D1D      		adc r25,r13
+ 373 017c 50E0      		ldi r21,lo8(0)
+ 374 017e 440F      		lsl r20
+ 375 0180 551F      		rol r21
+ 376 0182 60E0      		ldi r22,lo8(pressureData)
+ 377 0184 70E0      		ldi r23,hi8(pressureData)
+ 378 0186 0E94 0000 		call memcpy
+ 146:distal.c      ****         responseSize += numPressureSensors*2;
+ 379               		.loc 1 146 0
+ 380 018a 8091 0000 		lds r24,numPressureSensors
+ 381 018e 880F      		lsl r24
+ 382 0190 080F      		add r16,r24
+ 383               	.LVL22:
+ 384               	.L21:
+ 149:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 385               		.loc 1 149 0
+ 386 0192 E1FE      		sbrs r14,1
+ 387 0194 00C0      		rjmp .L23
+ 151:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,2);
+ 388               		.loc 1 151 0
+ 389 0196 8091 0000 		lds r24,RxCheckSumErrCnt
+ 390 019a 9091 0000 		lds r25,RxCheckSumErrCnt+1
+ 391 019e F601      		movw r30,r12
+ 392 01a0 E00F      		add r30,r16
+ 393 01a2 F11D      		adc r31,__zero_reg__
+ 394 01a4 8383      		std Z+3,r24
+ 395 01a6 9483      		std Z+4,r25
+ 152:distal.c      ****         responseSize += 2;
+ 396               		.loc 1 152 0
+ 397 01a8 0E5F      		subi r16,lo8(-(2))
+ 398               	.LVL23:
+ 399               	.L23:
+ 155:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_TEMP_BITMASK)
+ 400               		.loc 1 155 0
+ 401 01aa E0FE      		sbrs r14,0
+ 402 01ac 00C0      		rjmp .L24
+ 157:distal.c      ****         memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize], &pressureTempData, numPressureS
+ 403               		.loc 1 157 0
+ 404 01ae 4091 0000 		lds r20,numPressureSensors
+ 405 01b2 802F      		mov r24,r16
+ 406 01b4 90E0      		ldi r25,lo8(0)
+ 407 01b6 0396      		adiw r24,3
+ 408 01b8 8C0D      		add r24,r12
+ 409 01ba 9D1D      		adc r25,r13
+ 410 01bc 50E0      		ldi r21,lo8(0)
+ 411 01be 440F      		lsl r20
+ 412 01c0 551F      		rol r21
+ 413 01c2 60E0      		ldi r22,lo8(pressureTempData)
+ 414 01c4 70E0      		ldi r23,hi8(pressureTempData)
+ 415 01c6 0E94 0000 		call memcpy
+ 158:distal.c      ****         responseSize += numPressureSensors*2;
+ 416               		.loc 1 158 0
+ 417 01ca 8091 0000 		lds r24,numPressureSensors
+ 418 01ce 880F      		lsl r24
+ 419 01d0 080F      		add r16,r24
+ 420               	.LVL24:
+ 421               	.L24:
+ 161:distal.c      ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 422               		.loc 1 161 0
+ 423 01d2 802F      		mov r24,r16
+ 424 01d4 8D5F      		subi r24,lo8(-(3))
+ 425 01d6 F601      		movw r30,r12
+ 426 01d8 8083      		st Z,r24
+ 162:distal.c      ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = DATA_COLLECTION_OPCODE;
+ 427               		.loc 1 162 0
+ 428 01da 1182      		std Z+1,__zero_reg__
+ 163:distal.c      ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 429               		.loc 1 163 0
+ 430 01dc 1282      		std Z+2,__zero_reg__
+ 164:distal.c      ****     outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is the chec
+ 431               		.loc 1 164 0
+ 432 01de 10E0      		ldi r17,lo8(0)
+ 433 01e0 B801      		movw r22,r16
+ 434 01e2 6D5F      		subi r22,lo8(-(3))
+ 435 01e4 7F4F      		sbci r23,hi8(-(3))
+ 436 01e6 7601      		movw r14,r12
+ 437               	.LVL25:
+ 438 01e8 E60E      		add r14,r22
+ 439 01ea F71E      		adc r15,r23
+ 440 01ec C601      		movw r24,r12
+ 441 01ee 0E94 0000 		call computeChecksum
+ 442 01f2 F701      		movw r30,r14
+ 443 01f4 8083      		st Z,r24
+ 166:distal.c      ****     return 4+responseSize;
+ 444               		.loc 1 166 0
+ 445 01f6 C801      		movw r24,r16
+ 446 01f8 0496      		adiw r24,4
+ 447               	.LBE51:
+ 448               	.LBE50:
+ 301:distal.c      ****   {
+ 302:distal.c      ****       case DATA_COLLECTION_OPCODE:
+ 303:distal.c      ****           return handleCollectionCommand(commandPacket,outputBuffer);
+ 449               		.loc 1 303 0
+ 450 01fa 00C0      		rjmp .L26
+ 451               	.LVL26:
+ 452               	.L10:
+ 453               	.LBB52:
+ 454               	.LBB53:
+ 210:distal.c      ****     address = commandPacket[COMMAND_OFFSET] & 0x1F;
+ 455               		.loc 1 210 0
+ 456 01fc 8F71      		andi r24,lo8(31)
+ 457               	.LVL27:
+ 212:distal.c      ****     switch(opcode)
+ 458               		.loc 1 212 0
+ 459 01fe 9037      		cpi r25,lo8(112)
+ 460 0200 01F0      		breq .L28
+ 461 0202 9137      		cpi r25,lo8(113)
+ 462 0204 00F4      		brsh .L30
+ 463 0206 9036      		cpi r25,lo8(96)
+ 464 0208 01F4      		brne .L27
+ 465 020a 00C0      		rjmp .L28
+ 466               	.L30:
+ 467 020c 9038      		cpi r25,lo8(-128)
+ 468 020e 01F0      		breq .L29
+ 469 0210 9039      		cpi r25,lo8(-112)
+ 470 0212 01F4      		brne .L27
+ 471 0214 00C0      		rjmp .L29
+ 472               	.L28:
+ 217:distal.c      ****             ReadIntFromEEPROM(address, &outputBuffer[RESPONSE_PAYLOAD_OFFSET]);
+ 473               		.loc 1 217 0
+ 474 0216 B601      		movw r22,r12
+ 475 0218 6D5F      		subi r22,lo8(-(3))
+ 476 021a 7F4F      		sbci r23,hi8(-(3))
+ 477 021c 0E94 0000 		call ReadIntFromEEPROM
+ 478               	.LVL28:
+ 219:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
+ 479               		.loc 1 219 0
+ 480 0220 87E0      		ldi r24,lo8(7)
+ 481 0222 F601      		movw r30,r12
+ 482 0224 8083      		st Z,r24
+ 220:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 483               		.loc 1 220 0
+ 484 0226 F801      		movw r30,r16
+ 485 0228 8181      		ldd r24,Z+1
+ 486 022a F601      		movw r30,r12
+ 487 022c 8183      		std Z+1,r24
+ 221:distal.c      ****             outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 488               		.loc 1 221 0
+ 489 022e 1282      		std Z+2,__zero_reg__
+ 222:distal.c      ****             outputBuffer[3+responseSize] = computeChecksum(outputBuffer,3+responseSize); //this is 
+ 490               		.loc 1 222 0
+ 491 0230 C601      		movw r24,r12
+ 492 0232 67E0      		ldi r22,lo8(7)
+ 493 0234 70E0      		ldi r23,hi8(7)
+ 494 0236 0E94 0000 		call computeChecksum
+ 495 023a F601      		movw r30,r12
+ 496 023c 8783      		std Z+7,r24
+ 223:distal.c      ****             return 4+responseSize;
+ 497               		.loc 1 223 0
+ 498 023e 88E0      		ldi r24,lo8(8)
+ 499 0240 90E0      		ldi r25,hi8(8)
+ 500 0242 00C0      		rjmp .L26
+ 501               	.LVL29:
+ 502               	.L29:
+ 226:distal.c      ****             if(address==EEPROM_ADDRESS_LED) {
+ 503               		.loc 1 226 0
+ 504 0244 8F31      		cpi r24,lo8(31)
+ 505 0246 01F4      		brne .L32
+ 227:distal.c      ****                 if(commandPacket[PAYLOAD_OFFSET+0]
+ 506               		.loc 1 227 0
+ 507 0248 F801      		movw r30,r16
+ 508 024a 9381      		ldd r25,Z+3
+ 509               	.LVL30:
+ 510 024c 2281      		ldd r18,Z+2
+ 511 024e 922B      		or r25,r18
+ 512 0250 2481      		ldd r18,Z+4
+ 513 0252 922B      		or r25,r18
+ 514 0254 2581      		ldd r18,Z+5
+ 515 0256 922B      		or r25,r18
+ 516 0258 01F0      		breq .L33
+ 517               	.LBB54:
+ 518               	.LBB55:
+ 304:distal.c      **** 
+ 305:distal.c      ****       case MOTOR_PARAMETER_RE_L_OPCODE:
+ 306:distal.c      ****       case MOTOR_PARAMETER_RE_H_OPCODE:
+ 307:distal.c      ****       case MOTOR_PARAMETER_WR_L_OPCODE:
+ 308:distal.c      ****       case MOTOR_PARAMETER_WR_H_OPCODE:
+ 309:distal.c      ****           return handleEEPROMCommand(commandPacket,outputBuffer);
+ 310:distal.c      **** 
+ 311:distal.c      ****       case CALIBRATION_OPCODE:
+ 312:distal.c      ****           return handleCalibrationCommand(commandPacket, outputBuffer);
+ 313:distal.c      **** 
+ 314:distal.c      ****       case BOOTLOADER_OPCODE:
+ 315:distal.c      **** 	  return handleBootloaderCommand(commandPacket);
+ 316:distal.c      **** 
+ 317:distal.c      ****       default:
+ 318:distal.c      ****           outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 319:distal.c      ****           outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = opcode;
+ 320:distal.c      ****           outputBuffer[RESPONSE_STATUSCODE_OFFSET] = UNKNOWN_COMMAND;
+ 321:distal.c      ****           outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 322:distal.c      ****           return 4;
+ 323:distal.c      ****   }
+ 324:distal.c      **** }
+ 325:distal.c      **** 
+ 326:distal.c      **** void LEDon(void)
+ 327:distal.c      **** {
+ 328:distal.c      ****     //PORTC.DIRSET = 0x01;
+ 329:distal.c      ****     PORTC.OUTSET = 0x01;
+ 519               		.loc 1 329 0
+ 520 025a 91E0      		ldi r25,lo8(1)
+ 521 025c E0E4      		ldi r30,lo8(1600)
+ 522 025e F6E0      		ldi r31,hi8(1600)
+ 523 0260 9583      		std Z+5,r25
+ 524 0262 00C0      		rjmp .L32
+ 525               	.L33:
+ 526               	.LBE55:
+ 527               	.LBE54:
+ 528               	.LBB56:
+ 529               	.LBB57:
+ 330:distal.c      **** }
+ 331:distal.c      **** 
+ 332:distal.c      **** void LEDoff(void)
+ 333:distal.c      **** {
+ 334:distal.c      ****     //PORTC.DIRSET = 0x01;
+ 335:distal.c      ****     PORTC.OUTCLR = 0x01;
+ 530               		.loc 1 335 0
+ 531 0264 91E0      		ldi r25,lo8(1)
+ 532 0266 E0E4      		ldi r30,lo8(1600)
+ 533 0268 F6E0      		ldi r31,hi8(1600)
+ 534 026a 9683      		std Z+6,r25
+ 535               	.L32:
+ 536               	.LBE57:
+ 537               	.LBE56:
+ 238:distal.c      ****             WriteIntToEEPROM(address, &commandPacket[PAYLOAD_OFFSET]);
+ 538               		.loc 1 238 0
+ 539 026c B801      		movw r22,r16
+ 540 026e 6E5F      		subi r22,lo8(-(2))
+ 541 0270 7F4F      		sbci r23,hi8(-(2))
+ 542 0272 0E94 0000 		call WriteIntToEEPROM
+ 543               	.LVL31:
+ 240:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 544               		.loc 1 240 0
+ 545 0276 83E0      		ldi r24,lo8(3)
+ 546 0278 F601      		movw r30,r12
+ 547 027a 8083      		st Z,r24
+ 241:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 548               		.loc 1 241 0
+ 549 027c F801      		movw r30,r16
+ 550 027e 8181      		ldd r24,Z+1
+ 551 0280 F601      		movw r30,r12
+ 552 0282 00C0      		rjmp .L44
+ 553               	.LVL32:
+ 554               	.L27:
+ 246:distal.c      ****             outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 555               		.loc 1 246 0
+ 556 0284 83E0      		ldi r24,lo8(3)
+ 557               	.LVL33:
+ 558 0286 F601      		movw r30,r12
+ 559 0288 8083      		st Z,r24
+ 247:distal.c      ****             outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = commandPacket[COMMAND_OFFSET];
+ 560               		.loc 1 247 0
+ 561 028a F801      		movw r30,r16
+ 562 028c 8181      		ldd r24,Z+1
+ 563 028e F601      		movw r30,r12
+ 564 0290 8183      		std Z+1,r24
+ 565 0292 00C0      		rjmp .L45
+ 566               	.LVL34:
+ 567               	.L12:
+ 568               	.LBE53:
+ 569               	.LBE52:
+ 570               	.LBB58:
+ 571               	.LBB59:
+ 259:distal.c      ****     memcpy(&collectionBitfield, &commandPacket[PAYLOAD_OFFSET], 2);
+ 572               		.loc 1 259 0
+ 573 0294 F801      		movw r30,r16
+ 574 0296 4281      		ldd r20,Z+2
+ 575 0298 5381      		ldd r21,Z+3
+ 576               	.LVL35:
+ 261:distal.c      ****     if(collectionBitfield & DATA_COLLECTION_TACTILE_BITMASK)
+ 577               		.loc 1 261 0
+ 578 029a 51FF      		sbrs r21,1
+ 579 029c 00C0      		rjmp .L34
+ 580 029e A0E0      		ldi r26,lo8(pressureData)
+ 581 02a0 B0E0      		ldi r27,hi8(pressureData)
+ 582 02a2 E0E0      		ldi r30,lo8(pressureDataOffset)
+ 583 02a4 F0E0      		ldi r31,hi8(pressureDataOffset)
+ 584 02a6 60E0      		ldi r22,lo8(0)
+ 585               	.L35:
+ 586               	.LBB60:
+ 266:distal.c      ****             pressureDataOffset[i] = pressureData[i] + pressureDataOffset[i];
+ 587               		.loc 1 266 0
+ 588 02a8 2D91      		ld r18,X+
+ 589 02aa 3D91      		ld r19,X+
+ 590 02ac 8081      		ld r24,Z
+ 591 02ae 9181      		ldd r25,Z+1
+ 592 02b0 820F      		add r24,r18
+ 593 02b2 931F      		adc r25,r19
+ 594 02b4 8193      		st Z+,r24
+ 595 02b6 9193      		st Z+,r25
+ 264:distal.c      ****         for(uint8_t i=0; i<MAXIMUM_NUMBER_OF_TACTILE_SENSORS; i++)
+ 596               		.loc 1 264 0
+ 597 02b8 6F5F      		subi r22,lo8(-(1))
+ 598               	.LVL36:
+ 599 02ba 6C30      		cpi r22,lo8(12)
+ 600 02bc 01F4      		brne .L35
+ 601               	.LVL37:
+ 602               	.L34:
+ 603               	.LBE60:
+ 270:distal.c      ****     if (collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
+ 604               		.loc 1 270 0
+ 605 02be 41FF      		sbrs r20,1
+ 606 02c0 00C0      		rjmp .L36
+ 272:distal.c      ****         RxCheckSumErrCnt[0] = 0;
+ 607               		.loc 1 272 0
+ 608 02c2 1092 0000 		sts RxCheckSumErrCnt,__zero_reg__
+ 609 02c6 1092 0000 		sts RxCheckSumErrCnt+1,__zero_reg__
+ 273:distal.c      ****         RxCheckSumErrCnt[1] = 0;
+ 610               		.loc 1 273 0
+ 611 02ca 1092 0000 		sts RxCheckSumErrCnt+2,__zero_reg__
+ 612 02ce 1092 0000 		sts RxCheckSumErrCnt+2+1,__zero_reg__
+ 613               	.L36:
+ 276:distal.c      ****     outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 614               		.loc 1 276 0
+ 615 02d2 83E0      		ldi r24,lo8(3)
+ 616 02d4 F601      		movw r30,r12
+ 617 02d6 8083      		st Z,r24
+ 277:distal.c      ****     outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = CALIBRATION_OPCODE;
+ 618               		.loc 1 277 0
+ 619 02d8 80EC      		ldi r24,lo8(-64)
+ 620               	.LVL38:
+ 621               	.L44:
+ 622 02da 8183      		std Z+1,r24
+ 278:distal.c      ****     outputBuffer[RESPONSE_STATUSCODE_OFFSET] = STATUS_OK;
+ 623               		.loc 1 278 0
+ 624 02dc 1282      		std Z+2,__zero_reg__
+ 625 02de 00C0      		rjmp .L43
+ 626               	.LVL39:
+ 627               	.L11:
+ 628               	.LBE59:
+ 629               	.LBE58:
+ 630               	.LBB61:
+ 631               	.LBB62:
+ 285:distal.c      ****   wdt_enable(WDT_PER_8CLK_gc);
+ 632               		.loc 1 285 0
+ 633 02e0 93E0      		ldi r25,lo8(3)
+ 634               	.LVL40:
+ 635 02e2 88ED      		ldi r24,lo8(-40)
+ 636               	/* #APP */
+ 637               	 ;  285 "distal.c" 1
+ 638 02e4 08B6      		in __tmp_reg__, 56
+ 639 02e6 84BF      		out 52, r24
+ 640 02e8 9093 8000 		sts 128, r25
+ 641 02ec A895      		wdr
+ 642 02ee 08BE      		out 56, __tmp_reg__
+ 643               		
+ 644               	 ;  0 "" 2
+ 645               	/* #NOAPP */
+ 646               	.L37:
+ 647 02f0 00C0      		rjmp .L37
+ 648               	.LVL41:
+ 649               	.L8:
+ 650               	.LBE62:
+ 651               	.LBE61:
+ 318:distal.c      ****           outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3;
+ 652               		.loc 1 318 0
+ 653 02f2 83E0      		ldi r24,lo8(3)
+ 654 02f4 F601      		movw r30,r12
+ 655 02f6 8083      		st Z,r24
+ 319:distal.c      ****           outputBuffer[RESPONSE_REFLECTEDOPCODE_OFFSET] = opcode;
+ 656               		.loc 1 319 0
+ 657 02f8 9183      		std Z+1,r25
+ 658               	.L45:
+ 320:distal.c      ****           outputBuffer[RESPONSE_STATUSCODE_OFFSET] = UNKNOWN_COMMAND;
+ 659               		.loc 1 320 0
+ 660 02fa 82E0      		ldi r24,lo8(2)
+ 661 02fc 8283      		std Z+2,r24
+ 662               	.LVL42:
+ 663               	.L43:
+ 321:distal.c      ****           outputBuffer[3] = computeChecksum(outputBuffer,3); //this is the checksum
+ 664               		.loc 1 321 0
+ 665 02fe C601      		movw r24,r12
+ 666 0300 63E0      		ldi r22,lo8(3)
+ 667 0302 70E0      		ldi r23,hi8(3)
+ 668 0304 0E94 0000 		call computeChecksum
+ 669 0308 F601      		movw r30,r12
+ 670 030a 8383      		std Z+3,r24
+ 322:distal.c      ****           return 4;
+ 671               		.loc 1 322 0
+ 672 030c 84E0      		ldi r24,lo8(4)
+ 673 030e 90E0      		ldi r25,hi8(4)
+ 674               	.LVL43:
+ 675               	.L26:
+ 676               	/* epilogue start */
+ 324:distal.c      **** }
+ 677               		.loc 1 324 0
+ 678 0310 6496      		adiw r28,20
+ 679 0312 CDBF      		out __SP_L__,r28
+ 680 0314 DEBF      		out __SP_H__,r29
+ 681 0316 DF91      		pop r29
+ 682 0318 CF91      		pop r28
+ 683 031a 1F91      		pop r17
+ 684 031c 0F91      		pop r16
+ 685 031e FF90      		pop r15
+ 686 0320 EF90      		pop r14
+ 687 0322 DF90      		pop r13
+ 688 0324 CF90      		pop r12
+ 689               	.LVL44:
+ 690 0326 0895      		ret
+ 691               		.cfi_endproc
+ 692               	.LFE16:
+ 694               	.global	LEDon
+ 696               	LEDon:
+ 697               	.LFB17:
+ 327:distal.c      **** {
+ 698               		.loc 1 327 0
+ 699               		.cfi_startproc
+ 700               	/* prologue: function */
+ 701               	/* frame size = 0 */
+ 702               	/* stack size = 0 */
+ 703               	.L__stack_usage = 0
+ 329:distal.c      ****     PORTC.OUTSET = 0x01;
+ 704               		.loc 1 329 0
+ 705 0328 81E0      		ldi r24,lo8(1)
+ 706 032a E0E4      		ldi r30,lo8(1600)
+ 707 032c F6E0      		ldi r31,hi8(1600)
+ 708 032e 8583      		std Z+5,r24
+ 709               	/* epilogue start */
+ 330:distal.c      **** }
+ 710               		.loc 1 330 0
+ 711 0330 0895      		ret
+ 712               		.cfi_endproc
+ 713               	.LFE17:
+ 715               	.global	LEDoff
+ 717               	LEDoff:
+ 718               	.LFB18:
+ 333:distal.c      **** {
+ 719               		.loc 1 333 0
+ 720               		.cfi_startproc
+ 721               	/* prologue: function */
+ 722               	/* frame size = 0 */
+ 723               	/* stack size = 0 */
+ 724               	.L__stack_usage = 0
+ 725               		.loc 1 335 0
+ 726 0332 81E0      		ldi r24,lo8(1)
+ 727 0334 E0E4      		ldi r30,lo8(1600)
+ 728 0336 F6E0      		ldi r31,hi8(1600)
+ 729 0338 8683      		std Z+6,r24
+ 730               	/* epilogue start */
+ 336:distal.c      **** }
+ 731               		.loc 1 336 0
+ 732 033a 0895      		ret
+ 733               		.cfi_endproc
+ 734               	.LFE18:
+ 736               	.global	LEDtoggle
+ 738               	LEDtoggle:
+ 739               	.LFB19:
+ 337:distal.c      **** 
+ 338:distal.c      **** void LEDtoggle(void)
+ 339:distal.c      **** {
+ 740               		.loc 1 339 0
+ 741               		.cfi_startproc
+ 742               	/* prologue: function */
+ 743               	/* frame size = 0 */
+ 744               	/* stack size = 0 */
+ 745               	.L__stack_usage = 0
+ 340:distal.c      ****     //PORTC.DIRSET = 0x01;
+ 341:distal.c      ****     PORTC.OUTTGL = 0x01;
+ 746               		.loc 1 341 0
+ 747 033c 81E0      		ldi r24,lo8(1)
+ 748 033e E0E4      		ldi r30,lo8(1600)
+ 749 0340 F6E0      		ldi r31,hi8(1600)
+ 750 0342 8783      		std Z+7,r24
+ 751               	/* epilogue start */
+ 342:distal.c      **** }
+ 752               		.loc 1 342 0
+ 753 0344 0895      		ret
+ 754               		.cfi_endproc
+ 755               	.LFE19:
+ 757               		.section	.text.startup,"ax",@progbits
+ 758               	.global	main
+ 760               	main:
+ 761               	.LFB20:
+ 343:distal.c      **** 
+ 344:distal.c      **** /************************************************************************
+ 345:distal.c      **** * MAIN function.
+ 346:distal.c      **** *
+ 347:distal.c      **** * This initializes the other port modules and polls a few volatile status
+ 348:distal.c      **** * bits set in ISRs.
+ 349:distal.c      **** ************************************************************************/
+ 350:distal.c      **** int main(void)
+ 351:distal.c      **** {
+ 762               		.loc 1 351 0
+ 763               		.cfi_startproc
+ 764 0000 CF93      		push r28
+ 765               	.LCFI25:
+ 766               		.cfi_def_cfa_offset 3
+ 767               		.cfi_offset 28, -2
+ 768 0002 DF93      		push r29
+ 769               	.LCFI26:
+ 770               		.cfi_def_cfa_offset 4
+ 771               		.cfi_offset 29, -3
+ 772 0004 00D0      		rcall .
+ 773 0006 00D0      		rcall .
+ 774               	.LCFI27:
+ 775               		.cfi_def_cfa_offset 8
+ 776 0008 CDB7      		in r28,__SP_L__
+ 777 000a DEB7      		in r29,__SP_H__
+ 778               	.LCFI28:
+ 779               		.cfi_def_cfa_register 28
+ 780               	/* prologue: function */
+ 781               	/* frame size = 4 */
+ 782               	/* stack size = 6 */
+ 783               	.L__stack_usage = 6
+ 352:distal.c      ****     cli();                                    //disable all interrupts for clock reset
+ 784               		.loc 1 352 0
+ 785               	/* #APP */
+ 786               	 ;  352 "distal.c" 1
+ 787 000c F894      		cli
+ 788               	 ;  0 "" 2
+ 789               	.LVL45:
+ 790               	/* #NOAPP */
+ 791               	.LBB63:
+ 792               	.LBB64:
+ 793               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+   1:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    All rights reserved.
+   5:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   6:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+   9:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  12:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      distribution.
+  16:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  17:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  21:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  33:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* $Id: delay.h.in 2251 2011-09-14 08:20:33Z joerg_wunsch $ */
+  34:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  35:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  38:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  41:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  42:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <inttypes.h>
+  43:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #include <math.h>
+  45:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  46:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \file */
+  47:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \code
+  49:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \endcode
+  53:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  54:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     used.
+  58:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  59:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  68:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     routines linked into the application.
+  76:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  77:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  81:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** */
+  82:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  83:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  87:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  88:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef F_CPU
+  89:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  93:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  94:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+  97:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+  98:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #  include <math.h>
+ 102:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #endif
+ 103:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 104:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** /**
+ 105:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 107:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 109:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 112:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 114:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 120:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 125:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 129:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 132:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 140:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****  */
+ 141:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** void
+ 142:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** {
+ 144:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint16_t __ticks;
+ 145:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	double __tmp ; 
+ 146:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 147:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 148:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h ****   __STDC_HOSTED__
+ 149:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 150:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 151:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 152:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 153:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 154:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 155:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 156:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 157:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 158:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 159:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#else
+ 160:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		//round up by default
+ 161:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 162:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	#endif
+ 163:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 
+ 164:/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 794               		.loc 2 164 0
+ 795 000e 8FE3      		 ldi r24,lo8(7999)
+ 796 0010 9FE1      	    ldi r25,hi8(7999)
+ 797 0012 0197      	    1:sbiw r24,1
+ 798 0014 01F4      	    brne 1b
+ 799 0016 00C0      		rjmp .
+ 800 0018 0000      		nop
+ 801               	.LBE64:
+ 802               	.LBE63:
+ 803               	.LBB65:
+ 804               	.LBB66:
+  81:distal.c      ****     OSC.CTRL = OSC_RC32MEN_bm | OSC_RC32KEN_bm;            //enable the 32MHz ring oscillator and t
+ 805               		.loc 1 81 0
+ 806 001a 86E0      		ldi r24,lo8(6)
+ 807 001c 8093 5000 		sts 80,r24
+ 808               	.L50:
+  82:distal.c      ****     while(!(OSC.STATUS & OSC_RC32MRDY_bm));                //wait for 32MHz to stabilize
+ 809               		.loc 1 82 0
+ 810 0020 8091 5100 		lds r24,81
+ 811 0024 81FF      		sbrs r24,1
+ 812 0026 00C0      		rjmp .L50
+ 813               	.L60:
+  83:distal.c      ****     while(!(OSC.STATUS & OSC_RC32KRDY_bm));                //wait for 32kHz to stabilize
+ 814               		.loc 1 83 0
+ 815 0028 8091 5100 		lds r24,81
+ 816 002c 82FF      		sbrs r24,2
+ 817 002e 00C0      		rjmp .L60
+  85:distal.c      ****     DFLLRC32M.CTRL = DFLL_ENABLE_bm;
+ 818               		.loc 1 85 0
+ 819 0030 FF24      		clr r15
+ 820 0032 F394      		inc r15
+ 821 0034 F092 6000 		sts 96,r15
+  86:distal.c      ****     DFLLRC2M.CTRL = DFLL_ENABLE_bm;
+ 822               		.loc 1 86 0
+ 823 0038 F092 6800 		sts 104,r15
+  88:distal.c      ****     CCP = CCP_IOREG_gc;                                    //clock is protected by Configuration Ch
+ 824               		.loc 1 88 0
+ 825 003c 88ED      		ldi r24,lo8(-40)
+ 826 003e 84BF      		out 52-0,r24
+  89:distal.c      ****     CLK.CTRL = CLK_SCLKSEL_RC32M_gc;                    //switch to 32MHz oscillator
+ 827               		.loc 1 89 0
+ 828 0040 F092 4000 		sts 64,r15
+  90:distal.c      ****     CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;    //Select 1.024 kHz from internal oscillato
+ 829               		.loc 1 90 0
+ 830 0044 85E0      		ldi r24,lo8(5)
+ 831 0046 E0E4      		ldi r30,lo8(64)
+ 832 0048 F0E0      		ldi r31,hi8(64)
+ 833 004a 8383      		std Z+3,r24
+ 834               	.LVL46:
+ 835               	.LBE66:
+ 836               	.LBE65:
+ 837               	.LBB67:
+ 838               	.LBB68:
+ 839               		.loc 2 164 0
+ 840 004c EFE3      		 ldi r30,lo8(7999)
+ 841 004e FFE1      	    ldi r31,hi8(7999)
+ 842 0050 3197      	    1:sbiw r30,1
+ 843 0052 01F4      	    brne 1b
+ 844 0054 00C0      		rjmp .
+ 845 0056 0000      		nop
+ 846               	.LBE68:
+ 847               	.LBE67:
+ 848               	.LBB69:
+ 849               	.LBB70:
+  96:distal.c      ****   numPressureSensors = 10;
+ 850               		.loc 1 96 0
+ 851 0058 8AE0      		ldi r24,lo8(10)
+ 852 005a 8093 0000 		sts numPressureSensors,r24
+ 853               	.LBE70:
+ 854               	.LBE69:
+ 353:distal.c      ****     _delay_ms(1); // for stability of supplies
+ 354:distal.c      ****     configureClocks();
+ 355:distal.c      ****     _delay_ms(1); // for stability of clocks
+ 356:distal.c      ****     detectProximalDistal();
+ 357:distal.c      ****     configurePortIODistal();
+ 855               		.loc 1 357 0
+ 856 005e 0E94 0000 		call configurePortIODistal
+ 857               	.LBB71:
+ 858               	.LBB72:
+ 329:distal.c      ****     PORTC.OUTSET = 0x01;
+ 859               		.loc 1 329 0
+ 860 0062 00E4      		ldi r16,lo8(1600)
+ 861 0064 16E0      		ldi r17,hi8(1600)
+ 862 0066 F801      		movw r30,r16
+ 863 0068 F582      		std Z+5,r15
+ 864               	.LBE72:
+ 865               	.LBE71:
+ 358:distal.c      **** 
+ 359:distal.c      ****     LEDon();
+ 360:distal.c      **** 
+ 361:distal.c      ****     configureADC();
+ 866               		.loc 1 361 0
+ 867 006a 0E94 0000 		call configureADC
+ 362:distal.c      **** 
+ 363:distal.c      ****     configureDaisyUSART();
+ 868               		.loc 1 363 0
+ 869 006e 0E94 0000 		call configureDaisyUSART
+ 364:distal.c      **** 
+ 365:distal.c      ****     initTactileModule(); // initialize variables of the tactile buffer
+ 870               		.loc 1 365 0
+ 871 0072 0E94 0000 		call initTactileModule
+ 366:distal.c      **** 
+ 367:distal.c      ****     PMIC.CTRL |= PMIC_LOLVLEN_bm;            //tell event system to pay attention to low-priority i
+ 872               		.loc 1 367 0
+ 873 0076 8091 A200 		lds r24,162
+ 874 007a 8160      		ori r24,lo8(1)
+ 875 007c E0EA      		ldi r30,lo8(160)
+ 876 007e F0E0      		ldi r31,hi8(160)
+ 877 0080 8283      		std Z+2,r24
+ 368:distal.c      ****     sei();
+ 878               		.loc 1 368 0
+ 879               	/* #APP */
+ 880               	 ;  368 "distal.c" 1
+ 881 0082 7894      		sei
+ 882               	 ;  0 "" 2
+ 369:distal.c      **** 
+ 370:distal.c      ****     configureSPIModulesPressure();
+ 883               		.loc 1 370 0
+ 884               	/* #NOAPP */
+ 885 0084 0E94 0000 		call configureSPIModulesPressure
+ 371:distal.c      ****     collectAllCalibrationValues();
+ 886               		.loc 1 371 0
+ 887 0088 0E94 0000 		call collectAllCalibrationValues
+ 372:distal.c      **** 
+ 373:distal.c      ****     configureSPIModulesAccel();
+ 888               		.loc 1 373 0
+ 889 008c 0E94 0000 		call configureSPIModulesAccel
+ 374:distal.c      ****     configAccel();
+ 890               		.loc 1 374 0
+ 891 0090 0E94 0000 		call configAccel
+ 892               	.LBB73:
+ 893               	.LBB74:
+ 335:distal.c      ****     PORTC.OUTCLR = 0x01;
+ 894               		.loc 1 335 0
+ 895 0094 F801      		movw r30,r16
+ 896 0096 F682      		std Z+6,r15
+ 897               	.LBE74:
+ 898               	.LBE73:
+ 899               	.LBB75:
+ 900               	.LBB76:
+ 171:distal.c      ****     uint32_t zero_check = 0;
+ 901               		.loc 1 171 0
+ 902 0098 1982      		std Y+1,__zero_reg__
+ 903 009a 1A82      		std Y+2,__zero_reg__
+ 904 009c 1B82      		std Y+3,__zero_reg__
+ 905 009e 1C82      		std Y+4,__zero_reg__
+ 906               	.LVL47:
+ 172:distal.c      ****     ReadIntFromEEPROM(EEPROM_ADDRESS_LED, (uint8_t*)&zero_check);
+ 907               		.loc 1 172 0
+ 908 00a0 8FE1      		ldi r24,lo8(31)
+ 909 00a2 BE01      		movw r22,r28
+ 910 00a4 6F5F      		subi r22,lo8(-(1))
+ 911 00a6 7F4F      		sbci r23,hi8(-(1))
+ 912 00a8 0E94 0000 		call ReadIntFromEEPROM
+ 174:distal.c      ****     if(zero_check)
+ 913               		.loc 1 174 0
+ 914 00ac 8981      		ldd r24,Y+1
+ 915 00ae 9A81      		ldd r25,Y+2
+ 916 00b0 AB81      		ldd r26,Y+3
+ 917 00b2 BC81      		ldd r27,Y+4
+ 918               	.LBB77:
+ 919               	.LBB78:
+ 329:distal.c      ****     PORTC.OUTSET = 0x01;
+ 920               		.loc 1 329 0
+ 921 00b4 F801      		movw r30,r16
+ 922               	.LBE78:
+ 923               	.LBE77:
+ 174:distal.c      ****     if(zero_check)
+ 924               		.loc 1 174 0
+ 925 00b6 0097      		sbiw r24,0
+ 926 00b8 A105      		cpc r26,__zero_reg__
+ 927 00ba B105      		cpc r27,__zero_reg__
+ 928 00bc 01F0      		breq .L52
+ 929               	.LBB80:
+ 930               	.LBB79:
+ 329:distal.c      ****     PORTC.OUTSET = 0x01;
+ 931               		.loc 1 329 0
+ 932 00be F582      		std Z+5,r15
+ 933 00c0 00C0      		rjmp .L53
+ 934               	.L52:
+ 935               	.LBE79:
+ 936               	.LBE80:
+ 937               	.LBB81:
+ 938               	.LBB82:
+ 335:distal.c      ****     PORTC.OUTCLR = 0x01;
+ 939               		.loc 1 335 0
+ 940 00c2 F682      		std Z+6,r15
+ 941               	.L53:
+ 942               	.LBE82:
+ 943               	.LBE81:
+ 944               	.LBE76:
+ 945               	.LBE75:
+ 946               	.LBB83:
+ 947               	.LBB84:
+ 194:distal.c      ****     uint32_t readversion = 0;
+ 948               		.loc 1 194 0
+ 949 00c4 1982      		std Y+1,__zero_reg__
+ 950 00c6 1A82      		std Y+2,__zero_reg__
+ 951 00c8 1B82      		std Y+3,__zero_reg__
+ 952 00ca 1C82      		std Y+4,__zero_reg__
+ 953               	.LVL48:
+ 195:distal.c      ****     ReadIntFromEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ 954               		.loc 1 195 0
+ 955 00cc 8DE1      		ldi r24,lo8(29)
+ 956 00ce BE01      		movw r22,r28
+ 957 00d0 6F5F      		subi r22,lo8(-(1))
+ 958 00d2 7F4F      		sbci r23,hi8(-(1))
+ 959 00d4 0E94 0000 		call ReadIntFromEEPROM
+ 196:distal.c      ****     if (readversion != FIRMWARE_VERSION)
+ 960               		.loc 1 196 0
+ 961 00d8 8981      		ldd r24,Y+1
+ 962 00da 9A81      		ldd r25,Y+2
+ 963 00dc AB81      		ldd r26,Y+3
+ 964 00de BC81      		ldd r27,Y+4
+ 965 00e0 8D32      		cpi r24,lo8(301)
+ 966 00e2 F1E0      		ldi r31,hi8(301)
+ 967 00e4 9F07      		cpc r25,r31
+ 968 00e6 F0E0      		ldi r31,hlo8(301)
+ 969 00e8 AF07      		cpc r26,r31
+ 970 00ea F0E0      		ldi r31,hhi8(301)
+ 971 00ec BF07      		cpc r27,r31
+ 972 00ee 01F0      		breq .L64
+ 198:distal.c      ****         readversion = FIRMWARE_VERSION;
+ 973               		.loc 1 198 0
+ 974 00f0 8DE2      		ldi r24,lo8(301)
+ 975 00f2 91E0      		ldi r25,hi8(301)
+ 976 00f4 A0E0      		ldi r26,hlo8(301)
+ 977 00f6 B0E0      		ldi r27,hhi8(301)
+ 978 00f8 8983      		std Y+1,r24
+ 979 00fa 9A83      		std Y+2,r25
+ 980 00fc AB83      		std Y+3,r26
+ 981 00fe BC83      		std Y+4,r27
+ 199:distal.c      ****         WriteIntToEEPROM(EEPROM_ADDRESS_FIRMWARE_VERSION, (uint8_t*)&readversion);
+ 982               		.loc 1 199 0
+ 983 0100 8DE1      		ldi r24,lo8(29)
+ 984 0102 BE01      		movw r22,r28
+ 985 0104 6F5F      		subi r22,lo8(-(1))
+ 986 0106 7F4F      		sbci r23,hi8(-(1))
+ 987 0108 0E94 0000 		call WriteIntToEEPROM
+ 988               	.L64:
+ 989               	.LBE84:
+ 990               	.LBE83:
+ 375:distal.c      **** 
+ 376:distal.c      ****     LEDoff();
+ 377:distal.c      **** 
+ 378:distal.c      ****     initStateFromEEPROM();
+ 379:distal.c      ****     verifyVersion();
+ 380:distal.c      ****     
+ 381:distal.c      ****     while(1){
+ 382:distal.c      ****         
+ 383:distal.c      ****         if(notifyDaisy)
+ 991               		.loc 1 383 0
+ 992 010c 8091 0000 		lds r24,notifyDaisy
+ 993 0110 8823      		tst r24
+ 994 0112 01F0      		breq .L55
+ 384:distal.c      ****         {
+ 385:distal.c      ****             doDaisyTask();
+ 995               		.loc 1 385 0
+ 996 0114 0E94 0000 		call doDaisyTask
+ 997               	.L55:
+ 386:distal.c      ****         }
+ 387:distal.c      **** 
+ 388:distal.c      ****         if(tactReady)
+ 998               		.loc 1 388 0
+ 999 0118 8091 0000 		lds r24,tactReady
+ 1000 011c 8823      		tst r24
+ 1001 011e 01F0      		breq .L64
+ 389:distal.c      ****         {
+ 390:distal.c      ****             doTactSensors();
+ 1002               		.loc 1 390 0
+ 1003 0120 0E94 0000 		call doTactSensors
+ 1004 0124 00C0      		rjmp .L64
+ 1005               		.cfi_endproc
+ 1006               	.LFE20:
+ 1008               		.comm testADC,16,1
+ 1009               		.comm numPressureSensors,1,1
+ 1010               		.text
+ 1011               	.Letext0:
+ 1012               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1013               		.file 4 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1014               		.file 5 "distal.h"
+ 1015               		.file 6 "../common/daisycomm.h"
+ 1016               		.file 7 "tactsense.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 distal.c
+     /tmp/ccamxolJ.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccamxolJ.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccamxolJ.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccamxolJ.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccamxolJ.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccamxolJ.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccamxolJ.s:14     .text:00000000 ReadIntFromEEPROM
+     /tmp/ccamxolJ.s:101    .text:0000004e WriteIntToEEPROM
+     /tmp/ccamxolJ.s:187    .text:0000009c processCommand
+                            *COM*:00000001 numPressureSensors
+     /tmp/ccamxolJ.s:696    .text:00000328 LEDon
+     /tmp/ccamxolJ.s:717    .text:00000332 LEDoff
+     /tmp/ccamxolJ.s:738    .text:0000033c LEDtoggle
+     /tmp/ccamxolJ.s:760    .text.startup:00000000 main
+                            *COM*:00000010 testADC
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__eerd_byte_x32a4u
+__eewr_byte_x32a4u
+captureSweep
+readAxes
+pressureData
+memcpy
+RxCheckSumErrCnt
+pressureTempData
+computeChecksum
+pressureDataOffset
+configurePortIODistal
+configureADC
+configureDaisyUSART
+initTactileModule
+configureSPIModulesPressure
+collectAllCalibrationValues
+configureSPIModulesAccel
+configAccel
+notifyDaisy
+doDaisyTask
+tactReady
+doTactSensors

@@ -1,0 +1,813 @@
+   1               		.file	"currentADC.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  13               	.global	configureADC
+  15               	configureADC:
+  16               	.LFB5:
+  17               		.file 1 "currentADC.c"
+   1:currentADC.c  **** /****************************************************
+   2:currentADC.c  **** 
+   3:currentADC.c  ****  // Author:            Paul Butler
+   4:currentADC.c  ****  // File Name:        C1482-SRC-FGRMCU-0-currentADC.c
+   5:currentADC.c  ****  // Creation Date:    28 October, 2011
+   6:currentADC.c  ****  // Revision:        01
+   7:currentADC.c  ****  // Hardware:        ATxmega32A4
+   8:currentADC.c  ****  // Description:    Palm Motor Controller Micro BLDC ADC control module
+   9:currentADC.c  **** 
+  10:currentADC.c  **** ****************************************************/
+  11:currentADC.c  **** 
+  12:currentADC.c  **** /******************************************************************************
+  13:currentADC.c  ****     File Revision History:
+  14:currentADC.c  **** -------------------------------------------------------------------------------
+  15:currentADC.c  **** Revision    Date        Engineer    Description
+  16:currentADC.c  **** --------    --------    --------    -------------------------------------------
+  17:currentADC.c  **** 00            10/28/11    PDB            Initial Release
+  18:currentADC.c  **** 01            12/20/11    ZAC            Added documentation
+  19:currentADC.c  **** -------------------------------------------------------------------------------
+  20:currentADC.c  **** 
+  21:currentADC.c  **** ******************************************************************************/
+  22:currentADC.c  **** 
+  23:currentADC.c  **** #include <avr/io.h>
+  24:currentADC.c  **** #include <avr/interrupt.h>
+  25:currentADC.c  **** #include <stddef.h>
+  26:currentADC.c  **** #include <avr/pgmspace.h>
+  27:currentADC.c  **** #include <math.h>
+  28:currentADC.c  **** 
+  29:currentADC.c  **** #include "currentADC.h"
+  30:currentADC.c  **** #include "thermalModel.h"
+  31:currentADC.c  **** 
+  32:currentADC.c  **** //Private Functions
+  33:currentADC.c  **** static void calibrateCurrentADC(void);
+  34:currentADC.c  **** static uint8_t ReadCalibrationByte(uint8_t index);
+  35:currentADC.c  **** static float compensateCurrent(float inCurrent);
+  36:currentADC.c  **** 
+  37:currentADC.c  **** static int16_t ADCCurrentCalibration;
+  38:currentADC.c  **** 
+  39:currentADC.c  **** //Global variable to hold the motor current and temperature itself.
+  40:currentADC.c  **** float motorCurrent = 0.0;
+  41:currentADC.c  **** int16_t rawMotorCurrent = 0;
+  42:currentADC.c  **** float statorTemperature = 25.0;
+  43:currentADC.c  **** 
+  44:currentADC.c  **** uint16_t tension[2] = {0,0};
+  45:currentADC.c  **** 
+  46:currentADC.c  **** /************************************************************************
+  47:currentADC.c  **** * ReadCalibrationByte
+  48:currentADC.c  **** *
+  49:currentADC.c  **** * Library code from Atmel for reading the ADC calibration byte from the
+  50:currentADC.c  **** * production signature row.  This is required for the ADC to achieve
+  51:currentADC.c  **** * its full specification.
+  52:currentADC.c  **** ************************************************************************/
+  53:currentADC.c  **** static uint8_t ReadCalibrationByte(uint8_t index)
+  54:currentADC.c  **** {
+  55:currentADC.c  ****     uint8_t result;
+  56:currentADC.c  **** 
+  57:currentADC.c  ****     // Load the NVM Command register to read the calibration row.
+  58:currentADC.c  ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+  59:currentADC.c  ****     result = pgm_read_byte(index);
+  60:currentADC.c  **** 
+  61:currentADC.c  ****     //Clean up NVM Command register.
+  62:currentADC.c  ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+  63:currentADC.c  **** 
+  64:currentADC.c  ****     return result;
+  65:currentADC.c  **** }
+  66:currentADC.c  **** 
+  67:currentADC.c  **** /************************************************************************
+  68:currentADC.c  **** * calibrateCurrentADC
+  69:currentADC.c  **** *
+  70:currentADC.c  **** * Assumes that the motor is inactive.
+  71:currentADC.c  **** * Captures a few samples of the ADC, averages them, and stores an
+  72:currentADC.c  **** * appropriate offset estimation for calibration
+  73:currentADC.c  **** ************************************************************************/
+  74:currentADC.c  **** static void calibrateCurrentADC(void)
+  75:currentADC.c  **** {
+  76:currentADC.c  ****     int i=0;
+  77:currentADC.c  ****     int32_t calibrationAccumulator=0;
+  78:currentADC.c  ****     while(i<16)
+  79:currentADC.c  ****     {
+  80:currentADC.c  ****         if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
+  81:currentADC.c  ****         {
+  82:currentADC.c  ****             CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
+  83:currentADC.c  ****             calibrationAccumulator += CURRENT_ADC.CH1RES;
+  84:currentADC.c  ****             i++;
+  85:currentADC.c  ****         }
+  86:currentADC.c  ****     }
+  87:currentADC.c  ****     ADCCurrentCalibration = round((float) calibrationAccumulator / 16.0);
+  88:currentADC.c  ****     return;
+  89:currentADC.c  **** }
+  90:currentADC.c  **** 
+  91:currentADC.c  **** /************************************************************************
+  92:currentADC.c  **** * configureADC
+  93:currentADC.c  **** *
+  94:currentADC.c  **** * Configure the ADC to capture the four analog inputs we care about
+  95:currentADC.c  **** * in free-running sweep mode with no interrupts.
+  96:currentADC.c  **** * When the PID loop is evaluated, the most recent acquisition is placed into
+  97:currentADC.c  **** * a buffer for later use.
+  98:currentADC.c  **** *
+  99:currentADC.c  **** * Note that an internal reference is being used in this test setup.
+ 100:currentADC.c  **** * The production system will have an external one available.
+ 101:currentADC.c  **** ************************************************************************/
+ 102:currentADC.c  **** void configureADC(void)
+ 103:currentADC.c  **** {
+  18               		.loc 1 103 0
+  19               		.cfi_startproc
+  20 0000 CF93      		push r28
+  21               	.LCFI0:
+  22               		.cfi_def_cfa_offset 3
+  23               		.cfi_offset 28, -2
+  24               	/* prologue: function */
+  25               	/* frame size = 0 */
+  26               	/* stack size = 1 */
+  27               	.L__stack_usage = 1
+  28               	.LVL0:
+  29               	.LBB12:
+  30               	.LBB13:
+  58:currentADC.c  ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+  31               		.loc 1 58 0
+  32 0002 82E0      		ldi r24,lo8(2)
+  33 0004 8093 CA01 		sts 458,r24
+  34               	.LVL1:
+  35               	.LBB14:
+  59:currentADC.c  ****     result = pgm_read_byte(index);
+  36               		.loc 1 59 0
+  37 0008 E0E2      		ldi r30,lo8(32)
+  38 000a F0E0      		ldi r31,hi8(32)
+  39               	/* #APP */
+  40               	 ;  59 "currentADC.c" 1
+  41 000c E491      		lpm r30, Z
+  42               		
+  43               	 ;  0 "" 2
+  44               	.LVL2:
+  45               	/* #NOAPP */
+  46               	.LBE14:
+  62:currentADC.c  ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+  47               		.loc 1 62 0
+  48 000e 1092 CA01 		sts 458,__zero_reg__
+  49               	.LBE13:
+  50               	.LBE12:
+ 104:currentADC.c  ****     CURRENT_ADC.CALL = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL0) );
+  51               		.loc 1 104 0
+  52 0012 A0E0      		ldi r26,lo8(512)
+  53 0014 B2E0      		ldi r27,hi8(512)
+  54 0016 1C96      		adiw r26,12
+  55 0018 EC93      		st X,r30
+  56 001a 1C97      		sbiw r26,12
+  57               	.LVL3:
+  58               	.LBB15:
+  59               	.LBB16:
+  58:currentADC.c  ****     NVM_CMD = NVM_CMD_READ_CALIB_ROW_gc;
+  60               		.loc 1 58 0
+  61 001c 8093 CA01 		sts 458,r24
+  62               	.LVL4:
+  63               	.LBB17:
+  59:currentADC.c  ****     result = pgm_read_byte(index);
+  64               		.loc 1 59 0
+  65 0020 E1E2      		ldi r30,lo8(33)
+  66 0022 F0E0      		ldi r31,hi8(33)
+  67               	.LVL5:
+  68               	/* #APP */
+  69               	 ;  59 "currentADC.c" 1
+  70 0024 E491      		lpm r30, Z
+  71               		
+  72               	 ;  0 "" 2
+  73               	.LVL6:
+  74               	/* #NOAPP */
+  75               	.LBE17:
+  62:currentADC.c  ****     NVM_CMD = NVM_CMD_NO_OPERATION_gc;
+  76               		.loc 1 62 0
+  77 0026 1092 CA01 		sts 458,__zero_reg__
+  78               	.LBE16:
+  79               	.LBE15:
+ 105:currentADC.c  ****     CURRENT_ADC.CALH = ReadCalibrationByte( offsetof(NVM_PROD_SIGNATURES_t, ADCACAL1) );
+  80               		.loc 1 105 0
+  81 002a 1D96      		adiw r26,13
+  82 002c EC93      		st X,r30
+  83 002e 1D97      		sbiw r26,13
+ 106:currentADC.c  **** 
+ 107:currentADC.c  ****     //Use the Event System to actuate sweeps
+ 108:currentADC.c  **** 
+ 109:currentADC.c  ****     EVSYS.CH3MUX = EVSYS_CHMUX_PRESCALER_8192_gc;
+  84               		.loc 1 109 0
+  85 0030 E0E8      		ldi r30,lo8(384)
+  86 0032 F1E0      		ldi r31,hi8(384)
+  87               	.LVL7:
+  88 0034 9DE8      		ldi r25,lo8(-115)
+  89 0036 9383      		std Z+3,r25
+ 110:currentADC.c  ****     EVSYS.CH3CTRL = EVSYS_DIGFILT_1SAMPLE_gc;
+  90               		.loc 1 110 0
+  91 0038 1386      		std Z+11,__zero_reg__
+ 111:currentADC.c  **** 
+ 112:currentADC.c  ****     CURRENT_ADC.EVCTRL = ADC_SWEEP_0123_gc | ADC_EVSEL_3456_gc | ADC_EVACT_SWEEP_gc;
+  92               		.loc 1 112 0
+  93 003a 9DED      		ldi r25,lo8(-35)
+  94 003c 1396      		adiw r26,3
+  95 003e 9C93      		st X,r25
+  96 0040 1397      		sbiw r26,3
+ 113:currentADC.c  **** 
+ 114:currentADC.c  ****     //Maximum ADC clock is 2 MHz.  This requires a prescaler of 16 on a CPU clock of 32 MHz
+ 115:currentADC.c  ****     CURRENT_ADC.PRESCALER = ADC_PRESCALER_DIV16_gc;
+  97               		.loc 1 115 0
+  98 0042 1496      		adiw r26,4
+  99 0044 8C93      		st X,r24
+ 100 0046 1497      		sbiw r26,4
+ 116:currentADC.c  **** 
+ 117:currentADC.c  **** #ifdef USE_INTERNAL_REF
+ 118:currentADC.c  ****     CURRENT_ADC.REFCTRL = ADC_REFSEL_VCC_gc;
+ 119:currentADC.c  **** #else
+ 120:currentADC.c  ****     CURRENT_ADC.REFCTRL = ADC_REFSEL_AREFA_gc;
+ 101               		.loc 1 120 0
+ 102 0048 90E2      		ldi r25,lo8(32)
+ 103 004a 1296      		adiw r26,2
+ 104 004c 9C93      		st X,r25
+ 105 004e 1297      		sbiw r26,2
+ 121:currentADC.c  **** #endif
+ 122:currentADC.c  **** 
+ 123:currentADC.c  ****     #warning The ADC.CH structure is wrong in AU parts.  Just use the ADC_CH0_MUXCTRL, etc. defines
+ 124:currentADC.c  ****     //CH0 is the temperature
+ 125:currentADC.c  ****     CURRENT_ADC_CH0_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 106               		.loc 1 125 0
+ 107 0050 91E0      		ldi r25,lo8(1)
+ 108 0052 9093 2002 		sts 544,r25
+ 126:currentADC.c  ****     CURRENT_ADC_CH0_MUXCTRL = ADC_CH_MUXPOS_PIN1_gc;
+ 109               		.loc 1 126 0
+ 110 0056 28E0      		ldi r18,lo8(8)
+ 111 0058 2093 2102 		sts 545,r18
+ 127:currentADC.c  ****     CURRENT_ADC_CH0_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 112               		.loc 1 127 0
+ 113 005c 1092 2202 		sts 546,__zero_reg__
+ 128:currentADC.c  **** 
+ 129:currentADC.c  ****     //CH1 is the current monitor.  It arrives inverted due to limitations in the part
+ 130:currentADC.c  **** 
+ 131:currentADC.c  ****     CURRENT_ADC_CH1_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_DIFF_gc;
+ 114               		.loc 1 131 0
+ 115 0060 8093 2802 		sts 552,r24
+ 132:currentADC.c  ****     CURRENT_ADC_CH1_MUXCTRL = ADC_CH_MUXPOS_PIN5_gc | ADC_CH_MUXNEG_PIN2_gc;
+ 116               		.loc 1 132 0
+ 117 0064 8AE2      		ldi r24,lo8(42)
+ 118 0066 8093 2902 		sts 553,r24
+ 133:currentADC.c  ****     CURRENT_ADC_CH1_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 119               		.loc 1 133 0
+ 120 006a 1092 2A02 		sts 554,__zero_reg__
+ 134:currentADC.c  **** 
+ 135:currentADC.c  ****     // //CH2 is Tension sensor 1
+ 136:currentADC.c  ****     // CURRENT_ADC_CH2_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 137:currentADC.c  ****     // CURRENT_ADC_CH2_MUXCTRL = ADC_CH_MUXPOS_PIN3_gc;
+ 138:currentADC.c  ****     // CURRENT_ADC_CH2_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 139:currentADC.c  **** 
+ 140:currentADC.c  ****     // //CH3 is Tension sensor 2
+ 141:currentADC.c  ****     // CURRENT_ADC_CH3_CTRL = ADC_CH_GAIN_1X_gc | ADC_CH_INPUTMODE_SINGLEENDED_gc;
+ 142:currentADC.c  ****     // CURRENT_ADC_CH3_MUXCTRL = ADC_CH_MUXPOS_PIN4_gc;
+ 143:currentADC.c  ****     // CURRENT_ADC_CH3_INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;
+ 144:currentADC.c  **** 
+ 145:currentADC.c  ****     //Configure for Signed operation
+ 146:currentADC.c  ****     CURRENT_ADC.CTRLB = ADC_RESOLUTION_12BIT_gc | ADC_CONMODE_bm;
+ 121               		.loc 1 146 0
+ 122 006e 80E1      		ldi r24,lo8(16)
+ 123 0070 1196      		adiw r26,1
+ 124 0072 8C93      		st X,r24
+ 125 0074 1197      		sbiw r26,1
+ 147:currentADC.c  ****     CURRENT_ADC.CTRLA = ADC_ENABLE_bm;
+ 126               		.loc 1 147 0
+ 127 0076 9093 0002 		sts 512,r25
+ 128               	.LVL8:
+ 129 007a 21E1      		ldi r18,lo8(17)
+ 130 007c 30E0      		ldi r19,hi8(17)
+  77:currentADC.c  ****     int32_t calibrationAccumulator=0;
+ 131               		.loc 1 77 0
+ 132 007e 40E0      		ldi r20,lo8(0)
+ 133 0080 50E0      		ldi r21,hi8(0)
+ 134 0082 BA01      		movw r22,r20
+ 135               	.LBB18:
+ 136               	.LBB19:
+  80:currentADC.c  ****         if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
+ 137               		.loc 1 80 0
+ 138 0084 E0E0      		ldi r30,lo8(512)
+ 139 0086 F2E0      		ldi r31,hi8(512)
+  82:currentADC.c  ****             CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
+ 140               		.loc 1 82 0
+ 141 0088 C2E0      		ldi r28,lo8(2)
+ 142 008a 00C0      		rjmp .L2
+ 143               	.LVL9:
+ 144               	.L4:
+  80:currentADC.c  ****         if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
+ 145               		.loc 1 80 0
+ 146 008c 8091 0602 		lds r24,518
+ 147 0090 81FF      		sbrs r24,1
+ 148 0092 00C0      		rjmp .L4
+  82:currentADC.c  ****             CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
+ 149               		.loc 1 82 0
+ 150 0094 C683      		std Z+6,r28
+  83:currentADC.c  ****             calibrationAccumulator += CURRENT_ADC.CH1RES;
+ 151               		.loc 1 83 0
+ 152 0096 8091 1202 		lds r24,530
+ 153 009a 9091 1302 		lds r25,530+1
+ 154 009e A0E0      		ldi r26,lo8(0)
+ 155 00a0 B0E0      		ldi r27,hi8(0)
+ 156 00a2 480F      		add r20,r24
+ 157 00a4 591F      		adc r21,r25
+ 158 00a6 6A1F      		adc r22,r26
+ 159 00a8 7B1F      		adc r23,r27
+ 160               	.LVL10:
+ 161               	.L2:
+ 162 00aa 2150      		subi r18,lo8(-(-1))
+ 163 00ac 3040      		sbci r19,hi8(-(-1))
+  78:currentADC.c  ****     while(i<16)
+ 164               		.loc 1 78 0
+ 165 00ae 01F4      		brne .L4
+  87:currentADC.c  ****     ADCCurrentCalibration = round((float) calibrationAccumulator / 16.0);
+ 166               		.loc 1 87 0
+ 167 00b0 CB01      		movw r24,r22
+ 168 00b2 BA01      		movw r22,r20
+ 169 00b4 0E94 0000 		call __floatsisf
+ 170               	.LVL11:
+ 171 00b8 20E0      		ldi r18,lo8(0x3d800000)
+ 172 00ba 30E0      		ldi r19,hi8(0x3d800000)
+ 173 00bc 40E8      		ldi r20,hlo8(0x3d800000)
+ 174 00be 5DE3      		ldi r21,hhi8(0x3d800000)
+ 175 00c0 0E94 0000 		call __mulsf3
+ 176 00c4 0E94 0000 		call round
+ 177 00c8 0E94 0000 		call __fixsfsi
+ 178 00cc DC01      		movw r26,r24
+ 179 00ce CB01      		movw r24,r22
+ 180 00d0 8093 0000 		sts ADCCurrentCalibration,r24
+ 181 00d4 9093 0000 		sts ADCCurrentCalibration+1,r25
+ 182               	/* epilogue start */
+ 183               	.LBE19:
+ 184               	.LBE18:
+ 148:currentADC.c  **** 
+ 149:currentADC.c  ****     //Calibrate the ADC
+ 150:currentADC.c  ****     calibrateCurrentADC();
+ 151:currentADC.c  **** }
+ 185               		.loc 1 151 0
+ 186 00d8 CF91      		pop r28
+ 187 00da 0895      		ret
+ 188               		.cfi_endproc
+ 189               	.LFE5:
+ 191               	.global	readCurrentSignals
+ 193               	readCurrentSignals:
+ 194               	.LFB7:
+ 152:currentADC.c  **** 
+ 153:currentADC.c  **** /************************************************************************
+ 154:currentADC.c  **** * compensateCurrent(inCurrent)
+ 155:currentADC.c  **** *
+ 156:currentADC.c  **** * Compensates for duty cycle dependent errors in current measurements
+ 157:currentADC.c  **** * In the system, the power supply average current is measured. This does not
+ 158:currentADC.c  **** * equal the current in the windings when PWM is applied because the windings
+ 159:currentADC.c  **** * see continuous current.  The motor driver bridge inverts the polarity of the
+ 160:currentADC.c  **** * windings with respect to the power supply for the (1-D) portion of the
+ 161:currentADC.c  **** * PWM cycle.  In the limit of 50 percent, the power supply provides no net
+ 162:currentADC.c  **** * power because all current provided in the first half cycle is drained by the second.
+ 163:currentADC.c  **** * However, the windings did see current and did experience some heating because of it.
+ 164:currentADC.c  **** *
+ 165:currentADC.c  **** * The formula is: compensatedCurrent = measuredCurrent / (2 * D - 1).
+ 166:currentADC.c  **** *
+ 167:currentADC.c  **** * This formula explodes at 50 percent duty cycle because measured current is 0, but
+ 168:currentADC.c  **** * the compensated current should be non-zero.  Therefore, the value is capped
+ 169:currentADC.c  **** * when the duty cycle is less than the LOW_THRESHOLD_DUTY_CYCLE.
+ 170:currentADC.c  **** ************************************************************************/
+ 171:currentADC.c  **** static float compensateCurrent(float inCurrent)
+ 172:currentADC.c  **** {
+ 173:currentADC.c  ****     float dutyCycle = (256.0 + (float) getOldControlValue()) / 512.0;
+ 174:currentADC.c  **** 
+ 175:currentADC.c  ****     if(dutyCycle < TEMPERATURE_CORRECTION_LOW_THRESHOLD_DUTY_CYCLE)
+ 176:currentADC.c  ****     {
+ 177:currentADC.c  ****         dutyCycle = TEMPERATURE_CORRECTION_LOW_THRESHOLD_DUTY_CYCLE;
+ 178:currentADC.c  ****     }
+ 179:currentADC.c  ****     return inCurrent / (dutyCycle*2.0 - 1.0);
+ 180:currentADC.c  **** }
+ 181:currentADC.c  **** 
+ 182:currentADC.c  **** /************************************************************************
+ 183:currentADC.c  **** * readCurrentSignals()
+ 184:currentADC.c  **** * Reads the most recent captures into appropriate buffers for each motor
+ 185:currentADC.c  **** ************************************************************************/
+ 186:currentADC.c  **** float thermistorVoltage;
+ 187:currentADC.c  **** int rawReading;
+ 188:currentADC.c  **** void readCurrentSignals()
+ 189:currentADC.c  **** {
+ 195               		.loc 1 189 0
+ 196               		.cfi_startproc
+ 197 00dc CF92      		push r12
+ 198               	.LCFI1:
+ 199               		.cfi_def_cfa_offset 3
+ 200               		.cfi_offset 12, -2
+ 201 00de DF92      		push r13
+ 202               	.LCFI2:
+ 203               		.cfi_def_cfa_offset 4
+ 204               		.cfi_offset 13, -3
+ 205 00e0 EF92      		push r14
+ 206               	.LCFI3:
+ 207               		.cfi_def_cfa_offset 5
+ 208               		.cfi_offset 14, -4
+ 209 00e2 FF92      		push r15
+ 210               	.LCFI4:
+ 211               		.cfi_def_cfa_offset 6
+ 212               		.cfi_offset 15, -5
+ 213 00e4 0F93      		push r16
+ 214               	.LCFI5:
+ 215               		.cfi_def_cfa_offset 7
+ 216               		.cfi_offset 16, -6
+ 217 00e6 1F93      		push r17
+ 218               	.LCFI6:
+ 219               		.cfi_def_cfa_offset 8
+ 220               		.cfi_offset 17, -7
+ 221 00e8 CF93      		push r28
+ 222               	.LCFI7:
+ 223               		.cfi_def_cfa_offset 9
+ 224               		.cfi_offset 28, -8
+ 225 00ea DF93      		push r29
+ 226               	.LCFI8:
+ 227               		.cfi_def_cfa_offset 10
+ 228               		.cfi_offset 29, -9
+ 229               	/* prologue: function */
+ 230               	/* frame size = 0 */
+ 231               	/* stack size = 8 */
+ 232               	.L__stack_usage = 8
+ 190:currentADC.c  **** 
+ 191:currentADC.c  ****     float tempMotorCurrent;
+ 192:currentADC.c  **** 
+ 193:currentADC.c  ****     if(CURRENT_ADC.INTFLAGS & ADC_CH0IF_bm)
+ 233               		.loc 1 193 0
+ 234 00ec 8091 0602 		lds r24,518
+ 235 00f0 80FF      		sbrs r24,0
+ 236 00f2 00C0      		rjmp .L7
+ 194:currentADC.c  ****     {
+ 195:currentADC.c  ****         CURRENT_ADC.INTFLAGS = ADC_CH0IF_bm;
+ 237               		.loc 1 195 0
+ 238 00f4 81E0      		ldi r24,lo8(1)
+ 239 00f6 E0E0      		ldi r30,lo8(512)
+ 240 00f8 F2E0      		ldi r31,hi8(512)
+ 241 00fa 8683      		std Z+6,r24
+ 196:currentADC.c  ****         rawReading = CURRENT_ADC.CH0RES;
+ 242               		.loc 1 196 0
+ 243 00fc 6091 1002 		lds r22,528
+ 244 0100 7091 1102 		lds r23,528+1
+ 245 0104 6093 0000 		sts rawReading,r22
+ 246 0108 7093 0000 		sts rawReading+1,r23
+ 197:currentADC.c  ****         thermistorVoltage = ADC_CODES_TO_VOLTS_SIGNED(rawReading);
+ 247               		.loc 1 197 0
+ 248 010c 8827      		clr r24
+ 249 010e 77FD      		sbrc r23,7
+ 250 0110 8095      		com r24
+ 251 0112 982F      		mov r25,r24
+ 252 0114 0E94 0000 		call __floatsisf
+ 253 0118 20E0      		ldi r18,lo8(0x40200000)
+ 254 011a 30E0      		ldi r19,hi8(0x40200000)
+ 255 011c 40E2      		ldi r20,hlo8(0x40200000)
+ 256 011e 50E4      		ldi r21,hhi8(0x40200000)
+ 257 0120 0E94 0000 		call __mulsf3
+ 258 0124 20E0      		ldi r18,lo8(0x3a000000)
+ 259 0126 30E0      		ldi r19,hi8(0x3a000000)
+ 260 0128 40E0      		ldi r20,hlo8(0x3a000000)
+ 261 012a 5AE3      		ldi r21,hhi8(0x3a000000)
+ 262 012c 0E94 0000 		call __mulsf3
+ 263 0130 9B01      		movw r18,r22
+ 264 0132 F82F      		mov r31,r24
+ 265 0134 E92F      		mov r30,r25
+ 266 0136 462F      		mov r20,r22
+ 267 0138 532F      		mov r21,r19
+ 268 013a 682F      		mov r22,r24
+ 269 013c 792F      		mov r23,r25
+ 270 013e 4093 0000 		sts thermistorVoltage,r20
+ 271 0142 5093 0000 		sts thermistorVoltage+1,r21
+ 272 0146 6093 0000 		sts thermistorVoltage+2,r22
+ 273 014a 7093 0000 		sts thermistorVoltage+3,r23
+ 198:currentADC.c  ****         statorTemperature = Thermistor_RtoT(Thermistor_VtoR(thermistorVoltage));
+ 274               		.loc 1 198 0
+ 275 014e 822F      		mov r24,r18
+ 276 0150 932F      		mov r25,r19
+ 277 0152 AF2F      		mov r26,r31
+ 278 0154 BE2F      		mov r27,r30
+ 279 0156 BC01      		movw r22,r24
+ 280 0158 CD01      		movw r24,r26
+ 281 015a 0E94 0000 		call Thermistor_VtoR
+ 282 015e 0E94 0000 		call Thermistor_RtoT
+ 283 0162 6093 0000 		sts statorTemperature,r22
+ 284 0166 7093 0000 		sts statorTemperature+1,r23
+ 285 016a 8093 0000 		sts statorTemperature+2,r24
+ 286 016e 9093 0000 		sts statorTemperature+3,r25
+ 199:currentADC.c  ****         if(statorTemperature < 0) statorTemperature = 0;
+ 287               		.loc 1 199 0
+ 288 0172 20E0      		ldi r18,lo8(0x0)
+ 289 0174 30E0      		ldi r19,hi8(0x0)
+ 290 0176 A901      		movw r20,r18
+ 291 0178 0E94 0000 		call __ltsf2
+ 292 017c 87FF      		sbrs r24,7
+ 293 017e 00C0      		rjmp .L8
+ 294               		.loc 1 199 0 is_stmt 0 discriminator 1
+ 295 0180 80E0      		ldi r24,lo8(0x0)
+ 296 0182 90E0      		ldi r25,hi8(0x0)
+ 297 0184 DC01      		movw r26,r24
+ 298 0186 8093 0000 		sts statorTemperature,r24
+ 299 018a 9093 0000 		sts statorTemperature+1,r25
+ 300 018e A093 0000 		sts statorTemperature+2,r26
+ 301 0192 B093 0000 		sts statorTemperature+3,r27
+ 302               	.L8:
+ 200:currentADC.c  ****         if(statorTemperature > 130) statorTemperature = 130;
+ 303               		.loc 1 200 0 is_stmt 1
+ 304 0196 6091 0000 		lds r22,statorTemperature
+ 305 019a 7091 0000 		lds r23,statorTemperature+1
+ 306 019e 8091 0000 		lds r24,statorTemperature+2
+ 307 01a2 9091 0000 		lds r25,statorTemperature+3
+ 308 01a6 20E0      		ldi r18,lo8(0x43020000)
+ 309 01a8 30E0      		ldi r19,hi8(0x43020000)
+ 310 01aa 42E0      		ldi r20,hlo8(0x43020000)
+ 311 01ac 53E4      		ldi r21,hhi8(0x43020000)
+ 312 01ae 0E94 0000 		call __gtsf2
+ 313 01b2 1816      		cp __zero_reg__,r24
+ 314 01b4 04F4      		brge .L7
+ 315               		.loc 1 200 0 is_stmt 0 discriminator 1
+ 316 01b6 80E0      		ldi r24,lo8(0x43020000)
+ 317 01b8 90E0      		ldi r25,hi8(0x43020000)
+ 318 01ba A2E0      		ldi r26,hlo8(0x43020000)
+ 319 01bc B3E4      		ldi r27,hhi8(0x43020000)
+ 320 01be 8093 0000 		sts statorTemperature,r24
+ 321 01c2 9093 0000 		sts statorTemperature+1,r25
+ 322 01c6 A093 0000 		sts statorTemperature+2,r26
+ 323 01ca B093 0000 		sts statorTemperature+3,r27
+ 324               	.L7:
+ 201:currentADC.c  ****     }
+ 202:currentADC.c  **** 
+ 203:currentADC.c  ****     if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
+ 325               		.loc 1 203 0 is_stmt 1
+ 326 01ce 8091 0602 		lds r24,518
+ 327 01d2 81FF      		sbrs r24,1
+ 328 01d4 00C0      		rjmp .L6
+ 204:currentADC.c  ****     {
+ 205:currentADC.c  ****         CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
+ 329               		.loc 1 205 0
+ 330 01d6 82E0      		ldi r24,lo8(2)
+ 331 01d8 E0E0      		ldi r30,lo8(512)
+ 332 01da F2E0      		ldi r31,hi8(512)
+ 333 01dc 8683      		std Z+6,r24
+ 206:currentADC.c  ****         rawMotorCurrent = CURRENT_ADC.CH1RES;
+ 334               		.loc 1 206 0
+ 335 01de 6091 1202 		lds r22,530
+ 336 01e2 7091 1302 		lds r23,530+1
+ 207:currentADC.c  ****         rawMotorCurrent = rawMotorCurrent - ADCCurrentCalibration;
+ 337               		.loc 1 207 0
+ 338 01e6 8091 0000 		lds r24,ADCCurrentCalibration
+ 339 01ea 9091 0000 		lds r25,ADCCurrentCalibration+1
+ 340 01ee 681B      		sub r22,r24
+ 341 01f0 790B      		sbc r23,r25
+ 342 01f2 6093 0000 		sts rawMotorCurrent,r22
+ 343 01f6 7093 0000 		sts rawMotorCurrent+1,r23
+ 208:currentADC.c  ****         tempMotorCurrent = compensateCurrent(ADC_CODES_TO_AMPERES((float)rawMotorCurrent));
+ 344               		.loc 1 208 0
+ 345 01fa 8827      		clr r24
+ 346 01fc 77FD      		sbrc r23,7
+ 347 01fe 8095      		com r24
+ 348 0200 982F      		mov r25,r24
+ 349 0202 0E94 0000 		call __floatsisf
+ 350 0206 20E0      		ldi r18,lo8(0x40200000)
+ 351 0208 30E0      		ldi r19,hi8(0x40200000)
+ 352 020a 40E2      		ldi r20,hlo8(0x40200000)
+ 353 020c 50E4      		ldi r21,hhi8(0x40200000)
+ 354 020e 0E94 0000 		call __mulsf3
+ 355 0212 20E0      		ldi r18,lo8(0x3a000000)
+ 356 0214 30E0      		ldi r19,hi8(0x3a000000)
+ 357 0216 40E0      		ldi r20,hlo8(0x3a000000)
+ 358 0218 5AE3      		ldi r21,hhi8(0x3a000000)
+ 359 021a 0E94 0000 		call __mulsf3
+ 360 021e 2AE9      		ldi r18,lo8(0x3fd9999a)
+ 361 0220 39E9      		ldi r19,hi8(0x3fd9999a)
+ 362 0222 49ED      		ldi r20,hlo8(0x3fd9999a)
+ 363 0224 5FE3      		ldi r21,hhi8(0x3fd9999a)
+ 364 0226 0E94 0000 		call __mulsf3
+ 365 022a C62F      		mov r28,r22
+ 366 022c C72E      		mov r12,r23
+ 367 022e E82E      		mov r14,r24
+ 368 0230 D92E      		mov r13,r25
+ 369               	.LVL12:
+ 370               	.LBB20:
+ 371               	.LBB21:
+ 173:currentADC.c  ****     float dutyCycle = (256.0 + (float) getOldControlValue()) / 512.0;
+ 372               		.loc 1 173 0
+ 373 0232 0E94 0000 		call getOldControlValue
+ 374               	.LVL13:
+ 375 0236 682F      		mov r22,r24
+ 376 0238 70E0      		ldi r23,lo8(0)
+ 377 023a 80E0      		ldi r24,lo8(0)
+ 378 023c 90E0      		ldi r25,hi8(0)
+ 379 023e 0E94 0000 		call __floatunsisf
+ 380 0242 20E0      		ldi r18,lo8(0x43800000)
+ 381 0244 30E0      		ldi r19,hi8(0x43800000)
+ 382 0246 40E8      		ldi r20,hlo8(0x43800000)
+ 383 0248 53E4      		ldi r21,hhi8(0x43800000)
+ 384 024a 0E94 0000 		call __addsf3
+ 385 024e 20E0      		ldi r18,lo8(0x3b000000)
+ 386 0250 30E0      		ldi r19,hi8(0x3b000000)
+ 387 0252 40E0      		ldi r20,hlo8(0x3b000000)
+ 388 0254 5BE3      		ldi r21,hhi8(0x3b000000)
+ 389 0256 0E94 0000 		call __mulsf3
+ 390 025a F62E      		mov r15,r22
+ 391 025c 172F      		mov r17,r23
+ 392 025e D82F      		mov r29,r24
+ 393 0260 092F      		mov r16,r25
+ 394               	.LVL14:
+ 175:currentADC.c  ****     if(dutyCycle < TEMPERATURE_CORRECTION_LOW_THRESHOLD_DUTY_CYCLE)
+ 395               		.loc 1 175 0
+ 396 0262 862F      		mov r24,r22
+ 397               	.LVL15:
+ 398 0264 912F      		mov r25,r17
+ 399               	.LVL16:
+ 400 0266 AD2F      		mov r26,r29
+ 401 0268 B02F      		mov r27,r16
+ 402 026a BC01      		movw r22,r24
+ 403 026c CD01      		movw r24,r26
+ 404               	.LVL17:
+ 405 026e 20E0      		ldi r18,lo8(0x3f100000)
+ 406 0270 30E0      		ldi r19,hi8(0x3f100000)
+ 407 0272 40E1      		ldi r20,hlo8(0x3f100000)
+ 408 0274 5FE3      		ldi r21,hhi8(0x3f100000)
+ 409 0276 0E94 0000 		call __ltsf2
+ 410               	.LVL18:
+ 411 027a 87FF      		sbrs r24,7
+ 412 027c 00C0      		rjmp .L12
+ 177:currentADC.c  ****         dutyCycle = TEMPERATURE_CORRECTION_LOW_THRESHOLD_DUTY_CYCLE;
+ 413               		.loc 1 177 0
+ 414 027e FF24      		clr r15
+ 415               	.LVL19:
+ 416 0280 10E0      		ldi r17,lo8(0)
+ 417 0282 D0E1      		ldi r29,lo8(16)
+ 418 0284 0FE3      		ldi r16,lo8(63)
+ 419               	.L12:
+ 420               	.LVL20:
+ 179:currentADC.c  ****     return inCurrent / (dutyCycle*2.0 - 1.0);
+ 421               		.loc 1 179 0
+ 422 0286 8F2D      		mov r24,r15
+ 423 0288 912F      		mov r25,r17
+ 424 028a AD2F      		mov r26,r29
+ 425 028c B02F      		mov r27,r16
+ 426 028e BC01      		movw r22,r24
+ 427 0290 CD01      		movw r24,r26
+ 428 0292 0F2D      		mov r16,r15
+ 429               	.LVL21:
+ 430 0294 2D2F      		mov r18,r29
+ 431 0296 3B2F      		mov r19,r27
+ 432 0298 A901      		movw r20,r18
+ 433 029a 9801      		movw r18,r16
+ 434 029c 0E94 0000 		call __addsf3
+ 435               	.LVL22:
+ 436 02a0 20E0      		ldi r18,lo8(0x3f800000)
+ 437 02a2 30E0      		ldi r19,hi8(0x3f800000)
+ 438 02a4 40E8      		ldi r20,hlo8(0x3f800000)
+ 439 02a6 5FE3      		ldi r21,hhi8(0x3f800000)
+ 440 02a8 0E94 0000 		call __subsf3
+ 441 02ac 9B01      		movw r18,r22
+ 442 02ae AC01      		movw r20,r24
+ 443 02b0 8C2F      		mov r24,r28
+ 444 02b2 9C2D      		mov r25,r12
+ 445 02b4 AE2D      		mov r26,r14
+ 446 02b6 BD2D      		mov r27,r13
+ 447 02b8 BC01      		movw r22,r24
+ 448 02ba CD01      		movw r24,r26
+ 449 02bc 0E94 0000 		call __divsf3
+ 450 02c0 C62E      		mov r12,r22
+ 451               	.LVL23:
+ 452 02c2 D72E      		mov r13,r23
+ 453 02c4 E82E      		mov r14,r24
+ 454 02c6 F92E      		mov r15,r25
+ 455               	.LBE21:
+ 456               	.LBE20:
+ 209:currentADC.c  ****         
+ 210:currentADC.c  ****         //motorCurrent = fabs(tempMotorCurrent);
+ 211:currentADC.c  ****         
+ 212:currentADC.c  ****         // only noise will be positive.
+ 213:currentADC.c  ****         if(tempMotorCurrent > 0.0)
+ 457               		.loc 1 213 0
+ 458 02c8 462F      		mov r20,r22
+ 459 02ca 572F      		mov r21,r23
+ 460 02cc 682F      		mov r22,r24
+ 461 02ce 792F      		mov r23,r25
+ 462 02d0 CB01      		movw r24,r22
+ 463 02d2 BA01      		movw r22,r20
+ 464 02d4 20E0      		ldi r18,lo8(0x0)
+ 465 02d6 30E0      		ldi r19,hi8(0x0)
+ 466 02d8 A901      		movw r20,r18
+ 467 02da 0E94 0000 		call __gtsf2
+ 468 02de 1816      		cp __zero_reg__,r24
+ 469 02e0 04F4      		brge .L19
+ 214:currentADC.c  ****         {
+ 215:currentADC.c  ****             motorCurrent = 0;
+ 470               		.loc 1 215 0
+ 471 02e2 80E0      		ldi r24,lo8(0x0)
+ 472 02e4 90E0      		ldi r25,hi8(0x0)
+ 473 02e6 DC01      		movw r26,r24
+ 474 02e8 8093 0000 		sts motorCurrent,r24
+ 475 02ec 9093 0000 		sts motorCurrent+1,r25
+ 476 02f0 A093 0000 		sts motorCurrent+2,r26
+ 477 02f4 B093 0000 		sts motorCurrent+3,r27
+ 478 02f8 00C0      		rjmp .L6
+ 479               	.L19:
+ 216:currentADC.c  ****         } else {
+ 217:currentADC.c  ****             motorCurrent = -tempMotorCurrent;
+ 480               		.loc 1 217 0
+ 481 02fa F7FA      		bst r15,7
+ 482 02fc F094      		com r15
+ 483 02fe F7F8      		bld r15,7
+ 484 0300 F094      		com r15
+ 485 0302 C092 0000 		sts motorCurrent,r12
+ 486 0306 D092 0000 		sts motorCurrent+1,r13
+ 487 030a E092 0000 		sts motorCurrent+2,r14
+ 488 030e F092 0000 		sts motorCurrent+3,r15
+ 489               	.L6:
+ 490               	/* epilogue start */
+ 218:currentADC.c  ****         }
+ 219:currentADC.c  **** 
+ 220:currentADC.c  ****     }
+ 221:currentADC.c  **** 
+ 222:currentADC.c  ****     // if(CURRENT_ADC.INTFLAGS & ADC_CH2IF_bm)
+ 223:currentADC.c  ****     // {
+ 224:currentADC.c  ****     //     CURRENT_ADC.INTFLAGS = ADC_CH2IF_bm;
+ 225:currentADC.c  ****     //     tension[0] = CURRENT_ADC.CH2RES;
+ 226:currentADC.c  ****     // }
+ 227:currentADC.c  **** 
+ 228:currentADC.c  ****     // if(CURRENT_ADC.INTFLAGS & ADC_CH3IF_bm)
+ 229:currentADC.c  ****     // {
+ 230:currentADC.c  ****     //     CURRENT_ADC.INTFLAGS = ADC_CH3IF_bm;
+ 231:currentADC.c  ****     //     tension[1] = CURRENT_ADC.CH3RES;
+ 232:currentADC.c  ****     // }
+ 233:currentADC.c  **** }
+ 491               		.loc 1 233 0
+ 492 0312 DF91      		pop r29
+ 493 0314 CF91      		pop r28
+ 494 0316 1F91      		pop r17
+ 495 0318 0F91      		pop r16
+ 496 031a FF90      		pop r15
+ 497 031c EF90      		pop r14
+ 498 031e DF90      		pop r13
+ 499 0320 CF90      		pop r12
+ 500 0322 0895      		ret
+ 501               		.cfi_endproc
+ 502               	.LFE7:
+ 504               		.comm rawReading,2,1
+ 505               		.comm thermistorVoltage,4,1
+ 506               	.global	tension
+ 507               	.global	tension
+ 508               		.section .bss
+ 511               	tension:
+ 512 0000 0000 0000 		.skip 4,0
+ 513               	.global	statorTemperature
+ 514               		.data
+ 517               	statorTemperature:
+ 518 0000 00        		.byte	0
+ 519 0001 00        		.byte	0
+ 520 0002 C8        		.byte	-56
+ 521 0003 41        		.byte	65
+ 522               	.global	rawMotorCurrent
+ 523               	.global	rawMotorCurrent
+ 524               		.section .bss
+ 527               	rawMotorCurrent:
+ 528 0004 0000      		.skip 2,0
+ 529               	.global	motorCurrent
+ 530               	.global	motorCurrent
+ 533               	motorCurrent:
+ 534 0006 0000 0000 		.skip 4,0
+ 535               		.lcomm ADCCurrentCalibration,2
+ 536               		.text
+ 537               	.Letext0:
+ 538               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 539               		.file 3 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 540               		.file 4 "currentADC.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 currentADC.c
+     /tmp/cc4pd9Gy.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc4pd9Gy.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc4pd9Gy.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc4pd9Gy.s:5      *ABS*:00000034 __CCP__
+     /tmp/cc4pd9Gy.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/cc4pd9Gy.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/cc4pd9Gy.s:15     .text:00000000 configureADC
+                             .bss:0000000a ADCCurrentCalibration
+     /tmp/cc4pd9Gy.s:193    .text:000000dc readCurrentSignals
+                            *COM*:00000002 rawReading
+                            *COM*:00000004 thermistorVoltage
+     /tmp/cc4pd9Gy.s:517    .data:00000000 statorTemperature
+     /tmp/cc4pd9Gy.s:527    .bss:00000004 rawMotorCurrent
+     /tmp/cc4pd9Gy.s:533    .bss:00000006 motorCurrent
+     /tmp/cc4pd9Gy.s:511    .bss:00000000 tension
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__floatsisf
+__mulsf3
+round
+__fixsfsi
+Thermistor_VtoR
+Thermistor_RtoT
+__ltsf2
+__gtsf2
+getOldControlValue
+__floatunsisf
+__addsf3
+__subsf3
+__divsf3

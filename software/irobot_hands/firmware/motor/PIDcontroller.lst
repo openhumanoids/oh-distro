@@ -1,0 +1,1857 @@
+   1               		.file	"PIDcontroller.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  14               	PID_Clamp:
+  15               	.LFB2:
+  16               		.file 1 "PIDcontroller.c"
+   1:PIDcontroller.c **** /****************************************************
+   2:PIDcontroller.c **** 
+   3:PIDcontroller.c ****  // Author:            Paul Butler
+   4:PIDcontroller.c ****  // File Name:        C1482-SRC-FGRMCU-0-PIDcontroller.c
+   5:PIDcontroller.c ****  // Creation Date:    28 October, 2011
+   6:PIDcontroller.c ****  // Revision:        02
+   7:PIDcontroller.c ****  // Hardware:        ATxmega32A4
+   8:PIDcontroller.c ****  // Description:    Palm Motor Controller Micro BLDC PID speed/torque controller
+   9:PIDcontroller.c **** 
+  10:PIDcontroller.c **** ****************************************************/
+  11:PIDcontroller.c **** 
+  12:PIDcontroller.c **** /******************************************************************************
+  13:PIDcontroller.c ****     File Revision History:
+  14:PIDcontroller.c **** -------------------------------------------------------------------------------
+  15:PIDcontroller.c **** Revision    Date        Engineer    Description
+  16:PIDcontroller.c **** --------    --------    --------    -------------------------------------------
+  17:PIDcontroller.c **** 00            10/28/11    PDB            Initial Release
+  18:PIDcontroller.c **** 01            12/16/11    ZAC            Made PIDPreset more generic
+  19:PIDcontroller.c **** 02            01/16/12    ZAC            Made module outputs have variable clamps
+  20:PIDcontroller.c **** -------------------------------------------------------------------------------
+  21:PIDcontroller.c **** 
+  22:PIDcontroller.c **** ******************************************************************************/
+  23:PIDcontroller.c **** 
+  24:PIDcontroller.c **** #include "PIDcontroller.h"
+  25:PIDcontroller.c **** #include "velcounter.h"
+  26:PIDcontroller.c **** #include "currentADC.h"
+  27:PIDcontroller.c **** #include "thermalModel.h"
+  28:PIDcontroller.c **** 
+  29:PIDcontroller.c **** #include <avr/io.h>
+  30:PIDcontroller.c **** #include <avr/interrupt.h>
+  31:PIDcontroller.c **** #include <math.h>
+  32:PIDcontroller.c **** #include <stdlib.h>
+  33:PIDcontroller.c **** 
+  34:PIDcontroller.c **** //Public global variables
+  35:PIDcontroller.c **** float maximumOutputCommand = OUTPUT_HIGH_CLAMP;
+  36:PIDcontroller.c **** int16_t positionSetPoint = 0;
+  37:PIDcontroller.c **** PID_state_t PID_state;
+  38:PIDcontroller.c **** volatile uint8_t PID_runPID = 0;
+  39:PIDcontroller.c **** 
+  40:PIDcontroller.c **** //Private functions
+  41:PIDcontroller.c **** static void PID_Clamp(float *val, float low, float high);
+  42:PIDcontroller.c **** 
+  43:PIDcontroller.c **** /************************************************************************
+  44:PIDcontroller.c **** * PID_Clamp(*val,low,high)
+  45:PIDcontroller.c **** *
+  46:PIDcontroller.c **** * Clamps val to between low and high.
+  47:PIDcontroller.c **** ************************************************************************/
+  48:PIDcontroller.c **** static void PID_Clamp(float *val, float low, float high)
+  49:PIDcontroller.c **** {
+  17               		.loc 1 49 0
+  18               		.cfi_startproc
+  19               	.LVL0:
+  20 0000 8F92      		push r8
+  21               	.LCFI0:
+  22               		.cfi_def_cfa_offset 3
+  23               		.cfi_offset 8, -2
+  24 0002 9F92      		push r9
+  25               	.LCFI1:
+  26               		.cfi_def_cfa_offset 4
+  27               		.cfi_offset 9, -3
+  28 0004 AF92      		push r10
+  29               	.LCFI2:
+  30               		.cfi_def_cfa_offset 5
+  31               		.cfi_offset 10, -4
+  32 0006 BF92      		push r11
+  33               	.LCFI3:
+  34               		.cfi_def_cfa_offset 6
+  35               		.cfi_offset 11, -5
+  36 0008 CF92      		push r12
+  37               	.LCFI4:
+  38               		.cfi_def_cfa_offset 7
+  39               		.cfi_offset 12, -6
+  40 000a DF92      		push r13
+  41               	.LCFI5:
+  42               		.cfi_def_cfa_offset 8
+  43               		.cfi_offset 13, -7
+  44 000c EF92      		push r14
+  45               	.LCFI6:
+  46               		.cfi_def_cfa_offset 9
+  47               		.cfi_offset 14, -8
+  48 000e FF92      		push r15
+  49               	.LCFI7:
+  50               		.cfi_def_cfa_offset 10
+  51               		.cfi_offset 15, -9
+  52 0010 0F93      		push r16
+  53               	.LCFI8:
+  54               		.cfi_def_cfa_offset 11
+  55               		.cfi_offset 16, -10
+  56 0012 1F93      		push r17
+  57               	.LCFI9:
+  58               		.cfi_def_cfa_offset 12
+  59               		.cfi_offset 17, -11
+  60 0014 CF93      		push r28
+  61               	.LCFI10:
+  62               		.cfi_def_cfa_offset 13
+  63               		.cfi_offset 28, -12
+  64 0016 DF93      		push r29
+  65               	.LCFI11:
+  66               		.cfi_def_cfa_offset 14
+  67               		.cfi_offset 29, -13
+  68               	/* prologue: function */
+  69               	/* frame size = 0 */
+  70               	/* stack size = 12 */
+  71               	.L__stack_usage = 12
+  72 0018 EC01      		movw r28,r24
+  73 001a 6A01      		movw r12,r20
+  74 001c 7B01      		movw r14,r22
+  75 001e 4801      		movw r8,r16
+  76 0020 5901      		movw r10,r18
+  50:PIDcontroller.c ****     if(*val<low)    {*val = low;}
+  77               		.loc 1 50 0
+  78 0022 6881      		ld r22,Y
+  79 0024 7981      		ldd r23,Y+1
+  80 0026 8A81      		ldd r24,Y+2
+  81 0028 9B81      		ldd r25,Y+3
+  82 002a A701      		movw r20,r14
+  83 002c 9601      		movw r18,r12
+  84 002e 0E94 0000 		call __ltsf2
+  85               	.LVL1:
+  86 0032 87FF      		sbrs r24,7
+  87 0034 00C0      		rjmp .L2
+  88               	.LVL2:
+  89               		.loc 1 50 0 is_stmt 0 discriminator 1
+  90 0036 C882      		st Y,r12
+  91 0038 D982      		std Y+1,r13
+  92 003a EA82      		std Y+2,r14
+  93 003c FB82      		std Y+3,r15
+  94               	.L2:
+  51:PIDcontroller.c ****     if(*val>high)    {*val = high;}
+  95               		.loc 1 51 0 is_stmt 1
+  96 003e 6881      		ld r22,Y
+  97 0040 7981      		ldd r23,Y+1
+  98 0042 8A81      		ldd r24,Y+2
+  99 0044 9B81      		ldd r25,Y+3
+ 100 0046 A501      		movw r20,r10
+ 101 0048 9401      		movw r18,r8
+ 102 004a 0E94 0000 		call __gtsf2
+ 103 004e 1816      		cp __zero_reg__,r24
+ 104 0050 04F4      		brge .L4
+ 105               		.loc 1 51 0 is_stmt 0 discriminator 1
+ 106 0052 8882      		st Y,r8
+ 107 0054 9982      		std Y+1,r9
+ 108 0056 AA82      		std Y+2,r10
+ 109 0058 BB82      		std Y+3,r11
+ 110               	.L4:
+  52:PIDcontroller.c ****     if(low == high)    {*val = low;}
+ 111               		.loc 1 52 0 is_stmt 1
+ 112 005a C701      		movw r24,r14
+ 113 005c B601      		movw r22,r12
+ 114 005e A501      		movw r20,r10
+ 115 0060 9401      		movw r18,r8
+ 116 0062 0E94 0000 		call __eqsf2
+ 117 0066 8823      		tst r24
+ 118 0068 01F4      		brne .L1
+ 119               		.loc 1 52 0 is_stmt 0 discriminator 1
+ 120 006a C882      		st Y,r12
+ 121 006c D982      		std Y+1,r13
+ 122 006e EA82      		std Y+2,r14
+ 123 0070 FB82      		std Y+3,r15
+ 124               	.L1:
+ 125               	/* epilogue start */
+  53:PIDcontroller.c **** }
+ 126               		.loc 1 53 0 is_stmt 1
+ 127 0072 DF91      		pop r29
+ 128 0074 CF91      		pop r28
+ 129               	.LVL3:
+ 130 0076 1F91      		pop r17
+ 131 0078 0F91      		pop r16
+ 132 007a FF90      		pop r15
+ 133 007c EF90      		pop r14
+ 134 007e DF90      		pop r13
+ 135 0080 CF90      		pop r12
+ 136               	.LVL4:
+ 137 0082 BF90      		pop r11
+ 138 0084 AF90      		pop r10
+ 139 0086 9F90      		pop r9
+ 140 0088 8F90      		pop r8
+ 141               	.LVL5:
+ 142 008a 0895      		ret
+ 143               		.cfi_endproc
+ 144               	.LFE2:
+ 146               	.global	resetPIDController
+ 148               	resetPIDController:
+ 149               	.LFB3:
+  54:PIDcontroller.c **** 
+  55:PIDcontroller.c **** /************************************************************************
+  56:PIDcontroller.c **** * resetPIDController()
+  57:PIDcontroller.c **** *
+  58:PIDcontroller.c **** * Resets the chosen PID controller such that the device is effectively
+  59:PIDcontroller.c **** * disconnected.  This does not stop the motor.  It just stops the PID
+  60:PIDcontroller.c **** * controller.
+  61:PIDcontroller.c **** ************************************************************************/
+  62:PIDcontroller.c **** void resetPIDController(void)
+  63:PIDcontroller.c **** {
+ 150               		.loc 1 63 0
+ 151               		.cfi_startproc
+ 152               	/* prologue: function */
+ 153               	/* frame size = 0 */
+ 154               	/* stack size = 0 */
+ 155               	.L__stack_usage = 0
+  64:PIDcontroller.c ****     PID_state.integrationError = 0;
+ 156               		.loc 1 64 0
+ 157 008c 80E0      		ldi r24,lo8(0x0)
+ 158 008e 90E0      		ldi r25,hi8(0x0)
+ 159 0090 DC01      		movw r26,r24
+ 160 0092 8093 0000 		sts PID_state,r24
+ 161 0096 9093 0000 		sts PID_state+1,r25
+ 162 009a A093 0000 		sts PID_state+2,r26
+ 163 009e B093 0000 		sts PID_state+3,r27
+  65:PIDcontroller.c ****     PID_state.previousError = 0;
+ 164               		.loc 1 65 0
+ 165 00a2 8093 0000 		sts PID_state+4,r24
+ 166 00a6 9093 0000 		sts PID_state+4+1,r25
+ 167 00aa A093 0000 		sts PID_state+4+2,r26
+ 168 00ae B093 0000 		sts PID_state+4+3,r27
+ 169               	/* epilogue start */
+  66:PIDcontroller.c **** }
+ 170               		.loc 1 66 0
+ 171 00b2 0895      		ret
+ 172               		.cfi_endproc
+ 173               	.LFE3:
+ 175               	.global	positionControl
+ 177               	positionControl:
+ 178               	.LFB4:
+  67:PIDcontroller.c **** 
+  68:PIDcontroller.c **** // do position control on the hall effect sensor and return the targetRPM
+  69:PIDcontroller.c **** // suitable for feeding into the velocity control control scheme.
+  70:PIDcontroller.c **** uint16_t positionControl(int16_t setpoint)
+  71:PIDcontroller.c **** {
+ 179               		.loc 1 71 0
+ 180               		.cfi_startproc
+ 181               	.LVL6:
+ 182 00b4 CF92      		push r12
+ 183               	.LCFI12:
+ 184               		.cfi_def_cfa_offset 3
+ 185               		.cfi_offset 12, -2
+ 186 00b6 DF92      		push r13
+ 187               	.LCFI13:
+ 188               		.cfi_def_cfa_offset 4
+ 189               		.cfi_offset 13, -3
+ 190 00b8 EF92      		push r14
+ 191               	.LCFI14:
+ 192               		.cfi_def_cfa_offset 5
+ 193               		.cfi_offset 14, -4
+ 194 00ba FF92      		push r15
+ 195               	.LCFI15:
+ 196               		.cfi_def_cfa_offset 6
+ 197               		.cfi_offset 15, -5
+ 198 00bc 0F93      		push r16
+ 199               	.LCFI16:
+ 200               		.cfi_def_cfa_offset 7
+ 201               		.cfi_offset 16, -6
+ 202 00be 1F93      		push r17
+ 203               	.LCFI17:
+ 204               		.cfi_def_cfa_offset 8
+ 205               		.cfi_offset 17, -7
+ 206 00c0 CF93      		push r28
+ 207               	.LCFI18:
+ 208               		.cfi_def_cfa_offset 9
+ 209               		.cfi_offset 28, -8
+ 210 00c2 DF93      		push r29
+ 211               	.LCFI19:
+ 212               		.cfi_def_cfa_offset 10
+ 213               		.cfi_offset 29, -9
+ 214               	/* prologue: function */
+ 215               	/* frame size = 0 */
+ 216               	/* stack size = 8 */
+ 217               	.L__stack_usage = 8
+  72:PIDcontroller.c ****     // position control
+  73:PIDcontroller.c ****     int16_t perr = setpoint - encoder;
+ 218               		.loc 1 73 0
+ 219 00c4 2091 0000 		lds r18,encoder
+ 220 00c8 3091 0000 		lds r19,encoder+1
+ 221 00cc EC01      		movw r28,r24
+ 222 00ce C21B      		sub r28,r18
+ 223 00d0 D30B      		sbc r29,r19
+ 224               	.LVL7:
+  74:PIDcontroller.c ****     if (abs(perr) < Parameter[PARAMETER_POSITION_DEADBAND])
+ 225               		.loc 1 74 0
+ 226 00d2 BE01      		movw r22,r28
+ 227 00d4 D7FF      		sbrs r29,7
+ 228 00d6 00C0      		rjmp .L14
+ 229 00d8 6627      		clr r22
+ 230 00da 7727      		clr r23
+ 231 00dc 6C1B      		sub r22,r28
+ 232 00de 7D0B      		sbc r23,r29
+ 233               	.L14:
+ 234 00e0 8827      		clr r24
+ 235 00e2 77FD      		sbrc r23,7
+ 236 00e4 8095      		com r24
+ 237 00e6 982F      		mov r25,r24
+ 238 00e8 0E94 0000 		call __floatsisf
+ 239               	.LVL8:
+ 240 00ec 2091 0000 		lds r18,Parameter+88
+ 241 00f0 3091 0000 		lds r19,Parameter+88+1
+ 242 00f4 4091 0000 		lds r20,Parameter+88+2
+ 243 00f8 5091 0000 		lds r21,Parameter+88+3
+ 244 00fc 0E94 0000 		call __ltsf2
+ 245 0100 87FF      		sbrs r24,7
+ 246 0102 00C0      		rjmp .L13
+  75:PIDcontroller.c ****         perr = 0;
+ 247               		.loc 1 75 0
+ 248 0104 C0E0      		ldi r28,lo8(0)
+ 249 0106 D0E0      		ldi r29,hi8(0)
+ 250               	.LVL9:
+ 251               	.L13:
+  76:PIDcontroller.c ****     
+  77:PIDcontroller.c ****     float targetRPM = perr * Parameter[PARAMETER_POSITION_KP];
+ 252               		.loc 1 77 0
+ 253 0108 BE01      		movw r22,r28
+ 254 010a 8827      		clr r24
+ 255 010c 77FD      		sbrc r23,7
+ 256 010e 8095      		com r24
+ 257 0110 982F      		mov r25,r24
+ 258 0112 0E94 0000 		call __floatsisf
+ 259 0116 2091 0000 		lds r18,Parameter+84
+ 260 011a 3091 0000 		lds r19,Parameter+84+1
+ 261 011e 4091 0000 		lds r20,Parameter+84+2
+ 262 0122 5091 0000 		lds r21,Parameter+84+3
+ 263 0126 0E94 0000 		call __mulsf3
+ 264 012a EB01      		movw r28,r22
+ 265               	.LVL10:
+ 266 012c 182F      		mov r17,r24
+ 267 012e 092F      		mov r16,r25
+ 268               	.LVL11:
+  78:PIDcontroller.c ****     
+  79:PIDcontroller.c ****     // cap between (-MAX, -MIN) and (MIN, MAX).
+  80:PIDcontroller.c ****     if (targetRPM > Parameter[PARAMETER_MAXIMUM_RPM])
+ 269               		.loc 1 80 0
+ 270 0130 C090 0000 		lds r12,Parameter+72
+ 271 0134 D090 0000 		lds r13,Parameter+72+1
+ 272 0138 E090 0000 		lds r14,Parameter+72+2
+ 273 013c F090 0000 		lds r15,Parameter+72+3
+ 274 0140 9801      		movw r18,r16
+ 275 0142 862F      		mov r24,r22
+ 276               	.LVL12:
+ 277 0144 9D2F      		mov r25,r29
+ 278               	.LVL13:
+ 279 0146 A32F      		mov r26,r19
+ 280 0148 B22F      		mov r27,r18
+ 281 014a BC01      		movw r22,r24
+ 282 014c CD01      		movw r24,r26
+ 283               	.LVL14:
+ 284 014e A701      		movw r20,r14
+ 285 0150 9601      		movw r18,r12
+ 286 0152 0E94 0000 		call __gtsf2
+ 287               	.LVL15:
+ 288 0156 1816      		cp __zero_reg__,r24
+ 289 0158 04F4      		brge .L15
+  81:PIDcontroller.c ****         targetRPM = Parameter[PARAMETER_MAXIMUM_RPM];
+ 290               		.loc 1 81 0
+ 291 015a E601      		movw r28,r12
+ 292 015c 1E2D      		mov r17,r14
+ 293 015e 0F2D      		mov r16,r15
+ 294               	.L15:
+ 295               	.LVL16:
+  82:PIDcontroller.c ****     if (targetRPM < -Parameter[PARAMETER_MAXIMUM_RPM])
+ 296               		.loc 1 82 0
+ 297 0160 F7FA      		bst r15,7
+ 298 0162 F094      		com r15
+ 299 0164 F7F8      		bld r15,7
+ 300 0166 F094      		com r15
+ 301 0168 9801      		movw r18,r16
+ 302 016a 8C2F      		mov r24,r28
+ 303 016c 9D2F      		mov r25,r29
+ 304 016e A32F      		mov r26,r19
+ 305 0170 B02F      		mov r27,r16
+ 306 0172 BC01      		movw r22,r24
+ 307 0174 CD01      		movw r24,r26
+ 308 0176 A701      		movw r20,r14
+ 309 0178 9601      		movw r18,r12
+ 310 017a 0E94 0000 		call __ltsf2
+ 311 017e 87FD      		sbrc r24,7
+ 312 0180 00C0      		rjmp .L16
+ 313 0182 C801      		movw r24,r16
+ 314 0184 CC2E      		mov r12,r28
+ 315 0186 DD2E      		mov r13,r29
+ 316 0188 E92E      		mov r14,r25
+ 317 018a F02E      		mov r15,r16
+ 318               	.L16:
+ 319               	.LVL17:
+  83:PIDcontroller.c ****         targetRPM = -Parameter[PARAMETER_MAXIMUM_RPM];
+  84:PIDcontroller.c ****     if (targetRPM > 0 && targetRPM < MINIMUM_VELOCITY_COMMAND)
+ 320               		.loc 1 84 0
+ 321 018c C701      		movw r24,r14
+ 322 018e B601      		movw r22,r12
+ 323 0190 20E0      		ldi r18,lo8(0x0)
+ 324 0192 30E0      		ldi r19,hi8(0x0)
+ 325 0194 A901      		movw r20,r18
+ 326 0196 0E94 0000 		call __gtsf2
+ 327 019a 1816      		cp __zero_reg__,r24
+ 328 019c 04F4      		brge .L17
+ 329               		.loc 1 84 0 is_stmt 0 discriminator 1
+ 330 019e C701      		movw r24,r14
+ 331 01a0 B601      		movw r22,r12
+ 332 01a2 20E0      		ldi r18,lo8(0x43480000)
+ 333 01a4 30E0      		ldi r19,hi8(0x43480000)
+ 334 01a6 48E4      		ldi r20,hlo8(0x43480000)
+ 335 01a8 53E4      		ldi r21,hhi8(0x43480000)
+ 336 01aa 0E94 0000 		call __ltsf2
+ 337 01ae 87FF      		sbrs r24,7
+ 338 01b0 00C0      		rjmp .L17
+  85:PIDcontroller.c ****         targetRPM = MINIMUM_VELOCITY_COMMAND;
+ 339               		.loc 1 85 0 is_stmt 1
+ 340 01b2 0F2E      		mov __tmp_reg__,r31
+ 341 01b4 F0E0      		ldi r31,lo8(0x43480000)
+ 342 01b6 CF2E      		mov r12,r31
+ 343 01b8 F0E0      		ldi r31,hi8(0x43480000)
+ 344 01ba DF2E      		mov r13,r31
+ 345 01bc F8E4      		ldi r31,hlo8(0x43480000)
+ 346 01be EF2E      		mov r14,r31
+ 347 01c0 F3E4      		ldi r31,hhi8(0x43480000)
+ 348 01c2 FF2E      		mov r15,r31
+ 349 01c4 F02D      		mov r31,__tmp_reg__
+ 350               	.LVL18:
+ 351               	.L17:
+  86:PIDcontroller.c ****     if (targetRPM < 0 && targetRPM > -MINIMUM_VELOCITY_COMMAND)
+ 352               		.loc 1 86 0
+ 353 01c6 C701      		movw r24,r14
+ 354 01c8 B601      		movw r22,r12
+ 355 01ca 20E0      		ldi r18,lo8(0x0)
+ 356 01cc 30E0      		ldi r19,hi8(0x0)
+ 357 01ce A901      		movw r20,r18
+ 358 01d0 0E94 0000 		call __ltsf2
+ 359 01d4 87FF      		sbrs r24,7
+ 360 01d6 00C0      		rjmp .L19
+ 361               		.loc 1 86 0 is_stmt 0 discriminator 1
+ 362 01d8 C701      		movw r24,r14
+ 363 01da B601      		movw r22,r12
+ 364 01dc 20E0      		ldi r18,lo8(0xc3480000)
+ 365 01de 30E0      		ldi r19,hi8(0xc3480000)
+ 366 01e0 48E4      		ldi r20,hlo8(0xc3480000)
+ 367 01e2 53EC      		ldi r21,hhi8(0xc3480000)
+ 368 01e4 0E94 0000 		call __gtsf2
+ 369 01e8 1816      		cp __zero_reg__,r24
+ 370 01ea 04F4      		brge .L19
+  87:PIDcontroller.c ****         targetRPM = -MINIMUM_VELOCITY_COMMAND;
+ 371               		.loc 1 87 0 is_stmt 1
+ 372 01ec 0F2E      		mov __tmp_reg__,r31
+ 373 01ee F0E0      		ldi r31,lo8(0xc3480000)
+ 374 01f0 CF2E      		mov r12,r31
+ 375 01f2 F0E0      		ldi r31,hi8(0xc3480000)
+ 376 01f4 DF2E      		mov r13,r31
+ 377 01f6 F8E4      		ldi r31,hlo8(0xc3480000)
+ 378 01f8 EF2E      		mov r14,r31
+ 379 01fa F3EC      		ldi r31,hhi8(0xc3480000)
+ 380 01fc FF2E      		mov r15,r31
+ 381 01fe F02D      		mov r31,__tmp_reg__
+ 382               	.LVL19:
+ 383               	.L19:
+  88:PIDcontroller.c ****     
+  89:PIDcontroller.c ****     // switch direction if required
+  90:PIDcontroller.c ****     DIRECTION_MODE_t newDirection = getMotorDirection();
+ 384               		.loc 1 90 0
+ 385 0200 0E94 0000 		call getMotorDirection
+  91:PIDcontroller.c ****     if (targetRPM > 0)
+ 386               		.loc 1 91 0
+ 387 0204 C701      		movw r24,r14
+ 388 0206 B601      		movw r22,r12
+ 389 0208 20E0      		ldi r18,lo8(0x0)
+ 390 020a 30E0      		ldi r19,hi8(0x0)
+ 391 020c A901      		movw r20,r18
+ 392 020e 0E94 0000 		call __gtsf2
+ 393 0212 1816      		cp __zero_reg__,r24
+ 394 0214 04F0      		brlt .L28
+  92:PIDcontroller.c ****         newDirection = DIRECTION_FORWARD;
+  93:PIDcontroller.c ****     else if (targetRPM < 0)
+ 395               		.loc 1 93 0
+ 396 0216 C701      		movw r24,r14
+ 397 0218 B601      		movw r22,r12
+ 398 021a 20E0      		ldi r18,lo8(0x0)
+ 399 021c 30E0      		ldi r19,hi8(0x0)
+ 400 021e A901      		movw r20,r18
+ 401 0220 0E94 0000 		call __ltsf2
+  94:PIDcontroller.c ****         newDirection = DIRECTION_REVERSE;
+  95:PIDcontroller.c ****     else
+  96:PIDcontroller.c ****         newDirection = DIRECTION_STOP;
+ 402               		.loc 1 96 0
+ 403 0224 881F      		rol r24
+ 404 0226 8827      		clr r24
+ 405 0228 881F      		rol r24
+ 406 022a 880F      		lsl r24
+ 407 022c 00C0      		rjmp .L21
+ 408               	.L28:
+  92:PIDcontroller.c ****         newDirection = DIRECTION_FORWARD;
+ 409               		.loc 1 92 0
+ 410 022e 81E0      		ldi r24,lo8(1)
+ 411               	.L21:
+ 412               	.LVL20:
+  97:PIDcontroller.c ****     
+  98:PIDcontroller.c ****     updateMotorDirection(newDirection);
+ 413               		.loc 1 98 0
+ 414 0230 0E94 0000 		call updateMotorDirection
+ 415               	.LVL21:
+  99:PIDcontroller.c ****     
+ 100:PIDcontroller.c ****     return abs(targetRPM);
+ 416               		.loc 1 100 0
+ 417 0234 C701      		movw r24,r14
+ 418 0236 B601      		movw r22,r12
+ 419 0238 0E94 0000 		call __fixsfsi
+ 420 023c CB01      		movw r24,r22
+ 421 023e 77FF      		sbrs r23,7
+ 422 0240 00C0      		rjmp .L23
+ 423 0242 9095      		com r25
+ 424 0244 8195      		neg r24
+ 425 0246 9F4F      		sbci r25,lo8(-1)
+ 426               	.L23:
+ 427               	/* epilogue start */
+ 101:PIDcontroller.c **** }
+ 428               		.loc 1 101 0
+ 429 0248 DF91      		pop r29
+ 430 024a CF91      		pop r28
+ 431 024c 1F91      		pop r17
+ 432 024e 0F91      		pop r16
+ 433 0250 FF90      		pop r15
+ 434 0252 EF90      		pop r14
+ 435 0254 DF90      		pop r13
+ 436 0256 CF90      		pop r12
+ 437               	.LVL22:
+ 438 0258 0895      		ret
+ 439               		.cfi_endproc
+ 440               	.LFE4:
+ 442               	.global	PIDPreset
+ 444               	PIDPreset:
+ 445               	.LFB5:
+ 102:PIDcontroller.c **** 
+ 103:PIDcontroller.c **** /************************************************************************
+ 104:PIDcontroller.c **** * PIDPreset( newScheme)
+ 105:PIDcontroller.c **** *
+ 106:PIDcontroller.c **** * Presets the PID controller so that it can smoothly transition to a new
+ 107:PIDcontroller.c **** * control mode.  This is done by initializing the integration error to
+ 108:PIDcontroller.c **** * a value that would yield the current control value being delivered
+ 109:PIDcontroller.c **** * to the motor.
+ 110:PIDcontroller.c **** *
+ 111:PIDcontroller.c **** * This function assumes that the PID controller's new setpoint is already
+ 112:PIDcontroller.c **** * set for Velocity and Current control.  Since the setpoint for Power
+ 113:PIDcontroller.c **** * is created dynamically, this function does not care in that case.  The
+ 114:PIDcontroller.c **** * PID controller does not run in Voltage mode, so that is also ignored.
+ 115:PIDcontroller.c **** ************************************************************************/
+ 116:PIDcontroller.c **** void PIDPreset(PID_SCHEME_t newScheme)
+ 117:PIDcontroller.c **** {
+ 446               		.loc 1 117 0
+ 447               		.cfi_startproc
+ 448               	.LVL23:
+ 449 025a 7F92      		push r7
+ 450               	.LCFI20:
+ 451               		.cfi_def_cfa_offset 3
+ 452               		.cfi_offset 7, -2
+ 453 025c 8F92      		push r8
+ 454               	.LCFI21:
+ 455               		.cfi_def_cfa_offset 4
+ 456               		.cfi_offset 8, -3
+ 457 025e 9F92      		push r9
+ 458               	.LCFI22:
+ 459               		.cfi_def_cfa_offset 5
+ 460               		.cfi_offset 9, -4
+ 461 0260 AF92      		push r10
+ 462               	.LCFI23:
+ 463               		.cfi_def_cfa_offset 6
+ 464               		.cfi_offset 10, -5
+ 465 0262 BF92      		push r11
+ 466               	.LCFI24:
+ 467               		.cfi_def_cfa_offset 7
+ 468               		.cfi_offset 11, -6
+ 469 0264 CF92      		push r12
+ 470               	.LCFI25:
+ 471               		.cfi_def_cfa_offset 8
+ 472               		.cfi_offset 12, -7
+ 473 0266 DF92      		push r13
+ 474               	.LCFI26:
+ 475               		.cfi_def_cfa_offset 9
+ 476               		.cfi_offset 13, -8
+ 477 0268 EF92      		push r14
+ 478               	.LCFI27:
+ 479               		.cfi_def_cfa_offset 10
+ 480               		.cfi_offset 14, -9
+ 481 026a FF92      		push r15
+ 482               	.LCFI28:
+ 483               		.cfi_def_cfa_offset 11
+ 484               		.cfi_offset 15, -10
+ 485 026c 0F93      		push r16
+ 486               	.LCFI29:
+ 487               		.cfi_def_cfa_offset 12
+ 488               		.cfi_offset 16, -11
+ 489 026e 1F93      		push r17
+ 490               	.LCFI30:
+ 491               		.cfi_def_cfa_offset 13
+ 492               		.cfi_offset 17, -12
+ 493 0270 CF93      		push r28
+ 494               	.LCFI31:
+ 495               		.cfi_def_cfa_offset 14
+ 496               		.cfi_offset 28, -13
+ 497 0272 DF93      		push r29
+ 498               	.LCFI32:
+ 499               		.cfi_def_cfa_offset 15
+ 500               		.cfi_offset 29, -14
+ 501 0274 00D0      		rcall .
+ 502 0276 00D0      		rcall .
+ 503               	.LCFI33:
+ 504               		.cfi_def_cfa_offset 19
+ 505 0278 CDB7      		in r28,__SP_L__
+ 506 027a DEB7      		in r29,__SP_H__
+ 507               	.LCFI34:
+ 508               		.cfi_def_cfa_register 28
+ 509               	/* prologue: function */
+ 510               	/* frame size = 4 */
+ 511               	/* stack size = 17 */
+ 512               	.L__stack_usage = 17
+ 118:PIDcontroller.c ****     uint8_t oldValue;
+ 119:PIDcontroller.c **** 
+ 120:PIDcontroller.c ****     //float desiredVoltage;
+ 121:PIDcontroller.c ****     float inputSignal;
+ 122:PIDcontroller.c ****     float proportionalGain;
+ 123:PIDcontroller.c ****     float currentError;
+ 124:PIDcontroller.c ****     float powerLimit;
+ 125:PIDcontroller.c ****     float residualError;
+ 126:PIDcontroller.c ****     //float PID_KD; // BA: there seems to be no D control, so commenting this out to remove compile
+ 127:PIDcontroller.c ****     float PID_KI;
+ 128:PIDcontroller.c ****     float PID_KP;
+ 129:PIDcontroller.c **** 
+ 130:PIDcontroller.c ****     //Need to compute the proper integral error such that in power control mode the computed contro
+ 131:PIDcontroller.c ****     switch(newScheme)
+ 513               		.loc 1 131 0
+ 514 027c 8230      		cpi r24,lo8(2)
+ 515 027e 01F0      		breq .L36
+ 516 0280 8330      		cpi r24,lo8(3)
+ 517 0282 00F4      		brsh .L39
+ 518 0284 8130      		cpi r24,lo8(1)
+ 519 0286 01F0      		breq .+2
+ 520 0288 00C0      		rjmp .L33
+ 521 028a 00C0      		rjmp .L42
+ 522               	.L39:
+ 523 028c 8330      		cpi r24,lo8(3)
+ 524 028e 01F4      		brne .+2
+ 525 0290 00C0      		rjmp .L37
+ 526 0292 8430      		cpi r24,lo8(4)
+ 527 0294 01F0      		breq .+2
+ 528 0296 00C0      		rjmp .L33
+ 529 0298 00C0      		rjmp .L43
+ 530               	.L42:
+ 132:PIDcontroller.c ****     {
+ 133:PIDcontroller.c ****         case CONTROL_SCHEME_VELOCITY:
+ 134:PIDcontroller.c ****             //Want to drive a voltage consistent with the expected setpoint under no-load condition
+ 135:PIDcontroller.c ****             //Use the motor speed constant to predict a desired voltage.
+ 136:PIDcontroller.c ****             //desiredVoltage = (float) PID_state.setpoint / speedConstant[0];
+ 137:PIDcontroller.c ****             //PID_Clamp(&desiredVoltage,0.0,48.0);
+ 138:PIDcontroller.c ****             //oldValue = floor(desiredVoltage * 255.0 / 48.0);
+ 139:PIDcontroller.c **** 
+ 140:PIDcontroller.c ****             //For now, just drive the oldValue as before.  We can experiment with the new system as
+ 141:PIDcontroller.c ****             oldValue = getOldControlValue();
+ 531               		.loc 1 141 0
+ 532 029a 0E94 0000 		call getOldControlValue
+ 533               	.LVL24:
+ 534 029e 782E      		mov r7,r24
+ 535               	.LVL25:
+ 142:PIDcontroller.c ****             inputSignal = averageRPM;
+ 143:PIDcontroller.c ****             currentError = PID_state.setpoint - inputSignal;
+ 536               		.loc 1 143 0
+ 537 02a0 6091 0000 		lds r22,PID_state+9
+ 538 02a4 7091 0000 		lds r23,PID_state+9+1
+ 539 02a8 80E0      		ldi r24,lo8(0)
+ 540 02aa 90E0      		ldi r25,hi8(0)
+ 541               	.LVL26:
+ 542 02ac 0E94 0000 		call __floatunsisf
+ 543               	.LVL27:
+ 544 02b0 6B01      		movw r12,r22
+ 545 02b2 7C01      		movw r14,r24
+ 142:PIDcontroller.c ****             inputSignal = averageRPM;
+ 546               		.loc 1 142 0
+ 547 02b4 6091 0000 		lds r22,averageRPM
+ 548 02b8 7091 0000 		lds r23,averageRPM+1
+ 549               	.LVL28:
+ 550 02bc 80E0      		ldi r24,lo8(0)
+ 551 02be 90E0      		ldi r25,hi8(0)
+ 552 02c0 0E94 0000 		call __floatunsisf
+ 553               	.LVL29:
+ 554 02c4 9B01      		movw r18,r22
+ 555 02c6 AC01      		movw r20,r24
+ 556               		.loc 1 143 0
+ 557 02c8 C701      		movw r24,r14
+ 558 02ca B601      		movw r22,r12
+ 559 02cc 00C0      		rjmp .L41
+ 560               	.LVL30:
+ 561               	.L36:
+ 144:PIDcontroller.c ****             //PID_KD = Parameter[PARAMETER_VELOCITY_KD];
+ 145:PIDcontroller.c ****             PID_KI = Parameter[PARAMETER_VELOCITY_KI];
+ 146:PIDcontroller.c ****             PID_KP = Parameter[PARAMETER_VELOCITY_KP];
+ 147:PIDcontroller.c ****             break;
+ 148:PIDcontroller.c ****         case CONTROL_SCHEME_CURRENT:
+ 149:PIDcontroller.c ****             //Read a current
+ 150:PIDcontroller.c ****             //In Current control mode, it would be nice to operate on raw ADC values for less float
+ 151:PIDcontroller.c ****             //For now. just operate in terms of milliamperes
+ 152:PIDcontroller.c ****             oldValue = getOldControlValue();
+ 562               		.loc 1 152 0
+ 563 02ce 0E94 0000 		call getOldControlValue
+ 564               	.LVL31:
+ 565 02d2 782E      		mov r7,r24
+ 566               	.LVL32:
+ 153:PIDcontroller.c ****             inputSignal = motorCurrent * 1000;
+ 154:PIDcontroller.c ****             currentError = PID_state.setpoint - inputSignal;
+ 567               		.loc 1 154 0
+ 568 02d4 6091 0000 		lds r22,PID_state+9
+ 569 02d8 7091 0000 		lds r23,PID_state+9+1
+ 570 02dc 80E0      		ldi r24,lo8(0)
+ 571 02de 90E0      		ldi r25,hi8(0)
+ 572               	.LVL33:
+ 573 02e0 0E94 0000 		call __floatunsisf
+ 574               	.LVL34:
+ 575 02e4 6B01      		movw r12,r22
+ 576 02e6 7C01      		movw r14,r24
+ 153:PIDcontroller.c ****             inputSignal = motorCurrent * 1000;
+ 577               		.loc 1 153 0
+ 578 02e8 6091 0000 		lds r22,motorCurrent
+ 579 02ec 7091 0000 		lds r23,motorCurrent+1
+ 580 02f0 8091 0000 		lds r24,motorCurrent+2
+ 581 02f4 9091 0000 		lds r25,motorCurrent+3
+ 582               	.LVL35:
+ 583 02f8 20E0      		ldi r18,lo8(0x447a0000)
+ 584 02fa 30E0      		ldi r19,hi8(0x447a0000)
+ 585 02fc 4AE7      		ldi r20,hlo8(0x447a0000)
+ 586 02fe 54E4      		ldi r21,hhi8(0x447a0000)
+ 587 0300 0E94 0000 		call __mulsf3
+ 588               	.LVL36:
+ 589 0304 9B01      		movw r18,r22
+ 590 0306 AC01      		movw r20,r24
+ 591               		.loc 1 154 0
+ 592 0308 C701      		movw r24,r14
+ 593 030a B601      		movw r22,r12
+ 594 030c 0E94 0000 		call __subsf3
+ 595               	.LVL37:
+ 155:PIDcontroller.c ****             //PID_KD = Parameter[PARAMETER_TORQUE_KD];
+ 156:PIDcontroller.c ****             PID_KI = Parameter[PARAMETER_TORQUE_KI];
+ 596               		.loc 1 156 0
+ 597 0310 C090 0000 		lds r12,Parameter+4
+ 598 0314 D090 0000 		lds r13,Parameter+4+1
+ 599 0318 E090 0000 		lds r14,Parameter+4+2
+ 600 031c F090 0000 		lds r15,Parameter+4+3
+ 601               	.LVL38:
+ 157:PIDcontroller.c ****             PID_KP = Parameter[PARAMETER_TORQUE_KP];
+ 602               		.loc 1 157 0
+ 603 0320 0091 0000 		lds r16,Parameter
+ 604 0324 1091 0000 		lds r17,Parameter+1
+ 605 0328 2091 0000 		lds r18,Parameter+2
+ 606 032c 3091 0000 		lds r19,Parameter+3
+ 607               	.LVL39:
+ 158:PIDcontroller.c ****             break;
+ 608               		.loc 1 158 0
+ 609 0330 00C0      		rjmp .L40
+ 610               	.LVL40:
+ 611               	.L37:
+ 159:PIDcontroller.c ****         case CONTROL_SCHEME_POWER:
+ 160:PIDcontroller.c ****             oldValue = getOldControlValue();
+ 612               		.loc 1 160 0
+ 613 0332 0E94 0000 		call getOldControlValue
+ 614               	.LVL41:
+ 615 0336 782E      		mov r7,r24
+ 616               	.LVL42:
+ 161:PIDcontroller.c ****             powerLimit = getPowerSetpoint();
+ 617               		.loc 1 161 0
+ 618 0338 0E94 0000 		call getPowerSetpoint
+ 619               	.LVL43:
+ 620 033c 4B01      		movw r8,r22
+ 621 033e 5C01      		movw r10,r24
+ 622               	.LVL44:
+ 162:PIDcontroller.c ****             inputSignal = getWindingResistance() * pow(motorCurrent,2);
+ 623               		.loc 1 162 0
+ 624 0340 0E94 0000 		call getWindingResistance
+ 625               	.LVL45:
+ 626 0344 6B01      		movw r12,r22
+ 627 0346 7C01      		movw r14,r24
+ 628 0348 2091 0000 		lds r18,motorCurrent
+ 629 034c 3091 0000 		lds r19,motorCurrent+1
+ 630 0350 4091 0000 		lds r20,motorCurrent+2
+ 631 0354 5091 0000 		lds r21,motorCurrent+3
+ 632 0358 CA01      		movw r24,r20
+ 633 035a B901      		movw r22,r18
+ 634 035c 0E94 0000 		call __mulsf3
+ 635 0360 B62F      		mov r27,r22
+ 636 0362 A72F      		mov r26,r23
+ 637 0364 382F      		mov r19,r24
+ 638 0366 292F      		mov r18,r25
+ 639               	.LVL46:
+ 640 0368 C701      		movw r24,r14
+ 641 036a B601      		movw r22,r12
+ 642               	.LVL47:
+ 643 036c FD01      		movw r30,r26
+ 644 036e A901      		movw r20,r18
+ 645 0370 0F2F      		mov r16,r31
+ 646 0372 1E2F      		mov r17,r30
+ 647 0374 252F      		mov r18,r21
+ 648 0376 342F      		mov r19,r20
+ 649 0378 A901      		movw r20,r18
+ 650 037a 9801      		movw r18,r16
+ 651 037c 0E94 0000 		call __mulsf3
+ 652               	.LVL48:
+ 653 0380 9B01      		movw r18,r22
+ 654 0382 AC01      		movw r20,r24
+ 163:PIDcontroller.c ****             currentError = powerLimit - inputSignal;
+ 655               		.loc 1 163 0
+ 656 0384 C501      		movw r24,r10
+ 657 0386 B401      		movw r22,r8
+ 658 0388 0E94 0000 		call __subsf3
+ 659               	.LVL49:
+ 164:PIDcontroller.c ****             //PID_KD = Parameter[PARAMETER_POWER_KD];
+ 165:PIDcontroller.c ****             PID_KI = Parameter[PARAMETER_POWER_KI];
+ 660               		.loc 1 165 0
+ 661 038c C090 0000 		lds r12,Parameter+28
+ 662 0390 D090 0000 		lds r13,Parameter+28+1
+ 663 0394 E090 0000 		lds r14,Parameter+28+2
+ 664 0398 F090 0000 		lds r15,Parameter+28+3
+ 665               	.LVL50:
+ 166:PIDcontroller.c ****             PID_KP = Parameter[PARAMETER_POWER_KP];
+ 666               		.loc 1 166 0
+ 667 039c 0091 0000 		lds r16,Parameter+24
+ 668 03a0 1091 0000 		lds r17,Parameter+24+1
+ 669 03a4 2091 0000 		lds r18,Parameter+24+2
+ 670 03a8 3091 0000 		lds r19,Parameter+24+3
+ 671               	.LVL51:
+ 167:PIDcontroller.c ****             break;
+ 672               		.loc 1 167 0
+ 673 03ac 00C0      		rjmp .L40
+ 674               	.LVL52:
+ 675               	.L43:
+ 168:PIDcontroller.c ****         case CONTROL_SCHEME_POSITION:
+ 169:PIDcontroller.c ****         {
+ 170:PIDcontroller.c ****             oldValue = getOldControlValue();
+ 676               		.loc 1 170 0
+ 677 03ae 0E94 0000 		call getOldControlValue
+ 678               	.LVL53:
+ 679 03b2 782E      		mov r7,r24
+ 680               	.LVL54:
+ 171:PIDcontroller.c ****             inputSignal = averageRPM;
+ 681               		.loc 1 171 0
+ 682 03b4 6091 0000 		lds r22,averageRPM
+ 683 03b8 7091 0000 		lds r23,averageRPM+1
+ 684 03bc 80E0      		ldi r24,lo8(0)
+ 685 03be 90E0      		ldi r25,hi8(0)
+ 686               	.LVL55:
+ 687 03c0 0E94 0000 		call __floatunsisf
+ 688 03c4 162F      		mov r17,r22
+ 689 03c6 872E      		mov r8,r23
+ 690 03c8 C82E      		mov r12,r24
+ 691 03ca 092F      		mov r16,r25
+ 692               	.LVL56:
+ 172:PIDcontroller.c ****             PID_state.setpoint = positionControl(positionSetPoint);
+ 693               		.loc 1 172 0
+ 694 03cc 8091 0000 		lds r24,positionSetPoint
+ 695 03d0 9091 0000 		lds r25,positionSetPoint+1
+ 696               	.LVL57:
+ 697 03d4 0E94 0000 		call positionControl
+ 698               	.LVL58:
+ 699 03d8 8093 0000 		sts PID_state+9,r24
+ 700 03dc 9093 0000 		sts PID_state+9+1,r25
+ 173:PIDcontroller.c ****             currentError = PID_state.setpoint - inputSignal;
+ 701               		.loc 1 173 0
+ 702 03e0 BC01      		movw r22,r24
+ 703 03e2 80E0      		ldi r24,lo8(0)
+ 704 03e4 90E0      		ldi r25,hi8(0)
+ 705 03e6 0E94 0000 		call __floatunsisf
+ 706 03ea AB01      		movw r20,r22
+ 707 03ec BC01      		movw r22,r24
+ 708 03ee CB01      		movw r24,r22
+ 709 03f0 BA01      		movw r22,r20
+ 710 03f2 402F      		mov r20,r16
+ 711 03f4 012F      		mov r16,r17
+ 712               	.LVL59:
+ 713 03f6 182D      		mov r17,r8
+ 714               	.LVL60:
+ 715 03f8 2C2D      		mov r18,r12
+ 716 03fa 342F      		mov r19,r20
+ 717 03fc A901      		movw r20,r18
+ 718 03fe 9801      		movw r18,r16
+ 719               	.LVL61:
+ 720               	.L41:
+ 721 0400 0E94 0000 		call __subsf3
+ 722               	.LVL62:
+ 174:PIDcontroller.c ****             //PID_KD = Parameter[PARAMETER_VELOCITY_KD];
+ 175:PIDcontroller.c ****             PID_KI = Parameter[PARAMETER_VELOCITY_KI];
+ 723               		.loc 1 175 0
+ 724 0404 C090 0000 		lds r12,Parameter+16
+ 725 0408 D090 0000 		lds r13,Parameter+16+1
+ 726 040c E090 0000 		lds r14,Parameter+16+2
+ 727 0410 F090 0000 		lds r15,Parameter+16+3
+ 728               	.LVL63:
+ 176:PIDcontroller.c ****             PID_KP = Parameter[PARAMETER_VELOCITY_KP];
+ 729               		.loc 1 176 0
+ 730 0414 0091 0000 		lds r16,Parameter+12
+ 731 0418 1091 0000 		lds r17,Parameter+12+1
+ 732 041c 2091 0000 		lds r18,Parameter+12+2
+ 733 0420 3091 0000 		lds r19,Parameter+12+3
+ 734               	.LVL64:
+ 735               	.L40:
+ 177:PIDcontroller.c ****             break;
+ 178:PIDcontroller.c ****         }
+ 179:PIDcontroller.c ****         case CONTROL_SCHEME_VOLTAGE:
+ 180:PIDcontroller.c ****         default:
+ 181:PIDcontroller.c ****             //Invalid selection.  Do nothing
+ 182:PIDcontroller.c ****             return;
+ 183:PIDcontroller.c ****         }
+ 184:PIDcontroller.c **** 
+ 185:PIDcontroller.c ****     //Now the error has been computed for the destination control mode and the proper PID constants
+ 186:PIDcontroller.c **** 
+ 187:PIDcontroller.c ****     //the control signal is just Kp * powerError + Ki * integrationError
+ 188:PIDcontroller.c ****     proportionalGain = currentError * PID_KP;
+ 736               		.loc 1 188 0
+ 737 0424 582F      		mov r21,r24
+ 738 0426 492F      		mov r20,r25
+ 739 0428 862F      		mov r24,r22
+ 740               	.LVL65:
+ 741 042a 972F      		mov r25,r23
+ 742               	.LVL66:
+ 743 042c A52F      		mov r26,r21
+ 744 042e B42F      		mov r27,r20
+ 745 0430 BC01      		movw r22,r24
+ 746 0432 CD01      		movw r24,r26
+ 747               	.LVL67:
+ 748 0434 A901      		movw r20,r18
+ 749 0436 9801      		movw r18,r16
+ 750 0438 0E94 0000 		call __mulsf3
+ 751               	.LVL68:
+ 752 043c DC01      		movw r26,r24
+ 753 043e CB01      		movw r24,r22
+ 754 0440 8983      		std Y+1,r24
+ 755 0442 9A83      		std Y+2,r25
+ 756 0444 AB83      		std Y+3,r26
+ 757 0446 BC83      		std Y+4,r27
+ 758               	.LVL69:
+ 189:PIDcontroller.c ****     //PID_Clamp(&proportionalGain,OUTPUT_LOW_VAL,OUTPUT_HIGH_VAL);
+ 190:PIDcontroller.c ****     PID_Clamp(&proportionalGain, -maximumOutputCommand, maximumOutputCommand);
+ 759               		.loc 1 190 0
+ 760 0448 0091 0000 		lds r16,maximumOutputCommand
+ 761 044c 1091 0000 		lds r17,maximumOutputCommand+1
+ 762 0450 2091 0000 		lds r18,maximumOutputCommand+2
+ 763 0454 3091 0000 		lds r19,maximumOutputCommand+3
+ 764               	.LVL70:
+ 765 0458 B901      		movw r22,r18
+ 766 045a A801      		movw r20,r16
+ 767 045c 7058      		subi r23,0x80
+ 768 045e CE01      		movw r24,r28
+ 769 0460 0196      		adiw r24,1
+ 770 0462 0E94 0000 		call PID_Clamp
+ 771               	.LVL71:
+ 191:PIDcontroller.c ****     residualError = oldValue - proportionalGain;
+ 772               		.loc 1 191 0
+ 773 0466 672D      		mov r22,r7
+ 774 0468 70E0      		ldi r23,lo8(0)
+ 775 046a 80E0      		ldi r24,lo8(0)
+ 776 046c 90E0      		ldi r25,hi8(0)
+ 777 046e 0E94 0000 		call __floatsisf
+ 778               	.LVL72:
+ 779 0472 2981      		ldd r18,Y+1
+ 780 0474 3A81      		ldd r19,Y+2
+ 781 0476 4B81      		ldd r20,Y+3
+ 782 0478 5C81      		ldd r21,Y+4
+ 783               	.LVL73:
+ 784 047a 0E94 0000 		call __subsf3
+ 785               	.LVL74:
+ 192:PIDcontroller.c **** 
+ 193:PIDcontroller.c ****     //Now residualError = Ki * integration error
+ 194:PIDcontroller.c ****     PID_state.integrationError = residualError / PID_KI;
+ 786               		.loc 1 194 0
+ 787 047e A701      		movw r20,r14
+ 788 0480 9601      		movw r18,r12
+ 789 0482 0E94 0000 		call __divsf3
+ 790 0486 DC01      		movw r26,r24
+ 791 0488 CB01      		movw r24,r22
+ 792 048a 8093 0000 		sts PID_state,r24
+ 793 048e 9093 0000 		sts PID_state+1,r25
+ 794 0492 A093 0000 		sts PID_state+2,r26
+ 795 0496 B093 0000 		sts PID_state+3,r27
+ 195:PIDcontroller.c ****     PID_Clamp(&(PID_state.integrationError), (float)(OUTPUT_LOW_VAL) / PID_KI, maximumOutputCommand
+ 796               		.loc 1 195 0
+ 797 049a 60E0      		ldi r22,lo8(0x0)
+ 798 049c 70E0      		ldi r23,hi8(0x0)
+ 799 049e CB01      		movw r24,r22
+ 800 04a0 A701      		movw r20,r14
+ 801 04a2 9601      		movw r18,r12
+ 802 04a4 0E94 0000 		call __divsf3
+ 803 04a8 4B01      		movw r8,r22
+ 804 04aa 5C01      		movw r10,r24
+ 805 04ac 6091 0000 		lds r22,maximumOutputCommand
+ 806 04b0 7091 0000 		lds r23,maximumOutputCommand+1
+ 807 04b4 8091 0000 		lds r24,maximumOutputCommand+2
+ 808 04b8 9091 0000 		lds r25,maximumOutputCommand+3
+ 809 04bc A701      		movw r20,r14
+ 810 04be 9601      		movw r18,r12
+ 811 04c0 0E94 0000 		call __divsf3
+ 812 04c4 8B01      		movw r16,r22
+ 813 04c6 9C01      		movw r18,r24
+ 814 04c8 80E0      		ldi r24,lo8(PID_state)
+ 815 04ca 90E0      		ldi r25,hi8(PID_state)
+ 816 04cc B501      		movw r22,r10
+ 817 04ce A401      		movw r20,r8
+ 818 04d0 0E94 0000 		call PID_Clamp
+ 196:PIDcontroller.c ****     PID_state.previousError = 0;
+ 819               		.loc 1 196 0
+ 820 04d4 80E0      		ldi r24,lo8(0x0)
+ 821 04d6 90E0      		ldi r25,hi8(0x0)
+ 822 04d8 DC01      		movw r26,r24
+ 823 04da 8093 0000 		sts PID_state+4,r24
+ 824 04de 9093 0000 		sts PID_state+4+1,r25
+ 825 04e2 A093 0000 		sts PID_state+4+2,r26
+ 826 04e6 B093 0000 		sts PID_state+4+3,r27
+ 827               	.LVL75:
+ 828               	.L33:
+ 829               	/* epilogue start */
+ 197:PIDcontroller.c **** }
+ 830               		.loc 1 197 0
+ 831 04ea 2496      		adiw r28,4
+ 832 04ec CDBF      		out __SP_L__,r28
+ 833 04ee DEBF      		out __SP_H__,r29
+ 834 04f0 DF91      		pop r29
+ 835 04f2 CF91      		pop r28
+ 836 04f4 1F91      		pop r17
+ 837 04f6 0F91      		pop r16
+ 838 04f8 FF90      		pop r15
+ 839 04fa EF90      		pop r14
+ 840 04fc DF90      		pop r13
+ 841 04fe CF90      		pop r12
+ 842 0500 BF90      		pop r11
+ 843 0502 AF90      		pop r10
+ 844 0504 9F90      		pop r9
+ 845 0506 8F90      		pop r8
+ 846 0508 7F90      		pop r7
+ 847 050a 0895      		ret
+ 848               		.cfi_endproc
+ 849               	.LFE5:
+ 851               	.global	configurePIDController
+ 853               	configurePIDController:
+ 854               	.LFB6:
+ 198:PIDcontroller.c **** 
+ 199:PIDcontroller.c **** /************************************************************************
+ 200:PIDcontroller.c **** * configurePIDController()
+ 201:PIDcontroller.c **** *
+ 202:PIDcontroller.c **** * Configures the PID controller timer and resets the PID state.
+ 203:PIDcontroller.c **** * The RTC is used in order to conserve valuable Timer Counter resources
+ 204:PIDcontroller.c **** * for other uses.
+ 205:PIDcontroller.c **** ************************************************************************/
+ 206:PIDcontroller.c **** void configurePIDController(void)
+ 207:PIDcontroller.c **** {
+ 855               		.loc 1 207 0
+ 856               		.cfi_startproc
+ 857               	/* prologue: function */
+ 858               	/* frame size = 0 */
+ 859               	/* stack size = 0 */
+ 860               	.L__stack_usage = 0
+ 208:PIDcontroller.c ****     resetPIDController();
+ 861               		.loc 1 208 0
+ 862 050c 0E94 0000 		call resetPIDController
+ 863               	.L45:
+ 209:PIDcontroller.c **** 
+ 210:PIDcontroller.c ****     //Configure the Control Loop counter for about 5 ms
+ 211:PIDcontroller.c ****     while(CONTROL_LOOP_RTC.STATUS & RTC_SYNCBUSY_bm);    //Wait for sync with RTC clock domain
+ 864               		.loc 1 211 0 discriminator 1
+ 865 0510 8091 0104 		lds r24,1025
+ 866 0514 80FD      		sbrc r24,0
+ 867 0516 00C0      		rjmp .L45
+ 212:PIDcontroller.c ****     CONTROL_LOOP_RTC.PER = 5;                            //Set the period
+ 868               		.loc 1 212 0
+ 869 0518 85E0      		ldi r24,lo8(5)
+ 870 051a 90E0      		ldi r25,hi8(5)
+ 871 051c E0E0      		ldi r30,lo8(1024)
+ 872 051e F4E0      		ldi r31,hi8(1024)
+ 873 0520 8287      		std Z+10,r24
+ 874 0522 9387      		std Z+11,r25
+ 875               	.L46:
+ 213:PIDcontroller.c ****     while(CONTROL_LOOP_RTC.STATUS & RTC_SYNCBUSY_bm);    //Wait for sync again
+ 876               		.loc 1 213 0 discriminator 1
+ 877 0524 E0E0      		ldi r30,lo8(1024)
+ 878 0526 F4E0      		ldi r31,hi8(1024)
+ 879 0528 8091 0104 		lds r24,1025
+ 880 052c 80FD      		sbrc r24,0
+ 881 052e 00C0      		rjmp .L46
+ 214:PIDcontroller.c ****     CONTROL_LOOP_RTC.CNT = 0;                            //Reset the count
+ 882               		.loc 1 214 0
+ 883 0530 1086      		std Z+8,__zero_reg__
+ 884 0532 1186      		std Z+9,__zero_reg__
+ 215:PIDcontroller.c ****     CONTROL_LOOP_RTC.COMP = 10;                            //Ensure it will not trigger a compare
+ 885               		.loc 1 215 0
+ 886 0534 8AE0      		ldi r24,lo8(10)
+ 887 0536 90E0      		ldi r25,hi8(10)
+ 888 0538 8487      		std Z+12,r24
+ 889 053a 9587      		std Z+13,r25
+ 216:PIDcontroller.c ****     CONTROL_LOOP_RTC.INTCTRL = RTC_OVFINTLVL_LO_gc;
+ 890               		.loc 1 216 0
+ 891 053c 81E0      		ldi r24,lo8(1)
+ 892 053e 8283      		std Z+2,r24
+ 217:PIDcontroller.c ****     CONTROL_LOOP_RTC.CTRL = RTC_PRESCALER_DIV1_gc;        //Activate the clock first
+ 893               		.loc 1 217 0
+ 894 0540 8093 0004 		sts 1024,r24
+ 895               	/* epilogue start */
+ 218:PIDcontroller.c **** 
+ 219:PIDcontroller.c ****     //Uncomment to change back to a full Timer Counter for the Control Loop
+ 220:PIDcontroller.c ****     //Also fix the interrupt vector in the header file
+ 221:PIDcontroller.c ****     //CONTROL_LOOP_TC.CTRLB = TC_WGMODE_NORMAL_gc;
+ 222:PIDcontroller.c ****     //CONTROL_LOOP_TC.CTRLC = 0x00;
+ 223:PIDcontroller.c ****     //CONTROL_LOOP_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 224:PIDcontroller.c ****     //CONTROL_LOOP_TC.CTRLE = 0x00;
+ 225:PIDcontroller.c ****     //CONTROL_LOOP_TC.PERBUF = 3125;
+ 226:PIDcontroller.c ****     //CONTROL_LOOP_TC.INTCTRLA = TC_OVFINTLVL_LO_gc;
+ 227:PIDcontroller.c ****     //CONTROL_LOOP_TC.CTRLA = TC_CLKSEL_DIV1024_gc;
+ 228:PIDcontroller.c **** }
+ 896               		.loc 1 228 0
+ 897 0544 0895      		ret
+ 898               		.cfi_endproc
+ 899               	.LFE6:
+ 901               	.global	runPIDController
+ 903               	runPIDController:
+ 904               	.LFB7:
+ 229:PIDcontroller.c **** 
+ 230:PIDcontroller.c **** 
+ 231:PIDcontroller.c **** 
+ 232:PIDcontroller.c **** 
+ 233:PIDcontroller.c **** /************************************************************************
+ 234:PIDcontroller.c **** * runPIDController()
+ 235:PIDcontroller.c **** *
+ 236:PIDcontroller.c **** * Uses the PID structure to determine how it should interact with a motor
+ 237:PIDcontroller.c **** * It assumes the values in averagePeriod and motorCurrent have been recently
+ 238:PIDcontroller.c **** * refreshed by the caller.
+ 239:PIDcontroller.c **** *
+ 240:PIDcontroller.c **** * This outputs a control signal suitable for passing to updateMotorVoltage()
+ 241:PIDcontroller.c **** ************************************************************************/
+ 242:PIDcontroller.c **** uint8_t runPIDController(void)
+ 243:PIDcontroller.c **** {
+ 905               		.loc 1 243 0
+ 906               		.cfi_startproc
+ 907 0546 4F92      		push r4
+ 908               	.LCFI35:
+ 909               		.cfi_def_cfa_offset 3
+ 910               		.cfi_offset 4, -2
+ 911 0548 5F92      		push r5
+ 912               	.LCFI36:
+ 913               		.cfi_def_cfa_offset 4
+ 914               		.cfi_offset 5, -3
+ 915 054a 6F92      		push r6
+ 916               	.LCFI37:
+ 917               		.cfi_def_cfa_offset 5
+ 918               		.cfi_offset 6, -4
+ 919 054c 7F92      		push r7
+ 920               	.LCFI38:
+ 921               		.cfi_def_cfa_offset 6
+ 922               		.cfi_offset 7, -5
+ 923 054e 8F92      		push r8
+ 924               	.LCFI39:
+ 925               		.cfi_def_cfa_offset 7
+ 926               		.cfi_offset 8, -6
+ 927 0550 9F92      		push r9
+ 928               	.LCFI40:
+ 929               		.cfi_def_cfa_offset 8
+ 930               		.cfi_offset 9, -7
+ 931 0552 AF92      		push r10
+ 932               	.LCFI41:
+ 933               		.cfi_def_cfa_offset 9
+ 934               		.cfi_offset 10, -8
+ 935 0554 BF92      		push r11
+ 936               	.LCFI42:
+ 937               		.cfi_def_cfa_offset 10
+ 938               		.cfi_offset 11, -9
+ 939 0556 CF92      		push r12
+ 940               	.LCFI43:
+ 941               		.cfi_def_cfa_offset 11
+ 942               		.cfi_offset 12, -10
+ 943 0558 DF92      		push r13
+ 944               	.LCFI44:
+ 945               		.cfi_def_cfa_offset 12
+ 946               		.cfi_offset 13, -11
+ 947 055a EF92      		push r14
+ 948               	.LCFI45:
+ 949               		.cfi_def_cfa_offset 13
+ 950               		.cfi_offset 14, -12
+ 951 055c FF92      		push r15
+ 952               	.LCFI46:
+ 953               		.cfi_def_cfa_offset 14
+ 954               		.cfi_offset 15, -13
+ 955 055e 0F93      		push r16
+ 956               	.LCFI47:
+ 957               		.cfi_def_cfa_offset 15
+ 958               		.cfi_offset 16, -14
+ 959 0560 1F93      		push r17
+ 960               	.LCFI48:
+ 961               		.cfi_def_cfa_offset 16
+ 962               		.cfi_offset 17, -15
+ 963 0562 CF93      		push r28
+ 964               	.LCFI49:
+ 965               		.cfi_def_cfa_offset 17
+ 966               		.cfi_offset 28, -16
+ 967 0564 DF93      		push r29
+ 968               	.LCFI50:
+ 969               		.cfi_def_cfa_offset 18
+ 970               		.cfi_offset 29, -17
+ 971 0566 CDB7      		in r28,__SP_L__
+ 972 0568 DEB7      		in r29,__SP_H__
+ 973 056a 2C97      		sbiw r28,12
+ 974               	.LCFI51:
+ 975               		.cfi_def_cfa 28, 30
+ 976 056c CDBF      		out __SP_L__,r28
+ 977 056e DEBF      		out __SP_H__,r29
+ 978               	/* prologue: function */
+ 979               	/* frame size = 12 */
+ 980               	/* stack size = 28 */
+ 981               	.L__stack_usage = 28
+ 244:PIDcontroller.c ****     float currentError;
+ 245:PIDcontroller.c ****     float inputSignal;
+ 246:PIDcontroller.c ****     float temp;
+ 247:PIDcontroller.c ****     float sum;
+ 248:PIDcontroller.c ****     float PID_KD;
+ 249:PIDcontroller.c ****     float PID_KI;
+ 250:PIDcontroller.c ****     float PID_KP;
+ 251:PIDcontroller.c ****     float powerLimit;
+ 252:PIDcontroller.c ****     uint8_t controlSignal;
+ 253:PIDcontroller.c **** 
+ 254:PIDcontroller.c ****     powerLimit = getPowerSetpoint();
+ 982               		.loc 1 254 0
+ 983 0570 0E94 0000 		call getPowerSetpoint
+ 984 0574 6B01      		movw r12,r22
+ 985 0576 7C01      		movw r14,r24
+ 986               	.LVL76:
+ 255:PIDcontroller.c ****     if(powerLimit >= 0)
+ 987               		.loc 1 255 0
+ 988 0578 20E0      		ldi r18,lo8(0x0)
+ 989 057a 30E0      		ldi r19,hi8(0x0)
+ 990 057c A901      		movw r20,r18
+ 991 057e 0E94 0000 		call __gesf2
+ 992               	.LVL77:
+ 993 0582 87FD      		sbrc r24,7
+ 994 0584 00C0      		rjmp .L63
+ 256:PIDcontroller.c ****     {
+ 257:PIDcontroller.c ****         //System in power control mode.  Override
+ 258:PIDcontroller.c ****         inputSignal = getWindingResistance() * pow(motorCurrent,2);
+ 995               		.loc 1 258 0
+ 996 0586 0E94 0000 		call getWindingResistance
+ 997 058a 4B01      		movw r8,r22
+ 998 058c 5C01      		movw r10,r24
+ 999 058e 2091 0000 		lds r18,motorCurrent
+ 1000 0592 3091 0000 		lds r19,motorCurrent+1
+ 1001 0596 4091 0000 		lds r20,motorCurrent+2
+ 1002 059a 5091 0000 		lds r21,motorCurrent+3
+ 1003 059e CA01      		movw r24,r20
+ 1004 05a0 B901      		movw r22,r18
+ 1005 05a2 0E94 0000 		call __mulsf3
+ 1006 05a6 B62F      		mov r27,r22
+ 1007 05a8 A72F      		mov r26,r23
+ 1008 05aa 382F      		mov r19,r24
+ 1009 05ac 292F      		mov r18,r25
+ 1010               	.LVL78:
+ 1011 05ae C501      		movw r24,r10
+ 1012 05b0 B401      		movw r22,r8
+ 1013               	.LVL79:
+ 1014 05b2 FD01      		movw r30,r26
+ 1015 05b4 A901      		movw r20,r18
+ 1016 05b6 0F2F      		mov r16,r31
+ 1017 05b8 1E2F      		mov r17,r30
+ 1018 05ba 252F      		mov r18,r21
+ 1019 05bc 342F      		mov r19,r20
+ 1020 05be A901      		movw r20,r18
+ 1021 05c0 9801      		movw r18,r16
+ 1022 05c2 0E94 0000 		call __mulsf3
+ 1023               	.LVL80:
+ 1024 05c6 9B01      		movw r18,r22
+ 1025 05c8 AC01      		movw r20,r24
+ 259:PIDcontroller.c ****         currentError = powerLimit - inputSignal;
+ 1026               		.loc 1 259 0
+ 1027 05ca C701      		movw r24,r14
+ 1028 05cc B601      		movw r22,r12
+ 1029 05ce 0E94 0000 		call __subsf3
+ 1030 05d2 B62E      		mov r11,r22
+ 1031 05d4 A72E      		mov r10,r23
+ 1032 05d6 982E      		mov r9,r24
+ 1033 05d8 892E      		mov r8,r25
+ 1034               	.LVL81:
+ 260:PIDcontroller.c ****         PID_KD = Parameter[PARAMETER_POWER_KD];
+ 1035               		.loc 1 260 0
+ 1036 05da 4090 0000 		lds r4,Parameter+32
+ 1037 05de 5090 0000 		lds r5,Parameter+32+1
+ 1038 05e2 6090 0000 		lds r6,Parameter+32+2
+ 1039 05e6 7090 0000 		lds r7,Parameter+32+3
+ 1040               	.LVL82:
+ 261:PIDcontroller.c ****         PID_KI = Parameter[PARAMETER_POWER_KI];
+ 1041               		.loc 1 261 0
+ 1042 05ea C090 0000 		lds r12,Parameter+28
+ 1043 05ee D090 0000 		lds r13,Parameter+28+1
+ 1044 05f2 E090 0000 		lds r14,Parameter+28+2
+ 1045 05f6 F090 0000 		lds r15,Parameter+28+3
+ 1046               	.LVL83:
+ 262:PIDcontroller.c ****         PID_KP = Parameter[PARAMETER_POWER_KP];
+ 1047               		.loc 1 262 0
+ 1048 05fa 0091 0000 		lds r16,Parameter+24
+ 1049 05fe 1091 0000 		lds r17,Parameter+24+1
+ 1050 0602 2091 0000 		lds r18,Parameter+24+2
+ 1051 0606 3091 0000 		lds r19,Parameter+24+3
+ 1052               	.LVL84:
+ 1053 060a 00C0      		rjmp .L52
+ 1054               	.LVL85:
+ 1055               	.L63:
+ 263:PIDcontroller.c ****     } else
+ 264:PIDcontroller.c ****     {
+ 265:PIDcontroller.c ****         //System OK.  Run the normal loop.
+ 266:PIDcontroller.c **** 
+ 267:PIDcontroller.c ****         switch(PID_state.controlScheme)
+ 1056               		.loc 1 267 0
+ 1057 060c 8091 0000 		lds r24,PID_state+8
+ 1058 0610 8230      		cpi r24,lo8(2)
+ 1059 0612 01F0      		breq .L55
+ 1060 0614 8430      		cpi r24,lo8(4)
+ 1061 0616 01F4      		brne .+2
+ 1062 0618 00C0      		rjmp .L56
+ 1063 061a 8130      		cpi r24,lo8(1)
+ 1064 061c 01F0      		breq .+2
+ 1065 061e 00C0      		rjmp .L64
+ 1066               	.LVL86:
+ 268:PIDcontroller.c ****         {
+ 269:PIDcontroller.c ****             case CONTROL_SCHEME_VELOCITY:
+ 270:PIDcontroller.c ****                 //The setpoint is in terms of Hall state period length in ticks of the main timer-c
+ 271:PIDcontroller.c ****                 //inputSignal = averagePeriod;
+ 272:PIDcontroller.c ****                 //currentError = inputSignal - PID_state.setpoint;
+ 273:PIDcontroller.c ****                 inputSignal = averageRPM;
+ 274:PIDcontroller.c ****                 currentError = PID_state.setpoint - inputSignal;
+ 1067               		.loc 1 274 0
+ 1068 0620 6091 0000 		lds r22,PID_state+9
+ 1069 0624 7091 0000 		lds r23,PID_state+9+1
+ 1070 0628 80E0      		ldi r24,lo8(0)
+ 1071 062a 90E0      		ldi r25,hi8(0)
+ 1072 062c 0E94 0000 		call __floatunsisf
+ 1073               	.LVL87:
+ 1074 0630 6B01      		movw r12,r22
+ 1075 0632 7C01      		movw r14,r24
+ 1076               	.LVL88:
+ 273:PIDcontroller.c ****                 inputSignal = averageRPM;
+ 1077               		.loc 1 273 0
+ 1078 0634 6091 0000 		lds r22,averageRPM
+ 1079 0638 7091 0000 		lds r23,averageRPM+1
+ 1080               	.LVL89:
+ 1081 063c 80E0      		ldi r24,lo8(0)
+ 1082 063e 90E0      		ldi r25,hi8(0)
+ 1083 0640 0E94 0000 		call __floatunsisf
+ 1084               	.LVL90:
+ 1085 0644 9B01      		movw r18,r22
+ 1086 0646 AC01      		movw r20,r24
+ 1087               		.loc 1 274 0
+ 1088 0648 C701      		movw r24,r14
+ 1089 064a B601      		movw r22,r12
+ 1090 064c 00C0      		rjmp .L66
+ 1091               	.LVL91:
+ 1092               	.L55:
+ 275:PIDcontroller.c ****                 PID_KD = Parameter[PARAMETER_VELOCITY_KD];
+ 276:PIDcontroller.c ****                 PID_KI = Parameter[PARAMETER_VELOCITY_KI];
+ 277:PIDcontroller.c ****                 PID_KP = Parameter[PARAMETER_VELOCITY_KP];
+ 278:PIDcontroller.c ****                 break;
+ 279:PIDcontroller.c ****             case CONTROL_SCHEME_CURRENT:
+ 280:PIDcontroller.c ****                 //Read a current
+ 281:PIDcontroller.c ****                 //In Current control mode, it would be nice to operate on raw ADC values for less f
+ 282:PIDcontroller.c ****                 //For now. just operate in terms of milliamperes
+ 283:PIDcontroller.c ****                 inputSignal = motorCurrent * 1000;
+ 284:PIDcontroller.c ****                 currentError = PID_state.setpoint - inputSignal;
+ 1093               		.loc 1 284 0
+ 1094 064e 6091 0000 		lds r22,PID_state+9
+ 1095 0652 7091 0000 		lds r23,PID_state+9+1
+ 1096 0656 80E0      		ldi r24,lo8(0)
+ 1097 0658 90E0      		ldi r25,hi8(0)
+ 1098 065a 0E94 0000 		call __floatunsisf
+ 1099               	.LVL92:
+ 1100 065e 6B01      		movw r12,r22
+ 1101 0660 7C01      		movw r14,r24
+ 1102               	.LVL93:
+ 283:PIDcontroller.c ****                 inputSignal = motorCurrent * 1000;
+ 1103               		.loc 1 283 0
+ 1104 0662 6091 0000 		lds r22,motorCurrent
+ 1105 0666 7091 0000 		lds r23,motorCurrent+1
+ 1106 066a 8091 0000 		lds r24,motorCurrent+2
+ 1107 066e 9091 0000 		lds r25,motorCurrent+3
+ 1108               	.LVL94:
+ 1109 0672 20E0      		ldi r18,lo8(0x447a0000)
+ 1110 0674 30E0      		ldi r19,hi8(0x447a0000)
+ 1111 0676 4AE7      		ldi r20,hlo8(0x447a0000)
+ 1112 0678 54E4      		ldi r21,hhi8(0x447a0000)
+ 1113 067a 0E94 0000 		call __mulsf3
+ 1114               	.LVL95:
+ 1115 067e 9B01      		movw r18,r22
+ 1116 0680 AC01      		movw r20,r24
+ 1117               		.loc 1 284 0
+ 1118 0682 C701      		movw r24,r14
+ 1119 0684 B601      		movw r22,r12
+ 1120 0686 0E94 0000 		call __subsf3
+ 1121 068a B62E      		mov r11,r22
+ 1122 068c A72E      		mov r10,r23
+ 1123 068e 982E      		mov r9,r24
+ 1124 0690 892E      		mov r8,r25
+ 1125               	.LVL96:
+ 285:PIDcontroller.c ****                 PID_KD = Parameter[PARAMETER_TORQUE_KD];
+ 1126               		.loc 1 285 0
+ 1127 0692 4090 0000 		lds r4,Parameter+8
+ 1128 0696 5090 0000 		lds r5,Parameter+8+1
+ 1129 069a 6090 0000 		lds r6,Parameter+8+2
+ 1130 069e 7090 0000 		lds r7,Parameter+8+3
+ 1131               	.LVL97:
+ 286:PIDcontroller.c ****                 PID_KI = Parameter[PARAMETER_TORQUE_KI];
+ 1132               		.loc 1 286 0
+ 1133 06a2 C090 0000 		lds r12,Parameter+4
+ 1134 06a6 D090 0000 		lds r13,Parameter+4+1
+ 1135 06aa E090 0000 		lds r14,Parameter+4+2
+ 1136 06ae F090 0000 		lds r15,Parameter+4+3
+ 1137               	.LVL98:
+ 287:PIDcontroller.c ****                 PID_KP = Parameter[PARAMETER_TORQUE_KP];
+ 1138               		.loc 1 287 0
+ 1139 06b2 0091 0000 		lds r16,Parameter
+ 1140 06b6 1091 0000 		lds r17,Parameter+1
+ 1141 06ba 2091 0000 		lds r18,Parameter+2
+ 1142 06be 3091 0000 		lds r19,Parameter+3
+ 1143               	.LVL99:
+ 288:PIDcontroller.c ****                 break;
+ 1144               		.loc 1 288 0
+ 1145 06c2 00C0      		rjmp .L52
+ 1146               	.LVL100:
+ 1147               	.L56:
+ 289:PIDcontroller.c ****             case CONTROL_SCHEME_POSITION:
+ 290:PIDcontroller.c ****             {
+ 291:PIDcontroller.c ****                 inputSignal = averageRPM;
+ 1148               		.loc 1 291 0
+ 1149 06c4 6091 0000 		lds r22,averageRPM
+ 1150 06c8 7091 0000 		lds r23,averageRPM+1
+ 1151 06cc 80E0      		ldi r24,lo8(0)
+ 1152 06ce 90E0      		ldi r25,hi8(0)
+ 1153 06d0 0E94 0000 		call __floatunsisf
+ 1154 06d4 5B01      		movw r10,r22
+ 1155 06d6 C82E      		mov r12,r24
+ 1156               	.LVL101:
+ 1157 06d8 092F      		mov r16,r25
+ 1158               	.LVL102:
+ 292:PIDcontroller.c ****                 PID_state.setpoint = positionControl(positionSetPoint);
+ 1159               		.loc 1 292 0
+ 1160 06da 8091 0000 		lds r24,positionSetPoint
+ 1161 06de 9091 0000 		lds r25,positionSetPoint+1
+ 1162               	.LVL103:
+ 1163 06e2 0E94 0000 		call positionControl
+ 1164               	.LVL104:
+ 1165 06e6 8093 0000 		sts PID_state+9,r24
+ 1166 06ea 9093 0000 		sts PID_state+9+1,r25
+ 293:PIDcontroller.c ****                 currentError = PID_state.setpoint - inputSignal;
+ 1167               		.loc 1 293 0
+ 1168 06ee BC01      		movw r22,r24
+ 1169 06f0 80E0      		ldi r24,lo8(0)
+ 1170 06f2 90E0      		ldi r25,hi8(0)
+ 1171 06f4 0E94 0000 		call __floatunsisf
+ 1172 06f8 AB01      		movw r20,r22
+ 1173 06fa BC01      		movw r22,r24
+ 1174 06fc CB01      		movw r24,r22
+ 1175 06fe BA01      		movw r22,r20
+ 1176 0700 402F      		mov r20,r16
+ 1177 0702 0A2D      		mov r16,r10
+ 1178               	.LVL105:
+ 1179 0704 1B2D      		mov r17,r11
+ 1180 0706 2C2D      		mov r18,r12
+ 1181 0708 342F      		mov r19,r20
+ 1182 070a A901      		movw r20,r18
+ 1183 070c 9801      		movw r18,r16
+ 1184               	.LVL106:
+ 1185               	.L66:
+ 1186 070e 0E94 0000 		call __subsf3
+ 1187 0712 B62E      		mov r11,r22
+ 1188 0714 A72E      		mov r10,r23
+ 1189 0716 982E      		mov r9,r24
+ 1190 0718 892E      		mov r8,r25
+ 1191               	.LVL107:
+ 294:PIDcontroller.c ****                 PID_KD = Parameter[PARAMETER_VELOCITY_KD];
+ 1192               		.loc 1 294 0
+ 1193 071a 4090 0000 		lds r4,Parameter+20
+ 1194 071e 5090 0000 		lds r5,Parameter+20+1
+ 1195 0722 6090 0000 		lds r6,Parameter+20+2
+ 1196 0726 7090 0000 		lds r7,Parameter+20+3
+ 1197               	.LVL108:
+ 295:PIDcontroller.c ****                 PID_KI = Parameter[PARAMETER_VELOCITY_KI];
+ 1198               		.loc 1 295 0
+ 1199 072a C090 0000 		lds r12,Parameter+16
+ 1200 072e D090 0000 		lds r13,Parameter+16+1
+ 1201 0732 E090 0000 		lds r14,Parameter+16+2
+ 1202 0736 F090 0000 		lds r15,Parameter+16+3
+ 1203               	.LVL109:
+ 296:PIDcontroller.c ****                 PID_KP = Parameter[PARAMETER_VELOCITY_KP];
+ 1204               		.loc 1 296 0
+ 1205 073a 0091 0000 		lds r16,Parameter+12
+ 1206 073e 1091 0000 		lds r17,Parameter+12+1
+ 1207 0742 2091 0000 		lds r18,Parameter+12+2
+ 1208 0746 3091 0000 		lds r19,Parameter+12+3
+ 1209               	.LVL110:
+ 297:PIDcontroller.c ****                 break;
+ 1210               		.loc 1 297 0
+ 1211 074a 00C0      		rjmp .L52
+ 1212               	.LVL111:
+ 1213               	.L64:
+ 298:PIDcontroller.c ****             }
+ 299:PIDcontroller.c ****             case CONTROL_SCHEME_VOLTAGE:
+ 300:PIDcontroller.c ****                 //Voltage setpoints are the byte directly suitable for passing to updateMotorVoltag
+ 301:PIDcontroller.c ****                 //These 8 bits are stored in the upper word of the 16 bit PID setpoint.
+ 302:PIDcontroller.c ****             default:
+ 303:PIDcontroller.c ****                 controlSignal = PID_state.setpoint / 256;
+ 1214               		.loc 1 303 0
+ 1215 074c 8091 0000 		lds r24,PID_state+10
+ 1216               	.LVL112:
+ 304:PIDcontroller.c ****                 return controlSignal;
+ 1217               		.loc 1 304 0
+ 1218 0750 00C0      		rjmp .L57
+ 1219               	.LVL113:
+ 1220               	.L52:
+ 305:PIDcontroller.c ****         }
+ 306:PIDcontroller.c ****     }
+ 307:PIDcontroller.c **** 
+ 308:PIDcontroller.c ****     temp = currentError * PID_KP;
+ 1221               		.loc 1 308 0
+ 1222 0752 B501      		movw r22,r10
+ 1223 0754 A401      		movw r20,r8
+ 1224 0756 872F      		mov r24,r23
+ 1225 0758 9A2D      		mov r25,r10
+ 1226 075a A52F      		mov r26,r21
+ 1227 075c B82D      		mov r27,r8
+ 1228 075e BC01      		movw r22,r24
+ 1229 0760 CD01      		movw r24,r26
+ 1230 0762 A901      		movw r20,r18
+ 1231 0764 9801      		movw r18,r16
+ 1232 0766 0E94 0000 		call __mulsf3
+ 1233 076a DC01      		movw r26,r24
+ 1234 076c CB01      		movw r24,r22
+ 1235 076e 8D83      		std Y+5,r24
+ 1236 0770 9E83      		std Y+6,r25
+ 1237 0772 AF83      		std Y+7,r26
+ 1238 0774 B887      		std Y+8,r27
+ 1239               	.LVL114:
+ 309:PIDcontroller.c ****     PID_Clamp(&temp,-maximumOutputCommand, maximumOutputCommand);
+ 1240               		.loc 1 309 0
+ 1241 0776 0091 0000 		lds r16,maximumOutputCommand
+ 1242 077a 1091 0000 		lds r17,maximumOutputCommand+1
+ 1243 077e 2091 0000 		lds r18,maximumOutputCommand+2
+ 1244 0782 3091 0000 		lds r19,maximumOutputCommand+3
+ 1245               	.LVL115:
+ 1246 0786 B901      		movw r22,r18
+ 1247 0788 A801      		movw r20,r16
+ 1248 078a 7058      		subi r23,0x80
+ 1249 078c CE01      		movw r24,r28
+ 1250 078e 0596      		adiw r24,5
+ 1251 0790 0E94 0000 		call PID_Clamp
+ 310:PIDcontroller.c ****     sum = temp;
+ 1252               		.loc 1 310 0
+ 1253 0794 8D81      		ldd r24,Y+5
+ 1254 0796 9E81      		ldd r25,Y+6
+ 1255 0798 AF81      		ldd r26,Y+7
+ 1256 079a B885      		ldd r27,Y+8
+ 1257 079c 8983      		std Y+1,r24
+ 1258 079e 9A83      		std Y+2,r25
+ 1259 07a0 AB83      		std Y+3,r26
+ 1260 07a2 BC83      		std Y+4,r27
+ 1261               	.LVL116:
+ 311:PIDcontroller.c **** 
+ 312:PIDcontroller.c ****     PID_state.integrationError += currentError;
+ 1262               		.loc 1 312 0
+ 1263 07a4 6091 0000 		lds r22,PID_state
+ 1264 07a8 7091 0000 		lds r23,PID_state+1
+ 1265 07ac 8091 0000 		lds r24,PID_state+2
+ 1266 07b0 9091 0000 		lds r25,PID_state+3
+ 1267 07b4 F501      		movw r30,r10
+ 1268 07b6 A401      		movw r20,r8
+ 1269 07b8 0F2F      		mov r16,r31
+ 1270 07ba 1A2D      		mov r17,r10
+ 1271 07bc 252F      		mov r18,r21
+ 1272 07be 382D      		mov r19,r8
+ 1273 07c0 A901      		movw r20,r18
+ 1274 07c2 9801      		movw r18,r16
+ 1275 07c4 0E94 0000 		call __addsf3
+ 1276 07c8 DC01      		movw r26,r24
+ 1277 07ca CB01      		movw r24,r22
+ 1278 07cc 8093 0000 		sts PID_state,r24
+ 1279 07d0 9093 0000 		sts PID_state+1,r25
+ 1280 07d4 A093 0000 		sts PID_state+2,r26
+ 1281 07d8 B093 0000 		sts PID_state+3,r27
+ 313:PIDcontroller.c ****     if(PID_KI == 0)
+ 1282               		.loc 1 313 0
+ 1283 07dc C701      		movw r24,r14
+ 1284 07de B601      		movw r22,r12
+ 1285 07e0 20E0      		ldi r18,lo8(0x0)
+ 1286 07e2 30E0      		ldi r19,hi8(0x0)
+ 1287 07e4 A901      		movw r20,r18
+ 1288 07e6 0E94 0000 		call __eqsf2
+ 1289 07ea 8823      		tst r24
+ 1290 07ec 01F4      		brne .L65
+ 314:PIDcontroller.c ****     {
+ 315:PIDcontroller.c ****         PID_state.integrationError = 0;
+ 1291               		.loc 1 315 0
+ 1292 07ee 80E0      		ldi r24,lo8(0x0)
+ 1293 07f0 90E0      		ldi r25,hi8(0x0)
+ 1294 07f2 DC01      		movw r26,r24
+ 1295 07f4 8093 0000 		sts PID_state,r24
+ 1296 07f8 9093 0000 		sts PID_state+1,r25
+ 1297 07fc A093 0000 		sts PID_state+2,r26
+ 1298 0800 B093 0000 		sts PID_state+3,r27
+ 1299 0804 00C0      		rjmp .L60
+ 1300               	.L65:
+ 316:PIDcontroller.c ****     } else {
+ 317:PIDcontroller.c ****         PID_Clamp(&(PID_state.integrationError),(float)(OUTPUT_LOW_VAL) / PID_KI, maximumOutputComm
+ 1301               		.loc 1 317 0
+ 1302 0806 60E0      		ldi r22,lo8(0x0)
+ 1303 0808 70E0      		ldi r23,hi8(0x0)
+ 1304 080a CB01      		movw r24,r22
+ 1305 080c A701      		movw r20,r14
+ 1306 080e 9601      		movw r18,r12
+ 1307 0810 0E94 0000 		call __divsf3
+ 1308 0814 6987      		std Y+9,r22
+ 1309 0816 7A87      		std Y+10,r23
+ 1310 0818 8B87      		std Y+11,r24
+ 1311 081a 9C87      		std Y+12,r25
+ 1312 081c 6091 0000 		lds r22,maximumOutputCommand
+ 1313 0820 7091 0000 		lds r23,maximumOutputCommand+1
+ 1314 0824 8091 0000 		lds r24,maximumOutputCommand+2
+ 1315 0828 9091 0000 		lds r25,maximumOutputCommand+3
+ 1316 082c A701      		movw r20,r14
+ 1317 082e 9601      		movw r18,r12
+ 1318 0830 0E94 0000 		call __divsf3
+ 1319 0834 8B01      		movw r16,r22
+ 1320 0836 9C01      		movw r18,r24
+ 1321 0838 80E0      		ldi r24,lo8(PID_state)
+ 1322 083a 90E0      		ldi r25,hi8(PID_state)
+ 1323 083c 4985      		ldd r20,Y+9
+ 1324 083e 5A85      		ldd r21,Y+10
+ 1325 0840 6B85      		ldd r22,Y+11
+ 1326 0842 7C85      		ldd r23,Y+12
+ 1327 0844 0E94 0000 		call PID_Clamp
+ 1328               	.L60:
+ 318:PIDcontroller.c ****     }
+ 319:PIDcontroller.c ****     sum += PID_state.integrationError * PID_KI;
+ 1329               		.loc 1 319 0
+ 1330 0848 C701      		movw r24,r14
+ 1331 084a B601      		movw r22,r12
+ 1332 084c 2091 0000 		lds r18,PID_state
+ 1333 0850 3091 0000 		lds r19,PID_state+1
+ 1334 0854 4091 0000 		lds r20,PID_state+2
+ 1335 0858 5091 0000 		lds r21,PID_state+3
+ 1336 085c 0E94 0000 		call __mulsf3
+ 1337 0860 9B01      		movw r18,r22
+ 1338 0862 AC01      		movw r20,r24
+ 1339 0864 6981      		ldd r22,Y+1
+ 1340 0866 7A81      		ldd r23,Y+2
+ 1341 0868 8B81      		ldd r24,Y+3
+ 1342 086a 9C81      		ldd r25,Y+4
+ 1343 086c 0E94 0000 		call __addsf3
+ 1344 0870 DC01      		movw r26,r24
+ 1345 0872 CB01      		movw r24,r22
+ 1346 0874 8983      		std Y+1,r24
+ 1347 0876 9A83      		std Y+2,r25
+ 1348 0878 AB83      		std Y+3,r26
+ 1349 087a BC83      		std Y+4,r27
+ 320:PIDcontroller.c **** 
+ 321:PIDcontroller.c ****     temp = currentError - PID_state.previousError;
+ 1350               		.loc 1 321 0
+ 1351 087c A501      		movw r20,r10
+ 1352 087e 9401      		movw r18,r8
+ 1353 0880 852F      		mov r24,r21
+ 1354 0882 9A2D      		mov r25,r10
+ 1355 0884 A32F      		mov r26,r19
+ 1356 0886 B82D      		mov r27,r8
+ 1357 0888 BC01      		movw r22,r24
+ 1358 088a CD01      		movw r24,r26
+ 1359 088c 2091 0000 		lds r18,PID_state+4
+ 1360 0890 3091 0000 		lds r19,PID_state+4+1
+ 1361 0894 4091 0000 		lds r20,PID_state+4+2
+ 1362 0898 5091 0000 		lds r21,PID_state+4+3
+ 1363 089c 0E94 0000 		call __subsf3
+ 1364 08a0 262F      		mov r18,r22
+ 1365 08a2 B72F      		mov r27,r23
+ 322:PIDcontroller.c ****     PID_state.previousError = currentError;
+ 1366               		.loc 1 322 0
+ 1367 08a4 4B2D      		mov r20,r11
+ 1368 08a6 5A2D      		mov r21,r10
+ 1369 08a8 692D      		mov r22,r9
+ 1370 08aa 782D      		mov r23,r8
+ 1371 08ac 4093 0000 		sts PID_state+4,r20
+ 1372 08b0 5093 0000 		sts PID_state+4+1,r21
+ 1373 08b4 6093 0000 		sts PID_state+4+2,r22
+ 1374 08b8 7093 0000 		sts PID_state+4+3,r23
+ 323:PIDcontroller.c ****     temp = temp * PID_KD;
+ 1375               		.loc 1 323 0
+ 1376 08bc 422F      		mov r20,r18
+ 1377 08be 5B2F      		mov r21,r27
+ 1378 08c0 682F      		mov r22,r24
+ 1379 08c2 792F      		mov r23,r25
+ 1380 08c4 CB01      		movw r24,r22
+ 1381 08c6 BA01      		movw r22,r20
+ 1382 08c8 A301      		movw r20,r6
+ 1383 08ca 9201      		movw r18,r4
+ 1384 08cc 0E94 0000 		call __mulsf3
+ 1385 08d0 DC01      		movw r26,r24
+ 1386 08d2 CB01      		movw r24,r22
+ 1387 08d4 8D83      		std Y+5,r24
+ 1388 08d6 9E83      		std Y+6,r25
+ 1389 08d8 AF83      		std Y+7,r26
+ 1390 08da B887      		std Y+8,r27
+ 324:PIDcontroller.c ****     PID_Clamp(&temp, -maximumOutputCommand, maximumOutputCommand);
+ 1391               		.loc 1 324 0
+ 1392 08dc 0091 0000 		lds r16,maximumOutputCommand
+ 1393 08e0 1091 0000 		lds r17,maximumOutputCommand+1
+ 1394 08e4 2091 0000 		lds r18,maximumOutputCommand+2
+ 1395 08e8 3091 0000 		lds r19,maximumOutputCommand+3
+ 1396 08ec B901      		movw r22,r18
+ 1397 08ee A801      		movw r20,r16
+ 1398 08f0 7058      		subi r23,0x80
+ 1399 08f2 CE01      		movw r24,r28
+ 1400 08f4 0596      		adiw r24,5
+ 1401 08f6 0E94 0000 		call PID_Clamp
+ 325:PIDcontroller.c ****     sum += temp;
+ 1402               		.loc 1 325 0
+ 1403 08fa 6981      		ldd r22,Y+1
+ 1404 08fc 7A81      		ldd r23,Y+2
+ 1405 08fe 8B81      		ldd r24,Y+3
+ 1406 0900 9C81      		ldd r25,Y+4
+ 1407 0902 2D81      		ldd r18,Y+5
+ 1408 0904 3E81      		ldd r19,Y+6
+ 1409 0906 4F81      		ldd r20,Y+7
+ 1410 0908 5885      		ldd r21,Y+8
+ 1411 090a 0E94 0000 		call __addsf3
+ 1412 090e DC01      		movw r26,r24
+ 1413 0910 CB01      		movw r24,r22
+ 1414 0912 8983      		std Y+1,r24
+ 1415 0914 9A83      		std Y+2,r25
+ 1416 0916 AB83      		std Y+3,r26
+ 1417 0918 BC83      		std Y+4,r27
+ 326:PIDcontroller.c **** 
+ 327:PIDcontroller.c ****     PID_Clamp(&sum, OUTPUT_LOW_VAL, maximumOutputCommand);
+ 1418               		.loc 1 327 0
+ 1419 091a 0091 0000 		lds r16,maximumOutputCommand
+ 1420 091e 1091 0000 		lds r17,maximumOutputCommand+1
+ 1421 0922 2091 0000 		lds r18,maximumOutputCommand+2
+ 1422 0926 3091 0000 		lds r19,maximumOutputCommand+3
+ 1423 092a CE01      		movw r24,r28
+ 1424 092c 0196      		adiw r24,1
+ 1425 092e 40E0      		ldi r20,lo8(0x0)
+ 1426 0930 50E0      		ldi r21,hi8(0x0)
+ 1427 0932 BA01      		movw r22,r20
+ 1428 0934 0E94 0000 		call PID_Clamp
+ 328:PIDcontroller.c **** 
+ 329:PIDcontroller.c ****     controlSignal = ceil(sum);
+ 1429               		.loc 1 329 0
+ 1430 0938 6981      		ldd r22,Y+1
+ 1431 093a 7A81      		ldd r23,Y+2
+ 1432 093c 8B81      		ldd r24,Y+3
+ 1433 093e 9C81      		ldd r25,Y+4
+ 1434 0940 0E94 0000 		call ceil
+ 1435 0944 0E94 0000 		call __fixunssfsi
+ 1436 0948 862F      		mov r24,r22
+ 1437               	.LVL117:
+ 1438               	.L57:
+ 1439               	/* epilogue start */
+ 330:PIDcontroller.c ****     return controlSignal;
+ 331:PIDcontroller.c **** }
+ 1440               		.loc 1 331 0
+ 1441 094a 2C96      		adiw r28,12
+ 1442 094c CDBF      		out __SP_L__,r28
+ 1443 094e DEBF      		out __SP_H__,r29
+ 1444 0950 DF91      		pop r29
+ 1445 0952 CF91      		pop r28
+ 1446 0954 1F91      		pop r17
+ 1447 0956 0F91      		pop r16
+ 1448 0958 FF90      		pop r15
+ 1449 095a EF90      		pop r14
+ 1450 095c DF90      		pop r13
+ 1451 095e CF90      		pop r12
+ 1452 0960 BF90      		pop r11
+ 1453 0962 AF90      		pop r10
+ 1454 0964 9F90      		pop r9
+ 1455 0966 8F90      		pop r8
+ 1456 0968 7F90      		pop r7
+ 1457 096a 6F90      		pop r6
+ 1458 096c 5F90      		pop r5
+ 1459 096e 4F90      		pop r4
+ 1460 0970 0895      		ret
+ 1461               		.cfi_endproc
+ 1462               	.LFE7:
+ 1464               	.global	PID_runPID
+ 1465               	.global	PID_runPID
+ 1466               		.section .bss
+ 1469               	PID_runPID:
+ 1470 0000 00        		.skip 1,0
+ 1471               		.comm PID_state,11,1
+ 1472               	.global	positionSetPoint
+ 1473               	.global	positionSetPoint
+ 1476               	positionSetPoint:
+ 1477 0001 0000      		.skip 2,0
+ 1478               	.global	maximumOutputCommand
+ 1479               		.data
+ 1482               	maximumOutputCommand:
+ 1483 0000 00        		.byte	0
+ 1484 0001 00        		.byte	0
+ 1485 0002 7D        		.byte	125
+ 1486 0003 43        		.byte	67
+ 1487               		.text
+ 1488               	.Letext0:
+ 1489               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1490               		.file 3 "hallctrl.h"
+ 1491               		.file 4 "PIDcontroller.h"
+ 1492               		.file 5 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 1493               		.file 6 "motor.h"
+ 1494               		.file 7 "velcounter.h"
+ 1495               		.file 8 "currentADC.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 PIDcontroller.c
+     /tmp/ccoEvGc7.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccoEvGc7.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccoEvGc7.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccoEvGc7.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccoEvGc7.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccoEvGc7.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccoEvGc7.s:14     .text:00000000 PID_Clamp
+     /tmp/ccoEvGc7.s:148    .text:0000008c resetPIDController
+                            *COM*:0000000b PID_state
+     /tmp/ccoEvGc7.s:177    .text:000000b4 positionControl
+     /tmp/ccoEvGc7.s:444    .text:0000025a PIDPreset
+     /tmp/ccoEvGc7.s:1476   .bss:00000001 positionSetPoint
+     /tmp/ccoEvGc7.s:1482   .data:00000000 maximumOutputCommand
+     /tmp/ccoEvGc7.s:853    .text:0000050c configurePIDController
+     /tmp/ccoEvGc7.s:903    .text:00000546 runPIDController
+     /tmp/ccoEvGc7.s:1469   .bss:00000000 PID_runPID
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__ltsf2
+__gtsf2
+__eqsf2
+encoder
+__floatsisf
+Parameter
+__mulsf3
+getMotorDirection
+updateMotorDirection
+__fixsfsi
+getOldControlValue
+__floatunsisf
+averageRPM
+motorCurrent
+__subsf3
+getPowerSetpoint
+getWindingResistance
+__divsf3
+__gesf2
+__addsf3
+ceil
+__fixunssfsi

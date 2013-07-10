@@ -1,0 +1,1336 @@
+   1               		.file	"hallctrl.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.Ltext0:
+  12               		.cfi_sections	.debug_frame
+  13               	.global	getMotorDirection
+  15               	getMotorDirection:
+  16               	.LFB2:
+  17               		.file 1 "hallctrl.c"
+   1:hallctrl.c    **** /****************************************************
+   2:hallctrl.c    **** 
+   3:hallctrl.c    ****  // Author:            Paul Butler
+   4:hallctrl.c    ****  // File Name:        C1482-SRC-FGRMCU-0-hallctrl.c
+   5:hallctrl.c    ****  // Creation Date:    28 October, 2011
+   6:hallctrl.c    ****  // Revision:        00
+   7:hallctrl.c    ****  // Hardware:        ATxmega32A4
+   8:hallctrl.c    ****  // Description:    Palm Motor Controller Micro BLDC motor driver using Hall sensors
+   9:hallctrl.c    **** 
+  10:hallctrl.c    ****  ****************************************************/
+  11:hallctrl.c    **** 
+  12:hallctrl.c    **** /******************************************************************************
+  13:hallctrl.c    ****     File Revision History:
+  14:hallctrl.c    **** -------------------------------------------------------------------------------
+  15:hallctrl.c    **** Revision    Date        Engineer    Description
+  16:hallctrl.c    **** --------    --------    --------    -------------------------------------------
+  17:hallctrl.c    **** 00            10/28/11    PDB            Initial Release
+  18:hallctrl.c    **** -------------------------------------------------------------------------------
+  19:hallctrl.c    **** 
+  20:hallctrl.c    **** ******************************************************************************/
+  21:hallctrl.c    **** 
+  22:hallctrl.c    **** #include "hallctrl.h"
+  23:hallctrl.c    **** #include "velcounter.h"
+  24:hallctrl.c    **** #include "PIDcontroller.h"
+  25:hallctrl.c    **** #include <avr/io.h>
+  26:hallctrl.c    **** #include <avr/interrupt.h>
+  27:hallctrl.c    **** 
+  28:hallctrl.c    **** //Private module variables
+  29:hallctrl.c    **** static volatile DIRECTION_MODE_t direction = DIRECTION_STOP;
+  30:hallctrl.c    **** static uint8_t oldControlSignal = 0;
+  31:hallctrl.c    **** static volatile uint8_t lastHall = 0;
+  32:hallctrl.c    **** static volatile const int8_t HallIncrement[36] = { 0, -2, -1,  2,  1,  3,
+  33:hallctrl.c    ****                                                    2,  0,  1, -2, -3, -1,
+  34:hallctrl.c    ****                                                    1, -1,  0,  3,  2, -2,
+  35:hallctrl.c    ****                                                   -2,  2, -3,  0, -1,  1,
+  36:hallctrl.c    ****                                                   -1,  3, -2,  1,  0,  2,
+  37:hallctrl.c    ****                                                   -3,  1,  2, -1, -2,  0};
+  38:hallctrl.c    **** 
+  39:hallctrl.c    **** //Public variables
+  40:hallctrl.c    **** volatile int16_t encoder = 0;
+  41:hallctrl.c    **** 
+  42:hallctrl.c    **** //Private functions
+  43:hallctrl.c    **** //static void updateMotor1(void);
+  44:hallctrl.c    **** 
+  45:hallctrl.c    **** // Convert hall readings into +/- encoder value
+  46:hallctrl.c    **** static int8_t getHallIncrement(uint8_t last, uint8_t current)
+  47:hallctrl.c    **** {
+  48:hallctrl.c    ****     if (last == 0)
+  49:hallctrl.c    ****         return 0;
+  50:hallctrl.c    ****     return HallIncrement[6 * (last-1) + (current-1)];
+  51:hallctrl.c    **** }
+  52:hallctrl.c    **** 
+  53:hallctrl.c    **** 
+  54:hallctrl.c    **** /************************************************************************
+  55:hallctrl.c    ****  * Interrupt handlers
+  56:hallctrl.c    ****  ************************************************************************/
+  57:hallctrl.c    **** 
+  58:hallctrl.c    **** /************************************************************************
+  59:hallctrl.c    ****  * Interrupt handler for Motor 1 pin change.  When any Hall sensor changes
+  60:hallctrl.c    ****  * state, this will fire.  It updates the capture accumulator with the new
+  61:hallctrl.c    ****  * period and moves the motor to the next commutation state
+  62:hallctrl.c    ****  ************************************************************************/
+  63:hallctrl.c    **** ISR(MOTOR1_INT_vect)
+  64:hallctrl.c    **** {
+  65:hallctrl.c    ****     uint8_t currentHall = (MOTOR1PORT.IN & 0x70) >> 4;
+  66:hallctrl.c    ****     encoder += getHallIncrement(lastHall, currentHall);
+  67:hallctrl.c    ****     lastHall = currentHall;
+  68:hallctrl.c    **** 
+  69:hallctrl.c    ****     //ASSERT_DEBUG_LINE();
+  70:hallctrl.c    ****     updateMotorCount();
+  71:hallctrl.c    ****     updateMotor();
+  72:hallctrl.c    ****     //DEASSERT_DEBUG_LINE();
+  73:hallctrl.c    ****     return;
+  74:hallctrl.c    **** }
+  75:hallctrl.c    **** 
+  76:hallctrl.c    **** /************************************************************************
+  77:hallctrl.c    ****  * Motor 1 fault interrupt.  Shuts down the motor when either OTW or FAULT
+  78:hallctrl.c    ****  * assert.  Currently not used because of cycle-by-cycle limiting on the
+  79:hallctrl.c    ****  * driver chip.
+  80:hallctrl.c    ****  ************************************************************************/
+  81:hallctrl.c    **** //ISR(MOTOR1_FAULT_vect)
+  82:hallctrl.c    **** //{
+  83:hallctrl.c    **** //    resetPIDController(0);
+  84:hallctrl.c    **** //  updateMotorDirection(0,DIRECTION_STOP);
+  85:hallctrl.c    **** //    updateMotorVoltage(0,0x00);
+  86:hallctrl.c    **** //    forceMotorUpdate();
+  87:hallctrl.c    **** //}
+  88:hallctrl.c    **** 
+  89:hallctrl.c    **** /************************************************************************
+  90:hallctrl.c    ****  * getMotorDirection()
+  91:hallctrl.c    ****  *
+  92:hallctrl.c    ****  * Accessor for the current programmed motor direction
+  93:hallctrl.c    ****  ************************************************************************/
+  94:hallctrl.c    **** DIRECTION_MODE_t getMotorDirection(void)
+  95:hallctrl.c    **** {
+  18               		.loc 1 95 0
+  19               		.cfi_startproc
+  20               	/* prologue: function */
+  21               	/* frame size = 0 */
+  22               	/* stack size = 0 */
+  23               	.L__stack_usage = 0
+  96:hallctrl.c    ****     return direction;
+  24               		.loc 1 96 0
+  25 0000 8091 0000 		lds r24,direction
+  26               	/* epilogue start */
+  97:hallctrl.c    **** }
+  27               		.loc 1 97 0
+  28 0004 0895      		ret
+  29               		.cfi_endproc
+  30               	.LFE2:
+  32               	.global	getOldControlValue
+  34               	getOldControlValue:
+  35               	.LFB3:
+  98:hallctrl.c    **** 
+  99:hallctrl.c    **** /************************************************************************
+ 100:hallctrl.c    ****  * getOldControlValue()
+ 101:hallctrl.c    ****  *
+ 102:hallctrl.c    ****  * Accessor for the current programmed motor direction
+ 103:hallctrl.c    ****  ************************************************************************/
+ 104:hallctrl.c    **** uint8_t getOldControlValue(void)
+ 105:hallctrl.c    **** {
+  36               		.loc 1 105 0
+  37               		.cfi_startproc
+  38               	/* prologue: function */
+  39               	/* frame size = 0 */
+  40               	/* stack size = 0 */
+  41               	.L__stack_usage = 0
+ 106:hallctrl.c    ****     return oldControlSignal;
+ 107:hallctrl.c    **** }
+  42               		.loc 1 107 0
+  43 0006 8091 0000 		lds r24,oldControlSignal
+  44               	/* epilogue start */
+  45 000a 0895      		ret
+  46               		.cfi_endproc
+  47               	.LFE3:
+  49               	.global	updateMotorVoltage
+  51               	updateMotorVoltage:
+  52               	.LFB5:
+ 108:hallctrl.c    **** 
+ 109:hallctrl.c    **** /************************************************************************
+ 110:hallctrl.c    ****  * forceMotorUpdate()
+ 111:hallctrl.c    ****  *
+ 112:hallctrl.c    ****  * Can be called from userspace at any time to make sure the motor is in
+ 113:hallctrl.c    ****  * the correct state.  This is important for committing a change in direction
+ 114:hallctrl.c    ****  * or if something goes wrong during commutation and Hall sensor bounce
+ 115:hallctrl.c    ****  * selects the wrong state.  It is called by the PID loop just in case.
+ 116:hallctrl.c    ****  ************************************************************************/
+ 117:hallctrl.c    **** // void forceMotorUpdate(void)
+ 118:hallctrl.c    **** // {
+ 119:hallctrl.c    **** //     updateMotor1();
+ 120:hallctrl.c    **** // }
+ 121:hallctrl.c    **** 
+ 122:hallctrl.c    **** /************************************************************************
+ 123:hallctrl.c    ****  * updateMotorDirection(newDirection)
+ 124:hallctrl.c    ****  *
+ 125:hallctrl.c    ****  * Updates the motor in the direction of newDirection.  newDirection can have the value
+ 126:hallctrl.c    ****  * DIRECTION_NO_CHANGE to ensure that no attempt is made to change the direction.
+ 127:hallctrl.c    ****  * Otherwise, direction can be DIRECTION_FORWARD, DIRECTION_STOP, or DIRECTION_REVERSE
+ 128:hallctrl.c    ****  ************************************************************************/
+ 129:hallctrl.c    **** void updateMotorDirection(DIRECTION_MODE_t newDirection)
+ 130:hallctrl.c    **** {
+ 131:hallctrl.c    ****     if((newDirection == DIRECTION_STOP) || 
+ 132:hallctrl.c    ****        (newDirection != DIRECTION_NO_CHANGE && direction != newDirection))
+ 133:hallctrl.c    ****     {
+ 134:hallctrl.c    ****         updateMotorVoltage(0);
+ 135:hallctrl.c    ****         resetVelocityCounter();
+ 136:hallctrl.c    ****         direction = newDirection;
+ 137:hallctrl.c    ****     }
+ 138:hallctrl.c    **** }
+ 139:hallctrl.c    **** 
+ 140:hallctrl.c    **** 
+ 141:hallctrl.c    **** 
+ 142:hallctrl.c    **** /************************************************************************
+ 143:hallctrl.c    ****  * updateMotorVoltage(controlSignal)
+ 144:hallctrl.c    ****  *
+ 145:hallctrl.c    ****  * Changes Motor to have speed marked by controlSignal
+ 146:hallctrl.c    ****  *
+ 147:hallctrl.c    ****  ************************************************************************/
+ 148:hallctrl.c    **** void updateMotorVoltage(uint8_t controlSignal)
+ 149:hallctrl.c    **** {
+  53               		.loc 1 149 0
+  54               		.cfi_startproc
+  55               	.LVL0:
+  56 000c CF92      		push r12
+  57               	.LCFI0:
+  58               		.cfi_def_cfa_offset 3
+  59               		.cfi_offset 12, -2
+  60 000e DF92      		push r13
+  61               	.LCFI1:
+  62               		.cfi_def_cfa_offset 4
+  63               		.cfi_offset 13, -3
+  64 0010 EF92      		push r14
+  65               	.LCFI2:
+  66               		.cfi_def_cfa_offset 5
+  67               		.cfi_offset 14, -4
+  68 0012 FF92      		push r15
+  69               	.LCFI3:
+  70               		.cfi_def_cfa_offset 6
+  71               		.cfi_offset 15, -5
+  72 0014 CF93      		push r28
+  73               	.LCFI4:
+  74               		.cfi_def_cfa_offset 7
+  75               		.cfi_offset 28, -6
+  76               	/* prologue: function */
+  77               	/* frame size = 0 */
+  78               	/* stack size = 5 */
+  79               	.L__stack_usage = 5
+  80 0016 C82F      		mov r28,r24
+ 150:hallctrl.c    ****     if (controlSignal > Parameter[PARAMETER_MAXIMUM_PWM])
+  81               		.loc 1 150 0
+  82 0018 C090 0000 		lds r12,Parameter+80
+  83 001c D090 0000 		lds r13,Parameter+80+1
+  84 0020 E090 0000 		lds r14,Parameter+80+2
+  85 0024 F090 0000 		lds r15,Parameter+80+3
+  86 0028 682F      		mov r22,r24
+  87 002a 70E0      		ldi r23,lo8(0)
+  88 002c 80E0      		ldi r24,lo8(0)
+  89 002e 90E0      		ldi r25,hi8(0)
+  90               	.LVL1:
+  91 0030 0E94 0000 		call __floatsisf
+  92               	.LVL2:
+  93 0034 A701      		movw r20,r14
+  94 0036 9601      		movw r18,r12
+  95 0038 0E94 0000 		call __gtsf2
+  96 003c 1816      		cp __zero_reg__,r24
+  97 003e 04F4      		brge .L4
+ 151:hallctrl.c    ****         controlSignal = Parameter[PARAMETER_MAXIMUM_PWM];
+  98               		.loc 1 151 0
+  99 0040 C701      		movw r24,r14
+ 100 0042 B601      		movw r22,r12
+ 101 0044 0E94 0000 		call __fixunssfsi
+ 102 0048 C62F      		mov r28,r22
+ 103               	.LVL3:
+ 104               	.L4:
+ 152:hallctrl.c    ****     
+ 153:hallctrl.c    ****     if(controlSignal != oldControlSignal)
+ 105               		.loc 1 153 0
+ 106 004a 8091 0000 		lds r24,oldControlSignal
+ 107 004e C817      		cp r28,r24
+ 108 0050 01F0      		breq .L3
+ 154:hallctrl.c    ****     {
+ 155:hallctrl.c    ****         MOTOR1_PWMA_CCBUF = controlSignal + 256;
+ 109               		.loc 1 155 0
+ 110 0052 8C2F      		mov r24,r28
+ 111 0054 90E0      		ldi r25,lo8(0)
+ 112 0056 8050      		subi r24,lo8(-(256))
+ 113 0058 9F4F      		sbci r25,hi8(-(256))
+ 114 005a E0E0      		ldi r30,lo8(2048)
+ 115 005c F8E0      		ldi r31,hi8(2048)
+ 116 005e 80AF      		std Z+56,r24
+ 117 0060 91AF      		std Z+57,r25
+ 156:hallctrl.c    ****         MOTOR1_PWMB_CCBUF = controlSignal + 256;
+ 118               		.loc 1 156 0
+ 119 0062 82AF      		std Z+58,r24
+ 120 0064 93AF      		std Z+59,r25
+ 157:hallctrl.c    ****         MOTOR1_PWMC_CCBUF = controlSignal + 256;
+ 121               		.loc 1 157 0
+ 122 0066 84AF      		std Z+60,r24
+ 123 0068 95AF      		std Z+61,r25
+ 158:hallctrl.c    **** #ifdef USE_SWITCHING
+ 159:hallctrl.c    ****         MOTOR1_INVCURRENT_CCBUF = controlSignal + 256;
+ 160:hallctrl.c    **** #endif
+ 161:hallctrl.c    ****         oldControlSignal = controlSignal;
+ 124               		.loc 1 161 0
+ 125 006a C093 0000 		sts oldControlSignal,r28
+ 126               	.L3:
+ 127               	/* epilogue start */
+ 162:hallctrl.c    ****     }
+ 163:hallctrl.c    **** }
+ 128               		.loc 1 163 0
+ 129 006e CF91      		pop r28
+ 130               	.LVL4:
+ 131 0070 FF90      		pop r15
+ 132 0072 EF90      		pop r14
+ 133 0074 DF90      		pop r13
+ 134 0076 CF90      		pop r12
+ 135 0078 0895      		ret
+ 136               		.cfi_endproc
+ 137               	.LFE5:
+ 139               	.global	updateMotorDirection
+ 141               	updateMotorDirection:
+ 142               	.LFB4:
+ 130:hallctrl.c    **** {
+ 143               		.loc 1 130 0
+ 144               		.cfi_startproc
+ 145               	.LVL5:
+ 146 007a CF93      		push r28
+ 147               	.LCFI5:
+ 148               		.cfi_def_cfa_offset 3
+ 149               		.cfi_offset 28, -2
+ 150               	/* prologue: function */
+ 151               	/* frame size = 0 */
+ 152               	/* stack size = 1 */
+ 153               	.L__stack_usage = 1
+ 154 007c C82F      		mov r28,r24
+ 131:hallctrl.c    ****     if((newDirection == DIRECTION_STOP) || 
+ 155               		.loc 1 131 0
+ 156 007e 8823      		tst r24
+ 157 0080 01F0      		breq .L9
+ 131:hallctrl.c    ****     if((newDirection == DIRECTION_STOP) || 
+ 158               		.loc 1 131 0 is_stmt 0 discriminator 1
+ 159 0082 8330      		cpi r24,lo8(3)
+ 160 0084 01F0      		breq .L8
+ 132:hallctrl.c    ****        (newDirection != DIRECTION_NO_CHANGE && direction != newDirection))
+ 161               		.loc 1 132 0 is_stmt 1
+ 162 0086 8091 0000 		lds r24,direction
+ 163               	.LVL6:
+ 164 008a 8C17      		cp r24,r28
+ 165 008c 01F0      		breq .L8
+ 166               	.L9:
+ 134:hallctrl.c    ****         updateMotorVoltage(0);
+ 167               		.loc 1 134 0
+ 168 008e 80E0      		ldi r24,lo8(0)
+ 169 0090 0E94 0000 		call updateMotorVoltage
+ 135:hallctrl.c    ****         resetVelocityCounter();
+ 170               		.loc 1 135 0
+ 171 0094 0E94 0000 		call resetVelocityCounter
+ 136:hallctrl.c    ****         direction = newDirection;
+ 172               		.loc 1 136 0
+ 173 0098 C093 0000 		sts direction,r28
+ 174               	.L8:
+ 175               	/* epilogue start */
+ 138:hallctrl.c    **** }
+ 176               		.loc 1 138 0
+ 177 009c CF91      		pop r28
+ 178               	.LVL7:
+ 179 009e 0895      		ret
+ 180               		.cfi_endproc
+ 181               	.LFE4:
+ 183               	.global	configurePortIO
+ 185               	configurePortIO:
+ 186               	.LFB6:
+ 164:hallctrl.c    **** 
+ 165:hallctrl.c    **** /************************************************************************
+ 166:hallctrl.c    ****  * configurePortIO()
+ 167:hallctrl.c    ****  * This function configures the peripheral I/O ports.  The direction,
+ 168:hallctrl.c    ****  * default out state, and drivers are set up here.
+ 169:hallctrl.c    ****  ************************************************************************/
+ 170:hallctrl.c    **** void configurePortIO(void)
+ 171:hallctrl.c    **** {
+ 187               		.loc 1 171 0
+ 188               		.cfi_startproc
+ 189               	/* prologue: function */
+ 190               	/* frame size = 0 */
+ 191               	/* stack size = 0 */
+ 192               	.L__stack_usage = 0
+ 172:hallctrl.c    ****     //First setup the GPIOs by port.
+ 173:hallctrl.c    ****     //PA0 - VREF
+ 174:hallctrl.c    ****     //PA1 - TEMP
+ 175:hallctrl.c    ****     //PA2 - IMON
+ 176:hallctrl.c    ****     //PA3 - TENSION1
+ 177:hallctrl.c    ****     //PA4 - TENSION2
+ 178:hallctrl.c    ****     //PA5 - IMON_REF
+ 179:hallctrl.c    ****     //PA6 - NC
+ 180:hallctrl.c    ****     //PA7 - NC
+ 181:hallctrl.c    ****     PORTA.OUT = 0x00;
+ 193               		.loc 1 181 0
+ 194 00a0 E0E0      		ldi r30,lo8(1536)
+ 195 00a2 F6E0      		ldi r31,hi8(1536)
+ 196 00a4 1482      		std Z+4,__zero_reg__
+ 182:hallctrl.c    ****     PORTA.DIR = 0x00;
+ 197               		.loc 1 182 0
+ 198 00a6 1082      		st Z,__zero_reg__
+ 183:hallctrl.c    **** 
+ 184:hallctrl.c    ****     //Port B is entirely no-connect, except for CPU debug load
+ 185:hallctrl.c    ****     PORTB.OUT = 0x00;
+ 199               		.loc 1 185 0
+ 200 00a8 E0E2      		ldi r30,lo8(1568)
+ 201 00aa F6E0      		ldi r31,hi8(1568)
+ 202 00ac 1482      		std Z+4,__zero_reg__
+ 186:hallctrl.c    ****     PORTB.DIR = 0x04;
+ 203               		.loc 1 186 0
+ 204 00ae 84E0      		ldi r24,lo8(4)
+ 205 00b0 8083      		st Z,r24
+ 187:hallctrl.c    **** 
+ 188:hallctrl.c    ****     //PC0 - PWMA1
+ 189:hallctrl.c    ****     //PC1 - PWMB1
+ 190:hallctrl.c    ****     //PC2 - PWMC1
+ 191:hallctrl.c    ****     //PC3 - SEL
+ 192:hallctrl.c    ****     //PC4 - HA1
+ 193:hallctrl.c    ****     //PC5 - HB1
+ 194:hallctrl.c    ****     //PC6 - HC1
+ 195:hallctrl.c    ****     //PC7 - LED/ID
+ 196:hallctrl.c    ****     PORTC.OUT = 0x00;
+ 206               		.loc 1 196 0
+ 207 00b2 E0E4      		ldi r30,lo8(1600)
+ 208 00b4 F6E0      		ldi r31,hi8(1600)
+ 209 00b6 1482      		std Z+4,__zero_reg__
+ 197:hallctrl.c    ****     PORTC.DIR = 0x8F; //BA: used to be 0F
+ 210               		.loc 1 197 0
+ 211 00b8 8FE8      		ldi r24,lo8(-113)
+ 212 00ba 8083      		st Z,r24
+ 198:hallctrl.c    **** 
+ 199:hallctrl.c    ****     //PD0 - RX_PROX1_nEN
+ 200:hallctrl.c    ****     //PD1 - TX_PROX1_EN
+ 201:hallctrl.c    ****     //PD2 - RX_PROX1 (also debug to PC)
+ 202:hallctrl.c    ****     //PD3 - TX_PROX1 (also debug to PC)
+ 203:hallctrl.c    ****     //PD4 - RX_PROX2_EN
+ 204:hallctrl.c    ****     //PD5 - TX_PROX2_EN
+ 205:hallctrl.c    ****     //PD6 - RX_PROX2
+ 206:hallctrl.c    ****     //PD7 - TX_PROX2
+ 207:hallctrl.c    ****     PORTD.OUT = 0x22;
+ 213               		.loc 1 207 0
+ 214 00bc E0E6      		ldi r30,lo8(1632)
+ 215 00be F6E0      		ldi r31,hi8(1632)
+ 216 00c0 82E2      		ldi r24,lo8(34)
+ 217 00c2 8483      		std Z+4,r24
+ 208:hallctrl.c    ****     PORTD.DIR = 0xBB;
+ 218               		.loc 1 208 0
+ 219 00c4 8BEB      		ldi r24,lo8(-69)
+ 220 00c6 8083      		st Z,r24
+ 209:hallctrl.c    **** 
+ 210:hallctrl.c    ****     //PE0 - nRESET_A1
+ 211:hallctrl.c    ****     //PE1 - nRESET_B1
+ 212:hallctrl.c    ****     //PE2 - nRESET_C1
+ 213:hallctrl.c    ****     //PE3 - LED
+ 214:hallctrl.c    ****     PORTE.OUT = 0x08;
+ 221               		.loc 1 214 0
+ 222 00c8 E0E8      		ldi r30,lo8(1664)
+ 223 00ca F6E0      		ldi r31,hi8(1664)
+ 224 00cc 88E0      		ldi r24,lo8(8)
+ 225 00ce 8483      		std Z+4,r24
+ 215:hallctrl.c    ****     PORTE.DIR = 0x0F;
+ 226               		.loc 1 215 0
+ 227 00d0 8FE0      		ldi r24,lo8(15)
+ 228 00d2 8083      		st Z,r24
+ 216:hallctrl.c    **** 
+ 217:hallctrl.c    ****     //PR0 - nFAULT
+ 218:hallctrl.c    ****     //PR1 - nOTW
+ 219:hallctrl.c    ****     PORTR.OUT = 0x00;
+ 229               		.loc 1 219 0
+ 230 00d4 E0EE      		ldi r30,lo8(2016)
+ 231 00d6 F7E0      		ldi r31,hi8(2016)
+ 232 00d8 1482      		std Z+4,__zero_reg__
+ 220:hallctrl.c    ****     PORTR.DIR = 0x00;
+ 233               		.loc 1 220 0
+ 234 00da 1082      		st Z,__zero_reg__
+ 221:hallctrl.c    **** 
+ 222:hallctrl.c    ****     //Configure open collector outputs from the motor controller driver to have pullups
+ 223:hallctrl.c    ****     PORTR.PIN0CTRL = PORT_OPC_PULLUP_gc;
+ 235               		.loc 1 223 0
+ 236 00dc 88E1      		ldi r24,lo8(24)
+ 237 00de 808B      		std Z+16,r24
+ 224:hallctrl.c    ****     PORTR.PIN1CTRL = PORT_OPC_PULLUP_gc;
+ 238               		.loc 1 224 0
+ 239 00e0 818B      		std Z+17,r24
+ 240               	/* epilogue start */
+ 225:hallctrl.c    **** }
+ 241               		.loc 1 225 0
+ 242 00e2 0895      		ret
+ 243               		.cfi_endproc
+ 244               	.LFE6:
+ 246               	.global	configurePinInterrupts
+ 248               	configurePinInterrupts:
+ 249               	.LFB7:
+ 226:hallctrl.c    **** 
+ 227:hallctrl.c    **** /************************************************************************
+ 228:hallctrl.c    ****  * configurePinInterrupts()
+ 229:hallctrl.c    ****  * configure the Hall sensors to generate an interrupt on pin changes.
+ 230:hallctrl.c    ****  * Also handle the port change interrupts for FAULT conditions.
+ 231:hallctrl.c    ****  ************************************************************************/
+ 232:hallctrl.c    **** void configurePinInterrupts(void)
+ 233:hallctrl.c    **** {
+ 250               		.loc 1 233 0
+ 251               		.cfi_startproc
+ 252               	/* prologue: function */
+ 253               	/* frame size = 0 */
+ 254               	/* stack size = 0 */
+ 255               	.L__stack_usage = 0
+ 234:hallctrl.c    ****     //Set to interrupt on BOTH edges with TOTEM drivers and no slew rate control
+ 235:hallctrl.c    ****     MOTOR1_HA_PINCTRL = PORT_ISC_BOTHEDGES_gc | PORT_OPC_TOTEM_gc;
+ 256               		.loc 1 235 0
+ 257 00e4 E0E4      		ldi r30,lo8(1600)
+ 258 00e6 F6E0      		ldi r31,hi8(1600)
+ 259 00e8 148A      		std Z+20,__zero_reg__
+ 236:hallctrl.c    ****     MOTOR1_HB_PINCTRL = PORT_ISC_BOTHEDGES_gc | PORT_OPC_TOTEM_gc;
+ 260               		.loc 1 236 0
+ 261 00ea 158A      		std Z+21,__zero_reg__
+ 237:hallctrl.c    ****     MOTOR1_HC_PINCTRL = PORT_ISC_BOTHEDGES_gc | PORT_OPC_TOTEM_gc;
+ 262               		.loc 1 237 0
+ 263 00ec 168A      		std Z+22,__zero_reg__
+ 238:hallctrl.c    **** 
+ 239:hallctrl.c    ****     //Set to interrupt on FALLING edges and be with pullups as input
+ 240:hallctrl.c    ****     MOTOR1_FAULT_PINCTRL = PORT_ISC_FALLING_gc | PORT_OPC_PULLUP_gc;
+ 264               		.loc 1 240 0
+ 265 00ee A0EE      		ldi r26,lo8(2016)
+ 266 00f0 B7E0      		ldi r27,hi8(2016)
+ 267 00f2 8AE1      		ldi r24,lo8(26)
+ 268 00f4 5196      		adiw r26,17
+ 269 00f6 8C93      		st X,r24
+ 270 00f8 5197      		sbiw r26,17
+ 241:hallctrl.c    ****     MOTOR1_OTW_PINCTRL = PORT_ISC_FALLING_gc | PORT_OPC_PULLUP_gc;
+ 271               		.loc 1 241 0
+ 272 00fa 5096      		adiw r26,16
+ 273 00fc 8C93      		st X,r24
+ 274 00fe 5097      		sbiw r26,16
+ 242:hallctrl.c    **** 
+ 243:hallctrl.c    ****     //Configure Hall sensor pins to interrupt group zero.
+ 244:hallctrl.c    ****     MOTOR1PORT.INT0MASK = (1 << MOTOR1_HA_PIN) | (1 << MOTOR1_HB_PIN) | ( 1 << MOTOR1_HC_PIN);
+ 275               		.loc 1 244 0
+ 276 0100 80E7      		ldi r24,lo8(112)
+ 277 0102 8287      		std Z+10,r24
+ 245:hallctrl.c    **** 
+ 246:hallctrl.c    ****     //Configure Fault sensor pins to interrupt group one.
+ 247:hallctrl.c    ****     //MOTOR1PORT.INT1MASK = (1 << MOTOR1_FAULT_PIN) | (1 << MOTOR1_OTW_PIN);
+ 248:hallctrl.c    **** 
+ 249:hallctrl.c    ****     //Enable interrupt 0 on PORTC to priority LOW
+ 250:hallctrl.c    ****     MOTOR1PORT.INTCTRL = PORT_INT0LVL_LO_gc;
+ 278               		.loc 1 250 0
+ 279 0104 81E0      		ldi r24,lo8(1)
+ 280 0106 8187      		std Z+9,r24
+ 281               	/* epilogue start */
+ 251:hallctrl.c    ****     //MOTOR1PORT.INTCTRL = PORT_INT1LVL_LO_gc | PORT_INT0LVL_LO_gc;
+ 252:hallctrl.c    **** }
+ 282               		.loc 1 252 0
+ 283 0108 0895      		ret
+ 284               		.cfi_endproc
+ 285               	.LFE7:
+ 287               	.global	configureMotorPWMs
+ 289               	configureMotorPWMs:
+ 290               	.LFB8:
+ 253:hallctrl.c    **** 
+ 254:hallctrl.c    **** /************************************************************************
+ 255:hallctrl.c    ****  * configureMotorPWMs()
+ 256:hallctrl.c    ****  *
+ 257:hallctrl.c    ****  * Configure the PWM module that generate drive waveforms for the motors.
+ 258:hallctrl.c    ****  * The output will be gated or not depending on the Hall sensor states.
+ 259:hallctrl.c    ****  ************************************************************************/
+ 260:hallctrl.c    **** void configureMotorPWMs(void)
+ 261:hallctrl.c    **** {
+ 291               		.loc 1 261 0
+ 292               		.cfi_startproc
+ 293               	/* prologue: function */
+ 294               	/* frame size = 0 */
+ 295               	/* stack size = 0 */
+ 296               	.L__stack_usage = 0
+ 262:hallctrl.c    ****     //Now configure the PWMs for the appropriate frequency and pin outputs
+ 263:hallctrl.c    ****     //The clock will be the 32MHz RC Oscillator onboard the chip
+ 264:hallctrl.c    ****     //No prescaling is required, and it will give better PWM duty cycle granularity
+ 265:hallctrl.c    ****     direction = DIRECTION_STOP;
+ 297               		.loc 1 265 0
+ 298 010a 1092 0000 		sts direction,__zero_reg__
+ 266:hallctrl.c    **** 
+ 267:hallctrl.c    ****     //Shutdown all TC outputs before configuration
+ 268:hallctrl.c    ****     MOTOR1_TC.CTRLC = 0x00;
+ 299               		.loc 1 268 0
+ 300 010e E0E0      		ldi r30,lo8(2048)
+ 301 0110 F8E0      		ldi r31,hi8(2048)
+ 302 0112 1282      		std Z+2,__zero_reg__
+ 269:hallctrl.c    **** 
+ 270:hallctrl.c    ****     //Disable event actions
+ 271:hallctrl.c    ****     MOTOR1_TC.CTRLD = TC_EVACT_OFF_gc | TC_EVSEL_OFF_gc;
+ 303               		.loc 1 271 0
+ 304 0114 1382      		std Z+3,__zero_reg__
+ 272:hallctrl.c    **** 
+ 273:hallctrl.c    ****     //Set all TC modules to 16-bit mode
+ 274:hallctrl.c    ****     MOTOR1_TC.CTRLE = 0x00;
+ 305               		.loc 1 274 0
+ 306 0116 1482      		std Z+4,__zero_reg__
+ 275:hallctrl.c    **** 
+ 276:hallctrl.c    ****     //Set the period to 512 counts to make duty cycle increments work at 8 bits
+ 277:hallctrl.c    ****     //Value is 511 because counter moves from 0 to the value and then back to zero on the following
+ 278:hallctrl.c    ****     //This creates a frequency of 62.5 kHz, because 32MHz / 512 = 62.5 kHz.
+ 279:hallctrl.c    ****     MOTOR1_TC.PERBUF = 511;
+ 307               		.loc 1 279 0
+ 308 0118 8FEF      		ldi r24,lo8(511)
+ 309 011a 91E0      		ldi r25,hi8(511)
+ 310 011c 86AB      		std Z+54,r24
+ 311 011e 97AB      		std Z+55,r25
+ 280:hallctrl.c    **** 
+ 281:hallctrl.c    ****     //For now, initialize to a duty cycle of 50%, a command of 0.
+ 282:hallctrl.c    ****     //Each pin can have different duty cycles, so each one is on its own
+ 283:hallctrl.c    ****     MOTOR1_PWMA_CCBUF = 256;
+ 312               		.loc 1 283 0
+ 313 0120 80E0      		ldi r24,lo8(256)
+ 314 0122 91E0      		ldi r25,hi8(256)
+ 315 0124 80AF      		std Z+56,r24
+ 316 0126 91AF      		std Z+57,r25
+ 284:hallctrl.c    ****     MOTOR1_PWMB_CCBUF = 256;
+ 317               		.loc 1 284 0
+ 318 0128 82AF      		std Z+58,r24
+ 319 012a 93AF      		std Z+59,r25
+ 285:hallctrl.c    ****     MOTOR1_PWMC_CCBUF = 256;
+ 320               		.loc 1 285 0
+ 321 012c 84AF      		std Z+60,r24
+ 322 012e 95AF      		std Z+61,r25
+ 286:hallctrl.c    **** #ifdef USE_SWITCHING
+ 287:hallctrl.c    ****     MOTOR1_INVCURRENT_CCBUF = 256;
+ 288:hallctrl.c    **** #endif
+ 289:hallctrl.c    **** 
+ 290:hallctrl.c    ****     MOTOR1_TC.CTRLB = TC_WGMODE_SS_gc;
+ 323               		.loc 1 290 0
+ 324 0130 83E0      		ldi r24,lo8(3)
+ 325 0132 8183      		std Z+1,r24
+ 291:hallctrl.c    **** 
+ 292:hallctrl.c    ****     //Activate the Timer Counters
+ 293:hallctrl.c    ****     MOTOR1_TC.CTRLA = TC_CLKSEL_DIV1_gc;
+ 326               		.loc 1 293 0
+ 327 0134 81E0      		ldi r24,lo8(1)
+ 328 0136 8083      		st Z,r24
+ 329               	/* epilogue start */
+ 294:hallctrl.c    **** }
+ 330               		.loc 1 294 0
+ 331 0138 0895      		ret
+ 332               		.cfi_endproc
+ 333               	.LFE8:
+ 335               	.global	updateMotor
+ 337               	updateMotor:
+ 338               	.LFB9:
+ 295:hallctrl.c    **** 
+ 296:hallctrl.c    **** /***********************************************************************
+ 297:hallctrl.c    **** updateMotor()
+ 298:hallctrl.c    **** Takes as input the Hall sensors and generates the appropriate drive signals to Motor 1
+ 299:hallctrl.c    **** This routine is blind to the desired PWM duty cycle, so it is safe to call any time.
+ 300:hallctrl.c    **** In general, it should be called any time one of the Hall sensors changes state
+ 301:hallctrl.c    **** or any time the direction needs to be updated.  This includes when the direction
+ 302:hallctrl.c    **** is updated to STOP
+ 303:hallctrl.c    **** 
+ 304:hallctrl.c    **** The necessary drive signals were taken from TI's description of the DRV8132 and other sources.
+ 305:hallctrl.c    **** The outputs are RESETA, RESETB, RESETC, PWMA, PWMB, and PWMC.
+ 306:hallctrl.c    **** This module assumes that timer counters have already been configured with a duty cycle greater than
+ 307:hallctrl.c    **** 50% to PWMA, PWMB, and PWMC, so this function is mostly responsible for connecting and disconnectin
+ 308:hallctrl.c    **** underlying PWM source from the port pin.
+ 309:hallctrl.c    **** In any given state, one PWM output is high, one is low, and the third is off.  A high output is acc
+ 310:hallctrl.c    **** by connecting the underlying PWM to port pin.  Because the PWM has a greater than 50% duty cycle, t
+ 311:hallctrl.c    **** that the associated phase will have net positive current into it.
+ 312:hallctrl.c    **** A low output is accomplished by feeding the same PWM signal to the low pin with its inversion bit s
+ 313:hallctrl.c    **** This ensures that the output is out of phase at the inverse duty cycle.  This will make its half-br
+ 314:hallctrl.c    **** The off output is disconnected from the PWM module and driven low.  In addition, the associated RES
+ 315:hallctrl.c    **** to activate it.  This is required so that the half-bridge is tristated rather than pulled low.
+ 316:hallctrl.c    **** 
+ 317:hallctrl.c    **** The only difference between forward and reverse is that the high and low ports for that Hall state 
+ 318:hallctrl.c    **** More complicated drive structures may be possible depending on the particular motor chosen, but thi
+ 319:hallctrl.c    **** seems to be the generally accepted one.
+ 320:hallctrl.c    **** ************************************************************************/
+ 321:hallctrl.c    **** void updateMotor(void)
+ 322:hallctrl.c    **** {
+ 339               		.loc 1 322 0
+ 340               		.cfi_startproc
+ 341               	/* prologue: function */
+ 342               	/* frame size = 0 */
+ 343               	/* stack size = 0 */
+ 344               	.L__stack_usage = 0
+ 323:hallctrl.c    **** 
+ 324:hallctrl.c    ****     DIRECTION_MODE_t thisDirection;
+ 325:hallctrl.c    ****     uint8_t sensorState;
+ 326:hallctrl.c    **** 
+ 327:hallctrl.c    ****     //First get the state of the Hall Effect Sensors
+ 328:hallctrl.c    ****     //sensorState.0 is 1, sensorState.1 is 2, and sensorState.2 is 3
+ 329:hallctrl.c    ****     sensorState = (MOTOR1PORT.IN & 0x70) >> 4;
+ 345               		.loc 1 329 0
+ 346 013a E0E4      		ldi r30,lo8(1600)
+ 347 013c F6E0      		ldi r31,hi8(1600)
+ 348 013e 2091 4806 		lds r18,1608
+ 349               	.LVL8:
+ 330:hallctrl.c    ****     thisDirection = direction;
+ 350               		.loc 1 330 0
+ 351 0142 8091 0000 		lds r24,direction
+ 352               	.LVL9:
+ 331:hallctrl.c    **** 
+ 332:hallctrl.c    ****     //Configure pin outputs to match the Hall state
+ 333:hallctrl.c    ****     //In comments, H3-H2-H1 is given to match Hall Sensor states
+ 334:hallctrl.c    ****     //Reverse just involves swapping A and B
+ 335:hallctrl.c    **** 
+ 336:hallctrl.c    ****     if(thisDirection == DIRECTION_STOP)
+ 353               		.loc 1 336 0
+ 354 0146 8823      		tst r24
+ 355 0148 01F4      		brne .L15
+ 337:hallctrl.c    ****     {
+ 338:hallctrl.c    ****         MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm);
+ 356               		.loc 1 338 0
+ 357 014a 8091 8406 		lds r24,1668
+ 358               	.LVL10:
+ 359 014e 887F      		andi r24,lo8(-8)
+ 360 0150 A0E8      		ldi r26,lo8(1664)
+ 361 0152 B6E0      		ldi r27,hi8(1664)
+ 362 0154 1496      		adiw r26,4
+ 363 0156 8C93      		st X,r24
+ 339:hallctrl.c    ****         MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 364               		.loc 1 339 0
+ 365 0158 87E0      		ldi r24,lo8(7)
+ 366 015a 808B      		std Z+16,r24
+ 340:hallctrl.c    ****         MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 367               		.loc 1 340 0
+ 368 015c 818B      		std Z+17,r24
+ 341:hallctrl.c    ****         MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 369               		.loc 1 341 0
+ 370 015e 828B      		std Z+18,r24
+ 342:hallctrl.c    **** #ifdef USE_SWITCHING
+ 343:hallctrl.c    ****         MOTOR1_INVCURRENT_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 344:hallctrl.c    **** #endif
+ 345:hallctrl.c    ****         MOTOR1_TC.CTRLB = TC_WGMODE_SS_gc;
+ 371               		.loc 1 345 0
+ 372 0160 83E0      		ldi r24,lo8(3)
+ 373 0162 E0E0      		ldi r30,lo8(2048)
+ 374 0164 F8E0      		ldi r31,hi8(2048)
+ 375 0166 8183      		std Z+1,r24
+ 346:hallctrl.c    ****         averagePeriod = 65534;
+ 376               		.loc 1 346 0
+ 377 0168 80E0      		ldi r24,lo8(0x477ffe00)
+ 378 016a 9EEF      		ldi r25,hi8(0x477ffe00)
+ 379 016c AFE7      		ldi r26,hlo8(0x477ffe00)
+ 380 016e B7E4      		ldi r27,hhi8(0x477ffe00)
+ 381 0170 8093 0000 		sts averagePeriod,r24
+ 382 0174 9093 0000 		sts averagePeriod+1,r25
+ 383 0178 A093 0000 		sts averagePeriod+2,r26
+ 384 017c B093 0000 		sts averagePeriod+3,r27
+ 347:hallctrl.c    ****         averageRPM = 0;
+ 385               		.loc 1 347 0
+ 386 0180 1092 0000 		sts averageRPM,__zero_reg__
+ 387 0184 1092 0000 		sts averageRPM+1,__zero_reg__
+ 348:hallctrl.c    ****         return;
+ 388               		.loc 1 348 0
+ 389 0188 0895      		ret
+ 390               	.LVL11:
+ 391               	.L15:
+ 329:hallctrl.c    ****     sensorState = (MOTOR1PORT.IN & 0x70) >> 4;
+ 392               		.loc 1 329 0
+ 393 018a 30E0      		ldi r19,lo8(0)
+ 394 018c 2077      		andi r18,lo8(112)
+ 395 018e 3070      		andi r19,hi8(112)
+ 396               	.LVL12:
+ 397 0190 94E0      		ldi r25,4
+ 398 0192 3595      	1:	asr r19
+ 399 0194 2795      		ror r18
+ 400 0196 9A95      		dec r25
+ 401 0198 01F4      		brne 1b
+ 349:hallctrl.c    ****     }
+ 350:hallctrl.c    **** #ifdef USE_SWITCHING
+ 351:hallctrl.c    ****     //The current inversion PWM is always active if the motor is active
+ 352:hallctrl.c    ****     //It is inverted because of the required hookup of the ADC differential inputs
+ 353:hallctrl.c    ****     MOTOR1_INVCURRENT_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 354:hallctrl.c    **** #endif
+ 355:hallctrl.c    **** 
+ 356:hallctrl.c    ****     switch(sensorState)
+ 402               		.loc 1 356 0
+ 403 019a 2330      		cpi r18,lo8(3)
+ 404 019c 01F0      		breq .L19
+ 405 019e 2430      		cpi r18,lo8(4)
+ 406 01a0 00F4      		brsh .L23
+ 407 01a2 2130      		cpi r18,lo8(1)
+ 408 01a4 01F0      		breq .L17
+ 409 01a6 2230      		cpi r18,lo8(2)
+ 410 01a8 01F0      		breq .+2
+ 411 01aa 00C0      		rjmp .L14
+ 412 01ac 00C0      		rjmp .L35
+ 413               	.L23:
+ 414 01ae 2530      		cpi r18,lo8(5)
+ 415 01b0 01F4      		brne .+2
+ 416 01b2 00C0      		rjmp .L21
+ 417 01b4 2530      		cpi r18,lo8(5)
+ 418 01b6 00F4      		brsh .+2
+ 419 01b8 00C0      		rjmp .L20
+ 420 01ba 2630      		cpi r18,lo8(6)
+ 421 01bc 01F0      		breq .+2
+ 422 01be 00C0      		rjmp .L14
+ 423 01c0 00C0      		rjmp .L36
+ 424               	.L17:
+ 357:hallctrl.c    ****     {
+ 358:hallctrl.c    ****         case 0x01:
+ 359:hallctrl.c    ****             //0-0-1 - A and -C with reset on B for reverse
+ 360:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETA_DIS | 
+ 425               		.loc 1 360 0
+ 426 01c2 9091 8406 		lds r25,1668
+ 427 01c6 987F      		andi r25,lo8(-8)
+ 428 01c8 9560      		ori r25,lo8(5)
+ 429 01ca A0E8      		ldi r26,lo8(1664)
+ 430 01cc B6E0      		ldi r27,hi8(1664)
+ 431 01ce 1496      		adiw r26,4
+ 432 01d0 9C93      		st X,r25
+ 361:hallctrl.c    ****             MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 433               		.loc 1 361 0
+ 434 01d2 97E0      		ldi r25,lo8(7)
+ 435 01d4 918B      		std Z+17,r25
+ 362:hallctrl.c    **** #ifdef USE_SWITCHING
+ 363:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMC_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 364:hallctrl.c    **** #else
+ 365:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMC_EN | TC_WGMODE_SS_gc;
+ 436               		.loc 1 365 0
+ 437 01d6 23E5      		ldi r18,lo8(83)
+ 438 01d8 A0E0      		ldi r26,lo8(2048)
+ 439 01da B8E0      		ldi r27,hi8(2048)
+ 440 01dc 1196      		adiw r26,1
+ 441 01de 2C93      		st X,r18
+ 442 01e0 1197      		sbiw r26,1
+ 366:hallctrl.c    **** #endif
+ 367:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 443               		.loc 1 367 0
+ 444 01e2 8230      		cpi r24,lo8(2)
+ 445 01e4 01F0      		breq .+2
+ 446 01e6 00C0      		rjmp .L34
+ 368:hallctrl.c    ****             {
+ 369:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 447               		.loc 1 369 0
+ 448 01e8 908B      		std Z+16,r25
+ 449 01ea 00C0      		rjmp .L31
+ 450               	.L35:
+ 370:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 371:hallctrl.c    ****             }
+ 372:hallctrl.c    ****             else
+ 373:hallctrl.c    ****             {
+ 374:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 375:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 376:hallctrl.c    ****             }
+ 377:hallctrl.c    ****             break;
+ 378:hallctrl.c    ****         case 0x02:
+ 379:hallctrl.c    ****             //0-1-0 - B and -A with reset on C for reverse
+ 380:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETA_DIS | 
+ 451               		.loc 1 380 0
+ 452 01ec 9091 8406 		lds r25,1668
+ 453 01f0 987F      		andi r25,lo8(-8)
+ 454 01f2 9360      		ori r25,lo8(3)
+ 455 01f4 A0E8      		ldi r26,lo8(1664)
+ 456 01f6 B6E0      		ldi r27,hi8(1664)
+ 457 01f8 1496      		adiw r26,4
+ 458 01fa 9C93      		st X,r25
+ 381:hallctrl.c    ****             MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 459               		.loc 1 381 0
+ 460 01fc 97E0      		ldi r25,lo8(7)
+ 461 01fe 928B      		std Z+18,r25
+ 382:hallctrl.c    **** #ifdef USE_SWITCHING
+ 383:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMB_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 384:hallctrl.c    **** #else
+ 385:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMB_EN | TC_WGMODE_SS_gc;
+ 462               		.loc 1 385 0
+ 463 0200 23E3      		ldi r18,lo8(51)
+ 464 0202 A0E0      		ldi r26,lo8(2048)
+ 465 0204 B8E0      		ldi r27,hi8(2048)
+ 466 0206 1196      		adiw r26,1
+ 467 0208 2C93      		st X,r18
+ 468 020a 1197      		sbiw r26,1
+ 386:hallctrl.c    **** #endif
+ 387:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 469               		.loc 1 387 0
+ 470 020c 8230      		cpi r24,lo8(2)
+ 471 020e 01F0      		breq .+2
+ 472 0210 00C0      		rjmp .L32
+ 473 0212 00C0      		rjmp .L28
+ 474               	.L19:
+ 388:hallctrl.c    ****             {
+ 389:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 390:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 391:hallctrl.c    ****             }
+ 392:hallctrl.c    ****             else
+ 393:hallctrl.c    ****             {
+ 394:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 395:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 396:hallctrl.c    ****             }
+ 397:hallctrl.c    ****             break;
+ 398:hallctrl.c    ****         case 0x03:
+ 399:hallctrl.c    ****             //0-1-1 - B and -C with reset on A for reverse
+ 400:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETB_DIS | 
+ 475               		.loc 1 400 0
+ 476 0214 9091 8406 		lds r25,1668
+ 477 0218 987F      		andi r25,lo8(-8)
+ 478 021a 9660      		ori r25,lo8(6)
+ 479 021c A0E8      		ldi r26,lo8(1664)
+ 480 021e B6E0      		ldi r27,hi8(1664)
+ 481 0220 1496      		adiw r26,4
+ 482 0222 9C93      		st X,r25
+ 401:hallctrl.c    ****             MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 483               		.loc 1 401 0
+ 484 0224 97E0      		ldi r25,lo8(7)
+ 485 0226 908B      		std Z+16,r25
+ 402:hallctrl.c    **** #ifdef USE_SWITCHING
+ 403:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMB_EN | MOTOR1_PWMC_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 404:hallctrl.c    **** #else
+ 405:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMB_EN | MOTOR1_PWMC_EN | TC_WGMODE_SS_gc;
+ 486               		.loc 1 405 0
+ 487 0228 23E6      		ldi r18,lo8(99)
+ 488 022a A0E0      		ldi r26,lo8(2048)
+ 489 022c B8E0      		ldi r27,hi8(2048)
+ 490 022e 1196      		adiw r26,1
+ 491 0230 2C93      		st X,r18
+ 492 0232 1197      		sbiw r26,1
+ 406:hallctrl.c    **** #endif
+ 407:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 493               		.loc 1 407 0
+ 494 0234 8230      		cpi r24,lo8(2)
+ 495 0236 01F4      		brne .L33
+ 496 0238 00C0      		rjmp .L27
+ 497               	.L20:
+ 408:hallctrl.c    ****             {
+ 409:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 410:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 411:hallctrl.c    ****             }
+ 412:hallctrl.c    ****             else
+ 413:hallctrl.c    ****             {
+ 414:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 415:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 416:hallctrl.c    ****             }
+ 417:hallctrl.c    ****             break;
+ 418:hallctrl.c    ****         case 0x04:
+ 419:hallctrl.c    ****             //1-0-0 - C and -B with reset on A for reverse
+ 420:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETB_DIS | 
+ 498               		.loc 1 420 0
+ 499 023a 9091 8406 		lds r25,1668
+ 500 023e 987F      		andi r25,lo8(-8)
+ 501 0240 9660      		ori r25,lo8(6)
+ 502 0242 A0E8      		ldi r26,lo8(1664)
+ 503 0244 B6E0      		ldi r27,hi8(1664)
+ 504 0246 1496      		adiw r26,4
+ 505 0248 9C93      		st X,r25
+ 421:hallctrl.c    ****             MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 506               		.loc 1 421 0
+ 507 024a 97E0      		ldi r25,lo8(7)
+ 508 024c 908B      		std Z+16,r25
+ 422:hallctrl.c    **** #ifdef USE_SWITCHING
+ 423:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMB_EN | MOTOR1_PWMC_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 424:hallctrl.c    **** #else
+ 425:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMB_EN | MOTOR1_PWMC_EN | TC_WGMODE_SS_gc;
+ 509               		.loc 1 425 0
+ 510 024e 23E6      		ldi r18,lo8(99)
+ 511 0250 A0E0      		ldi r26,lo8(2048)
+ 512 0252 B8E0      		ldi r27,hi8(2048)
+ 513 0254 1196      		adiw r26,1
+ 514 0256 2C93      		st X,r18
+ 515 0258 1197      		sbiw r26,1
+ 426:hallctrl.c    **** #endif
+ 427:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 516               		.loc 1 427 0
+ 517 025a 8230      		cpi r24,lo8(2)
+ 518 025c 01F4      		brne .L27
+ 519               	.L33:
+ 428:hallctrl.c    ****             {
+ 429:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 520               		.loc 1 429 0
+ 521 025e 87E4      		ldi r24,lo8(71)
+ 522               	.LVL13:
+ 523 0260 818B      		std Z+17,r24
+ 524 0262 00C0      		rjmp .L30
+ 525               	.LVL14:
+ 526               	.L27:
+ 430:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 431:hallctrl.c    ****             }
+ 432:hallctrl.c    ****             else
+ 433:hallctrl.c    ****             {
+ 434:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 527               		.loc 1 434 0
+ 528 0264 918B      		std Z+17,r25
+ 529               	.L31:
+ 435:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 530               		.loc 1 435 0
+ 531 0266 87E4      		ldi r24,lo8(71)
+ 532               	.LVL15:
+ 533 0268 828B      		std Z+18,r24
+ 534 026a 0895      		ret
+ 535               	.LVL16:
+ 536               	.L21:
+ 436:hallctrl.c    ****             }
+ 437:hallctrl.c    ****             break;
+ 438:hallctrl.c    ****         case 0x05:
+ 439:hallctrl.c    ****             //1-0-1 - A and -B with reset on C for reverse
+ 440:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETA_DIS | 
+ 537               		.loc 1 440 0
+ 538 026c 9091 8406 		lds r25,1668
+ 539 0270 987F      		andi r25,lo8(-8)
+ 540 0272 9360      		ori r25,lo8(3)
+ 541 0274 A0E8      		ldi r26,lo8(1664)
+ 542 0276 B6E0      		ldi r27,hi8(1664)
+ 543 0278 1496      		adiw r26,4
+ 544 027a 9C93      		st X,r25
+ 441:hallctrl.c    ****             MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 545               		.loc 1 441 0
+ 546 027c 97E0      		ldi r25,lo8(7)
+ 547 027e 928B      		std Z+18,r25
+ 442:hallctrl.c    **** #ifdef USE_SWITCHING
+ 443:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMB_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 444:hallctrl.c    **** #else
+ 445:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMB_EN | TC_WGMODE_SS_gc;
+ 548               		.loc 1 445 0
+ 549 0280 23E3      		ldi r18,lo8(51)
+ 550 0282 A0E0      		ldi r26,lo8(2048)
+ 551 0284 B8E0      		ldi r27,hi8(2048)
+ 552 0286 1196      		adiw r26,1
+ 553 0288 2C93      		st X,r18
+ 554 028a 1197      		sbiw r26,1
+ 446:hallctrl.c    **** #endif
+ 447:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 555               		.loc 1 447 0
+ 556 028c 8230      		cpi r24,lo8(2)
+ 557 028e 01F4      		brne .L28
+ 558               	.L32:
+ 448:hallctrl.c    ****             {
+ 449:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 559               		.loc 1 449 0
+ 560 0290 908B      		std Z+16,r25
+ 450:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 561               		.loc 1 450 0
+ 562 0292 87E4      		ldi r24,lo8(71)
+ 563               	.LVL17:
+ 564 0294 818B      		std Z+17,r24
+ 565 0296 0895      		ret
+ 566               	.LVL18:
+ 567               	.L28:
+ 451:hallctrl.c    ****             }
+ 452:hallctrl.c    ****             else
+ 453:hallctrl.c    ****             {
+ 454:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 568               		.loc 1 454 0
+ 569 0298 87E4      		ldi r24,lo8(71)
+ 570               	.LVL19:
+ 571 029a 808B      		std Z+16,r24
+ 455:hallctrl.c    ****                 MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 572               		.loc 1 455 0
+ 573 029c 918B      		std Z+17,r25
+ 574 029e 0895      		ret
+ 575               	.LVL20:
+ 576               	.L36:
+ 456:hallctrl.c    ****             }
+ 457:hallctrl.c    ****             break;
+ 458:hallctrl.c    ****         case 0x06:
+ 459:hallctrl.c    ****             //1-1-0 - C and -A with reset on B
+ 460:hallctrl.c    ****             MOTOR1_RESETPORT.OUT = (MOTOR1_RESETPORT.OUT & ~MOTOR1_RESET_bm) | MOTOR1_RESETA_DIS | 
+ 577               		.loc 1 460 0
+ 578 02a0 9091 8406 		lds r25,1668
+ 579 02a4 987F      		andi r25,lo8(-8)
+ 580 02a6 9560      		ori r25,lo8(5)
+ 581 02a8 A0E8      		ldi r26,lo8(1664)
+ 582 02aa B6E0      		ldi r27,hi8(1664)
+ 583 02ac 1496      		adiw r26,4
+ 584 02ae 9C93      		st X,r25
+ 461:hallctrl.c    ****             MOTOR1_PWMB_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 585               		.loc 1 461 0
+ 586 02b0 97E0      		ldi r25,lo8(7)
+ 587 02b2 918B      		std Z+17,r25
+ 462:hallctrl.c    **** #ifdef USE_SWITCHING
+ 463:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMC_EN | MOTOR1_INVCURRENT_EN | TC_WGMODE_SS
+ 464:hallctrl.c    **** #else
+ 465:hallctrl.c    ****             MOTOR1_TC.CTRLB = MOTOR1_PWMA_EN | MOTOR1_PWMC_EN | TC_WGMODE_SS_gc;
+ 588               		.loc 1 465 0
+ 589 02b4 23E5      		ldi r18,lo8(83)
+ 590 02b6 A0E0      		ldi r26,lo8(2048)
+ 591 02b8 B8E0      		ldi r27,hi8(2048)
+ 592 02ba 1196      		adiw r26,1
+ 593 02bc 2C93      		st X,r18
+ 594 02be 1197      		sbiw r26,1
+ 466:hallctrl.c    **** #endif
+ 467:hallctrl.c    ****             if(thisDirection == DIRECTION_REVERSE)
+ 595               		.loc 1 467 0
+ 596 02c0 8230      		cpi r24,lo8(2)
+ 597 02c2 01F4      		brne .L29
+ 598               	.L34:
+ 468:hallctrl.c    ****             {
+ 469:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 599               		.loc 1 469 0
+ 600 02c4 87E4      		ldi r24,lo8(71)
+ 601               	.LVL21:
+ 602 02c6 808B      		std Z+16,r24
+ 603               	.L30:
+ 470:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 604               		.loc 1 470 0
+ 605 02c8 928B      		std Z+18,r25
+ 606 02ca 0895      		ret
+ 607               	.LVL22:
+ 608               	.L29:
+ 471:hallctrl.c    ****             }
+ 472:hallctrl.c    ****             else
+ 473:hallctrl.c    ****             {
+ 474:hallctrl.c    ****                 MOTOR1_PWMA_PINCTRL = PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc;
+ 609               		.loc 1 474 0
+ 610 02cc 908B      		std Z+16,r25
+ 475:hallctrl.c    ****                 MOTOR1_PWMC_PINCTRL = PORT_INVEN_bm | PORT_ISC_INPUT_DISABLE_gc | PORT_OPC_TOTEM_gc
+ 611               		.loc 1 475 0
+ 612 02ce 87E4      		ldi r24,lo8(71)
+ 613               	.LVL23:
+ 614 02d0 828B      		std Z+18,r24
+ 615               	.L14:
+ 616 02d2 0895      		ret
+ 617               		.cfi_endproc
+ 618               	.LFE9:
+ 620               	.global	__vector_2
+ 622               	__vector_2:
+ 623               	.LFB1:
+  64:hallctrl.c    **** {
+ 624               		.loc 1 64 0
+ 625               		.cfi_startproc
+ 626 02d4 1F92      		push r1
+ 627               	.LCFI6:
+ 628               		.cfi_def_cfa_offset 3
+ 629               		.cfi_offset 1, -2
+ 630 02d6 0F92      		push r0
+ 631               	.LCFI7:
+ 632               		.cfi_def_cfa_offset 4
+ 633               		.cfi_offset 0, -3
+ 634 02d8 0FB6      		in r0,__SREG__
+ 635 02da 0F92      		push r0
+ 636 02dc 1124      		clr __zero_reg__
+ 637 02de 2F93      		push r18
+ 638               	.LCFI8:
+ 639               		.cfi_def_cfa_offset 5
+ 640               		.cfi_offset 18, -4
+ 641 02e0 3F93      		push r19
+ 642               	.LCFI9:
+ 643               		.cfi_def_cfa_offset 6
+ 644               		.cfi_offset 19, -5
+ 645 02e2 4F93      		push r20
+ 646               	.LCFI10:
+ 647               		.cfi_def_cfa_offset 7
+ 648               		.cfi_offset 20, -6
+ 649 02e4 5F93      		push r21
+ 650               	.LCFI11:
+ 651               		.cfi_def_cfa_offset 8
+ 652               		.cfi_offset 21, -7
+ 653 02e6 6F93      		push r22
+ 654               	.LCFI12:
+ 655               		.cfi_def_cfa_offset 9
+ 656               		.cfi_offset 22, -8
+ 657 02e8 7F93      		push r23
+ 658               	.LCFI13:
+ 659               		.cfi_def_cfa_offset 10
+ 660               		.cfi_offset 23, -9
+ 661 02ea 8F93      		push r24
+ 662               	.LCFI14:
+ 663               		.cfi_def_cfa_offset 11
+ 664               		.cfi_offset 24, -10
+ 665 02ec 9F93      		push r25
+ 666               	.LCFI15:
+ 667               		.cfi_def_cfa_offset 12
+ 668               		.cfi_offset 25, -11
+ 669 02ee AF93      		push r26
+ 670               	.LCFI16:
+ 671               		.cfi_def_cfa_offset 13
+ 672               		.cfi_offset 26, -12
+ 673 02f0 BF93      		push r27
+ 674               	.LCFI17:
+ 675               		.cfi_def_cfa_offset 14
+ 676               		.cfi_offset 27, -13
+ 677 02f2 EF93      		push r30
+ 678               	.LCFI18:
+ 679               		.cfi_def_cfa_offset 15
+ 680               		.cfi_offset 30, -14
+ 681 02f4 FF93      		push r31
+ 682               	.LCFI19:
+ 683               		.cfi_def_cfa_offset 16
+ 684               		.cfi_offset 31, -15
+ 685               	/* prologue: Signal */
+ 686               	/* frame size = 0 */
+ 687               	/* stack size = 15 */
+ 688               	.L__stack_usage = 15
+  65:hallctrl.c    ****     uint8_t currentHall = (MOTOR1PORT.IN & 0x70) >> 4;
+ 689               		.loc 1 65 0
+ 690 02f6 8091 4806 		lds r24,1608
+ 691 02fa 90E0      		ldi r25,lo8(0)
+ 692 02fc 8077      		andi r24,lo8(112)
+ 693 02fe 9070      		andi r25,hi8(112)
+ 694 0300 E4E0      		ldi r30,4
+ 695 0302 9595      	1:	asr r25
+ 696 0304 8795      		ror r24
+ 697 0306 EA95      		dec r30
+ 698 0308 01F4      		brne 1b
+ 699               	.LVL24:
+  66:hallctrl.c    ****     encoder += getHallIncrement(lastHall, currentHall);
+ 700               		.loc 1 66 0
+ 701 030a 2091 0000 		lds r18,encoder
+ 702 030e 3091 0000 		lds r19,encoder+1
+ 703 0312 4091 0000 		lds r20,lastHall
+ 704               	.LVL25:
+ 705               	.LBB4:
+ 706               	.LBB5:
+  48:hallctrl.c    ****     if (last == 0)
+ 707               		.loc 1 48 0
+ 708 0316 4423      		tst r20
+ 709 0318 01F0      		breq .L39
+  50:hallctrl.c    ****     return HallIncrement[6 * (last-1) + (current-1)];
+ 710               		.loc 1 50 0
+ 711 031a 50E0      		ldi r21,lo8(0)
+ 712 031c 4150      		subi r20,lo8(-(-1))
+ 713 031e 5040      		sbci r21,hi8(-(-1))
+ 714               	.LVL26:
+ 715 0320 FA01      		movw r30,r20
+ 716 0322 EE0F      		lsl r30
+ 717 0324 FF1F      		rol r31
+ 718 0326 E40F      		add r30,r20
+ 719 0328 F51F      		adc r31,r21
+ 720 032a EE0F      		lsl r30
+ 721 032c FF1F      		rol r31
+ 722 032e E80F      		add r30,r24
+ 723 0330 F11D      		adc r31,__zero_reg__
+ 724 0332 E050      		subi r30,lo8(-(HallIncrement-1))
+ 725 0334 F040      		sbci r31,hi8(-(HallIncrement-1))
+ 726 0336 4081      		ld r20,Z
+ 727 0338 00C0      		rjmp .L38
+ 728               	.LVL27:
+ 729               	.L39:
+  49:hallctrl.c    ****         return 0;
+ 730               		.loc 1 49 0
+ 731 033a 40E0      		ldi r20,lo8(0)
+ 732               	.LVL28:
+ 733               	.L38:
+ 734               	.LBE5:
+ 735               	.LBE4:
+  66:hallctrl.c    ****     encoder += getHallIncrement(lastHall, currentHall);
+ 736               		.loc 1 66 0
+ 737 033c 5527      		clr r21
+ 738 033e 47FD      		sbrc r20,7
+ 739 0340 5095      		com r21
+ 740 0342 420F      		add r20,r18
+ 741 0344 531F      		adc r21,r19
+ 742 0346 4093 0000 		sts encoder,r20
+ 743 034a 5093 0000 		sts encoder+1,r21
+  67:hallctrl.c    ****     lastHall = currentHall;
+ 744               		.loc 1 67 0
+ 745 034e 8093 0000 		sts lastHall,r24
+  70:hallctrl.c    ****     updateMotorCount();
+ 746               		.loc 1 70 0
+ 747 0352 0E94 0000 		call updateMotorCount
+ 748               	.LVL29:
+  71:hallctrl.c    ****     updateMotor();
+ 749               		.loc 1 71 0
+ 750 0356 0E94 0000 		call updateMotor
+ 751               	/* epilogue start */
+  74:hallctrl.c    **** }
+ 752               		.loc 1 74 0
+ 753 035a FF91      		pop r31
+ 754 035c EF91      		pop r30
+ 755 035e BF91      		pop r27
+ 756 0360 AF91      		pop r26
+ 757 0362 9F91      		pop r25
+ 758 0364 8F91      		pop r24
+ 759 0366 7F91      		pop r23
+ 760 0368 6F91      		pop r22
+ 761 036a 5F91      		pop r21
+ 762 036c 4F91      		pop r20
+ 763 036e 3F91      		pop r19
+ 764 0370 2F91      		pop r18
+ 765 0372 0F90      		pop r0
+ 766 0374 0FBE      		out __SREG__,r0
+ 767 0376 0F90      		pop r0
+ 768 0378 1F90      		pop r1
+ 769 037a 1895      		reti
+ 770               		.cfi_endproc
+ 771               	.LFE1:
+ 773               	.global	encoder
+ 774               	.global	encoder
+ 775               		.section .bss
+ 778               	encoder:
+ 779 0000 0000      		.skip 2,0
+ 780               		.data
+ 783               	HallIncrement:
+ 784 0000 00        		.byte	0
+ 785 0001 FE        		.byte	-2
+ 786 0002 FF        		.byte	-1
+ 787 0003 02        		.byte	2
+ 788 0004 01        		.byte	1
+ 789 0005 03        		.byte	3
+ 790 0006 02        		.byte	2
+ 791 0007 00        		.byte	0
+ 792 0008 01        		.byte	1
+ 793 0009 FE        		.byte	-2
+ 794 000a FD        		.byte	-3
+ 795 000b FF        		.byte	-1
+ 796 000c 01        		.byte	1
+ 797 000d FF        		.byte	-1
+ 798 000e 00        		.byte	0
+ 799 000f 03        		.byte	3
+ 800 0010 02        		.byte	2
+ 801 0011 FE        		.byte	-2
+ 802 0012 FE        		.byte	-2
+ 803 0013 02        		.byte	2
+ 804 0014 FD        		.byte	-3
+ 805 0015 00        		.byte	0
+ 806 0016 FF        		.byte	-1
+ 807 0017 01        		.byte	1
+ 808 0018 FF        		.byte	-1
+ 809 0019 03        		.byte	3
+ 810 001a FE        		.byte	-2
+ 811 001b 01        		.byte	1
+ 812 001c 00        		.byte	0
+ 813 001d 02        		.byte	2
+ 814 001e FD        		.byte	-3
+ 815 001f 01        		.byte	1
+ 816 0020 02        		.byte	2
+ 817 0021 FF        		.byte	-1
+ 818 0022 FE        		.byte	-2
+ 819 0023 00        		.byte	0
+ 820               		.lcomm lastHall,1
+ 821               		.lcomm direction,1
+ 822               		.lcomm oldControlSignal,1
+ 823               		.text
+ 824               	.Letext0:
+ 825               		.file 2 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 826               		.file 3 "hallctrl.h"
+ 827               		.file 4 "/home/baxelrod/ARM-H/avr8-gnu-toolchain-linux_x86/bin/../lib/gcc/avr/4.6.2/../../../../av
+ 828               		.file 5 "motor.h"
+ 829               		.file 6 "velcounter.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 hallctrl.c
+     /tmp/ccPUOpKX.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccPUOpKX.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccPUOpKX.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccPUOpKX.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccPUOpKX.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccPUOpKX.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccPUOpKX.s:15     .text:00000000 getMotorDirection
+     /tmp/ccPUOpKX.s:820    .bss:00000003 direction
+     /tmp/ccPUOpKX.s:34     .text:00000006 getOldControlValue
+     /tmp/ccPUOpKX.s:821    .bss:00000004 oldControlSignal
+     /tmp/ccPUOpKX.s:51     .text:0000000c updateMotorVoltage
+     /tmp/ccPUOpKX.s:141    .text:0000007a updateMotorDirection
+     /tmp/ccPUOpKX.s:185    .text:000000a0 configurePortIO
+     /tmp/ccPUOpKX.s:248    .text:000000e4 configurePinInterrupts
+     /tmp/ccPUOpKX.s:289    .text:0000010a configureMotorPWMs
+     /tmp/ccPUOpKX.s:337    .text:0000013a updateMotor
+     /tmp/ccPUOpKX.s:622    .text:000002d4 __vector_2
+     /tmp/ccPUOpKX.s:778    .bss:00000000 encoder
+                             .bss:00000002 lastHall
+     /tmp/ccPUOpKX.s:783    .data:00000000 HallIncrement
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+Parameter
+__floatsisf
+__gtsf2
+__fixunssfsi
+resetVelocityCounter
+averagePeriod
+averageRPM
+updateMotorCount

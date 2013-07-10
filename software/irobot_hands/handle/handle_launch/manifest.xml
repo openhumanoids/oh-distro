@@ -1,0 +1,18 @@
+<package>
+  <description brief="handle_launch">
+
+     launch scripts for the HANDLE hand
+
+  </description>
+  <author>Ben Axelrod</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_launch</url>
+
+  <depend package="joint_publisher"/>
+  <depend package="handle_sensors"/>
+  <depend package="handle_collisions"/>
+
+</package>
+
+
