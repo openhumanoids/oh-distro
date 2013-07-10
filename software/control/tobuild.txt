@@ -1,7 +1,6 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
-# mypod1
 #pd_chain_control
 reactive_navigation_2d
 #gaze_control

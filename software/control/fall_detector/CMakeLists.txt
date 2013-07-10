@@ -14,3 +14,4 @@ pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/python)
 # and automatically sets the correct python path.
 pods_install_python_script(drc-fall-detector fall_detector.main)
 pods_install_python_script(drc-stop-walking stop_walking.main)
+pods_install_python_script(drc-hit-the-deck hit_the_deck.main)
