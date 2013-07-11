@@ -21,7 +21,7 @@ classdef AtlasJointConfig < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('NominalPositionGoal',length(jrange),'x');
       obj = obj@Singleton();
       if isempty(obj.lcmcoder)
-        coder = JointAnglesCoder('atlas',joint_names);
+        coder = drc.control.JointAnglesCoder('atlas',joint_names);
         obj = setLCMCoder(obj,JLCMCoder(coder));
         obj.setCoordinateNames(joint_names);
         obj.setDefaultChannel('NOMINAL_POS_GOAL');

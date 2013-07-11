@@ -92,7 +92,7 @@ end
 
 xtraj = [q; zeros(size(q))];
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 plan_pub.publish(ts,xtraj);
 
 end

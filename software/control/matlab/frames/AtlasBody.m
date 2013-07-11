@@ -10,7 +10,7 @@ classdef AtlasBody < LCMCoordinateFrameWCoder & Singleton
       if isempty(obj.lcmcoder)
         link_names =  r.getLinkNames();
 
-        coder = RobotBodyCoder('atlas', link_names);
+        coder = drc.control.RobotBodyCoder('atlas', link_names);
         obj = setLCMCoder(obj,JLCMCoder(coder));
         
         obj.setCoordinateNames(link_names);

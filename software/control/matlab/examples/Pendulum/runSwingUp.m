@@ -1,7 +1,7 @@
 function runSwingUp()
 % runs trajectory optimization and animates open-loop playback
 
-options.plan_publisher = RobotPlanPublisher('Pendulum',{'theta'},'CANDIDATE_ROBOT_PLAN');
+options.plan_publisher = drc.control.RobotPlanPublisher('Pendulum',{'theta'},'CANDIDATE_ROBOT_PLAN');
 
 addpath([getDrakePath(),'/examples/Pendulum']);
 pd = PendulumPlant;

@@ -29,8 +29,9 @@
 #define USE_FAST_QP
 //#define TEST_FAST_QP
 
-#include "fastQP.h"
-#include "RigidBodyManipulator.h"
+#include "drake/fastQP.h"
+#include "drake/gurobiQP.h"
+#include "drake/RigidBodyManipulator.h"
 
 const int m_surface_tangents = 2;  // number of faces in the friction cone approx
 const double REG = 1e-8;

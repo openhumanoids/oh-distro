@@ -13,7 +13,7 @@ classdef PinnedAtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
         [Kp,Kd,Ki] = getPIDGains(r,'pinned2');
 %       [Kp,Kd] = getPDGains(r,'gazebo');
       
-        coder = JointCommandCoderWIntegralGains('atlas',input_names,diag(Kp),diag(Kd),diag(Ki));
+        coder = drc.control.JointCommandCoderWIntegralGains('atlas',input_names,diag(Kp),diag(Kd),diag(Ki));
         obj = setLCMCoder(obj,JLCMCoder(coder));
         
         obj.setCoordinateNames(input_names);

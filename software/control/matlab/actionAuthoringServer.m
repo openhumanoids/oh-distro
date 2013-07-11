@@ -71,12 +71,12 @@ q = q_standing;
 options.q_traj_nom = ConstantTrajectory(q);
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
-%robot_plan_publisher =  RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
+robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder('atlas', joint_names)));
+%robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...  
+robot_plan_publisher =  drc.control.RobotPlanPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher_viewer =  WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
+robot_plan_publisher_viewer =  drc.control.WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
 %%
 
 

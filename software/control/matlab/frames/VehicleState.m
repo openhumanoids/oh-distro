@@ -5,7 +5,7 @@ classdef VehicleState < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('VehicleState',12,'x');
       obj = obj@Singleton();
       if isempty(obj.lcmcoder)
-        coder = AffordanceFullStateCoder('car',[],[]);
+        coder = drc.control.AffordanceFullStateCoder('car',[],[]);
         obj = setLCMCoder(obj,JLCMCoder(coder));
         obj.setDefaultChannel('AFFORDANCE_COLLECTION');
       end

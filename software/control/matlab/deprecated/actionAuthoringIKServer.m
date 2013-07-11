@@ -18,7 +18,7 @@ r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_m
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
+robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder('atlas', joint_names)));
 
 % load the "zero position"
 load('data/aa_atlas_fp.mat');

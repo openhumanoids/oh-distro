@@ -1,7 +1,7 @@
 function testGraspOptListener()
 
 
-lcmcoder = JLCMCoder(GraspSeedOptCoder('atlas'));
+lcmcoder = JLCMCoder(drc.control.GraspSeedOptCoder('atlas'));
 nx=22; % this changes?
 
 channel = ['INIT_GRASP_SEED_OPT_1'];

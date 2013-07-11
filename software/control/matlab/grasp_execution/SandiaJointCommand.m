@@ -14,7 +14,7 @@ classdef SandiaJointCommand < LCMCoordinateFrameWCoder
               Kd = [1.5 0.9 0.6 1.5 0.9 0.6 1.5 0.9 0.6 1.5 0.9 0.6]';          
             end
             
-            coder = SandiaJointCommandCoder('atlas',floating,side, joint_names,Kp,Kd); 
+            coder = drc.control.SandiaJointCommandCoder('atlas',floating,side, joint_names,Kp,Kd); 
             obj = obj@LCMCoordinateFrameWCoder('sandia_qd', nq,'q',JLCMCoder(coder));
             obj.setCoordinateNames(joint_names);
             if(strcmp(side,'left'))

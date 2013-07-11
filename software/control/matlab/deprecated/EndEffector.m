@@ -16,7 +16,7 @@ classdef EndEffector
       obj.xyz_offset = xyz_offset;
 
 
-      coder = EndEffectorGoalCoder(robot_name,body_id);
+      coder = drc.control.EndEffectorGoalCoder(robot_name,body_id);
       obj.frame = LCMCoordinateFrameWCoder(strcat(body_id,'_end_effector_goal'),7,'x',JLCMCoder(coder));
       ee_names = cell(4,1);
       ee_names{1} = strcat(body_id,'_active');

@@ -24,7 +24,7 @@ classdef SandiaJointCommand_Vicon < LCMCoordinateFrameWCoder
 %             end
             
             
-             coder = SandiaJointCommandCoder('atlas',floating,side, joint_names,Kp,Kd);
+             coder = drc.control.SandiaJointCommandCoder('atlas',floating,side, joint_names,Kp,Kd);
             obj = obj@LCMCoordinateFrameWCoder('sandia_qd', nq*4,'q',JLCMCoder(coder));
             names = [strcat(joint_names,'_kp');strcat(joint_names,'_kd');joint_names;strcat(joint_names,'_torque')];
             obj.setCoordinateNames(names);

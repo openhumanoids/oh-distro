@@ -9,6 +9,8 @@ classdef RobotPlanPublisher
     methods
 
         function obj = RobotPlanPublisher(channel,floating,joint_names)
+          error('I believe that this is defunct, and that you were always calling RobotPlanPublisher.java.  please correct me if I am wrong.  - Russ');
+          
             obj.channel = channel;
             obj.lc = lcm.lcm.LCM.getSingleton();
             if nargin > 1

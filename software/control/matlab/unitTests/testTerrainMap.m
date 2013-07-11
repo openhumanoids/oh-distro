@@ -3,7 +3,7 @@ function testTerrainMap
 lc = lcm.lcm.LCM.getSingleton();
 robot_state_mon = drake.util.MessageMonitor(drc.robot_state_t,'utime');
 lc.subscribe('EST_ROBOT_STATE',robot_state_mon);
-robot_state_coder = RobotStateCoder('atlas',{''});
+robot_state_coder = drc.control.RobotStateCoder('atlas',{''});
 map = DRCTerrainMap;
 map_mon = drake.util.MessageMonitor(drc.map_image_t,'utime');
 lc.subscribe('MAP_DEPTH',map_mon);

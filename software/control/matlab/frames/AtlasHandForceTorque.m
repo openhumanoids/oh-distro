@@ -11,7 +11,7 @@ classdef AtlasHandForceTorque < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('AtlasHandForceTorque',length(coordinates),'f');
       obj = obj@Singleton();
       if isempty(obj.lcmcoder)
-        coder = ContactStateCoder('atlas', contacts);
+        coder = drc.control.ContactStateCoder('atlas', contacts);
         obj = setLCMCoder(obj,JLCMCoder(coder));
 
         obj.setCoordinateNames(coordinates);

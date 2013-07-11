@@ -24,7 +24,7 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
         input_names = r.getInputFrame().coordinates;
         input_names = regexprep(input_names,'_motor',''); % remove motor suffix
       
-        coder = AtlasCommandCoder(input_names,diag(Kp),diag(Kd),send_mode);
+        coder = drc.control.AtlasCommandCoder(input_names,diag(Kp),diag(Kd),send_mode);
         obj = setLCMCoder(obj,JLCMCoder(coder));
         
         coords = input_names;

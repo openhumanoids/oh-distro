@@ -23,8 +23,8 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
   state_frame.subscribe('EST_ROBOT_STATE');
 
   map_listener = AffIndexedRobotPlanListener('COMMITTED_MANIP_MAP',true);
-  planviz_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
-  plan_pub = RobotPlanPublisher('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
+  planviz_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+  plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
   affgoal_listener = AffGoalListener('DRIVING_MANIP_CMD');
   driving_aff_status_pub = DrivingAffordanceStatusPublisher();%'DRIVING_STEERING_AFFORDANCE_STATUS');
   

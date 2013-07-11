@@ -7,7 +7,7 @@ classdef AtlasCOM < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('COMGoal',3,'x');
       obj = obj@Singleton();
       if isempty(obj.lcmcoder)
-        coder = COMGoalCoder('atlas');
+        coder = drc.control.COMGoalCoder('atlas');
         
         obj = setLCMCoder(obj,JLCMCoder(coder));
         

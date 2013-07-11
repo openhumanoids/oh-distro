@@ -16,7 +16,7 @@ classdef GraspState < LCMCoordinateFrameWCoder & Singleton
             nx=18+nq_l-6+nq_r-6;
           
             %public GraspStateCoder(String robot_name, String[] l_joint_name, String[] r_joint_name)
-            coder = GraspStateCoder('atlas',l_jointNames,r_jointNames);            
+            coder = drc.control.GraspStateCoder('atlas',l_jointNames,r_jointNames);            
             obj = obj@LCMCoordinateFrameWCoder('grasp_state',nx,'x',JLCMCoder(coder));
             coordNames = cell(nx,1);
             

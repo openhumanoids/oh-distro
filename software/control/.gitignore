@@ -6,3 +6,8 @@ matlab/tmp_w.mat
 matlab/unitTests/logfile.tmp
 tmp_w.mat
 netstat.txt
+doc/DoxygenMatlab/html
+drake_viewer.out
+pod-build
+*.mexmaci64
+.viewer-prefs

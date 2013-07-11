@@ -13,7 +13,7 @@ classdef FootstepPlanner < DRCPlanner
       
       robot_name = 'atlas';
       obj = obj@DRCPlanner();
-      % obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(NavGoalCoder(robot_name)));
+      % obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(drc.control.NavGoalCoder(robot_name)));
       obj.biped = biped;
 
       obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', 1, 1, 1);

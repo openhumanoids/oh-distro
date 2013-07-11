@@ -185,7 +185,7 @@ while true
       x_data = squeeze(eval(xtraj,ts));
       msg =['Crawl Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
       joint_names = r.getStateFrame.coordinates(1:nq);
-      plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_CRAWLING_PLAN');
+      plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_CRAWLING_PLAN');
       plan_pub.publish(ts,x_data);
     end
   end

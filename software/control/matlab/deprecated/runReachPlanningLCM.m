@@ -23,7 +23,7 @@ l_ee.frame.subscribe('L_HAND_GOAL');
 
 % TEMP: for now listen for an ee_goal_t message over the EE_PLAN_START
 % channel to commence planning
-ee_start_frame = LCMCoordinateFrameWCoder('ee_plan_start',7,'x',JLCMCoder(EndEffectorGoalCoder('atlas','ee_plan_start')));
+ee_start_frame = LCMCoordinateFrameWCoder('ee_plan_start',7,'x',JLCMCoder(drc.control.EndEffectorGoalCoder('atlas','ee_plan_start')));
 ee_start_frame.subscribe('EE_PLAN_START');
 
 x0 = getInitialState(r); 
@@ -156,7 +156,7 @@ xtraj = zeros(getNumStates(r),length(ts));
 xtraj(1:getNumDOF(r),:) = q;
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 plan_pub.publish(ts,xtraj,des_traj);
 
 % wait for confirmation

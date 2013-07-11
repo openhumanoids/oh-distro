@@ -2,7 +2,7 @@ classdef PendulumState < LCMCoordinateFrameWCoder & Singleton
   
   methods
     function obj=PendulumState()
-      coder = RobotStateCoder('Pendulum',{'theta'});
+      coder = drc.control.RobotStateCoder('Pendulum',{'theta'});
       obj = obj@LCMCoordinateFrameWCoder('PendulumState',2,'x',JLCMCoder(coder));
       obj.setAngleFlags([true;false]);
     end

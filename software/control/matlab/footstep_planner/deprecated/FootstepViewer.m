@@ -23,7 +23,7 @@ classdef FootstepViewer
     end
     
     function run(obj)
-      % nav_goal_coder = NavGoalCoder('atlas');
+      % nav_goal_coder = drc.control.NavGoalCoder('atlas');
       % goal_msg = nav_goal_coder.encode([1;1;0;0;0;0]);
       % obj.lc.publish('NAV_GOAL_TIMED', goal_msg);
 

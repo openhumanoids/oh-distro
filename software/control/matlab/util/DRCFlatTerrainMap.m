@@ -2,7 +2,7 @@ classdef DRCFlatTerrainMap < RigidBodyTerrain
 
   methods
     function obj = DRCFlatTerrainMap()
-      obj.monitor = PoseGroundMonitor();
+      obj.monitor = drc.control.PoseGroundMonitor();
     end
     
     function [z,normal] = getHeight(obj,xy)
