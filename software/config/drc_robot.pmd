@@ -99,11 +99,11 @@ group "a.2.walking" {
         host = "robot";
     }
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
     cmd "BotCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runCrawlingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('robot');\"";
        host = "extra";
     }
     cmd "fall-detector" {
@@ -111,7 +111,7 @@ group "a.2.walking" {
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
     cmd "recovery" {
@@ -128,11 +128,11 @@ group "a.3.manip" {
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
 }
@@ -171,7 +171,7 @@ group "a.4.driving" {
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
     cmd "ManipMapStateMachine" {
@@ -228,23 +228,23 @@ group "b.1.core" {
 
 group "b.2.walking" {
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
     cmd "BaseCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runCrawlingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('base');\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
        host = "base";
     }
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
 }
@@ -256,29 +256,29 @@ group "b.3.grasping" {
 # Planners for Simulataneous Walking and Manipulation
 group "b.3.manip" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
        host = "base";
     }
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
 }
 group "b.4.driving" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "base";
     }
 }
@@ -335,11 +335,6 @@ group "m.simple-control" {
 }
 
 group "m.dev_tools" {
-    cmd "SitUpStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSitUpStateMachine;\"";
-        host = "robot";
-    }
-
     cmd "segmentation_viewer" {
         exec = "segmentation-viewer -r base";
         host = "base";
@@ -381,7 +376,7 @@ group "m.grasping" {
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
 }
@@ -598,7 +593,7 @@ script "dev.russ.crawling" {
 ############ System Tests ############
 
 script "systest-main" {
-    run_script "dev.mit_walking";
+    run_script "dev.flat_walking";
     start cmd "systemwide-test";
     wait ms 200000;
     stop cmd "systemwide-test";
