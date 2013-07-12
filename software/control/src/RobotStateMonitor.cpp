@@ -16,11 +16,11 @@
 #include <condition_variable>
 #include <chrono>
 
-#ifdef __APPLE__
+//#ifdef __APPLE__
 	#include <atomic>
-#else
-	#include <cstdatomic>
-#endif
+//#else
+//	#include <cstdatomic>
+//#endif
 
 
 #include <Eigen/Dense>
