@@ -1,7 +1,7 @@
-classdef QPController < MIMODrakeSystem
+classdef QPControlBlock < MIMODrakeSystem
 
   methods
-  function obj = QPController(r,controller_data,options)
+  function obj = QPControlBlock(r,controller_data,options)
     % @param r atlas instance
     % @param controller_data shared data handle containing linear system, zmp trajectories, Riccati solution, etc
     % @param options structure for specifying objective weight (w), slack
@@ -9,7 +9,7 @@ classdef QPController < MIMODrakeSystem
     typecheck(r,'Atlas');
     typecheck(controller_data,'SharedDataHandle');
 
-    QPController.check_ctrl_data(controller_data)
+    QPControlBlock.check_ctrl_data(controller_data)
     
     if nargin>2
       typecheck(options,'struct');
@@ -238,7 +238,7 @@ classdef QPController < MIMODrakeSystem
     out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
-%    QPController.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
+%    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
   
     q_ddot_des = varargin{1};
     hand_ft = varargin{2};

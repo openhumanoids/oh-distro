@@ -1,4 +1,4 @@
-function drakeWalking(use_mex)
+function drakeCrawling(use_mex)
 
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -91,7 +91,7 @@ options.lcm_foot_contacts = false;
 options.full_body_opt = true;
 options.debug = false;
 
-qp = QPController(r,ctrl_data,options);
+qp = QPControlBlock(r,ctrl_data,options);
 clear options;
 
 sys = r;

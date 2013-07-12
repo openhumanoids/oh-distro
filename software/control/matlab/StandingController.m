@@ -40,7 +40,7 @@ classdef StandingController < DRCController
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
       
-      qp = QPController(r,ctrl_data,options);
+      qp = QPControlBlock(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
       options.soft_ankles = true;
@@ -205,7 +205,7 @@ classdef StandingController < DRCController
         obj = initialize(obj,data);
       end
      
-      QPController.check_ctrl_data(obj.controller_data);  
+      QPControlBlock.check_ctrl_data(obj.controller_data);  
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
   end  

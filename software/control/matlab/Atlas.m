@@ -166,7 +166,7 @@ classdef Atlas < Biped
         options.debug = false;
         options.use_mex = 2;
       
-        obj.inverse_dyn_qp_controller = QPController(obj,ctrl_data,options);
+        obj.inverse_dyn_qp_controller = QPControlBlock(obj,ctrl_data,options);
       else
         ctrl_data = obj.inverse_dyn_qp_controller.controller_data;
         setField(ctrl_data,'supports',active_supports);

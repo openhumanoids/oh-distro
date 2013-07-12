@@ -64,7 +64,7 @@ options.slack_limit = 30.0;
 options.w = 0.01;
 options.lcm_foot_contacts = false;
 options.use_mex = true;
-qp = QPController(r,ctrl_data,options);
+qp = QPControlBlock(r,ctrl_data,options);
 clear options;
 
 % feedback QP controller with atlas

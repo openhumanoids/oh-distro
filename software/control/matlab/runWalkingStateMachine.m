@@ -42,16 +42,11 @@ bracing_controller = BracingController('bracing',r,options);
 crawling_controller = CrawlingController('crawling',r,options);
 dummy_controller = DummyController('dummy',r,options);
 
-% Controllers for projectile ingress
-%situp_dummy_controller = DummyController('sit_up_dummy',r,options);
-situp_controller = SitUpController('sit_up',r,options);
-
 controllers = struct(standing_controller.name,standing_controller,...
                      walking_controller.name,walking_controller,...     
                      bracing_controller.name,bracing_controller,...
                      crawling_controller.name,crawling_controller,...
-                     dummy_controller.name,dummy_controller,...
-                     situp_controller.name, situp_controller);
+                     dummy_controller.name,dummy_controller);
 
 state_machine = DRCStateMachine(controllers,standing_controller.name);
 

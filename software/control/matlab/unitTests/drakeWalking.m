@@ -111,7 +111,7 @@ options.debug = false;
 if use_bullet
   options.multi_robot = r_bullet;
 end
-qp = QPController(r,ctrl_data,options);
+qp = QPControlBlock(r,ctrl_data,options);
 clear options;
 
 sys = r;

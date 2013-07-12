@@ -43,7 +43,7 @@ classdef StandingManipController < DRCController
       if(~isfield(options,'debug')) options.debug = false; end
       
       options.lcm_foot_contacts = true;
-      qp = QPController(r,ctrl_data,options);
+      qp = QPControlBlock(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
 % 			pd = SimplePDBlock(r,ctrl_data);
@@ -244,7 +244,7 @@ classdef StandingManipController < DRCController
         obj = initialize(obj,data);
       end
      
-      QPController.check_ctrl_data(obj.controller_data);  
+      QPControlBlock.check_ctrl_data(obj.controller_data);  
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
   end  

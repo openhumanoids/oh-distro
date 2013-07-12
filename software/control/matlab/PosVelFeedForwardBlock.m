@@ -66,7 +66,7 @@ classdef PosVelFeedForwardBlock < MIMODrakeSystem
 %      end
       if ~isfield(options,'use_mex') qp_options.use_mex = true; end
 
-      obj.qp_controller = QPController(r,qp_ctrl_data,qp_options);
+      obj.qp_controller = QPControlBlock(r,qp_ctrl_data,qp_options);
       obj.actuated = getActuatedJoints(r);
       
 %      [~,obj.robot] = inverseDynamics(r,zeros(getNumDOF(r),1),zeros(getNumDOF(r),1),zeros(getNumDOF(r),1),SupportState(r,[]));

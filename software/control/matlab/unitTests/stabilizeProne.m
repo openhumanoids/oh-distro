@@ -90,7 +90,7 @@ options.lcm_foot_contacts = false;
 options.use_mex = true;
 options.debug = false;
 
-qp = QPController(r,ctrl_data,options);
+qp = QPControlBlock(r,ctrl_data,options);
 clear options;
 
 % feedback QP controller with atlas
