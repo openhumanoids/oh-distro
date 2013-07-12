@@ -235,7 +235,7 @@ classdef QPControlBlock < MIMODrakeSystem
   methods
     
   function y=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+%    out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
 %    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
@@ -721,7 +721,7 @@ classdef QPControlBlock < MIMODrakeSystem
       end
     end
 
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
