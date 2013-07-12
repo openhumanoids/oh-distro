@@ -1,0 +1,12 @@
+<package>
+  <description brief="multisense_dashboard">
+
+     multisense_dashboard
+
+  </description>
+
+  <depend package="robot_monitor"/>;
+
+</package>
+
+

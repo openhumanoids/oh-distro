@@ -1,0 +1,443 @@
+<robot name="multisense">
+  <!-- Head Link Simplified Collision Mesh -->
+  <link name="head_root"/>
+  <joint name="head_root_joint" type="fixed">
+    <parent link="head_root"/>
+    <child link="head"/>
+  </joint>
+  <link name="head">
+    <inertial>
+      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
+      <mass value="1.4199" />
+      <inertia iyy="0.0041178" ixy="-1.5797E-06" iyz="-6.8415E-07" ixx="0.0039688" ixz="-0.00089293" izz="0.0035243" />
+    </inertial>
+    <visual>
+      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+  <collision>
+    <origin xyz="-0.0503 0 -0.00195" rpy="0 0 0" />
+    <geometry>
+      <box size="0.1311 0.12 0.0591"/>
+    </geometry>
+  </collision>
+  </link>
+
+  <link name="pre_spindle" />
+  <joint name="pre_spindle_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="-0.0446 0 0.0880" rpy="0 0 0" />
+    <parent link="head"/>
+    <child link="pre_spindle"/>
+  </joint>
+
+  <!-- Pre-Spindle Calibration -->
+  <link name="pre_spindle_cal_x" />
+  <link name="pre_spindle_cal_y" />
+  <link name="pre_spindle_cal_z" />
+  <link name="pre_spindle_cal_roll" />
+  <link name="pre_spindle_cal_pitch" />
+  <link name="pre_spindle_cal_yaw" />
+
+  <joint name="pre_spindle_cal_x_joint" type="prismatic">
+    <parent link="pre_spindle" />
+    <child link="pre_spindle_cal_x" />
+    <axis xyz="1 0 0" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="pre_spindle_cal_y_joint" type="prismatic">
+    <parent link="pre_spindle_cal_x" />
+    <child link="pre_spindle_cal_y" />
+    <axis xyz="0 1 0" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="pre_spindle_cal_z_joint" type="prismatic">
+    <parent link="pre_spindle_cal_y" />
+    <child link="pre_spindle_cal_z" />
+    <axis xyz="0 0 1" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="pre_spindle_cal_roll_joint" type="continuous">
+    <parent link="pre_spindle_cal_z" />
+    <child link="pre_spindle_cal_roll" />
+    <axis xyz="1 0 0" />
+  </joint>
+
+  <joint name="pre_spindle_cal_pitch_joint" type="continuous">
+    <parent link="pre_spindle_cal_roll" />
+    <child link="pre_spindle_cal_pitch" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="pre_spindle_cal_yaw_joint" type="continuous">
+    <parent link="pre_spindle_cal_pitch" />
+    <child link="pre_spindle_cal_yaw" />
+    <axis xyz="0 0 1" />
+  </joint>
+  <!-- End of pre-spindle calibration -->
+
+  <joint name="hokuyo_joint" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="pre_spindle_cal_yaw" />
+    <child link="post_spindle" />
+    <axis xyz="1 0 0" />
+  </joint>
+
+  <link name="post_spindle" />
+
+  <!-- Post-Spindle Calibration -->
+  <link name="post_spindle_cal_x" />
+  <link name="post_spindle_cal_y" />
+  <link name="post_spindle_cal_z" />
+  <link name="post_spindle_cal_roll" />
+  <link name="post_spindle_cal_pitch" />
+  <!-- link name="post_spindle_cal_yaw" / --> <!-- Not needed, since last cal joint goes direction to hokuyo link -->
+
+  <joint name="post_spindle_cal_x_joint" type="prismatic">
+    <parent link="post_spindle" />
+    <child link="post_spindle_cal_x" />
+    <axis xyz="1 0 0" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="post_spindle_cal_y_joint" type="prismatic">
+    <parent link="post_spindle_cal_x" />
+    <child link="post_spindle_cal_y" />
+    <axis xyz="0 1 0" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="post_spindle_cal_z_joint" type="prismatic">
+    <parent link="post_spindle_cal_y" />
+    <child link="post_spindle_cal_z" />
+    <axis xyz="0 0 1" />
+    <limit velocity="0.0" effort="0.0" lower="-0.5" upper="0.5" />
+  </joint>
+
+  <joint name="post_spindle_cal_roll_joint" type="continuous">
+    <parent link="post_spindle_cal_z" />
+    <child link="post_spindle_cal_roll" />
+    <axis xyz="1 0 0" />
+  </joint>
+
+  <joint name="post_spindle_cal_pitch_joint" type="continuous">
+    <parent link="post_spindle_cal_roll" />
+    <child link="post_spindle_cal_pitch" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="post_spindle_cal_yaw_joint" type="continuous">
+    <parent link="post_spindle_cal_pitch" />
+    <child link="hokuyo_link" />
+    <axis xyz="0 0 1" />
+  </joint>
+  <!-- End of post-spindle calibration -->
+
+  <link name="hokuyo_link">
+    <inertial>
+      <origin xyz="0.012428 0.0004084 -0.0041835" rpy="0 0 0" />
+      <mass value="0.057664" />
+      <inertia iyy="4.2412E-05" ixy="4.9927E-08" iyz="-9.8165E-09" ixx="3.7174E-05" ixz="1.1015E-05" izz="4.167E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/hokuyo_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.72941 0.35686 0.023529 1" />
+      </material>
+    </visual>
+  <collision>
+    <origin xyz="0.03 0 0.0235" rpy="0 0 0" />
+    <geometry>
+      <cylinder radius="0.024425" length="0.047"/>
+    </geometry>
+  </collision>
+  </link>
+
+  <!-- Head Link Full Mesh as Collision
+  <link name="head">
+    <inertial>
+      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
+      <mass value="1.4199" />
+      <inertia iyy="0.0041178" ixy="-1.5797E-06" iyz="-6.8415E-07" ixx="0.0039688" ixz="-0.00089293" izz="0.0035243" />
+    </inertial>
+    <visual>
+      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="hokuyo_link">
+    <inertial>
+      <origin xyz="0.012428 0.0004084 -0.0041835" rpy="0 0 0" />
+      <mass value="0.057664" />
+      <inertia iyy="4.2412E-05" ixy="4.9927E-08" iyz="-9.8165E-09" ixx="3.7174E-05" ixz="1.1015E-05" izz="4.167E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/hokuyo_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.72941 0.35686 0.023529 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <geometry>
+        <mesh filename="package://multisense_description/meshes/hokuyo_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  -->
+
+  <!-- Hokuyo Laser -->
+  <joint name="head_hokuyo_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="0.03 0 0.015" rpy="0 0 0"/>
+    <parent link="hokuyo_link"/>
+    <child link="head_hokuyo_frame"/>
+  </joint>
+  <link name="head_hokuyo_frame">
+    <inertial>
+      <mass value="0.01" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001" />
+    </inertial>
+  </link>
+  <gazebo reference="head_hokuyo_frame">
+    <sensor type="ray" name="head_hokuyo_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <gaussianNoise>0.005</gaussianNoise>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>40</updateRate>
+        <topicName>/scan</topicName>
+        <frameName>head_hokuyo_frame</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <!-- Stereo Camera -->
+  <joint name="left_camera_frame_joint" type="fixed">
+    <!-- optical frame collocated with tilting DOF -->
+    <origin xyz="0.0 0.035 -0.002"/>
+    <parent link="head"/>
+    <child link="left_camera_frame"/>
+  </joint>
+  <link name="left_camera_frame">
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0" iyy="0.001"  iyz="0.0" izz="0.001" />
+    </inertial>
+  </link>
+  <joint name="left_camera_optical_frame_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.5708 0.0 -1.5708" />
+    <parent link="left_camera_frame" />
+    <child link="left_camera_optical_frame"/>
+  </joint>
+  <link name="left_camera_optical_frame"/>
+  <gazebo reference="left_camera_frame">
+    <sensor type="camera" name="left_camera_sensor">
+      <!-- update rate based on spec sheet for 2mp 15fps -->
+      <update_rate>15.0</update_rate>
+      <camera>
+        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
+        <!-- but gazebo will violate the vertical fov for now to keep aspect ratio of 1 -->
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>2048</width>
+          <height>1088</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <!-- update rate based on spec sheet for 2mp 15fps -->
+        <updateRate>15.0</updateRate>
+        <cameraName>multisense/left</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>left_camera_optical_frame</frameName>
+        <hackBaseline>0.0</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+
+  <joint name="right_camera_frame_joint" type="fixed">
+    <origin xyz="0.0 -0.035 -0.002"/>
+    <parent link="head"/>
+    <child link="right_camera_frame"/>
+  </joint>
+  <link name="right_camera_frame">
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0" iyy="0.001"  iyz="0.0" izz="0.001" />
+    </inertial>
+  </link>
+  <joint name="right_camera_optical_frame_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.5708 0.0 -1.5708" />
+    <parent link="right_camera_frame" />
+    <child link="right_camera_optical_frame"/>
+  </joint>
+  <link name="right_camera_optical_frame"/>
+  <gazebo reference="right_camera_frame">
+    <sensor type="camera" name="right_camera_sensor">
+      <!-- update rate based on spec sheet for 2mp 15fps -->
+      <update_rate>15.0</update_rate>
+      <camera>
+        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
+        <!-- but gazebo will violate the vertical fov for now to keep aspect ratio of 1 -->
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>2048</width>
+          <height>1088</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <!-- update rate based on spec sheet for 2mp 15fps -->
+        <updateRate>15.0</updateRate>
+        <cameraName>multisense/right</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>left_camera_optical_frame</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <joint name="center_top_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 0.0105"/>
+    <parent link="head"/>
+    <child link="center_top_led_frame"/>
+  </joint>
+  <link name="center_top_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="center_bottom_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 -0.0155"/>
+    <parent link="head"/>
+    <child link="center_bottom_led_frame"/>
+  </joint>
+  <link name="center_bottom_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="left_led_frame_joint" type="fixed">
+    <origin xyz="-0.01443 0.07452 0.050346" rpy="0 -0.15 0.53"/>
+    <parent link="head"/>
+    <child link="left_led_frame"/>
+  </joint>
+  <link name="left_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="right_led_frame_joint" type="fixed">
+    <origin xyz="-0.01443 -0.07452 0.050346" rpy="0 -0.15 -0.53"/>
+    <parent link="head"/>
+    <child link="right_led_frame"/>
+  </joint>
+  <link name="right_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="r_foot">
+    <!-- contact sensor -->
+    <sensor type="contact" name="r_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>r_foot_collision</collision>
+        <topic>/r_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+  <gazebo reference="l_foot">
+    <!-- contact sensor -->
+    <sensor type="contact" name="l_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>l_foot_collision</collision>
+        <topic>/l_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+
+</robot>
+

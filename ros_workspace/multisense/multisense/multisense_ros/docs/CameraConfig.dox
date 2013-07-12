@@ -1,0 +1,22 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~resolution" : \b [str] sensor resolution min: , default: 1024x544, max: 
+- \b "~fps" : \b [double] FPS min: 1.0, default: 10.0, max: 30.0
+- \b "~gain" : \b [double] sensor gain min: 1.0, default: 1.0, max: 8.0
+- \b "~auto_exposure" : \b [bool] AutoExposure min: False, default: True, max: True
+- \b "~auto_exposure_max_time" : \b [double] AutoExposureMaxTime min: 0.0, default: 0.5, max: 0.5
+- \b "~auto_exposure_decay" : \b [int] AutoExposureDecay min: 0, default: 7, max: 20
+- \b "~auto_exposure_thresh" : \b [double] AutoExposureThresh min: 0.0, default: 0.75, max: 1.0
+- \b "~exposure_time" : \b [double] Exposure min: 0.0, default: 0.025, max: 0.5
+- \b "~auto_white_balance" : \b [bool] AutoWhiteBalance min: False, default: True, max: True
+- \b "~auto_white_balance_decay" : \b [int] AutoWhiteBalanceDecay min: 0, default: 3, max: 20
+- \b "~auto_white_balance_thresh" : \b [double] AutoWhiteBalanceThresh min: 0.0, default: 0.5, max: 1.0
+- \b "~white_balance_red" : \b [double] WhiteBalanceScaleRed min: 0.25, default: 1.0, max: 4.0
+- \b "~white_balance_blue" : \b [double] WhiteBalanceScaleBlue min: 0.25, default: 1.0, max: 4.0
+- \b "~lighting" : \b [bool] Lighting min: False, default: False, max: True
+- \b "~flash" : \b [bool] Flash min: False, default: False, max: True
+- \b "~duty_cycle" : \b [double] DutyCycle min: 0.0, default: 0.0, max: 1.0
+- \b "~motor_speed" : \b [double] MotorSpeed min: 0.0, default: 0.0, max: 5.2
+

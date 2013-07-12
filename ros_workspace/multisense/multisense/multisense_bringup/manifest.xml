@@ -1,0 +1,13 @@
+<package>
+  <description brief="multisense_bringup">
+
+     multisense_bringup
+
+  </description>
+
+  <depend package="multisense_ros"/>
+  <depend package="multisense_diagnostics"/>
+
+</package>
+
+

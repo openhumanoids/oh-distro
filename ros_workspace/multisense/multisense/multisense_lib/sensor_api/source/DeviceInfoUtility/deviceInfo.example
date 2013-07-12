@@ -1,0 +1,76 @@
+#
+# This file contains an example MultiSense-SL 
+# device-info specification.
+#
+# Each keyword must end in ": ", and only takes
+# a specific payload (string, int, or float)
+#
+# - strings have a maximum length of 31 characters
+# - strings may contain whitespace
+# - floating points are 32-bit
+# - comments must be on their own line
+#
+
+# string
+deviceName: MultiSense-SL
+
+# string
+buildDate: Thu May 23 02:12:16 UTC 2013
+
+# string
+serialNumber: 0004
+
+# integer
+hardwareRevision: 1
+
+# string
+imagerName: CMV2000
+
+# integer
+#
+# For 'imagerType'
+#   1: CMV2000, greyscale
+#   2: CMV2000, color
+#   3: CMV4000, greyscale
+#   4: CMV4000, color
+imagerType: 2
+
+# integers
+imagerWidth: 2048
+imagerHeight: 1088
+
+# string
+lensName: Unknwown
+
+# integer
+lensType: 1
+
+# floating point
+nominalBaseline: 0.075
+nominalFocalLength: 2.123
+nominalRelativeAperture: 2.0
+
+# integer
+lightingType: 1
+numberOfLights: 4
+
+# string
+laserName: Hokuyo XXXX
+
+# integer
+laserType: 1
+
+# string
+motorName: Maxon XXXX
+
+# integer
+motorType: 1
+
+# floating point
+motorGearReduction: 50.0
+
+# PCB specs (maximum of 8): "<revision> <name>"
+pcb: 1 imager board
+pcb: 1 main board
+pcb: 1 fpga cariier board
+

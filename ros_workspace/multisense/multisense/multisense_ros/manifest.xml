@@ -1,0 +1,27 @@
+<package>
+  <description brief="multisense_ros">
+
+     multisense_ros
+
+  </description>
+
+  <depend package="multisense_lib"/>
+  <depend package="sensor_msgs"/>
+  <depend package="laser_assembler"/>
+  <depend package="image_transport"/>
+  <depend package="opencv2"/>
+  <depend package="angles"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="image_geometry"/>
+  <depend package="kdl"/>
+  <depend package="kdl_parser"/>
+
+  <rosdep name="yaml-cpp" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="" />
+  </export>
+
+</package>
+
+

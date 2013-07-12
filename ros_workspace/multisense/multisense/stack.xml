@@ -1,0 +1,22 @@
+<stack>
+  <description brief="multisense">
+
+  </description>
+  <author>Maintained by hiDOF</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense</url>
+
+  <depend stack="ros" />
+  <depend stack="ros_comm" />
+  <depend stack="laser_pipeline" />
+  <depend stack="image_common" />
+  <depend stack="common_msgs" />
+  <depend stack="diagnostics" />
+  <depend stack="dynamic_reconfigure" />
+  <depend stack="vision_opencv"/>
+  <depend stack="diagnostics_monitors"/>
+  <depend stack="geometry"/>
+  <depend stack="robot_model"/>
+
+</stack>

@@ -1,0 +1,23 @@
+\subsubsection usage Usage
+\verbatim
+<node name="Camera" pkg="multisense_ros" type="Camera">
+  <param name="resolution" type="str" value="1024x544" />
+  <param name="fps" type="double" value="10.0" />
+  <param name="gain" type="double" value="1.0" />
+  <param name="auto_exposure" type="bool" value="True" />
+  <param name="auto_exposure_max_time" type="double" value="0.5" />
+  <param name="auto_exposure_decay" type="int" value="7" />
+  <param name="auto_exposure_thresh" type="double" value="0.75" />
+  <param name="exposure_time" type="double" value="0.025" />
+  <param name="auto_white_balance" type="bool" value="True" />
+  <param name="auto_white_balance_decay" type="int" value="3" />
+  <param name="auto_white_balance_thresh" type="double" value="0.5" />
+  <param name="white_balance_red" type="double" value="1.0" />
+  <param name="white_balance_blue" type="double" value="1.0" />
+  <param name="lighting" type="bool" value="False" />
+  <param name="flash" type="bool" value="False" />
+  <param name="duty_cycle" type="double" value="0.0" />
+  <param name="motor_speed" type="double" value="0.0" />
+</node>
+\endverbatim
+
