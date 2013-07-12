@@ -123,8 +123,8 @@ group "a.2.walking" {
 
 # Controllers for vrc task 3 (hose manipulation)
 group "a.3.manip" {
-    cmd "WalkingManipStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingManipStateMachine;\"";
+    cmd "WalkingStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
     }
     cmd "GraspController" {
