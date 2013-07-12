@@ -32,7 +32,8 @@ fprintf(fptr,'\n\n% Set environment variables\n');
 fprintf(fptr,'setenv(''DRC_PATH'',''%s'');\n',fullfile(pwd,'..'));
 fprintf(fptr,'setenv(''ROS_ROOT'',''%s'');\n',getenv('ROS_ROOT'));
 fprintf(fptr,'setenv(''ROS_PACKAGE_PATH'',''%s'');\n',[fullfile(BUILD_PREFIX,'..','..','ros_workspace'),pathsep,getenv('ROS_PACKAGE_PATH')]);
-fprintf(fptr,'setenv(''LD_LIBRARY_PATH'',''%s'');\n',[fullfile(pwd,'drake','thirdParty','gurobi','linux64','lib'),':/opt/ros/fuerte/lib']);
+[rv,p] = system('pkg-config --libs-only-L gurobi'); 
+fprintf(fptr,'setenv(''LD_LIBRARY_PATH'',''%s'');\n',[strtrim(p(3:end)),':/opt/ros/fuerte/lib']);
 
 % path license
 fprintf(fptr,'\n\n% Setup PATH LCP solver\n');
