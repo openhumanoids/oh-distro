@@ -14,7 +14,7 @@ Maintainers:  Russ Tedrake <russt@mit.edu>
 	      Scott Kuindersma <scottk@csail.mit.edu>
 Summary:      DRC planning and control POD
 Description:
-  DRC specific routines for planning and control (with drake included as an external)
+  DRC specific routines for planning and control
 
 Requirements: 
 	      g++-4.4
