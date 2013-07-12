@@ -51,7 +51,8 @@ fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','planners','footstep_pla
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','frames'));
-fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','unitTests'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','test'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','systems'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 
 fclose(fptr);
