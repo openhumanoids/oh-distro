@@ -95,7 +95,7 @@ classdef WalkingController < DRCController
       clear connection ins outs;
       
       % cascade footstep replanner 
-      fs = FootstepReplanner(r,ctrl_data);
+      fs = FootstepPlanShiftBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 2;

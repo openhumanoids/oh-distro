@@ -1,4 +1,4 @@
-classdef FootstepReplanner < DrakeSystem
+classdef FootstepPlanShiftBlock < DrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     dt;
@@ -14,7 +14,7 @@ classdef FootstepReplanner < DrakeSystem
   end
   
   methods
-    function obj = FootstepReplanner(r,controller_data,options)
+    function obj = FootstepPlanShiftBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
             
