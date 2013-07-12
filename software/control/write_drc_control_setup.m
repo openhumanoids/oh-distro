@@ -38,6 +38,9 @@ fprintf(fptr,'setenv(''LD_LIBRARY_PATH'',''%s'');\n',[fullfile(pwd,'drake','thir
 fprintf(fptr,'\n\n% Setup PATH LCP solver\n');
 fprintf(fptr,'setenv(''PATH_LICENSE_STRING'',''2069810742&Courtesy_License&&&USR&2013&14_12_2011&1000&PATH&GEN&31_12_2013&0_0_0&0&0_0'');\n');
 
+fprintf(fptr,'\n\naddpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
+fprintf(fptr,'addpath_drake;\n');
+
 % add the drake control matlab util directory into the matlab path:
 fprintf(fptr,'\n\n% Add drc control matlab utilities to the path\n');
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab'));
@@ -46,7 +49,6 @@ fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','frames'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','footstep_planner'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','pinned_manipulation/spherical_interp'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
-fprintf(fptr,'addpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
 
 fclose(fptr);
 
