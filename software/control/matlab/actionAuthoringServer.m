@@ -65,7 +65,7 @@ warning(s);
 
 nq = r.getNumDOF();
 % load the "zero position"
-load('data/atlas_fp.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 q_standing = xstar(1:nq);
 q = q_standing;
 options.q_traj_nom = ConstantTrajectory(q);

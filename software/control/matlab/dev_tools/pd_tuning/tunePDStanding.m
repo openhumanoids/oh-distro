@@ -8,7 +8,7 @@ options.dt = 0.001;
 r = Atlas('../urdf/atlas_minimal_contact.urdf',options);
 
 % set initial state to fixed point
-load('../data/atlas_fp.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 %xstar = r.getInitialState();
 

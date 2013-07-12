@@ -45,10 +45,13 @@ fprintf(fptr,'addpath_drake;\n');
 % add the drake control matlab util directory into the matlab path:
 fprintf(fptr,'\n\n% Add drc control matlab utilities to the path\n');
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','controllers'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','planners'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','planners','footstep_planner'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','frames'));
-fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','footstep_planner'));
-fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','pinned_manipulation/spherical_interp'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','unitTests'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 
 fclose(fptr);

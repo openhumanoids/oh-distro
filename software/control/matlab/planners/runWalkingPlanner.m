@@ -13,7 +13,6 @@ end
 
 debug = true;
 
-addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
@@ -36,7 +35,7 @@ while true
 
   % if nominal posture was not set previously. Load from file.
   if(~strcmp(qnom_state,'current')) 
-   d = load('data/atlas_fp.mat');
+   d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
    xstar = d.xstar;     
   end
   

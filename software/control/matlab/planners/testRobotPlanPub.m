@@ -10,7 +10,7 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
-load('data/atlas_fp.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');

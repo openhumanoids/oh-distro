@@ -6,8 +6,9 @@ addpath(fullfile(pwd,'frames'));
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
-load('data/atlas_fp.mat');
-load('data/atlas_ingress.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_ingress.mat'));
+
 t_qs_breaks = t_qs_breaks*scale_t;
 
 if size(foot_support_qs,1) == 35
