@@ -11,6 +11,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
+set(POD_NAME multisense_ros)
+include(cmake/pods.cmake)
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -36,6 +39,10 @@ rosbuild_add_boost_directories()
 rosbuild_add_executable(ros_driver src/ros_driver.cpp)
 target_link_libraries(ros_driver ${PROJECT_NAME})
 target_link_libraries(ros_driver yaml-cpp)
+
+pods_use_pkg_config_packages(ros_driver lcm  
+                             lcmtypes_bot2-core 
+                             lcmtypes_multisense) 
 
 rosbuild_add_executable(raw_snapshot src/raw_snapshot.cpp)
 target_link_libraries(raw_snapshot ${PROJECT_NAME})

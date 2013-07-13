@@ -40,6 +40,10 @@
 
 #include <MultiSenseChannel.hh>
 
+#include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/multisense.hpp>
+#include <lcm/lcm-cpp.hpp>
+
 namespace multisense_ros {
 
 class Camera {
@@ -58,6 +62,9 @@ public:
     void rawCamDataCallback(const crl::multisense::image::Header& header,
                             const void *imageDataP);
     void colorImageCallback(const crl::multisense::image::Header& header,
+                            const void *imageDataP);
+    
+    void rawcolorCamDataCallback(const crl::multisense::image::Header& header,
                             const void *imageDataP);
 private:
 
@@ -197,6 +204,15 @@ private:
     // The current capture rate of the sensor
 
     float capture_fps_;
+    
+    // LCM stuff:
+    lcm::LCM lcm_publish_ ;
+    // this message bundles both together:    
+    multisense::images_t multisense_msg_out_;
+    bot_core::image_t disparity_msg_out_;
+    bot_core::image_t left_msg_out_;
+
+  
 };
 
 }

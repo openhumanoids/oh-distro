@@ -60,6 +60,10 @@ void rawCB(const image::Header& header, const void* imageDataP, void* userDataP)
 void colorCB(const image::Header& header, const void* imageDataP, void* userDataP)
 { reinterpret_cast<Camera*>(userDataP)->colorImageCallback(header, imageDataP); }
 
+// added by mfallon:
+void rawcolorCB(const image::Header& header, const void* imageDataP, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->rawcolorCamDataCallback(header, imageDataP); }
+
 bool isValidPoint(const cv::Vec3f& pt)
 {
     //
@@ -98,6 +102,10 @@ Camera::Camera(Channel* driver) :
 {
     device_nh_.param("frame_id", frame_id_, std::string("/left_camera_optical_frame"));
 
+    if(!lcm_publish_.good()){
+      std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+    }
+  
     //
     // Create topic publishers
 
@@ -160,6 +168,9 @@ Camera::Camera(Channel* driver) :
     driver_->addIsolatedCallback(pointCB, Source_Disparity, this);
     driver_->addIsolatedCallback(rawCB,   Source_Disparity | Source_Luma_Rectified_Left, this);
     driver_->addIsolatedCallback(colorCB, Source_Luma_Left | Source_Chroma_Left, this);
+    
+    driver_->addIsolatedCallback(rawcolorCB,   Source_Disparity | Source_Luma_Left | Source_Chroma_Left, this);
+    
 }
 
 Camera::~Camera()
@@ -675,6 +686,14 @@ void Camera::colorImageCallback(const image::Header& header,
                     sourceImageP->imageData = reinterpret_cast<char*>(&(left_rgb_image_.data[0]));
                     IplImage *destImageP    = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 3);
                     destImageP->imageData   = reinterpret_cast<char*>(&(left_rgb_rect_image_.data[0]));
+                    
+                    // LCM 1:
+                    int n_colors=3;
+                    int left_isize = n_colors*width*height;
+                    left_msg_out_.data.resize( left_isize);
+                    destImageP->imageData   = reinterpret_cast<char*>(&(left_msg_out_.data[0]));
+                    ////////////////////////////////////////////////
+                    
 
                     cvRemap(sourceImageP, destImageP, 
                             calibration_map_left_1_, 
@@ -685,17 +704,201 @@ void Camera::colorImageCallback(const image::Header& header,
                     cvReleaseImageHeader(&destImageP);
 
                     left_rgb_rect_image_.header.frame_id = frame_id_;
-                    left_rgb_rect_image_.header.stamp    = ros::Time::now();
+                    ros::Time cam_time = ros::Time::now();
+                    left_rgb_rect_image_.header.stamp    =cam_time;
                     left_rgb_rect_image_.height          = height;
                     left_rgb_rect_image_.width           = width;
                     
                     left_rgb_rect_image_.encoding        = "rgb8";
                     left_rgb_rect_image_.is_bigendian    = false;
                     left_rgb_rect_image_.step            = width;
-                    
                     left_rgb_rect_cam_info_.header = left_rgb_rect_image_.header;
-                    
                     left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
+                    
+                    // LCM 2:
+                    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+                    left_msg_out_.width = width;
+                    left_msg_out_.height = height;
+                    left_msg_out_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
+                    left_msg_out_.nmetadata =0;
+                    left_msg_out_.row_stride=n_colors*width;
+                    left_msg_out_.size =left_isize;
+                    //memcpy(&left_msg_out_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
+                    //ROS_ERROR("postcam");
+                    lcm_publish_.publish("CAMERALEFT", &left_msg_out_);                    
+                    //ROS_ERROR("postpub");
+                    ////////////////////////////////////////////////
+                    
+                    
+                    
+                }
+            }
+        }
+
+        got_left_luma_ = false;
+    }
+}
+
+
+
+//void Camera::colorImageCallback(const image::Header& header,
+void Camera::rawcolorCamDataCallback(const image::Header& header,
+                                const void*          imageDataP)
+{
+    if (0 == left_rgb_cam_pub_.getNumSubscribers() &&
+        0 == left_rgb_rect_cam_pub_.getNumSubscribers()) {
+        got_left_luma_ = false;
+        return;
+    }
+
+    //
+    // Just count the chroma.. the luma image is counted in monoCallback
+
+    if (Source_Chroma_Left == header.source)
+        camera_diagnostics_.countStream();
+
+    //
+    // The left-luma image is currently published before
+    // the matching chroma image. 
+
+    if (false == got_left_luma_) {
+
+        if (Source_Luma_Left == header.source) {
+
+            const uint32_t imageSize = header.width * header.height;
+
+            left_luma_image_.data.resize(imageSize);
+            memcpy(&left_luma_image_.data[0], imageDataP, imageSize);
+
+            left_luma_image_.height = header.height;
+            left_luma_image_.width  = header.width;
+
+            left_luma_frame_id_ = header.frameId;
+            got_left_luma_      = true;
+        }
+        
+    } else if (Source_Chroma_Left == header.source) {
+
+        if (header.frameId == left_luma_frame_id_) {
+
+            const uint32_t height    = left_luma_image_.height;
+            const uint32_t width     = left_luma_image_.width;
+            const uint32_t imageSize = 3 * height * width;
+            
+            left_rgb_image_.data.resize(imageSize);
+
+            left_rgb_image_.header.frame_id = frame_id_;
+            left_rgb_image_.header.stamp    = ros::Time::now();
+            left_rgb_image_.height          = height;
+            left_rgb_image_.width           = width;
+             
+            left_rgb_image_.encoding        = "rgb8";
+            left_rgb_image_.is_bigendian    = false;
+            left_rgb_image_.step            = width;
+
+            //
+            // Convert YCbCr 4:2:0 to RGB
+            // TODO: speed this up
+
+            const uint8_t *lumaP     = reinterpret_cast<const uint8_t*>(&(left_luma_image_.data[0]));
+            const uint8_t *chromaP   = reinterpret_cast<const uint8_t*>(imageDataP);
+            uint8_t       *rgbP      = reinterpret_cast<uint8_t*>(&(left_rgb_image_.data[0]));
+            const uint32_t rgbStride = width * 3;
+
+            for(uint32_t y=0; y<height; y++) {
+                for(uint32_t x=0; x<width; x++) {
+
+                    const uint32_t lumaOffset   = (y * width) + x;
+                    const uint32_t chromaOffset = 2 * (((y/2) * (width/2)) + (x/2));
+                    
+                    const float px_y  = static_cast<float>(lumaP[lumaOffset]);
+                    const float px_cb = static_cast<float>(chromaP[chromaOffset+0]) - 128.0f;
+                    const float px_cr = static_cast<float>(chromaP[chromaOffset+1]) - 128.0f;
+
+                    float px_r  = px_y +                    1.402f   * px_cr;
+                    float px_g  = px_y - 0.34414f * px_cb - 0.71414f * px_cr;
+                    float px_b  = px_y + 1.772f   * px_cb;
+
+                    if (px_r < 0.0f)        px_r = 0.0f;
+                    else if (px_r > 255.0f) px_r = 255.0f;
+                    if (px_g < 0.0f)        px_g = 0.0f;
+                    else if (px_g > 255.0f) px_g = 255.0f;
+                    if (px_b < 0.0f)        px_b = 0.0f;
+                    else if (px_b > 255.0f) px_b = 255.0f;
+
+                    const uint32_t rgbOffset = (y * rgbStride) + (3 * x);
+
+                    rgbP[rgbOffset + 0] = static_cast<uint8_t>(px_r);
+                    rgbP[rgbOffset + 1] = static_cast<uint8_t>(px_g);
+                    rgbP[rgbOffset + 2] = static_cast<uint8_t>(px_b);
+                }
+            }
+
+            if (0 != left_rgb_cam_pub_.getNumSubscribers())
+                left_rgb_cam_pub_.publish(left_rgb_image_);
+
+            if (0 != left_rgb_rect_cam_pub_.getNumSubscribers()) {
+                boost::mutex::scoped_lock lock(cal_lock_);
+
+                if (width  != image_config_.width() ||
+                    height != image_config_.height())
+                    ROS_ERROR("calibration/image size mismatch: image=%dx%d, calibration=%dx%d",
+                              width, height, image_config_.width(), image_config_.height());
+                else if (NULL == calibration_map_left_1_ || NULL == calibration_map_left_2_)
+                    ROS_ERROR("undistort maps not initialized");
+                else {
+
+                    const CvScalar outlierColor = {{0.0}};
+
+                    left_rgb_rect_image_.data.resize(imageSize);
+
+                    IplImage *sourceImageP  = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 3);
+                    sourceImageP->imageData = reinterpret_cast<char*>(&(left_rgb_image_.data[0]));
+                    IplImage *destImageP    = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 3);
+                    destImageP->imageData   = reinterpret_cast<char*>(&(left_rgb_rect_image_.data[0]));
+                    
+                    // LCM 1:
+                    int n_colors=3;
+                    int left_isize = n_colors*width*height;
+                    left_msg_out_.data.resize( left_isize);
+                    destImageP->imageData   = reinterpret_cast<char*>(&(left_msg_out_.data[0]));
+                    ////////////////////////////////////////////////
+                    
+
+                    cvRemap(sourceImageP, destImageP, 
+                            calibration_map_left_1_, 
+                            calibration_map_left_2_,
+                            CV_INTER_LINEAR, outlierColor);
+
+                    cvReleaseImageHeader(&sourceImageP);
+                    cvReleaseImageHeader(&destImageP);
+
+                    left_rgb_rect_image_.header.frame_id = frame_id_;
+                    ros::Time cam_time = ros::Time::now();
+                    left_rgb_rect_image_.header.stamp    =cam_time;
+                    left_rgb_rect_image_.height          = height;
+                    left_rgb_rect_image_.width           = width;
+                    
+                    left_rgb_rect_image_.encoding        = "rgb8";
+                    left_rgb_rect_image_.is_bigendian    = false;
+                    left_rgb_rect_image_.step            = width;
+                    left_rgb_rect_cam_info_.header = left_rgb_rect_image_.header;
+                    left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
+                    
+                    // LCM 2:
+                    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+                    left_msg_out_.width = width;
+                    left_msg_out_.height = height;
+                    left_msg_out_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
+                    left_msg_out_.nmetadata =0;
+                    left_msg_out_.row_stride=n_colors*width;
+                    left_msg_out_.size =left_isize;
+                    //memcpy(&left_msg_out_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
+                    //ROS_ERROR("postcam");
+                    lcm_publish_.publish("CAMERALEFT", &left_msg_out_);                    
+                    //ROS_ERROR("postpub");
+                    ////////////////////////////////////////////////
+                    
                 }
             }
         }

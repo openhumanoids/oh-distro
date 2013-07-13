@@ -36,6 +36,10 @@
 
 #include <MultiSenseChannel.hh>
 
+#include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/multisense.hpp>
+#include <lcm/lcm-cpp.hpp>
+
 namespace multisense_ros {
 
 class Laser {
@@ -99,6 +103,11 @@ private:
 
     sensor_msgs::LaserScan   laser_msg_;
     sensor_msgs::PointCloud2 point_cloud_;
+    
+    // LCM stuff:
+    lcm::LCM lcm_publish_ ;
+    bot_core::planar_lidar_t lcm_laser_msg_;    
+    multisense::joint_t lcm_joint_msg_;
 
     //
     // Subscriptions

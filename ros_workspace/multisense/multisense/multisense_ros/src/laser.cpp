@@ -311,6 +311,11 @@ Laser::Laser(Channel* driver,
                 boost::bind(&Laser::subscribe, this),
                 boost::bind(&Laser::unsubscribe, this));
 
+    if(!lcm_publish_.good()){
+      std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+      ROS_ERROR("ERROR: lcm is not good()");
+    }    
+    
     //
     // Create point cloud publisher
 
@@ -482,14 +487,25 @@ void Laser::scanCallback(const lidar::Header&        header,
     js_msg_.velocity[0]     = velocity;
     js_pub_.publish(js_msg_);
 
+    lcm_joint_msg_.utime = (int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
+    lcm_joint_msg_.position= angle_start;
+    lcm_joint_msg_.velocity= velocity;
+    lcm_publish_.publish("MULTISENSE_JOINT", &lcm_joint_msg_);    
+    
     //
     // Publish joint state for end of scan
     
     js_msg_.header.frame_id = "";
-    js_msg_.header.stamp    = start_absolute_time + (end_relative_time - start_relative_time);
+    ros::Time end_absolute_time = start_absolute_time + (end_relative_time - start_relative_time);
+    js_msg_.header.stamp    = end_absolute_time;
     js_msg_.position[0]     = angle_end;
     js_msg_.velocity[0]     = velocity;
     js_pub_.publish(js_msg_);
+    
+    lcm_joint_msg_.utime = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
+    lcm_joint_msg_.position= angle_start;
+    lcm_joint_msg_.velocity= velocity;
+    lcm_publish_.publish("MULTISENSE_JOINT", &lcm_joint_msg_);        
 
     //
     // Downsample diagnostics to 1 Hz
@@ -500,11 +516,28 @@ void Laser::scanCallback(const lidar::Header&        header,
         js_diagnostics_.current_rate = velocity;
         js_diagnostics_pub_.publish(js_diagnostics_);
     }
-
+    
+    
+    const double arcRadians = 1e-6 * static_cast<double>(header.scanArc);
+      
+    // LCM:
+    lcm_laser_msg_.utime = (int64_t) floor(start_absolute_time.toNSec()/1000);
+    lcm_laser_msg_.ranges.resize( header.pointCount );
+    lcm_laser_msg_.intensities.resize( header.pointCount );
+    for (size_t i=0; i < header.pointCount; i++){
+      lcm_laser_msg_.ranges[i]      = static_cast<float>(rangesP[i]) / 1000.0f; // from millimeters
+      lcm_laser_msg_.intensities[i] = static_cast<float>(intensitiesP[i]);      // in device units
+    }
+    lcm_laser_msg_.nranges = header.pointCount;
+    //  lcm_laser_msg_.ranges=range_line;
+    lcm_laser_msg_.nintensities=0;
+    //lcm_laser_msg_.intensities=NULL;
+    lcm_laser_msg_.rad0 = -arcRadians / 2.0;
+    lcm_laser_msg_.radstep = arcRadians / (header.pointCount - 1);
+    lcm_publish_.publish("SCAN", &lcm_laser_msg_);
+    /////////////////////////////////////////////////////////////      
+    
     if (scan_pub_.getNumSubscribers() > 0) {
-        
-        const double arcRadians = 1e-6 * static_cast<double>(header.scanArc);
-        
         laser_msg_.header.frame_id = frame_id_;
         laser_msg_.header.stamp    = start_absolute_time;
         laser_msg_.scan_time       = (end_relative_time - start_relative_time).toSec();
