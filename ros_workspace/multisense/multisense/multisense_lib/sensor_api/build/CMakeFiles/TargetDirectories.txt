@@ -1,7 +1,0 @@
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/ChangeIpUtility/CMakeFiles/ChangeIpUtility.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/DeviceInfoUtility/CMakeFiles/DeviceInfoUtility.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/FlashUtility/CMakeFiles/FlashUtility.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/ImageCalUtility/CMakeFiles/ImageCalUtility.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/LidarCalUtility/CMakeFiles/LidarCalUtility.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/LibMultiSense/CMakeFiles/MultiSense.dir
-/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/build/source/SaveImageUtility/CMakeFiles/SaveImageUtility.dir

@@ -1,1 +1,0 @@
-/home/mfallon/bin/c++       CMakeFiles/SaveImageUtility.dir/SaveImageUtility.cc.o  -o ../../../bin/SaveImageUtility -rdynamic ../../../bin/libMultiSense.so.2.0 -lpthread -lrt -lpng -Wl,-rpath,/home/mfallon/drc/ros_workspace/multisense/multisense/multisense_lib/sensor_api/bin 
