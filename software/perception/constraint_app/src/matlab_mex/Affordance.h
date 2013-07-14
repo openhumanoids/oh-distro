@@ -30,10 +30,11 @@ class Affordance {
   Joint(const std::string& _name, const int& _num) : name(_name), num(_num) {}
     std::string name;
     int num;
-  };
+  };  
 
   typedef boost::shared_ptr<Affordance> Ptr;
   typedef std::vector<double> StateVector;
+  typedef std::map<std::string, KDL::Twist> SegmentNoiseMap;
   
   Affordance(const std::string& filename, std::ostream& log = std::cout);
   Affordance(std::ostream& log, const drc::affordance_t& msg);  
@@ -52,6 +53,11 @@ class Affordance {
   void DecodeState(const StateVector& state, KDL::JntArray& joints);
   void PrintKdlTree() { PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0); }
 
+  bool noisyTreeCopy(const SegmentNoiseMap& noiseMap,
+		     KDL::Tree& newTree, 
+		     KDL::SegmentMap::const_iterator root, 
+		     const std::string& hook_name);
+
  private:
   void PrintKdlTree(const KDL::Tree& tree, 
 		    const KDL::TreeElement& segment,
@@ -65,6 +71,7 @@ class Affordance {
  public:
   std::ostream& m_log;
   KDL::Tree m_tree;
+  KDL::Tree m_originalTree;
 
   typedef boost::multi_index_container<
     Joint,

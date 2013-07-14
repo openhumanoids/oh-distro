@@ -28,6 +28,17 @@ Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::c
     return;
   }
 
+  /*
+  m_log << "OTDF deviceTree = " << std::endl;
+  PrintKdlTree(deviceTree, deviceTree.getRootSegment()->second, 0);
+
+  KDL::Tree tempTree;
+  noisyTreeCopy(tempTree, deviceTree.getRootSegment(), "root");
+  m_log << "tempTree = " << std::endl;
+  PrintKdlTree(tempTree, tempTree.getRootSegment()->second, 0);
+  m_log << "---------------------------------------" << std::endl;
+  */
+
   //add a base joint
   m_tree.addSegment(KDL::Segment("segment_x", 
 				 KDL::Joint("x", KDL::Joint::TransX), 
@@ -64,6 +75,8 @@ Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::c
   m_log << "created KDL object with " << m_tree.getNrOfJoints() << " joints and " 
 	<< m_tree.getNrOfSegments() << " segments" << std::endl;
   PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0);
+
+  m_originalTree = m_tree; //backup copy, handy if adding noise
 }
 
 Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(log)
@@ -124,6 +137,49 @@ Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(
   m_log << "created KDL object with " << m_tree.getNrOfJoints() << " joints and " 
 	<< m_tree.getNrOfSegments() << " segments" << std::endl;
   PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0);
+
+  m_originalTree = m_tree; //backup copy, handy if adding noise
+}
+
+bool Affordance::noisyTreeCopy(const SegmentNoiseMap& noiseMap,
+			       KDL::Tree& newTree, 
+			       KDL::SegmentMap::const_iterator root, 
+			       const std::string& hook_name)
+{
+  KDL::SegmentMap::const_iterator child;
+  for (unsigned int i = 0; i < root->second.children.size(); i++) {
+    child = root->second.children[i];
+    //Try to add the child
+    m_log << "adding " << child->first << " to " << hook_name << std::endl;
+
+    SegmentNoiseMap::const_iterator noiseIter = noiseMap.find(child->first);
+
+    KDL::Segment originalSegment = child->second.segment;
+    KDL::Segment newSegment;
+    if ( noiseIter == noiseMap.end() ) {
+      newSegment = originalSegment;
+    } else {
+      newSegment = KDL::Segment(originalSegment.getName(),
+				originalSegment.getJoint(),
+				KDL::addDelta(originalSegment.getFrameToTip(), 
+					      noiseIter->second),
+				originalSegment.getInertia());
+      m_log << "adding noise to segment " << originalSegment.getName() << std::endl
+	    << "original tip frame: " << originalSegment.getFrameToTip() << std::endl
+	    << "new tip frame: " << newSegment.getFrameToTip() << std::endl
+	    << "noise twist: " << noiseIter->second << std::endl;
+    }
+
+    if (newTree.addSegment(newSegment, hook_name)) {
+      //if child is added, add all the child's children
+      if (!(noisyTreeCopy(noiseMap, newTree, child, child->first)))
+	//if it didn't work, return false
+	return false;
+    } else
+      //If the child could not be added, return false
+      return false;
+  }
+  return true;
 }
 
 void Affordance::PrintKdlTree(const KDL::Tree& tree, 
@@ -133,10 +189,13 @@ void Affordance::PrintKdlTree(const KDL::Tree& tree,
   for ( unsigned int i = 0; i < depth; i++ ) {
     m_log << " ";
   }
+  KDL::Frame frameToTip(segment.segment.getFrameToTip());
+  
   m_log << segment.segment.getName() 
 	<< ", joint " << segment.segment.getJoint().getName() 
 	<< " of type " << segment.segment.getJoint().getTypeName()
 	<< ", joint #" << segment.q_nr
+	<< ", tip = " << frameToTip.p
 	<< std::endl;
   for ( unsigned int i = 0; i < segment.children.size(); i++ ) {
     PrintKdlTree(tree, segment.children[i]->second, depth+1);
