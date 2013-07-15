@@ -1,6 +1,0 @@
-
-    <include>
-      <uri>model://mit_floating_sandia_hands</uri>
-    </include>   
-  </world>
-</gazebo>

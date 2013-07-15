@@ -6,7 +6,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/trajectory_control_tutorial</url>
   <depend package="atlas_utils"/>
-  <depend package="multisense_msgs"/>
+<!--  <depend package="multisense_msgs"/> -->
 
 
 </package>
