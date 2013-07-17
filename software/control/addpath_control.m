@@ -1,0 +1,42 @@
+function addpath_control()
+
+if ~exist('pods_get_base_path')
+  % todo: implement the BUILD_PREFIX logic from the pod Makefiles (e.g.
+  % search up to four directories higher)
+  if ~exist('build/matlab')
+    error('You must run make first (and/or add your pod build/matlab directory to the matlab path)');
+  end
+  addpath(fullfile(pwd,'build','matlab'));  
+end
+
+% setup javaclasspath
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_drc_lcmtypes.jar']);
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2-core.jar']);
+javaaddpath([pods_get_base_path,'/share/java/drc_control.jar']);
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
+
+% tell drake about ROS
+setenv('DRC_PATH',[pods_get_base_path,'/..']);
+setenv('ROS_ROOT',getenv('ROS_ROOT'));
+setenv('ROS_PACKAGE_PATH',[pods_get_base_path,'/../../ros_workspace',pathsep,getenv('ROS_PACKAGE_PATH')]);
+setenv('LD_LIBRARY_PATH',[getenv('LD_LIBRARY_PATH'),pathsep,'/opt/ros/fuerte/lib']);
+
+% path license
+setenv('PATH_LICENSE_STRING','2069810742&Courtesy_License&&&USR&2013&14_12_2011&1000&PATH&GEN&31_12_2013&0_0_0&0&0_0');
+
+addpath([pods_get_base_path,'/matlab']);
+
+% add the drake control matlab util directory into the matlab path:
+addpath(fullfile(pwd,'matlab'));
+addpath(fullfile(pwd,'matlab','controllers'));
+addpath(fullfile(pwd,'matlab','planners'));
+addpath(fullfile(pwd,'matlab','planners','footstep_planner'));
+addpath(fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
+addpath(fullfile(pwd,'matlab','util'));
+addpath(fullfile(pwd,'matlab','frames'));
+addpath(fullfile(pwd,'matlab','test'));
+addpath(fullfile(pwd,'matlab','systems'));
+addpath(fullfile(pwd,'collections_utils'));
+
+end

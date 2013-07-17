@@ -7,6 +7,8 @@ pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
 add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
 pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
+install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
+
 if (APPLE)
 
   add_mex(QPControllermex QPControllermex.cpp)
