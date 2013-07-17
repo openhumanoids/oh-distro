@@ -209,9 +209,10 @@ private:
     lcm::LCM lcm_publish_ ;
     // this message bundles both together:    
     multisense::images_t multisense_msg_out_;
-    bot_core::image_t disparity_msg_out_;
-    bot_core::image_t left_msg_out_;
-
+    bot_core::image_t lcm_disp_;
+    bot_core::image_t lcm_left_;
+    int64_t lcm_disp_frame_id_;
+    int64_t lcm_left_frame_id_;
   
 };
 

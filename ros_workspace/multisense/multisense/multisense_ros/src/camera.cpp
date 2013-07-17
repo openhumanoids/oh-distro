@@ -28,6 +28,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <arpa/inet.h>
+#include "../include/multisense_ros/camera.h"
 
 using namespace crl::multisense;
 
@@ -61,8 +62,8 @@ void colorCB(const image::Header& header, const void* imageDataP, void* userData
 { reinterpret_cast<Camera*>(userDataP)->colorImageCallback(header, imageDataP); }
 
 // added by mfallon:
-void rawcolorCB(const image::Header& header, const void* imageDataP, void* userDataP)
-{ reinterpret_cast<Camera*>(userDataP)->rawcolorCamDataCallback(header, imageDataP); }
+//void rawcolorCB(const image::Header& header, const void* imageDataP, void* userDataP)
+//{ reinterpret_cast<Camera*>(userDataP)->rawcolorCamDataCallback(header, imageDataP); }
 
 bool isValidPoint(const cv::Vec3f& pt)
 {
@@ -105,6 +106,12 @@ Camera::Camera(Channel* driver) :
     if(!lcm_publish_.good()){
       std::cerr <<"ERROR: lcm is not good()" <<std::endl;
     }
+    lcm_disp_frame_id_ = -1;
+    lcm_left_frame_id_ = -2;
+    multisense_msg_out_.image_types.push_back(0);// multisense::images_t::LEFT );
+    multisense_msg_out_.image_types.push_back(2);// multisense::images_t::DISPARITY );
+    multisense_msg_out_.images.push_back(lcm_left_);
+    multisense_msg_out_.images.push_back(lcm_disp_);
   
     //
     // Create topic publishers
@@ -133,6 +140,9 @@ Camera::Camera(Channel* driver) :
     point_cloud_pub_    = device_nh_.advertise<sensor_msgs::PointCloud2>("points2", 5,
                           boost::bind(&Camera::connectStream, this, Source_Luma_Rectified_Left | Source_Disparity),
                           boost::bind(&Camera::disconnectStream, this, Source_Luma_Rectified_Left | Source_Disparity));
+    
+    
+    
 
     ros::NodeHandle calibration_nh(device_nh_, "calibration");
     raw_cam_config_pub_ = calibration_nh.advertise<multisense_ros::RawCamConfig>("raw_cam_config", 1, true);
@@ -169,7 +179,7 @@ Camera::Camera(Channel* driver) :
     driver_->addIsolatedCallback(rawCB,   Source_Disparity | Source_Luma_Rectified_Left, this);
     driver_->addIsolatedCallback(colorCB, Source_Luma_Left | Source_Chroma_Left, this);
     
-    driver_->addIsolatedCallback(rawcolorCB,   Source_Disparity | Source_Luma_Left | Source_Chroma_Left, this);
+    // driver_->addIsolatedCallback(rawcolorCB,   Source_Luma_Left | Source_Chroma_Left, this);
     
 }
 
@@ -310,6 +320,9 @@ void Camera::depthCallback(const image::Header& header,
         ROS_ERROR("Unexpected image source: 0x%x", header.source);
         return;
     }
+    
+    
+    
 
     depth_diagnostics_.countStream();
 
@@ -337,6 +350,7 @@ void Camera::depthCallback(const image::Header& header,
 
     //
     // Disparity is in 32-bit floating point
+    // mfallon: not the mode we have
 
     if (32 == header.bitsPerPixel) {
 
@@ -360,9 +374,31 @@ void Camera::depthCallback(const image::Header& header,
 
     //
     // Disparity is in 1/16th pixel, unsigned integer
+    // disparity is in this mode, and was for the device in jan 2013
 
     } else if (16 == header.bitsPerPixel) {
+        ROS_ERROR("16 bits per pixel"); // mfallon
 
+        // LCM Disparity:
+        ros::Time cam_time = ros::Time::now();
+        left_rgb_rect_image_.header.stamp    =cam_time;
+        int n_bytes=2; // 4 bytes per value
+        int isize = n_bytes*header.width*header.height;
+        lcm_disp_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+        lcm_disp_.width = header.width;
+        lcm_disp_.height = header.height;
+        // lcm_disp_.pixelformat =bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32; originally used, incorrect
+        lcm_disp_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+        lcm_disp_.nmetadata =0;
+        lcm_disp_.row_stride=n_bytes*header.width;
+        lcm_disp_.size =isize;
+        lcm_disp_.data.resize(isize);
+        memcpy(&lcm_disp_.data[ 0 ], imageDataP, isize); 
+        
+        ROS_ERROR("disp      frame id: %lld", header.frameId);
+        lcm_disp_frame_id_ = header.frameId;
+        //////////////////////////////////////////////// 
+          
         cv::Mat_<uint16_t> disparity(header.height, header.width, 
                                      const_cast<uint16_t*>(reinterpret_cast<const uint16_t*>(imageDataP)));
         
@@ -381,6 +417,9 @@ void Camera::depthCallback(const image::Header& header,
             if (0 == disparityImageP[i])
                 depthImageP[i] = bad_point;
 
+            
+                
+            
     } else {
         ROS_ERROR("unsupported disparity bpp: %d", header.bitsPerPixel);
         return;
@@ -575,6 +614,7 @@ void Camera::rawCamDataCallback(const image::Header& header,
 void Camera::colorImageCallback(const image::Header& header,
                                 const void*          imageDataP)
 {
+  
     if (0 == left_rgb_cam_pub_.getNumSubscribers() &&
         0 == left_rgb_rect_cam_pub_.getNumSubscribers()) {
         got_left_luma_ = false;
@@ -690,8 +730,8 @@ void Camera::colorImageCallback(const image::Header& header,
                     // LCM 1:
                     int n_colors=3;
                     int left_isize = n_colors*width*height;
-                    left_msg_out_.data.resize( left_isize);
-                    destImageP->imageData   = reinterpret_cast<char*>(&(left_msg_out_.data[0]));
+                    lcm_left_.data.resize( left_isize);
+                    destImageP->imageData   = reinterpret_cast<char*>(&(lcm_left_.data[0]));
                     ////////////////////////////////////////////////
                     
 
@@ -716,20 +756,37 @@ void Camera::colorImageCallback(const image::Header& header,
                     left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
                     
                     // LCM 2:
-                    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
-                    left_msg_out_.width = width;
-                    left_msg_out_.height = height;
-                    left_msg_out_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
-                    left_msg_out_.nmetadata =0;
-                    left_msg_out_.row_stride=n_colors*width;
-                    left_msg_out_.size =left_isize;
-                    //memcpy(&left_msg_out_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
+                    lcm_left_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+                    lcm_left_.width = width;
+                    lcm_left_.height = height;
+                    lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
+                    lcm_left_.nmetadata =0;
+                    lcm_left_.row_stride=n_colors*width;
+                    lcm_left_.size =left_isize;
+                    //memcpy(&lcm_left_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
                     //ROS_ERROR("postcam");
-                    lcm_publish_.publish("CAMERALEFT", &left_msg_out_);                    
                     //ROS_ERROR("postpub");
+                    
+                    ROS_ERROR("left luma frame id: %lld", left_luma_frame_id_);
+                    ROS_ERROR("leftchromaframe id: %lld", header.frameId);
+                    lcm_left_frame_id_ = header.frameId;
+                    
                     ////////////////////////////////////////////////
-                    
-                    
+                    if ( lcm_left_frame_id_ == lcm_disp_frame_id_ ){
+                      //ROS_ERROR("Syncd frames. publish left RGB [id %lld]", lcm_left_frame_id_);
+                      //lcm_publish_.publish("CAMERALEFT", &lcm_left_);
+                      //ROS_ERROR("Syncd frames. publish disparity [id %lld]", header.frameId);
+                      //lcm_publish_.publish("DISPARITY", &lcm_disp_);            
+                      
+                      multisense_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+                      multisense_msg_out_.n_images =2;
+                      multisense_msg_out_.images[0]= lcm_left_;
+                      multisense_msg_out_.images[1]= lcm_disp_;
+                      ROS_ERROR("Syncd frames. publish pair [id %lld]", header.frameId);
+                      lcm_publish_.publish("MULTISENSE_LD", &multisense_msg_out_);
+                    }else{
+                      ROS_ERROR("Left [%lld] and Disparity [%lld]: Frame Ids dont match", lcm_left_frame_id_, header.frameId);
+                    }
                     
                 }
             }
@@ -740,16 +797,35 @@ void Camera::colorImageCallback(const image::Header& header,
 }
 
 
+/*
 
 //void Camera::colorImageCallback(const image::Header& header,
+// mfallon: this is where the magic happens for MIT
 void Camera::rawcolorCamDataCallback(const image::Header& header,
                                 const void*          imageDataP)
 {
+
+    ros::Time rtime = ros::Time::now();
+    int64_t utime = floor(rtime.toNSec()/1000);
+      ROS_ERROR("%lld Callback", utime);
+    if (Source_Chroma_Left == header.source){
+      ROS_ERROR("%lld Source_Luma_Left   | %lld", utime, header.frameId);
+    }else if (Source_Chroma_Left == header.source){
+      ROS_ERROR("%lld Source_Chroma_Left | %lld", utime, header.frameId);
+    }else if (Source_Disparity == header.source){
+      ROS_ERROR("%lld Source_Disparity   | %lld", utime, header.frameId);
+    }
+      
+      
+  
     if (0 == left_rgb_cam_pub_.getNumSubscribers() &&
         0 == left_rgb_rect_cam_pub_.getNumSubscribers()) {
         got_left_luma_ = false;
         return;
     }
+    
+    
+    ROS_ERROR("%lld a", utime);
 
     //
     // Just count the chroma.. the luma image is counted in monoCallback
@@ -777,6 +853,7 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
             got_left_luma_      = true;
         }
         
+        ROS_ERROR("%lld b", utime);
     } else if (Source_Chroma_Left == header.source) {
 
         if (header.frameId == left_luma_frame_id_) {
@@ -839,6 +916,8 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
 
             if (0 != left_rgb_rect_cam_pub_.getNumSubscribers()) {
                 boost::mutex::scoped_lock lock(cal_lock_);
+                
+                ROS_ERROR("%lld b", utime);
 
                 if (width  != image_config_.width() ||
                     height != image_config_.height())
@@ -860,8 +939,8 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
                     // LCM 1:
                     int n_colors=3;
                     int left_isize = n_colors*width*height;
-                    left_msg_out_.data.resize( left_isize);
-                    destImageP->imageData   = reinterpret_cast<char*>(&(left_msg_out_.data[0]));
+                    lcm_left_.data.resize( left_isize);
+                    destImageP->imageData   = reinterpret_cast<char*>(&(lcm_left_.data[0]));
                     ////////////////////////////////////////////////
                     
 
@@ -886,16 +965,16 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
                     left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
                     
                     // LCM 2:
-                    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
-                    left_msg_out_.width = width;
-                    left_msg_out_.height = height;
-                    left_msg_out_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
-                    left_msg_out_.nmetadata =0;
-                    left_msg_out_.row_stride=n_colors*width;
-                    left_msg_out_.size =left_isize;
-                    //memcpy(&left_msg_out_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
+                    lcm_left_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+                    lcm_left_.width = width;
+                    lcm_left_.height = height;
+                    lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; //bot_core::image_t::PIXEL_FORMAT_GRAY;
+                    lcm_left_.nmetadata =0;
+                    lcm_left_.row_stride=n_colors*width;
+                    lcm_left_.size =left_isize;
+                    //memcpy(&lcm_left_.data[0], destImageP->imageData, left_isize); // didn't work in newer version
                     //ROS_ERROR("postcam");
-                    lcm_publish_.publish("CAMERALEFT", &left_msg_out_);                    
+                    lcm_publish_.publish("CAMERALEFT", &lcm_left_);                    
                     //ROS_ERROR("postpub");
                     ////////////////////////////////////////////////
                     
@@ -903,9 +982,11 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
             }
         }
 
+        ROS_ERROR("%lld c", utime);
         got_left_luma_ = false;
     }
 }
+*/
 
 void Camera::queryConfig()
 {
