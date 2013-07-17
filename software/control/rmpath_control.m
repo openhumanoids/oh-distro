@@ -15,6 +15,7 @@ javarmpath([pods_get_base_path,'/share/java/lcmtypes_bot2-core.jar']);
 javarmpath([pods_get_base_path,'/share/java/drc_control.jar']);
 javarmpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
 javarmpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
+javarmpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 
 % add the drake control matlab util directory into the matlab path:
 rmpath(fullfile(pwd,'matlab'));
