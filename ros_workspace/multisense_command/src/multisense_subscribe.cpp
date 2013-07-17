@@ -61,6 +61,7 @@ App::App(bool get_left_and_right_, bool get_left_and_disparity_):
     right_image_sub_ = node_.subscribe(string("/multisense_sl/right/image_rect_color"), 10, &App::right_image_cb,this);
   }
   if (get_left_and_disparity_){
+    left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_rect_color"), 10, &App::left_image_cb,this);
     disparity_image_sub_ = node_.subscribe(string("/multisense_sl/depth"), 10, &App::disparity_image_cb,this);
   }
   joint_states_sub_ = node_.subscribe("/joint_states", 10, &App::joint_states_cb,this);
