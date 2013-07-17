@@ -14,7 +14,7 @@ classdef HarnessController < DRCController
       % instantiate QP controller
       options = struct();
       options.R = 1e-12*eye(getNumInputs(r));
-      qp = HarnessQPController(r,options);
+      qp = HarnessQPControlBlock(r,options);
 
       % cascade PD controller
       if getNumDOF(r)==34 % floating model

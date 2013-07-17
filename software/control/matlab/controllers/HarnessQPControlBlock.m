@@ -1,7 +1,7 @@
-classdef HarnessQPController < MIMODrakeSystem
+classdef HarnessQPControlBlock < MIMODrakeSystem
 
   methods
-  function obj = HarnessQPController(r,options)
+  function obj = HarnessQPControlBlock(r,options)
     % @param r atlas instance
     typecheck(r,'Atlas');
 
