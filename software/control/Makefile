@@ -23,7 +23,16 @@ ifeq "$(BUILD_TYPE)" ""
 BUILD_TYPE="Release"
 endif
 
-all: pod-build/Makefile
+# Build doxygen docs, if doxygen is available
+DOX := $(shell which doxygen)
+ifneq (,$(findstring doxygen,$(DOX)))
+DOXYCOMMAND := echo -n "Looks like you have doxygen installed, so I will build the documentation now...\n"; doxygen Doxyfile > /dev/null 2> /dev/null; echo -n "Done.\n"
+else
+DOXYCOMMAND := echo -n "Sorry, you do not appear to have doxygen installed, so I am not going to create the doxygen files.\n"
+endif
+
+
+all: pod-build/Makefile $(BUILD_PREFIX)/config/drc_control_setup.m
 	$(MAKE) -C pod-build all install
 
 pod-build/Makefile:
@@ -39,6 +48,9 @@ configure:
 	# run CMake to generate and configure the build scripts
 	@cd pod-build && cmake -DCMAKE_INSTALL_PREFIX=$(BUILD_PREFIX) \
 		   -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) ..
+
+$(BUILD_PREFIX)/config/drc_control_setup.m : write_drc_control_setup.m
+	matlab -nosplash -nodesktop -r "setenv('BUILD_PREFIX','$(BUILD_PREFIX)'); write_drc_control_setup;exit";
 
 doxygen :
 	$(DOXYCOMMAND);
