@@ -1,11 +1,10 @@
 // Tool to take a multisense stereo image (images_t)
 // - republish images on seperate channels
 // - use disparity image and left and create a point cloud
+// - apply affordances as image mask 
 //
-// Various features incomplete as of feb 2013
+// Features required:
 // e.g. support for rgb, masking, checking if images are actually left or disparity
-//      getting the camera calibration from the param server
-// mfallon 2013
 //
 // Example usage:
 // drc-multisense-image-tool -p -s -d 4
@@ -20,11 +19,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-//#include <bot_core/bot_core.h>
-//#include <lcmtypes/multisense.h>
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/multisense.hpp"
-
 
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
@@ -32,7 +28,8 @@
 
 #include <pointcloud_tools/pointcloud_lcm.hpp> // create point clouds
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
+#include <image_io_utils/image_io_utils.hpp>   // to simplify jpeg/zlib compression and decompression
+#include <camera_params/camera_params.hpp>     // (Stereo) Camera Parameters
 
 using namespace cv;
 using namespace std;
@@ -40,28 +37,30 @@ using namespace std;
 class image_tool{
   public:
     image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_, 
-                 std::string camera_out_, 
-                 bool output_pointcloud_, bool output_images_, int decimate_);
+               std::string camera_out_, 
+               bool output_pointcloud_, bool output_images_,
+               bool write_pointcloud_, bool write_images_, 
+               int decimate_);
     
-    ~image_tool(){
-    }
+    ~image_tool(){}
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     std::string camera_in_, camera_out_;
     std::string mask_channel_;
     bool output_pointcloud_, output_images_;
+    bool write_pointcloud_, write_images_;
     
     void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    
     
     int counter_;
 
     BotParam* botparam_;
     BotFrames* botframes_;
     bot::frames* botframes_cpp_;
-    
+    StereoParams stereo_params_;
+
     mutable std::vector<float> disparity_buff_;
     mutable std::vector<cv::Vec3f> points_buff_;
     mutable sensor_msgs::PointCloud2 cloud_out;
@@ -73,49 +72,39 @@ class image_tool{
     pointcloud_lcm* pc_lcm_;     
     image_io_utils*  imgutils_;
 
-    
     bot_core::image_t last_mask_;    
 };    
 
-
-// static bool isValidPoint(const cv::Vec3f& pt)
-// {
-//   // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
-//   // and zero disparities (point mapped to infinity).
-//   return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
-//   return pt[2];// != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
-// }
-
-
 image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_,
-                           std::string camera_out_, 
-                           bool output_pointcloud_, bool output_images_, int decimate_):
+                       std::string camera_out_, 
+                       bool output_pointcloud_, bool output_images_, 
+                       bool write_pointcloud_, bool write_images_, 
+                       int decimate_):
       lcm_(lcm_), camera_in_(camera_in_), camera_out_(camera_out_), 
-      output_pointcloud_(output_pointcloud_), output_images_(output_images_), decimate_(decimate_), Q_(4,4,0.0){
+      output_pointcloud_(output_pointcloud_), output_images_(output_images_), 
+      write_pointcloud_(write_pointcloud_), write_images_(write_images_), 
+      decimate_(decimate_), Q_(4,4,0.0){
         
   lcm_->subscribe( camera_in_.c_str(),&image_tool::disparityHandler,this);
   mask_channel_="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel_ ,&image_tool::maskHandler,this);
 
-  
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);  
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);  
         
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
-  float colors_r[] ={1.0,0.0,0.0};
-  vector <float> colors_v_r;
-  colors_v_r.assign(colors_r,colors_r+4*sizeof(float));
-  int reset =1;
-  // obj: id name type reset
-  // pts: id name type reset objcoll usergb rgb        
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(3000,"Pose",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3001,"Pts",1,1, 3000,0,colors_v_r));
-        
-  pc_lcm_ = new pointcloud_lcm(lcm_->getUnderlyingLCM());
-  pc_lcm_->set_decimate( decimate_ );  
-        
+  stereo_params_ = StereoParams();
+  stereo_params_.setParams(botparam_, "CAMERA");
   
-  // TODO: get from botparam server..
+  double baseline = fabs(stereo_params_.translation[0]);
+  Q_(0,0) = Q_(1,1) = 1.0;  
+  Q_(3,2) = 1.0 / baseline;
+  Q_(0,3) = -stereo_params_.right.cx;
+  Q_(1,3) = -stereo_params_.right.cy;
+  Q_(2,3) =  stereo_params_.right.fx;
+  Q_(3,3) = (stereo_params_.right.cx - stereo_params_.left.cx ) / baseline;  
+  
+  /* 
+  // This can be removed:
   if (1==0){ // real device with letterboxes
     Q_(0,0) = Q_(1,1) = 1.0;  
     //double Tx = baseline();
@@ -124,7 +113,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
     Q_(1,3) = -544;//-right_.cy();
     Q_(2,3) = 606.0344848632812;//right_.fx();
     Q_(3,3) = 0;//(right_.cx() - left_.cx()) / Tx;  
-  }else if (1==0){   // real device without letterboxes
+  }else if (1==1){   // real device without letterboxes
     Q_(0,0) = Q_(1,1) = 1.0;  
     //double Tx = baseline();
     Q_(3,2) = 14.2914745276283;//1.0 / Tx;
@@ -149,17 +138,26 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
     Q_(2,3) = 476.7014;//right_.fx();
     Q_(3,3) = 0;// (400.5 - 400.5)/0.07;//(right_.cx() - left_.cx()) / Tx;      
   }
+  */
   std::cout << Q_ << " is reprojectionMatrix\n";  
   
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 800, 800);
-  last_mask_.utime =0; // use this number to determine initial image
-  counter_=0;
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_params_.left.width, stereo_params_.left.height);
+
+  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  float colors_r[] ={1.0,0.0,0.0};
+  vector <float> colors_v_r;
+  colors_v_r.assign(colors_r,colors_r+4*sizeof(float));
+  // obj: id name type reset
+  // pts: id name type reset objcoll usergb rgb
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(3000,"Pose",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3001,"Pts",1,1, 3000,0,colors_v_r));
+  pc_lcm_ = new pointcloud_lcm(lcm_->getUnderlyingLCM());
+  pc_lcm_->set_decimate( decimate_ );
   
+  last_mask_.utime =0; // use this number to determine initial image
+  counter_=0;  
 }
 
-
-
-// left , disparity
 void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
   int w = msg->images[0].width;
   int h = msg->images[0].height; 
@@ -238,10 +236,13 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   pc_vis_->pose_to_lcm_from_list(3000, ref_poseT);    
   pc_vis_->ptcld_to_lcm_from_list(3001, *cloud, msg->utime, msg->utime);
   
-  //pcl::PCDWriter writer;
-  //std::stringstream pcd_fname;
-  //pcd_fname << "/home/mfallon/Desktop/depth/pcd_lcm_" << counter_ << ".pcd";
-  //writer.write (pcd_fname.str() , *cloud, false);  
+  if (write_pointcloud_){
+    pcl::PCDWriter writer;
+    std::stringstream pcd_fname;
+    pcd_fname << "/tmp/multisense_" << counter_ << ".pcd";
+    std::cout << pcd_fname.str() << " written\n";
+    writer.write (pcd_fname.str() , *cloud, false);  
+  }
 }
 
 
@@ -254,28 +255,36 @@ int main(int argc, char ** argv) {
   ConciseArgs parser(argc, argv, "registeration-app");
   string camera_in="MULTISENSE_LD";
   string camera_out="CAMERALEFT";
-  bool output_pointcloud=false;
-  bool output_images=false;  
+  bool output_pointcloud=false; // to LCM viewer
+  bool output_images=false;
+  bool write_pointcloud=false; // to file
+  bool write_images=false;
   int decimate = 8;
   parser.add(camera_in, "i", "in", "Incoming Multisense channel");
-  parser.add(camera_out, "o", "out", "Outgoing Mono Camera channel");
-  parser.add(output_pointcloud, "p", "output_pointcloud", "Output PointCloud");
-  parser.add(output_images, "s", "output_images", "Output the images split");
-  parser.add(decimate, "d", "decimate", "Decimation of images");
+  parser.add(camera_out, "c", "out", "Outgoing Mono Camera channel");
+  parser.add(output_pointcloud, "op", "output_pointcloud", "Output PointCloud");
+  parser.add(output_images, "oi", "output_images", "Output the images split");
+  parser.add(write_pointcloud, "fp", "write_pointcloud", "Write PointCloud file");
+  parser.add(write_images, "fi", "write_images", "Write images");
+  parser.add(decimate, "d", "decimate", "Decimation of data");
   parser.parse();
   cout << camera_in << " is camera_in\n"; 
   cout << camera_out << " is camera_out\n"; 
   cout << decimate << " is decimate\n"; 
   cout << output_pointcloud << " is output_pointcloud\n"; 
-  cout << output_images << " is output_images (split\n"; 
+  cout << output_images << " is output_images (split)\n"; 
+  cout << write_pointcloud << " is write_pointcloud\n"; 
+  cout << write_images << " is write_images \n"; 
 
-  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  image_tool app(lcm,camera_in, camera_out, output_pointcloud, output_images, decimate);
+  image_tool app(lcm,camera_in, camera_out, 
+                 output_pointcloud, output_images,
+                 write_pointcloud, write_images, 
+                 decimate);
   cout << "Ready image tool" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;

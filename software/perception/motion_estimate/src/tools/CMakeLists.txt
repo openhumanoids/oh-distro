@@ -30,6 +30,7 @@ pods_use_pkg_config_packages(drc-multisense-image-tool
                 bot2-frames
                 bot2-frames_cpp
                 image_io_utils
+                camera_params
                 opencv)
 pods_install_executables(drc-multisense-image-tool )
 
