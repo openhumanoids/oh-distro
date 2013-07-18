@@ -1,7 +1,15 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
+# Modules for Robot State publishing:
+# probably should be merged
+meas_joint_angles_publisher
+est_robot_state_publisher
+test_est_robot_state_publisher
+
+# Motion Estimation:
 twolegged_estimate
 #CollierTools
-
 vo_estimate
+
+
