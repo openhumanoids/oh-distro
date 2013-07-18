@@ -7,7 +7,6 @@ robot_model
 object_template_model
 kinematics
 utils
-sensing
 gfe
 perception
 motion_estimate
