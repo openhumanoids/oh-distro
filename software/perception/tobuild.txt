@@ -1,21 +1,19 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
-tf_solver
 camunits-drc
 
-# core tools widely used by mfallon:
-pointcloud-tools
-
+# core utils widely used by mfallon:
+pointcloud-utils
 image_io_utils
-
-# utility to filter lidar self detections
-lidar-passthrough
-
-# library to creat depth masks:
-rgbd_simulation 
-
 # sudeep:
 opencv-utils
+
+# too to filter lidar self detections
+lidar-passthrough
+
+# library to create depth masks:
+rgbd_simulation 
+
 stereo-bm
 
 # core lidar tools (antone) and affordance store (fleder)
@@ -27,7 +25,6 @@ image-passthrough
 # particle-filter based tracking
 particle_filter
 trackers
-
 
 # some quick start examples:
 tutorials
