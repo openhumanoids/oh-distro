@@ -11,45 +11,19 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-#include "pcl/ModelCoefficients.h"
-#include "pcl/segmentation/sac_segmentation.h"
-#include "pcl/sample_consensus/method_types.h"
-#include "pcl/sample_consensus/model_types.h"
-
-#include <pcl/filters/passthrough.h>
-#include "pcl/filters/conditional_removal.h"
-#include "pcl/filters/statistical_outlier_removal.h"
-#include "pcl/filters/extract_indices.h"
-
-#include "pcl/filters/voxel_grid.h"
-#include "pcl/filters/project_inliers.h"
-#include "pcl/surface/convex_hull.h"
-#include "pcl/surface/concave_hull.h"
-#include "pcl/PolygonMesh.h"
-#include "pcl/octree/octree.h"
-
-#include "pcl/kdtree/kdtree_flann.h"
-#include "pcl/features/normal_3d.h"
-#include "pcl/features/fpfh.h"
-#include "pcl/registration/ia_ransac.h"
-
-
-#include <image_utils/jpeg.h>
-#include <kinect/kinect-utils.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
+#include <image_utils/jpeg.h>
+#include <kinect/kinect-utils.h>
+
+#include <lcmtypes/kinect_frame_msg_t.h>
 #include <lcmtypes/pointcloud_tools.h>
 #include <lcmtypes/pointcloud_tools.hpp>
-#include <lcmtypes/kinect_frame_msg_t.h>
-
-
-// Multisense Requires:
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 #include <lcmtypes/multisense.h>
 #include <lcmtypes/multisense.hpp>
-
 
 using namespace pcl;
 using namespace pcl::io;
@@ -67,17 +41,17 @@ class pointcloud_lcm {
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
+    ////////////////////////////////////////////////////////////////////////
     void unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb = true);
     
     void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
-    // CPP:
     void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
-    // an integer decimation factor:
+    // set an integer decimation factor:
     void set_decimate(int decimate_in){ decimate_ = decimate_in; };
 
   private:
@@ -86,12 +60,10 @@ class pointcloud_lcm {
     KinectCalibration* kcal;
     int decimate_;
     
-    
     // Multisense Compress:
     mutable std::vector<float> disparity_buf_;
     mutable std::vector<cv::Vec3f> points_buf_;    
 };
-
 
 
 inline void
@@ -108,24 +80,22 @@ convertLidar(const float * ranges, int numPoints, double thetaStart,
   cloud->height   = 1;
   cloud->points.resize (numPoints);
 
-// minRange was 0.1 until march 2013
-  
-    for (int i = 0; i < numPoints; i++) {
-        if (ranges[i] > minRange && ranges[i] < maxRange && theta > validRangeStart
-                && theta < validRangeEnd) { 
-            //hokuyo driver seems to report maxRanges as .001 :-/
-            //project to body centered coordinates
-            cloud->points[count].x = ranges[i] * cos(theta);
-	    cloud->points[count].y = ranges[i] * sin(theta);
-            count++;
-        }
-        theta += thetaStep;
-    }
+  // minRange was 0.1 until march 2013
+  for (int i = 0; i < numPoints; i++) {
+      if (ranges[i] > minRange && ranges[i] < maxRange && theta > validRangeStart
+              && theta < validRangeEnd) { 
+          //hokuyo driver seems to report maxRanges as .001 :-/
+          //project to body centered coordinates
+          cloud->points[count].x = ranges[i] * cos(theta);
+          cloud->points[count].y = ranges[i] * sin(theta);
+          count++;
+      }
+      theta += thetaStep;
+  }
   // Resize outgoing cloud
   cloud->width   = count;
   cloud->points.resize (count);
 }
-
 
 
 inline void
@@ -133,8 +103,7 @@ convertLidar(std::vector< float > ranges, int numPoints, double thetaStart,
         double thetaStep,
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
         double minRange = 0., double maxRange = 1e10,
-        double validRangeStart = -1000, double validRangeEnd = 1000)
-{
+        double validRangeStart = -1000, double validRangeEnd = 1000){
   int count = 0;
   double theta = thetaStart;
 
@@ -142,29 +111,21 @@ convertLidar(std::vector< float > ranges, int numPoints, double thetaStart,
   cloud->height   = 1;
   cloud->points.resize (numPoints);
 
-  
   // minRange was 0.1 until march 2013
-
-    for (int i = 0; i < numPoints; i++) {
-        if (ranges[i] > minRange && ranges[i] < maxRange && theta > validRangeStart
-                && theta < validRangeEnd) { 
-            //hokuyo driver seems to report maxRanges as .001 :-/
-            //project to body centered coordinates
-            cloud->points[count].x = ranges[i] * cos(theta);
-            cloud->points[count].y = ranges[i] * sin(theta);
-            count++;
-        }
-        theta += thetaStep;
-    }
+  for (int i = 0; i < numPoints; i++) {
+      if (ranges[i] > minRange && ranges[i] < maxRange && theta > validRangeStart
+              && theta < validRangeEnd) { 
+          //hokuyo driver seems to report maxRanges as .001 :-/
+          //project to body centered coordinates
+          cloud->points[count].x = ranges[i] * cos(theta);
+          cloud->points[count].y = ranges[i] * sin(theta);
+          count++;
+      }
+      theta += thetaStep;
+  }
   // Resize outgoing cloud
   cloud->width   = count;
   cloud->points.resize (count);
 }
-
-
-
-
-
-
 
 #endif
