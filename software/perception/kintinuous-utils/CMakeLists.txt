@@ -9,6 +9,4 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-# build two LCM test programs
-add_subdirectory(src/tools)
-
+#add_subdirectory(src/tools)
