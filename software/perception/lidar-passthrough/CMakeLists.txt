@@ -12,3 +12,4 @@ lcmtypes_build()
 add_subdirectory(src/lidar-passthrough)
 
 add_subdirectory(src/lidar-depth-image)
+add_subdirectory(src/stream)
