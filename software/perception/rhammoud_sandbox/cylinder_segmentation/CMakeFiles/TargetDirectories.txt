@@ -1,1 +1,0 @@
-/mnt/hgfs/C/x/cylinder_segmentation/CMakeFiles/cylinder_segmentation.dir
