@@ -34,9 +34,7 @@ tutorials
 
 
 # i think these are deprecated
-#map_store
-#local_map
 # maurice's sandbox:
 #mfallon_sandbox
 #driving-perception
-kintinuous-utils
+#kintinuous-utils
