@@ -1,6 +1,6 @@
 group "1.core" {
     cmd "pserver" {
-        exec = "bot-param-server drc_robot.cfg";
+        exec = "bot-param-server multisense02.cfg";
         host = "localhost";
     }
     cmd "viewer" {
@@ -17,6 +17,10 @@ group "1.core" {
     }
     cmd "j2f" {
         exec = "drc-joints2frames -s";
+        host = "localhost";
+    }
+    cmd "microstrain_pose" {
+        exec = "microstrain_pose";
         host = "localhost";
     }
 }
