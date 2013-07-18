@@ -1,8 +1,3 @@
-// LCM example program for interacting  with PCL data
-// In this case it pushes the data back out to LCM in
-// a different message type for which the "collections"
-// renderer can view it in the LCM viewer
-// mfallon aug 2012
 #include <stdio.h>
 #include <inttypes.h>
 #include <lcm/lcm.h>
@@ -17,7 +12,6 @@ using namespace boost;
 using namespace boost::assign;
 
 #define DO_TIMING_PROFILE FALSE
-
 
 /////////////////////////////////////
 
@@ -245,7 +239,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"createScene");  
+    display_tic_toc(tic_toc,"joint2frames");  
   #endif
 
   

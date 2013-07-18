@@ -17,14 +17,5 @@ add_subdirectory(src/voestimator)
 add_subdirectory(src/fovision)
 
 add_subdirectory(src/registeration)
-add_subdirectory(src/tools)
 
-
-
-
-## Older Depreciated Stuff for Laser and Rotating Laser:
-#add_subdirectory(src/motion_estimate)
-#add_subdirectory(src/motion_estimate_scanmatcher_bolt_vertical)
-#add_subdirectory(src/motion_estimate_scanmatcher_righted_vertical)
-#add_subdirectory(src/motion_estimate_scanmatcher_rotating)
-add_subdirectory(src/motion_estimate_ypr_only)
+#add_subdirectory(src/motion_estimate_ypr_only)
