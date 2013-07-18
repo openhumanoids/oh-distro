@@ -10,18 +10,22 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+// this seems to be required. don't know why?
+#include "pcl/kdtree/kdtree_flann.h"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <image_utils/jpeg.h>
+#include <kinect/kinect-utils.h>
+#include <lcmtypes/kinect_frame_msg_t.h>
 
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
-#include <image_utils/jpeg.h>
-#include <kinect/kinect-utils.h>
-
-#include <lcmtypes/kinect_frame_msg_t.h>
 #include <lcmtypes/pointcloud_tools.h>
 #include <lcmtypes/pointcloud_tools.hpp>
+
+
+// Multisense Requires:
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 #include <lcmtypes/multisense.h>
 #include <lcmtypes/multisense.hpp>
 
@@ -48,10 +52,11 @@ class pointcloud_lcm {
     void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
+    // CPP:
     void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
-    // set an integer decimation factor:
+    // an integer decimation factor:
     void set_decimate(int decimate_in){ decimate_ = decimate_in; };
 
   private:
