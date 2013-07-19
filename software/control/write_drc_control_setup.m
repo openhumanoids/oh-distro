@@ -12,8 +12,9 @@ if (fptr==-1)
   error('couldn''t open %s for writing\n',[BUILD_PREFIX,'/config/drc_control_setup.m']);
 end
 
-% call pathdef (can't believe that i have to do this!)
-% fprintf(fptr,'\n\npath(pathdef);\n');
+pathstr = [BUILD_PREFIX,'/matlab'];
+
+fprintf(fptr,['addpath(''',pathstr,''');\n']);
 
 fprintf(fptr,'addpath_drake;\n');
 fprintf(fptr,'addpath_eigen_utils;\n');
