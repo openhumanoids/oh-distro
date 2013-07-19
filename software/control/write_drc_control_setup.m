@@ -13,7 +13,7 @@ if (fptr==-1)
 end
 
 % call pathdef (can't believe that i have to do this!)
-fprintf(fptr,'\n\npath(pathdef);\n');
+% fprintf(fptr,'\n\npath(pathdef);\n');
 
 fprintf(fptr,'addpath_drake;\n');
 fprintf(fptr,'addpath_eigen_utils;\n');
