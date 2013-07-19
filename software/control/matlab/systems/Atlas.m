@@ -164,7 +164,7 @@ classdef Atlas < Biped
         options.lcm_foot_contacts = false;
         options.full_body_opt = true;
         options.debug = false;
-        options.use_mex = 2;
+        options.use_mex = 1;
       
         obj.inverse_dyn_qp_controller = QPControlBlock(obj,ctrl_data,options);
       else

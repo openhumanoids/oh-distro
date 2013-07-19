@@ -31,7 +31,7 @@ function testCrawling()
   
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
   [q_traj,support_times,supports] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
-  save data/crawling_traj.mat q_traj support_times supports
+  save(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'),'q_traj','support_times','supports');
 
   x_traj = setOutputFrame([q_traj;0*q_traj],getStateFrame(r)); 
   v = r.constructVisualizer();
