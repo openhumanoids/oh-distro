@@ -1,4 +1,5 @@
 function testQuasistaticPlanPub
+% NOTEST
 
 addpath(fullfile(pwd,'frames'));
 

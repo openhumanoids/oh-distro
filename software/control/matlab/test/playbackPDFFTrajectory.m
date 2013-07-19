@@ -1,4 +1,5 @@
 function playbackPDFFTrajectory(q_traj,support_times,supports,simrate)
+% NOTEST
 typecheck(q_traj,'Trajectory');
 typecheck(supports,'SupportState');
 

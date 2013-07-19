@@ -1,4 +1,5 @@
 function testRobotPlanPub
+% NOTEST
 
 addpath(fullfile(pwd,'frames'));
 

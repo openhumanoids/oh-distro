@@ -1,5 +1,6 @@
 % function [t_test,com_test,com_nom] = testIngressPlanPub(scale_t,foot_support_qs)
 function testIngressPlanPub(scale_t,foot_support_qs)
+% NOTEST
 
 addpath(fullfile(pwd,'frames'));
 
