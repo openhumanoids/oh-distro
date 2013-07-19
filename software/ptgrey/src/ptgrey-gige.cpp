@@ -15,22 +15,68 @@ int main(const int iArgc, const char** iArgv) {
   std::string channel = "DUMMY_CAMERA_CHANNEL";
   int compressionQuality = 100;
   int frameRate = 0;
+  int64_t desiredSerial = -1;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(channel, "c", "channel", "output channel");
   opt.add(compressionQuality, "q", "compression quality");
   opt.add(frameRate, "f", "frame rate (0=max)");
+  opt.add(desiredSerial, "s", "serial number");
   opt.parse();
 
   bool shouldCompress = (compressionQuality < 100);
   int periodMs = (frameRate == 0 ? 0 : 1000/frameRate);
   lcm::LCM lcm;
 
+  // determine which camera id to connect to
   FlyCapture2::Error error;
+  FlyCapture2::PGRGuid cameraUid;
+  bool foundCamera = false;
+  if (desiredSerial >= 0) {
+    FlyCapture2::BusManager busManager;
+    unsigned int numCameras;
+    error = busManager.GetNumOfCameras(&numCameras);
+    if (error != FlyCapture2::PGRERROR_OK) {
+      std::cout << "Could not get number of cameras" << std::endl;
+      return -1;
+    }
+
+    for (int i = 0; i < numCameras; ++i) {
+      unsigned int curSerial;
+      error = busManager.GetCameraSerialNumberFromIndex(i, &curSerial);
+      if (error != FlyCapture2::PGRERROR_OK) {
+        std::cout << "Could not get serial number from index " <<
+          i << std::endl;
+        return -1;
+      }
+
+      if (curSerial == desiredSerial) {
+        error = busManager.GetCameraFromIndex(i, &cameraUid);
+        if (error != FlyCapture2::PGRERROR_OK) {
+          std::cout << "Could not get camera id from index " <<
+            i << std::endl;
+          return -1;
+        }
+        foundCamera = true;
+        break;
+      }
+    }
+    if (!foundCamera) {
+      std::cout << "Could not find camera with serial " <<
+        desiredSerial << std::endl;
+      return -1;
+    }
+  }
+
   FlyCapture2::Camera camera;
   FlyCapture2::CameraInfo camInfo;
  
   // connect to camera
-  error = camera.Connect(0);
+  if (desiredSerial >= 0) {
+    error = camera.Connect(&cameraUid);
+  }
+  else {
+    error = camera.Connect(NULL);
+  }
   if (error != FlyCapture2::PGRERROR_OK) {
     std::cout << "Failed to connect to camera" << std::endl;     
     return -1;
@@ -64,9 +110,9 @@ int main(const int iArgc, const char** iArgv) {
   int64_t imageCount = 0;
   int64_t totalBytes = 0;
   int64_t prevTime = 0;
-  int64_t checkpointStart = bot_timestamp_now();
 
   while (true) {
+    int64_t checkpointStart = bot_timestamp_now();
 
     // grab image
     FlyCapture2::Image rawImage;
@@ -136,7 +182,6 @@ int main(const int iArgc, const char** iArgv) {
       std::this_thread::sleep_for
         (std::chrono::milliseconds(periodMs - elapsedMs));
     }
-    checkpointStart = bot_timestamp_now();
   }
 
   // clean up
