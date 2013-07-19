@@ -8,8 +8,6 @@ image_io_utils
 # sudeep:
 opencv-utils
 
-# too to filter lidar self detections
-lidar-passthrough
 
 # library to create depth masks:
 rgbd_simulation 
@@ -19,6 +17,8 @@ stereo-bm
 # core lidar tools (antone) and affordance store (fleder)
 world_model
 
+# too to filter lidar self detections
+lidar-passthrough
 # and module to apply object masks:
 image-passthrough
 
