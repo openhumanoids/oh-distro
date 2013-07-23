@@ -91,7 +91,7 @@ classdef ManipPDBlock < MIMODrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.005;
+        obj.dt = 0.004;
       end
       
       obj.robot = r;

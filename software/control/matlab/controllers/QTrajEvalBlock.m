@@ -7,7 +7,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   end
   
   methods
-    function obj = QTrajEvalBlock(r,controller_data)
+    function obj = QTrajEvalBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
       
@@ -28,6 +28,15 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
 
+      if isfield(options,'dt')
+        typecheck(options.dt,'double');
+        sizecheck(options.dt,[1 1]);
+        dt = options.dt;
+      else
+        dt = 0.004;
+      end
+      obj = setSampleTime(obj,[dt;0]);
+      
       obj.robot = r;
       obj.controller_data = controller_data;
     end

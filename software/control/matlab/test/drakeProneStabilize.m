@@ -1,9 +1,7 @@
-function stabilizeProne
+function drakeProneStabilize
 
-test_ignore_states = false;
-
-addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
+test_ignore_states = false;
 
 options.floating = true;
 options.dt = 0.002;

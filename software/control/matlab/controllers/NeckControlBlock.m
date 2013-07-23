@@ -6,7 +6,6 @@ classdef NeckControlBlock < MIMODrakeSystem
     controller_data;
     neck_idx;
     head_idx;
-    dt;
     nq;
   end
   
@@ -38,16 +37,16 @@ classdef NeckControlBlock < MIMODrakeSystem
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
-        obj.dt = options.dt;
+        dt = options.dt;
       else
-        obj.dt = 0.005;
+        dt = 0.004;
       end
       
       joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
       obj.nq=getNumDOF(obj.robot);
       obj.neck_idx = find(~cellfun(@isempty,strfind(joint_names,'neck')));
       obj.head_idx = findLinkInd(r,'head');
-      obj = setSampleTime(obj,[obj.dt;0]); 
+      obj = setSampleTime(obj,[dt;0]); 
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,varargin)

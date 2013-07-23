@@ -59,7 +59,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.005;
+        obj.dt = 0.004;
       end
      
       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));

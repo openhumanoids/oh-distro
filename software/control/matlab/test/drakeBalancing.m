@@ -1,10 +1,9 @@
 function drakeBalancing
 
+addpath(fullfile(getDrakePath,'examples','ZMP'));
+
 % put robot in a random x,y,yaw position and balance for 3 seconds
 visualize = false;
-
-addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
-addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
 options.dt = 0.002;

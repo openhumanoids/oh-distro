@@ -19,7 +19,7 @@ classdef DummySys < DrakeSystem
         sizecheck(options.dt,[1 1]);
         dt = options.dt;
       else
-        dt = 0.005;
+        dt = 0.004;
       end
 
       obj.robot = r;

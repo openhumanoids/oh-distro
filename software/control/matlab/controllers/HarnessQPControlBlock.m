@@ -5,12 +5,27 @@ classdef HarnessQPControlBlock < MIMODrakeSystem
     % @param r atlas instance
     typecheck(r,'Atlas');
 
+    if nargin > 1
+      assert(isa(options,'struct'));
+    else
+      options = struct();
+    end
+
     qddframe = AtlasCoordinates(r);
 
+    if isfield(options,'dt')
+      % controller update rate
+      typecheck(options.dt,'double');
+      sizecheck(options.dt,[1 1]);
+      dt = options.dt;
+    else
+      dt = 0.004;
+    end
+    
     input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
     output_frame = r.getInputFrame();
     obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
-    obj = setSampleTime(obj,[.005;0]); % sets controller update rate
+    obj = setSampleTime(obj,[dt;0]); % sets controller update rate
     obj = setInputFrame(obj,input_frame);
     obj = setOutputFrame(obj,output_frame);
 
