@@ -110,6 +110,12 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.use_hand_ft = false;
     end
 
+    if isfield(options,'include_angular_momentum')
+      obj.include_angular_momentum = options.include_angular_momentum;
+    else
+      obj.include_angular_momentum = false;
+    end
+
     if (isfield(options,'ignore_states'))
       % specifies what dimensions of the state we should ignore 
       assert(isnumeric(options.ignore_states));
@@ -181,6 +187,9 @@ classdef QPControlBlock < MIMODrakeSystem
     else
       obj.using_flat_terrain = false;
     end
+    
+    obj.lcmgl = bot_lcmgl_init('qp-control-block-debug');
+
   end
 
   end
@@ -399,6 +408,43 @@ classdef QPControlBlock < MIMODrakeSystem
       B_act = B(act_idx,:);
 
       [xcom,J] = getCOM(r,kinsol);
+      
+      if obj.include_angular_momentum
+        % NOTE: not working well at the moment, need to revisit this --sk
+        
+        [Ag,Agdot] = getCMM(r,kinsol,qd);
+  
+        Ag_ang = Ag(1:3,:);
+        Agdot_ang = Agdot(1:3,:);
+        h_ang_dot_des = [0;0;0]; % regulate to zero for now
+        w2 = 0.0001; % QP objective function weight
+        
+        if 0
+          % plot momentum vectors
+          h = Ag*qd;
+          bot_lcmgl_line_width(obj.lcmgl, 3);
+
+          bot_lcmgl_push_matrix(obj.lcmgl);
+          bot_lcmgl_translated(obj.lcmgl,xcom(1),xcom(2),xcom(3));
+          bot_lcmgl_color3f(obj.lcmgl, 1, 0, 0);
+          bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
+          bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
+          bot_lcmgl_vertex3f(obj.lcmgl, 0.05*h(4), 0.05*h(5), 0.05*h(6)); % scale for drawing
+          bot_lcmgl_end(obj.lcmgl);
+
+          aa_h = rpy2axis(h(1:3));
+          bot_lcmgl_color3f(obj.lcmgl, 0, 1, 0);
+          bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
+          bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
+          bot_lcmgl_vertex3f(obj.lcmgl, 0.2*aa_h(1), 0.2*aa_h(2), 0.2*aa_h(3)); % scale for drawing
+          bot_lcmgl_end(obj.lcmgl);
+          bot_lcmgl_pop_matrix(obj.lcmgl);
+
+          bot_lcmgl_line_width(obj.lcmgl, 1);
+          bot_lcmgl_switch_buffer(obj.lcmgl);
+        end
+      end
+      
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
       Jdot = Jdot(1:2,:);
@@ -534,14 +580,21 @@ classdef QPControlBlock < MIMODrakeSystem
       if nc > 0
         Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
-
+        if obj.include_angular_momentum
+          Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + w2*Ag_ang'*Ag_ang;
+        end
+        
         fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
         fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
         fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J*Iqdd;
         fqp = fqp - u0'*R_ls*J*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
         fqp = fqp - obj.w*q_ddot_des'*Iqdd;
-
+        if obj.include_angular_momentum
+          fqp = fqp + w2*qd'*Agdot_ang'*Ag_ang*Iqdd;
+          fqp = fqp - w2*h_ang_dot_des'*Ag_ang*Iqdd;
+        end
+        
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
@@ -656,6 +709,7 @@ classdef QPControlBlock < MIMODrakeSystem
     end
     
     if (obj.use_mex==2)
+      % note: this only works when using gurobi
       if ctrl_data.ignore_terrain
         contact_threshold =-1;       
       end
@@ -765,5 +819,7 @@ classdef QPControlBlock < MIMODrakeSystem
     num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain
     ignore_states; % array if state indices we want to ignore (and substitute with planned values)
+    lcmgl;
+    include_angular_momentum; % tmp flag for testing out angular momentum control
   end
 end
