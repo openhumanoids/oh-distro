@@ -31,13 +31,14 @@ function testCrawling()
   
 %  [support_times,supports,V,comtraj,zmptraj,qdtraj] = 
   [q_traj,support_times,supports] = crawlingPlan(r,d.x0,body_spec,foot_spec,options)
-  save(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'),'q_traj','support_times','supports');
+  %save(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'),'q_traj','support_times','supports');
 
   x_traj = setOutputFrame([q_traj;0*q_traj],getStateFrame(r)); 
   v = r.constructVisualizer();
   v.playback(x_traj,struct('slider',true));
 
-  simrate = .65;
-  playbackPDFFTrajectory(q_traj,support_times,supports,simrate);
-  
+  if 0
+    simrate = .65;
+    playbackPDFFTrajectory(q_traj,support_times,supports,simrate);
+  end
 end
