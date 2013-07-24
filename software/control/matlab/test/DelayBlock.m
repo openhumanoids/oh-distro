@@ -3,7 +3,6 @@ classdef DelayBlock < DrakeSystem
   methods
     function obj = DelayBlock(robot,options)
       typecheck(robot,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
-      
       if nargin > 1
         assert(isa(options,'struct'));
       else

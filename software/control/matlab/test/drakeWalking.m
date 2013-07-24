@@ -3,18 +3,12 @@ function drakeWalking(use_mex)
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
-use_state_corrupter = false;
 
-num_steps = 5;
+num_steps = 5; % steps taken by robot
 step_length = 0.5;
 step_time = 1.0;
 
-% set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 0*randn();
-xstar(2) = 0*randn();
-
-
+% construct robot model
 options.floating = true;
 options.dt = 0.002;
 if (nargin>0) options.use_mex = use_mex;
@@ -36,12 +30,16 @@ end
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
+% set initial state to fixed point
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+xstar(1) = 0*randn();
+xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);
 
-x0 = xstar;% + 0.01*randn(size(xstar));
+x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
@@ -61,7 +59,6 @@ com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
 [c,V,comtraj] = ZMPtracker(limp,zmptraj,struct('use_tvlqr',false,'com0',com(1:2)));
-%comtraj = COMplanFromTracker(limp,com(1:2),zeros(2,1),zmptraj.tspan,c);
 
 ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);
@@ -102,6 +99,7 @@ ctrl_data = SharedDataHandle(struct(...
   'y0',zmptraj));
 
 % instantiate QP controller
+options.dt = 0.004;
 options.slack_limit = 30.0;
 options.w = 0.01;
 options.lcm_foot_contacts = false;
@@ -115,24 +113,6 @@ clear options;
 
 sys = r;
 
-if use_state_corrupter
-  % parameters for state corruption
-  % populate types, terms and  channels for all the noise source to be
-  % added.
-  SCParam.P.types = {'ramp','whitenoise'};
-  ramp.rate = 0.001;
-  wnP.sigma = 0.002;
-  SCParam.P.terms = {ramp,wnP};
-  SCParam.P.channels = {'y'}; % to be completed
-  
-  SCParam.V.types = {'whitenoise'};
-  wnV.sigma = 0.015;
-  SCParam.V.terms = {wnV};
-  SCParam.V.channels = {'xyz'}; % to be completed
-    
-  sc = StateCorrupter(r,SCParam);
-  sys = cascade(sys,sc);
-end
 
 % feedback QP controller with atlas
 ins(1).system = 1;
@@ -184,6 +164,5 @@ err
 if err > num_steps*0.5
   error('drakeWalking unit test failed: error is too large');
 end
-
 
 end

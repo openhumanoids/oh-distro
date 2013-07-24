@@ -1,25 +1,26 @@
-function drakeWalkingDelayTest(delay_steps)
-%NOTEST 
+function drakeWalkingWithNoise()
+% tests forward walking on flat terrain with state noise and actuator
+% delays
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 5;
+num_steps = 5; % steps taken by robot
 step_length = 0.5;
 step_time = 1.0;
 
-% set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-
+% construct robot model
 options.floating = true;
 options.dt = 0.002;
 options.use_mex = true;
-
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
+
+% set initial state to fixed point
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -86,17 +87,30 @@ options.debug = false;
 qp = QPControlBlock(r,ctrl_data,options);
 
 % cascade qp controller with delay block
-options.delay_steps = delay_steps;
+options.delay_steps = 2;
 options.use_input_frame = true;
 delayblk = DelayBlock(r,options);
 sys = cascade(qp,delayblk);
+
+% cascade robot with noise block
+options.noise_model = struct();
+% position noise
+options.noise_model(1).ind = (1:nq)';
+options.noise_model(1).type = 'gauss_markov';
+options.noise_model(1).params = struct('std',0.0001);
+% velocity noise
+options.noise_model(2).ind = (nq+(1:nq))';
+options.noise_model(2).type = 'white_noise';
+options.noise_model(2).params = struct('std',0.0025);
+noiseblk = StateCorruptionBlock(r,options);
+rnoisy = cascade(r,noiseblk);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(sys,r,[],[],ins,outs);
+sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD block 
@@ -118,7 +132,7 @@ output_select(1).system=1;
 output_select(1).output=1;
 sys = mimoCascade(sys,v,[],[],output_select);
 warning(S);
-traj = simulate(sys,[0 T],[x0;zeros((delay_steps+1)*nu,1)]);
+traj = simulate(sys,[0 T],[x0;0*x0;zeros((options.delay_steps+1)*nu,1)]);
 playback(v,traj,struct('slider',true));
 
 com_err = 0; % x,y error
@@ -153,5 +167,10 @@ subplot(3,1,2);
 plot(ts,com(2,:),'r');
 subplot(3,1,3); hold on;
 plot(com(1,:),com(2,:),'r');
+
+
+if com_err > 0.2
+  error('drakeWalking unit test failed: error is too large');
+end
 
 end
