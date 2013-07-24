@@ -72,7 +72,6 @@
 #include "InitGraspOptPublisher.hpp"
 #include "CandidateGraspSeedListener.hpp"
 #include "GraspOptStatusListener.hpp"
-#include "CandidateFootStepSeedManager.hpp"
 //#include "ReachabilityVerifier.hpp"
 
 using namespace renderer_affordances;
@@ -177,7 +176,7 @@ namespace renderer_affordances_gui_utils
             
             //Get affordance origin
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-            object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(self->object_selection));
+            object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(self->object_selection));
             KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
             temp.trans_vec[0] = T_world_object.p[0]; temp.trans_vec[1] = T_world_object.p[1]; temp.trans_vec[2] = T_world_object.p[2];
             double x,y,z,w;
@@ -275,7 +274,7 @@ namespace renderer_affordances_gui_utils
     RendererAffordances *self = (RendererAffordances*) user;
     std::string instance_name=  self->object_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     self->motion_trail_log_enabled =false;
     it->second._gl_object->set_future_state_changing(false);
     self->second_stage_popup  = NULL;
@@ -288,7 +287,7 @@ namespace renderer_affordances_gui_utils
     RendererAffordances *self = (RendererAffordances*) user;
     std::string instance_name=  self->object_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
 
       
@@ -301,8 +300,8 @@ namespace renderer_affordances_gui_utils
 
      // clear previously accumulated motion states for all dependent bodies
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
       {
          if (hand_it->second.object_name == (instance_name))
          {
@@ -370,7 +369,7 @@ namespace renderer_affordances_gui_utils
     std::string instance_name=  self->object_selection;
 
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     self->motion_trail_log_enabled =true;
     
     KDL::Frame T_world_object = it->second._gl_object->_T_world_body_future;
@@ -456,7 +455,7 @@ namespace renderer_affordances_gui_utils
   {
     RendererAffordances *self = (RendererAffordances*) user;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
+    object_instance_map_type_::iterator it= self->affCollection->_objects.find(self->object_selection);
 
   
     if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
@@ -476,7 +475,7 @@ namespace renderer_affordances_gui_utils
          self->motion_trail_log_enabled =false;
       }  
         
-      if(it!=self->instantiated_objects.end()){
+      if(it!=self->affCollection->_objects.end()){
         it->second._gl_object->enable_bodypose_adjustment(val);
         it->second._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         it->second._gl_object->enable_jointdof_adjustment(false);    
@@ -498,7 +497,7 @@ namespace renderer_affordances_gui_utils
          }
          self->motion_trail_log_enabled =false;
       }
-      if(it!=self->instantiated_objects.end()){
+      if(it!=self->affCollection->_objects.end()){
           it->second._gl_object->enable_bodypose_adjustment(false); 
           it->second._gl_object->enable_jointdof_adjustment(val);  
        }      
@@ -515,8 +514,8 @@ namespace renderer_affordances_gui_utils
           self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
           self->otdf_instance_hold._gl_object.reset();
           self->otdf_instance_hold._collision_detector.reset();
-          self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
-          self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+          self->otdf_instance_hold._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());     
+          self->otdf_instance_hold._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
           self->otdf_instance_hold._otdf_instance->update();
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
           self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
@@ -530,7 +529,7 @@ namespace renderer_affordances_gui_utils
         std::cout << "disabling bodypose adjustment for object " <<self->object_selection << std::endl;
         self->selection_hold_on=false;
       }  
-      if(it!=self->instantiated_objects.end()){
+      if(it!=self->affCollection->_objects.end()){
         self->otdf_instance_hold._gl_object->enable_bodypose_adjustment(val);
         self->otdf_instance_hold._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         self->otdf_instance_hold._gl_object->enable_jointdof_adjustment(false);    
@@ -550,8 +549,8 @@ namespace renderer_affordances_gui_utils
           self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
           self->otdf_instance_hold._gl_object.reset();
           self->otdf_instance_hold._collision_detector.reset();
-          self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
-          self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+          self->otdf_instance_hold._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());     
+          self->otdf_instance_hold._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
           self->otdf_instance_hold._otdf_instance->update();
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
           self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
@@ -566,7 +565,7 @@ namespace renderer_affordances_gui_utils
           self->selection_hold_on=false;
       }
       
-      if(it!=self->instantiated_objects.end()){
+      if(it!=self->affCollection->_objects.end()){
          self->otdf_instance_hold._gl_object->enable_bodypose_adjustment(false); 
          self->otdf_instance_hold._gl_object->enable_jointdof_adjustment(val);  
        } 
@@ -577,8 +576,8 @@ namespace renderer_affordances_gui_utils
        it->second._gl_object->disable_future_display(); 
       // clear previously accumulated motion states for all dependent bodies
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
       {
          std::string hand_name = std::string(hand_it->second.object_name);
          if (hand_name == (it->first))
@@ -589,8 +588,8 @@ namespace renderer_affordances_gui_utils
       }
 
       typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-      while (foot_it!=self->sticky_feet.end()) 
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+      while (foot_it!=self->stickyFootCollection->_feet.end()) 
       {
          std::string foot_name = std::string(foot_it->second.object_name);
          if (foot_name == (it->first))
@@ -601,52 +600,28 @@ namespace renderer_affordances_gui_utils
       }
        
        bot_viewer_request_redraw(self->viewer);
-    }       
-    else if (! strcmp(name, PARAM_SEED_LH)) {
+    } 
+    else if ((!strcmp(name, PARAM_SEED_LH))||(!strcmp(name, PARAM_SEED_RH))) {
       drc::grasp_opt_control_t msg;
-      int grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-
-      KDL::Frame T_geom_lhandpose = self->T_graspgeometry_lhandinitpos;
-      KDL::Frame T_geom_rhandpose = KDL::Frame::Identity(); 
-
-      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);  
-      int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;//       
-      self->free_running_sticky_hand_cnt++;
-      int uid = self->free_running_sticky_hand_cnt;
-      std::string channel;
-      if(self->graspOptStatusListener->isOptPoolReady())
-       {
-          int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
-         
-          if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
-          {
-           //int id =  1;
-            std::stringstream oss;
-            oss << "INIT_GRASP_OPT_" << id; 
-            channel = oss.str();
-            std::cout << channel << "  id :" << id << std::endl;
-            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
-          }             
-      }
- 
-    }
-    else if (! strcmp(name, PARAM_SEED_RH)) {
-      drc::grasp_opt_control_t msg;
-      int grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-
+      int grasp_type;
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
-      KDL::Frame T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
+      KDL::Frame T_geom_rhandpose = KDL::Frame::Identity(); 
       
-      //T_geom_rhandpose = KDL::Frame::Identity();
-      //T_geom_rhandpose.M =  KDL::Rotation::RPY((M_PI/4),0,(M_PI/4));
-      //double x,y,z,w;
-      //T_geom_rhandpose.M.GetQuaternion(x,y,z,w);
-      //std::cout << w << " " << x <<" " << y << " " << z << std::endl;
-
+      if(!strcmp(name, PARAM_SEED_LH))
+      {
+        grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        T_geom_lhandpose = self->T_graspgeometry_lhandinitpos;
+      }
+      else if(!strcmp(name, PARAM_SEED_RH))
+      {
+        grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
+      }
+      
       int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);  
       int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
-      self->free_running_sticky_hand_cnt++;
-      int uid = self->free_running_sticky_hand_cnt;
+      self->stickyHandCollection->free_running_sticky_hand_cnt++;
+      int uid = self->stickyHandCollection->free_running_sticky_hand_cnt;
        std::string channel;
       if(self->graspOptStatusListener->isOptPoolReady())
        {
@@ -662,144 +637,52 @@ namespace renderer_affordances_gui_utils
            }             
        }
     }
-    else if (! strcmp(name, PARAM_SEED_LF)) {
-      self->free_running_sticky_foot_cnt++;
-      int uid = self->free_running_sticky_foot_cnt;
+    else if ((!strcmp(name, PARAM_SEED_LF))||(!strcmp(name, PARAM_SEED_RF))) {
+      //self->stickyFootCollection->free_running_sticky_foot_cnt++;
+      //int uid = self->stickyFootCollection->free_running_sticky_foot_cnt;
       int foot_type = 0;
-      std::string object_name =self->object_selection;
-      
-      std::string object_geometry_name = self->link_selection;
-      std::string object_name_token  = object_name + "_";
-      size_t found = object_geometry_name.find(object_name_token);  
-      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size()); 
-    
-      Eigen::Vector3f eVx,eVy,eVz,diff;
-      diff=self->ray_hit_drag-self->ray_hit;
-      cout << diff.norm() << endl;
-      if(diff.norm()< 0.001){
-        diff << 0,0,1;
-       } 
-      diff.normalize();
-      eVz = self->ray_hit_normal; eVz.normalize();
-      eVy = eVz.cross(diff);  eVy.normalize();
-      eVx = eVy.cross(eVz); eVx.normalize();
-
-      KDL::Vector Vx,Vy,Vz;
-      Vx[0]= eVx[0];Vx[1]= eVx[1];Vx[2]= eVx[2];
-      Vy[0]= eVy[0];Vy[1]= eVy[1];Vy[2]= eVy[2];
-      Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
-
-      KDL::Frame T_world_footcontact= KDL::Frame::Identity();
-      T_world_footcontact.p[0] = self->ray_hit[0];
-      T_world_footcontact.p[1] = self->ray_hit[1];
-      T_world_footcontact.p[2] = self->ray_hit[2];
-      KDL::Rotation tempM(Vx,Vy,Vz);
-      T_world_footcontact.M = tempM;
-
-      KDL::Frame T_world_objectgeometry = KDL::Frame::Identity(); 
-      if(! it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry))
+      if(!strcmp(name, PARAM_SEED_RF))
       {
-       cerr << " ERROR: failed to retrieve " << geometry_name<<" in object " << object_name <<endl;
+       foot_type = 1;
       }
-      KDL::Frame  T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
-      KDL::Frame T_objectgeometry_foot,T_contactframe_footframe;
-      T_contactframe_footframe=self->candidateFootStepSeedManager->_T_groundframe_bodyframe_left;
-      T_objectgeometry_foot=T_objectgeometry_footcontact*(T_contactframe_footframe);
-    
-      std::vector<std::string> joint_names;
-      std::vector<double> joint_positions;
-      joint_names.push_back("l_leg_uay");
-      joint_names.push_back("l_leg_lax");
-      joint_positions.push_back(0);
-      joint_positions.push_back(0);      
-      self->candidateFootStepSeedManager->add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name, T_objectgeometry_foot,joint_names,joint_positions);	
-
-    }
-    else if (! strcmp(name, PARAM_SEED_RF)) {
-      self->free_running_sticky_foot_cnt++;
-      int uid = self->free_running_sticky_foot_cnt;
-      int foot_type = 1;
       std::string object_name =self->object_selection;
+      
       std::string object_geometry_name = self->link_selection;
       std::string object_name_token  = object_name + "_";
       size_t found = object_geometry_name.find(object_name_token);  
-      std::string geometry_name = object_geometry_name.substr(found+object_name_token.size());
+      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
       
-      Eigen::Vector3f eVx,eVy,eVz,diff;
-      diff=self->ray_hit_drag-self->ray_hit;
-      cout << diff.norm() << endl;
-      if(diff.norm()< 0.001)
-          diff << 0,0,1;
-
-      diff.normalize();
-      eVz = self->ray_hit_normal; eVz.normalize();
-      eVy = eVz.cross(diff);  eVy.normalize();
-      eVx = eVy.cross(eVz); eVx.normalize();
-
-      KDL::Vector Vx,Vy,Vz;
-      Vx[0]= eVx[0];Vx[1]= eVx[1];Vx[2]= eVx[2];
-      Vy[0]= eVy[0];Vy[1]= eVy[1];Vy[2]= eVy[2];
-      Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
-
-      KDL::Frame T_world_footcontact= KDL::Frame::Identity();
-      //T_world_footcontact.p[0] = self->ray_hit[0];
-      //T_world_footcontact.p[1] = self->ray_hit[1];
-      //T_world_footcontact.p[2] = self->ray_hit[2];
-
-      // For the car (pedals) we offset the sticky foot to prevent the pedal from being depressed
-      double delta = 0.025;
-      T_world_footcontact.p[0] = self->ray_hit[0] + delta * eVz[0];
-      T_world_footcontact.p[1] = self->ray_hit[1] + delta * eVz[1];
-      T_world_footcontact.p[2] = self->ray_hit[2] + delta * eVz[2];
-
-      KDL::Rotation tempM(Vx,Vy,Vz);
-      T_world_footcontact.M = tempM;
-
-      KDL::Frame T_world_objectgeometry = KDL::Frame::Identity(); 
-      if(! it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry))
-          cerr << " ERROR: failed to retrieve " << geometry_name <<" in object " << object_name <<endl;
-
-      KDL::Frame T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
-      KDL::Frame T_objectgeometry_foot,T_contactframe_footframe;
-      T_contactframe_footframe = self->candidateFootStepSeedManager->_T_groundframe_bodyframe_right;
-      T_objectgeometry_foot = T_objectgeometry_footcontact*(T_contactframe_footframe);
-      
-      std::vector<std::string> joint_names;
-      std::vector<double> joint_positions;
-      joint_names.push_back("r_leg_uay");
-      joint_names.push_back("r_leg_lax");
-      joint_positions.push_back(0);
-      joint_positions.push_back(0); 
       // Query Normal at point of dbl click. Drag direction gives foot direction.
-      // Foot frame Z direction should point towards normal.     
-      self->candidateFootStepSeedManager->add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name, T_objectgeometry_foot,joint_names,joint_positions);	
+      // Foot frame Z direction should point towards normal. 
+      // also increments free_running_counter
+      self->stickyFootCollection->seed_foot(it->second,object_name,geometry_name,foot_type,self->ray_hit_drag,self->ray_hit,self->ray_hit_normal);
 
     }
     else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
     
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
       {
          if (hand_it->second.object_name == self->object_selection)
          {
             if(self->stickyhand_selection==hand_it->first)
                self->stickyhand_selection = " ";
-            self->sticky_hands.erase(hand_it++);
+            self->stickyHandCollection->_hands.erase(hand_it++);
          }
          else
             hand_it++;
       } 
       
       typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-      while (foot_it!=self->sticky_feet.end()) 
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+      while (foot_it!=self->stickyFootCollection->_feet.end()) 
       {
          if (foot_it->second.object_name == self->object_selection)
          {
             if(self->stickyfoot_selection==foot_it->first)
                self->stickyfoot_selection = " ";
-            self->sticky_feet.erase(foot_it++);
+            self->stickyFootCollection->_feet.erase(foot_it++);
          }
          else
             foot_it++;
@@ -894,8 +777,8 @@ namespace renderer_affordances_gui_utils
          ee_name = "right_palm";  
               
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
       {
         std::string hand_name = std::string(hand_it->second.object_name);
         if ((hand_name == (it->first))&&(hand_it->second.is_melded))
@@ -971,8 +854,8 @@ namespace renderer_affordances_gui_utils
   
       // set dependent bodies desired motion state to mate state
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
       {
          std::string hand_name = std::string(hand_it->second.object_name);
          if (hand_name == (it->first))
@@ -995,8 +878,8 @@ namespace renderer_affordances_gui_utils
       }
 
       typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-      while (foot_it!=self->sticky_feet.end()) 
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+      while (foot_it!=self->stickyFootCollection->_feet.end()) 
       {
          std::string foot_name = std::string(foot_it->second.object_name);
          if (foot_name == (it->first))
@@ -1042,7 +925,7 @@ namespace renderer_affordances_gui_utils
     bool has_seeds = otdf_instance_has_seeds(self,self->object_selection);
     if((self->marker_selection  == " "))
        set_hand_init_position(self); 
-       
+ 
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;
 
@@ -1070,8 +953,7 @@ namespace renderer_affordances_gui_utils
     int* contact_nums = (int *)calloc(num_masks, sizeof(int));
     contact_masks[0]=(char*) "ALL"; contact_masks[1]=(char*) "FINGERS";
     contact_nums[0]=msg.ALL; contact_nums[1]=msg.FINGERS_ONLY;
-    
-    
+   
     /*if((!has_seeds)&&((self->marker_selection  == " ")
       ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
       ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) */
@@ -1114,63 +996,63 @@ namespace renderer_affordances_gui_utils
     }
 
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
-   //has_seeds = true;
-   if((has_seeds)&&(!self->selection_hold_on))  
-   {
-      bool val,val2;
-      val = false;
-      val2 = false;
-      if(it!=self->instantiated_objects.end()){
-      val = it->second._gl_object->is_bodypose_adjustment_enabled();
-      if(!val)
-       val2 = it->second._gl_object->is_jointdof_adjustment_enabled();
-      }   
+      object_instance_map_type_::iterator it= self->affCollection->_objects.find(self->object_selection);
+      if(it!=self->affCollection->_objects.end())
+      {
+       //has_seeds = true;
+         if((has_seeds)&&(!self->selection_hold_on))  
+         {
+            bool val,val2;
+            val = false;
+            val2 = false;
+            if(it!=self->affCollection->_objects.end()){
+            val = it->second._gl_object->is_bodypose_adjustment_enabled();
+            if(!val)
+             val2 = it->second._gl_object->is_jointdof_adjustment_enabled();
+            }   
+            
+            bot_gtk_param_widget_add_separator (pw,"Set desired state");
+            bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+
+           
+            bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
+            bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
+            bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);
+            bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
+            
+            bot_gtk_param_widget_add_separator (pw,"Get Manip Plan/Map");
+            bot_gtk_param_widget_add_separator (pw,"(via EE pt/motion/range goal)");     
+            bot_gtk_param_widget_add_separator (pw,"(for approval)");
+            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
+            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
+            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
+            bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
+            //if(it->second._gl_object->is_future_display_active())
+            bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
+         }
+          
+          bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
+
+          // If affordance is mateable SHOW ee teleop settings.
+          
+          //To engage EE teleop the object must have a valid melded sticky hand, and it must be melded to robot state as well
+          if((it->second._gl_object->is_mateable())&&(it->second.is_melded) ) {
+            //bool has_melded_seeds = object_has_melded_sticky_hands(it->first);
+              bot_gtk_param_widget_add_separator (pw,"EE Teleop Settings");
+                /*bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, 
+                                     BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
+                                    "Left hand", drc::ee_teleop_transform_t::LEFT_HAND,
+                                    "Right Hand", drc::ee_teleop_transform_t::RIGHT_HAND, NULL);*/
+                bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP,
+                                     BOT_GTK_PARAM_WIDGET_MENU,self->active_mate_axis,
+                                     "MATE::X",0,
+                                     "MATE::Y",1,
+                                     "MATE::Z",2, NULL); 
+                bot_gtk_param_widget_add_buttons(pw,PARAM_ENGAGE_EE_TELEOP, NULL);
+          }
       
-      bot_gtk_param_widget_add_separator (pw,"Set desired state");
-      bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+      }// end if 
 
-     
-      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
-      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
-      bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);
-      bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
-      
-      bot_gtk_param_widget_add_separator (pw,"Get Manip Plan/Map");
-      bot_gtk_param_widget_add_separator (pw,"(via EE pt/motion/range goal)");     
-      bot_gtk_param_widget_add_separator (pw,"(for approval)");
-      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
-      //if(it->second._gl_object->is_future_display_active())
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
-   }
-    
-    bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
-    
-    // If affordance is mateable SHOW ee teleop settings.
-    
-    //To engage EE teleop the object must have a valid melded sticky hand, and it must be melded to robot state as well
-    if((it->second._gl_object->is_mateable())&&(it->second.is_melded) ) {
-      //bool has_melded_seeds = object_has_melded_sticky_hands(it->first);
-        bot_gtk_param_widget_add_separator (pw,"EE Teleop Settings");
-
-          /*bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, 
-                               BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
-                              "Left hand", drc::ee_teleop_transform_t::LEFT_HAND,
-                              "Right Hand", drc::ee_teleop_transform_t::RIGHT_HAND, NULL);*/
-          bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP,
-                               BOT_GTK_PARAM_WIDGET_MENU,self->active_mate_axis,
-                               "MATE::X",0,
-                               "MATE::Y",1,
-                               "MATE::Z",2, NULL);
-          bot_gtk_param_widget_add_buttons(pw,PARAM_ENGAGE_EE_TELEOP, NULL);
-     
-
-    }
-    
-    
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
 
@@ -1180,17 +1062,16 @@ namespace renderer_affordances_gui_utils
     g_signal_connect (G_OBJECT (close_button),"clicked",G_CALLBACK (on_popup_close),(gpointer) window);
     g_signal_connect(G_OBJECT(pw), "destroy", G_CALLBACK(on_dblclk_popup_close), self); 
 
-
     vbox = gtk_vbox_new (FALSE, 3);
     gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
       gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
     gtk_container_add (GTK_CONTAINER (window), vbox);
     gtk_widget_show_all(window); 
- 
+
  
       free(contact_masks);
       free(contact_nums);
-    
+
   }
   
  
@@ -1214,9 +1095,9 @@ namespace renderer_affordances_gui_utils
       fprintf(stderr,"\n Clearing selected sticky hand\n");
       
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
-      if(hand_it!=self->sticky_hands.end())
-        self->sticky_hands.erase(hand_it);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      if(hand_it!=self->stickyHandCollection->_hands.end())
+        self->stickyHandCollection->_hands.erase(hand_it);
       self->stickyhand_selection = " ";
       bot_viewer_request_redraw(self->viewer);
     }
@@ -1225,7 +1106,7 @@ namespace renderer_affordances_gui_utils
     }
     else if(! strcmp(name, PARAM_MOVE_EE)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
 
       drc::grasp_opt_control_t msg; // just to access types
       int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
@@ -1240,12 +1121,12 @@ namespace renderer_affordances_gui_utils
     
     else if ((!strcmp(name, PARAM_GRASP_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       
       bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
@@ -1272,12 +1153,12 @@ namespace renderer_affordances_gui_utils
     }
     else if (!strcmp(name, PARAM_PARTIAL_GRASP_UNGRASP)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       int g_status = bot_gtk_param_widget_get_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP);
       fprintf(stderr, "Requested grasp status : %d\n", g_status);
       //set the value 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
@@ -1295,49 +1176,19 @@ namespace renderer_affordances_gui_utils
         //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 
       }
- 
-      /*bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
-
-      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
-      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
-
-      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
-        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
-      else { 
-        drc::desired_grasp_state_t msg; // just to access types
-        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-        
-        bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
-        if(power_flag)
-         val=true;
-  
-
-        //publish desired_grasp_state_t on COMMITED_GRASP msg.
-            //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
-          
-        hand_it->second.grasp_status = !hand_it->second.grasp_status;  
-        }*/      
     }
-  
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL3)){
       string channel = "POSE_GOAL";
-       // only orientation is considered as seed in pose optimization
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,false);  
     }
 
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
       string channel = "POSE_GOAL";
-       // only orientation is considered as seed in pose optimization
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,true);  
     }
@@ -1345,10 +1196,10 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
@@ -1382,7 +1233,7 @@ namespace renderer_affordances_gui_utils
     else if (!strcmp(name, PARAM_MELD_HAND_TO_CURRENT))
     {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       if(!hand_it->second.is_melded)
       {
         //change joint_position to current hand state and 
@@ -1406,7 +1257,7 @@ namespace renderer_affordances_gui_utils
           posture_msg.joint_position = hand_it->second.joint_position; 
           
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
           KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
           if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry))
             cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;           
@@ -1447,9 +1298,9 @@ namespace renderer_affordances_gui_utils
     } // end if else
     else if ((!strcmp(name,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
       if(hand_it->second.is_melded)
       {
         obj_it->second.is_melded = !obj_it->second.is_melded; 
@@ -1465,7 +1316,7 @@ namespace renderer_affordances_gui_utils
   {
   
     typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-    sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+    sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
   
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;
@@ -1507,7 +1358,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_separator(pw, "Partial Grasp");
     bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+    object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
   
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL3, NULL);
     
@@ -1556,16 +1407,16 @@ namespace renderer_affordances_gui_utils
           fprintf(stderr,"\n Clearing selected sticky foot\n");
           
           typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
-          if(foot_it!=self->sticky_feet.end())
-              self->sticky_feet.erase(foot_it);
+          sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+          if(foot_it!=self->stickyFootCollection->_feet.end())
+              self->stickyFootCollection->_feet.erase(foot_it);
           self->stickyfoot_selection = " ";
           bot_viewer_request_redraw(self->viewer);
       }
       else if(! strcmp(name, PARAM_MOVE_EE)) {
           
           typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+          sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
           
           drc::grasp_opt_control_t msg; // just to access types
           int grasp_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
@@ -1578,10 +1429,10 @@ namespace renderer_affordances_gui_utils
       else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
           
           typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-          sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+          sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
           
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
           
           if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_graspgeometry))
@@ -1602,7 +1453,7 @@ namespace renderer_affordances_gui_utils
       else if (!strcmp(name, PARAM_MELD_FOOT_TO_CURRENT))
       {
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-        sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
         if(!foot_it->second.is_melded)
         {
           //change joint_position to current foot state and 
@@ -1626,7 +1477,7 @@ namespace renderer_affordances_gui_utils
             posture_msg.joint_position = foot_it->second.joint_position; 
             
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-            object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+            object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
             KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
             if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
               cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;           
@@ -1684,7 +1535,7 @@ namespace renderer_affordances_gui_utils
   {
   
     typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-    sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+    sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
   
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;

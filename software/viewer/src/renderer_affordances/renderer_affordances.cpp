@@ -4,7 +4,7 @@
 #include "InitGraspOptPublisher.hpp"
 #include "CandidateGraspSeedListener.hpp"
 #include "GraspOptStatusListener.hpp"
-#include "CandidateFootStepSeedManager.hpp"
+
 #include "ReachabilityVerifier.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "object_interaction_gui_utils.hpp"
@@ -23,35 +23,6 @@ using namespace renderer_affordances_gui_utils;
 
 // =================================================================================
 // DRAWING
-
-
-static void draw_axis(double x, double y,double z, 
-                      double yaw, double pitch, double roll, 
-                      double size, bool mark)
-{
-    glPushMatrix();
-    glPushAttrib(GL_CURRENT_BIT);
-
-    glTranslatef(x, y, z);
-
-    glRotatef(bot_to_degrees(yaw),  0., 0., 1.);
-    glRotatef(bot_to_degrees(pitch),0., 1., 0.);
-    glRotatef(bot_to_degrees(roll), 1., 0., 0.);
-
-    glBegin(GL_LINES);
-    glColor3f(1.0,0.0,0.0); glVertex3f(0.0,0.0,0.0);glVertex3f(size*1.0,0.0,0.0);
-    glColor3f(0.0,1.0,0.0); glVertex3f(0.0,0.0,0.0);glVertex3f(0.0,size*1.0,0.0);
-    glColor3f(0.0,0.0,1.0); glVertex3f(0.0,0.0,0.0);glVertex3f(0.0,0.0,size*1.0);
-    glEnd();
-
-    if (mark) {
-        //    glutWireSphere(size*1.5, 5, 5);
-    }
-
-    glPopAttrib();
-    // todo: reset color?
-    glPopMatrix();
-}
 
 // TODO: Super bloated need to break it up later.
 static void _draw (BotViewer *viewer, BotRenderer *renderer) 
@@ -104,7 +75,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 
     // Draw all OTDF objectes.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++) {
+    for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++) {
         
         // draw object   
         double pos[3];
@@ -177,10 +148,10 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     float c_gray[3] = {0.3,0.3,0.3};
     float alpha = 0.6;
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-    for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++) {
+    for(sticky_hands_map_type_::const_iterator hand_it = self->stickyHandCollection->_hands.begin(); hand_it!=self->stickyHandCollection->_hands.end(); hand_it++) {
         hand_it->second._gl_hand->enable_link_selection(self->selection_enabled);
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+        object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
         KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
         
         if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
@@ -327,10 +298,10 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   
     // Draw all sticky feet 
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-    for(sticky_feet_map_type_::const_iterator foot_it = self->sticky_feet.begin(); foot_it!=self->sticky_feet.end(); foot_it++) {
+    for(sticky_feet_map_type_::const_iterator foot_it = self->stickyFootCollection->_feet.begin(); foot_it!=self->stickyFootCollection->_feet.end(); foot_it++) {
         foot_it->second._gl_foot->enable_link_selection(self->selection_enabled);
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+        object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
         KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
         if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry)){
             cerr << " failed to retrieve " << string(foot_it->second.geometry_name)<<" in object " << string(foot_it->second.object_name) <<endl;
@@ -561,24 +532,24 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     RendererAffordances *self = (RendererAffordances*) ehandler->user;
     //loop through object list and clear old selections.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
+    for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++)
+    {
+        if(it->second._gl_object) // to make sure that _gl_object is initialized 
         {
-            if(it->second._gl_object) // to make sure that _gl_object is initialized 
-                {
-                    string no_selection = " ";
-                    it->second._gl_object->highlight_link(no_selection); 
-                    it->second._gl_object->highlight_marker(no_selection); 
-                }
-        }// end for
+            string no_selection = " ";
+            it->second._gl_object->highlight_link(no_selection); 
+            it->second._gl_object->highlight_marker(no_selection); 
+        }
+    }// end for
 
     //loop through stick-hands list and clear older Selections
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-    for(sticky_hands_map_type_::iterator it = self->sticky_hands.begin(); it!=self->sticky_hands.end(); it++)
-        {
-            string no_selection = " ";
-            it->second._gl_hand->highlight_link(no_selection);
-            it->second._gl_hand->highlight_marker(no_selection);  
-        }// end for  
+    for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
+    {
+        string no_selection = " ";
+        it->second._gl_hand->highlight_link(no_selection);
+        it->second._gl_hand->highlight_marker(no_selection);  
+    }// end for  
     
     //std::cout << "Aff ehandler->picking " << ehandler->picking << std::endl;
     if((ehandler->picking==0)||(self->selection_enabled==0)){     
@@ -595,46 +566,53 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     self->clicked = 1;
 
     if(self->stickyhand_selection!=" "){
-        sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+        typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+        sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
         hand_it->second._gl_hand->enable_whole_body_selection(true); 
         hand_it->second._gl_hand->highlight_link(self->stickyhand_selection);
         cout << "intersected stickyhand:" << (self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
+        self->seedSelectionManager->add(self->stickyhand_selection);
     }
     else if(self->stickyfoot_selection!=" "){
+        
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-        sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
         foot_it->second._gl_foot->enable_whole_body_selection(true); 
         foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
         cout << "intersected stickyfoot:" << self->stickyfoot_selection << " at: "<< self->ray_hit.transpose() << endl;
+        self->seedSelectionManager->add(self->stickyfoot_selection);
     }
     else if(self->object_selection!=" "){
-        object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(self->object_selection);
-        if((self->marker_selection!=" ")&&(!self->selection_hold_on)) {
-            obj_it->second._gl_object->highlight_marker(self->marker_selection);
-            cout << "intersected an object's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
-        }
-        else if((self->marker_selection!=" ")&&(self->selection_hold_on)) {
-            self->otdf_instance_hold._gl_object->highlight_marker(self->marker_selection);
-            cout << "intersected an temp object's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
-        }
-        else {
-            obj_it->second._gl_object->highlight_link(self->link_selection); 
-            cout << "intersected an object's link: " << self->link_selection<< " at: " << self->ray_hit.transpose() << endl;
-        }
+      self->seedSelectionManager->clear();
+       // NOTE: cannot use self->object_selection affCollection if selection hold is on;
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(self->object_selection);
+      if((self->marker_selection!=" ")&&(!self->selection_hold_on)) {
+          obj_it->second._gl_object->highlight_marker(self->marker_selection);
+          cout << "intersected an object's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
+      }
+      else if((self->marker_selection!=" ")&&(self->selection_hold_on)) {
+          self->otdf_instance_hold._gl_object->highlight_marker(self->marker_selection);
+          cout << "intersected an temp object's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
+      }
+      else {
+          obj_it->second._gl_object->highlight_link(self->link_selection); 
+          cout << "intersected an object's link: " << self->link_selection<< " at: " << self->ray_hit.transpose() << endl;
+      }
     }
 
     //(event->button==3) -- Right Click
     //cout << "current selection:" << self->link_selection  <<  endl;
     if(((self->link_selection  != " ") || (self->marker_selection  != " ")) &&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
-        {
-            //spawn_object_geometry_dblclk_popup(self);
-            // draw circle for angle specification around the axis.
-            self->dragging = 1;
-            self->show_popup_onrelease = 1;
-            bot_viewer_request_redraw(self->viewer);
-            std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
-            return 1;// consumed if pop up comes up.
-        }
+    {
+        //spawn_object_geometry_dblclk_popup(self);
+        // draw circle for angle specification around the axis.
+        self->dragging = 1;
+        self->show_popup_onrelease = 1;
+        bot_viewer_request_redraw(self->viewer);
+        std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
+
+        return 1;// consumed if pop up comes up.
+    }
     else if((self->stickyhand_selection != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){
         spawn_sticky_hand_dblclk_popup(self);
         std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
@@ -659,19 +637,26 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
    
         self->dragging = 1;
         if(!(self->selection_hold_on))
-            {
-                object_instance_map_type_::iterator it = self->instantiated_objects.find(self->object_selection);            
-                KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-                self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2];
-                self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
-            }
+        {
+            // NOTE: cannot use self->object_selection affCollection if selection hold is on;
+            object_instance_map_type_::iterator it = self->affCollection->_objects.find(self->object_selection);            
+            KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
+            self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2];
+            self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
+        }
         else{
            KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
-           double current_pos, current_vel; 
-          self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);         
-          self->joint_marker_pos_on_press = current_pos;
+           
+           
+          if( self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
+          {
+            double current_pos, current_vel; 
+            self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);         
+            self->joint_marker_pos_on_press = current_pos;
+          }
           self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
         }
+
         return 1;// consumed
      }
 
@@ -698,7 +683,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
         self->dragging = 0;
         if(self->selection_hold_on && !self->show_popup_onrelease && !self->dblclk_popup){
             if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
-               publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+               self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
         }
     }
     if (ehandler->picking==1)
@@ -729,13 +714,13 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     
         //std::cout << "motion\n" << std::endl;
         if(!(self->selection_hold_on)) 
-            {
-                set_object_desired_state_on_marker_motion(self,start,dir);
-            }
+        {
+            set_object_desired_state_on_marker_motion(self,start,dir);
+        }
         else 
-            {
-                set_object_current_state_on_marker_motion(self,start,dir);
-            }
+        {
+            set_object_current_state_on_marker_motion(self,start,dir);
+        }
       
     }
     bot_viewer_request_redraw(self->viewer);
@@ -774,8 +759,8 @@ static void popup_clear_from_affstore(BotGtkParamWidget *pw, void *user)
     if (result == GTK_RESPONSE_YES){
         cout << "Sending message to clear all\n";
         map<string, OtdfInstanceStruc>::iterator it;
-        for(it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++) {
-            delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid, self);
+        for(it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++) {
+            self->affCollection->delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid);
         }
     }
 }
@@ -797,7 +782,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     else if(!strcmp(name, PARAM_INSTANTIATE)) {
         cout << "\nInstantiating Selected Otdf:  " << self->otdf_filenames[self->otdf_id] << endl;
         self->debugMode = bot_gtk_param_widget_get_bool(pw, PARAM_DEBUG_MODE);
-        create_otdf_object_instance(self,self->debugMode);
+        self->affCollection->create(self->otdf_filenames[self->otdf_id],self->debugMode);
     }
     else if(!strcmp(name, PARAM_CLEAR)) {
         fprintf(stderr,"\nClearing Instantiated Objects\n");
@@ -805,15 +790,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         // popup for clear from aff store
         if(!self->debugMode) popup_clear_from_affstore(pw,user);
 
-        self->instantiated_objects.clear();
-        self->sticky_hands.clear();
-        self->sticky_feet.clear();
+        self->affCollection->_objects.clear();
+        self->stickyHandCollection->_hands.clear();
+        self->stickyFootCollection->_feet.clear();
         for( map<string,int >::iterator it = self->instance_cnt.begin(); it!=self->instance_cnt.end(); it++)
             { 
                 it->second = 0;
             }
         self->link_selection = " ";
         self->object_selection = " ";
+        self->seedSelectionManager->clear();
         self->stickyhand_selection = " ";
         self->stickyfoot_selection = " ";
         self->marker_selection = " ";
@@ -860,6 +846,24 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
 }
 
+/*static void keyboardSignalCallback(int keyval, bool is_pressed)
+{
+  if(is_pressed) 
+  {
+    cout << "RendererAffordances::KeyPress Signal Received:  Keyval: " << keyval << endl;
+  }
+  else {
+    cout << "RendererAffordances::KeyRelease Signal Received: Keyval: " << keyval << endl;
+  }
+  // last key event was shift release
+  // and selection cnt is greater than one
+  if(self->seedSelectionManager->is_multiselect_completed()){
+	  self->seedSelectionManager->print();
+     //spawn_ee_constraint_sequencer_pop_up();
+  }
+  
+}*/
+
 static void
 _free (BotRenderer *renderer)
 {
@@ -868,7 +872,7 @@ _free (BotRenderer *renderer)
     //free (renderer);
 }
 
-BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
+BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef)
 {
 
     //RendererAffordances *self = (RendererAffordances*) calloc (1, sizeof (RendererAffordances)); // Calloc is bad as it prevents having string as members as strings can change size
@@ -886,11 +890,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     self->num_otdfs = otdf_files.size();
     self->otdf_names =(char **) calloc(self->num_otdfs, sizeof(char *));
     self->otdf_nums = (int *)calloc(self->num_otdfs, sizeof(int));
-    self->instance_cnt.clear();
-    self->instantiated_objects.clear();
-    self->sticky_hands.clear();
-    self->sticky_feet.clear();
-  
+
     for(size_t i=0;i<otdf_files.size();i++){
         cout << otdf_files[i] << endl;
         self->otdf_filenames.push_back(otdf_files[i]);
@@ -915,18 +915,22 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
         self->urdf_names[i]=(char *) urdf_files[i].c_str();
         self->urdf_nums[i] =i;
     }
-
-  
+    
+    self->affCollection = boost::shared_ptr<AffordanceCollectionManager>(new AffordanceCollectionManager(self->lcm));
+    self->stickyHandCollection = boost::shared_ptr<StickyhandCollectionManager>(new StickyhandCollectionManager(self->lcm));
+    self->stickyFootCollection = boost::shared_ptr<StickyfootCollectionManager>(new StickyfootCollectionManager(self->lcm));
+    
     self->affordanceMsgHandler = boost::shared_ptr<AffordanceCollectionListener>(new AffordanceCollectionListener(self));
     self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self));
     self->candidateGraspSeedListener = boost::shared_ptr<CandidateGraspSeedListener>(new CandidateGraspSeedListener(self));
     self->initGraspOptPublisher  = boost::shared_ptr<InitGraspOptPublisher>(new InitGraspOptPublisher(self));
     self->graspOptStatusListener= boost::shared_ptr<GraspOptStatusListener>(new GraspOptStatusListener(self));
-    self->candidateFootStepSeedManager = boost::shared_ptr<CandidateFootStepSeedManager>(new CandidateFootStepSeedManager(self));
+
     self->reachabilityVerifier=boost::shared_ptr<ReachabilityVerifier>(new ReachabilityVerifier(self));
-  
-    self->free_running_sticky_hand_cnt = 0;
-    self->free_running_sticky_foot_cnt = 0;
+    //self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,RendererAffordances::keyboardSignalCallback));
+    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererAffordances::keyboardSignalCallback,self,_1,_2)));
+    self->seedSelectionManager = boost::shared_ptr<SelectionManager>(new SelectionManager(signalRef));
+    
     self->T_graspgeometry_lhandinitpos= KDL::Frame::Identity(); 
     self->T_graspgeometry_rhandinitpos= KDL::Frame::Identity(); 
   
@@ -1018,12 +1022,12 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
    return &self->renderer;
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames,signalRef), render_priority, 0); // 0= add on left hand side
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, KeyboardSignalRef signalRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef), render_priority, 0); // 0= add on left hand side
 }

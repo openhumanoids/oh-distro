@@ -13,9 +13,6 @@ namespace renderer_affordances
 {
   //==================constructor / destructor
 
-//   InitGraspOptPublisher::InitGraspOptPublisher(boost::shared_ptr<lcm::LCM> &lcm, RendererAffordances* affordance_renderer):
-//     _lcm(lcm),
-//     _parent_renderer(affordance_renderer)
   InitGraspOptPublisher::InitGraspOptPublisher(RendererAffordances* affordance_renderer):
     _parent_renderer(affordance_renderer)
   {
@@ -61,7 +58,7 @@ namespace renderer_affordances
     msg.contact_mask = contact_mask;//msg.ALL;
     
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it= _parent_renderer->instantiated_objects.find(msg.object_name);
+    object_instance_map_type_::iterator it= _parent_renderer->affCollection->_objects.find(msg.object_name);
     
     
     boost::shared_ptr<otdf::Geometry> link_geom;
@@ -76,14 +73,14 @@ namespace renderer_affordances
       enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
       
       if(type==SPHERE)  {
-        shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link_geom));	
+        boost::shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link_geom));	
         msg.geometry_type = msg.SPHERE;
         msg.num_dims = 1;
         msg.dims.push_back(sphere->radius);
 
       }
       else if(type==BOX)  {
-        shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link_geom));
+        boost::shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link_geom));
         msg.geometry_type = msg.BOX;
         msg.num_dims = 3;
         msg.dims.push_back(box->dim.x);
@@ -92,7 +89,7 @@ namespace renderer_affordances
       }
       else if(type==CYLINDER) {
    
-        shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link_geom));
+        boost::shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link_geom));
    
         msg.geometry_type = msg.CYLINDER;
         msg.num_dims = 2;

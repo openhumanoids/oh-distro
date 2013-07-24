@@ -53,7 +53,17 @@
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/file_access_utils.hpp>
-#include "BatchFKQueryHandler.hpp"
+#include <visualization_utils/gl_draw_utils.hpp>
+#include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/SelectionManager.hpp>
+#include <visualization_utils/affordance_utils/affordance_utils.hpp>
+#include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
+#include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
+#include <visualization_utils/stickyhand_utils/sticky_hand_utils.hpp>
+#include <visualization_utils/stickyhand_utils/StickyhandCollectionManager.hpp>
+#include <visualization_utils/stickyfoot_utils/sticky_foot_utils.hpp>
+#include <visualization_utils/stickyfoot_utils/StickyfootCollectionManager.hpp>
+
 
 #define RENDERER_NAME "Affordances & StickyHands/Feet"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
@@ -125,104 +135,6 @@ typedef point3d_t vec3d_t;
 
 #define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
 
-
-struct OtdfInstanceStruc {
-
-    OtdfInstanceStruc()
-    {
-     otdf_instance_viz_object_sync = true; 
-      is_melded= false;
-    };
-    
-     ~OtdfInstanceStruc()
-    {
-
-    };
-
-    std::string otdf_type;
-    int uid;
-    boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
-    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
-    boost::shared_ptr<collision::Collision_Detector> _collision_detector;  
-    // Each object has its own collision detector for now. 
-    // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.
-
-    // filename of model used to generate points or triangles (alternative to points/triangles in aff message)
-    std::string modelfile;
-
-    // bounding box info relative to object
-    Eigen::Vector3f boundingBoxXYZ;
-    Eigen::Vector3f boundingBoxRPY;
-    Eigen::Vector3f boundingBoxLWH;
-    
-    // otdf instance is in sync with aff server. 
-    // Turn off if one needs to visualize state changes before committing to aff server.    
-    bool otdf_instance_viz_object_sync;
-    bool is_melded; // if melded via a sticky hand, the affordance is tracked via EST_ROBOT_STATE
-
-};   
-
-struct StickyHandStruc {
-
-    StickyHandStruc()
-    {
-     grasp_status = 0;
-     motion_trail_log_enabled = true;
-     is_melded= false;
-    };
-    
-     ~StickyHandStruc()
-    {
-
-    };
-    
-    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_hand;
-    boost::shared_ptr<collision::Collision_Detector> _collision_detector;
-    string object_name;
-    string geometry_name; 
-    int hand_type; //SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
-    KDL::Frame T_geometry_hand; // this is stored in obj frame
-    std::vector<std::string> joint_name;
-    std::vector<double> joint_position;
-    bool is_melded;
-    KDL::Frame optimized_T_geometry_hand; // store as backup when melded. Retains the ability to unmeld.
-    std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.
-    int uid;
-    int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
-    int grasp_status;//CANDIDATE=0,COMMITTED=1;
-    int partial_grasp_status; 
-    bool motion_trail_log_enabled;
-};   
-
-
-struct StickyFootStruc {
-
-    StickyFootStruc()
-    {
-     motion_trail_log_enabled = true;
-     is_melded= false;
-    };
-    
-     ~StickyFootStruc()
-    {
-
-    };
-    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_foot;
-    boost::shared_ptr<collision::Collision_Detector> _collision_detector;
-    string object_name;
-    string geometry_name; 
-    int foot_type; //LEFT=0, RIGHT=1;
-    KDL::Frame T_geometry_foot; // this is stored in obj frame
-    std::vector<std::string> joint_name;
-    std::vector<double> joint_position;
-    bool is_melded;
-    KDL::Frame optimized_T_geometry_foot; // store as backup when melded. Retains the ability to unmeld.
-    std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.
-    int uid;
-    bool motion_trail_log_enabled;
-   // int opt_status;
-}; 
-
 class AffordanceCollectionListener;
 class RobotStateListener;
 class InitGraspOptPublisher;
@@ -266,9 +178,6 @@ struct RendererAffordances {
     lhand_urdf_id=0;
     rhand_urdf_id=0;
     
-    free_running_sticky_hand_cnt = 0;
-    free_running_sticky_foot_cnt = 0;
-    
     active_mate_axis = 2; //MATE_X=0,MATE_Y=1,MATE_Z=2;
     active_ee= drc::ee_teleop_transform_t::RIGHT_HAND; //RIGHT by default
   }
@@ -289,7 +198,17 @@ struct RendererAffordances {
   boost::shared_ptr<lcm::LCM> lcm;
     
   BotFrames *frames;
- 
+  
+  
+  //Member Variables 
+  // -----------------
+  
+  //object/stickyhands/stickyfeet cache managers 
+  boost::shared_ptr<AffordanceCollectionManager> affCollection; 
+  boost::shared_ptr<StickyhandCollectionManager> stickyHandCollection;
+  boost::shared_ptr<StickyfootCollectionManager> stickyFootCollection;
+  
+  
   // Member Classes
   // -----------------
   // LCM msg handlers and publishers
@@ -298,24 +217,18 @@ struct RendererAffordances {
   boost::shared_ptr<CandidateGraspSeedListener> candidateGraspSeedListener;
   boost::shared_ptr<InitGraspOptPublisher> initGraspOptPublisher;
   boost::shared_ptr<GraspOptStatusListener> graspOptStatusListener;
-  boost::shared_ptr<CandidateFootStepSeedManager> candidateFootStepSeedManager;
+
   boost::shared_ptr<ReachabilityVerifier> reachabilityVerifier;
   boost::shared_ptr<BatchFKQueryHandler>  dofRangeFkQueryHandler;
-  
-  //Member Variables 
-  // -----------------
+  boost::shared_ptr<KeyboardSignalHandler> keyboardSignalHndlr;
+  boost::shared_ptr<SelectionManager> seedSelectionManager;
 
-  std::map<std::string, OtdfInstanceStruc > instantiated_objects; // otdftemplatename+ object_uid
-  std::map<std::string, StickyHandStruc> sticky_hands; // otdftemplatename + object_uid + geometryname + "_grasp_" + hand_uid;  
-  std::map<std::string, StickyFootStruc> sticky_feet; // otdftemplatename + object_uid + geometryname + "_footstep_" + foot_uid;
-  // NOTE: an otdf instance can have multiple sticky_hands/feet associated with it.
+
   
   OtdfInstanceStruc otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance.
   KDL::Frame otdf_T_world_body_hold; //store position in the world
   std::map<std::string, double> otdf_current_jointpos_hold;
   
-  int free_running_sticky_hand_cnt; // never decremented, used to set uid of sticky hands which is unique in global map scope 
-  int free_running_sticky_foot_cnt;
   KDL::Frame T_graspgeometry_lhandinitpos;
   KDL::Frame T_graspgeometry_rhandinitpos;
 
@@ -382,840 +295,71 @@ struct RendererAffordances {
   bool show_popup_onrelease;
   bool visualize_bbox;
   bool motion_trail_log_enabled;
+  
+  
+  
+  void keyboardSignalCallback(int keyval, bool is_pressed)
+  {
+    /*if(is_pressed) 
+    {
+      cout << "RendererAffordances::KeyPress Signal Received:  Keyval: " << keyval << endl;
+    }
+    else {
+      cout << "RendererAffordances::KeyRelease Signal Received: Keyval: " << keyval << endl;
+    }*/
+    
+    // last key event was shift release
+    // and selection cnt is greater than one
+    
+    if(((!is_pressed)&&(keyval == SHIFT_L||keyval == SHIFT_R ))&&(seedSelectionManager->get_selection_cnt()>1))
+    {
+        cout<< "Printing Selection Order On Shift KeyRelease\n";
+	      seedSelectionManager->print();
+       //spawn_ee_constraint_sequencer_pop_up();
+    }
+    
+  }
 };
 
-// if common shape (e.g. cylinder, sphere), fill in bounding box
-static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<otdf::ModelInterface> instance_in,
-                            double* bounding_xyz, double* bounding_rpy, double* bounding_lwh)
-{
-   if(otdf_type == "cylinder"){  
-      bounding_lwh[0] = instance_in->params_map_.find("radius")->second*2;
-      bounding_lwh[1] = instance_in->params_map_.find("radius")->second*2;
-      bounding_lwh[2] = instance_in->params_map_.find("length")->second;
-   } else if(otdf_type == "sphere"){  
-      bounding_lwh[0] = instance_in->params_map_.find("radius")->second*2;
-      bounding_lwh[1] = instance_in->params_map_.find("radius")->second*2;
-      bounding_lwh[2] = instance_in->params_map_.find("radius")->second*2;
-   } else if(otdf_type == "TODO"){  //TODO others...
-   }
-}
 
-// =================================================================================
-// maintaining  OtdfInstanceStruc
-  
-  inline static void delete_otdf_from_affstore(string channel, string otdf_type, int uid, void *user)
-  {
-        RendererAffordances *self = (RendererAffordances*) user;
-
-        // create and send delete affordance message
-        drc::affordance_plus_t aff;
-        aff.aff.aff_store_control = drc::affordance_t::DELETE;
-        aff.aff.otdf_type = otdf_type;
-        aff.aff.uid = uid;
-        aff.aff.map_id = 0;
-        aff.aff.nparams = 0;
-        aff.aff.nstates = 0;
-        aff.npoints = 0;
-        aff.ntriangles = 0;
-        self->lcm->publish(channel, &aff);
-        cout << "Delete message sent for: " << otdf_type << "_" << uid << endl;
-  }
-
-  // xyz_ypr is already in message, no need to duplicate it   
-  inline static bool isRedundantParam(const std::string& param)
-  {
-    if(param=="x" || param=="y" || param=="z" || 
-       param=="yaw" || param=="pitch" || param=="roll") return true;
-    else return false;
-  }
-
-// =================================================================================
-// affstore sync methods (TODO: can be merged into a better utility class )
-  inline static void update_mate_joints_in_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in, KDL::Frame &T_mate_start_mate_end, void *user)
-  {
-  
-  RendererAffordances *self = (RendererAffordances*) user;
-   drc::affordance_t msg;
-
-   // get otdf from map
-   stringstream nameSS;
-   OtdfInstanceStruc* otdf = NULL;
-   nameSS << otdf_type << "_" << uid;
-   if(self->instantiated_objects.count(nameSS.str())){
-     otdf = &self->instantiated_objects[nameSS.str()];
-   } else{
-     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
-   }
-
-   msg.utime = 0;
-   msg.map_id = 0;
-   
-   
-   msg.otdf_type = otdf_type;
-   msg.aff_store_control = msg.UPDATE;//msg.NEW
-   msg.uid = uid; 
-   
-    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
-   msg.origin_xyz[0] =instance_in->params_map_.find("x")->second;
-   msg.origin_xyz[1] =instance_in->params_map_.find("y")->second;
-   msg.origin_xyz[2] =instance_in->params_map_.find("z")->second;
-   msg.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
-   msg.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
-   msg.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
-
-   double bounding_xyz[]={0,0,0};
-   double bounding_rpy[]={0,0,0};
-   double bounding_lwh[]={0,0,0};
-  
-   if(otdf){
-      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
-      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
-      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
-      bounding_rpy[0] = otdf->boundingBoxRPY[0];
-      bounding_rpy[1] = otdf->boundingBoxRPY[1];
-      bounding_rpy[2] = otdf->boundingBoxRPY[2];
-      bounding_lwh[0] = otdf->boundingBoxLWH[0];
-      bounding_lwh[1] = otdf->boundingBoxLWH[1];
-      bounding_lwh[2] = otdf->boundingBoxLWH[2];
-      msg.modelfile = otdf->modelfile;
-   }
-
-   // if common shape (e.g. cylinder, sphere), fill in bounding box
-   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
-
-   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
-   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
-   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
-    
-   typedef std::map<std::string, double > params_mapType;
-   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   { 
-      // don't copy xyz ypr
-      if(isRedundantParam(it->first)) continue;
-      // copy all other params
-      msg.param_names.push_back(it->first);
-      msg.params.push_back(it->second);
-   }
-   msg.nparams =  msg.param_names.size();
-
-  int cnt=0;
-   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
-    {     
-      if(it->second->type!=(int) otdf::Joint::FIXED) {
-        string token  = "mate::";
-        string joint_name = it->first;
-        double pos, vel;
-        size_t found = joint_name.find(token);  
-        if (found!=std::string::npos) 
-        {
-          vel=0;
-          double r,p,y;
-
-          //Mate Joints are Intrinsic XYZ (roll::pitch::yaw)
-          //Rx(1)*Ry(2)*Rz(3)	
-          //c2c3	c2s3	-s2
-          //s1s2c3-c1s3	s1s2s3+c1c3	s1c2
-          //c1s2c3+s1s3	c1s2s3-s1c3	c1c2
-
-          /*double qx,qy,qz,qw,roll_a,roll_b,pitch_sin,yaw_a,yaw_b;
-          T_mate_start_mate_end.M.GetQuaternion(qx,qy,qz,qw);
-          roll_a = 2 * (qy*qz - qw*qx);
-          roll_b = 1 - 2 * (qx*qx + qy*qy);
-          r = atan2 (-roll_a, roll_b);
-          pitch_sin = 2 * (qx*qz + qw*qy);
-          p = asin (pitch_sin);//
-          yaw_a = 2 * (qx*qy - qw*qz);
-          yaw_b = 1 - 2 * (qy*qy + qz*qz);
-          y = atan2 (-yaw_a, yaw_b);   */
-          
-          double R12,R11,R13,R23,R33;
-          R11 = T_mate_start_mate_end.M.data[0];
-          R12 = T_mate_start_mate_end.M.data[1];
-          R13 = T_mate_start_mate_end.M.data[2];
-          R23 = T_mate_start_mate_end.M.data[5];
-          R33 = T_mate_start_mate_end.M.data[8];
-          r = atan2 (-R23, R33);
-          p = asin (R13);
-          y = atan2 (-R12,R11);
-                     
-          if(joint_name=="mate::x")
-            pos = T_mate_start_mate_end.p[0];
-          else if(joint_name=="mate::y")
-            pos = T_mate_start_mate_end.p[1];          
-          else if(joint_name=="mate::z")
-            pos = T_mate_start_mate_end.p[2];
-          else if(joint_name=="mate::roll")
-            pos = r;
-          else if(joint_name=="mate::pitch")
-            pos = p;     
-          else if(joint_name=="mate::yaw")
-            pos = y;    
-        }
-        else
-        {
-          instance_in->getJointState(it->first,pos,vel);
-        }
-        cnt++;
-        msg.state_names.push_back(it->first);
-        msg.states.push_back(pos); 
-      }
-      
-     }
-   msg.nstates =  cnt;
-   //cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
-   self->lcm->publish(channel, &msg);
-  }
-  
-  
-  // ========================================== 
-  inline static void update_object_pose_in_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in, KDL::Frame &T_world_object,void *user)
-  {
-  
-   RendererAffordances *self = (RendererAffordances*) user;
-   drc::affordance_t msg;
-
-   // get otdf from map
-   stringstream nameSS;
-   OtdfInstanceStruc* otdf = NULL;
-   nameSS << otdf_type << "_" << uid;
-   if(self->instantiated_objects.count(nameSS.str())){
-     otdf = &self->instantiated_objects[nameSS.str()];
-   } else{
-     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
-   }
-
-   msg.utime = 0;
-   msg.map_id = 0;
-   
-   
-   msg.otdf_type = otdf_type;
-   msg.aff_store_control = msg.UPDATE;//msg.NEW
-   msg.uid = uid; 
-   
-    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
-   msg.origin_xyz[0] =T_world_object.p[0];
-   msg.origin_xyz[1] =T_world_object.p[1];
-   msg.origin_xyz[2] =T_world_object.p[2];
-   double r,p,y;
-   T_world_object.M.GetRPY(r,p,y);
-   msg.origin_rpy[0] =r;
-   msg.origin_rpy[1] =p;
-   msg.origin_rpy[2] =y;
-   
-
-   double bounding_xyz[]={0,0,0};
-   double bounding_rpy[]={0,0,0};
-   double bounding_lwh[]={0,0,0};
-  
-   if(otdf){
-      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
-      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
-      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
-      bounding_rpy[0] = otdf->boundingBoxRPY[0];
-      bounding_rpy[1] = otdf->boundingBoxRPY[1];
-      bounding_rpy[2] = otdf->boundingBoxRPY[2];
-      bounding_lwh[0] = otdf->boundingBoxLWH[0];
-      bounding_lwh[1] = otdf->boundingBoxLWH[1];
-      bounding_lwh[2] = otdf->boundingBoxLWH[2];
-      msg.modelfile = otdf->modelfile;
-   }
-
-   // if common shape (e.g. cylinder, sphere), fill in bounding box
-   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
-
-   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
-   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
-   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
-    
-   typedef std::map<std::string, double > params_mapType;
-   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   { 
-      // don't copy xyz ypr
-      if(isRedundantParam(it->first)) continue;
-      // copy all other params
-      msg.param_names.push_back(it->first);
-      msg.params.push_back(it->second);
-   }
-   msg.nparams =  msg.param_names.size();
-
-  int cnt=0;
-   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
-    {     
-      if(it->second->type!=(int) otdf::Joint::FIXED) {
-
-          double pos, vel;
-          instance_in->getJointState(it->first,pos,vel);
-          cnt++;
-          msg.state_names.push_back(it->first);
-          msg.states.push_back(pos);
-      }
-     }
-   msg.nstates =  cnt;
-   //cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
-   self->lcm->publish(channel, &msg);
-  }
-  
-  
-// ==========================================
-    
-  inline static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
-  {
-   RendererAffordances *self = (RendererAffordances*) user;
-   drc::affordance_t msg;
-
-   // get otdf from map
-   stringstream nameSS;
-   OtdfInstanceStruc* otdf = NULL;
-   nameSS << otdf_type << "_" << uid;
-   if(self->instantiated_objects.count(nameSS.str())){
-     otdf = &self->instantiated_objects[nameSS.str()];
-   } else{
-     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
-   }
-
-   msg.utime = 0;
-   msg.map_id = 0;
-   
-   
-   msg.otdf_type = otdf_type;
-   msg.aff_store_control = msg.UPDATE;//msg.NEW
-   msg.uid = uid; 
-   
-    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
-   msg.origin_xyz[0] =instance_in->params_map_.find("x")->second;
-   msg.origin_xyz[1] =instance_in->params_map_.find("y")->second;
-   msg.origin_xyz[2] =instance_in->params_map_.find("z")->second;
-   msg.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
-   msg.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
-   msg.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
-   
-
-   double bounding_xyz[]={0,0,0};
-   double bounding_rpy[]={0,0,0};
-   double bounding_lwh[]={0,0,0};
-  
-   if(otdf){
-      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
-      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
-      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
-      bounding_rpy[0] = otdf->boundingBoxRPY[0];
-      bounding_rpy[1] = otdf->boundingBoxRPY[1];
-      bounding_rpy[2] = otdf->boundingBoxRPY[2];
-      bounding_lwh[0] = otdf->boundingBoxLWH[0];
-      bounding_lwh[1] = otdf->boundingBoxLWH[1];
-      bounding_lwh[2] = otdf->boundingBoxLWH[2];
-      msg.modelfile = otdf->modelfile;
-   }
-
-   // if common shape (e.g. cylinder, sphere), fill in bounding box
-   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
-
-   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
-   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
-   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
-    
-   typedef std::map<std::string, double > params_mapType;
-   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   { 
-      // don't copy xyz ypr
-      if(isRedundantParam(it->first)) continue;
-      // copy all other params
-      msg.param_names.push_back(it->first);
-      msg.params.push_back(it->second);
-   }
-   msg.nparams =  msg.param_names.size();
-
-  int cnt=0;
-   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
-    {     
-      if(it->second->type!=(int) otdf::Joint::FIXED) {
-
-          double pos, vel;
-          instance_in->getJointState(it->first,pos,vel);
-          cnt++;
-          msg.state_names.push_back(it->first);
-          msg.states.push_back(pos);
-      }
-     }
-   msg.nstates =  cnt;
-   cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
-   
-   self->lcm->publish(channel, &msg);
-
-  } 
-
-  inline static void publish_new_otdf_instance_to_affstore( string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
-  {
-   RendererAffordances *self = (RendererAffordances*) user;
-   drc::affordance_plus_t msg;
-
-   msg.aff.utime = 0;
-   msg.aff.map_id = 0;
-   msg.aff.uid =0; // aff store should assign this
-   
-      
-   msg.aff.otdf_type = otdf_type;
-   msg.aff.aff_store_control = msg.aff.NEW;
-   
-   //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
-   msg.aff.origin_xyz[0] =instance_in->params_map_.find("x")->second;
-   msg.aff.origin_xyz[1] =instance_in->params_map_.find("y")->second;
-   msg.aff.origin_xyz[2] =instance_in->params_map_.find("z")->second;
-   msg.aff.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
-   msg.aff.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
-   msg.aff.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
-   
-   double bounding_xyz[]={0,0,0};
-   double bounding_rpy[]={0,0,0};
-   double bounding_lwh[]={0,0,0};
-
-   if(otdf_type == "car"){
-      //TODO centralize these settings.  This is duplicated in segmentation code
-      msg.aff.modelfile = "car.pcd";
-      bounding_xyz[2] = 1.0;   // center of bounding box is 1m above car origin
-      bounding_lwh[0] = 3.0;
-      bounding_lwh[1] = 1.7;
-      bounding_lwh[2] = 2.2;
-   } else commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
-
-   msg.aff.bounding_xyz[0] = bounding_xyz[0]; msg.aff.bounding_xyz[1] = bounding_xyz[1];msg.aff.bounding_xyz[2] = bounding_xyz[2];
-   msg.aff.bounding_rpy[0] = bounding_rpy[0]; msg.aff.bounding_rpy[1] = bounding_rpy[1];msg.aff.bounding_rpy[2] = bounding_rpy[2];
-   msg.aff.bounding_lwh[0] = bounding_lwh[0]; msg.aff.bounding_lwh[1] = bounding_lwh[1];msg.aff.bounding_lwh[2] = bounding_lwh[2];
-
-  
-   typedef std::map<std::string, double > params_mapType;
-   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   {
-      // don't copy xyz ypr
-      if(isRedundantParam(it->first)) continue;
-      // copy all other params
-      msg.aff.param_names.push_back(it->first);
-      msg.aff.params.push_back(it->second);
-   }
-   msg.aff.nparams =  msg.aff.param_names.size();
-
-  int cnt=0;
-   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
-    {   
-      if(it->second->type!=(int) otdf::Joint::FIXED) {
-
-          double pos, vel;
-          instance_in->getJointState(it->first,pos,vel);
-          cnt++;
-          msg.aff.state_names.push_back(it->first);
-          msg.aff.states.push_back(pos);
-      }
-     }
-   msg.aff.nstates =  cnt;
-   msg.npoints = 0;
-   msg.ntriangles = 0;
-   cout <<"publish_otdf_instance_to_affstore: creating a new instance of template :" << msg.aff.otdf_type << endl;
-    
-   self->lcm->publish(channel, &msg);
-  } 
-  
-  inline static void create_otdf_object_instance (RendererAffordances *self, bool local_testing)
-  {
-    std::string filename = self->otdf_filenames[self->otdf_id];
-    std::string xml_string;
-    if(!otdf::get_xml_string_from_file(filename, xml_string)){
-     return; // file extraction failed
-    }
-   
-    OtdfInstanceStruc instance_struc;
-    instance_struc._otdf_instance = otdf::parseOTDF(xml_string);
-    if (!instance_struc._otdf_instance){
-      std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
-    }
-    // TODO: create a KDL tree parser from OTDF instance, without having to convert to urdf.
-    // otdf can contain some elements that are not part of urdf. e.g. TORUS  
-    std::string _urdf_xml_string = otdf::convertObjectInstanceToCompliantURDFstring(instance_struc._otdf_instance);
-    
-    std::map<std::string, int >::iterator it;
-    it= self->instance_cnt.find(self->otdf_filenames[self->otdf_id]);
-    it->second = it->second + 1;
-    std::stringstream oss;
-    oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second-1;  // unique name, cnt starts from zero
-    
-    instance_struc.otdf_type=filename;//new string(filename);
-    instance_struc.uid=it->second-1; // starts from zero
-    //instance_struc._otdf_instance->name_ = oss.str();
-    
-    instance_struc._collision_detector.reset();
-     // Each object has its own collision detector for now.      
-    instance_struc._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());
-    instance_struc._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
-    instance_struc._gl_object->set_state(instance_struc._otdf_instance);
-
-    if(local_testing)
-      self->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
-    else
-    {
-      publish_new_otdf_instance_to_affstore("AFFORDANCE_FIT",(instance_struc.otdf_type),0,instance_struc._otdf_instance,self); 
-    }
-    bot_viewer_request_redraw(self->viewer);
-  } 
-
-  inline static void update_OtdfInstanceStruc (OtdfInstanceStruc &instance_struc)
-  {
-    instance_struc._otdf_instance->update();
-    instance_struc._gl_object->set_state(instance_struc._otdf_instance);
-  }
-  
-    
- inline static bool otdf_instance_has_seeds(void* user, string &object_name)
- { 
-    RendererAffordances *self = (RendererAffordances*) user;
-    typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-    sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-    while (hand_it!=self->sticky_hands.end()) 
-    {
-       if (hand_it->second.object_name == (object_name))
-       {
-         return true;
-       }
-       
-       hand_it++;
-    } 
-
-    typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-    sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-    while (foot_it!=self->sticky_feet.end()) 
-    {
-       if (foot_it->second.object_name == (object_name))
-       {
-         return true;
-       }
-       
-       foot_it++;
-    } 
-    return false;
-    
-  }
-
-  
 //===============================================================================
 // MISC. UTILS
 
-   //-------------------------------------------------------------------------------
-  inline static void get_min_dimension(boost::shared_ptr<otdf::Geometry> &link_geom, std::string &min_dimension_tag)
-  {
-   
-    min_dimension_tag = "XY";
-    enum {SPHERE, BOX, CYLINDER, MESH, TORUS};   
-    int type = link_geom->type;
-//    if(type == SPHERE)
-//    {
-//      boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(link_geom));	
-//      double radius = sphere->radius;
-//    }
-//    else 
-    if(type == BOX)
-    {
-      boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(link_geom));
-      double xDim = box->dim.x;
-      double yDim = box->dim.y;
-      double zDim = box->dim.z;
-      if(zDim<min(xDim,yDim))
-        min_dimension_tag = "Z"; 
-    }      
-    else if(type == CYLINDER)
-    {
-      boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(link_geom));
-      double radius = cyl->radius;
-      double length = cyl->length;
-      if(length<radius)
-       min_dimension_tag = "Z";   
-    }  
-    else if(type == TORUS)
-    {
-      boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link_geom));
-      double innerRadius = torus->tube_radius;
-      double outerRadius = torus->radius;
-      if(innerRadius<outerRadius)
-        min_dimension_tag = "Z";  
-    }      
-  
-  }
- //-------------------------------------------------------------------------------
-  inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand, KDL::Frame &T_objectgeometry_rhand)
-  {
-  
-   // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand. 
-   Eigen::Vector3d ux,uy,uz;
-   //x axis on sandia hand is pointing away from the palm face
-   // if we define the urdf in palm frame as base then palm is facing z positive :Will scale to other hands
-   ux << 1 , 0 , 0; 
-   uy << 0 , 1 , 0;
-   uz << 0 , 0 , 1;
-  
-   Eigen::Vector3d nray = -(to - from);
-   nray.normalize();  // normalize
-   
-     // back-track from the hit pt in the approach dir by 10*t cm
-   double t = 0.08;
-   Eigen::Vector3d p;
-   p << to[0]+t*nray[0], to[1]+t*nray[1], to[2]+t*nray[2]; 
+ inline static bool otdf_instance_has_seeds(void* user, string &object_name)
+ { 
+    RendererAffordances *self = (RendererAffordances*) user;
+    bool has_hand = self->stickyHandCollection->is_parent_object(object_name);
+    bool has_foot = self->stickyFootCollection->is_parent_object(object_name);
+    return (has_hand||has_foot);
+ }
 
-   Eigen::Vector3d cross_prod;
-   double dot_prod;
-  
-  // no need to normalize vectors
-    nray = -(to - from);
-    if(nray[0]>=0){
-      dot_prod =ux.dot(nray); 
-      cross_prod = ux.cross(nray);
-    }
-    else {
-      dot_prod =ux.dot(-nray); 
-      cross_prod = ux.cross(-nray);
-    }
- 
-   // supposedly handles better aaround 180deg
-   double w = (dot_prod) + ux.norm()*nray.norm();
-   Eigen::Vector4f quat;
-   quat << w,cross_prod[0],cross_prod[1],cross_prod[2];
-   quat.normalize();
-   
-   if (w < 0.0001) { // vectors are 180 degrees apart
-    quat << 0,-ux[2],ux[1],ux[0];
-    quat.normalize();
-  } 
-   KDL::Frame T_objectgeometry_hand;
-   T_objectgeometry_hand.p[0]=p[0];
-   T_objectgeometry_hand.p[1]=p[1];
-   T_objectgeometry_hand.p[2]=p[2];
-   T_objectgeometry_hand.M =  KDL::Rotation::Quaternion(quat[1], quat[2], quat[3], quat[0]);
-
-  // hand pos is calculated in positive x hemisphere only.
-  // if viewpoint is in negative x hemisphere, hand is flipped about Z axis.
-   if(nray[0]<0){
-    KDL::Frame fliphand; 
-    fliphand.p[0]=0;
-    fliphand.p[1]=0;
-    fliphand.p[2]=0;
-    fliphand.M =  KDL::Rotation::RPY(0,0,M_PI);
-    T_objectgeometry_hand = T_objectgeometry_hand*fliphand;
-   }
-  //-------
-  // Hand is now with the palm facing the object.
-  
-   KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
-   T_rotatedhand_lhand.p[0]=0;
-   T_rotatedhand_lhand.p[1]=0;
-   T_rotatedhand_lhand.p[2]=0.125;
-   T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
-   
-   objectframe_finger_dir.normalize(); // finger dir in object frame.
- 
-   Eigen::Vector3d desired_finger_dir;
-   
-   KDL::Frame temp_frame = T_objectgeometry_hand.Inverse();
-   temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
-   rotate_eigen_vector_given_kdl_frame(objectframe_finger_dir,temp_frame,desired_finger_dir);
-  
-   double theta = atan2(desired_finger_dir[2],desired_finger_dir[1]);
-   //depending on left or right hand, sign of rotation will change.
-   std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
-    
-   T_rotatedhand_lhand.M =  KDL::Rotation::RPY(5*(M_PI/8)-theta,0,0);
-   T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
-   T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//gets T_objectgeometry_rotatedhand 
-   T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//gets T_objectgeometry_rotatedhand 
-   
-  } // end get_user_specified_hand_approach
-  
-   //-------------------------------------------------------------------------------
-  inline static void get_hand_approach(Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand,KDL::Frame &T_objectgeometry_rhand)
-  {
-
-   // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand.  
-       
-   Eigen::Vector3d ux,uy,uz;
-   ux << 1 , 0 , 0; //x axis on sandia hand is pointing away from the palm face
-   uy << 0 , 1 , 0;
-   uz << 0 , 0 , 1;
-  
-   Eigen::Vector3d nray = -(to - from);
-   nray.normalize();  // normalize
-   
-
-   // back-track from the hit pt in the approach dir by 100*t cm
-   double t = 0.05;
-   Eigen::Vector3d p;
-   p << to[0]+t*nray[0], to[1]+t*nray[1], to[2]+t*nray[2]; 
-   
-   // APPROACH 1 to calculate 
-    Eigen::Vector3d cross_prod;
-    double dot_prod;
-    if(nray[0]>=0){
-      dot_prod =ux.dot(nray); 
-      cross_prod = ux.cross(nray);
-    }
-    else {
-      dot_prod =ux.dot(-nray); 
-      cross_prod = ux.cross(-nray);
-    }
-
-   cross_prod.normalize(); 
-
-   double q[4];
-   double axis[3]  = {cross_prod[0],cross_prod[1],cross_prod[2]};
-   
-    double angle = acos(dot_prod);
-  bot_angle_axis_to_quat(angle,axis,q); 
-  
-  // APPROACH 2
-  // no need to normalize vectors
-    nray = -(to - from);
-    if(nray[0]>=0){
-      dot_prod =ux.dot(nray); 
-      cross_prod = ux.cross(nray);
-    }
-    else {
-      dot_prod =ux.dot(-nray); 
-      cross_prod = ux.cross(-nray);
-    }
- 
-   // supposedly handles better aaround 180deg
-   double w = (dot_prod) + ux.norm()*nray.norm();
-   Eigen::Vector4f quat;
-   quat << w,cross_prod[0],cross_prod[1],cross_prod[2];
-   quat.normalize();
-   
-   if (w < 0.0001) { // vectors are 180 degrees apart
-    quat << 0,-ux[2],ux[1],ux[0];
-    quat.normalize();
-  } 
-
-
-   KDL::Frame T_objectgeometry_hand;
-   T_objectgeometry_hand.p[0]=p[0];
-   T_objectgeometry_hand.p[1]=p[1];
-   T_objectgeometry_hand.p[2]=p[2];
-   T_objectgeometry_hand.M =  KDL::Rotation::Quaternion(q[1], q[2], q[3], q[0]);
-   T_objectgeometry_hand.M =  KDL::Rotation::Quaternion(quat[1], quat[2], quat[3], quat[0]);
-   
-//   std::cout << "quat(x,y,z,w):  " << q[1]<< " " <<q[2]<< " "  << q[3]<< " "  << q[0]  << std::endl;
-//   std::cout << "quat(x,y,z,w):  " << quat[1]<< " " <<quat[2]<< " "  << quat[3]<< " "  << quat[0]  << std::endl;
-   
-   
-  // hand pos is calculated in positive x hemisphere only.
-  // if viewpoint is in negative x hemisphere, hand is flipped about Z axis.
-   if(nray[0]<0){
-    KDL::Frame fliphand; 
-    fliphand.p[0]=0;
-    fliphand.p[1]=0;
-    fliphand.p[2]=0;
-    fliphand.M =  KDL::Rotation::RPY(0,0,M_PI);
-    T_objectgeometry_hand = T_objectgeometry_hand*fliphand;
-   }
-  //-----------
-  // Hand is now with the palm facing the object.
-  
-  //hand orientation is dependent on whether the smallest dimension along the axis of the link geometry in geom_z_axis or perpendicular to it in geom_XY plane.
-  // things like steering wheel cylinder are thin in Z axis. You want to position your hand so as to pinch the thin part of the plate. Not that by default z is the key axis for urdf geometry definitions like cyl, torus.
-     std::string min_dimension_tag;
-     get_min_dimension(link_geom,min_dimension_tag); 
-     
-     
-  //  if looking down at the object from the top or looking up from the bottom.
-    if( fabs(uz.dot(nray))>max(fabs(ux.dot(nray)),fabs(uy.dot(nray))) )
-    {
-   
-      double bearing_about_z = atan2(to[1],to[0]);
-      if(uz.dot(nray)<0)
-        bearing_about_z = M_PI-bearing_about_z;      
-
-      KDL::Frame rotatetocenter=KDL::Frame::Identity();
-      if(nray[0]<0){
-        bearing_about_z += M_PI;
-      }
-      rotatetocenter.M =  KDL::Rotation::RPY(bearing_about_z,0,0);
-      T_objectgeometry_hand = T_objectgeometry_hand*rotatetocenter;
-    }//end if
-      
-     //depending on left or right hand, sign of rotation will change.
-     KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
-     T_rotatedhand_lhand.p[0]=0;
-     T_rotatedhand_lhand.p[1]=0;
-     T_rotatedhand_lhand.p[2]=0.125;
-     T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
-     if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){
-      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-3*(M_PI/8),0,0);
-      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8),0,0);
-     }
-     else if(min_dimension_tag=="Z"){ 
-      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
-      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
-     }
-
-    T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//T_objectgeometry_rotatedhand 
-    T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//T_objectgeometry_rotatedhand 
-
-  }// end get_hand_approach
-  
-  
  //-------------------------------------------------------------------------------  
   inline static void set_hand_init_position(void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-
     string object_geometry_name = self->link_selection; 
     string object_name_token  = self->object_selection + "_";
     size_t found = object_geometry_name.find(object_name_token);  
     string geometry_name =object_geometry_name.substr(found+object_name_token.size());
-  
     
-    KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
     self->T_graspgeometry_lhandinitpos = KDL::Frame::Identity();
     self->T_graspgeometry_rhandinitpos = KDL::Frame::Identity();
-    //Get initial position of hand relative to object geometry.
+    
+  //Get initial position of hand relative to object geometry.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(self->object_selection);
-    if(!obj_it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_graspgeometry))
-        cerr << " failed to retrieve " << geometry_name<<" in object " << self->object_selection <<endl;
-    else {
+    object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(self->object_selection);
         
-        KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
-        Eigen::Vector3d from_geomframe,hit_pt_geomframe;
-        rotate_eigen_vector_given_kdl_frame(self->ray_start,T_graspgeometry_world,from_geomframe);
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit,T_graspgeometry_world,hit_pt_geomframe);
+    //Get initial position of hand relative to object geometry.
+    //utility function defined in stickyhand_utils library
+    //#include <vizualization_utils/stickyhand_utils/sticky_hand_utils.hpp>
+    bool success = get_stickyhand_init_positions(self->object_selection, geometry_name ,obj_it->second,
+                                  self->ray_start,self->ray_hit,self->ray_hit_drag,self->dragging,
+                                  self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
 
-        boost::shared_ptr<otdf::Geometry> link_geom;
-        obj_it->second._gl_object->get_link_geometry(geometry_name,link_geom); 
-
-        
-        // when not dragging set handpose deterministically (assumes z is up). 
-        // Other wise you the user specified orientation as the direction of the fingers.        
-        Eigen::Vector3f diff = self->ray_hit_drag - self->ray_hit;
-        double length =diff.norm();
-        if ((self->dragging)&&(length>1e-3)){
-         Eigen::Vector3f diff = self->ray_hit_drag - self->ray_hit; // finger direction in world frame
-         Eigen::Vector3d fingerdir_geomframe;//(temp.data);// finger direction in geometry frame
-         diff.normalize();
-         KDL::Frame temp_frame = T_graspgeometry_world;
-         temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
-         rotate_eigen_vector_given_kdl_frame(diff,temp_frame,fingerdir_geomframe);//something wrong here.
-         fingerdir_geomframe.normalize();
-         get_user_specified_hand_approach(self,fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
-        }
-        else{
-         get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
-
-        }//end else
-         
-        /*std::cout << "T_objectgeometry_hand.p: " << self->T_graspgeometry_lhandinitpos.p[0] 
-                                          << " " << self->T_graspgeometry_lhandinitpos.p[1] 
-                                          << " " << self->T_graspgeometry_lhandinitpos.p[2] << " " << std::endl;*/
-        
-    }//end else
   }// end void set_hand_init_position(void *user)
   //------------------------------------------------------------------------------- 
+  
+  
   
   inline static void set_object_desired_state_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
   {
@@ -1224,7 +368,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 
       std::string instance_name=  self->object_selection;
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+      object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
 
 
 
@@ -1235,8 +379,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 		//  leave the clearing to the user to do this via reset                     
        // clear previously accumulated motion states for all dependent bodies
       /*  typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-        sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-        while (hand_it!=self->sticky_hands.end()) 
+        sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+        while (hand_it!=self->stickyHandCollection->_hands.end()) 
         {
            if (hand_it->second.object_name == (instance_name))
            {
@@ -1246,8 +390,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         }
         
         typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-        sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
-        while (foot_it!=self->sticky_feet.end()) 
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+        while (foot_it!=self->stickyFootCollection->_feet.end()) 
         {
            std::string foot_name = std::string(foot_it->second.object_name);
            if (foot_name == (it->first))
@@ -1447,7 +591,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
            it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
            bot_viewer_request_redraw(self->viewer); 
          }
-      }
+      }// end else if(it->second._gl_object->is_jointdof_adjustment_enabled())
       self->prev_ray_hit_drag = self->ray_hit_drag; 
       bot_viewer_request_redraw(self->viewer);     
   }   // end set_object_desired_state_on_marker_motion()
@@ -1648,7 +792,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
           self->otdf_instance_hold._otdf_instance->update(); 
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
         }    
-      }
+      }//end else if(it->second._gl_object->is_jointdof_adjustment_enabled())
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 
   }   // end set_object_current_state_on_marker_motion()
@@ -1718,7 +862,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
 
     // loop through object list and check if ray intersect any of them.
-    for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
+    for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++)
     {
 
       if(it->second._gl_object) // to make sure that _gl_object is initialized 
@@ -1820,12 +964,12 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
   
    //loop through stick-feet list and check if ray intersect any of them.
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-    for(sticky_feet_map_type_::iterator it = self->sticky_feet.begin(); it!=self->sticky_feet.end(); it++)
+    for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
     {
     
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(it->second.object_name);
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(it->second.object_name);
           if(!obj_it->second._gl_object->get_link_geometry_frame(it->second.geometry_name,T_world_graspgeometry))
               cerr << " failed to retrieve " << it->second.geometry_name<<" in object " << it->second.object_name <<endl;
           else {
@@ -1880,12 +1024,12 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 
     //loop through stick-hands list and check if ray intersect any of them.
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-    for(sticky_hands_map_type_::iterator it = self->sticky_hands.begin(); it!=self->sticky_hands.end(); it++)
+    for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
     {
     
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(it->second.object_name);
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(it->second.object_name);
           if(!obj_it->second._gl_object->get_link_geometry_frame(it->second.geometry_name,T_world_graspgeometry))
               cerr << " failed to retrieve " << it->second.geometry_name<<" in object " << it->second.object_name <<endl;
           else {
@@ -1942,9 +1086,8 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
   
 }//end_namespace
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames);
-
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames, KeyboardSignalRef signalRef);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, KeyboardSignalRef signalRef);
 
 
 #endif //RENDERER_AFFORDANCES_HPP

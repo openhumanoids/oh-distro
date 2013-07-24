@@ -28,8 +28,8 @@ namespace renderer_affordances
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
     boost::shared_ptr<lcm::LCM> _lcm;    
     RendererAffordances* _parent_renderer; 
-	int64_t _last_state_msg_system_timestamp;
-	int object_update_counter;
+	  int64_t _last_state_msg_system_timestamp;
+	  int object_update_counter;
     
     //BotViewer *_viewer;
 
@@ -46,8 +46,7 @@ namespace renderer_affordances
     bool _urdf_parsed;
     bool _urdf_subscription_on;
     // Using GlKinematicBody as cache for fk queries.
-    // TODO: Feature dev after VRC  (Sisir, 5th June)
-    // We should have a bare bones KinematicBody class when no drawing(parsing meshes etc) is required.
+    // TODO: should have a bare bones KinematicBody class when no drawing(parsing meshes etc) is required.
     boost::shared_ptr<visualization_utils::GlKinematicBody> _gl_robot; 
 
 

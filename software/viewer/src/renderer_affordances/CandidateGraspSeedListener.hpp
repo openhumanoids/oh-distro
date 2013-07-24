@@ -29,8 +29,6 @@
 namespace renderer_affordances
 {
 
-  /**Class for keeping track of robot link state / joint angles.
-   The constructor subscribes to MEAS_JOINT_ANGLES and registers a callback*/
   class CandidateGraspSeedListener
   {
     //--------fields
@@ -55,19 +53,8 @@ namespace renderer_affordances
     void handleDesiredGraspStateMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::desired_grasp_state_t* msg);
-			      
-		//-------------utils
-  public:
-		void add_or_update_sticky_hand(int uid, std::string& unique_hand_name, KDL::Frame &T_world_hand, drc::joint_angles_t &posture_msg);		
-  private:	      
-		bool load_hand_urdf(int grasp_type);
-		
-		std::string _object_name;
-		std::string _geometry_name;
-		int _grasp_type;
-		int _optimization_status;// RUNNING=0, SUCCESS=1, FAILURE=2;
-		std::vector< boost::shared_ptr<visualization_utils::GlKinematicBody> >  _gl_hand_list;
-		std::map<int,int> _handtype_id_map;
+	      
+
   }; //class CandidateGraspSeedListener
 
 

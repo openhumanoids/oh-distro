@@ -22,16 +22,14 @@
 
 namespace renderer_affordances
 {
-  /**Class for keeping track of robot link state / joint angles.
-   The constructor subscribes to MEAS_JOINT_ANGLES and registers a callback*/
-  class AffordanceCollectionListener
+
+  class AffordanceCollectionListener 
   {
     //--------fields
   private:
     std::string _robot_name;
     boost::shared_ptr<lcm::LCM> _lcm;    
     RendererAffordances* _parent_affordance_renderer; // maintains the list of objects.
-
 
     //----------------constructor/destructor
   public:
@@ -54,10 +52,6 @@ namespace renderer_affordances
                                           const drc::affordance_plus_collection_t* msg); 
    void handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,  
                                 const  drc::affordance_plus_t* msg);    
-			    
-	//-------------utils   
-	void add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff);
-	void update_object_instance (const drc::affordance_t &aff);
 
 }; //class AffordanceCollectionListener
 

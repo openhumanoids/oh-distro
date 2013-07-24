@@ -13,7 +13,7 @@
 
 #include <affordance/AffordanceUtils.hpp>
 #include <renderer_affordances/CandidateGraspSeedListener.hpp>
-#include <renderer_affordances/CandidateFootStepSeedManager.hpp>
+
 
 using namespace std;
 using namespace boost;
@@ -76,19 +76,24 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       oss << aff.otdf_type << "_"<< aff.uid; 
         
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
+      object_instance_map_type_::iterator it = _parent_affordance_renderer->affCollection->_objects.find(oss.str());
        
-       if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
+       if (it!=_parent_affordance_renderer->affCollection->_objects.end()) {
           //exists so update
           //cout <<"updated_otdf_object_instance: "<< aff.otdf_type <<  " " <<  aff.uid << endl;
-          update_object_instance(aff);
+          _parent_affordance_renderer->affCollection->update(aff);
        }      
        else {
           // add new otdf instance
           std::string filename = aff.otdf_type;//get_filename(aff.otdf_id);
           cout <<"add new otdf instance: "<< aff.otdf_type << "_"<< aff.uid << ", of template :" << filename << endl;
           //std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
-          add_new_otdf_object_instance(filename, aff);
+           OtdfInstanceStruc instance_struc;
+          bool success=_parent_affordance_renderer->affCollection->add(filename, aff,instance_struc);
+          if((instance_struc._otdf_instance)&&(success)){
+           _parent_affordance_renderer->stickyHandCollection->load_stored(instance_struc);
+           _parent_affordance_renderer->stickyFootCollection->load_stored(instance_struc);
+          }
        }
     }
 
@@ -111,7 +116,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     // delete any affordance not in message
     if(!_parent_affordance_renderer->debugMode){
       std::map<std::string, OtdfInstanceStruc>::iterator it;
-      std::map<std::string, OtdfInstanceStruc>& objs = _parent_affordance_renderer->instantiated_objects;
+      std::map<std::string, OtdfInstanceStruc>& objs = _parent_affordance_renderer->affCollection->_objects;
       for(it = objs.begin(); it!=objs.end(); ){
         // if not in collection, erase
         if(currentAffs.find(make_pair(it->second.otdf_type, it->second.uid)) == currentAffs.end()) {
@@ -153,19 +158,26 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
        oss << msg->otdf_type << "_"<< msg->uid; 
     
        typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-       object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
-       if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
+       object_instance_map_type_::iterator it = _parent_affordance_renderer->affCollection->_objects.find(oss.str());
+       if (it!=_parent_affordance_renderer->affCollection->_objects.end()) {
           //exists so update
          //cout <<"update_otdf_object_instance" << endl;
-         update_object_instance((*msg));
+         _parent_affordance_renderer->affCollection->update(*msg);
        }      
        else{
           // add new otdf instance
           cout <<"add new otdf instance" << endl;
           std::string filename = msg->otdf_type;//get_filename(msg->otdf_id);
-          add_new_otdf_object_instance(filename, (*msg));
+          
+          OtdfInstanceStruc instance_struc;
+          bool success=_parent_affordance_renderer->affCollection->add(filename, (*msg),instance_struc);
+          if((instance_struc._otdf_instance)&&(success)){
+           _parent_affordance_renderer->stickyHandCollection->load_stored(instance_struc);
+           _parent_affordance_renderer->stickyFootCollection->load_stored(instance_struc);
+          }
        }
-       
+      //Request redraw
+      bot_viewer_request_redraw(_parent_affordance_renderer->viewer);    
   } 
 
   void AffordanceCollectionListener::handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
@@ -181,8 +193,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     std::stringstream oss;
     oss << msg->aff.otdf_type << "_"<< msg->aff.uid;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
-    if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
+    object_instance_map_type_::iterator it = _parent_affordance_renderer->affCollection->_objects.find(oss.str());
+    if (it!=_parent_affordance_renderer->affCollection->_objects.end()) {
 
       // if no modelfile, copy points and triangles
       if(msg->aff.modelfile.empty()){
@@ -236,214 +248,6 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 
   }
 
- // =======================================================================  
- //  Utils
- // =======================================================================   
-
- /*std::string AffordanceCollectionListener::get_filename(int32_t otdf_id)
- {
-       
-  std::string filename;
-          
-  //NOTE: Have to manually list all the otdf templates, not ideal. 
-  //Much better if otdf_id is a string instead of a enumerated type.
-  if(otdf_id==drc::affordance_t::CYLINDER){
-   // check if cylinder exists in _parent_affordance_renderer->otdf_filenames
-   filename = "cylinder";
-  }
-  else if(otdf_id==drc::affordance_t::LEVER)
-  {
-   filename = "lever";
-  }
-  else if(otdf_id==drc::affordance_t::SPHERE)
-  {
-    filename = "sphere";  
-  }
-    
-  return filename;
- }*/
- // =======================================================================
-void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff)
-{
- 
-  std::string xml_string;
-  if(!otdf::get_xml_string_from_file(filename, xml_string)){
-    return; // file extraction failed
-  }
-  
-  OtdfInstanceStruc instance_struc;
-  instance_struc._otdf_instance = otdf::parseOTDF(xml_string);
-  if (!instance_struc._otdf_instance){
-    std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
-  }
-  
-  //instance_struc._otdf_instance->name_ = aff.name;
-
-  // set non-standard params from affordance message
-  for (size_t i=0; i < (size_t)aff.nparams; i++)
-    {   
-      instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
-    }
-
-  
-  // set standard params from affordance message
-  instance_struc._otdf_instance->setParam("x",aff.origin_xyz[0]);
-  instance_struc._otdf_instance->setParam("y",aff.origin_xyz[1]);
-  instance_struc._otdf_instance->setParam("z",aff.origin_xyz[2]);
-  instance_struc._otdf_instance->setParam("roll", aff.origin_rpy[0]);
-  instance_struc._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
-  instance_struc._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
-
-  instance_struc._otdf_instance->update();
-  
-    //set All JointStates too.
-  // set non-standard params from affordance message
-   for (size_t i=0; i < (size_t)aff.nstates; i++)
-   {   
-       instance_struc._otdf_instance->setJointState(aff.state_names[i],aff.states[i],0);   
-   }
-
-  
-  // create a KDL tree parser from OTDF instance, without having to convert to urdf.
-  // otdf can contain some elements that are not part of urdf. e.g. TORUS, DYNAMIC_MESH (They are handled as special cases)  
-  std::string _urdf_xml_string = otdf::convertObjectInstanceToCompliantURDFstring(instance_struc._otdf_instance);
-  
-  /*std::map<std::string, int >::iterator it;
-  it= _parent_affordance_renderer->instance_cnt.find(filename);
-  it->second = it->second + 1;*/
-  std::stringstream oss;
-  oss << aff.otdf_type << "_"<< aff.uid;
-  instance_struc.uid = aff.uid;
-  instance_struc.otdf_type = aff.otdf_type;//new string(aff.otdf_type);
-  instance_struc._collision_detector.reset();
-  instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
-  instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
-  instance_struc._gl_object->set_state(instance_struc._otdf_instance);
-
-  //boost::shared_ptr<const otdf::BaseEntity> base = instance_struc._otdf_instance->getRoot();
-  //boost::shared_ptr<otdf::Link> link = dynamic_pointer_cast<otdf::Link>(instance_struc._otdf_instance->getRoot());
-
-  //->visual->geometry;
-
-  // handle sticky hands/feet if available
-  if(instance_struc._otdf_instance){
-    std::vector<GraspSeed>& list = instance_struc._otdf_instance->graspSeedList_;
-    CandidateGraspSeedListener& cgsl = *_parent_affordance_renderer->candidateGraspSeedListener;
-    for(int i=0; i<list.size(); i++) {
-
-      if(list[i].appType == GraspSeed::HAND){
-        std::stringstream objname;
-        objname << aff.otdf_type << "_"<< aff.uid;
-        int uid = _parent_affordance_renderer->free_running_sticky_hand_cnt++;
-
-        drc::position_3d_t pose;
-        pose.translation.x = list[i].xyz[0];
-        pose.translation.y = list[i].xyz[1];
-        pose.translation.z = list[i].xyz[2];
-        KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],list[i].rpy[2]));
-        rot.GetQuaternion(pose.rotation.x, pose.rotation.y,
-                          pose.rotation.z, pose.rotation.w);
-
-        drc::desired_grasp_state_t msg;
-        msg.utime = -1;
-        msg.robot_name = "TODO";
-        msg.object_name = objname.str();
-        msg.geometry_name = list[i].geometry_name;
-        msg.unique_id = uid;
-        msg.grasp_type = list[i].grasp_type;
-        msg.power_grasp = false;
-        msg.num_r_joints = 0;
-        msg.num_l_joints = 0;
-        if(msg.grasp_type == msg.SANDIA_LEFT || msg.grasp_type == msg.SANDIA_BOTH 
-          || msg.grasp_type == msg.IROBOT_LEFT || msg.grasp_type == msg.IROBOT_BOTH){
-          msg.num_l_joints = list[i].joint_positions.size();
-          msg.l_hand_pose = pose;
-          msg.l_joint_name = list[i].joint_names;
-          msg.l_joint_position = list[i].joint_positions;
-        }else if(msg.grasp_type == msg.SANDIA_RIGHT || msg.grasp_type == msg.SANDIA_BOTH 
-          || msg.grasp_type == msg.IROBOT_RIGHT || msg.grasp_type == msg.IROBOT_BOTH){
-          msg.num_r_joints = list[i].joint_positions.size();
-          msg.r_hand_pose = pose;
-          msg.r_joint_name = list[i].joint_names;
-          msg.r_joint_position = list[i].joint_positions;
-        }else{
-          cout << "add_new_otdf_object_instance error. grasp_type not recognized: " << msg.grasp_type << endl;
-        }
-        msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
-        _lcm->publish("CANDIDATE_GRASP",&msg);
-      }else  if(list[i].appType == GraspSeed::FOOT){
-
-        std::stringstream objname;
-        objname << aff.otdf_type << "_"<< aff.uid;
-        int uid = _parent_affordance_renderer->free_running_sticky_foot_cnt++;
-        double*xyz = list[i].xyz;
-        KDL::Rotation rot(KDL::Rotation::RPY(list[i].rpy[0],list[i].rpy[1],
-                                             list[i].rpy[2]));
-        KDL::Frame frame(rot, KDL::Vector(xyz[0],xyz[1],xyz[2]));
-        string obj_name = objname.str();
-        _parent_affordance_renderer->candidateFootStepSeedManager->add_or_update_sticky_foot(
-                                 uid,list[i].grasp_type,obj_name,
-                                 list[i].geometry_name,frame,list[i].joint_names,
-                                 list[i].joint_positions);	
-      }else{
-        cout << "render_affordances error.  Unregconized graspseed apptype\n";
-      }
-
-      cout << "Done\n";
-    }
-  }
-
-  //_parent_affordance_reinstance_strucnderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
-  _parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
-  // Update params 
-  
-  //Request redraw
-  bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
-} 
-
-
-// =======================================================================  
-void AffordanceCollectionListener::update_object_instance (const drc::affordance_t &aff)
-{
-
-  std::stringstream oss;
-  oss << aff.otdf_type << "_"<< aff.uid; 
-
-  typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-  object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
-
-  // set non-standard params from affordance message
-   for (size_t i=0; i < (size_t)aff.nparams; i++)
-   {   
-       it->second._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
-   }
-
-  // set standard params from affordance message
-  it->second._otdf_instance->setParam("x",aff.origin_xyz[0]);
-  it->second._otdf_instance->setParam("y",aff.origin_xyz[1]);
-  it->second._otdf_instance->setParam("z",aff.origin_xyz[2]);
-  it->second._otdf_instance->setParam("roll", aff.origin_rpy[0]);
-  it->second._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
-  it->second._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
-       
-  //set All JointStates too.
-  // set non-standard params from affordance message
-   for (size_t i=0; i < (size_t)aff.nstates; i++)
-   {   
-       it->second._otdf_instance->setJointState(aff.state_names[i],aff.states[i],0);   
-   }
-
-    it->second._otdf_instance->update();
-    if(it->second.otdf_instance_viz_object_sync)
-      it->second._gl_object->set_state(it->second._otdf_instance);  
- 
-
-
-
-    //Request redraw
-    bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
- }
- 
 // =======================================================================
 
 

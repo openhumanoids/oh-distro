@@ -20,8 +20,7 @@
 namespace renderer_affordances
 {
 
-  /**Class for keeping track of robot link state / joint angles.
-   The constructor subscribes to MEAS_JOINT_ANGLES and registers a callback*/
+
   class InitGraspOptPublisher
   {
     //--------fields

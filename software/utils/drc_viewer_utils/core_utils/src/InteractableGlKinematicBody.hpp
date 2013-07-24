@@ -261,6 +261,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
     else
      _marker_dir_flip[2] = 1;
    };
+
 };
 
 } // end namespace 

@@ -540,6 +540,17 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   return 1;
 }
 
+static void keyboardSignalCallback(int keyval, bool is_pressed)
+{
+  /*if(is_pressed) 
+  {
+    cout << "RendererRobotPlan::KeyPress Signal Received:  Keyval: " << keyval << endl;
+  }
+  else {
+    cout << "RendererRobotPlan::KeyRelease Signal Received: Keyval: " << keyval << endl;
+  }*/
+}
+
 // ------------------------END Event Handling-------------------------------------------
 
 static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel, 
@@ -609,14 +620,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode)
+setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef)
 {
     RendererRobotPlan *self = (RendererRobotPlan*) calloc (1, sizeof (RendererRobotPlan));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
     
     self->robotPlanListener = boost::shared_ptr<RobotPlanListener>(new RobotPlanListener(self->lcm, 
 					  viewer, operation_mode));
-
+    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
+    
     BotRenderer *renderer = &self->renderer;
 
     renderer->draw = _renderer_draw;

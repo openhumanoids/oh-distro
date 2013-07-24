@@ -1,7 +1,7 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 add_executable(drc-viewer main.cpp udp_util.c RendererGroupUtil.cpp)
 pods_use_pkg_config_packages(drc-viewer 
-	bot2-vis  
+	      bot2-vis  
         bot2-lcmgl-renderer
         bot2-frames-renderers  
         laser-util-renderer
@@ -9,7 +9,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_walking
         multisense-renderer
         octomap-renderer
-	occ-map-renderers
+	      occ-map-renderers
         renderer_maps
         lcmtypes_drc_lcmtypes
         renderer_robot_state

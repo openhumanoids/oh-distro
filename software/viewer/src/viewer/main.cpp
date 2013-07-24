@@ -44,41 +44,79 @@
 #include "udp_util.h"
 #include "RendererGroupUtil.hpp"
 #include <lcmtypes/drc_lcmtypes.h>
+#include <visualization_utils/keyboard_signal_utils.hpp>
 
 using namespace std;
+using namespace visualization_utils;
+
+// NOTE (Sisir, 8th Jul 13): We dont want to have individual keyboard event handlers in renderers
+// as designed in lib-bot as the key events can be non-unique and the key handlers can conflict. 
+// Using boost::signals to create a global keyboard signal. Each renderer creates a corresponding 
+// slot to handle global key events. Using a shared ptr to the boost signal. Renderers that require access
+// to keyboard signals will receive the signal ref as an argument in their setup function.
+KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
 
 static int
 logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
         const GdkEventKey *event)
 {
     int keyval = event->keyval;
-
+    //std::cout << "keyval: " << keyval << "\n";
+    
+    // emit global keyboard signal, second argument indicates that it is a keypress (if true)
+    (*_keyboardSignalRef)(keyval,true); 
+    
     switch (keyval)
     {
-    case 'P':
-    case 'p':
-        udp_send_string("127.0.0.1", 53261, "PLAYPAUSETOGGLE");
-        break;
-    case 'N':
-    case 'n':
-        udp_send_string("127.0.0.1", 53261, "STEP");
-        break;
-    case '=':
-    case '+':
-        udp_send_string("127.0.0.1", 53261, "FASTER");
-        break;
-    case '_':
-    case '-':
-        udp_send_string("127.0.0.1", 53261, "SLOWER");
-        break;
-    case '[':
-        udp_send_string("127.0.0.1", 53261, "BACK5");
-        break;
-    case ']':
-        udp_send_string("127.0.0.1", 53261, "FORWARD5");
-        break;
-    default:
-        return 0;
+      case 'P':
+      case 'p':
+          udp_send_string("127.0.0.1", 53261, "PLAYPAUSETOGGLE");
+          break;
+      case 'N':
+      case 'n':
+          udp_send_string("127.0.0.1", 53261, "STEP");
+          break;
+      case '=':
+      case '+':
+          udp_send_string("127.0.0.1", 53261, "FASTER");
+          break;
+      case '_':
+      case '-':
+          udp_send_string("127.0.0.1", 53261, "SLOWER");
+          break;
+      case '[':
+          udp_send_string("127.0.0.1", 53261, "BACK5");
+          break;
+      case ']':
+          udp_send_string("127.0.0.1", 53261, "FORWARD5");
+          break;
+      case SHIFT_L:
+      case SHIFT_R:
+          //std::cout << "shift pressed\n";
+          break;
+      default:
+          return 0;
+    }
+
+    return 1;
+}
+
+static int
+on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
+        const GdkEventKey *event)
+{
+    int keyval = event->keyval;
+    // emit global keyboard signal, second argument indicates that it is a keyrelease (if false)
+    (*_keyboardSignalRef)(keyval,false); // emit global keyboard signal
+    
+    switch (keyval)
+    {
+      case SHIFT_L:
+      case SHIFT_R:
+          //std::cout << "shift released\n";
+          break;
+      default:
+          return 0;
     }
 
     return 1;
@@ -308,7 +346,6 @@ int main(int argc, char *argv[])
   gtk_init(&argc, &argv);
   glutInit(&argc, argv);
   g_thread_init(NULL);
-
   
   string lcm_url="";
   std::string role_upper;
@@ -364,6 +401,7 @@ int main(int argc, char *argv[])
   ehandler->name = "LogPlayer Remote";
   ehandler->enabled = 1;
   ehandler->key_press = logplayer_remote_on_key_press;
+  ehandler->key_release = on_key_release;
   bot_viewer_add_event_handler(viewer, ehandler, 0);
 
   // core renderers
@@ -378,17 +416,17 @@ int main(int argc, char *argv[])
 //  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
-  setup_renderer_affordances(viewer, 0, lcm, bot_frames);
+  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef);
   setup_renderer_robot_state(viewer, 0, lcm,0);
-  setup_renderer_robot_plan(viewer, 0, lcm, 0);
+  setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   // Renderers for Testing Loopback Quality:
   if (network_debug == 1){    
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1); // committed
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,2); // loopback
   }else if ( network_debug == 2) { /// DONT RUN THIS WHEN WALKING AS ALL THE PLANS CRASH THE VIEWER:
-    setup_renderer_robot_plan(viewer, 0, lcm, 1);
-    setup_renderer_robot_plan(viewer, 0, lcm, 2);
+    setup_renderer_robot_plan(viewer, 0, lcm, 1,_keyboardSignalRef);
+    setup_renderer_robot_plan(viewer, 0, lcm, 2,_keyboardSignalRef);
   }else if ( network_debug == 3) {
     setup_renderer_robot_state(viewer, 0, lcm, 1);
     // only one debg version needed

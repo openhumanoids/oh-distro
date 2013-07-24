@@ -7,10 +7,10 @@ void renderer_affordances_gui_utils::store_sticky_hand(BotGtkParamWidget *pw, co
   RendererAffordances *self = (RendererAffordances*) user;
 
   typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-  sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+  sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
 
   typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-  object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
+  object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
 
   // get otdf name
   std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
@@ -37,10 +37,10 @@ void renderer_affordances_gui_utils::store_sticky_feet(BotGtkParamWidget *pw, co
   RendererAffordances *self = (RendererAffordances*) user;
 
   typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-  sticky_feet_map_type_::iterator feet_it = self->sticky_feet.find(self->stickyfoot_selection);
+  sticky_feet_map_type_::iterator feet_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
 
   typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-  object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(feet_it->second.object_name));
+  object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(feet_it->second.object_name));
 
   // get otdf name
   std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 

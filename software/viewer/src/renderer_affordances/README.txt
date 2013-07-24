@@ -1,4 +1,4 @@
-Some notes on STRUCTURE & FUNCTION of the Affordance renderer
+Some notes on CODE DESIGN STRUCTURE and FUNCTION of the Affordance renderer
 ---------------------------------------------------------------
 FUNCTION
 =========
@@ -7,17 +7,14 @@ The affordance renderer's primary function is to render otdf object instances an
 The renderer currently performances the following functions
  1) Listens to `affordance_state_t' and `affordance_collection_t' msgs, creates object instances and renders them.
  
- 2) Can create and manage its own cache of object instances fused with the affordance msgs coming in from outside.
-    - TODO: there needs to be synchronization with the affordance store process. In case the viewer crashes, we won't loose everything. 
+ 2) Can create and manage its own cache of object instances fused with the affordance msgs coming in from outside. The cache is synchronized with the affordance store process. In case the viewer crashes, we won't loose the affordances. 
     
- 3) Maintains a local cache of list of sticky hands that associated with objects. 
-    - TODO: this also needs to synchronized with a sticky hand store or affordance store processes
-
+ 3) Maintains a local cache of list of sticky hands and feet that are associated with objects. 
 
 STRUCTURE
 ==========
 ----------------------------------------------------------------------------------
-Parasite model (`Agnostic features' model may be a better name, but it is boring) 
+Host-Parasite model 
 ----------------------------------------------------------------------------------
 Description:
 ------------
@@ -33,4 +30,5 @@ Notes:
 
 
 Sisir
-8th January 2013
+Created: 8th January 2013
+Last Updated: 14th July 2013

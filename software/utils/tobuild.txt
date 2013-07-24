@@ -8,5 +8,4 @@ opengl
 state
 interface
 qt4
-visualization_utils
-
+drc_viewer_utils

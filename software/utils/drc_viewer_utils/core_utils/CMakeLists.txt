@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.6.0)
 
 # pull in the pods macros. See cmake/pods.cmake for documentation
-set(POD_NAME visualization_utils)
+set(POD_NAME core_utils)
 include(cmake/pods.cmake)
 
 
-FILE(GLOB INTERACTABLE_KINEMATIC_BODY_HDRS src/[^.]*.hpp)
-pods_install_headers(${INTERACTABLE_KINEMATIC_BODY_HDRS} DESTINATION visualization_utils)
+FILE(GLOB CORE_UTILS_HDRS src/[^.]*.hpp)
+pods_install_headers(${CORE_UTILS_HDRS} DESTINATION visualization_utils)
                
 # create an executable, and make it public
 add_library(visualization-utils SHARED  src/GlKinematicBody.cpp src/InteractableGlKinematicBody.cpp) # 

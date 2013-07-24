@@ -33,17 +33,17 @@ namespace renderer_affordances_gui_utils
         RendererAffordances *self = (RendererAffordances*) user;
         //    string instance_name=  (self->instance_selection_ptr);
         //    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        //    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        //    object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     
         typedef map<string, double > params_mapType;
         //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
         for( params_mapType::const_iterator it2 = self->otdf_instance_hold._otdf_instance->params_map_.begin(); it2!=self->otdf_instance_hold._otdf_instance->params_map_.end(); it2++) 
-            { 
-                double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
-                //cout << it->first << ": " << t << endl;
-                //it->second._otdf_instance->setParam(it2->first, t);
-                self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
-            }
+        { 
+            double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
+            //cout << it->first << ": " << t << endl;
+            //it->second._otdf_instance->setParam(it2->first, t);
+            self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
+        }
         // regen kdl::tree and reset fksolver
         // regen link tfs and shapes for display
         //update_OtdfInstanceStruc(it->second);
@@ -53,7 +53,7 @@ namespace renderer_affordances_gui_utils
    
         //was AFFORDANCE_FIT
         //string otdf_type = string(self->otdf_instance_hold.otdf_type);
-        publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+        self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
         bot_viewer_request_redraw(self->viewer);
     }  
     //------------------
@@ -63,19 +63,19 @@ namespace renderer_affordances_gui_utils
         RendererAffordances *self = (RendererAffordances*) user;
         //    string instance_name=  (self->instance_selection_ptr);
         //    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        //    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        //    object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     
         typedef map<string, double > params_mapType;
         //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
         for( params_mapType::const_iterator it2 = self->otdf_instance_hold._otdf_instance->params_map_.begin(); it2!=self->otdf_instance_hold._otdf_instance->params_map_.end(); it2++)
-            { 
-                if(!strcmp(name, it2->first.c_str())) {
-                    double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
-                    //cout << it->first << ": " << t << endl;
-                    //it->second._otdf_instance->setParam(it2->first, t);
-                    self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
-                }
+        { 
+            if(!strcmp(name, it2->first.c_str())) {
+                double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
+                //cout << it->first << ": " << t << endl;
+                //it->second._otdf_instance->setParam(it2->first, t);
+                self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
             }
+        }
     
         self->otdf_instance_hold._otdf_instance->update(); //update_OtdfInstanceStruc(it->second);
         self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
@@ -89,7 +89,7 @@ namespace renderer_affordances_gui_utils
     {
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
-        publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+        self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
         self->selection_hold_on=false;
         bot_viewer_request_redraw(self->viewer);
   
@@ -125,7 +125,7 @@ namespace renderer_affordances_gui_utils
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     
         self->popup_widget_name_list.clear();
         it->second._gl_object->set_future_state_changing(false);
@@ -143,135 +143,22 @@ namespace renderer_affordances_gui_utils
 
         self->ee_frames_map.clear();
         self->ee_frame_affindices_map.clear();
+        // get ee dof range constraints for associated sticky hands and feet
+        string aff_name=it->first;
+        self->stickyHandCollection->get_aff_indexed_ee_constraints(aff_name,it->second,self->dofRangeFkQueryHandler,self->ee_frames_map,self->ee_frame_affindices_map);
+        self->stickyFootCollection->get_aff_indexed_ee_constraints(aff_name,it->second,self->dofRangeFkQueryHandler,self->ee_frames_map,self->ee_frame_affindices_map);
 
-        // Publish EE Range goals for associated sticky hands 
-        typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-        for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++) {
-            string host_name = hand_it->second.object_name;
-            if (host_name == (it->first)) {
-                
-                string ee_name;
-                if(hand_it->second.hand_type==0)
-                    ee_name ="left_palm";    
-                else if(hand_it->second.hand_type==1)   
-                    ee_name ="right_palm";    
-                else
-                    cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
-                
-                // if ee_name already exists in ee_frames_map, redundant ee_frames
-                // e.g two right sticky hands on the same object.
-                map<string, vector<KDL::Frame> >::const_iterator ee_it = self->ee_frames_map.find(ee_name);
-                if(ee_it!=self->ee_frames_map.end()){
-                    cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
-                    return;   
-                }
-                
-                KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
-                if(!hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_ee))
-                    cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-                
-                
-                vector<KDL::Frame> T_world_geometry_frames;        
-                string seed_geometry_name = hand_it->second.geometry_name;
-                self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
-                std::string dof_name;
-                vector<double> dof_values;  
-                bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
-                
-                // dof range was set
-                if(isdofset) {
-                    int num_of_incs = T_world_geometry_frames.size();
-                    vector<KDL::Frame> T_world_ee_frames;
-                    vector<drc::affordance_index_t> frame_affindices;
-                    for(size_t i=0;i<(size_t)num_of_incs;i++) {
-                        KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-                        T_world_ee_frames.push_back(T_world_ee);
-                        drc::affordance_index_t aff_index;
-                        aff_index.utime=(int64_t)i;
-                        aff_index.aff_type = it->second.otdf_type; 
-                        aff_index.aff_uid = it->second.uid;   
-                        aff_index.num_ees = 1;  
-                        aff_index.ee_name.push_back(ee_name); 
-                        aff_index.dof_name.push_back(dof_name);     
-                        aff_index.dof_value.push_back(dof_values[i]); 
-                        
-                        frame_affindices.push_back(aff_index);
-                    } 
-                    self->ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-                    self->ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));   
-                }// ebd if dofset
-            } // end if (host_name == (it->first))
-        }// end for sticky hands
-        
-        // Publish EE Range goals for associated stick feet 
-        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
-        for(sticky_feet_map_type_::const_iterator foot_it = self->sticky_feet.begin(); foot_it!=self->sticky_feet.end(); foot_it++) {
-            string host_name = foot_it->second.object_name;
-            if (host_name == (it->first)) {
-                
-                string ee_name;
-                if(foot_it->second.foot_type==0)
-                    ee_name ="l_foot";    
-                else if(foot_it->second.foot_type==1)   
-                    ee_name ="r_foot";    
-                else
-                    cout << "unknown foot_type in on_otdf_dof_range_widget_popup_close\n";  
-                
-                // if ee_name already exists in ee_frames_map, redundant ee_frames
-                // e.g two right sticky hands on the same object.
-                map<string, vector<KDL::Frame> >::const_iterator ee_it = self->ee_frames_map.find(ee_name);
-                if(ee_it!=self->ee_frames_map.end()){
-                    cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
-                    return;   
-                }      
-                
-                KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
-                if(!foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_ee))
-                    cout <<"ERROR: ee link "<< ee_name << " not found in sticky foot urdf"<< endl;
-                
-                
-                vector<KDL::Frame> T_world_geometry_frames;
-                string seed_geometry_name = foot_it->second.geometry_name;
-                self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
-                std::string dof_name;
-                vector<double> dof_values;  
-                bool isdofset = self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
-                if(isdofset) { // dof range was set
-                    int num_of_incs = T_world_geometry_frames.size();
-                    vector<KDL::Frame> T_world_ee_frames;
-                    vector<drc::affordance_index_t> frame_affindices;
-                    for(size_t i=0;i<(size_t)num_of_incs;i++){
-                        KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-                        T_world_ee_frames.push_back(T_world_ee);
-                        
-                        drc::affordance_index_t aff_index;
-                        aff_index.utime=(int64_t)i;
-                        aff_index.aff_type = it->second.otdf_type; 
-                        aff_index.aff_uid = it->second.uid; 
-                        aff_index.num_ees =1; 
-                        aff_index.ee_name.push_back(ee_name); 
-                        aff_index.dof_name.push_back(dof_name);     
-                        aff_index.dof_value.push_back(dof_values[i]); 
-                        frame_affindices.push_back(aff_index);
-                    } 
-                    
-                    self->ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-                    self->ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices)); 
-                } // end if isdofset  
-            } // end if (host_name == (it->first))
-        } // end sticky feet
-      
         string channel  = "DESIRED_MANIP_MAP_EE_LOCI"; 
         publish_aff_indexed_traj_opt_constraint(channel, self->ee_frames_map, self->ee_frame_affindices_map, self);
-    
     }
+    
     //------------------------------------------------------------------    
     static void on_otdf_manip_map_dof_range_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         string instance_name=  self->instance_selection;
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     
         // get desired dof ranges from popup sliders
 
@@ -374,7 +261,7 @@ namespace renderer_affordances_gui_utils
 
         string instance_name=  self->instance_selection;
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
 
         for(vector<string>::const_iterator it2 = it->second._otdf_instance->params_order_.begin(); it2 != it->second._otdf_instance->params_order_.end(); ++it2) 
             {
@@ -395,8 +282,8 @@ namespace renderer_affordances_gui_utils
             self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
             self->otdf_instance_hold._gl_object.reset();
             self->otdf_instance_hold._collision_detector.reset();
-            self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
-            self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+            self->otdf_instance_hold._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());     
+            self->otdf_instance_hold._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
             self->otdf_instance_hold._otdf_instance->update();
             self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
             self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
@@ -451,9 +338,9 @@ namespace renderer_affordances_gui_utils
         string instance_name=  self->instance_selection;
 
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
 
-        // Need tarcked joint positions of all objects.
+        // Need tracked joint positions of all objects.
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
         for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
             // Skip certain joints
@@ -511,8 +398,8 @@ namespace renderer_affordances_gui_utils
             self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
             self->otdf_instance_hold._gl_object.reset();
             self->otdf_instance_hold._collision_detector.reset();
-            self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
-            self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+            self->otdf_instance_hold._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());     
+            self->otdf_instance_hold._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
             self->otdf_instance_hold._otdf_instance->update();
             self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
             self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
@@ -569,7 +456,7 @@ namespace renderer_affordances_gui_utils
         //self->popup_widget_name_list.clear(); 
 
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+        object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
 
         // Need tracked joint positions of all objects.
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
@@ -718,15 +605,14 @@ namespace renderer_affordances_gui_utils
         }
         else if(!strcmp(name,PARAM_OTDF_FLIP_PITCH)) {
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator it = self->instantiated_objects.find(string(instance_name));
-          if(it!=self->instantiated_objects.end()){
+          object_instance_map_type_::iterator it = self->affCollection->_objects.find(string(instance_name));
+          if(it!=self->affCollection->_objects.end()){
             double p = it->second._otdf_instance->getParam("pitch");
             p = (p>0)?(p-M_PI):(p+M_PI); // flip 180
             it->second._otdf_instance->setParam("pitch", p);
             it->second._otdf_instance->update(); //update_OtdfInstanceStruc(it->second);
             it->second._gl_object->set_state(it->second._otdf_instance);
-            publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(it->second.otdf_type),
-                it->second.uid,it->second._otdf_instance,self); 
+            self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(it->second.otdf_type),it->second.uid,it->second._otdf_instance); 
             bot_viewer_request_redraw(self->viewer);// gives realtime feedback of the geometry changing.
           }else cout << "Can't find: " << name << endl;
 
@@ -735,48 +621,73 @@ namespace renderer_affordances_gui_utils
             fprintf(stderr,"\nClearing Selected Instance\n");
         
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-            object_instance_map_type_::iterator it = self->instantiated_objects.find(string(instance_name));
+            object_instance_map_type_::iterator it = self->affCollection->_objects.find(string(instance_name));
       
-            if(it!=self->instantiated_objects.end())
+            if(it!=self->affCollection->_objects.end())
+            {
+                self->affCollection->delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid);
+
+                self->affCollection->_objects.erase(it);
+                if(self->object_selection==string(instance_name))
                 {
-                    delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid, self);
+                    self->link_selection = " ";
+                    self->object_selection = " ";
+                }  
 
-                    self->instantiated_objects.erase(it);
-                    if(self->object_selection==string(instance_name))
+                typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+   
+                sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+                while (hand_it!=self->stickyHandCollection->_hands.end()) {
+                    string hand_name = string(hand_it->second.object_name);
+                    if (hand_name == string(instance_name))
+                    {
+                        if(self->stickyhand_selection==hand_it->first){
+							self->seedSelectionManager->remove(self->stickyhand_selection);
+                            self->stickyhand_selection = " ";
+                            
+                        }
+                        self->stickyHandCollection->_hands.erase(hand_it++);
+                    }
+                    else
+                        hand_it++;
+                } 
+
+                typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+   
+                sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+                while (foot_it!=self->stickyFootCollection->_feet.end()) {
+                    string foot_name = string(foot_it->second.object_name);
+                    if (foot_name == string(instance_name))
+                    {
+                        if(self->stickyfoot_selection==foot_it->first)
                         {
-                            self->link_selection = " ";
-                            self->object_selection = " ";
-                        }  
+						 self->seedSelectionManager->remove(self->stickyfoot_selection);                            
+						 self->stickyfoot_selection = " ";
+                           
+                        }
+                        self->stickyFootCollection->_feet.erase(foot_it++);
+                    }
+                    else
+                        foot_it++;
+                } 
 
-                    typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-       
-                    sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-                    while (hand_it!=self->sticky_hands.end()) {
-                        string hand_name = string(hand_it->second.object_name);
-                        if (hand_name == string(instance_name))
-                            {
-                                if(self->stickyhand_selection==hand_it->first)
-                                    self->stickyhand_selection = " ";
-                                self->sticky_hands.erase(hand_it++);
-                            }
-                        else
-                            hand_it++;
-                    } 
-
-                    bot_viewer_request_redraw(self->viewer);
-                }
+                bot_viewer_request_redraw(self->viewer);
+            }
         }
         else if(!strcmp(name,PARAM_OTDF_INSTANCE_CLEAR_ALL)) {
             fprintf(stderr,"\nClearing Instantiated Objects\n");
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-            self->instantiated_objects.clear();
-            self->sticky_hands.clear();
+            self->affCollection->_objects.clear();
+            self->stickyHandCollection->_hands.clear();
             for( map<string,int >::iterator it = self->instance_cnt.begin(); it!=self->instance_cnt.end(); it++) { 
                 it->second = 0;
             }
             self->link_selection = " ";
             self->object_selection = " ";
             self->stickyhand_selection = " ";
+            self->stickyfoot_selection = " ";
+            self->seedSelectionManager->clear();
+            
             bot_viewer_request_redraw(self->viewer);
         }
     }
@@ -805,14 +716,14 @@ namespace renderer_affordances_gui_utils
         char ** otdf_instance_names;
         int * otdf_instance_nums;
 
-        if( self->instantiated_objects.size() > 0) {
-            num_otdf_instances = self->instantiated_objects.size();
+        if( self->affCollection->_objects.size() > 0) {
+            num_otdf_instances = self->affCollection->_objects.size();
             otdf_instance_names =(char **) calloc(num_otdf_instances, sizeof(char *));
             otdf_instance_nums = (int *)calloc(num_otdf_instances, sizeof(int));
             
             unsigned int i = 0;  
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-            for( object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++) { 
+            for( object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++) { 
                 string instance_name = it->first;
                 otdf_instance_names[i] = (char *) instance_name.c_str();
                 otdf_instance_nums[i] =i;
@@ -837,7 +748,7 @@ namespace renderer_affordances_gui_utils
                                         (const char **)  otdf_instance_names,
                                         otdf_instance_nums);
 
-        if( self->instantiated_objects.size() > 0) {
+        if( self->affCollection->_objects.size() > 0) {
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL);
                 bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_FLIP_PITCH, NULL);

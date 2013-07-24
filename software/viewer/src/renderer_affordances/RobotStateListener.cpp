@@ -115,7 +115,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       cout<< "\nReceived urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << endl;
     
-      _gl_robot = shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(_urdf_xml_string));
+      _gl_robot = boost::shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(_urdf_xml_string));
 
       //remember that we've parsed the urdf already
       _urdf_parsed = true;
@@ -126,13 +126,13 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   void RobotStateListener::updateGraspedObjectPosesViaFK(void)
   {
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = _parent_renderer->sticky_hands.begin();
-      while (hand_it!=_parent_renderer->sticky_hands.end()) 
+      sticky_hands_map_type_::iterator hand_it = _parent_renderer->stickyHandCollection->_hands.begin();
+      while (hand_it!=_parent_renderer->stickyHandCollection->_hands.end()) 
       {
          std::string hand_name = std::string(hand_it->second.object_name);
          
          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-         object_instance_map_type_::iterator obj_it = _parent_renderer->instantiated_objects.find(string(hand_it->second.object_name));
+         object_instance_map_type_::iterator obj_it = _parent_renderer->affCollection->_objects.find(string(hand_it->second.object_name));
          if((hand_it->second.is_melded)&&(obj_it->second.is_melded))
          {
             KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase,T_world_hand; 
@@ -166,7 +166,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
               KDL::Frame T_world_object_new = T_world_hand*T_hand_geometry*T_geometry_object; 
               // cant set state directly interferes with affordance server
               //obj_it->second._gl_object->set_state(T_world_object_new,obj_it->second._gl_object->_current_jointpos); 
-              update_object_pose_in_affstore("AFFORDANCE_TRACK",(obj_it->second.otdf_type),obj_it->second.uid,obj_it->second._otdf_instance, T_world_object_new,_parent_renderer);
+              _parent_renderer->affCollection->update_object_pose_in_affstore("AFFORDANCE_TRACK",(obj_it->second.otdf_type),obj_it->second.uid,obj_it->second._otdf_instance, T_world_object_new);
             }
             else
             {
@@ -213,7 +213,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
               T_world_mate_end =T_world_mate_end*(T_mateend_jointorigin.Inverse());
 
               KDL::Frame T_mate_start_mate_end = (T_world_mate_start.Inverse())*(T_world_hand*T_hand_geometry*T_world_geometry.Inverse())*T_world_mate_end;
-              update_mate_joints_in_affstore("AFFORDANCE_TRACK",(obj_it->second.otdf_type),obj_it->second.uid,obj_it->second._otdf_instance,T_mate_start_mate_end,_parent_renderer);
+              _parent_renderer->affCollection->update_mate_joints_in_affstore("AFFORDANCE_TRACK",(obj_it->second.otdf_type),obj_it->second.uid,obj_it->second._otdf_instance,T_mate_start_mate_end);
             }
          }
          hand_it++;
