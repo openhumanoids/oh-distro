@@ -26,6 +26,7 @@
 
 //#include <otdf_renderer/renderer_otdf.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
+#include <visualization_utils/keyboard_signal_utils.hpp>
 #include <ConciseArgs>
 
 using namespace surrogate_gui;
@@ -34,6 +35,48 @@ typedef struct {
     BotViewer *viewer;
     lcm_t *lcm;
 } state_t;
+
+// NOTE (Sisir, 8th Jul 13): We dont want to have individual keyboard event handlers in renderers
+// as designed in lib-bot as the key events can be non-unique and the key handlers can conflict. 
+// Using boost::signals to create a global keyboard signal. Each renderer creates a corresponding 
+// slot to handle global key events. Using a shared ptr to the boost signal. Renderers that require access
+// to keyboard signals will receive the signal ref as an argument in their setup function.
+KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
+
+static int
+on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
+        const GdkEventKey *event)
+{
+    int keyval = event->keyval;
+    //std::cout << "keyval: " << keyval << "\n";
+    
+    // emit global keyboard signal, second argument indicates that it is a keypress (if true)
+    (*_keyboardSignalRef)(keyval,true); 
+   
+    return 1;
+}
+
+static int
+on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
+        const GdkEventKey *event)
+{
+    int keyval = event->keyval;
+    // emit global keyboard signal, second argument indicates that it is a keyrelease (if false)
+    (*_keyboardSignalRef)(keyval,false); // emit global keyboard signal
+    
+    switch (keyval)
+    {
+      case SHIFT_L:
+      case SHIFT_R:
+          //std::cout << "shift released\n";
+          break;
+      default:
+          return 0;
+    }
+
+    return 1;
+}
+
 
 /////////////////////////////////////////////////////////////
 
@@ -125,7 +168,17 @@ int main(int argc, char *argv[])
 
     //otdf
     // older: setup_renderer_otdf(viewer, 0, lcmCpp);
-    setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames);
+
+  // logplayer controls
+  BotEventHandler *ehandler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+  ehandler->name = "LogPlayer Remote";
+  ehandler->enabled = 1;
+  ehandler->key_press = on_key_press;
+  ehandler->key_release = on_key_release;
+  bot_viewer_add_event_handler(viewer, ehandler, 0);
+
+ 
+  setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef);
 
     // setup renderers
     drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM());
