@@ -39,6 +39,8 @@ pods_install_headers(renderer_affordances.hpp
   ReachabilityVerifier.hpp
   otdf_instance_management_gui_utils.hpp
   object_interaction_gui_utils.hpp
+  stickyhand_interaction_gui_utils.hpp
+  stickyfoot_interaction_gui_utils.hpp
   lcm_utils.hpp
   DESTINATION renderer_affordances )
 

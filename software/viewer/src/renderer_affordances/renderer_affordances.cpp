@@ -8,6 +8,8 @@
 #include "ReachabilityVerifier.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "object_interaction_gui_utils.hpp"
+#include "stickyhand_interaction_gui_utils.hpp"
+#include "stickyfoot_interaction_gui_utils.hpp"
 #include "lcm_utils.hpp"
 
 #define GEOM_EPSILON 1e-9
@@ -215,7 +217,21 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             }   
  
             hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
-
+            string hand_name = hand_it->first;
+            int order = self->seedSelectionManager->get_selection_order(hand_name);
+            if((order>0)&&(self->seedSelectionManager->get_selection_cnt()>1))
+            {
+            
+                KDL::Frame T_world_hand =  T_world_graspgeometry*hand_it->second._gl_hand->_T_world_body;
+                double pos[3];
+                pos[0] = T_world_hand.p[0]; 
+                pos[1] = T_world_hand.p[1]; 
+                pos[2] = T_world_hand.p[2];  
+                std::stringstream oss;
+                oss << order;
+                glColor4f(0,0,1,1);
+                bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);             
+            }
         }
 
         double alpha2 = 0.3;
@@ -235,55 +251,56 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             // Check reachability w.r.t to current pelvis
             bool reachable;
             if(hand_it->second.hand_type == 1)//SANDIA_LEFT=0, SANDIA_RIGHT=1,
-                {
-                    reachable = true;
-          
-                    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-    
-                    hand_it->second._gl_hand->get_link_future_frame("right_palm",T_geometry_palm);      
-                    KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
-                    KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                    T_hand_palm_r.p[1] = -0.1;
-                    T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
+            {
+                reachable = true;
+      
+                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+
+                hand_it->second._gl_hand->get_link_future_frame("right_palm",T_geometry_palm);      
+                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
+                KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
+                T_hand_palm_r.p[1] = -0.1;
+                T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
 
 
-                    KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
-                    if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
-                    }
-                    if(reachable){
-                        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-                    }
-                    else{
-                        ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                    }
-                }   
-          
+                KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
+                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
+                }
+                if(reachable){
+                    ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+                }
+                else{
+                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+                }
+            }   
+      
             if(hand_it->second.hand_type == 0)
-                {
-                    reachable = true;
-          
-                    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                    hand_it->second._gl_hand->get_link_future_frame("left_palm",T_geometry_palm);
-           
-                    KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
-          
-                    KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                    T_hand_palm_l.p[1] = 0.1;
-                    T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
+            {
+                reachable = true;
+      
+                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+                hand_it->second._gl_hand->get_link_future_frame("left_palm",T_geometry_palm);
+       
+                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
+      
+                KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
+                T_hand_palm_l.p[1] = 0.1;
+                T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
 
-                    KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
-                    if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                        reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
-                    if(reachable){
-                        ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-                    }
-                    else{
-                        ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                    }
-                }   
+                KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
+                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
+                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
+                if(reachable){
+                    ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+                }
+                else{
+                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+                }
+            }   
         
             hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
+
         
             KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
             KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
@@ -351,7 +368,21 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             }   
         
             foot_it->second._gl_foot->draw_body_in_frame (ch,alpha,T_world_geometry);//draws in geometry frame
-
+            string foot_name = foot_it->first;
+            int order = self->seedSelectionManager->get_selection_order(foot_name);
+            if((order>0)&&(self->seedSelectionManager->get_selection_cnt()>1))
+            {
+            
+                KDL::Frame T_world_foot =  T_world_geometry*foot_it->second._gl_foot->_T_world_body;
+                double pos[3];
+                pos[0] = T_world_foot.p[0]; 
+                pos[1] = T_world_foot.p[1]; 
+                pos[2] = T_world_foot.p[2];  
+                std::stringstream oss;
+                oss << order;
+                glColor4f(0,0,1,1);
+                bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);             
+            }
         }
     
         double alpha2 =  0.3;
@@ -530,27 +561,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
 static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
 {
     RendererAffordances *self = (RendererAffordances*) ehandler->user;
-    //loop through object list and clear old selections.
-    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++)
-    {
-        if(it->second._gl_object) // to make sure that _gl_object is initialized 
-        {
-            string no_selection = " ";
-            it->second._gl_object->highlight_link(no_selection); 
-            it->second._gl_object->highlight_marker(no_selection); 
-        }
-    }// end for
-
-    //loop through stick-hands list and clear older Selections
-    typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-    for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
-    {
-        string no_selection = " ";
-        it->second._gl_hand->highlight_link(no_selection);
-        it->second._gl_hand->highlight_marker(no_selection);  
-    }// end for  
-    
+   
     //std::cout << "Aff ehandler->picking " << ehandler->picking << std::endl;
     if((ehandler->picking==0)||(self->selection_enabled==0)){     
         return 0;
@@ -568,23 +579,25 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     if(self->stickyhand_selection!=" "){
         typedef map<string, StickyHandStruc > sticky_hands_map_type_;
         sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
-        hand_it->second._gl_hand->enable_whole_body_selection(true); 
-        hand_it->second._gl_hand->highlight_link(self->stickyhand_selection);
+        //hand_it->second._gl_hand->enable_whole_body_selection(true); 
+        //hand_it->second._gl_hand->highlight_link(self->stickyhand_selection);
         cout << "intersected stickyhand:" << (self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyhand_selection);
+        self->stickyHandCollection->highlight_selected(self->seedSelectionManager);
     }
     else if(self->stickyfoot_selection!=" "){
         
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
         sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
-        foot_it->second._gl_foot->enable_whole_body_selection(true); 
-        foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
+        //foot_it->second._gl_foot->enable_whole_body_selection(true); 
+        //foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
         cout << "intersected stickyfoot:" << self->stickyfoot_selection << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyfoot_selection);
+        self->stickyFootCollection->highlight_selected(self->seedSelectionManager);
     }
     else if(self->object_selection!=" "){
       self->seedSelectionManager->clear();
-       // NOTE: cannot use self->object_selection affCollection if selection hold is on;
+       // NOTE: cannot use self->object_selection affCollection if selection hold is on;      
       object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(self->object_selection);
       if((self->marker_selection!=" ")&&(!self->selection_hold_on)) {
           obj_it->second._gl_object->highlight_marker(self->marker_selection);

@@ -811,7 +811,9 @@ struct RendererAffordances {
     self->stickyhand_selection  = " ";
     self->stickyfoot_selection  = " ";
     self->marker_selection = " ";
-    
+    self->affCollection->clear_highlights();
+    self->stickyHandCollection->clear_highlights();
+    self->stickyFootCollection->clear_highlights();
     if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
     {
      //if marker based adjustment is enabled
@@ -848,12 +850,7 @@ struct RendererAffordances {
               self->marker_selection  = string(intersected_object->id().c_str());
              }
         }
-        else {
-        // clear previous selections
-         string no_selection = " ";
-         self->otdf_instance_hold._gl_object->highlight_link(no_selection); 
-        }  
-                     
+                           
       }// end if(...is_bodypose_adjustment_enabled)||...->is_jointdof_adjustment_enabled))
 
     }// end if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on))
@@ -902,21 +899,12 @@ struct RendererAffordances {
                 self->marker_selection  = string(intersected_object->id().c_str());
                }
           }
-          else {
-          // clear previous selections
-           string no_selection = " ";
-           it->second._gl_object->highlight_link(no_selection); 
-          }  
-                       
+                        
         }
 
 
-  /*if(!(it->second._gl_object->is_jointdof_adjustment_enabled()))
-  {*/
-       //it->second._gl_object->_collision_detector->num_collisions();
+
          it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
-        //it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
-               
         // Highlight all objects that intersect with ray
         if(intersected_object != NULL ){
               self->ray_hit = hit_pt;
@@ -951,17 +939,10 @@ struct RendererAffordances {
 
               intersected_object = NULL;  
         }
-        else {
-        // clear previous selections
-         string no_selection = " ";
-         it->second._gl_object->highlight_link(no_selection); 
-        }  
-                
+   
       }// end if object exists
     }// end for
 
-  //}
-  
    //loop through stick-feet list and check if ray intersect any of them.
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
     for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
@@ -1009,18 +990,11 @@ struct RendererAffordances {
    
                 intersected_object = NULL;
               }
-              else {
-                // clear previous selections
-                string no_selection = " ";
-                it->second._gl_foot->highlight_link(no_selection); 
-                it->second._gl_foot->highlight_marker(no_selection);
-              }
-        
+          
          }// end if
     
     }// end for   
     
-  
 
     //loop through stick-hands list and check if ray intersect any of them.
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
@@ -1067,18 +1041,10 @@ struct RendererAffordances {
    
                 intersected_object = NULL;
               }
-              else {
-                // clear previous selections
-                string no_selection = " ";
-                it->second._gl_hand->highlight_link(no_selection); 
-                it->second._gl_hand->highlight_marker(no_selection);
-              }
         
          }// end if
     
     }// end for
-    
-
     
     self->prev_ray_hit_drag = self->ray_hit_drag;
     return shortest_distance;
