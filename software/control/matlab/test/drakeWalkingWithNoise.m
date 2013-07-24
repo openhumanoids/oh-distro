@@ -23,8 +23,8 @@ v.display_dt = 0.05;
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
-options.inertia_noise = 0.1; % standard deviation for inertia noise (percentage of true inertia)
-options.damping_noise = 0.1; % standard deviation for damping noise (percentage of true joint damping)
+options.inertia_error = 0.1; % standard deviation for inertia noise (percentage of true inertia)
+options.damping_error = 0.1; % standard deviation for damping noise (percentage of true joint damping)
 % ******************* END ADJUSTABLE **************************************
 
 rctrl = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
