@@ -46,7 +46,6 @@ classdef DelayBlock < DrakeSystem
         obj = setOutputFrame(obj,getStateFrame(robot));
       end
       
-      obj.robot = robot;
       obj.delay_steps = delay_steps;
       obj.nd = nd;
     end
@@ -67,8 +66,7 @@ classdef DelayBlock < DrakeSystem
   end
   
   properties
-    robot
-    delay_steps
-    nd
+    delay_steps;
+    nd;
   end
 end

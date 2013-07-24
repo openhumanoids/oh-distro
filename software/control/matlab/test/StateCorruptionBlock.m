@@ -126,8 +126,6 @@ end
 
 
 
-
-
 %% DEHANN'S CLASS:
 %
 % classdef StateCorrupter < DrakeSystem
