@@ -552,4 +552,27 @@ void StickyhandCollectionManager::get_aff_indexed_ee_constraints(string& object_
 } // end method
 
 //-------------------------------------------------------------------------------------------
- 
+void StickyhandCollectionManager::clear_highlights()
+{
+  for(sticky_hands_map_type_::iterator it = _hands.begin(); it!=_hands.end(); it++)
+  {
+      string no_selection = " ";
+        it->second._gl_hand->highlight_link(no_selection); // clear selection if not part of selection manager
+        it->second._gl_hand->highlight_marker(no_selection);  
+  }// end for 
+} 
+//-------------------------------------------------------------------------------------------
+
+void StickyhandCollectionManager::highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager)
+{
+ for(sticky_hands_map_type_::iterator it = _hands.begin(); it!=_hands.end(); it++)
+  {
+      string no_selection = " ";
+      string id = it->first;
+      if(selectionManager->is_selected(id)){
+        it->second._gl_hand->enable_whole_body_selection(true); 
+        it->second._gl_hand->highlight_link(id); // clear selection if not part of selection manager
+        
+      }
+  }// end for 
+}

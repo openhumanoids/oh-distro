@@ -568,5 +568,18 @@ void AffordanceCollectionManager::delete_otdf_from_affstore(string channel, stri
   } 
  //-------------------------------------------------------------------------------------------   
 
+  void AffordanceCollectionManager::clear_highlights()
+  {
+       
+       for(object_instance_map_type_::const_iterator it = _objects.begin(); it!=_objects.end(); it++)
+        {
+            if(it->second._gl_object) // to make sure that _gl_object is initialized 
+            {
+                string no_selection = " ";
+                it->second._gl_object->highlight_link(no_selection); 
+                it->second._gl_object->highlight_marker(no_selection); 
+            }
+        }// end for
+  }
 
-  
+//--------------------------------------------------------------------------------- 

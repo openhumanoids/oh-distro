@@ -4,7 +4,7 @@
 
 #include "sticky_hand_utils.hpp"
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
-
+#include <visualization_utils/SelectionManager.hpp>
 using namespace std;
 
 namespace visualization_utils
@@ -51,7 +51,11 @@ namespace visualization_utils
       void get_aff_indexed_ee_constraints(string& object_name,OtdfInstanceStruc& obj,
                                           boost::shared_ptr<visualization_utils::BatchFKQueryHandler>  &dofRangeFkQueryHandler,
                                           map<string, vector<KDL::Frame> > &ee_frames_map,
-                                          map<string, vector<drc::affordance_index_t> > &ee_frame_affindices_map);                                                  
+                                          map<string, vector<drc::affordance_index_t> > &ee_frame_affindices_map); 
+                                          
+      
+      void clear_highlights();
+      void highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);                                                                          
     private:	
       boost::shared_ptr<lcm::LCM> _lcm;
       std::string _urdf_dir_name;

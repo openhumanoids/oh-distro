@@ -4,6 +4,7 @@
 
 #include "sticky_foot_utils.hpp"
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
+#include <visualization_utils/SelectionManager.hpp>
 using namespace std;
 
 namespace visualization_utils
@@ -59,7 +60,9 @@ namespace visualization_utils
     // Seeds foot given normal at point of dbl click. Drag direction gives foot direction.
     // Foot frame Z direction should point towards normal.  
     void seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal);
-                                
+      
+    void clear_highlights();
+    void highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);                                
   private:	      
     boost::shared_ptr<lcm::LCM> _lcm;
     bool load_foot_urdfs();

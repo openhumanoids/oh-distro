@@ -135,7 +135,7 @@ namespace visualization_utils
           if(found != _selection_history.end())
           {
             int index  = (found - _selection_history.begin());
-            return index;
+            return index+1;
           }
           return -1;
         };

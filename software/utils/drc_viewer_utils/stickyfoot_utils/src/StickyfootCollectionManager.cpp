@@ -470,3 +470,27 @@ void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &
 
     add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name, T_objectgeometry_foot,joint_names,joint_positions);	
 }    
+//---------------------------------------------------------------------------------
+void StickyfootCollectionManager::clear_highlights()
+{
+  for(sticky_feet_map_type_::iterator it = _feet.begin(); it!=_feet.end(); it++)
+  {
+      string no_selection = " ";
+        it->second._gl_foot->highlight_link(no_selection); // clear selection if not part of selection manager
+        it->second._gl_foot->highlight_marker(no_selection);  
+  }// end for 
+}
+//-------------------------------------------------------------------------------------------
+
+void StickyfootCollectionManager::highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager)
+{
+ for(sticky_feet_map_type_::iterator it = _feet.begin(); it!=_feet.end(); it++)
+  {
+      string no_selection = " ";
+      string id = it->first;
+      if(selectionManager->is_selected(id)){
+        it->second._gl_foot->enable_whole_body_selection(true); 
+        it->second._gl_foot->highlight_link(id); // clear selection if not part of selection manager
+      }
+  }// end for 
+}

@@ -7,7 +7,7 @@ using namespace std;
 
 namespace visualization_utils
 {
-
+  typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
   // wraps aff store messaging and the cache of affordances
   class AffordanceCollectionManager 
   {
@@ -28,11 +28,11 @@ namespace visualization_utils
      std::map<std::string, int > _instance_cnt;
      std::map<std::string, OtdfInstanceStruc> _objects; // pass a reference from construction?
      
-     // creation methods
+     //  methods
     bool add(std::string &filename, const drc::affordance_t &aff, OtdfInstanceStruc &instance_struc);
     void update(const drc::affordance_t &aff);
     void create(std::string &filename, bool local_testing);
-   
+    void clear_highlights();
 
     private:
       boost::shared_ptr<lcm::LCM> _lcm;
