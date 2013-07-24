@@ -1,4 +1,5 @@
 function testTerrainMap
+%NOTEST
 
 lc = lcm.lcm.LCM.getSingleton();
 robot_state_mon = drake.util.MessageMonitor(drc.robot_state_t,'utime');

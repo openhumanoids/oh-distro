@@ -18,6 +18,12 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
+% set initial state to fixed point
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+xstar(1) = 0*randn();
+xstar(2) = 0*randn();
+r = r.setInitialState(xstar);
+
 if use_bullet
   r_bullet = RigidBodyManipulator();
   r_bullet = addRobotFromURDF(r_bullet,strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),[0;0;0],[0;0;0],options);
@@ -29,12 +35,6 @@ end
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
-
-% set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 0*randn();
-xstar(2) = 0*randn();
-r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);

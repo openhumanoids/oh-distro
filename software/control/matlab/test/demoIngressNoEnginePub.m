@@ -1,5 +1,6 @@
 % function [t_test,com_test,com_nom] = testIngressPlanPub(scale_t,foot_support_qs)
 function demoIngressPlanPub
+%NOTEST
 
 scale_t = 2;
 addpath(fullfile(pwd,'frames'));
