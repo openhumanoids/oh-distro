@@ -9,4 +9,6 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/kintinuous_pub)
+
 #add_subdirectory(src/tools)
