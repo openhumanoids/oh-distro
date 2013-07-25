@@ -311,11 +311,6 @@ Laser::Laser(Channel* driver,
                 boost::bind(&Laser::subscribe, this),
                 boost::bind(&Laser::unsubscribe, this));
 
-    if(!lcm_publish_.good()){
-      std::cerr <<"ERROR: lcm is not good()" <<std::endl;
-      ROS_ERROR("ERROR: lcm is not good()");
-    }    
-    
     //
     // Create point cloud publisher
 
@@ -336,6 +331,20 @@ Laser::Laser(Channel* driver,
 
     driver_->addIsolatedCallback(lCB, this);
     driver_->addIsolatedCallback(pCB, this);
+
+    // Set LCM components:
+    if(!lcm_publish_.good()){
+      std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+      ROS_ERROR("ERROR: lcm is not good()");
+    }    
+    
+    for (size_t i=0; i < js_msg_.position.size() ; i++){
+      lcm_state_.type.push_back(150 + i);      
+      lcm_state_.position.push_back( js_msg_.position[i] );
+      lcm_state_.velocity.push_back( js_msg_.velocity[i] );
+      lcm_state_.effort.push_back( js_msg_.effort[i] );
+    }
+    lcm_state_.num_joints = js_msg_.position.size();
 }
 
 Laser::~Laser()
@@ -359,6 +368,15 @@ void Laser::pointCloudCallback(const lidar::Header&        header,
     if (0 == point_cloud_pub_.getNumSubscribers())
         return;
 
+    pointCloudPublish(header, rangesP, intensitiesP, false, true);
+}
+
+void Laser::pointCloudPublish(const lidar::Header&        header,
+                               const lidar::RangeType*     rangesP,
+                               const lidar::IntensityType* intensitiesP,
+                               bool sendToLCM, bool sendToROS)   
+{
+    
     const uint32_t cloud_step = 16;
 
     point_cloud_.data.resize(cloud_step * header.pointCount);
@@ -405,6 +423,11 @@ void Laser::pointCloudCallback(const lidar::Header&        header,
     const double   spindleAngleEnd   = angles::normalize_angle(1e-6 * static_cast<double>(header.spindleAngleEnd));
     const double   spindleAngleRange = angles::normalize_angle(spindleAngleEnd - spindleAngleStart);
 
+    // Vectors for LCM type:
+    std::vector< float > x_vals, y_vals, z_vals;
+    std::vector< int32_t > intensity;
+    
+    
     for(uint32_t i=0; i<header.pointCount; ++i, cloudP += cloud_step) {
         
         //
@@ -445,9 +468,64 @@ void Laser::pointCloudCallback(const lidar::Header&        header,
                         
         memcpy(cloudP, &(xyz[0]), pointSize);
         memcpy((cloudP + pointSize), &(intensitiesP[i]), sizeof(uint32_t));
+        
+        x_vals.push_back( xyz[0] );
+        y_vals.push_back( xyz[1] );
+        z_vals.push_back( xyz[2] );
+        intensity.push_back(intensitiesP[i] );
     }
 
-    point_cloud_pub_.publish(point_cloud_);
+    if (sendToROS){
+      point_cloud_pub_.publish(point_cloud_);
+    }
+    
+    // Push the cloud to LCM
+    if (sendToLCM){
+      multisense::pointcloud_t lcm_cloud;
+      int64_t utime_start =(int64_t) ros::Time::now().toNSec()/1000; // from nsec to usec
+      lcm_cloud.utime = utime_start;
+      lcm_cloud.x = x_vals;
+      lcm_cloud.y = y_vals;
+      lcm_cloud.z = z_vals;
+      lcm_cloud.intensity = intensity;
+      lcm_cloud.num_points =x_vals.size();
+      lcm_publish_.publish("SCAN_CLOUD", &lcm_cloud);         
+    }
+}
+
+
+
+void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
+    // camera-to-laser is defined by three transforms: 
+    // (1) camera-to-pre-spindle (from calibration)
+    // (2) sensed rotation 
+    // (3) post-spindle-to-laser (from calibration)
+    // + seem to require a unit rotation into our expected lidar frame
+
+    double spindleAngleDouble = angles::normalize_angle(1e-6 * static_cast<double>(spindleAngle));
+    double cosSpindleTheta = std::cos(spindleAngleDouble);
+    double sinSpindleTheta = std::sin(spindleAngleDouble);    
+    const KDL::Rotation spindleFromMotor(cosSpindleTheta, -sinSpindleTheta, 0.0,
+                                          sinSpindleTheta,  cosSpindleTheta, 0.0,
+                                          0.0,              0.0,             1.0);  
+    KDL::Frame T_spindleFromMotor;
+    T_spindleFromMotor.p[0]= 0;
+    T_spindleFromMotor.p[1]= 0;
+    T_spindleFromMotor.p[2]= 0;
+    T_spindleFromMotor.M = spindleFromMotor;
+
+    KDL::Frame pre_spindle_T_pre_spindle_rot(KDL::Rotation::RPY(-M_PI/2, -M_PI/2, 0.0) );
+    
+    KDL::Frame cam_to_laser = pc_post_spindle_cal_ * T_spindleFromMotor * pc_pre_spindle_cal_
+                                    * pre_spindle_T_pre_spindle_rot;
+
+    bot_core::rigid_transform_t cam_to_hokuyo_frame;
+    cam_to_hokuyo_frame.utime = utime_out;
+    cam_to_hokuyo_frame.trans[0] = cam_to_laser.p[0];
+    cam_to_hokuyo_frame.trans[1] = cam_to_laser.p[1];
+    cam_to_hokuyo_frame.trans[2] = cam_to_laser.p[2];
+    cam_to_laser.M.GetQuaternion(cam_to_hokuyo_frame.quat[1], cam_to_hokuyo_frame.quat[2], cam_to_hokuyo_frame.quat[3], cam_to_hokuyo_frame.quat[0]);
+    lcm_publish_.publish("CAMERA_TO_SCAN", &cam_to_hokuyo_frame);
 }
 
 void Laser::scanCallback(const lidar::Header&        header,
@@ -487,10 +565,12 @@ void Laser::scanCallback(const lidar::Header&        header,
     js_msg_.velocity[0]     = velocity;
     js_pub_.publish(js_msg_);
 
-    lcm_joint_msg_.utime = (int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
-    lcm_joint_msg_.position= angle_start;
-    lcm_joint_msg_.velocity= velocity;
-    lcm_publish_.publish("MULTISENSE_JOINT", &lcm_joint_msg_);    
+    int64_t utime_start =(int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
+    lcm_state_.utime = utime_start;
+    lcm_state_.position[0]= angle_start;
+    lcm_state_.velocity[0]= velocity;
+    lcm_publish_.publish("STATE_MULTISENSE", &lcm_state_);    
+    publishLCMTransforms(utime_start, header.spindleAngleStart);
     
     //
     // Publish joint state for end of scan
@@ -502,10 +582,12 @@ void Laser::scanCallback(const lidar::Header&        header,
     js_msg_.velocity[0]     = velocity;
     js_pub_.publish(js_msg_);
     
-    lcm_joint_msg_.utime = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
-    lcm_joint_msg_.position= angle_start;
-    lcm_joint_msg_.velocity= velocity;
-    lcm_publish_.publish("MULTISENSE_JOINT", &lcm_joint_msg_);        
+    int64_t utime_end = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
+    lcm_state_.utime = utime_end;
+    lcm_state_.position[0]= angle_end;
+    lcm_state_.velocity[0]= velocity;
+    lcm_publish_.publish("STATE_MULTISENSE", &lcm_state_);        
+    publishLCMTransforms(utime_end, header.spindleAngleEnd);
 
     //
     // Downsample diagnostics to 1 Hz
@@ -529,12 +611,12 @@ void Laser::scanCallback(const lidar::Header&        header,
       lcm_laser_msg_.intensities[i] = static_cast<float>(intensitiesP[i]);      // in device units
     }
     lcm_laser_msg_.nranges = header.pointCount;
-    //  lcm_laser_msg_.ranges=range_line;
-    lcm_laser_msg_.nintensities=0;
-    //lcm_laser_msg_.intensities=NULL;
+    lcm_laser_msg_.nintensities=header.pointCount;
     lcm_laser_msg_.rad0 = -arcRadians / 2.0;
     lcm_laser_msg_.radstep = arcRadians / (header.pointCount - 1);
     lcm_publish_.publish("SCAN", &lcm_laser_msg_);
+    
+    pointCloudPublish(header, rangesP, intensitiesP, true, false);
     /////////////////////////////////////////////////////////////      
     
     if (scan_pub_.getNumSubscribers() > 0) {

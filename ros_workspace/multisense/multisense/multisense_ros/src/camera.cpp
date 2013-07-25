@@ -377,7 +377,7 @@ void Camera::depthCallback(const image::Header& header,
     // disparity is in this mode, and was for the device in jan 2013
 
     } else if (16 == header.bitsPerPixel) {
-        ROS_ERROR("16 bits per pixel"); // mfallon
+        //ROS_ERROR("16 bits per pixel"); // mfallon
 
         // LCM Disparity:
         ros::Time cam_time = ros::Time::now();
@@ -395,7 +395,7 @@ void Camera::depthCallback(const image::Header& header,
         lcm_disp_.data.resize(isize);
         memcpy(&lcm_disp_.data[ 0 ], imageDataP, isize); 
         
-        ROS_ERROR("disp      frame id: %lld", header.frameId);
+        // ROS_ERROR("disp      frame id: %lld", header.frameId);
         lcm_disp_frame_id_ = header.frameId;
         //////////////////////////////////////////////// 
           
@@ -767,8 +767,8 @@ void Camera::colorImageCallback(const image::Header& header,
                     //ROS_ERROR("postcam");
                     //ROS_ERROR("postpub");
                     
-                    ROS_ERROR("left luma frame id: %lld", left_luma_frame_id_);
-                    ROS_ERROR("leftchromaframe id: %lld", header.frameId);
+                    //ROS_ERROR("left luma frame id: %lld", left_luma_frame_id_);
+                    //ROS_ERROR("leftchromaframe id: %lld", header.frameId);
                     lcm_left_frame_id_ = header.frameId;
                     
                     ////////////////////////////////////////////////
@@ -782,8 +782,8 @@ void Camera::colorImageCallback(const image::Header& header,
                       multisense_msg_out_.n_images =2;
                       multisense_msg_out_.images[0]= lcm_left_;
                       multisense_msg_out_.images[1]= lcm_disp_;
-                      ROS_ERROR("Syncd frames. publish pair [id %lld]", header.frameId);
-                      lcm_publish_.publish("MULTISENSE_LD", &multisense_msg_out_);
+                      //ROS_ERROR("Syncd frames. publish pair [id %lld]", header.frameId);
+                      lcm_publish_.publish("CAMERA", &multisense_msg_out_);
                     }else{
                       ROS_ERROR("Left [%lld] and Disparity [%lld]: Frame Ids dont match", lcm_left_frame_id_, header.frameId);
                     }

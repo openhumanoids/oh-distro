@@ -107,7 +107,15 @@ private:
     // LCM stuff:
     lcm::LCM lcm_publish_ ;
     bot_core::planar_lidar_t lcm_laser_msg_;    
-    multisense::joint_t lcm_joint_msg_;
+    multisense::state_t lcm_state_;
+    void publishLCMTransforms(int64_t utime_out, int32_t spindleAngle);
+    
+    // Seperated publish from callback:
+    void pointCloudPublish(const crl::multisense::lidar::Header& header,
+                            const crl::multisense::lidar::RangeType *rangesP,
+                            const crl::multisense::lidar::IntensityType *intensitiesP,
+                            bool sendToLCM, bool sendToROS);    
+    
 
     //
     // Subscriptions
