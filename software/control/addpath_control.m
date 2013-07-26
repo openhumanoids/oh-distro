@@ -21,7 +21,7 @@ javaaddpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 setenv('DRC_PATH',[pods_get_base_path,'/..']);
 %setenv('ROS_ROOT',getenv('ROS_ROOT'));
 %setenv('ROS_PACKAGE_PATH',[pods_get_base_path,'/../../ros_workspace',pathsep,getenv('ROS_PACKAGE_PATH')]);
-[~,ROS_MODEL_PKG] = system(['cmake -L -N ','pod-build',' | grep ROS_MODEL_PKG | cut -d "=" -f2']);
+[~,ROS_MODEL_PKG] = system(['grep ROS_MODEL_PKG pod-build/CMakeCache.txt | cut -d "=" -f2']);
 ROS_MODEL_PKG = strtrim(ROS_MODEL_PKG);
 setenv('ROS_PACKAGE_PATH',[ROS_MODEL_PKG,pathsep,getenv('ROS_PACKAGE_PATH')]);
 
