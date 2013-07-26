@@ -26,7 +26,6 @@
 
 #endif
 
-#define USE_FAST_QP
 //#define TEST_FAST_QP
 
 #include "drake/fastQP.h"
@@ -388,6 +387,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   int narg=1;
 
+  int use_fast_qp = (int) mxGetScalar(prhs[narg++]);
+  
   Map< VectorXd > q_ddot_des(mxGetPr(prhs[narg++]),nq);
   
   double *q = mxGetPr(prhs[narg++]);
@@ -624,7 +625,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
   vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
-#ifdef USE_FAST_QP
+  if (use_fast_qp > 0)
   { // set up and call fastqp
 
   	//    We want Hqp inverse, which I can compute efficiently using the
@@ -667,7 +668,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     if (info<0)  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
   }
-#endif
 
   if (info<0) {
 		// now set up gurobi:

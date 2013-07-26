@@ -419,8 +419,6 @@ classdef QPControlBlock < MIMODrakeSystem
       [xcom,J] = getCOM(r,kinsol);
       
       if obj.include_angular_momentum
-        % NOTE: not working well at the moment, need to revisit this --sk
-        
         [Ag,Agdot] = getCMM(r,kinsol,qd);
   
         Ag_ang = Ag(1:3,:);
@@ -615,62 +613,57 @@ classdef QPControlBlock < MIMODrakeSystem
       % Solve QP ------------------------------------------------------------
       
       REG = 1e-8;
-      % call fastQPmex first
-        
-      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
-      lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+      
       IR = eye(nparams);  
-      Aeq_fqp = full(Aeq);
+      lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
       Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
-        
-      %% NOTE: model.obj is 2* f for fastQP!!!
-      [alpha,info_fqp,qp_active_set] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+
+      if obj.use_mex ~= 2
+        % call fastQPmex first
+        QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
+        Aeq_fqp = full(Aeq);
+
+        %% NOTE: model.obj is 2* f for fastQP!!!
+        [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+      else
+        info_fqp = -1;
+      end
       
       if info_fqp<0
-         
-      %%% then call gurobi only if it fails:
+        % then call gurobi
         
-      model.Q = sparse(Hqp + REG*eye(nparams));
-      model.A = [Aeq; Ain];
-      model.rhs = [beq; bin];
-      model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
-      model.lb = lb;
-      model.ub = ub;
-        
-      model.obj = fqp;
-      if ~isempty(model.A) && obj.solver_options.method==2
-        % see drake/algorithms/test/mygurobi.m
-        model.obj = 2*model.obj;
-      end
-      
-      if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
-        keyboard;
-      end
+        model.Q = sparse(Hqp + REG*eye(nparams));
+        model.A = [Aeq; Ain];
+        model.rhs = [beq; bin];
+        model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
+        model.lb = lb;
+        model.ub = ub;
 
-%       qp_tic = tic;
-      result = gurobi(model,obj.solver_options);
-%       qp_toc = toc(qp_tic);
-%       fprintf('QP solve: %2.4f\n',qp_toc);
-      
-      alpha = result.x;
+        model.obj = fqp;
+        if ~isempty(model.A) && obj.solver_options.method==2
+          % see drake/algorithms/test/mygurobi.m
+          model.obj = 2*model.obj;
+        end
 
-      if isempty(model.A) && obj.solver_options.method==2
-        % see drake/algorithms/test/mygurobi.m
-        alpha = alpha/2;
-      end
+        if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
+          keyboard;
+        end
+
+%         qp_tic = tic;
+        result = gurobi(model,obj.solver_options);
+%         qp_toc = toc(qp_tic);
+%         fprintf('QP solve: %2.4f\n',qp_toc);
+      
+        alpha = result.x;
+
+        if isempty(model.A) && obj.solver_options.method==2
+          % see drake/algorithms/test/mygurobi.m
+          alpha = alpha/2;
+        end
       end
         
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-        
-%       if (info_fqp<0)
-%         warning(['t=',num2str(t),' fastqp said infeasible.  not expected to get the same answer']);  
-      % else
-      %   valuecheck(qp_active_set_fqp,qp_active_set);
-      %   valuecheck(alpha_fqp,alpha);
-      % end
-%       end
-      
       setField(obj.controller_data,'qp_active_set',qp_active_set);
       
       %----------------------------------------------------------------------
@@ -708,7 +701,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
     end
 
     if ~isempty(active_supports)
@@ -727,7 +720,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,0,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
       valuecheck(active_supports_mex,active_supports);
       valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
       valuecheck(gobj,model.obj,1e-12);
@@ -736,8 +729,8 @@ classdef QPControlBlock < MIMODrakeSystem
       valuecheck(sense',model.sense);
       valuecheck(lb,model.lb,1e-12);
       valuecheck(ub,model.ub,1e-12);
-      valuecheck(y,des.y,1e-5);
-      valuecheck(Vdotmex,Vdot,1e-5);
+      valuecheck(y,des.y,0.5);
+      valuecheck(Vdotmex,Vdot,1e-4);
     end
     
    
