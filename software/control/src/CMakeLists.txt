@@ -9,7 +9,9 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
-if (APPLE)
+pods_find_pkg_config(maps)
+pods_find_pkg_config(opencv)
+if (NOT maps_FOUND OR NOT opencv_FOUND)
 
   add_mex(QPControllermex QPControllermex.cpp)
   pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
@@ -23,7 +25,7 @@ else()
   pods_use_pkg_config_packages(HeightMapWrapper maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
 
   add_mex(QPControllermex QPControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm maps)
+  pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS -std=c++0x")
 
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_BK})
