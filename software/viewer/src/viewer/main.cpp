@@ -408,12 +408,12 @@ int main(int argc, char *argv[])
   drcgrid_add_renderer_to_viewer(viewer, 1, lcm);
 //  bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
-//  laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
+  laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
-//  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-//  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef);
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 //  add_octomap_renderer_to_viewer(viewer, 1, lcm);
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-//  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   //score_add_renderer_to_viewer(viewer, 0, lcm);
 //  setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
