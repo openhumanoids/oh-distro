@@ -5,7 +5,7 @@
 #include "qt4/qt4_widget_gfe_object.h" // TODO move to editor when defined for configuration space
 #include "authoring/qt4_widget_constraint_editor.h"
 #include <qt4/qt4_widget_gfe_control.h>
-
+#include "authoring/qt4_widget_opengl_authoring.h"
 using namespace std;
 using namespace boost;
 using namespace urdf;
@@ -27,12 +27,14 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
                                                     _label_id( new QLabel( QString( "C%1" ).arg( _constraint_index ), this ) ),
                                                     _check_box_active( new QCheckBox( this ) ),
                                                     _check_box_visible( new QCheckBox( this ) ),
+                                                    _push_button_edit_3D( new QPushButton( QString( "3D edit" ), this ) ),
                                                     _push_button_edit( new QPushButton( QString( "edit" ), this ) ),
                                                     _double_spin_box_time_start( new QDoubleSpinBox( this ) ),
                                                     _double_spin_box_time_end( new QDoubleSpinBox( this ) ),
                                                     _line_edit_metadata( new QLineEdit( QString::fromStdString( _constraint.metadata() ), this ) ),
                                                     _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
-                                                    _constraint_editor_popup( NULL ) {
+                                                    _constraint_editor_popup( NULL ),
+                                                    _select_class(SELECT_NONE) {
 
   _double_spin_box_time_start->setToolTip("the absolute start time for this constraint, in seconds");
   _double_spin_box_time_end->setToolTip("the absolute end time for this constraint, in seconds");
@@ -50,10 +52,14 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
 
   _label_id->setFixedWidth( 35 );
   _label_id->setAlignment( Qt::AlignRight | Qt::AlignVCenter );
+
+  _label_id->setStyleSheet("QLabel { border: 2px solid rgba(0, 255, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+
   _check_box_active->setFixedWidth( 25 );
   _check_box_active->setEnabled( true );
   _check_box_visible->setFixedWidth( 25 );
   _check_box_visible->setEnabled( false );
+  _push_button_edit_3D->setFixedWidth( 50 );
   _push_button_edit->setFixedWidth( 50 );
   _double_spin_box_time_start->setFixedWidth( 70 );
   _double_spin_box_time_start->setRange( 0.1, 1000000.0 );
@@ -73,6 +79,7 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
   widget_layout->addWidget( _label_id );
   widget_layout->addWidget( _check_box_active );
   widget_layout->addWidget( _check_box_visible );
+  widget_layout->addWidget( _push_button_edit_3D );
   widget_layout->addWidget( _push_button_edit );
   widget_layout->addWidget( _double_spin_box_time_start );
   widget_layout->addWidget( _double_spin_box_time_end );
@@ -84,6 +91,7 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
 
   connect( _check_box_active, SIGNAL( stateChanged( int ) ), this, SLOT( _check_box_active_changed( int ) ) );
   connect( _check_box_visible, SIGNAL( stateChanged( int ) ), this, SLOT( _check_box_visible_changed( int ) ) );
+  connect( _push_button_edit_3D, SIGNAL( clicked() ), this, SLOT( _push_button_edit_3D_pressed() ) );
   connect( _push_button_edit, SIGNAL( clicked() ), this, SLOT( _push_button_edit_pressed() ) );
   connect( _double_spin_box_time_start, SIGNAL( valueChanged( double ) ), this, SLOT( _double_spin_box_time_start_value_changed( double ) ) );
   connect( _double_spin_box_time_end, SIGNAL( valueChanged( double ) ), this, SLOT( _double_spin_box_time_end_value_changed( double ) ) );
@@ -124,6 +132,7 @@ update_constraint( const Constraint_Task_Space_Region& constraint ){
   _check_box_visible->setEnabled( _constraint.active() );
   _check_box_visible->setCheckState( ( _constraint.visible() ? Qt::Checked : Qt::Unchecked ) );
   _push_button_edit->setEnabled( _constraint.active() );
+  _push_button_edit_3D->setEnabled( _constraint.active() );
   _double_spin_box_time_start->setEnabled( _constraint.active() );
   _double_spin_box_time_start->setValue( _constraint.start() );
   _double_spin_box_time_end->setEnabled( _constraint.active() );
@@ -150,8 +159,9 @@ update_description( const QString& description ){
 void
 Qt4_Widget_Constraint_Editor::
 highlight_constraint( const QString& id,
+                      highlight_class_t highlight_class,
                       bool highlight ){
-  emit constraint_highlight( id, highlight );
+  emit constraint_highlight( id, highlight_class, highlight );
   return;
 }
 
@@ -162,6 +172,42 @@ highlight_child( const QString& id,
                   bool highlight ){
   emit child_highlight( id, child, highlight );
   return; 
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+select_constraint( const QString& id, select_class_t select_class ){
+  // if we're the one being selected...
+  if (_constraint.id() == id.toStdString()){
+    // select as appropriate select class, where select_opengl is more
+    // important than (persists over selection as) select_widget
+    // (in theory we could maintain these selections separately. that may
+    // not be a poor choice. but this works too~)
+    switch (select_class){
+      case SELECT_NONE:
+        break;
+      case SELECT_EDIT:
+        _label_id->setStyleSheet("QLabel { border: 4px solid rgba(200, 0, 200, 200); background-color: rgba(255, 0, 0, 0); color : black; }");
+        _select_class = select_class;
+      case SELECT_OPENGL:
+        if (_select_class != SELECT_EDIT){
+          _label_id->setStyleSheet("QLabel { border: 4px solid rgba(0, 0, 200, 200); background-color: rgba(255, 0, 0, 0); color : black; }");
+          _select_class = select_class;
+        }
+        break;
+      case SELECT_WIDGET:
+        if (_select_class != SELECT_OPENGL && _select_class != SELECT_EDIT){
+          _label_id->setStyleSheet("QLabel { border: 4px solid rgba(0, 200, 0, 200); background-color: rgba(255, 0, 0, 0); color : black; }");
+          _select_class = select_class;
+        }
+        break;
+    }
+  } // otherwise, if our current selection class is being chosen, and we're NOT it,
+  // don't be selected any more!
+  else if (_select_class == select_class){
+    _label_id->setStyleSheet("QLabel { border: 2px solid rgba(0, 255, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+    _select_class = SELECT_NONE;
+  }
 }
 
 void
@@ -240,13 +286,20 @@ _check_box_visible_changed( int state ){
 
 void
 Qt4_Widget_Constraint_Editor::
+_push_button_edit_3D_pressed( void ){
+  emit bind_axes_to_constraint( &_constraint, true );
+  return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
 _push_button_edit_pressed( void ){
   switch( _constraint.type() ){
   case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
     _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( _constraint, _robot_model, _object_affordances, this );
     connect( this, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), _constraint_editor_popup, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
     connect( _constraint_editor_popup, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
-    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString&, bool ) ), this, SLOT( highlight_constraint( const QString&, bool ) ) );
+    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString&, highlight_class_t highlight_class, bool ) ), this, SLOT( highlight_constraint( const QString&, highlight_class_t highlight_class, bool ) ) );
     connect( _constraint_editor_popup, SIGNAL( child_highlight( const QString&, const QString&, bool ) ), this, SLOT( highlight_child( const QString&, const QString&,  bool ) ) );
     _constraint_editor_popup->show();
     emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
@@ -258,6 +311,20 @@ _push_button_edit_pressed( void ){
   }
   update_description( QString::fromStdString( _constraint.description() ) );
   return;
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+enterEvent( QEvent * event ){
+  emit constraint_highlight( QString::fromStdString(_constraint.id()), HIGHLIGHT_GREEN, true );
+  select_constraint( QString::fromStdString(_constraint.id()), SELECT_WIDGET );
+}
+
+void
+Qt4_Widget_Constraint_Editor::
+leaveEvent( QEvent * event ){
+  emit constraint_highlight( QString::fromStdString(_constraint.id()), HIGHLIGHT_GREEN, false );
+  select_constraint( QString::fromStdString(""), SELECT_WIDGET );
 }
 
 namespace authoring {

@@ -7,6 +7,7 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QDoubleSpinBox>
 #include <QtGui/QCheckBox>
+#include <QtGui/QProgressBar>
 
 #include <qt4/qt4_widget_opengl.h>
 
@@ -37,6 +38,7 @@ namespace authoring {
     void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
     void state_gfe_update( state::State_GFE& stateGFE );
     void drc_action_sequence_t_publish( const drc::action_sequence_t& msg );
+    void robot_plan_t_publish( const drc::robot_plan_t& msg );
 
   public slots:
     void update_info( const QString& info );
@@ -44,12 +46,17 @@ namespace authoring {
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_state_gfe( state::State_GFE& stateGFE );
-
+    void aas_got_status_msg( float last_time_solved, float total_time_to_solve,
+             bool solving_highres, bool plan_is_good, bool plan_is_warn );
+    void publish_constraints( void );
+    
   protected slots:
     void _push_button_grab_pressed( void );
     void _push_button_import_pressed( void );
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
+    void _push_button_publish_plan_pressed( void );
+    void _push_button_publish_reverse_plan_pressed( void );
     void _slider_updated( int currentIndex );
 
   protected:
@@ -65,8 +72,12 @@ namespace authoring {
     QCheckBox * _check_box_visible_trajectory;
     QCheckBox * _check_box_visible_trajectory_wrist;
     QCheckBox * _check_box_visible_initial_state;
+    QPushButton * _push_button_publish_plan;
+    QPushButton * _push_button_publish_reverse_plan;
     QLabel * _slider_current_time;
-
+    QProgressBar * _progress_bar_planner;
+    QLabel * _label_planner_feedback;
+    
     urdf::Model _robot_model;
     kinematics::Kinematics_Model_GFE _kinematics_model_gfe;
     std::vector< affordance::AffordanceState > _affordance_collection;

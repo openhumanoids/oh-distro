@@ -26,12 +26,14 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_robot_plan( std::vector< state::State_GFE >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring, SLOT( update_state_gfe( state::State_GFE& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_gfe_ghost( state::State_GFE& ) ) ); 
-
+  connect( this, SIGNAL( aas_got_status_msg( float, float, bool, bool, bool ) ), _qt4_widget_authoring, SLOT( aas_got_status_msg( float, float, bool, bool, bool ) ) );
+  
   connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t( const drc::action_sequence_t& ) ) );
+  connect( _qt4_widget_authoring, SIGNAL( robot_plan_t_publish( const drc::robot_plan_t& ) ), this, SLOT( publish_robot_plan_t( const drc::robot_plan_t& ) ) );
   _lcm->subscribe( "EST_ROBOT_STATE", &Qt4_Widget_Authoring_LCM_Interface::_handle_est_robot_state_msg, this );
   _lcm->subscribe( "AFFORDANCE_COLLECTION", &Qt4_Widget_Authoring_LCM_Interface::_handle_affordance_collection_msg, this );
   _lcm->subscribe( "RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE", &Qt4_Widget_Authoring_LCM_Interface::_handle_candidate_robot_plan_msg, this );
-
+  _lcm->subscribe( "ACTION_AUTHORING_SERVER_STATUS", &Qt4_Widget_Authoring_LCM_Interface::_handle_action_authoring_server_status_msg, this );
   _lcm_timer->start( 10 );
 }
 
@@ -58,6 +60,13 @@ void
 Qt4_Widget_Authoring_LCM_Interface::
 publish_drc_action_sequence_t( const action_sequence_t& msg ){
   _lcm->publish( "REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE", &msg );
+  return;
+}
+
+void 
+Qt4_Widget_Authoring_LCM_Interface::
+publish_robot_plan_t( const robot_plan_t& msg ){
+  _lcm->publish( "CANDIDATE_ROBOT_PLAN", &msg );
   return;
 }
 
@@ -120,6 +129,7 @@ _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
           affordance_collection.push_back(*split[i]);
 */
     }
+
     emit affordance_collection_update( affordance_collection );
   }
   return;
@@ -141,6 +151,20 @@ _handle_candidate_robot_plan_msg( const ReceiveBuffer * rbuf,
   }
   return;
 }
+
+void
+Qt4_Widget_Authoring_LCM_Interface::
+_handle_action_authoring_server_status_msg( const lcm::ReceiveBuffer* rbuf, 
+                                            const std::string& channel, 
+                                            const drc::action_authoring_server_status_t* msg ){
+  if( msg != NULL ){
+    emit aas_got_status_msg( msg->last_ik_time_solved, msg->total_ik_time_to_solve,
+                             msg->solving_highres, msg->plan_is_good,
+                             msg->plan_is_warn );
+  }
+  return;
+}
+
 
 namespace authoring {
   ostream&

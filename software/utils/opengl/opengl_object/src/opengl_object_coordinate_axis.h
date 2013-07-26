@@ -10,7 +10,7 @@
 namespace opengl {
   class OpenGL_Object_Coordinate_Axis: public OpenGL_Object {
   public:
-    OpenGL_Object_Coordinate_Axis( bool drawTranslationAxes = true, bool drawRotationAxes = true );
+    OpenGL_Object_Coordinate_Axis( bool drawTranslationAxes = true, bool drawRotationAxes = true, double min_scale = 0.3 );
     ~OpenGL_Object_Coordinate_Axis();
     OpenGL_Object_Coordinate_Axis( const OpenGL_Object_Coordinate_Axis& other );
     OpenGL_Object_Coordinate_Axis& operator=( const OpenGL_Object_Coordinate_Axis& other );
@@ -22,6 +22,7 @@ namespace opengl {
     bool _generate_dl( void );
 
     double              _scale;
+    double              _min_scale;
     OpenGL_Object_Torus _opengl_object_torus;
     GLUquadric *        _quadric;
     GLuint              _dl;

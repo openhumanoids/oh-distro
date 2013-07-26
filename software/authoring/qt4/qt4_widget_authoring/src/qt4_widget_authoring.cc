@@ -33,6 +33,10 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
                                             _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
                                             _check_box_visible_initial_state( new QCheckBox( "initial state", this ) ),
+                                            _push_button_publish_plan( new QPushButton( QString( "publish plan" ), this ) ),
+                                            _push_button_publish_reverse_plan( new QPushButton( QString( "reverse plan" ), this ) ),
+                                            _progress_bar_planner( new QProgressBar( ) ),
+                                            _label_planner_feedback( new QLabel( "No plan submitted.\n" ) ),
                                             _slider_current_time( new QLabel("frame 0") ),
                                             _robot_model(),
                                             _kinematics_model_gfe( xmlString ),
@@ -58,6 +62,14 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _push_button_export->setEnabled( false );
   _push_button_export->setToolTip("export all constraints to a file");
 
+  _progress_bar_planner->setMinimum( 0.0 );
+  _progress_bar_planner->setMaximum( 0.0 );
+  _progress_bar_planner->setFormat( QString("No plan submitted."));
+  _progress_bar_planner->setTextVisible( true );
+
+  _label_planner_feedback->setFrameStyle( QFrame::Panel | QFrame::Sunken );
+  _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+
   _text_edit_info->setFixedHeight( 75 );
 
   _text_edit_info->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -67,6 +79,10 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _check_box_visible_trajectory->setCheckState( Qt::Checked );
   _check_box_visible_trajectory_wrist->setCheckState( Qt::Unchecked );
   _check_box_visible_initial_state->setCheckState( Qt::Checked );
+  _push_button_publish_plan->setEnabled( false );
+  _push_button_publish_reverse_plan->setEnabled( false );
+  _push_button_publish_plan->setToolTip("broadcast current plan as a candidate plan");
+  _push_button_publish_reverse_plan->setToolTip("broadcast current plan, time-reversed, as a candidate plan");
 
   QGroupBox * controls_group_box = new QGroupBox( QString( "controls" ) );
   QGridLayout * controls_layout = new QGridLayout();
@@ -102,6 +118,10 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 4 );
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 4 );
   plan_layout->addWidget( _slider_current_time, 2, 0, 1, 5 );
+  plan_layout->addWidget( _progress_bar_planner, 3, 0, 1, 2);
+  plan_layout->addWidget( _push_button_publish_plan, 3, 2);
+  plan_layout->addWidget( _push_button_publish_reverse_plan, 3, 3);
+  plan_layout->addWidget( _label_planner_feedback, 4, 0, 1, 4);
   plan_widget->setLayout( plan_layout );
 
   plan_scroll_area->setWidget( plan_widget );
@@ -140,12 +160,19 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( _check_box_visible_trajectory, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory( int ) ) );
   connect( _check_box_visible_trajectory_wrist, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_trajectory_wrist( int ) ) );
   connect( _check_box_visible_initial_state, SIGNAL( stateChanged( int ) ), _widget_opengl_authoring, SLOT( update_opengl_object_robot_plan_visible_initial_state( int ) ) );
+  connect( _push_button_publish_plan, SIGNAL( clicked() ), this, SLOT( _push_button_publish_plan_pressed() ) );
+  connect( _push_button_publish_reverse_plan, SIGNAL( clicked() ), this, SLOT( _push_button_publish_reverse_plan_pressed() ) );
+
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
+  connect( _widget_opengl_authoring, SIGNAL( publish_constraints( void ) ), this, SLOT( publish_constraints( void ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
     connect( *it, SIGNAL( constraint_update( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
-    connect( *it, SIGNAL( constraint_highlight ( const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString&, bool ) ) );
+    connect( *it, SIGNAL( constraint_highlight ( const QString&, highlight_class_t, bool ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString&, highlight_class_t, bool ) ) );
     connect( *it, SIGNAL( child_highlight ( const QString&, const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_child( const QString&, const QString&, bool ) ) );
+    connect( *it, SIGNAL( bind_axes_to_constraint ( Constraint_Task_Space_Region *, bool ) ), _widget_opengl_authoring, SLOT( bind_axes_to_constraint( Constraint_Task_Space_Region *, bool ) ) );
+    connect( _widget_opengl_authoring, SIGNAL( update_constraint ( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
+    connect( _widget_opengl_authoring, SIGNAL( select_constraint( const QString&, select_class_t) ), *it, SLOT( select_constraint( const QString&, select_class_t) ) );
   }
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
@@ -214,6 +241,69 @@ update_state_gfe( State_GFE& stateGFE ){
   return;
 } 
 
+void 
+Qt4_Widget_Authoring::
+aas_got_status_msg( float last_time_solved,  float total_time_to_solve,
+      bool solving_highres, bool plan_is_good, bool plan_is_warn ){
+  char tmp[100];
+  _progress_bar_planner->setMinimum( 0.0 );
+  _progress_bar_planner->setMaximum( 100.0 );
+  _progress_bar_planner->setValue( (int)(100.0 * last_time_solved / total_time_to_solve) );
+
+  // first -- if plan failed, better catch it!
+  if (!plan_is_good){
+      _progress_bar_planner->setFormat( QString("Planning failed!") );
+      if (solving_highres){
+        sprintf(tmp, "Constraints impossible in highres at time %fs", last_time_solved);
+      } else {
+        sprintf(tmp, "Constraints impossible in low res at time %fs", last_time_solved);
+      }
+      _label_planner_feedback->setText(tmp);
+      _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(255, 0, 0, 150); background-color: rgba(255, 0, 0, 0); color : black; }");
+  
+      // go highlight all constraints active during that time window.
+      vector< string > all_in_error;
+      for (int i=0; i < _constraint_sequence.constraints().size(); i++){
+        if (_constraint_sequence.constraints()[i].start() <= last_time_solved &&
+           _constraint_sequence.constraints()[i].end() >= last_time_solved)
+          all_in_error.push_back(_constraint_sequence.constraints()[i].id());
+      }
+      _widget_opengl_authoring->highlight_constraints(all_in_error, HIGHLIGHT_RED);
+
+  } else { // if not failed...
+    // if this is the last time in either
+    if (last_time_solved == total_time_to_solve && solving_highres){
+        _progress_bar_planner->setFormat( QString("Fully planned!") );
+        _push_button_publish_plan->setEnabled( true );
+        _push_button_publish_reverse_plan->setEnabled( true );
+        if (plan_is_warn){
+          _label_planner_feedback->setText("Plan ready for publish, with warnings.");
+          _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(255, 255, 0, 150); background-color: rgba(255, 0, 0, 0); color : black; }");
+        } else {
+          _label_planner_feedback->setText("Plan ready for publish, no warnings.");
+          _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 255, 0, 150); background-color: rgba(255, 0, 0, 0); color : black; }");
+        }
+    } else {
+      if (solving_highres){
+        sprintf(tmp, "Highres: %%p%%: %fs", last_time_solved);
+      } else {
+        sprintf(tmp, "Low res: %%p%%: %fs", last_time_solved);
+        // if this is the last step of the low res then set label that we're waiting on highres
+        if (last_time_solved == total_time_to_solve)
+          _label_planner_feedback->setText("Waiting for fine plan from server...");
+      }
+      _progress_bar_planner->setFormat( QString(tmp) );
+    }
+  }
+  return;
+}
+
+void 
+Qt4_Widget_Authoring::
+publish_constraints( void ){
+  _push_button_publish_pressed();
+}
+
 void
 Qt4_Widget_Authoring::
 _push_button_grab_pressed( void ){
@@ -276,8 +366,82 @@ _push_button_publish_pressed( void ){
   action_sequence_t msg; 
   _constraint_sequence.to_msg( msg, _affordance_collection ); 
   Constraint_Sequence::print_msg( msg );
-  emit drc_action_sequence_t_publish( msg );     
+  emit drc_action_sequence_t_publish( msg );  
+  _push_button_publish_plan->setEnabled( false );
+  _push_button_publish_reverse_plan->setEnabled( false );
+  _label_planner_feedback->setText("Waiting for rough plan from server...");
+  _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+  _widget_opengl_authoring->highlight_constraints(vector<string>(), HIGHLIGHT_RED);
   emit info_update( QString( "[<b>OK</b>] published constraint sequence as drc::action_sequence_t" ) ); 
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+_push_button_publish_plan_pressed( void ){
+  robot_plan_t msg;
+  robot_state_t tmp;
+  msg.robot_name = "atlas";
+  msg.utime = 0;
+  // set up states
+  msg.num_states = _robot_plan.size();
+  for ( unsigned int i = 0; i < _robot_plan.size(); i++){
+    _robot_plan[i].to_lcm_minimal( &tmp );
+    tmp.robot_name = "atlas";
+    msg.plan.push_back(tmp); 
+  }
+  // and grasps
+  msg.num_grasp_transitions = 0;
+  // and control types
+  msg.left_arm_control_type = 0;
+  msg.right_arm_control_type = 0;
+  msg.left_leg_control_type = 0;
+  msg.right_leg_control_type = 0;
+  // and matlab payload (none)
+  msg.num_bytes = 0;
+
+  emit robot_plan_t_publish( msg ); 
+  _label_planner_feedback->setText("No plan submitted.\n");
+  _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+  emit info_update( QString( "[<b>OK</b>] published robot plan as drc::robot_plan_t" ) ); 
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+_push_button_publish_reverse_plan_pressed( void ){
+  robot_plan_t msg;
+  robot_state_t tmp;
+  msg.robot_name = "atlas";
+  msg.utime = 0;
+  // set up states
+  msg.num_states = _robot_plan.size();
+  // get the "starting time"
+  _robot_plan[_robot_plan.size()-1].to_lcm_minimal( &tmp );
+  tmp.robot_name = "atlas";
+  long last_state_time = tmp.utime;
+  tmp.utime = 0;
+  msg.plan.push_back(tmp);
+  for ( int i = _robot_plan.size() - 2; i >= 0; i--){
+    _robot_plan[i].to_lcm_minimal( &tmp );
+    tmp.robot_name = "atlas";
+    tmp.utime = last_state_time - tmp.utime;
+    msg.plan.push_back(tmp); 
+  }
+  // and grasps
+  msg.num_grasp_transitions = 0;
+  // and control types
+  msg.left_arm_control_type = 0;
+  msg.right_arm_control_type = 0;
+  msg.left_leg_control_type = 0;
+  msg.right_leg_control_type = 0;
+  // and matlab payload (none)
+  msg.num_bytes = 0;
+
+  emit robot_plan_t_publish( msg ); 
+  _label_planner_feedback->setText("No plan submitted.\n");
+  _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
+  emit info_update( QString( "[<b>OK</b>] published reversed robot plan as drc::robot_plan_t" ) ); 
   return;
 }
 

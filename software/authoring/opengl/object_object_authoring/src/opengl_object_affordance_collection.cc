@@ -77,6 +77,7 @@ void
 OpenGL_Object_Affordance_Collection::
 set_transparency( double transparency ){
   _opengl_object_affordance.set_transparency( transparency );
+  printf("transparency set to %f\n", transparency);
   return;
 }
 

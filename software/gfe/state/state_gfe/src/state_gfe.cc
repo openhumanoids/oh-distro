@@ -246,6 +246,67 @@ to_lcm( robot_state_t* robotState )const{
 }
 
 /**
+ * to_lcm_minimal
+ * constructs an drc::robot_state_t message from the contents of the State_GF#
+ * without adding in finger info or imu_joint
+ */
+void
+State_GFE::
+to_lcm_minimal( robot_state_t* robotState )const{
+  robotState->utime = _time;
+  robotState->origin_position.translation.x = _pose.p[ 0 ];
+  robotState->origin_position.translation.y = _pose.p[ 1 ];
+  robotState->origin_position.translation.z = _pose.p[ 2 ];
+  _pose.M.GetQuaternion( robotState->origin_position.rotation.x, robotState->origin_position.rotation.y, robotState->origin_position.rotation.z, robotState->origin_position.rotation.w );
+  robotState->num_joints = 28;
+  robotState->joint_name.resize( robotState->num_joints );
+  robotState->joint_name[0] = "back_lbz";
+  robotState->joint_name[1] = "back_mby";
+  robotState->joint_name[2] = "back_ubx";
+  robotState->joint_name[3] = "l_arm_elx";
+  robotState->joint_name[4] = "l_arm_ely";
+  robotState->joint_name[5] = "l_arm_mwx";
+  robotState->joint_name[6] = "l_arm_shx";
+  robotState->joint_name[7] = "l_arm_usy";
+  robotState->joint_name[8] = "l_arm_uwy";
+  robotState->joint_name[9] = "l_leg_kny";
+  robotState->joint_name[10] = "l_leg_lax";
+  robotState->joint_name[11] = "l_leg_lhy";
+  robotState->joint_name[12] = "l_leg_mhx";
+  robotState->joint_name[13] = "l_leg_uay";
+  robotState->joint_name[14] = "l_leg_uhz";
+  robotState->joint_name[15] = "neck_ay";
+  robotState->joint_name[16] = "r_arm_elx";
+  robotState->joint_name[17] = "r_arm_ely";
+  robotState->joint_name[18] = "r_arm_mwx";
+  robotState->joint_name[19] = "r_arm_shx";
+  robotState->joint_name[20] = "r_arm_usy";
+  robotState->joint_name[21] = "r_arm_uwy";
+  robotState->joint_name[22] = "r_leg_kny";
+  robotState->joint_name[23] = "r_leg_lax";
+  robotState->joint_name[24] = "r_leg_lhy";
+  robotState->joint_name[25] = "r_leg_mhx";
+  robotState->joint_name[26] = "r_leg_uay";
+  robotState->joint_name[27] = "r_leg_uhz";
+  robotState->joint_position.resize( robotState->num_joints );
+  robotState->joint_velocity.resize( robotState->num_joints );
+  robotState->measured_effort.resize( robotState->num_joints );
+  robotState->joint_cov.resize( robotState->num_joints );
+  for( unsigned int i = 0; i < robotState->num_joints; i++ ){
+    const State_GFE_Joint& current_joint = joint( robotState->joint_name[i] );
+    robotState->joint_position[ i ] = current_joint.position();
+    robotState->joint_velocity[ i ] = current_joint.velocity();
+    robotState->measured_effort[ i ] = current_joint.measured_effort();
+  }
+  robotState->contacts.num_contacts = 0;
+  robotState->contacts.id.clear(); 
+  robotState->contacts.contact_torque.clear(); 
+  robotState->contacts.contact_force.clear(); 
+  return;
+}
+
+
+/**
  * from_urdf
  * loads the state from the URDF
  */

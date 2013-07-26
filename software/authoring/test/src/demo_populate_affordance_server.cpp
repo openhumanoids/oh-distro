@@ -34,6 +34,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     box.setToBox( 100.0, 100.0, box_height, 0, 0, KDL::Frame(KDL::Vector(0.0, 0.0, -box_height / 2.0)),
                         Eigen::Vector3f(0.75, 0.75, 0.0));
     wrapper.addNewlyFittedAffordance(box);
+
 /*
     //car
     AffordanceState car(uniqueObjId++, mapId,

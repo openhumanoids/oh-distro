@@ -24,11 +24,11 @@ namespace qt4 {
     Qt4_Widget_OpenGL( const Qt4_Widget_OpenGL& other );
     Qt4_Widget_OpenGL& operator=( const Qt4_Widget_OpenGL& other );
 
-    void add_collision_object( collision::Collision_Object& collisionObject );
+    virtual void add_collision_object( collision::Collision_Object& collisionObject );
 
     opengl::OpenGL_Scene& opengl_scene( void );
     const opengl::OpenGL_Scene& opengl_scene( void )const;
-    interface::Interface_Handler& interface_handler( void );
+    virtual interface::Interface_Handler& interface_handler( void );
 
   protected slots:
     void _handle_update_timer( void );
@@ -46,7 +46,7 @@ namespace qt4 {
     virtual void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
 
     QTimer                                    _update_timer;
-    interface::Interface_Handler              _interface_handler;
+    interface::Interface_Handler *            _interface_handler;
     opengl::OpenGL_Scene                      _opengl_scene;
     opengl::OpenGL_Object_Collision_Detector  _opengl_object_collision_detector;
 

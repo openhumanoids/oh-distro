@@ -18,10 +18,10 @@ using namespace qt4;
 Qt4_Widget_OpenGL::
 Qt4_Widget_OpenGL( QWidget * parent ) : QGLWidget( parent ),
                                         _update_timer( this ),
-                                        _interface_handler(),
                                         _opengl_scene(),
                                         _opengl_object_collision_detector() {
-  _opengl_object_collision_detector.set( _interface_handler.collision_detector() );
+  _interface_handler = new Interface_Handler();                             
+  _opengl_object_collision_detector.set( _interface_handler->collision_detector() );
   opengl_scene().add_object( _opengl_object_collision_detector );
   setMinimumSize( 400, 300 );
   setMouseTracking( true );
@@ -47,8 +47,9 @@ Qt4_Widget_OpenGL::
 Qt4_Widget_OpenGL::
 Qt4_Widget_OpenGL( const Qt4_Widget_OpenGL& other ) : QGLWidget(),
                                                       _update_timer(),
-                                                      _opengl_scene( other._opengl_scene ),
-                                                      _interface_handler( other._interface_handler ){
+                                                      _opengl_scene( other._opengl_scene ){
+  _interface_handler = new Interface_Handler();
+  *_interface_handler = *other._interface_handler;
   _update_timer.start( 100 );
 }
 
@@ -60,14 +61,14 @@ Qt4_Widget_OpenGL&
 Qt4_Widget_OpenGL::
 operator=( const Qt4_Widget_OpenGL& other ) {
   _opengl_scene = other._opengl_scene;
-  _interface_handler = other._interface_handler;
+  *_interface_handler = *other._interface_handler;
   return (*this);
 }
 
 void
 Qt4_Widget_OpenGL::
 add_collision_object( Collision_Object& collisionObject ){
-  interface_handler().add_collision_object( collisionObject );
+  _interface_handler->add_collision_object( collisionObject );
   return;
 }
 
@@ -94,7 +95,7 @@ opengl_scene( void )const{
 Interface_Handler&
 Qt4_Widget_OpenGL::
 interface_handler( void ){
-  return _interface_handler;
+  return *_interface_handler;
 }
 
 /** 
@@ -163,15 +164,15 @@ mouseIdleEvent( void ){
   _opengl_scene.camera().projection_matrix( projection_matrix );
   _opengl_scene.camera().viewport( viewport );
 
-  _interface_handler.set_eye_position( _opengl_scene.camera().eye_position() );
-  _interface_handler.set_modelview_matrix( modelview_matrix );
-  _interface_handler.set_projection_matrix( projection_matrix );
-  _interface_handler.set_viewport( viewport );
+  _interface_handler->set_eye_position( _opengl_scene.camera().eye_position() );
+  _interface_handler->set_modelview_matrix( modelview_matrix );
+  _interface_handler->set_projection_matrix( projection_matrix );
+  _interface_handler->set_viewport( viewport );
 
-  _interface_handler.mouse_event_idle();
+  _interface_handler->mouse_event_idle();
   
-  if( _interface_handler.intersected_object() != NULL ){
-    cout << "selected object: " << _interface_handler.intersected_object()->id() << endl;
+  if( _interface_handler->intersected_object() != NULL ){
+    cout << "selected object: " << _interface_handler->intersected_object()->id() << endl;
   }
 
   return;
@@ -192,30 +193,30 @@ mouseMoveEvent( QMouseEvent * event ){
   _opengl_scene.camera().projection_matrix( projection_matrix );
   _opengl_scene.camera().viewport( viewport );
   
-  _interface_handler.set_eye_position( _opengl_scene.camera().eye_position() );
-  _interface_handler.set_modelview_matrix( modelview_matrix );
-  _interface_handler.set_projection_matrix( projection_matrix );
-  _interface_handler.set_viewport( viewport );
+  _interface_handler->set_eye_position( _opengl_scene.camera().eye_position() );
+  _interface_handler->set_modelview_matrix( modelview_matrix );
+  _interface_handler->set_projection_matrix( projection_matrix );
+  _interface_handler->set_viewport( viewport );
 
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
     _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT );
-    _interface_handler.mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_LEFT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_LEFT, event->x(), event->y() );
     break;
   case ( Qt::MidButton ):
     _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE );
-    _interface_handler.mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
     break;
   case ( Qt::RightButton ):
     _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT );
-    _interface_handler.mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
     break;
   default:
-    _interface_handler.mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_NONE, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_MOVE, MOUSE_BUTTON_NONE, event->x(), event->y() );
     break;
   }
-  if( _interface_handler.intersected_object() != NULL ){
-    cout << "selected object: " << _interface_handler.intersected_object()->id() << endl;
+  if( _interface_handler->intersected_object() != NULL ){
+    cout << "selected object: " << _interface_handler->intersected_object()->id() << endl;
   }
 
   update();
@@ -238,31 +239,31 @@ mousePressEvent( QMouseEvent * event ){
   _opengl_scene.camera().viewport( viewport );
 
 
-  _interface_handler.set_eye_position( _opengl_scene.camera().eye_position() );
-  _interface_handler.set_modelview_matrix( modelview_matrix );
-  _interface_handler.set_projection_matrix( projection_matrix );
-  _interface_handler.set_viewport( viewport );
+  _interface_handler->set_eye_position( _opengl_scene.camera().eye_position() );
+  _interface_handler->set_modelview_matrix( modelview_matrix );
+  _interface_handler->set_projection_matrix( projection_matrix );
+  _interface_handler->set_viewport( viewport );
 
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
     _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT );
-    _interface_handler.mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_LEFT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_LEFT, event->x(), event->y() );
     raycast( _opengl_scene.camera().eye_position(), _opengl_scene.camera().click_position( Vector2( event->x(), event->y() )  ) ); 
     break;
   case ( Qt::MidButton ):
     _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE );
-    _interface_handler.mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
     break;
   case ( Qt::RightButton ):
     _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT );
-    _interface_handler.mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
     break;
   default:  
     break;
   }
 
-  if( _interface_handler.intersected_object() != NULL ){
-    cout << "selected object: " << _interface_handler.intersected_object()->id() << endl;
+  if( _interface_handler->intersected_object() != NULL ){
+    cout << "selected object: " << _interface_handler->intersected_object()->id() << endl;
   }
 
   update();
@@ -285,23 +286,23 @@ mouseReleaseEvent( QMouseEvent * event ){
   _opengl_scene.camera().viewport( viewport );
 
 
-  _interface_handler.set_eye_position( _opengl_scene.camera().eye_position() );
-  _interface_handler.set_modelview_matrix( modelview_matrix );
-  _interface_handler.set_projection_matrix( projection_matrix );
-  _interface_handler.set_viewport( viewport );
+  _interface_handler->set_eye_position( _opengl_scene.camera().eye_position() );
+  _interface_handler->set_modelview_matrix( modelview_matrix );
+  _interface_handler->set_projection_matrix( projection_matrix );
+  _interface_handler->set_viewport( viewport );
 
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
     _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT );
-    _interface_handler.mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_LEFT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_LEFT, event->x(), event->y() );
     break;
   case ( Qt::MidButton ):
     _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE );
-    _interface_handler.mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_MIDDLE, event->x(), event->y() );
     break;
   case ( Qt::RightButton ):
     _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT );
-    _interface_handler.mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
+    _interface_handler->mouse_event( MOUSE_EVENT_RELEASE, MOUSE_BUTTON_RIGHT, event->x(), event->y() );
     break;
   default:
     break;

@@ -317,6 +317,14 @@ group "g.0.gazebo" {
       exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
       host = "robot";
     }
+    cmd "gz_greg_aas_ingress" {
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/aas_ingress.world";
+        host = "robot";
+    }
+    cmd "gz_greg_aas_flat" {
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/aas_flat.world";
+        host = "robot";
+    }
 }
 
 group "m.simple-control" {
@@ -462,6 +470,57 @@ group "m.hose_task_utils" {
         host = "base";
     }
 }
+
+group "m.authoring" {
+    cmd "MotionPlanServer_from_seated" {
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupnames',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
+    }
+
+    cmd "MotionPlanServer_from_standing" {
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+    }
+
+    cmd "MotionPlanServer_from_turtled" {
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
+       host = "localhost";
+    }
+
+    cmd "MotionPlanServer_online" {
+       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
+       host = "localhost";
+    }
+
+    cmd "AuthoringGUI" {
+       exec = "qt4-widget-authoring-lcm-interface-test ../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf";
+       host = "localhost";
+    }
+
+    cmd "DemoAffordanceServer" {
+       exec = "demo_populate_aff_server";
+       host = "localhost";
+    }
+
+    cmd "PublishPassengerSeatedState" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_passenger.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+
+    cmd "PublishDriverSeatedState" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_forward.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+
+    cmd "PublishStandingState" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_fp.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+
+    cmd "PublishPreingressState" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_preingress.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+}
+
 ####################################################
 # drc102 - gazebo
 # pal-02 - robot
@@ -589,6 +648,31 @@ script "dev.russ.crawling" {
     start cmd "gz_mit_walking";
 }
 
+script "dev.greg.aa.ingress" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 1000;
+    start cmd "AuthoringGUI";
+    start cmd "MotionPlanServer_from_standing";
+    wait ms 4000;
+    start cmd "gz_greg_aas_ingress";
+}
+
+script "dev.greg.aa.flat" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 1000;
+    start cmd "AuthoringGUI";
+    start cmd "MotionPlanServer_from_standing";
+    wait ms 4000;
+    start cmd "gz_greg_aas_flat";
+}
 
 ############ System Tests ############
 

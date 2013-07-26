@@ -58,9 +58,9 @@ s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('');
 %r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf', [],[],struct('floating',true));
-r_Atlas = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake_no_mass.urdf',[0;0;0],[0;0;0]);
+r = r.addRobotFromURDF('../../../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf', [],[],struct('floating',true));
+r_Atlas = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',struct('floating',true));
+r = r.addRobotFromURDF('../../../models/mit_gazebo_objects/mit_vehicle/model_drake_no_mass.urdf',[1.1; 0.2; -0.888],[0;0;-1.57]);
 warning(s);
 
 nq = r.getNumDOF();
@@ -76,9 +76,15 @@ robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',J
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 robot_plan_publisher =  drc.control.RobotPlanPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher_viewer =  drc.control.WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
+%robot_plan_publisher_viewer =  WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
+robot_plan_publisher_viewer = drc.control.RobotPlanPublisher('atlas',joint_names,true, ...  
+  'CANDIDATE_ROBOT_PLAN');
 %%
 
+%% Status publish channel
+status_channel = 'ACTION_AUTHORING_SERVER_STATUS';
+% and the message package we will use
+status_msg = drc.action_authoring_server_status_t();
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
@@ -142,11 +148,27 @@ end
 
 clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid jointLimitMin jointLimitMax knee_idx elbow_idx back_idx hip_idx joint_names cost arm_cost IK ustar zstar xstar;
 
+newdata = [];
+
 timeout=10;
 display('Listening ...');
 while (1)
   warning on
-  data = getNextMessage(monitor,timeout);
+  if ~isempty(newdata)
+    fprintf('Interuppted, loading new data...\n');
+    while (1)
+      nextplandata = getNextMessage(monitor,timeout);
+      if (~isempty(nextplandata))
+        newdata = nextplandata;
+      else
+        break
+      end
+    end
+    data = newdata
+    newdata = []
+  else
+    data = getNextMessage(monitor,timeout);
+  end
   if ~isempty(data)
     msg = drc.action_sequence_t(data);
     ik_time = msg.ik_time;
@@ -259,6 +281,11 @@ while (1)
       contact_surface_idx = [];
       support_states = [];
       for i = 1:num_key_time_samples 
+        % check if a new plan came in that we should do instead
+        newdata = getNextMessage(monitor,timeout);
+        if ~isempty(newdata)
+          break
+        end
         if(i==num_key_time_samples)
           for j=1:length(action_sequence.kincons)
               %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
@@ -342,16 +369,31 @@ while (1)
         
         kinsol = doKinematics(r,q_key_time_samples(:,i));
         com_key_time_samples(:,i) = getCOM(r,kinsol);
+
+        %% Publish status
+        status_msg.utime = 0;
+        status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
+        status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
+        status_msg.solving_highres = false;
+        status_msg.plan_is_good = ~key_time_IK_failed;
+        status_msg.plan_is_warn = key_time_IK_failed;
+        lc.publish(status_channel, status_msg);
+      end
+      if ~isempty(newdata)
+        continue
       end
       publish(robot_plan_publisher, action_sequence.key_time_samples(1:i), ...
         [q_key_time_samples(:,1:i); 0*q_key_time_samples(:,1:i)]);
       if(key_time_IK_failed)
+        %% Publish failure status
+        status_msg.utime = 0;
+        status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
+        status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
+        status_msg.solving_highres = false;
+        status_msg.plan_is_good = ~key_time_IK_failed;
+        status_msg.plan_is_warn = key_time_IK_failed;
+        lc.publish(status_channel, status_msg);
         error('IK at key times was not successful! Publishing key time results.');
-      else
-        key = input('Enter ''y''to refine trajectory. Press any other key to listen for new action sequence.','s');
-        if ~strcmp(key,'y')
-          continue;
-        end
       end
       if(action_options.drake_vis)
         v.draw(0,q_key_time_samples(:,1));
@@ -427,7 +469,13 @@ while (1)
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
         
         % Compute support at t0
+        highres_had_warnings = false;
         for i = 1:numel(t_qs_breaks)
+          % check if a new plan came in that we should do instead
+          newdata = getNextMessage(monitor,timeout);
+          if ~isempty(newdata)
+            break
+          end
           ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
           if(isempty(ikargs))
             q_qs_plan(:,i) = q_qs_traj.eval(t_qs_breaks(i));
@@ -436,6 +484,7 @@ while (1)
               inverseKin(r,q_qs_traj.eval(t_qs_breaks(i)),ikargs{:},options);
             if(info>10)
               warning(['IK at time ',num2str(t_qs_breaks(i)),' is not successful']);
+              highres_had_warnings = true;
             elseif(mod(t_qs_breaks(i),1) < dt-eps)
               fprintf('IK successful at time %5.3f \n',t_qs_breaks(i));
             else
@@ -501,8 +550,20 @@ while (1)
               total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
             end
           end
-        end
 
+          %% Publish status
+          status_msg.utime = 0;
+          status_msg.last_ik_time_solved = t_qs_breaks(i);
+          status_msg.total_ik_time_to_solve = t_qs_breaks(end);
+          status_msg.solving_highres = true;
+          status_msg.plan_is_good = true;
+          status_msg.plan_is_warn = highres_had_warnings;
+          lc.publish(status_channel, status_msg);
+
+        end
+        if ~isempty(newdata)
+          continue
+        end
         %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 
         % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
@@ -515,10 +576,11 @@ while (1)
         publish(robot_plan_publisher, t_qs_breaks, ...
           [q_qs_plan; 0*q_qs_plan]);
         
-        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.','s');
-        if ~strcmp(key,'y')
-          continue;
-        end
+%        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.','s');
+%        if ~strcmp(key,'y')
+%          continue;
+%        end
+
         % Publish plan to viewer
         Q = 1*eye(4);
         R = 0.001*eye(2);
@@ -545,6 +607,8 @@ while (1)
         %else
           %robot_plan_publisher_viewer.publish(0,data);
         %end
+        %publish(robot_plan_publisher_viewer, t_qs_breaks, ...
+        %  [q_qs_plan; 0*q_qs_plan]);
 
         % Drake gui playback
         if(action_options.drake_vis)
@@ -553,8 +617,9 @@ while (1)
           v.playback(xtraj,struct('slider',true));
         end
         if(action_options.debug)
-          key = input('Press ''s'' to save and continue, or any other key to continue without saving...','s');
-          if strcmp(key,'s')
+          %key = input('Press ''s'' to save and continue, or any other key to continue without saving...','s');
+          %if strcmp(key,'s')
+          if (1 == 0)
             % Shift trajectories to be in the body frame of the link specified by
             % action_options.ref_link_str, if present.
             if(isfield(action_options,'ref_link_str'))
@@ -589,7 +654,8 @@ while (1)
       if(action_options.ZMP)
           action_sequence_ZMP = action_sequence;
         
-        
+          %TODO: status messages here?
+
           dt = 0.02;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);

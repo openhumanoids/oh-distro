@@ -6,8 +6,10 @@ using namespace opengl;
 
 OpenGL_Object_Coordinate_Axis::
 OpenGL_Object_Coordinate_Axis( bool drawTranslationAxes,
-                                bool drawRotationAxes ) : OpenGL_Object(),
+                                bool drawRotationAxes,
+                                double min_scale ) : OpenGL_Object(),
                                                           _scale( 0.1 ),
+                                                          _min_scale( min_scale ),
                                                           _opengl_object_torus(),
                                                           _quadric( NULL ),
                                                           _dl( 0 ),
@@ -51,6 +53,8 @@ operator=( const OpenGL_Object_Coordinate_Axis& other ) {
 void
 OpenGL_Object_Coordinate_Axis::
 set_scale( double scale ){
+  if (scale < _min_scale)
+    scale = _min_scale;
   _scale = scale;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 1 );
@@ -93,33 +97,61 @@ _generate_dl( void ){
   gluSphere( _quadric, _scale/20.0, 8, 8 );
   glPopMatrix();
   if( _draw_translation_axes ){
-    // draw the red x-axis
+    // draw the red +x-axis
     glPushMatrix();
-    glColor4f( 1.0, 0.0, 0.0, 1.0 );
+    glColor4f( 1.0, 0.0, 0.0, _transparency );
     glRotatef( 90.0, 0.0, 1.0, 0.0 );
     gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
     glTranslatef( 0.0, 0.0, _scale );
     gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
     glPopMatrix();
-    // draw the green y-axis
+    // draw the red -x-axis
     glPushMatrix();
-    glColor4f( 0.0, 1.0, 0.0, 1.0 );
+    glColor4f( 1.0, 0.0, 0.0, _transparency );
+    glRotatef( -90.0, 0.0, 1.0, 0.0 );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+    
+    // draw the green +y-axis
+    glPushMatrix();
+    glColor4f( 0.0, 1.0, 0.0, _transparency);
     glRotatef( -90.0, 1.0, 0.0, 0.0 );
     gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
     glTranslatef( 0.0, 0.0, _scale );
     gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
     glPopMatrix();
-    // draw the blue z-axis
+    // draw the green -y-axis
     glPushMatrix();
-    glColor4f( 0.0, 0.0, 1.0, 1.0 );
+    glColor4f( 0.0, 1.0, 0.0, _transparency );
+    glRotatef( 90.0, 1.0, 0.0, 0.0 );
     gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
     glTranslatef( 0.0, 0.0, _scale );
     gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
     glPopMatrix();
-    _opengl_object_torus.set_dimensions( _scale/1.5, _scale/40.0 );
+
+    // draw the blue +z-axis
+    glPushMatrix();
+    glColor4f( 0.0, 0.0, 1.0, _transparency );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+    // draw the blue -z-axis
+    glPushMatrix();
+    glColor4f( 0.0, 0.0, 1.0, _transparency );
+    glRotatef( 180.0, 1.0, 0.0, 0.0 );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+
   }
   if( _draw_rotation_axes ){
     // draw the roll ring
+    _opengl_object_torus.set_transparency(_transparency);
+    _opengl_object_torus.set_dimensions( _scale/1.5, _scale/40.0 );
     glPushMatrix();
     glRotatef( 90.0, 0.0, 1.0, 0.0 );
     _opengl_object_torus.draw( Vector3f( 1.0, 0.0, 0.0 ) );

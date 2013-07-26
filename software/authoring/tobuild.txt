@@ -4,5 +4,6 @@
 # mypod1
 constraint
 opengl
+#interface
 qt4
 test

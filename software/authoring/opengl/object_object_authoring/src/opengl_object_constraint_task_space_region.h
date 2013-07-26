@@ -7,6 +7,7 @@
 #include <opengl/opengl_object_box.h>
 
 #include <authoring/constraint_task_space_region.h>
+#include <collision/collision_detector.h>
 
 namespace authoring {
   class OpenGL_Object_Constraint_Task_Space_Region: public opengl::OpenGL_Object {
@@ -22,7 +23,7 @@ namespace authoring {
     virtual void set_affordance( affordance::AffordanceState& affordanceState );  
   
     virtual void draw( void );
-
+    virtual void add_to_collision( collision::Collision_Detector& detector, std::string id );
   protected:
     opengl::OpenGL_Object_Box _opengl_object_box;
     affordance::AffordanceState _affordance_state;

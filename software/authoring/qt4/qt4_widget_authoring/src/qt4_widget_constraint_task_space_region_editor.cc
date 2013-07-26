@@ -279,7 +279,7 @@ _mark_invalid_spin_boxes() {
 void 
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 enterEvent( QEvent* event ){
-  emit constraint_highlight( QString::fromStdString( _constraint.id() ), true );
+  emit constraint_highlight( QString::fromStdString( _constraint.id() ), HIGHLIGHT_PURPLE, true );
   emit child_highlight( QString::fromStdString( _constraint.id() ), QString::fromStdString( _constraint.child() ), true );
   _publish_highlights = true; 
   return;
@@ -288,7 +288,7 @@ enterEvent( QEvent* event ){
 void
 Qt4_Widget_Constraint_Task_Space_Region_Editor::
 leaveEvent( QEvent* event ){
-  emit constraint_highlight( QString::fromStdString( _constraint.id() ), false );
+  emit constraint_highlight( QString::fromStdString( _constraint.id() ), HIGHLIGHT_PURPLE, false );
   emit child_highlight( QString::fromStdString( _constraint.id() ), QString::fromStdString( _constraint.child() ), false );
   _publish_highlights = false;
   return;

@@ -14,6 +14,8 @@ namespace collision {
   public:
     Collision_Object_Cylinder( std::string id = "N/A", double radius = 1.0, double height = 0.1, Eigen::Vector3f position = Eigen::Vector3f(), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
     Collision_Object_Cylinder( std::string id, double radius, double height, const KDL::Frame& offset, const KDL::Frame& transform = KDL::Frame::Identity() );
+    //Collision_Object_Cylinder( const Collision_Object_Cylinder& other );
+    // need a copy / assignment constructor ?
     ~Collision_Object_Cylinder();
 
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );

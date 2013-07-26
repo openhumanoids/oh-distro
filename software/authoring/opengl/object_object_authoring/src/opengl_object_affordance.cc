@@ -62,10 +62,21 @@ set( AffordanceState& affordanceState ){
     _opengl_object_cylinder.set_visible( false );
     _opengl_object_sphere.set_visible( false );
     _opengl_object_box.set_visible( true );
-    _opengl_object_box.set( affordanceState.getFrame(),
+    // Half of the time, LENGTH/WIDTH/HEIGHT_NAME are used, half the time
+    // lX, lY, lZ. Yuck :P
+    if (affordanceState.hasWidth()){
+      _opengl_object_box.set( affordanceState.getFrame(),
                             Vector3f( affordanceState._params[ AffordanceState::LENGTH_NAME ],
                                       affordanceState._params[ AffordanceState::WIDTH_NAME ],
                                       affordanceState._params[ AffordanceState::HEIGHT_NAME ] ) );
+    } else {
+      _opengl_object_box.set( affordanceState.getFrame(),
+                            Vector3f( affordanceState._params[ "lX" ],
+                                      affordanceState._params[ "lY" ],
+                                      affordanceState._params[ "lZ" ] ) );
+    }
+  } else { 
+    printf("Don't know how to handle this aff type in OpenGL_Object_Affordance::set()\n");
   }
   return;
 }

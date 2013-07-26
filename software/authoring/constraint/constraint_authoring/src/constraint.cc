@@ -17,7 +17,6 @@ Constraint( const string& id,
                                         _start( start ),
                                         _end( end ),
                                         _metadata( metadata ) {
-
 }
 
 Constraint::

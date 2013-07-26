@@ -37,6 +37,10 @@ namespace state {
     bool from_lcm( const drc::robot_state_t& robotState ); 
     bool from_lcm( const drc::robot_state_t* robotState );
     void to_lcm( drc::robot_state_t* robotState )const;
+    // to be used by the action authoring client to build messages 
+    //  for publishing candidate plans, without including all of the
+    //  hand info...
+    void to_lcm_minimal( drc::robot_state_t* robotState )const;
 
     bool from_urdf( std::string filename );
 

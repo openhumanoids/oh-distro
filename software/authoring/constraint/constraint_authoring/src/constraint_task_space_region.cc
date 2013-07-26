@@ -273,7 +273,7 @@ add_to_drc_action_sequence_t( action_sequence_t& actionSequence,
   }
 
   if( child == NULL ){
-    cout << "could not add_to_drc_action_sequence_t because child == NULL" << endl;
+    cout << "could not add_to_drc_action_sequence_t because child == NULL (child aff not found)" << endl;
     return;
   } else {
     string affordance_link_name = "NA";

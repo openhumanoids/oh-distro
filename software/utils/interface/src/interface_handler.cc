@@ -188,6 +188,7 @@ mouse_event( mouse_event_t mouseEvent,
 void
 Interface_Handler::
 mouse_event_idle( void ){
+  /* No mouseover selection 
   if( _intersected_object == NULL ){
   _collision_detector.ray_test( _eye_position, _eye_position + ( _mouse_position - _eye_position ) * 100000.0, _intersected_object );
   if( _intersected_object != NULL ){
@@ -199,6 +200,7 @@ mouse_event_idle( void ){
     _num_event_idle_intersections = 0;
   }
   }
+  */
   return;
 }
 
@@ -229,9 +231,11 @@ intersected_object( void ){
 void
 Interface_Handler::
 _mouse_event_move( mouse_button_t mouseButton ){
+  /* no easy deselect by stopping mouseover
   if( _intersected_object != NULL ){
     _collision_detector.ray_test( _eye_position, _eye_position + ( _mouse_position - _eye_position ) * 100000.0, _intersected_object );
   }
+  */
   return;
 }
 
@@ -244,8 +248,10 @@ Interface_Handler::
 _mouse_event_click( mouse_button_t mouseButton ){
   switch( mouseButton ){
   case ( MOUSE_BUTTON_LEFT ):
+    _collision_detector.ray_test( _eye_position, _eye_position + ( _mouse_position - _eye_position ) * 100000.0, _intersected_object );
     break;
-  case ( MOUSE_BUTTON_MIDDLE ):
+  case ( MOUSE_BUTTON_MIDDLE ):    
+    _collision_detector.ray_test( _eye_position, _eye_position + ( _mouse_position - _eye_position ) * 100000.0, _intersected_object );
     break;
   case ( MOUSE_BUTTON_RIGHT ):
     _collision_detector.ray_test( _eye_position, _eye_position + ( _mouse_position - _eye_position ) * 100000.0, _intersected_object );

@@ -36,6 +36,20 @@ Collision_Object_Cylinder( string id,
 }
 
 /**
+ * Collision_Object_Cylinder
+ * copy constructor 
+ */ /*
+Collision_Object_Cylinder::
+Collision_Object_Cylinder( const Collision_Object_Cylinder& other ) : 
+          Collision_Object( other ),
+          _bt_collision_object(),
+          _bt_cylinder_shape(btVector3( 1.0, 0.0, 1.0))                          {
+  _bt_collision_object = other._bt_collision_object;
+  _bt_cylinder_shape = other._bt_cylinder_shape;
+}
+*/
+
+/**
  * ~Collision_Object_Cylinder
  * class destructor
  */

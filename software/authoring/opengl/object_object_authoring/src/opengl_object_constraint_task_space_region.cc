@@ -13,12 +13,14 @@
  */
 
 #include "authoring/opengl_object_constraint_task_space_region.h"
+#include "collision/collision_object_box.h"
 
 using namespace std;
 using namespace KDL;
 using namespace opengl;
 using namespace affordance;
 using namespace authoring;
+using namespace collision;
 
 OpenGL_Object_Constraint_Task_Space_Region::
 OpenGL_Object_Constraint_Task_Space_Region() : OpenGL_Object(),
@@ -57,7 +59,6 @@ void
 OpenGL_Object_Constraint_Task_Space_Region::
 set( const Constraint_Task_Space_Region& constraint ){
   _opengl_object_box.set_visible( constraint.active() && constraint.visible() );
-
   double xmin = constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : -1000.0;
   double xmax = constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 1000.0;
   double ymin = constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first ? constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second : -1000.0;
@@ -104,6 +105,18 @@ draw( void ){
   return;
 }
 
+/* Add to specified collision detector */
+void
+OpenGL_Object_Constraint_Task_Space_Region::
+add_to_collision( Collision_Detector& detector, string id ){
+  // Spawn collision box
+  Collision_Object_Box * tmp = new Collision_Object_Box( id, 
+      _opengl_object_box.dimensions(), _opengl_object_box.offset(), 
+      _opengl_object_box.transform() );
+  // populate into detector
+  detector.add_collision_object( tmp );
+  return;
+}
 
 namespace authoring {
   ostream&

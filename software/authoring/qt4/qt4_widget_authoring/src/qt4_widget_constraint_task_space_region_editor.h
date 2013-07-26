@@ -15,6 +15,7 @@
 #include <affordance/AffordanceState.h>
 
 #include <authoring/constraint_task_space_region.h>
+#include <authoring/opengl_object_constraint_sequence.h>
 
 namespace authoring {
   class Qt4_Widget_Constraint_Task_Space_Region_Editor : public QWidget {
@@ -27,7 +28,7 @@ namespace authoring {
 
   signals:
     void constraint_update( const Constraint_Task_Space_Region& constraint );
-    void constraint_highlight( const QString& id, bool highlight );
+    void constraint_highlight( const QString& id, highlight_class_t highlight_class, bool highlight );
     void child_highlight( const QString& id, const QString& child, bool highlight ); 
  
   public slots:
