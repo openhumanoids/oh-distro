@@ -9,3 +9,5 @@ for j = 1:1000
   valuecheck(X, Y);
 end
 profile viewer
+
+% NOTEST
