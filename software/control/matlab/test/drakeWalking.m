@@ -1,8 +1,6 @@
-function drakeWalking(use_mex)
+function drakeWalking(use_mex,use_bullet)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-
-use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
 
 num_steps = 5; % steps taken by robot
 step_length = 0.5;
@@ -13,6 +11,9 @@ options.floating = true;
 options.dt = 0.002;
 if (nargin>0) options.use_mex = use_mex;
 else options.use_mex = true; end
+if (nargin<2) 
+  use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
+end
 
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
