@@ -14,7 +14,7 @@ Usage:
     python fall_detector.py
 """
 
-DEFAULTS = {'vdot_threshold': 0.5,
+DEFAULTS = {'vdot_threshold': 1.0,
             'vdot_count_threshold': 5,
             'vdot_memory': 10,
             'retransmit_delay_s': 5}
