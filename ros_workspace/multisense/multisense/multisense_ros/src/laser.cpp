@@ -276,6 +276,7 @@ Laser::Laser(Channel* driver,
 
     double roll, pitch, yaw;
     scan_pre_spindle_cal_.M.GetRPY(roll, pitch, yaw);
+    
     pushCal(js_msg_, "pre_spindle_cal_x_joint", scan_pre_spindle_cal_.p[0]);
     pushCal(js_msg_, "pre_spindle_cal_y_joint", scan_pre_spindle_cal_.p[1]);
     pushCal(js_msg_, "pre_spindle_cal_z_joint", scan_pre_spindle_cal_.p[2]);
@@ -496,6 +497,73 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
 
 
 void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
+  
+  
+    std::stringstream ss2;
+    ss2 << "scan_pre_spindle_cal_\n" <<  scan_pre_spindle_cal_ ;
+    ROS_ERROR("%s", ss2.str().c_str() );
+  
+    double roll, pitch, yaw;
+    scan_pre_spindle_cal_.M.GetRPY(roll, pitch, yaw);
+    
+    ROS_ERROR("pre_spindle_cal_x_joint     %f", scan_pre_spindle_cal_.p[0]);
+    ROS_ERROR("pre_spindle_cal_y_joint     %f", scan_pre_spindle_cal_.p[1]);
+    ROS_ERROR("pre_spindle_cal_z_joint     %f", scan_pre_spindle_cal_.p[2]);
+    ROS_ERROR("pre_spindle_cal_roll_joint  %f",  roll);
+    ROS_ERROR("pre_spindle_cal_pitch_joint %f", pitch);
+    ROS_ERROR("pre_spindle_cal_yaw_joint   %f",   yaw);
+  
+    KDL::Frame trans_frame, roll_frame, pitch_frame, yaw_frame;
+    {
+      trans_frame.p[0]= scan_pre_spindle_cal_.p[0];
+      trans_frame.p[1]= scan_pre_spindle_cal_.p[1];
+      trans_frame.p[2]= scan_pre_spindle_cal_.p[2];
+      KDL::Rotation rot= KDL::Rotation::RPY(0, 0, 0 );
+      trans_frame.M = rot;
+      std::stringstream ss2;
+      ss2 << "trans_frame\n" <<  trans_frame ;
+      ROS_ERROR("%s", ss2.str().c_str() );  
+    }    
+    {
+      roll_frame.p[0]= 0;
+      roll_frame.p[1]= 0;
+      roll_frame.p[2]= 0;
+      KDL::Rotation rot= KDL::Rotation::RPY(roll, 0, 0 );
+      roll_frame.M = rot;
+      std::stringstream ss2;
+      ss2 << "roll_frame\n" <<  roll_frame ;
+      ROS_ERROR("%s", ss2.str().c_str() );  
+    }
+    {
+      pitch_frame.p[0]= 0;
+      pitch_frame.p[1]= 0;
+      pitch_frame.p[2]= 0;
+      KDL::Rotation rot= KDL::Rotation::RPY(0, pitch, 0 );
+      pitch_frame.M = rot;
+      std::stringstream ss2;
+      ss2 << "pitch_frame\n" <<  pitch_frame ;
+      ROS_ERROR("%s", ss2.str().c_str() );  
+    }    
+    
+    {
+      yaw_frame.p[0]= 0;
+      yaw_frame.p[1]= 0;
+      yaw_frame.p[2]= 0;
+      KDL::Rotation rot= KDL::Rotation::RPY(0, 0, yaw );
+      yaw_frame.M = rot;
+      std::stringstream ss2;
+      ss2 << "yaw_frame\n" <<  yaw_frame ;
+      ROS_ERROR("%s", ss2.str().c_str() );  
+    }    
+    
+    
+    KDL::Frame final_frame = trans_frame* roll_frame*pitch_frame*yaw_frame;
+    {
+      std::stringstream ss2;
+      ss2 << "final_frame\n" <<  final_frame ;
+      ROS_ERROR("%s\n\n", ss2.str().c_str() );  
+    }
+  
     // camera-to-laser is defined by three transforms: 
     // (1) camera-to-pre-spindle (from calibration)
     // (2) sensed rotation 
