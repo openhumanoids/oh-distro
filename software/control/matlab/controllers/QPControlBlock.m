@@ -234,6 +234,8 @@ classdef QPControlBlock < MIMODrakeSystem
       if ctrl_data.is_time_varying
         assert(isa(ctrl_data.s1,'Trajectory'));
         assert(isa(ctrl_data.s2,'Trajectory'));
+        assert(isa(ctrl_data.s1dot,'Trajectory'));
+        assert(isa(ctrl_data.s2dot,'Trajectory'));
         assert(isa(ctrl_data.y0,'Trajectory'));
       else
         assert(isnumeric(ctrl_data.s1));
@@ -295,10 +297,8 @@ classdef QPControlBlock < MIMODrakeSystem
     if (ctrl_data.is_time_varying)
       s1 = fasteval(ctrl_data.s1,t);
 %       s2 = fasteval(ctrl_data.s2,t);
-%       s1dot = ctrl_data.s1.deriv(t); % deriv not implemented yet
-%       s2dot = ctrl_data.s2.deriv(t); % deriv not implemented yet
-      s1dot = 0*s1;
-      s2dot = 0;
+      s1dot = fasteval(ctrl_data.s1dot,t);
+      s2dot = fasteval(ctrl_data.s2dot,t);
       y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       
       %----------------------------------------------------------------------
@@ -686,10 +686,11 @@ classdef QPControlBlock < MIMODrakeSystem
       % compute V,Vdot for controller status updates
       if (nc>0)
         %V = x_bar'*S*x_bar + s1'*x_bar + s2;
+        %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
         % note for ZMP dynamics, S is constant so Sdot=0
-        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
-      end
       
+        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
+      end
     end
   
     if (obj.use_mex==1)

@@ -17,11 +17,17 @@ struct walking_plan_t
 	int32_t n_S_bytes;
   byte S[n_S_bytes];
 
-	int32_t n_s1_bytes;
+  int32_t n_s1_bytes;
   byte s1[n_s1_bytes];
 
-	int32_t n_s2_bytes;
+  int32_t n_s2_bytes;
   byte s2[n_s2_bytes];
+
+  int32_t n_s1dot_bytes;
+  byte s1[n_s1dot_bytes];
+
+  int32_t n_s2dot_bytes;
+  byte s2[n_s2dot_bytes];
 
 	int32_t n_comtraj_bytes;
   byte comtraj[n_comtraj_bytes];

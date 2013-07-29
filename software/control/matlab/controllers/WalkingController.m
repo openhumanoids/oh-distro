@@ -18,6 +18,8 @@ classdef WalkingController < DRCController
         'S',zeros(4),...
         's1',zeros(4,1),...
         's2',0,...
+        's1dot',zeros(4,1),...
+        's2dot',0,...
         'x0',zeros(4,1),...
         'u0',zeros(2,1),...
         'y0',zeros(2,1),...
@@ -158,10 +160,22 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('is_time_varying',istv);
       
       fid = fopen(tmp_fname,'w');
+      fwrite(fid,typecast(msg_data.s1dot,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load(tmp_fname);
+      obj.controller_data.setField('s1dot',matdata.s1dot);
+
+      fid = fopen(tmp_fname,'w');
       fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
       fclose(fid);
       matdata = load(tmp_fname);
       obj.controller_data.setField('s2',matdata.s2);
+
+      fid = fopen(tmp_fname,'w');
+      fwrite(fid,typecast(msg_data.s2dot,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load(tmp_fname);
+      obj.controller_data.setField('s2dot',matdata.s2dot);
       
       support_times = msg_data.support_times;
       obj.controller_data.setField('support_times',support_times);

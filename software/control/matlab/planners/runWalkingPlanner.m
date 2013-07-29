@@ -151,8 +151,12 @@ while true
   q0 = x0(1:nq);
   link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
+  % compute s1,s2 derivatives for controller Vdot computation
+  s1dot = fnder(V.s1,1);
+  s2dot = fnder(V.s2,1);
+  
   if committed
-    walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
+    walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'s1dot',s1dot,'s2dot',s2dot,...
         'support_times',support_times,'supports',{supports},'comtraj',comtraj,'mu',mu,'t_offset',0,...
         'link_constraints',link_constraints,'zmptraj',zmptraj,'qtraj',qstar,'ignore_terrain',footstep_opts.ignore_terrain)
     msg =['Walk Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);

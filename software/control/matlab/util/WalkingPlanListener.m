@@ -52,10 +52,22 @@ classdef WalkingPlanListener
         s1=matdata.s1;
 
         fid = fopen(tmp_fname,'w');
+        fwrite(fid,typecast(msg.s1dot,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load(tmp_fname);
+        s1dot=matdata.s1dot;
+
+        fid = fopen(tmp_fname,'w');
         fwrite(fid,typecast(msg.s2,'uint8'),'uint8');
         fclose(fid);
         matdata = load(tmp_fname);
         s2=matdata.s2;
+
+        fid = fopen(tmp_fname,'w');
+        fwrite(fid,typecast(msg.s2dot,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load(tmp_fname);
+        s2dot=matdata.s2dot;
 
         support_times=msg.support_times;
 
@@ -89,7 +101,7 @@ classdef WalkingPlanListener
         
         walking_data = struct('qtraj',qtraj,'mu',mu,'t_offset',t_offset,...
           'comtraj',comtraj,'zmptraj',zmptraj,'link_constraints',link_constraints,...
-          'S',S,'s1',s1,'s2',s2,'ignore_terrain',ignore_terrain,...
+          'S',S,'s1',s1,'s2',s2,'s1dot',s1dot,'s2dot',s2dot,'ignore_terrain',ignore_terrain,...
           'support_times',support_times,'supports',supports);
         delete(tmp_fname);
 

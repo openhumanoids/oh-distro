@@ -16,8 +16,8 @@ classdef WalkingPlanPublisher
       
  			msg.robot_name = 'atlas';
       msg.utime = utime;
-      % assume: data is a struct with fields: htraj, hddtraj, S, s1, 
-      %    support_times, supports, comtraj, zmptraj, lfoottraj, rfoottraj
+      % assume: data is a struct with fields: htraj, hddtraj, S, s1, s2, 
+      %    s1dot, s2dot, support_times, supports, comtraj, zmptraj, link_constraints
       tmp_fname = ['tmp_r_', num2str(feature('getpid')), '.mat'];
 
       % do we have to save to file to convert to byte stream?
@@ -42,13 +42,27 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_s1_bytes = length(msg.s1); 
 
+      s1dot = data.s1dot;
+      save(tmp_fname,'s1dot');
+      fid = fopen(tmp_fname,'r');
+      msg.s1dot = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_s1dot_bytes = length(msg.s1dot); 
+
       s2 = data.s2;
       save(tmp_fname,'s2');
       fid = fopen(tmp_fname,'r');
       msg.s2 = fread(fid,inf,'*uint8');
       fclose(fid);
       msg.n_s2_bytes = length(msg.s2); 
-      
+
+      s2dot = data.s2dot;
+      save(tmp_fname,'s2dot');
+      fid = fopen(tmp_fname,'r');
+      msg.s2dot = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_s2dot_bytes = length(msg.s2dot); 
+
       msg.n_support_times = length(data.support_times);
       msg.support_times = data.support_times;
       
