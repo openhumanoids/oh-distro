@@ -1,0 +1,939 @@
+<robot
+  name="URDF_Valve_Levers Assembly">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.6096 1.11452653151833 0.543174211482219"
+        rpy="0 0 0" />
+      <mass
+        value="174.907641926744" />
+      <inertia
+        ixx="128.652285201911"
+        ixy="-5.07927033766009E-15"
+        ixz="-0.193188044902114"
+        iyy="78.8062616145878"
+        iyz="-3.30876199174869"
+        izz="139.632959788624" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="v1">
+    <inertial>
+      <origin
+        xyz="-4.746E-09 0.095635 -7.3518E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.65601" />
+      <inertia
+        ixx="0.0044947"
+        ixy="-6.7219E-11"
+        ixz="-9.1532E-12"
+        iyy="0.0037091"
+        iyz="-1.3409E-10"
+        izz="0.0044947" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r1"
+    type="continuous">
+    <origin
+      xyz="0 -0.4191 2.1336"
+      rpy="3.1416 -1.2931 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v1" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v2">
+    <inertial>
+      <origin
+        xyz="-4.746E-09 0.095635 -7.3518E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.65601" />
+      <inertia
+        ixx="0.0044947"
+        ixy="-6.7219E-11"
+        ixz="-9.1532E-12"
+        iyy="0.0037091"
+        iyz="-1.3409E-10"
+        izz="0.0044947" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r2"
+    type="continuous">
+    <origin
+      xyz="0 -1.0287 2.1336"
+      rpy="3.1416 -1.1328 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v2" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v3">
+    <inertial>
+      <origin
+        xyz="-4.746E-09 0.095635 -7.3518E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.65601" />
+      <inertia
+        ixx="0.0044947"
+        ixy="-6.7219E-11"
+        ixz="-9.1532E-12"
+        iyy="0.0037091"
+        iyz="-1.3409E-10"
+        izz="0.0044947" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r3"
+    type="continuous">
+    <origin
+      xyz="0 -0.7239 1.8288"
+      rpy="0 -1.4773 1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v3" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v4">
+    <inertial>
+      <origin
+        xyz="-8.52767412240496E-10 0.117204229542309 -1.51652523872059E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.77825229381572" />
+      <inertia
+        ixx="0.00500965140128703"
+        ixy="6.28897615352796E-10"
+        ixz="-3.78876433097415E-12"
+        iyy="0.00366910402881906"
+        iyz="6.68893110487346E-13"
+        izz="0.00500965125745142" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v4.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v4.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r4"
+    type="continuous">
+    <origin
+      xyz="0 -0.4191 1.524"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v4" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v5">
+    <inertial>
+      <origin
+        xyz="-7.13656356232661E-09 0.108071625872632 -1.13921447830734E-08"
+        rpy="0 0 0" />
+      <mass
+        value="1.02511563829574" />
+      <inertia
+        ixx="0.0149519472728223"
+        ixy="-1.21632295637733E-11"
+        ixz="-2.32716264499155E-11"
+        iyy="0.0240320369397913"
+        iyz="-1.56460612180546E-10"
+        izz="0.014951947765545" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v5.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v5.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r5"
+    type="continuous">
+    <origin
+      xyz="0 -1.0287 1.524"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v5" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v6">
+    <inertial>
+      <origin
+        xyz="-4.746043558157E-09 0.0956352923055542 -7.3517734677786E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.656013496642836" />
+      <inertia
+        ixx="0.00449465412712098"
+        ixy="-6.72187442066675E-11"
+        ixz="-9.15315360398156E-12"
+        iyy="0.00370906234196722"
+        iyz="-1.34085585402013E-10"
+        izz="0.00449465421512398" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v6.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v6.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r6"
+    type="continuous">
+    <origin
+      xyz="0 -0.7239 1.2192"
+      rpy="3.1416 -1.2931 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v6" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v7">
+    <inertial>
+      <origin
+        xyz="-8.52766968151286E-10 0.117204229542309 -1.51652468360908E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.77825229381572" />
+      <inertia
+        ixx="0.00500965140128703"
+        ixy="6.28897624035715E-10"
+        ixz="-3.78876418122429E-12"
+        iyy="0.00366910402881906"
+        iyz="6.68896169640755E-13"
+        izz="0.00500965125745142" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v7.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v7.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r7"
+    type="continuous">
+    <origin
+      xyz="0 -0.4191 0.9144"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v7" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v8">
+    <inertial>
+      <origin
+        xyz="0.00706916409908454 -0.000621686508626262 -0.0627242757744499"
+        rpy="0 0 0" />
+      <mass
+        value="0.459248271077251" />
+      <inertia
+        ixx="0.00172564926013972"
+        ixy="-1.90889755852663E-05"
+        ixz="-0.000208703510294614"
+        iyy="0.0019363723993027"
+        iyz="1.8414870596658E-05"
+        izz="0.000287745147748124" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v8.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v8.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r8"
+    type="continuous">
+    <origin
+      xyz="0 -1.0287 0.9144"
+      rpy="-1.5708 -6.123E-17 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v8" />
+    <axis
+      xyz="0 0 -1" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v9">
+    <inertial>
+      <origin
+        xyz="0.00706916413000225 0.000621687748853961 0.0627242753810679"
+        rpy="0 0 0" />
+      <mass
+        value="0.459248268362249" />
+      <inertia
+        ixx="0.0017256492504604"
+        ixy="1.90889803459404E-05"
+        ixz="0.000208703509420951"
+        iyy="0.00193637239421663"
+        iyz="1.84148847998541E-05"
+        izz="0.000287745146436968" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v9.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v9.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r9"
+    type="continuous">
+    <origin
+      xyz="0 -0.7239 0.6096"
+      rpy="1.5708 -0.010936 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v9" />
+    <axis
+      xyz="0 0 1" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v10">
+    <inertial>
+      <origin
+        xyz="-7.13656378437122E-09 0.108071625872632 -1.13921451161403E-08"
+        rpy="0 0 0" />
+      <mass
+        value="1.02511563829574" />
+      <inertia
+        ixx="0.0149519472728222"
+        ixy="-1.21632334514053E-11"
+        ixz="-2.32716280191765E-11"
+        iyy="0.0240320369397912"
+        iyz="-1.56460618949435E-10"
+        izz="0.014951947765545" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v10.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v10.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r10"
+    type="continuous">
+    <origin
+      xyz="0 -0.4191 0.3048"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v10" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v11">
+    <inertial>
+      <origin
+        xyz="-7.13656372886007E-09 0.108071625872632 -1.13921452271626E-08"
+        rpy="0 0 0" />
+      <mass
+        value="1.02511563829574" />
+      <inertia
+        ixx="0.0149519472728222"
+        ixy="-1.21632314643244E-11"
+        ixz="-2.3271627471329E-11"
+        iyy="0.0240320369397912"
+        iyz="-1.56460619748772E-10"
+        izz="0.014951947765545" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v11.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v11.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r11"
+    type="continuous">
+    <origin
+      xyz="0 -1.0287 0.3048"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v11" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v12">
+    <inertial>
+      <origin
+        xyz="-8.52767190195891E-10 0.218804229542309 -1.51652523872059E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.77825229381572" />
+      <inertia
+        ixx="0.00500965140128703"
+        ixy="6.28897622039146E-10"
+        ixz="-3.78876426130021E-12"
+        iyy="0.00366910402881906"
+        iyz="6.6889506624168E-13"
+        izz="0.00500965125745142" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v12.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v12.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r12"
+    type="continuous">
+    <origin
+      xyz="0.3048 -0.4191 0.1397"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v12" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v13">
+    <inertial>
+      <origin
+        xyz="-8.52767079173589E-10 0.218804229542309 -1.51652468360908E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.77825229381572" />
+      <inertia
+        ixx="0.00500965140128703"
+        ixy="6.28897622002565E-10"
+        ixz="-3.78876422922644E-12"
+        iyy="0.00366910402881906"
+        iyz="6.68893921098464E-13"
+        izz="0.00500965125745142" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v13.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v13.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r13"
+    type="continuous">
+    <origin
+      xyz="0.9144 -0.4191 0.1397"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v13" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v14">
+    <inertial>
+      <origin
+        xyz="-7.13656389539352E-09 0.209671625872632 -1.1392145005118E-08"
+        rpy="0 0 0" />
+      <mass
+        value="1.02511563829574" />
+      <inertia
+        ixx="0.0149519472728222"
+        ixy="-1.21632356945778E-11"
+        ixz="-2.32716265104374E-11"
+        iyy="0.0240320369397912"
+        iyz="-1.56460616262579E-10"
+        izz="0.014951947765545" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v14.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v14.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r14"
+    type="continuous">
+    <origin
+      xyz="0.6096 -0.7239 0.1397"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="v14" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v15">
+    <inertial>
+      <origin
+        xyz="0.00706916410795699 -0.000621686505698826 -0.164324275821457"
+        rpy="0 0 0" />
+      <mass
+        value="0.459248271540944" />
+      <inertia
+        ixx="0.00172564926114988"
+        ixy="-1.90889755740338E-05"
+        ixz="-0.000208703510484654"
+        iyy="0.00193637240034412"
+        iyz="1.84148705345386E-05"
+        izz="0.000287745147788674" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v15.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v15.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r15"
+    type="continuous">
+    <origin
+      xyz="0.3048 -1.0287 0.17014"
+      rpy="3.1416 -6.123E-17 -1.5708" />
+    <parent
+      link="base_link" />
+    <child
+      link="v15" />
+    <axis
+      xyz="0 0 1" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+  <link
+    name="v16">
+    <inertial>
+      <origin
+        xyz="-4.746043558157E-09 0.197235292305554 -7.35177363431205E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.656013496642836" />
+      <inertia
+        ixx="0.00449465412712098"
+        ixy="-6.72187503914131E-11"
+        ixz="-9.15315371240177E-12"
+        iyy="0.00370906234196722"
+        iyz="-1.34085588984552E-10"
+        izz="0.00449465421512398" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v16.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://URDF_Valve_Levers Assembly/meshes/v16.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r16"
+    type="continuous">
+    <origin
+      xyz="0.9144 -1.0287 0.1397"
+      rpy="1.5708 -2.5968E-17 -0.43798" />
+    <parent
+      link="base_link" />
+    <child
+      link="v16" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics
+      damping="0.1"
+      friction="0.8" />
+  </joint>
+</robot>

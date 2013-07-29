@@ -1,0 +1,6 @@
+<package>
+  <description brief="URDF_Valve_Levers Assembly">URDF_Valve_Levers Assembly</description>
+  <depend package="gazebo" />
+  <author>me</author>
+  <license>BSD</license>
+</package>
