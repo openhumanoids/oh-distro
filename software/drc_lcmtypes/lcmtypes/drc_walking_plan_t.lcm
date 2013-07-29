@@ -24,10 +24,10 @@ struct walking_plan_t
   byte s2[n_s2_bytes];
 
   int32_t n_s1dot_bytes;
-  byte s1[n_s1dot_bytes];
+  byte s1dot[n_s1dot_bytes];
 
   int32_t n_s2dot_bytes;
-  byte s2[n_s2dot_bytes];
+  byte s2dot[n_s2dot_bytes];
 
 	int32_t n_comtraj_bytes;
   byte comtraj[n_comtraj_bytes];
