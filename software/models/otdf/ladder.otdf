@@ -14,28 +14,30 @@
 <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
 
 <!-- Size of the outer most bounding volume -->
-<param name="lX" default_value="0.5" inc="0.01" min="0" max="100"/> 
-<param name="lY" default_value="5.0" inc="0.01" min="0" max="100"/>
-<param name="lZ" default_value="10.0" inc="0.01" min="0" max="100"/> <!-- ladder height -->
+<param name="lX" default_value="0.1" inc="0.01" min="0" max="100"/> 
+<param name="lY" default_value="0.8" inc="0.01" min="0" max="100"/>
+<param name="lZ" default_value="2.4" inc="0.01" min="0" max="100"/> <!-- ladder height -->
 
-<param name="STEP_THICKNESS" default_value="0.2" inc="0.01" min="0" max="100"/>
-<param name="STEP_WIDTH" default_value="4.0" inc="0.01" min="0" max="100"/> <!-- Also specifies the width of the rails -->
-<param name="STEP_OFFSET_Z" default_value="0.9" inc="0.01" min="0" max="10" />
+<param name="step_thickness" default_value="0.02" inc="0.01" min="0" max="100"/>
+<param name="step_width" default_value="0.8" inc="0.01" min="0" max="100"/> <!-- Also specifies the width of the rails -->
+<param name="step_xoffset" default_value="0.0" inc="0.01" min="0" max="10" />
+<param name="step_yoffset" default_value="0.0" inc="0.01" min="0" max="10" />
+<param name="step_zoffset" default_value="0.3" inc="0.01" min="0" max="10" />
 <param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>
-<param name="NO_OF_STEPS" default_value="10" inc="1" min="1" max="20"/>
+<param name="no_of_steps" default_value="6" inc="1" min="1" max="20"/>
 
 
 <!-- Bounding volumes :: They become dummy links when otdf is converted to urdf for visualization-->
 <link name="base_link"/>
 
-<bounding_volume name="Outer_Volume">
+<bounding_volume name="outer_volume">
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 	<geometry>
 		<box size="${lX} ${lY} ${lZ}"/>
 	</geometry>
 </bounding_volume> <!-- outer volume -->
 
-<bounding_volume name="Inner_Volume">
+<bounding_volume name="inner_volume">
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 	<geometry>
 		<box size="${lX} ${lY/3} ${lZ}"/>
@@ -45,66 +47,66 @@
 <!-- Links -->
 <link name="LRAIL">
 	<inertial>
-		<mass value="${Density*(lX*((lY-STEP_WIDTH)/2)*lZ)}" />
+		<mass value="${mass}" />
 		<origin rpy="0 0 0" xyz="0 0 0"/>
-		<inertia ixx="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((((lY-STEP_WIDTH)/2)*((lY-STEP_WIDTH)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0"
-			iyy="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((lX*lX) + (lZ*lZ))}" iyz="0.0"
-			izz="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((lX*lX) + (((lY-STEP_WIDTH)/2)*((lY-STEP_WIDTH)/2)))}" />
+		<inertia ixx="${((mass)/12)*((((lY-step_width)/2)*((lY-step_width)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0"
+			iyy="${((mass)/12)*((lX*lX) + (lZ*lZ))}" iyz="0.0"
+			izz="${((mass)/12)*((lX*lX) + (((lY-step_width)/2)*((lY-step_width)/2)))}" />
 	</inertial>
 	<visual>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<box size="${lX} ${(lY-STEP_WIDTH)/2} ${lZ}"/> 
+			<box size="${lX} ${(lY-step_width)/2} ${lZ}"/> 
 		</geometry>
 	</visual>
 	<collision>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<box size="${lX} ${(lY-STEP_WIDTH)/2} ${lZ}"/>
+			<box size="${lX} ${(lY-step_width)/2} ${lZ}"/>
 		</geometry>
 	</collision>
 </link>
 
 <link name="RRAIL">
 	<inertial>
-		<mass value="${Density*(lX*((lY-STEP_WIDTH)/2)*lZ)}" />
+		<mass value="${mass}" />
 		<origin rpy="0 0 0" xyz="0 0 0"/>
-		<inertia ixx="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((((lY-STEP_WIDTH)/2)*((lY-STEP_WIDTH)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0"
-			iyy="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((lX*lX)+(lZ*lZ))}" iyz="0.0"
-			izz="${((Density*(lX*((lY-STEP_WIDTH)/2)*lZ))/12)*((lX*lX)+(((lY-STEP_WIDTH)/2)*((lY-STEP_WIDTH)/2)))}" />
+		<inertia ixx="${((mass)/12)*((((lY-step_width)/2)*((lY-step_width)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0"
+			iyy="${((mass)/12)*((lX*lX)+(lZ*lZ))}" iyz="0.0"
+			izz="${((mass)/12)*((lX*lX)+(((lY-step_width)/2)*((lY-step_width)/2)))}" />
 	</inertial>
 	<visual>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<box size="${lX} ${(lY - STEP_WIDTH)/2} ${lZ}"/> 
+			<box size="${lX} ${(lY - step_width)/2} ${lZ}"/> 
 		</geometry>
 	</visual>
 	<collision>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<box size="${lX} ${(lY-STEP_WIDTH)/2} ${lZ}"/>
+			<box size="${lX} ${(lY-step_width)/2} ${lZ}"/>
 		</geometry>
 	</collision>
 </link>
 
-<link_pattern name="STEPS"  noofrepetitions ="${NO_OF_STEPS}">
+<link_pattern name="STEPS"  noofrepetitions ="${no_of_steps}">
 		<inertial>
-			<mass value="${Density*(lX*STEP_WIDTH*STEP_THICKNESS)}" />
+			<mass value="${mass}" />
 			<origin rpy="0 0 0" xyz="0 0 0"/>
-			<inertia ixx="${((Density*(lX*STEP_WIDTH*STEP_THICKNESS))/12)*((STEP_WIDTH*STEP_WIDTH)+(STEP_THICKNESS*STEP_THICKNESS))}" ixy="0.0" ixz="0.0"
-				iyy="${((Density*(lX*STEP_WIDTH*STEP_THICKNESS))/12)*((lX*lX)+(STEP_THICKNESS*STEP_THICKNESS))}" iyz="0.0"
-				izz="${((Density*(lX*STEP_WIDTH*STEP_THICKNESS))/12)*((lX*lX)+(STEP_WIDTH*STEP_WIDTH))}" />
+			<inertia ixx="${((mass)/12)*((step_width*step_width)+(step_thickness*step_thickness))}" ixy="0.0" ixz="0.0"
+				iyy="${((mass)/12)*((lX*lX)+(step_thickness*step_thickness))}" iyz="0.0"
+				izz="${((mass)/12)*((lX*lX)+(step_width*step_width))}" />
 		</inertial>
 		<visual>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<geometry>
-				<box size="${lX} ${STEP_WIDTH} ${STEP_THICKNESS}"/>
+				<box size="${lX} ${step_width} ${step_thickness}"/>
 			</geometry>
 		</visual>
 		<collision>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<geometry>
-				<box size="${lX} ${STEP_WIDTH} ${STEP_THICKNESS}"/>
+				<box size="${lX} ${step_width} ${step_thickness}"/>
 			</geometry>
 		</collision>
 </link_pattern>
@@ -116,34 +118,34 @@
  -->	
 <joint name="base_joint" type="fixed">
 	<parent link="base_link" type="link"/>
-	<child link="Outer_Volume" type="bounding_volume"/>
+	<child link="outer_volume" type="bounding_volume"/>
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 </joint>
 
 
 <joint name="LRAIL_joint" type="fixed">
-	<parent link="Outer_Volume" type="bounding_volume"/>
+	<parent link="outer_volume" type="bounding_volume"/>
 	<child link="LRAIL"  type="link"/>
-	<origin rpy="0 0 0" xyz="0 ${-((lY-STEP_WIDTH)/4)-((STEP_WIDTH)/2)} 0"/>
+	<origin rpy="0 0 0" xyz="0 ${-((lY-step_width)/4)-((step_width)/2)} 0"/>
 </joint>
 
 <joint name="RRAIL_joint" type="fixed">
-	<parent link="Outer_Volume" type="bounding_volume"/>
+	<parent link="outer_volume" type="bounding_volume"/>
 	<child link="RRAIL" type="link"/>
-	<origin rpy="0 0 0" xyz="0 ${((lY-STEP_WIDTH)/4)+((STEP_WIDTH)/2)} 0"/>
+	<origin rpy="0 0 0" xyz="0 ${((lY-step_width)/4)+((step_width)/2)} 0"/>
 </joint> 
 
-<joint name="Inner_Volume_joint" type="fixed">
-	<parent link="Outer_Volume" type="bounding_volume"/>
-	<child  link="Inner_Volume" type="bounding_volume"/>
+<joint name="inner_volume_joint" type="fixed">
+	<parent link="outer_volume" type="bounding_volume"/>
+	<child  link="inner_volume" type="bounding_volume"/>
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 </joint> 
 
 <!-- A set of joints --> 
-<joint_pattern name="STEP_joints" noofrepetitions ="${NO_OF_STEPS}" type="fixed">
-  <origin rpy="0 0 0" xyz="0 0 ${-((0.5*lZ)-(0.5*STEP_THICKNESS))+STEP_OFFSET_Z}"/> <!-- origin of the first element, all other joints are offset from it -->
-	<pattern_offset rpy="0 0 0" xyz="0 0 ${STEP_OFFSET_Z}"/> <!--relative offsets between links--> 
-	<parent link="Inner_Volume" type="bounding_volume"/>
+<joint_pattern name="STEP_joints" noofrepetitions ="${no_of_steps}" type="fixed">
+  <origin rpy="0 0 0" xyz="${step_xoffset} ${step_yoffset} ${-((0.5*lZ)-(0.5*step_thickness))+step_zoffset}"/> <!-- origin of the first element, all other joints are offset from it -->
+	<pattern_offset rpy="0 0 0" xyz="${step_xoffset} ${step_yoffset} ${step_zoffset}"/> <!--relative offsets between links--> 
+	<parent link="inner_volume" type="bounding_volume"/>
 	<child  link="STEPS" type ="link_pattern"/>
 </joint_pattern>
 

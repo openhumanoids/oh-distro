@@ -1,0 +1,456 @@
+<?xml version="1.0" ?>
+<object name="AngledLadder">
+    <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--Roll,Pitch,Yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="ladder_pitch" default_value="-0.5236" inc="0.001" min="-3.1416" max="3.1416" />
+    <param name="platform_length" default_value="0.8" inc="0.01" min="0" max="100" />
+    <param name="radius" default_value="0.025" inc="0.01" min="0" max="100" />
+    <param name="handrail_xoffset" default_value="0.5" inc="0.01" min="0" max="10" />
+    <param name="handrail_zoffset" default_value="0.9" inc="0.01" min="0" max="10" />
+    <param name="handrail_length" default_value="3" inc="0.01" min="0" max="10" />
+    <param name="upper_platform_handrail_zoffset" default_value="1.2" inc="0.01" min="0" max="10" />
+    <!-- Size of the outer bounding volume of the steps -->
+    <param name="lX" default_value="0.1" inc="0.01" min="0" max="100" />
+    <param name="lY" default_value="0.8" inc="0.01" min="0" max="100" />
+    <param name="lZ" default_value="2.77" inc="0.01" min="0" max="100" />
+    <!-- ladder height -->
+    <param name="step_thickness" default_value="0.02" inc="0.01" min="0" max="100" />
+    <param name="step_width" default_value="0.8" inc="0.01" min="0" max="100" />
+    <!-- Also specifies the width of the rails -->
+    <param name="first_step_zoffset" default_value="0.3" inc="0.01" min="0" max="10" />
+    <param name="step_zoffset" default_value="0.3" inc="0.01" min="0" max="10" />
+    <param name="Density" default_value="1.0" inc="0.01" min="0" max="100" />
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <param name="no_of_steps" default_value="8" inc="1" min="1" max="20" />
+    <!-- Bounding volumes :: They become dummy links when otdf is converted to urdf for visualization-->
+    <link name="base_link" />
+    <bounding_volume name="outer_volume">
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <geometry>
+            <box size="${lX} ${lY} ${lZ}" />
+        </geometry>
+    </bounding_volume>
+    <!-- outer volume -->
+    <bounding_volume name="inner_volume">
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <geometry>
+            <box size="${lX} ${lY/3} ${lZ}" />
+        </geometry>
+    </bounding_volume>
+    <!-- inner volume -->
+    <!-- Links -->
+    <link name="lhandrail">
+        <inertial>
+            <mass value="${mass/3}" />
+            <inertia ixx="${(mass/36)*(3*(radius^2)+(handrail_length^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/36)*(3*(radius^2)+(handrail_length^2))}" iyz="0.0" izz="${(mass/6)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${handrail_length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${handrail_length}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="rhandrail">
+        <inertial>
+            <mass value="${mass/3}" />
+            <inertia ixx="${(mass/36)*(3*(radius^2)+(handrail_length^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/36)*(3*(radius^2)+(handrail_length^2))}" iyz="0.0" izz="${(mass/6)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${handrail_length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${handrail_length}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="lrail_lower">
+        <inertial>
+            <mass value="${mass}" />
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <inertia ixx="${(mass/12)*((((lY-step_width)/2)*((lY-step_width)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*((lX*lX) + (lZ*lZ))}" iyz="0.0" izz="${(mass/12)*((lX*lX) + (((lY-step_width)/2)*((lY-step_width)/2)))}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${(lY-step_width)/2} ${lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${(lY-step_width)/2} ${lZ}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="rrail_lower">
+        <inertial>
+            <mass value="${mass}" />
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <inertia ixx="${((mass)/12)*((((lY-step_width)/2)*((lY-step_width)/2)) + (lZ*lZ))}" ixy="0.0" ixz="0.0" iyy="${((mass)/12)*((lX*lX)+(lZ*lZ))}" iyz="0.0" izz="${((mass)/12)*((lX*lX)+(((lY-step_width)/2)*((lY-step_width)/2)))}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${(lY - step_width)/2} ${lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${(lY-step_width)/2} ${lZ}" />
+            </geometry>
+        </collision>
+    </link>
+    <link_pattern name="STEPS" noofrepetitions="${no_of_steps}">
+        <inertial>
+            <mass value="${mass}" />
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <inertia ixx="${((mass)/12)*((step_width*step_width)+(step_thickness*step_thickness))}" ixy="0.0" ixz="0.0" iyy="${((mass)/12)*((lX*lX)+(step_thickness*step_thickness))}" iyz="0.0" izz="${((mass)/12)*((lX*lX)+(step_width*step_width))}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${step_width} ${step_thickness}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${step_width} ${step_thickness}" />
+            </geometry>
+        </collision>
+    </link_pattern>
+    <link name="lower_platform">
+        <inertial>
+            <mass value="${mass}" />
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <inertia ixx="${((mass)/12)*((step_width*step_width)+(step_thickness*step_thickness))}" ixy="0.0" ixz="0.0" iyy="${((mass)/12)*((lX*lX)+(step_thickness*step_thickness))}" iyz="0.0" izz="${((mass)/12)*((lX*lX)+(step_width*step_width))}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${platform_length} ${step_width} ${step_thickness}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${platform_length} ${step_width} ${step_thickness}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="upper_platform">
+        <inertial>
+            <mass value="${mass}" />
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <inertia ixx="${((mass)/12)*((step_width*step_width)+(step_thickness*step_thickness))}" ixy="0.0" ixz="0.0" iyy="${((mass)/12)*((lX*lX)+(step_thickness*step_thickness))}" iyz="0.0" izz="${((mass)/12)*((lX*lX)+(step_width*step_width))}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${platform_length} ${step_width} ${step_thickness}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${platform_length} ${step_width} ${step_thickness}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="upper_platform_lhandrail">
+        <inertial>
+            <mass value="${mass/3}" />
+            <inertia ixx="${(mass/36)*(3*(radius^2)+(lZ^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/36)*(3*(radius^2)+(platform_length^2))}" iyz="0.0" izz="${(mass/6)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${platform_length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${platform_length}" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="upper_platform_rhandrail">
+        <inertial>
+            <mass value="${mass/3}" />
+            <inertia ixx="${(mass/36)*(3*(radius^2)+(lZ^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/36)*(3*(radius^2)+(platform_length^2))}" iyz="0.0" izz="${(mass/6)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${platform_length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${platform_length}" />
+            </geometry>
+        </collision>
+    </link>
+    <!--
+ Parents and child for a joint can be a link, volume, or a linkpattern.
+ To keep the protocol urdf consistent we add a new xml attribute "type" to distinguish the different elements.
+ Ideally the tag should be something like 	<parent element="xxxx" type="link/bounding_volume/pattern_template"/>
+ -->
+    <joint name="base_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="lower_platform" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+    </joint>
+    <joint name="lower_platform_joint" type="fixed">
+        <parent link="lower_platform" type="link" />
+        <child link="outer_volume" type="bounding_volume" />
+        <origin rpy="0 ${ladder_pitch} 0" xyz="${(lZ/2)*sin(ladder_pitch)-(platform_length/2)} 0 ${(lZ/2)*cos(ladder_pitch)}" />
+    </joint>
+    <joint name="upper_platform_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="upper_platform" type="link" />
+        <origin rpy="0 0 0" xyz="${(lZ)*sin(ladder_pitch)-(platform_length)} 0 ${lZ*cos(ladder_pitch)}" />
+    </joint>
+    <joint name="upper_platform_lrail_joint" type="fixed">
+        <parent link="upper_platform" type="l0ink" />
+        <child link="upper_platform_lhandrail" type="link" />
+        <origin rpy="0 1.5708 0" xyz="0 ${step_width/2} ${upper_platform_handrail_zoffset}" />
+    </joint>
+    <joint name="upper_platform_rrail_joint" type="fixed">
+        <parent link="upper_platform" type="link" />
+        <child link="upper_platform_rhandrail" type="link" />
+        <origin rpy="0 1.5708 0" xyz="0 ${-step_width/2} ${upper_platform_handrail_zoffset}" />
+    </joint>
+    <joint name="lrail_lower_joint" type="fixed">
+        <parent link="outer_volume" type="bounding_volume" />
+        <child link="lrail_lower" type="link" />
+        <origin rpy="0 0 0" xyz="0 ${-((lY-step_width)/4)-((step_width)/2)} 0" />
+    </joint>
+    <joint name="rrail_lower_joint" type="fixed">
+        <parent link="outer_volume" type="bounding_volume" />
+        <child link="rrail_lower" type="link" />
+        <origin rpy="0 0 0" xyz="0 ${((lY-step_width)/4)+((step_width)/2)} 0" />
+    </joint>
+    <joint name="inner_volume_joint" type="fixed">
+        <parent link="outer_volume" type="bounding_volume" />
+        <child link="inner_volume" type="bounding_volume" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+    </joint>
+    <joint name="lhandrail_joint" type="fixed">
+        <parent link="lrail_lower" type="link" />
+        <child link="lhandrail" type="link" />
+        <origin rpy="0 0 0" xyz="${handrail_xoffset} 0 ${handrail_zoffset}" />
+    </joint>
+    <joint name="rhandrail_joint" type="fixed">
+        <parent link="rrail_lower" type="link" />
+        <child link="rhandrail" type="link" />
+        <origin rpy="0 0 0" xyz="${handrail_xoffset} 0 ${handrail_zoffset}" />
+    </joint>
+    <!-- A set of joints -->
+    <joint_pattern name="STEP_joints" noofrepetitions="${no_of_steps}" type="fixed">
+        <origin rpy="0 ${-ladder_pitch} 0" xyz="0 0 ${-((0.5*lZ)-(0.5*step_thickness))+first_step_zoffset}" />
+        <!-- origin of the first element, all other joints are offset from it -->
+        <pattern_offset rpy="0 0 0" xyz="0 0 ${step_zoffset}" />
+        <!--relative offsets between links-->
+        <parent link="inner_volume" type="bounding_volume" />
+        <child link="STEPS" type="link_pattern" />
+    </joint_pattern>
+    <!-- PERSISTENT SEEDS -->
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="lower_platform_0" />
+        <relative_pose rpy="-1.08294e-06 -1.0715e-06 -3.13628" xyz="-0.194347 0.201567 0.0843518" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="lower_platform_0" />
+        <relative_pose rpy="-6.15395e-07 -1.19919e-06 -3.13111" xyz="-0.20077 -0.200747 0.0845343" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_0_0" />
+        <relative_pose rpy="0.00171232 0.0269066 3.08081" xyz="0.00695314 0.111849 0.0868654" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_1_0" />
+        <relative_pose rpy="1.47379e-06 -3.2454e-06 -3.10422" xyz="0.00401303 -0.177679 0.0845344" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_2_0" />
+        <relative_pose rpy="-0.0014056 0.000122741 -3.0569" xyz="0.00604826 0.101548 0.0850586" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="2.36793e-06 -2.43883e-07 -3.03896" xyz="0.00399082 -0.170579 0.0845349" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="1.33988e-05 -3.72851e-06 -3.1046" xyz="0.0371895 0.118338 0.0843546" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_5_0" />
+        <relative_pose rpy="-0.00117362 -0.0298471 -3.1018" xyz="0.0188469 -0.203143 0.0855064" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_6_0" />
+        <relative_pose rpy="-3.63672e-05 -2.09943e-06 3.08393" xyz="0.00850344 0.104822 0.0843691" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="STEPS_7_0" />
+        <relative_pose rpy="0.0055978 3.65703e-05 3.13506" xyz="0.0261645 -0.154387 0.0876381" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="upper_platform_0" />
+        <relative_pose rpy="-1.35477e-06 -3.518e-08 3.11563" xyz="0.25412 -0.129594 0.0845336" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="upper_platform_0" />
+        <relative_pose rpy="-3.11477e-07 7.13733e-09 -3.11868" xyz="0.264247 0.206948 0.0843504" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.898326 -0.1063 -1.17454" xyz="0.107204 -0.0159622 -1.20557" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141676 1.41012 0.9529 -0.00310152 1.42867 0.830622 0.0139626 1.43598 0.736938 -0.414757 1.02751 -0.164017 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.932978 -0.192061 -0.52943" xyz="0.0955156 0.0523924 -0.77448" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141424 1.47362 0.999752 -0.00275301 1.44257 0.872691 0.0140107 1.43004 0.726212 -0.0927606 1.05537 -0.0204882 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.899526 -0.0740502 -0.857415" xyz="0.106642 0.0192341 -0.437001" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141536 1.41934 0.890527 -0.00310309 1.42114 0.826986 0.0140032 1.42467 0.763821 -0.0696527 1.04754 -0.0534718 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.888183 -0.034642 -1.09754" xyz="0.107214 -0.00550002 -0.0311709" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141924 1.38359 0.910092 -0.0029098 1.41362 0.831149 0.0140171 1.43521 0.76897 -0.053861 1.01346 0.0315003 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.935527 -0.310446 -1.22918" xyz="0.106445 -0.022337 0.655064" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141795 1.51094 1.09307 -0.00259909 1.47976 0.853874 0.014052 1.45622 0.643732 -0.199177 1.04752 -0.0312018 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="lhandrail_0" />
+        <relative_pose rpy="0.945739 -0.260673 -1.27329" xyz="0.105997 -0.0263662 1.1205" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141713 1.49387 1.06144 -0.00142629 1.47133 0.84414 0.01402 1.45531 0.642569 -0.00238258 1.0665 0.0125217 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="upper_platform_rhandrail_0" />
+        <relative_pose rpy="-2.25035 -0.0019699 -2.46585" xyz="-0.0986552 0.0389867 0.166524" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0125691 1.45268 0.740273 0.00423425 1.44765 0.756529 0.0130195 1.4464 0.775054 0.334802 1.28906 0.783633 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="upper_platform_lhandrail_0" />
+        <relative_pose rpy="2.34787 -0.249075 2.81844" xyz="-0.0595736 -0.0725497 0.244167" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141486 1.36776 0.648371 -0.0042786 1.39666 0.889589 0.0139302 1.47229 1.06102 0.165826 1.03574 -0.0703636 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="rhandrail_0" />
+        <relative_pose rpy="-0.875602 -0.0122517 1.58303" xyz="0.0920435 0.0544242 1.21663" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141612 1.38228 0.861698 -0.0027038 1.42157 0.792515 0.014047 1.42254 0.803084 -0.184966 1.06322 -0.116888 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="rhandrail_0" />
+        <relative_pose rpy="-0.910967 -0.060721 1.20567" xyz="0.106437 0.0181118 0.583547" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0130071 1.45211 0.824957 0.00466906 1.44607 0.779798 0.0133587 1.43971 0.73227 0.42171 1.27214 0.842263 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="rhandrail_0" />
+        <relative_pose rpy="-0.839156 0.0512217 1.2835" xyz="0.101958 0.0220639 -0.0391461" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141631 1.34031 0.831835 -0.00363275 1.37702 0.855522 0.0139763 1.41792 0.869785 -0.512066 1.05103 -0.21235 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="rhandrail_0" />
+        <relative_pose rpy="-0.935015 -0.203333 1.15595" xyz="0.108187 0.0138338 -0.484988" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141193 1.47391 1.01287 -0.0021212 1.46011 0.838906 0.0140456 1.44844 0.67836 -0.0483562 1.02371 0.0710025 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="rhandrail_0" />
+        <relative_pose rpy="-0.896236 -0.0575744 1.17002" xyz="0.106986 0.0138667 -0.879644" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.014158 1.38795 0.935352 -0.00399786 1.41736 0.834123 0.0140018 1.43686 0.751754 -0.00274 1.00206 0.0648161 " />
+    </grasp_seed>
+</object>
