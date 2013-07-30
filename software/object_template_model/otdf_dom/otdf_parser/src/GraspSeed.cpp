@@ -161,7 +161,7 @@ void GraspSeed::unstoreFromOtdf(const std::string& otdf_file){
   for (TiXmlElement* grasp_it = object->FirstChildElement("grasp_seed"); grasp_it; grasp_it = grasp_it->NextSiblingElement("grasp_seed")) {
     GraspSeed readSeed;
     readSeed.setFromXml(grasp_it);
-    cout << readSeed.geometry_name << endl;
+    //cout << readSeed.geometry_name << endl;
     if(readSeed==*this) toRemove.push_back(grasp_it);
   }
 
