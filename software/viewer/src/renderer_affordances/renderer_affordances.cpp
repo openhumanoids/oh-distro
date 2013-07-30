@@ -10,6 +10,7 @@
 #include "object_interaction_gui_utils.hpp"
 #include "stickyhand_interaction_gui_utils.hpp"
 #include "stickyfoot_interaction_gui_utils.hpp"
+#include "mixedseed_interaction_gui_utils.hpp"
 #include "lcm_utils.hpp"
 
 #define GEOM_EPSILON 1e-9
@@ -584,6 +585,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         cout << "intersected stickyhand:" << (self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyhand_selection);
         self->stickyHandCollection->highlight_selected(self->seedSelectionManager);
+        self->stickyFootCollection->highlight_selected(self->seedSelectionManager);
     }
     else if(self->stickyfoot_selection!=" "){
         
@@ -593,6 +595,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         //foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
         cout << "intersected stickyfoot:" << self->stickyfoot_selection << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyfoot_selection);
+        self->stickyHandCollection->highlight_selected(self->seedSelectionManager);
         self->stickyFootCollection->highlight_selected(self->seedSelectionManager);
     }
     else if(self->object_selection!=" "){

@@ -61,7 +61,7 @@
 #define PARAM_CURRENT_POSE "Maintain pose"
 #define PARAM_CLEAR_CURRENT_GOAL "Clear EE goal"
 
-
+#define PARAM_SEND_EE_GOAL_SEQUENCE "Get Whole Body Plan"
 
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
@@ -91,8 +91,8 @@ namespace renderer_affordances_gui_utils
 //--------------------------------------------------------------------------------
 //  OTDF object dblclk popup and associated cbs.
  
-  void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);  
-  void store_sticky_feet(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
+  //void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);  
+  //void store_sticky_feet(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
   
    static void on_ee_goal_widget_closed(BotGtkParamWidget *pw, const void *user)
     {
@@ -664,34 +664,17 @@ namespace renderer_affordances_gui_utils
     }
     else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
     
-      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
-      while (hand_it!=self->stickyHandCollection->_hands.end()) 
-      {
-         if (hand_it->second.object_name == self->object_selection)
-         {
-            if(self->stickyhand_selection==hand_it->first)
-               self->stickyhand_selection = " ";
-            self->stickyHandCollection->_hands.erase(hand_it++);
-         }
-         else
-            hand_it++;
-      } 
-      
-      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
-      while (foot_it!=self->stickyFootCollection->_feet.end()) 
-      {
-         if (foot_it->second.object_name == self->object_selection)
-         {
-            if(self->stickyfoot_selection==foot_it->first)
-               self->stickyfoot_selection = " ";
-            self->stickyFootCollection->_feet.erase(foot_it++);
-         }
-         else
-            foot_it++;
-      } 
-      
+     self->stickyHandCollection->remove_seeds(self->object_selection,self->affCollection);
+     self->stickyFootCollection->remove_seeds(self->object_selection,self->affCollection);
+     size_t found;
+     found = self->stickyhand_selection.find(self->object_selection);
+     if(found!=std::string::npos){
+      self->stickyhand_selection = " ";
+     }
+     found = self->stickyfoot_selection.find(self->object_selection);
+     if(found!=std::string::npos){
+      self->stickyfoot_selection = " ";
+      }
       self->selection_hold_on = false;
     
     }

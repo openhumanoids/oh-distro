@@ -102,6 +102,10 @@ using namespace boost;
 using namespace visualization_utils;
 using namespace collision;
 
+namespace renderer_affordances_gui_utils{
+static void spawn_mixed_seed_dblclk_popup(void* user);
+}
+
 namespace renderer_affordances {
 
 // ===== 2 dimensional structure =====
@@ -142,6 +146,8 @@ class CandidateGraspSeedListener;
 class GraspOptStatusListener;
 class CandidateFootStepSeedManager;
 class ReachabilityVerifier;
+
+
  
 struct RendererAffordances {
   RendererAffordances()
@@ -315,7 +321,7 @@ struct RendererAffordances {
     {
         cout<< "Printing Selection Order On Shift KeyRelease\n";
 	      seedSelectionManager->print();
-       //spawn_ee_constraint_sequencer_pop_up();
+        renderer_affordances_gui_utils::spawn_mixed_seed_dblclk_popup(this);
     }
     
   }

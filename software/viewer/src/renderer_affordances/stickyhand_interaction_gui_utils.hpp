@@ -24,11 +24,7 @@ namespace renderer_affordances_gui_utils
     
     if (! strcmp(name, PARAM_DELETE)) {
       fprintf(stderr,"\n Clearing selected sticky hand\n");
-      
-      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
-      if(hand_it!=self->stickyHandCollection->_hands.end())
-        self->stickyHandCollection->_hands.erase(hand_it);
+      self->stickyHandCollection->remove(self->stickyhand_selection);
       self->stickyhand_selection = " ";
       bot_viewer_request_redraw(self->viewer);
     }
@@ -156,10 +152,12 @@ namespace renderer_affordances_gui_utils
        cout << "TODO" << endl;
     }
     else if ((!strcmp(name, PARAM_STORE))) {
-      store_sticky_hand(pw,name,user,false);    
+      self->stickyHandCollection->store(self->stickyhand_selection,false,self->affCollection);
+      //store_sticky_hand(pw,name,user,false);    
     }
     else if ((!strcmp(name, PARAM_UNSTORE))) {
-      store_sticky_hand(pw,name,user,true);    
+      self->stickyHandCollection->store(self->stickyhand_selection,true,self->affCollection);
+      //store_sticky_hand(pw,name,user,true);    
     }
     else if (!strcmp(name, PARAM_MELD_HAND_TO_CURRENT))
     {
@@ -242,7 +240,7 @@ namespace renderer_affordances_gui_utils
     gtk_widget_destroy(self->dblclk_popup);
     
    }
-  
+  //--------------------------------------------------------------------------
   static void spawn_sticky_hand_dblclk_popup (RendererAffordances *self)
   {
   
@@ -320,10 +318,7 @@ namespace renderer_affordances_gui_utils
     gtk_widget_show_all(window); 
 
   }
-  
-
-
- 
+ //=======================================================================================  
   
 
 }

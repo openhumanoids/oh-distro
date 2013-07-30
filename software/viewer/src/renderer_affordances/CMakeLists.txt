@@ -24,7 +24,6 @@ add_library(renderer_affordances SHARED
   InitGraspOptPublisher.cpp
   GraspOptStatusListener.cpp
   ReachabilityVerifier.cpp
-  object_interaction_gui_utils.cpp
   )
   
 set_target_properties(renderer_affordances  PROPERTIES SOVERSION 1)
@@ -41,6 +40,7 @@ pods_install_headers(renderer_affordances.hpp
   object_interaction_gui_utils.hpp
   stickyhand_interaction_gui_utils.hpp
   stickyfoot_interaction_gui_utils.hpp
+  mixedseed_interaction_gui_utils.hpp
   lcm_utils.hpp
   DESTINATION renderer_affordances )
 

@@ -22,11 +22,7 @@ namespace renderer_affordances_gui_utils
       
       if (! strcmp(name, PARAM_DELETE)) {
           fprintf(stderr,"\n Clearing selected sticky foot\n");
-          
-          typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-          sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
-          if(foot_it!=self->stickyFootCollection->_feet.end())
-              self->stickyFootCollection->_feet.erase(foot_it);
+          self->stickyFootCollection->remove(self->stickyfoot_selection);
           self->stickyfoot_selection = " ";
           bot_viewer_request_redraw(self->viewer);
       }
@@ -137,17 +133,19 @@ namespace renderer_affordances_gui_utils
       } // end if else
       
     else if ((!strcmp(name, PARAM_STORE))) {
-      store_sticky_feet(pw,name,user,false);    
+      //store_sticky_feet(pw,name,user,false);   
+      self->stickyFootCollection->store(self->stickyfoot_selection,false,self->affCollection); 
     }
     else if ((!strcmp(name, PARAM_UNSTORE))) {
-      store_sticky_feet(pw,name,user,true);    
+      //store_sticky_feet(pw,name,user,true);   
+      self->stickyFootCollection->store(self->stickyfoot_selection,true,self->affCollection);  
     }
 
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
     
   }
-    
+  //--------------------------------------------------------------------------
   static void spawn_sticky_foot_dblclk_popup (RendererAffordances *self)
   {
   

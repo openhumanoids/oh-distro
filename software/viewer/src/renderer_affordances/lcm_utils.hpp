@@ -20,7 +20,8 @@ namespace renderer_affordances_lcm_utils
     {
         RendererAffordances *self = (RendererAffordances*) user;
         drc::aff_indexed_traj_opt_constraint_t trajmsg;
-        get_aff_indexed_traj_opt_constraint(self->last_state_msg_timestamp,self->robot_name,ee_frames_map,ee_frame_affindices_map,trajmsg);
+        bool unique_ee_occurances=true;
+        get_aff_indexed_traj_opt_constraint(self->last_state_msg_timestamp,self->robot_name,unique_ee_occurances,ee_frames_map,ee_frame_affindices_map,trajmsg);
         self->lcm->publish(channel, &trajmsg);
     }
     //----------------------------------------------------------------------------------------------------  
@@ -39,14 +40,16 @@ namespace renderer_affordances_lcm_utils
    //----------------------------------------------------------------------------------------------------
     // one traj_opt_constraint
     // for N ee's and K timesteps. 
-    static void publish_traj_opt_constraint(const string& channel, map<string, vector<KDL::Frame> > &ee_frames_map,
+
+    static void publish_traj_opt_constraint(const string& channel, bool unique_ee_occurances,
+                                            map<string, vector<KDL::Frame> > &ee_frames_map,
                                             map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                             map<string, vector<double> > &joint_pos_map,
                                             map<string, vector<int64_t> > &joint_pos_timestamps_map,  void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         drc::traj_opt_constraint_t trajmsg;
-        get_traj_opt_constraint(self->last_state_msg_timestamp,self->robot_name,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,trajmsg);
+        get_traj_opt_constraint(self->last_state_msg_timestamp,self->robot_name,unique_ee_occurances,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,trajmsg);
         self->lcm->publish(channel, &trajmsg);
     }
     //----------------------------------------------------------------------------------------------------
@@ -165,7 +168,10 @@ namespace renderer_affordances_lcm_utils
         self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
         
         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
-        publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map, self);
+     bool unique_ee_occurances=true;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
     } 
   
     //----------------------------------------------------------------------------------------------------   
@@ -197,8 +203,41 @@ namespace renderer_affordances_lcm_utils
       ee_frames_map.insert(make_pair("pelvis", T_world_ee_frames));
       ee_frame_timestamps_map.insert(make_pair("pelvis", frame_timestamps));      
 
-      publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
+     bool unique_ee_occurances=true;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
   } 
+  //----------------------------------------------------------------------------------------------------   
+  
+  static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+
+  
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+  
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map;   
+  
+     // get time indexed ee goal constraints from selected sticky hands 
+     self->stickyHandCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
+                                                                   self->seedSelectionManager,
+                                                                   ee_frames_map,ee_frame_timestamps_map,
+                                                                   joint_pos_map,joint_pos_timestamps_map);
+     // Publish time indexed ee goal constraints from selected sticky feet 
+     self->stickyFootCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
+                                                                   self->seedSelectionManager,
+                                                                   ee_frames_map,ee_frame_timestamps_map,
+                                                                   joint_pos_map,joint_pos_timestamps_map);
+     bool unique_ee_occurances=false;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
+  } 
+  
+  
   //----------------------------------------------------------------------------------------------------   
    // Publish time indexed ee motion constraints from the selected sticky hand
   static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired, bool to_future_state)
@@ -217,7 +256,10 @@ namespace renderer_affordances_lcm_utils
       // populate message cache
       get_pose_constraint_to_sticky_hand(handstruc,it->second,T_world_body_desired,to_future_state,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
       // Publish the message 
-      publish_traj_opt_constraint(channel, ee_frames_map, ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,self);
+     bool unique_ee_occurances=true;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
   }  
  
   //----------------------------------------------------------------------------------------------------   
