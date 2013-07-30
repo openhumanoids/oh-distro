@@ -153,11 +153,9 @@ namespace renderer_affordances_gui_utils
     }
     else if ((!strcmp(name, PARAM_STORE))) {
       self->stickyHandCollection->store(self->stickyhand_selection,false,self->affCollection);
-      //store_sticky_hand(pw,name,user,false);    
     }
     else if ((!strcmp(name, PARAM_UNSTORE))) {
       self->stickyHandCollection->store(self->stickyhand_selection,true,self->affCollection);
-      //store_sticky_hand(pw,name,user,true);    
     }
     else if (!strcmp(name, PARAM_MELD_HAND_TO_CURRENT))
     {

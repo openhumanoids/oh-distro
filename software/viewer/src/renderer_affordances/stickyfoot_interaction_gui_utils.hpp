@@ -133,11 +133,9 @@ namespace renderer_affordances_gui_utils
       } // end if else
       
     else if ((!strcmp(name, PARAM_STORE))) {
-      //store_sticky_feet(pw,name,user,false);   
       self->stickyFootCollection->store(self->stickyfoot_selection,false,self->affCollection); 
     }
     else if ((!strcmp(name, PARAM_UNSTORE))) {
-      //store_sticky_feet(pw,name,user,true);   
       self->stickyFootCollection->store(self->stickyfoot_selection,true,self->affCollection);  
     }
 

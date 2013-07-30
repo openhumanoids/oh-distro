@@ -90,10 +90,7 @@ namespace renderer_affordances_gui_utils
 {
 //--------------------------------------------------------------------------------
 //  OTDF object dblclk popup and associated cbs.
- 
-  //void store_sticky_hand(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);  
-  //void store_sticky_feet(BotGtkParamWidget *pw, const char *name,void *user,bool unstore);
-  
+
    static void on_ee_goal_widget_closed(BotGtkParamWidget *pw, const void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
