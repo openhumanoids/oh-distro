@@ -1,0 +1,50 @@
+package drc;
+
+// The part of the Robot State
+// that origins from BDI's library
+
+struct atlas_state_t
+{
+  int64_t utime;
+
+  int16_t num_joints;
+  int16_t joint_type[num_joints];
+  float joint_position [num_joints];
+  float joint_velocity [num_joints];
+  float joint_effort[num_joints];
+
+  force_torque_t force_torque;
+  
+  // 0->50 BDI
+  const int16_t BACK_BKZ    = 0;
+  const int16_t BACK_BKY    = 1;
+  const int16_t BACK_BKX    = 2;
+  const int16_t NECK_AY     = 3;
+  const int16_t L_LEG_HPZ   = 4;
+  const int16_t L_LEG_HPX   = 5;
+  const int16_t L_LEG_HPY   = 6;
+  const int16_t L_LEG_KNY   = 7;
+  const int16_t L_LEG_AKY   = 8;
+  const int16_t L_LEG_AKX   = 9;
+  const int16_t R_LEG_HPZ   = 10;
+  const int16_t R_LEG_HPX   = 11;
+  const int16_t R_LEG_HPY   = 12;
+  const int16_t R_LEG_KNY   = 13;
+  const int16_t R_LEG_AKY   = 14;
+  const int16_t R_LEG_AKX   = 15;
+  const int16_t L_ARM_USY   = 16;
+  const int16_t L_ARM_SHX   = 17;
+  const int16_t L_ARM_ELY   = 18;
+  const int16_t L_ARM_ELX   = 19;
+  const int16_t L_ARM_UWY   = 20;
+  const int16_t L_ARM_MWX   = 21;
+  const int16_t R_ARM_USY   = 22;
+  const int16_t R_ARM_SHX   = 23;
+  const int16_t R_ARM_ELY   = 24;
+  const int16_t R_ARM_ELX   = 25;
+  const int16_t R_ARM_UWY   = 26;
+  const int16_t R_ARM_MWX   = 27;
+  // 50 -> 99 sandia hands
+  // 100->149 irobot
+  // 150->199 sensor head
+}

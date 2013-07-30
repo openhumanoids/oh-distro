@@ -1,0 +1,43 @@
+package drc;
+
+// State of the sandia hand component
+// NB: the joint_type fields are derived from drc_state_t
+//     pull all changes from there
+
+struct sandia_state_t
+{
+  int64_t utime;
+
+  int16_t num_joints;
+  int16_t joint_type[num_joints];
+  float joint_position [num_joints];
+  float joint_velocity [num_joints];
+  float joint_effort[num_joints];
+
+  // 100 -> 119 sandia hands left
+  const int16_t LEFT_F0_J0  = 100;
+  const int16_t LEFT_F0_J1  = 101;
+  const int16_t LEFT_F0_J2  = 102;
+  const int16_t LEFT_F1_J0  = 103;
+  const int16_t LEFT_F1_J1  = 104;
+  const int16_t LEFT_F1_J2  = 105;
+  const int16_t LEFT_F2_J0  = 106;
+  const int16_t LEFT_F2_J1  = 107;
+  const int16_t LEFT_F2_J2  = 108;
+  const int16_t LEFT_F3_J0  = 109;
+  const int16_t LEFT_F3_J1  = 110;
+  const int16_t LEFT_F3_J2  = 111;
+  // 120 -> 149 sandia hands right
+  const int16_t RIGHT_F0_J0 = 120;
+  const int16_t RIGHT_F0_J1 = 121;
+  const int16_t RIGHT_F0_J2 = 122;
+  const int16_t RIGHT_F1_J0 = 123;
+  const int16_t RIGHT_F1_J1 = 124;
+  const int16_t RIGHT_F1_J2 = 125;
+  const int16_t RIGHT_F2_J0 = 126;
+  const int16_t RIGHT_F2_J1 = 127;
+  const int16_t RIGHT_F2_J2 = 128;
+  const int16_t RIGHT_F3_J0 = 129;
+  const int16_t RIGHT_F3_J1 = 130;
+  const int16_t RIGHT_F3_J2 = 141;  
+}
