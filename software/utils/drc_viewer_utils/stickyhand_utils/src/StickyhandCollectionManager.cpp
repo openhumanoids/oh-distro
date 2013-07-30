@@ -1,6 +1,6 @@
 
 #include "StickyhandCollectionManager.hpp"
-
+#include <tinyxml.h>
 using namespace visualization_utils;
 using namespace collision;
 
@@ -40,7 +40,103 @@ StickyhandCollectionManager::StickyhandCollectionManager(boost::shared_ptr<lcm::
 StickyhandCollectionManager::~StickyhandCollectionManager() {
 
 }
-  
+
+//-------------------------------------------------------------------------------------------
+bool StickyhandCollectionManager::is_parent_object(std::string& object_name)
+{
+  sticky_hands_map_type_::iterator hand_it = _hands.begin();
+  while (hand_it!=_hands.end()) 
+  {
+     if (hand_it->second.object_name == (object_name))
+     {
+       return true;
+     }
+     
+     hand_it++;
+  } 
+  return false;
+}
+//-------------------------------------------------------------------------------------------
+bool StickyhandCollectionManager::remove(std::string& id) {
+    sticky_hands_map_type_::iterator hand_it = _hands.find(id);
+    if(hand_it!=_hands.end()){
+        _hands.erase(hand_it);
+        return true;
+    }
+    return false;
+}
+//-------------------------------------------------------------------------------------------
+bool StickyhandCollectionManager::remove_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager) {
+
+  sticky_hands_map_type_::iterator hand_it = _hands.begin();
+  while (hand_it!=_hands.end()) 
+  {
+     string id = hand_it->first;
+     if(selectionManager->is_selected(id))
+     { 
+         selectionManager->remove(id); 
+        _hands.erase(hand_it++);
+     }
+     else
+        hand_it++;
+  }
+}
+
+//-------------------------------------------------------------------------------------------
+void StickyhandCollectionManager::remove_seeds(std::string& obj_id,boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+
+  sticky_hands_map_type_::iterator hand_it = _hands.begin();
+  while (hand_it!=_hands.end()) 
+  {
+     string id = hand_it->first;
+     if (hand_it->second.object_name == obj_id)
+     { 
+        _hands.erase(hand_it++);
+     }
+     else
+        hand_it++;
+  }
+}
+
+//-------------------------------------------------------------------------------------------
+bool StickyhandCollectionManager::store(std::string& id,bool unstore,
+                                         boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+    sticky_hands_map_type_::iterator hand_it = _hands.find(id);
+    if(hand_it!=_hands.end()){
+      object_instance_map_type_::iterator obj_it = affCollectionManager->_objects.find(string(hand_it->second.object_name));
+      // get otdf name
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string filepath =  otdf_models_path + obj_it->second.otdf_type +".otdf";
+
+      // get variables to create grasp_seed xml
+      GraspSeed graspSeed;
+      graspSeed.appType = GraspSeed::HAND;
+      KDL::Frame& geo = hand_it->second.T_geometry_hand;
+      graspSeed.xyz[0] = geo.p.x(), graspSeed.xyz[1] = geo.p.y(), graspSeed.xyz[2] = geo.p.z();
+      geo.M.GetRPY(graspSeed.rpy[0],graspSeed.rpy[1],graspSeed.rpy[2]);
+      graspSeed.geometry_name = hand_it->second.geometry_name;
+      graspSeed.grasp_type = hand_it->second.hand_type;
+      graspSeed.joint_names = hand_it->second.joint_name;
+      graspSeed.joint_positions = hand_it->second.joint_position;
+      if(unstore) 
+        graspSeed.unstoreFromOtdf(filepath);
+      else        
+        graspSeed.writeToOtdf(filepath);
+      return true;
+    }    
+    return false;
+}
+//-------------------------------------------------------------------------------------------
+bool StickyhandCollectionManager::store_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,bool unstore,
+                                         boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+  for(sticky_hands_map_type_::iterator it = _hands.begin(); it!=_hands.end(); it++)
+  {
+      string id = it->first;
+      if(selectionManager->is_selected(id)){
+        store(id,unstore,affCollectionManager);
+      }
+  }// end for 
+}  
 //-------------------------------------------------------------------------------------------  
 void StickyhandCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 {
@@ -94,23 +190,6 @@ void StickyhandCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 }
 
 //-------------------------------------------------------------------------------------------
-bool StickyhandCollectionManager::is_parent_object(std::string& object_name)
-{
-  sticky_hands_map_type_::iterator hand_it = _hands.begin();
-  while (hand_it!=_hands.end()) 
-  {
-     if (hand_it->second.object_name == (object_name))
-     {
-       return true;
-     }
-     
-     hand_it++;
-  } 
-  return false;
-}
-
-//------------------------
-
 void StickyhandCollectionManager::add_or_update(const drc::desired_grasp_state_t* msg)		
 {
 
@@ -412,7 +491,7 @@ void StickyhandCollectionManager::get_pose_constraints(string object_name, OtdfI
                   else if(hand_it->second.hand_type==1)   
                       ee_name ="right_palm";    
                   else
-                      cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
+                      cout << "unknown hand_type in StickyhandCollectionManager::get_pose_constraints\n";   
          
                   // if ee_name already exists in ee_frames_map, redundant ee_frames
                   // e.g two right sticky hands on the same object.
@@ -484,7 +563,104 @@ void StickyhandCollectionManager::get_pose_constraints(string object_name, OtdfI
       } // end for sticky hands
       
 }// end method
+//-------------------------------------------------------------------------------------------
 
+void StickyhandCollectionManager::get_time_ordered_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
+                                                  boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
+                                                  map<string, vector<KDL::Frame> > &ee_frames_map, 
+                                                  map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                                                  map<string, vector<double> > &joint_pos_map,
+                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map)
+                                                  
+{
+
+      for(sticky_hands_map_type_::const_iterator hand_it = _hands.begin(); hand_it!=_hands.end(); hand_it++)
+      {
+          string host_name = hand_it->second.object_name;
+          object_instance_map_type_::const_iterator obj_it = affCollectionManager->_objects.find(host_name);
+          string id = hand_it->first;
+          if ((selectionManager->is_selected(id))&&(obj_it!=affCollectionManager->_objects.end()))
+          {
+              string ee_name;
+              if(hand_it->second.hand_type==0)
+                  ee_name ="left_palm";    
+              else if(hand_it->second.hand_type==1)   
+                  ee_name ="right_palm";    
+              else
+                  cout << "unknown hand_type in StickyhandCollectionManager::get_time_ordered_pose_constraints\n";   
+      
+             
+              //======================     
+              KDL::Frame  T_geometry_hand = hand_it->second.T_geometry_hand;
+              KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+              if(!hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+                  cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+              KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
+
+              KDL::Frame T_world_object = KDL::Frame::Identity();
+              KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
+              if(!to_future_state){
+                  T_world_object = obj_it->second._gl_object->_T_world_body;
+                // the object might have moved.
+                 if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+                    cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+              }
+              else {
+                T_world_object = obj_it->second._gl_object->_T_world_body_future;
+                // the object might have moved.
+                 if(!obj_it->second._gl_object->get_link_geometry_future_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+                    cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;        
+              }
+
+              int num_frames = 1;
+              vector<KDL::Frame> T_world_ee_frames;
+              vector<int64_t> frame_timestamps;
+              for(uint i = 0; i < (uint) num_frames; i++) {
+                  KDL::Frame  T_world_ee = T_world_graspgeometry*T_geometry_palm;   
+                  KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
+                  KDL::Vector handframe_offset;
+                  handframe_offset[0]=0.01;handframe_offset[1]=0;handframe_offset[2]=0;
+                  KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+                  KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+                  T_world_ee.p += worldframe_offset;                    
+                  
+                  T_world_ee_frames.push_back(T_world_ee);
+                  double nmr = (selectionManager->get_selection_order(id)-1);
+                  double dmr = (selectionManager->get_selection_cnt()-1);
+                  int64_t timestamp = (int64_t)((nmr/dmr)*1000000);
+                  frame_timestamps.push_back(timestamp);   
+              }
+              //===================         
+
+              std::stringstream oss;
+              oss << ee_name << "::" << selectionManager->get_selection_order(id);
+              std::string unique_ee_name = oss.str();
+              ee_frames_map.insert(make_pair(unique_ee_name, T_world_ee_frames));
+              ee_frame_timestamps_map.insert(make_pair(unique_ee_name, frame_timestamps));   
+              // hand_it->second.joint_name;  
+              // hand_it->second.joint_position; 
+
+                for(uint k = 0; k< (uint) hand_it->second.joint_name.size(); k++) 
+                {
+                  std::string joint_name = hand_it->second.joint_name[k];
+                  std::stringstream oss2;
+                  oss2 << joint_name << "::" << selectionManager->get_selection_order(id);
+                  std::string unique_joint_name = oss2.str();
+                  vector<double> joint_pos;
+                  vector<int64_t> joint_pos_timestamps;
+                  joint_pos.push_back(hand_it->second.joint_position[k]);
+                  double nmr = (selectionManager->get_selection_order(id)-1);
+                  double dmr = (selectionManager->get_selection_cnt()-1);
+                  int64_t timestamp = (int64_t)((nmr/dmr)*1000000);
+                  joint_pos_timestamps.push_back(timestamp);
+                  joint_pos_map.insert(make_pair(unique_joint_name,joint_pos));
+                  joint_pos_timestamps_map.insert(make_pair(unique_joint_name, joint_pos_timestamps));  
+                }
+
+          } // end if (host_name == (object_na,me))
+      } // end for sticky hands
+      
+}// end method
 //-------------------------------------------------------------------------------------------
 void StickyhandCollectionManager::get_aff_indexed_ee_constraints(string& object_name, OtdfInstanceStruc& obj,
                                                                  boost::shared_ptr<BatchFKQueryHandler>  &dofRangeFkQueryHandler,
@@ -557,8 +733,8 @@ void StickyhandCollectionManager::clear_highlights()
   for(sticky_hands_map_type_::iterator it = _hands.begin(); it!=_hands.end(); it++)
   {
       string no_selection = " ";
-        it->second._gl_hand->highlight_link(no_selection); // clear selection if not part of selection manager
-        it->second._gl_hand->highlight_marker(no_selection);  
+      it->second._gl_hand->highlight_link(no_selection); // clear selection 
+      it->second._gl_hand->highlight_marker(no_selection);  
   }// end for 
 } 
 //-------------------------------------------------------------------------------------------
@@ -571,7 +747,7 @@ void StickyhandCollectionManager::highlight_selected(boost::shared_ptr<visualiza
       string id = it->first;
       if(selectionManager->is_selected(id)){
         it->second._gl_hand->enable_whole_body_selection(true); 
-        it->second._gl_hand->highlight_link(id); // clear selection if not part of selection manager
+        it->second._gl_hand->highlight_link(id); 
         
       }
   }// end for 

@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <Eigen/Dense>
-
+#include <path_util/path_util.h>
 #include <visualization_utils/affordance_utils/affordance_utils.hpp>
 
 

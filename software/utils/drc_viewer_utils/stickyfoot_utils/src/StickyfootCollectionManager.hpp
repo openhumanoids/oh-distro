@@ -3,8 +3,11 @@
 
 
 #include "sticky_foot_utils.hpp"
+#include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
 #include <visualization_utils/SelectionManager.hpp>
+#include <otdf_parser/otdf_parser.h>
+
 using namespace std;
 
 namespace visualization_utils
@@ -39,7 +42,8 @@ namespace visualization_utils
                                 map<string, vector<KDL::Frame> > &ee_frames_map, 
                                 map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                 map<string, vector<double> > &joint_pos_map,
-                                map<string, vector<int64_t> > &joint_pos_timestamps_map);   
+                                map<string, vector<int64_t> > &joint_pos_timestamps_map);
+                               
                                 
     // Used to generate desired ee constraints for pose goals. 
     // Generates and returns ee constraints for all associated seeds of a given parent object                         
@@ -48,6 +52,14 @@ namespace visualization_utils
                               map<string, vector<int64_t> > &ee_frame_timestamps_map,
                               map<string, vector<double> > &joint_pos_map,
                               map<string, vector<int64_t> > &joint_pos_timestamps_map);
+                              
+   // Ordered constraints via shift+select mechanism.
+   void get_time_ordered_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
+                            boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
+                            map<string, vector<KDL::Frame> > &ee_frames_map, 
+                            map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                            map<string, vector<double> > &joint_pos_map,
+                            map<string, vector<int64_t> > &joint_pos_timestamps_map);                                
                               
     // Used to generate desired ee constraints for manip maps. 
     // Generates and returns ee constraints for all associated seeds of a given parent object that are indexed with
@@ -62,7 +74,16 @@ namespace visualization_utils
     void seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal);
       
     void clear_highlights();
-    void highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);                                
+    void highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);   
+    
+    bool remove(string &id);      
+    bool remove_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);
+    bool store(string &id, bool unstore,
+               boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager);  
+    bool store_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,bool unstore,
+                        boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager); 
+    void remove_seeds(std::string& obj_id,
+                      boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager);                               
   private:	      
     boost::shared_ptr<lcm::LCM> _lcm;
     bool load_foot_urdfs();

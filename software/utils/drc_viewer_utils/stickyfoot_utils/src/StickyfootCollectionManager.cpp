@@ -1,6 +1,6 @@
 
 #include "StickyfootCollectionManager.hpp"
-
+#include <tinyxml.h>
 using namespace visualization_utils;
 using namespace collision;
 
@@ -179,7 +179,85 @@ bool StickyfootCollectionManager::is_parent_object(std::string& object_name)
   } 
   return false;
 }
+//-------------------------------------------------------------------------------------------
+bool StickyfootCollectionManager::remove(std::string& id) {
+    sticky_feet_map_type_::iterator foot_it = _feet.find(id);
+    if(foot_it!=_feet.end()){
+        _feet.erase(foot_it);
+        return true;
+    }    
+    return false;
+}
+//-------------------------------------------------------------------------------------------
+bool StickyfootCollectionManager::remove_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager) {
 
+ sticky_feet_map_type_::iterator foot_it = _feet.begin();
+  while (foot_it!=_feet.end()) 
+  {
+     string id = foot_it->first;
+     if(selectionManager->is_selected(id))
+     {
+         selectionManager->remove(id); 
+        _feet.erase(foot_it++);
+     }
+     else
+        foot_it++;
+  } 
+}
+//-------------------------------------------------------------------------------------------
+void StickyfootCollectionManager::remove_seeds(std::string& obj_id,boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+
+  sticky_feet_map_type_::iterator foot_it = _feet.begin();
+  while (foot_it!=_feet.end()) 
+  {
+     string id = foot_it->first;
+     if (foot_it->second.object_name == obj_id)
+     { 
+        _feet.erase(foot_it++);
+     }
+     else
+        foot_it++;
+  }
+}
+//-------------------------------------------------------------------------------------------
+bool StickyfootCollectionManager::store(std::string& id,bool unstore,
+                                         boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+    sticky_feet_map_type_::iterator foot_it = _feet.find(id);
+    if(foot_it!=_feet.end()){
+      object_instance_map_type_::iterator obj_it = affCollectionManager->_objects.find(string(foot_it->second.object_name));
+        // get otdf name
+        std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+        std::string filepath =  otdf_models_path + obj_it->second.otdf_type +".otdf";
+
+        // get variables to create grasp_seed xml
+        GraspSeed graspSeed;
+        graspSeed.appType = GraspSeed::FOOT;
+        KDL::Frame& geo = foot_it->second.T_geometry_foot;
+        graspSeed.xyz[0] = geo.p.x(), graspSeed.xyz[1] = geo.p.y(), graspSeed.xyz[2] = geo.p.z();
+        geo.M.GetRPY(graspSeed.rpy[0],graspSeed.rpy[1],graspSeed.rpy[2]);
+        graspSeed.geometry_name = foot_it->second.geometry_name;
+        graspSeed.grasp_type = foot_it->second.foot_type;
+        graspSeed.joint_names = foot_it->second.joint_name;
+        graspSeed.joint_positions = foot_it->second.joint_position;
+        if(unstore) 
+          graspSeed.unstoreFromOtdf(filepath);
+        else        
+          graspSeed.writeToOtdf(filepath);
+        return true;
+    }    
+    return false;
+}
+//-------------------------------------------------------------------------------------------
+bool StickyfootCollectionManager::store_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,bool unstore,
+                                         boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager) {
+  for(sticky_feet_map_type_::iterator it = _feet.begin(); it!=_feet.end(); it++)
+  {
+      string id = it->first;
+      if(selectionManager->is_selected(id)){
+        store(id,unstore,affCollectionManager);
+      }
+  }// end for 
+}
 //-------------------------------------------------------------------------------------------
 void StickyfootCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 {
@@ -229,7 +307,7 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
           else if(foot_it->second.foot_type==1)   
               ee_name ="r_foot";    
           else
-              cout << "unknown foot_type in on_otdf_dof_range_widget_popup_close\n";  
+              cout << "unknown foot_type in StickyfootCollectionManager::get_motion_constraints\n";  
  
           // if ee_name already exists in ee_frames_map, redundant ee_frames
           // e.g two right sticky hands on the same object.
@@ -250,14 +328,14 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
           vector<KDL::Frame> T_world_ee_frames;
           vector<int64_t> frame_timestamps;
           for(uint i = 0; i < (uint) num_frames; i++)
-              {
-                  KDL::Frame T_object_foot = foot_it->second._gl_foot->_desired_body_motion_history[i];
-                  KDL::Frame T_world_foot = T_world_object*T_object_foot;
-                  KDL::Frame T_world_ee = T_world_foot;//TODO: Eventually will be in object frame
-                  T_world_ee_frames.push_back(T_world_ee);
-                  int64_t timestamp=(int64_t)i*1000000;
-                  frame_timestamps.push_back(timestamp);   
-              }
+          {
+              KDL::Frame T_object_foot = foot_it->second._gl_foot->_desired_body_motion_history[i];
+              KDL::Frame T_world_foot = T_world_object*T_object_foot;
+              KDL::Frame T_world_ee = T_world_foot;//TODO: Eventually will be in object frame
+              T_world_ee_frames.push_back(T_world_ee);
+              int64_t timestamp=(int64_t)i*1000000;
+              frame_timestamps.push_back(timestamp);   
+          }
           //=================== 
 
           ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
@@ -265,6 +343,9 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
       } // end if (host_name == (object_name))
   } // end for sticky feet
 }
+
+
+
 //-------------------------------------------------------------------------------------------
 
 void StickyfootCollectionManager::get_pose_constraints(string object_name, OtdfInstanceStruc& obj, bool to_future_state,
@@ -324,12 +405,12 @@ void StickyfootCollectionManager::get_pose_constraints(string object_name, OtdfI
                   vector<KDL::Frame> T_world_ee_frames;
                   vector<int64_t> frame_timestamps;
                   for(uint i = 0; i < (uint) num_frames; i++)
-                      {
-                          KDL::Frame  T_world_ee = T_world_geometry*T_geometry_foot;  
-                          T_world_ee_frames.push_back(T_world_ee);
-                          int64_t timestamp=(int64_t)i*1000000;
-                          frame_timestamps.push_back(timestamp);   
-                      }
+                  {
+                      KDL::Frame  T_world_ee = T_world_geometry*T_geometry_foot;  
+                      T_world_ee_frames.push_back(T_world_ee);
+                      int64_t timestamp=(int64_t)i*1000000;
+                      frame_timestamps.push_back(timestamp);   
+                  }
                   //=================== 
       
                   ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
@@ -338,6 +419,77 @@ void StickyfootCollectionManager::get_pose_constraints(string object_name, OtdfI
       } // end for sticky feet
       
  }
+//-------------------------------------------------------------------------------------------  
+void StickyfootCollectionManager::get_time_ordered_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
+                                                  boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
+                                                  map<string, vector<KDL::Frame> > &ee_frames_map, 
+                                                  map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                                                  map<string, vector<double> > &joint_pos_map,
+                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map)
+                                                  
+{
+
+
+
+  for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
+  {
+      string host_name = foot_it->second.object_name;
+      object_instance_map_type_::const_iterator obj_it = affCollectionManager->_objects.find(host_name);
+      string id = foot_it->first;
+
+      if ((selectionManager->is_selected(id))&&(obj_it!=affCollectionManager->_objects.end()))
+      {      
+          string ee_name;
+          if(foot_it->second.foot_type==0)
+              ee_name ="l_foot";    
+          else if(foot_it->second.foot_type==1)   
+              ee_name ="r_foot";    
+          else
+              cout << "unknown foot_type in StickyfootCollectionManager::get_selected_motion_constraints\n";  
+ 
+          //======================     
+          KDL::Frame  T_geometry_foot = KDL::Frame::Identity(); 
+          if(!foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_foot))
+             cout <<"ERROR: ee link "<< ee_name << " not found in sticky foot urdf"<< endl;
+
+
+          KDL::Frame T_world_object = KDL::Frame::Identity();
+          KDL::Frame T_world_geometry = KDL::Frame::Identity();
+          if(!to_future_state){
+              T_world_object = obj_it->second._gl_object->_T_world_body;
+            // the object might have moved.
+             if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry))
+                cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;
+          }
+          else {
+            T_world_object = obj_it->second._gl_object->_T_world_body_future;
+            // the object might have moved.
+             if(!obj_it->second._gl_object->get_link_geometry_future_frame(string(foot_it->second.geometry_name),T_world_geometry))
+                cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;        
+          }
+
+          int num_frames =  1;
+          vector<KDL::Frame> T_world_ee_frames;
+          vector<int64_t> frame_timestamps;
+          for(uint i = 0; i < (uint) num_frames; i++)
+          {
+              KDL::Frame  T_world_ee = T_world_geometry*T_geometry_foot;  
+              T_world_ee_frames.push_back(T_world_ee);
+              double nmr = (selectionManager->get_selection_order(id)-1);
+              double dmr = (selectionManager->get_selection_cnt()-1);
+              int64_t timestamp = (int64_t)((nmr/dmr)*1000000);
+              frame_timestamps.push_back(timestamp);   
+          }
+          //=================== 
+          std::stringstream oss;
+          oss << ee_name << "::" << selectionManager->get_selection_order(id);
+          std::string unique_ee_name = oss.str();
+          ee_frames_map.insert(make_pair(unique_ee_name, T_world_ee_frames));
+          ee_frame_timestamps_map.insert(make_pair(unique_ee_name, frame_timestamps));    
+      } // end if (host_name == (object_name))
+  } // end for sticky feet
+}
+ 
 //-------------------------------------------------------------------------------------------  
 
 void StickyfootCollectionManager::get_aff_indexed_ee_constraints(string& object_name,OtdfInstanceStruc& obj,
@@ -476,7 +628,7 @@ void StickyfootCollectionManager::clear_highlights()
   for(sticky_feet_map_type_::iterator it = _feet.begin(); it!=_feet.end(); it++)
   {
       string no_selection = " ";
-        it->second._gl_foot->highlight_link(no_selection); // clear selection if not part of selection manager
+        it->second._gl_foot->highlight_link(no_selection); 
         it->second._gl_foot->highlight_marker(no_selection);  
   }// end for 
 }
@@ -490,7 +642,7 @@ void StickyfootCollectionManager::highlight_selected(boost::shared_ptr<visualiza
       string id = it->first;
       if(selectionManager->is_selected(id)){
         it->second._gl_foot->enable_whole_body_selection(true); 
-        it->second._gl_foot->highlight_link(id); // clear selection if not part of selection manager
+        it->second._gl_foot->highlight_link(id); 
       }
   }// end for 
 }

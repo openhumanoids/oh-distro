@@ -1,6 +1,8 @@
 #ifndef AFFORDANCE_LCM_UTILS_HPP
 #define AFFORDANCE_LCM_UTILS_HPP
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <algorithm>
+#include <string> 
 
 using namespace std;
 using namespace boost;
@@ -8,8 +10,25 @@ using namespace boost;
 
 namespace visualization_utils
 {
+
+
+inline static bool parse_unique_name(const std::string &id,std::string &name)
+{
+    std::string token_str("::");
+    name=" ";
+    size_t found;
+       found=id.find_last_of(token_str);
+    if (found!=std::string::npos) // if string contains token as a substring 
+    {  
+      name=id.substr(0,found-1);
+      return true;
+    }
+    return false;
+}
+
  //----------------------------------------------------------------------------------------------------------   
   inline static bool get_aff_indexed_traj_opt_constraint(int64_t last_state_msg_timestamp, string robot_name,
+                                                          bool unique_ee_occurances,
                                                           map<string, vector<KDL::Frame> > &ee_frames_map,
                                                           map<string, vector<drc::affordance_index_t> > &ee_frame_affindices_map,
                                                           drc::aff_indexed_traj_opt_constraint_t &trajmsg)
@@ -22,6 +41,10 @@ namespace visualization_utils
     // N ee's and K keyframes
     for(map<string,vector<KDL::Frame> >::iterator it = ee_frames_map.begin(); it!=ee_frames_map.end(); it++) { 
         string ee_name = it->first;
+        if(!unique_ee_occurances)
+        {
+          parse_unique_name(it->first,ee_name);
+        }
         vector<KDL::Frame> ee_frames  = it->second;
         map<string, vector<drc::affordance_index_t> >::iterator ts_it = ee_frame_affindices_map.find(it->first);
         if(ts_it == ee_frame_affindices_map.end()){
@@ -53,8 +76,10 @@ namespace visualization_utils
     return true;         
   }
 
-  //----------------------------------------------------------------------------------------------------------        
+  //----------------------------------------------------------------------------------------------------------  
+        
   inline static bool get_traj_opt_constraint(int64_t last_state_msg_timestamp, string robot_name,
+                                                                    bool unique_ee_occurances,
                                                                     map<string, vector<KDL::Frame> > &ee_frames_map, 
                                                                     map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                                     map<string, vector<double> > &joint_pos_map,
@@ -70,6 +95,10 @@ namespace visualization_utils
     for(map<string,vector<KDL::Frame> >::iterator it = ee_frames_map.begin(); it!=ee_frames_map.end(); it++)
     { 
         string ee_name = it->first;
+        if(!unique_ee_occurances)
+        {
+          parse_unique_name(it->first,ee_name);
+        }        
         vector<KDL::Frame> ee_frames  = it->second;
         map<string, vector<int64_t> >::iterator ts_it = ee_frame_timestamps_map.find(it->first);
         if(ts_it == ee_frame_timestamps_map.end()){
@@ -105,6 +134,10 @@ namespace visualization_utils
     for(map<string,vector<double> >::iterator it = joint_pos_map.begin(); it!=joint_pos_map.end(); it++)
     { 
         string joint_name = it->first;
+        if(!unique_ee_occurances)
+        {
+          parse_unique_name(it->first,joint_name);
+        }  
         vector<double> joint_pos  = it->second;
         map<string, vector<int64_t> >::iterator ts_it = joint_pos_timestamps_map.find(it->first);
         if(ts_it == joint_pos_timestamps_map.end()){
