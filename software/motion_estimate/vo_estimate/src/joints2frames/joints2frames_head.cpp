@@ -46,6 +46,34 @@ Eigen::Isometry3d DRCTransformToEigen(drc::transform_t tf){
   return tf_out;
 }
 
+
+
+void quat_to_euler_XXX(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
+  const double q0 = q.w();
+  const double q1 = q.x();
+  const double q2 = q.y();
+  const double q3 = q.z();
+  roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2));
+  pitch = asin(2*(q0*q2-q3*q1));
+  yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+}
+
+std::string print(Eigen::Isometry3d pose){
+  std::stringstream ss;
+  
+  Eigen::Vector3d t(pose.translation());
+  Eigen::Quaterniond r(pose.rotation());
+  double ypr[3];
+  quat_to_euler_XXX(r, ypr[0], ypr[1], ypr[2]);
+  
+  ss <<t[0]<<", "<<t[1]<<", "<<t[2]<<" | " 
+       <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << " | RPY "
+       << ypr[2] <<", "<< ypr[1] <<", "<< ypr[0];
+       
+  return ss.str();
+}
+
+
 void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
   // 0. Extract World Pose of body:
@@ -102,6 +130,17 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }
   }
   
+  
+  
+  {
+//    std::cout << print(head_to_pre_spindle) << " head_to_pre_spindle\n";
+  }
+  
+  
+  
+  
+  
+  
   {
   Eigen::Isometry3d pre_spindle_to_pre_spindle_cal_yaw = head_to_pre_spindle.inverse() * head_to_pre_spindle_cal_yaw ;
   std::stringstream ss2;
@@ -111,15 +150,18 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   }
   
   {
-  Eigen::Isometry3d pre_spindle_cal_yaw_to_post_spindle = head_to_pre_spindle_cal_yaw.inverse() * head_to_post_spindle ;
-  std::stringstream ss2;
-  print_Isometry3d(pre_spindle_cal_yaw_to_post_spindle,ss2);
-  std::cout << "pre_spindle_cal_yaw_to_post_spindle: " << ss2.str() << "\n";
+//  Eigen::Isometry3d pre_spindle_cal_yaw_to_post_spindle = head_to_pre_spindle_cal_yaw.inverse() * head_to_post_spindle ;
+//  std::stringstream ss2;
+//  print_Isometry3d(pre_spindle_cal_yaw_to_post_spindle,ss2);
+//  std::cout << "pre_spindle_cal_yaw_to_post_spindle: " << ss2.str() << "\n";
   
-  std::stringstream ss3;
-  print_Isometry3d(pre_spindle_cal_yaw_to_post_spindle.inverse(),ss3);
-  std::cout << "pre_spindle_cal_yaw_to_post_spindle inv: " << ss3.str() << "\n";
+//  std::stringstream ss3;
+  //print_Isometry3d(pre_spindle_cal_yaw_to_post_spindle.inverse(),ss3);
+  //std::cout << "pre_spindle_cal_yaw_to_post_spindle inv: " << ss3.str() << "\n";
   }
+  
+  
+  std::cout << "\n\n";
   
   
   

@@ -11,9 +11,10 @@
 #include "lcmtypes/multisense.hpp"
 
 struct Joints { 
-  std::vector<double> position;
-  std::vector<double> velocity;
-  std::vector<double> effort;
+  std::vector<float> position;
+  std::vector<float> velocity;
+  std::vector<float> effort;
+  std::vector<int16_t> type;
   std::vector<std::string> name; // temporary - remove name from message eventually
 };
 
@@ -30,14 +31,31 @@ class state_sync{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
 
-    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
+    void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
+    void sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg);
+    void sandiaRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg);
 
-    void publishRobotState(int64_t utime_in);
-    void appendJoints(drc::robot_state_t& msg_out, Joints joints);
+    void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
+    void appendJoints(drc::state_t& msg_out, Joints joints);
+    
+    
+    void publishRobotState_VRC(int64_t utime_in, const  drc::force_torque_t& msg);
+    void appendJoints_VRC(drc::robot_state_t& msg_out, Joints joints);
+    drc::contact_state_t setContacts_VRC(const  drc::force_torque_t& msg);
 
     Joints head_joints_;
     std::vector<std::string> head_names_;
+    
+    Joints atlas_joints_;
+    std::vector<std::string> atlas_names_;
+    
+    Joints sandia_left_joints_;
+    std::vector<std::string> sandia_left_names_;
+    
+    Joints sandia_right_joints_;
+    std::vector<std::string> sandia_right_names_;
+    
 };    
 
 #endif

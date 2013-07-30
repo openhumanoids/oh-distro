@@ -12,5 +12,7 @@ twolegged_estimate
 #CollierTools
 vo_estimate
 
-
 motion_estimate
+
+#signal_scope
+
