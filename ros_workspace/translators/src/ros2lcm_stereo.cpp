@@ -197,11 +197,13 @@ void App::send_tactile(const sandia_hand_msgs::RawTactileConstPtr& msg,string ch
 
 void App::l_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg){
   //ROS_ERROR("ROS2LCM Stereo: got l hand tacile");  
-  send_tactile(msg,"TACTILE_RAW_LHAND");  
+  // channel changed: TACTILE_RAW_LHAND -> SANDIA_LEFT_TACTILE
+  send_tactile(msg,"SANDIA_LEFT_TACTILE");  
 }
 void App::r_hand_tactile_cb(const sandia_hand_msgs::RawTactileConstPtr& msg){
-  //ROS_ERROR("ROS2LCM Stereo: got r hand tacile");  
-  send_tactile(msg,"TACTILE_RAW_RHAND");  
+  //ROS_ERROR("ROS2LCM Stereo: got r hand tacile");
+  // channel changed: TACTILE_RAW_RHAND -> SANDIA_RIGHT_TACTILE  
+  send_tactile(msg,"SANDIA_RIGHT_TACTILE");  
 }
 
 void App::hand_fps_cb(const std_msgs::Float64ConstPtr& msg){
