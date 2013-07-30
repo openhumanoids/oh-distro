@@ -56,6 +56,7 @@ struct QPControllerData {
   MatrixXd J_xy, Jdot_xy;
   MatrixXd Hqp;
   RowVectorXd fqp;
+  MatrixXd Ag, Agdot; // centroidal momentum matrix
 //  MatrixXd Ain_lb_ub, bin_lb_ub;
 };
 
@@ -368,6 +369,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->Jdot_xy.resize(2,nq);
     pdata->Hqp.resize(nq,nq);
     pdata->fqp.resize(nq);
+    pdata->Ag.resize(6,nq);
+    pdata->Agdot.resize(6,nq);
     return;
   }
   
@@ -443,6 +446,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     contact_sensor(i)=(int)double_contact_sensor[i];
   double contact_threshold = mxGetScalar(prhs[narg++]);
   double terrain_height = mxGetScalar(prhs[narg++]); // nonzero if we're using DRCFlatTerrainMap
+  int include_angular_momentum = (int) mxGetScalar(prhs[narg++]); 
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
@@ -506,6 +510,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   pdata->C_float = pdata->C.head(6);
   pdata->C_act = pdata->C.tail(nu);
  
+  MatrixXd Ag_ang,Agdot_ang;
+  Vector3d h_ang_dot_des; 
+  double w2 = 0.0001; // QP angular momentum objective weight
+  if (include_angular_momentum == 1) {
+    pdata->r->getCMM(q,qd,pdata->Ag,pdata->Agdot);
+    Ag_ang = pdata->Ag.topRows(3);
+    Agdot_ang = pdata->Agdot.topRows(3);
+    h_ang_dot_des = Vector3d::Zero(); // regulate to zero for now
+  }
+  
   Vector3d xcom;
   // consider making all J's into row-major
   
@@ -552,7 +566,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp -= u0.transpose()*R_DQyD_ls*pdata->J_xy;
       pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
       pdata->fqp -= pdata->w*q_ddot_des.transpose();
-
+      if (include_angular_momentum == 1) {
+        pdata->fqp += w2*qdvec.transpose()*Agdot_ang.transpose()*Ag_ang;
+        pdata->fqp -= w2*h_ang_dot_des.transpose()*Ag_ang;
+      }
+     
       // obj(1:nq) = fqp
       f.head(nq) = pdata->fqp.transpose();
      } else {
@@ -625,7 +643,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
   vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
-  if (use_fast_qp > 0)
+  if (use_fast_qp > 0 && include_angular_momentum == 0)
   { // set up and call fastqp
 
   	//    We want Hqp inverse, which I can compute efficiently using the
@@ -674,6 +692,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (nc > 0) {
       pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;          // note: only needed for gurobi call (could pull it down)
       pdata->Hqp += (pdata->w+REG)*MatrixXd::Identity(nq,nq);
+      if (include_angular_momentum == 1)
+        pdata->Hqp += w2*Ag_ang.transpose()*Ag_ang;
+                 
     } else {
       // Q(1:nq,1:nq) = eye(nq)
     	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);

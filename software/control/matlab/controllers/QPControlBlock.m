@@ -702,7 +702,9 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
+      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
+          supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
+          contact_sensor,contact_threshold,height,obj.include_angular_momentum);
     end
 
     if ~isempty(active_supports)
@@ -721,8 +723,13 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data,0,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu,contact_sensor,contact_threshold,height);
-      valuecheck(active_supports_mex,active_supports);
+      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data, ...
+        0,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
+        x0,u0,y0,mu,contact_sensor,contact_threshold,height,obj.include_angular_momentum);
+      if (nc>0)
+        valuecheck(active_supports_mex,active_supports);
+        valuecheck(Vdotmex,Vdot,1e-4);
+      end
       valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
       valuecheck(gobj,model.obj,1e-12);
       valuecheck(A,model.A,1e-12);
@@ -731,7 +738,6 @@ classdef QPControlBlock < MIMODrakeSystem
       valuecheck(lb,model.lb,1e-12);
       valuecheck(ub,model.ub,1e-12);
       valuecheck(y,des.y,0.5);
-      valuecheck(Vdotmex,Vdot,1e-4);
     end
     
    
