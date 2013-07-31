@@ -14,8 +14,7 @@ struct Joints {
   std::vector<float> position;
   std::vector<float> velocity;
   std::vector<float> effort;
-  std::vector<int16_t> type;
-  std::vector<std::string> name; // temporary - remove name from message eventually
+  std::vector<std::string> name;
 };
 
 
@@ -45,16 +44,9 @@ class state_sync{
     drc::contact_state_t setContacts_VRC(const  drc::force_torque_t& msg);
 
     Joints head_joints_;
-    std::vector<std::string> head_names_;
-    
     Joints atlas_joints_;
-    std::vector<std::string> atlas_names_;
-    
     Joints sandia_left_joints_;
-    std::vector<std::string> sandia_left_names_;
-    
     Joints sandia_right_joints_;
-    std::vector<std::string> sandia_right_names_;
     
 };    
 

@@ -230,97 +230,29 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
   _leg_odo->updateSingleFootContactStates(utime, left_z, right_z);
 }
 
-void LegOdometry_Handler::FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg) {
+void LegOdometry_Handler::FilterHandForces(const drc::state_t* msg, drc::state_t* estmsg) {
 
-  Eigen::VectorXd lefthand(6);
-  Eigen::VectorXd righthand(6);
+  estmsg->force_torque.l_hand_force[0] = lefthandforcesfilters[0].processSample( msg->force_torque.l_hand_force[0] );
+  estmsg->force_torque.l_hand_force[1] = lefthandforcesfilters[1].processSample( msg->force_torque.l_hand_force[1] );
+  estmsg->force_torque.l_hand_force[2] = lefthandforcesfilters[2].processSample( msg->force_torque.l_hand_force[2] );
 
-  map<string, drc::vector_3d_t> forces;
-  map<string, drc::vector_3d_t> torques;
-  map<string, int> order;
+  estmsg->force_torque.l_hand_torque[0] = lefthandforcesfilters[3].processSample( msg->force_torque.l_hand_torque[0] );
+  estmsg->force_torque.l_hand_torque[1] = lefthandforcesfilters[4].processSample( msg->force_torque.l_hand_torque[1] );
+  estmsg->force_torque.l_hand_torque[2] = lefthandforcesfilters[5].processSample( msg->force_torque.l_hand_torque[2] );
 
-  for (int i=0;i<msg->contacts.num_contacts;i++) {
-    forces.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_force[i]));
-    torques.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_torque[i]));
-    order.insert(make_pair(msg->contacts.id[i],i));
+  estmsg->force_torque.r_hand_force[0] = righthandforcesfilters[0].processSample( msg->force_torque.r_hand_force[0] );
+  estmsg->force_torque.r_hand_force[1] = righthandforcesfilters[1].processSample( msg->force_torque.r_hand_force[1] );
+  estmsg->force_torque.r_hand_force[2] = righthandforcesfilters[2].processSample( msg->force_torque.r_hand_force[2] );
 
-  }
-  typedef map<string, drc::vector_3d_t >  contact_map_type_;
-  contact_map_type_::iterator contact_lf,contact_rf,contact_lt,contact_rt;
-
-  contact_lf=forces.find("l_hand");
-  contact_rf=forces.find("r_hand");
-  contact_lt=torques.find("l_hand");
-  contact_rt=torques.find("r_hand");
-
-  lefthand(0) = lefthandforcesfilters[0].processSample(contact_lf->second.x);
-  lefthand(1) = lefthandforcesfilters[1].processSample(contact_lf->second.y);
-  lefthand(2) = lefthandforcesfilters[2].processSample(contact_lf->second.z);
-
-  lefthand(3) = lefthandforcesfilters[3].processSample(contact_lt->second.x);
-  lefthand(4) = lefthandforcesfilters[4].processSample(contact_lt->second.y);
-  lefthand(5) = lefthandforcesfilters[5].processSample(contact_lt->second.z);
-
-  righthand(0) =righthandforcesfilters[0].processSample(contact_rf->second.x);
-  righthand(1) =righthandforcesfilters[1].processSample(contact_rf->second.y);
-  righthand(2) =righthandforcesfilters[2].processSample(contact_rf->second.z);
-
-  righthand(3) =righthandforcesfilters[3].processSample(contact_rt->second.x);
-  righthand(4) =righthandforcesfilters[4].processSample(contact_rt->second.y);
-  righthand(5) =righthandforcesfilters[5].processSample(contact_rt->second.z);
-
-  //estmsg->contacts = msg->contacts;
-  estmsg->contacts.num_contacts = msg->contacts.num_contacts;
-  int j=order.find("l_hand")->second;
-  estmsg->contacts.contact_force[j].x=lefthand(0);
-  estmsg->contacts.contact_force[j].y=lefthand(1);
-  estmsg->contacts.contact_force[j].z=lefthand(2);
-
-  estmsg->contacts.contact_torque[j].x=lefthand(3);
-  estmsg->contacts.contact_torque[j].y=lefthand(4);
-  estmsg->contacts.contact_torque[j].z=lefthand(5);
-
-  j=order.find("r_hand")->second;
-  estmsg->contacts.contact_force[j].x=righthand(0);
-  estmsg->contacts.contact_force[j].y=righthand(1);
-  estmsg->contacts.contact_force[j].z=righthand(2);
-
-  estmsg->contacts.contact_torque[j].x=righthand(3);
-  estmsg->contacts.contact_torque[j].y=righthand(4);
-  estmsg->contacts.contact_torque[j].z=righthand(5);
-
+  estmsg->force_torque.r_hand_torque[0] = righthandforcesfilters[3].processSample( msg->force_torque.r_hand_torque[0] );
+  estmsg->force_torque.r_hand_torque[1] = righthandforcesfilters[4].processSample( msg->force_torque.r_hand_torque[1] );
+  estmsg->force_torque.r_hand_torque[2] = righthandforcesfilters[5].processSample( msg->force_torque.r_hand_torque[2] );
 }
 
-void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
-  // TODO -- This must be updated to use naming and not numerical 0 and 1 for left to right foot isolation
+void LegOdometry_Handler::ParseFootForces(const drc::state_t* msg, double &left_force, double &right_force) {
   
-#ifdef TRY_FOOT_FORCE_MAP_FIND
-
-  // using a map to find the forces each time is not the most efficient way, but its flexible and useful for when we need to change to using forces from the hands when climbing ladders
-  // can optimize here if required, but the overhead for this is expected to be reasonable
-  map<string, drc::vector_3d_t> foot_forces;
-
-  for (int i=0;i<msg->contacts.num_contacts;i++) {
-    foot_forces.insert(make_pair(msg->contacts.id[i], msg->contacts.contact_force[i]));
-  }
-
-  typedef map<string, drc::vector_3d_t >  contact_map_type_;
-  contact_map_type_::iterator contact_lf,contact_rf;
-
-  contact_lf=foot_forces.find("l_foot");
-  contact_rf=foot_forces.find("r_foot");
-
-  left_force  = (double)lpfilter[0].processSample(contact_lf->second.z);
-  right_force = (double)lpfilter[1].processSample(contact_rf->second.z);
-
-#else
-
-  left_force  = (double)lpfilter[0].processSample(msg->contacts.contact_force[0].z);
-  right_force = (double)lpfilter[1].processSample(msg->contacts.contact_force[1].z);
-
-  std::cout << "LegOdometry_Handler::ParseFootForces -- foot contact forces read from the message directly. This method should not be used.\n";
-
-#endif
+  left_force  = (double)lpfilter[0].processSample( msg->force_torque.l_foot_force_z );
+  right_force = (double)lpfilter[1].processSample( msg->force_torque.r_foot_force_z );
 
 }
 
@@ -505,7 +437,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
 
 void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, 
-                        const drc::robot_state_t* _msg) {
+                        const drc::state_t* _msg) {
 
   //clock_gettime(CLOCK_REALTIME, &before);
   if (_switches->print_computation_time) {
@@ -528,7 +460,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
   // 2. After an estimation iteration these state variables go out of scope, preventing stale data to be carried over to the next iteration of this code (short of memory errors -- which must NEVER happen)
   // This is the main core memory of the state estimation process. These values are the single point of interface with the LCM cloud -- method of odometry will have their own state memory,
   // and should always be managed as such.
-  drc::robot_state_t est_msgout;
+  drc::state_t est_msgout;
   bot_core::pose_t est_headmsg;
   Eigen::Isometry3d left;
   Eigen::Isometry3d right;
@@ -786,7 +718,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
       #endif
       #ifdef LOG_28_JOINT_COMMANDS
        for (int i=0;i<16;i++) {
-         measured_joint_effort[i] = _msg->measured_effort[i];
+         measured_joint_effort[i] = _msg->joint_effort[i]; // mfallon: this was "measured_effort" -> now "joint_effort"
        }
       #endif
 
@@ -919,7 +851,7 @@ void LegOdometry_Handler::PublishH2B(const unsigned long long &utime, const Eige
   lcm_->publish("HEAD_TO_BODY" + _channel_extension, &tf);
 }
 
-void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout) {
+void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::state_t * est_msgout) {
   
   /*
     if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
@@ -1027,7 +959,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
   est_msgout->origin_position = origin;
   est_msgout->origin_twist = twist;
 
-  lcm_->publish("EST_ROBOT_STATE" + _channel_extension, est_msgout);
+  lcm_->publish("EST_ROBOT_STATE_NEW" + _channel_extension, est_msgout);
 
 
   // TODO -- This must be converted to a permanent foot triad
@@ -1106,7 +1038,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg,
 
 // TODO -- remember that this is to be depreciated
 // This function will not be available during the VRC, as the true robot state will not be known
-void LegOdometry_Handler::PublishPoseBodyTrue(const drc::robot_state_t * msg) {
+void LegOdometry_Handler::PublishPoseBodyTrue(const drc::state_t * msg) {
 
   // Infer the Robot's head position from the ground truth root world pose
   bot_core::pose_t pose_msg;
@@ -1129,7 +1061,7 @@ void LegOdometry_Handler::PublishHeadStateMsgs(const bot_core::pose_t * msg) {
   return;
 }
 
-void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_core::pose_t * l2head_msg) {
+void LegOdometry_Handler::UpdateHeadStates(const drc::state_t * msg, bot_core::pose_t * l2head_msg) {
 
   Eigen::Vector3d local_to_head_vel;
   Eigen::Vector3d local_to_head_acc;
@@ -1201,7 +1133,7 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_c
   return;
 }
 
-void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const drc::robot_state_t * est_msgout) {
+void LegOdometry_Handler::LogAllStateData(const drc::state_t * msg, const drc::state_t * est_msgout) {
 
   // Logging csv file with true and estimated states
   stringstream ss (stringstream::in | stringstream::out);
@@ -1221,9 +1153,9 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
   // adding timestamp a bit late, sorry
   ss << msg->utime << ", ";
 
-  // Adding the foot contact forces
-  ss << msg->contacts.contact_force[0].z << ", "; // left
-  ss << msg->contacts.contact_force[1].z << ", "; // right
+  // Adding the foot forces
+  ss << msg->force_torque.l_foot_force_z << ", "; // left
+  ss << msg->force_torque.r_foot_force_z << ", "; // right
 
   // Active foot is
   ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
@@ -1313,8 +1245,8 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 
 }
 
-// Push the state values in a drc::robot_state_t message type to the given stringstream
-void LegOdometry_Handler::stateMessage_to_stream(  const drc::robot_state_t *msg,
+// Push the state values in a drc::state_t message type to the given stringstream
+void LegOdometry_Handler::stateMessage_to_stream(  const drc::state_t *msg,
                           stringstream &ss) {
 
   Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
@@ -1567,7 +1499,7 @@ void LegOdometry_Handler::addFootstepPose_draw() {
   collectionindex = collectionindex + 1;
 }
 
-void LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]) {
+void LegOdometry_Handler::getJoints(const drc::state_t * msg, double alljoints[], std::string joint_name[]) {
   
   if (filtered_joints.capacity() != msg->num_joints || !filter_joints_vector_size_set) {
     std::cout << "LegOdometry_Handler::getJoints -- Automatically changing the capacity of filt.joints -- capacity: " << filtered_joints.capacity() << ", num_joints: " << msg->num_joints << std::endl;
