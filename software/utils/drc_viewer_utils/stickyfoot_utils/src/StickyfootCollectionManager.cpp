@@ -566,18 +566,18 @@ KDL::Vector StickyfootCollectionManager::get_contact_mask_offset(foot_contact_ma
  //<collision group="heel">
  // <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
  
- double foot_length = 0.5*(0.178+0.082);
+ double foot_length = (0.178+0.082);
   if(contact_mask==ORG)
   {
    contact_mask_offset[0]=0;
   }
   else if(contact_mask==HEEL)
   {
-    contact_mask_offset[0]=-(0.082-0.1*foot_length);
+    contact_mask_offset[0]=-(0.082-0.25*foot_length);
   }
   else if(contact_mask==TOE)
   {
-    contact_mask_offset[0]=0.178-0.1*foot_length;
+    contact_mask_offset[0]=0.178-0.25*foot_length;
   }
   else if(contact_mask==MID)
   {
