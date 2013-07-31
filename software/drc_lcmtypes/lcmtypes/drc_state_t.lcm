@@ -8,81 +8,10 @@ struct state_t
   twist_t origin_twist;
 
   int16_t num_joints;
-  int16_t joint_type[num_joints];
+  string joint_name[num_joints];
   float joint_position [num_joints];
   float joint_velocity [num_joints];
   float joint_effort[num_joints];
 
   force_torque_t force_torque;
-
-  // 0->50 BDI
-  const int16_t BACK_BKZ    = 0;
-  const int16_t BACK_BKY    = 1;
-  const int16_t BACK_BKX    = 2;
-  const int16_t NECK_AY     = 3;
-  const int16_t L_LEG_HPZ   = 4;
-  const int16_t L_LEG_HPX   = 5;
-  const int16_t L_LEG_HPY   = 6;
-  const int16_t L_LEG_KNY   = 7;
-  const int16_t L_LEG_AKY   = 8;
-  const int16_t L_LEG_AKX   = 9;
-  const int16_t R_LEG_HPZ   = 10;
-  const int16_t R_LEG_HPX   = 11;
-  const int16_t R_LEG_HPY   = 12;
-  const int16_t R_LEG_KNY   = 13;
-  const int16_t R_LEG_AKY   = 14;
-  const int16_t R_LEG_AKX   = 15;
-  const int16_t L_ARM_USY   = 16;
-  const int16_t L_ARM_SHX   = 17;
-  const int16_t L_ARM_ELY   = 18;
-  const int16_t L_ARM_ELX   = 19;
-  const int16_t L_ARM_UWY   = 20;
-  const int16_t L_ARM_MWX   = 21;
-  const int16_t R_ARM_USY   = 22;
-  const int16_t R_ARM_SHX   = 23;
-  const int16_t R_ARM_ELY   = 24;
-  const int16_t R_ARM_ELX   = 25;
-  const int16_t R_ARM_UWY   = 26;
-  const int16_t R_ARM_MWX   = 27;
-  // 50-99 is reserved for laser:
-  const int16_t HOKUYO_JOINT                 = 50;
-  const int16_t PRE_SPINDLE_CAL_X_JOINT      = 51;
-  const int16_t PRE_SPINDLE_CAL_Y_JOINT      = 52;
-  const int16_t PRE_SPINDLE_CAL_Z_JOINT      = 53;
-  const int16_t PRE_SPINDLE_CAL_ROLL_JOINT   = 54;
-  const int16_t PRE_SPINDLE_CAL_PITCH_JOINT  = 55;
-  const int16_t PRE_SPINDLE_CAL_YAW_JOINT    = 56;
-  const int16_t POST_SPINDLE_CAL_X_JOINT     = 57;
-  const int16_t POST_SPINDLE_CAL_Y_JOINT     = 58;
-  const int16_t POST_SPINDLE_CAL_Z_JOINT     = 59;
-  const int16_t POST_SPINDLE_CAL_ROLL_JOINT  = 60;
-  const int16_t POST_SPINDLE_CAL_PITCH_JOINT = 61;
-  const int16_t POST_SPINDLE_CAL_YAW_JOINT   = 62;
-  // 100 -> 119 sandia hands left
-  const int16_t LEFT_F0_J0  = 100;
-  const int16_t LEFT_F0_J1  = 101;
-  const int16_t LEFT_F0_J2  = 102;
-  const int16_t LEFT_F1_J0  = 103;
-  const int16_t LEFT_F1_J1  = 104;
-  const int16_t LEFT_F1_J2  = 105;
-  const int16_t LEFT_F2_J0  = 106;
-  const int16_t LEFT_F2_J1  = 107;
-  const int16_t LEFT_F2_J2  = 108;
-  const int16_t LEFT_F3_J0  = 109;
-  const int16_t LEFT_F3_J1  = 110;
-  const int16_t LEFT_F3_J2  = 111;
-  // 120 -> 149 sandia hands right
-  const int16_t RIGHT_F0_J0 = 120;
-  const int16_t RIGHT_F0_J1 = 121;
-  const int16_t RIGHT_F0_J2 = 122;
-  const int16_t RIGHT_F1_J0 = 123;
-  const int16_t RIGHT_F1_J1 = 124;
-  const int16_t RIGHT_F1_J2 = 125;
-  const int16_t RIGHT_F2_J0 = 126;
-  const int16_t RIGHT_F2_J1 = 127;
-  const int16_t RIGHT_F2_J2 = 128;
-  const int16_t RIGHT_F3_J0 = 129;
-  const int16_t RIGHT_F3_J1 = 130;
-  const int16_t RIGHT_F3_J2 = 141;  
-  // 150->199 irobot
 }
