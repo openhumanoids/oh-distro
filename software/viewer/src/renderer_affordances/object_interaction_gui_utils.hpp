@@ -46,8 +46,8 @@
 #define PARAM_GET_RETRACTABLE_MANIP_PLAN "Get Retractable Manip Plan"
 #define PARAM_GET_MANIP_MAP "Get Manip Map"
 #define PARAM_RESET_DESIRED_STATE "Reset"
-#define PARAM_CONTACT_MASK_SELECT "Mask"
-
+#define PARAM_HAND_CONTACT_MASK_SELECT "Hand Mask"
+#define PARAM_FOOT_CONTACT_MASK_SELECT "Foot Mask"
 #define PARAM_EE_SELECT_EE "Select EE"
 #define PARAM_EE_HEAD "Head"
 #define PARAM_EE_RIGHT_HAND "Right hand"
@@ -619,7 +619,7 @@ namespace renderer_affordances_gui_utils
         T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
       }
       
-      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);  
+      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);  
       int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
       self->stickyHandCollection->free_running_sticky_hand_cnt++;
       int uid = self->stickyHandCollection->free_running_sticky_hand_cnt;
@@ -641,6 +641,7 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_SEED_LF))||(!strcmp(name, PARAM_SEED_RF))) {
       //self->stickyFootCollection->free_running_sticky_foot_cnt++;
       //int uid = self->stickyFootCollection->free_running_sticky_foot_cnt;
+      foot_contact_mask_type_t contact_mask = (foot_contact_mask_type_t) bot_gtk_param_widget_get_enum (pw, PARAM_FOOT_CONTACT_MASK_SELECT);
       int foot_type = 0;
       if(!strcmp(name, PARAM_SEED_RF))
       {
@@ -656,7 +657,7 @@ namespace renderer_affordances_gui_utils
       // Query Normal at point of dbl click. Drag direction gives foot direction.
       // Foot frame Z direction should point towards normal. 
       // also increments free_running_counter
-      self->stickyFootCollection->seed_foot(it->second,object_name,geometry_name,foot_type,self->ray_hit_drag,self->ray_hit,self->ray_hit_normal);
+      self->stickyFootCollection->seed_foot(it->second,object_name,geometry_name,foot_type,contact_mask,self->ray_hit_drag,self->ray_hit,self->ray_hit_normal);
 
     }
     else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
@@ -690,7 +691,7 @@ namespace renderer_affordances_gui_utils
       drc::grasp_opt_control_t msg;
    
       int grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);    
+      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);    
       int drake_control =msg.HALT;//or NEW=0, RESET=1, HALT=2;
       int uid = 0;
       // Halt all active optimizations.
@@ -888,7 +889,7 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
+    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -931,12 +932,22 @@ namespace renderer_affordances_gui_utils
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     
-    drc::grasp_opt_control_t msg;
-    int num_masks =  2;
-    char ** contact_masks =(char **) calloc(num_masks, sizeof(char *));
-    int* contact_nums = (int *)calloc(num_masks, sizeof(int));
-    contact_masks[0]=(char*) "ALL"; contact_masks[1]=(char*) "FINGERS";
-    contact_nums[0]=msg.ALL; contact_nums[1]=msg.FINGERS_ONLY;
+
+    int num_hand_contact_masks =  2;
+    char ** hand_contact_masks =(char **) calloc(num_hand_contact_masks, sizeof(char *));
+    int* hand_contact_nums = (int *)calloc(num_hand_contact_masks, sizeof(int));
+    hand_contact_masks[0]=(char*) "ALL"; hand_contact_masks[1]=(char*) "FINGERS";
+    hand_contact_nums[0]=drc::grasp_opt_control_t::ALL; hand_contact_nums[1]=drc::grasp_opt_control_t::FINGERS_ONLY;
+    
+    foot_contact_mask_type_t temp;
+    int num_foot_contact_masks =  4;
+    char ** foot_contact_masks =(char **) calloc(num_foot_contact_masks, sizeof(char *));
+    int* foot_contact_nums = (int *)calloc(num_foot_contact_masks, sizeof(int));
+    foot_contact_masks[0]=(char*) "Org"; foot_contact_nums[0]=visualization_utils::ORG; 
+    foot_contact_masks[1]=(char*) "Heel";foot_contact_nums[1]=visualization_utils::HEEL;
+    foot_contact_masks[2]=(char*) "Toe"; foot_contact_nums[2]=visualization_utils::TOE;
+    foot_contact_masks[3]=(char*) "Mid"; foot_contact_nums[3]=visualization_utils::MID;
+    
    
     /*if((!has_seeds)&&((self->marker_selection  == " ")
       ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
@@ -963,11 +974,16 @@ namespace renderer_affordances_gui_utils
     {
      bot_gtk_param_widget_add_separator (pw,"Seed Management");
       bot_gtk_param_widget_add_separator (pw,"(contact filter)");
-      bot_gtk_param_widget_add_enumv (pw, PARAM_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
-				                            msg.ALL,
-				                            num_masks,
-			                              (const char **)  contact_masks,
-			                              contact_nums);
+      bot_gtk_param_widget_add_enumv (pw, PARAM_HAND_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+				                            drc::grasp_opt_control_t::ALL,
+				                            num_hand_contact_masks,
+			                              (const char **)  hand_contact_masks,
+			                              hand_contact_nums);
+			bot_gtk_param_widget_add_enumv (pw, PARAM_FOOT_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+				                            visualization_utils::ORG,
+				                            num_foot_contact_masks,
+			                              (const char **)  foot_contact_masks,
+			                              foot_contact_nums);                              
 			bot_gtk_param_widget_add_separator (pw,"(seed-opt control)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
@@ -1053,9 +1069,10 @@ namespace renderer_affordances_gui_utils
     gtk_widget_show_all(window); 
 
  
-      free(contact_masks);
-      free(contact_nums);
-
+      free(hand_contact_masks);
+      free(hand_contact_nums);
+      free(foot_contact_masks);
+      free(foot_contact_nums);
   }
   
 }
