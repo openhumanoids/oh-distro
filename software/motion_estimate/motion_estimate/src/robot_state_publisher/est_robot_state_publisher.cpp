@@ -124,15 +124,15 @@ void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
   drc::robot_state_t msgout;
   msgout= *TRUE_state_msg;
   _lcm->publish("EST_ROBOT_STATE", &msgout);
-  sendPose(msgout.origin_position, msgout.utime, "POSE_BODY");
+  sendPose(msgout.pose, msgout.utime, "POSE_BODY");
     
   // Infer the Robot's head position from the ground truth root world pose
   KDL::Frame T_world_body, T_world_head;
-  T_world_body.p[0]= msgout.origin_position.translation.x;
-  T_world_body.p[1]= msgout.origin_position.translation.y;
-  T_world_body.p[2]= msgout.origin_position.translation.z;
-  T_world_body.M =  KDL::Rotation::Quaternion(msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
-                                                msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
+  T_world_body.p[0]= msgout.pose.translation.x;
+  T_world_body.p[1]= msgout.pose.translation.y;
+  T_world_body.p[2]= msgout.pose.translation.z;
+  T_world_body.M =  KDL::Rotation::Quaternion(msgout.pose.rotation.x, msgout.pose.rotation.y, 
+                                                msgout.pose.rotation.z, msgout.pose.rotation.w);
   T_world_head = T_world_body * T_body_head; 
   sendPose(T_world_head, msgout.utime, "POSE_HEAD");   
   sendPose(T_world_head, msgout.utime, "POSE_HEAD_TRUE"); // courtesy publish
@@ -147,35 +147,35 @@ void StatePub::outputDriving(const drc::robot_state_t * TRUE_state_msg,
   KDL::Frame  T_body_head){
   drc::robot_state_t msgout;
   msgout= *TRUE_state_msg;
-  msgout.origin_position.translation.x=0;
-  msgout.origin_position.translation.y=0;
+  msgout.pose.translation.x=0;
+  msgout.pose.translation.y=0;
   //z might need to change 
-  msgout.origin_position.translation.z=1.059; 
+  msgout.pose.translation.z=1.059; 
 
-  double quat[4] = {msgout.origin_position.rotation.w, msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
-                    msgout.origin_position.rotation.z};
+  double quat[4] = {msgout.pose.rotation.w, msgout.pose.rotation.x, msgout.pose.rotation.y, 
+                    msgout.pose.rotation.z};
   double rpy[3] = {0};
   bot_quat_to_roll_pitch_yaw(quat, rpy);
   rpy[2] = 0;
   double quat_new[4];
   bot_roll_pitch_yaw_to_quat(rpy, quat_new);
 
-  msgout.origin_position.rotation.w = quat_new[0];
-  msgout.origin_position.rotation.x = quat_new[1];
-  msgout.origin_position.rotation.y = quat_new[2];
-  msgout.origin_position.rotation.z = quat_new[3];
+  msgout.pose.rotation.w = quat_new[0];
+  msgout.pose.rotation.x = quat_new[1];
+  msgout.pose.rotation.y = quat_new[2];
+  msgout.pose.rotation.z = quat_new[3];
   
   // this is the assumed height of the pelvis from the ground. 
   // this is paired with NOT running -g in drc-joint-frames to draw the height of the robot at z but with x and y =0
   // maintained by sachi
   _lcm->publish("EST_ROBOT_STATE", &msgout);
-  sendPose(msgout.origin_position, msgout.utime, "POSE_BODY");
+  sendPose(msgout.pose, msgout.utime, "POSE_BODY");
     
   // Infer the Robot's head position from the ground truth root world pose
   KDL::Frame T_world_body, T_world_head;
-  T_world_body.p[0]= msgout.origin_position.translation.x;
-  T_world_body.p[1]= msgout.origin_position.translation.y;
-  T_world_body.p[2]= msgout.origin_position.translation.z;
+  T_world_body.p[0]= msgout.pose.translation.x;
+  T_world_body.p[1]= msgout.pose.translation.y;
+  T_world_body.p[2]= msgout.pose.translation.z;
 
   //take out the yaw in the message 
   
@@ -184,8 +184,8 @@ void StatePub::outputDriving(const drc::robot_state_t * TRUE_state_msg,
   /*fprintf(stderr, "Quat : %f, %f,%f,%f => %f,%f,%f,%f\n", 
           quat[0], quat[1], quat[2], quat[3], 
           quat_new[0], quat_new[1], quat_new[2], quat_new[3]);*/
-  T_world_body.M =  KDL::Rotation::Quaternion(msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
-                                              msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
+  T_world_body.M =  KDL::Rotation::Quaternion(msgout.pose.rotation.x, msgout.pose.rotation.y, 
+                                              msgout.pose.rotation.z, msgout.pose.rotation.w);
 
   //T_world_body.M =  KDL::Rotation::Quaternion(quat_new[1], quat_new[2], quat_new[3], quat_new[0]);
 
@@ -204,11 +204,11 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
   
   // Infer the Robot's head position from the ground truth root world pose
   KDL::Frame T_world_body_GT, T_world_head_GT;
-  T_world_body_GT.p[0]= TRUE_state_msg->origin_position.translation.x;
-  T_world_body_GT.p[1]= TRUE_state_msg->origin_position.translation.y;
-  T_world_body_GT.p[2]= TRUE_state_msg->origin_position.translation.z;
-  T_world_body_GT.M =  KDL::Rotation::Quaternion(TRUE_state_msg->origin_position.rotation.x, TRUE_state_msg->origin_position.rotation.y, 
-                                                TRUE_state_msg->origin_position.rotation.z, TRUE_state_msg->origin_position.rotation.w);
+  T_world_body_GT.p[0]= TRUE_state_msg->pose.translation.x;
+  T_world_body_GT.p[1]= TRUE_state_msg->pose.translation.y;
+  T_world_body_GT.p[2]= TRUE_state_msg->pose.translation.z;
+  T_world_body_GT.M =  KDL::Rotation::Quaternion(TRUE_state_msg->pose.rotation.x, TRUE_state_msg->pose.rotation.y, 
+                                                TRUE_state_msg->pose.rotation.z, TRUE_state_msg->pose.rotation.w);
   T_world_head_GT = T_world_body_GT * T_body_head; 
   sendPose(T_world_head_GT, TRUE_state_msg->utime, "POSE_HEAD_TRUE");  
   
@@ -230,7 +230,7 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
   // EST is TRUE with sensor estimated position
   drc::robot_state_t msgout;
   msgout = *TRUE_state_msg;
-  msgout.origin_position = body_origin;
+  msgout.pose = body_origin;
   _lcm->publish("EST_ROBOT_STATE", &msgout);
 
   // Publish robot's root link position as a curtesy - prob no necessary:
@@ -341,7 +341,7 @@ void StatePub::sendTriggerOutput(){
   if (_last_est_state.utime==0){     return;   } // if no msg recieved yet then ignore output command
   drc::minimal_robot_state_t msgout;
   msgout.utime = _last_est_state.utime;
-  msgout.origin_position = _last_est_state.origin_position;
+  msgout.pose = _last_est_state.pose;
   msgout.num_joints = _last_est_state.num_joints;
   msgout.joint_position = _last_est_state.joint_position;
   _lcm->publish("EST_ROBOT_STATE_MINIMAL", &msgout);        

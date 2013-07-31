@@ -545,10 +545,10 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
   //InteractableGLKinematicBody will provide an method for interactive adjustment.  
     
   KDL::Frame T_world_body;
-  T_world_body.p[0]= msg.origin_position.translation.x;
-  T_world_body.p[1]= msg.origin_position.translation.y;
-  T_world_body.p[2]= msg.origin_position.translation.z;		    
-  T_world_body.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
+  T_world_body.p[0]= msg.pose.translation.x;
+  T_world_body.p[1]= msg.pose.translation.y;
+  T_world_body.p[2]= msg.pose.translation.z;		    
+  T_world_body.M =  KDL::Rotation::Quaternion(msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z, msg.pose.rotation.w);
   
    update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists  
   _T_world_body  = T_world_body;  
@@ -640,10 +640,10 @@ void GlKinematicBody::set_future_state(const drc::robot_state_t &msg)
   //InteractableGLKinematicBody will provide an method for interactive adjustment.  
     
   KDL::Frame T_world_body_future;
-  T_world_body_future.p[0]= msg.origin_position.translation.x;
-  T_world_body_future.p[1]= msg.origin_position.translation.y;
-  T_world_body_future.p[2]= msg.origin_position.translation.z;		    
-  T_world_body_future.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
+  T_world_body_future.p[0]= msg.pose.translation.x;
+  T_world_body_future.p[1]= msg.pose.translation.y;
+  T_world_body_future.p[2]= msg.pose.translation.z;		    
+  T_world_body_future.M =  KDL::Rotation::Quaternion(msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z, msg.pose.rotation.w);
   _T_world_body_future = T_world_body_future;
   
  if(!future_display_active){

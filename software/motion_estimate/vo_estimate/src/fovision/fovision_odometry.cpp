@@ -352,10 +352,10 @@ bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d
   // 1. Take the simulator-created robot root position in world frame:
   Eigen::Isometry3d local_to_body;
   local_to_body.setIdentity();
-  local_to_body.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y,
-                                 msg->origin_position.translation.z;
-  local_to_body.rotate(  Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-                                            msg->origin_position.rotation.y, msg->origin_position.rotation.z) );
+  local_to_body.translation() << msg->pose.translation.x, msg->pose.translation.y,
+                                 msg->pose.translation.z;
+  local_to_body.rotate(  Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+                                            msg->pose.rotation.y, msg->pose.rotation.z) );
   
   map<string, double> jointpos_in;
   map<string, drc::transform_t > cartpos_out;

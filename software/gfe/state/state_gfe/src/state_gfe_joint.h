@@ -9,7 +9,7 @@
 namespace state {
   class State_GFE_Joint : public State {
   public:
-    State_GFE_Joint( std::string id = "gfe-joint", unsigned long long time = 0, double position = 0.0, double velocity = 0.0, double measuredEffort = 0.0 );
+    State_GFE_Joint( std::string id = "gfe-joint", unsigned long long time = 0, double position = 0.0, double velocity = 0.0, double effort = 0.0 );
     ~State_GFE_Joint();
     State_GFE_Joint( const State_GFE_Joint& other );
     State_GFE_Joint& operator=( const State_GFE_Joint& other );
@@ -18,16 +18,16 @@ namespace state {
 
     void set_position( double position );
     void set_velocity( double velocity );
-    void set_measured_effort( double measuredEffort );
+    void set_effort( double effort );
 
     double position( void )const;
     double velocity( void )const;
-    double measured_effort( void )const; 
+    double effort( void )const; 
  
   protected:
     double _position;
     double _velocity;
-    double _measured_effort;
+    double _effort;
 
   private:
     

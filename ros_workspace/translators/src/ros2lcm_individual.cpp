@@ -398,11 +398,41 @@ void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointStat
       msg_out.joint_position.push_back(msg_in.position[i]);      
     }
     msg_out.joint_velocity.push_back(msg_in.velocity[i]);
-    msg_out.measured_effort.push_back( msg_in.effort[i] );
-    msg_out.joint_cov.push_back(j_cov);
+    msg_out.joint_effort.push_back( msg_in.effort[i] );
   }
 }
 
+void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
+
+  msg_out.l_foot_force_z =  msg_in.l_foot.force.z;
+  msg_out.l_foot_torque_x = msg_in.l_foot.torque.x; 
+  msg_out.l_foot_torque_y = msg_in.l_foot.torque.y;
+
+  msg_out.r_foot_force_z =  msg_in.r_foot.force.z;
+  msg_out.r_foot_torque_x = msg_in.r_foot.torque.x; 
+  msg_out.r_foot_torque_y = msg_in.r_foot.torque.y;
+
+  msg_out.l_hand_force[0] =  msg_in.l_hand.force.x;
+  msg_out.l_hand_force[1] =  msg_in.l_hand.force.y;
+  msg_out.l_hand_force[2] =  msg_in.l_hand.force.z;
+
+  msg_out.l_hand_torque[0] =  msg_in.l_hand.torque.x;
+  msg_out.l_hand_torque[1] =  msg_in.l_hand.torque.y;
+  msg_out.l_hand_torque[2] =  msg_in.l_hand.torque.z;
+
+  msg_out.r_hand_force[0] =  msg_in.r_hand.force.x;
+  msg_out.r_hand_force[1] =  msg_in.r_hand.force.y;
+  msg_out.r_hand_force[2] =  msg_in.r_hand.force.z;
+
+  msg_out.r_hand_torque[0] =  msg_in.r_hand.torque.x;
+  msg_out.r_hand_torque[1] =  msg_in.r_hand.torque.y;
+  msg_out.r_hand_torque[2] =  msg_in.r_hand.torque.z;    
+  
+}
+
+
+
+/*
 void App::appendLimbSensor_VRC(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
   {
     drc::vector_3d_t l_foot_force;
@@ -446,34 +476,6 @@ void App::appendLimbSensor_VRC(drc::robot_state_t& msg_out , atlas_msgs::ForceTo
 }
 
 
-void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
-
-  msg_out.l_foot_force_z =  msg_in.l_foot.force.z;
-  msg_out.l_foot_torque_x = msg_in.l_foot.torque.x; 
-  msg_out.l_foot_torque_y = msg_in.l_foot.torque.y;
-
-  msg_out.r_foot_force_z =  msg_in.r_foot.force.z;
-  msg_out.r_foot_torque_x = msg_in.r_foot.torque.x; 
-  msg_out.r_foot_torque_y = msg_in.r_foot.torque.y;
-
-  msg_out.l_hand_force[0] =  msg_in.l_hand.force.x;
-  msg_out.l_hand_force[1] =  msg_in.l_hand.force.y;
-  msg_out.l_hand_force[2] =  msg_in.l_hand.force.z;
-
-  msg_out.l_hand_torque[0] =  msg_in.l_hand.torque.x;
-  msg_out.l_hand_torque[1] =  msg_in.l_hand.torque.y;
-  msg_out.l_hand_torque[2] =  msg_in.l_hand.torque.z;
-
-  msg_out.r_hand_force[0] =  msg_in.r_hand.force.x;
-  msg_out.r_hand_force[1] =  msg_in.r_hand.force.y;
-  msg_out.r_hand_force[2] =  msg_in.r_hand.force.z;
-
-  msg_out.r_hand_torque[0] =  msg_in.r_hand.torque.x;
-  msg_out.r_hand_torque[1] =  msg_in.r_hand.torque.y;
-  msg_out.r_hand_torque[2] =  msg_in.r_hand.torque.z;    
-  
-}
-
 void App::publishRobotState(int64_t utime_in){
   // If haven't got a ground_truth_odom_ or joint states, exit:
   if(!init_recd_[0])
@@ -483,29 +485,22 @@ void App::publishRobotState(int64_t utime_in){
   
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
-  robot_state_msg.robot_name = "atlas";
   
   // Pelvis Pose:
-  robot_state_msg.origin_position.translation.x = ground_truth_odom_.pose.pose.position.x;
-  robot_state_msg.origin_position.translation.y = ground_truth_odom_.pose.pose.position.y;
-  robot_state_msg.origin_position.translation.z = ground_truth_odom_.pose.pose.position.z;
-  robot_state_msg.origin_position.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
-  robot_state_msg.origin_position.rotation.x = ground_truth_odom_.pose.pose.orientation.x;
-  robot_state_msg.origin_position.rotation.y = ground_truth_odom_.pose.pose.orientation.y;
-  robot_state_msg.origin_position.rotation.z = ground_truth_odom_.pose.pose.orientation.z;
+  robot_state_msg.pose.translation.x = ground_truth_odom_.pose.pose.position.x;
+  robot_state_msg.pose.translation.y = ground_truth_odom_.pose.pose.position.y;
+  robot_state_msg.pose.translation.z = ground_truth_odom_.pose.pose.position.z;
+  robot_state_msg.pose.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
+  robot_state_msg.pose.rotation.x = ground_truth_odom_.pose.pose.orientation.x;
+  robot_state_msg.pose.rotation.y = ground_truth_odom_.pose.pose.orientation.y;
+  robot_state_msg.pose.rotation.z = ground_truth_odom_.pose.pose.orientation.z;
 
-  robot_state_msg.origin_twist.linear_velocity.x =ground_truth_odom_.twist.twist.linear.x;
-  robot_state_msg.origin_twist.linear_velocity.y =ground_truth_odom_.twist.twist.linear.y;
-  robot_state_msg.origin_twist.linear_velocity.z =ground_truth_odom_.twist.twist.linear.z;
-  robot_state_msg.origin_twist.angular_velocity.x =ground_truth_odom_.twist.twist.angular.x;
-  robot_state_msg.origin_twist.angular_velocity.y =ground_truth_odom_.twist.twist.angular.y;
-  robot_state_msg.origin_twist.angular_velocity.z =ground_truth_odom_.twist.twist.angular.z;
-  for(int i = 0; i < 6; i++)  {
-    for(int j = 0; j < 6; j++) {
-      robot_state_msg.origin_cov.position_cov[i][j] = 0;
-      robot_state_msg.origin_cov.twist_cov[i][j] = 0;
-    }
-  }
+  robot_state_msg.twist.linear_velocity.x =ground_truth_odom_.twist.twist.linear.x;
+  robot_state_msg.twist.linear_velocity.y =ground_truth_odom_.twist.twist.linear.y;
+  robot_state_msg.twist.linear_velocity.z =ground_truth_odom_.twist.twist.linear.z;
+  robot_state_msg.twist.angular_velocity.x =ground_truth_odom_.twist.twist.angular.x;
+  robot_state_msg.twist.angular_velocity.y =ground_truth_odom_.twist.twist.angular.y;
+  robot_state_msg.twist.angular_velocity.z =ground_truth_odom_.twist.twist.angular.z;
 
   // Joint States:
   appendJointStates(robot_state_msg, robot_joint_states_,false);
@@ -515,8 +510,8 @@ void App::publishRobotState(int64_t utime_in){
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
   // Limb Sensor states
-  appendLimbSensor_VRC(robot_state_msg, end_effector_sensors_);
-  robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
+  //appendLimbSensor_VRC(robot_state_msg, end_effector_sensors_);
+  //robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
     
   // ensure that all the data has been received -- this is to force the number of joints in the TRUE_ROBOT_STATE message to be consistent at startup
   if (received_robot_joint_states_ && received_head_joint_states_ && received_l_hand_joint_states_ && received_r_hand_joint_states_) {
@@ -524,9 +519,8 @@ void App::publishRobotState(int64_t utime_in){
   } else {
     std::cerr << "Publish of TRUE_ROBOT_STATE suppressed, because all ROS messages have not yet been received: " << received_robot_joint_states_ << received_head_joint_states_ << received_l_hand_joint_states_ << received_r_hand_joint_states_ << std::endl;
   }
-
-
 }
+*/
 
 int main(int argc, char **argv){
   bool control_output = true;// by default

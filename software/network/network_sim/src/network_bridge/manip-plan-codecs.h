@@ -68,8 +68,8 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
 
         drc::MinimalRobotStateDiff* present_goal_diff = dccl_plan.mutable_goal_diff();
         present_goal_diff->add_utime_diff(present_lcm_goal.utime - previous_lcm_goal.utime);
-        if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.origin_position,
-                                                previous_lcm_goal.origin_position,
+        if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.pose,
+                                                previous_lcm_goal.pose,
                                                 present_goal_diff->mutable_pos_diff(),
                                                 true))
            return false;
@@ -365,7 +365,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
 
 
          
-         if(!RobotStateCodec::from_position3d_diff(present_goal.mutable_origin_position(),
+         if(!RobotStateCodec::from_position3d_diff(present_goal.mutable_pose(),
                                                    dccl_plan.goal_diff().pos_diff(), i, true))
             return false;
 

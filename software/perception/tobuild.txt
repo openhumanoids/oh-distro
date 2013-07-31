@@ -10,7 +10,7 @@ opencv-utils
 
 
 # library to create depth masks:
-rgbd_simulation 
+#rgbd_simulation 
 
 stereo-bm
 
@@ -25,6 +25,9 @@ image-passthrough
 # particle-filter based tracking
 particle_filter
 trackers
+
+affordance-tags
+
 
 # some quick start examples:
 #tutorials

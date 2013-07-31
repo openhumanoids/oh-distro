@@ -9,8 +9,9 @@ pods_use_pkg_config_packages(drc-state-sync
   lcmtypes_drc_lcmtypes)
 pods_install_executables(drc-state-sync )
 
-add_executable(drc-state-converter state_converter.cpp  )
-pods_use_pkg_config_packages(drc-state-converter
-  lcmtypes_drc_lcmtypes)
-
-pods_install_executables(drc-state-converter )
+# not required
+#add_executable(drc-state-converter state_converter.cpp  )
+#pods_use_pkg_config_packages(drc-state-converter
+#  lcmtypes_drc_lcmtypes)
+#
+#pods_install_executables(drc-state-converter )

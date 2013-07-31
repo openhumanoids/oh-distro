@@ -1015,7 +1015,6 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
             drc_nav_goal_timed_t msg;
             msg.utime = self->robot_utime; //bot_timestamp_now();
             msg.timeout = (int64_t) 1E6*self->goal_timeout;
-            msg.robot_name = "atlas"; // this should be set from robot state message
 
             msg.goal_pos.translation.x = self->click_pos.x;
             msg.goal_pos.translation.y = self->click_pos.y;
@@ -1033,7 +1032,6 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
         }else if (self->active ==3){
             drc_nav_goal_t msg;
             msg.utime = self->robot_utime; // bot_timestamp_now();
-            msg.robot_name = "atlas"; // this should be set from robot state message
 
             msg.goal_pos.translation.x = self->click_pos.x;
             msg.goal_pos.translation.y = self->click_pos.y;
@@ -1454,14 +1452,14 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
     self->robot_utime =msg->utime;
   
     // Remove the pose roll and pitch:
-    Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-                                                 msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+    Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+                                                 msg->pose.rotation.y, msg->pose.rotation.z);
     double ypr[3];
     quat_to_euler(quat, ypr[0], ypr[1], ypr[2]);
     ypr[1] =0; ypr[2] =0;
     Eigen::Quaterniond quat_yaw_only = euler_to_quat(ypr[0], ypr[1], ypr[2]);
     self->robot_pose.setIdentity();
-    self->robot_pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+    self->robot_pose.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
     self->robot_pose.rotate(quat_yaw_only);    
     self->robot_yaw = ypr[0]; // for convenece keep the yaw
 
@@ -1607,14 +1605,14 @@ static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel,
       self->robot_utime =msg->utime;
   
       // Remove the pose roll and pitch:
-      Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-      msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+      Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+      msg->pose.rotation.y, msg->pose.rotation.z);
       double ypr[3];
       quat_to_euler(quat, ypr[0], ypr[1], ypr[2]);
       ypr[1] =0; ypr[2] =0;
       Eigen::Quaterniond quat_yaw_only = euler_to_quat(ypr[0], ypr[1], ypr[2]);
       self->robot_pose.setIdentity();
-      self->robot_pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+      self->robot_pose.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
       self->robot_pose.rotate(quat_yaw_only);    
       self->robot_yaw = ypr[0]; // for convenece keep the yaw
 

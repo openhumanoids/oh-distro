@@ -243,13 +243,13 @@ private:
   // Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
   //void setupLCM();
   
-  //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::state_t* msg);
-  void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::state_t* msg);  
+  //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+  void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);  
   void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
   void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
   void delta_vo_handler(  const lcm::ReceiveBuffer* rbuf,  const std::string& channel,  const fovis::update_t * msg);
   
-  void getJoints(const drc::state_t * msg, double alljoints[], std::string joint_name[]);
+  void getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]);
   void joints_to_map(const double joints[], const std::string joint_name[], const int &num_joints, std::map<std::string, double> *_jointpos_in);
   void getTransforms_FK(const unsigned long long &u_ts, const std::map<std::string, double> &jointpos_in, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
   void setupSolver();
@@ -270,9 +270,9 @@ private:
   void DrawLegPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right , const Eigen::Isometry3d &true_pelvis);
 
   void PublishFootContactEst(int64_t utime);
-  void PublishEstimatedStates(const drc::state_t * msg, drc::state_t * est_msgout);
+  void PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout);
   
-  void ParseFootForces(const drc::state_t* msg, double &left_force, double &right_force);
+  void ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force);
   // This function may move to a new class in the future. This is just the starting location for testing of the functionality
   void DetermineLegContactStates(long utime, float left_z, float right_z);
   void InitializeFilters(const int num_filters);
@@ -280,19 +280,19 @@ private:
   int filterJointPositions(const unsigned long long &ts, const int &num_joints, double alljoints[]);
 
   //void UpdateJoints(uint64_t utime, const double &left_force, const double &right_force, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
-  void UpdateHeadStates(const drc::state_t * msg, bot_core::pose_t * l2head_msg);
+  void UpdateHeadStates(const drc::robot_state_t * msg, bot_core::pose_t * l2head_msg);
 
-  void LogAllStateData(const drc::state_t * msg, const drc::state_t * est_msgout);
-  void stateMessage_to_stream(const drc::state_t *msg, std::stringstream &ss);
+  void LogAllStateData(const drc::robot_state_t * msg, const drc::robot_state_t * est_msgout);
+  void stateMessage_to_stream(const drc::robot_state_t *msg, std::stringstream &ss);
 
   // Publishing of all the required LCM messages
   void PublishHeadStateMsgs(const bot_core::pose_t * msg);
-  void PublishPoseBodyTrue(const drc::state_t * msg);
+  void PublishPoseBodyTrue(const drc::robot_state_t * msg);
   void PublishH2B(const unsigned long long &utime,  const Eigen::Isometry3d &h2b);
 
   void DrawDebugPoses(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const Eigen::Isometry3d &true_pelvis, const bool &legchangeflag);
 
-  void FilterHandForces(const drc::state_t* msg, drc::state_t* estmsg);
+  void FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg);
   void publishAccBiasEst(const unsigned long long &uts);
 
 public:

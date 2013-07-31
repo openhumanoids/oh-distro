@@ -123,7 +123,8 @@ namespace renderer_robot_state
     {
     // cout << now - _last_state_msg_system_timestamp << endl;
     _gl_robot->set_state(*msg);
-    updateContactForceAndTorqueCache(msg->contacts);
+    
+    // disabled using robot_state_t change: updateContactForceAndTorqueCache(msg->contacts);
     bot_viewer_request_redraw(_viewer);
      _last_state_msg_system_timestamp = now;//msg->utime;
      _last_state_msg_sim_timestamp = msg->utime;

@@ -287,7 +287,6 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       drc_nav_goal_timed_t msg;
       msg.utime = self->robot_utime; //bot_timestamp_now();
       msg.timeout = (int64_t) 1E6*self->goal_timeout;
-      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
@@ -305,7 +304,6 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     }else if (self->active ==3){
       drc_nav_goal_t msg;
       msg.utime = self->robot_utime; // bot_timestamp_now();
-      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
@@ -510,13 +508,13 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
   RendererNavigation *self = (RendererNavigation*) user;
   
   self->robot_utime =msg->utime;
-  self->robot_pos[0] = msg->origin_position.translation.x;
-  self->robot_pos[1] = msg->origin_position.translation.y;
-  self->robot_pos[2] = msg->origin_position.translation.z;
-  self->robot_rot[0] = msg->origin_position.rotation.w;
-  self->robot_rot[1] = msg->origin_position.rotation.x;
-  self->robot_rot[2] = msg->origin_position.rotation.y;
-  self->robot_rot[3] = msg->origin_position.rotation.z;
+  self->robot_pos[0] = msg->pose.translation.x;
+  self->robot_pos[1] = msg->pose.translation.y;
+  self->robot_pos[2] = msg->pose.translation.z;
+  self->robot_rot[0] = msg->pose.rotation.w;
+  self->robot_rot[1] = msg->pose.rotation.x;
+  self->robot_rot[2] = msg->pose.rotation.y;
+  self->robot_rot[3] = msg->pose.rotation.z;
 }
 
 static void

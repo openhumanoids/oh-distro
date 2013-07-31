@@ -72,10 +72,10 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   
   	  KDL::Frame  T_world_body;
   	    
-      T_world_body.p[0]= msg->origin_position.translation.x;
-	    T_world_body.p[1]= msg->origin_position.translation.y;
-	    T_world_body.p[2]= msg->origin_position.translation.z;		    
-	    T_world_body.M =  KDL::Rotation::Quaternion(msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z, msg->origin_position.rotation.w);
+      T_world_body.p[0]= msg->pose.translation.x;
+	    T_world_body.p[1]= msg->pose.translation.y;
+	    T_world_body.p[2]= msg->pose.translation.z;		    
+	    T_world_body.M =  KDL::Rotation::Quaternion(msg->pose.rotation.x, msg->pose.rotation.y, msg->pose.rotation.z, msg->pose.rotation.w);
 
       T_body_world=T_world_body.Inverse(); 
 
@@ -96,8 +96,6 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
    
       _last_robotstate_msg = (*msg);
       _parent_renderer->last_state_msg_timestamp = msg->utime;
-      _parent_renderer->robot_name = msg->robot_name;
-      //(*_parent_renderer->robot_name_ptr)  = msg->robot_name
     
   } // end handleMessage
 

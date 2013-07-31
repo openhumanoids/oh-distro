@@ -75,12 +75,13 @@ int main (int argc, char* argv[])
         
         if(0 == status)
         {
-            drc::minimal_robot_state_t msg;
-            msg.utime = goby::common::goby_time<goby::uint64>();
-            msg.origin_position = drc::position_3d_t();
-            msg.num_joints = 0;
-            robot_lcm->publish("EST_ROBOT_STATE_MINIMAL", &msg);
-            std::cout << "Sent with time: " << msg.utime << std::endl;            
+            // Disabled as of july 2013:
+            //drc::minimal_robot_state_t msg;
+            //msg.utime = goby::common::goby_time<goby::uint64>();
+            //msg.pose = drc::position_3d_t();
+            //msg.num_joints = 0;
+            //robot_lcm->publish("EST_ROBOT_STATE_MINIMAL", &msg);
+            //std::cout << "Sent with time: " << msg.utime << std::endl;            
 
             counter++;
 

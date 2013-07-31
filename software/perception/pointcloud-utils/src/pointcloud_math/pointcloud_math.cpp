@@ -97,8 +97,8 @@ void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
   quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
   
   ss <<t[0]<<", "<<t[1]<<", "<<t[2]<<" | " 
-       <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << " | YPR "
-       << ypr[0] <<", "<< ypr[1] <<", "<< ypr[2];
+       <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << " | RPY "
+       << ypr[2] <<", "<< ypr[1] <<", "<< ypr[0];
 }
 
 void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss){

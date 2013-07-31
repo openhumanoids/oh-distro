@@ -230,7 +230,7 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
   _leg_odo->updateSingleFootContactStates(utime, left_z, right_z);
 }
 
-void LegOdometry_Handler::FilterHandForces(const drc::state_t* msg, drc::state_t* estmsg) {
+void LegOdometry_Handler::FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg) {
 
   estmsg->force_torque.l_hand_force[0] = lefthandforcesfilters[0].processSample( msg->force_torque.l_hand_force[0] );
   estmsg->force_torque.l_hand_force[1] = lefthandforcesfilters[1].processSample( msg->force_torque.l_hand_force[1] );
@@ -249,7 +249,7 @@ void LegOdometry_Handler::FilterHandForces(const drc::state_t* msg, drc::state_t
   estmsg->force_torque.r_hand_torque[2] = righthandforcesfilters[5].processSample( msg->force_torque.r_hand_torque[2] );
 }
 
-void LegOdometry_Handler::ParseFootForces(const drc::state_t* msg, double &left_force, double &right_force) {
+void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
   
   left_force  = (double)lpfilter[0].processSample( msg->force_torque.l_foot_force_z );
   right_force = (double)lpfilter[1].processSample( msg->force_torque.r_foot_force_z );
@@ -437,7 +437,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
 
 void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, 
-                        const drc::state_t* _msg) {
+                        const drc::robot_state_t* _msg) {
 
   //clock_gettime(CLOCK_REALTIME, &before);
   if (_switches->print_computation_time) {
@@ -460,7 +460,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
   // 2. After an estimation iteration these state variables go out of scope, preventing stale data to be carried over to the next iteration of this code (short of memory errors -- which must NEVER happen)
   // This is the main core memory of the state estimation process. These values are the single point of interface with the LCM cloud -- method of odometry will have their own state memory,
   // and should always be managed as such.
-  drc::state_t est_msgout;
+  drc::robot_state_t est_msgout;
   bot_core::pose_t est_headmsg;
   Eigen::Isometry3d left;
   Eigen::Isometry3d right;
@@ -483,9 +483,9 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
   
 #ifdef TRUE_ROBOT_STATE_MSG_AVAILABLE
   // maintain a true pelvis position for drawing of the foot
-  true_pelvis.translation() << _msg->origin_position.translation.x, _msg->origin_position.translation.y, _msg->origin_position.translation.z;
+  true_pelvis.translation() << _msg->pose.translation.x, _msg->pose.translation.y, _msg->pose.translation.z;
 
-  Eigen::Quaterniond tq(_msg->origin_position.rotation.w, _msg->origin_position.rotation.x, _msg->origin_position.rotation.y, _msg->origin_position.rotation.z);
+  Eigen::Quaterniond tq(_msg->pose.rotation.w, _msg->pose.rotation.x, _msg->pose.rotation.y, _msg->pose.rotation.z);
 
   //true_pelvis.rotate(tq);
   true_pelvis.linear() = q2C(tq);
@@ -851,7 +851,7 @@ void LegOdometry_Handler::PublishH2B(const unsigned long long &utime, const Eige
   lcm_->publish("HEAD_TO_BODY" + _channel_extension, &tf);
 }
 
-void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::state_t * est_msgout) {
+void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg, drc::robot_state_t * est_msgout) {
   
   /*
     if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
@@ -877,10 +877,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::
     
     //std::cout << "CHECKING ROTATIONS: " << 57.29*(_leg_odo->truth_E-InertialOdometry::QuaternionLib::q2e(output_q)).norm() << std::endl;
 
-    true_q.w() = msg->origin_position.rotation.w;
-    true_q.x() = msg->origin_position.rotation.x;
-    true_q.y() = msg->origin_position.rotation.y;
-    true_q.z() = msg->origin_position.rotation.z;
+    true_q.w() = msg->pose.rotation.w;
+    true_q.x() = msg->pose.rotation.x;
+    true_q.y() = msg->pose.rotation.y;
+    true_q.z() = msg->pose.rotation.z;
 
     pose.utime  =msg->utime;
     
@@ -893,31 +893,31 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::
   // True or estimated position
   if (_switches->use_true_z) {
 
-  pose.pos[0] = msg->origin_position.translation.x;
-  pose.pos[1] = msg->origin_position.translation.y;
-  pose.pos[2] = msg->origin_position.translation.z;
+  pose.pos[0] = msg->pose.translation.x;
+  pose.pos[1] = msg->pose.translation.y;
+  pose.pos[2] = msg->pose.translation.z;
 
   pose.orientation[0] =true_q.w();
   pose.orientation[1] =true_q.x();
   pose.orientation[2] =true_q.y();
   pose.orientation[3] =true_q.z();
 
-  origin.translation.x = msg->origin_position.translation.x;
-  origin.translation.y = msg->origin_position.translation.y;
-  origin.translation.z = msg->origin_position.translation.z;
+  origin.translation.x = msg->pose.translation.x;
+  origin.translation.y = msg->pose.translation.y;
+  origin.translation.z = msg->pose.translation.z;
 
-  origin.rotation.w = msg->origin_position.rotation.w;
-  origin.rotation.x = msg->origin_position.rotation.x;
-  origin.rotation.y = msg->origin_position.rotation.y;
-  origin.rotation.z = msg->origin_position.rotation.z;
+  origin.rotation.w = msg->pose.rotation.w;
+  origin.rotation.x = msg->pose.rotation.x;
+  origin.rotation.y = msg->pose.rotation.y;
+  origin.rotation.z = msg->pose.rotation.z;
 
-  twist.linear_velocity.x = msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
-  twist.linear_velocity.y = msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
-  twist.linear_velocity.z = msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+  twist.linear_velocity.x = msg->twist.linear_velocity.x; //local_to_body_lin_rate_(0);
+  twist.linear_velocity.y = msg->twist.linear_velocity.y; //local_to_body_lin_rate_(1);
+  twist.linear_velocity.z = msg->twist.linear_velocity.z; //local_to_body_lin_rate_(2);
 
-  twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
-  twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
-  twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
+  twist.angular_velocity.x = msg->twist.angular_velocity.x;
+  twist.angular_velocity.y = msg->twist.angular_velocity.y;
+  twist.angular_velocity.z = msg->twist.angular_velocity.z;
   } else {*/
   pose.pos[0] =currentPelvis.translation().x();
   pose.pos[1] =currentPelvis.translation().y();
@@ -937,8 +937,8 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::
   origin.rotation.y = output_q.y();
   origin.rotation.z = output_q.z();
 
-  twist.linear_velocity.x = velocity_states(0);//msg->origin_twist.linear_velocity.x;//velocity_states(0);
-  twist.linear_velocity.y = velocity_states(1);//msg->origin_twist.linear_velocity.y;//velocity_states(1);
+  twist.linear_velocity.x = velocity_states(0);//msg->twist.linear_velocity.x;//velocity_states(0);
+  twist.linear_velocity.y = velocity_states(1);//msg->twist.linear_velocity.y;//velocity_states(1);
   twist.linear_velocity.z = velocity_states(2);
   publishvelocitiesvec(0) = twist.linear_velocity.x;
   publishvelocitiesvec(1) = twist.linear_velocity.y;
@@ -956,10 +956,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::
   // EST is TRUE with sensor estimated position
   
   //msgout = *msg;
-  est_msgout->origin_position = origin;
-  est_msgout->origin_twist = twist;
+  est_msgout->pose = origin;
+  est_msgout->twist = twist;
 
-  lcm_->publish("EST_ROBOT_STATE_NEW" + _channel_extension, est_msgout);
+  lcm_->publish("EST_ROBOT_STATE" + _channel_extension, est_msgout);
 
 
   // TODO -- This must be converted to a permanent foot triad
@@ -1038,18 +1038,18 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::state_t * msg, drc::
 
 // TODO -- remember that this is to be depreciated
 // This function will not be available during the VRC, as the true robot state will not be known
-void LegOdometry_Handler::PublishPoseBodyTrue(const drc::state_t * msg) {
+void LegOdometry_Handler::PublishPoseBodyTrue(const drc::robot_state_t * msg) {
 
   // Infer the Robot's head position from the ground truth root world pose
   bot_core::pose_t pose_msg;
   pose_msg.utime = msg->utime;
-  pose_msg.pos[0] = msg->origin_position.translation.x;
-  pose_msg.pos[1] = msg->origin_position.translation.y;
-  pose_msg.pos[2] = msg->origin_position.translation.z;
-  pose_msg.orientation[0] = msg->origin_position.rotation.w;
-  pose_msg.orientation[1] = msg->origin_position.rotation.x;
-  pose_msg.orientation[2] = msg->origin_position.rotation.y;
-  pose_msg.orientation[3] = msg->origin_position.rotation.z;
+  pose_msg.pos[0] = msg->pose.translation.x;
+  pose_msg.pos[1] = msg->pose.translation.y;
+  pose_msg.pos[2] = msg->pose.translation.z;
+  pose_msg.orientation[0] = msg->pose.rotation.w;
+  pose_msg.orientation[1] = msg->pose.rotation.x;
+  pose_msg.orientation[2] = msg->pose.rotation.y;
+  pose_msg.orientation[3] = msg->pose.rotation.z;
 
   lcm_->publish("POSE_BODY_TRUE", &pose_msg);
 }
@@ -1061,7 +1061,7 @@ void LegOdometry_Handler::PublishHeadStateMsgs(const bot_core::pose_t * msg) {
   return;
 }
 
-void LegOdometry_Handler::UpdateHeadStates(const drc::state_t * msg, bot_core::pose_t * l2head_msg) {
+void LegOdometry_Handler::UpdateHeadStates(const drc::robot_state_t * msg, bot_core::pose_t * l2head_msg) {
 
   Eigen::Vector3d local_to_head_vel;
   Eigen::Vector3d local_to_head_acc;
@@ -1085,11 +1085,11 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::state_t * msg, bot_core::p
 
   //std::cout << body_to_head.translation().transpose() << " is b2h\n";
   Eigen::Isometry3d pelvis;
-  Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  Eigen::Quaterniond q(msg->pose.rotation.w, msg->pose.rotation.x, msg->pose.rotation.y, msg->pose.rotation.z);
   // TODO -- remember this flag
 
   pelvis.setIdentity();
-  pelvis.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+  pelvis.translation() << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
   pelvis.linear() = q2C(q);
 
     //std::cout << truebody.translation().transpose() << " is tb\n";
@@ -1133,7 +1133,7 @@ void LegOdometry_Handler::UpdateHeadStates(const drc::state_t * msg, bot_core::p
   return;
 }
 
-void LegOdometry_Handler::LogAllStateData(const drc::state_t * msg, const drc::state_t * est_msgout) {
+void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const drc::robot_state_t * est_msgout) {
 
   // Logging csv file with true and estimated states
   stringstream ss (stringstream::in | stringstream::out);
@@ -1144,7 +1144,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::state_t * msg, const drc::s
 
   {
   Eigen::Vector3d elogged;
-  elogged = q2e_new(Eigen::Quaterniond(est_msgout->origin_position.rotation.w, est_msgout->origin_position.rotation.x, est_msgout->origin_position.rotation.y, est_msgout->origin_position.rotation.z));
+  elogged = q2e_new(Eigen::Quaterniond(est_msgout->pose.rotation.w, est_msgout->pose.rotation.x, est_msgout->pose.rotation.y, est_msgout->pose.rotation.z));
 
   //std::cout << "logged: " << (_leg_odo->truth_E - elogged).norm() << std::endl;
 
@@ -1245,30 +1245,30 @@ void LegOdometry_Handler::LogAllStateData(const drc::state_t * msg, const drc::s
 
 }
 
-// Push the state values in a drc::state_t message type to the given stringstream
-void LegOdometry_Handler::stateMessage_to_stream(  const drc::state_t *msg,
+// Push the state values in a drc::robot_state_t message type to the given stringstream
+void LegOdometry_Handler::stateMessage_to_stream(  const drc::robot_state_t *msg,
                           stringstream &ss) {
 
-  Eigen::Quaterniond q(msg->origin_position.rotation.w, msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  Eigen::Quaterniond q(msg->pose.rotation.w, msg->pose.rotation.x, msg->pose.rotation.y, msg->pose.rotation.z);
   Eigen::Vector3d E;
 
   E = q2e_new(q);
 
-  ss << msg->origin_position.translation.x << ", ";
-  ss << msg->origin_position.translation.y << ", ";
-  ss << msg->origin_position.translation.z << ", ";
+  ss << msg->pose.translation.x << ", ";
+  ss << msg->pose.translation.y << ", ";
+  ss << msg->pose.translation.z << ", ";
 
-  ss << msg->origin_twist.linear_velocity.x << ", ";
-  ss << msg->origin_twist.linear_velocity.y << ", ";
-  ss << msg->origin_twist.linear_velocity.z << ", ";
+  ss << msg->twist.linear_velocity.x << ", ";
+  ss << msg->twist.linear_velocity.y << ", ";
+  ss << msg->twist.linear_velocity.z << ", ";
 
   ss << E(0) << ", ";
   ss << E(1) << ", ";
   ss << E(2) << ", ";
 
-  ss << msg->origin_twist.angular_velocity.x << ", ";
-  ss << msg->origin_twist.angular_velocity.y << ", ";
-  ss << msg->origin_twist.angular_velocity.z << ", ";
+  ss << msg->twist.angular_velocity.x << ", ";
+  ss << msg->twist.angular_velocity.y << ", ";
+  ss << msg->twist.angular_velocity.z << ", ";
 
   return;
 }
@@ -1499,7 +1499,7 @@ void LegOdometry_Handler::addFootstepPose_draw() {
   collectionindex = collectionindex + 1;
 }
 
-void LegOdometry_Handler::getJoints(const drc::state_t * msg, double alljoints[], std::string joint_name[]) {
+void LegOdometry_Handler::getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]) {
   
   if (filtered_joints.capacity() != msg->num_joints || !filter_joints_vector_size_set) {
     std::cout << "LegOdometry_Handler::getJoints -- Automatically changing the capacity of filt.joints -- capacity: " << filtered_joints.capacity() << ", num_joints: " << msg->num_joints << std::endl;

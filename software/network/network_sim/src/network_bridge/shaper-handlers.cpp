@@ -163,8 +163,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         plan.set_utime(6000000);
 
         plan.mutable_goal()->set_utime(0);
-        drc::TranslationVector* translation = plan.mutable_goal()->mutable_origin_position()->mutable_translation();
-        drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_origin_position()->mutable_rotation();
+        drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
+        drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
 
         translation->set_x(23);
         translation->set_y(50);

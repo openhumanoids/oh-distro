@@ -47,8 +47,8 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     std::cout << "skip start of log\n";
     return;
   }
-  Eigen::Quaterniond quat_in = Eigen::Quaterniond( msg->origin_position.rotation.w, msg->origin_position.rotation.x,
-                    msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  Eigen::Quaterniond quat_in = Eigen::Quaterniond( msg->pose.rotation.w, msg->pose.rotation.x,
+                    msg->pose.rotation.y, msg->pose.rotation.z);
   double ypr[3];
   quat_to_euler(quat_in, ypr[0], ypr[1], ypr[2]);
   

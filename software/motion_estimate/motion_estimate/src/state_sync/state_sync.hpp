@@ -36,13 +36,8 @@ class state_sync{
     void sandiaRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg);
 
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
-    void appendJoints(drc::state_t& msg_out, Joints joints);
+    void appendJoints(drc::robot_state_t& msg_out, Joints joints);
     
-    
-    void publishRobotState_VRC(int64_t utime_in, const  drc::force_torque_t& msg);
-    void appendJoints_VRC(drc::robot_state_t& msg_out, Joints joints);
-    drc::contact_state_t setContacts_VRC(const  drc::force_torque_t& msg);
-
     Joints head_joints_;
     Joints atlas_joints_;
     Joints sandia_left_joints_;

@@ -532,13 +532,13 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
   RendererWalking *self = (RendererWalking*) user;
   
   self->robot_utime =msg->utime;
-  self->robot_pos[0] = msg->origin_position.translation.x;
-  self->robot_pos[1] = msg->origin_position.translation.y;
-  self->robot_pos[2] = msg->origin_position.translation.z;
-  self->robot_rot[0] = msg->origin_position.rotation.w;
-  self->robot_rot[1] = msg->origin_position.rotation.x;
-  self->robot_rot[2] = msg->origin_position.rotation.y;
-  self->robot_rot[3] = msg->origin_position.rotation.z;
+  self->robot_pos[0] = msg->pose.translation.x;
+  self->robot_pos[1] = msg->pose.translation.y;
+  self->robot_pos[2] = msg->pose.translation.z;
+  self->robot_rot[0] = msg->pose.rotation.w;
+  self->robot_rot[1] = msg->pose.rotation.x;
+  self->robot_rot[2] = msg->pose.rotation.y;
+  self->robot_rot[3] = msg->pose.rotation.z;
 }
 
 static void

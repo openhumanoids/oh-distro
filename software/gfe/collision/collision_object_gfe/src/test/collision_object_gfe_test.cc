@@ -17,13 +17,13 @@ main( int argc,
   Collision_Object_GFE collision_object_gfe( "gfe1" );
 
   robot_state_t robot_state;
-  robot_state.origin_position.translation.x = 0.0;
-  robot_state.origin_position.translation.y = 0.0;
-  robot_state.origin_position.translation.z = 1.0;
-  robot_state.origin_position.rotation.x = 0.0;
-  robot_state.origin_position.rotation.y = 0.0;
-  robot_state.origin_position.rotation.z = 0.0;
-  robot_state.origin_position.rotation.w = 1.0;
+  robot_state.pose.translation.x = 0.0;
+  robot_state.pose.translation.y = 0.0;
+  robot_state.pose.translation.z = 1.0;
+  robot_state.pose.rotation.x = 0.0;
+  robot_state.pose.rotation.y = 0.0;
+  robot_state.pose.rotation.z = 0.0;
+  robot_state.pose.rotation.w = 1.0;
   robot_state.num_joints = collision_object_gfe.kinematics_model().model().joints_.size();
   robot_state.joint_name.resize( collision_object_gfe.kinematics_model().model().joints_.size() );
   unsigned int index = 0;

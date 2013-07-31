@@ -126,7 +126,7 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 {
     dccl_state->set_utime(lcm_object.utime);
 
-    if(!to_minimal_position3d(lcm_object.origin_position, dccl_state->mutable_origin_position(), use_rpy))
+    if(!to_minimal_position3d(lcm_object.pose, dccl_state->mutable_pose(), use_rpy))
         return false;
 
 
@@ -145,9 +145,8 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
 {
 
     lcm_object->utime = dccl_state.utime();
-    lcm_object->robot_name = "atlas";
 
-    if(!from_minimal_position3d(&lcm_object->origin_position,dccl_state.origin_position(), use_rpy))
+    if(!from_minimal_position3d(&lcm_object->pose,dccl_state.pose(), use_rpy))
         return false;    
     
     lcm_object->num_joints = dccl_state.joint_position_size();
@@ -160,29 +159,14 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     
     std::vector<float> joint_zeros;
     joint_zeros.assign ( joint_names_.size(),0); 
-    drc::joint_covariance_t j_cov;
-    j_cov.variance = 0;
-    std::vector<drc::joint_covariance_t> joint_cov_zeros;
-    joint_cov_zeros.assign ( joint_names_.size(),j_cov);  
-    lcm_object->origin_twist.linear_velocity.x =0;
-    lcm_object->origin_twist.linear_velocity.y =0;
-    lcm_object->origin_twist.linear_velocity.z =0;
-    lcm_object->origin_twist.angular_velocity.x =0;
-    lcm_object->origin_twist.angular_velocity.y =0;
-    lcm_object->origin_twist.angular_velocity.z =0;  
-    for(int i = 0; i < 6; i++)  {
-        for(int j = 0; j < 6; j++) {
-            lcm_object->origin_cov.position_cov[i][j] = 0;
-            lcm_object->origin_cov.twist_cov[i][j] = 0;
-        }
-    }
+    lcm_object->twist.linear_velocity.x =0;
+    lcm_object->twist.linear_velocity.y =0;
+    lcm_object->twist.linear_velocity.z =0;
+    lcm_object->twist.angular_velocity.x =0;
+    lcm_object->twist.angular_velocity.y =0;
+    lcm_object->twist.angular_velocity.z =0;  
     lcm_object->joint_velocity = joint_zeros;
-    lcm_object->measured_effort = joint_zeros;
-    lcm_object->joint_cov = joint_cov_zeros;
-
-    drc::contact_state_t cs;
-    cs.num_contacts = 0;
-    lcm_object->contacts = cs;
+    lcm_object->joint_effort = joint_zeros;
 
     return true;
 }

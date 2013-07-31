@@ -122,9 +122,9 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
 
     Eigen::Isometry3d current_pose;
     current_pose.setIdentity();
-    current_pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-    Eigen::Quaterniond quat_in = Eigen::Quaterniond( msg->origin_position.rotation.w, msg->origin_position.rotation.x,
-                     msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+    current_pose.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+    Eigen::Quaterniond quat_in = Eigen::Quaterniond( msg->pose.rotation.w, msg->pose.rotation.x,
+                     msg->pose.rotation.y, msg->pose.rotation.z);
     current_pose.rotate(quat_in);    
     Eigen::Isometry3d goal_pose = current_pose*getRandomGoal();
     

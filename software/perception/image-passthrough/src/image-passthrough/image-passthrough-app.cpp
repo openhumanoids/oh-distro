@@ -309,9 +309,9 @@ bool Pass::createMask(int64_t msg_time){
   // 0. Extract World to Body TF:  
   Eigen::Isometry3d world_to_body;
   world_to_body.setIdentity();
-  world_to_body.translation()  << last_rstate_.origin_position.translation.x, last_rstate_.origin_position.translation.y, last_rstate_.origin_position.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(last_rstate_.origin_position.rotation.w, last_rstate_.origin_position.rotation.x, 
-                                               last_rstate_.origin_position.rotation.y, last_rstate_.origin_position.rotation.z);
+  world_to_body.translation()  << last_rstate_.pose.translation.x, last_rstate_.pose.translation.y, last_rstate_.pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(last_rstate_.pose.rotation.w, last_rstate_.pose.rotation.x, 
+                                               last_rstate_.pose.rotation.y, last_rstate_.pose.rotation.z);
   world_to_body.rotate(quat);    
 
   // 1. Determine the Camera in World Frame:

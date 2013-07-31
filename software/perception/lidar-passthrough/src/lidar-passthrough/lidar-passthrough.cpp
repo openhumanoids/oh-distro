@@ -160,9 +160,9 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     }
   }else if (which ==1){
     for( unsigned int i = 0; i < 500; i++ ){
-      Vector3f point(last_rstate_.origin_position.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
-                    last_rstate_.origin_position.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
-                    last_rstate_.origin_position.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
+      Vector3f point(last_rstate_.pose.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
+                    last_rstate_.pose.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
+                    last_rstate_.pose.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
       points.push_back( point );
       possible_indices.push_back( points.size() - 1 );
     }
@@ -173,7 +173,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
       possible_indices.push_back( points.size() - 1 );
     }
   }else if(which==3){
-    Vector3f bot_root(last_rstate_.origin_position.translation.x,last_rstate_.origin_position.translation.y,last_rstate_.origin_position.translation.z);
+    Vector3f bot_root(last_rstate_.pose.translation.x,last_rstate_.pose.translation.y,last_rstate_.pose.translation.z);
     Vector3f offset( 0.,0.,0.45);
     for( float i = -0.3; i < 0.3; i=i+0.02 ){
       for( float j = -0.3; j < 0.3; j=j+0.02 ){

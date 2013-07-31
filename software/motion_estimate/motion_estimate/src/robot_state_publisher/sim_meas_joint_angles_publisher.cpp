@@ -32,7 +32,6 @@ class TrueRobotStateHandler
                drc::joint_angles_t message;
 
 		message.utime =msg->utime; 
-		message.robot_name = msg -> robot_name;
 		message.num_joints = msg->num_joints;		     	 
 
 		for (std::vector<int>::size_type i = 0; i !=  msg -> joint_name.size(); i++)  {

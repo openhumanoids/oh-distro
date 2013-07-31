@@ -99,9 +99,9 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   // 0. Extract World Pose of body:
   Eigen::Isometry3d world_to_body;
   world_to_body.setIdentity();
-  world_to_body.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-                                               msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  world_to_body.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+                                               msg->pose.rotation.y, msg->pose.rotation.z);
   world_to_body.rotate(quat);    
     
   // 1. Solve for Forward Kinematics:
@@ -354,4 +354,3 @@ main(int argc, char ** argv){
   while(0 == lcm->handle());
   return 0;
 }
-

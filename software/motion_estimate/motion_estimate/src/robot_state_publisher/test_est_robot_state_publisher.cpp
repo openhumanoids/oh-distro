@@ -15,7 +15,6 @@ namespace test_est_robot_state_publisher {
 class RobotModel {
  public:
    lcm::LCM lcm;
-   std::string robot_name;
    std::string urdf_xml_string; 
    std::vector<std::string> joint_names_;
  };
@@ -23,9 +22,8 @@ class RobotModel {
 void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot) {
   // Received robot urdf string. Store it internally and get all available joints.
 
-   robot->robot_name      = msg->robot_name;
    robot->urdf_xml_string = msg->urdf_xml_string;
-  std::cout<<"Received urdf_xml_string of robot ["<<msg->robot_name <<"], storing it internally as a param"<<std::endl;
+  std::cout<<"Received urdf_xml_string of robot, storing it internally as a param"<<std::endl;
 
   urdf::Model robot_model; 
   if (!robot_model.initString( msg->urdf_xml_string))
@@ -56,7 +54,7 @@ int main(int argc, char ** argv)
   robot->lcm.unsubscribe(robot_model_subcription_); // Stop listening to ROBOT_MODEL.
 
    
-  std::cout<< "Received URDF of robot [" <<robot->robot_name <<"] "<<std::endl;
+  std::cout<< "Received URDF of robot"<<std::endl;
   std::cout<< "Number of Joints: " << robot->joint_names_.size() <<std::endl;
 
  
@@ -76,33 +74,22 @@ int main(int argc, char ** argv)
     struct timeval tv;
     gettimeofday (&tv, NULL);
     message.utime = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; 
-    message.robot_name = robot -> robot_name;
     
-    message.origin_position.translation.x = 0;
-    message.origin_position.translation.y = 0;
-    message.origin_position.translation.z = 0;
-    message.origin_position.rotation.x = 0;
-    message.origin_position.rotation.y = 0;
-    message.origin_position.rotation.z = 0;
-    message.origin_position.rotation.w = 1;
+    message.pose.translation.x = 0;
+    message.pose.translation.y = 0;
+    message.pose.translation.z = 0;
+    message.pose.rotation.x = 0;
+    message.pose.rotation.y = 0;
+    message.pose.rotation.z = 0;
+    message.pose.rotation.w = 1;
     
-    message.origin_twist.linear_velocity.x =0;
-    message.origin_twist.linear_velocity.y =0;
-    message.origin_twist.linear_velocity.z =0;
-    message.origin_twist.angular_velocity.x =0;
-    message.origin_twist.angular_velocity.y =0;
-    message.origin_twist.angular_velocity.z =0;
+    message.twist.linear_velocity.x =0;
+    message.twist.linear_velocity.y =0;
+    message.twist.linear_velocity.z =0;
+    message.twist.angular_velocity.x =0;
+    message.twist.angular_velocity.y =0;
+    message.twist.angular_velocity.z =0;
 
-    int i,j;
-    for(i = 0; i < 6; i++)  {
-       for(j = 0; j < 6; j++) {
-             message.origin_cov.position_cov[i][j] = 0;
-	     message.origin_cov.twist_cov[i][j] = 0;
-    }
-    }
-
-    drc::joint_covariance_t j_cov;
-    j_cov.variance = 0;
 
     message.num_joints = robot->joint_names_.size();
 
@@ -112,20 +99,9 @@ int main(int argc, char ** argv)
       message.joint_name.push_back(robot->joint_names_[i]); // Joint names available in alphabetical order.
       message.joint_position.push_back(0.0);
       message.joint_velocity.push_back(0);
-      message.measured_effort.push_back(0);
-      message.joint_cov.push_back(j_cov);
+      message.joint_effort.push_back(0);
     }
 
-
-    // dummy ground contact states
-    message.contacts.num_contacts =0;
-    message.contacts.id.push_back("dummy");
-    for (int i=0; i< message.contacts.num_contacts; i++){
-        drc::vector_3d_t f_zero;
-        f_zero.x = 0;f_zero.y = 0;f_zero.z = 0;
-        message.contacts.contact_force.push_back(f_zero);
-        message.contacts.contact_torque.push_back(f_zero);
-    }
     // Publish
     lcm.publish("EST_ROBOT_STATE", &message);
     
@@ -133,12 +109,8 @@ int main(int argc, char ** argv)
     message.joint_name.clear();
     message.joint_position.clear();
     message.joint_velocity.clear();
-    message.measured_effort.clear();
-    message.joint_cov.clear();
-    message.contacts.id.clear();
-    message.contacts.contact_torque.clear();
-    message.contacts.contact_force.clear();
-    
+    message.joint_effort.clear();
+
     usleep(10000); // publish at 100 hz.
    } 
 

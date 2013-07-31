@@ -139,10 +139,10 @@ from_lcm( const robot_state_t* robotState ){
     return false;
   } else {
     _time = robotState->utime;
-    _pose.p[ 0 ] = robotState->origin_position.translation.x;
-    _pose.p[ 1 ] = robotState->origin_position.translation.y;
-    _pose.p[ 2 ] = robotState->origin_position.translation.z;
-    _pose.M = KDL::Rotation::Quaternion( robotState->origin_position.rotation.x, robotState->origin_position.rotation.y, robotState->origin_position.rotation.z, robotState->origin_position.rotation.w );
+    _pose.p[ 0 ] = robotState->pose.translation.x;
+    _pose.p[ 1 ] = robotState->pose.translation.y;
+    _pose.p[ 2 ] = robotState->pose.translation.z;
+    _pose.M = KDL::Rotation::Quaternion( robotState->pose.rotation.x, robotState->pose.rotation.y, robotState->pose.rotation.z, robotState->pose.rotation.w );
 
     for( unsigned int i = 0; i < robotState->num_joints; i++ ){ 
       State_GFE_Joint& current_joint = joint( robotState->joint_name[i] );
@@ -155,7 +155,7 @@ from_lcm( const robot_state_t* robotState ){
         current_joint.set_position( robotState->joint_position[i] );
       }
       current_joint.set_velocity( robotState->joint_velocity[i] );
-      current_joint.set_measured_effort( robotState->measured_effort[i] );
+      current_joint.set_effort( robotState->joint_effort[i] );
     }
     return true;
   }
@@ -169,10 +169,10 @@ void
 State_GFE::
 to_lcm( robot_state_t* robotState )const{
   robotState->utime = _time;
-  robotState->origin_position.translation.x = _pose.p[ 0 ];
-  robotState->origin_position.translation.y = _pose.p[ 1 ];
-  robotState->origin_position.translation.z = _pose.p[ 2 ];
-  _pose.M.GetQuaternion( robotState->origin_position.rotation.x, robotState->origin_position.rotation.y, robotState->origin_position.rotation.z, robotState->origin_position.rotation.w );
+  robotState->pose.translation.x = _pose.p[ 0 ];
+  robotState->pose.translation.y = _pose.p[ 1 ];
+  robotState->pose.translation.z = _pose.p[ 2 ];
+  _pose.M.GetQuaternion( robotState->pose.rotation.x, robotState->pose.rotation.y, robotState->pose.rotation.z, robotState->pose.rotation.w );
   robotState->num_joints = 53;
   robotState->joint_name.resize( robotState->num_joints );
   robotState->joint_name[0] = "back_lbz";
@@ -230,18 +230,13 @@ to_lcm( robot_state_t* robotState )const{
   robotState->joint_name[52] = "right_f3_j2";
   robotState->joint_position.resize( robotState->num_joints );
   robotState->joint_velocity.resize( robotState->num_joints );
-  robotState->measured_effort.resize( robotState->num_joints );
-  robotState->joint_cov.resize( robotState->num_joints );
+  robotState->joint_effort.resize( robotState->num_joints );
   for( unsigned int i = 0; i < robotState->num_joints; i++ ){
     const State_GFE_Joint& current_joint = joint( robotState->joint_name[i] );
     robotState->joint_position[ i ] = current_joint.position();
     robotState->joint_velocity[ i ] = current_joint.velocity();
-    robotState->measured_effort[ i ] = current_joint.measured_effort();
+    robotState->joint_effort[ i ] = current_joint.effort();
   }
-  robotState->contacts.num_contacts = 0;
-  robotState->contacts.id.clear(); 
-  robotState->contacts.contact_torque.clear(); 
-  robotState->contacts.contact_force.clear(); 
   return;
 }
 
@@ -254,10 +249,10 @@ void
 State_GFE::
 to_lcm_minimal( robot_state_t* robotState )const{
   robotState->utime = _time;
-  robotState->origin_position.translation.x = _pose.p[ 0 ];
-  robotState->origin_position.translation.y = _pose.p[ 1 ];
-  robotState->origin_position.translation.z = _pose.p[ 2 ];
-  _pose.M.GetQuaternion( robotState->origin_position.rotation.x, robotState->origin_position.rotation.y, robotState->origin_position.rotation.z, robotState->origin_position.rotation.w );
+  robotState->pose.translation.x = _pose.p[ 0 ];
+  robotState->pose.translation.y = _pose.p[ 1 ];
+  robotState->pose.translation.z = _pose.p[ 2 ];
+  _pose.M.GetQuaternion( robotState->pose.rotation.x, robotState->pose.rotation.y, robotState->pose.rotation.z, robotState->pose.rotation.w );
   robotState->num_joints = 28;
   robotState->joint_name.resize( robotState->num_joints );
   robotState->joint_name[0] = "back_lbz";
@@ -290,18 +285,13 @@ to_lcm_minimal( robot_state_t* robotState )const{
   robotState->joint_name[27] = "r_leg_uhz";
   robotState->joint_position.resize( robotState->num_joints );
   robotState->joint_velocity.resize( robotState->num_joints );
-  robotState->measured_effort.resize( robotState->num_joints );
-  robotState->joint_cov.resize( robotState->num_joints );
+  robotState->joint_effort.resize( robotState->num_joints );
   for( unsigned int i = 0; i < robotState->num_joints; i++ ){
     const State_GFE_Joint& current_joint = joint( robotState->joint_name[i] );
     robotState->joint_position[ i ] = current_joint.position();
     robotState->joint_velocity[ i ] = current_joint.velocity();
-    robotState->measured_effort[ i ] = current_joint.measured_effort();
+    robotState->joint_effort[ i ] = current_joint.effort();
   }
-  robotState->contacts.num_contacts = 0;
-  robotState->contacts.id.clear(); 
-  robotState->contacts.contact_torque.clear(); 
-  robotState->contacts.contact_force.clear(); 
   return;
 }
 

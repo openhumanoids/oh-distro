@@ -385,10 +385,7 @@ namespace renderer_robot_plan
            state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);      
            state_msg->joint_position.push_back(msg->grasps[k_max].joint_position[i]);  
            state_msg->joint_velocity.push_back(0);
-           state_msg->measured_effort.push_back(0);
-           drc::joint_covariance_t jcov;
-           jcov.variance = 0;
-           state_msg->joint_cov.push_back(jcov);
+           state_msg->joint_effort.push_back(0);
          }// end for  
        }     
        

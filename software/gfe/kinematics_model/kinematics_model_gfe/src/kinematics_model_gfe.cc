@@ -448,7 +448,7 @@ load_urdf( string urdfFilename,
 void
 Kinematics_Model_GFE::
 set( const drc::robot_state_t& robotState ){
-  Kinematics_Model::drc_position_3d_t_to_kdl_frame( robotState.origin_position, _world_to_body );
+  Kinematics_Model::drc_position_3d_t_to_kdl_frame( robotState.pose, _world_to_body );
  
   _link_frames.clear();
 

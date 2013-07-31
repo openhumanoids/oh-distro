@@ -10,10 +10,10 @@ State_GFE_Joint( string id,
                   unsigned long long time,
                   double position,
                   double velocity,
-                  double measuredEffort ) : State( id, time ),
+                  double effort ) : State( id, time ),
                                             _position( position ),
                                             _velocity( velocity ),
-                                            _measured_effort( measuredEffort ) {
+                                            _effort( effort ) {
 
 }
 
@@ -26,7 +26,7 @@ State_GFE_Joint::
 State_GFE_Joint( const State_GFE_Joint& other ) : State( other ),
                                                   _position( other._position ),
                                                   _velocity( other._velocity ),
-                                                  _measured_effort( other._measured_effort ){
+                                                  _effort( other._effort ){
   
 }
 
@@ -37,7 +37,7 @@ operator=( const State_GFE_Joint& other ){
   _time = other._time;
   _position = other._position;
   _velocity = other._velocity;
-  _measured_effort = other._measured_effort;
+  _effort = other._effort;
   return ( *this );
 }
 
@@ -50,7 +50,7 @@ interpolate( const State_GFE_Joint& first,
   double ifactor = ( double )( time - first.time() ) / ( double )( second.time() - first.time() );
   state.set_position( first.position() + ifactor * ( second.position() - first.position() ) );
   state.set_velocity( first.velocity() + ifactor * ( second.velocity() - first.velocity() ) );
-  state.set_measured_effort( first.measured_effort() + ifactor * ( second.measured_effort() - first.measured_effort() ) );
+  state.set_effort( first.effort() + ifactor * ( second.effort() - first.effort() ) );
   return state;
 }
 
@@ -71,8 +71,8 @@ set_velocity( double velocity ){
 
 void
 State_GFE_Joint::
-set_measured_effort( double measuredEffort ){
-  _measured_effort = measuredEffort;
+set_effort( double effort ){
+  _effort = effort;
   return;
 }
 
@@ -90,8 +90,8 @@ velocity( void )const{
 
 double
 State_GFE_Joint::
-measured_effort( void )const{
-  return _measured_effort;
+effort( void )const{
+  return _effort;
 }
 
 namespace state {
@@ -102,7 +102,7 @@ namespace state {
     out << "time:{" << other.time() << "} ";
     out << "pos:{" << other.position() << "} ";
     out << "vel:{" << other.velocity() << "} ";
-    out << "me:{" << other.measured_effort() << "}";
+    out << "me:{" << other.effort() << "}";
     return out;
   }
 }

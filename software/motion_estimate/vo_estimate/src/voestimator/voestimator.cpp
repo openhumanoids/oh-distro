@@ -255,13 +255,13 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   // TODO: do this somewhere else
   bot_core::pose_t pose_msg;
   pose_msg.utime = TRUE_state_msg->utime;
-  pose_msg.pos[0] = TRUE_state_msg->origin_position.translation.x;
-  pose_msg.pos[1] = TRUE_state_msg->origin_position.translation.y;
-  pose_msg.pos[2] = TRUE_state_msg->origin_position.translation.z;
-  pose_msg.orientation[0] = TRUE_state_msg->origin_position.rotation.w;
-  pose_msg.orientation[1] = TRUE_state_msg->origin_position.rotation.x;
-  pose_msg.orientation[2] = TRUE_state_msg->origin_position.rotation.y;
-  pose_msg.orientation[3] = TRUE_state_msg->origin_position.rotation.z;
+  pose_msg.pos[0] = TRUE_state_msg->pose.translation.x;
+  pose_msg.pos[1] = TRUE_state_msg->pose.translation.y;
+  pose_msg.pos[2] = TRUE_state_msg->pose.translation.z;
+  pose_msg.orientation[0] = TRUE_state_msg->pose.rotation.w;
+  pose_msg.orientation[1] = TRUE_state_msg->pose.rotation.x;
+  pose_msg.orientation[2] = TRUE_state_msg->pose.rotation.y;
+  pose_msg.orientation[3] = TRUE_state_msg->pose.rotation.z;
   lcm_->publish("POSE_BODY_TRUE", &pose_msg);    
   
   // 1. Extrapolate:
@@ -305,7 +305,7 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   // EST is TRUE with sensor estimated position
   drc::robot_state_t msgout;
   msgout = *TRUE_state_msg;
-  msgout.origin_position = origin;
-  msgout.origin_twist = twist;
+  msgout.pose = origin;
+  msgout.twist = twist;
   lcm_->publish("EST_ROBOT_STATE" + channel_extension_, &msgout); 
 }
