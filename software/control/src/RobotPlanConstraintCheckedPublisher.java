@@ -7,9 +7,9 @@ public class RobotPlanConstraintCheckedPublisher extends RobotPlanPublisher
 {
     drc.robot_plan_constraint_checked_t msg_constraint_checked;
 
-    public RobotPlanConstraintCheckedPublisher(String robot_name,String[] joint_name,boolean floating_base, String channel)
+    public RobotPlanConstraintCheckedPublisher(String[] joint_name,boolean floating_base, String channel)
     {
-      super(robot_name, joint_name, floating_base, channel);
+      super(joint_name, floating_base, channel);
       msg_constraint_checked = new drc.robot_plan_constraint_checked_t();
     }
 

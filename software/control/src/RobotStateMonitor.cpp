@@ -142,13 +142,11 @@ public:
       }
     }
 
-#if 0 // doesn't seem to be needed
-    msg.robot_name = robot_name;
-      
+#if 0 // doesn't seem to be needed      
     if (m_num_floating_joints == 0) {
       // Atlas specific stuff
-      msg.origin_position.rotation.w = 1.0;
-      msg.origin_position.translation.z = 0.927;
+      msg.pose.rotation.w = 1.0;
+      msg.pose.translation.z = 0.927;
     }
 
     msg.num_joints = m_num_joints;
@@ -161,11 +159,7 @@ public:
     }
     msg.joint_position.resize(m_num_joints);
     msg.joint_velocity.resize(m_num_joints);
-    msg.measured_effort.resize(m_num_joints);
-	
-    msg.joint_cov.resize(m_num_joints);
-
-    msg.contacts.num_contacts = 0;
+    msg.joint_effort.resize(m_num_joints);
 #endif
 
     // local stuff
@@ -209,33 +203,33 @@ public:
       it = m_floating_joint_map.find("base_x");
       if (it!=m_floating_joint_map.end()) {
         int index = it->second;
-        m_x[index] = msg->origin_position.translation.x;
-        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.x;
+        m_x[index] = msg->pose.translation.x;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->twist.linear_velocity.x;
       }
       it = m_floating_joint_map.find("base_y");
       if (it!=m_floating_joint_map.end()) {
         int index = it->second;
-        m_x[index] = msg->origin_position.translation.y;
-        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.y;
+        m_x[index] = msg->pose.translation.y;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->twist.linear_velocity.y;
       }
       it = m_floating_joint_map.find("base_z");
       if (it!=m_floating_joint_map.end()) {
         int index = it->second;
-        m_x[index] = msg->origin_position.translation.z;
-        m_x[index+m_num_joints+m_num_floating_joints] = msg->origin_twist.linear_velocity.z;
+        m_x[index] = msg->pose.translation.z;
+        m_x[index+m_num_joints+m_num_floating_joints] = msg->twist.linear_velocity.z;
       }
 
       Vector4d q;
-      q[0] = msg->origin_position.rotation.w;
-      q[1] = msg->origin_position.rotation.x;
-      q[2] = msg->origin_position.rotation.y;
-      q[3] = msg->origin_position.rotation.z;
+      q[0] = msg->pose.rotation.w;
+      q[1] = msg->pose.rotation.x;
+      q[2] = msg->pose.rotation.y;
+      q[3] = msg->pose.rotation.z;
       Vector3d rpy = quat2rpy(q);
 
       Vector3d omega;
-      omega[0] = msg->origin_twist.angular_velocity.x;
-      omega[1] = msg->origin_twist.angular_velocity.y;
-      omega[2] = msg->origin_twist.angular_velocity.z;
+      omega[0] = msg->twist.angular_velocity.x;
+      omega[1] = msg->twist.angular_velocity.y;
+      omega[2] = msg->twist.angular_velocity.z;
       Vector3d rpydot = angularvel2rpydot(rpy,omega);
 
       it = m_floating_joint_map.find("base_roll");

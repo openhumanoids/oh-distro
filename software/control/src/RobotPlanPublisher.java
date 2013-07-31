@@ -11,10 +11,9 @@ public class RobotPlanPublisher
     boolean has_floating_base;
     int nonfloating_joint_start_ndx;
 
-    public RobotPlanPublisher(String robot_name,String[] joint_name,boolean floating_base, String channel)
+    public RobotPlanPublisher(String[] joint_name,boolean floating_base, String channel)
     {
       msg = new drc.robot_plan_t();
-      msg.robot_name = robot_name;
       channel_name = channel;
       has_floating_base = floating_base;
       
@@ -33,9 +32,9 @@ public class RobotPlanPublisher
       //   if (!(joint_name[i].startsWith("pelvis_"))) 
     }
     
-    public RobotPlanPublisher(String robot_name, String[] joint_name,boolean has_floating_base, String channel, int num_states)
+    public RobotPlanPublisher(String[] joint_name,boolean has_floating_base, String channel, int num_states)
     {
-      this(robot_name,joint_name,has_floating_base,channel);
+      this(joint_name,has_floating_base,channel);
       allocate(num_states);
     }
 
@@ -47,29 +46,20 @@ public class RobotPlanPublisher
       for (int i=0;i<msg.num_states;i++)
       {
         msg.plan[i] = new drc.robot_state_t();
-        msg.plan[i].robot_name = msg.robot_name;
-        msg.plan[i].num_joints = nonfloating_joint_name.length;
+        msg.plan[i].num_joints = (short) nonfloating_joint_name.length;
         msg.plan[i].joint_name = nonfloating_joint_name;
-        msg.plan[i].origin_position = new drc.position_3d_t();
-        msg.plan[i].origin_position.translation = new drc.vector_3d_t();
-        msg.plan[i].origin_position.rotation = new drc.quaternion_t();
-        msg.plan[i].origin_position.rotation.w = 1.0;
-        msg.plan[i].origin_twist = new drc.twist_t();
-        msg.plan[i].origin_twist.linear_velocity = new drc.vector_3d_t();
-        msg.plan[i].origin_twist.angular_velocity = new drc.vector_3d_t();
-        msg.plan[i].origin_cov = new drc.covariance_t();
+        msg.plan[i].pose = new drc.position_3d_t();
+        msg.plan[i].pose.translation = new drc.vector_3d_t();
+        msg.plan[i].pose.rotation = new drc.quaternion_t();
+        msg.plan[i].pose.rotation.w = 1.0;
+        msg.plan[i].twist = new drc.twist_t();
+        msg.plan[i].twist.linear_velocity = new drc.vector_3d_t();
+        msg.plan[i].twist.angular_velocity = new drc.vector_3d_t();
         msg.plan[i].joint_position = new float[msg.plan[i].num_joints];
         msg.plan[i].joint_velocity = new float[msg.plan[i].num_joints];
-        msg.plan[i].measured_effort = new float[msg.plan[i].num_joints];
+        msg.plan[i].joint_effort = new float[msg.plan[i].num_joints];
         
-        msg.plan[i].joint_cov = new drc.joint_covariance_t[msg.plan[i].num_joints];
-        for(int j = 0;j<msg.plan[i].num_joints;j++)
-        {
-          msg.plan[i].joint_cov[j] = new drc.joint_covariance_t();
-        }
-        
-        msg.plan[i].contacts = new drc.contact_state_t();
-        msg.plan[i].contacts.num_contacts = 0;
+        msg.plan[i].force_torque = new drc.force_torque_t();
       }
     }
     
@@ -82,9 +72,9 @@ public class RobotPlanPublisher
       {
         if (has_floating_base) {
           msg.plan[i].utime = (long) (t[i]*1000000+msg.utime);        
-          msg.plan[i].origin_position.translation.x = (float) x[0][i];
-          msg.plan[i].origin_position.translation.y = (float) x[1][i];
-          msg.plan[i].origin_position.translation.z = (float) x[2][i];
+          msg.plan[i].pose.translation.x = (float) x[0][i];
+          msg.plan[i].pose.translation.y = (float) x[1][i];
+          msg.plan[i].pose.translation.z = (float) x[2][i];
           
           double[] rpy = new double[3];
           rpy[0] = x[3][i];
@@ -92,20 +82,20 @@ public class RobotPlanPublisher
           rpy[2] = x[5][i];
           double[] q = drake.util.Transform.rpy2quat(rpy);
           
-          msg.plan[i].origin_position.rotation.w = (float) q[0];
-          msg.plan[i].origin_position.rotation.x = (float) q[1];
-          msg.plan[i].origin_position.rotation.y = (float) q[2];
-          msg.plan[i].origin_position.rotation.z = (float) q[3];
+          msg.plan[i].pose.rotation.w = (float) q[0];
+          msg.plan[i].pose.rotation.x = (float) q[1];
+          msg.plan[i].pose.rotation.y = (float) q[2];
+          msg.plan[i].pose.rotation.z = (float) q[3];
 
-          msg.plan[i].origin_twist.linear_velocity.x = x[6+msg.plan[i].num_joints][i];
-          msg.plan[i].origin_twist.linear_velocity.y = x[6+msg.plan[i].num_joints+1][i];
-          msg.plan[i].origin_twist.linear_velocity.z = x[6+msg.plan[i].num_joints+2][i];
-          msg.plan[i].origin_twist.angular_velocity.x = x[6+msg.plan[i].num_joints+3][i];
-          msg.plan[i].origin_twist.angular_velocity.y = x[6+msg.plan[i].num_joints+4][i];
-          msg.plan[i].origin_twist.angular_velocity.z = x[6+msg.plan[i].num_joints+5][i];
+          msg.plan[i].twist.linear_velocity.x = x[6+msg.plan[i].num_joints][i];
+          msg.plan[i].twist.linear_velocity.y = x[6+msg.plan[i].num_joints+1][i];
+          msg.plan[i].twist.linear_velocity.z = x[6+msg.plan[i].num_joints+2][i];
+          msg.plan[i].twist.angular_velocity.x = x[6+msg.plan[i].num_joints+3][i];
+          msg.plan[i].twist.angular_velocity.y = x[6+msg.plan[i].num_joints+4][i];
+          msg.plan[i].twist.angular_velocity.z = x[6+msg.plan[i].num_joints+5][i];
         }
         
-        //System.out.format("The %d's state is at time %d, origin's translation is %f, %f, %f, angles are %f,%f,%f; the velocity of origin is %f, %f, %f, %f, %f, %f\n",i+1,msg.plan[i].utime,msg.plan[i].origin_position.translation.x,msg.plan[i].origin_position.translation.y,msg.plan[i].origin_position.translation.z,msg.plan[i].origin_position.rotation.x,msg.plan[i].origin_position.rotation.y,msg.plan[i].origin_position.rotation.z,msg.plan[i].origin_twist.linear_velocity.x,msg.plan[i].origin_twist.linear_velocity.y,msg.plan[i].origin_twist.linear_velocity.z,msg.plan[i].origin_twist.angular_velocity.x,msg.plan[i].origin_twist.angular_velocity.y,msg.plan[i].origin_twist.angular_velocity.z);
+        //System.out.format("The %d's state is at time %d, origin's translation is %f, %f, %f, angles are %f,%f,%f; the velocity of origin is %f, %f, %f, %f, %f, %f\n",i+1,msg.plan[i].utime,msg.plan[i].pose.translation.x,msg.plan[i].pose.translation.y,msg.plan[i].pose.translation.z,msg.plan[i].pose.rotation.x,msg.plan[i].pose.rotation.y,msg.plan[i].pose.rotation.z,msg.plan[i].twist.linear_velocity.x,msg.plan[i].twist.linear_velocity.y,msg.plan[i].twist.linear_velocity.z,msg.plan[i].twist.angular_velocity.x,msg.plan[i].twist.angular_velocity.y,msg.plan[i].twist.angular_velocity.z);
         
         for(int j = 0;j<msg.plan[i].num_joints;j++)
         {

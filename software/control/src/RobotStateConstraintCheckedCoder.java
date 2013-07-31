@@ -8,9 +8,9 @@ public class RobotStateConstraintCheckedCoder extends RobotStateCoder
 {
     drc.robot_state_constraint_checked_t msg_constraint_checked;
 
-    public RobotStateConstraintCheckedCoder (String robot_name, String[] joint_name)
+    public RobotStateConstraintCheckedCoder (String[] joint_name)
     {
-      super(robot_name, joint_name);
+      super(joint_name);
       msg_constraint_checked = new drc.robot_state_constraint_checked_t();
     }
 

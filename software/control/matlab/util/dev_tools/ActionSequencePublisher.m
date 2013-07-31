@@ -28,7 +28,7 @@ classdef ActionSequencePublisher
       end
       joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
       obj.robot_state_coder = ...
-        JLCMCoder(drc.control.RobotStateCoder(obj.robot.name{1}, joint_names));
+        JLCMCoder(drc.control.RobotStateCoder(joint_names));
       obj.msg = drc.action_sequence_t();
       obj.msg.robot_name = obj.robot.name{1};
       obj.msg.num_contact_goals = orig_num_contact_goals + length(kincons);

@@ -18,7 +18,7 @@ classdef QPControlBlock < MIMODrakeSystem
     end
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-    hand_ft_frame = AtlasHandForceTorque();
+    ft_frame = AtlasForceTorque();
 
     if isfield(options,'multi_robot')
       typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
@@ -26,14 +26,14 @@ classdef QPControlBlock < MIMODrakeSystem
       % IMPORTANT NOTE: I'm assuming the atlas state is always the first
       % frame in a multi coordinate frame
       if typecheck(fr,'MultiCoordinateFrame')
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,fr.frame{:}});
+        input_frame = MultiCoordinateFrame({qddframe,ft_frame,fr.frame{:}});
         num_state_fr = length(options.multi_robot.getStateFrame.frame);
       else
-        input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,fr});
+        input_frame = MultiCoordinateFrame({qddframe,ft_frame,fr});
         num_state_fr = 1;
       end
     else
-      input_frame = MultiCoordinateFrame({qddframe,hand_ft_frame,r.getStateFrame});
+      input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
       num_state_fr = 1;
     end
     
@@ -261,7 +261,8 @@ classdef QPControlBlock < MIMODrakeSystem
 %    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
   
     q_ddot_des = varargin{1};
-    hand_ft = varargin{2};
+    ft = varargin{2};
+    hand_ft = ft(6+(1:12));
     % IMPORTANT NOTE: I'm assuming the atlas state is always the first
     % frame in a multi coordinate frame 
     x = varargin{3};

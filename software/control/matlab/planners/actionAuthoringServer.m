@@ -71,13 +71,13 @@ q = q_standing;
 options.q_traj_nom = ConstantTrajectory(q);
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder('atlas', joint_names)));
-%robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
+robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder(joint_names)));
+%robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher(joint_names,true, ...  
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher =  drc.control.RobotPlanPublisher('atlas',joint_names,true, ...  
+robot_plan_publisher =  drc.control.RobotPlanPublisher(joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 %robot_plan_publisher_viewer =  WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
-robot_plan_publisher_viewer = drc.control.RobotPlanPublisher('atlas',joint_names,true, ...  
+robot_plan_publisher_viewer = drc.control.RobotPlanPublisher(joint_names,true, ...  
   'CANDIDATE_ROBOT_PLAN');
 %%
 
@@ -175,7 +175,7 @@ while (1)
     action_sequence = ActionSequence();
     q_bk = q;
     % Get initial conditions from msg.q0
-    msg.q0.robot_name = 'atlas'; % To match robot_state_coder.lcmcoder
+    msg.q0.robot_name = 'atlas'; % no longer needed
     x0 = robot_state_coder.lcmcoder.jcoder.decode(msg.q0).val;
     if any(x0 > eps)
       q = x0(1:getNumDOF(r));

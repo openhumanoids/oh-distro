@@ -48,25 +48,25 @@ classdef RobotPlanListener
             for i=1:msg.num_states
                 T(i) = double(msg.plan(i).utime)/1000000; % use relative time index. At the time of plan execution, this will be offset by latest sim time est from the robot state msg.
                 if floating
-                    X(1,i) = msg.plan(i).origin_position.translation.x;
-                    X(2,i) = msg.plan(i).origin_position.translation.y;
-                    X(3,i) = msg.plan(i).origin_position.translation.z;
-                    X(num_dofs+1,i) = msg.plan(i).origin_twist.linear_velocity.x;
-                    X(num_dofs+2,i) = msg.plan(i).origin_twist.linear_velocity.y;
-                    X(num_dofs+3,i) = msg.plan(i).origin_twist.linear_velocity.z;
+                    X(1,i) = msg.plan(i).pose.translation.x;
+                    X(2,i) = msg.plan(i).pose.translation.y;
+                    X(3,i) = msg.plan(i).pose.translation.z;
+                    X(num_dofs+1,i) = msg.plan(i).twist.linear_velocity.x;
+                    X(num_dofs+2,i) = msg.plan(i).twist.linear_velocity.y;
+                    X(num_dofs+3,i) = msg.plan(i).twist.linear_velocity.z;
                     
-                    rpy = quat2rpy([msg.plan(i).origin_position.rotation.w,...
-                        msg.plan(i).origin_position.rotation.x,...
-                        msg.plan(i).origin_position.rotation.y,...
-                        msg.plan(i).origin_position.rotation.z]);
+                    rpy = quat2rpy([msg.plan(i).pose.rotation.w,...
+                        msg.plan(i).pose.rotation.x,...
+                        msg.plan(i).pose.rotation.y,...
+                        msg.plan(i).pose.rotation.z]);
                     
                     X(4,i) = rpy(1);
                     X(5,i) = rpy(2);
                     X(6,i) = rpy(3);
                     
-                    X(num_dofs+4,i) = msg.plan(i).origin_twist.angular_velocity.x;
-                    X(num_dofs+5,i) = msg.plan(i).origin_twist.angular_velocity.y;
-                    X(num_dofs+6,i) = msg.plan(i).origin_twist.angular_velocity.z;
+                    X(num_dofs+4,i) = msg.plan(i).twist.angular_velocity.x;
+                    X(num_dofs+5,i) = msg.plan(i).twist.angular_velocity.y;
+                    X(num_dofs+6,i) = msg.plan(i).twist.angular_velocity.z;
                 end
                 
                 for j=float_offset+1:num_dofs

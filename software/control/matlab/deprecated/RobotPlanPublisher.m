@@ -63,43 +63,40 @@ classdef RobotPlanPublisher
                 plan(i).utime = (T(i)*1000000);% use relative time, not absolute (G(i).utime*1000000+msg.utime)
                 plan(i).robot_name = msg.robot_name;
                 if obj.floating
-                    plan(i).origin_position = drc.position_3d_t();
-                    plan(i).origin_position.translation = drc.vector_3d_t();
-                    plan(i).origin_position.rotation = drc.quaternion_t();
-                    plan(i).origin_position.translation.x = X(1,i);
-                    plan(i).origin_position.translation.y = X(2,i);
-                    plan(i).origin_position.translation.z = X(3,i);
+                    plan(i).pose = drc.position_3d_t();
+                    plan(i).pose.translation = drc.vector_3d_t();
+                    plan(i).pose.rotation = drc.quaternion_t();
+                    plan(i).pose.translation.x = X(1,i);
+                    plan(i).pose.translation.y = X(2,i);
+                    plan(i).pose.translation.z = X(3,i);
                     
                     q = rpy2quat([X(4,i) X(5,i) X(6,i)]);                  
-                    plan(i).origin_position.rotation.w = q(1);
-                    plan(i).origin_position.rotation.x = q(2);
-                    plan(i).origin_position.rotation.y = q(3);
-                    plan(i).origin_position.rotation.z = q(4);
+                    plan(i).pose.rotation.w = q(1);
+                    plan(i).pose.rotation.x = q(2);
+                    plan(i).pose.rotation.y = q(3);
+                    plan(i).pose.rotation.z = q(4);
                     
-                    plan(i).origin_twist = drc.twist_t();
-                    plan(i).origin_twist.linear_velocity = drc.vector_3d_t();
-                    plan(i).origin_twist.angular_velocity = drc.vector_3d_t();   
-                    plan(i).origin_twist.linear_velocity.x = X(offset+num_dofs+1,i);
-                    plan(i).origin_twist.linear_velocity.y = X(offset+num_dofs+2,i);
-                    plan(i).origin_twist.linear_velocity.z = X(offset+num_dofs+3,i);
-                    plan(i).origin_twist.angular_velocity.x = X(offset+num_dofs+4,i);
-                    plan(i).origin_twist.angular_velocity.y = X(offset+num_dofs+5,i);
-                    plan(i).origin_twist.angular_velocity.z = X(offset+num_dofs+6,i);
+                    plan(i).twist = drc.twist_t();
+                    plan(i).twist.linear_velocity = drc.vector_3d_t();
+                    plan(i).twist.angular_velocity = drc.vector_3d_t();   
+                    plan(i).twist.linear_velocity.x = X(offset+num_dofs+1,i);
+                    plan(i).twist.linear_velocity.y = X(offset+num_dofs+2,i);
+                    plan(i).twist.linear_velocity.z = X(offset+num_dofs+3,i);
+                    plan(i).twist.angular_velocity.x = X(offset+num_dofs+4,i);
+                    plan(i).twist.angular_velocity.y = X(offset+num_dofs+5,i);
+                    plan(i).twist.angular_velocity.z = X(offset+num_dofs+6,i);
                     
                     float_offset = 6;
                 end
-                plan(i).origin_cov =drc.covariance_t();
                 plan(i).num_joints = num_dofs - float_offset;
                 plan(i).joint_name=javaArray('java.lang.String', plan(i).num_joints);
                 plan(i).joint_position=zeros(1,plan(i).num_joints);
                 plan(i).joint_velocity=zeros(1,plan(i).num_joints);
-                plan(i).measured_effort=zeros(1,plan(i).num_joints);
-                plan(i).joint_cov= javaArray('drc.joint_covariance_t', plan(i).num_joints);
+                plan(i).joint_effort=zeros(1,plan(i).num_joints);
                 for j=float_offset+1:num_dofs,
                     plan(i).joint_name(j-float_offset) = java.lang.String(obj.joint_names{j});
                     plan(i).joint_position(j-float_offset) = X(j+offset,i);
                     plan(i).joint_velocity(j-float_offset) = X(j+offset+num_dofs,i);
-                    plan(i).joint_cov(j-float_offset) =drc.joint_covariance_t();
                 end
  
                 plan(i).contacts = drc.contact_state_t();

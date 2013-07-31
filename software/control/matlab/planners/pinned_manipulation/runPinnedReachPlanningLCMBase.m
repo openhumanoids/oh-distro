@@ -82,7 +82,7 @@ indexed_trajoptconstraint_listener = AffIndexedTrajOptConstraintListener('DESIRE
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
 % committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
 % rejected_plan_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
 committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_names);
