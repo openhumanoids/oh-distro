@@ -340,10 +340,10 @@ Laser::Laser(Channel* driver,
     }    
     
     for (size_t i=0; i < js_msg_.position.size() ; i++){
-      lcm_state_.type.push_back(150 + i);      
-      lcm_state_.position.push_back( js_msg_.position[i] );
-      lcm_state_.velocity.push_back( js_msg_.velocity[i] );
-      lcm_state_.effort.push_back( js_msg_.effort[i] );
+      lcm_state_.joint_name.push_back( js_msg_.name[i] );
+      lcm_state_.joint_position.push_back( js_msg_.position[i] );
+      lcm_state_.joint_velocity.push_back( js_msg_.velocity[i] );
+      lcm_state_.joint_effort.push_back( js_msg_.effort[i] );
     }
     lcm_state_.num_joints = js_msg_.position.size();
 }
@@ -635,8 +635,8 @@ void Laser::scanCallback(const lidar::Header&        header,
 
     int64_t utime_start =(int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
     lcm_state_.utime = utime_start;
-    lcm_state_.position[0]= angle_start;
-    lcm_state_.velocity[0]= velocity;
+    lcm_state_.joint_position[0]= angle_start;
+    lcm_state_.joint_velocity[0]= velocity;
     lcm_publish_.publish("STATE_MULTISENSE", &lcm_state_);    
     publishLCMTransforms(utime_start, header.spindleAngleStart);
     
@@ -652,9 +652,9 @@ void Laser::scanCallback(const lidar::Header&        header,
     
     int64_t utime_end = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
     lcm_state_.utime = utime_end;
-    lcm_state_.position[0]= angle_end;
-    lcm_state_.velocity[0]= velocity;
-    lcm_publish_.publish("STATE_MULTISENSE", &lcm_state_);        
+    lcm_state_.joint_position[0]= angle_end;
+    lcm_state_.joint_velocity[0]= velocity;
+    lcm_publish_.publish("MULTISENSE_STATE", &lcm_state_);        
     publishLCMTransforms(utime_end, header.spindleAngleEnd);
 
     //
