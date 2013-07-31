@@ -10,4 +10,6 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 
+add_subdirectory(src/joints2frames)
+add_subdirectory(src/robot_state_publisher)
 add_subdirectory(src/state_sync)

@@ -1,0 +1,25 @@
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
+
+add_executable(est_robot_state_publisher est_robot_state_publisher.cpp)
+pods_use_pkg_config_packages(est_robot_state_publisher   model-client lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES}
+  bot2-param-client
+  bot2-frames  bot2-frames_cpp)
+pods_install_executables(est_robot_state_publisher)
+
+# build two LCM test programs
+add_executable(meas_joint_angles_publisher meas_joint_angles_publisher.cpp)
+pods_use_pkg_config_packages(meas_joint_angles_publisher lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+
+add_executable(meas_joint_angles_listener meas_joint_angles_listener.cpp)
+pods_use_pkg_config_packages(meas_joint_angles_listener lcm lcmtypes_drc_lcmtypes)
+
+add_executable(sim_meas_joint_angles_publisher sim_meas_joint_angles_publisher.cpp)
+pods_use_pkg_config_packages(sim_meas_joint_angles_publisher lcm lcmtypes_drc_lcmtypes)
+
+# make executables public
+pods_install_executables(meas_joint_angles_publisher meas_joint_angles_listener sim_meas_joint_angles_publisher)
+
+add_executable(test_est_robot_state_publisher test_est_robot_state_publisher.cpp)
+pods_use_pkg_config_packages(test_est_robot_state_publisher lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+
+pods_install_executables(test_est_robot_state_publisher)
