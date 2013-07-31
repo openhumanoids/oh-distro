@@ -124,7 +124,7 @@ namespace renderer_robot_state
     // cout << now - _last_state_msg_system_timestamp << endl;
     _gl_robot->set_state(*msg);
     
-    // disabled using robot_state_t change: updateContactForceAndTorqueCache(msg->contacts);
+    updateForceAndTorqueCache(msg->force_torque);
     bot_viewer_request_redraw(_viewer);
      _last_state_msg_system_timestamp = now;//msg->utime;
      _last_state_msg_sim_timestamp = msg->utime;
@@ -182,29 +182,57 @@ namespace renderer_robot_state
  
   } // end urdf handler
 
-   void RobotStateListener::updateContactForceAndTorqueCache(const drc::contact_state_t &contactsmsg) 
+  // Heavily changed when switching to new LCM types. 
+  // NB: note that feet forces and torques are 3-axis sensors
+  void RobotStateListener::updateForceAndTorqueCache(const drc::force_torque_t &msg) 
   {
-
-     int num_contacts = contactsmsg.num_contacts;
-     for (size_t j=0;j<num_contacts;j++)
+     std::map<std::string, Eigen::Vector3f >::iterator it;
+     ////////////// Hands ///////////////////////////
+     it=ee_forces_map.find("l_hand");
+     if(it!=ee_forces_map.end())
      {
-      Eigen::Vector3f force_measured,torque_measured;
+       it->second << msg.l_hand_force[0],msg.l_hand_force[1], msg.l_hand_force[2];
+     }
+     it=ee_torques_map.find("l_hand");
+     if(it!=ee_torques_map.end())
+     {
+       it->second << msg.l_hand_torque[0],msg.l_hand_torque[1], msg.l_hand_torque[2];
+     }
 
-      force_measured << contactsmsg.contact_force[j].x,contactsmsg.contact_force[j].y,contactsmsg.contact_force[j].z;
-      torque_measured << contactsmsg.contact_torque[j].x,contactsmsg.contact_torque[j].y,contactsmsg.contact_torque[j].z;
-      std::map<std::string, Eigen::Vector3f >::iterator it;
-      it=ee_forces_map.find(contactsmsg.id[j]);
-      if(it!=ee_forces_map.end()) // exists in cache
-      { 
-        it->second = force_measured;
-      }
-      it=ee_torques_map.find(contactsmsg.id[j]);
-      if(it!=ee_torques_map.end()) // exists in cache
-      { 
-        it->second = torque_measured;
-      }
-     }// end for
-  } // end updateContactForceAndTorqueCache
+     it=ee_forces_map.find("r_hand");
+     if(it!=ee_forces_map.end())
+     {
+       it->second << msg.r_hand_force[0],msg.r_hand_force[1], msg.r_hand_force[2];
+     }
+     it=ee_torques_map.find("r_hand");
+     if(it!=ee_torques_map.end())
+     {
+       it->second << msg.r_hand_torque[0],msg.r_hand_torque[1], msg.r_hand_torque[2];
+     }
+     
+     ////////////// Feet ////////////////////////////
+     it=ee_forces_map.find("l_foot");
+     if(it!=ee_forces_map.end())
+     {
+       it->second << 0,0, msg.l_foot_force_z; 
+     }
+     it=ee_torques_map.find("l_foot");
+     if(it!=ee_torques_map.end())
+     {
+       it->second << msg.l_foot_torque_x,msg.l_foot_torque_y, 0;
+     }
+
+     it=ee_forces_map.find("r_foot");
+     if(it!=ee_forces_map.end())
+     {
+       it->second << 0,0, msg.r_foot_force_z;
+     }
+     it=ee_torques_map.find("r_foot");
+     if(it!=ee_torques_map.end())
+     {
+       it->second << msg.r_foot_torque_x,msg.r_foot_torque_y, 0;
+     }
+  } // end updateForceAndTorqueCache
   
   
 

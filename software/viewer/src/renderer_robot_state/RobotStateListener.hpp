@@ -72,12 +72,12 @@ namespace renderer_robot_state
     void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);
-	  void handleCandidateRobotEndPoseMsg (const lcm::ReceiveBuffer* rbuf,
+    void handleCandidateRobotEndPoseMsg (const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg); 
-		void updateContactForceAndTorqueCache(const drc::contact_state_t &contactsmsg);
+    void updateForceAndTorqueCache(const drc::force_torque_t &msg);
 
   }; //class RobotStateListener
 
