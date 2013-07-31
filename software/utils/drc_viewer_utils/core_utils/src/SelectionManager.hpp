@@ -139,6 +139,12 @@ namespace visualization_utils
           }
           return -1;
         };
+        
+        bool is_shift_pressed()
+        {
+         return ((_is_key_pressed)&&(_latest_keyval == SHIFT_L||_latest_keyval == SHIFT_R ));
+        };
+        
         //core data object    
         std::vector<std::string> _selection_history;
         //std::string _marker_selection; TODO:??? 
