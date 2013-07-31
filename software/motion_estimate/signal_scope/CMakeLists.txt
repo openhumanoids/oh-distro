@@ -9,5 +9,5 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/example)
+add_subdirectory(src/signal_scope)
 
