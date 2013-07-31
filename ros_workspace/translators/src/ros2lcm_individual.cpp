@@ -28,37 +28,6 @@
 #include <lcmtypes/multisense.hpp>
 
 using namespace std;
-
-std::vector < int16_t > atlas_types={drc::atlas_state_t::BACK_BKZ, drc::atlas_state_t::BACK_BKY,
-                drc::atlas_state_t::BACK_BKX, drc::atlas_state_t::NECK_AY,
-                drc::atlas_state_t::L_LEG_HPZ, drc::atlas_state_t::L_LEG_HPX,
-                drc::atlas_state_t::L_LEG_HPY, drc::atlas_state_t::L_LEG_KNY,
-                drc::atlas_state_t::L_LEG_AKY, drc::atlas_state_t::L_LEG_AKX,
-                drc::atlas_state_t::R_LEG_HPZ, drc::atlas_state_t::R_LEG_HPX,
-                drc::atlas_state_t::R_LEG_HPY, drc::atlas_state_t::R_LEG_KNY,
-                drc::atlas_state_t::R_LEG_AKY, drc::atlas_state_t::R_LEG_AKX,
-                drc::atlas_state_t::L_ARM_USY, drc::atlas_state_t::L_ARM_SHX,
-                drc::atlas_state_t::L_ARM_ELY, drc::atlas_state_t::L_ARM_ELX,
-                drc::atlas_state_t::L_ARM_UWY, drc::atlas_state_t::L_ARM_MWX,
-                drc::atlas_state_t::R_ARM_USY, drc::atlas_state_t::R_ARM_SHX,
-                drc::atlas_state_t::R_ARM_ELY, drc::atlas_state_t::R_ARM_ELX,
-                drc::atlas_state_t::R_ARM_UWY, drc::atlas_state_t::R_ARM_MWX};
-
-std::vector <int16_t > multisense_types={multisense::state_t::HOKUYO_JOINT };              
-
-std::vector <int16_t > sandia_types_left={drc::sandia_state_t::LEFT_F0_J0, drc::sandia_state_t::LEFT_F0_J1,
-                drc::sandia_state_t::LEFT_F0_J2, drc::sandia_state_t::LEFT_F1_J0,
-                drc::sandia_state_t::LEFT_F1_J1, drc::sandia_state_t::LEFT_F1_J2,
-                drc::sandia_state_t::LEFT_F2_J0, drc::sandia_state_t::LEFT_F2_J1,
-                drc::sandia_state_t::LEFT_F2_J2, drc::sandia_state_t::LEFT_F3_J0,
-                drc::sandia_state_t::LEFT_F3_J1, drc::sandia_state_t::LEFT_F3_J2};
-
-std::vector <int16_t > sandia_types_right={drc::sandia_state_t::RIGHT_F0_J0, drc::sandia_state_t::RIGHT_F0_J1,
-                drc::sandia_state_t::RIGHT_F0_J2, drc::sandia_state_t::RIGHT_F1_J0,
-                drc::sandia_state_t::RIGHT_F1_J1, drc::sandia_state_t::RIGHT_F1_J2,
-                drc::sandia_state_t::RIGHT_F2_J0, drc::sandia_state_t::RIGHT_F2_J1,
-                drc::sandia_state_t::RIGHT_F2_J2, drc::sandia_state_t::RIGHT_F3_J0,
-                drc::sandia_state_t::RIGHT_F3_J1, drc::sandia_state_t::RIGHT_F3_J2};
                 
 class App{
 public:
@@ -321,11 +290,12 @@ void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
 
 /// Locally cache the joint states:
 void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  ROS_ERROR("HEAD JS");
   
   multisense::state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.joint_type = multisense_types;
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
+    msg_out.joint_name.push_back(msg->name[i]);      
     msg_out.joint_position.push_back(msg->position[i]);      
     msg_out.joint_velocity.push_back(msg->velocity[i]);
     msg_out.joint_effort.push_back( msg->effort[i] );
@@ -338,11 +308,12 @@ void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   
 }
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  ROS_ERROR("LHAND JS");
   
   drc::sandia_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.joint_type = sandia_types_left;
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
+    msg_out.joint_name.push_back(msg->name[i]);      
     msg_out.joint_position.push_back(msg->position[i]);      
     msg_out.joint_velocity.push_back(msg->velocity[i]);
     msg_out.joint_effort.push_back( msg->effort[i] );
@@ -354,11 +325,12 @@ void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   received_l_hand_joint_states_ = true;
 }
 void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  ROS_ERROR("RHAND JS");
 
   drc::sandia_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.joint_type = sandia_types_right;
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
+    msg_out.joint_name.push_back(msg->name[i]);      
     msg_out.joint_position.push_back(msg->position[i]);      
     msg_out.joint_velocity.push_back(msg->velocity[i]);
     msg_out.joint_effort.push_back( msg->effort[i] );
@@ -376,17 +348,12 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   }  
   js_counter++;
   
+  ROS_ERROR("JS JS");
   
-  // TODO do a stronger safeguard here
-  if (atlas_types.size() != msg->name.size() ){
-    std::cout << "atlas_types doesn't match atlas joint states\n";
-    return; 
-  }
   drc::atlas_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec  
-  msg_out.joint_type = atlas_types; 
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
-    
+    msg_out.joint_name.push_back(msg->name[i]);          
     msg_out.joint_position.push_back(msg->position[i]);      
     msg_out.joint_velocity.push_back(msg->velocity[i]);
     msg_out.joint_effort.push_back( msg->effort[i] );
