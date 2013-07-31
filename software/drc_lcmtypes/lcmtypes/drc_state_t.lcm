@@ -1,7 +1,7 @@
 package drc;
 
 // Full Combined Robot State
-struct robot_state_t
+struct state_t
 {
   int64_t utime;
   position_3d_t pose;
