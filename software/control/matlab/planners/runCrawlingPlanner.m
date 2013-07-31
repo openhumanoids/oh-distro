@@ -21,7 +21,7 @@ end
 
 %addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-addpath(strcat(getenv('DRC_PATH'),'/control/matlab/controllers/grasp_execution'));
+addpath(strcat(getenv('DRC_PATH'),'/control/matlab/controllers/grasping'));
 
 
 options.ignore_terrain = true;
