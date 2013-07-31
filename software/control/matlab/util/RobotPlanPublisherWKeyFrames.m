@@ -67,7 +67,6 @@ classdef RobotPlanPublisherWKeyFrames
                 is_breakpoint(i) = (X(2,i)==1.0);
                 plan(i) = drc.robot_state_t();
                 plan(i).utime = (T(i)*1000000);% use relative time //+msg.utime
-                plan(i).robot_name = msg.robot_name;
                 if obj.floating
                     plan(i).pose = drc.position_3d_t();
                     plan(i).pose.translation = drc.vector_3d_t();
@@ -105,8 +104,7 @@ classdef RobotPlanPublisherWKeyFrames
                     plan(i).joint_velocity(j-float_offset) = X(j+offset+num_dofs,i);
                 end
  
-                plan(i).contacts = drc.contact_state_t();
-                plan(i).contacts.num_contacts=0;
+                plan(i).force_torque = drc.force_torque_t();
             end
             msg.is_keyframe = is_keyframe;
             msg.is_breakpoint = is_breakpoint;

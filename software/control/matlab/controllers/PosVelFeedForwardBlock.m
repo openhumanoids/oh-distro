@@ -93,7 +93,7 @@ classdef PosVelFeedForwardBlock < MIMODrakeSystem
       active_supports = obj.ctrl_data.data.supports(supp_idx);
       ctrl_data = obj.qp_controller.controller_data;
       setField(ctrl_data,'supports',active_supports);
-      u = obj.qp_controller.mimoOutput(0,[],qddot,zeros(12,1),xt);
+      u = obj.qp_controller.mimoOutput(0,[],qddot,zeros(18,1),xt);
       
 %      u = inverseDynamics(obj.robot,q,qdot,qddot,active_supports);
       y = [q(obj.actuated);qdot(obj.actuated);u];

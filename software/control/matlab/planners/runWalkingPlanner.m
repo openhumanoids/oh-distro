@@ -168,7 +168,7 @@ while true
     msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
     joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
     joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-    plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+    plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
     plan_pub.publish(ts,xtraj);
     if debug
       tt = 0:0.05:ts(end);

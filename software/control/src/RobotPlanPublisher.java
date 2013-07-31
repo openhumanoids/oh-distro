@@ -14,6 +14,7 @@ public class RobotPlanPublisher
     public RobotPlanPublisher(String[] joint_name,boolean floating_base, String channel)
     {
       msg = new drc.robot_plan_t();
+      msg.robot_name = "atlas";
       channel_name = channel;
       has_floating_base = floating_base;
       
@@ -58,7 +59,6 @@ public class RobotPlanPublisher
         msg.plan[i].joint_position = new float[msg.plan[i].num_joints];
         msg.plan[i].joint_velocity = new float[msg.plan[i].num_joints];
         msg.plan[i].joint_effort = new float[msg.plan[i].num_joints];
-        
         msg.plan[i].force_torque = new drc.force_torque_t();
       }
     }

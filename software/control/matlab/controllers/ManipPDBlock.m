@@ -39,8 +39,8 @@ classdef ManipPDBlock < MIMODrakeSystem
       typecheck(controller_data,'SharedDataHandle');
       
       coords = AtlasCoordinates(r);
-      hand_ft_frame = AtlasHandForceTorque();
-      input_frame = MultiCoordinateFrame({coords,r.getStateFrame,hand_ft_frame});
+      ft_frame = AtlasForceTorque();
+      input_frame = MultiCoordinateFrame({coords,r.getStateFrame,ft_frame});
       obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,coords);
@@ -153,7 +153,8 @@ classdef ManipPDBlock < MIMODrakeSystem
       try
       q_des = varargin{1};
       x = varargin{2};
-      hand_ft = varargin{3};
+%       ft = varargin{3};
+%       hand_ft = ft(6+(1:12));
 %       rhand_force = hand_ft(7:9);
 %       lhand_force = hand_ft(1:3);
 %       rhand_torque = hand_ft(10:12);

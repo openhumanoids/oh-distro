@@ -171,7 +171,7 @@ while true
       %crawling_plan = struct('S',V{1}.S,'s1',s1_full,'s2',s2_full,...
       %'support_times',support_times_full,'supports',{supports_full},'comtraj',comtraj_full(1:2),'qtraj',qtraj_full,'mu',mu,...
       %'link_constraints',link_constraints{1},'zmptraj',zmptraj,'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
-      crawling_plan = struct('S',[],'s1',[],'s2',[],...
+      crawling_plan = struct('S',[],'s1',[],'s2',[],'s1dot',[],'s2dot',[],...
         'support_times',support_times,'supports',{supports},'comtraj',[],'qtraj',qtraj,'mu',mu,...
         'link_constraints',link_constraints,'zmptraj',[],'qnom',qstar,'ignore_terrain',options.ignore_terrain,'t_offset',t_offset)
       msg =['Crawl Plan (', location, '): Publishing committed plan...']; disp(msg); send_status(status_code,0,0,msg);
@@ -185,7 +185,7 @@ while true
       x_data = squeeze(eval(xtraj,ts));
       msg =['Crawl Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
       joint_names = r.getStateFrame.coordinates(1:nq);
-      plan_pub = drc.control.RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_CRAWLING_PLAN');
+      plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_CRAWLING_PLAN');
       plan_pub.publish(ts,x_data);
     end
   end
