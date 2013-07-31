@@ -553,9 +553,44 @@ void StickyfootCollectionManager::get_aff_indexed_ee_constraints(string& object_
       } // end if (host_name == (object_name))
   } // end sticky feet
 } // end method
-
 //-------------------------------------------------------------------------------------------
-void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal)
+
+KDL::Vector StickyfootCollectionManager::get_contact_mask_offset(foot_contact_mask_type_t contact_mask)
+{
+   KDL::Vector contact_mask_offset;
+   contact_mask_offset[0]=0;
+   contact_mask_offset[1]=0;
+   contact_mask_offset[2]=0;
+   // <collision group="toe">
+  //<origin rpy="0 0 0" xyz="0.178 0 -0.081119"/>
+ //<collision group="heel">
+ // <origin rpy="0 0 0" xyz="-0.082 0 -0.081119"/>
+ 
+ double foot_length = 0.5*(0.178+0.082);
+  if(contact_mask==ORG)
+  {
+   contact_mask_offset[0]=0;
+  }
+  else if(contact_mask==HEEL)
+  {
+    contact_mask_offset[0]=-(0.082-0.1*foot_length);
+  }
+  else if(contact_mask==TOE)
+  {
+    contact_mask_offset[0]=0.178-0.1*foot_length;
+  }
+  else if(contact_mask==MID)
+  {
+    contact_mask_offset[0]=0.5*(0.178-0.082);
+  }
+  else
+  {
+    cerr <<  "unknown contact mask in seed_foot. Defaulting to foot origin projection ORG\n";
+  }
+  return contact_mask_offset;
+}   
+//-------------------------------------------------------------------------------------------
+void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,foot_contact_mask_type_t contact_mask, Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal)
 {
     free_running_sticky_foot_cnt++;
     int uid = free_running_sticky_foot_cnt;
@@ -575,7 +610,8 @@ void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &
     Vx[0]= eVx[0];Vx[1]= eVx[1];Vx[2]= eVx[2];
     Vy[0]= eVy[0];Vy[1]= eVy[1];Vy[2]= eVy[2];
     Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
-
+    
+    
     KDL::Frame T_world_footcontact= KDL::Frame::Identity();
     T_world_footcontact.p[0] = ray_hit[0];
     T_world_footcontact.p[1] = ray_hit[1];
@@ -603,6 +639,9 @@ void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &
     else    {
       T_contactframe_footframe = _T_groundframe_bodyframe_left;
     }
+    
+    KDL::Vector contact_mask_offset = get_contact_mask_offset(contact_mask);
+    T_contactframe_footframe.p -=contact_mask_offset;
     T_objectgeometry_foot = T_objectgeometry_footcontact*(T_contactframe_footframe);
     
     std::vector<std::string> joint_names;

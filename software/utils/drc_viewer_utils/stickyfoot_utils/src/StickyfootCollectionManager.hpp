@@ -71,7 +71,7 @@ namespace visualization_utils
     
     // Seeds foot given normal at point of dbl click. Drag direction gives foot direction.
     // Foot frame Z direction should point towards normal.  
-    void seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal);
+    void seed_foot(OtdfInstanceStruc& obj,std::string &object_name,std::string &geometry_name,int foot_type,foot_contact_mask_type_t contact_mask, Eigen::Vector3f &ray_hit_drag,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_normal);
       
     void clear_highlights();
     void highlight_selected(boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager);   
@@ -93,7 +93,9 @@ namespace visualization_utils
     std::string _left_urdf_xml_string;
     std::string _right_urdf_xml_string;
 		boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_foot_left;
-    boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_foot_right;    
+    boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_foot_right;   
+    
+    KDL::Vector get_contact_mask_offset(foot_contact_mask_type_t contact_mask); 
   };
 
 

@@ -20,8 +20,15 @@
 
 using namespace std;
 
+
+
 namespace visualization_utils
 {
+
+
+  typedef enum _foot_contact_mask_type_t {
+      ORG, HEEL, TOE, MID
+  } foot_contact_mask_type_t;
 
   struct StickyFootStruc {
 
