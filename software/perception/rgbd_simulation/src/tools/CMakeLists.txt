@@ -4,7 +4,7 @@ find_package(GLEW)
 find_package(GLUT)
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
-set(REQUIRED_LIBS ${VTK_IO_TARGET_LINK_LIBRARIES} ${GLEW_LIBRARIES}    
+set(REQUIRED_LIBS GL ${VTK_IO_TARGET_LINK_LIBRARIES} ${GLEW_LIBRARIES}    
        ${GLUT_LIBRARIES} vtkCommon vtkIO vtkHybrid)
 set(PKG_CONFIG_DEPS eigen3 rgbd_simulation pcl_visualization-1.6 pcl_io-1.6)
 include_directories(${VTK_INCLUDE_DIRS} ${GLEW_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
@@ -24,7 +24,7 @@ pods_install_executables(rgbd-sim-test-simple)
 
 ################
 add_executable(rgbd-sim-test-performance sim_test_performance.cpp)
-target_link_libraries (rgbd-sim-test-performance boost_system
+target_link_libraries (rgbd-sim-test-performance boost_system 
            ${REQUIRED_LIBS})
 pods_use_pkg_config_packages(rgbd-sim-test-performance ${PKG_CONFIG_DEPS})
 pods_install_executables(rgbd-sim-test-performance)
