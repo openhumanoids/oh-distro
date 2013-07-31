@@ -35,7 +35,7 @@ namespace renderer_affordances_gui_utils
       self->stickyFootCollection->store_selected(self->seedSelectionManager,true,self->affCollection);
     }
     else if(!strcmp(name,PARAM_SEND_EE_GOAL_SEQUENCE)){
-      string channel = "EE_GOAL_SEQUENCE";
+      string channel = "DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
       publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false);  
     }
