@@ -818,69 +818,22 @@ struct RendererAffordances {
     self->stickyfoot_selection  = " ";
     self->marker_selection = " ";
     self->affCollection->clear_highlights();
-    if(!self->seedSelectionManager->is_shift_pressed()){
+    if(!self->seedSelectionManager->is_shift_pressed())
+    {
       self->stickyHandCollection->clear_highlights();
       self->stickyFootCollection->clear_highlights();
-    }
-    if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
-    {
-     //if marker based adjustment is enabled
-     if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
-     {
 
-       if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
-          self->otdf_instance_hold._gl_object->_collision_detector_jointdof_markers->ray_test( from, to, intersected_object,hit_pt);
-       else
-          self->otdf_instance_hold._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
-        
-        if(intersected_object != NULL ){
-            self->ray_hit = hit_pt;
-            self->ray_hit_t = (hit_pt - self->ray_start).norm();
-            Eigen::Vector3f diff = (from-hit_pt);
-            double distance = diff.norm();
-            if(shortest_distance>0) {
-              if (distance < shortest_distance)
-              {
-                shortest_distance = distance;
-                self->ray_hit = hit_pt;
-                self->ray_hit_drag = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
-                self->marker_selection  = string(intersected_object->id().c_str());
-              }
-            }
-            else {
-              shortest_distance = distance;
-              self->ray_hit = hit_pt;
-              self->ray_hit_drag = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
-              self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
-              self->marker_selection  = string(intersected_object->id().c_str());
-             }
-        }
-                           
-      }// end if(...is_bodypose_adjustment_enabled)||...->is_jointdof_adjustment_enabled))
-
-    }// end if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on))
-
-
-    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-
-    // loop through object list and check if ray intersect any of them.
-    for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++)
-    {
-
-      if(it->second._gl_object) // to make sure that _gl_object is initialized 
-      {
       
+      if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
+      {
        //if marker based adjustment is enabled
-       if((it->second._gl_object->is_bodypose_adjustment_enabled())||(it->second._gl_object->is_jointdof_adjustment_enabled()))
+       if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
        {
 
-         if(it->second._gl_object->is_jointdof_adjustment_enabled())
-            it->second._gl_object->_collision_detector_jointdof_markers->ray_test( from, to, intersected_object,hit_pt);
+         if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
+            self->otdf_instance_hold._gl_object->_collision_detector_jointdof_markers->ray_test( from, to, intersected_object,hit_pt);
          else
-            it->second._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+            self->otdf_instance_hold._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
           
           if(intersected_object != NULL ){
               self->ray_hit = hit_pt;
@@ -894,7 +847,7 @@ struct RendererAffordances {
                   self->ray_hit = hit_pt;
                   self->ray_hit_drag = hit_pt;
                   self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  self->object_selection  =  it->first;
+                  self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
                   self->marker_selection  = string(intersected_object->id().c_str());
                 }
               }
@@ -903,25 +856,86 @@ struct RendererAffordances {
                 self->ray_hit = hit_pt;
                 self->ray_hit_drag = hit_pt;
                 self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                self->object_selection  =  it->first;
+                self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
                 self->marker_selection  = string(intersected_object->id().c_str());
                }
           }
-                        
-        }
+                             
+        }// end if(...is_bodypose_adjustment_enabled)||...->is_jointdof_adjustment_enabled))
+
+      }// end if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on))
+
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+
+      // loop through object list and check if ray intersect any of them.
+      for(object_instance_map_type_::const_iterator it = self->affCollection->_objects.begin(); it!=self->affCollection->_objects.end(); it++)
+      {
+
+        if(it->second._gl_object) // to make sure that _gl_object is initialized 
+        {
+        
+         //if marker based adjustment is enabled
+         if((it->second._gl_object->is_bodypose_adjustment_enabled())||(it->second._gl_object->is_jointdof_adjustment_enabled()))
+         {
+
+           if(it->second._gl_object->is_jointdof_adjustment_enabled())
+              it->second._gl_object->_collision_detector_jointdof_markers->ray_test( from, to, intersected_object,hit_pt);
+           else
+              it->second._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+            
+            if(intersected_object != NULL ){
+                self->ray_hit = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    self->object_selection  =  it->first;
+                    self->marker_selection  = string(intersected_object->id().c_str());
+                  }
+                }
+                else {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  self->object_selection  =  it->first;
+                  self->marker_selection  = string(intersected_object->id().c_str());
+                 }
+            }
+                          
+          }
 
 
 
-         it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
-        // Highlight all objects that intersect with ray
-        if(intersected_object != NULL ){
-              self->ray_hit = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
-              Eigen::Vector3f diff = (from-hit_pt);
-              double distance = diff.norm();
-              if(shortest_distance>0) {
-                if (distance < shortest_distance)
-                {
+           it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
+          // Highlight all objects that intersect with ray
+          if(intersected_object != NULL ){
+                self->ray_hit = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_normal = hit_normal;  
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    self->object_selection  =  it->first;
+                    self->marker_selection  = " ";
+                    self->link_selection  = string(intersected_object->id().c_str());   
+            
+                  }
+                }
+                else {
                   shortest_distance = distance;
                   self->ray_hit = hit_pt;
                   self->ray_hit_normal = hit_normal;  
@@ -929,27 +943,18 @@ struct RendererAffordances {
                   self->ray_hit_t = (hit_pt - self->ray_start).norm();
                   self->object_selection  =  it->first;
                   self->marker_selection  = " ";
-                  self->link_selection  = string(intersected_object->id().c_str());   
-          
-                }
-              }
-              else {
-                shortest_distance = distance;
-                self->ray_hit = hit_pt;
-                self->ray_hit_normal = hit_normal;  
-                self->ray_hit_drag = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                self->object_selection  =  it->first;
-                self->marker_selection  = " ";
-                self->link_selection = string(intersected_object->id().c_str());   
-     
-               }          
+                  self->link_selection = string(intersected_object->id().c_str());   
+       
+                 }          
 
-              intersected_object = NULL;  
-        }
-   
-      }// end if object exists
-    }// end for
+                intersected_object = NULL;  
+          }
+     
+        }// end if object exists
+      }// end for
+      
+   }// end if(!self->seedSelectionManager->is_shift_pressed()) // if shift is pressed ignore objects 
+    
 
    //loop through stick-feet list and check if ray intersect any of them.
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
