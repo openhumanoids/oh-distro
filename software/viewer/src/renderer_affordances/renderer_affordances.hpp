@@ -818,8 +818,10 @@ struct RendererAffordances {
     self->stickyfoot_selection  = " ";
     self->marker_selection = " ";
     self->affCollection->clear_highlights();
-    self->stickyHandCollection->clear_highlights();
-    self->stickyFootCollection->clear_highlights();
+    if(!self->seedSelectionManager->is_shift_pressed()){
+      self->stickyHandCollection->clear_highlights();
+      self->stickyFootCollection->clear_highlights();
+    }
     if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
     {
      //if marker based adjustment is enabled

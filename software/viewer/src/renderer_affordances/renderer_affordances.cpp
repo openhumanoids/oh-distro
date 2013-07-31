@@ -555,7 +555,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
     self->ray_hit = to;
     self->ray_hit_normal << 0,0,1;
     double shortest_distance = get_shortest_distance_between_objects_markers_sticky_hands_and_feet(self,from,to);
-    if(shortest_distance<0)
+    if((shortest_distance<0)&&(!self->seedSelectionManager->is_shift_pressed()))
       self->seedSelectionManager->clear();
     
     return shortest_distance;
