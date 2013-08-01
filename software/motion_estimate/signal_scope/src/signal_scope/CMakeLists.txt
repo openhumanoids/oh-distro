@@ -18,6 +18,7 @@ qt4_wrap_cpp(moc_srcs
   plot.h
   plotwidget.h
   lcmthread.h
+  signaldescription.h
   signalhandler.h
   setscaledialog.h
   selectsignaldialog.h
@@ -38,6 +39,7 @@ set(srcs
   plotwidget.cpp
   setscaledialog.cpp
   signaldata.cpp
+  signaldescription.cpp
   lcmthread.cpp
   signalhandler.cpp
   selectsignaldialog.cpp
@@ -57,6 +59,7 @@ pods_install_headers(
   selectsignaldialog.h
   setscaledialog.h
   signaldata.h
+  signaldescription.h
   signalhandler.h
   DESTINATION signal_scope)
 

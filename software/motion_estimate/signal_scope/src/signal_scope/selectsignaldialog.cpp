@@ -1,6 +1,7 @@
 #include "selectsignaldialog.h"
 #include "ui_selectsignaldialog.h"
 
+#include "signaldescription.h"
 #include "signalhandler.h"
 
 class SelectSignalDialog::Internal : public Ui::SelectSignalDialog
@@ -23,7 +24,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   QStringList messageFields;
   messageFields << "joint_position"
                 << "joint_velocity"
-                << "measured_effort";
+                << "joint_effort";
 
   mInternal->ChannelListBox->addItems(channels);
   mInternal->MessageTypeListBox->addItems(messageTypes);
@@ -41,29 +42,18 @@ SelectSignalDialog::~SelectSignalDialog()
 
 SignalHandler* SelectSignalDialog::createSignalHandler() const
 {
-
   QString channel = mInternal->ChannelListBox->currentItem()->text();
   QString messageType = mInternal->MessageTypeListBox->currentItem()->text();
   QString messageField = mInternal->MessageFieldListBox->currentItem()->text();
   int arrayIndex = mInternal->ArrayIndexSpinBox->value();
   bool fieldIsArray = mInternal->FieldIsArrayCheckBox->isChecked();
 
-  if (messageType == "drc.robot_state_t")
-  {
-    if (messageField == "joint_position")
-    {
-      return new RobotStateJointPositionHandler(channel, arrayIndex);
-    }
-    if (messageField == "joint_velocity")
-    {
-      return new RobotStateJointPositionHandler(channel, arrayIndex);
-    }
-    if (messageField == "measured_effort")
-    {
-      return new RobotStateJointPositionHandler(channel, arrayIndex);
-    }
-  }
+  SignalDescription desc;
+  desc.mChannel = channel;
+  desc.mMessageType = messageType;
+  desc.mFieldName = messageField;
+  desc.mArrayIndex = arrayIndex;
 
-  return 0;
+  return SignalHandlerFactory::instance().createHandler(&desc);
 }
 

@@ -1,6 +1,7 @@
 #include "signalhandler.h"
 
 #include "signaldata.h"
+#include "signaldescription.h"
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -47,50 +48,47 @@ void SignalHandler::unsubscribe(lcm::LCM* lcmInstance)
 }
 
 
+SignalHandlerFactory& SignalHandlerFactory::instance()
+{
+  static SignalHandlerFactory factory;
+
+  bool registerHandlers = true;
+  if (registerHandlers)
+  {
+    factory.registerClass<RobotStateJointPositionHandler>();
+    factory.registerClass<RobotStateJointVelocityHandler>();
+    factory.registerClass<RobotStateJointEffortHandler>();
+  }
+
+  return factory;
+}
+
+SignalHandler* SignalHandlerFactory::createHandler(SignalDescription* desc) const
+{
+  Constructor constructor = mConstructors.value(desc->mMessageType).value(desc->mFieldName);
+  if (constructor == NULL)
+  {
+    return NULL;
+  }
+  return (*constructor)(desc);
+}
+
 //-----------------------------------------------------------------------------
 
 
-#define define_array_handler(className, fieldName) \
-className::className(const QString& channel, int arrayIndex) : SignalHandler(channel), mArrayIndex(arrayIndex) { } \
+#define define_array_handler(className, _fieldName) \
+className::className(SignalDescription* desc) : SignalHandler(desc->mChannel), mArrayIndex(desc->mArrayIndex) { } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, const drc::robot_state_t* msg, float& timeNow, float& signalValue) \
 { \
   timeNow = (msg->utime)/1000000.0; \
-  signalValue = msg->fieldName[mArrayIndex]; \
+  signalValue = msg->_fieldName[mArrayIndex]; \
   return true; \
-}
+} \
+QString className::fieldName() { return #_fieldName ; }
 
 
 
 define_array_handler(RobotStateJointPositionHandler, joint_position);
 define_array_handler(RobotStateJointVelocityHandler, joint_velocity);
-define_array_handler(RobotStateMeasuredEffortHandler, measured_effort);
-
-/*
-RobotJointPositionSignalHandler::RobotJointPositionSignalHandler(const QString& channel, int jointId) : SignalHandler(channel)
-{
-  mJointId = jointId;
-}
-
-bool RobotJointPositionSignalHandler::extractSignalData(const lcm::ReceiveBuffer* rbuf, const drc::robot_state_t* msg, float& timeNow, float& signalValue)
-{
-  //static int64_t firstTime = 0;
-  //if (firstTime == 0)
-  //{
-  //  firstTime = msg->utime;
-  //}
-
-  if (!msg->num_joints)
-  {
-    return false;
-  }
-
-  int jointId = 28;
-  //float timeNow = (msg->utime - firstTime)/1000000.0;
-  timeNow = (msg->utime)/1000000.0;
-  signalValue = msg->joint_position[mJointId];
-
-  //printf("time now: %f.  joint_position[0]: %f\n", timeNow, signalValue);
-  return true;
-}
-*/
+define_array_handler(RobotStateJointEffortHandler, joint_effort);
 
