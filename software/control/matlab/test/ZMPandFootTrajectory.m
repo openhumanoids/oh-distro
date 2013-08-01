@@ -28,10 +28,9 @@ com0 = getCOM(r,q0);
 rfoot0 = forwardKin(r,kinsol,rfoot_body_idx,[0;0;0],true);
 lfoot0 = forwardKin(r,kinsol,lfoot_body_idx,[0;0;0],true);
 
-gc = r.contactPositions(q0);
-
+footidx = [lfoot_body_idx, rfoot_body_idx];
+gc = contactPositions(r,q0,footidx); 
 % compute desired COM projection
-% assumes minimal contact model for now
 k = convhull(gc(1:2,1:4)');
 lfootcen0 = [mean(gc(1:2,k(1:end-1)),2);0];
 k = convhull(gc(1:2,5:8)');

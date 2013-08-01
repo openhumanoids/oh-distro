@@ -166,8 +166,15 @@ classdef WalkingPDBlock < MIMODrakeSystem
           approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
         end
       end
+      
+      % note: we should really only try to control COM position when in
+      % contact with the environment
       com = fasteval(cdata.comtraj,t);
-      compos = [com(1:2) - cdata.trans_drift(1:2);nan];
+      if length(com)==3
+        compos = [com(1:2) - cdata.trans_drift(1:2);com(3)];
+      else
+        compos = [com(1:2) - cdata.trans_drift(1:2);nan];
+      end
 
       [q_des,info] = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
       if info

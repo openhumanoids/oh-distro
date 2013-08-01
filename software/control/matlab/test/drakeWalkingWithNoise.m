@@ -16,8 +16,6 @@ step_time = 1.0;
 options.floating = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-r = removeCollisionGroupsExcept(r,{'heel','toe'});
-r = compile(r);
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
@@ -28,8 +26,6 @@ options.damping_error = 0.1; % standard deviation for damping noise (percentage 
 % ******************* END ADJUSTABLE **************************************
 
 rctrl = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-rctrl = removeCollisionGroupsExcept(rctrl,{'heel','toe'});
-rctrl = compile(rctrl);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
