@@ -937,7 +937,8 @@ namespace renderer_affordances_gui_utils
     char ** hand_contact_masks =(char **) calloc(num_hand_contact_masks, sizeof(char *));
     int* hand_contact_nums = (int *)calloc(num_hand_contact_masks, sizeof(int));
     hand_contact_masks[0]=(char*) "ALL"; hand_contact_masks[1]=(char*) "FINGERS";
-    hand_contact_nums[0]=drc::grasp_opt_control_t::ALL; hand_contact_nums[1]=drc::grasp_opt_control_t::FINGERS_ONLY;
+    hand_contact_nums[0]=drc::grasp_opt_control_t::ALL; 
+    hand_contact_nums[1]=drc::grasp_opt_control_t::FINGERS_ONLY;
     
     foot_contact_mask_type_t temp;
     int num_foot_contact_masks =  4;

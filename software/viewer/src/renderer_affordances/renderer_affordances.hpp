@@ -174,6 +174,7 @@ struct RendererAffordances {
     show_popup_onrelease=false;
     visualize_bbox=false;
     motion_trail_log_enabled=false;
+    doBatchFK = false;
     
     ray_hit_t = 0;
     joint_marker_pos_on_press = 0;
@@ -271,8 +272,13 @@ struct RendererAffordances {
   
   std::map<std::string, int > instance_cnt; // templateName, value. keeps track of how many times each template is instantiated. (only used for creating a local aff store)
 
-    std::map<std::string, vector<KDL::Frame> > ee_frames_map;
-    std::map<std::string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
+
+  // for manip map
+  std::vector<string> dof_names;
+  std::vector<double> dof_min;
+  std::vector<double> dof_max;
+  std::map<std::string, vector<KDL::Frame> > ee_frames_map;
+  std::map<std::string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
   
   long last_state_msg_timestamp;
   float alpha;    // transparency of the object:
@@ -301,6 +307,7 @@ struct RendererAffordances {
   bool show_popup_onrelease;
   bool visualize_bbox;
   bool motion_trail_log_enabled;
+  bool doBatchFK;
   
   
   
@@ -599,7 +606,6 @@ struct RendererAffordances {
          }
       }// end else if(it->second._gl_object->is_jointdof_adjustment_enabled())
       self->prev_ray_hit_drag = self->ray_hit_drag; 
-      bot_viewer_request_redraw(self->viewer);     
   }   // end set_object_desired_state_on_marker_motion()
   
 
@@ -619,7 +625,6 @@ struct RendererAffordances {
       KDL::Frame DragRotation=KDL::Frame::Identity();       
       if(self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())
       {
-      
         if(self->marker_selection=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
           T_world_object.p[0] = dx;
@@ -636,7 +641,6 @@ struct RendererAffordances {
           currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object.p[2],self->prev_ray_hit_drag[1]-T_world_object.p[1]);
           angleTo = atan2(self->ray_hit_drag[2]-T_world_object.p[2],self->ray_hit_drag[1]-T_world_object.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
@@ -645,7 +649,6 @@ struct RendererAffordances {
           currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object.p[0],self->prev_ray_hit_drag[2]-T_world_object.p[2]);
           angleTo = atan2(self->ray_hit_drag[0]-T_world_object.p[0],self->ray_hit_drag[2]-T_world_object.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);

@@ -30,10 +30,10 @@ namespace renderer_affordances
 //     _lcm(lcm),
 //     _parent_affordance_renderer(affordance_renderer)
   AffordanceCollectionListener::AffordanceCollectionListener( RendererAffordances* affordance_renderer):
-    _parent_affordance_renderer(affordance_renderer)
+    _parent_affordance_renderer(affordance_renderer),_last_affcoll_msg_system_timestamp(0)
   {
     _lcm = affordance_renderer->lcm;
-    
+    _last_affcoll_msg_system_timestamp = bot_timestamp_now();
  
     //lcm ok?
     if(!_lcm->good())
@@ -65,7 +65,10 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 						 const drc::affordance_collection_t* msg)						 
   {
   
-
+   int64_t now =bot_timestamp_now();
+   double dt = (now- _last_affcoll_msg_system_timestamp )/1000000.0;// timestamps are in usec
+    if(dt< 2) // 1Hz Sync
+      return;
   
     //cout << "Ok!: " << oss.str() << endl;
     for (size_t i=0; i< (size_t)msg->naffs; i++)
@@ -96,6 +99,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
           }
        }
     }
+    _last_affcoll_msg_system_timestamp = now;
 
   } // end handleMessage
 

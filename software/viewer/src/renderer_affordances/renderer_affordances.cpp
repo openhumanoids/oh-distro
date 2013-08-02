@@ -721,7 +721,14 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     if((!self->dragging)||(ehandler->picking==0)||(self->selection_enabled==0)){
         return 0;
     }
-  
+    int64_t now = bot_timestamp_now();
+    double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
+    std::cout << "last_draw_dt "<<dt<< std::endl;   
+    if((dt>0.05))
+    {
+      return 1;
+    }
+    
     if((self->show_popup_onrelease)||(self->marker_selection  != " ")){
         double t = self->ray_hit_t;
         self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];

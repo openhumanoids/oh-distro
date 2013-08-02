@@ -51,7 +51,9 @@ namespace renderer_affordances
                                           const std::string& chan, 
                                           const drc::affordance_plus_collection_t* msg); 
    void handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,  
-                                const  drc::affordance_plus_t* msg);    
+                                const  drc::affordance_plus_t* msg);   
+                                
+   int64_t _last_affcoll_msg_system_timestamp; 
 
 }; //class AffordanceCollectionListener
 

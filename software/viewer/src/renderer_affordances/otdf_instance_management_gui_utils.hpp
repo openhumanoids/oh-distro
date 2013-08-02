@@ -140,7 +140,12 @@ namespace renderer_affordances_gui_utils
 
         //map<string, vector<KDL::Frame> > ee_frames_map;
         //map<string, vector<drc::affordance_index_t> > ee_frame_affindices_map;
-
+        if(self->doBatchFK) {
+            //doBatchFK given DOF Desired Ranges
+            int num_of_increments = 30; // determines no of intermediate holds between dof_min and dof_max;
+            self->dofRangeFkQueryHandler->doBatchFK(self->dof_names, self->dof_min, self->dof_max, num_of_increments);
+        } 
+        
         self->ee_frames_map.clear();
         self->ee_frame_affindices_map.clear();
         // get ee dof range constraints for associated sticky hands and feet
@@ -166,9 +171,11 @@ namespace renderer_affordances_gui_utils
         vector<double> dof_min,dof_max;
         map<string, double> current_jointpos_in;
         map<string, double> future_jointpos_in; 
+        
+       
     
         bool doFK= false;
-    
+        self->doBatchFK = false;
         // Build up a map of the desired joint position ranges
         typedef map<string,boost::shared_ptr<otdf::Joint> > joints_mapType;
         for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++) {     
@@ -212,14 +219,16 @@ namespace renderer_affordances_gui_utils
                 }  
             }// end if
         }// end for
-        
-        
-        if(doFK) {
+        self->dof_names.clear();self->dof_min.clear();self->dof_max.clear();
+        self->dof_names=dof_names;
+        self->dof_min=dof_min;
+        self->dof_max=dof_max;
+        /*if(doFK) {
             //doBatchFK given DOF Desired Ranges
             //int num_of_increments = 10; // determines no of intermediate holds between dof_min and dof_max;
-            int num_of_increments = 30; // determines no of intermediate holds between dof_min and dof_max;
+            int num_of_increments = 5; // determines no of intermediate holds between dof_min and dof_max;
             self->dofRangeFkQueryHandler->doBatchFK(dof_names, dof_min, dof_max, num_of_increments);
-        } 
+        } */
 
         // Visualizing how seeds change with dof range changes
         //--------------------------------------
@@ -277,7 +286,6 @@ namespace renderer_affordances_gui_utils
         // create a temp copy of the selected otdf instance to make modifications to.    
         if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
             self->otdf_instance_hold.uid=it->second.uid;
-     
             self->otdf_instance_hold.otdf_type = it->second.otdf_type;
             self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
             self->otdf_instance_hold._gl_object.reset();
@@ -560,7 +568,7 @@ namespace renderer_affordances_gui_utils
         self->otdf_current_jointpos_hold=it->second._gl_object->_current_jointpos;    
     
         self->dofRangeFkQueryHandler.reset();
-        int num_of_increments = 5; // preallocates 5 spaces for speed
+        int num_of_increments = 30; // preallocates spaces for speed
         self->dofRangeFkQueryHandler=boost::shared_ptr<BatchFKQueryHandler>(new BatchFKQueryHandler(it->second._otdf_instance,num_of_increments));
 
         g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_manip_map_dof_range_widget_changed), self);
