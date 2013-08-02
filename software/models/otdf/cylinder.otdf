@@ -59,11 +59,4 @@
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_0" />
-        <relative_pose rpy="-0.930089 -0.0109444 1.46487" xyz="0.0995748 0.0424263 -0.0701087" />
-        <grasp_type type="1" />
-        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141761 1.4593 0.780946 -0.00249965 1.43654 0.796186 0.0138238 1.40653 0.814208 0.840206 1.20747 0.852003 " />
-    </grasp_seed>
 </object>

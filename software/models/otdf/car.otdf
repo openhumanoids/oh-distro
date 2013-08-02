@@ -839,20 +839,6 @@
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142226 1.52346 1.37803 -0.00293375 1.53692 1.32742 0.0140219 1.54334 1.31305 0.875808 1.29825 -0.251281 " />
     </grasp_seed>
     <!--HAND BRAKE STANCE-->
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="hb_rfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="hb_lfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
     <link name="hb_lfoot_target">
         <visual name="hb_lfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -892,20 +878,6 @@
         <child link="hb_rfoot_target" type="link" />
     </joint>
     <!--VAULT STANCE-->
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="vault_rfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="vault_lfoot_target_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.05 0 0.1" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
     <link name="vault_lfoot_target">
         <visual name="vault_lfoot_target">
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -946,9 +918,72 @@
     </joint>
     <grasp_seed>
         <appendage type="HAND" />
-        <geometry name="hand_brake_0" />
-        <relative_pose rpy="-2.27432 0.243726 0.107955" xyz="0.0637521 -0.0851439 0.0544072" />
+        <geometry name="chassis_14" />
+        <relative_pose rpy="0.902444 -0.0244067 2.6496" xyz="-0.0999805 -0.0550053 0.205313" />
         <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141419 1.52632 1.28637 -0.00445307 1.52155 1.08055 0.0139409 1.52092 0.897526 0.225121 1.4314 0.499761 " />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141713 1.32452 0.67983 -0.00199577 1.32453 0.662341 0.0139996 1.32792 0.63673 0.0876021 1.27178 0.7517 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="chassis_14" />
+        <relative_pose rpy="0.964764 -0.0194908 -2.91829" xyz="-0.0382346 -0.109453 0.384412" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0140981 1.37908 0.644374 -0.00159371 1.33116 0.664372 0.0140112 1.28078 0.688447 0.861496 1.15796 0.821304 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="chassis_17" />
+        <relative_pose rpy="-0.989258 -0.307946 -1.2298" xyz="-0.06886 -0.101591 0.0509876" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141179 1.40394 0.748887 -0.00221336 1.36159 0.568962 0.0139871 1.36248 0.360967 0.203413 1.25859 0.812667 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="hb_rfoot_target_0" />
+        <relative_pose rpy="0.0428448 0.0367308 0.862495" xyz="0.0791778 -0.0456671 0.0820573" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="vault_rfoot_target_0" />
+        <relative_pose rpy="2.25025e-06 -7.10494e-07 -3.12873" xyz="0.0815723 -0.0165789 0.0795336" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="chassis_0" />
+        <relative_pose rpy="-6.32422e-07 -1.15533e-07 0.23496" xyz="0.333893 -0.467888 0.104352" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="chassis_0" />
+        <relative_pose rpy="8.5272e-08 2.56061e-07 0.273467" xyz="0.276131 -0.380693 0.104534" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="chassis_0" />
+        <relative_pose rpy="0 -0 0.205747" xyz="0.311077 -0.081078 0.104533" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="brake_pedal_0" />
+        <relative_pose rpy="3.12286 0.000160621 -3.13304" xyz="-0.0347082 0.00141121 -0.0802696" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="gas_pedal_0" />
+        <relative_pose rpy="3.13373 2.87304e-05 -3.13784" xyz="-0.0392726 -0.0175453 -0.0797933" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
 </object>
