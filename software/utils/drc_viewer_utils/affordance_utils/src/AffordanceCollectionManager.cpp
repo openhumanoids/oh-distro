@@ -96,7 +96,6 @@ bool AffordanceCollectionManager::add(std::string &filename, const drc::affordan
   instance_struc._otdf_instance->setParam("roll", aff.origin_rpy[0]);
   instance_struc._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
   instance_struc._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
-
   instance_struc._otdf_instance->update();
   
     //set All JointStates too.
@@ -122,7 +121,7 @@ bool AffordanceCollectionManager::add(std::string &filename, const drc::affordan
   instance_struc._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());
   instance_struc._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
   instance_struc._gl_object->set_state(instance_struc._otdf_instance);
-
+  instance_struc.otdf_instance_viz_object_sync = true;
   _objects.insert(std::make_pair(oss.str(), instance_struc));
 
   return true;

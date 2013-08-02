@@ -75,11 +75,11 @@ namespace visualization_utils
 
   void BatchFKQueryHandler::doBatchFK(std::vector<std::string> &dof_names,std::vector<double> &dof_min,std::vector<double> &dof_max, double num_of_incs)
   {
-    _frame_list.clear();
+    //_frame_list.clear();
     _dof_names.clear();
     _dof_min.clear();
     _dof_max.clear();
-    _num_of_incs= num_of_incs;
+    //_num_of_incs= num_of_incs;
 
     
     double dof_vel= 0;
@@ -106,9 +106,13 @@ namespace visualization_utils
           Eigen::VectorXf dof_positions = dof_positions_list[k];
           _otdf_instance->setJointState(dof_names[k],dof_positions[i],dof_vel);
        }
-      new_frame =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_otdf_instance));
-      new_frame->set_state(_otdf_instance);
-      _frame_list.push_back(new_frame);
+       if(i > _num_of_incs-1)
+       {
+        new_frame =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_otdf_instance));
+        new_frame->set_state(_otdf_instance);
+        _frame_list.push_back(new_frame);
+        _num_of_incs++;
+       }
       _frame_list[i]->set_state(_otdf_instance);
     } 
 
