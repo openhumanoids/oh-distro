@@ -13,6 +13,7 @@ void LCMThread::initLCM()
   }
 
   //std::string logFile = "file:///source/drc/logs/snippet.lcm";
+  //std::string logFile = "file:///source/drc/logs/lcmlog-2013-08-01.00";
   //mLCM = new lcm::LCM(logFile);
 
   mLCM = new lcm::LCM();
@@ -44,6 +45,11 @@ void LCMThread::run()
 
   while (!mShouldStop)
   {
+    if (mShouldPause)
+    {
+      this->waitForResume();
+    }
+
     // mMutex.lock();
     int result = mLCM->handle();
     // mMutex.unlock();
@@ -53,4 +59,28 @@ void LCMThread::run()
       break;
     }
   }
+}
+
+void LCMThread::stop()
+{
+  mShouldStop = true;
+  this->resume();
+}
+
+void LCMThread::pause()
+{
+  mShouldPause = true;
+}
+
+void LCMThread::waitForResume()
+{
+  mMutex.lock();
+  mWaitCondition.wait(&mMutex);
+  mMutex.unlock();
+}
+
+void LCMThread::resume()
+{
+  mShouldPause = false;
+  mWaitCondition.wakeAll();
 }

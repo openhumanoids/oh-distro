@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <QMutex>
+#include <QWaitCondition>
 #include <string>
 
 class SignalHandler;
@@ -24,10 +25,9 @@ public:
     mLCM = 0;
   }
 
-  void stop()
-  {
-    mShouldStop = true;
-  }
+  void stop();
+  void pause();
+  void resume();
 
   void addSignalHandler(SignalHandler* handler);
   void removeSignalHandler(SignalHandler* handler);
@@ -36,12 +36,15 @@ public:
 
   void run();
   void initLCM();
+  void waitForResume();
 
+  bool mShouldPause;
   bool mShouldStop;
   QList<SignalHandler*> mSignalHandlers;
   lcm::LCM* mLCM;
 
   QMutex mMutex;
+  QWaitCondition mWaitCondition;
 };
 
 #endif

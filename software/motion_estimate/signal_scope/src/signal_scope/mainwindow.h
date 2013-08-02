@@ -19,6 +19,7 @@ public:
 
 public slots:
 
+  void onTogglePause();
   void onNewPlot();
   void onRemovePlot(PlotWidget* plot);
 
@@ -28,6 +29,8 @@ protected:
   QScrollArea* mScrollArea;
   QWidget* mPlotArea;
   QVBoxLayout* mPlotLayout;
+
+  QList<PlotWidget*> mPlots;
 
   LCMThread* mLCMThread;
 

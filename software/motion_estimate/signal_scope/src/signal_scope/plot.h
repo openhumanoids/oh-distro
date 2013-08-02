@@ -20,12 +20,15 @@ public:
     virtual ~Plot();
 
     void start();
+    void stop();
+
     virtual void replot();
 
     void addSignal(SignalData* signalData, QColor color=Qt::green);
 
 public Q_SLOTS:
     void setIntervalLength(double);
+    void setYScale(double);
 
 protected:
     virtual void timerEvent(QTimerEvent *);

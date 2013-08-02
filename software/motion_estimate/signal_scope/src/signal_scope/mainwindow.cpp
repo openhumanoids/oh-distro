@@ -24,10 +24,16 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
 
   QPushButton* newPlotButton = new QPushButton("Add plot");
   hlayout->addWidget(newPlotButton);
+
+  QPushButton* pauseButton = new QPushButton("Pause");
+  pauseButton->setCheckable(true);
+  hlayout->addWidget(pauseButton);
+
   hlayout->addStretch();
 
 
   this->connect(newPlotButton, SIGNAL(clicked()), SLOT(onNewPlot()));
+  this->connect(pauseButton, SIGNAL(clicked()), SLOT(onTogglePause()));
 
   mScrollArea = new QScrollArea;
   mPlotArea = new QWidget;
@@ -54,12 +60,32 @@ MainWindow::~MainWindow()
   delete mLCMThread;
 }
 
+void MainWindow::onTogglePause()
+{
+  QPushButton* button = qobject_cast<QPushButton*>(this->sender());
+  if (button->isChecked())
+  {
+    foreach (PlotWidget* plot, mPlots)
+    {
+      plot->stop();
+    }
+  }
+  else
+  {
+    foreach (PlotWidget* plot, mPlots)
+    {
+      plot->start();
+    }
+  }
+}
+
 void MainWindow::onNewPlot()
 {
   PlotWidget* plot = new PlotWidget(mLCMThread);
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
   plot->addSignal();
+  mPlots.append(plot);
 }
 
 void MainWindow::onRemovePlot(PlotWidget* plot)
@@ -67,6 +93,7 @@ void MainWindow::onRemovePlot(PlotWidget* plot)
   if (plot)
   {
     mPlotLayout->removeWidget(plot);
+    mPlots.removeAll(plot);
     delete plot;
   }
 }

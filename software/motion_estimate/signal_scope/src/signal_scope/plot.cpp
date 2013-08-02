@@ -11,6 +11,9 @@
 #include <qwt_painter.h>
 #include <qwt_scale_engine.h>
 #include <qwt_scale_draw.h>
+#include <qwt_plot_zoomer.h>
+#include <qwt_plot_panner.h>
+#include <qwt_plot_magnifier.h>
 #include <qwt_text.h>
 
 #include <qevent.h>
@@ -24,6 +27,26 @@ class MyScaleDraw : public QwtScaleDraw
   {
     return QString::number(value, 'f', 2);
   }
+};
+
+class MyZoomer: public QwtPlotZoomer
+{
+public:
+    MyZoomer(QwtPlotCanvas *canvas):
+        QwtPlotZoomer(canvas)
+    {
+        setTrackerMode(AlwaysOn);
+    }
+
+    virtual QwtText trackerTextF(const QPointF &pos) const
+    {
+        QColor bg(Qt::white);
+        bg.setAlpha(200);
+
+        QwtText text = QwtPlotZoomer::trackerTextF(pos);
+        text.setBackgroundBrush( QBrush( bg ));
+        return text;
+    }
 };
 
 Plot::Plot(QWidget *parent):
@@ -88,6 +111,25 @@ Plot::Plot(QWidget *parent):
   d_origin->setLinePen(QPen(Qt::gray, 0.0, Qt::DashLine));
   d_origin->attach(this);
 
+
+  QwtPlotZoomer* zoomer = new MyZoomer(canvas());
+    zoomer->setMousePattern(QwtEventPattern::QwtEventPattern::MouseSelect1,
+        Qt::LeftButton, Qt::ShiftModifier);
+   // zoomer->setMousePattern(QwtEventPattern::MouseSelect3,
+   //     Qt::RightButton);
+
+    QwtPlotPanner *panner = new QwtPlotPanner(canvas());
+    //panner->setAxisEnabled(QwtPlot::yRight, false);
+    panner->setMouseButton(Qt::LeftButton);
+
+
+    // zoom in/out with the wheel
+    QwtPlotMagnifier* magnifier = new QwtPlotMagnifier( canvas() );
+
+    const QColor c(Qt::darkBlue);
+    zoomer->setRubberBandPen(c);
+    zoomer->setTrackerPen(c);
+
   this->setMinimumHeight(200);
 }
 
@@ -139,6 +181,11 @@ void Plot::start()
   d_timerId = startTimer(33);
 }
 
+void Plot::stop()
+{
+  killTimer(d_timerId);
+}
+
 void Plot::replot()
 {
   // Lock the signal data objects, then plot the data and unlock.
@@ -164,6 +211,13 @@ void Plot::setIntervalLength(double interval)
     d_interval.setMinValue(d_interval.maxValue() - interval);
   }
 }
+
+
+void Plot::setYScale(double scale)
+{
+  setAxisScale(QwtPlot::yLeft, -scale, scale);
+}
+
 
 void Plot::timerEvent(QTimerEvent *event)
 {

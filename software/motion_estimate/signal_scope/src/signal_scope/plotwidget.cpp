@@ -30,10 +30,16 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
           << Qt::darkCyan;
 
   QDoubleSpinBox* timeWindowSpin = new QDoubleSpinBox;
+  timeWindowSpin->setSingleStep(0.1);
+
+  QDoubleSpinBox* yScaleSpin = new QDoubleSpinBox;
+  yScaleSpin->setSingleStep(0.1);
 
   QVBoxLayout* vLayout1 = new QVBoxLayout();
   vLayout1->addWidget(timeWindowSpin);
   vLayout1->addWidget(new QLabel("Time Window [s]"));
+  vLayout1->addWidget(yScaleSpin);
+  vLayout1->addWidget(new QLabel("Y Scale [+/-]"));
   vLayout1->addStretch(10);
 
   QHBoxLayout *layout = new QHBoxLayout(this);
@@ -43,6 +49,10 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   connect(timeWindowSpin, SIGNAL(valueChanged(double)),
           d_plot, SLOT(setIntervalLength(double)));
   timeWindowSpin->setValue(10.0);
+
+  connect(yScaleSpin, SIGNAL(valueChanged(double)),
+          d_plot, SLOT(setYScale(double)));
+  yScaleSpin->setValue(10.0);
 
   this->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -99,6 +109,11 @@ void PlotWidget::onShowContextMenu(const QPoint& pos)
 void PlotWidget::start()
 {
   d_plot->start();
+}
+
+void PlotWidget::stop()
+{
+  d_plot->stop();
 }
 
 void PlotWidget::addSignal()

@@ -17,6 +17,7 @@ public:
   PlotWidget(LCMThread* lcmThread, QWidget* parent=0);
 
   void start();
+  void stop();
   void stopThreads();
 
 
