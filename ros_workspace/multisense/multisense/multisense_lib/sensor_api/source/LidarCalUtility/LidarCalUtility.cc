@@ -75,7 +75,7 @@ int main(int    argc,
 
     int c;
 
-    while(-1 != (c = getopt(argc, argvPP, "a:f:sy")))
+    while(-1 != (c = getopt(argc, argvPP, "sya:f:")))
         switch(c) {
         case 'a': ipAddress = std::string(optarg);    break;
         case 'f': calFile   = std::string(optarg);    break;

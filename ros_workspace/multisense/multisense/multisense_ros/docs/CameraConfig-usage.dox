@@ -16,7 +16,7 @@
   <param name="white_balance_blue" type="double" value="1.0" />
   <param name="lighting" type="bool" value="False" />
   <param name="flash" type="bool" value="False" />
-  <param name="duty_cycle" type="double" value="0.0" />
+  <param name="led_duty_cycle" type="double" value="0.0" />
   <param name="motor_speed" type="double" value="0.0" />
 </node>
 \endverbatim

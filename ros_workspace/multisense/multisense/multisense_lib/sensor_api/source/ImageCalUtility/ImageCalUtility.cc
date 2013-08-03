@@ -63,8 +63,8 @@ int main(int    argc,
          char **argvPP)
 {
     std::string ipAddress = "10.66.171.21";
-    std::string intrinsicsFile;
-    std::string extrinsicsFile;
+    std::string intrinsicsFile = "saved_extrinsics.yml";
+    std::string extrinsicsFile = "saved_intrinsics.yml";
     bool        setCal=false;
     bool        prompt=true;
 
@@ -85,6 +85,9 @@ int main(int    argc,
 
     //
     // Verify options
+    std::cout << intrinsicsFile << " int \n";
+    std::cout << extrinsicsFile << " ext \n";
+    std::cout << ipAddress << " ip \n";
 
     if (intrinsicsFile.empty() || extrinsicsFile.empty()) {
         fprintf(stderr, "Both intrinsics and extrinsics files must be set\n");

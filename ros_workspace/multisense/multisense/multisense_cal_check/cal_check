@@ -1,0 +1,259 @@
+#! /usr/bin/env python
+
+'''
+Simple Script to collect and process bag files
+from RawSnapshot in Release 2.0. This then calls the CRL
+cal_check matlab executable.
+
+NOTE: ROS environmental variables must be source and multisense driver
+must be running for this to work.
+
+NOTE: the Matlab Compiler Runtime (MCR) must be installed on this machine
+http://www.mathworks.com/products/compiler/mcr/
+Use the R2013a 64-bit version for Ubuntu 12.04 64bit
+
+Commandline args:
+    -d <exe_dir>    MATLAB executable directory
+    -n <exe_name>   MATLAB executable name
+    -t <tmp_dir>    temporary directory
+    -m <mcr_dir>    location of Matlab MCR compiler install
+    -b <bag_dir>    directory to save bag file
+    -o <out_dr>     output directory for report
+    -c              remove temporary directory after finished
+    -h              get help
+
+Please direct any question to multisense@carnegierobotics.com or
+    http://support.carnegierobotics.com
+    
+'''
+
+import sys
+import getopt
+import os
+import time
+import platform
+import tempfile
+import shutil
+from Tkinter import Tk
+from tkFileDialog import askopenfilename
+import tkMessageBox
+import getopt
+
+from process_bags import _BagProcessor
+
+try:
+    import roslib.packages
+except:
+    raise Exception("Error importing ROS. Source the ROS environment" \
+                   +" in the workspace where the multisense stack is located")
+
+class CheckCal():
+
+    def __init__(self, matlab_exe_dir=".", tmp_dir="./tmp", cleanup=True,
+                 exe_name="run_MULTISENSE_SL_CHECK_CAL.sh", 
+                 mcr_dir="/usr/local/MATLAB/MATLAB_Compiler_Runtime/v81/",
+                 bag_dir=".", out_dir="."):
+
+        self.cal_exe_dir = matlab_exe_dir
+        self.exe_name = exe_name
+        self.mcr_dir = mcr_dir
+        self.cleanup_dir = cleanup
+        self.bag_dir = bag_dir
+        self.out_dir = out_dir
+
+        #Create bag file directory if it does not already exist
+        if not os.path.exists(self.bag_dir):
+            os.makedirs(self.bag_dir)
+
+        #Create output file directory if it does not already exist
+        if not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
+
+        #Create temporary directory to save extracted files too
+        #If it does not already exist
+        self.tmp_dir = tmp_dir
+        if not os.path.exists(self.tmp_dir):
+            os.makedirs(self.tmp_dir)
+        else:
+            if cleanup and os.path.split(self.tmp_dir)[0] != "/tmp":
+                #Cleanup routine will delete tmp_dir and all its
+                #contents
+                answer = raw_input("%s directory already exists " % self.tmp_dir
+                                   + "files will be deleted. Continue (Y/n)")
+                if answer.lower() == "n":
+                    sys.exit()
+
+    #Run the routine to collect a bag file, process it, and run the
+    #Calibration utility
+    def run(self):
+        [bag_out, fname] = self.collect_bag()
+        
+        if bag_out == 0:
+            fname = self.process_bag(fname)
+            cal_out = self.check_cal(fname)
+            if cal_out != 0 and cal_out != 2:
+                self.cleanup()
+                raise Exception("Error running cal checker. Please" 
+                                +" follow suggestions displayed on the"
+                                +" command line")
+            self.cleanup()
+
+        else:
+            self.cleanup()
+            raise Exception("Error collecting bag file. Make sure "\
+                           +"the ROS environment is sourced and the "\
+                           +"Multisense-SL driver is running. Exiting")
+
+    #Collects Bag files using the raw_snapshot executable
+    def collect_bag(self):
+        fname =  time.strftime("%Y-%m-%d_%H-%M_%Z",
+                                time.localtime(time.time())) + ".bag"
+        fname = os.path.join(self.bag_dir, fname)
+        output = os.system("rosrun multisense_ros raw_snapshot %s" % fname)
+
+        return output, fname
+
+
+    #Instantiate bag Processor and extract information saving to tmp dir
+    #Returns bag file name
+    def process_bag(self, bag):
+        processor = _BagProcessor(bag)
+        #Four files are created:
+        #   -stereo_left_0000.pgm
+        #   -dispairty_0000.pgm
+        #   -extrinsics_0p5mp.yml
+        #   -lidarData.csv
+        #   -dev_info.txt
+        return processor.process(self.tmp_dir)
+
+
+    #Runs Matlab claibration checking routine
+    def check_cal(self, bag_name):
+        command = self.get_exe()
+        #Command format: command, MCR_direcotry, bag_name, camera_extrinsics,
+        #laser_calibration params, left_image, disparity_image,
+        #lidar data, device_info, output_file, n_error, laser_cal_thresh, 
+        #stereo_cal_thresh
+        return os.system(command + " " + self.mcr_dir + " " +
+                         bag_name + " " + 
+                         os.path.join(self.tmp_dir, "extrinsics_0p5mp.yml ") +
+                         os.path.join(self.tmp_dir, "laser_cal.yml ") + 
+                         os.path.join(self.tmp_dir, "stereo_left_0000.pgm ") +
+                         os.path.join(self.tmp_dir, "disparity_0000.pgm ") +
+                         os.path.join(self.tmp_dir, "lidarData.csv ") +
+                         os.path.join(self.tmp_dir, "dev_info.txt ") + 
+                         os.path.join(self.out_dir, os.path.basename(bag_name).\
+                         replace("calCheck.bag", "calResults.txt ")) +
+                         "11 300 300" )
+
+
+    #Deletes temporary directory
+    def cleanup(self):
+        if self.cleanup_dir:
+            shutil.rmtree(self.tmp_dir)
+
+
+    #Checks if specified directory contains the calibration executable
+    #If not check to see if it is in the $PATH
+    #Otherwise let the user select the executable from the dialog box
+    def get_exe(self):
+        if self.is_exe(self.cal_exe_dir + "/" + self.exe_name):
+            return self.cal_exe_dir + "/" + self.exe_name
+        elif os.system("command -v %s" % self.exe_name) == 0:
+            return self.exe_name
+        else:
+            Tk().withdraw()
+            tkMessageBox.showinfo(title="No Calibration Exe Found", 
+                        message="Please select a calibration exe")
+            Tk().withdraw()
+            return askopenfilename()
+
+    #Tests if a file is executable
+    def is_exe(self, fname):
+        return os.path.isfile(fname) and os.access(fname, os.X_OK)
+
+
+#Checks if the current linux distro is 32 or 64 bit. 
+#Currently matlab executable only works on 64 bit
+def check_linux():
+    linux = platform.linux_distribution()
+    if linux[0] in ["Ubuntu"] and linux[1] in ["12.04"]:
+        return True
+    return False
+
+
+def usage():
+    print "usage: ./cal_check <options>"
+    print "Where <options> are"
+    print "    -n <exe_name>\t\tspecifies the name of the CRL cal "\
+                 +"checker executable (default=run_MULTISENSE_SL_CHECK_CAL_64.sh)"
+    print "    -d <exe_dir>\t\tspecifies the directory the CRL cal checker" \
+                 + " executable (default='multisense_cal_check/distrib')"
+    print "    -t <tmp_dir>\t\tspecifies the temp directory to save files."\
+                 + "(default= automatically generated directory in /tmp)"
+    print "    -m <MCR_dir> \t\tdirectory Matlab MCR  is installed "\
+                 + "(default=/usr/local/MATLAB/MATLAB_Compiler_Runtime/v81)"
+    print "    -b <bag_dir>\t\tspecifies the directory to save bag files. " \
+                 + "(default='.')"
+    print "    -o <out_dir>\t\tspecifies the output directory to save the "\
+                 + "calibration results file (default='.')"
+    print "    -c \t\t\t\tdo not remove temporary directory"
+    print "    -h \t\t\t\tget help"
+
+
+if __name__ == "__main__":
+
+    #Check if linux is Ubuntu 12.04 
+    if not check_linux():
+        print "WARNING: Program is only supported in Ubuntu 12.04"
+
+
+    #Default values
+    exe_dir = roslib.packages.get_pkg_dir("multisense_cal_check") +\
+                                             "/distrib"
+    tmp_dir = tempfile.mkdtemp()
+    cleanup = True
+    bag_dir = "."
+    out_dir = "."
+
+    #Select proper executable for system architecture
+    #TODO Test 32 bit and see if mcr_dir is the same
+    if platform.architecture()[0] in ["32bit"]:
+        exe_name = "run_MULTISENSE_SL_CHECK_CAL_32.sh"
+        mcr_dir = "/usr/local/MATLAB/MATLAB_Compiler_Runtime/v717/"
+    else:
+        exe_name = "run_MULTISENSE_SL_CHECK_CAL_64.sh"
+        mcr_dir = "/usr/local/MATLAB/MATLAB_Compiler_Runtime/v81/"
+
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"n:d:t:m:a:b:o:ch")
+    except getopt.GetoptError as err:
+        print str(err)
+        usage()
+        sys.exit(2)
+    for o, a in opts:
+        if o == "-h":
+            usage()
+            sys.exit()
+        elif o == "-n":
+            exe_name = str(a)
+        elif o == "-d":
+            exe_dir = str(a)
+        elif o == "-c":
+            cleanup = False
+        elif o == "-t":
+            os.rmdir(tmp_dir)
+            tmp_dir = str(a)
+        elif o == "-m":
+            mcr_dir = str(a)
+        elif o == "-b":
+            bag_dir = str(a)
+        elif o == "-o":
+            out_dir = str(a)
+        else:
+            pass
+
+    cal_check = CheckCal(exe_dir, tmp_dir, cleanup,
+                         exe_name, mcr_dir, bag_dir, out_dir)
+    cal_check.run()

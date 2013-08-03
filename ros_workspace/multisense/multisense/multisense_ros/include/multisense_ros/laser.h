@@ -97,6 +97,7 @@ private:
 
     ros::Publisher raw_lidar_data_pub_;
     ros::Publisher point_cloud_pub_;
+    ros::Publisher raw_lidar_cal_pub_;
 
     //
     // Keep around for efficiency

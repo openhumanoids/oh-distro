@@ -23,6 +23,7 @@
 
 #include <multisense_ros/laser.h>
 #include <multisense_ros/RawLidarData.h>
+#include <multisense_ros/RawLidarCal.h>
 #include <angles/angles.h>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
@@ -174,6 +175,19 @@ KDL::Frame makeFrame(float T[4][4])
     return out;
 }
 
+
+void makeCRLFrame(KDL::Frame frame_in, lidar::Calibration& c)
+{
+    for (int i=0; i < 3; i++) {
+        for (int j=0; j < 3; j++)
+            c.cameraToSpindleFixed[i][j] = frame_in.M(i,j);
+    }
+    c.cameraToSpindleFixed[0][3] = frame_in.p[0];
+    c.cameraToSpindleFixed[1][3] = frame_in.p[1];
+    c.cameraToSpindleFixed[2][3] = frame_in.p[2];
+
+}
+
 void getLaserCal(lidar::Calibration& c,
                  const std::string&  robot_desc,
                  KDL::Frame&         pre_spindle_cal,
@@ -249,8 +263,19 @@ Laser::Laser(Channel* driver,
 
     //
     // Query calibration from sensor
+    Status cal_status = driver->getLidarCalibration(lidar_cal_);
 
-    if (Status_Ok != driver->getLidarCalibration(lidar_cal_))
+    KDL::Frame cal = makeFrame(lidar_cal_.cameraToSpindleFixed);
+
+    // + further down
+    // + further left
+    // + further forward
+    KDL::Frame mfallon_adjust = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( -0.06, 0.0, -0.008));  
+
+//    cal = cal*mfallon_adjust;
+    makeCRLFrame(cal, lidar_cal_);
+
+    if (Status_Ok != cal_status)
         ROS_WARN("could not query lidar calibration, using URDF defaults");
     else {
 
@@ -263,7 +288,7 @@ Laser::Laser(Channel* driver,
         // Calibration for point cloud topic
 
         pc_pre_spindle_cal_  = makeFrame(lidar_cal_.laserToSpindle);
-        pc_post_spindle_cal_ = makeFrame(lidar_cal_.cameraToSpindleFixed);
+        pc_post_spindle_cal_ = makeFrame(lidar_cal_.cameraToSpindleFixed);        
     }
 
     //
@@ -276,7 +301,6 @@ Laser::Laser(Channel* driver,
 
     double roll, pitch, yaw;
     scan_pre_spindle_cal_.M.GetRPY(roll, pitch, yaw);
-    
     pushCal(js_msg_, "pre_spindle_cal_x_joint", scan_pre_spindle_cal_.p[0]);
     pushCal(js_msg_, "pre_spindle_cal_y_joint", scan_pre_spindle_cal_.p[1]);
     pushCal(js_msg_, "pre_spindle_cal_z_joint", scan_pre_spindle_cal_.p[2]);
@@ -320,12 +344,28 @@ Laser::Laser(Channel* driver,
                        boost::bind(&Laser::unsubscribe, this));
     
     //
-    // Create calibration publisher
+    // Create calibration publishers
 
     ros::NodeHandle calibration_nh(nh, "calibration");
-    raw_lidar_data_pub_  = calibration_nh.advertise<multisense_ros::RawLidarData>("raw_lidar_data", 20,
-                           boost::bind(&Laser::subscribe, this),
-                           boost::bind(&Laser::unsubscribe, this));
+    raw_lidar_cal_pub_  = calibration_nh.advertise<multisense_ros::RawLidarCal>("raw_lidar_cal", 1, true);
+    raw_lidar_data_pub_ = calibration_nh.advertise<multisense_ros::RawLidarData>("raw_lidar_data", 20,
+                          boost::bind(&Laser::subscribe, this),
+                          boost::bind(&Laser::unsubscribe, this));
+
+    //
+    // Publish calibration
+
+    multisense_ros::RawLidarCal ros_msg;
+
+    const float *calP = reinterpret_cast<const float*>(&(lidar_cal_.laserToSpindle[0][0]));
+    for(uint32_t i=0; i<16; ++i)
+        ros_msg.laserToSpindle[i] = calP[i];
+
+    calP = reinterpret_cast<const float*>(&(lidar_cal_.cameraToSpindleFixed[0][0]));
+    for(uint32_t i=0; i<16; ++i)
+        ros_msg.cameraToSpindleFixed[i] = calP[i];
+    
+    raw_lidar_cal_pub_.publish(ros_msg);
 
     //
     // Register callbacks, driver creates dedicated background thread for each
@@ -411,7 +451,8 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
 
     point_cloud_.row_step     = header.pointCount;
     point_cloud_.width        = header.pointCount;
-    point_cloud_.header.stamp = ros::Time::now();
+    point_cloud_.header.stamp = ros::Time(header.timeStartSeconds,
+                                          1000 * header.timeStartMicroSeconds);
     
     //
     // For convenience below
@@ -498,11 +539,17 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
 
 void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
   
-  
+  /*
+    std::stringstream ss4;
+    ss4 << "scan_pre_spindle_cal_\n" <<  scan_pre_spindle_cal_ ;
+    ROS_ERROR("%s", ss4.str().c_str() );
+
     std::stringstream ss2;
-    ss2 << "scan_pre_spindle_cal_\n" <<  scan_pre_spindle_cal_ ;
+    ss2 << "pc_pre_spindle_cal_ aka laserToSpindle\n" <<  pc_pre_spindle_cal_ ;
     ROS_ERROR("%s", ss2.str().c_str() );
-  
+    std::stringstream ss3;
+    ss3 << "pc_post_spindle_cal_ aka cameraToSpindleFixed\n" <<  pc_post_spindle_cal_ ;
+    ROS_ERROR("%s\n\n\n", ss3.str().c_str() );
     double roll, pitch, yaw;
     scan_pre_spindle_cal_.M.GetRPY(roll, pitch, yaw);
     
@@ -563,6 +610,8 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
       ss2 << "final_frame\n" <<  final_frame ;
       ROS_ERROR("%s\n\n", ss2.str().c_str() );  
     }
+    
+    */
   
     // camera-to-laser is defined by three transforms: 
     // (1) camera-to-pre-spindle (from calibration)
@@ -613,16 +662,16 @@ void Laser::scanCallback(const lidar::Header&        header,
 
     const float offset = M_PI;
 
-    const ros::Time start_absolute_time = ros::Time::now();
-    const ros::Time start_relative_time = ros::Time(header.timeStartSeconds,
+    const ros::Time start_absolute_time = ros::Time(header.timeStartSeconds,
                                                     1000 * header.timeStartMicroSeconds);
-    const ros::Time end_relative_time   = ros::Time(header.timeEndSeconds,
+    const ros::Time end_absolute_time   = ros::Time(header.timeEndSeconds,
                                                     1000 * header.timeEndMicroSeconds);
+    const ros::Time scan_time((end_absolute_time - start_absolute_time).toSec());
 
-    const float angle_start = static_cast<float>(header.spindleAngleStart) / 1000000.0f - offset;
-    const float angle_end   = static_cast<float>(header.spindleAngleEnd) / 1000000.0f - offset;
+    const float angle_start = 1e-6 * static_cast<float>(header.spindleAngleStart) - offset;
+    const float angle_end   = 1e-6 * static_cast<float>(header.spindleAngleEnd) - offset;
     const float angle_diff  = angles::shortest_angular_distance(angle_start, angle_end);
-    const float velocity    = angle_diff / (end_relative_time - start_relative_time).toSec();
+    const float velocity    = angle_diff / scan_time.toSec();
 
     //
     // Publish joint state for beginning of scan
@@ -644,7 +693,6 @@ void Laser::scanCallback(const lidar::Header&        header,
     // Publish joint state for end of scan
     
     js_msg_.header.frame_id = "";
-    ros::Time end_absolute_time = start_absolute_time + (end_relative_time - start_relative_time);
     js_msg_.header.stamp    = end_absolute_time;
     js_msg_.position[0]     = angle_end;
     js_msg_.velocity[0]     = velocity;
@@ -688,9 +736,10 @@ void Laser::scanCallback(const lidar::Header&        header,
     /////////////////////////////////////////////////////////////      
     
     if (scan_pub_.getNumSubscribers() > 0) {
+
         laser_msg_.header.frame_id = frame_id_;
         laser_msg_.header.stamp    = start_absolute_time;
-        laser_msg_.scan_time       = (end_relative_time - start_relative_time).toSec();
+        laser_msg_.scan_time       = scan_time.toSec();
         laser_msg_.time_increment  = laser_msg_.scan_time / header.pointCount;
         laser_msg_.angle_min       = -arcRadians / 2.0;
         laser_msg_.angle_max       = arcRadians / 2.0;
@@ -702,8 +751,8 @@ void Laser::scanCallback(const lidar::Header&        header,
         laser_msg_.intensities.resize(header.pointCount);
         
         for (size_t i=0; i<header.pointCount; i++) {
-            laser_msg_.ranges[i]      = static_cast<float>(rangesP[i]) / 1000.0f; // from millimeters
-            laser_msg_.intensities[i] = static_cast<float>(intensitiesP[i]);      // in device units
+            laser_msg_.ranges[i]      = 1e-3 * static_cast<float>(rangesP[i]); // from millimeters
+            laser_msg_.intensities[i] = static_cast<float>(intensitiesP[i]);   // in device units
         }
 
         scan_pub_.publish(laser_msg_);
@@ -714,8 +763,8 @@ void Laser::scanCallback(const lidar::Header&        header,
         RawLidarData::Ptr ros_msg(new RawLidarData);
 
         ros_msg->scan_count  = header.scanId;
-        ros_msg->time_start  = start_relative_time;
-        ros_msg->time_end    = end_relative_time;
+        ros_msg->time_start  = start_absolute_time;
+        ros_msg->time_end    = end_absolute_time;
         ros_msg->angle_start = header.spindleAngleStart;
         ros_msg->angle_end   = header.spindleAngleEnd;
 

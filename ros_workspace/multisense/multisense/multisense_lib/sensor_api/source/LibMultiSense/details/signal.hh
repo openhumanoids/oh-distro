@@ -112,8 +112,8 @@ public:
 	m_map.remove(m_id);
     };
 
-    bool wait(Status& status, 
-	      double  timeout) {
+    bool wait(Status&       status, 
+	      const double& timeout) {
 	return m_signal.timedWait(status, timeout);
     };
 

@@ -17,6 +17,6 @@ Reads and maintains the following parameters on the ROS server
 - \b "~white_balance_blue" : \b [double] WhiteBalanceScaleBlue min: 0.25, default: 1.0, max: 4.0
 - \b "~lighting" : \b [bool] Lighting min: False, default: False, max: True
 - \b "~flash" : \b [bool] Flash min: False, default: False, max: True
-- \b "~duty_cycle" : \b [double] DutyCycle min: 0.0, default: 0.0, max: 1.0
+- \b "~led_duty_cycle" : \b [double] DutyCycle min: 0.0, default: 0.0, max: 1.0
 - \b "~motor_speed" : \b [double] MotorSpeed min: 0.0, default: 0.0, max: 5.2
 

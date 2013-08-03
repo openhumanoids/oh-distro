@@ -152,6 +152,7 @@ private:
     static const uint32_t DEFAULT_ACK_ATTEMPTS       = 5;
     static const uint32_t IMAGE_META_CACHE_DEPTH     = 20;
     static const uint32_t UDP_TRACKER_CACHE_DEPTH    = 5;
+    static const uint32_t TIME_SYNC_OFFSET_DECAY     = 8;
 
     //
     // We must protect ourselves from user callbacks misbehaving
@@ -257,6 +258,11 @@ private:
     utility::Thread *m_rxThreadP;
 
     //
+    // Internal status thread
+
+    utility::Thread *m_statusThreadP;
+
+    //
     // The lists of user callbacks
 
     std::list<ImageListener*> m_imageListeners;
@@ -276,7 +282,13 @@ private:
     // The mask of currently enabled streams (desired)
     
     DataSource m_streamsEnabled;
-    
+
+    //
+    // The current sensor time offset
+
+    utility::Mutex m_timeLock;
+    bool           m_timeOffsetInit;
+    double         m_timeOffset;
 
     //
     // Private procedures
@@ -323,6 +335,12 @@ private:
 
     void cleanup();
 
+    void applySensorTimeOffset(const double& offset);
+    double sensorToLocalTime(const double& sensorTime);
+    void sensorToLocalTime(const double& sensorTime,
+                           uint32_t& seconds,
+                           uint32_t& microseconds);
+
     //
     // Static members
 
@@ -330,6 +348,7 @@ private:
     static DataSource       sourceWireToApi(wire::SourceType mask);
     
     static void *rxThread(void *userDataP);
+    static void *statusThread(void *userDataP);
 };
 
 

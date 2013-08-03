@@ -23,12 +23,13 @@
 
 #include <multisense_ros/camera.h>
 #include <multisense_ros/RawCamConfig.h>
+#include <multisense_ros/RawCamCal.h>
+#include <multisense_ros/DeviceInfo.h>
 
 #include <MultiSenseChannel.hh>
 
 #include <opencv2/opencv.hpp>
 #include <arpa/inet.h>
-#include "../include/multisense_ros/camera.h"
 
 using namespace crl::multisense;
 
@@ -145,6 +146,8 @@ Camera::Camera(Channel* driver) :
     
 
     ros::NodeHandle calibration_nh(device_nh_, "calibration");
+    device_info_pub_    = calibration_nh.advertise<multisense_ros::DeviceInfo>("device_info", 1, true);
+    raw_cam_cal_pub_    = calibration_nh.advertise<multisense_ros::RawCamCal>("raw_cam_cal", 1, true);
     raw_cam_config_pub_ = calibration_nh.advertise<multisense_ros::RawCamConfig>("raw_cam_config", 1, true);
     raw_cam_data_pub_   = calibration_nh.advertise<multisense_ros::RawCamData>("raw_cam_data", 5,
                           boost::bind(&Camera::connectStream, this, Source_Luma_Rectified_Left | Source_Disparity),
@@ -156,14 +159,103 @@ Camera::Camera(Channel* driver) :
     stop();
 
     //
-    // Set up dynamic reconfigure
+    // Publish device info
 
-    reconfigure_server_.setCallback(boost::bind(&Camera::configureCallback, this, _1, _2));
+    system::DeviceInfo  deviceInfo;
+    system::VersionInfo versionInfo;
+
+    if (Status_Ok != driver_->getDeviceInfo(deviceInfo))
+        ROS_WARN("Failed to query device info");
+    else if (Status_Ok != driver_->getVersionInfo(versionInfo))
+        ROS_WARN("Failed to query version info");
+    else {
+
+        multisense_ros::DeviceInfo msg;
+        
+        msg.deviceName     = deviceInfo.name;
+        msg.buildDate      = deviceInfo.buildDate;
+        msg.serialNumber   = deviceInfo.serialNumber;
+        msg.deviceRevision = deviceInfo.hardwareRevision;
+
+        msg.numberOfPcbs = deviceInfo.pcbs.size();
+        std::vector<system::PcbInfo>::const_iterator it = deviceInfo.pcbs.begin();
+        for(; it != deviceInfo.pcbs.end(); ++it) {
+            msg.pcbSerialNumbers.push_back((*it).revision);
+            msg.pcbNames.push_back((*it).name);
+        }
+
+        msg.imagerName              = deviceInfo.imagerName;
+        msg.imagerType              = deviceInfo.imagerType;
+        msg.imagerWidth             = deviceInfo.imagerWidth;
+        msg.imagerHeight            = deviceInfo.imagerHeight;
+
+        msg.lensName                = deviceInfo.lensName;
+        msg.lensType                = deviceInfo.lensType;
+        msg.nominalBaseline         = deviceInfo.nominalBaseline;
+        msg.nominalFocalLength      = deviceInfo.nominalFocalLength;
+        msg.nominalRelativeAperture = deviceInfo.nominalRelativeAperture;
+
+        msg.lightingType            = deviceInfo.lightingType;
+        msg.numberOfLights          = deviceInfo.numberOfLights;
+
+        msg.laserName               = deviceInfo.laserName;
+        msg.laserType               = deviceInfo.laserType;
+
+        msg.motorName               = deviceInfo.motorName;
+        msg.motorType               = deviceInfo.motorType;
+        msg.motorGearReduction      = deviceInfo.motorGearReduction;
+
+        msg.apiBuildDate            = versionInfo.apiBuildDate;
+        msg.apiVersion              = versionInfo.apiVersion;
+        msg.firmwareBuildDate       = versionInfo.sensorFirmwareBuildDate;
+        msg.firmwareVersion         = versionInfo.sensorFirmwareVersion;
+        msg.bitstreamVersion        = versionInfo.sensorHardwareVersion;
+        msg.bitstreamMagic          = versionInfo.sensorHardwareMagic;
+        msg.fpgaDna                 = versionInfo.sensorFpgaDna;
+
+        device_info_pub_.publish(msg);
+    }
+
+    //
+    // Publish image calibration
+
+    if (Status_Ok != driver_->getImageCalibration(image_calibration_))
+        ROS_ERROR("Failed to query image calibration");
+    else {
+        
+        multisense_ros::RawCamCal cal;
+        const float              *cP;
+
+        cP = reinterpret_cast<const float *>(&(image_calibration_.left.M[0][0]));
+        for(uint32_t i=0; i<9; i++) cal.left_M[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.left.D[0]));
+        for(uint32_t i=0; i<8; i++) cal.left_D[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.left.R[0][0]));
+        for(uint32_t i=0; i<9; i++) cal.left_R[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.left.P[0][0]));
+        for(uint32_t i=0; i<12; i++) cal.left_P[i] = cP[i];
+
+        cP = reinterpret_cast<const float *>(&(image_calibration_.right.M[0][0]));
+        for(uint32_t i=0; i<9; i++) cal.right_M[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.right.D[0]));
+        for(uint32_t i=0; i<8; i++) cal.right_D[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.right.R[0][0]));
+        for(uint32_t i=0; i<9; i++) cal.right_R[i] = cP[i];
+        cP = reinterpret_cast<const float *>(&(image_calibration_.right.P[0][0]));
+        for(uint32_t i=0; i<12; i++) cal.right_P[i] = cP[i];
+        
+        raw_cam_cal_pub_.publish(cal);
+    }
 
     //
     // Get current sensor configuration
 
     queryConfig();
+
+    //
+    // Set up dynamic reconfigure
+
+    reconfigure_server_.setCallback(boost::bind(&Camera::configureCallback, this, _1, _2));
 
     //
     // Add driver-level callbacks.
@@ -206,7 +298,8 @@ void Camera::monoCallback(const image::Header& header,
 
     const uint32_t imageSize = header.width * header.height;
 
-    ros::Time t = ros::Time::now();
+    ros::Time t = ros::Time(header.timeSeconds,
+                            1000 * header.timeMicroSeconds);
 
     switch(header.source) {
     case Source_Luma_Left:
@@ -262,7 +355,8 @@ void Camera::rectCallback(const image::Header& header,
 
     const uint32_t imageSize = header.width * header.height;
 
-    ros::Time t = ros::Time::now();
+    ros::Time t = ros::Time(header.timeSeconds,
+                            1000 * header.timeMicroSeconds);
 
     switch(header.source) {
     case Source_Luma_Rectified_Left:
@@ -333,7 +427,8 @@ void Camera::depthCallback(const image::Header& header,
     const uint32_t depthSize = header.height * header.width * sizeof(float);
     const uint32_t imageSize = header.width * header.height;
 
-    depth_image_.header.stamp    = ros::Time::now();
+    depth_image_.header.stamp    = ros::Time(header.timeSeconds,
+                                             1000 * header.timeMicroSeconds);
     depth_image_.header.frame_id = frame_id_;
     depth_image_.height          = header.height;
     depth_image_.width           = header.width;
@@ -380,8 +475,9 @@ void Camera::depthCallback(const image::Header& header,
         //ROS_ERROR("16 bits per pixel"); // mfallon
 
         // LCM Disparity:
-        ros::Time cam_time = ros::Time::now();
-        left_rgb_rect_image_.header.stamp    =cam_time;
+        ros::Time cam_time = ros::Time(header.timeSeconds,
+                                                            1000 * header.timeMicroSeconds);
+
         int n_bytes=2; // 4 bytes per value
         int isize = n_bytes*header.width*header.height;
         lcm_disp_.utime = (int64_t) floor(cam_time.toNSec()/1000);
@@ -478,7 +574,8 @@ void Camera::pointCloudCallback(const image::Header& header,
 
     if (32 == header.bitsPerPixel) {
 
-        cv::Mat_<float> disparity(header.height, header.width, (float *) imageDataP);
+        cv::Mat_<float> disparity(header.height, header.width, 
+                                  const_cast<float*>(reinterpret_cast<const float*>(imageDataP)));
         
         cv::reprojectImageTo3D(disparity, points, model_.reprojectionMatrix(), 
                                handle_missing);
@@ -487,7 +584,8 @@ void Camera::pointCloudCallback(const image::Header& header,
 
     } else if (16 == header.bitsPerPixel) {
 
-        cv::Mat_<int16_t> disparityOrigP(header.height, header.width, (int16_t *) imageDataP);
+        cv::Mat_<uint16_t> disparityOrigP(header.height, header.width, 
+                                          const_cast<uint16_t*>(reinterpret_cast<const uint16_t*>(imageDataP)));
         cv::Mat_<float>   disparity(header.height, header.width, &(disparity_buff_[0]));
         disparity = disparityOrigP / 16.0f;
 
@@ -553,7 +651,8 @@ void Camera::pointCloudCallback(const image::Header& header,
    
     point_cloud_.row_step        = validPoints;
     point_cloud_.width           = validPoints;
-    point_cloud_.header.stamp    = now;
+    point_cloud_.header.stamp    = ros::Time(header.timeSeconds,
+                                             1000 * header.timeMicroSeconds);
 
     point_cloud_.data.resize(validPoints * cloud_step);
     point_cloud_pub_.publish(point_cloud_);
@@ -596,7 +695,7 @@ void Camera::rawCamDataCallback(const image::Header& header,
         
     } else if (Source_Disparity == header.source) {
 
-        const uint32_t imageSize = header.width * header.height * sizeof(uint16_t);
+        const uint32_t imageSize = header.width * header.height;
 
         if (header.frameId == raw_cam_data_.frame_count) {
 
@@ -658,7 +757,8 @@ void Camera::colorImageCallback(const image::Header& header,
             left_rgb_image_.data.resize(imageSize);
 
             left_rgb_image_.header.frame_id = frame_id_;
-            left_rgb_image_.header.stamp    = ros::Time::now();
+            left_rgb_image_.header.stamp    = ros::Time(header.timeSeconds,
+                                                        1000 * header.timeMicroSeconds);
             left_rgb_image_.height          = height;
             left_rgb_image_.width           = width;
              
@@ -744,18 +844,22 @@ void Camera::colorImageCallback(const image::Header& header,
                     cvReleaseImageHeader(&destImageP);
 
                     left_rgb_rect_image_.header.frame_id = frame_id_;
-                    ros::Time cam_time = ros::Time::now();
-                    left_rgb_rect_image_.header.stamp    =cam_time;
+                    left_rgb_rect_image_.header.stamp    = ros::Time(header.timeSeconds,
+                                                                     1000 * header.timeMicroSeconds);
                     left_rgb_rect_image_.height          = height;
                     left_rgb_rect_image_.width           = width;
                     
                     left_rgb_rect_image_.encoding        = "rgb8";
                     left_rgb_rect_image_.is_bigendian    = false;
                     left_rgb_rect_image_.step            = width;
+                    
                     left_rgb_rect_cam_info_.header = left_rgb_rect_image_.header;
+
                     left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
                     
                     // LCM 2:
+                    ros::Time cam_time = ros::Time(header.timeSeconds,
+                                                                     1000 * header.timeMicroSeconds);
                     lcm_left_.utime = (int64_t) floor(cam_time.toNSec()/1000);
                     lcm_left_.width = width;
                     lcm_left_.height = height;
@@ -791,7 +895,6 @@ void Camera::colorImageCallback(const image::Header& header,
                 }
             }
         }
-
         got_left_luma_ = false;
     }
 }
@@ -962,7 +1065,7 @@ void Camera::rawcolorCamDataCallback(const image::Header& header,
                     left_rgb_rect_image_.is_bigendian    = false;
                     left_rgb_rect_image_.step            = width;
                     left_rgb_rect_cam_info_.header = left_rgb_rect_image_.header;
-                    left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
+                     left_rgb_rect_cam_pub_.publish(left_rgb_rect_image_, left_rgb_rect_cam_info_);
                     
                     // LCM 2:
                     lcm_left_.utime = (int64_t) floor(cam_time.toNSec()/1000);
@@ -998,8 +1101,7 @@ void Camera::queryConfig()
     //
     // Get the camera config (TODO: clean this up to better handle multiple resolutions)
 
-    if (Status_Ok != driver_->getImageConfig(image_config_) ||
-        Status_Ok != driver_->getImageCalibration(image_calibration_)) {
+    if (Status_Ok != driver_->getImageConfig(image_config_)) {
         ROS_ERROR("failed to query sensor configuration");
         return;
     }
@@ -1044,48 +1146,50 @@ void Camera::queryConfig()
     // Calibration from sensor is for 2 Mpix, must adjust here (TODO: fix on firmware side, this
     // will get messy when we support arbitrary resolutions.)
     
+    image::Calibration cal = image_calibration_;
+
     if (1024 == image_config_.width()) {
-        image_calibration_.left.M[0][0] /= 2.0;
-        image_calibration_.left.M[0][2] /= 2.0;
-        image_calibration_.left.M[1][1] /= 2.0;
-        image_calibration_.left.M[1][2] /= 2.0;
-        image_calibration_.left.P[0][0] /= 2.0;
-        image_calibration_.left.P[0][2] /= 2.0;
-        image_calibration_.left.P[0][3] /= 2.0;
-        image_calibration_.left.P[1][1] /= 2.0;
-        image_calibration_.left.P[1][2] /= 2.0;
+        cal.left.M[0][0] /= 2.0;
+        cal.left.M[0][2] /= 2.0;
+        cal.left.M[1][1] /= 2.0;
+        cal.left.M[1][2] /= 2.0;
+        cal.left.P[0][0] /= 2.0;
+        cal.left.P[0][2] /= 2.0;
+        cal.left.P[0][3] /= 2.0;
+        cal.left.P[1][1] /= 2.0;
+        cal.left.P[1][2] /= 2.0;
     }
 
-    CvMat M1 = cvMat(3, 3, CV_32F, &image_calibration_.left.M);
-    CvMat D1 = cvMat(1, 8, CV_32F, &image_calibration_.left.D);
-    CvMat R1 = cvMat(3, 3, CV_32F, &image_calibration_.left.R);
-    CvMat P1 = cvMat(3, 4, CV_32F, &image_calibration_.left.P);
+    CvMat M1 = cvMat(3, 3, CV_32F, &cal.left.M);
+    CvMat D1 = cvMat(1, 8, CV_32F, &cal.left.D);
+    CvMat R1 = cvMat(3, 3, CV_32F, &cal.left.R);
+    CvMat P1 = cvMat(3, 4, CV_32F, &cal.left.P);
     
     cvInitUndistortRectifyMap(&M1, &D1, &R1, &P1, calibration_map_left_1_, calibration_map_left_2_);
     
     //
-    // Publish the "raw" message
+    // Publish the "raw" config message
     
-    multisense_ros::RawCamConfig ros_msg;
+    multisense_ros::RawCamConfig cfg;
     
-    ros_msg.width             = image_config_.width();
-    ros_msg.height            = image_config_.height();
-    ros_msg.frames_per_second = image_config_.fps();
-    ros_msg.gain              = image_config_.gain();
-    ros_msg.exposure_time     = image_config_.exposure();
+    cfg.width             = image_config_.width();
+    cfg.height            = image_config_.height();
+    cfg.frames_per_second = image_config_.fps();
+    cfg.gain              = image_config_.gain();
+    cfg.exposure_time     = image_config_.exposure();
     
-    ros_msg.fx    = image_config_.fx();
-    ros_msg.fy    = image_config_.fy();
-    ros_msg.cx    = image_config_.cx();
-    ros_msg.cy    = image_config_.cy();
-    ros_msg.tx    = image_config_.tx();
-    ros_msg.ty    = image_config_.ty();
-    ros_msg.tz    = image_config_.tx();
-    ros_msg.roll  = image_config_.roll();
-    ros_msg.pitch = image_config_.pitch();
-    ros_msg.yaw   = image_config_.yaw();
+    cfg.fx    = image_config_.fx();
+    cfg.fy    = image_config_.fy();
+    cfg.cx    = image_config_.cx();
+    cfg.cy    = image_config_.cy();
+    cfg.tx    = image_config_.tx();
+    cfg.ty    = image_config_.ty();
+    cfg.tz    = image_config_.tx();
+    cfg.roll  = image_config_.roll();
+    cfg.pitch = image_config_.pitch();
+    cfg.yaw   = image_config_.yaw();
 
-    raw_cam_config_pub_.publish(ros_msg);
+    raw_cam_config_pub_.publish(cfg);
 
     camera_diagnostics_.publish(SensorStatus::RUNNING);
     depth_diagnostics_.publish(SensorStatus::RUNNING);
@@ -1306,7 +1410,7 @@ void Camera::configureCallback(multisense_ros::CameraConfig & config, uint32_t l
         leds.setDutyCycle(0.0);
     } else {
         leds.setFlash(config.flash);
-        leds.setDutyCycle(config.duty_cycle * 100.0);
+        leds.setDutyCycle(config.led_duty_cycle * 100.0);
     }
 
     status = driver_->setLightingConfig(leds);

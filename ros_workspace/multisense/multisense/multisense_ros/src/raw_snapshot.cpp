@@ -23,9 +23,12 @@
 #include <ros/ros.h>
 #include <ros/topic.h>
 #include <rosbag/bag.h>
+#include <multisense_ros/DeviceInfo.h>
 #include <multisense_ros/RawCamConfig.h>
+#include <multisense_ros/RawCamCal.h>
 #include <multisense_ros/RawCamData.h>
 #include <multisense_ros/RawLidarData.h>
+#include <multisense_ros/RawLidarCal.h>
 #include <stdio.h>
 #include <ros/callback_queue.h>
 
@@ -36,9 +39,12 @@
 
 namespace { // anonymous
 
-#define TOPIC_RAW_LIDAR       "/laser/calibration/raw_lidar_data"
+#define TOPIC_DEVICE_INFO     "/multisense_sl/calibration/device_info"
+#define TOPIC_RAW_CAM_CAL     "/multisense_sl/calibration/raw_cam_cal"
 #define TOPIC_RAW_CAM_CONFIG  "/multisense_sl/calibration/raw_cam_config"
 #define TOPIC_RAW_CAM_DATA    "/multisense_sl/calibration/raw_cam_data"
+#define TOPIC_RAW_LIDAR       "/laser/calibration/raw_lidar_data"
+#define TOPIC_RAW_LIDAR_CAL   "/laser/calibration/raw_lidar_cal"
 
 //
 // Helper class for getting a full rotation of laser scan data
@@ -213,32 +219,47 @@ int main(int    argc,
     setResolution("1024x544");
     ros::Duration(1.0).sleep();
 
-    //
-    // Capture a raw camera config message
+    printf("Capturing device information... "); fflush(stdout);
+    multisense_ros::DeviceInfo::ConstPtr device_info = ros::topic::waitForMessage<multisense_ros::DeviceInfo>(TOPIC_DEVICE_INFO, nh);
+    if (!device_info) {
+        printf("  Error capturing DeviceInfo. Exiting\n");
+        return -1;
+    }
+    printf("  Success\n");
 
-    printf("Getting a single raw CamConfig message...\n");
+    printf("Capturing lidar calibration... ");
+    multisense_ros::RawLidarCal::ConstPtr lidar_cal = ros::topic::waitForMessage<multisense_ros::RawLidarCal>(TOPIC_RAW_LIDAR_CAL, nh);
+    if (!lidar_cal) {
+        printf("  Error capturing RawLidarCal. Exiting\n");
+        return -1;
+    }
+    printf("  Success\n");
+
+    printf("Capturing camera calibration... "); fflush(stdout);
+    multisense_ros::RawCamCal::ConstPtr cam_cal = ros::topic::waitForMessage<multisense_ros::RawCamCal>(TOPIC_RAW_CAM_CAL, nh);
+    if (!cam_cal) {
+        printf("  Error capturing RawCamCal. Exiting\n");
+        return -1;
+    }
+    printf("  Success\n");
+
+    printf("Capturing camera config... "); fflush(stdout);
     multisense_ros::RawCamConfig::ConstPtr cam_config = ros::topic::waitForMessage<multisense_ros::RawCamConfig>(TOPIC_RAW_CAM_CONFIG, nh);
     if (!cam_config) {
-        printf("  Error receiving RawCamConfig. Exiting\n");
+        printf("  Error capturing RawCamConfig. Exiting\n");
         return -1;
     }
     printf("  Success\n");
 
-    //
-    // Capture a raw CamData messge
-
-    printf("Getting a single raw CamData message\n");
+    printf("Capturing a single left-rectified/disparity image pair... "); fflush(stdout);
     multisense_ros::RawCamData::ConstPtr cam_data = ros::topic::waitForMessage<multisense_ros::RawCamData>(TOPIC_RAW_CAM_DATA, nh);
     if (!cam_data) {
-        printf("  Error receiving RawCamData. Exiting\n");
+        printf("  Error capturing RawCamData. Exiting\n");
         return -1;
     }
     printf("  Success\n");
 
-    //
-    // Capture a full rotation of lidar scans
-
-    printf("Getting a full rotation of raw LidarData\n");
+    printf("Capturing a full rotation of lidar scans... "); fflush(stdout);
 
     setMotorSpeed(0.785);
 
@@ -249,7 +270,7 @@ int main(int    argc,
         printf("  Error capturing RawLidarData...\n");
         return -1;
     }
-    printf("  Got %zu RawLidarData messages\n", raw_lidar_data.size());
+    printf("  Captured %zu lidar scans\n", raw_lidar_data.size());
 
     setMotorSpeed(0.0);
 
@@ -260,6 +281,9 @@ int main(int    argc,
     rosbag::Bag bag;
     bag.open(outfile, rosbag::bagmode::Write);
     
+    bag.write(TOPIC_DEVICE_INFO, ros::TIME_MIN, *device_info);
+    bag.write(TOPIC_RAW_LIDAR_CAL, ros::TIME_MIN, *lidar_cal);
+    bag.write(TOPIC_RAW_CAM_CAL, ros::TIME_MIN, *cam_cal);
     bag.write(TOPIC_RAW_CAM_CONFIG, ros::TIME_MIN, *cam_config);
     bag.write(TOPIC_RAW_CAM_DATA, ros::TIME_MIN, *cam_data);
 

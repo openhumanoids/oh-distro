@@ -25,10 +25,15 @@
  **/
 
 #include "details/channel.hh"
+#include "details/query.hh"
 
 #include "details/wire/DisparityMessage.h"
 #include "details/wire/SysMtuMessage.h"
 #include "details/wire/SysGetMtuMessage.h"
+#include "details/wire/StatusRequestMessage.h"
+#include "details/wire/StatusResponseMessage.h"
+
+#include "details/utility/Functional.hh"
 
 #include <netdb.h>
 #include <errno.h>
@@ -64,7 +69,10 @@ impl::impl(const std::string& address,
     m_rxThreadP(NULL),
     m_imageListeners(),
     m_lidarListeners(),
-    m_streamsEnabled(0)
+    m_streamsEnabled(0),
+    m_timeLock(),
+    m_timeOffsetInit(false),
+    m_timeOffset(0)
 {
     //
     // Make sure the sensor address is sane
@@ -123,6 +131,11 @@ impl::impl(const std::string& address,
     }
 
     //
+    // Create status thread
+
+    m_statusThreadP = new utility::Thread(statusThread, this);
+
+    //
     // Use the same MTU for TX 
 
     m_sensorMtu = mtu.mtu;
@@ -137,6 +150,8 @@ void impl::cleanup()
 
     if (m_rxThreadP)
         delete m_rxThreadP;
+    if (m_statusThreadP)
+        delete m_statusThreadP;
 
     std::list<ImageListener*>::const_iterator iti;
     for(iti  = m_imageListeners.begin();
@@ -300,6 +315,117 @@ DataSource impl::sourceWireToApi(wire::SourceType mask)
 
     return api_mask;
 };
+
+//
+// Apply a time offset correction
+
+void impl::applySensorTimeOffset(const double& offset)
+{
+    utility::ScopedLock lock(m_timeLock);
+
+    if (false == m_timeOffsetInit) {
+        m_timeOffset     = offset; // seed
+        m_timeOffsetInit = true;
+        return;
+    }
+    
+    const double samples = static_cast<double>(TIME_SYNC_OFFSET_DECAY);
+
+    m_timeOffset = utility::decayedAverage(m_timeOffset, samples, offset);
+}
+
+//
+// Return the corrected time
+
+double impl::sensorToLocalTime(const double& sensorTime)
+{
+    utility::ScopedLock lock(m_timeLock);
+    return m_timeOffset + sensorTime;
+}
+
+//
+// Correct the time, populate seconds/microseconds
+
+void impl::sensorToLocalTime(const double& sensorTime,
+                             uint32_t&     seconds,
+                             uint32_t&     microseconds)
+{
+    double corrected = sensorToLocalTime(sensorTime);
+    seconds          = static_cast<uint32_t>(corrected);
+    microseconds     = static_cast<uint32_t>(1e6 * (corrected - static_cast<double>(seconds)));
+}
+
+//
+// An internal thread for status/time-synchroniziation
+
+void *impl::statusThread(void *userDataP)
+{
+    impl *selfP = reinterpret_cast<impl*>(userDataP);
+
+    //
+    // Loop until shutdown
+
+    while(selfP->m_threadsRunning) {
+
+        try {
+
+            //
+            // Setup handler for the status response
+
+            ScopedWatch ack(wire::StatusResponse::ID, selfP->m_watch);
+
+            //
+            // Send the status request, recording the (approx) local time
+
+            const double ping = utility::TimeStamp::getCurrentTime();
+            selfP->publish(wire::StatusRequest());
+
+            //
+            // Wait for the response
+
+            Status status;
+            if (ack.wait(status, 0.2)) {
+
+                //
+                // Record (approx) time of response
+
+                const double pong = utility::TimeStamp::getCurrentTime();
+
+                //
+                // Extract the response payload
+
+                wire::StatusResponse msg;
+                selfP->m_messages.extract(msg);
+
+                //
+                // Estimate 'msg.uptime' capture using half of the round trip period
+
+                const double latency = (pong - ping) / 2.0;
+
+                //
+                // Compute and apply the estimated time offset
+
+                const double offset = (ping + latency) - static_cast<double>(msg.uptime);
+                selfP->applySensorTimeOffset(offset);
+            }
+        
+        } catch (const utility::Exception& e) {
+
+            CRL_DEBUG("exception: %s\n", e.what());
+
+        } catch (...) {
+
+            CRL_DEBUG("unknown exception\n");
+        }
+
+        //
+        // Recompute offset at ~1Hz
+
+        usleep(1e6);
+    }
+
+    return NULL;
+}
 
 }; // namespace details
 

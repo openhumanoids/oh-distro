@@ -147,6 +147,8 @@ private:
 
     ros::Publisher raw_cam_data_pub_;
     ros::Publisher raw_cam_config_pub_;
+    ros::Publisher raw_cam_cal_pub_;
+    ros::Publisher device_info_pub_;
 
     //
     // Store outgoing messages for efficiency

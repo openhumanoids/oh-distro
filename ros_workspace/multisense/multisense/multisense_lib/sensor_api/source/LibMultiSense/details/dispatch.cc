@@ -142,16 +142,20 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 	const int32_t  scanArc  = utility::degreesToRadians(270.0) * 1e6; // microradians
 	const uint32_t maxRange = 30.0 * 1e3; // mm
 
-        header.scanId                = scan.scanCount;
-        header.timeStartSeconds      = scan.timeStartSeconds;
-        header.timeStartMicroSeconds = scan.timeStartMicroSeconds;
-        header.timeEndSeconds        = scan.timeEndSeconds;
-        header.timeEndMicroSeconds   = scan.timeEndMicroSeconds;
-        header.spindleAngleStart     = scan.angleStart;
-        header.spindleAngleEnd       = scan.angleEnd;
-	header.scanArc               = scanArc;
-	header.maxRange              = maxRange;
-        header.pointCount            = scan.points;
+        sensorToLocalTime(static_cast<double>(scan.timeStartSeconds) + 
+                          1e-6 * static_cast<double>(scan.timeStartMicroSeconds),
+                          header.timeStartSeconds, header.timeStartMicroSeconds);
+
+        sensorToLocalTime(static_cast<double>(scan.timeEndSeconds) + 
+                          1e-6 * static_cast<double>(scan.timeEndMicroSeconds),
+                          header.timeEndSeconds, header.timeEndMicroSeconds);
+
+        header.scanId            = scan.scanCount;
+        header.spindleAngleStart = scan.angleStart;
+        header.spindleAngleEnd   = scan.angleEnd;
+	header.scanArc           = scanArc;
+	header.maxRange          = maxRange;
+        header.pointCount        = scan.points;
 
         dispatchLaser(buffer, header, scan.distanceP, scan.intensityP);
 
@@ -178,13 +182,15 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 
         image::Header header;
 
+        sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
+                          1e-6 * static_cast<double>(metaP->timeMicroSeconds),
+                          header.timeSeconds, header.timeMicroSeconds);
+
         header.source           = sourceWireToApi(image.source);
         header.bitsPerPixel     = image.bitsPerPixel;
         header.width            = image.width;
         header.height           = image.height;
         header.frameId          = image.frameId;
-        header.timeSeconds      = metaP->timeSeconds;
-        header.timeMicroSeconds = metaP->timeMicroSeconds;
         header.exposure         = metaP->exposureTime;
         header.gain             = metaP->gain;
         header.framesPerSecond  = metaP->framesPerSecond;
@@ -203,13 +209,15 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
         
         image::Header header;
 
+        sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
+                          1e-6 * static_cast<double>(metaP->timeMicroSeconds),
+                          header.timeSeconds, header.timeMicroSeconds);
+
         header.source           = Source_Disparity;
         header.bitsPerPixel     = wire::Disparity::API_BITS_PER_PIXEL;
         header.width            = image.width;
         header.height           = image.height;
         header.frameId          = image.frameId;
-        header.timeSeconds      = metaP->timeSeconds;
-        header.timeMicroSeconds = metaP->timeMicroSeconds;
         header.exposure         = metaP->exposureTime;
         header.gain             = metaP->gain;
         header.framesPerSecond  = metaP->framesPerSecond;

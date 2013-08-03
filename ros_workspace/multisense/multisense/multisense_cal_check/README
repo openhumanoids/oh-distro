@@ -1,0 +1,52 @@
+Running CRL calibration Utility
+
+  The utility utilizes MatLab executables to process
+  image and lidar data. You must install the 
+  Matlab Compiler Runtime (MCR) before continuing with the 
+  calibration Routine.
+
+  Note: this calibration utility has only been tested on
+  Ubuntu 12.04 64 bit. It is currently only supported in 
+  this configuration.
+
+  (1) Install MCR
+
+   Navigate to the following link and install MCR 2013a for 
+   Linux
+
+   http://www.mathworks.com/products/compiler/mcr/index.html
+
+   Note: After unpacking the .zip file run sudo ./install in
+   the extracted directory. This will allow you to place MCR
+   in the default /usr/local/MATLAB/MATLAB_Compiler_Runtime location.
+   This utilty, by default, assumes you have installed MCR in the default location.
+   It is possible to specify a different path through command line
+   arguments.
+
+  (2) Run Camera Calibration
+
+   The Multisense v2.0 driver must be running for this to work.
+
+   In addition in the termial where the cal_checker will run the ROS
+   environmental variables must be sourced which contain the path to the 
+   multisense v2.0 ros driver (most likely a setup.bash file)
+
+   Navigate to the directory where the cal_check executable is located.
+   
+   Note: a process_bags.py file and a distrib directory should also be located
+   in the cal_check directory.
+   
+   Run the following command to check the multisense-sl calibration
+   
+   ./cal_check <options>
+   usage: ./cal_check <options>
+   Where <options> are
+       -n <exe_name>        specifies the name of the CRL cal checker executable (default= run_MULTISENSE_SL_CHECK_CAL.sh)
+       -d <exe_dir>         specifies the directory the CRL cal checker executable (default './distrib')
+       -t <tmp_dir>         specifies the temp directory to save files.(default= automatically generated directory in /tmp)
+       -m <MCR_dir>         directory Matlab MCR  is installed (default=/usr/local/MATLAB/MATLAB_Compiler_Runtime/v81)
+       -b <bag_dir>         specifies the directory to save bag files. (default='.')
+       -o <out_dr>          specifies the directory to save the calibration results
+       -c                   do not remove temporary directory
+       -h                   get help
+                                    

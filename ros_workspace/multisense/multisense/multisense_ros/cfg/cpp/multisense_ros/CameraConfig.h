@@ -278,7 +278,7 @@ class DEFAULT
         if("white_balance_blue"==(*i)->name){white_balance_blue = boost::any_cast<double>(val);}
         if("lighting"==(*i)->name){lighting = boost::any_cast<bool>(val);}
         if("flash"==(*i)->name){flash = boost::any_cast<bool>(val);}
-        if("duty_cycle"==(*i)->name){duty_cycle = boost::any_cast<double>(val);}
+        if("led_duty_cycle"==(*i)->name){led_duty_cycle = boost::any_cast<double>(val);}
         if("motor_speed"==(*i)->name){motor_speed = boost::any_cast<double>(val);}
       }
     }
@@ -298,7 +298,7 @@ double white_balance_red;
 double white_balance_blue;
 bool lighting;
 bool flash;
-double duty_cycle;
+double led_duty_cycle;
 double motor_speed;
 
     bool state;
@@ -340,7 +340,7 @@ double motor_speed;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       bool flash;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      double duty_cycle;
+      double led_duty_cycle;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       double motor_speed;
 //#line 255 "/opt/ros/fuerte/stacks/dynamic_reconfigure/templates/ConfigType.h"
@@ -629,15 +629,15 @@ CameraConfig::GroupDescription<CameraConfig::DEFAULT, CameraConfig> Default("Def
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       __param_descriptions__.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<bool>("flash", "bool", 0, "Flash", "", &CameraConfig::flash)));
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      __min__.duty_cycle = 0.0;
+      __min__.led_duty_cycle = 0.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      __max__.duty_cycle = 1.0;
+      __max__.led_duty_cycle = 1.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      __default__.duty_cycle = 0.0;
+      __default__.led_duty_cycle = 0.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      Default.abstract_parameters.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<double>("duty_cycle", "double", 0, "DutyCycle", "", &CameraConfig::duty_cycle)));
+      Default.abstract_parameters.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<double>("led_duty_cycle", "double", 0, "DutyCycle", "", &CameraConfig::led_duty_cycle)));
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      __param_descriptions__.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<double>("duty_cycle", "double", 0, "DutyCycle", "", &CameraConfig::duty_cycle)));
+      __param_descriptions__.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<double>("led_duty_cycle", "double", 0, "DutyCycle", "", &CameraConfig::led_duty_cycle)));
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       __min__.motor_speed = 0.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
