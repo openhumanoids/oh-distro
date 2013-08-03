@@ -7,3 +7,8 @@ pods_use_pkg_config_packages(drc-lidar-passthrough collision_object_gfe collisio
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_lcm)
 pods_install_executables(drc-lidar-passthrough)
+
+# Simple scan-by-scan filtering:
+add_executable(drc-lidar-filter lidar-filter.cpp)
+pods_use_pkg_config_packages(drc-lidar-filter lcm )
+pods_install_executables(drc-lidar-filter)
