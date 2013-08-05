@@ -12,11 +12,22 @@
 namespace bot {
 
 class frames {
+private:
+  boost::shared_ptr<lcm::LCM> lcm_;
+  BotParam* botparam_;
+  BotFrames* botframes_;
+  
 public:
-  frames();
+  frames(boost::shared_ptr<lcm::LCM> &lcm_);
+  frames(boost::shared_ptr<lcm::LCM> &lcm_, BotParam *botparam_ );
+  
+  
+  int get_trans_with_utime(std::string from_frame, std::string to_frame, 
+                                 int64_t utime, Eigen::Isometry3d & mat); 
+  
   int get_trans_with_utime(BotFrames *bot_frames,
         const char *from_frame, const char *to_frame, int64_t utime,
-        Eigen::Isometry3d&mat);
+        Eigen::Isometry3d& mat);
 
   // Varient of above directly returnig the frame
   Eigen::Isometry3d get_trans_with_utime(BotFrames *bot_frames,
