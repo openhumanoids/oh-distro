@@ -57,8 +57,7 @@ struct state_t {
     bot_lcmgl_t* lcmgl;
 
     BotParam* param;
-    BotFrames* frames;
-    bot::frames frames_cpp;
+    bot::frames* frames_cpp;
 
     // Img
     cv::Mat img;
@@ -85,7 +84,8 @@ struct state_t {
         lcmgl = NULL;
 
         param = bot_param_new_from_server(lcm, 1);
-        frames = bot_frames_get_global (lcm, param);
+        frames_cpp = new bot::frames( param);
+
 
         // Camera Params
         camera_params = CameraParams(param, "cameras." + _options.vCHANNEL + ".intrinsic_cal");
@@ -241,10 +241,10 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     // Bot trans for rigid-body transform from head to local frame
     std::vector< Eigen::Vector3d > pts;
     Eigen::Isometry3d cam_to_local;
-    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "local", msg->utime, cam_to_local); 
+    state->frames_cpp->get_trans_with_utime("CAMERA", "local", msg->utime, cam_to_local); 
 
     Eigen::Isometry3d cam_to_body;
-    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "body", msg->utime, cam_to_body); 
+    state->frames_cpp->get_trans_with_utime("CAMERA", "body", msg->utime, cam_to_body); 
 
     // LCM gl draw bearing vector
     if (!state->lcmgl)
