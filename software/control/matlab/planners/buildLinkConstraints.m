@@ -18,16 +18,18 @@ for f = {'right', 'left'}
 end
 
 
-%% Allow the user to fix the current position of some links (useful for walking while holding the hand still, e.g.)
-for j = 1:length(fixed_links)
-  if isa(fixed_links(j).link, 'RigidBody')
-    link_ndx = find(strcmp(biped.getLinkNames(), fixed_links(j).link.linkname),1);
-  else
-    link_ndx = fixed_links(j);
+if nargin > 3
+  %% Allow the user to fix the current position of some links (useful for walking while holding the hand still, e.g.)
+  for j = 1:length(fixed_links)
+    if isa(fixed_links(j).link, 'RigidBody')
+      link_ndx = find(strcmp(biped.getLinkNames(), fixed_links(j).link.linkname),1);
+    else
+      link_ndx = fixed_links(j);
+    end
+    pos = biped.forwardKin(kinsol, link_ndx, fixed_links(j).pt,0);
+    pos_min = pos - fixed_links(j).tolerance;
+    pos_max = pos + fixed_links(j).tolerance;
+    link_constraints(end+1) = struct('link_ndx', link_ndx, 'pt',fixed_links(j).pt, 'min_traj', ConstantTrajectory(pos_min), 'max_traj', ConstantTrajectory(pos_max), 'traj', []);
   end
-  pos = biped.forwardKin(kinsol, link_ndx, fixed_links(j).pt,0);
-  pos_min = pos - fixed_links(j).tolerance;
-  pos_max = pos + fixed_links(j).tolerance;
-  link_constraints(end+1) = struct('link_ndx', link_ndx, 'pt',fixed_links(j).pt, 'min_traj', ConstantTrajectory(pos_min), 'max_traj', ConstantTrajectory(pos_max), 'traj', []);
 end
 

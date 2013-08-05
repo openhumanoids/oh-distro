@@ -2,9 +2,8 @@ function drakeWalking(use_mex,use_bullet)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 5; % steps taken by robot
-step_length = 0.5;
-step_time = 1.0;
+plot_comtraj = false;
+navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 
 % construct robot model
 options.floating = true;
@@ -36,46 +35,48 @@ v = r.constructVisualizer;
 v.display_dt = 0.05;
 
 nq = getNumDOF(r);
-nu = getNumInputs(r);
 
 x0 = xstar;
 q0 = x0(1:nq);
-kinsol = doKinematics(r,q0);
 
-% create desired ZMP trajectory
-[zmptraj,lfoottraj,rfoottraj,support_times,supports] = ZMPandFootTrajectory(r,q0,num_steps,step_length,step_time);
-zmptraj = setOutputFrame(zmptraj,desiredZMP);
+% create footstep and ZMP trajectories
+step_options.max_num_steps = 100;
+step_options.min_num_steps = 2;
+step_options.step_height = 0.0;
+step_options.step_speed = 1.0;
+step_options.follow_spline = true;
+step_options.right_foot_lead = true;
+step_options.ignore_terrain = false;
+step_options.nom_step_width = r.nom_step_width;
+step_options.nom_forward_step = r.nom_forward_step;
+step_options.max_forward_step = r.max_forward_step;
 
-
+footsteps = r.createInitialSteps(x0, navgoal, step_options);
+[support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps,step_options);
+link_constraints = buildLinkConstraints(r, q0, foottraj);
+ 
 if use_bullet
   for i=1:length(supports)
     supports{i}=supports{i}.setContactSurfaces(-ones(length(supports{i}.bodies),1));
   end
 end
 
-% construct ZMP feedback controller
-com = getCOM(r,kinsol);
-limp = LinearInvertedPendulum(com(3));
-% get COM traj from desired ZMP traj
-[c,V,comtraj] = ZMPtracker(limp,zmptraj,struct('use_tvlqr',false,'com0',com(1:2)));
-
 ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);
 
-figure(2); 
-clf; 
-subplot(3,1,1); hold on;
-fnplt(zmptraj(1));
-fnplt(comtraj(1));
-subplot(3,1,2); hold on;
-fnplt(zmptraj(2));
-fnplt(comtraj(2));
-subplot(3,1,3); hold on;
-fnplt(zmptraj);
-fnplt(comtraj);
-
-link_constraints(1) = struct('link_ndx', r.findLinkInd('r_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', rfoottraj);
-link_constraints(2) = struct('link_ndx', r.findLinkInd('l_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', lfoottraj);
+if plot_comtraj
+  figure(2); 
+  clf; 
+  subplot(3,1,1); hold on;
+  fnplt(zmptraj(1));
+  fnplt(comtraj(1));
+  subplot(3,1,2); hold on;
+  fnplt(zmptraj(2));
+  fnplt(comtraj(2));
+  subplot(3,1,3); hold on;
+  fnplt(zmptraj);
+  fnplt(comtraj);
+end
 
 % compute s1,s2 derivatives for controller Vdot computation
 s1dot = fnder(V.s1,1);
@@ -114,10 +115,10 @@ if use_bullet
   options.multi_robot = r_bullet;
 end
 qp = QPControlBlock(r,ctrl_data,options);
-clear options;
 
-sys = r;
-
+% cascade footstep plan shift block
+fs = FootstepPlanShiftBlock(r,ctrl_data,options);
+sys = cascade(r,fs);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
@@ -151,23 +152,26 @@ playback(v,traj,struct('slider',true));
 
 err = 0; % x,y error
 for i=1:length(ts)
-  x=traj.eval(ts(i));
-  q=x(1:getNumDOF(r)); 
+  opt=traj.eval(ts(i));
+  q=opt(1:getNumDOF(r)); 
   com(:,i)=getCOM(r,q);
   err = err + sum(abs(comtraj.eval(ts(i)) - com(1:2,i)));
 end
 
-figure(2);
-subplot(3,1,1);
-plot(ts,com(1,:),'r');
-subplot(3,1,2);
-plot(ts,com(2,:),'r');
-subplot(3,1,3); hold on;
-plot(com(1,:),com(2,:),'r');
+if plot_comtraj
+  figure(2);
+  subplot(3,1,1);
+  plot(ts,com(1,:),'r');
+  subplot(3,1,2);
+  plot(ts,com(2,:),'r');
+  subplot(3,1,3); hold on;
+  plot(com(1,:),com(2,:),'r');
+end
 
 err
-if err > num_steps*0.5
+if err > length(footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
+  navgoal
 end
 
 end

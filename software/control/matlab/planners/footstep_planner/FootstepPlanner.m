@@ -11,7 +11,6 @@ classdef FootstepPlanner < DRCPlanner
     function obj = FootstepPlanner(biped)
       typecheck(biped, 'Biped');
       
-      robot_name = 'atlas';
       obj = obj@DRCPlanner();
       % obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(drc.control.NavGoalCoder(robot_name)));
       obj.biped = biped;
