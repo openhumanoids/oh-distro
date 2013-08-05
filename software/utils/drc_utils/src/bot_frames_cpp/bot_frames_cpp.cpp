@@ -3,17 +3,26 @@
 #include <iostream>
 
 namespace bot {
-  
+
+frames::frames(){
+  // unsafe initialisation
+  // included for backward compatiabilty
+  // TODO: deprecate usage else where
+};
+
+
 frames::frames(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
-
 };
+
 frames::frames(boost::shared_ptr<lcm::LCM> &lcm_, BotParam *botparam_ ): lcm_(lcm_){
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
-
 };
 
+frames::frames(BotParam *botparam_ ){
+  botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+};
 
 int frames::get_trans_with_utime(std::string from_frame, std::string to_frame, 
                                  int64_t utime, Eigen::Isometry3d & mat){
