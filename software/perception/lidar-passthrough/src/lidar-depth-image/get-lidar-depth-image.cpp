@@ -38,6 +38,7 @@
 #include <drc_utils/PointerUtils.hpp>
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <camera_params/camera_params.hpp>     // Camera Parameters
 #include <ConciseArgs>
 
 using namespace std;
@@ -68,28 +69,26 @@ public:
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, State* iState);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, State* iState);
     
     ~Pass(){
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    std::string image_channel_;
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    
 
     BotParam* botparam_;
     BotFrames* botframes_;
     bot::frames* botframes_cpp_;   
-
-    // Camera Params:
-    int width_;
-    int height_;
-    double fx_, fy_, cx_, cy_;
+    CameraParams camera_params_;
     Eigen::Matrix3f camera_calib_;
     
     int counter_;
 
+    void queryNewSweep();
     // Get a sweep of lidar
     // True if we have a new sweep, different from before
     bool getSweep(LocalMap::SpaceTimeBounds bounds, Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0), 
@@ -125,17 +124,38 @@ class Pass{
     State* mState;
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, State* iState): lcm_(lcm_), image_channel_(image_channel_), 
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_), 
     mState(iState){
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+  camera_params_ = CameraParams();
 
-  lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
+  lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
+  camera_params_.setParams(botparam_, "cameras.CAMERA.left");
+
+  // Previous:
+  //lcm_->subscribe( "CAMERALEFT" ,&Pass::imageHandler,this);
+  //camera_params_.setParams(botparam_, "cameras.CAMERALEFT");
+  
   string mask_channel="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel ,&Pass::maskHandler,this);
 
+  // set up camera projection parameters - for depth image from camera
+  camera_calib_ = Eigen::Matrix3f::Identity();
+  camera_calib_(0,0) = camera_calib_(1,1) = camera_params_.fx;  // focal length
+  camera_calib_(0,2) = camera_params_.cx;                       // cop at center of image
+  camera_calib_(1,2) = camera_params_.cy;
 
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), camera_params_.width, 
+                                  camera_params_.height );
+  disparity_data_ = (uint16_t*) malloc(camera_params_.width * camera_params_.height * 2);
+  
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  cloud_ = cloud_ptr;    
+
+  mask_init_=false;
+  
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
@@ -144,32 +164,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, State*
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91001,"Raw Sweep Cloud"           ,1,1, 91000,1, { 0.0, 1.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(91004,"Pose - Camera",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91005,"Range Image as Cloud"           ,1,1, 91004,0, { 1.0, 0.0, 1.0} ));
-
-  
-  std::string key_prefix_str = "cameras."+ image_channel_ +".intrinsic_cal";
-  width_ = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
-  height_ = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
-  fx_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
-  fy_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
-  cx_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
-  cy_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());    
-
-  // set up camera projection parameters - for depth image from camera
-  camera_calib_ = Eigen::Matrix3f::Identity();
-  camera_calib_(0,0) = camera_calib_(1,1) = fx_ ;  // focal length
-  camera_calib_(0,2) =cx_;                  // cop at center of image
-  camera_calib_(1,2) =cy_;
-
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
-
   counter_=0;
   
-  disparity_data_ = (uint16_t*) malloc(width_ * height_* 2);
-  
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  cloud_ = cloud_ptr;    
-
-  mask_init_=false;
 }
 
 
@@ -224,7 +220,9 @@ void Pass::getSweepDepthImage(LocalMap::SpaceTimeBounds bounds){
 
   Eigen::Projective3f projector;
   Utils::composeViewMatrix(projector, camera_calib_, isometryDoubleToFloat(camera_pose_), false);
-  DepthImageView::Ptr depthImageView = localMap->getAsDepthImage(width_, height_, projector, bounds);  
+  DepthImageView::Ptr depthImageView = localMap->getAsDepthImage( camera_params_.width  , 
+                                                                  camera_params_.height , 
+                                                                  projector, bounds);  
   depth_buf_ = depthImageView->getDepthImage()->getData(DepthImage::TypeDisparity);
 }  
 /////////////////////////////////////////////////////////////////////////////
@@ -232,99 +230,99 @@ void Pass::getSweepDepthImage(LocalMap::SpaceTimeBounds bounds){
 
 // Publish Various Representations of the Depth Image:
 void Pass::sendSweepDepthImage(){
-  {
+  bool write_raw = false;
+  bool publish_raw = false;
+  bool publish_range_image = true;
+  
   // a. Write raw depths to file
-  if (1==0){
+  if (write_raw){
+    cout << "Writing Raw Range Image Points to /tmp\n";
     std::ofstream ofs("/tmp/sweep_depths.txt");
-    for (int i = 0; i < height_; ++i) {
-      for (int j = 0; j < width_; ++j) {
-        ofs << depth_buf_[i*width_ + j] << " ";
+    for (int i = 0; i < camera_params_.height; ++i) {
+      for (int j = 0; j < camera_params_.width; ++j) {
+        ofs << depth_buf_[i*camera_params_.width + j] << " ";
       }
       ofs << std::endl;
     }
     ofs.close();
   }
 
-  cout << "a\n";
 
   // b. Reproject the depth image into xyz, colourize, apply a mask and publish
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  int decimate=4;
-  uint8_t* mask_buf;
-  if (mask_init_){
-    mask_buf = imgutils_->unzipImage( &last_mask_ );
-  }
-
-  cout << "b\n";
-  
-  for (int v = 0; v < height_; v=v+decimate) { // rows t2b //height
-    for (int u = 0; u < width_; u=u+decimate) { // cols l2r
-      pcl::PointXYZRGB pt;
-      int pixel = v*width_ +u;
-      pt.z = 1/ depth_buf_[pixel]; /// inversion currently required due to Matt's interperation of depth as 1/depth ;)
-      pt.x = ( pt.z * (u  - cx_))/fx_ ;
-      pt.y = ( pt.z * (v  - cy_))/fy_ ;
-      if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_RGB){
-        pt.r = (float) img_.data[pixel*3];
-        pt.g = (float) img_.data[pixel*3+1];
-        pt.b = (float) img_.data[pixel*3+2];
-      }else if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_GRAY){
-        pt.r = (float) img_.data[pixel];
-        pt.g = (float) img_.data[pixel];
-        pt.b = (float) img_.data[pixel];
-      }
-
-      if (mask_init_){ // if we have a mask color the points by it
-        if (mask_buf[pixel] > 0){ // if the mask is not 0 (black), apply it as red
-          pt.r = 255;
-          pt.g = 0;
-          pt.b = 0;
-        }
-      }
-
-      cloud4->points.push_back(pt);
+  if (publish_raw){
+    cout << "Publishing Raw Range Image Points\n";
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    int decimate=4;
+    uint8_t* mask_buf;
+    if (mask_init_){
+      mask_buf = imgutils_->unzipImage( &last_mask_ );
     }
-  }
-  cloud4->width = cloud4->points.size();
-  cloud4->height =1;
-  cout << "c\n";
-  
-  
-  
-  Isometry3dTime camera_pose_T = Isometry3dTime(current_utime_, camera_pose_);
-  pc_vis_->pose_to_lcm_from_list(91004, camera_pose_T);  
-  pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime_, current_utime_);  
-  
-  pc_vis_->pointcloud2_to_lcm(*cloud4,"RANGE_IMAGE_POINTS",current_utime_);
-  
-}
 
-  // c. publish in Depth Image mode:
-  int n_bytes=2; // 2 bytes per value // different from before in driver
-  int isize = n_bytes*width_*height_;
-  disparity_.utime =img_.utime;
-  disparity_.width = width_;
-  disparity_.height = height_;
-  disparity_.pixelformat =bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32; //PIXEL_FORMAT_GRAY;
-  disparity_.nmetadata =0;
-  disparity_.row_stride=n_bytes*width_;
-  disparity_.size =isize;
-  disparity_.data.resize(isize);
-  for (size_t i=0; i < width_*height_; i++){
-    // convert to MM - the same as kinect mm openni format
-    disparity_data_[i] = (uint16_t) 1000* 1/(depth_buf_[i]); // need 1/depth for now until Matt fixes this
+    for (int v = 0; v < camera_params_.height ; v=v+decimate) { // rows t2b //height
+      for (int u = 0; u < camera_params_.width; u=u+decimate) { // cols l2r
+        pcl::PointXYZRGB pt;
+        int pixel = v*camera_params_.width +u;
+        pt.z = 1/ depth_buf_[pixel]; /// inversion currently required due to Matt's interperation of depth as 1/depth ;)
+        pt.x = ( pt.z * (u  - camera_params_.cx ))/  camera_params_.fx ;
+        pt.y = ( pt.z * (v  - camera_params_.cy ))/  camera_params_.fy ;
+        if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_RGB){
+          pt.r = (float) img_.data[pixel*3];
+          pt.g = (float) img_.data[pixel*3+1];
+          pt.b = (float) img_.data[pixel*3+2];
+        }else if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_GRAY){
+          pt.r = (float) img_.data[pixel];
+          pt.g = (float) img_.data[pixel];
+          pt.b = (float) img_.data[pixel];
+        }
+
+        if (mask_init_){ // if we have a mask color the points by it
+          if (mask_buf[pixel] > 0){ // if the mask is not 0 (black), apply it as red
+            pt.r = 255;
+            pt.g = 0;
+            pt.b = 0;
+          }
+        }
+
+        cloud4->points.push_back(pt);
+      }
+    }
+    cloud4->width = cloud4->points.size();
+    cloud4->height =1;
+    Isometry3dTime camera_pose_T = Isometry3dTime(current_utime_, camera_pose_);
+    pc_vis_->pose_to_lcm_from_list(91004, camera_pose_T);  
+    pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime_, current_utime_);  
+    pc_vis_->pointcloud2_to_lcm(*cloud4,"RANGE_IMAGE_POINTS",current_utime_);
   }
-  memcpy(&disparity_.data[0], disparity_data_, isize);
   
-  multisense::images_t images;
-  images.utime = img_.utime;
-  images.n_images =2;
-  images.image_types.push_back( 0 ); // multisense::images_t::LEFT ); for some reason enums won't work
-  images.image_types.push_back( 4 ); // multisense::images_t::DEPTH_MM );
-  images.images.push_back( img_ );
-  images.images.push_back(disparity_);
-  lcm_->publish("LIDARSWEEP_LD", &images);
-  //lcm_->publish("MULTISENSE_LD", &images);        
+
+  if (publish_range_image){
+    std::cout << "Publishing Range image to LIDARSWEEP\n";
+    // c. publish in Depth Image mode:
+    int n_bytes=2; // 2 bytes per value // different from before in driver
+    int isize = n_bytes*camera_params_.width * camera_params_.height;
+    disparity_.utime =img_.utime;
+    disparity_.width = camera_params_.width;
+    disparity_.height = camera_params_.height;
+    disparity_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY; //PIXEL_FORMAT_GRAY;
+    disparity_.nmetadata =0;
+    disparity_.row_stride=n_bytes* camera_params_.width ;
+    disparity_.size =isize;
+    disparity_.data.resize(isize);
+    for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
+      // convert to MM - the same as kinect mm openni format
+      disparity_data_[i] = (uint16_t) 1000* 1/(depth_buf_[i]); // need 1/depth for now until Matt fixes this
+    }
+    memcpy(&disparity_.data[0], disparity_data_, isize);
+    
+    multisense::images_t images;
+    images.utime = img_.utime;
+    images.n_images =2;
+    images.image_types.push_back( 0 ); // multisense::images_t::LEFT ); for some reason enums won't work
+    images.image_types.push_back( 4 ); // multisense::images_t::DEPTH_MM );
+    images.images.push_back( img_ );
+    images.images.push_back(disparity_);
+    lcm_->publish("LIDARSWEEP", &images); 
+  }
 }
 
 
@@ -368,14 +366,31 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
                         const std::string& channel, const  bot_core::image_t* msg){
   counter_++;
   if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
-  if (width_ != msg->width){
-    cout << "incoming width " << msg->width << " doesn't match assumed width " << width_ << "\n";
+  if (camera_params_.width  != msg->width){
+    cout << "incoming width " << msg->width << " doesn't match assumed width " << camera_params_.width << "\n";
     cout << "returning cowardly\n";
     return;
   }
   img_= *msg;  
   current_utime_ = msg->utime;
+  queryNewSweep();
+}
 
+void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
+                        const std::string& channel, const  multisense::images_t* msg){
+  counter_++;
+  if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
+  if (camera_params_.width != msg->images[0].width){
+    cout << "incoming width " << msg->images[0].width << " doesn't match assumed width " << camera_params_.width << "\n";
+    cout << "returning cowardly\n";
+    return;
+  }
+  img_= msg->images[0];  
+  current_utime_ = msg->utime;
+  queryNewSweep();
+}
+  
+void Pass::queryNewSweep(){
   Eigen::Isometry3d head_to_local;
   botframes_cpp_->get_trans_with_utime( botframes_ , "head", "local"  , current_utime_, head_to_local);
 
@@ -387,12 +402,12 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
 
     // use the time and space bounds to get a new cloud
-    getSweepCloud(bounds);
-    sendSweepCloud();
+    //getSweepCloud(bounds);
+    //sendSweepCloud();
 
     // use the time and space bounds to get a new depth image
-    //getSweepDepthImage(bounds);
-    //sendSweepDepthImage();
+    getSweepDepthImage(bounds);
+    sendSweepDepthImage();
   }
 }
 
@@ -405,11 +420,12 @@ void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
 
 
 int main(int argc, char ** argv) {
-  string channel = "CAMERALEFT";
+  
+  string lidar_channel = "SCAN";
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(channel, "c", "channel","channel");
+  opt.add(lidar_channel, "l", "lidar_channel","lidar_channel");
   opt.parse();
-  std::cout << "channel: " << channel << "\n";    
+  std::cout << "lidar_channel: " << lidar_channel << "\n"; 
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -430,7 +446,7 @@ int main(int argc, char ** argv) {
   mapSpec.mResolution = 0.01;
   state.mActiveMapId = state.mCollector->getMapManager()->createMap(mapSpec);
   // start running wrapper
-  std::string laserChannel("SCAN");
+  std::string laserChannel( lidar_channel );
   state.mCollector->getDataReceiver()->
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
@@ -438,7 +454,7 @@ int main(int argc, char ** argv) {
   state.mCollector->start();  
   
   
-  Pass app(lcm, channel, &state);
+  Pass app(lcm, &state);
   cout << "Tool ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;

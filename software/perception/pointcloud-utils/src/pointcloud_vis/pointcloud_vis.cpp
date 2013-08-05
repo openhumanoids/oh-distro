@@ -416,8 +416,6 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
   //pcl::fromROSMsg (*msg, cloud);
   pcl::toROSMsg(cloud, senor_cloud);
   
-  cout <<"1\n";
-
   ptools_pointcloud2_t pc;
   pc.utime = cloud_utime;//(int64_t) floor(msg->header.stamp.toSec()  * 1E6);
   pc.seq =0;
@@ -425,14 +423,8 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
   pc.is_bigendian=0;
   pc.height = senor_cloud.height;
   pc.width = senor_cloud.width;
-  
-  cout << senor_cloud.height << " and " << senor_cloud.width << "\n";
-  cout <<"2\n";
-
-  cout <<"2\n";
   pc.data_nbytes = (int) senor_cloud.data.size();
   uint8_t* raw_data = new uint8_t [ pc.data_nbytes];
-  
   
   pc.nfields = senor_cloud.fields.size();
   ptools_pointfield_t* fields = new ptools_pointfield_t[pc.nfields];
@@ -454,14 +446,6 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
   pc.data_nbytes = 0;
   pc.data = NULL;
   */
-  cout <<"3\n";
-
-  
-  cout <<"4\n";
-  
-  
-  cout <<"5\n";
-
   ptools_pointcloud2_t_publish(publish_lcm_, channel.c_str() ,&pc);
 //  delete[] raw_data;
 

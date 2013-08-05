@@ -11,7 +11,7 @@ using namespace std;
 
 /////////////////////////////////////
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_):lcm_(lcm_){
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_):lcm_(lcm_), standalone_head_(standalone_head_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
   lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
@@ -25,6 +25,12 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
   head_joints_.effort = msg->joint_effort;
+  
+  if (standalone_head_){
+    drc::force_torque_t force_torque_msg;
+    publishRobotState(msg->utime, force_torque_msg);
+  }
+  
 }
 
 void state_sync::sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg){
@@ -87,7 +93,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   // Limb Sensor states
   robot_state_msg.force_torque = force_torque_msg;
   
-  lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
 }
 
 void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
@@ -103,18 +109,18 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
 
 int
 main(int argc, char ** argv){
-  bool labels = false;
+  bool standalone_head = false;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(labels, "l", "labels","Frame Labels - show no not");
+  opt.add(standalone_head, "l", "standalone_head","Standalone Head");
   opt.parse();
   
-  std::cout << "labels: " << labels << "\n";
+  std::cout << "standalone_head: " << standalone_head << "\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
     return 1;  
   
-  state_sync app(lcm);
+  state_sync app(lcm, standalone_head);
   while(0 == lcm->handle());
   return 0;
 }

@@ -5,6 +5,6 @@ project(local_map)
 
 add_executable(drc-motion-estimate-imu-ypr-only imu_to_pose.cpp  )
 pods_use_pkg_config_packages(drc-motion-estimate-imu-ypr-only
-	lcmtypes_drc_lcmtypes)
+	lcmtypes_drc_lcmtypes eigen3)
 
 pods_install_executables(drc-motion-estimate-imu-ypr-only )

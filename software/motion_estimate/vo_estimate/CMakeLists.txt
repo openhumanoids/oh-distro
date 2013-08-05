@@ -16,4 +16,4 @@ add_subdirectory(src/fovision)
 
 add_subdirectory(src/registeration)
 
-#add_subdirectory(src/motion_estimate_ypr_only)
+add_subdirectory(src/motion_estimate_ypr_only)

@@ -6,12 +6,15 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include <lcmtypes/microstrain_comm.hpp>
 #include <ConciseArgs>
 
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+
+
 using namespace std;
-using namespace drc;
+using namespace Eigen;
 
 
 class Pass{
@@ -40,16 +43,43 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
 
 
 void Pass::insHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  microstrain::ins_t* msg){
-    bot_core::pose_t pose_msg;
-    pose_msg.utime = msg->utime;
-    pose_msg.pos[0] = 0;
-    pose_msg.pos[1] = 0;
-    pose_msg.pos[2] = 0;
-    pose_msg.orientation[0] = msg->quat[0];
-    pose_msg.orientation[1] = msg->quat[1];
-    pose_msg.orientation[2] = msg->quat[2];
-    pose_msg.orientation[3] = msg->quat[3];
-    lcm_->publish("POSE_HEAD", &pose_msg); 
+  Eigen::Quaterniond meas_rot(msg->quat[0],msg->quat[1],msg->quat[2],msg->quat[3]);
+  Eigen::Matrix3d meas_rotation(meas_rot);
+
+  // rotate coordinate frame so that look vector is +X, and up is +Z
+  Eigen::Matrix3d M;
+  M <<  -1, 0,  0,
+         0, 1,  0,
+         0, 0, -1;    
+
+  // which is equivalent to:
+  /*
+  double rpy[] = {M_PI, 0,M_PI};
+  double q[4],rot[9];
+  roll_pitch_yaw_to_quat (rpy,q);
+  quat_to_matrix(q,rot);
+  M << rot[0], rot[1], rot[2],
+       rot[3], rot[4], rot[5],
+       rot[6], rot[7], rot[8];
+
+  cout << rot[0] << " " << rot[1] << " "<< rot[2] << "\n";
+  cout << rot[3] << " "<< rot[4] << " "<< rot[5] << "\n";
+  cout << rot[6] << " "<< rot[7] << " "<< rot[8] << "\n";
+  */
+
+  meas_rotation= M * meas_rotation;
+  Eigen::Quaterniond rotation = Eigen::Quaterniond( meas_rotation * M.transpose() );
+
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = msg->utime;
+  pose_msg.pos[0] =0;
+  pose_msg.pos[1] =0;
+  pose_msg.pos[2] =1;
+  pose_msg.orientation[0] = rotation.w();
+  pose_msg.orientation[1] = rotation.x();
+  pose_msg.orientation[2] = rotation.y();
+  pose_msg.orientation[3] = rotation.z();
+  lcm_->publish("POSE_HEAD", &pose_msg); 
 }
 
 
