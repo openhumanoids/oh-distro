@@ -265,15 +265,14 @@ Laser::Laser(Channel* driver,
     // Query calibration from sensor
     Status cal_status = driver->getLidarCalibration(lidar_cal_);
 
-    KDL::Frame cal = makeFrame(lidar_cal_.cameraToSpindleFixed);
-
-    // + further down
-    // + further left
-    // + further forward
-    KDL::Frame mfallon_adjust = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( -0.06, 0.0, -0.008));  
-
-//    cal = cal*mfallon_adjust;
-    makeCRLFrame(cal, lidar_cal_);
+    // Manual addjustment of calibration by mfallon: (july 2013):
+    // KDL::Frame cal = makeFrame(lidar_cal_.cameraToSpindleFixed);
+    //// + further down
+    //// + further left
+    //// + further forward
+    // KDL::Frame mfallon_adjust = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( -0.06, 0.0, -0.008));  
+    // cal = cal*mfallon_adjust;
+    // makeCRLFrame(cal, lidar_cal_);
 
     if (Status_Ok != cal_status)
         ROS_WARN("could not query lidar calibration, using URDF defaults");

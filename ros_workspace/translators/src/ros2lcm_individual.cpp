@@ -290,7 +290,6 @@ void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
 
 /// Locally cache the joint states:
 void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
-  ROS_ERROR("HEAD JS");
   
   multisense::state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -308,7 +307,6 @@ void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   
 }
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
-  ROS_ERROR("LHAND JS");
   
   drc::sandia_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -325,7 +323,6 @@ void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   received_l_hand_joint_states_ = true;
 }
 void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
-  ROS_ERROR("RHAND JS");
 
   drc::sandia_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -347,8 +344,6 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
     std::cout << "J ST " << js_counter << "\n";
   }  
   js_counter++;
-  
-  ROS_ERROR("JS JS");
   
   drc::atlas_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec  

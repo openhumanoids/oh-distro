@@ -57,10 +57,12 @@ App::App(bool get_left_and_right_, bool get_left_and_disparity_):
   ROS_INFO("Initializing multisense_subscribe");
   real_head_scan_sub_ = node_.subscribe(string("/laser/scan"), 10, &App::real_head_scan_cb,this);
   if (get_left_and_right_){
-    left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_rect_color"), 10, &App::left_image_cb,this);
-    right_image_sub_ = node_.subscribe(string("/multisense_sl/right/image_rect_color"), 10, &App::right_image_cb,this);
+    // NB: only two grays available..
+    left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_rect"), 10, &App::left_image_cb,this);
+    right_image_sub_ = node_.subscribe(string("/multisense_sl/right/image_rect"), 10, &App::right_image_cb,this);
   }
   if (get_left_and_disparity_){
+    // left color and disparity:
     left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_rect_color"), 10, &App::left_image_cb,this);
     disparity_image_sub_ = node_.subscribe(string("/multisense_sl/depth"), 10, &App::disparity_image_cb,this);
   }

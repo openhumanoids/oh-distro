@@ -40,9 +40,11 @@
 
 #include <MultiSenseChannel.hh>
 
+//// LCM:
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <lcm/lcm-cpp.hpp>
+#include <zlib.h>
 
 namespace multisense_ros {
 
@@ -213,8 +215,18 @@ private:
     multisense::images_t multisense_msg_out_;
     bot_core::image_t lcm_disp_;
     bot_core::image_t lcm_left_;
+    bot_core::image_t lcm_right_;
     int64_t lcm_disp_frame_id_;
     int64_t lcm_left_frame_id_;
+    int64_t lcm_right_frame_id_;
+    
+    bool do_jpeg_compress_;
+    int jpeg_quality_;
+    bool do_zlib_compress_;
+    int depth_compress_buf_size_;
+    uint8_t* depth_compress_buf_;
+    
+    
   
 };
 
