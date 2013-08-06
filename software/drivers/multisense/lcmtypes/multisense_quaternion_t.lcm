@@ -1,0 +1,9 @@
+package multisense;
+
+struct quaternion_t
+{
+ double x;
+ double y;
+ double z;
+ double w;
+}

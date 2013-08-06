@@ -1,0 +1,23 @@
+package multisense;
+
+// simple array of images
+// introduced to support Multisense SL disparity data
+// this message is now integrated into libbot
+// and should be sync'ed there
+
+struct images_t
+{
+  int64_t  utime;
+
+  int32_t  n_images;
+  int16_t image_types[n_images];     
+  bot_core.image_t  images[n_images];
+ 
+  const int16_t LEFT=0;
+  const int16_t RIGHT=1;
+  const int16_t DISPARITY=2;         // 16bit as in the multisense
+  const int16_t MASK_ZIPPED=3;       // gray scale mask of left image, zipped with zlib
+  const int16_t DEPTH_MM=4;          // values this is similar to the OpenNI format
+  const int16_t DISPARITY_ZIPPED=5;  // 16bit as in the multisense, zipped with zlib 
+  
+}

@@ -1,0 +1,12 @@
+package multisense;
+
+struct pointcloud_t
+{
+   int64_t utime;
+   int32_t num_points;
+   float x[num_points];
+   float y[num_points];
+   float z[num_points];
+   int32_t intensity[num_points];
+}
+

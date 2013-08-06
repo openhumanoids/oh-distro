@@ -1,0 +1,13 @@
+package multisense;
+
+// Simple Message for Multisense's Hokuyo Joint angle
+// Matches ROS's sensor_msgs/JointState
+
+struct joint_t
+{
+  int64_t  utime;
+  string name; // typically "hokuyo_joint"
+  float position;
+  float velocity;
+  float effort;     
+}

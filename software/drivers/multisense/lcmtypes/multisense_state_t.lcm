@@ -1,0 +1,14 @@
+package multisense;
+
+struct state_t
+{
+  int64_t  utime;
+  //  string name; // typically "hokuyo_joint" - update removed
+  
+  int16_t num_joints;
+  string joint_name[num_joints];
+  float joint_position[num_joints];
+  float joint_velocity[num_joints];
+  float joint_effort[num_joints];
+
+}

@@ -1,0 +1,13 @@
+package multisense;
+
+// Only used for one datas data collection - remove after spring 2013
+// mfallon
+
+struct images_old_t
+{
+  int64_t  utime;
+
+  int32_t  n_images;
+  bot_core.image_t  images[n_images];
+ 
+}
