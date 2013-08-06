@@ -1,6 +1,6 @@
 classdef EndEffector 
   methods
-    function obj = EndEffector(r,robot_name,body_id,xyz_offset,channel_name)
+    function obj = EndEffector(r,robot_name,body_id,xyz_offset,channel_name,include_rot)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       typecheck(robot_name,'char');
       typecheck(body_id,'char');
@@ -10,12 +10,17 @@ classdef EndEffector
         xyz_offset = zeros(3,1);
       end
       
+      if nargin > 5
+        obj.include_rot = include_rot;
+	  else
+		obj.include_rot = false;      
+      end
+      
       obj.manip = r;
       obj.body_id = body_id;
-      obj.body_index = find(~cellfun(@isempty,strfind(r.getLinkNames(),body_id)));
+      obj.body_index = r.findLinkInd(body_id);
       obj.xyz_offset = xyz_offset;
-
-
+      
       coder = drc.control.EndEffectorGoalCoder(robot_name,body_id);
       obj.frame = LCMCoordinateFrameWCoder(strcat(body_id,'_end_effector_goal'),7,'x',JLCMCoder(coder));
       ee_names = cell(4,1);
@@ -38,7 +43,7 @@ classdef EndEffector
     
     function [x,J] = doKin(obj,q)
       kinsol = doKinematics(obj.manip,q); 
-      [x,J] = forwardKin(obj.manip,kinsol,obj.body_index,obj.xyz_offset);
+      [x,J] = forwardKin(obj.manip,kinsol,obj.body_index,obj.xyz_offset,obj.include_rot);
     end
     
     function obj = setMask(obj,mask)
@@ -66,6 +71,7 @@ classdef EndEffector
     body_id
     body_index
     xyz_offset
+    include_rot
     P_mask % used to select controllable subsets of joints
     gain = 0.75;
     normbound = 1.0;

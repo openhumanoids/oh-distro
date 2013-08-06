@@ -42,10 +42,12 @@ classdef StateCorruptionBlock < DrakeSystem
           % check that noise models are known
           if (isa(options.noise_model(i).type,'cell'))
             for j=1:length(options.noise_model(i).type)
-              assert(any(strcmp(options.noise_model(i).type{j},{'white_noise','gauss_markov','ramp'})));
+              assert(any(strcmp(options.noise_model(i).type{j},{'white_noise', ...
+                'gauss_markov','ramp_bias','fixed_bias','motion_bias'})));
             end
           else
-            assert(any(strcmp(options.noise_model(i).type,{'white_noise','gauss_markov','ramp'})));
+            assert(any(strcmp(options.noise_model(i).type,{'white_noise', ...
+              'gauss_markov','ramp_bias','fixed_bias','motion_bias'})));
             % convert to cell for consistency below
             options.noise_model(i).type = {options.noise_model(i).type};
           end
@@ -70,10 +72,23 @@ classdef StateCorruptionBlock < DrakeSystem
       obj.robot = robot;
     end
     
-    function pert = ramp(obj,t,dim,rate)
+    function pert = ramp_bias(obj,t,dim,rate)
       pert = rate*t*ones(dim,1);
     end
-    
+
+    function pert = motion_bias(obj,x,ind,bias)
+      % hack to get something like backlash error--not at all ideal
+      % (doesn't take joint loading into account, purely velocity based)
+      nq = getNumDOF(obj.robot);
+      qd = x(nq+(1:nq));
+      qdi = qd(ind);
+      db = 0.05; % linear bias scaling range
+      pert = zeros(length(ind),1);
+      pert(qdi<=-db) = -bias;
+      pert(qdi>=db) = bias;
+      pert(qdi<db & qdi>-db) = bias/db.*qdi(qdi<db & qdi>-db);
+    end
+
     function pert = gauss_markov(obj,prev,std)
       pert = prev + std*randn(length(prev),1); 
     end
@@ -94,8 +109,12 @@ classdef StateCorruptionBlock < DrakeSystem
       for i=1:length(obj.noise_model)
         dim = length(obj.noise_model(i).ind);
         for j=1:length(obj.noise_model(i).type)
-          if strcmp(obj.noise_model(i).type{j},'ramp')
-            pert = ramp(obj,t,dim,obj.noise_model(i).params{j}.rate);
+          if strcmp(obj.noise_model(i).type{j},'ramp_bias')
+            pert = ramp_bias(obj,t,dim,obj.noise_model(i).params{j}.rate);
+          elseif strcmp(obj.noise_model(i).type{j},'fixed_bias')
+            pert = obj.noise_model(i).params{j}.bias;
+          elseif strcmp(obj.noise_model(i).type{j},'motion_bias')
+            pert = motion_bias(obj,u,obj.noise_model(i).ind,obj.noise_model(i).params{j}.bias);
           elseif strcmp(obj.noise_model(i).type{j},'white_noise')
             pert = white_noise(obj,dim,obj.noise_model(i).params{j}.std);
           elseif strcmp(obj.noise_model(i).type{j},'gauss_markov')

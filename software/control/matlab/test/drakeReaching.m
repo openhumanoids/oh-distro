@@ -48,15 +48,18 @@ foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'f
   
 % generate manip plan
 rhand_ind = findLinkInd(r,'r_hand');
+%rhand_ee = EndEffector(r,'atlas',rhand_ind,[0;0;0],'RHAND_OBS',false);
 lhand_ind = findLinkInd(r,'l_hand');
-rfoot_ind = findLinkInd(r,'r_foot');
-lfoot_ind = findLinkInd(r,'l_foot');
-rfoot_pos = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
-lfoot_pos = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
+%lhand_ee = EndEffector(r,'atlas',lhand_ind,[0;0;0],'LHAND_OBS',false);
 rhand_pos = forwardKin(r,kinsol,rhand_ind,[0;0;0],1);
 lhand_pos = forwardKin(r,kinsol,lhand_ind,[0;0;0],1);
 rhand_goal = rhand_pos(1:3) + [0.1+0.1*rand(); 0.05*randn(); 0.1+0.5*rand()];
 lhand_goal = lhand_pos(1:3) + [0.1+0.1*rand(); 0.05*randn(); 0.1+0.5*rand()];
+
+rfoot_ind = findLinkInd(r,'r_foot');
+lfoot_ind = findLinkInd(r,'l_foot');
+rfoot_pos = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
+lfoot_pos = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
 
 cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
@@ -128,31 +131,49 @@ else
   options.delay_steps = 1;
 end
 options.use_input_frame = true;
-
 % cascade qp controller with delay block
 delayblk = DelayBlock(r,options);
 sys = cascade(qp,delayblk);
 
+if noisy
+  options.deadband = 0.01 * r.umax; 
+else
+  options.deadband = 0;
+end
+% cascade qp controller with deadband block
+dblk = DeadbandBlock(r,options);
+sys = cascade(sys,dblk);
+
 options.noise_model = struct();
 % position noise on upper body joints
 joint_names = r.getStateFrame.coordinates(1:nq);
+arm_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')));
 upper_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')) | ...
     ~cellfun(@isempty,strfind(joint_names,'back')) | ...
     ~cellfun(@isempty,strfind(joint_names,'neck')));
 options.noise_model(1).ind = upper_joints'; 
-options.noise_model(1).type = 'gauss_markov';
+options.noise_model(1).type = 'white_noise';
+options.noise_model(2).ind = arm_joints'; 
+options.noise_model(2).type = 'fixed_bias';
+options.noise_model(3).ind = arm_joints'; 
+options.noise_model(3).type = 'motion_bias';
 if noisy
-  options.noise_model(1).params = struct('std',0.0005);
+  options.noise_model(1).params = struct('std',0.001);
+  options.noise_model(2).params = struct('bias',0);
+%   options.noise_model(2).params = struct('bias',0.0001*randn(length(arm_joints),1));
+  options.noise_model(3).params = struct('bias',0.02);
 else
   options.noise_model(1).params = struct('std',0);
+  options.noise_model(2).params = struct('bias',0);
+  options.noise_model(3).params = struct('bias',0);
 end
 % velocity noise
-options.noise_model(2).ind = (nq+upper_joints)';
-options.noise_model(2).type = 'white_noise';
+options.noise_model(4).ind = (nq+upper_joints)';
+options.noise_model(4).type = 'white_noise';
 if noisy
-  options.noise_model(2).params = struct('std',0.005);
+  options.noise_model(4).params = struct('std',0.005);
 else
-  options.noise_model(2).params = struct('std',0);
+  options.noise_model(4).params = struct('std',0);
 end
 % cascade robot with noise block
 noiseblk = StateCorruptionBlock(r,options);
@@ -201,7 +222,7 @@ lhand_err = norm(lhand_goal-lhand_pos)
 
 playback(v,traj,struct('slider',true));
 
-if rhand_err > 0.02 || lhand_err > 0.02
+if rhand_err > 0.03 || lhand_err > 0.03
   error('drakeReaching unit test failed: end effector steady state error too large.');
 end
 end
