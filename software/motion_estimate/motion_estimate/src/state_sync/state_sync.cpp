@@ -93,7 +93,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   // Limb Sensor states
   robot_state_msg.force_torque = force_torque_msg;
   
-  lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+  lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
 }
 
 void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
