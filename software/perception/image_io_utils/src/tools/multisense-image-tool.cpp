@@ -168,6 +168,8 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     lcm_->publish(camera_out_.c_str(), &msg->images[0]);
     lcm_->publish( "SECOND_IMAGE" , &msg->images[1]); // TODO add paramater for name
   }
+
+  return;
   
   // Only process the point cloud occasionally:
   counter_++;
@@ -253,7 +255,7 @@ void image_tool::maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 
 int main(int argc, char ** argv) {
   ConciseArgs parser(argc, argv, "registeration-app");
-  string camera_in="MULTISENSE_LD";
+  string camera_in="CAMERA";
   string camera_out="CAMERALEFT";
   bool output_pointcloud=false; // to LCM viewer
   bool output_images=false;

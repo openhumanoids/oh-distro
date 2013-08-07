@@ -67,7 +67,10 @@ class pointcloud_lcm {
     
     // Multisense Compress:
     mutable std::vector<float> disparity_buf_;
-    mutable std::vector<cv::Vec3f> points_buf_;    
+    mutable std::vector<cv::Vec3f> points_buf_;  
+
+
+    uint8_t* rgb_buf_ ;
 };
 
 

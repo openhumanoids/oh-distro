@@ -443,7 +443,7 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
   if (right_img_.empty() || right_img_.rows != h || right_img_.cols != w)
       right_img_.create(h, w, CV_8UC1);
 
-  imgutils_->decodeStereoImage(msg, left_img_.data, right_img_.data);
+  imgutils_->decodeStereoImageToGray(msg, left_img_.data, right_img_.data);
   //memcpy(left_img_.data,  msg->data.data() , msg->size/2);
   //memcpy(right_img_.data,  msg->data.data() + msg->size/2 , msg->size/2);
 

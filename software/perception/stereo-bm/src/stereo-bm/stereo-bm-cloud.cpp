@@ -138,7 +138,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (right_img.empty() || right_img.rows != h || right_img.cols != w)
         right_img.create(h, w, CV_8UC1);
 
-  imgutils_->decodeStereoImage(msg, left_img.data, right_img.data);
+  imgutils_->decodeStereoImageToGray(msg, left_img.data, right_img.data);
   
   stereob_->doStereoB(left_img, right_img);
   //stereob_->sendRangeImage(msg->utime);

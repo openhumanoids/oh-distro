@@ -34,6 +34,10 @@ pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
   memcpy(kcal->depth_to_rgb_translation, depth_to_rgb_translation  , 3*sizeof(double));  
 
 
+  // Data buffer
+  rgb_buf_ = (uint8_t*) malloc(10*1024 * 1024 * sizeof(uint8_t)); 
+
+
   decimate_ =32.0;
 }
 
@@ -375,14 +379,22 @@ void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   bool is_rgb=false;
   if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
+    rgb_buf_ = msg->images[0].data;
     is_rgb = true;
   }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY ){
+    rgb_buf_ = msg->images[0].data;
     is_rgb = false;
+  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG ){
+    jpeg_decompress_8u_rgb (msg->images[0].data, msg->images[0].size,
+        rgb_buf_, msg->images[0].width, msg->images[0].height, msg->images[0].width* 3);
+    //jpegijg_decompress_8u_rgb(msg->image.image_data, msg->image.image_data_nbytes,
+    //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
+    is_rgb = true;
   }else{
     std::cout << "pointcloud_lcm::unpack_multisense | type not understood\n";
     exit(-1);
   }
-  unpack_multisense(msg->images[1].data, msg->images[0].data, msg->images[0].height, msg->images[0].width, repro_matrix, 
+  unpack_multisense(msg->images[1].data, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
                                        cloud, is_rgb);
 }
 
@@ -391,9 +403,17 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   bool is_rgb=true;
   if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
+    rgb_buf_ = (uint8_t*) msg->images[0].data.data();
     is_rgb = true;
   }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY ){
+    rgb_buf_ = (uint8_t*) msg->images[0].data.data();
     is_rgb = false;
+  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG ){
+    jpeg_decompress_8u_rgb ( msg->images[0].data.data(), msg->images[0].size,
+        rgb_buf_, msg->images[0].width, msg->images[0].height, msg->images[0].width* 3);
+    //jpegijg_decompress_8u_rgb(msg->image.image_data, msg->image.image_data_nbytes,
+    //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
+    is_rgb = true;
   }else{
     std::cout << "pointcloud_lcm::unpack_multisense | type not understood\n";
     exit(-1);

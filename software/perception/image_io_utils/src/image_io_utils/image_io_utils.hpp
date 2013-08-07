@@ -14,7 +14,8 @@ class image_io_utils {
   public:
     image_io_utils (lcm_t* publish_lcm_, int width_, int height_);
     
-    void decodeStereoImage(const  bot_core::image_t* msg, uint8_t* left_buf, uint8_t* right_buf);
+    void decodeStereoImageToGray(const  bot_core::image_t* msg, uint8_t* left_buf, uint8_t* right_buf);
+    void decodeImageToGray(const  bot_core::image_t* msg, uint8_t* img_buf);
     
     void unzipImageThenSend(const bot_core_image_t *msg, std::string channel);
     void unzipImageThenSend(const bot_core::image_t *msg, std::string channel);
@@ -36,8 +37,8 @@ class image_io_utils {
     lcm_t *publish_lcm_; 
     int width_, height_;
 
-    int img_buffer_size_;
-    uint8_t* img_buffer_;
+    int local_img_buffer_size_;
+    uint8_t* local_img_buffer_;
 };
 
 

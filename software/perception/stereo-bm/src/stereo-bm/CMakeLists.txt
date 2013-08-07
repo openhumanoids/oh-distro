@@ -32,9 +32,10 @@ pods_use_pkg_config_packages(drc-stereo-bm-cloud  stereo-bm  bot2-param-client
   opencv)
 pods_install_executables(drc-stereo-bm-cloud )
 
-add_executable (drc-stereo-bm-hd stereo-bm-hd.cpp )
-pods_use_pkg_config_packages(drc-stereo-bm-hd  stereo-bm
-  bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} pointcloud_lcm
-  image_io_utils
-  opencv)
-pods_install_executables(drc-stereo-bm-hd )
+# Depreciated process to do pixel time averaging, explored during vrc
+#add_executable (drc-stereo-bm-hd stereo-bm-hd.cpp )
+#pods_use_pkg_config_packages(drc-stereo-bm-hd  stereo-bm
+#  bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} pointcloud_lcm
+#  image_io_utils
+#  opencv)
+#pods_install_executables(drc-stereo-bm-hd )
