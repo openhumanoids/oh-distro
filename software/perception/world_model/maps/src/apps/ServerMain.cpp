@@ -56,34 +56,48 @@ struct StereoHandler {
                 const std::string& iCameraBaseName) {
     mBotWrapper = iBotWrapper;
     auto lcm = mBotWrapper->getLcm();
-    auto boostLcm = drc::PointerUtils::boostPtr(lcm);
-    mStereoMatcher.reset(new StereoB(boostLcm));
-    mStereoMatcher->setScale(1.0);
     mLatestImage.size = 0;
 
-    std::string cameraName = iCameraBaseName + "LEFT";
+    std::string cameraName = iCameraBaseName + "_LEFT";
     mCamTrans = bot_param_get_new_camtrans
       (mBotWrapper->getBotParam(), cameraName.c_str());
-    double k00 = bot_camtrans_get_focal_length_x(mCamTrans);
-    double k11 = bot_camtrans_get_focal_length_y(mCamTrans);
-    double k01 = bot_camtrans_get_skew(mCamTrans);
-    double k02 = bot_camtrans_get_principal_x(mCamTrans);
-    double k12 = bot_camtrans_get_principal_y(mCamTrans);
-    mCalibMatrix << k00,k01,k02, 0,k11,k12, 0,0,1;
-    std::string key("cameras.");
-    key += (cameraName + ".coord_frame");
-    char* val = NULL;
-    if (bot_param_get_str(mBotWrapper->getBotParam(),key.c_str(),&val) == 0) {
-      mCameraFrame = val;
-      free(val);
+    if (mCamTrans != NULL) {
+      double k00 = bot_camtrans_get_focal_length_x(mCamTrans);
+      double k11 = bot_camtrans_get_focal_length_y(mCamTrans);
+      double k01 = bot_camtrans_get_skew(mCamTrans);
+      double k02 = bot_camtrans_get_principal_x(mCamTrans);
+      double k12 = bot_camtrans_get_principal_y(mCamTrans);
+      mCalibMatrix << k00,k01,k02, 0,k11,k12, 0,0,1;
+      std::string key("cameras.");
+      key += (cameraName + ".coord_frame");
+      char* val = NULL;
+      if (bot_param_get_str(mBotWrapper->getBotParam(),key.c_str(),&val) == 0) {
+        mCameraFrame = val;
+        free(val);
+      }
+
+      // baseline
+      Eigen::Isometry3f rightToLeft;
+      double baseline = 0.04;
+      if (mBotWrapper->getTransform(iCameraBaseName+"_RIGHT",
+                                    iCameraBaseName+"_LEFT", rightToLeft)) {
+        baseline = rightToLeft.translation().norm();
+      }
+      mDisparityFactor = 1/k00/baseline;
+
+      lcm->subscribe(iCameraBaseName, &StereoHandler::onImage, this);
+
+      auto boostLcm = drc::PointerUtils::boostPtr(lcm);
+      mStereoMatcher.reset(new StereoB(boostLcm));
+      mStereoMatcher->setScale(1.0);
+
+      std::cout << "successfully set up stereo camera " <<
+        iCameraBaseName << std::endl;
     }
-
-    // TODO: can derive the 7cm baseline from camera config
-    double baseline = 0.04;
-    if (iCameraBaseName == "CAMERA") baseline = 0.07;
-    mDisparityFactor = 1/k00/baseline;
-
-    lcm->subscribe(iCameraBaseName, &StereoHandler::onImage, this);
+    if (mCamTrans == NULL) {
+      std::cout << "error: could not set up stereo camera " <<
+        iCameraBaseName << std::endl;
+    }
   }
 
   ~StereoHandler() {
@@ -260,13 +274,19 @@ struct ViewWorker {
         DepthImageView::Ptr view;
         switch (mRequest.view_id) {
         case drc::data_request_t::STEREO_MAP_HEAD:
-          view = mStereoHandlerHead->getDepthImageView(spec.mClipPlanes);
+          if (mStereoHandlerHead != NULL) {
+            view = mStereoHandlerHead->getDepthImageView(spec.mClipPlanes);
+          }
           break;
         case drc::data_request_t::STEREO_MAP_LHAND:
-          view = mStereoHandlerLeft->getDepthImageView(spec.mClipPlanes);
+          if (mStereoHandlerLeft != NULL) {
+            view = mStereoHandlerLeft->getDepthImageView(spec.mClipPlanes);
+          }
           break;
         case drc::data_request_t::STEREO_MAP_RHAND:
-          view = mStereoHandlerRight->getDepthImageView(spec.mClipPlanes);
+          if (mStereoHandlerRight != NULL) {
+            view = mStereoHandlerRight->getDepthImageView(spec.mClipPlanes);
+          }
           break;
         default: break;
         }
@@ -283,6 +303,9 @@ struct ViewWorker {
           std::cout << "Sent stereo image on " << chan << " at " <<
             msg.blob.num_bytes << " bytes (view " << view->getId() <<
             ")" << std::endl;
+        }
+        else {
+          std::cout << "Could not send stereo image" << std::endl;
         }
       }
 
@@ -439,8 +462,11 @@ public:
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mStereoHandlerHead.reset(new StereoHandler(mBotWrapper, "CAMERA"));
-    mStereoHandlerLeft.reset(new StereoHandler(mBotWrapper, "CAMERA_LHAND"));
-    mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERA_RHAND"));
+    if (mStereoHandlerHead->mCamTrans == NULL) mStereoHandlerHead.reset();
+    mStereoHandlerLeft.reset(new StereoHandler(mBotWrapper, "CAMERALHAND"));
+    if (mStereoHandlerLeft->mCamTrans == NULL) mStereoHandlerLeft.reset();
+    mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERARHAND"));
+    if (mStereoHandlerRight->mCamTrans == NULL) mStereoHandlerRight.reset();
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;

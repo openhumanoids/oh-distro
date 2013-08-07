@@ -26,7 +26,11 @@ struct CameraParams {
 
     int width, height;
     float fx, fy, cx, cy, k1, k2, k3, p1, p2;
-    CameraParams () {}
+    CameraParams () {
+        width = height = 0;
+        fx = fy = cx = cy = 0;
+        k1 = k2 = k3 = p1 = p2 = 0;
+    }
     cv::Mat_<double> getK() { 
         K = cv::Mat_<double>::zeros(3,3);
         K(0,0) = fx, K(1,1) = fy; 
@@ -92,31 +96,42 @@ StereoB::StereoB(boost::shared_ptr<lcm::LCM> &lcm_, std::string lcm_channel):
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
     vSCALE = .25f;// full scale 1.f; // key scaling parameter
 
-    std::string key_prefix_str = "cameras."+lcm_channel+".left";
+    std::string key_prefix_str = "cameras."+lcm_channel+"_LEFT.intrinsic_cal";
     left_camera_params.width = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
     left_camera_params.height = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
-    left_camera_params.fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
-    left_camera_params.fy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
-    left_camera_params.cx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
-    left_camera_params.cy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());
-    left_camera_params.k1 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k1").c_str());
-    left_camera_params.k2 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k2").c_str());
-    left_camera_params.k3 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k3").c_str());
-    left_camera_params.p1 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p1").c_str());
-    left_camera_params.p2 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p2").c_str());
+    double vals[10];
+    bot_param_get_double_array_or_fail(botparam_, (key_prefix_str+".pinhole").c_str(), vals, 5);
+    left_camera_params.fx = vals[0];
+    left_camera_params.fy = vals[1];
+    left_camera_params.cx = vals[3];
+    left_camera_params.cy = vals[4];
+    if (3 == bot_param_get_double_array(botparam_, (key_prefix_str+".distortion_k").c_str(), vals, 3)) {
+      left_camera_params.k1 = vals[0];
+      left_camera_params.k2 = vals[1];
+      left_camera_params.k3 = vals[2];
+    }
+    if (2 == bot_param_get_double_array(botparam_, (key_prefix_str+".distortion_p").c_str(), vals, 2)) {
+      left_camera_params.p1 = vals[0];
+      left_camera_params.p1 = vals[1];
+    }
 
-    key_prefix_str = "cameras."+lcm_channel+".right";
+    key_prefix_str = "cameras."+lcm_channel+"_RIGHT.intrinsic_cal";
     right_camera_params.width = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
     right_camera_params.height = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
-    right_camera_params.fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
-    right_camera_params.fy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
-    right_camera_params.cx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
-    right_camera_params.cy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());
-    right_camera_params.k1 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k1").c_str());
-    right_camera_params.k2 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k2").c_str());
-    right_camera_params.k3 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".k3").c_str());
-    right_camera_params.p1 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p1").c_str());
-    right_camera_params.p2 = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".p2").c_str());
+    bot_param_get_double_array_or_fail(botparam_, (key_prefix_str+".pinhole").c_str(), vals, 5);
+    right_camera_params.fx = vals[0];
+    right_camera_params.fy = vals[1];
+    right_camera_params.cx = vals[3];
+    right_camera_params.cy = vals[4];
+    if (3 == bot_param_get_double_array(botparam_, (key_prefix_str+".distortion_k").c_str(), vals, 3)) {
+      right_camera_params.k1 = vals[0];
+      right_camera_params.k2 = vals[1];
+      right_camera_params.k3 = vals[2];
+    }
+    if (2 == bot_param_get_double_array(botparam_, (key_prefix_str+".distortion_p").c_str(), vals, 2)) {
+      right_camera_params.p1 = vals[0];
+      right_camera_params.p1 = vals[1];
+    }
 }
 
 int  verbose_counter=0;
