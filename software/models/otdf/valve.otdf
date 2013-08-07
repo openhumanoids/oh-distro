@@ -1,0 +1,188 @@
+<?xml version="1.0" ?>
+<object name="valve">
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Size of the outer most bounding volume -->
+    <param name="radius" default_value="0.01" inc="0.0025" min="0" max="100" />
+    <param name="length" default_value="0.1" inc="0.0025" min="0" max="100" />
+    <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="base_link" />
+    <link name="valve_ring">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <mass value="1.0" />
+            <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.012" iyz="0" izz="0.024" />
+        </inertial>
+        <collision group="valve_post_left">
+            <origin rpy=" 1.570796 0 0" xyz="0.0 0.08 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </collision>
+        <visual name="valve_post_left">
+            <origin rpy=" 1.570796 0 0" xyz="0.0 0.08 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </visual>
+        <collision group="valve_post_right">
+            <origin rpy=" 1.570796 0 0" xyz="0.0 -0.08 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </collision>
+        <visual name="valve_post_right">
+            <origin rpy=" 1.570796 0 0" xyz="0.0 -0.08 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </visual>
+        <collision group="valve_post_middle">
+            <origin rpy="0 1.570796 0" xyz="-0.08 0.0 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </collision>
+        <visual name="valve_post_middle">
+            <origin rpy="0 1.570796 0" xyz="-0.08 0.0 0.0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </visual>
+        <collision group="collision00">
+            <origin rpy=" 0 1.570796 1.570796" xyz="0.150000 0.000000 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision00">
+            <origin rpy=" 0 1.570796 1.570796" xyz="0.150000 0.000000 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision01">
+            <origin rpy=" 0 1.570796 2.199115" xyz="0.121353 0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision01">
+            <origin rpy=" 0 1.570796 2.199115" xyz="0.121353 0.088168 0" />
+            <geometry>
+                <cylinder length="${length}"  radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision02">
+            <origin rpy=" 0 1.570796 2.827433" xyz="0.046353 0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision02">
+            <origin rpy=" 0 1.570796 2.827433" xyz="0.046353 0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision03">
+            <origin rpy=" 0 1.570796 3.455752" xyz="-0.046353 0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision03">
+            <origin rpy=" 0 1.570796 3.455752" xyz="-0.046353 0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision04">
+            <origin rpy=" 0 1.570796 4.084070" xyz="-0.121353 0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision04">
+            <origin rpy=" 0 1.570796 4.084070" xyz="-0.121353 0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision05">
+            <origin rpy=" 0 1.570796 4.712389" xyz="-0.150000 0.000000 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision05">
+            <origin rpy=" 0 1.570796 4.712389" xyz="-0.150000 0.000000 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision06">
+            <origin rpy=" 0 1.570796 5.340708" xyz="-0.121353 -0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision06">
+            <origin rpy=" 0 1.570796 5.340708" xyz="-0.121353 -0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision07">
+            <origin rpy=" 0 1.570796 5.969026" xyz="-0.046353 -0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision07">
+            <origin rpy=" 0 1.570796 5.969026" xyz="-0.046353 -0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision08">
+            <origin rpy=" 0 1.570796 6.597345" xyz="0.046353 -0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision08">
+            <origin rpy=" 0 1.570796 6.597345" xyz="0.046353 -0.142658 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+        <collision group="collision09">
+            <origin rpy=" 0 1.570796 7.225663" xyz="0.121353 -0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </collision>
+        <visual name="collision09">
+            <origin rpy=" 0 1.570796 7.225663" xyz="0.121353 -0.088168 0" />
+            <geometry>
+                <cylinder length="${length}" radius="${radius}" />
+            </geometry>
+        </visual>
+    </link>
+    <joint name="valve_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <axis xyz="-4.395184338701341E-7 0 1.3083368536045321" />
+        <limit effort="1" velocity="1" lower="-3.14" upper="3.14" />
+        <parent link="base_link" type="link" />
+        <child link="valve_ring" type="link" />
+    </joint>
+</object>
