@@ -537,7 +537,6 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
 
 
 void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
-  
   /*
     std::stringstream ss4;
     ss4 << "scan_pre_spindle_cal_\n" <<  scan_pre_spindle_cal_ ;
@@ -617,6 +616,7 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     // (2) sensed rotation 
     // (3) post-spindle-to-laser (from calibration)
     // + seem to require a unit rotation into our expected lidar frame
+    // NB: several variables in CRL's code are named wrongly
 
     double spindleAngleDouble = angles::normalize_angle(1e-6 * static_cast<double>(spindleAngle));
     double cosSpindleTheta = std::cos(spindleAngleDouble);
@@ -629,9 +629,38 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     T_spindleFromMotor.p[1]= 0;
     T_spindleFromMotor.p[2]= 0;
     T_spindleFromMotor.M = spindleFromMotor;
-
+    
+    bot_core::rigid_transform_t pre_to_post_frame;
+    pre_to_post_frame.utime = utime_out;
+    pre_to_post_frame.trans[0] = T_spindleFromMotor.p[0];
+    pre_to_post_frame.trans[1] = T_spindleFromMotor.p[1];
+    pre_to_post_frame.trans[2] = T_spindleFromMotor.p[2];
+    T_spindleFromMotor.M.GetQuaternion(pre_to_post_frame.quat[1], pre_to_post_frame.quat[2], pre_to_post_frame.quat[3], pre_to_post_frame.quat[0]);
+    lcm_publish_.publish("PRE_SPINDLE_TO_POST_SPINDLE", &pre_to_post_frame);
+    
+    // Print the calibration to screen if it needs to be updated:
+    /*
     KDL::Frame pre_spindle_T_pre_spindle_rot(KDL::Rotation::RPY(-M_PI/2, -M_PI/2, 0.0) );
     
+    std::stringstream ss4;
+    ss4 << "pc_post_spindle_cal_\n" <<  pc_post_spindle_cal_ ;
+    ROS_ERROR("%s", ss4.str().c_str() );
+    ROS_ERROR("%0.6f, %0.6f, %0.6f", pc_post_spindle_cal_.p[0], pc_post_spindle_cal_.p[1], pc_post_spindle_cal_.p[2] );
+    double quat[4];
+    pc_post_spindle_cal_.M.GetQuaternion(quat[1], quat[2], quat[3], quat[0]);
+    ROS_ERROR("%0.6f, %0.6f, %0.6f, %0.6f", quat[0], quat[1], quat[2], quat[3] );
+    
+    KDL::Frame post_spindle_to_laser = pc_pre_spindle_cal_ * pre_spindle_T_pre_spindle_rot    ;
+    std::stringstream ss5;
+    ss5 << "post_spindle_to_laser\n" <<  post_spindle_to_laser ;
+    ROS_ERROR("%s", ss5.str().c_str() );
+    ROS_ERROR("%0.6f, %0.6f, %0.6f", post_spindle_to_laser.p[0], post_spindle_to_laser.p[1], post_spindle_to_laser.p[2] );
+    double quat5[4];
+    post_spindle_to_laser.M.GetQuaternion(quat5[1], quat5[2], quat5[3], quat5[0]);
+    ROS_ERROR("%0.6f, %0.6f, %0.6f, %0.6f\n\n", quat5[0], quat5[1], quat5[2], quat5[3] );    
+    */
+  
+    /* Deprecated: camera to scan in one go:
     KDL::Frame cam_to_laser = pc_post_spindle_cal_ * T_spindleFromMotor * pc_pre_spindle_cal_
                                     * pre_spindle_T_pre_spindle_rot;
 
@@ -641,7 +670,9 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     cam_to_hokuyo_frame.trans[1] = cam_to_laser.p[1];
     cam_to_hokuyo_frame.trans[2] = cam_to_laser.p[2];
     cam_to_laser.M.GetQuaternion(cam_to_hokuyo_frame.quat[1], cam_to_hokuyo_frame.quat[2], cam_to_hokuyo_frame.quat[3], cam_to_hokuyo_frame.quat[0]);
-    lcm_publish_.publish("CAMERA_TO_SCAN", &cam_to_hokuyo_frame);
+    lcm_publish_.publish("CAMERA_TO_SCAN", &cam_to_hokuyo_frame); */
+
+    
 }
 
 void Laser::scanCallback(const lidar::Header&        header,
