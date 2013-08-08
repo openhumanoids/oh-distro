@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <path_util/path_util.h>
 
 
 // creates a new_logging file
@@ -291,12 +292,9 @@ void DistributedDiff::ParameterFileInit() {
 
 	FILE *fp;
 
-	char* pHome = getenv("HOME");
-	std::string home = std::string(pHome);
+	std::string weightsFile = std::string(getConfigPath()) + "/subsystems/legged_odometry/weights.txt";
 
-
-
-	if( (fp = fopen((home + "/drc/software/config/subsystems/legged_odometry/weights.txt").c_str(), "r+")) == NULL)
+	if( (fp = fopen(weightsFile.c_str(), "r+")) == NULL)
 	{
 		std::cout << "weights.txt not found in the current directory.\n";
 		exit(1);

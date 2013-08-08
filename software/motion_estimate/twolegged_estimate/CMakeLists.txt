@@ -18,7 +18,7 @@ lcmtypes_build()
 
 set(REQUIRED_PACKAGES urdf  kdl-parser forward-kinematics bot2-frames 
     model-client lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core
-    bot2-frames_cpp visualization libfovis lcmtypes_fovis-bot2)
+    bot2-frames_cpp visualization libfovis lcmtypes_fovis-bot2 path-util)
 set(SOURCE_FILES src/BotTransforms.cpp src/Filter.cpp src/HeavyLowPassFilter.cpp 
     src/SignalTap.cpp src/QuaternionLib.cpp src/InertialOdometry_Types.hpp 
     src/IMUCompensation.cpp src/OrientationComputer.cpp 
@@ -46,11 +46,4 @@ pods_use_pkg_config_packages(data-fusion-unittest ${REQUIRED_PACKAGES})
 
 #add_executable(testing_isometry src/Filter.cpp src/SignalTap.cpp src/QuaternionLib.cpp src/testing_isometry.cpp)
 #pods_use_pkg_config_packages(testing_isometry)
-
-
-
-
-
-
-
 
