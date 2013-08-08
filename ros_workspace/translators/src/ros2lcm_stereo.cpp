@@ -34,6 +34,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/multisense.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #define DO_TIMING_PROFILE false
@@ -42,7 +43,8 @@ using namespace std;
 int width =800;//1024; // hardcoded
 int height =800;//544; // hardcoded
 uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
-uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
+uint8_t* left_image_data = new uint8_t [3* width*height]; // 1 color scale image
+uint8_t* right_image_data = new uint8_t [3* width*height]; // 1 color scale image
 int jpeg_quality=90;
 // Estimated Rates at 90% compression and 5Hz
 // CAMERA 200KB x5Hz
@@ -71,7 +73,9 @@ private:
   void hand_fps_cb(const std_msgs::Float64ConstPtr& msg);  
   
   // Combined Stereo Image:
-  bot_core::image_t stereo_msg_out_;  
+  bot_core::image_t lcm_left_;
+  bot_core::image_t lcm_right_;
+  bot_core::image_t lcm_disp_;
   void publishStereo(const sensor_msgs::ImageConstPtr& l_image, const sensor_msgs::CameraInfoConstPtr& l_cam_info,
       const sensor_msgs::ImageConstPtr& r_image, const sensor_msgs::CameraInfoConstPtr& r_cam_info, std::string camera_out);
   image_transport::ImageTransport it_;
@@ -131,9 +135,9 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     std::string lim_string ,lin_string,rim_string,rin_string;
     std::string head_stereo_root = "/multisense_sl/camera";
     // Grey:
-    lim_string = head_stereo_root + "/left/image_rect";
+    lim_string = head_stereo_root + "/left/image_rect_color"; // was image_rect for vrc
     lin_string = head_stereo_root + "/left/camera_info";
-    rim_string = head_stereo_root + "/right/image_rect";
+    rim_string = head_stereo_root + "/right/image_rect_color";// was image_rect for vrc
     rin_string = head_stereo_root + "/right/camera_info";
     cout << lim_string << " is the left stereo image subscription [for stereo]\n";
     l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 30);
@@ -167,6 +171,9 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
     r_hand_stereo_last_utime_=0;
     
+    lcm_left_.data.resize(800*800*3);
+    lcm_right_.data.resize(800*800*3);
+    lcm_disp_.data.resize(800*800*2); // 2 bytes per pixel
     
     l_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/l_hand/tactile_raw"),100, &App::l_hand_tactile_cb ,this);
     r_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/r_hand/tactile_raw"),100, &App::r_hand_tactile_cb ,this);
@@ -303,6 +310,7 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::ImageConstPtr& r_image,
     const sensor_msgs::CameraInfoConstPtr& r_cam_info, std::string camera_out){
   
+  ROS_ERROR("RHCAM [%s] publish", camera_out.c_str() );
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
     tic_toc.push_back(_timestamp_now());
@@ -315,51 +323,83 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
 
   int n_colors=0;
   if (l_image->encoding.compare("mono8") == 0){
-    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
-    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
     n_colors=1;
+    lcm_left_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    copy(l_image->data.begin(), l_image->data.end(), left_image_data);
+    copy(r_image->data.begin(), r_image->data.end(), right_image_data);    
+    
   }else if (l_image->encoding.compare("rgb8") == 0){
-    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
-    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (3*l_image->width*l_image->height));
     n_colors=3;
+    lcm_left_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    copy(l_image->data.begin(), l_image->data.end(), left_image_data);
+    copy(r_image->data.begin(), r_image->data.end(), right_image_data);    
   }else {
     cout << l_image->encoding << " image encoded not supported, not publishing\n";
     cout << camera_out << "\n";
     return;
   }
   
+  lcm_left_.data.assign(left_image_data, left_image_data + ( n_colors*isize));
+  lcm_left_.size =n_colors*isize;
+
+  lcm_right_.data.assign(right_image_data, right_image_data + ( n_colors*isize));
+  lcm_right_.size =n_colors*isize;
+  
+  
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
     
   //int64_t tic = _timestamp_now();  
-  if (1==1){
-    imgutils_->jpegImageThenSend(stereo_data, current_utime, 
-                l_image->width, 2*l_image->height, jpeg_quality, camera_out, n_colors );
+  if (1==0){
+    //imgutils_->jpegImageThenSend(stereo_data, current_utime, 
+    //            l_image->width, 2*l_image->height, jpeg_quality, camera_out, n_colors );
   }else{
-    stereo_msg_out_.utime =current_utime;
-    stereo_msg_out_.width =l_image->width;
-    stereo_msg_out_.height =2*l_image->height;
-    stereo_msg_out_.nmetadata =0;
-    stereo_msg_out_.row_stride=l_image->width;
-    if (n_colors ==1){
-      stereo_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-      stereo_msg_out_.size =2*isize;
-    }else if(n_colors ==3){
-      stereo_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-      stereo_msg_out_.size =2*n_colors*isize;
-    }else{
-      std::cout << "Color Error\n"; 
-    }
     
-    stereo_msg_out_.data.assign(stereo_data, stereo_data + ( 2*isize));
-    lcm_publish_.publish(camera_out, &stereo_msg_out_);
+    lcm_left_.utime = current_utime;
+    lcm_left_.width =l_image->width;
+    lcm_left_.height =l_image->height;
+    lcm_left_.nmetadata =0;
+    lcm_left_.row_stride=n_colors*l_image->width;
+    
+    lcm_right_.utime = current_utime;
+    lcm_right_.width =r_image->width;
+    lcm_right_.height =r_image->height;
+    lcm_right_.nmetadata =0;
+    lcm_right_.row_stride=n_colors*r_image->width;    
+    
+    //lcm_publish_.publish(camera_out, &lcm_left_);
+    //lcm_publish_.publish("SDFSDF", &lcm_right_);
+    
+    lcm_disp_.utime = current_utime;
+    lcm_disp_.width =l_image->width;
+    lcm_disp_.height =l_image->height;
+    lcm_disp_.nmetadata =0;
+    lcm_disp_.row_stride=2*l_image->width;  // 2 bytes per pixel
+    lcm_disp_.data.resize( 2*isize);
+    lcm_disp_.size =2*isize;
+
+    
+    multisense::images_t stereo_msg_out;
+    stereo_msg_out.images.push_back( lcm_left_);
+    stereo_msg_out.image_types.push_back(0);
+    //stereo_msg_out.images.push_back( lcm_right_);
+    //stereo_msg_out.image_types.push_back(1);// multisense::images_t::RIGHT );
+    stereo_msg_out.images.push_back( lcm_disp_);
+    stereo_msg_out.image_types.push_back(2);// multisense::images_t::DISPARITY );
+    
+    stereo_msg_out.n_images = 2;//2;// stereo_msg_out_.images.size();
+    stereo_msg_out.utime =current_utime;
+    lcm_publish_.publish("CAAA",&stereo_msg_out);
   }
-  //std::cout << "pub: " <<  float((_timestamp_now() - tic)*1E-6) << "\n";;  
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"stereo");
   #endif    
+//  copy(l_image->data.begin(), l_image->data.end(), lcm_left_.data);
+//    lcm_left_.data.assign(stereo_data, stereo_data + ( 2*isize));
 }
 
 

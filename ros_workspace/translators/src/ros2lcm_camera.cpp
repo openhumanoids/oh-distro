@@ -46,10 +46,14 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  void l_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  void r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
     
   image_transport::Subscriber left_image_sub_;
   image_transport::ImageTransport it_;
+  
+  image_transport::Subscriber l_hand_l_image_sub_, r_hand_l_image_sub_;
   
   // Image Compression
   image_io_utils*  imgutils_;  
@@ -64,6 +68,11 @@ App::App(ros::NodeHandle node_) :it_(node_), node_(node_){
   // Mono-Cameras:
   left_image_sub_ = it_.subscribe("/multisense_sl/camera/left/image_rect_color", 1, &App::left_image_cb,this);
   //left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);
+ 
+  l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/camera/left/image_raw", 1, &App::l_hand_l_image_cb,this);
+  r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/camera/left/image_raw", 1, &App::r_hand_l_image_cb,this);
+  
+  
     
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
 };
@@ -71,14 +80,34 @@ App::App(ros::NodeHandle node_) :it_(node_), node_(node_){
 App::~App()  {
 }
 
-int l_counter =0;
+int h_counter =0;
 void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (h_counter%30 ==0){
+    ROS_ERROR("LEFTC [%d]", h_counter );
+    ///std::cout << h_counter << " head left image\n";
+  }  
+  h_counter++;
+  send_image(msg, "CAMERA_LEFT");
+}
+
+int l_counter =0;
+void App::l_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
   if (l_counter%30 ==0){
-    ROS_ERROR("LEFTC [%d]", l_counter );
-    ///std::cout << l_counter << " left image\n";
+    ROS_ERROR("L H C [%d]", l_counter );
+    ///std::cout << l_counter << " left hand image\n";
   }  
   l_counter++;
-  send_image(msg, "CAMERALEFT");
+  send_image(msg, "CAMERALHAND_LEFT");
+}
+
+int r_counter =0;
+void App::r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (r_counter%30 ==0){
+    ROS_ERROR("R H C [%d]", r_counter );
+    ///std::cout << r_counter << " right hand image\n";
+  }  
+  r_counter++;
+  send_image(msg, "CAMERARHAND_LEFT");
 }
 
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
@@ -87,11 +116,23 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
        << msg->encoding << " is encoding | "
        << current_utime << " | "<< channel << "\n";*/
 
-  int n_colors=3;
+  int n_colors=0;
+  if (msg->encoding.compare("mono8") == 0){
+    copy(msg->data.begin(), msg->data.end(), singleimage_data);
+    n_colors=1;
+  }else if (msg->encoding.compare("rgb8") == 0){
+    copy(msg->data.begin(), msg->data.end(), singleimage_data);
+    n_colors=3;
+  }else {
+    cout << msg->encoding << " image encoded not supported, not publishing\n";
+    cout << channel << "\n";
+    return;
+  }  
+  
+  
   int isize = msg->width*msg->height;
   //ROS_ERROR("Received size [%d]", msg->data.size() );
   
-  copy(msg->data.begin(), msg->data.end(), singleimage_data);
   if (1==1){
     imgutils_->jpegImageThenSend(singleimage_data, current_utime, 
                 msg->width, msg->height, jpeg_quality, channel, n_colors );
@@ -102,12 +143,21 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
     lcm_img.height =msg->height;
     lcm_img.nmetadata =0;
     lcm_img.row_stride=n_colors*msg->width;
-    lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-    lcm_img.size =n_colors*isize;
+    if (n_colors ==1){
+      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+      lcm_img.size =2*isize;
+    }else if(n_colors ==3){
+      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+      lcm_img.size =2*n_colors*isize;
+    }else{
+      std::cout << "Color Error\n"; 
+    }    
     lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*isize));
     lcm_publish_.publish(channel.c_str(), &lcm_img);
   }
 }
+
+
 
 int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm_camera");
