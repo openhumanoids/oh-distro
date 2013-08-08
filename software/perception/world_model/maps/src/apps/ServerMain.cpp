@@ -711,10 +711,14 @@ int main(const int iArgc, const char** iArgv) {
   state.mCollector->bind(laserChannel, 1);
 
   // this channel is for original scan messages
-  state.mCollector->getDataReceiver()->
-    addChannel("SCAN", SensorDataReceiver::SensorTypePlanarLidar,
-               "SCAN", "local");
-  state.mCollector->bind("SCAN", 2);
+  auto pos = laserChannel.find("_FREE");
+  if (pos != std::string::npos) {
+    std::string rawChannel = laserChannel.substr(0,pos);
+    state.mCollector->getDataReceiver()->
+      addChannel(rawChannel, SensorDataReceiver::SensorTypePlanarLidar,
+                 rawChannel, "local");
+    state.mCollector->bind(rawChannel, 2);
+  }
 
   // set up remaining parameters
   LocalMap::Spec mapSpec;
