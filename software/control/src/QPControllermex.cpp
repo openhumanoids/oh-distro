@@ -276,6 +276,75 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
 }
 
 
+int contactConstraintsBV(struct QPControllerData* pdata, int nc, double mu, vector<SupportStateElement>& supp, MatrixXd &B, MatrixXd &JB, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
+{
+  int i, j, k=0, nq = pdata->r->num_dof;
+
+  B.resize(3,nc*2*m_surface_tangents);
+  JB.resize(nq,nc*2*m_surface_tangents);
+  Jp.resize(3*nc,nq);
+  Jpdot.resize(3*nc,nq);
+  
+  Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
+  MatrixXd J(3,nq);
+  Matrix<double,3,m_surface_tangents> d;
+  double norm = sqrt(1+mu*mu); // because normals and ds are orthogonal, the norm has a simple form
+  
+  for (vector<SupportStateElement>::iterator iter = supp.begin(); iter!=supp.end(); iter++) {
+    RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
+    if (nc>0) {
+      for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
+      	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+        tmp = b->contact_pts.col(*pt_iter);
+        pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
+        pdata->r->forwardJac(iter->body_idx,tmp,0,J);
+
+        #ifdef BULLET_COLLISION
+        if (iter->contact_surface!=-1 && pdata->multi_robot) {
+          // do bullet rigid body collision check
+          auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
+
+          if (iter->contact_surface < -1) {
+            // check entire world
+            multi_robot->getPointCollision(iter->body_idx,(int)*pt_iter,pos,posB,normal);
+          }
+          else {
+            // do pairwise check with specified contact surface
+            multi_robot->getPairwisePointCollision(iter->body_idx,iter->contact_surface,*pt_iter,pos,posB,normal);
+          }
+        }
+        else {
+        #endif
+          collisionDetect(pdata->map_ptr,contact_pos,pos,&normal,terrain_height);
+        #ifdef BULLET_COLLISION
+        }
+        #endif
+
+        surfaceTangents(normal,d);
+        for (j=0; j<m_surface_tangents; j++) {
+          B.col(2*k*m_surface_tangents+j) = (normal + mu*d.col(j)) / norm; 
+          B.col((2*k+1)*m_surface_tangents+j) = (normal - mu*d.col(j)) / norm; 
+    
+          JB.col(2*k*m_surface_tangents+j) = J.transpose()*B.col(2*k*m_surface_tangents+j);
+          JB.col((2*k+1)*m_surface_tangents+j) = J.transpose()*B.col((2*k+1)*m_surface_tangents+j);
+        }
+
+        // store away kin sols into Jp and Jpdot
+        // NOTE: I'm cheating and using a slightly different ordering of J and Jdot here
+        Jp.block(3*k,0,3,nq) = J;
+        pdata->r->forwardJacDot(iter->body_idx,tmp,J);
+        Jpdot.block(3*k,0,3,nq) = J;
+        
+        k++;
+      }
+    }
+  }
+  
+  return k;
+}
+
+
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
@@ -533,22 +602,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map<VectorXd> qdvec(qd,nq);
   
   MatrixXd Jz,Jp,Jpdot,D;
-  int nc = contactConstraints(pdata,num_active_contact_pts,active_supports,Jz,D,Jp,Jpdot,terrain_height);
+  int nc = contactConstraintsBV(pdata,num_active_contact_pts,mu,active_supports,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector4d x_bar,xlimp;
-  MatrixXd Jz_float(Jz.rows(),6),Jz_act(Jz.rows(),nu), D_float(6,D.cols()), D_act(nu,D.cols());
+  MatrixXd D_float(6,D.cols()), D_act(nu,D.cols());
   if (nc>0) {
     xlimp << xcom.topRows(2),pdata->J_xy*qdvec;
     x_bar = xlimp-x0;
 
-    Jz_float = Jz.leftCols(6);
-    Jz_act = Jz.rightCols(nu);
     D_float = D.topRows(6);
     D_act = D.bottomRows(nu);
   }
 
-  int nf = nc+nc*nd; // number of contact force variables
+  int nf = nc*nd; // number of contact force variables
   int nparams = nq+nf+neps;
   
   //----------------------------------------------------------------------
@@ -590,8 +657,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   beq.topRows(6) = -pdata->C_float;
     
   if (nc>0) {
-    Aeq.block(0,nq,6,nc) = -Jz_float.transpose();
-    Aeq.block(0,nq+nc,6,nc*nd) = -D_float;
+    Aeq.block(0,nq,6,nc*nd) = -D_float;
   }
   
   if (nc > 0) {
@@ -602,29 +668,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     beq.bottomRows(neps) = (-Jpdot - 1.0*Jp)*qdvec;
   }    
 
-  MatrixXd Ain = MatrixXd::Zero(2*nu+nc,nparams);  // note: obvious sparsity here
-  VectorXd bin = VectorXd::Zero(2*nu+nc);
   
+  MatrixXd Ain = MatrixXd::Zero(2*nu,nparams);  // note: obvious sparsity here
+  VectorXd bin = VectorXd::Zero(2*nu);
+
   // linear input saturation constraints
   // u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
   // using transpose instead of inverse because B is orthogonal
   Ain.topLeftCorner(nu,nq) = pdata->B_act.transpose()*pdata->H_act;
-  Ain.block(0,nq,nu,nc) = -pdata->B_act.transpose()*Jz_act.transpose();
-  Ain.block(0,nq+nc,nu,nc*nd) = -pdata->B_act.transpose()*D_act;
+  Ain.block(0,nq,nu,nc*nd) = -pdata->B_act.transpose()*D_act;
   bin.head(nu) = -pdata->B_act.transpose()*pdata->C_act + pdata->umax;
 
   Ain.block(nu,0,nu,nparams) = -1*Ain.block(0,0,nu,nparams);
   bin.segment(nu,nu) = pdata->B_act.transpose()*pdata->C_act - pdata->umin;
 
-  if (nc>0) {
-    // linear friction constraints
-    int cind[1+nd];
-    for (i=0; i<nc; i++) {
-      // -mu*lambda[i] + sum(beta[i]s) <= 0
-      Ain(2*nu+i,nq+i) = -mu;
-      for (j=0; j<nd; j++) Ain(2*nu+i,nq+nc+i*nd+j) = 1;
-    }
-  }
 
   GRBmodel * model = NULL;
   int info=-1;
@@ -675,8 +732,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
-    MatrixXd Ain_lb_ub(2*nu+nc+2*nparams,nparams);
-    VectorXd bin_lb_ub(2*nu+nc+2*nparams);
+    MatrixXd Ain_lb_ub(2*nu+2*nparams,nparams);
+    VectorXd bin_lb_ub(2*nu+2*nparams);
     Ain_lb_ub << Ain, 			     // note: obvious sparsity here
     		-MatrixXd::Identity(nparams,nparams),
     		MatrixXd::Identity(nparams,nparams);
@@ -720,11 +777,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // Solve for inputs ----------------------------------------------------
   VectorXd y(nu);
   VectorXd qdd = alpha.head(nq);
-  VectorXd lambda = alpha.segment(nq,nc);
-  VectorXd beta = alpha.segment(nq+nc,nc*nd);
+  VectorXd beta = alpha.segment(nq,nc*nd);
 
   // use transpose because B_act is orthogonal
-  y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
+  y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - D_act*beta);
   //y = pdata->B_act.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
   
   if (nlhs>0) plhs[0] = eigenToMatlab(y);

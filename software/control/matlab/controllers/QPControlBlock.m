@@ -459,48 +459,41 @@ classdef QPControlBlock < MIMODrakeSystem
       
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
-
-        % [~,Jz,D_] = contactConstraints(r,kinsol,active_supports,active_contact_pts);
-
-        Jz = zeros(nc,nq);
         c_pre = 0;
+        Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,Jz(c_pre+(1:length(active_contact_pts{j})),:),D__] = contactConstraints(r,kinsol,active_supports(j),active_contact_pts{j});
+            [~,B,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
+            if 0
+              cpos = contactPositions(r,kinsol,active_supports(j),active_contact_pts{j});
+              acpts = active_contact_pts{j};
+              for jj=1:length(acpts)
+                b=0.1*B{jj};
+                m = size(b,2); 
+                bot_lcmgl_line_width(obj.lcmgl, 3);
+                bot_lcmgl_push_matrix(obj.lcmgl);
+                bot_lcmgl_translated(obj.lcmgl,cpos(1,jj),cpos(2,jj),cpos(3,jj));
+                bot_lcmgl_color3f(obj.lcmgl, 1, 0, 0);
+                for kk=1:m
+                  bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
+                  bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
+                  bot_lcmgl_vertex3f(obj.lcmgl, b(1,kk), b(2,kk), b(3,kk)); 
+                  bot_lcmgl_end(obj.lcmgl);
+                end
+                bot_lcmgl_pop_matrix(obj.lcmgl);
+              end
+            end
           else
             % use bullet collision between bodies
-            [~,Jz(c_pre+(1:length(active_contact_pts{j})),:),D__] = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+            [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
           end
+          Dbar = [Dbar, [JB{:}]];
           c_pre = c_pre + length(active_contact_pts{j});
-        
-          % kinda gross
-          if j==1
-            D_=D__;
-          else
-            for k=1:nd
-              D_{k} = [D_{k}; D__{k}];
-            end
-          end
-        end
 
-        Jz = sparse(Jz); 
-        Jz_float = Jz(:,float_idx);
-        Jz_act = Jz(:,act_idx);
-
-        % D_ is the parameterization of the polyhedral approximation of the
-        %    friction cone, in joint coordinates (figure 1 from Stewart96)
-        %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
-        % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for
-        % the kth contact point
-        %
-        % OPT---this could be made cleaner
-        D = cell(1,nc);
-        for k=1:nc
-          for i=1:nd
-            D{k}(:,i) = D_{i}(k,:)';
-          end
         end
-        Dbar = sparse([D{:}]);
+        bot_lcmgl_line_width(obj.lcmgl, 1);
+        bot_lcmgl_switch_buffer(obj.lcmgl);
+
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
@@ -519,13 +512,12 @@ classdef QPControlBlock < MIMODrakeSystem
       %----------------------------------------------------------------------
       % Build handy index matrices ------------------------------------------
       
-      nf = nc+nc*nd; % number of contact force variables
+      nf = nc*nd; % number of contact force variables
       nparams = nq+nf+neps;
       Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-      Iz = zeros(nc,nparams); Iz(:,nq+(1:nc)) = eye(nc);
-      Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq+nc+(1:nc*nd)) = eye(nc*nd);
+      Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
       Ieps = zeros(neps,nparams);
-      Ieps(:,nq+nc+nc*nd+(1:neps)) = eye(neps);
+      Ieps(:,nq+nf+(1:neps)) = eye(neps);
       
       
       %----------------------------------------------------------------------
@@ -536,12 +528,12 @@ classdef QPControlBlock < MIMODrakeSystem
       
       Aeq_ = cell(1,2);
       beq_ = cell(1,2);
-      Ain_ = cell(1,2+nc);
-      bin_ = cell(1,2+nc);
+      Ain_ = cell(1,2);
+      bin_ = cell(1,2);
       
       % constrained dynamics
       if nc>0
-        Aeq_{1} = H_float*Iqdd - Jz_float'*Iz - Dbar_float*Ibeta;
+        Aeq_{1} = H_float*Iqdd - Dbar_float*Ibeta;
       else
         Aeq_{1} = H_float*Iqdd;
       end
@@ -551,7 +543,7 @@ classdef QPControlBlock < MIMODrakeSystem
       % u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
 
       if nc>0
-        Ain_{1} = B_act'*(H_act*Iqdd - Jz_act'*Iz - Dbar_act*Ibeta);
+        Ain_{1} = B_act'*(H_act*Iqdd - Dbar_act*Ibeta);
       else
         Ain_{1} = B_act'*H_act*Iqdd;
       end
@@ -563,12 +555,6 @@ classdef QPControlBlock < MIMODrakeSystem
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
         beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
-        
-        % linear friction constraints
-        for i=1:nc
-          Ain_{2+i} = -mu*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
-          bin_{2+i} = 0;
-        end
       end
       
       % linear equality constraints: Aeq*alpha = beq
@@ -672,9 +658,8 @@ classdef QPControlBlock < MIMODrakeSystem
 
       qdd = alpha(1:nq);
       if nc>0
-        z = alpha(nq+(1:nc));
-        beta = alpha(nq+nc+(1:nc*nd));
-        u = B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta);
+        beta = alpha(nq+(1:nf));
+        u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
       else
         u = B_act'*(H_act*qdd + C_act);
       end
