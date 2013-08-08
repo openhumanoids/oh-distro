@@ -1,3 +1,11 @@
+// Process to Determine morphological gradient on an 
+// unsigned short (16bit) DEPTH IMAGE
+// some of the operations in opencv CV dont support 16bit - hence the loop
+//
+// usage:
+// test-morphology-gradient test.png   <--- 16 bit depth image
+// mfallon aug 2013
+
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdlib.h>
@@ -7,85 +15,43 @@
 using namespace cv;
 using namespace std;
 
-int main( int argc, char** argv ){
-  /// Load an image
-  char* window_name = "Morphology Transformations Demo";
-  Mat dst, src_gray;
-  Mat src = imread( argv[1] );
 
-  if( !src.data )
-  { return -1; }
-  
-  
-    cvtColor( src, src_gray, CV_RGB2GRAY );
-  imshow( "Input", src );
-    imshow( "Input Gray", src_gray );
+void removeEdges(cv::Mat &src) {
+  // 1 Convert to 16S as morphologyEx doesnt support 16U
+  Mat src_16s;  
+  src.convertTo(src_16s, CV_16S);
 
-
- /// Create window
- namedWindow( window_name, CV_WINDOW_AUTOSIZE );
-
+  // 2 Determain Morpological Gradient:
   int morph_elem = 0;
   int morph_size = 1;
-  int morph_operator = 2;
-  // Since MORPH_X : 2,3,4,5 and 6
-  int operation = morph_operator + 2;
-
-  std::cout << morph_elem << " " << morph_size << " " << operation << "\n";
+  int morph_operator = 4;
   Mat element = getStructuringElement( morph_elem, 
-                   Size( 2*morph_size + 1, 2*morph_size+1 ),
-                   Point( morph_size, morph_size ) );
+            Size( 2*morph_size + 1, 2*morph_size+1 ),
+            Point( morph_size, morph_size ) );
+  Mat dst;
+  morphologyEx( src_16s, dst, morph_operator, element );
+  imwrite("test_morph_gray.png",dst);
 
-  /// Apply the specified morphology operation
-  morphologyEx( src, dst, operation, element );
-  imshow( window_name, dst );
-  
-//  threshold( src_gray, dst2, threshold_value, max_BINARY_value,threshold_type );
-
-
-  /* 0: Binary
-     1: Binary Inverted
-     2: Threshold Truncated
-     3: Threshold to Zero
-     4: Threshold to Zero Inverted
-   */
-  Mat morph_gray, dst2;
-  cvtColor( dst, morph_gray, CV_RGB2GRAY );
+  // 3 Apply a binary threshold on the gradient and remove high gradient elements
+  for(int i=0; i<dst.rows; i++)
+    for(int j=0; j<dst.cols; j++) 
+      if (  dst.at<short unsigned int>(i,j) > 254)
+        src.at<short unsigned int>(i,j)  = 0;
+}
 
 
-  bool color_version =false;
-  if (color_version){ // rgb
-
-    int threshold_value =10;
-    int const max_BINARY_value = 255;
-    int threshold_type = 0;
-
-    threshold( morph_gray, dst2, threshold_value, max_BINARY_value,threshold_type );
-    imshow( "Threshold", dst2 );  
-
-    cvtColor(dst2, dst2, CV_GRAY2BGR);
-    cv::bitwise_or(src, dst2, dst2);
+int main( int argc, char** argv ){
+  // type16 = CV_8UC3 = 3x 8 bit colour
+  // type 0 = CV_8U =  8 bit gray
+  // type 2 = CV_16U = 16 bit grey scale depth map
 
 
-  }else{
-    int threshold_value =10;
-    int const max_BINARY_value = 255;
-    int threshold_type = 1;
+  Mat src  = imread( argv[1], CV_LOAD_IMAGE_UNCHANGED );
 
-    threshold( morph_gray, dst2, threshold_value, max_BINARY_value,threshold_type );
-    imshow( "Threshold", dst2 );  
+  removeEdges(src);
 
-    cv::bitwise_and(src_gray, dst2, dst2);
+  imwrite("test_out.png",src);
 
-
-  }
-  
-  
-  imshow( "Applied", dst2 );  
-  
-  imwrite("test_out.png",dst2);
-  
-  waitKey(0);
   return 0;
 }
 
