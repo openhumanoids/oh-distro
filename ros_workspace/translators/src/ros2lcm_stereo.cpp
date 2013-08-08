@@ -173,7 +173,7 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     depth_compress_buf_size_ = 800 * 800 * sizeof(int8_t) * 10;
     depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
     do_jpeg_compress_=true;
-    jpeg_quality_ = 24;
+    jpeg_quality_ = 94;
     do_zlib_compress_ = true;      
     
   }
