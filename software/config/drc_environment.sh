@@ -13,6 +13,7 @@ setup_drcsim()
   export GAZEBO_PLUGIN_PATH=$DRC_BASE/ros_workspace/mit_drcsim_plugins/lib:$GAZEBO_PLUGIN_PATH
   export GAZEBO_MODEL_PATH=$DRC_SOFTWARE/models/mit_gazebo_models:$GAZEBO_MODEL_PATH
   export GAZEBO_MODEL_PATH=$DRC_SOFTWARE/models/mit_gazebo_objects:$GAZEBO_MODEL_PATH
+  export VRC_CHEATS_ENABLED=1
 }
 
 
