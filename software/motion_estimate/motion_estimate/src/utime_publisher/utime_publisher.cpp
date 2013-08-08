@@ -54,10 +54,13 @@ struct Publisher {
   void start() {
     mLcmWrapper->startHandleThread(false);
 
-    if (tryChannel<drc::robot_state_t>("ROBOT_STATE") ||
-        tryChannel<bot_core::rigid_transform_t>("PRE_SPINDLE_TO_POST_SPINDLE")) {
-      mLcmWrapper->startHandleThread(true);
-      return;
+    while (true) {
+      if (tryChannel<drc::robot_state_t>("ROBOT_STATE") ||
+          tryChannel<bot_core::rigid_transform_t>("PRE_SPINDLE_TO_POST_SPINDLE")) {
+        mLcmWrapper->startHandleThread(true);
+        return;
+      }
+      if (mPublishFrequency > 0) break;
     }
 
     std::cout << "no state messages found; publishing at " <<
