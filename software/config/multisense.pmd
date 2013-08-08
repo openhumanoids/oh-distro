@@ -34,20 +34,28 @@ group "2.processing" {
         exec = "drc-viewer";
         host = "localhost";
     }
-    cmd "microstrain2pose" {
-        exec = "drc-motion-estimate-imu-ypr-only";
-        host = "localhost";
-    }
     cmd "glview" {
         exec = "multisense-glview";
         host = "localhost";
     }
+    cmd "utime_pub" {
+        exec = "drc-utime-publisher -f 0";
+        host = "localhost";
+    }
+    cmd "pseudo_publisher" {
+        exec = "pseudo-pose-publisher -f 100 -p 80";
+        host = "localhost";
+    }
     cmd "maps-server" {
-        exec = "maps-server";
+        exec = "maps-server -l SCAN";
         host = "localhost";
     }
     cmd "data-request-server" {
         exec = "data-request-server";
+        host = "localhost";
+    }
+    cmd "microstrain2pose" {
+        exec = "drc-motion-estimate-imu-ypr-only";
         host = "localhost";
     }
 }
