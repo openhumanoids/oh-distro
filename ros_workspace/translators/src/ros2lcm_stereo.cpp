@@ -36,6 +36,7 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
+#include <opencv2/opencv.hpp>
 
 #define DO_TIMING_PROFILE false
 using namespace std;
@@ -45,7 +46,6 @@ int height =800;//544; // hardcoded
 uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
 uint8_t* left_image_data = new uint8_t [3* width*height]; // 1 color scale image
 uint8_t* right_image_data = new uint8_t [3* width*height]; // 1 color scale image
-int jpeg_quality=90;
 // Estimated Rates at 90% compression and 5Hz
 // CAMERA 200KB x5Hz
 // CAMERALEFT 114KB x5Hz
@@ -73,6 +73,7 @@ private:
   void hand_fps_cb(const std_msgs::Float64ConstPtr& msg);  
   
   // Combined Stereo Image:
+  multisense::images_t multisense_msg_out_;
   bot_core::image_t lcm_left_;
   bot_core::image_t lcm_right_;
   bot_core::image_t lcm_disp_;
@@ -114,6 +115,14 @@ private:
   
   // Image Compression
   image_io_utils*  imgutils_;
+  
+  bool do_jpeg_compress_;
+  int jpeg_quality_;
+  bool do_zlib_compress_;
+  int depth_compress_buf_size_;
+  uint8_t* depth_compress_buf_;
+  int color_compress_buffer_size_;
+  uint8_t* color_compress_buffer_;  
 };
 
 App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_) :
@@ -147,6 +156,26 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
     sync_.registerCallback( boost::bind(&App::head_stereo_cb, this, _1, _2, _3, _4) );
     head_stereo_last_utime_=0;
+    
+    multisense_msg_out_.images.push_back( lcm_left_);
+    multisense_msg_out_.images.push_back( lcm_disp_);
+    multisense_msg_out_.image_types.push_back(0);// LEFT
+    multisense_msg_out_.image_types.push_back(2);// multisense::images_t::DISPARITY );
+    //stereo_msg_out.images.push_back( lcm_right_);
+    //stereo_msg_out.image_types.push_back(1);// multisense::images_t::RIGHT );    
+    
+    
+    // allocate space for zlib compressing depth data
+    color_compress_buffer_size_ = 800 * 800 * sizeof(int8_t) * 10;
+    color_compress_buffer_= new uint8_t[color_compress_buffer_size_];  // x4 was used for zlib in kinect_lcm
+    
+    
+    depth_compress_buf_size_ = 800 * 800 * sizeof(int8_t) * 10;
+    depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
+    do_jpeg_compress_=true;
+    jpeg_quality_ = 24;
+    do_zlib_compress_ = true;      
+    
   }
     
   /////////////////////////////// Hand Cameras /////////////////////////////////////
@@ -170,10 +199,7 @@ App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_
     r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
     r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
     r_hand_stereo_last_utime_=0;
-    
-    lcm_left_.data.resize(800*800*3);
-    lcm_right_.data.resize(800*800*3);
-    lcm_disp_.data.resize(800*800*2); // 2 bytes per pixel
+        
     
     l_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/l_hand/tactile_raw"),100, &App::l_hand_tactile_cb ,this);
     r_hand_tactile_sub_ = node_.subscribe( string("/sandia_hands/r_hand/tactile_raw"),100, &App::r_hand_tactile_cb ,this);
@@ -309,97 +335,83 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::CameraInfoConstPtr& l_cam_info,
     const sensor_msgs::ImageConstPtr& r_image,
     const sensor_msgs::CameraInfoConstPtr& r_cam_info, std::string camera_out){
-  
-  ROS_ERROR("RHCAM [%s] publish", camera_out.c_str() );
-  #if DO_TIMING_PROFILE
-    std::vector<int64_t> tic_toc;
-    tic_toc.push_back(_timestamp_now());
-  #endif
-  
-  int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
-  int isize = l_image->width*l_image->height;
-  //cout << l_image->width << " w | h " << l_image->height << "\n";
-  //cout << l_image->encoding << " q\n";
 
-  int n_colors=0;
-  if (l_image->encoding.compare("mono8") == 0){
-    n_colors=1;
-    lcm_left_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-    lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-    copy(l_image->data.begin(), l_image->data.end(), left_image_data);
-    copy(r_image->data.begin(), r_image->data.end(), right_image_data);    
-    
-  }else if (l_image->encoding.compare("rgb8") == 0){
-    n_colors=3;
-    lcm_left_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-    lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-    copy(l_image->data.begin(), l_image->data.end(), left_image_data);
-    copy(r_image->data.begin(), r_image->data.end(), right_image_data);    
-  }else {
-    cout << l_image->encoding << " image encoded not supported, not publishing\n";
-    cout << camera_out << "\n";
+  if (l_image->encoding.compare("rgb8") != 0){
+    cout << l_image->encoding << " " << camera_out << " | encoded not supported, not publishing\n";
     return;
   }
   
-  lcm_left_.data.assign(left_image_data, left_image_data + ( n_colors*isize));
-  lcm_left_.size =n_colors*isize;
-
-  lcm_right_.data.assign(right_image_data, right_image_data + ( n_colors*isize));
-  lcm_right_.size =n_colors*isize;
+  int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
+  int isize = l_image->width*l_image->height;
+  int n_colors=3;
   
-  
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-    
-  //int64_t tic = _timestamp_now();  
-  if (1==0){
-    //imgutils_->jpegImageThenSend(stereo_data, current_utime, 
-    //            l_image->width, 2*l_image->height, jpeg_quality, camera_out, n_colors );
+  /// Left:
+  lcm_left_.utime = current_utime;
+  lcm_left_.width =l_image->width;
+  lcm_left_.height =l_image->height;
+  lcm_left_.nmetadata =0;
+  lcm_left_.row_stride=n_colors*l_image->width;
+  if (do_jpeg_compress_){
+    int jpeg_compressed_size =  isize*n_colors;//image_buf_size;
+    int status = jpeg_compress_8u_rgb  (l_image->data.data(), l_image->width, l_image->height, 
+    l_image->width*n_colors, color_compress_buffer_ , &jpeg_compressed_size, jpeg_quality_);
+    lcm_left_.data.resize( jpeg_compressed_size);
+    memcpy(&lcm_left_.data[0], color_compress_buffer_ , jpeg_compressed_size);
+    lcm_left_.size = jpeg_compressed_size;
+    lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG; 
   }else{
-    
-    lcm_left_.utime = current_utime;
-    lcm_left_.width =l_image->width;
-    lcm_left_.height =l_image->height;
-    lcm_left_.nmetadata =0;
-    lcm_left_.row_stride=n_colors*l_image->width;
-    
-    lcm_right_.utime = current_utime;
-    lcm_right_.width =r_image->width;
-    lcm_right_.height =r_image->height;
-    lcm_right_.nmetadata =0;
-    lcm_right_.row_stride=n_colors*r_image->width;    
-    
-    //lcm_publish_.publish(camera_out, &lcm_left_);
-    //lcm_publish_.publish("SDFSDF", &lcm_right_);
-    
-    lcm_disp_.utime = current_utime;
-    lcm_disp_.width =l_image->width;
-    lcm_disp_.height =l_image->height;
-    lcm_disp_.nmetadata =0;
-    lcm_disp_.row_stride=2*l_image->width;  // 2 bytes per pixel
-    lcm_disp_.data.resize( 2*isize);
-    lcm_disp_.size =2*isize;
-
-    
-    multisense::images_t stereo_msg_out;
-    stereo_msg_out.images.push_back( lcm_left_);
-    stereo_msg_out.image_types.push_back(0);
-    //stereo_msg_out.images.push_back( lcm_right_);
-    //stereo_msg_out.image_types.push_back(1);// multisense::images_t::RIGHT );
-    stereo_msg_out.images.push_back( lcm_disp_);
-    stereo_msg_out.image_types.push_back(2);// multisense::images_t::DISPARITY );
-    
-    stereo_msg_out.n_images = 2;//2;// stereo_msg_out_.images.size();
-    stereo_msg_out.utime =current_utime;
-    lcm_publish_.publish("CAAA",&stereo_msg_out);
+    lcm_left_.data.resize(  n_colors*isize);
+    memcpy(&lcm_left_.data[0], l_image->data.data() , n_colors*isize);
+    lcm_left_.size = n_colors*isize;    
+    lcm_left_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
   }
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"stereo");
-  #endif    
-//  copy(l_image->data.begin(), l_image->data.end(), lcm_left_.data);
-//    lcm_left_.data.assign(stereo_data, stereo_data + ( 2*isize));
+  
+  // No disparity is being computed, so will create some 
+  // fake data here for compatiablity:
+  lcm_disp_.utime = current_utime;
+  lcm_disp_.width =l_image->width;
+  lcm_disp_.height =l_image->height;
+  lcm_disp_.nmetadata =0;
+  lcm_disp_.row_stride=2*l_image->width;  // 2 bytes per pixel
+  if (1==1){ 
+    int uncompressed_size = isize;
+    /*
+    // Insert proper compression here if needed:
+    unsigned long compressed_size = depth_compress_buf_size_;
+    compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
+            Z_BEST_SPEED);
+    lcm_disp_.data.resize(compressed_size);
+    */
+    unsigned long zlib_compressed_size = 1000; // fake compressed size
+    lcm_disp_.data.resize( zlib_compressed_size);
+    lcm_disp_.size = zlib_compressed_size;
+    multisense_msg_out_.image_types[1] = 5;// multisense::images_t::DISPARITY_ZIPPED );
+  }else{
+    lcm_disp_.data.resize( 2*isize);
+    lcm_disp_.size =2*isize; 
+    multisense_msg_out_.image_types[1] = 2;// multisense::images_t::DISPARITY );
+  } 
+
+  multisense_msg_out_.images[0] = lcm_left_;
+  multisense_msg_out_.images[1] = lcm_disp_;
+  multisense_msg_out_.n_images = 2;//2;// stereo_msg_out_.images.size();
+  multisense_msg_out_.utime =current_utime;
+  lcm_publish_.publish("CAMERA",&multisense_msg_out_);
+
+/* Required for right image transmission:
+ *     lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    lcm_right_.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    
+  lcm_right_.data.resize(  n_colors*isize);
+  memcpy(&lcm_right_.data[0], r_image->data.data() , n_colors*isize);
+  lcm_right_.size = n_colors*isize;
+  
+  lcm_right_.utime = current_utime;
+  lcm_right_.width =r_image->width;
+  lcm_right_.height =r_image->height;
+  lcm_right_.nmetadata =0;
+  lcm_right_.row_stride=n_colors*r_image->width; 
+*/
 }
 
 
