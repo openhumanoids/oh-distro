@@ -174,9 +174,9 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       body_to_hokuyo_link_found=true;
     }else if (joint_publish_ok){
       if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
-        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND" );
+        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
       }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
-        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND" );
+        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
       }
     }
   }

@@ -444,8 +444,9 @@ int main(int argc, char *argv[])
   //occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA","CAMERA", bot_param);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA","LIDARSWEEP", bot_param);
+  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","LIDARSWEEP", bot_param);
+  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA_SGBM", bot_param);
 
 //  tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);

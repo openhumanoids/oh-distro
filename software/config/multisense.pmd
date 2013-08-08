@@ -1,4 +1,31 @@
-group "1.core" {
+group "1.driver" {
+    cmd "rviz" {
+        exec = "rosrun rviz rviz";
+        host = "localhost";
+    }
+    cmd "dashboard" {
+        exec = "rosrun multisense_dashboard multisense_dashboard";
+        host = "localhost";
+    }
+    cmd "driver" {
+        exec = "roslaunch multisense_bringup multisense.launch";
+        host = "localhost";
+    }
+    cmd "watchdog" {
+        exec = "rosrun multisense_command multisense_subscribe -d";
+        host = "localhost";
+    }
+    cmd "reconfig" {
+        exec = "rosrun dynamic_reconfigure reconfigure_gui";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/ros_workspace/multisense/multisense/multisense_description/urdf/multisense.urdf";
+        host = "localhost";
+    }
+}
+
+group "2.processing" {
     cmd "pserver" {
         exec = "bot-param-server multisense02.cfg";
         host = "localhost";
@@ -7,47 +34,20 @@ group "1.core" {
         exec = "drc-viewer";
         host = "localhost";
     }
-    cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/real_multisense_sl/multisense.urdf";
+    cmd "microstrain2pose" {
+        exec = "drc-motion-estimate-imu-ypr-only";
         host = "localhost";
     }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher";
+    cmd "glview" {
+        exec = "multisense-glview";
         host = "localhost";
     }
-    cmd "j2f" {
-        exec = "drc-joints2frames -s";
+    cmd "maps-server" {
+        exec = "maps-server";
         host = "localhost";
     }
-    cmd "microstrain_pose" {
-        exec = "microstrain_pose";
-        host = "localhost";
-    }
-}
-
-group "2.ros_driver" {
-    cmd "rviz" {
-        exec = "rosrun rviz rviz";
-        host = "localhost";
-    }
-    cmd "head_control" {
-        exec = "roslaunch multisense_bringup control.launch";
-        host = "localhost";
-    }
-    cmd "head_dash" {
-        exec = "rosrun multisense_dashboard multisense_dashboard";
-        host = "localhost";
-    }
-    cmd "head_driver" {
-        exec = "roslaunch multisense_bringup multisense.launch";
-        host = "localhost";
-    }
-    cmd "head_watchdog" {
-        exec = "rosrun multisense_command multisense_subscribe -d";
-        host = "localhost";
-    }
-    cmd "reconfig" {
-        exec = "rosrun dynamic_reconfigure reconfigure_gui";
+    cmd "data-request-server" {
+        exec = "data-request-server";
         host = "localhost";
     }
 }
@@ -57,8 +57,8 @@ group "3.spin_rate" {
         exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 2.156";
         host = "localhost";
     }
-    cmd "slow" {
-        exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 0.3";
+    cmd "typical" {
+        exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 0.75";
         host = "localhost";
     }
     cmd "stop" {
@@ -67,7 +67,7 @@ group "3.spin_rate" {
     }
 }
 
-group "4.processing" {
+group "4.older_processing" {
     cmd "robotstate_upgrade" {
         exec = "old-robot-state-upgrade ";
         host = "localhost";
@@ -78,25 +78,6 @@ group "4.processing" {
     }
     cmd "image_out" {
         exec = "drc-multisense-image-tool -s";
-        host = "localhost";
-    }
-    cmd "glview" {
-        exec = "multisense-glview";
-        host = "localhost";
-    }
-}
-
-
-group "misc" {
-    cmd "spy" {
-        exec = "bot-spy";
-        host = "localhost";
-    }
-}
-
-group "zold" {
-    cmd "disparity" {
-        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
         host = "localhost";
     }
 }

@@ -9,7 +9,13 @@ pods_use_pkg_config_packages(drc-state-sync
   lcmtypes_drc_lcmtypes)
 pods_install_executables(drc-state-sync )
 
-# not required
+#add_executable(drc-robot-utime-creator robot_utime_creator.cpp  )
+#pods_use_pkg_config_packages(drc-robot-utime-creator
+#  lcmtypes_drc_lcmtypes)
+#pods_install_executables(drc-robot-utime-creator )
+
+
+# not required any more
 #add_executable(drc-state-converter state_converter.cpp  )
 #pods_use_pkg_config_packages(drc-state-converter
 #  lcmtypes_drc_lcmtypes)

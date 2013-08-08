@@ -259,7 +259,7 @@ void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf,
       std::cout << channel << " "<< msg->utime << " frame:"<< counter_cam << " MJPEG received\n"; 
     }
     counter_cam++;
-    imgutils_->decodeStereoImage(msg, left_buf_, right_buf_);
+    imgutils_->decodeStereoImageToGray(msg, left_buf_, right_buf_);
    
   }else{
     std::cout << "camera not MJPEG - not supported/tested\n"; 

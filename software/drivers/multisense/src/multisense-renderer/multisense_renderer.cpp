@@ -300,15 +300,20 @@ multisense_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lcm,
   std::string root_str = "cameras." + std::string(camera_channel); 
   if ( bot_param_has_key (param, root_str.c_str()) ){
     std::cout << "Using config for: " << camera_channel << "\n";
-    std::string left_str = "cameras." + std::string(camera_channel) + ".left"; 
-    self->width = bot_param_get_double_or_fail(param, (left_str+".width").c_str());
-    self->height = bot_param_get_double_or_fail(param, (left_str+".height").c_str());
-    self->left_cx = bot_param_get_double_or_fail(param, (left_str+".cx").c_str());
-    std::string right_str = "cameras." + std::string(camera_channel) + ".right"; 
-    self->right_fx = bot_param_get_double_or_fail(param, (right_str+".fx").c_str());
-    self->right_fy = bot_param_get_double_or_fail(param, (right_str+".fy").c_str());
-    self->right_cx = bot_param_get_double_or_fail(param, (right_str+".cx").c_str());
-    self->right_cy = bot_param_get_double_or_fail(param, (right_str+".cy").c_str());
+    std::string left_str = "cameras." + std::string(camera_channel) + "_LEFT"; 
+    self->width = bot_param_get_double_or_fail(param, (left_str+".intrinsic_cal.width").c_str());
+    self->height = bot_param_get_double_or_fail(param, (left_str+".intrinsic_cal.height").c_str());
+    double vals[5];
+    bot_param_get_double_array_or_fail(param, (left_str+".intrinsic_cal.pinhole").c_str(), vals, 5);
+    self->left_cx = vals[3];
+    
+    std::string right_str = "cameras." + std::string(camera_channel) + "_RIGHT"; 
+    bot_param_get_double_array_or_fail(param, (right_str+".intrinsic_cal.pinhole").c_str(), vals, 5);
+    self->right_fx = vals[0];
+    self->right_fy = vals[1];
+    self->right_cx = vals[3];
+    self->right_cy = vals[4];
+
     std::string trans_str = "cameras." + std::string(camera_channel) + ".translation"; 
     self->baseline = fabs( bot_param_get_double_or_fail(param, trans_str.c_str() )  );
   }else{
