@@ -695,6 +695,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
+  for (int jj=0; jj<pdata->r->num_dof; jj++) {
+    // set acceleration limit to zero if at joint limit
+    if (q[jj] >= pdata->r->joint_limit_max[jj]-1e-4)
+      ub(jj) = 0;
+    if (q[jj] <= pdata->r->joint_limit_min[jj]+1e-4)
+      lb(jj) = 0;
+  }
+  
   VectorXd alpha(nparams);
 
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);

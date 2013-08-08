@@ -199,6 +199,8 @@ classdef QPControlBlock < MIMODrakeSystem
     
     obj.lcmgl = bot_lcmgl_init('qp-control-block-debug');
 
+    [obj.jlmin, obj.jlmax] = getJointLimits(r);
+        
   end
 
   end
@@ -526,6 +528,10 @@ classdef QPControlBlock < MIMODrakeSystem
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
       ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
       
+      % if at joint limit, disallow accelerations in that direction
+      lb(q<=obj.jlmin+1e-4) = 0;
+      ub(q>=obj.jlmax-1e-4) = 0;
+      
       Aeq_ = cell(1,2);
       beq_ = cell(1,2);
       Ain_ = cell(1,2);
@@ -816,5 +822,7 @@ classdef QPControlBlock < MIMODrakeSystem
     ignore_states; % array if state indices we want to ignore (and substitute with planned values)
     lcmgl;
     include_angular_momentum; % tmp flag for testing out angular momentum control
-  end
+    jlmin;
+    jlmax;
+    end
 end
