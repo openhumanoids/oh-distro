@@ -40,6 +40,7 @@ class StereoParams {
     
    CameraParams left;
    CameraParams right;
+   double rotation[9];
    double translation[3];
 
 };
