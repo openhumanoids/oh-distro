@@ -265,7 +265,7 @@ namespace otdf
 
           if(this->is_serial_pattern)
           {
-           temp->child_type="link";
+           //temp->child_type="link";
            if(i>0)
            {
               stm.clear();

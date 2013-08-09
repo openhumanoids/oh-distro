@@ -217,11 +217,12 @@ namespace otdf {
               
             link_pattern->initXml(link_pattern_xml,model->symbol_table);
 
+
             // -----------------------------------------------------------------------
-            // Patch added 9th August 2013
-            // -----------------------------------------------------------------------
-            //Loop through all links in the link pattern acc to noofrepetitions
-            for  (unsigned int i=0; i < link_pattern->noofrepetitions; i++)
+            // do not resolve  joint_pattern into individual joints as that interferes with
+            // online adjusment of the number of links in any pattern
+            
+            /*for  (unsigned int i=0; i < link_pattern->noofrepetitions; i++)
             {
                boost::shared_ptr<Link> link;
                link.reset(new Link(*link_pattern->link_set[i]));
@@ -268,7 +269,7 @@ namespace otdf {
    	             model->entities_.insert(make_pair(link->name,link));
    
                }  //end if (model->getLink( ))
-            }// end for  (unsigned int i=0; i < noofrepetitions; i++)
+            }// end for  (unsigned int i=0; i < noofrepetitions; i++)*/
             // -----------------------------------------------------------------------
             
            model->entities_.insert(make_pair(link_pattern->name,link_pattern));   
@@ -360,37 +361,38 @@ namespace otdf {
       {
 
             // -----------------------------------------------------------------------
-            // Patch added 9th August 2013
-            // -----------------------------------------------------------------------      
-          //Loop through all joints in the joint pattern acc to noofrepetitions
-          if(joint_pattern->is_serial_pattern)
-          {
-          
-           for(unsigned int i=0; i < joint_pattern->noofrepetitions; i++)
-           {
-             boost::shared_ptr<Joint> joint;
-             joint.reset(new Joint(*joint_pattern->joint_set[i]));
-           
-             if (model->getJoint(joint->name))
-             {
-               //ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
-                std::cerr<< "ERROR: material" << joint->name <<"is not unique."<< std::endl;   
-               model.reset();
-               return model;
-             }
-             else
-             {
-               model->joints_.insert(make_pair(joint->name,joint)); 
-               //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
-             }
-           } // end for joint_set
-           
-          } 
-          else 
-          {
+            // do not resolve  joint_pattern into individual joints as that interferes with
+            // online adjusment of the number of links in any pattern
+                  
+//          //Loop through all joints in the joint pattern acc to noofrepetitions
+//          if(joint_pattern->is_serial_pattern)
+//          {
+//          
+//           for(unsigned int i=0; i < joint_pattern->noofrepetitions; i++)
+//           {
+//             boost::shared_ptr<Joint> joint;
+//             joint.reset(new Joint(*joint_pattern->joint_set[i]));
+//           
+//             if (model->getJoint(joint->name))
+//             {
+//               //ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
+//                std::cerr<< "ERROR: material" << joint->name <<"is not unique."<< std::endl;   
+//               model.reset();
+//               return model;
+//             }
+//             else
+//             {
+//               model->joints_.insert(make_pair(joint->name,joint)); 
+//               //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
+//             }
+//           } // end for joint_set
+//           
+//          } 
+//          else 
+//          {
             // -----------------------------------------------------------------------
             model->joint_patterns_.insert(make_pair(joint_pattern->name,joint_pattern));  
-          }
+//          }
       }
       else
       {

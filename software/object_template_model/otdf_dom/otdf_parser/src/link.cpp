@@ -917,7 +917,7 @@ bool Joint_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
      
      if(this->is_serial_pattern)
      {
-       temp->child_type="link";
+       //temp->child_type="link";
        if(i>0)
        {
           stm.clear();

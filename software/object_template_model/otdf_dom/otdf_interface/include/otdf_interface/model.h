@@ -72,7 +72,7 @@ public:
     else
       ptr = this->links_.find(name)->second;
     return ptr;
-  };
+  };  
   boost::shared_ptr<const BaseEntity> getEntity(const std::string& name) const
   {
     boost::shared_ptr<const BaseEntity> ptr;
@@ -135,6 +135,7 @@ public:
       ptr = this->links_.find(name)->second;
     link = ptr;
   };
+
   
   /// non-const getEntity()
  void getEntity(const std::string& name,boost::shared_ptr<BaseEntity> &entity) const
@@ -374,13 +375,22 @@ public:
        	  {
 	          //BaseEntity is a base class for bounding_volume's, link's, and link_pattern's
 	          boost::shared_ptr<BaseEntity>  parent_entity,child_entity;
-	          this->getEntity(parent_entity_name, parent_entity);
+	          
+	          if((i>0)&&(joint_pattern->second->is_serial_pattern))
+	          {
+              parent_entity=it->second->link_set[i-1];
+            }
+            else
+            {
+              this->getEntity(parent_entity_name, parent_entity);
+	          }
+	          
 	          if (!parent_entity)
 	          {
               std::cerr<< "ERROR:  parent entity "<< parent_entity_name << " of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
               return false;
 	          }
-	       
+	
 	         // this->getEntity(child_entity_name, child_entity);
 	          child_entity = it->second->link_set[i];
 	        
@@ -598,10 +608,11 @@ public:
       }
       else
       {
+      
         //BaseEntity is a base class for bounding_volume's, link's
         boost::shared_ptr<BaseEntity>  parent_entity;
-
         this->getEntity(parent_entity_name, parent_entity);
+        
         if (!parent_entity)
         {
           std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<"of joint pattern" << joint_pattern->first <<" not found." << std::endl;
@@ -631,7 +642,16 @@ public:
         {
           //BaseEntity is a base class for bounding_volume's, link's, and link_pattern's
           boost::shared_ptr<BaseEntity>  parent_entity,child_entity;
-          this->getEntity(parent_entity_name, parent_entity);
+          
+          if((i>0)&&(joint_pattern->second->is_serial_pattern))
+          {
+            parent_entity=it->second->link_set[i-1];
+          }
+          else
+          {
+           this->getEntity(parent_entity_name, parent_entity);
+          }
+        
           if (!parent_entity)
           {
           std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<" of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
@@ -665,58 +685,4 @@ public:
 }
 
 #endif
-	/*
-        // find parent links
-       if(parent_type == "link")
-       {
-	boost::shared_ptr<Link>  parent_link;
-	this->getLink(parent_link_name, parent_link);
-        if (!parent_link)
-        {
-           std::cerr<< "ERROR:  parent link "<< parent_link_name <<"of joint " << joint->first <<" not found." << std::endl;
-	    return false;
-        }
-	 
-       }
-       else if (parent_type == "bounding_volume")
-       {
-	 boost::shared_ptr<Bounding_volume>  parent_link; 
-	this->getBoundingVolume(parent_link_name, parent_link);
-        if (!parent_link)
-        {
-           std::cerr<< "ERROR:  parent bounding_volume "<< parent_link_name <<"of joint " << joint->first <<" not found." << std::endl;
-	    return false;
-        } 
-       }
-       else{
-	  std::cerr<< "ERROR:  unknown parent type "<< parent_type << "of joint " << joint->first << std::endl;
-	  return false;
-       }
-       
-       
-         // find child links
-       if(child_type == "link")
-       {
-	boost::shared_ptr<Link>  child_link;
-	this->getLink(child_link_name, child_link);
-        if (!child_link)
-        {
-           std::cerr<< "ERROR:  child link "<< child_link_name <<"of joint " << joint->first <<" not found." << std::endl;
-	    return false;
-        }
-	 
-       }
-       else if (child_type == "bounding_volume")
-       {
-	 boost::shared_ptr<Bounding_volume>  child_link; 
-	this->getBoundingVolume(child_link_name, child_link);
-        if (!child_link)
-        {
-           std::cerr<< "ERROR:  child bounding_volume "<< child_link_name <<"of joint " << joint->first <<" not found." << std::endl;
-	    return false;
-        } 
-       }
-       else{
-	  std::cerr<< "ERROR:  unknown child type "<< child_type << "of joint " << joint->first << std::endl;
-	  return false;
-       }*/
+	
