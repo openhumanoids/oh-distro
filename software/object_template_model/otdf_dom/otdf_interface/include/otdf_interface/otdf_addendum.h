@@ -284,8 +284,16 @@ namespace otdf
 	        if(i==0)
 	          temp->parent_to_joint_origin_transform = origin;     
 	        else{
-	          temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
-	          temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	          if(this->is_serial_pattern)
+            {
+       	      temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position;
+	            temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation;     
+            }
+            else
+            {
+	            temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+	            temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	          }
 	        }   
 	        this->joint_set.push_back(temp);
 	      }
