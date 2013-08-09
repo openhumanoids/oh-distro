@@ -22,7 +22,8 @@ void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out){
 }
 
 
-Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
+// Deprecated:
+Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
   double sy = sin(yaw*0.5);
   double cy = cos(yaw*0.5);
   double sp = sin(pitch*0.5);
@@ -37,6 +38,7 @@ Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
 }
 
 
+/*
 Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll) {
   double sy = sin(yaw*0.5);
   double cy = cos(yaw*0.5);
@@ -50,8 +52,9 @@ Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll) {
   double z = cr*cp*sy - sr*sp*cy;
   return Eigen::Quaternionf(w,x,y,z);
 }
+*/
 
-void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
+void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& yaw) {
   const double q0 = q.w();
   const double q1 = q.x();
   const double q2 = q.y();
@@ -93,12 +96,12 @@ Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
   Eigen::Vector3d t(pose.translation());
   Eigen::Quaterniond r(pose.rotation());
-  double ypr[3];
-  quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
+  double rpy[3];
+  quat_to_euler(r, rpy[0], rpy[1], rpy[2]);
   
   ss <<t[0]<<", "<<t[1]<<", "<<t[2]<<" | " 
        <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << " | RPY "
-       << ypr[2] <<", "<< ypr[1] <<", "<< ypr[0];
+       << rpy[0] <<", "<< rpy[1] <<", "<< rpy[2];
 }
 
 void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss){

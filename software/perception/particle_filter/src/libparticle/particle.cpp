@@ -55,11 +55,11 @@ void Particle::MoveParticleDrift(rng *pRng, std::vector<double> move_var,double 
   }
 
   // Apply noise to position:
-  double ypr[3];
-  ypr[0] =pRng->Normal(0,sqrt(move_var[1]));
-  ypr[1] =pRng->Normal(0,sqrt(move_var[1]));
-  ypr[2] =pRng->Normal(0,sqrt(move_var[1]));
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  double rpy[3];
+  rpy[0] =pRng->Normal(0,sqrt(move_var[1]));
+  rpy[1] =pRng->Normal(0,sqrt(move_var[1]));
+  rpy[2] =pRng->Normal(0,sqrt(move_var[1]));
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   Eigen::Isometry3d noise_dpose;
   noise_dpose.setIdentity();
   noise_dpose.translation() << pRng->Normal(0,sqrt(move_var[0])),
@@ -168,11 +168,11 @@ void Particle::MoveParticle(rng *pRng, pf_state odom_diff,std::vector<double> mo
   state.pose = state.pose*odom_dpose;
   
   // Apply noise to position:
-  double ypr[3];
-  ypr[0] =pRng->Normal(0,sqrt(move_var[1]));
-  ypr[1] =pRng->Normal(0,sqrt(move_var[1]));
-  ypr[2] =pRng->Normal(0,sqrt(move_var[1]));
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  double rpy[3];
+  rpy[0] =pRng->Normal(0,sqrt(move_var[1]));
+  rpy[1] =pRng->Normal(0,sqrt(move_var[1]));
+  rpy[2] =pRng->Normal(0,sqrt(move_var[1]));
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   Eigen::Isometry3d noise_dpose;
   noise_dpose.setIdentity();
     noise_dpose.translation() << pRng->Normal(0,sqrt(move_var[0])),
@@ -255,11 +255,11 @@ void Particle::MoveParticle(rng *pRng, pf_state odom_diff,std::vector<double> mo
 void Particle::InitializeState(rng *pRng, double init_weight,
 	Eigen::Isometry3d init_pose, std::vector <double> initial_var){
   // Add noise to position:
-  double ypr[3];
-  ypr[0] =pRng->Normal(0,sqrt(initial_var[1]));
-  ypr[1] =pRng->Normal(0,sqrt(initial_var[1]));
-  ypr[2] =pRng->Normal(0,sqrt(initial_var[1]));
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  double rpy[3];
+  rpy[0] =pRng->Normal(0,sqrt(initial_var[1]));
+  rpy[1] =pRng->Normal(0,sqrt(initial_var[1]));
+  rpy[2] =pRng->Normal(0,sqrt(initial_var[1]));
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   
   Eigen::Isometry3d noise_dpose;
   noise_dpose.setIdentity();
@@ -270,11 +270,11 @@ void Particle::InitializeState(rng *pRng, double init_weight,
   state.pose =init_pose * noise_dpose;
 
   // Set velocity with known state
-  double ypr_velocity[3];
-  ypr_velocity[0] =pRng->Normal(0,sqrt(initial_var[3]));
-  ypr_velocity[1] =pRng->Normal(0,sqrt(initial_var[3]));
-  ypr_velocity[2] =pRng->Normal(0,sqrt(initial_var[3]));
-  Eigen::Quaterniond m_vel = euler_to_quat(ypr_velocity[0], ypr_velocity[1], ypr_velocity[2]);
+  double rpy_velocity[3];
+  rpy_velocity[0] =pRng->Normal(0,sqrt(initial_var[3]));
+  rpy_velocity[1] =pRng->Normal(0,sqrt(initial_var[3]));
+  rpy_velocity[2] =pRng->Normal(0,sqrt(initial_var[3]));
+  Eigen::Quaterniond m_vel = euler_to_quat(rpy_velocity[0], rpy_velocity[1], rpy_velocity[2]);
 
   Eigen::Isometry3d init_vel;
   init_vel.setIdentity();

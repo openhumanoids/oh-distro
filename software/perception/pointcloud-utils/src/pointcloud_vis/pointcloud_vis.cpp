@@ -106,8 +106,8 @@ void pointcloud_vis::pose_collection_to_lcm(obj_cfg ocfg, std::vector<Isometry3d
     poses[i].y = posesT[i].pose.translation().y();
     poses[i].z = posesT[i].pose.translation().z();
     Eigen::Quaterniond r(posesT[i].pose.rotation());
-    quat_to_euler(r, poses[i].yaw,
-      poses[i].pitch, poses[i].roll);
+    quat_to_euler(r, poses[i].roll,
+      poses[i].pitch, poses[i].yaw);
   }
   objs.objs = poses;
   vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
@@ -138,8 +138,8 @@ void pointcloud_vis::pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT){
   poses[0].y = poseT.pose.translation().y();
   poses[0].z = poseT.pose.translation().z();
   Eigen::Quaterniond r(poseT.pose.rotation());
-  quat_to_euler(r, poses[0].yaw,
-      poses[0].pitch, poses[0].roll);
+  quat_to_euler(r, poses[0].roll,
+      poses[0].pitch, poses[0].yaw);
   objs.objs = poses;
   vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
 }

@@ -47,10 +47,10 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
     
     Eigen::Vector3d delta_head_to_local = local_to_head_.translation() - local_to_head_prev_.translation();
     local_to_head_lin_rate_ = delta_head_to_local/elapsed_time; // velocity (linear rate)
-    Eigen::Vector3d head_ypr,head_ypr_prev, delta_local_to_head_rot;
-    quat_to_euler(  Eigen::Quaterniond(local_to_head_.rotation()) , head_ypr(0), head_ypr(1), head_ypr(2));
-    quat_to_euler(  Eigen::Quaterniond(local_to_head_prev_.rotation()) , head_ypr_prev(0), head_ypr_prev(1), head_ypr_prev(2));
-    delta_local_to_head_rot = head_ypr - head_ypr_prev ;
+    Eigen::Vector3d head_rpy,head_rpy_prev, delta_local_to_head_rot;
+    quat_to_euler(  Eigen::Quaterniond(local_to_head_.rotation()) , head_rpy(0), head_rpy(1), head_rpy(2));
+    quat_to_euler(  Eigen::Quaterniond(local_to_head_prev_.rotation()) , head_rpy_prev(0), head_rpy_prev(1), head_rpy_prev(2));
+    delta_local_to_head_rot = head_rpy - head_rpy_prev ;
     local_to_head_rot_rate_ = delta_local_to_head_rot/elapsed_time; // rotation rate
 
     Eigen::Vector3d delta_body_to_local = local_to_body_.translation() - local_to_body_prev_.translation();
@@ -58,25 +58,21 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
     
     bool use_vo_rot_rates=false;
     if (use_vo_rot_rates){
-      Eigen::Vector3d body_ypr,body_ypr_prev, delta_local_to_body_rot;
-      quat_to_euler(  Eigen::Quaterniond(local_to_body_.rotation()) , body_ypr(0), body_ypr(1), body_ypr(2));
-      quat_to_euler(  Eigen::Quaterniond(local_to_body_prev_.rotation()) , body_ypr_prev(0), body_ypr_prev(1), body_ypr_prev(2));
-      delta_local_to_body_rot = body_ypr - body_ypr_prev ; 
+      Eigen::Vector3d body_rpy,body_rpy_prev, delta_local_to_body_rot;
+      quat_to_euler(  Eigen::Quaterniond(local_to_body_.rotation()) , body_rpy(0), body_rpy(1), body_rpy(2));
+      quat_to_euler(  Eigen::Quaterniond(local_to_body_prev_.rotation()) , body_rpy_prev(0), body_rpy_prev(1), body_rpy_prev(2));
+      delta_local_to_body_rot = body_rpy - body_rpy_prev ; 
       local_to_body_rot_rate_ = delta_local_to_body_rot/elapsed_time; // rotation rate
     }else{
-      // Convert from ypr to rpy:
-      Eigen::Vector3d temp_body_rpy_rate(body_rot_rate_imu_(2), body_rot_rate_imu_(1), body_rot_rate_imu_(0) );
-      // do calculation in RPY - this linear() was Dehann's suggestion
-      Eigen::Vector3d temp_local_rpy_rate = local_to_body_.linear() * ( temp_body_rpy_rate ); 
-      // Convert back to ypr holder:
-      local_to_body_rot_rate_ = Eigen::Vector3d( temp_local_rpy_rate(2), temp_local_rpy_rate(1), temp_local_rpy_rate(0) );
+      // This linear() was Dehann's suggestion
+      local_to_body_rot_rate_ = local_to_body_.linear() * ( body_rot_rate_imu_ ); 
       //std::cout << local_to_body_rot_rate_.transpose() <<" test1\n";
     }
     
     /*
     cout << delta_body_to_local << "\n";
-    cout << body_ypr <<" body_ypr\n";
-    cout << body_ypr_prev << " body_ypr_prev\n";
+    cout << body_rpy <<" body_rpy\n";
+    cout << body_rpy_prev << " body_rpy_prev\n";
     cout << delta_local_to_body_rot << " delta_local_to_body_rot\n";
     cout << local_to_body_rot_rate_ << " local_to_body_rot_rate_\n";
     cout << local_to_body_rot_rate_*180/M_PI << " local_to_body_rot_rate_ deg\n";
@@ -111,19 +107,19 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   xyz_vel[1] = delta_head.translation().y()/elapsed_time;
   xyz_vel[2] = delta_head.translation().z()/elapsed_time;
   
-  double d_ypr[3], ypr_vel[3];
-  quat_to_euler(  Eigen::Quaterniond(delta_head.rotation()) , d_ypr[0], d_ypr[1], d_ypr[2]);
-  ypr_vel[0] = d_ypr[0]/elapsed_time;
-  ypr_vel[1] = d_ypr[1]/elapsed_time;
-  ypr_vel[2] = d_ypr[2]/elapsed_time;  // ypr_vel are now the angular rates in camera frame
+  double d_rpy[3], rpy_vel[3];
+  quat_to_euler(  Eigen::Quaterniond(delta_head.rotation()) , d_rpy[0], d_rpy[1], d_rpy[2]);
+  rpy_vel[0] = d_rpy[0]/elapsed_time;
+  rpy_vel[1] = d_rpy[1]/elapsed_time;
+  rpy_vel[2] = d_rpy[2]/elapsed_time;  // rpy_vel are now the angular rates in camera frame
   
   cout << "\nElapsed Time: " << elapsed_time << "\n";
   std::stringstream ss;
   ss << "DeltaH: ";     print_Isometry3d(delta_head,ss); 
   std::cout << ss.str() << "\n";
-  std::cout << "YPR: " << d_ypr[0] << ", "<<d_ypr[1] << ", "<<d_ypr[2] <<" rads [delta]\n";
-  std::cout << "YPR: " << ypr_vel[0] << ", "<<ypr_vel[1] << ", "<<ypr_vel[2] <<" rad/s | ang velocity\n";
-  std::cout << "YPR: " << ypr_vel[0]*180/M_PI << ", "<<ypr_vel[1]*180/M_PI << ", "<<ypr_vel[2]*180/M_PI <<" deg/s | ang velocity\n";
+  std::cout << "RPY: " << d_rpy[0] << ", "<<d_rpy[1] << ", "<<d_rpy[2] <<" rads [delta]\n";
+  std::cout << "RPY: " << rpy_vel[0] << ", "<<rpy_vel[1] << ", "<<rpy_vel[2] <<" rad/s | ang velocity\n";
+  std::cout << "RPY: " << rpy_vel[0]*180/M_PI << ", "<<rpy_vel[1]*180/M_PI << ", "<<rpy_vel[2]*180/M_PI <<" deg/s | ang velocity\n";
   std::cout << "XYZ: " << xyz_vel[0] << ", "<<xyz_vel[1] << ", "<<xyz_vel[2] <<" m/s | lin velocity\n";
   */       
     
@@ -173,9 +169,9 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, 
   l2head_msg.vel[0]=local_to_head_lin_rate_(0);
   l2head_msg.vel[1]=local_to_head_lin_rate_(1);
   l2head_msg.vel[2]=local_to_head_lin_rate_(2);
-  l2head_msg.rotation_rate[0]=local_to_head_rot_rate_(2);
+  l2head_msg.rotation_rate[0]=local_to_head_rot_rate_(0);
   l2head_msg.rotation_rate[1]=local_to_head_rot_rate_(1);
-  l2head_msg.rotation_rate[2]=local_to_head_rot_rate_(0);
+  l2head_msg.rotation_rate[2]=local_to_head_rot_rate_(2);
   l2head_msg.accel[0]=0; // not estimated
   l2head_msg.accel[1]=0;
   l2head_msg.accel[2]=0;  
@@ -199,9 +195,9 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, 
   l2body_msg.vel[0]=local_to_body_lin_rate_(0);
   l2body_msg.vel[1]=local_to_body_lin_rate_(1);
   l2body_msg.vel[2]=local_to_body_lin_rate_(2);
-  l2body_msg.rotation_rate[0]=local_to_body_rot_rate_(2);
+  l2body_msg.rotation_rate[0]=local_to_body_rot_rate_(0);
   l2body_msg.rotation_rate[1]=local_to_body_rot_rate_(1);
-  l2body_msg.rotation_rate[2]=local_to_body_rot_rate_(0);
+  l2body_msg.rotation_rate[2]=local_to_body_rot_rate_(2);
   l2body_msg.accel[0]=0; // not estimated
   l2body_msg.accel[1]=0;
   l2body_msg.accel[2]=0;  

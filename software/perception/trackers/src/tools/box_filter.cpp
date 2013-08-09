@@ -134,21 +134,20 @@ void StatePub::boxFilter(){
 
 
 void StatePub::moveCloud(){
-    Eigen::Isometry3f local_to_lidar;
-    Eigen::Quaternionf quat = euler_to_quat_f( yaw*M_PI/180.0 ,0,0);
-    //Eigen::Quaternionf quat = Eigen::Quaternionf(1,0,0,0);
+    Eigen::Isometry3d local_to_lidar;
+    Eigen::Quaterniond quat = euler_to_quat( 0 ,0, yaw*M_PI/180.0);
+
     local_to_lidar.setIdentity();
-//    local_to_lidar.translation()  << 1.2575, 1.3, 1.16;
-    local_to_lidar.translation()  << x,y,z;//0,0,-0.63;
+    local_to_lidar.translation()  << x,y,z;
     local_to_lidar.rotate(quat);
 
     
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1005,"[BoxFilter] Pose to removed",5,0) );  
-  Isometry3dTime local_to_lidarT = Isometry3dTime(0, local_to_lidar.cast<double>()  ); 
+  Isometry3dTime local_to_lidarT = Isometry3dTime(0, local_to_lidar  ); 
   pc_vis_->pose_to_lcm_from_list(1005, local_to_lidarT);
     
-    Eigen::Isometry3f local_to_lidar_i = local_to_lidar.inverse();  
-    Eigen::Quaternionf quat_i  =  Eigen::Quaternionf ( local_to_lidar_i.rotation()  );
+    Eigen::Isometry3f local_to_lidar_i = local_to_lidar.inverse().cast<float>();  
+    Eigen::Quaternionf quat_i  =  Eigen::Quaternionf ( local_to_lidar_i.cast<float>().rotation()  );
   
     pcl::transformPointCloud (*_cloud, *_cloud,
         local_to_lidar_i.translation(), quat_i); // !! modifies lidar_cloud

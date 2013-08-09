@@ -72,13 +72,8 @@ class ParticleFilter{
     // Apply a manifold constraint to a plane
     // @input: xyzypr - the relative offset for each specific dimension 
     // @input: set_xyzypr - a binary vector of which dimensions to project
-    void applyPlaneConstraint(std::vector<double> xyzypr, std::vector<bool> set_xyzypr);
-    
-    // Apply a manifold constraint to a plane
-    // @input: xyzypr - the relative offset for each specific dimension 
-    // @input: set_xyzypr - a binary vector of which dimensions to project
     // @input: plane_pose - the plane onto which to project. TODO: use something more useful
-    void applyPlaneConstraint(std::vector<double> xyzypr, std::vector<bool> set_xyzypr, 
+    void applyPlaneConstraint(std::vector<double> xyzrpy, std::vector<bool> set_xyzrpy, 
                   Eigen::Isometry3d plane_pose);
     
     void LogLikelihoodParticles(std::vector<float> loglikelihoods);

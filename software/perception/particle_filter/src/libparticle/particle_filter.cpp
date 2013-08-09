@@ -146,11 +146,11 @@ void ParticleFilter::SetHeightPitchRoll(std::vector<double> height_pitch_roll){
     pf_state state = particleset[i].GetState();
     Eigen::Quaterniond r(state.pose.rotation());
     double yaw,pitch,roll;
-    quat_to_euler(r, yaw, pitch, roll) ;
+    quat_to_euler(r, roll, pitch, yaw) ;
     pitch =height_pitch_roll[1];
     roll  =height_pitch_roll[2];
 
-    Eigen::Quaterniond m = euler_to_quat(yaw, pitch, roll);
+    Eigen::Quaterniond m = euler_to_quat(roll, pitch, yaw);
     Eigen::Isometry3d ipose;
     ipose.setIdentity();
     ipose.translation() << state.pose.translation().x(),state.pose.translation().y(), height_pitch_roll[0];
@@ -162,53 +162,27 @@ void ParticleFilter::SetHeightPitchRoll(std::vector<double> height_pitch_roll){
 }
 
 
-void ParticleFilter::applyPlaneConstraint(std::vector<double> xyzypr,
-        std::vector<bool> set_xyzypr){
-  // Set the HPR at fixed values in world frame
-  std::cout << "deprecated - use more general method with Identity plane_pose\n";
-  for(int i = 0; i < N_p ; ++i) {
-    pf_state state = particleset[i].GetState();
-    double current_ypr[3];
-    quat_to_euler(  Eigen::Quaterniond(state.pose.rotation()) , current_ypr[0], current_ypr[1], current_ypr[2]);
-    if (set_xyzypr[3]){ current_ypr[0] = xyzypr[3]; }
-    if (set_xyzypr[4]){ current_ypr[1] = xyzypr[4]; }
-    if (set_xyzypr[5]){ current_ypr[2] = xyzypr[5]; }
-    Eigen::Quaterniond revised_quat = euler_to_quat( current_ypr[0], current_ypr[1], current_ypr[2]);             
-    
-    Eigen::Isometry3d ipose;
-    ipose.setIdentity();
-    ipose.translation() << state.pose.translation();
-    if (set_xyzypr[0]){ ipose.translation().x() = xyzypr[0]; }
-    if (set_xyzypr[1]){ ipose.translation().y() = xyzypr[1]; }
-    if (set_xyzypr[2]){ ipose.translation().z() = xyzypr[2]; }
 
-    ipose.rotate(revised_quat);
-    state.pose = ipose;
-    particleset[i].SetState(state);  
-  }
-}
-
-
-void ParticleFilter::applyPlaneConstraint(std::vector<double> xyzypr,
-        std::vector<bool> set_xyzypr, Eigen::Isometry3d plane_pose){
+void ParticleFilter::applyPlaneConstraint(std::vector<double> xyzrpy,
+        std::vector<bool> set_xyzrpy, Eigen::Isometry3d plane_pose){
 
   for(int i = 0; i < N_p ; ++i) {  
     pf_state state = particleset[i].GetState();
     state.pose = plane_pose.inverse() * state.pose ;
   
-    double current_ypr[3];
-    quat_to_euler(  Eigen::Quaterniond( state.pose.rotation()) , current_ypr[0], current_ypr[1], current_ypr[2]);
-    if (set_xyzypr[3]){ current_ypr[0] = xyzypr[3]; }
-    if (set_xyzypr[4]){ current_ypr[1] = xyzypr[4]; }
-    if (set_xyzypr[5]){ current_ypr[2] = xyzypr[5]; }
-    Eigen::Quaterniond revised_quat = euler_to_quat( current_ypr[0], current_ypr[1], current_ypr[2]);             
+    double current_rpy[3];
+    quat_to_euler(  Eigen::Quaterniond( state.pose.rotation()) , current_rpy[0], current_rpy[1], current_rpy[2]);
+    if (set_xyzrpy[3]){ current_rpy[0] = xyzrpy[3]; }
+    if (set_xyzrpy[4]){ current_rpy[1] = xyzrpy[4]; }
+    if (set_xyzrpy[5]){ current_rpy[2] = xyzrpy[5]; }
+    Eigen::Quaterniond revised_quat = euler_to_quat( current_rpy[0], current_rpy[1], current_rpy[2]);             
     
     Eigen::Isometry3d ipose;
     ipose.setIdentity();
     ipose.translation() << state.pose.translation();
-    if (set_xyzypr[0]){ ipose.translation().x() = xyzypr[0]; }
-    if (set_xyzypr[1]){ ipose.translation().y() = xyzypr[1]; }
-    if (set_xyzypr[2]){ ipose.translation().z() = xyzypr[2]; }
+    if (set_xyzrpy[0]){ ipose.translation().x() = xyzrpy[0]; }
+    if (set_xyzrpy[1]){ ipose.translation().y() = xyzrpy[1]; }
+    if (set_xyzrpy[2]){ ipose.translation().z() = xyzrpy[2]; }
 
     ipose.rotate(revised_quat);
     state.pose = ipose;    
@@ -324,7 +298,7 @@ pf_state ParticleFilter::Integrate(){
   long double wSum = 0;
   
   double pos[]={0,0,0};
-  double ypr[]={0,0,0};
+  double rpy[]={0,0,0};
   for(int i =0; i < N_p; i++){
     pf_state state = particleset[i].GetState();
     double w = expl(particleset[i].GetLogWeight());
@@ -332,7 +306,7 @@ pf_state ParticleFilter::Integrate(){
     Eigen::Vector3d t(state.pose.translation());
     Eigen::Quaterniond r(state.pose.rotation());
     double yaw,pitch,roll;
-    quat_to_euler(r, yaw, pitch, roll) ;
+    quat_to_euler(r, roll, pitch, yaw) ;
 
     /*if(isnan_particle(t[0])){
       cout << t[0] << " is t[0] "<< i <<"\n";
@@ -344,9 +318,9 @@ pf_state ParticleFilter::Integrate(){
     pos[0] += w*t[0];
     pos[1] += w*t[1];
     pos[2] += w*t[2];
-    ypr[0] += w*yaw;
-    ypr[1] += w*pitch;
-    ypr[2] += w*roll;
+    rpy[0] += w*roll;
+    rpy[1] += w*pitch;
+    rpy[2] += w*yaw;
     wSum  += w ;
   }
   //cout << wSum << " is wSum\n";
@@ -354,11 +328,11 @@ pf_state ParticleFilter::Integrate(){
   pos[0] /= wSum;
   pos[1] /= wSum;
   pos[2] /= wSum;
-  ypr[0] /= wSum;
-  ypr[1] /= wSum;
-  ypr[2] /= wSum;
+  rpy[0] /= wSum;
+  rpy[1] /= wSum;
+  rpy[2] /= wSum;
   
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   Eigen::Isometry3d ipose;
   ipose.setIdentity();
     ipose.translation() << pos[0],pos[1],pos[2];
@@ -373,7 +347,7 @@ pf_state ParticleFilter::IntegrateVelocity(){
   long double wSum = 0;
   
   double pos[]={0,0,0};
-  double ypr[]={0,0,0};
+  double rpy[]={0,0,0};
   for(int i =0; i < N_p; i++){
     pf_state state = particleset[i].GetState();
     double w = expl(particleset[i].GetLogWeight());
@@ -381,24 +355,24 @@ pf_state ParticleFilter::IntegrateVelocity(){
     Eigen::Vector3d t(state.velocity.translation());
     Eigen::Quaterniond r(state.velocity.rotation());
     double yaw,pitch,roll;
-    quat_to_euler(r, yaw, pitch, roll) ;
+    quat_to_euler(r, roll, pitch, yaw) ;
 
     pos[0] += w*t[0];
     pos[1] += w*t[1];
     pos[2] += w*t[2];
-    ypr[0] += w*yaw;
-    ypr[1] += w*pitch;
-    ypr[2] += w*roll;
+    rpy[0] += w*roll;
+    rpy[1] += w*pitch;
+    rpy[2] += w*yaw;
     wSum  += w ;
   }
   pos[0] /= wSum;
   pos[1] /= wSum;
   pos[2] /= wSum;
-  ypr[0] /= wSum;
-  ypr[1] /= wSum;
-  ypr[2] /= wSum;
+  rpy[0] /= wSum;
+  rpy[1] /= wSum;
+  rpy[2] /= wSum;
   
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   Eigen::Isometry3d ipose;
   ipose.setIdentity();
   ipose.translation() << pos[0],pos[1],pos[2];
@@ -426,7 +400,7 @@ pf_state ParticleFilter::IntegrateWrapSafe(){
     Eigen::Vector3d t(state.pose.translation());
     Eigen::Quaterniond r(state.pose.rotation());
     double yaw,pitch,roll;
-    quat_to_euler(r, yaw, pitch, roll) ;
+    quat_to_euler(r, roll, pitch, yaw) ;
     
     if (yaw < -170*M_PI/180){
       count=count+1.0;
@@ -439,7 +413,7 @@ pf_state ParticleFilter::IntegrateWrapSafe(){
   }  
   
   double pos[]={0,0,0};
-  double ypr[]={0,0,0};
+  double rpy[]={0,0,0};
   for(int i =0; i < N_p; i++){
     pf_state state = particleset[i].GetState();
     double w = expl(particleset[i].GetLogWeight());
@@ -447,7 +421,7 @@ pf_state ParticleFilter::IntegrateWrapSafe(){
     Eigen::Vector3d t(state.pose.translation());
     Eigen::Quaterniond r(state.pose.rotation());
     double yaw,pitch,roll;
-    quat_to_euler(r, yaw, pitch, roll) ;
+    quat_to_euler(r, roll, pitch, yaw) ;
 
     pos[0] += w*t[0];
     pos[1] += w*t[1];
@@ -460,19 +434,19 @@ pf_state ParticleFilter::IntegrateWrapSafe(){
       }
     }
     
-    ypr[0] += w*yaw;
-    ypr[1] += w*pitch;
-    ypr[2] += w*roll;
+    rpy[0] += w*roll;
+    rpy[1] += w*pitch;
+    rpy[2] += w*yaw;
     wSum  += w ;
   }
   pos[0] /= wSum;
   pos[1] /= wSum;
   pos[2] /= wSum;
-  ypr[0] /= wSum;
-  ypr[1] /= wSum;
-  ypr[2] /= wSum;
+  rpy[0] /= wSum;
+  rpy[1] /= wSum;
+  rpy[2] /= wSum;
   
-  Eigen::Quaterniond m = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  Eigen::Quaterniond m = euler_to_quat(rpy[0], rpy[1], rpy[2]);
   Eigen::Isometry3d ipose;
   ipose.setIdentity();
     ipose.translation() << pos[0],pos[1],pos[2];
@@ -545,7 +519,7 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
     particle_state =particleset[i].GetState();
     Eigen::Vector3d t(particle_state.pose.translation());
     Eigen::Quaterniond r(particle_state.pose.rotation());
-    quat_to_euler(r, poses_ps[i].yaw, poses_ps[i].pitch, poses_ps[i].roll) ;
+    quat_to_euler(r, poses_ps[i].roll, poses_ps[i].pitch, poses_ps[i].yaw) ;
     poses_ps[i].id = time_stamp + i;
     poses_ps[i].x = t[0];
     poses_ps[i].y = t[1];
@@ -567,7 +541,7 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   poses[0].x = t[0];
   poses[0].y = t[1];
   poses[0].z = t[2];
-  quat_to_euler(r, poses[0].yaw, poses[0].pitch, poses[0].roll) ;
+  quat_to_euler(r, poses[0].roll, poses[0].pitch, poses[0].yaw) ;
   objs.objs = poses;
   vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs);  
   
@@ -581,7 +555,7 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   poses[0].x = tw[0];
   poses[0].y = tw[1];
   poses[0].z = tw[2];
-  quat_to_euler(rw, poses[0].yaw, poses[0].pitch, poses[0].roll) ;
+  quat_to_euler(rw, poses[0].roll, poses[0].pitch, poses[0].yaw) ;
   objs.objs = poses;
   vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs);    
   
@@ -622,7 +596,7 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   poses2[0].x = t2[0];
   poses2[0].y = t2[1];
   poses2[0].z = t2[2];
-  quat_to_euler(r2, poses2[0].yaw, poses2[0].pitch, poses2[0].roll) ;
+  quat_to_euler(r2, poses2[0].roll, poses2[0].pitch, poses2[0].yaw) ;
   objs2.objs = poses2;
   vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs2);        
   

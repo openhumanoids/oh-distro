@@ -99,12 +99,11 @@ static inline void jet_rgb(float value,std::vector< float > &rgb){
 void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out);
 
 // From isam/Rot3d.h
-Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll);
-
+Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw);
 // Float version -  From isam/Rot3d.h
-Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll);
+//Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll);
 
-void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
+void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& yaw);
 
 
 // generic float to double converter: [remove if something in eigen works instead

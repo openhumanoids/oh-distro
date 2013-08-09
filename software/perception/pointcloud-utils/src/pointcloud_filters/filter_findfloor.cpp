@@ -199,7 +199,7 @@ bool FilterFindfloor::getHeightPitchRoll(double height_pitch_roll[]){
       testdata.pos[0]=0;
       testdata.pos[1]=0;
       testdata.pos[2]=height;
-      Eigen::Quaterniond quat =euler_to_quat(0,roll,pitch); // ypr
+      Eigen::Quaterniond quat =euler_to_quat(roll,pitch,0); // rpy
       testdata.orientation[0] = quat.w();
       testdata.orientation[1] = quat.x();
       testdata.orientation[2] = quat.y();

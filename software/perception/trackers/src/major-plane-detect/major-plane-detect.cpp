@@ -111,7 +111,7 @@ Eigen::Isometry3d MajorPlane::determinePlanePose(pcl::ModelCoefficients::Ptr pla
   Eigen::Isometry3d plane_pose;
   plane_pose.setIdentity();
   plane_pose.translation() << centroid(0), centroid(1), centroid(2);
-  Eigen::Quaterniond quat = euler_to_quat( yaw , pitch , 0 );             
+  Eigen::Quaterniond quat = euler_to_quat( 0 , pitch , yaw );             
   plane_pose.rotate( quat );
   return plane_pose;
 }

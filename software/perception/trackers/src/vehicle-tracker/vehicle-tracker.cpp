@@ -141,7 +141,7 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, st
   
   
   Eigen::Isometry3d transform;
-  Eigen::Quaterniond quat = euler_to_quat( 0.1, 0,0 );             
+  Eigen::Quaterniond quat = euler_to_quat( 0, 0,0.1 );             
   transform.setIdentity();
   transform.translation()  << 0.1, 0., 0.;
   transform.rotate(quat);  
@@ -194,7 +194,7 @@ void StatePub::primitivesToMesh(std::vector<Primitive> &primitives){
     Eigen::Isometry3d transform;
     transform.setIdentity();
     transform.translation()  << primitives[i].params[0] , primitives[i].params[1] , primitives[i].params[2];
-    Eigen::Quaterniond quat = euler_to_quat( primitives[i].params[5],  primitives[i].params[4],  primitives[i].params[3]);
+    Eigen::Quaterniond quat = euler_to_quat( primitives[i].params[3],  primitives[i].params[4],  primitives[i].params[5]);
     transform.rotate(quat);  
     
     pcl::PolygonMesh::Ptr mesh_ptr_temp(new pcl::PolygonMesh());
@@ -212,7 +212,7 @@ void StatePub::transformMesh(){
     Eigen::Isometry3d transform;
     transform.setIdentity();
     transform.translation()  << -0.2 +x ,-2.5 + y,0 +z;
-    Eigen::Quaterniond quat = euler_to_quat( M_PI + yaw,0,0);
+    Eigen::Quaterniond quat = euler_to_quat( 0,0, M_PI + yaw);
     transform.rotate(quat);  
 
   

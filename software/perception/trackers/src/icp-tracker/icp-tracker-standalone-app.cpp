@@ -156,7 +156,7 @@ drc::affordance_t StatePub::getAffordance(Eigen::Isometry3d &pose, int uid){
 
     Eigen::Quaterniond r(pose.rotation());
     double yaw, pitch, roll;
-    quat_to_euler(r, yaw, pitch, roll);    
+    quat_to_euler(r, roll, pitch, yaw);    
     double x,y,z;
     x = pose.translation().x() ;
     y = pose.translation().y() ;

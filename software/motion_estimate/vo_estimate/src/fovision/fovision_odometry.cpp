@@ -401,12 +401,12 @@ void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
       if (!pose_initialized_){
         std::stringstream ss2;
         print_Isometry3d(local_to_head_true, ss2);
-        double ypr[3];
-        quat_to_euler(  Eigen::Quaterniond(local_to_head_true.rotation()) , ypr[0], ypr[1], ypr[2]);
+        double rpy[3];
+        quat_to_euler(  Eigen::Quaterniond(local_to_head_true.rotation()) , rpy[0], rpy[1], rpy[2]);
         
         if (1==1){//verbose
           std::cout << "gt local_to_head_true: " << ss2.str() << " | "<< 
-            ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+            rpy[0]*180/M_PI << " " << rpy[1]*180/M_PI << " " << rpy[2]*180/M_PI << "\n";         
         }
       
         estimator_->setHeadPose(local_to_head_true);
@@ -504,22 +504,22 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
       Eigen::Isometry3d local_to_head = estimator_->getHeadPose();// _local_to_camera *cam2head;
       std::stringstream ss2;
       print_Isometry3d(local_to_head, ss2);
-      double ypr[3];
-      quat_to_euler(  Eigen::Quaterniond(local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+      double rpy[3];
+      quat_to_euler(  Eigen::Quaterniond(local_to_head.rotation()) , rpy[0], rpy[1], rpy[2]);
       
       if (verbose){
         std::cout << "local_to_head: " << ss2.str() << " | "<< 
-          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+          rpy[0]*180/M_PI << " " << rpy[1]*180/M_PI << " " << rpy[2]*180/M_PI << "\n";        
       }
         
-      double ypr_imu[3];
+      double rpy_imu[3];
       quat_to_euler( imu_robotorientation , 
-                      ypr_imu[0], ypr_imu[1], ypr_imu[2]);
+                      rpy_imu[0], rpy_imu[1], rpy_imu[2]);
       if (verbose){
-        std::cout <<  ypr_imu[0]*180/M_PI << " " << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << " imuypr\n";        
-        cout << "IMU correction | pitch roll | was: "
-            << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << " | now: "
-            << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << "\n";
+        std::cout <<  rpy_imu[0]*180/M_PI << " " << rpy_imu[1]*180/M_PI << " " << rpy_imu[2]*180/M_PI << " rpy_imu\n";        
+        cout << "IMU correction | roll pitch | was: "
+            << rpy[0]*180/M_PI << " " << rpy[1]*180/M_PI << " | now: "
+            << rpy_imu[0]*180/M_PI << " " << rpy_imu[1]*180/M_PI << "\n";
       }
       
       
@@ -536,9 +536,9 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
       if (verbose){
         std::stringstream ss4;
         print_Isometry3d(revised_local_to_head, ss4);
-        quat_to_euler(  Eigen::Quaterniond(revised_local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+        quat_to_euler(  Eigen::Quaterniond(revised_local_to_head.rotation()) , rpy[0], rpy[1], rpy[2]);
         std::cout << "local_revhead: " << ss4.str() << " | "<< 
-          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+          rpy[0]*180/M_PI << " " << rpy[1]*180/M_PI << " " << rpy[2]*180/M_PI << "\n";        
       }
       estimator_->setHeadPose(revised_local_to_head);
       //estimator_->publishUpdate(utime); // now always done in publishUpdateRobotState
@@ -588,14 +588,14 @@ void StereoOdom::gazeboBodyIMUHandler(const lcm::ReceiveBuffer* rbuf,
   // Previous stuff from me - doesnt work
   /*
     Eigen::Vector3d ypr;
-    quat_to_euler( imu_orientation , ypr(0), ypr(1), ypr(2) );
+    quat_to_euler_old( imu_orientation , ypr(0), ypr(1), ypr(2) );
 
     Eigen::Vector3d ypr_rate( msg->angular_velocity[2],  msg->angular_velocity[1],  msg->angular_velocity[0] );
     Eigen::Quaterniond ypr_rate_quat= euler_to_quat( ypr_rate(0), ypr_rate(1), ypr_rate(2) );
     
     Eigen::Quaterniond applied_rotation = imu_orientation * ypr_rate_quat;
     Eigen::Vector3d applied_ypr;
-    quat_to_euler( applied_rotation , applied_ypr(0), applied_ypr(1), applied_ypr(2));
+    quat_to_euler_old( applied_rotation , applied_ypr(0), applied_ypr(1), applied_ypr(2));
 
     Eigen::Vector3d ypr_rate_world = applied_ypr - ypr ;
 

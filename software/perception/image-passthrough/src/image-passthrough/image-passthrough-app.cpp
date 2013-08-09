@@ -408,7 +408,7 @@ bool Pass::createMask(int64_t msg_time){
   Eigen::Isometry3d fixrotation_pose;
   fixrotation_pose.setIdentity();
   fixrotation_pose.translation() << 0,0,0;    
-  Eigen::Quaterniond fix_r = euler_to_quat(0.0*M_PI/180.0, -90.0*M_PI/180.0 , 90.0*M_PI/180.0);
+  Eigen::Quaterniond fix_r = euler_to_quat(90.0*M_PI/180.0, -90.0*M_PI/180.0, 0.0*M_PI/180.0 );
   fixrotation_pose.rotate(fix_r);    
   world_to_camera = world_to_camera*fixrotation_pose;
   

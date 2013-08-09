@@ -67,10 +67,10 @@ void lidar_classifier::lidar_handler(const bot_core_planar_lidar_t *msg){
   Eigen::Isometry3d lidar_to_local =  frames_cpp_->get_trans_with_utime( botframes_ ,  "SCAN_FREE", "local", msg->utime);
 
   // 2. Determine the lookahead transform - the forward direction from the pelvis ignoring pitch and roll:
-  double ypr[3];
-  quat_to_euler( Eigen::Quaterniond(body_to_local.rotation()) , ypr[0], ypr[1], ypr[2]);
+  double rpy[3];
+  quat_to_euler( Eigen::Quaterniond(body_to_local.rotation()) , rpy[0], rpy[1], rpy[2]);
   Matrix3d m;
-  m = AngleAxisd ( ypr[0], Vector3d::UnitZ ())
+  m = AngleAxisd ( rpy[2], Vector3d::UnitZ ())
                   * AngleAxisd (0 , Vector3d::UnitY ())
                   * AngleAxisd ( 0 , Vector3d::UnitX ());  
   Eigen::Isometry3d body_to_local_yaw =  Eigen::Isometry3d::Identity();

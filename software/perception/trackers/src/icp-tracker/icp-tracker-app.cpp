@@ -195,7 +195,7 @@ std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vecto
   for (size_t j=0; j< param_names.size(); j++){
     am[ param_names[j] ] = params[j];
   }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
+  Eigen::Quaterniond quat = euler_to_quat( am.find("roll")->second , am.find("pitch")->second , am.find("yaw")->second );             
   Eigen::Isometry3d transform;
   transform.setIdentity();
   transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
