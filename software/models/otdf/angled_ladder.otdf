@@ -269,7 +269,7 @@
         <origin rpy="0 0 0" xyz="${handrail_xoffset} 0 ${handrail_zoffset}" />
     </joint>
     <!-- A set of joints -->
-    <joint_pattern name="STEP_joints" noofrepetitions="${no_of_steps}" type="fixed">
+    <joint_pattern name="STEP_joints" noofrepetitions="${no_of_steps}" type="fixed" arrangement="parallel">
         <origin rpy="0 ${-ladder_pitch} 0" xyz="0 0 ${-((0.5*lZ)-(0.5*step_thickness))+first_step_zoffset}" />
         <!-- origin of the first element, all other joints are offset from it -->
         <pattern_offset rpy="0 0 0" xyz="0 0 ${step_zoffset}" />
