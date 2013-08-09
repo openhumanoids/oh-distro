@@ -192,6 +192,7 @@ namespace otdf
     /// transform from Parent Link frame to Joint frame
     //Pose  parent_to_joint_origin_transform;
     Pose pattern_offset;
+    bool is_serial_pattern;
     boost::shared_ptr<Joint> joint_template;
     std::vector<boost::shared_ptr<Joint> > joint_set;
     
@@ -229,6 +230,7 @@ namespace otdf
       
       this->origin.clear();
       this->pattern_offset.clear();
+      this->is_serial_pattern = false;
 
       this->child_link_pattern_name.clear();
       this->parent_link_name.clear();
@@ -246,32 +248,47 @@ namespace otdf
     void update()
     {
 
-	this->origin.update(); 
-	this->pattern_offset.update();  
-	joint_template->update();
-	if(expression_flags[0]){
-	    this->noofrepetitions = this->local_expressions[0].value();
-	}   
-	this->joint_set.clear();
-	//Update all joints in joint_set
-	for  (unsigned int i=0; i < (unsigned int)noofrepetitions; i++){
-	    boost::shared_ptr<Joint> temp; 
-	    temp.reset(new Joint(*joint_template));
-	    std::ostringstream stm;   
-	    stm << name << "_" << i; // append ID to pattern name
-	    temp->name =stm.str();
-	    stm.clear();
-	    stm.str("");
-	    stm << temp->child_link_name << "_" << i; // append ID to pattern name
-	    temp->child_link_name= stm.str();
-	    if(i==0)
-	      temp->parent_to_joint_origin_transform = origin;     
-	    else{
-	      temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
-	      temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	    this->origin.update(); 
+	    this->pattern_offset.update();  
+	    joint_template->update();
+	    if(expression_flags[0]){
+	        this->noofrepetitions = this->local_expressions[0].value();
 	    }   
-	    this->joint_set.push_back(temp);
-	  }
+	    this->joint_set.clear();
+	    //Update all joints in joint_set
+	    for  (unsigned int i=0; i < (unsigned int)noofrepetitions; i++){
+	        boost::shared_ptr<Joint> temp; 
+	        temp.reset(new Joint(*joint_template));
+	        std::ostringstream stm;   
+	        stm << name << "_" << i; // append ID to pattern name
+	        temp->name =stm.str();
+
+          if(this->is_serial_pattern)
+          {
+           temp->child_type="link";
+           if(i>0)
+           {
+              stm.clear();
+              stm.str("");
+              stm << temp->child_link_name << "_" << i-1; 
+              temp->parent_link_name= stm.str(); // append new child link to previous child link in a serial pattern
+              temp->parent_type = this->joint_set[i-1]->child_type;
+           }	  
+          } 
+
+          stm.clear();
+          stm.str("");
+          stm << temp->child_link_name << "_" << i; // append ID to pattern name
+          temp->child_link_name= stm.str();	       
+	        
+	        if(i==0)
+	          temp->parent_to_joint_origin_transform = origin;     
+	        else{
+	          temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+	          temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	        }   
+	        this->joint_set.push_back(temp);
+	      }
     };
   };
 

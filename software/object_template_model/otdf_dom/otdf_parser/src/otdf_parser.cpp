@@ -217,55 +217,60 @@ namespace otdf {
               
             link_pattern->initXml(link_pattern_xml,model->symbol_table);
 
-  //          //Loop through all links in the link pattern acc to noofrepetitions
-  //          for  (unsigned int i=0; i < link_pattern->noofrepetitions; i++)
-  //          {
-  //             boost::shared_ptr<Link> link;
-  //             link.reset(new Link(*link_pattern->link_set[i]));
-  //         
-  //             if (model->getLink(link->name))
-  //             {
-  //               //ROS_ERROR("link '%s' is not unique.", link->name.c_str());
-  //               std::cerr<< "ERROR: link in link_pattern" << link->name <<"is not unique."<< std::endl;   
-  //               model.reset();
-  //               return model;
-  //             }
-  //             else
-  //             {
-  //               // set link visual material
-  //               //ROS_DEBUG("setting link '%s' material", link->name.c_str());
-  //               if (link->visual)
-  //               {
-  //                 if (!link->visual->material_name.empty())
-  //                 {
-  //                   if (model->getMaterial(link->visual->material_name))
-  //                   {
-  //                     //ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name.c_str());
-  //                     link->visual->material = model->getMaterial( link->visual->material_name.c_str() );
-  //                   }
-  //                   else
-  //                   {
-  //                     if (link->visual->material)
-  //                     {
-  //                       //ROS_DEBUG("link '%s' material '%s' defined in Visual.", link->name.c_str(),link->visual->material_name.c_str());
-  //                       model->materials_.insert(make_pair(link->visual->material->name,link->visual->material));
-  //                     }
-  //                     else
-  //                     {
-  //                       //ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
-  //                       std::cerr<< "ERROR: link in link pattern" << link->name <<" material " << link->visual->material_name << " is not unique."<< std::endl;   
-  //                       model.reset();
-  //                       return model;
-  //                     }
-  //                   }//end if (model->getMaterial(link->visual->material_name))
-  //                 }//end if (!link->visual->material_name.empty())
-  //               }//end if (link->visual)
-  //               
-  //               model->links_.insert(make_pair(link->name,link));
-  // 	             model->entities_.insert(make_pair(link->name,link));
-  // 
-  //             }  //end if (model->getLink( ))
-  //             }// end for  (unsigned int i=0; i < noofrepetitions; i++)
+            // -----------------------------------------------------------------------
+            // Patch added 9th August 2013
+            // -----------------------------------------------------------------------
+            //Loop through all links in the link pattern acc to noofrepetitions
+            for  (unsigned int i=0; i < link_pattern->noofrepetitions; i++)
+            {
+               boost::shared_ptr<Link> link;
+               link.reset(new Link(*link_pattern->link_set[i]));
+           
+               if (model->getLink(link->name))
+               {
+                 //ROS_ERROR("link '%s' is not unique.", link->name.c_str());
+                 std::cerr<< "ERROR: link in link_pattern" << link->name <<"is not unique."<< std::endl;   
+                 model.reset();
+                 return model;
+               }
+               else
+               {
+                 // set link visual material
+                 //ROS_DEBUG("setting link '%s' material", link->name.c_str());
+                 if (link->visual)
+                 {
+                   if (!link->visual->material_name.empty())
+                   {
+                     if (model->getMaterial(link->visual->material_name))
+                     {
+                       //ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name.c_str());
+                       link->visual->material = model->getMaterial( link->visual->material_name.c_str() );
+                     }
+                     else
+                     {
+                       if (link->visual->material)
+                       {
+                         //ROS_DEBUG("link '%s' material '%s' defined in Visual.", link->name.c_str(),link->visual->material_name.c_str());
+                         model->materials_.insert(make_pair(link->visual->material->name,link->visual->material));
+                       }
+                       else
+                       {
+                         //ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
+                         std::cerr<< "ERROR: link in link pattern" << link->name <<" material " << link->visual->material_name << " is not unique."<< std::endl;   
+                         model.reset();
+                         return model;
+                       }
+                     }//end if (model->getMaterial(link->visual->material_name))
+                   }//end if (!link->visual->material_name.empty())
+                 }//end if (link->visual)
+                 
+                 model->links_.insert(make_pair(link->name,link));
+   	             model->entities_.insert(make_pair(link->name,link));
+   
+               }  //end if (model->getLink( ))
+            }// end for  (unsigned int i=0; i < noofrepetitions; i++)
+            // -----------------------------------------------------------------------
+            
            model->entities_.insert(make_pair(link_pattern->name,link_pattern));   
            model->link_patterns_.insert(make_pair(link_pattern->name,link_pattern));  
               
@@ -353,26 +358,39 @@ namespace otdf {
 
       if (joint_pattern->initXml(joint_pattern_xml,model->symbol_table))
       {
+
+            // -----------------------------------------------------------------------
+            // Patch added 9th August 2013
+            // -----------------------------------------------------------------------      
           //Loop through all joints in the joint pattern acc to noofrepetitions
-  //         for(unsigned int i=0; i < joint_pattern->noofrepetitions; i++)
-  //         {
-  //           boost::shared_ptr<Joint> joint;
-  //           joint.reset(new Joint(*joint_pattern->joint_set[i]));
-  //         
-  //           if (model->getJoint(joint->name))
-  //           {
-  //             //ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
-  //              std::cerr<< "ERROR: material" << joint->name <<"is not unique."<< std::endl;   
-  //             model.reset();
-  //             return model;
-  //           }
-  //           else
-  //           {
-  //             model->joints_.insert(make_pair(joint->name,joint)); 
-  //             //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
-  //           }
-  //         } // end for joint_set
-          model->joint_patterns_.insert(make_pair(joint_pattern->name,joint_pattern));  
+          if(joint_pattern->is_serial_pattern)
+          {
+          
+           for(unsigned int i=0; i < joint_pattern->noofrepetitions; i++)
+           {
+             boost::shared_ptr<Joint> joint;
+             joint.reset(new Joint(*joint_pattern->joint_set[i]));
+           
+             if (model->getJoint(joint->name))
+             {
+               //ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
+                std::cerr<< "ERROR: material" << joint->name <<"is not unique."<< std::endl;   
+               model.reset();
+               return model;
+             }
+             else
+             {
+               model->joints_.insert(make_pair(joint->name,joint)); 
+               //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
+             }
+           } // end for joint_set
+           
+          } 
+          else 
+          {
+            // -----------------------------------------------------------------------
+            model->joint_patterns_.insert(make_pair(joint_pattern->name,joint_pattern));  
+          }
       }
       else
       {

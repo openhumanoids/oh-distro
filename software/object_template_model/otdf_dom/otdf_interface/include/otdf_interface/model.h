@@ -280,7 +280,7 @@ public:
 	      this->getEntity(parent_entity_name, parent_entity);
         if (!parent_entity)
         {
-          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<"of joint " << joint->first <<" not found." << std::endl;
+          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<" of joint " << joint->first <<" not found." << std::endl;
           return false;
         }
         this->getEntity(child_entity_name, child_entity);
@@ -316,6 +316,9 @@ public:
        std::string parent_entity_name = joint_pattern->second->parent_link_name;
        std::string parent_type = joint_pattern->second->parent_type;
        std::string child_link_pattern_name = joint_pattern->second->child_link_pattern_name;
+       
+       //std::cout <<" child_link_pattern_name "<< child_link_pattern_name << std::endl;
+        
        std::map<std::string,boost::shared_ptr<Link_pattern> >::iterator it;
        it = this->link_patterns_.find(child_link_pattern_name);
        if (!it->second)
@@ -338,7 +341,7 @@ public:
         this->getEntity(parent_entity_name, parent_entity);
         if (!parent_entity)
         {
-          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<"of joint pattern" << joint_pattern->first <<" not found." << std::endl;
+          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<" of joint pattern" << joint_pattern->first <<" not found." << std::endl;
           return false;
         }
      
@@ -354,7 +357,13 @@ public:
 	        std::string child_entity_name = joint_pattern->second->joint_set[i]->child_link_name;
 	        std::string parent_type = joint_pattern->second->joint_set[i]->parent_type;
        	  std::string child_type = joint_pattern->second->joint_set[i]->child_type;
- 
+        
+          /*std::cout << i <<": parent_entity_name "<<parent_entity_name<< std::endl;
+          std::cout << i <<": child_entity_name "<<child_entity_name<< std::endl;
+          std::cout << i <<": parent_type "<<parent_type<< std::endl;
+          std::cout << i <<": child_type "<<child_type<< std::endl;
+          std::cout << std::endl;*/
+          
        	  //ROS_DEBUG("build tree: joint: '%s' has parent link '%s' and child  link '%s'", joint->first.c_str(), parent_link_name.c_str(),child_link_name.c_str());
        	  if (parent_entity_name.empty() || child_entity_name.empty())
        	  {
@@ -368,7 +377,7 @@ public:
 	          this->getEntity(parent_entity_name, parent_entity);
 	          if (!parent_entity)
 	          {
-              std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<"of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
+              std::cerr<< "ERROR:  parent entity "<< parent_entity_name << " of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
               return false;
 	          }
 	       
@@ -391,7 +400,7 @@ public:
 	        
 	          //set child link for parent link
 	          parent_entity->addChild(child_entity);
-	         // std::cout << child_entity->name << " " << parent_entity_name << std::endl;
+	          //std::cout << child_entity->name << " " << parent_entity_name << std::endl;
 	          // fill in child/parent string map
 	          parent_entity_tree[child_entity->name] = parent_entity_name;
 	        } // end if (parent_entity_name.empty() || child_entity_name.empty())
@@ -625,7 +634,7 @@ public:
           this->getEntity(parent_entity_name, parent_entity);
           if (!parent_entity)
           {
-          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<"of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
+          std::cerr<< "ERROR:  parent entity "<< parent_entity_name <<" of joint " << joint_pattern->second->joint_set[i]->name <<" not found." << std::endl;
           return false;
           }
 

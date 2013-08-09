@@ -747,6 +747,35 @@ bool Joint_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
   }
   this->name = name;
   
+
+  // ---------------------------------------------------------
+  // ---- New Patch to support serial arrangement of joints. (9th August 2013)---
+  //Get Pattern Arrangement
+  const char* arrangement_char = config->Attribute("arrangement");
+  if (!arrangement_char)
+  {
+     this->is_serial_pattern = false;
+  }
+  else {
+    std::string arrangement_str = arrangement_char;
+    if (arrangement_str == "serial")
+    {
+       this->is_serial_pattern = true;
+      //ROS_WARN("Planar joints are deprecated in the URDF!\n");
+    }
+    else if (arrangement_str == "parallel")
+    {
+      this->is_serial_pattern = false;
+      //ROS_WARN("Floating joints are deprecated in the URDF!\n");
+    }
+    else
+    {
+       std::cerr << " ERROR: joint pattern "<< this->name <<" has no known arrangement type"<< arrangement_str << std::endl;
+       return false;
+    } 
+  }
+  // ---------------------------------------------------------
+  
  // Get Joint pattern type
   const char* type_char = config->Attribute("type");
   if (!type_char)
@@ -885,10 +914,24 @@ bool Joint_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
      std::ostringstream stm;   
      stm << name << "_" << i; // append ID to pattern name
      temp->name =stm.str();
+     
+     if(this->is_serial_pattern)
+     {
+       temp->child_type="link";
+       if(i>0)
+       {
+          stm.clear();
+          stm.str("");
+          stm << temp->child_link_name << "_" << i-1; 
+          temp->parent_link_name= stm.str(); // append new child link to previous child link in a serial pattern
+          temp->parent_type = this->joint_set[i-1]->child_type;
+	     }	  
+	   }
      stm.clear();
      stm.str("");
      stm << temp->child_link_name << "_" << i; // append ID to pattern name
-     temp->child_link_name= stm.str();
+     temp->child_link_name= stm.str();	             
+     
      if(i==0)
        temp->parent_to_joint_origin_transform = origin;     
      else{
