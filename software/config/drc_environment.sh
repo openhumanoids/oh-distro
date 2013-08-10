@@ -1,4 +1,5 @@
-DRC_BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+export DRC_BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
 DRC_SOFTWARE=$DRC_BASE/software
 DRC_PATH=$DRC_SOFTWARE # for compatibility
 DRC_CONFIG=$DRC_BASE/software/config
