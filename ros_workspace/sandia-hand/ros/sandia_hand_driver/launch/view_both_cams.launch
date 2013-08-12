@@ -1,0 +1,10 @@
+<launch>
+  <node name="right_cam_viewer" pkg="image_view" type="image_view" output="screen">
+    <remap from="image" to="right/image_raw"/>
+    <param name="autosize" value="true"/>
+  </node>
+  <node name="left_cam_viewer" pkg="image_view" type="image_view" output="screen">
+    <remap from="image" to="left/image_raw"/>
+    <param name="autosize" value="true"/>
+  </node>
+</launch>

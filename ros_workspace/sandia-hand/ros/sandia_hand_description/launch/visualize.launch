@@ -1,0 +1,8 @@
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find sandia_hand_description)/robots/sandia_hand.urdf.xacro'" />
+  <node name="rviz" pkg="rviz" type="rviz" />
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="/use_gui" value="true"/>
+  </node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" respawn="true" output="screen" />
+</launch>

@@ -1,0 +1,8 @@
+find_package(Qt4 REQUIRED)
+set(sandia_hand_homing_SOURCES main.cpp homing_dialog.cpp)
+set(sandia_hand_homing_HEADERS homing_dialog.h)
+include(${QT_USE_FILE})
+QT4_WRAP_CPP(sandia_hand_homing_HEADERS_MOC ${sandia_hand_homing_HEADERS})
+add_definitions(${QT_DEFINITIONS})
+rosbuild_add_executable(sandia_hand_homing ${sandia_hand_homing_SOURCES} ${sandia_hand_homing_HEADERS_MOC})
+target_link_libraries(sandia_hand_homing ${QT_LIBRARIES})

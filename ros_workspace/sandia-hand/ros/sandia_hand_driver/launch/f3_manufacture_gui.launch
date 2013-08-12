@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="sandia_hand_driver" name="f3_maintenance_gui" type="maintenance.py" output="screen" required="true"/>
+</launch>

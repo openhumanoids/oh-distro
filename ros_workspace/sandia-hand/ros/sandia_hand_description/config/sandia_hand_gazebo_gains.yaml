@@ -1,0 +1,25 @@
+gains:
+  left_f0_j0:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f0_j1:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f0_j2:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f1_j0:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f1_j1:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f1_j2:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f2_j0:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f2_j1:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f2_j2:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f3_j0:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f3_j1:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  left_f3_j2:  {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f0_j0: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f0_j1: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f0_j2: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f1_j0: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f1_j1: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f1_j2: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f2_j0: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f2_j1: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f2_j2: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f3_j0: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f3_j1: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}
+  right_f3_j2: {p: 1.0, d: 0.04, i: 0.0, i_clamp: 0.0}

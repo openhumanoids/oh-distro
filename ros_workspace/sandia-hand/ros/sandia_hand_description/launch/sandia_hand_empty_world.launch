@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- start up empty world -->
+  <arg name="gui" default="true"/>
+  <include file="$(find gazebo_worlds)/launch/empty_world_paused.launch">
+    <arg name="gui" value="$(arg gui)" />
+  </include>
+
+  <!-- start hand -->
+  <include file="$(find sandia_hand_description)/launch/sandia_hand.launch"/>
+
+</launch>
+

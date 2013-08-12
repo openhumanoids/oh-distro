@@ -1,0 +1,46 @@
+# input files
+#C_SOURCES := bootloader 
+C_SOURCES := bootloader tactile io comms startup main pins imu #params bootloader 
+#ASM_SOURCES := bootloader_startup
+# random definitions
+HW_VERSION ?= 1
+RS485_ADDRESS ?= 1
+BOARD = PP_REV2
+OPTIMIZATION = -O2
+#OPTIMIZATION = 
+OUTPUT = pp4
+CFLAGS += -DBL_MANCHESTER
+CFLAGS += -DBL_LED_PIO=PIOA -DBL_LED_PIN=22 -D$(BOARD)
+CFLAGS += -DBL_RS485_DE_PIO=PIOC -DBL_RS485_DE_PIN=9
+CFLAGS += -DHW_VERSION=$(HW_VERSION)
+CFLAGS += -fno-exceptions
+include ../libcommon-sam3s/common-sam3s.mk
+include ../libcommon-sam3s/common-elf.mk
+
+FINGER_CLI=`rospack find sandia_hand`/bin/finger_cli /dev/ttyUSB1
+OCD = openocd $(OCD_INIT)
+fresh_board:
+	$(FINGER_CLI) phalange_power on
+	sleep 0.5
+	$(OCD) -c "at91sam3 gpnvm set 1" -c shutdown
+	$(OCD) -c "at91sam3 gpnvm show all" -c shutdown
+	sleep 0.5
+	$(OCD) -c "flash banks" -c "flash write_image $(OUTPUT).elf" -c reset -c shutdown
+	sleep 5.0
+	$(FINGER_CLI) pp_test
+	$(FINGER_CLI) phalange_power off
+
+pb_off:
+	$(FINGER_CLI) phalange_power off
+
+pb_on:
+	$(FINGER_CLI) phalange_power on
+
+test:
+	$(FINGER_CLI) pp_test
+
+power_test:
+	$(FINGER_CLI) phalange_power on
+	sleep 5
+	$(FINGER_CLI) pp_test
+	$(FINGER_CLI) phalange_power off

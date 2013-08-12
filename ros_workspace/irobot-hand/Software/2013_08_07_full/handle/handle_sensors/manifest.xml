@@ -1,0 +1,22 @@
+<package>
+  <description brief="handle_sensors">
+
+     Sensor processing functions for the HANDLE hand.
+
+  </description>
+  <author>Leif Jentoft</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sensors</url>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="handle_msgs"/>
+
+  <export>
+	<python path="${prefix}/src"/>
+  </export>
+ 
+</package>
+
+

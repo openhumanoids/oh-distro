@@ -1,0 +1,4 @@
+TODO: convert this to a launch file
+
+rosrun tf static_ansform_publisher 0 0 0 0 0 -0.9 world stereo_cam_pitched 100
+rosrun tf static_transform_publisher 0 0 0 0 1.57 0 stereo_cam_pitched stereo_cam 100

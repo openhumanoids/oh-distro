@@ -1,0 +1,53 @@
+
+2013_08_07
+-------------------
+ * overhaul GUI (requires qt4, qt_build, and qt-ros)
+ 
+Changed files:
+ * handle/gui_control/CMakeLists.txt
+ * handle/gui_control/include/gui_control/annanWrapper.hpp  [deleted]
+ * handle/gui_control/include/gui_control/controlform.hpp
+ * handle/gui_control/manifest.xml
+ * handle/gui_control/src/annanWrapper.cpp  [deleted]
+ * handle/gui_control/src/controlform.cpp
+ * handle/gui_control/src/gui.cpp
+ * handle/gui_control/ui/controlform.ui
+ * handle/handle_launch/launch/gui_control.sh  [added]
+ * handle/handle_launch/launch/gui_control_righthand.launch  [added]
+ * handle/handle_launch/launch/gui_control_twohands.launch  [added]
+
+This update only involves changes to the ros nodes.  To update, simply 
+extract the files on your machine, then in the handle directory:
+  rosmake -s --pre-clean
+
+
+
+2013_07_25
+-------------------
+ * fix bug which disallowed negative position values
+ * fix bug which disallowed variable speed commands for spread motor
+
+Changed files:
+ * handle/annan_control/include/annan_control/annanLib.hpp
+ * handle/annan_control/src/annanLib.cpp
+ * handle/handle_controller/src/controller.cpp
+ * handle/handle_controller/src/handle_controller
+ * handle/handle_controller/utils/motortest
+ * handle/handle_controller/utils/motortest.c
+
+This update only requires modifying the Overo code.  To update the hand:
+  1.  Loginto the hand
+  2.  Wait 30 seconds
+  3.  ./kill_handle.sh   (must return with no warning)
+  4.  Wait 5 seconds
+  5.  ./stopall          (must not return FFFFFFFF)
+  6.  makerw
+  7.  scp the new binaries to hand.  These are the files you should send:
+        handle/handle_controller/src/handle_controller
+        handle/handle_controller/utils/motortest
+
+
+
+2013_07_22
+-------------------
+Initial release

@@ -1,0 +1,30 @@
+# documentation for which sensor connects to what with the custom breakout
+# for the NI-PCI-6225
+
+Base Joint 1 : AI18
+Base Joint 2 : AI17
+Base Joint 3 : AI16
+
+Finger 1 Distal Joint A : AI19 - AI22
+Finger 1 Distal Joint B : AI23 - AI26
+
+Finger 2 Distal Joint A : AI27 - AI30
+Finger 2 Distal Joint B : AI31 - AI34
+
+Finger 3 Distal Joint A : AI35 - AI38
+Finger 3 Distal Joint B : AI39 - AI42
+
+Cable Tension 1 : AI43 - AI44
+Cable Tension 2 : AI45 - AI46
+Cable Tension 3 : AI47 - AI48
+Cable Tension 4 : AI49 - AI50
+
+Piezo Bank 1 : AI51 - AI54
+Piezo Bank 2 : AI55 - AI58
+Piezo Bank 3 : AI59 - AI62
+Piezo Bank 4 : AI63 - AI66
+Piezo Bank 5 : AI67 - AI70
+Piezo Bank 6 : AI71 - AI74
+
+
+

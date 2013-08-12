@@ -1,0 +1,10 @@
+<launch>
+  <node name="right_hand_node" pkg="sandia_hand_driver" type="sandia_hand_node" ns="right_hand" output="screen">
+    <param name="ip" value="10.66.171.23"/>
+    <param name="port" value="12321"/>
+  </node>
+  <node name="left_hand_node"  pkg="sandia_hand_driver" type="sandia_hand_node" ns="left_hand" output="screen">
+    <param name="ip" value="10.66.171.22"/>
+    <param name="port" value="12325"/>
+  </node>
+</launch>

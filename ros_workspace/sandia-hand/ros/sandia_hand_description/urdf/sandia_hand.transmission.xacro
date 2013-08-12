@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<robot name="sandia_hand"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="finger_transmission" params="idx x y z r p yaw side">
+    <transmission name="${side}_f${idx}_j0" type="pr2_mechanism_model/SimpleTransmission">
+      <joint name="${side}_f${idx}_j0" />
+      <actuator name="${side}_f${idx}_j0_motor" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+    <transmission name="${side}_f${idx}_j1" type="pr2_mechanism_model/SimpleTransmission">
+      <joint name="${side}_f${idx}_j1" />
+      <actuator name="${side}_f${idx}_j1_motor" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+    <transmission name="${side}_f${idx}_j2" type="pr2_mechanism_model/SimpleTransmission">
+      <joint name="${side}_f${idx}_j2" />
+      <actuator name="${side}_f${idx}_j2_motor" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+  </xacro:macro>
+
+</robot>
+

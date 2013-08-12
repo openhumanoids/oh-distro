@@ -1,0 +1,48 @@
+<launch>
+  <node name="dynamixel_manager"
+        pkg="dynamixel_controllers"
+        type="controller_manager.py"
+        required="true"
+        output="screen">
+    <rosparam>
+      serial_ports:
+        tilt_roll_port:
+          port_name: "/dev/ttyUSB0"
+          baud_rate: 1000000
+          min_motor_id: 1
+          max_motor_id: 2
+          update_rate: 20
+    </rosparam>
+  </node>
+  <rosparam>
+    tilt_controller:
+      controller:
+        package: dynamixel_controllers
+        module: joint_position_controller
+        type: JointPositionController
+      joint_name: tilt_joint
+      joint_speed: 1
+      motor:
+        id: 1
+        init: 2048
+        min: 0
+        max: 4095
+    roll_controller:
+      controller:
+        package: dynamixel_controllers
+        module: joint_position_controller
+        type: JointPositionController
+      joint_name: roll_joint
+      joint_speed: 1
+      motor:
+        id: 2
+        init: 2048
+        min: 0
+        max: 4095
+  </rosparam>
+  <node name="tilt_roll_spawner" 
+        pkg="dynamixel_controllers" 
+        type="controller_spawner.py" 
+        args="--manager dynamixel_manager --port tilt_roll_port tilt_controller roll_controller"
+        output="screen"/>
+</launch>

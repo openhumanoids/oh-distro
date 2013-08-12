@@ -1,0 +1,10 @@
+grounded sensors:
+
+9  led 4 mux 2 ch 5
+12 led 6 mux 2 ch 6
+14       mux 2 ch 0
+15       mux 2 ch 7
+16       mux 2 ch 1
+18
+19
+

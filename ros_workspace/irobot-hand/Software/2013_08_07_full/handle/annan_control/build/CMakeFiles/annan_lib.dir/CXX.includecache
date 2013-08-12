@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/annan_control/src/../include/annan_control/annanLib.hpp
+handle_lib/handleControl.hpp
+-
+pthread.h
+-
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/annan_control/src/annanLib.cpp
+../include/annan_control/annanLib.hpp
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/annan_control/src/../include/annan_control/annanLib.hpp
+fcntl.h
+-
+termios.h
+-
+stdio.h
+-
+string.h
+-
+unistd.h
+-
+stdlib.h
+-
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/include/handle_lib/handleControl.hpp
+packing.hpp
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/include/handle_lib/packing.hpp
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/include/handle_lib/packing.hpp
+stdint.h
+-
+math.h
+-
+

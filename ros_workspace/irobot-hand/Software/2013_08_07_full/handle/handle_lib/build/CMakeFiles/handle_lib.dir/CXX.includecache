@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/src/../include/handle_lib/packing.hpp
+stdint.h
+-
+math.h
+-
+
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/src/packing.cpp
+../include/handle_lib/packing.hpp
+/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/src/../include/handle_lib/packing.hpp
+

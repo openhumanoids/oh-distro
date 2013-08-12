@@ -1,0 +1,14 @@
+<launch>
+  <node name="finger_0_estimator" pkg="sandia_hand_driver" type="finger_state_estimator.py" ns="finger_0">
+    <param name="name" value="index"/>
+  </node>
+  <node name="finger_1_estimator" pkg="sandia_hand_driver" type="finger_state_estimator.py" ns="finger_1">
+    <param name="name" value="middle"/>
+  </node>
+  <node name="finger_2_estimator" pkg="sandia_hand_driver" type="finger_state_estimator.py" ns="finger_2">
+    <param name="name" value="pinkie"/>
+  </node>
+  <node name="finger_3_estimator" pkg="sandia_hand_driver" type="finger_state_estimator.py" ns="finger_3">
+    <param name="name" value="thumb"/>
+  </node>
+</launch>

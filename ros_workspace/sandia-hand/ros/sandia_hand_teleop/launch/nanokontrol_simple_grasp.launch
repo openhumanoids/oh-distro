@@ -1,0 +1,9 @@
+<launch>
+  <arg name="start_nanokontrol" default="true"/>
+  <node name="nanokontrol" pkg="sandia_hand_teleop" type="nanokontrol.py" args="3" if="$(arg start_nanokontrol)"/>
+  <node ns="sandia_hands/l_hand" name="simple_grasp_left" pkg="sandia_hand_teleop" type="simple_grasp.py"/>
+  <node ns="sandia_hands/r_hand" name="simple_grasp_right" pkg="sandia_hand_teleop" type="simple_grasp.py"/>
+  <!-- Change first arg "l" for left hand, "r" for right hand. 
+       Change second arg to set which scene must be active [0-3] for control to happen. -->
+  <node name="joy_to_simple_grasp" pkg="sandia_hand_teleop" type="joy_to_simple_grasp.py" args="lr 2"/>
+</launch>

@@ -1,0 +1,15 @@
+<package>
+  <description brief="sandia_hand_calibration">
+    This package has a bit of code to control a dynamixel-based rig which
+    spins the Sandia fingers around to do an inertial calibration.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sandia_hand_calibration</url>
+  <depend package="dynamixel_controllers"/>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+</package>
+
+

@@ -1,0 +1,14 @@
+<package>
+  <description brief="handle_controller">
+
+     The code that runs on the Overo on the hand.  There are also some helpful utilities that run on the hand.
+
+  </description>
+  <author>Ben Axelrod</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_controller</url>
+  <depend package="handle_lib"/>
+</package>
+
+

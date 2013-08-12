@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+
+<robot name="sandia_hand"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="finger_gazebo" params="side idx">
+    <gazebo reference ="${side}_f${idx}_base">
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_0">
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_1">
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_2">
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_j0">
+      <cfmDamping>1</cfmDamping>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_j1">
+      <cfmDamping>1</cfmDamping>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_j2">
+      <cfmDamping>1</cfmDamping>
+    </gazebo>
+  </xacro:macro>
+  <xacro:macro name="sandia_hand_gazebo" params="side">
+    <gazebo reference="${side}_palm">
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>6</maxContacts>
+      <material>Gazebo/FlatBlack</material>
+    </gazebo>
+  </xacro:macro>
+  <!-- begin cameras -->
+  <xacro:property name="M_pi" value="3.1415926535897931" />
+  <!-- the following properties are used to adjust the camera location -->
+  <!-- theta specifies the inclination of the stereo axis -->
+  <!-- sin_theta and cos_theta are manually entered since xacro doesn't do trig -->
+  <xacro:property name="theta" value="0.6708" />
+  <xacro:property name="sin_theta" value="0.62161284558" />
+  <xacro:property name="cos_theta" value="0.78332462632" />
+  <!-- stereo offset of 40 mm -->
+  <xacro:property name="stereo_offset" value="0.04" />
+  <!-- cam_d1 and cam_L1 are lengths that adjust the camera position -->
+  <xacro:property name="cam_d1" value="0.1" />
+  <xacro:property name="cam_L1" value="0.09" />
+  <!-- 72 degrees -->
+  <xacro:property name="horizontal_fov_degrees" value="72.0" />
+  <xacro:property name="image_width" value="752" />
+  <xacro:property name="image_height" value="480" />
+  <xacro:property name="image_format" value="L8" />
+  <xacro:property name="clip_near" value="0.02" />
+  <xacro:property name="clip_far" value="100" />
+  <!-- Noise is sampled independently per pixel on each frame.
+       That pixel's noise value is added to each of its color
+       channels, which at that point lie in the range [0,1].
+       The stddev value of 0.007 is based on experimental data
+       from a camera in a Sandia hand pointed at a static scene
+       in a couple of different lighting conditions.  -->
+  <xacro:property name="noise_type" value="gaussian" />
+  <xacro:property name="noise_mean" value="0.0" />
+  <xacro:property name="noise_stddev" value="0.007" />
+  <xacro:macro name="sandia_hand_cameras_gazebo" params="side reflect parent">
+    <joint name="${side}_palm_left_camera_frame_joint" type="fixed">
+      <origin xyz="${(cam_L1+reflect*stereo_offset/2)*sin_theta} ${reflect*(cam_d1-(cam_L1+reflect*stereo_offset/2)*cos_theta)} 0.025"
+              rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
+      <parent link="${side}_palm"/>
+      <child link="${side}_palm_left_camera_frame"/>
+    </joint>
+    <link name="${side}_palm_left_camera_frame">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      </inertial>
+      <visual group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.003 0.010 0.007" />
+        </geometry>
+      </visual>
+    </link>
+    <joint name="${side}_palm_left_camera_optical_frame_joint" type="fixed">
+      <origin rpy="${-M_pi/2} 0.0 ${-M_pi/2}" xyz="0 0 0"/>
+      <parent link="${side}_palm_left_camera_frame"/>
+      <child link="${side}_palm_left_camera_optical_frame"/>
+    </joint>
+    <link name="${side}_palm_left_camera_optical_frame"/>
+    <gazebo reference="${side}_palm_left_camera_frame">
+      <sensor name="${side}_palm_stereo_camera" type="multicamera">
+        <update_rate>30.0</update_rate>
+        <camera name="left">
+          <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
+          <image>
+            <width>${image_width}</width>
+            <height>${image_height}</height>
+            <format>${image_format}</format>
+          </image>
+          <clip>
+            <near>${clip_near}</near>
+            <far>${clip_far}</far>
+          </clip>
+          <noise>
+            <type>${noise_type}</type>
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+        </camera>
+        <camera name="right">
+          <pose>0 ${-stereo_offset} 0  0 0 0</pose>
+          <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
+          <image>
+            <width>${image_width}</width>
+            <height>${image_height}</height>
+            <format>${image_format}</format>
+          </image>
+          <clip>
+            <near>${clip_near}</near>
+            <far>${clip_far}</far>
+          </clip>
+          <noise>
+            <type>${noise_type}</type>
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+        </camera>
+        <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>sandia_hands/${parent}/camera</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>${side}_palm_left_camera_optical_frame</frameName>
+          <hackBaseline>${stereo_offset}</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+    <joint name="${side}_palm_right_camera_frame_joint" type="fixed">
+      <origin xyz="${(cam_L1-reflect*stereo_offset/2)*sin_theta} ${reflect*(cam_d1-(cam_L1-reflect*stereo_offset/2)*cos_theta)} 0.025"
+              rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
+      <parent link="${side}_palm"/>
+      <child link="${side}_palm_right_camera_frame"/>
+    </joint>
+    <link name="${side}_palm_right_camera_frame">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      </inertial>
+      <visual group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.003 0.010 0.007" />
+        </geometry>
+      </visual>
+    </link>
+    <joint name="${side}_palm_right_camera_optical_frame_joint" type="fixed">
+      <origin rpy="${-M_pi/2} 0.0 ${-M_pi/2}" xyz="0 0 0"/>
+      <parent link="${side}_palm_right_camera_frame"/>
+      <child link="${side}_palm_right_camera_optical_frame"/>
+    </joint>
+    <link name="${side}_palm_right_camera_optical_frame"/>
+  </xacro:macro>
+  <!-- end cameras -->
+  <xacro:macro name="sandia_hand_gazebo_controller" params="side">
+    <gazebo>
+      <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side parent" >
+    <gazebo>
+      <plugin filename="libContactModelPlugin.so" name="sandia_contact_plugin">
+         <contact>
+          <collision>${parent}::${parent}_collision_${side}_palm</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_1</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_3</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_4</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_5</collision>
+          <collision>${side}_f0_1::${side}_f0_1_collision</collision>
+          <collision>${side}_f0_2::${side}_f0_2_collision</collision>
+          <collision>${side}_f1_1::${side}_f1_1_collision</collision>
+          <collision>${side}_f1_2::${side}_f1_2_collision</collision>
+          <collision>${side}_f2_1::${side}_f2_1_collision</collision>
+          <collision>${side}_f2_2::${side}_f2_2_collision</collision>
+          <collision>${side}_f3_1::${side}_f3_1_collision</collision>
+          <collision>${side}_f3_2::${side}_f3_2_collision</collision>
+        </contact>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="sandia_hand_imu_sensor_gazebo" params="parent" >
+  <gazebo reference="${parent}">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>1</always_on>
+      <update_rate>1000.0</update_rate>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0.0</mean>
+            <stddev>2e-4</stddev>
+            <bias_mean>0.0000075</bias_mean>
+            <bias_stddev>0.0000008</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0.0</mean>
+            <stddev>1.7e-2</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
+  </xacro:macro>
+
+</robot>

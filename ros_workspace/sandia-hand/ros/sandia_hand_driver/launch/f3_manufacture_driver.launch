@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="sandia_hand_driver" type="sandia_hand_loose_finger_node" name="sandia_hand_loose_finger_node">
+    <param name="use_proximal_phalange" value="false"/>
+  </node>
+</launch>

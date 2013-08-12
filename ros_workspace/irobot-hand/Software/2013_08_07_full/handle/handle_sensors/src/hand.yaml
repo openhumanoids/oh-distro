@@ -1,0 +1,18 @@
+# Calibrations specific to the hand itself
+
+fingerSpread:
+# int32 fingerSpread
+# encoder reading in tics
+# Approx. 768 ticks to rotate the fingers 90 degrees.
+    zero : 1023
+    tics_per_radian : 488.923984
+
+# The cable tension sensors measuring F1 and F2.
+# [F1, F2:
+# CableTension[2: cableTension
+#
+# calibration is a third-order polynomial fit of the ratio data
+# [ax^3 + bx^2 + cx + d]
+cableTension:
+    0 : [1, 1, 1, 1]
+    1 : [1, 1, 1, 1]
