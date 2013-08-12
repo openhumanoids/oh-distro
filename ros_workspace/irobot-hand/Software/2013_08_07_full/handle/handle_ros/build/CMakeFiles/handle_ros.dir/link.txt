@@ -1,1 +1,0 @@
-/usr/bin/c++   -O2 -g     -pthread CMakeFiles/handle_ros.dir/src/main.o  -o ../bin/handle_ros -rdynamic -L/opt/ros/fuerte/lib -L/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/lib -lroscpp -lrostime -lrosconsole -lroscpp_serialization -lxmlrpcpp -lhandle_lib -Wl,-rpath,/opt/ros/fuerte/lib:/home/sisir/irobot-hand/Software/2013_08_07_full/handle/handle_lib/lib 
