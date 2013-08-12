@@ -25,7 +25,7 @@ if [ "$RESP" = "g" ]; then
   cmake -DPKG_CONFIG_PATH=/opt/ros/fuerte/lib/pkgconfig/:/opt/ros/fuerte/stacks/visualization_common/ogre/ogre/lib/pkgconfig/ .. 
   echo "Config done on Gazebo, now to build ====================="
   sleep 2
-  make -j8
+  make -j
   sudo make install 
   pwd
   cd ~/
@@ -48,7 +48,7 @@ elif [ "$RESP" = "d" ]; then
   cmake ..
   echo "cmake done on DRCSIM, now to build ====================="
   sleep 2
-  make
+  make -j
   sudo make install 
   cd ../..
   echo "Finished Installing DRCSIM==================="
