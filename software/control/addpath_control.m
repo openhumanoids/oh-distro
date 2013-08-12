@@ -1,5 +1,10 @@
 function addpath_control()
 
+if ~isempty(getenv('PODS_MATLAB_SKIP_SETUP'))
+  disp('Found PODS_MATLAB_SKIP_SETUP. Skipping addpath_control');
+  return;
+end
+
 if ~exist('pods_get_base_path')
   % todo: implement the BUILD_PREFIX logic from the pod Makefiles (e.g.
   % search up to four directories higher)
