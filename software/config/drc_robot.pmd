@@ -99,15 +99,15 @@ group "a.1.core" {
 
 group "a.2.walking" {
     cmd "WalkingStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
     }
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
     cmd "BotCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('robot');\"";
        host = "extra";
     }
     cmd "fall-detector" {
@@ -115,7 +115,7 @@ group "a.2.walking" {
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
     cmd "recovery" {
@@ -128,15 +128,15 @@ group "a.2.walking" {
 # Controllers for vrc task 3 (hose manipulation)
 group "a.3.manip" {
     cmd "WalkingStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "extra";
     } 
     cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
 }
@@ -171,22 +171,22 @@ group "a.4.driving" {
         host = "robot";
     }
     cmd "DrivingController" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
     cmd "ManipMapStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
         host = "robot";
     }
 }
 
 group "a.4.ingress" {
     cmd "IngressStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
         host = "robot";
     }
 }
@@ -232,23 +232,23 @@ group "b.1.core" {
 
 group "b.2.walking" {
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
     cmd "BaseCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('base');\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
        host = "base";
     }
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
 }
@@ -260,29 +260,29 @@ group "b.3.grasping" {
 # Planners for Simulataneous Walking and Manipulation
 group "b.3.manip" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
        host = "base";
     }
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
     cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
 }
 group "b.4.driving" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/planners/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "base";
     }
 }
@@ -384,11 +384,11 @@ group "m.dev_tools" {
 # Bare bone grasping
 group "m.grasping" {
     cmd "HarnessedController" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runHarnessedManipulationStateMachine;\"";
         host = "robot";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
 }
@@ -477,20 +477,20 @@ group "m.hose_task_utils" {
 
 group "m.authoring" {
     cmd "MotionPlanServer_from_seated" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupnames',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupnames',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
     }
 
     cmd "MotionPlanServer_from_standing" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
     }
 
     cmd "MotionPlanServer_from_turtled" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
        host = "localhost";
     }
 
     cmd "MotionPlanServer_online" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
        host = "localhost";
     }
 
@@ -505,22 +505,22 @@ group "m.authoring" {
     }
 
     cmd "PublishPassengerSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_passenger.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_passenger.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 
     cmd "PublishDriverSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_forward.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_forward.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 
     cmd "PublishStandingState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_fp.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_fp.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 
     cmd "PublishPreingressState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_preingress.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_preingress.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 }
