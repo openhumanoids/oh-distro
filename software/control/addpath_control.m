@@ -49,4 +49,8 @@ addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
 
+addpath_drake;
+addpath_eigen_utils;
+addpath_matlab_utils;
+
 end
