@@ -197,7 +197,7 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.using_flat_terrain = false;
     end
     
-    obj.lcmgl = bot_lcmgl_init('qp-control-block-debug');
+    obj.lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'qp-control-block-debug');
 
     [obj.jlmin, obj.jlmax] = getJointLimits(r);
         
@@ -428,31 +428,6 @@ classdef QPControlBlock < MIMODrakeSystem
         Agdot_ang = Agdot(1:3,:);
         h_ang_dot_des = [0;0;0]; % regulate to zero for now
         w2 = 0.0001; % QP objective function weight
-        
-        if 0
-          % plot momentum vectors
-          h = Ag*qd;
-          bot_lcmgl_line_width(obj.lcmgl, 3);
-
-          bot_lcmgl_push_matrix(obj.lcmgl);
-          bot_lcmgl_translated(obj.lcmgl,xcom(1),xcom(2),xcom(3));
-          bot_lcmgl_color3f(obj.lcmgl, 1, 0, 0);
-          bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
-          bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
-          bot_lcmgl_vertex3f(obj.lcmgl, 0.05*h(4), 0.05*h(5), 0.05*h(6)); % scale for drawing
-          bot_lcmgl_end(obj.lcmgl);
-
-          aa_h = rpy2axis(h(1:3));
-          bot_lcmgl_color3f(obj.lcmgl, 0, 1, 0);
-          bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
-          bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
-          bot_lcmgl_vertex3f(obj.lcmgl, 0.2*aa_h(1), 0.2*aa_h(2), 0.2*aa_h(3)); % scale for drawing
-          bot_lcmgl_end(obj.lcmgl);
-          bot_lcmgl_pop_matrix(obj.lcmgl);
-
-          bot_lcmgl_line_width(obj.lcmgl, 1);
-          bot_lcmgl_switch_buffer(obj.lcmgl);
-        end
       end
       
       Jdot = forwardJacDot(r,kinsol,0);
@@ -465,26 +440,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,B,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
-            if 0
-              cpos = contactPositions(r,kinsol,active_supports(j),active_contact_pts{j});
-              acpts = active_contact_pts{j};
-              for jj=1:length(acpts)
-                b=0.1*B{jj};
-                m = size(b,2); 
-                bot_lcmgl_line_width(obj.lcmgl, 3);
-                bot_lcmgl_push_matrix(obj.lcmgl);
-                bot_lcmgl_translated(obj.lcmgl,cpos(1,jj),cpos(2,jj),cpos(3,jj));
-                bot_lcmgl_color3f(obj.lcmgl, 1, 0, 0);
-                for kk=1:m
-                  bot_lcmgl_begin(obj.lcmgl, obj.lcmgl.LCMGL_LINES);
-                  bot_lcmgl_vertex3f(obj.lcmgl, 0, 0, 0);
-                  bot_lcmgl_vertex3f(obj.lcmgl, b(1,kk), b(2,kk), b(3,kk)); 
-                  bot_lcmgl_end(obj.lcmgl);
-                end
-                bot_lcmgl_pop_matrix(obj.lcmgl);
-              end
-            end
+            [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
@@ -493,8 +449,6 @@ classdef QPControlBlock < MIMODrakeSystem
           c_pre = c_pre + length(active_contact_pts{j});
 
         end
-        bot_lcmgl_line_width(obj.lcmgl, 1);
-        bot_lcmgl_switch_buffer(obj.lcmgl);
 
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
@@ -734,46 +688,114 @@ classdef QPControlBlock < MIMODrakeSystem
     
    
     if obj.debug && (obj.use_mex==0 || obj.use_mex==2) && nc > 0
-%       if nq_free > 0
-%         xcomdd = Jdot * qd + J * qdd;
-%       else
-%         xcomdd = Jdot * qd + J * alpha(1:nq);
-%       end
-%       zmppos = xcom(1:2) + D_ls * xcomdd;
-%       convh = convhull(cpos(1,:), cpos(2,:));
-%       zmp_ok = inpolygon(zmppos(1), zmppos(2), cpos(1,convh), cpos(2,convh));
-%       if zmp_ok
-%         color = [0 1 0];
-%       else
-%         color = [1 0 0];
-%       end
-%       plot_lcm_points([zmppos', mean(cpos(3,:))], color, 660, 'Commanded ZMP', 1, true);
-
-      state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      lax = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')));
-      uay = find(~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
-
-      scope('Atlas','lax_qdd_des',t,q_ddot_des(lax),struct('linespec','r','scope_id',1));
-      scope('Atlas','uay_qdd_des',t,q_ddot_des(uay),struct('linespec','b','scope_id',1));
-      scope('Atlas','lax_qdd',t,qdd(lax),struct('linespec','r','scope_id',2));
-      scope('Atlas','uay_qdd',t,qdd(uay),struct('linespec','b','scope_id',2));
-      
-      [~,normals] = getTerrainHeight(r,cpos);
-      d = RigidBodyManipulator.surfaceTangents(normals);
-
-      lambda = Iz*alpha;
-      beta_full = Ibeta*alpha;
-      for kk=1:8
-        if kk<=nc
-          plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.25*normals(:,kk)]', [0 0 1; 0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
-          beta = beta_full((kk-1)*nd+(1:nd),:);
-          fvec = lambda(kk)*normals(:,kk) + d{1}(:,kk)*beta(1) + d{2}(:,kk)*beta(2) - d{1}(:,kk)*beta(3) - d{2}(:,kk)*beta(4);
-          plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.0025*fvec]', [1 0 0; 1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
-        else
-          plot_lcm_points(zeros(2,3), [0 0 1;0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
-          plot_lcm_points(zeros(2,3), [1 0 0;1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
-        end
+      xcomdd = Jdot * qd + J * qdd;
+      zmppos = xcom(1:2) + D_ls * xcomdd;
+      zmp = [zmppos', mean(cpos(3,:))];
+      convh = convhull(cpos(1,:), cpos(2,:));
+      zmp_ok = inpolygon(zmppos(1), zmppos(2), cpos(1,convh), cpos(2,convh));
+      if zmp_ok
+        color = [0 1 0];
+      else
+        color = [1 0 0];
       end
+      obj.lcmgl.glColor3f(color(1), color(2), color(3));
+      obj.lcmgl.sphere(zmp, 0.015, 20, 20);
+
+      % plot Vdot indicator
+      headpos = forwardKin(r,kinsol,findLinkInd(r,'head'),[0;0;0]);
+      obj.lcmgl.glLineWidth(3);
+      obj.lcmgl.glPushMatrix();
+      obj.lcmgl.glTranslated(headpos(1),headpos(2),headpos(3)+0.3);
+      obj.lcmgl.glRotated(90, 0, 1, 0);
+      if Vdot < 0
+        obj.lcmgl.glColor3f(0, 1, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0.025, -0.055, 0.01);
+        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.025, 0.055, 0.01);
+        obj.lcmgl.glEnd();
+      elseif Vdot < 0.1
+        obj.lcmgl.glColor3f(1, 1, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
+        obj.lcmgl.glEnd();
+      elseif Vdot < 0.25
+        obj.lcmgl.glColor3f(1, 0.5, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
+        obj.lcmgl.glEnd();
+      else
+        obj.lcmgl.glColor3f(1, 0, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0.065, -0.055, 0.01);
+        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
+        obj.lcmgl.glVertex3f(0.065, 0.055, 0.01);
+        obj.lcmgl.glEnd();
+      end
+      obj.lcmgl.circle(0,0,0, 0.1);
+      obj.lcmgl.circle(-0.03,-0.035,0.005, 0.01);
+      obj.lcmgl.circle(-0.03,0.035,0.005, 0.01);
+      obj.lcmgl.glPopMatrix();
+      
+      [~,B] = contactConstraintsBV(r,kinsol,active_supports,active_contact_pts);
+      beta = Ibeta*alpha;
+      nd=size(B{1},2); 
+      for j=1:nc
+        beta_j = beta((j-1)*nd+(1:nd),:);
+        b=0.1*B{j}; % scale for drawing
+        obj.lcmgl.glLineWidth(2);
+        obj.lcmgl.glPushMatrix();
+        obj.lcmgl.glTranslated(cpos(1,j),cpos(2,j),cpos(3,j));
+        obj.lcmgl.glColor3f(0, 0, 1);
+        fvec = zeros(3,1);
+        for k=1:nd
+          obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+          obj.lcmgl.glVertex3f(0, 0, 0);
+          obj.lcmgl.glVertex3f(b(1,k), b(2,k), b(3,k)); 
+          obj.lcmgl.glEnd();
+          fvec = fvec + beta_j(k)*b(:,k);
+        end
+        obj.lcmgl.glLineWidth(3);
+        obj.lcmgl.glColor3f(1, 0, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0, 0, 0);
+        obj.lcmgl.glVertex3f(0.025*fvec(1), 0.025*fvec(2), 0.025*fvec(3)); 
+        obj.lcmgl.glEnd();
+        obj.lcmgl.glPopMatrix();
+      end
+      
+      if obj.include_angular_momentum
+        % plot momentum vectors
+        h = Ag*qd;
+        obj.lcmgl.glLineWidth(3);
+
+        obj.lcmgl.glPushMatrix();
+        obj.lcmgl.glTranslated(xcom(1),xcom(2),xcom(3));
+        obj.lcmgl.glColor3f(0.5, 0.25, 0);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0, 0, 0);
+        obj.lcmgl.glVertex3f(0.05*h(4), 0.05*h(5), 0.05*h(6)); % scale for drawing
+        obj.lcmgl.glEnd();
+
+        aa_h = rpy2axis(h(1:3));
+        obj.lcmgl.glColor3f(0, 0.25, 0.5);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        obj.lcmgl.glVertex3f(0, 0, 0);
+        obj.lcmgl.glVertex3f(0.2*aa_h(1), 0.2*aa_h(2), 0.2*aa_h(3)); % scale for drawing
+        obj.lcmgl.glEnd();
+        obj.lcmgl.glPopMatrix();
+      end
+      
+      obj.lcmgl.glLineWidth(1);
+      obj.lcmgl.switchBuffers();
     end
 
     if (0)     % simple timekeeping for performance optimization
@@ -804,7 +826,6 @@ classdef QPControlBlock < MIMODrakeSystem
     lfoot_idx;
     rhand_idx;
     lhand_idx;
-    solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug;
     use_mex;
