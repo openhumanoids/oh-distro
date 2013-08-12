@@ -35,6 +35,11 @@ setenv('LD_LIBRARY_PATH',[getenv('LD_LIBRARY_PATH'),pathsep,'/opt/ros/fuerte/lib
 % path license
 setenv('PATH_LICENSE_STRING','2069810742&Courtesy_License&&&USR&2013&14_12_2011&1000&PATH&GEN&31_12_2013&0_0_0&0&0_0');
 
+
+addpath_drake;
+addpath_eigen_utils;
+addpath_matlab_utils;
+
 addpath([pods_get_base_path,'/matlab']);
 
 % add the drake control matlab util directory into the matlab path:
@@ -49,8 +54,5 @@ addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
 
-addpath_drake;
-addpath_eigen_utils;
-addpath_matlab_utils;
 
 end
