@@ -15,6 +15,7 @@ set(ROS_MODEL_PKG "${ROS_MODEL_PKG}" CACHE STRING "${ROS_MODEL_PKG}" )
 add_subdirectory(src)
 
 message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab") 
+
 file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
 	   "function addpath_control()\n"
 	   "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${ROS_MODEL_PKG}']);\n"
@@ -30,6 +31,12 @@ file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/rmpath_control.m
 	   "  cd(wd);\n"
     )
 
+message(STATUS "Writing ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m")
+
+file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
+	   "function drc_control_setup()\n"
+	   "  addpath('${CMAKE_INSTALL_PREFIX}/matlab');\n"
+    )
 
 enable_testing()
 find_program(matlab matlab)
