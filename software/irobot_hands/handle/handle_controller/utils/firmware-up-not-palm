@@ -1,1 +1,0 @@
-avrdude -p x32a4 -P /dev/ttyS0 -b 38400 -c AVR109 -D -u -q -U flash:w:$1 -v -v -v -v
