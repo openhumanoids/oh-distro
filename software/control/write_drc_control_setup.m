@@ -18,10 +18,7 @@ fprintf(fptr,['addpath(''',pathstr,''');\n']);
 
 fprintf(fptr,'addpath_drake;\n');
 fprintf(fptr,'addpath_eigen_utils;\n');
-fprintf(fptr,'addpath_gurobi;\n');
 fprintf(fptr,'addpath_matlab_utils;\n');
-fprintf(fptr,'addpath_snopt;\n');
-fprintf(fptr,'addpath_spotless;\n');
 fprintf(fptr,'addpath_control;\n');
 
 fclose(fptr);
