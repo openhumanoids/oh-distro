@@ -1,24 +1,31 @@
 classdef ManipulationPlanner < handle
     
     properties
-        num_breaks
-        s_breaks
-        q_breaks
-        qdos_breaks
+
         plan_pub
         map_pub
         pose_pub
         r
-        lhandT % cache goals
+
+		% cache
+        lhandT 
         rhandT
-        lfootT % cache goals
+        lfootT 
         rfootT
         headT
+        head_gaze_target
+        lhand_gaze_target
+        rhand_gaze_target
         qtraj_guess % old coarse keyframe sequence search
         qtraj_guess_fine % fine manip plan with individual IK fill ins
+        num_breaks
+        s_breaks
+        q_breaks
+        qdos_breaks
         time_2_index_scale
         restrict_feet
         v_desired
+        
         r_hand_body
         l_hand_body
         head_body
@@ -26,10 +33,6 @@ classdef ManipulationPlanner < handle
         r_foot_body
         pelvis_body
         utorso_body
-        
-        head_gaze_target
-        lhand_gaze_target
-        rhand_gaze_target
 
         planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
     end
@@ -59,7 +62,6 @@ classdef ManipulationPlanner < handle
         function setPlanningMode(obj,val)
               obj.planning_mode  = val;
         end
-
 
         function adjustAndPublishManipulationPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,goal_type_flags)
             is_keyframe_constraint = true;
@@ -111,7 +113,7 @@ classdef ManipulationPlanner < handle
             end
             
             
-        end
+        end     
            
         function generateAndPublishManipulationMap(obj,x0,ee_names,ee_loci,affIndices)
             is_manip_map =true;
@@ -1263,6 +1265,466 @@ classdef ManipulationPlanner < handle
                 
             end
         end
+  % ================================================== TEMPORARY ADDITION FOR TESTING (will be moved to a new planner)  =====================================
+         
+         
+        function generateAndPublishWholeBodyPlan(obj,varargin)
+            switch nargin
+                case 7
+                    x0 = varargin{1};
+                    ee_names= varargin{2};
+                    ee_loci = varargin{3};
+                    timeIndices = varargin{4};
+                    postureconstraint = varargin{5};
+                    goal_type_flags = varargin{6};
+                    % runs IK sequence but its  slow.
+                    % Given N constraitns, iksequence needs atleast N break points
+                    % which is slow.
+                    %runOptimization(obj,x0,ee_names,ee_loci,timeIndices);
+                    
+                    % Point wise IK, much faster, linear complexity.
+                    runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,goal_type_flags);
+                otherwise
+                    error('Incorrect usage of generateAndPublishWholeBodyPlan in Manip Planner. Undefined number of vargin.')
+            end
+        end 
+  
+        function runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,goal_type_flags)
+
+           disp('Generating whole body plan...');
+           send_status(3,0,0,'Generating whole body plan...');
+      
+            q0 = x0(1:getNumDOF(obj.r));
+            
+            T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
+            
+            
+            r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+            l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
+            num_r_foot_pts = size(r_foot_pts,2);
+            num_l_foot_pts = size(l_foot_pts,2);
+            
+           
+            % Hand Goals are presented in palm frame, must be transformed to hand coordinate frame
+            % Using notation similar to KDL.
+            % fixed transform between hand and palm as specified in the urdf
+            T_hand_palm_l = HT([0;0.1;0],1.57079,0,1.57079);
+            T_palm_hand_l = inv_HT(T_hand_palm_l);
+            T_hand_palm_r = HT([0;-0.1;0],-1.57079,0,-1.57079);
+            T_palm_hand_r = inv_HT(T_hand_palm_r);
+            T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
+            T_grasp_palm = inv_HT(T_palm_grasp);
+            
+            ind = getActuatedJoints(obj.r);
+            cost = getCostVector(obj);
+            
+            ikoptions = struct();
+            ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+            ikoptions.q_nom = q0;
+            ikoptions.MajorIterationsLimit = 100;
+            ikoptions.shrinkFactor = 0.8;
+
+						%%% Hongkai added - to prevent the robot from leaning back - when getting manip-maps (and plans possibly)
+						coords = obj.r.getStateFrame();
+						[joint_min,joint_max] = obj.r.getJointLimits();
+						joint_min = Point(coords,[joint_min;0*joint_min]);
+						joint_min.back_mby = -.2;
+            joint_min.l_leg_kny = 0.2;
+            joint_min.r_leg_kny = 0.2;
+						joint_min = double(joint_min);
+						ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());            
+           
+            %joint_max
+            
+            %Setting a max joint limit on the back also 
+            
+            joint_max = Point(coords,[joint_max;0*joint_max]);
+						joint_max.back_mby = 0.2;
+						joint_max = double(joint_max);
+						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+            
+						% Might be worth preventing leaning forward too much also 
+            
+            
+            %=============================================================
+            % PRESERVE CACHE for Keyframe Adjustment
+            % TODO: Modify cache to take into account constraints instead of just
+            % ee constraints at end time T.
+             kinsol = doKinematics(obj.r,q0);
+            obj.rfootT = forwardKin(obj.r,kinsol,obj.r_foot_body,[0;0;0],1);
+            obj.lfootT = forwardKin(obj.r,kinsol,obj.l_foot_body,[0;0;0],1);
+            obj.rhandT = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
+            obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
+            obj.headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
+            %=============================================================
+            
+            % Solve IK for each element i n EE LOCII
+            timeIndices=[];
+            timeIndices = unique(Indices);
+         
+            N = length(timeIndices);
+            plan_Indices=[];
+            q_guess =q0;
+            %plan_
+            lhand_const_plan = [];
+            rhand_const_plan = [];
+            rhand_const_plan = [];
+            rhand_const_plan = [];
+            
+            rh_in_contact=false;
+            lh_in_contact=false;
+            for i=1:length(timeIndices),
+                
+             tic;              
+                % get current hand and foot positions
+                kinsol = doKinematics(obj.r,q_guess);
+                r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,[0;0;0],2);
+                l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,[0;0;0],2);
+                head_pose0 = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
+                head_pose0(1:3)=nan(3,1); % only set head orientation not position
+                head_pose0_relaxed.min=head_pose0-[1e-2*ones(3,1);1e-2*ones(4,1)];
+                head_pose0_relaxed.max=head_pose0+[1e-2*ones(3,1);1e-2*ones(4,1)];
+
+                % compute fixed COM goal
+                gc = contactPositions(obj.r,q_guess);
+                k = convhull(gc(1:2,:)');
+                com0 = getCOM(obj.r,q_guess);
+                %   comgoal = [mean(gc(1:2,k(1:end-1)),2);com0(3)];
+                %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
+                comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
+                comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
+
+                % compute EE trajectories
+                r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
+                l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
+                pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
+                utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
+                utorso_pose0_relaxed = utorso_pose0;
+                utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-2*ones(4,1)];
+                utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-2*ones(4,1)];
+                % utorso_pose0 = utorso_pose0(1:3);              
+
+                
+                %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
+                if(goal_type_flags.lh ~=2)
+                  lhand_const.min = l_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
+                  lhand_const.max = l_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                else
+                  lhand_const.type = 'gaze';
+                  lhand_const.gaze_target = ee_loci(1:3,i);
+                  lhand_const.gaze_axis = [1;0;0];
+                  lhand_const.gaze_conethreshold = pi/18;
+                end
+                %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
+                if(goal_type_flags.rh ~=2)
+                  rhand_const.min = r_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
+                  rhand_const.max = r_hand_pose0+1e-2*[ones(3,1);ones(4,1)];
+                else
+                  rhand_const.type = 'gaze';
+                  rhand_const.gaze_target = ee_loci(1:3,i);
+                  rhand_const.gaze_axis = [1;0;0];
+                  rhand_const.gaze_conethreshold = pi/18;
+                end
+                if(goal_type_flags.h ==2)
+                  head_const.type = 'gaze';
+                  head_const.gaze_target = ee_loci(1:3,i);
+                  head_const.gaze_axis = [1;0;0];
+                  head_const.gaze_conethreshold = pi/12;
+                else
+                  head_const = [];
+                end
+                %l_foot_pose0= [nan;nan;nan;nan;nan;nan;nan];
+%                 lfoot_const.min = l_foot_pose0-1e-2*[ones(3,1);ones(4,1)];
+%                 lfoot_const.max = l_foot_pose0+1e-2*[ones(3,1);ones(4,1)]; 
+                %r_foot_pose0= [nan;nan;nan;nan;nan;nan;nan];
+%                 rfoot_const.min = r_foot_pose0-1e-2*[ones(3,1);ones(4,1)];
+%                 rfoot_const.max = r_foot_pose0+1e-2*[ones(3,1);ones(4,1)];
+                r_foot_pose = r_foot_pose0;
+                T_world_r_foot = [quat2rotmat(r_foot_pose(4:7)) r_foot_pose(1:3);0 0 0 1];
+                r_foot_pts_pose = T_world_r_foot*[r_foot_pts;ones(1,num_r_foot_pts)];
+                r_foot_pts_pose = [r_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_r_foot_pts),r_foot_pose(4:7))];
+                rfoot_const.min = r_foot_pts_pose-1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
+                rfoot_const.max = r_foot_pts_pose+1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
+                rfoot_const_static_contact = rfoot_const;
+                rfoot_const_static_contact.contact_state = ...
+                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)};
+
+                l_foot_pose = l_foot_pose0;
+                T_world_l_foot = [quat2rotmat(l_foot_pose(4:7)) l_foot_pose(1:3);0 0 0 1];
+                l_foot_pts_pose = T_world_l_foot*[l_foot_pts;ones(1,num_l_foot_pts)];
+                l_foot_pts_pose = [l_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_l_foot_pts),l_foot_pose(4:7))];
+                lfoot_const.min = l_foot_pts_pose-1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
+                lfoot_const.max = l_foot_pts_pose+1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
+                lfoot_const_static_contact = lfoot_const;
+                lfoot_const_static_contact.contact_state = ...
+                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
+                    
+                ind = [];
+                ind=find(Indices==timeIndices(i));
+
+                % Find all active constraints at current index
+                for k=1:length(ind),
+                    
+                    if(strcmp('left_palm',ee_names{ind(k)}))
+                        l_ee_goal = ee_loci(:,ind(k));
+                        lhandT = zeros(6,1);
+                        T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
+                        T_world_hand_l = T_world_palm_l*T_palm_hand_l;
+                        lhandT(1:3) = T_world_hand_l(1:3,4);
+                        lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
+                        l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
+                        T_world_grasp_l = T_world_palm_l * T_palm_grasp;
+                        lgraspT = zeros(6,1);
+                        lgraspT(1:3) = T_world_grasp_l(1:3,4);
+                        lgraspT(4:6) =rotmat2rpy(T_world_grasp_l(1:3,1:3));
+                        l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];
+                        lhand_const.min = l_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
+                        lhand_const.max = l_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
+                        if(i==length(timeIndices))
+                            obj.lhandT = l_ee_goal;
+                        end
+                        lh_in_contact=true;
+                    end
+                    if(~lh_in_contact)
+                        l_hand_pose = [nan;nan;nan;nan;nan;nan;nan];
+                        lhand_const.min=l_hand_pose;
+                        lhand_const.max=l_hand_pose;
+                    end
+                    
+                    if(strcmp('right_palm',ee_names{ind(k)}))
+                        r_ee_goal = ee_loci(:,ind(k));
+                        rhandT = zeros(6,1);
+                        T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
+                        T_world_hand_r = T_world_palm_r*T_palm_hand_r;
+                        rhandT(1:3) = T_world_hand_r(1:3,4);
+                        rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
+                        r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
+                        T_world_grasp_r = T_world_palm_r * T_palm_grasp;
+                        rgraspT = zeros(6,1);
+                        rgraspT(1:3) = T_world_grasp_r(1:3,4);
+                        rgraspT(4:6) =rotmat2rpy(T_world_grasp_r(1:3,1:3));
+                        r_grasp_pose = [rgraspT(1:3); rpy2quat(rgraspT(4:6))];
+                        if(goal_type_flags.rh ~= 2)
+                        rhand_const.min = r_hand_pose-0*1e-4*[ones(3,1);ones(4,1)];
+                        rhand_const.max = r_hand_pose+0*1e-4*[ones(3,1);ones(4,1)];
+                        end
+                        if(i==length(timeIndices))
+                            obj.rhandT = r_ee_goal;
+                        end
+                        rh_in_contact=true;
+                    end
+                    if(~rh_in_contact)
+                        r_hand_pose = [nan;nan;nan;nan;nan;nan;nan];
+                        rhand_const.min=r_hand_pose;
+                        rhand_const.max=r_hand_pose;
+                    end
+                    
+                    if(strcmp('l_foot',ee_names{ind(k)}))
+                        lfootT = ee_loci(:,ind(k));
+                        l_foot_pose = [lfootT(1:3); rpy2quat(lfootT(4:6))];
+                        T_world_l_foot = [quat2rotmat(l_foot_pose(4:7)) l_foot_pose(1:3);0 0 0 1];
+                        l_foot_pts_pose = T_world_l_foot*[l_foot_pts;ones(1,num_l_foot_pts)];
+                        l_foot_pts_pose = [l_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_l_foot_pts),l_foot_pose(4:7))];
+                        lfoot_const.min = l_foot_pts_pose-1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
+                        lfoot_const.max = l_foot_pts_pose+1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
+                        lfoot_const_static_contact = lfoot_const;
+                        lfoot_const_static_contact.contact_state = ...
+                          {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
+                        if(i==length(timeIndices))
+                            obj.lfootT = l_foot_pose;
+                        end
+                    end
+                    
+                    if(strcmp('r_foot',ee_names{ind(k)}))
+                        rfootT = ee_loci(:,ind(k));
+                        r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];
+                        T_world_r_foot = [quat2rotmat(r_foot_pose(4:7)) r_foot_pose(1:3);0 0 0 1];
+                        r_foot_pts_pose = T_world_r_foot*[r_foot_pts;ones(1,num_r_foot_pts)];
+                        r_foot_pts_pose = [r_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_r_foot_pts),r_foot_pose(4:7))];
+                        rfoot_const.min = r_foot_pts_pose-1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
+                        rfoot_const.max = r_foot_pts_pose+1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
+                        rfoot_const_static_contact = rfoot_const;
+                        rfoot_const_static_contact.contact_state = ...
+                          {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)};
+                        if(i==length(timeIndices))
+                            obj.rfootT = r_foot_pose;
+                        end
+                    end
+                end
+
+                %%%%%%%%%%%%%%%%%%%% Setting joint Limits to prevent singularities
+                buffer=0.05;
+                coords = obj.r.getStateFrame();
+                [joint_min,joint_max] = obj.r.getJointLimits();
+                joint_min = Point(coords,[joint_min;0*joint_min]);
+                joint_min.back_mby = -.2;
+                joint_min.l_leg_kny= 0.2;
+                joint_min.r_leg_kny= 0.2;
+                joint_min = double(joint_min);
+                ikoptions.jointLimitMin = joint_min(1:obj.r.getNumDOF());
+               
+                %joint_max
+                
+                %Setting a max joint limit on the back also 
+                
+                joint_max = Point(coords,[joint_max;0*joint_max]);
+                joint_max.back_mby = 0.2;
+                joint_max.l_leg_kny= joint_max.l_leg_kny-buffer;
+                joint_max.r_leg_kny= joint_max.r_leg_kny-buffer;
+                joint_max = double(joint_max);
+                ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+                ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+                ikoptions.q_nom = q_guess;
+
+                ikoptions.quasiStaticFlag = true;
+                [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
+                    obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,...
+                    obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,...
+                    obj.r_hand_body,[0;0;0],rhand_const, ...
+                    obj.l_hand_body,[0;0;0],lhand_const,...
+                    ikoptions);  
+                
+                q_guess =q(:,i);
+                toc;
+                if(snopt_info > 10)
+                    msg=['The IK fails at ',num2str(i)];
+                    warning(msg);
+                    send_status(3,0,0,msg);
+                end
+                %q_d(:,i) = q(ind,i);
+            end
+            
+            % publish robot map
+            disp('Publishing manip plan...');
+
+            
+            utime = now() * 24 * 60 * 60;
+            xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
+            xtraj(1,:) = 0*timeIndices;
+            keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.num_breaks))); % no more than ${obj.num_breaks} keyframes
+            xtraj(1,keyframe_inds) = 1.0;
+            xtraj(2,:) = 0*timeIndices;
+            xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            
+            s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
+            
+            %timeIndices
+            
+            fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
+
+
+            % MORE CACHE STORE
+            obj.qtraj_guess_fine = PPTrajectory(spline(s, q));
+            
+            s_sorted = sort(s);
+            s_breaks = s_sorted(keyframe_inds);
+            obj.s_breaks = s_breaks;
+            % calculate end effectors breaks via FK.
+            for brk =1:length(s_breaks),
+                q_break = obj.qtraj_guess_fine.eval(s_breaks(brk));
+                kinsol_tmp = doKinematics(obj.r,q_break);
+                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
+                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
+                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
+                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
+                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+            end
+            s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
+            s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
+            s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head); 
+            s_total = max(s_total,0.01);
+            
+            ts = s.*(s_total/obj.v_desired); % plan timesteps
+            obj.time_2_index_scale = (obj.v_desired/s_total);
+            brkpts =logical(zeros(1,length(timeIndices))==1);
+            if(~isempty(postureconstraint))
+                timetags = [postureconstraint.utime];
+                if(length(unique(timetags)) > 1)
+                    for k=1:length(timetags),
+                        brkpts = brkpts|(timeIndices == timetags(k));
+                    end
+                end
+                brkpts_shiftright=circshift(brkpts,[ 0 -1]);
+                xtraj(2,:) = brkpts|brkpts_shiftright;
+                
+                unique_transitions = unique(timetags);%get all values for a given time index
+                cnt = 1;
+                for j=1:length(unique_transitions),
+                    s_transition =(unique_transitions(j)-min(timeIndices))/(max(timeIndices)-min(timeIndices));
+                    ind = find(unique_transitions(j)==timetags);
+                    num_joints = length(ind);
+                    num_l_joints = 0;
+                    num_r_joints = 0;
+                    ind_l =[];ind_r =[];
+                    % figure out if it is bihanded or single hand grasp transition.
+                    for(k=1:num_joints),
+                        if(~isempty(regexp(char(postureconstraint(ind(k)).joint_name),'left_')))
+                            num_l_joints = num_l_joints+1;
+                            ind_l = [ind_l ind(k)];
+                        else
+                            num_r_joints = num_r_joints+1;
+                            ind_r =[ind_r ind(k)];
+                        end
+                    end
+                    
+                    if(num_l_joints>0)
+                        G(cnt).utime =  s_transition.*(s_total/obj.v_desired);
+                        G(cnt).num_joints=round(num_l_joints);
+                        G(cnt).joint_name=javaArray('java.lang.String', num_l_joints);
+                        G(cnt).joint_position=zeros(1,num_l_joints);
+                        for k=1:num_l_joints,
+                            G(cnt).joint_name(k) = postureconstraint(ind_l(k)).joint_name;
+                            G(cnt).joint_position(k) = postureconstraint(ind_l(k)).joint_position;
+                        end
+                        G(cnt).affordance_uid = 0;
+                        G(cnt).grasp_on = false;
+                        G(cnt).grasp_type = 0; % LEFT
+                        G(cnt).power_grasp=false;
+                        pose = drc.position_3d_t();
+                        pose.translation = drc.vector_3d_t();
+                        pose.rotation = drc.quaternion_t();
+                        pose.rotation.w =1.0;
+                        G(cnt).hand_pose = pose;
+                        cnt = cnt+1;
+                    end
+                    
+                    if(num_r_joints>0)
+                        G(cnt).utime =  s_transition.*(s_total/obj.v_desired);
+                        G(cnt).num_joints=round(num_r_joints);
+                        G(cnt).joint_name=javaArray('java.lang.String', num_r_joints);
+                        G(cnt).joint_position=zeros(1,num_r_joints);
+                        for k=1:num_r_joints,
+                            G(cnt).joint_name(k) = postureconstraint(ind_r(k)).joint_name;
+                            G(cnt).joint_position(k) = postureconstraint(ind_r(k)).joint_position;
+                        end
+                        G(cnt).affordance_uid = 0;
+                        G(cnt).grasp_on = false;
+                        G(cnt).grasp_type = 1; % RIGHT
+                        G(cnt).power_grasp=false;
+                        pose = drc.position_3d_t();
+                        pose.translation = drc.vector_3d_t();
+                        pose.rotation = drc.quaternion_t();
+                        pose.rotation.w =1.0;
+                        G(cnt).hand_pose = pose;
+                        cnt = cnt+1;
+                    end
+                end
+                %utime = 0;
+                obj.plan_pub.publish(xtraj,ts,G,utime);
+            else
+                obj.plan_pub.publish(xtraj,ts,utime);
+            end
+        end      
+        
+        
+        
+        
+        
    %======== THE MAIN OPTIMIZATION OF BOUNDARY VALUE PLANNING PROBLEM GIVEN DESIRED EE LOCATIONS ==============
         function runOptimization(obj,varargin)
             is_locii = false;
@@ -1335,6 +1797,7 @@ classdef ManipulationPlanner < handle
             %   comgoal = [mean(gc(1:2,k),2);com0(3)];
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
             
+
             % get hand positions
             
             % compute EE trajectories
@@ -1621,8 +2084,8 @@ classdef ManipulationPlanner < handle
                         head_int_constraint(5), head_int_constraint(6));
                     
                     
-                    if(abs(1-s_int_lf)<1e-3)
-                        disp('lf end state is modified')
+                    if(abs(1-s_int_head)<1e-3)
+                        disp('head end state is modified')
                         head_poseT(1:3) = head_int_constraint(1:3);
                         head_poseT(4:7) = rpy2quat(head_int_constraint(4:6));
                         obj.headT = head_int_constraint;
@@ -1691,7 +2154,7 @@ classdef ManipulationPlanner < handle
             % kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
             % ks = ks.addKinematicConstraint(kc_com);
         
-			      if(isempty(q_desired))
+			 if(isempty(q_desired))
                 r_hand_poseT_relaxed.min=r_hand_poseT-1e-3;
                 r_hand_poseT_relaxed.max=r_hand_poseT+1e-3;
                 l_hand_poseT_relaxed.min=l_hand_poseT-1e-3;
@@ -2535,8 +2998,7 @@ classdef ManipulationPlanner < handle
             cost.r_leg_lax = cost.l_leg_lax;
             cost = double(cost);
             
-        end       
-        
+        end 
         
         function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);

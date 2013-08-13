@@ -85,7 +85,7 @@ constraint_listener = TrajOptConstraintListener('MANIP_PLAN_CONSTRAINT');
 % The following support multiple ee's at the same time
 trajoptconstraint_listener = TrajOptConstraintListener('DESIRED_MANIP_PLAN_EE_LOCI');
 indexed_trajoptconstraint_listener = AffIndexedTrajOptConstraintListener('DESIRED_MANIP_MAP_EE_LOCI');
-
+wholebodytrajoptconstraint_listener = TrajOptConstraintListener('DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE');
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
@@ -403,6 +403,27 @@ while(1)
       manip_planner.generateAndPublishManipulationMap(x0,ee_names,ee_loci,affIndices,ee_goal_type_flags);
   end
   
+  
+  [trajoptconstraint,postureconstraint]= wholebodytrajoptconstraint_listener.getNextMessage(msg_timeout);
+  if(~isempty(trajoptconstraint))
+      disp('time indexed traj opt constraint for whole body plan received .');
+      
+      % cache the a subset of fields as indices for aff_indexed_plans
+      timestamps =[trajoptconstraint.time];
+      ee_names = {trajoptconstraint.name};
+      ee_loci = zeros(6,length(ee_names));
+      
+        % joint_timestamps=[postureconstraint.time];
+        % joint_names = {postureconstraint.name};
+        % joint_positions = [postureconstraint.joint_position];
+      for i=1:length(ee_names),
+          p = trajoptconstraint(i).desired_pose(1:3);% for now just take the end state
+          q = trajoptconstraint(i).desired_pose(4:7);q=q/norm(q);
+          rpy = quat2rpy(q);
+          ee_loci(:,i)=[p(:);rpy(:)];
+      end
+      manip_planner.generateAndPublishWholeBodyPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
+  end 
 
   posture_goal =preset_posture_goal_listener.getNextMessage(msg_timeout);  
   useIK_state = 0;
