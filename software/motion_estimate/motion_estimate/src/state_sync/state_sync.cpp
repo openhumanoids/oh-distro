@@ -11,7 +11,9 @@ using namespace std;
 
 /////////////////////////////////////
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_):lcm_(lcm_), standalone_head_(standalone_head_){
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, bool spoof_motion_estimation_):
+   lcm_(lcm_), standalone_head_(standalone_head_),
+   spoof_motion_estimation_(spoof_motion_estimation_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
   lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
@@ -94,6 +96,9 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   robot_state_msg.force_torque = force_torque_msg;
   
   lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  if (spoof_motion_estimation_){
+    lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+  }
 }
 
 void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
@@ -110,8 +115,10 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
 int
 main(int argc, char ** argv){
   bool standalone_head = false;
+  bool spoof_motion_estimation = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
+  opt.add(spoof_motion_estimation, "e", "spoof","Spoof EST_ROBOT_STATE message");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
@@ -120,7 +127,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  state_sync app(lcm, standalone_head);
+  state_sync app(lcm, standalone_head,spoof_motion_estimation);
   while(0 == lcm->handle());
   return 0;
 }

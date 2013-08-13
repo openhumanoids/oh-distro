@@ -21,7 +21,8 @@ struct Joints {
 ///////////////////////////////////////////////////////////////
 class state_sync{
   public:
-    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_);
+    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_,
+      bool spoof_motion_estimation);
     
     ~state_sync(){
     }
@@ -30,6 +31,7 @@ class state_sync{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     bool standalone_head_;
+    bool spoof_motion_estimation_;
 
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
