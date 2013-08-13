@@ -1,12 +1,18 @@
 #include "mainwindow.h"
 #include "plotwidget.h"
+#include "selectsignaldialog.h"
+#include "signaldescription.h"
 #include "lcmthread.h"
 
 #include <qlabel.h>
 #include <qlayout.h>
+#include <QApplication>
+#include <QDebug>
 #include <QScrollArea>
 #include <QPushButton>
 #include <QShortcut>
+
+#include "qjson.h"
 
 #include <cstdio>
 
@@ -32,7 +38,7 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
   hlayout->addStretch();
 
 
-  this->connect(newPlotButton, SIGNAL(clicked()), SLOT(onNewPlot()));
+  this->connect(newPlotButton, SIGNAL(clicked()), SLOT(onNewPlotClicked()));
   this->connect(pauseButton, SIGNAL(clicked()), SLOT(onTogglePause()));
 
   mScrollArea = new QScrollArea;
@@ -47,10 +53,11 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
   vLayout->addWidget(toolbar);
   vLayout->addWidget(mScrollArea);
 
-  //this->onNewPlot();
-
  QShortcut* quit = new QShortcut(QKeySequence(tr("Ctrl+Q", "Quit")), this);
   this->connect(quit, SIGNAL(activated()), SLOT(close()));
+
+
+  this->loadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -58,6 +65,28 @@ MainWindow::~MainWindow()
   mLCMThread->stop();
   mLCMThread->wait(1000);
   delete mLCMThread;
+}
+
+void MainWindow::loadSettings()
+{
+  QStringList args = QApplication::instance()->arguments();
+
+  if (args.length() > 1)
+  {
+    QString filename = args[1];
+    QMap<QString, QVariant> plotSettings = Json::decodeFile(filename);
+    this->loadPlots(plotSettings);
+  }
+}
+
+void MainWindow::loadPlots(const QMap<QString, QVariant>& plotSettings)
+{
+  QList<QVariant> plots = plotSettings.value("plots").toList();
+  foreach (const QVariant& plot, plots)
+  {
+    PlotWidget* plotWidget = this->addPlot();
+    plotWidget->loadSettings(plot.toMap());
+  }
 }
 
 void MainWindow::onTogglePause()
@@ -79,21 +108,63 @@ void MainWindow::onTogglePause()
   }
 }
 
-void MainWindow::onNewPlot()
+SignalHandler* MainWindow::getSignalSelectionFromUser()
+{
+  SelectSignalDialog dialog(this);
+  int result = dialog.exec();
+  if (result != QDialog::Accepted)
+  {
+    return 0;
+  }
+
+  return dialog.createSignalHandler();
+}
+
+void MainWindow::onNewPlotClicked()
+{
+  SignalHandler* signalHandler = this->getSignalSelectionFromUser();
+  if (!signalHandler)
+  {
+    return;
+  }
+
+  PlotWidget* plot = this->addPlot();
+  plot->addSignal(signalHandler);
+}
+
+PlotWidget* MainWindow::addPlot()
 {
   PlotWidget* plot = new PlotWidget(mLCMThread);
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
-  plot->addSignal();
   mPlots.append(plot);
+  return plot;
+}
+
+void MainWindow::onAddSignalToPlot(PlotWidget* plot)
+{
+  if (!plot)
+  {
+    return;
+  }
+
+  SignalHandler* signalHandler = this->getSignalSelectionFromUser();
+  if (!signalHandler)
+  {
+    return;
+  }
+
+  plot->addSignal(signalHandler);
 }
 
 void MainWindow::onRemovePlot(PlotWidget* plot)
 {
-  if (plot)
+  if (!plot)
   {
-    mPlotLayout->removeWidget(plot);
-    mPlots.removeAll(plot);
-    delete plot;
+    return;
   }
+
+  mPlotLayout->removeWidget(plot);
+  mPlots.removeAll(plot);
+  delete plot;
 }

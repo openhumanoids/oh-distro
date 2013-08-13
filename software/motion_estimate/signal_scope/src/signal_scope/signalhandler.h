@@ -34,6 +34,8 @@ public:
     return mSignalData;
   }
 
+  virtual QString description() = 0;
+
   virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, const drc::robot_state_t* msg, float& timeNow, float& signalValue) = 0;
 
   void subscribe(lcm::LCM* lcmInstance);
@@ -85,6 +87,7 @@ public: \
   virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, const drc::robot_state_t* msg, float& timeNow, float& signalValue); \
   static QString messageType() { return "drc.robot_state_t"; } \
   static QString fieldName(); \
+  virtual QString description(); \
 protected: \
   int mArrayIndex; \
 };

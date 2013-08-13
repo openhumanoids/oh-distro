@@ -18,7 +18,7 @@ public:
   QString mChannel;
   QString mMessageType;
   QString mFieldName;
-  int mArrayIndex;
+  QList<QString> mArrayKeys;
 
  protected:
 

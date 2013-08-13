@@ -4,6 +4,7 @@
 #include "signalhandler.h"
 #include "setscaledialog.h"
 #include "selectsignaldialog.h"
+#include "signaldescription.h"
 
 #include <qwt_scale_engine.h>
 #include <qlabel.h>
@@ -88,7 +89,7 @@ void PlotWidget::onShowContextMenu(const QPoint& pos)
   }
   else if (selectedAction == "Add signal")
   {
-    this->addSignal();
+    emit this->addSignalRequested(this);
   }
   else if (selectedAction == "Set Y axis scale")
   {
@@ -116,19 +117,47 @@ void PlotWidget::stop()
   d_plot->stop();
 }
 
-void PlotWidget::addSignal()
+void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
 {
-  SelectSignalDialog dialog(this);
-  int result = dialog.exec();
-  if (result == QDialog::Accepted)
+  SignalDescription desc;
+  desc.mChannel = signalSettings.value("channel").toString();
+  desc.mMessageType = signalSettings.value("messageType").toString();
+  desc.mFieldName = signalSettings.value("fieldName").toString();
+  desc.mArrayKeys = signalSettings.value("arrayKeys").toStringList();
+
+  SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&desc);
+
+  if (signalHandler)
   {
-    SignalHandler* handler = dialog.createSignalHandler();
-    if (handler)
-    {
-      int signalColorIndex = mSignals.size() % mColors.size();
-      mLCMThread->addSignalHandler(handler);
-      mSignals.append(handler);
-      d_plot->addSignal(handler->signalData(), mColors[signalColorIndex]);
-    }
+    printf("adding signal: %s\n", qPrintable(signalHandler->description()));
+  }
+  else
+  {
+    printf("failed to create signal from signal settings.\n");
+  }
+
+  this->addSignal(signalHandler);
+}
+
+void PlotWidget::addSignal(SignalHandler* signalHandler)
+{
+  if (!signalHandler)
+  {
+    return;
+  }
+
+  int signalColorIndex = mSignals.size() % mColors.size();
+  mLCMThread->addSignalHandler(signalHandler);
+  mSignals.append(signalHandler);
+  d_plot->addSignal(signalHandler->signalData(), mColors[signalColorIndex]);
+}
+
+
+void PlotWidget::loadSettings(const QMap<QString, QVariant>& plotSettings)
+{
+  QList<QVariant> signalList = plotSettings.value("signals").toList();
+  foreach (const QVariant& signalVariant, signalList)
+  {
+    this->addSignal(signalVariant.toMap());
   }
 }

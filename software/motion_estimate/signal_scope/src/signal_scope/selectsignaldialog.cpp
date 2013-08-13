@@ -46,13 +46,13 @@ SignalHandler* SelectSignalDialog::createSignalHandler() const
   QString messageType = mInternal->MessageTypeListBox->currentItem()->text();
   QString messageField = mInternal->MessageFieldListBox->currentItem()->text();
   int arrayIndex = mInternal->ArrayIndexSpinBox->value();
-  bool fieldIsArray = mInternal->FieldIsArrayCheckBox->isChecked();
+  //bool fieldIsArray = mInternal->FieldIsArrayCheckBox->isChecked();
 
   SignalDescription desc;
   desc.mChannel = channel;
   desc.mMessageType = messageType;
   desc.mFieldName = messageField;
-  desc.mArrayIndex = arrayIndex;
+  desc.mArrayKeys.append(QString::number(arrayIndex));
 
   return SignalHandlerFactory::instance().createHandler(&desc);
 }

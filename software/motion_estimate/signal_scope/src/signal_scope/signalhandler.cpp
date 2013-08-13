@@ -2,9 +2,15 @@
 
 #include "signaldata.h"
 #include "signaldescription.h"
+#include "jointnames.h"
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
+
+#include <cassert>
+
+#include <QDebug>
+
 
 SignalHandler::SignalHandler(const QString& channel)
 {
@@ -22,6 +28,7 @@ void SignalHandler::handleRobotStateMessage(const lcm::ReceiveBuffer* rbuf, cons
 {
   float timeNow;
   float signalValue;
+  (void)channel;
 
   bool valid = this->extractSignalData(rbuf, msg, timeNow, signalValue);
   if (valid)
@@ -75,16 +82,57 @@ SignalHandler* SignalHandlerFactory::createHandler(SignalDescription* desc) cons
 
 //-----------------------------------------------------------------------------
 
+namespace
+{
+  int ArrayIndexFromIntegerKey(const QString& key)
+  {
+    bool ok;
+    int arrayIndex = key.toInt(&ok);
+    return  ok ? arrayIndex : -1;
+  }
+
+  int ArrayIndexFromJointNameKey(const QString& key)
+  {
+    return JointNames::indexOfJointName(key);
+  }
+
+  int ArrayIndexFromKey(const QString& key)
+  {
+    int arrayIndex = ArrayIndexFromIntegerKey(key);
+    if (arrayIndex >= 0)
+    {
+      return arrayIndex;
+    }
+
+    arrayIndex = ArrayIndexFromJointNameKey(key);
+    if (arrayIndex >= 0)
+    {
+      return arrayIndex;
+    }
+
+    qDebug() << "Failed to convert array key: " << key;
+    assert(arrayIndex >= 0);
+    return arrayIndex;
+  }
+
+  int ArrayIndexFromKeys(const QList<QString>& keys)
+  {
+    assert(keys.length() == 1);
+    return ArrayIndexFromKey(keys[0]);
+  }
+}
 
 #define define_array_handler(className, _fieldName) \
-className::className(SignalDescription* desc) : SignalHandler(desc->mChannel), mArrayIndex(desc->mArrayIndex) { } \
+className::className(SignalDescription* desc) : SignalHandler(desc->mChannel), mArrayIndex(ArrayIndexFromKeys(desc->mArrayKeys)) { } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, const drc::robot_state_t* msg, float& timeNow, float& signalValue) \
 { \
+  (void)rbuf; \
   timeNow = (msg->utime)/1000000.0; \
   signalValue = msg->_fieldName[mArrayIndex]; \
   return true; \
 } \
-QString className::fieldName() { return #_fieldName ; }
+QString className::fieldName() { return #_fieldName ; } \
+QString className::description() { return QString("%1.%2[%3]").arg(this->messageType()).arg(this->fieldName()).arg(this->mArrayIndex); }
 
 
 

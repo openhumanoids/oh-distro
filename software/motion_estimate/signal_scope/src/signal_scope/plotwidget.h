@@ -20,8 +20,9 @@ public:
   void stop();
   void stopThreads();
 
-
-  void addSignal();
+  void loadSettings(const QMap<QString, QVariant>& plotSettings);
+  void addSignal(const QMap<QString, QVariant>& signalSettings);
+  void addSignal(SignalHandler* signalHandler);
 
 public slots:
 
@@ -29,6 +30,7 @@ public slots:
 
 signals:
 
+  void addSignalRequested(PlotWidget* plot);
   void removePlotRequested(PlotWidget* plot);
 
 private:

@@ -7,6 +7,7 @@ class QScrollArea;
 class QVBoxLayout;
 class PlotWidget;
 class LCMThread;
+class SignalHandler;
 
 class MainWindow : public QWidget
 {
@@ -20,11 +21,19 @@ public:
 public slots:
 
   void onTogglePause();
-  void onNewPlot();
+  void onNewPlotClicked();
   void onRemovePlot(PlotWidget* plot);
+  void onAddSignalToPlot(PlotWidget* plot);
 
 protected:
 
+  void loadSettings();
+
+  void loadPlots(const QMap<QString, QVariant>& plotSettings);
+  void loadPlot(const QMap<QString, QVariant>& plot);
+
+  PlotWidget* addPlot();
+  SignalHandler* getSignalSelectionFromUser();
 
   QScrollArea* mScrollArea;
   QWidget* mPlotArea;

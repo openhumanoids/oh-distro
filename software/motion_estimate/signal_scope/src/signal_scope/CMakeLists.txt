@@ -1,4 +1,4 @@
-find_package(Qt4 REQUIRED QtCore QtGui)
+find_package(Qt4 REQUIRED QtCore QtGui QtScript)
 include(${QT_USE_FILE})
 
 find_package(PkgConfig)
@@ -33,6 +33,7 @@ set(srcs
   ${moc_srcs}
   ${ui_srcs}
   curvedata.cpp
+  jointnames.cpp
   main.cpp
   mainwindow.cpp
   plot.cpp

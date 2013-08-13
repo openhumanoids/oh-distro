@@ -1,0 +1,35 @@
+{
+  "plots" : [
+    {
+      "ymin" : -4.0,
+      "ymax" : 4.0,
+
+      "signals" : [
+        {
+          "channel" : "TRUE_ROBOT_STATE",
+          "messageType" : "drc.robot_state_t",
+          "fieldName" : "joint_position",
+          "arrayKeys" : "R_ARM_ELY"
+        },
+
+        {
+          "channel" : "TRUE_ROBOT_STATE",
+          "messageType" : "drc.robot_state_t",
+          "fieldName" : "joint_position",
+          "arrayKeys" : "R_ARM_ELY"
+        }
+      ]
+    },
+
+    {
+      "signals" : [
+        {
+          "channel" : "TRUE_ROBOT_STATE",
+          "messageType" : "drc.robot_state_t",
+          "fieldName" : "joint_position",
+          "arrayKeys" : "R_ARM_ELY"
+        }
+      ]
+    }
+  ]
+}
