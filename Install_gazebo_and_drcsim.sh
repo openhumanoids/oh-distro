@@ -3,6 +3,17 @@ GAZEBO_REV=8795
 GAZEBO_VERSION=1.8
 SIM_REV=2840
 MODELS_REV=310
+
+install_sandia_from_src(){
+  echo "Installing sandia-hand from src ===================="
+  CURRENT_DIR=$PWD
+  cd $DRC_BASE/ros_workspace/sandia-hand/  
+  ./install.sh
+  cd $CURRENT_DIR
+  echo " 'find_package(sandia-hand)' should now work in cmake "
+  echo "Finished Installing sandia-hand ===================="
+}
+
 cd ~/
 mkdir ~/gazebo_versions
 mkdir ~/gazebo_versions/gazebo_$GAZEBO_REV
@@ -34,6 +45,7 @@ if [ "$RESP" = "g" ]; then
 
 elif [ "$RESP" = "d" ]; then
 
+  install_sandia_from_src
   source /opt/ros/fuerte/setup.bash
   source /usr/local/share/gazebo-$GAZEBO_VERSION/setup.sh 
   echo "CHECKING OUT DRCSIM ======================="
@@ -45,16 +57,15 @@ elif [ "$RESP" = "d" ]; then
   hg update -r$SIM_REV
   mkdir build
   cd build
-  cmake ..
+  cmake -Dsandia-hand_DIR=$DRC_BASE/ros_workspace/sandia-hand/build ..
   echo "cmake done on DRCSIM, now to build ====================="
   sleep 2
   make -j6
   sudo make install 
   cd ../..
   echo "Finished Installing DRCSIM==================="
-
+  
 else
-
   echo "GETTING A NEW VERSION OF ~/gazebo/.models ====================================="
   rm ~/.gazebo/models -Rf
   hg clone https://bitbucket.org/osrf/gazebo_models ~/.gazebo/models 
