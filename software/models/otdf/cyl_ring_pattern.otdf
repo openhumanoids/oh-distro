@@ -37,12 +37,14 @@
      </link_pattern>  
 
      <!-- A set of joints -->
-    <joint_pattern name="RING_joints" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints" noofrepetitions="${no_of_cyls}" type="revolute"  arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="base_link" type="link" />
         <child link="RING" type="link_pattern" />
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/>
     </joint_pattern>
     
 </object>

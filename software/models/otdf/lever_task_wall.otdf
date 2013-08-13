@@ -1,0 +1,553 @@
+<?xml version="1.0"?>
+<object name="lever_task_wall">
+
+<!-- x,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+<!-- World frame origin of the object -->
+<param name="x" default_value="0.0" inc="0.001" min="-100" max="100"/> 
+<param name="y" default_value="0.0" inc="0.001" min="-100" max="100"/>
+<param name="z" default_value="2.1336" inc="0.001" min="-100" max="100"/>
+
+<!--roll,pitch,yaw are about Body Frame-->
+<param name="roll" default_value="1.57" inc="0.01" min="-3.1416" max="3.1416"/> 
+<param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
+<param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
+
+<!-- Rectangular Lever Parameters -->
+<param name="lever_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
+<param name="lever_length" default_value="0.075" inc="0.0025" min="0" max="100" />
+<param name="lever_rad" default_value="0.004" inc="0.0025" min="0" max="100" />
+
+<!-- Size of the outer most bounding volume -->
+<param name="lX" default_value="0.03" inc="0.01" min="0" max="100"/> 
+<param name="lY" default_value="0.03" inc="0.01" min="0" max="100"/>
+<param name="lZ" default_value="0.03" inc="0.01" min="0" max="100"/> 
+
+<!-- Base Link Description -->
+<link name="base_link"/>
+
+<!-- ================== -->
+<!-- = Lever #1       = -->
+<!-- ================== -->
+<!-- Lever Base Description -->
+<link name="lever_base">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #2       = -->
+<!-- ================== -->
+<link name="lever_base2">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever2">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #3       = -->
+<!-- ================== -->
+<link name="lever_base3">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever3">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #4       = -->
+<!-- ================== -->
+<link name="lever_base4">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever4">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #5       = -->
+<!-- ================== -->
+<link name="lever_base5">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever5">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #6       = -->
+<!-- ================== -->
+<link name="lever_base6">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever6">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #7       = -->
+<!-- ================== -->
+<link name="lever_base7">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever7">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #8       = -->
+<!-- ================== -->
+<link name="lever_base8">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever8">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #9       = -->
+<!-- ================== -->
+<link name="lever_base9">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever9">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #10       = -->
+<!-- ================== -->
+<link name="lever_base10">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever10">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+<!-- ================== -->
+<!-- = Lever #11      = -->
+<!-- ================== -->
+<link name="lever_base11">
+    <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <box size="${lX} ${lY} ${lZ}" />
+	</geometry>
+    </collision>
+</link>  
+<!-- Lever Link Description -->
+<link name="lever11">
+    <visual>
+	<origin rpy="0 1.57 0" xyz="${lever_length*3/8} 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	    <cylinder radius="${lever_rad}" length="${lever_length}"/> 
+	</geometry>
+    </collision>
+</link>  
+
+<!-- Join Descriptions -->
+
+<!-- ======================= -->
+<!-- = Lever Joint #1      = -->
+<!-- ======================= -->
+<joint name="base_joint" type="fixed">
+	<parent link="base_link" type="link"/>
+	<child link="lever_base" type="link"/>
+</joint>
+<joint name="lever_joint" type="revolute">
+	<parent link="lever_base" type="link"/>
+	<child link="lever" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+
+<!-- ======================= -->
+<!-- = Lever Joint #2      = -->
+<!-- ======================= -->
+<joint name="base_joint2" type="fixed">
+        <origin rpy="0 0 0" xyz="0.60968 ${-0.60968*0} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base2" type="link"/>
+</joint>
+<joint name="lever_joint2" type="revolute">
+	<parent link="lever_base2" type="link"/>
+	<child link="lever2" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #3      = -->
+<!-- ======================= -->
+<joint name="base_joint3" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*1} ${-0.30484*1} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base3" type="link"/>
+</joint>
+<joint name="lever_joint3" type="revolute">
+	<parent link="lever_base3" type="link"/>
+	<child link="lever3" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #4      = -->
+<!-- ======================= -->
+<joint name="base_joint4" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*0} ${-0.30484*2} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base4" type="link"/>
+</joint>
+<joint name="lever_joint4" type="revolute">
+	<parent link="lever_base4" type="link"/>
+	<child link="lever4" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #5      = -->
+<!-- ======================= -->
+<joint name="base_joint5" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*2} ${-0.30484*2} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base5" type="link"/>
+</joint>
+<joint name="lever_joint5" type="revolute">
+	<parent link="lever_base5" type="link"/>
+	<child link="lever5" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #6      = -->
+<!-- ======================= -->
+<joint name="base_joint6" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*1} ${-0.30484*3} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base6" type="link"/>
+</joint>
+<joint name="lever_joint6" type="revolute">
+	<parent link="lever_base6" type="link"/>
+	<child link="lever6" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #7      = -->
+<!-- ======================= -->
+<joint name="base_joint7" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*0} ${-0.30484*4} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base7" type="link"/>
+</joint>
+<joint name="lever_joint7" type="revolute">
+	<parent link="lever_base7" type="link"/>
+	<child link="lever7" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #8      = -->
+<!-- ======================= -->
+<joint name="base_joint8" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*2} ${-0.30484*4} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base8" type="link"/>
+</joint>
+<joint name="lever_joint8" type="revolute">
+	<parent link="lever_base8" type="link"/>
+	<child link="lever8" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #9      = -->
+<!-- ======================= -->
+<joint name="base_joint9" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*1} ${-0.30484*5} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base9" type="link"/>
+</joint>
+<joint name="lever_joint9" type="revolute">
+	<parent link="lever_base9" type="link"/>
+	<child link="lever9" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #10      = -->
+<!-- ======================= -->
+<joint name="base_joint10" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*0} ${-0.30484*6} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base10" type="link"/>
+</joint>
+<joint name="lever_joint10" type="revolute">
+	<parent link="lever_base10" type="link"/>
+	<child link="lever10" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+<!-- ======================= -->
+<!-- = Lever Joint #11      = -->
+<!-- ======================= -->
+<joint name="base_joint11" type="fixed">
+        <origin rpy="0 0 0" xyz="${0.30484*2} ${-0.30484*6} 0" />
+	<parent link="base_link" type="link"/>
+	<child link="lever_base11" type="link"/>
+</joint>
+<joint name="lever_joint11" type="revolute">
+	<parent link="lever_base11" type="link"/>
+	<child link="lever11" type="link"/>
+	<origin rpy="0 0 ${lever_start_theta}" xyz="0 0 ${(lZ/2)+(lever_rad)}"/>
+	<axis xyz="0 0 1"/>
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+</joint>
+
+
+</object>
+
+
