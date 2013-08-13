@@ -17,6 +17,9 @@ public:
 
 protected slots:
 
+  void onMessageTypeChanged();
+  void onFieldNameChanged();
+
 private:
 
   class Internal;

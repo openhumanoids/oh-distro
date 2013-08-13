@@ -6,9 +6,8 @@
 class SignalData;
 
 
-class SignalDescription : public QObject
+class SignalDescription
 {
-  Q_OBJECT
 
 public:
 

@@ -25,9 +25,13 @@ public:
     virtual void replot();
 
     void addSignal(SignalData* signalData, QColor color=Qt::green);
+    void removeSignal(SignalData* signalData);
+    void setSignalVisible(SignalData* signalData, bool visible);
+
+    double timeWindow();
 
 public Q_SLOTS:
-    void setIntervalLength(double);
+    void setTimeWindow(double);
     void setYScale(double);
 
 protected:

@@ -18,7 +18,6 @@ qt4_wrap_cpp(moc_srcs
   plot.h
   plotwidget.h
   lcmthread.h
-  signaldescription.h
   signalhandler.h
   setscaledialog.h
   selectsignaldialog.h

@@ -22,14 +22,16 @@ public slots:
 
   void onTogglePause();
   void onNewPlotClicked();
+  void onSaveSettings();
   void onRemovePlot(PlotWidget* plot);
   void onAddSignalToPlot(PlotWidget* plot);
 
 protected:
 
-  void loadSettings();
-
-  void loadPlots(const QMap<QString, QVariant>& plotSettings);
+  void handleCommandLineArgs();
+  void saveSettings(const QString& filename);
+  void loadSettings(const QString& filename);
+  void loadSettings(const QMap<QString, QVariant>& settings);
   void loadPlot(const QMap<QString, QVariant>& plot);
 
   PlotWidget* addPlot();

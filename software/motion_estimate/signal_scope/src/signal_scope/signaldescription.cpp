@@ -5,7 +5,12 @@
 SignalDescription::SignalDescription()
 {
 }
+/*
+SignalDescription::SignalDescription(const SignalDescription&)
+{
 
+}
+*/
 SignalDescription::~SignalDescription()
 {
 

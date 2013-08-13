@@ -8,6 +8,8 @@ class Knob;
 class WheelBox;
 class SignalHandler;
 class LCMThread;
+class QListWidget;
+class QListWidgetItem;
 
 class PlotWidget : public QWidget
 {
@@ -24,9 +26,15 @@ public:
   void addSignal(const QMap<QString, QVariant>& signalSettings);
   void addSignal(SignalHandler* signalHandler);
 
+  QMap<QString, QVariant> saveSettings();
+  QMap<QString, QVariant> saveSignalSettings(SignalHandler* signalHandler);
+
 public slots:
 
   void onShowContextMenu(const QPoint&);
+  void onShowSignalContextMenu(const QPoint&);
+
+  void onSignalListItemChanged(QListWidgetItem* item);
 
 signals:
 
@@ -39,6 +47,8 @@ private:
   QList<SignalHandler*> mSignals;
   QList<QColor> mColors;
   LCMThread* mLCMThread;
+
+  QListWidget* mSignalListWidget;
 };
 
 #endif

@@ -57,3 +57,8 @@ QString JointNames::jointName(int jointIndex)
 
   return QString();
 }
+
+const QList<QString>& JointNames::jointNames()
+{
+  return instance.mNames;
+}

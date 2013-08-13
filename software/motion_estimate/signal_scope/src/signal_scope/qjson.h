@@ -50,6 +50,20 @@ public:
     return Json::decode(fileContents);
   }
 
+  static void encodeFile(const QString &filename, const QMap<QString,QVariant> &map)
+  {
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+      qDebug() << "Json::encodeFile: Failed to open file: " << filename;
+      return;
+    }
+
+    QTextStream stream(&file);
+    stream << Json::encode(map) << endl;
+
+  }
+
   protected:
 
   static QScriptValue encodeInner(const QMap<QString,QVariant> &map, QScriptEngine* engine)

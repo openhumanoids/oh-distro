@@ -19,6 +19,7 @@
 #include <qevent.h>
 
 #include <limits>
+#include <cassert>
 
 
 class MyScaleDraw : public QwtScaleDraw
@@ -124,7 +125,8 @@ Plot::Plot(QWidget *parent):
 
 
     // zoom in/out with the wheel
-    QwtPlotMagnifier* magnifier = new QwtPlotMagnifier( canvas() );
+    QwtPlotMagnifier* magnifier = new QwtPlotMagnifier(canvas());
+    magnifier->setMouseButton(Qt::MiddleButton);
 
     const QColor c(Qt::darkBlue);
     zoomer->setRubberBandPen(c);
@@ -153,6 +155,40 @@ void Plot::addSignal(SignalData* signalData, QColor color)
   d_curve->attach(this);
 
   mSignals[signalData] = d_curve;
+}
+
+void Plot::removeSignal(SignalData* signalData)
+{
+  if (!signalData)
+  {
+    return;
+  }
+
+  QwtPlotCurve* curve = mSignals.value(signalData);
+  assert(curve);
+  curve->detach();
+  delete curve;
+  mSignals.remove(signalData);
+}
+
+void Plot::setSignalVisible(SignalData* signalData, bool visible)
+{
+  if (!signalData)
+  {
+    return;
+  }
+
+  QwtPlotCurve* curve = mSignals.value(signalData);
+  assert(curve);
+
+  if (visible)
+  {
+    curve->attach(this);
+  }
+  else
+  {
+    curve->detach();
+  }
 }
 
 void Plot::initGradient()
@@ -201,10 +237,16 @@ void Plot::replot()
   {
     signalData->unlock();
   }
-
 }
 
-void Plot::setIntervalLength(double interval)
+
+double Plot::timeWindow()
+{
+  return d_interval.width();
+}
+
+
+void Plot::setTimeWindow(double interval)
 {
   if ( interval > 0.0 && interval != d_interval.width() )
   {
@@ -223,8 +265,6 @@ void Plot::timerEvent(QTimerEvent *event)
 {
   if ( event->timerId() == d_timerId )
   {
-
-
 
     if (!mSignals.size())
     {

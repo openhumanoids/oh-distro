@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QPushButton>
 #include <QShortcut>
+#include <QFileDialog>
 
 #include "qjson.h"
 
@@ -35,11 +36,15 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
   pauseButton->setCheckable(true);
   hlayout->addWidget(pauseButton);
 
+  QPushButton* saveSettingsButton = new QPushButton("Save settings");
+  hlayout->addWidget(saveSettingsButton);
+
   hlayout->addStretch();
 
 
   this->connect(newPlotButton, SIGNAL(clicked()), SLOT(onNewPlotClicked()));
   this->connect(pauseButton, SIGNAL(clicked()), SLOT(onTogglePause()));
+  this->connect(saveSettingsButton, SIGNAL(clicked()), SLOT(onSaveSettings()));
 
   mScrollArea = new QScrollArea;
   mPlotArea = new QWidget;
@@ -57,36 +62,85 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
   this->connect(quit, SIGNAL(activated()), SLOT(close()));
 
 
-  this->loadSettings();
+  this->resize(1024,800);
+  this->handleCommandLineArgs();
 }
 
 MainWindow::~MainWindow()
 {
+
+  QString settingsFile = QDir::homePath() + "/.signal_scope.json";
+  this->saveSettings(settingsFile);
+
   mLCMThread->stop();
-  mLCMThread->wait(1000);
+  mLCMThread->wait(250);
   delete mLCMThread;
 }
 
-void MainWindow::loadSettings()
+void MainWindow::handleCommandLineArgs()
 {
   QStringList args = QApplication::instance()->arguments();
 
   if (args.length() > 1)
   {
     QString filename = args[1];
-    QMap<QString, QVariant> plotSettings = Json::decodeFile(filename);
-    this->loadPlots(plotSettings);
+    this->loadSettings(filename);
+  }
+  else
+  {
+    QString settingsFile = QDir::homePath() + "/.signal_scope.json";
+    if (QFileInfo(settingsFile).exists())
+    {
+      this->loadSettings(settingsFile);
+    }
   }
 }
 
-void MainWindow::loadPlots(const QMap<QString, QVariant>& plotSettings)
+void MainWindow::onSaveSettings()
 {
-  QList<QVariant> plots = plotSettings.value("plots").toList();
+  QString filename = QFileDialog::getSaveFileName(this, "Save Settings", ".json");
+  if (filename.length())
+  {
+    this->saveSettings(filename);
+  }
+}
+
+void MainWindow::saveSettings(const QString& filename)
+{
+  QMap<QString, QVariant> settings;
+
+  settings["windowWidth"] = this->width();
+  settings["windowHeight"] = this->height();
+
+  QList<QVariant> plotSettings;
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plotSettings.append(plot->saveSettings());
+  }
+
+  settings["plots"] = plotSettings;
+
+  Json::encodeFile(filename, settings);
+}
+
+void MainWindow::loadSettings(const QString& filename)
+{
+  QMap<QString, QVariant> settings = Json::decodeFile(filename);
+  this->loadSettings(settings);
+}
+
+void MainWindow::loadSettings(const QMap<QString, QVariant>& settings)
+{
+  QList<QVariant> plots = settings.value("plots").toList();
   foreach (const QVariant& plot, plots)
   {
     PlotWidget* plotWidget = this->addPlot();
     plotWidget->loadSettings(plot.toMap());
   }
+
+  int windowWidth = settings.value("windowWidth", 1024).toInt();
+  int windowHeight = settings.value("windowHeight", 800).toInt();
+  this->resize(windowWidth, windowHeight);
 }
 
 void MainWindow::onTogglePause()
@@ -137,6 +191,7 @@ PlotWidget* MainWindow::addPlot()
   PlotWidget* plot = new PlotWidget(mLCMThread);
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
+  this->connect(plot, SIGNAL(addSignalRequested(PlotWidget*)), SLOT(onAddSignalToPlot(PlotWidget*)));
   mPlots.append(plot);
   return plot;
 }

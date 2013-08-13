@@ -13,6 +13,7 @@ public:
   static int numberOfJoints();
   static int indexOfJointName(const QString& jointName);
   static QString jointName(int jointIndex);
+  static const QList<QString>& jointNames();
 
   QList<QString> mNames;
 };
