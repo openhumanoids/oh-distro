@@ -69,5 +69,5 @@ add_subdirectory(ros)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(conf_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sandia-hand-config.cmake")
-configure_file("${conf_file}.in" "${PROJECT_BINARY_DIR}/${conf_file}" @ONLY)
-install(FILES "${PROJECT_BINARY_DIR}/${conf_file}" DESTINATION share/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/cmake COMPONENT cmake)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/sandia-hand-config.cmake.in" "${PROJECT_BINARY_DIR}/sandia-hand-config.cmake" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/sandia-hand-config.cmake" DESTINATION share/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/cmake COMPONENT cmake)
