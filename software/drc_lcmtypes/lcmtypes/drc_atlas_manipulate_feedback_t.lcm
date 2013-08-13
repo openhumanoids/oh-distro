@@ -1,0 +1,15 @@
+package drc;
+
+// contents of AtlasBehaviorManipulateFeedback
+
+struct atlas_manipulate_feedback_t
+{
+  int32_t status_flags;
+
+  // servo clamp parameters - AtlasBehaviorPelvisServoParams
+  float clamped_pelvis_height;
+  float clamped_pelvis_yaw;
+  float clamped_pelvis_lat;
+
+  // TODO: add status enums  
+}
