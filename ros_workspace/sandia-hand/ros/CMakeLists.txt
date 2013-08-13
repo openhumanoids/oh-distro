@@ -27,5 +27,9 @@ macro(chain_build pkg_name)
 endmacro(chain_build)
 
 chain_build(sandia_hand_msgs)
-chain_build(sandia_hand_driver sandia_hand_msgs)
-chain_build(sandia_hand_teleop sandia_hand_driver)
+#====================================MIT EDIT========================================
+#We dont want to install sandia_hand_driver and sandia_hand_teleop as drcsim doesn't need them
+#(Sisir 13th August)
+#chain_build(sandia_hand_driver sandia_hand_msgs)
+#chain_build(sandia_hand_teleop sandia_hand_driver)
+#====================================================================================
