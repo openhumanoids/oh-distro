@@ -7,6 +7,7 @@ MODELS_REV=310
 install_sandia_from_src(){
   echo "Installing sandia-hand from src ===================="
   CURRENT_DIR=$PWD
+  rosmake sandia_hand_driver --pre-clean
   cd $DRC_BASE/ros_workspace/sandia-hand/  
   ./install.sh
   cd $CURRENT_DIR
