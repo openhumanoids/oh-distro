@@ -823,7 +823,7 @@
     <limit effort="170" lower="-1.39626" upper="1.74533" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.3963" soft_upper_limit="11.7453"/>
   </joint>
-  <joint name="l_arm_shy" type="revolute">
+  <joint name="l_arm_usy" type="revolute">
     <origin rpy="0 -0 0" xyz="0.024 0.221 0.289"/>
     <axis xyz="0 0.5 0.866025"/>
     <parent link="utorso"/>
@@ -942,7 +942,7 @@
     <limit effort="170" lower="-1.74533" upper="1.39626" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7453" soft_upper_limit="11.3963"/>
   </joint>
-  <joint name="r_arm_shy" type="revolute">
+  <joint name="r_arm_usy" type="revolute">
     <origin rpy="0 -0 0" xyz="0.024 -0.221 0.289"/>
     <axis xyz="0 0.5 -0.866025"/>
     <parent link="utorso"/>
@@ -4430,7 +4430,7 @@
   <gazebo reference="l_arm_shx">
     <cfmDamping>1</cfmDamping>
   </gazebo>
-  <gazebo reference="l_arm_shy">
+  <gazebo reference="l_arm_usy">
     <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="l_arm_uwy">
@@ -4466,7 +4466,7 @@
   <gazebo reference="r_arm_shx">
     <cfmDamping>1</cfmDamping>
   </gazebo>
-  <gazebo reference="r_arm_shy">
+  <gazebo reference="r_arm_usy">
     <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="r_arm_uwy">
@@ -4527,9 +4527,9 @@
     <joint name="l_arm_shx"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="l_arm_shy_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="l_arm_shy_motor"/>
-    <joint name="l_arm_shy"/>
+  <transmission name="l_arm_usy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_usy_motor"/>
+    <joint name="l_arm_usy"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="l_arm_uwy_trans" type="pr2_mechanism_model/SimpleTransmission">
@@ -4592,9 +4592,9 @@
     <joint name="r_arm_shx"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="r_arm_shy_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r_arm_shy_motor"/>
-    <joint name="r_arm_shy"/>
+  <transmission name="r_arm_usy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_usy_motor"/>
+    <joint name="r_arm_usy"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="r_arm_uwy_trans" type="pr2_mechanism_model/SimpleTransmission">

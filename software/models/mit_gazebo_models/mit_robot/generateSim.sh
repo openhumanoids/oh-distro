@@ -50,13 +50,13 @@ r_leg_kny
 l_arm_elx
 l_arm_ely
 l_arm_shx
-l_arm_shy
+l_arm_usy
 l_arm_mwx
 l_arm_uwy
 r_arm_elx
 r_arm_ely
 r_arm_shx
-r_arm_shy
+r_arm_usy
 r_arm_mwx
 r_arm_uwy )
 
@@ -67,7 +67,7 @@ echo $n_joints
 #sed 's/l_leg_lax/l_leg_akx/g' <model.urdf > model_sim.urdf
 
 #${sim[@]}
-cp model.urdf model_sim.urdf
+cp model.urdf model_sim.urdf 
 
 for (( i=0; i<${n_joints}; i++ ));
 do
