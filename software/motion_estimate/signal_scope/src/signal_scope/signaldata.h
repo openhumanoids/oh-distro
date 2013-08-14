@@ -1,5 +1,5 @@
 #ifndef _SIGNAL_DATA_H_
-#define _SIGNAL_DATA_H_ 1
+#define _SIGNAL_DATA_H_
 
 #include <qrect.h>
 
@@ -21,12 +21,16 @@ public:
     void lock();
     void unlock();
 
+    bool hasMessageError() const;
+    void flagMessageError();
+
+    // New signal data points per second are calculated using
+    // an exponential moving average with a 1 second time window.
+    double messageFrequency() const;
+
 private:
 
-
     Q_DISABLE_COPY(SignalData);
-
-
 
     class PrivateData;
     PrivateData *d_data;

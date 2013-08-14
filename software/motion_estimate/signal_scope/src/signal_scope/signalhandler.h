@@ -96,7 +96,9 @@ public: \
   virtual QString description(); \
 protected: \
   int mArrayIndex; \
+  int mArrayIndex2; \
   QString mArrayKey; \
+  QString mArrayKey2; \
 };
 
 

@@ -2,6 +2,7 @@
 #include "plot.h"
 #include "lcmthread.h"
 #include "signalhandler.h"
+#include "signaldata.h"
 #include "setscaledialog.h"
 #include "selectsignaldialog.h"
 #include "signaldescription.h"
@@ -16,6 +17,10 @@
 #include <QInputDialog>
 #include <QDialogButtonBox>
 #include <QListWidget>
+#include <QTimer>
+
+#include <tr1/cmath>
+
 
 PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
     QWidget(parent),
@@ -47,6 +52,9 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
 
   mSignalListWidget = new QListWidget(this);
   vLayout1->addWidget(mSignalListWidget);
+
+  mSignalInfoLabel = new QLabel(this);
+  vLayout1->addWidget(mSignalInfoLabel);
   
   vLayout1->addStretch(10);
 
@@ -72,6 +80,10 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
       SLOT(onShowSignalContextMenu(const QPoint&)));
 
   this->connect(mSignalListWidget, SIGNAL(itemChanged(QListWidgetItem *)), SLOT(onSignalListItemChanged(QListWidgetItem*)));
+
+  QTimer* labelUpdateTimer = new QTimer(this);
+  this->connect(labelUpdateTimer, SIGNAL(timeout()), SLOT(updateSignalInfoLabel()));
+  labelUpdateTimer->start(100);
 
   this->start();
 }
@@ -158,6 +170,32 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
     delete signalHandler;
   }
 
+}
+
+void PlotWidget::updateSignalInfoLabel()
+{
+  mSignalInfoLabel->setText(QString());
+
+  QListWidgetItem* selectedItem = mSignalListWidget->currentItem();
+  if (!selectedItem)
+  {
+    return;
+  }
+
+  SignalHandler* signalHandler = selectedItem->data(Qt::UserRole).value<SignalHandler*>();
+  SignalData* signalData = signalHandler->signalData();
+
+
+  QString signalValue = "No data";
+  int numberOfValues = signalData->size();
+  if (numberOfValues)
+  {
+    signalValue = QString::number(signalData->value(numberOfValues-1).y(), 'g', 3);
+  }
+
+  QString signalInfoText = QString("Freq:  %1  Val: %2").arg(signalData->messageFrequency()).arg(signalValue);
+
+  mSignalInfoLabel->setText(signalInfoText);
 }
 
 void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)

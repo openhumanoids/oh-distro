@@ -3,21 +3,26 @@
 #include <qmutex.h>
 #include <qreadwritelock.h>
 
+
+#include "fpscounter.h"
+
+
 class SignalData::PrivateData
 {
 public:
-  PrivateData():
-    boundingRect(1.0, 1.0, -2.0, -2.0) // invalid
+  PrivateData()
   {
-    values.reserve(1000);
+    messageError = false;
+    //values.reserve(1000);
   }
 
   inline void append(const QPointF &sample)
   {
     values.append(sample);
+    fpsCounter.update();
 
     // adjust the bounding rectangle
-
+    /*
     if ( boundingRect.width() < 0 || boundingRect.height() < 0 )
     {
       boundingRect.setRect(sample.x(), sample.y(), 0.0, 0.0);
@@ -32,7 +37,10 @@ public:
       if ( sample.y() < boundingRect.top() )
           boundingRect.setTop(sample.y());
     }
+    */
   }
+
+  bool messageError;
 
   QReadWriteLock lock;
 
@@ -41,6 +49,8 @@ public:
 
   QMutex mutex; // protecting pendingValues
   QVector<QPointF> pendingValues;
+
+  FPSCounter fpsCounter;
 };
 
 SignalData::SignalData()
@@ -85,6 +95,21 @@ void SignalData::append(const QPointF &sample)
   d_data->mutex.unlock();
 }
 
+void SignalData::flagMessageError()
+{
+  d_data->messageError = true;
+}
+
+bool SignalData::hasMessageError() const
+{
+  return d_data->messageError;
+}
+
+double SignalData::messageFrequency() const
+{
+  return d_data->fpsCounter.averageFPS();
+}
+
 void SignalData::updateValues()
 {
   d_data->mutex.lock();
@@ -102,5 +127,29 @@ void SignalData::updateValues()
   while (d_data->values.size() && d_data->values.front().x() < expireTime)
   {
     d_data->values.pop_front();
+  }
+
+  // recompute bounding rect
+  if (d_data->values.size() > 1)
+  {
+    d_data->boundingRect.setLeft(d_data->values.front().x());
+    d_data->boundingRect.setRight(d_data->values.back().x());
+
+    double minY, maxY = d_data->values.front().y();
+    foreach (const QPointF& point, d_data->values)
+    {
+      if (point.y() < minY)
+        minY = point.y();
+
+      if (point.y() > maxY)
+        maxY = point.y();
+    }
+
+    d_data->boundingRect.setTop(maxY);
+    d_data->boundingRect.setBottom(minY);
+  }
+  else
+  {
+    d_data->boundingRect = QRectF();
   }
 }

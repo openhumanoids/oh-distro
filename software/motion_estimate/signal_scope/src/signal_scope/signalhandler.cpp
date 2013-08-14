@@ -48,10 +48,10 @@ namespace
     return arrayIndex;
   }
 
-  int ArrayIndexFromKeys(const QList<QString>& keys)
+  int ArrayIndexFromKeys(const QList<QString>& keys, int keyIndex)
   {
-    assert(keys.length() == 1);
-    return ArrayIndexFromKey(keys[0]);
+    assert(keys.length() > keyIndex);
+    return ArrayIndexFromKey(keys[keyIndex]);
   }
 }
 
@@ -64,13 +64,16 @@ namespace
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) \
 { \
-   mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys); \
+   mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
    mArrayKey = desc->mArrayKeys[0]; \
 } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
   drc::_messageType msg; \
-  msg.decode(rbuf->data, 0, 1000000); \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
   timeNow = (msg.utime)/1000000.0; \
   signalValue = msg._fieldName[mArrayIndex]; \
   return true; \
@@ -80,13 +83,40 @@ QString className::fieldName() { return #_fieldName ; } \
 QString className::description() { return QString("%1.%2[%3]").arg(this->messageType()).arg(this->fieldName()).arg(this->mArrayKey); }
 
 
-#define define_subfield2_handler(className, _messageType, _fieldName1, _fieldName2) \
+#define define_array_array_handler(className, _messageType, _fieldName1, _fieldName2) \
+declare_signal_handler(className); \
+className::className(SignalDescription* desc) : SignalHandler(desc) \
+{ \
+   mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
+   mArrayIndex2 = ArrayIndexFromKeys(desc->mArrayKeys, 1); \
+   mArrayKey = desc->mArrayKeys[0]; \
+   mArrayKey2 = desc->mArrayKeys[1]; \
+} \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+{ \
+  drc::_messageType msg; \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
+  timeNow = (msg.utime)/1000000.0; \
+  signalValue = msg._fieldName1[mArrayIndex]._fieldName2[mArrayIndex2]; \
+  return true; \
+} \
+QString className::messageType() { return #_messageType ; } \
+QString className::fieldName() { return #_fieldName1"."#_fieldName2 ; } \
+QString className::description() { return QString("%1.%2[%3].%4[%5]").arg(this->messageType()).arg(#_fieldName1).arg(this->mArrayKey).arg(#_fieldName2).arg(this->mArrayKey2); }
+
+#define define_field_field_handler(className, _messageType, _fieldName1, _fieldName2) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) { } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
   drc::_messageType msg; \
-  msg.decode(rbuf->data, 0, 1000000); \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
   timeNow = (msg.utime)/1000000.0; \
   signalValue = msg._fieldName1._fieldName2; \
   return true; \
@@ -96,13 +126,16 @@ QString className::fieldName() { return #_fieldName1"."#_fieldName2 ; } \
 QString className::description() { return QString("%1.%2").arg(this->messageType()).arg(this->fieldName()); }
 
 
-#define define_subfield3_handler(className, _messageType, _fieldName1, _fieldName2, _fieldName3) \
+#define define_field_field_field_handler(className, _messageType, _fieldName1, _fieldName2, _fieldName3) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) { } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
   drc::_messageType msg; \
-  msg.decode(rbuf->data, 0, 1000000); \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
   timeNow = (msg.utime)/1000000.0; \
   signalValue = msg._fieldName1._fieldName2._fieldName3; \
   return true; \
@@ -118,30 +151,30 @@ define_array_handler(RobotStateJointPositionHandler, robot_state_t, joint_positi
 define_array_handler(RobotStateJointVelocityHandler, robot_state_t, joint_velocity);
 define_array_handler(RobotStateJointEffortHandler, robot_state_t, joint_effort);
 
-define_subfield3_handler(RobotStatePoseTranslationXHandler, robot_state_t, pose, translation, x);
-define_subfield3_handler(RobotStatePoseTranslationYHandler, robot_state_t, pose, translation, y);
-define_subfield3_handler(RobotStatePoseTranslationZHandler, robot_state_t, pose, translation, z);
+define_field_field_field_handler(RobotStatePoseTranslationXHandler, robot_state_t, pose, translation, x);
+define_field_field_field_handler(RobotStatePoseTranslationYHandler, robot_state_t, pose, translation, y);
+define_field_field_field_handler(RobotStatePoseTranslationZHandler, robot_state_t, pose, translation, z);
 
-define_subfield3_handler(RobotStatePoseRotationWHandler, robot_state_t, pose, rotation, w);
-define_subfield3_handler(RobotStatePoseRotationXHandler, robot_state_t, pose, rotation, x);
-define_subfield3_handler(RobotStatePoseRotationYHandler, robot_state_t, pose, rotation, y);
-define_subfield3_handler(RobotStatePoseRotationZHandler, robot_state_t, pose, rotation, z);
+define_field_field_field_handler(RobotStatePoseRotationWHandler, robot_state_t, pose, rotation, w);
+define_field_field_field_handler(RobotStatePoseRotationXHandler, robot_state_t, pose, rotation, x);
+define_field_field_field_handler(RobotStatePoseRotationYHandler, robot_state_t, pose, rotation, y);
+define_field_field_field_handler(RobotStatePoseRotationZHandler, robot_state_t, pose, rotation, z);
 
-define_subfield3_handler(RobotStateTwistLinearVelocityXHandler, robot_state_t, twist, linear_velocity, x);
-define_subfield3_handler(RobotStateTwistLinearVelocityYHandler, robot_state_t, twist, linear_velocity, y);
-define_subfield3_handler(RobotStateTwistLinearVelocityZHandler, robot_state_t, twist, linear_velocity, z);
+define_field_field_field_handler(RobotStateTwistLinearVelocityXHandler, robot_state_t, twist, linear_velocity, x);
+define_field_field_field_handler(RobotStateTwistLinearVelocityYHandler, robot_state_t, twist, linear_velocity, y);
+define_field_field_field_handler(RobotStateTwistLinearVelocityZHandler, robot_state_t, twist, linear_velocity, z);
 
-define_subfield3_handler(RobotStateTwistAngularVelocityXHandler, robot_state_t, twist, angular_velocity, x);
-define_subfield3_handler(RobotStateTwistAngularVelocityYHandler, robot_state_t, twist, angular_velocity, y);
-define_subfield3_handler(RobotStateTwistAngularVelocityZHandler, robot_state_t, twist, angular_velocity, z);
+define_field_field_field_handler(RobotStateTwistAngularVelocityXHandler, robot_state_t, twist, angular_velocity, x);
+define_field_field_field_handler(RobotStateTwistAngularVelocityYHandler, robot_state_t, twist, angular_velocity, y);
+define_field_field_field_handler(RobotStateTwistAngularVelocityZHandler, robot_state_t, twist, angular_velocity, z);
 
-define_subfield2_handler(RobotStateForceTorqueLFootForceZHandler, robot_state_t, force_torque, l_foot_force_z);
-define_subfield2_handler(RobotStateForceTorqueLFootTorqueXHandler, robot_state_t, force_torque, l_foot_torque_x);
-define_subfield2_handler(RobotStateForceTorqueLFootTorqueYHandler, robot_state_t, force_torque, l_foot_torque_y);
+define_field_field_handler(RobotStateForceTorqueLFootForceZHandler, robot_state_t, force_torque, l_foot_force_z);
+define_field_field_handler(RobotStateForceTorqueLFootTorqueXHandler, robot_state_t, force_torque, l_foot_torque_x);
+define_field_field_handler(RobotStateForceTorqueLFootTorqueYHandler, robot_state_t, force_torque, l_foot_torque_y);
 
-define_subfield2_handler(RobotStateForceTorqueRFootForceZHandler, robot_state_t, force_torque, r_foot_force_z);
-define_subfield2_handler(RobotStateForceTorqueRFootTorqueXHandler, robot_state_t, force_torque, r_foot_torque_x);
-define_subfield2_handler(RobotStateForceTorqueRFootTorqueYHandler, robot_state_t, force_torque, r_foot_torque_y);
+define_field_field_handler(RobotStateForceTorqueRFootForceZHandler, robot_state_t, force_torque, r_foot_force_z);
+define_field_field_handler(RobotStateForceTorqueRFootTorqueXHandler, robot_state_t, force_torque, r_foot_torque_x);
+define_field_field_handler(RobotStateForceTorqueRFootTorqueYHandler, robot_state_t, force_torque, r_foot_torque_y);
 
 
 
@@ -151,15 +184,19 @@ define_array_handler(AtlasStateJointPositionHandler, atlas_state_t, joint_positi
 define_array_handler(AtlasStateJointVelocityHandler, atlas_state_t, joint_velocity);
 define_array_handler(AtlasStateJointEffortHandler, atlas_state_t, joint_effort);
 
-define_subfield2_handler(AtlasStateForceTorqueLFootForceZHandler, atlas_state_t, force_torque, l_foot_force_z);
-define_subfield2_handler(AtlasStateForceTorqueLFootTorqueXHandler, atlas_state_t, force_torque, l_foot_torque_x);
-define_subfield2_handler(AtlasStateForceTorqueLFootTorqueYHandler, atlas_state_t, force_torque, l_foot_torque_y);
+define_field_field_handler(AtlasStateForceTorqueLFootForceZHandler, atlas_state_t, force_torque, l_foot_force_z);
+define_field_field_handler(AtlasStateForceTorqueLFootTorqueXHandler, atlas_state_t, force_torque, l_foot_torque_x);
+define_field_field_handler(AtlasStateForceTorqueLFootTorqueYHandler, atlas_state_t, force_torque, l_foot_torque_y);
 
-define_subfield2_handler(AtlasStateForceTorqueRFootForceZHandler, atlas_state_t, force_torque, r_foot_force_z);
-define_subfield2_handler(AtlasStateForceTorqueRFootTorqueXHandler, atlas_state_t, force_torque, r_foot_torque_x);
-define_subfield2_handler(AtlasStateForceTorqueRFootTorqueYHandler, atlas_state_t, force_torque, r_foot_torque_y);
+define_field_field_handler(AtlasStateForceTorqueRFootForceZHandler, atlas_state_t, force_torque, r_foot_force_z);
+define_field_field_handler(AtlasStateForceTorqueRFootTorqueXHandler, atlas_state_t, force_torque, r_foot_torque_x);
+define_field_field_handler(AtlasStateForceTorqueRFootTorqueYHandler, atlas_state_t, force_torque, r_foot_torque_y);
 
 
+// atlas_raw_imu_batch_t
+
+define_array_array_handler(AtlasRawIMUBatchIMUDeltaRotation, atlas_raw_imu_batch_t, raw_imu, delta_rotation);
+define_array_array_handler(AtlasRawIMUBatchIMULinearAcceleration, atlas_raw_imu_batch_t, raw_imu, linear_acceleration);
 
 
 SignalHandler::SignalHandler(SignalDescription* signalDescription)
@@ -186,6 +223,10 @@ void SignalHandler::handleRobotStateMessage(const lcm::ReceiveBuffer* rbuf, cons
   {
     const QPointF s(timeNow, signalValue);
     mSignalData->append(s);
+  }
+  else
+  {
+    mSignalData->flagMessageError();
   }
 }
 

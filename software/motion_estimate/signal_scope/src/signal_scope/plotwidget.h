@@ -10,6 +10,7 @@ class SignalHandler;
 class LCMThread;
 class QListWidget;
 class QListWidgetItem;
+class QLabel;
 
 class PlotWidget : public QWidget
 {
@@ -35,6 +36,7 @@ public slots:
   void onShowSignalContextMenu(const QPoint&);
 
   void onSignalListItemChanged(QListWidgetItem* item);
+  void updateSignalInfoLabel();
 
 signals:
 
@@ -49,6 +51,7 @@ private:
   LCMThread* mLCMThread;
 
   QListWidget* mSignalListWidget;
+  QLabel* mSignalInfoLabel;
 };
 
 #endif
