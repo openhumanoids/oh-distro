@@ -1,0 +1,14 @@
+package drc;
+
+// Raw Contents of structure sent to the robot
+
+struct atlas_control_data_t
+{
+  int64_t utime;
+
+  // insert more here...  
+}
+
+
+
+
