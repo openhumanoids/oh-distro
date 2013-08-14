@@ -2,8 +2,8 @@
 
 
 declare -a sim_joints=(back_ubx
-back_lbz
 back_mby
+back_lbz
 neck_ay
 l_leg_lax
 l_leg_uay
@@ -34,7 +34,7 @@ r_arm_uwy )
 declare -a bdi_joints=(back_bkx
 back_bky
 back_bkz
-neck_ry
+neck_ay
 l_leg_akx
 l_leg_aky
 l_leg_hpx
@@ -51,16 +51,16 @@ l_arm_elx
 l_arm_ely
 l_arm_shx
 l_arm_shy
-l_arm_wrx
-l_arm_wry
+l_arm_mwx
+l_arm_uwy
 r_arm_elx
 r_arm_ely
 r_arm_shx
 r_arm_shy
-r_arm_wrx
-r_arm_wry )
+r_arm_mwx
+r_arm_uwy )
 
-n_joints=${#bdi[@]}
+n_joints=${#bdi_joints[@]}
 echo $n_joints
 
 
@@ -71,8 +71,8 @@ cp model.urdf model_sim.urdf
 
 for (( i=0; i<${n_joints}; i++ ));
 do
-  strfrom=${sim_joints[$i]}
-  strto=${bdi_joints[$i]}
+  strfrom=${bdi_joints[$i]}
+  strto=${sim_joints[$i]}
   echo "$i | from $strfrom | to $strto"
   pattern='s/'"$strfrom"'/'"$strto"'/g'
   #pattern='s/neck_ay/random/g'
