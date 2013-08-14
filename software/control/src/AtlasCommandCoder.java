@@ -11,7 +11,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     final int m_num_joints = 28;
 		int[] drake_to_atlas_joint_map;
 
-    int mode = 1; 
+    final int mode; 
     // mode==1: torque-only, 
     // mode==2: position-only, fixed gains
     // mode==3: position and velocity, fixed gains
@@ -27,9 +27,8 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     
     public AtlasCommandCoder(String[] joint_name, double[] Kp, double[] Kd, int send_mode) throws Exception
     {
-      this(joint_name);
+      this(joint_name, send_mode);
       
-      mode = send_mode;
       int j;
       for (int i=0; i<msg.num_joints; i++) {
         j = drake_to_atlas_joint_map[i];
@@ -38,12 +37,17 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         if (send_mode>2) msg.kp_velocity[j] = Kd[i];
       }
     }
-    
+
     public AtlasCommandCoder(String[] joint_name) throws Exception
+    {
+      this(joint_name,1); //Default mode=1
+    }
+    
+    public AtlasCommandCoder(String[] joint_name, int send_mode) throws Exception
     {
       if (joint_name.length != m_num_joints)
         throw new Exception("Length of joint_name must be " + m_num_joints);
-      
+      mode = send_mode;
 			// fixed ordering assumed by drcsim interface AND atlas api 
 			// see: AtlasControlTypes.h 
       String[] atlas_joint_name = new String[m_num_joints];
@@ -132,10 +136,64 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
-			// don't need to go in this direction 
+      try {
+        drc.atlas_command_t msg = new drc.atlas_command_t(data);
+        return decode(msg);
+      } catch (IOException ex) {
+        System.out.println("Exception: " + ex);
+      }
       return null;
     }
-    
+
+    public drake.util.CoordinateFrameData decode(drc.atlas_command_t msg)
+    { 
+      drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
+
+      switch(mode) {
+      case 1:
+      case 2:
+        fdata.val = new double[m_num_joints];
+        break;                
+      case 3:
+        fdata.val = new double[2*m_num_joints];
+        break;        
+      case 4:
+        fdata.val = new double[3*m_num_joints];
+        break;        
+      default:
+        throw new IllegalStateException("Unknown mode: " + mode);    
+      }
+
+      fdata.t = (double)msg.utime / 1000000.0;
+
+      int j;
+      for (int i=0; i<m_num_joints; i++) {
+        j = drake_to_atlas_joint_map[i];
+        switch(mode) {
+        case 1:
+          fdata.val[i] = msg.effort[j];
+          //cycle through gains, checking for any non-zero
+//          if (msg.kp_position[j] != 0 || msg.ki_position[j] != 0 || msg.kd_position[j] != 0 || msg.kp_velocity[j] != 0) {
+//            throw new IllegalArgumentException("Encoder is set to mode 1, but message has non-zero gains");
+//          }
+          break;
+        case 2:
+          fdata.val[i] = msg.position[j];
+          break;
+        case 3:
+          fdata.val[i] = msg.position[j];
+          fdata.val[m_num_joints+i] = msg.velocity[j];
+          break;
+        case 4:
+          fdata.val[i] = msg.position[j];
+          fdata.val[m_num_joints+i] = msg.velocity[j];
+        	fdata.val[2*m_num_joints+i] = msg.effort[j];
+          break;
+        }
+      }
+      return fdata;
+    }
+
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
       msg.utime = (long)(d.t*1000000);
