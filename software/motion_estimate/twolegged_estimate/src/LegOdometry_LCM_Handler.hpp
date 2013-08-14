@@ -64,7 +64,6 @@
 #define FILTER_ARR                 8
 #define DISPLAY_FOOTSTEP_POSES
 
-#define LOG_28_JOINT_COMMANDS
 #define NUMBER_JOINTS             28
 #define PI               3.14159265358979323
 
@@ -201,11 +200,8 @@ private:
   
   volatile long long prev_frame_utime;
 
-#ifdef LOG_28_JOINT_COMMANDS
-  volatile double joint_commands[NUMBER_JOINTS];
-  volatile double joint_positions[16];
-  volatile double measured_joint_effort[16];
-#endif
+volatile double joint_positions[16];
+
 #ifdef LOG_LEG_TRANSFORMS
   NumericalDiff pelvis_to_feet_speed[4]; // left vel, right vel, left rate, right rate
   volatile double pelvis_to_feet_transform[12]; // left vel, right vel, left rate, right rate
@@ -246,7 +242,6 @@ private:
   //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
   void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);  
   void torso_imu_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
-  void joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg);
   void delta_vo_handler(  const lcm::ReceiveBuffer* rbuf,  const std::string& channel,  const fovis::update_t * msg);
   
   void getJoints(const drc::robot_state_t * msg, double alljoints[], std::string joint_name[]);

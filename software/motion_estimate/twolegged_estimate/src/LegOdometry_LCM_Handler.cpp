@@ -133,11 +133,6 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   }
 
   lcm_->subscribe("FOVIS_REL_ODOMETRY",&LegOdometry_Handler::delta_vo_handler,this);
-
-  // TODO -- the logging of joint commands was added quickly and is therefore added as a define based inclusion. if this is to stay, then proper dynamic size coding must be done
-#ifdef LOG_28_JOINT_COMMANDS
-  lcm_->subscribe("JOINT_COMMANDS", &LegOdometry_Handler::joint_commands_handler,this);
-#endif
   
   /*
   if (_switches->lcm_read_trues) {
@@ -173,12 +168,6 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   elapsed_us = 0;
   maxtime = 0;
   prev_frame_utime = 0;
-
-#ifdef LOG_28_JOINT_COMMANDS
-  for (int i=0;i<NUMBER_JOINTS;i++) {
-    joint_commands[i] = 0.;
-  }
-#endif
 
   _leg_odo = new TwoLegOdometry(_switches->log_data_files, _switches->publish_footcontact_states);
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
@@ -716,12 +705,6 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
       // True state messages will ont be available during the VRC and must be removed accordingly
       //PublishPoseBodyTrue(_msg);
       #endif
-      #ifdef LOG_28_JOINT_COMMANDS
-       for (int i=0;i<16;i++) {
-         measured_joint_effort[i] = _msg->joint_effort[i]; // mfallon: this was "measured_effort" -> now "joint_effort"
-       }
-      #endif
-
 
       if (_switches->log_data_files) {
         LogAllStateData(_msg, &est_msgout);
@@ -1164,19 +1147,10 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
   ss << _leg_odo->leftContactStatus() << ", ";
   ss << _leg_odo->rightContactStatus() << ", "; // 30
 
-  #ifdef LOG_28_JOINT_COMMANDS
-    for (int i=0;i<NUMBER_JOINTS;i++) {
-      ss << joint_commands[i] << ", "; //31-58
-    }
+  for (int i=0;i<16;i++) {
+    ss << joint_positions[i] << ", "; //59-74
+  }
 
-    for (int i=0;i<16;i++) {
-      ss << joint_positions[i] << ", "; //59-74
-    }
-
-     for (int i=0;i<16;i++) {
-       ss << measured_joint_effort[i] << ", ";//75-90
-     }
-  #endif
   #ifdef LOG_LEG_TRANSFORMS
      // left vel, right vel, left rate, right rate
      for (int i=0;i<12;i++) {
@@ -1352,14 +1326,6 @@ void LegOdometry_Handler::torso_imu_handler(  const lcm::ReceiveBuffer* rbuf,
   return;
 }
 
-#ifdef LOG_28_JOINT_COMMANDS
-void LegOdometry_Handler::joint_commands_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_command_t* msg) {
-  // TODO -- 28 actuated joints are hard coded, this must be changed -- but subject to the LOG_28_JOINT_COMMANDS define for the time being
-  for (int i=0;i<NUMBER_JOINTS;i++) {
-    joint_commands[i] = msg->effort[i];
-  }
-}
-#endif
 
 /*
 void LegOdometry_Handler::pose_head_true_handler(  const lcm::ReceiveBuffer* rbuf, 
