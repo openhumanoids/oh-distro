@@ -4,7 +4,6 @@ DRC_SOFTWARE=$DRC_BASE/software
 DRC_PATH=$DRC_SOFTWARE # for compatibility
 DRC_CONFIG=$DRC_BASE/software/config
 
-
 setup_drcsim()
 {
   source /usr/local/share/drcsim/setup.sh # this will also source setup.sh for ROS and Gazebo
