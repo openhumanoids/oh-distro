@@ -1,5 +1,5 @@
 // faster way to publish AtlasCommand from Matlab
-// Michael Kaess, June 2013
+// Michael Kaess, June 2013 --- updated by scottk August 2013
 // based on AtlasCommandCoder.java
 
 #include <mex.h>
@@ -26,6 +26,10 @@ private:
   // so number of joints here is fixed
   static const int m_num_joints = 28;
 
+
+  //vector<string> joint_names;
+  //VectorXd k_q_p, k_q_i, k_qd_p, k_f_p, ff_qd, ff_qd_d, ff_f_d, ff_const;
+
   vector<int> drake_to_atlas_joint_map;
 
   int mode;
@@ -37,108 +41,112 @@ private:
     
   drc::atlas_command_t msg;
 
-  void init(const vector<string>& joint_name, int send_mode, const Map<VectorXd>* Kp=NULL, const Map<VectorXd>* Kd=NULL) {
+public:
+  AtlasCommand(const vector<string>& joint_names, int send_mode, const VectorXd& k_q_p, 
+    const VectorXd& k_q_i, const VectorXd& k_qd_p, const VectorXd& k_f_p, 
+    const VectorXd& ff_qd, const VectorXd& ff_qd_d, const VectorXd& ff_f_d,
+    const VectorXd& ff_const) {
+
+    if (joint_names.size() != m_num_joints)
+      mexErrMsgTxt("Length of joint_names must be 28");
+    if (k_q_p.size() != m_num_joints)
+      mexErrMsgTxt("Length of k_q_p must be 28");
+    if (k_q_i.size() != m_num_joints)
+      mexErrMsgTxt("Length of k_q_i must be 28");
+    if (k_qd_p.size() != m_num_joints)
+      mexErrMsgTxt("Length of k_qd_p must be 28");
+    if (k_f_p.size() != m_num_joints)
+      mexErrMsgTxt("Length of k_f_p must be 28");
+    if (ff_qd.size() != m_num_joints)
+      mexErrMsgTxt("Length of ff_qd must be 28");
+    if (ff_qd_d.size() != m_num_joints)
+      mexErrMsgTxt("Length of ff_qd_d must be 28");
+    if (ff_f_d.size() != m_num_joints)
+      mexErrMsgTxt("Length of ff_f_d must be 28");
+    if (ff_const.size() != m_num_joints)
+      mexErrMsgTxt("Length of ff_const must be 28");
+    if (send_mode < 1 || send_mode > 4)
+      mexErrMsgTxt("mode must be between 1 and 4. See AtlasCommandPublisher comments for mode spec.");
+
     mode = send_mode;
 
-    if (joint_name.size() != m_num_joints) {
-      mexErrMsgTxt("AtlasCommandPublisher: Length of joint_name wrong");
-    }
-
-    // fixed ordering assumed by drcsim interface
-    vector<string> atlas_joint_name(m_num_joints);
-    atlas_joint_name[0] = "back_bkz";
-    atlas_joint_name[1] = "back_bky";
-    atlas_joint_name[2] = "back_bkx";
-    atlas_joint_name[3] = "neck_ay";
-    atlas_joint_name[4] = "l_leg_hpz";
-    atlas_joint_name[5] = "l_leg_hpx";
-    atlas_joint_name[6] = "l_leg_hpy";
-    atlas_joint_name[7] = "l_leg_kny";
-    atlas_joint_name[8] = "l_leg_aky";
-    atlas_joint_name[9] = "l_leg_akx";
-    atlas_joint_name[10] = "r_leg_hpz";
-    atlas_joint_name[11] = "r_leg_hpx";
-    atlas_joint_name[12] = "r_leg_hpy";
-    atlas_joint_name[13] = "r_leg_kny";
-    atlas_joint_name[14] = "r_leg_aky";
-    atlas_joint_name[15] = "r_leg_akx";
-    atlas_joint_name[16] = "l_arm_usy";
-    atlas_joint_name[17] = "l_arm_shx";
-    atlas_joint_name[18] = "l_arm_ely";
-    atlas_joint_name[19] = "l_arm_elx";
-    atlas_joint_name[20] = "l_arm_uwy";
-    atlas_joint_name[21] = "l_arm_mwx";
-    atlas_joint_name[22] = "r_arm_usy";
-    atlas_joint_name[23] = "r_arm_shx";
-    atlas_joint_name[24] = "r_arm_ely";
-    atlas_joint_name[25] = "r_arm_elx";
-    atlas_joint_name[26] = "r_arm_uwy";
-    atlas_joint_name[27] = "r_arm_mwx";
+    // fixed ordering assumed by drcsim interface AND atlas api 
+    // see: AtlasControlTypes.h 
+    vector<string> atlas_joint_names(m_num_joints);
+    atlas_joint_names[0] = "back_bkz";
+    atlas_joint_names[1] = "back_bky";
+    atlas_joint_names[2] = "back_bkx";
+    atlas_joint_names[3] = "neck_ay";
+    atlas_joint_names[4] = "l_leg_hpz";
+    atlas_joint_names[5] = "l_leg_hpx";
+    atlas_joint_names[6] = "l_leg_hpy";
+    atlas_joint_names[7] = "l_leg_kny";
+    atlas_joint_names[8] = "l_leg_aky";
+    atlas_joint_names[9] = "l_leg_akx";
+    atlas_joint_names[10] = "r_leg_hpz";
+    atlas_joint_names[11] = "r_leg_hpx";
+    atlas_joint_names[12] = "r_leg_hpy";
+    atlas_joint_names[13] = "r_leg_kny";
+    atlas_joint_names[14] = "r_leg_aky";
+    atlas_joint_names[15] = "r_leg_akx";
+    atlas_joint_names[16] = "l_arm_usy";
+    atlas_joint_names[17] = "l_arm_shx";
+    atlas_joint_names[18] = "l_arm_ely";
+    atlas_joint_names[19] = "l_arm_elx";
+    atlas_joint_names[20] = "l_arm_uwy";
+    atlas_joint_names[21] = "l_arm_mwx";
+    atlas_joint_names[22] = "r_arm_usy";
+    atlas_joint_names[23] = "r_arm_shx";
+    atlas_joint_names[24] = "r_arm_ely";
+    atlas_joint_names[25] = "r_arm_elx";
+    atlas_joint_names[26] = "r_arm_uwy";
+    atlas_joint_names[27] = "r_arm_mwx";
 
     drake_to_atlas_joint_map.reserve(m_num_joints);
 
-    for (int i=0; i<m_num_joints; i++) {
-      for (int j=0; j<m_num_joints; j++) {
-        if (joint_name[i].compare(atlas_joint_name[j]) == 0)
-          drake_to_atlas_joint_map[i]=j;
-      }
-    }
-
     msg.num_joints = m_num_joints;
+    msg.joint_names.resize(msg.num_joints);
 
     msg.position.resize(msg.num_joints);
     msg.velocity.resize(msg.num_joints);
     msg.effort.resize(msg.num_joints);
 
-    msg.kp_position.resize(msg.num_joints);
-    msg.ki_position.resize(msg.num_joints);
-    msg.kd_position.resize(msg.num_joints);
-    msg.kp_velocity.resize(msg.num_joints);
+    msg.k_q_p.resize(msg.num_joints);
+    msg.k_q_i.resize(msg.num_joints);
+    msg.k_qd_p.resize(msg.num_joints);
+    msg.k_f_p.resize(msg.num_joints);
+    msg.ff_qd.resize(msg.num_joints);
+    msg.ff_qd_d.resize(msg.num_joints);
+    msg.ff_f_d.resize(msg.num_joints);
+    msg.ff_const.resize(msg.num_joints);
 
-    msg.i_effort_min.resize(msg.num_joints);
-    msg.i_effort_max.resize(msg.num_joints);
+    msg.k_effort.resize(msg.num_joints); // only used in sim
+    msg.desired_controller_period_ms = 3; // set desired controller rate (ms), only used in sim
 
-    msg.k_effort.resize(msg.num_joints);
-    msg.desired_controller_period_ms = 5; // set desired controller rate (ms)
+    drake_to_atlas_joint_map.reserve(m_num_joints);
+    for (int i=0; i<m_num_joints; i++) {
+      for (int j=0; j<m_num_joints; j++) {
+        if (joint_names[i].compare(atlas_joint_names[j]) == 0)
+          drake_to_atlas_joint_map[i]=j;
+      }
 
-    for (int i=0; i<msg.num_joints; i++) {
       msg.position[i] = 0.0;
       msg.velocity[i] = 0.0;
       msg.effort[i] = 0.0;
-      msg.kp_position[i] = 0.0;
-      msg.ki_position[i] = 0.0;
-      msg.kd_position[i] = 0.0;
-      msg.kp_velocity[i] = 0.0;
-      msg.i_effort_min[i] = 0.0;
-      msg.i_effort_max[i] = 0.0;
-      msg.effort[i] = 0.0;
-      msg.k_effort[i] = (uint8_t)255; // take complete control of joints (remove BDI control)
+
+      msg.joint_names[drake_to_atlas_joint_map[i]] = joint_names[i];
+      
+      msg.k_q_p[drake_to_atlas_joint_map[i]] = k_q_p[i];
+      msg.k_q_i[drake_to_atlas_joint_map[i]] = k_q_i[i];;
+      msg.k_qd_p[drake_to_atlas_joint_map[i]] = k_qd_p[i];;
+      msg.k_f_p[drake_to_atlas_joint_map[i]] = k_f_p[i];;
+      msg.ff_qd[drake_to_atlas_joint_map[i]] = ff_qd[i];;
+      msg.ff_qd_d[drake_to_atlas_joint_map[i]] = ff_qd_d[i];;
+      msg.ff_f_d[drake_to_atlas_joint_map[i]] = ff_f_d[i];;
+      msg.ff_const[drake_to_atlas_joint_map[i]] = ff_const[i];;
+
+      msg.k_effort[i] = (uint8_t)255; // take complete control of joints (remove BDI control), sim only
     }
-
-    if (send_mode>2 && Kp && Kd) {
-    	int j;
-    	for (int i=0; i<msg.num_joints; i++) {
-    		j = drake_to_atlas_joint_map[i];
-    		msg.kp_position[j] = (*Kp)[i];
-    		msg.kd_position[j] = (*Kd)[i];
-    	}
-    }
-  }
-
-public:
-  AtlasCommand(const vector<string>& joint_name)
-  {
-    init(joint_name,1);
-  }
-
-  AtlasCommand(const vector<string>& joint_name, const Map <VectorXd>* Kp, const Map<VectorXd>* Kd)
-  {
-    init(joint_name,2,Kp,Kd);
-  }
-
-  AtlasCommand(const vector<string>& joint_name, const Map< VectorXd >* Kp, const Map< VectorXd >* Kd, int send_mode)
-  {
-    init(joint_name,send_mode,Kp,Kd);
   }
 
   int dim(void)
@@ -166,11 +174,19 @@ public:
         msg.effort[j] = x(i);
       else if (mode==2)
         msg.position[j] = x(i);
+      else if (mode==3) {
+        msg.position[j] = x(i);
+        msg.velocity[j] = x(m_num_joints+i);
+      } 
+      else if (mode==4) {
+        msg.position[j] = x(i);
+        msg.velocity[j] = x(m_num_joints+i);
+        msg.effort[j] = x(2*m_num_joints+i);
+      }
     }
 
     lcm.publish(channel, &msg);
   }
-
 };
 
 
@@ -194,37 +210,24 @@ vector<string> get_strings(const mxArray *rhs) {
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  if (nrhs==1 && mxGetNumberOfElements(prhs[0])>1) { // init()
-  	if (nlhs<1) return;
+  if (nrhs==10 && mxGetNumberOfElements(prhs[0]) > 1) { // init
 
-  	vector<string> joint_name = get_strings(prhs[0]);
+  	vector<string> joint_names = get_strings(prhs[0]);
+    int mode = (int) mxGetScalar(prhs[1]);
+    Map<VectorXd> k_q_p(mxGetPr(prhs[2]), mxGetNumberOfElements(prhs[2]));
+    Map<VectorXd> k_q_i(mxGetPr(prhs[3]), mxGetNumberOfElements(prhs[3]));
+    Map<VectorXd> k_qd_p(mxGetPr(prhs[4]), mxGetNumberOfElements(prhs[4]));
+    Map<VectorXd> k_f_p(mxGetPr(prhs[5]), mxGetNumberOfElements(prhs[5]));
+    Map<VectorXd> ff_qd(mxGetPr(prhs[6]), mxGetNumberOfElements(prhs[6]));
+    Map<VectorXd> ff_qd_d(mxGetPr(prhs[7]), mxGetNumberOfElements(prhs[7]));
+    Map<VectorXd> ff_f_d(mxGetPr(prhs[8]), mxGetNumberOfElements(prhs[8]));
+    Map<VectorXd> ff_const(mxGetPr(prhs[9]), mxGetNumberOfElements(prhs[9]));
 
-  	AtlasCommand *ac = new AtlasCommand(joint_name);
+  	AtlasCommand *ac = new AtlasCommand(joint_names,mode,k_q_p,k_q_i,k_qd_p,k_f_p,ff_qd,ff_qd_d,ff_f_d,ff_const);
   	mxClassID cid;
   	if (sizeof(ac)==4) cid = mxUINT32_CLASS;
   	else if (sizeof(ac)==8) cid = mxUINT64_CLASS;
-  	else mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:PointerSize","Are you on a 32-bit machine or 64-bit machine??");
-  	plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
-  	memcpy(mxGetData(plhs[0]),&ac,sizeof(ac));
-
-  	return;
-  }
-
-  if ((nrhs==3 || nrhs==4) && mxGetNumberOfElements(prhs[0]) > 1) { // init2()
-  	if (nlhs<1) return;
-
-  	int send_mode=2;
-  	if (nrhs>3) send_mode = (int) mxGetScalar(prhs[3]);
-
-  	vector<string> joint_name = get_strings(prhs[0]);
-  	Map<VectorXd> Kp(mxGetPr(prhs[1]), mxGetNumberOfElements(prhs[1]));
-  	Map<VectorXd> Kd(mxGetPr(prhs[2]), mxGetNumberOfElements(prhs[2]));
-
-  	AtlasCommand *ac = new AtlasCommand(joint_name,&Kp,&Kd,send_mode);
-  	mxClassID cid;
-  	if (sizeof(ac)==4) cid = mxUINT32_CLASS;
-  	else if (sizeof(ac)==8) cid = mxUINT64_CLASS;
-  	else mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:PointerSize","Are you on a 32-bit machine or 64-bit machine??");
+  	else mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:PointerSize error","Are you on a 32-bit machine or 64-bit machine??");
   	plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
   	memcpy(mxGetData(plhs[0]),&ac,sizeof(ac));
 
@@ -237,16 +240,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   // retrieve object
   AtlasCommand *ac = NULL;
-  if (nrhs==0 || !mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
+  if (nrhs==0 || !mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1) {
     mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:BadInputs","the first argument should be the mex_ptr");
+  }
   memcpy(&ac,mxGetData(prhs[0]),sizeof(ac));
 
   if (nrhs==1) { // delete()
-
   	if (ac) delete(ac);
-
   } else if (nrhs==4) { // publish()
-
     char* str = mxArrayToString(prhs[1]);
     string channel(str);
     mxFree(str);
@@ -255,11 +256,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (n != ac->dim()) mexErrMsgIdAndTxt("Drake:AtlasCommandPublisher:BadInputs","the dimension of x is wrong");
     Map<VectorXd> x(mxGetPr(prhs[3]), n);
     ac->publish(channel, t, x);
-
   } else {
-
     mexErrMsgTxt("AtlasCommandPublisher: wrong number of input arguments");
-
   }
 
 }

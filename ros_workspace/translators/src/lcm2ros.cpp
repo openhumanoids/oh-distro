@@ -29,10 +29,6 @@ class LCM2ROS{
 		std::map<std::string,std::string> jointNameMap;
 		int last_command_timestamp;
     
-    // DRCSIM 2.0 joint command API
-    void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
-    ros::Publisher joint_cmd_pub_;
-
     // DRCSIM 2.6 atlas command API
     void atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg);
     ros::Publisher atlas_cmd_pub_;
@@ -69,10 +65,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   
   lcm_->subscribe("CONTROLLER_MODE",&LCM2ROS::controllerModeHandler, this);
 	     
-  /// DRCSIM 2.0 joint command API
-  lcm_->subscribe("JOINT_COMMANDS",&LCM2ROS::jointCommandHandler,this);  
-  joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10, true);
-
   /// DRCSIM 2.6 atlas command API
   lcm_->subscribe("ATLAS_COMMAND",&LCM2ROS::atlasCommandHandler,this);  
   // hang up to the bdi controller:
@@ -171,50 +163,6 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
   }   
 }
   
-void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
-
-  
-//	if (msg->utime > last_command_timestamp) {
-//    ROS_WARN("NEW COMMAND: %d > %d", msg->utime, last_command_timestamp);
-//		last_command_timestamp = msg->utime;
-		osrf_msgs::JointCommands joint_command_msg;
-		joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-		
-		joint_command_msg.ki_position.resize(msg->num_joints);
-		joint_command_msg.kp_velocity.resize(msg->num_joints);
-		joint_command_msg.i_effort_min.resize(msg->num_joints);
-		joint_command_msg.i_effort_max.resize(msg->num_joints);
-
-		for (int i=0; i<msg->num_joints; i++) {
-			if (jointNameMap.find(msg->name[i]) != jointNameMap.end())
-			  joint_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
-			else
-			  joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
-
-		  joint_command_msg.position.push_back(msg->position[i]);
-		  joint_command_msg.velocity.push_back(msg->velocity[i]);
-		  joint_command_msg.effort.push_back(msg->effort[i]);
-
-		  joint_command_msg.kp_position.push_back(msg->kp_position[i]);
-		  joint_command_msg.kd_position.push_back(msg->kd_position[i]);
-
-		  // NOTE: This slows things down significantly, just set to zero instead
-		  // for now never change i gains or clamps
-	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/p", joint_command_msg.kp_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/d", joint_command_msg.kd_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/i", joint_command_msg.ki_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/i_clamp", joint_command_msg.i_effort_max[i]);
-	//    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
-		}
-		if(ros::ok()) {
-		  joint_cmd_pub_.publish(joint_command_msg);
-		} 
-//	}
-//	else {
-//    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
-//	}
-} 
-
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
 //  if (msg->effort[0] == 0){ // assume this is enough to trigger
 //    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
@@ -245,8 +193,8 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 			else
 			  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
 
-		  atlas_command_msg.kp_position.push_back(msg->kp_position[i]);
-		  atlas_command_msg.kd_position.push_back(msg->kd_position[i]);
+		  atlas_command_msg.kp_position.push_back(msg->k_q_p[i]);
+		  atlas_command_msg.kd_position.push_back(msg->ff_qd[i]);
 		}
 		if(ros::ok()) {
 		  atlas_cmd_pub_.publish(atlas_command_msg);

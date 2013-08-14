@@ -71,23 +71,25 @@ void Pass::trsHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel
     drc::atlas_command_t mout;
     mout.utime =msg->utime;
     mout.num_joints = n;
+    mout.joint_names.assign (n,""); 
     mout.position.assign (n,-1.0); 
     mout.velocity.assign (n,-1.0);// n values, all -1
     mout.effort.assign (n,-1.0); 
-    mout.kp_position.assign (n,-1.0); 
-    mout.ki_position.assign (n,-1.0); 
-    mout.kd_position.assign (n,-1.0); 
-    mout.kp_velocity.assign (n,-1.0); 
+    mout.k_q_p.assign (n,-1.0); 
+    mout.k_q_i.assign (n,-1.0); 
+    mout.k_qd_p.assign (n,-1.0); 
+    mout.k_f_p.assign (n,-1.0); 
+    mout.ff_qd.assign (n,-1.0); 
+    mout.ff_qd_d.assign (n,-1.0); 
+    mout.ff_f_d.assign (n,-1.0); 
+    mout.ff_const.assign (n,-1.0); 
     mout.k_effort.assign (n,-0);  // ie no control output - use BDI
-    mout.i_effort_min.assign( n, -1.0);
-    mout.i_effort_max.assign( n, -1.0);
-//    mout.desired_controller_period_ms = 5;
+    mout.desired_controller_period_ms = 5;
     lcm_->publish( "ATLAS_COMMAND_HANGUP", &mout);
 
   }
    
 }
-
 
 void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::atlas_command_t* msg){

@@ -10,7 +10,11 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
         input_names = r.getInputFrame().coordinates;
         input_names = regexprep(input_names,'_motor',''); % remove motor suffix
         
-        coder = drc.control.AtlasCommandCoder(input_names);
+        mode = 1;
+        gains = getAtlasGains(r,mode);
+        
+        coder = drc.control.AtlasCommandCoder(input_names,mode,gains.k_q_p,gains.k_q_i,...
+          gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
         obj = setLCMCoder(obj,JLCMCoder(coder));
         
         obj.setCoordinateNames(input_names);
@@ -18,7 +22,9 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
       end
       
       if (obj.mex_ptr==0)
-        obj.mex_ptr = AtlasCommandPublisher(input_names);
+        obj.mex_ptr = AtlasCommandPublisher(input_names,mode,gains.k_q_p,gains.k_q_i,...
+          gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
       end
     end
     
@@ -33,6 +39,6 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
   end
   
   properties
-    mex_ptr=0
+    mex_ptr=0;
   end
 end
