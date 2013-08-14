@@ -29,9 +29,9 @@ State_GFE() : State( "gfe" ),
               _left_leg( "l_leg_" ),
               _right_leg( "r_leg_" ),
               _joints() {
-  _joints[ STATE_GFE_BACK_LBZ_JOINT ].set_id( "back_lbz" );
-  _joints[ STATE_GFE_BACK_MBY_JOINT ].set_id( "back_mby" );
-  _joints[ STATE_GFE_BACK_UBX_JOINT ].set_id( "back_ubx" );
+  _joints[ STATE_GFE_BACK_LBZ_JOINT ].set_id( "back_bkz" );
+  _joints[ STATE_GFE_BACK_MBY_JOINT ].set_id( "back_bky" );
+  _joints[ STATE_GFE_BACK_UBX_JOINT ].set_id( "back_bkx" );
   _joints[ STATE_GFE_NECK_AY_JOINT ].set_id( "neck_ay" );
   _joints[ STATE_GFE_HEAD_IMU_JOINT ].set_id( "head_imu_joint" );
   _joints[ STATE_GFE_HOKUYO_JOINT ].set_id( "hokuyo_joint" );
@@ -175,9 +175,9 @@ to_lcm( robot_state_t* robotState )const{
   _pose.M.GetQuaternion( robotState->pose.rotation.x, robotState->pose.rotation.y, robotState->pose.rotation.z, robotState->pose.rotation.w );
   robotState->num_joints = 53;
   robotState->joint_name.resize( robotState->num_joints );
-  robotState->joint_name[0] = "back_lbz";
-  robotState->joint_name[1] = "back_mby";
-  robotState->joint_name[2] = "back_ubx";
+  robotState->joint_name[0] = "back_bkz";
+  robotState->joint_name[1] = "back_bky";
+  robotState->joint_name[2] = "back_bkx";
   robotState->joint_name[3] = "imu_joint";
   robotState->joint_name[4] = "l_arm_elx";
   robotState->joint_name[5] = "l_arm_ely";
@@ -186,11 +186,11 @@ to_lcm( robot_state_t* robotState )const{
   robotState->joint_name[8] = "l_arm_usy";
   robotState->joint_name[9] = "l_arm_uwy";
   robotState->joint_name[10] = "l_leg_kny";
-  robotState->joint_name[11] = "l_leg_lax";
-  robotState->joint_name[12] = "l_leg_lhy";
-  robotState->joint_name[13] = "l_leg_mhx";
-  robotState->joint_name[14] = "l_leg_uay";
-  robotState->joint_name[15] = "l_leg_uhz";
+  robotState->joint_name[11] = "l_leg_akx";
+  robotState->joint_name[12] = "l_leg_hpy";
+  robotState->joint_name[13] = "l_leg_hpx";
+  robotState->joint_name[14] = "l_leg_aky";
+  robotState->joint_name[15] = "l_leg_hpz";
   robotState->joint_name[16] = "neck_ay";
   robotState->joint_name[17] = "r_arm_elx";
   robotState->joint_name[18] = "r_arm_ely";
@@ -199,11 +199,11 @@ to_lcm( robot_state_t* robotState )const{
   robotState->joint_name[21] = "r_arm_usy";
   robotState->joint_name[22] = "r_arm_uwy";
   robotState->joint_name[23] = "r_leg_kny";
-  robotState->joint_name[24] = "r_leg_lax";
-  robotState->joint_name[25] = "r_leg_lhy";
-  robotState->joint_name[26] = "r_leg_mhx";
-  robotState->joint_name[27] = "r_leg_uay";
-  robotState->joint_name[28] = "r_leg_uhz";
+  robotState->joint_name[24] = "r_leg_akx";
+  robotState->joint_name[25] = "r_leg_hpy";
+  robotState->joint_name[26] = "r_leg_hpx";
+  robotState->joint_name[27] = "r_leg_aky";
+  robotState->joint_name[28] = "r_leg_hpz";
   robotState->joint_name[29] = "left_f0_j0";
   robotState->joint_name[30] = "left_f0_j1";
   robotState->joint_name[31] = "left_f0_j2";
@@ -255,9 +255,9 @@ to_lcm_minimal( robot_state_t* robotState )const{
   _pose.M.GetQuaternion( robotState->pose.rotation.x, robotState->pose.rotation.y, robotState->pose.rotation.z, robotState->pose.rotation.w );
   robotState->num_joints = 28;
   robotState->joint_name.resize( robotState->num_joints );
-  robotState->joint_name[0] = "back_lbz";
-  robotState->joint_name[1] = "back_mby";
-  robotState->joint_name[2] = "back_ubx";
+  robotState->joint_name[0] = "back_bkz";
+  robotState->joint_name[1] = "back_bky";
+  robotState->joint_name[2] = "back_bkx";
   robotState->joint_name[3] = "l_arm_elx";
   robotState->joint_name[4] = "l_arm_ely";
   robotState->joint_name[5] = "l_arm_mwx";
@@ -265,11 +265,11 @@ to_lcm_minimal( robot_state_t* robotState )const{
   robotState->joint_name[7] = "l_arm_usy";
   robotState->joint_name[8] = "l_arm_uwy";
   robotState->joint_name[9] = "l_leg_kny";
-  robotState->joint_name[10] = "l_leg_lax";
-  robotState->joint_name[11] = "l_leg_lhy";
-  robotState->joint_name[12] = "l_leg_mhx";
-  robotState->joint_name[13] = "l_leg_uay";
-  robotState->joint_name[14] = "l_leg_uhz";
+  robotState->joint_name[10] = "l_leg_akx";
+  robotState->joint_name[11] = "l_leg_hpy";
+  robotState->joint_name[12] = "l_leg_hpx";
+  robotState->joint_name[13] = "l_leg_aky";
+  robotState->joint_name[14] = "l_leg_hpz";
   robotState->joint_name[15] = "neck_ay";
   robotState->joint_name[16] = "r_arm_elx";
   robotState->joint_name[17] = "r_arm_ely";
@@ -278,11 +278,11 @@ to_lcm_minimal( robot_state_t* robotState )const{
   robotState->joint_name[20] = "r_arm_usy";
   robotState->joint_name[21] = "r_arm_uwy";
   robotState->joint_name[22] = "r_leg_kny";
-  robotState->joint_name[23] = "r_leg_lax";
-  robotState->joint_name[24] = "r_leg_lhy";
-  robotState->joint_name[25] = "r_leg_mhx";
-  robotState->joint_name[26] = "r_leg_uay";
-  robotState->joint_name[27] = "r_leg_uhz";
+  robotState->joint_name[23] = "r_leg_akx";
+  robotState->joint_name[24] = "r_leg_hpy";
+  robotState->joint_name[25] = "r_leg_hpx";
+  robotState->joint_name[26] = "r_leg_aky";
+  robotState->joint_name[27] = "r_leg_hpz";
   robotState->joint_position.resize( robotState->num_joints );
   robotState->joint_velocity.resize( robotState->num_joints );
   robotState->joint_effort.resize( robotState->num_joints );
@@ -489,11 +489,11 @@ joint( string id ){
   map< string, State_GFE_Joint >::iterator it = _joints.find( id );
   return  it->second;
 */
-  if( id == "back_lbz" ){
+  if( id == "back_bkz" ){
     return _joints[ STATE_GFE_BACK_LBZ_JOINT ];
-  } else if( id == "back_mby" ){
+  } else if( id == "back_bky" ){
     return _joints[ STATE_GFE_BACK_MBY_JOINT ];
-  } else if( id == "back_ubx" ){
+  } else if( id == "back_bkx" ){
     return _joints[ STATE_GFE_BACK_UBX_JOINT ];
   } else if( id == "neck_ay" ){
     return _joints[ STATE_GFE_NECK_AY_JOINT ];
@@ -577,27 +577,27 @@ joint( string id ){
     return _right_hand.finger( STATE_GFE_HAND_FINGER_3 ).joint( STATE_GFE_FINGER_JOINT_2 );
   } else if ( id == "l_leg_kny" ){
     return _left_leg.joint( STATE_GFE_LEG_KNY_JOINT );
-  } else if ( id == "l_leg_lax" ){
+  } else if ( id == "l_leg_akx" ){
     return _left_leg.joint( STATE_GFE_LEG_LAX_JOINT );
-  } else if ( id == "l_leg_lhy" ){
+  } else if ( id == "l_leg_hpy" ){
     return _left_leg.joint( STATE_GFE_LEG_LHY_JOINT );
-  } else if ( id == "l_leg_mhx" ){
+  } else if ( id == "l_leg_hpx" ){
     return _left_leg.joint( STATE_GFE_LEG_MHX_JOINT );
-  } else if ( id == "l_leg_uay" ){
+  } else if ( id == "l_leg_aky" ){
     return _left_leg.joint( STATE_GFE_LEG_UAY_JOINT );
-  } else if ( id == "l_leg_uhz" ){
+  } else if ( id == "l_leg_hpz" ){
     return _left_leg.joint( STATE_GFE_LEG_UHZ_JOINT );
   } else if ( id == "r_leg_kny" ){
     return _right_leg.joint( STATE_GFE_LEG_KNY_JOINT );
-  } else if ( id == "r_leg_lax" ){
+  } else if ( id == "r_leg_akx" ){
     return _right_leg.joint( STATE_GFE_LEG_LAX_JOINT );
-  } else if ( id == "r_leg_lhy" ){
+  } else if ( id == "r_leg_hpy" ){
     return _right_leg.joint( STATE_GFE_LEG_LHY_JOINT );
-  } else if ( id == "r_leg_mhx" ){
+  } else if ( id == "r_leg_hpx" ){
     return _right_leg.joint( STATE_GFE_LEG_MHX_JOINT );
-  } else if ( id == "r_leg_uay" ){
+  } else if ( id == "r_leg_aky" ){
     return _right_leg.joint( STATE_GFE_LEG_UAY_JOINT );
-  } else if ( id == "r_leg_uhz" ){
+  } else if ( id == "r_leg_hpz" ){
     return _right_leg.joint( STATE_GFE_LEG_UHZ_JOINT );
   }
 }
@@ -614,11 +614,11 @@ joint( string id )const
   map< string, State_GFE_Joint >::const_iterator it = _joints.find( id );
   return it->second;
 */
-  if( id == "back_lbz" ){
+  if( id == "back_bkz" ){
     return _joints[ STATE_GFE_BACK_LBZ_JOINT ];
-  } else if( id == "back_mby" ){
+  } else if( id == "back_bky" ){
     return _joints[ STATE_GFE_BACK_MBY_JOINT ];
-  } else if( id == "back_ubx" ){
+  } else if( id == "back_bkx" ){
     return _joints[ STATE_GFE_BACK_UBX_JOINT ];
   } else if( id == "neck_ay" ){
     return _joints[ STATE_GFE_NECK_AY_JOINT ];
@@ -702,27 +702,27 @@ joint( string id )const
     return _right_hand.finger( STATE_GFE_HAND_FINGER_3 ).joint( STATE_GFE_FINGER_JOINT_2 );
   } else if ( id == "l_leg_kny" ){
     return _left_leg.joint( STATE_GFE_LEG_KNY_JOINT );
-  } else if ( id == "l_leg_lax" ){
+  } else if ( id == "l_leg_akx" ){
     return _left_leg.joint( STATE_GFE_LEG_LAX_JOINT );
-  } else if ( id == "l_leg_lhy" ){
+  } else if ( id == "l_leg_hpy" ){
     return _left_leg.joint( STATE_GFE_LEG_LHY_JOINT );
-  } else if ( id == "l_leg_mhx" ){
+  } else if ( id == "l_leg_hpx" ){
     return _left_leg.joint( STATE_GFE_LEG_MHX_JOINT );
-  } else if ( id == "l_leg_uay" ){
+  } else if ( id == "l_leg_aky" ){
     return _left_leg.joint( STATE_GFE_LEG_UAY_JOINT );
-  } else if ( id == "l_leg_uhz" ){
+  } else if ( id == "l_leg_hpz" ){
     return _left_leg.joint( STATE_GFE_LEG_UHZ_JOINT );
   } else if ( id == "r_leg_kny" ){
     return _right_leg.joint( STATE_GFE_LEG_KNY_JOINT );
-  } else if ( id == "r_leg_lax" ){
+  } else if ( id == "r_leg_akx" ){
     return _right_leg.joint( STATE_GFE_LEG_LAX_JOINT );
-  } else if ( id == "r_leg_lhy" ){
+  } else if ( id == "r_leg_hpy" ){
     return _right_leg.joint( STATE_GFE_LEG_LHY_JOINT );
-  } else if ( id == "r_leg_mhx" ){
+  } else if ( id == "r_leg_hpx" ){
     return _right_leg.joint( STATE_GFE_LEG_MHX_JOINT );
-  } else if ( id == "r_leg_uay" ){
+  } else if ( id == "r_leg_aky" ){
     return _right_leg.joint( STATE_GFE_LEG_UAY_JOINT );
-  } else if ( id == "r_leg_uhz" ){
+  } else if ( id == "r_leg_hpz" ){
     return _right_leg.joint( STATE_GFE_LEG_UHZ_JOINT );
   }
  

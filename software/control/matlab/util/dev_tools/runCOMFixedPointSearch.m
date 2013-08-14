@@ -17,28 +17,28 @@ x0 = Point(r.getStateFrame);
 
 x0.base_z = 0.86000;
 x0.base_pitch = 0.000000;
-x0.back_mby = 0.000000;
+x0.back_bky = 0.000000;
 x0.l_arm_elx = 1.000000;
 x0.l_arm_ely = 1.870000;
 x0.l_arm_shx = -1.300000;
 x0.l_arm_usy = -0.0000;
-x0.l_leg_lhy = -1.65000;
+x0.l_leg_hpy = -1.65000;
 x0.l_leg_kny = 1.000000;cd
-x0.l_leg_lhy = -0.650000;
-x0.l_leg_uay = -0.35000;
-x0.l_leg_mhx = 0.1000;
-x0.l_leg_lax = -0.1000;
+x0.l_leg_hpy = -0.650000;
+x0.l_leg_aky = -0.35000;
+x0.l_leg_hpx = 0.1000;
+x0.l_leg_akx = -0.1000;
 
 x0.r_arm_elx = -x0.l_arm_elx;
 x0.r_arm_ely = x0.l_arm_ely;
 x0.r_arm_shx = -x0.l_arm_shx;
 x0.r_arm_usy = x0.l_arm_usy;
-x0.r_leg_lhy = x0.l_leg_lhy;
+x0.r_leg_hpy = x0.l_leg_hpy;
 x0.r_leg_kny = x0.l_leg_kny;
-x0.r_leg_lhy = x0.l_leg_lhy;
-x0.r_leg_uay = x0.l_leg_uay;
-x0.r_leg_mhx = -x0.l_leg_mhx;
-x0.r_leg_lax = -x0.l_leg_lax;
+x0.r_leg_hpy = x0.l_leg_hpy;
+x0.r_leg_aky = x0.l_leg_aky;
+x0.r_leg_hpx = -x0.l_leg_hpx;
+x0.r_leg_akx = -x0.l_leg_akx;
 
 %x0 = resolveConstraints(r,double(x0));
 v.draw(0,double(x0));

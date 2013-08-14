@@ -44,24 +44,25 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
       if (joint_name.length != m_num_joints)
         throw new Exception("Length of joint_name must be " + m_num_joints);
       
-			// fixed ordering assumed by drcsim interface
+			// fixed ordering assumed by drcsim interface AND atlas api 
+			// see: AtlasControlTypes.h 
       String[] atlas_joint_name = new String[m_num_joints];
-      atlas_joint_name[0] = "back_lbz";
-      atlas_joint_name[1] = "back_mby";
-      atlas_joint_name[2] = "back_ubx";
+      atlas_joint_name[0] = "back_bkz";
+      atlas_joint_name[1] = "back_bky";
+      atlas_joint_name[2] = "back_bkx";
       atlas_joint_name[3] = "neck_ay";
-      atlas_joint_name[4] = "l_leg_uhz";
-      atlas_joint_name[5] = "l_leg_mhx";
-      atlas_joint_name[6] = "l_leg_lhy";
+      atlas_joint_name[4] = "l_leg_hpz";
+      atlas_joint_name[5] = "l_leg_hpx";
+      atlas_joint_name[6] = "l_leg_hpy";
       atlas_joint_name[7] = "l_leg_kny";
-      atlas_joint_name[8] = "l_leg_uay";
-      atlas_joint_name[9] = "l_leg_lax";
-      atlas_joint_name[10] = "r_leg_uhz";
-      atlas_joint_name[11] = "r_leg_mhx";
-      atlas_joint_name[12] = "r_leg_lhy";
+      atlas_joint_name[8] = "l_leg_aky";
+      atlas_joint_name[9] = "l_leg_akx";
+      atlas_joint_name[10] = "r_leg_hpz";
+      atlas_joint_name[11] = "r_leg_hpx";
+      atlas_joint_name[12] = "r_leg_hpy";
       atlas_joint_name[13] = "r_leg_kny";
-      atlas_joint_name[14] = "r_leg_uay";
-      atlas_joint_name[15] = "r_leg_lax";
+      atlas_joint_name[14] = "r_leg_aky";
+      atlas_joint_name[15] = "r_leg_akx";
       atlas_joint_name[16] = "l_arm_usy";
       atlas_joint_name[17] = "l_arm_shx";
       atlas_joint_name[18] = "l_arm_ely";

@@ -89,9 +89,9 @@ end
   cost.base_roll = 0;
   cost.base_pitch = 0;
   cost.base_yaw = 0;
-  cost.back_lbz = 10;
-  cost.back_mby = 100;
-  cost.back_ubx = 100;
+  cost.back_bkz = 10;
+  cost.back_bky = 100;
+  cost.back_bkx = 100;
   cost = double(cost);
   options.Q = diag(cost(1:nq));
   options.q_nom = q_nom;

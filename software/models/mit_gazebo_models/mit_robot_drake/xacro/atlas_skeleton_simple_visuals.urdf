@@ -957,7 +957,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="back_lbz" type="revolute">
+  <joint name="back_bkz" type="revolute">
     <origin xyz="-0.0125 0 0" rpy="0 -0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
@@ -967,7 +967,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6109"
       soft_upper_limit="10.6109"/>
   </joint>
-  <joint name="back_mby" type="revolute">
+  <joint name="back_bky" type="revolute">
     <origin xyz="0 0 0.09" rpy="0 -0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="ltorso"/>
@@ -977,7 +977,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2"
       soft_upper_limit="11.28"/>
   </joint>
-  <joint name="back_ubx" type="revolute">
+  <joint name="back_bkx" type="revolute">
     <origin xyz="0 0 0.05" rpy="0 -0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="mtorso"/>
@@ -1057,7 +1057,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10"
       soft_upper_limit="12.45"/>
   </joint>
-  <joint name="l_leg_lax" type="revolute">
+  <joint name="l_leg_akx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="l_talus"/>
@@ -1067,7 +1067,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436"
       soft_upper_limit="10.436"/>
   </joint>
-  <joint name="l_leg_lhy" type="revolute">
+  <joint name="l_leg_hpy" type="revolute">
     <origin xyz="0.05 0 -0.05" rpy="0 -0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="l_lglut"/>
@@ -1077,7 +1077,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.75"
       soft_upper_limit="10.524"/>
   </joint>
-  <joint name="l_leg_mhx" type="revolute">
+  <joint name="l_leg_hpx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="l_uglut"/>
@@ -1087,7 +1087,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.47"
       soft_upper_limit="10.495"/>
   </joint>
-  <joint name="l_leg_uay" type="revolute">
+  <joint name="l_leg_aky" type="revolute">
     <origin xyz="0 0 -0.422" rpy="0 -0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="l_lleg"/>
@@ -1097,7 +1097,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698"
       soft_upper_limit="10.698"/>
   </joint>
-  <joint name="l_leg_uhz" type="revolute">
+  <joint name="l_leg_hpz" type="revolute">
     <origin xyz="0 0.089 0" rpy="0 -0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
@@ -1189,7 +1189,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10"
       soft_upper_limit="12.45"/>
   </joint>
-  <joint name="r_leg_lax" type="revolute">
+  <joint name="r_leg_akx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="r_talus"/>
@@ -1199,7 +1199,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436"
       soft_upper_limit="10.436"/>
   </joint>
-  <joint name="r_leg_lhy" type="revolute">
+  <joint name="r_leg_hpy" type="revolute">
     <origin xyz="0.05 0 -0.05" rpy="0 -0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="r_lglut"/>
@@ -1209,7 +1209,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.745"
       soft_upper_limit="10.524"/>
   </joint>
-  <joint name="r_leg_mhx" type="revolute">
+  <joint name="r_leg_hpx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="r_uglut"/>
@@ -1219,7 +1219,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.495"
       soft_upper_limit="10.47"/>
   </joint>
-  <joint name="r_leg_uay" type="revolute">
+  <joint name="r_leg_aky" type="revolute">
     <origin xyz="0 0 -0.422" rpy="0 -0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="r_lleg"/>
@@ -1229,7 +1229,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698"
       soft_upper_limit="10.698"/>
   </joint>
-  <joint name="r_leg_uhz" type="revolute">
+  <joint name="r_leg_hpz" type="revolute">
     <origin xyz="0 -0.089 0" rpy="0 -0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>

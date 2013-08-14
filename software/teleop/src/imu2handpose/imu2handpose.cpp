@@ -115,11 +115,11 @@ void ObstacleApp::PublishPoseToLCM(int id, Eigen::Isometry3d poseout,int64_t uti
   quat_to_euler(r_x, yaw,pitch,roll);
   cout << pitch*180/M_PI << " | " << roll*180/M_PI << "\n";
 
-/*   string joint_names[] ={ "back_lbz",
-       "back_mby", "back_ubx", "neck_ay", "l_leg_uhz", 
-       "l_leg_mhx", "l_leg_lhy", "l_leg_kny", "l_leg_uay", "l_leg_lax",
-       "r_leg_uhz", "r_leg_mhx", "r_leg_lhy", "r_leg_kny", "r_leg_uay",
-       "r_leg_lax", "l_arm_elx", "l_arm_ely", "l_arm_mwx", "l_arm_shx",
+/*   string joint_names[] ={ "back_bkz",
+       "back_bky", "back_bkx", "neck_ay", "l_leg_hpz", 
+       "l_leg_hpx", "l_leg_hpy", "l_leg_kny", "l_leg_aky", "l_leg_akx",
+       "r_leg_hpz", "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky",
+       "r_leg_akx", "l_arm_elx", "l_arm_ely", "l_arm_mwx", "l_arm_shx",
        "l_arm_usy", "l_arm_uwy", "r_arm_elx", "r_arm_ely", "r_arm_mwx",
        "r_arm_shx", "r_arm_usy", "r_arm_uwy"};
    double joint_position[] ={ 0.0, 

@@ -1,5 +1,5 @@
 function atlasKneeBend
-
+%NOTEST
 % simple knee wiggle example using a sinusoid
 
 options.floating = true;

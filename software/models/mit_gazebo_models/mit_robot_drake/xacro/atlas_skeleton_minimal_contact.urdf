@@ -428,7 +428,7 @@
     <xacro:collision_point group="back" xyz="-0.1148 0.12 0.0309" visualize="1"/>
     <xacro:collision_point group="back" xyz="-0.1148 -0.12 0.0309" visualize="1"/>
   </link>
-  <joint name="back_lbz" type="revolute">
+  <joint name="back_bkz" type="revolute">
     <origin xyz="-0.0125 0 0" rpy="0 -0 0" />
     <axis xyz="0 0 1" />
     <parent link="pelvis" />
@@ -437,7 +437,7 @@
     <limit effort="124.016" velocity="12" lower="-0.610865" upper="0.610865" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6109" soft_upper_limit="10.6109" />
   </joint>
-  <joint name="back_mby" type="revolute">
+  <joint name="back_bky" type="revolute">
     <origin xyz="0 0 0.09" rpy="0 -0 0" />
     <axis xyz="0 1 0" />
     <parent link="ltorso" />
@@ -446,7 +446,7 @@
     <limit effort="206.843" velocity="12" lower="-1.2" upper="1.28" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2" soft_upper_limit="11.28" />
   </joint>
-  <joint name="back_ubx" type="revolute">
+  <joint name="back_bkx" type="revolute">
     <origin xyz="0 0 0.05" rpy="0 -0 0" />
     <axis xyz="1 0 0" />
     <parent link="mtorso" />
@@ -518,7 +518,7 @@
     <limit effort="400" velocity="12" lower="0" upper="2.45" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45" />
   </joint>
-  <joint name="l_leg_lax" type="revolute">
+  <joint name="l_leg_akx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0" />
     <axis xyz="1 0 0" />
     <parent link="l_talus" />
@@ -527,7 +527,7 @@
     <limit effort="90" velocity="12" lower="-0.436" upper="0.436" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436" />
   </joint>
-  <joint name="l_leg_lhy" type="revolute">
+  <joint name="l_leg_hpy" type="revolute">
     <origin xyz="0.05 0 -0.05" rpy="0 -0 0" />
     <axis xyz="0 1 0" />
     <parent link="l_lglut" />
@@ -536,7 +536,7 @@
     <limit effort="260" velocity="12" lower="-1.75" upper="0.524" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.75" soft_upper_limit="10.524" />
   </joint>
-  <joint name="l_leg_mhx" type="revolute">
+  <joint name="l_leg_hpx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0" />
     <axis xyz="1 0 0" />
     <parent link="l_uglut" />
@@ -545,7 +545,7 @@
     <limit effort="180" velocity="12" lower="-0.47" upper="0.495" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.47" soft_upper_limit="10.495" />
   </joint>
-  <joint name="l_leg_uay" type="revolute">
+  <joint name="l_leg_aky" type="revolute">
     <origin xyz="0 0 -0.422" rpy="0 -0 0" />
     <axis xyz="0 1 0" />
     <parent link="l_lleg" />
@@ -554,7 +554,7 @@
     <limit effort="220" velocity="12" lower="-0.9" upper="0.698" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698" />
   </joint>
-  <joint name="l_leg_uhz" type="revolute">
+  <joint name="l_leg_hpz" type="revolute">
     <origin xyz="0 0.089 0" rpy="0 -0 0" />
     <axis xyz="0 0 1" />
     <parent link="pelvis" />
@@ -637,7 +637,7 @@
     <limit effort="400" velocity="12" lower="0" upper="2.45" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45" />
   </joint>
-  <joint name="r_leg_lax" type="revolute">
+  <joint name="r_leg_akx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0" />
     <axis xyz="1 0 0" />
     <parent link="r_talus" />
@@ -646,7 +646,7 @@
     <limit effort="90" velocity="12" lower="-0.436" upper="0.436" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436" />
   </joint>
-  <joint name="r_leg_lhy" type="revolute">
+  <joint name="r_leg_hpy" type="revolute">
     <origin xyz="0.05 0 -0.05" rpy="0 -0 0" />
     <axis xyz="0 1 0" />
     <parent link="r_lglut" />
@@ -655,7 +655,7 @@
     <limit effort="260" velocity="12" lower="-1.745" upper="0.524" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.745" soft_upper_limit="10.524" />
   </joint>
-  <joint name="r_leg_mhx" type="revolute">
+  <joint name="r_leg_hpx" type="revolute">
     <origin xyz="0 0 0" rpy="0 -0 0" />
     <axis xyz="1 0 0" />
     <parent link="r_uglut" />
@@ -664,7 +664,7 @@
     <limit effort="180" velocity="12" lower="-0.495" upper="0.47" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.495" soft_upper_limit="10.47" />
   </joint>
-  <joint name="r_leg_uay" type="revolute">
+  <joint name="r_leg_aky" type="revolute">
     <origin xyz="0 0 -0.422" rpy="0 -0 0" />
     <axis xyz="0 1 0" />
     <parent link="r_lleg" />
@@ -673,7 +673,7 @@
     <limit effort="220" velocity="12" lower="-0.9" upper="0.698" />
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698" />
   </joint>
-  <joint name="r_leg_uhz" type="revolute">
+  <joint name="r_leg_hpz" type="revolute">
     <origin xyz="0 -0.089 0" rpy="0 -0 0" />
     <axis xyz="0 0 1" />
     <parent link="pelvis" />

@@ -105,8 +105,8 @@ cost.r_arm_uwy = arm_cost;
 cost.base_roll = 0;
 cost.base_pitch =0;
 cost.base_yaw = 0;
-cost.back_mby = 100;
-cost.back_ubx = 100;
+cost.back_bky = 100;
+cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
 options.q_nom = q_standing;
@@ -117,7 +117,7 @@ knee_idx = find(~cellfun(@isempty,strfind(joint_names,'kny')));
 elbow_idx = find(~cellfun(@isempty,strfind(joint_names,'elx')));
 back_idx = find(~cellfun(@isempty,strfind(joint_names,'ubx')) | ~cellfun(@isempty,strfind(joint_names,'mby')));
 hip_idx = find( ...
-                ~cellfun(@isempty,strfind(joint_names,'l_leg_uhz')) ...
+                ~cellfun(@isempty,strfind(joint_names,'l_leg_hpz')) ...
               );
                 %| ~cellfun(@isempty,strfind(joint_names,'mhx')) ...
                 %| ~cellfun(@isempty,strfind(joint_names,'uay')) ...

@@ -324,8 +324,8 @@ classdef ManipulationPlanner < handle
             state_frame = obj.r.getStateFrame;
             ikoptions.jointLimitMin = Point(state_frame,[ikoptions.jointLimitMin;zeros(obj.r.getNumDOF,1)]);
             ikoptions.jointLimitMax = Point(state_frame,[ikoptions.jointLimitMax;zeros(obj.r.getNumDOF,1)]);
-            ikoptions.jointLimitMin.back_mby = -0.3;
-            ikoptions.jointLimitMax.back_mby = 0.3;
+            ikoptions.jointLimitMin.back_bky = -0.3;
+            ikoptions.jointLimitMax.back_bky = 0.3;
             ikoptions.jointLimitMax.r_arm_usy = 0;
             ikoptions.jointLimitMax.l_arm_usy = 0;
             ikoptions.jointLimitMin.r_leg_kny = 0.2;
@@ -355,8 +355,8 @@ classdef ManipulationPlanner < handle
             state_frame = obj.r.getStateFrame;
             ikoptions.jointLimitMin = Point(state_frame,[ikoptions.jointLimitMin;zeros(obj.r.getNumDOF,1)]);
             ikoptions.jointLimitMax = Point(state_frame,[ikoptions.jointLimitMax;zeros(obj.r.getNumDOF,1)]);
-            ikoptions.jointLimitMin.back_mby = -0.3;
-            ikoptions.jointLimitMax.back_mby = 0.3;
+            ikoptions.jointLimitMin.back_bky = -0.3;
+            ikoptions.jointLimitMax.back_bky = 0.3;
             ikoptions.jointLimitMin.r_leg_kny = 0.2;
             ikoptions.jointLimitMin.l_leg_kny = 0.2;
             ikoptions.jointLimitMin = double(ikoptions.jointLimitMin);
@@ -718,7 +718,7 @@ classdef ManipulationPlanner < handle
 						coords = obj.r.getStateFrame();
 						[joint_min,joint_max] = obj.r.getJointLimits();
 						joint_min = Point(coords,[joint_min;0*joint_min]);
-						joint_min.back_mby = -.2;
+						joint_min.back_bky = -.2;
             joint_min.l_leg_kny = 0.2;
             joint_min.r_leg_kny = 0.2;
 						joint_min = double(joint_min);
@@ -729,7 +729,7 @@ classdef ManipulationPlanner < handle
             %Setting a max joint limit on the back also 
             
             joint_max = Point(coords,[joint_max;0*joint_max]);
-						joint_max.back_mby = 0.2;
+						joint_max.back_bky = 0.2;
 						joint_max = double(joint_max);
 						ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             
@@ -955,7 +955,7 @@ classdef ManipulationPlanner < handle
                 coords = obj.r.getStateFrame();
                 [joint_min,joint_max] = obj.r.getJointLimits();
                 joint_min = Point(coords,[joint_min;0*joint_min]);
-                joint_min.back_mby = -.2;
+                joint_min.back_bky = -.2;
                 joint_min.l_leg_kny= 0.2;
                 joint_min.r_leg_kny= 0.2;
                 joint_min = double(joint_min);
@@ -966,7 +966,7 @@ classdef ManipulationPlanner < handle
                 %Setting a max joint limit on the back also 
                 
                 joint_max = Point(coords,[joint_max;0*joint_max]);
-                joint_max.back_mby = 0.2;
+                joint_max.back_bky = 0.2;
                 joint_max.l_leg_kny= joint_max.l_leg_kny-buffer;
                 joint_max.r_leg_kny= joint_max.r_leg_kny-buffer;
                 joint_max = double(joint_max);
@@ -2122,7 +2122,7 @@ classdef ManipulationPlanner < handle
             coords = obj.r.getStateFrame();
             [joint_min,joint_max] = obj.r.getJointLimits();
             joint_min = Point(coords,[joint_min;0*joint_min]);
-            joint_min.back_mby = -.2;
+            joint_min.back_bky = -.2;
             joint_min.l_leg_kny = 0.2;
             joint_min.r_leg_kny = 0.2;
             joint_min = double(joint_min);
@@ -2133,7 +2133,7 @@ classdef ManipulationPlanner < handle
             %Setting a max joint limit on the back also 
             
             joint_max = Point(coords,[joint_max;0*joint_max]);
-            joint_max.back_mby = 0.2;
+            joint_max.back_bky = 0.2;
             joint_max = double(joint_max);
             ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2928,9 +2928,9 @@ classdef ManipulationPlanner < handle
             cost.base_roll = 100;
             cost.base_pitch = 100;
             cost.base_yaw = 100;
-            cost.back_lbz = 1e4;
-            cost.back_mby = 1e4;
-            cost.back_ubx = 1e4;
+            cost.back_bkz = 1e4;
+            cost.back_bky = 1e4;
+            cost.back_bkx = 1e4;
             cost.neck_ay =  100;
             cost.l_arm_usy = 1;
             cost.l_arm_shx = 1;
@@ -2938,24 +2938,24 @@ classdef ManipulationPlanner < handle
             cost.l_arm_elx = 1;
             cost.l_arm_uwy = 1;
             cost.l_arm_mwx = 1;
-            cost.l_leg_uhz = 1;
-            cost.l_leg_mhx = 1;
-            cost.l_leg_lhy = 1;
+            cost.l_leg_hpz = 1;
+            cost.l_leg_hpx = 1;
+            cost.l_leg_hpy = 1;
             cost.l_leg_kny = 1;
-            cost.l_leg_uay = 1;
-            cost.l_leg_lax = 1;
+            cost.l_leg_aky = 1;
+            cost.l_leg_akx = 1;
             cost.r_arm_usy = cost.l_arm_usy;
             cost.r_arm_shx = cost.l_arm_shx;
             cost.r_arm_ely = cost.l_arm_ely;
             cost.r_arm_elx = cost.l_arm_elx;
             cost.r_arm_uwy = cost.l_arm_uwy;
             cost.r_arm_mwx = cost.l_arm_mwx;
-            cost.r_leg_uhz = cost.l_leg_uhz;
-            cost.r_leg_mhx = cost.l_leg_mhx;
-            cost.r_leg_lhy = cost.l_leg_lhy;
+            cost.r_leg_hpz = cost.l_leg_hpz;
+            cost.r_leg_hpx = cost.l_leg_hpx;
+            cost.r_leg_hpy = cost.l_leg_hpy;
             cost.r_leg_kny = cost.l_leg_kny;
-            cost.r_leg_uay = cost.l_leg_uay;
-            cost.r_leg_lax = cost.l_leg_lax;
+            cost.r_leg_aky = cost.l_leg_aky;
+            cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
             
         end
@@ -2968,9 +2968,9 @@ classdef ManipulationPlanner < handle
             cost.base_roll = 100;
             cost.base_pitch = 100;
             cost.base_yaw = 0;
-            cost.back_lbz = 10;
-            cost.back_mby = 10;
-            cost.back_ubx = 10;
+            cost.back_bkz = 10;
+            cost.back_bky = 10;
+            cost.back_bkx = 10;
             cost.neck_ay =  10;
             cost.l_arm_usy = 1000;
             cost.l_arm_shx = 1000;
@@ -2978,24 +2978,24 @@ classdef ManipulationPlanner < handle
             cost.l_arm_elx = 50;
             cost.l_arm_uwy = 1;
             cost.l_arm_mwx = 1;
-            cost.l_leg_uhz = 1;
-            cost.l_leg_mhx = 1;
-            cost.l_leg_lhy = 1;
+            cost.l_leg_hpz = 1;
+            cost.l_leg_hpx = 1;
+            cost.l_leg_hpy = 1;
             cost.l_leg_kny = 1;
-            cost.l_leg_uay = 1;
-            cost.l_leg_lax = 1;
+            cost.l_leg_aky = 1;
+            cost.l_leg_akx = 1;
             cost.r_arm_usy = cost.l_arm_usy;
             cost.r_arm_shx = cost.l_arm_shx;
             cost.r_arm_ely = cost.l_arm_ely;
             cost.r_arm_elx = cost.l_arm_elx;
             cost.r_arm_uwy = cost.l_arm_uwy;
             cost.r_arm_mwx = cost.l_arm_mwx;
-            cost.r_leg_uhz = cost.l_leg_uhz;
-            cost.r_leg_mhx = cost.l_leg_mhx;
-            cost.r_leg_lhy = cost.l_leg_lhy;
+            cost.r_leg_hpz = cost.l_leg_hpz;
+            cost.r_leg_hpx = cost.l_leg_hpx;
+            cost.r_leg_hpy = cost.l_leg_hpy;
             cost.r_leg_kny = cost.l_leg_kny;
-            cost.r_leg_uay = cost.l_leg_uay;
-            cost.r_leg_lax = cost.l_leg_lax;
+            cost.r_leg_aky = cost.l_leg_aky;
+            cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
             
         end 
@@ -3008,9 +3008,9 @@ classdef ManipulationPlanner < handle
             cost.base_roll = 100;
             cost.base_pitch = 100;
             cost.base_yaw = 1;
-            cost.back_lbz = 10;
-            cost.back_mby = 10000;
-            cost.back_ubx = 10000;
+            cost.back_bkz = 10;
+            cost.back_bky = 10000;
+            cost.back_bkx = 10000;
             cost.neck_ay =  100;
             cost.l_arm_usy = 1;
             cost.l_arm_shx = 1;
@@ -3018,24 +3018,24 @@ classdef ManipulationPlanner < handle
             cost.l_arm_elx = 1;
             cost.l_arm_uwy = 1;
             cost.l_arm_mwx = 1;
-            cost.l_leg_uhz = 1;
-            cost.l_leg_mhx = 1;
-            cost.l_leg_lhy = 1;
+            cost.l_leg_hpz = 1;
+            cost.l_leg_hpx = 1;
+            cost.l_leg_hpy = 1;
             cost.l_leg_kny = 1;
-            cost.l_leg_uay = 1;
-            cost.l_leg_lax = 1;
+            cost.l_leg_aky = 1;
+            cost.l_leg_akx = 1;
             cost.r_arm_usy = cost.l_arm_usy;
             cost.r_arm_shx = cost.l_arm_shx;
             cost.r_arm_ely = cost.l_arm_ely;
             cost.r_arm_elx = cost.l_arm_elx;
             cost.r_arm_uwy = cost.l_arm_uwy;
             cost.r_arm_mwx = cost.l_arm_mwx;
-            cost.r_leg_uhz = cost.l_leg_uhz;
-            cost.r_leg_mhx = cost.l_leg_mhx;
-            cost.r_leg_lhy = cost.l_leg_lhy;
+            cost.r_leg_hpz = cost.l_leg_hpz;
+            cost.r_leg_hpx = cost.l_leg_hpx;
+            cost.r_leg_hpy = cost.l_leg_hpy;
             cost.r_leg_kny = cost.l_leg_kny;
-            cost.r_leg_uay = cost.l_leg_uay;
-            cost.r_leg_lax = cost.l_leg_lax;
+            cost.r_leg_aky = cost.l_leg_aky;
+            cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
             
         end

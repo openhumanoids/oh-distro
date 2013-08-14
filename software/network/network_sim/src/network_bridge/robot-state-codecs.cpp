@@ -17,22 +17,22 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
     if(joint_names_.empty())
     {
         int i = 0;
-        joint_names_to_order_.insert(std::make_pair("back_lbz", i++));
-        joint_names_to_order_.insert(std::make_pair("back_mby", i++));
-        joint_names_to_order_.insert(std::make_pair("back_ubx", i++));
+        joint_names_to_order_.insert(std::make_pair("back_bkz", i++));
+        joint_names_to_order_.insert(std::make_pair("back_bky", i++));
+        joint_names_to_order_.insert(std::make_pair("back_bkx", i++));
         joint_names_to_order_.insert(std::make_pair("neck_ay", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_uhz", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_mhx", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_lhy", i++));
+        joint_names_to_order_.insert(std::make_pair("l_leg_hpz", i++));
+        joint_names_to_order_.insert(std::make_pair("l_leg_hpx", i++));
+        joint_names_to_order_.insert(std::make_pair("l_leg_hpy", i++));
         joint_names_to_order_.insert(std::make_pair("l_leg_kny", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_uay", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_lax", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_uhz", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_mhx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_lhy", i++));
+        joint_names_to_order_.insert(std::make_pair("l_leg_aky", i++));
+        joint_names_to_order_.insert(std::make_pair("l_leg_akx", i++));
+        joint_names_to_order_.insert(std::make_pair("r_leg_hpz", i++));
+        joint_names_to_order_.insert(std::make_pair("r_leg_hpx", i++));
+        joint_names_to_order_.insert(std::make_pair("r_leg_hpy", i++));
         joint_names_to_order_.insert(std::make_pair("r_leg_kny", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_uay", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_lax", i++));
+        joint_names_to_order_.insert(std::make_pair("r_leg_aky", i++));
+        joint_names_to_order_.insert(std::make_pair("r_leg_akx", i++));
         joint_names_to_order_.insert(std::make_pair("l_arm_usy", i++));
         joint_names_to_order_.insert(std::make_pair("l_arm_shx", i++));
         joint_names_to_order_.insert(std::make_pair("l_arm_ely", i++));

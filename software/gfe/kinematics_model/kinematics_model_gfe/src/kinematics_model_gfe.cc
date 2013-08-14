@@ -341,9 +341,9 @@ load_xml_string( string xmlString,
   }
 
 
-  _min_joint_limits_left_arm( 0 ) = _model.getJoint( "back_lbz" )->limits->lower;
-  _min_joint_limits_left_arm( 1 ) = _model.getJoint( "back_mby" )->limits->lower;
-  _min_joint_limits_left_arm( 2 ) = _model.getJoint( "back_ubx" )->limits->lower;
+  _min_joint_limits_left_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->lower;
+  _min_joint_limits_left_arm( 1 ) = _model.getJoint( "back_bky" )->limits->lower;
+  _min_joint_limits_left_arm( 2 ) = _model.getJoint( "back_bkx" )->limits->lower;
 
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->lower;
@@ -352,9 +352,9 @@ load_xml_string( string xmlString,
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->lower;
 
-  _max_joint_limits_left_arm( 0 ) = _model.getJoint( "back_lbz" )->limits->upper;
-  _max_joint_limits_left_arm( 1 ) = _model.getJoint( "back_mby" )->limits->upper;
-  _max_joint_limits_left_arm( 2 ) = _model.getJoint( "back_ubx" )->limits->upper;
+  _max_joint_limits_left_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
+  _max_joint_limits_left_arm( 1 ) = _model.getJoint( "back_bky" )->limits->upper;
+  _max_joint_limits_left_arm( 2 ) = _model.getJoint( "back_bkx" )->limits->upper;
 
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->upper;
@@ -363,9 +363,9 @@ load_xml_string( string xmlString,
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->upper;  
 
-  _min_joint_limits_right_arm( 0 ) = _model.getJoint( "back_lbz" )->limits->lower;
-  _min_joint_limits_right_arm( 1 ) = _model.getJoint( "back_mby" )->limits->lower;
-  _min_joint_limits_right_arm( 2 ) = _model.getJoint( "back_ubx" )->limits->lower;
+  _min_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->lower;
+  _min_joint_limits_right_arm( 1 ) = _model.getJoint( "back_bky" )->limits->lower;
+  _min_joint_limits_right_arm( 2 ) = _model.getJoint( "back_bkx" )->limits->lower;
 
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->lower;
@@ -374,9 +374,9 @@ load_xml_string( string xmlString,
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->lower;
 
-  _max_joint_limits_right_arm( 0 ) = _model.getJoint( "back_lbz" )->limits->upper;
-  _max_joint_limits_right_arm( 1 ) = _model.getJoint( "back_mby" )->limits->upper;
-  _max_joint_limits_right_arm( 2 ) = _model.getJoint( "back_ubx" )->limits->upper;
+  _max_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
+  _max_joint_limits_right_arm( 1 ) = _model.getJoint( "back_bky" )->limits->upper;
+  _max_joint_limits_right_arm( 2 ) = _model.getJoint( "back_bkx" )->limits->upper;
 
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->upper;
@@ -386,32 +386,32 @@ load_xml_string( string xmlString,
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->upper;
 
   _min_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->lower;
-  _min_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_lax" )->limits->lower;
-  _min_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_lhy" )->limits->lower;
-  _min_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_mhx" )->limits->lower;
-  _min_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_uay" )->limits->lower;
-  _min_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_uhz" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_akx" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_hpy" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_hpx" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_aky" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_hpz" )->limits->lower;
 
   _max_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->upper;
-  _max_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_lax" )->limits->upper;
-  _max_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_lhy" )->limits->upper;
-  _max_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_mhx" )->limits->upper;
-  _max_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_uay" )->limits->upper;
-  _max_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_uhz" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_akx" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_hpy" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_hpx" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_aky" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_hpz" )->limits->upper;
 
   _min_joint_limits_right_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "r_leg_kny" )->limits->lower;
-  _min_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_lax" )->limits->lower;
-  _min_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_lhy" )->limits->lower;
-  _min_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_mhx" )->limits->lower;
-  _min_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_uay" )->limits->lower;
-  _min_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_uhz" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_akx" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_hpy" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_hpx" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_aky" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_hpz" )->limits->lower;
 
   _max_joint_limits_right_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "r_leg_kny" )->limits->upper;
-  _max_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_lax" )->limits->upper;
-  _max_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_lhy" )->limits->upper;
-  _max_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_mhx" )->limits->upper;
-  _max_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_uay" )->limits->upper;
-  _max_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_uhz" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_akx" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_hpy" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_hpx" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_aky" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_hpz" )->limits->upper;
 
   return true;
 }

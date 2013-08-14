@@ -57,22 +57,22 @@ namespace renderer_robot_state
     _jointdof_filter_list.push_back("r_arm_uwy");
     _jointdof_filter_list.push_back("l_arm_mwx");
     _jointdof_filter_list.push_back("r_arm_mwx");
-    _jointdof_filter_list.push_back("l_leg_uhz");
-    _jointdof_filter_list.push_back("r_leg_uhz");
-    _jointdof_filter_list.push_back("l_leg_mhx");
-    _jointdof_filter_list.push_back("r_leg_mhx");
-    _jointdof_filter_list.push_back("l_leg_lhy");
-    _jointdof_filter_list.push_back("r_leg_lhy");
+    _jointdof_filter_list.push_back("l_leg_hpz");
+    _jointdof_filter_list.push_back("r_leg_hpz");
+    _jointdof_filter_list.push_back("l_leg_hpx");
+    _jointdof_filter_list.push_back("r_leg_hpx");
+    _jointdof_filter_list.push_back("l_leg_hpy");
+    _jointdof_filter_list.push_back("r_leg_hpy");
     _jointdof_filter_list.push_back("l_leg_kny");
     _jointdof_filter_list.push_back("r_leg_kny");
-    _jointdof_filter_list.push_back("l_leg_uay");
-    _jointdof_filter_list.push_back("r_leg_uay");
-    _jointdof_filter_list.push_back("l_leg_lax");
-    _jointdof_filter_list.push_back("r_leg_lax");  
+    _jointdof_filter_list.push_back("l_leg_aky");
+    _jointdof_filter_list.push_back("r_leg_aky");
+    _jointdof_filter_list.push_back("l_leg_akx");
+    _jointdof_filter_list.push_back("r_leg_akx");  
     _jointdof_filter_list.push_back("neck_ay");
-    _jointdof_filter_list.push_back("back_lbz");
-    _jointdof_filter_list.push_back("back_mby");
-    _jointdof_filter_list.push_back("back_ubx");
+    _jointdof_filter_list.push_back("back_bkz");
+    _jointdof_filter_list.push_back("back_bky");
+    _jointdof_filter_list.push_back("back_bkx");
     
     
     Eigen::Vector3f temp;

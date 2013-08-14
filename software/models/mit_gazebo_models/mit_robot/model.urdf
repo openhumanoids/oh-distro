@@ -760,7 +760,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="back_bky" type="revolute">
+  <joint name="back_bkz" type="revolute">
     <origin rpy="0 -0 0" xyz="-0.0125 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
@@ -769,7 +769,7 @@
     <limit effort="124.016" lower="-0.610865" upper="0.610865" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6109" soft_upper_limit="10.6109"/>
   </joint>
-  <joint name="back_bkz" type="revolute">
+  <joint name="back_bky" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 0.09"/>
     <axis xyz="0 1 0"/>
     <parent link="ltorso"/>
@@ -4409,10 +4409,10 @@
       <topicName>/atlas/apply_pelvis_force</topicName>
     </plugin>
   </gazebo>
-  <gazebo reference="back_bky">
+  <gazebo reference="back_bkz">
     <cfmDamping>1</cfmDamping>
   </gazebo>
-  <gazebo reference="back_bkz">
+  <gazebo reference="back_bky">
     <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="back_bkx">
@@ -4492,14 +4492,14 @@
     <actuator name="hokuyo_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="back_bky_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="back_bky"/>
-    <actuator name="back_bky_motor"/>
+  <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="back_bkz"/>
+    <actuator name="back_bkz_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="back_bkz_motor"/>
-    <joint name="back_bkz"/>
+  <transmission name="back_bky_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="back_bky_motor"/>
+    <joint name="back_bky"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="back_bkx_trans" type="pr2_mechanism_model/SimpleTransmission">

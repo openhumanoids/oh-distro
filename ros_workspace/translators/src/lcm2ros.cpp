@@ -10,7 +10,7 @@
 #include <osrf_msgs/JointCommands.h>
 #include <atlas_msgs/AtlasCommand.h>
 #include <sandia_hand_msgs/SimpleGrasp.h>
-
+#include <map>
 #include <ConciseArgs>
 
 using namespace std;
@@ -26,6 +26,7 @@ class LCM2ROS{
     ros::NodeHandle nh_;
 	  lcm::LCM lcm_publish_ ;
 
+		std::map<std::string,std::string> jointNameMap;
 		int last_command_timestamp;
     
     // DRCSIM 2.0 joint command API
@@ -110,6 +111,34 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/gas_pedal/cmd", 1000);
   brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/brake_pedal/cmd", 1000);
   
+	// maps joint names from BDI format to sim/VRC format
+	jointNameMap["back_bkx"] = "back_ubx";
+	jointNameMap["back_bky"] = "back_mby";
+	jointNameMap["back_bkz"] = "back_lbz";
+	jointNameMap["l_leg_akx"] = "l_leg_lax";
+	jointNameMap["l_leg_aky"] = "l_leg_uay";
+	jointNameMap["l_leg_kny"] = "l_leg_kny";
+	jointNameMap["l_leg_hpx"] = "l_leg_mhx";
+	jointNameMap["l_leg_hpy"] = "l_leg_lhy";
+	jointNameMap["l_leg_hpz"] = "l_leg_uhz";
+	jointNameMap["r_leg_akx"] = "r_leg_lax";
+	jointNameMap["r_leg_aky"] = "r_leg_uay";
+	jointNameMap["r_leg_kny"] = "r_leg_kny";
+	jointNameMap["r_leg_hpx"] = "r_leg_mhx";
+	jointNameMap["r_leg_hpy"] = "r_leg_lhy";
+	jointNameMap["r_leg_hpz"] = "r_leg_uhz";
+	jointNameMap["l_arm_mwx"] = "l_arm_mwx";
+	jointNameMap["l_arm_uwy"] = "l_arm_uwy";
+	jointNameMap["l_arm_elx"] = "l_arm_elx";
+	jointNameMap["l_arm_ely"] = "l_arm_ely";
+	jointNameMap["l_arm_shx"] = "l_arm_shx";
+	jointNameMap["l_arm_usy"] = "l_arm_usy";
+	jointNameMap["r_arm_mwx"] = "r_arm_mwx";
+	jointNameMap["r_arm_uwy"] = "r_arm_uwy";
+	jointNameMap["r_arm_elx"] = "r_arm_elx";
+	jointNameMap["r_arm_ely"] = "r_arm_ely";
+	jointNameMap["r_arm_shx"] = "r_arm_shx";
+	jointNameMap["r_arm_usy"] = "r_arm_usy";
 
 	last_command_timestamp = -1;
 
@@ -157,7 +186,11 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 		joint_command_msg.i_effort_max.resize(msg->num_joints);
 
 		for (int i=0; i<msg->num_joints; i++) {
-		  joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
+			if (jointNameMap.find(msg->name[i]) != jointNameMap.end())
+			  joint_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
+			else
+			  joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
+
 		  joint_command_msg.position.push_back(msg->position[i]);
 		  joint_command_msg.velocity.push_back(msg->velocity[i]);
 		  joint_command_msg.effort.push_back(msg->effort[i]);
@@ -167,10 +200,10 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
 		  // NOTE: This slows things down significantly, just set to zero instead
 		  // for now never change i gains or clamps
-	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/p", joint_command_msg.kp_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/d", joint_command_msg.kd_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
-	//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/p", joint_command_msg.kp_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/d", joint_command_msg.kd_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/i", joint_command_msg.ki_position[i]);
+	//    rosnode->getParam("atlas_controller/gains/" + jointNameMap[msg->name[i]] + "/i_clamp", joint_command_msg.i_effort_max[i]);
 	//    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
 		}
 		if(ros::ok()) {
@@ -202,7 +235,7 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
 		for (int i=0; i<msg->num_joints; i++) {
-		  //atlas_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
+		  //atlas_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
 		  atlas_command_msg.position.push_back(msg->position[i]);
 		  atlas_command_msg.velocity.push_back(msg->velocity[i]);
 		  atlas_command_msg.effort.push_back(msg->effort[i]);

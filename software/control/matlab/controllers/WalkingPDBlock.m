@@ -63,8 +63,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
      
       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      obj.l_ank = find(~cellfun(@isempty,strfind(state_names,'l_leg_lax')) | ~cellfun(@isempty,strfind(state_names,'l_leg_uay')));
-      obj.r_ank = find(~cellfun(@isempty,strfind(state_names,'r_leg_lax')) | ~cellfun(@isempty,strfind(state_names,'r_leg_uay')));
+      obj.l_ank = find(~cellfun(@isempty,strfind(state_names,'l_leg_akx')) | ~cellfun(@isempty,strfind(state_names,'l_leg_aky')));
+      obj.r_ank = find(~cellfun(@isempty,strfind(state_names,'r_leg_akx')) | ~cellfun(@isempty,strfind(state_names,'r_leg_aky')));
       
       if isfield(options,'q_nom')
         typecheck(options.q_nom,'double');
@@ -89,9 +89,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       cost.base_roll = 1000;
       cost.base_pitch = 1000;
       cost.base_yaw = 0;
-      cost.back_lbz = 10;
-      cost.back_mby = 100;
-      cost.back_ubx = 100;
+      cost.back_bkz = 10;
+      cost.back_bky = 100;
+      cost.back_bkx = 100;
 
       cost = double(cost);
       

@@ -8,9 +8,9 @@ order = {'l_arm_mwx';
          'l_arm_shx';
          'l_arm_usy';
          'neck_ay';
-         'back_ubx'; %Something iffy about this one
-         'back_mby';
-         'back_lbz'};
+         'back_bkx'; %Something iffy about this one
+         'back_bky';
+         'back_bkz'};
 
 dof = order(8)
 amplitude = .5;

@@ -98,10 +98,10 @@ namespace renderer_affordances_gui_utils
 
             std::string joint_name;
             if(foot_it->second.foot_type==0){
-               joint_name = "l_leg_uay";
+               joint_name = "l_leg_aky";
             }
             else {
-               joint_name = "r_leg_uay";
+               joint_name = "r_leg_aky";
              }
             // stickyfoot base is a dummy link at  ankle joint origin
             T_geometry_stickyfootbase = foot_it->second._gl_foot->_T_world_body;

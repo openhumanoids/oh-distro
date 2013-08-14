@@ -8,15 +8,15 @@ dofnames ={'l_arm_mwx'
 'l_arm_shx'
 'l_arm_usy'
 'neck_ay'
-'l_leg_lax'
-'l_leg_uay'
+'l_leg_akx'
+'l_leg_aky'
 'l_leg_kny'
-'l_leg_lhy'
-'l_leg_mhx'
-'l_leg_uhz'
-'back_ubx'
-'back_mby'
-'back_lbz'};
+'l_leg_hpy'
+'l_leg_hpx'
+'l_leg_hpz'
+'back_bkx'
+'back_bky'
+'back_bkz'};
 
 ind=16;
 
