@@ -92,6 +92,7 @@ void SignalData::append(const QPointF &sample)
 {
   d_data->mutex.lock();
   d_data->pendingValues += sample;
+  d_data->fpsCounter.update();
   d_data->mutex.unlock();
 }
 
@@ -107,7 +108,10 @@ bool SignalData::hasMessageError() const
 
 double SignalData::messageFrequency() const
 {
-  return d_data->fpsCounter.averageFPS();
+  d_data->mutex.lock();
+  double freq = d_data->fpsCounter.averageFPS();
+  d_data->mutex.unlock();
+  return freq;
 }
 
 void SignalData::updateValues()

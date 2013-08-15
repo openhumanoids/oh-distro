@@ -5,6 +5,8 @@
 
 // A class for keeping a exponential moving average of frames per second.
 
+#include <cstdio>
+
 class FPSCounter
 {
 public:
@@ -45,14 +47,25 @@ public:
 
   void update()
   {
-    // update counters
-
     ++mFramesThisWindow;
+    updateAverage();
+  }
 
+  double averageFPS()
+  {
+    updateAverage();
+    return mAverageFPS;
+  }
+
+private:
+
+  void updateAverage()
+  {
     // check if a time window has elapsed
-    double elapsedTime = mTime.elapsed();
-    if (elapsedTime > mTimeWindow) {
+    double elapsedTime = mTime.elapsed() / 1000.0;
 
+    if (elapsedTime > mTimeWindow)
+    {
       // compute FPS for this time window
       double averageFPSThisWindow = mFramesThisWindow / elapsedTime;
 
@@ -64,13 +77,6 @@ public:
       mFramesThisWindow = 0;
     }
   }
-
-  double averageFPS() const
-  {
-    return mAverageFPS;
-  }
-
-private:
 
   FPSCounter(const FPSCounter&); // Not implemented
   void operator=(const FPSCounter&); // Not implemented

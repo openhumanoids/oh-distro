@@ -201,10 +201,10 @@ void PlotWidget::updateSignalInfoLabel()
   int numberOfValues = signalData->size();
   if (numberOfValues)
   {
-    signalValue = QString::number(signalData->value(numberOfValues-1).y(), 'g', 3);
+    signalValue = QString::number(signalData->value(numberOfValues-1).y(), 'g', 6);
   }
 
-  QString signalInfoText = QString("Freq:  %1  Val: %2").arg(signalData->messageFrequency()).arg(signalValue);
+  QString signalInfoText = QString("Freq:  %1  Val: %2").arg(QString::number(signalData->messageFrequency(), 'f', 1)).arg(signalValue);
 
   mSignalInfoLabel->setText(signalInfoText);
 }
