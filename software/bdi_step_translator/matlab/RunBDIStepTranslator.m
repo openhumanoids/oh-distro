@@ -1,0 +1,2 @@
+t = BDIStepTranslator();
+t.run();

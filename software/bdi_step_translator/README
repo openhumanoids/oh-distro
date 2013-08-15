@@ -1,0 +1,19 @@
+This is a simple pod designed to translate footstep plans into the Atlas walking parameters used by the BDI walking system. 
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         bdi_step_translator
+Maintainers:  Robin Deits <rdeits@csail.mit.edu>
+Summary:      FILL-ME-IN
+Description:
+  FILL-ME-IN
+
+Requirements: 
+  FILL-ME-IN
+
+License:      FILL-ME-IN

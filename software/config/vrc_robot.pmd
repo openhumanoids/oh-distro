@@ -379,6 +379,10 @@ group "m.dev_tools" {
         exec = "drc-control-hangup";
         host = "robot";
     }
+    cmd "BDIStepTranslator" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; addpath_bdi_step_translator; RunBDIStepTranslator;\"";
+        host = "base";
+    }
 }
 
 # Bare bone grasping

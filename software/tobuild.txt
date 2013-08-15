@@ -46,3 +46,4 @@ control/reactive_navigation_2d
 driving
 ptgrey
 ipwebcam
+bdi_step_translator
