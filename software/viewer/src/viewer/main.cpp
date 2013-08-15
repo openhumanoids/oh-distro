@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
   
-  string config_file = ""; // leave this empty so force viewer to get it from the param server
+  string config_file = "drc_robot.cfg";
   string role = "robot";
   int network_debug = 0; 
   ConciseArgs opt(argc, (char**)argv);
