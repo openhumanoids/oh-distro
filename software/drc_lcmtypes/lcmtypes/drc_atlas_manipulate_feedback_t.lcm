@@ -6,10 +6,7 @@ struct atlas_manipulate_feedback_t
 {
   int32_t status_flags;
 
-  // servo clamp parameters - AtlasBehaviorPelvisServoParams
-  float clamped_pelvis_height;
-  float clamped_pelvis_yaw;
-  float clamped_pelvis_lat;
+  atlas_behavior_pelvis_servo_params_t clamped;
 
   // TODO: add status enums  
 }
