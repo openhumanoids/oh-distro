@@ -25,6 +25,11 @@ gains.ff_qd_d = zeros(nq,1);
 gains.ff_const = zeros(nq,1);
 
 if mode==1 % return torque control gains
+
+  % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  % NOTE: these are the default gains from BDI---they appear to be crap --sk
+  % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   k_f_p = Point(atlas_input_frame);
   
   k_f_p.back_bkz = 0.012;

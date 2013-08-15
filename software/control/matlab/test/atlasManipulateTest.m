@@ -18,7 +18,6 @@ qdes = zeros(nu,1);
 r_elx_idx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_elx')));
 l_elx_idx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_elx')));
 
-% execute knee bend
 toffset=-1;
 q0=zeros(nq,1);
 act_idx = getActuatedJoints(r);
