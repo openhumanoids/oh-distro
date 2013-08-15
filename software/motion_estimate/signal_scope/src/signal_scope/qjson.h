@@ -53,7 +53,7 @@ public:
   static void encodeFile(const QString &filename, const QMap<QString,QVariant> &map)
   {
     QFile file(filename);
-    if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
     {
       qDebug() << "Json::encodeFile: Failed to open file: " << filename;
       return;
