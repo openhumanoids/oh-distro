@@ -1,0 +1,11 @@
+robot coords: +x forward, +y left, +z up
+assuming robot origin is:
+z=0, z axis given by lower x direction pelvis bar
+y=0, symmetry axis of robot
+torso rotation cylinder defines x=0,y=0
+
+centroid of vicon plate on robot pelvis wrt approximate robot origin
+8 cm forward (+x)
+1 cm right (-y)
+6.6 cm up (+z)
+(accurate to approximately +/- 1mm)
