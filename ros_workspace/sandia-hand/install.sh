@@ -1,6 +1,10 @@
-rm -r build
+#!/bin/bash
+
+cd `dirname $0`
+
+rm -rf build
 mkdir build
 cd build
-#echo $PWD/sandia-hand/build
-cmake -DCMAKE_INSTALL_PREFIX=$PWD/build  ../
-make -j8 install
+
+cmake -DCMAKE_INSTALL_PREFIX=$PWD  ../
+make -j6 install
