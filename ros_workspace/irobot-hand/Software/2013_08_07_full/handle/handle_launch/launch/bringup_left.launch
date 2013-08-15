@@ -7,9 +7,9 @@
     <param name="hand_name" value="$(arg left_hand_name)" type="string"/>
     <param name="hand_port" value="3490" type="string"/>
     <param name="hand_udp" value="false" type="bool"/>
-    <remap from="/handle/sensors/raw" to="/left_hand/sensors/raw"/>
-    <remap from="/handle/control" to="/left_hand/control"/>
-    <remap from="/handle/calibrate" to="/left_hand/calibrate"/>
+    <remap from="/handle/sensors/raw" to="/irobot_hands/l_hand/sensors/raw"/>
+    <remap from="/handle/control" to="/irobot_hands/l_hand/control"/>
+    <remap from="/handle/calibrate" to="/irobot_hands/l_hand/calibrate"/>
   </node>
 
 </launch>
