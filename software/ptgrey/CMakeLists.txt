@@ -12,6 +12,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wreturn-type -Wuninitialized
 
 set(REQUIRED_PACKAGES
   flycapture
+  opencv
   bot2-core
   jpeg-utils
   lcm

@@ -2,6 +2,7 @@
 #include <thread>
 #include <chrono>
 
+#include <opencv2/opencv.hpp>
 #include <bot_core/timestamp.h>
 #include <jpeg-utils/jpeg-utils.h>
 #include <lcm/lcm-cpp.hpp>
@@ -15,13 +16,22 @@ int main(const int iArgc, const char** iArgv) {
   std::string channel = "DUMMY_CAMERA_CHANNEL";
   int compressionQuality = 100;
   int frameRate = 0;
+  int rotation = 0;
   int64_t desiredSerial = -1;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(channel, "c", "channel", "output channel");
-  opt.add(compressionQuality, "q", "compression quality");
-  opt.add(frameRate, "f", "frame rate (0=max)");
+  opt.add(compressionQuality, "q", "quality",
+          "compression quality (100=no compression)");
+  opt.add(frameRate, "f", "framerate", "frame rate (0=max)");
+  opt.add(rotation, "r", "rotation", "rotation (0,90,180,270)");
   opt.add(desiredSerial, "s", "serial number");
   opt.parse();
+
+  if ((rotation != 0) && (rotation != 90) &&
+      (rotation != 180) && (rotation != 270)) {
+    std::cout << "error: invalid rotation " << rotation << std::endl;
+    return -1;
+  }
 
   bool shouldCompress = (compressionQuality < 100);
   int periodMs = (frameRate == 0 ? 0 : 1000/frameRate);
@@ -122,20 +132,47 @@ int main(const int iArgc, const char** iArgv) {
       continue;
     }
 
+    // TODO: this can be grabbed from image metadata via GetTimeStamp()
+    int64_t imageTime = bot_timestamp_now();
+
     // convert to rgb
     FlyCapture2::Image rgbImage;
     rawImage.Convert(FlyCapture2::PIXEL_FORMAT_RGB, &rgbImage);
+
+    // convert to opencv
+    cv::Mat cvImage(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC1,
+                    rgbImage.GetData(), rgbImage.GetStride());
        
+    // rotate
+    switch (rotation) {
+    case 0:
+      break;
+    case 90:
+      cv::transpose(cvImage, cvImage);
+      cv::flip(cvImage, cvImage, 1);
+      break;
+    case 180:
+      cv::flip(cvImage, cvImage, -1);
+      break;
+    case 270:
+      cv::transpose(cvImage, cvImage);
+      cv::flip(cvImage, cvImage, 0);
+      break;
+    default:
+      std::cout << "error: cannot rotate by " << rotation << std::endl;
+      break;
+    }
+
     // convert to libbot image type
     bot_core::image_t msg;
-    msg.utime = bot_timestamp_now();
-    msg.width = rgbImage.GetCols();
-    msg.height = rgbImage.GetRows();
-    msg.row_stride = rgbImage.GetStride();
+    msg.utime = imageTime;
+    msg.width = cvImage.cols;
+    msg.height = cvImage.rows;
+    msg.row_stride = cvImage.step;
     msg.nmetadata = 0;
 
     // compress if necessary
-    uint8_t* data = rgbImage.GetData();
+    uint8_t* data = cvImage.data;
     msg.size = msg.height*msg.row_stride;
     if (shouldCompress) {
       std::vector<uint8_t> dest(msg.height*msg.row_stride);

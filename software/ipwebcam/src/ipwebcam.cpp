@@ -15,15 +15,24 @@ int main(const int iArgc, const char** iArgv) {
   std::string channel = "DUMMY_CAMERA_CHANNEL";
   int compressionQuality = 100;
   int frameRate = 0;
+  int rotation = 0;
   std::string url = "http://admin:@10.0.0.100/video2.mjpg";
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(channel, "c", "channel", "output channel");
   opt.add(url, "u", "url", "camera url");
-  opt.add(compressionQuality, "q", "compression quality");
-  opt.add(frameRate, "f", "frame rate (0=max)");
+  opt.add(compressionQuality, "q", "quality",
+          "compression quality (100=no compression)");
+  opt.add(frameRate, "f", "framerate", "frame rate (0=max)");
+  opt.add(rotation, "r", "rotation", "rotation (0,90,180,270)");
   opt.parse();
 
-  // TODO: can modify compression and grab stream directly
+  if ((rotation != 0) && (rotation != 90) &&
+      (rotation != 180) && (rotation != 270)) {
+    std::cout << "error: invalid rotation " << rotation << std::endl;
+    return -1;
+  }
+
+  // TODO: could grab stream directly rather than re-compressing
 
   bool shouldCompress = (compressionQuality < 100);
   int periodMs = (frameRate == 0 ? 0 : 1000/frameRate);
@@ -53,12 +62,37 @@ int main(const int iArgc, const char** iArgv) {
       continue;
     }
 
+    // TODO: can this be grabbed from image metadata?
+    int64_t imageTime = bot_timestamp_now();
+
     // convert to rgb
-    cv::cvtColor(image, rgbImage, CV_BGR2RGB);
+    if (image.channels() == 3) {
+      cv::cvtColor(image, rgbImage, CV_BGR2RGB);
+    }
+
+    // rotate
+    switch (rotation) {
+    case 0:
+      break;
+    case 90:
+      cv::transpose(rgbImage, rgbImage);
+      cv::flip(rgbImage, rgbImage, 1);
+      break;
+    case 180:
+      cv::flip(rgbImage, rgbImage, -1);
+      break;
+    case 270:
+      cv::transpose(rgbImage, rgbImage);
+      cv::flip(rgbImage, rgbImage, 0);
+      break;
+    default:
+      std::cout << "error: cannot rotate by " << rotation << std::endl;
+      break;
+    }
 
     // convert to libbot image type
     bot_core::image_t msg;
-    msg.utime = bot_timestamp_now();
+    msg.utime = imageTime;
     msg.width = rgbImage.cols;
     msg.height = rgbImage.rows;
     msg.row_stride = rgbImage.step;
