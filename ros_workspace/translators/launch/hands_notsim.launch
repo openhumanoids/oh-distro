@@ -1,0 +1,4 @@
+<launch>
+   <node name="ros2lcm_hands" pkg="translators" type="ros2lcm_hands" /> 
+</launch>
+
