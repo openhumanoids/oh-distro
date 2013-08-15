@@ -339,7 +339,7 @@ void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   
-  drc::sandia_state_t msg_out;
+  drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
     msg_out.joint_name.push_back(msg->name[i]);      
@@ -356,7 +356,7 @@ void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 
 void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 
-  drc::sandia_state_t msg_out;
+  drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
     msg_out.joint_name.push_back(msg->name[i]);      

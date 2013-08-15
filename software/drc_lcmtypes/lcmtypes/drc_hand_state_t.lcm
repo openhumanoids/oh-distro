@@ -1,10 +1,10 @@
 package drc;
 
-// State of the sandia hand component
+// State of the sandia/irobot hand components
 // NB: the joint_type fields are derived from drc_state_t
 //     pull all changes from there
 
-struct sandia_state_t
+struct hand_state_t
 {
   int64_t utime;
 

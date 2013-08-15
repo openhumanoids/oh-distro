@@ -13,10 +13,13 @@ using namespace std;
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, bool spoof_motion_estimation_):
    lcm_(lcm_), standalone_head_(standalone_head_),
+   is_sandia_left_(false),is_sandia_right_(false),	
    spoof_motion_estimation_(spoof_motion_estimation_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
   lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
+  lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::irobotLeftHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::irobotRightHandler,this);  
   lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
 }
 
@@ -35,7 +38,8 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
 }
 
-void state_sync::sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg){
+void state_sync::sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  is_sandia_left_ = true;
   //std::cout << "got sandiaLeftHandler\n";
   sandia_left_joints_.name = msg->joint_name;
   sandia_left_joints_.position = msg->joint_position;
@@ -43,12 +47,29 @@ void state_sync::sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   sandia_left_joints_.effort = msg->joint_effort;
 }
 
-void state_sync::sandiaRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::sandia_state_t* msg){
+void state_sync::sandiaRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  is_sandia_right_ = true;
   //std::cout << "got sandiaRightHandler\n";
   sandia_right_joints_.name = msg->joint_name;
   sandia_right_joints_.position = msg->joint_position;
   sandia_right_joints_.velocity = msg->joint_velocity;
   sandia_right_joints_.effort = msg->joint_effort;
+}
+
+void state_sync::irobotLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  //std::cout << "got sandiaLeftHandler\n";
+  irobot_left_joints_.name = msg->joint_name;
+  irobot_left_joints_.position = msg->joint_position;
+  irobot_left_joints_.velocity = msg->joint_velocity;
+  irobot_left_joints_.effort = msg->joint_effort;
+}
+
+void state_sync::irobotRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  //std::cout << "got sandiaRightHandler\n";
+  irobot_right_joints_.name = msg->joint_name;
+  irobot_right_joints_.position = msg->joint_position;
+  irobot_right_joints_.velocity = msg->joint_velocity;
+  irobot_right_joints_.effort = msg->joint_effort;
 }
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
@@ -87,8 +108,17 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   // Joint States:
   appendJoints(robot_state_msg, atlas_joints_);
   appendJoints(robot_state_msg, head_joints_);
-  appendJoints(robot_state_msg, sandia_left_joints_);
-  appendJoints(robot_state_msg, sandia_right_joints_);
+  
+  if(is_sandia_left_)
+    appendJoints(robot_state_msg, sandia_left_joints_);
+  else
+    appendJoints(robot_state_msg, irobot_left_joints_);
+  
+  if(is_sandia_right_)
+    appendJoints(robot_state_msg, sandia_right_joints_);
+  else
+    appendJoints(robot_state_msg, irobot_right_joints_);  
+
   //std::cout << robot_state_msg.joint_name.size() << " Number of Joints\n";
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
