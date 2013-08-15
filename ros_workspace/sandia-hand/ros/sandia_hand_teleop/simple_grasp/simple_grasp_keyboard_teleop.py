@@ -109,8 +109,8 @@ if __name__ == '__main__':
   pygame.display.flip()
   print_usage()
   rospy.init_node("simple_grasp_keyboard_teleop")
-  g_left_grasp_pub = rospy.Publisher("left_hand/simple_grasp", SimpleGrasp)
-  g_right_grasp_pub = rospy.Publisher("right_hand/simple_grasp", SimpleGrasp)
+  g_left_grasp_pub = rospy.Publisher("sandia_hands/l_hand/simple_grasp", SimpleGrasp)
+  g_right_grasp_pub = rospy.Publisher("sandia_hands/r_hand/simple_grasp", SimpleGrasp)
   rate = rospy.Rate(100.0) # todo: something smarter
   done = False
   while not done and not rospy.is_shutdown():
