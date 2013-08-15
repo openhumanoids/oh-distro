@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
   
-  string config_file = "drc_robot.cfg";
+  string config_file = "";
   string role = "robot";
   int network_debug = 0; 
   ConciseArgs opt(argc, (char**)argv);
