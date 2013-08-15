@@ -15,9 +15,14 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       elseif (mode==4) dim=3*nq;
       end
       
+      input_names = r.getInputFrame().coordinates;
+      input_names = regexprep(input_names,'_motor',''); % remove motor suffix
+      input_frame = getInputFrame(r);
+      input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
+      
       if nargin<3 % controlling robot
         warning('AtlasPositionRef: USING ATLAS GAINS')
-        gains = getAtlasGains(r,mode);
+        gains = getAtlasGains(input_frame,mode);
       else
         warning('AtlasPositionRef: USING SIMULATION GAINS')
         typecheck(gains_id,'char');
@@ -37,8 +42,6 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',dim,'x');
       obj = obj@Singleton(['AtlasPositionRef_sendmode=',num2str(mode)]);
       if isempty(obj.lcmcoder)
-        input_names = r.getInputFrame().coordinates;
-        input_names = regexprep(input_names,'_motor',''); % remove motor suffix
       
         coder = drc.control.AtlasCommandCoder(input_names,2,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);

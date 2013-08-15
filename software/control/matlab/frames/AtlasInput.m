@@ -10,8 +10,11 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
         input_names = r.getInputFrame().coordinates;
         input_names = regexprep(input_names,'_motor',''); % remove motor suffix
         
+        input_frame = getInputFrame(r);
+        input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
+
         mode = 1;
-        gains = getAtlasGains(r,mode);
+        gains = getAtlasGains(input_frame,mode);
         
         coder = drc.control.AtlasCommandCoder(input_names,mode,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);

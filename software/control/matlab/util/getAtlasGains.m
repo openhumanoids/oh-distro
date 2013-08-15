@@ -1,4 +1,4 @@
-function gains = getAtlasGains(r, mode)
+function gains = getAtlasGains(atlas_input_frame, mode)
 %GETATLASGAINS Returns default Atlas control gains
 
 % mode==1: torque 
@@ -9,9 +9,8 @@ if mode < 1 || mode > 2
 end
 
 nq = 28; % fixed number
-input_frame = getInputFrame(r);
 
-if input_frame.dim ~= nq
+if atlas_input_frame.dim ~= nq
   error('joint_names has incorrect number of elements.');
 end
 
@@ -26,84 +25,84 @@ gains.ff_qd_d = zeros(nq,1);
 gains.ff_const = zeros(nq,1);
 
 if mode==1 % return torque control gains
-  k_f_p = Point(input_frame);
+  k_f_p = Point(atlas_input_frame);
   
-  k_f_p.back_bkz_motor = 0.012;
-  k_f_p.back_bky_motor = 0.012;
-  k_f_p.back_bkx_motor = 0.012;
+  k_f_p.back_bkz = 0.012;
+  k_f_p.back_bky = 0.012;
+  k_f_p.back_bkx = 0.012;
   
-  k_f_p.neck_ay_motor = 0.012;
+  k_f_p.neck_ay = 0.012;
 
-  k_f_p.l_leg_hpz_motor = 0.012;
-  k_f_p.l_leg_hpx_motor = 0.012;
-  k_f_p.l_leg_hpy_motor = 0.012;
-  k_f_p.l_leg_kny_motor = 0.012;
-  k_f_p.l_leg_aky_motor = 1.4;
-  k_f_p.l_leg_akx_motor = 1.4;
+  k_f_p.l_leg_hpz = 0.012;
+  k_f_p.l_leg_hpx = 0.012;
+  k_f_p.l_leg_hpy = 0.012;
+  k_f_p.l_leg_kny = 0.012;
+  k_f_p.l_leg_aky = 1.4;
+  k_f_p.l_leg_akx = 1.4;
   
   % mirror left/right (note, this could potentially change)
-  k_f_p.r_leg_hpz_motor = k_f_p.l_leg_hpz_motor;
-  k_f_p.r_leg_hpx_motor = k_f_p.l_leg_hpx_motor;
-  k_f_p.r_leg_hpy_motor = k_f_p.l_leg_hpy_motor;
-  k_f_p.r_leg_kny_motor = k_f_p.l_leg_kny_motor;
-  k_f_p.r_leg_aky_motor = k_f_p.l_leg_aky_motor;
-  k_f_p.r_leg_akx_motor = k_f_p.l_leg_akx_motor;
+  k_f_p.r_leg_hpz = k_f_p.l_leg_hpz;
+  k_f_p.r_leg_hpx = k_f_p.l_leg_hpx;
+  k_f_p.r_leg_hpy = k_f_p.l_leg_hpy;
+  k_f_p.r_leg_kny = k_f_p.l_leg_kny;
+  k_f_p.r_leg_aky = k_f_p.l_leg_aky;
+  k_f_p.r_leg_akx = k_f_p.l_leg_akx;
 
-  k_f_p.l_arm_usy_motor = 0.012;
-  k_f_p.l_arm_shx_motor = 0.012;
-  k_f_p.l_arm_ely_motor = 0.012;
-  k_f_p.l_arm_elx_motor = 0.012;
-  k_f_p.l_arm_uwy_motor = 0.012;
-  k_f_p.l_arm_mwx_motor = 0.012;
+  k_f_p.l_arm_usy = 0.012;
+  k_f_p.l_arm_shx = 0.012;
+  k_f_p.l_arm_ely = 0.012;
+  k_f_p.l_arm_elx = 0.012;
+  k_f_p.l_arm_uwy = 0.012;
+  k_f_p.l_arm_mwx = 0.012;
 
   % mirror left/right (note, this could potentially change)
-  k_f_p.r_arm_usy_motor = k_f_p.l_arm_usy_motor;
-  k_f_p.r_arm_shx_motor = k_f_p.l_arm_shx_motor;
-  k_f_p.r_arm_ely_motor = k_f_p.l_arm_ely_motor;
-  k_f_p.r_arm_elx_motor = k_f_p.l_arm_elx_motor;
-  k_f_p.r_arm_uwy_motor = k_f_p.l_arm_uwy_motor;
-  k_f_p.r_arm_mwx_motor = k_f_p.l_arm_mwx_motor;
+  k_f_p.r_arm_usy = k_f_p.l_arm_usy;
+  k_f_p.r_arm_shx = k_f_p.l_arm_shx;
+  k_f_p.r_arm_ely = k_f_p.l_arm_ely;
+  k_f_p.r_arm_elx = k_f_p.l_arm_elx;
+  k_f_p.r_arm_uwy = k_f_p.l_arm_uwy;
+  k_f_p.r_arm_mwx = k_f_p.l_arm_mwx;
 
-  gains.k_f_p_motor = double(k_f_p);
+  gains.k_f_p = double(k_f_p);
   
 elseif mode==2 % return position control gains
-  k_q_p = Point(input_frame);
+  k_q_p = Point(atlas_input_frame);
   
-  k_q_p.back_bkz_motor = 15.0;
-  k_q_p.back_bky_motor = 60.0;
-  k_q_p.back_bkx_motor = 60.0;
+  k_q_p.back_bkz = 15.0;
+  k_q_p.back_bky = 60.0;
+  k_q_p.back_bkx = 60.0;
   
-  k_q_p.neck_ay_motor = 5.0;
+  k_q_p.neck_ay = 5.0;
 
-  k_q_p.l_leg_hpz_motor = 45.0;
-  k_q_p.l_leg_hpx_motor = 30.0;
-  k_q_p.l_leg_hpy_motor = 60.0;
-  k_q_p.l_leg_kny_motor = 60.0;
-  k_q_p.l_leg_aky_motor = 2000.0;
-  k_q_p.l_leg_akx_motor = 2000.0;
+  k_q_p.l_leg_hpz = 45.0;
+  k_q_p.l_leg_hpx = 30.0;
+  k_q_p.l_leg_hpy = 60.0;
+  k_q_p.l_leg_kny = 60.0;
+  k_q_p.l_leg_aky = 2000.0;
+  k_q_p.l_leg_akx = 2000.0;
   
   % mirror left/right (note, this could potentially change)
-  k_q_p.r_leg_hpz_motor = k_q_p.l_leg_hpz_motor;
-  k_q_p.r_leg_hpx_motor = k_q_p.l_leg_hpx_motor;
-  k_q_p.r_leg_hpy_motor = k_q_p.l_leg_hpy_motor;
-  k_q_p.r_leg_kny_motor = k_q_p.l_leg_kny_motor;
-  k_q_p.r_leg_aky_motor = k_q_p.l_leg_aky_motor;
-  k_q_p.r_leg_akx_motor = k_q_p.l_leg_akx_motor;
+  k_q_p.r_leg_hpz = k_q_p.l_leg_hpz;
+  k_q_p.r_leg_hpx = k_q_p.l_leg_hpx;
+  k_q_p.r_leg_hpy = k_q_p.l_leg_hpy;
+  k_q_p.r_leg_kny = k_q_p.l_leg_kny;
+  k_q_p.r_leg_aky = k_q_p.l_leg_aky;
+  k_q_p.r_leg_akx = k_q_p.l_leg_akx;
 
-  k_q_p.l_arm_usy_motor = 4.0;
-  k_q_p.l_arm_shx_motor = 4.0;
-  k_q_p.l_arm_ely_motor = 4.0;
-  k_q_p.l_arm_elx_motor = 4.0;
-  k_q_p.l_arm_uwy_motor = 4.0;
-  k_q_p.l_arm_mwx_motor = 4.0;
+  k_q_p.l_arm_usy = 4.0;
+  k_q_p.l_arm_shx = 4.0;
+  k_q_p.l_arm_ely = 4.0;
+  k_q_p.l_arm_elx = 4.0;
+  k_q_p.l_arm_uwy = 4.0;
+  k_q_p.l_arm_mwx = 4.0;
 
   % mirror left/right (note, this could potentially change)
-  k_q_p.r_arm_usy_motor = k_q_p.l_arm_usy_motor;
-  k_q_p.r_arm_shx_motor = k_q_p.l_arm_shx_motor;
-  k_q_p.r_arm_ely_motor = k_q_p.l_arm_ely_motor;
-  k_q_p.r_arm_elx_motor = k_q_p.l_arm_elx_motor;
-  k_q_p.r_arm_uwy_motor = k_q_p.l_arm_uwy_motor;
-  k_q_p.r_arm_mwx_motor = k_q_p.l_arm_mwx_motor;
+  k_q_p.r_arm_usy = k_q_p.l_arm_usy;
+  k_q_p.r_arm_shx = k_q_p.l_arm_shx;
+  k_q_p.r_arm_ely = k_q_p.l_arm_ely;
+  k_q_p.r_arm_elx = k_q_p.l_arm_elx;
+  k_q_p.r_arm_uwy = k_q_p.l_arm_uwy;
+  k_q_p.r_arm_mwx = k_q_p.l_arm_mwx;
 
   gains.k_q_p = double(k_q_p);
 
