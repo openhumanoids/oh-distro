@@ -6,28 +6,12 @@ import lcm.lcm.*;
 
 public class AtlasCommandCoder implements drake.util.LCMCoder 
 {
-  final int m_num_joints = 28;
+  final int m_num_joints = 28; // hard coded --- should match Atlas::NUM_JOINTS in BDI API
   int[] drake_to_atlas_joint_map;
   
-  // String[] joint_names;
-  // double[] k_q_p;
-  // double[] k_q_i;
-  // double[] k_qd_p;
-  // double[] k_f_p;
-  // double[] ff_qd;
-  // double[] ff_qd_d;
-  // double[] ff_f_d;
-  // double[] ff_const;
-
   drc.atlas_command_t msg;
-
-  int mode; 
-  // mode==1: torque-only, 
-  // mode==2: position-only, fixed gains
-  // mode==3: position and velocity, fixed gains
-  // mode==4: position, velocity, torque, fixed pd gains
   
-  public AtlasCommandCoder(String[] joint_names, int send_mode, double[] k_q_p, double[] k_q_i,
+  public AtlasCommandCoder(String[] joint_names, double[] k_q_p, double[] k_q_i,
     double[] k_qd_p, double[] k_f_p, double[] ff_qd, double[] ff_qd_d, double[] ff_f_d,
     double[] ff_const) throws Exception {
 
@@ -49,10 +33,6 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
       throw new Exception("Length of ff_f_d must be " + m_num_joints);
     if (ff_const.length != m_num_joints)
       throw new Exception("Length of ff_const must be " + m_num_joints);
-    if (send_mode < 1 || send_mode > 4)
-      throw new Exception("send_mode must be between 1 and 4. See AtlasCommandCoder comments for mode spec.");
-
-    mode = send_mode;
 
     // fixed ordering assumed by drcsim interface AND atlas api 
     // see: AtlasControlTypes.h 
@@ -120,33 +100,57 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
 
       msg.joint_names[drake_to_atlas_joint_map[i]] = joint_names[i];
       
-      msg.k_q_p[drake_to_atlas_joint_map[i]] = k_q_p[i];
-      msg.k_q_i[drake_to_atlas_joint_map[i]] = k_q_i[i];;
-      msg.k_qd_p[drake_to_atlas_joint_map[i]] = k_qd_p[i];;
-      msg.k_f_p[drake_to_atlas_joint_map[i]] = k_f_p[i];;
-      msg.ff_qd[drake_to_atlas_joint_map[i]] = ff_qd[i];;
-      msg.ff_qd_d[drake_to_atlas_joint_map[i]] = ff_qd_d[i];;
-      msg.ff_f_d[drake_to_atlas_joint_map[i]] = ff_f_d[i];;
-      msg.ff_const[drake_to_atlas_joint_map[i]] = ff_const[i];;
+      k_q_p[drake_to_atlas_joint_map[i]] = k_q_p[i];
+      msg.k_q_i[drake_to_atlas_joint_map[i]] = k_q_i[i];
+      msg.k_qd_p[drake_to_atlas_joint_map[i]] = k_qd_p[i];
+      msg.k_f_p[drake_to_atlas_joint_map[i]] = k_f_p[i];
+      msg.ff_qd[drake_to_atlas_joint_map[i]] = ff_qd[i];
+      msg.ff_qd_d[drake_to_atlas_joint_map[i]] = ff_qd_d[i];
+      msg.ff_f_d[drake_to_atlas_joint_map[i]] = ff_f_d[i];
+      msg.ff_const[drake_to_atlas_joint_map[i]] = ff_const[i];
 
       msg.k_effort[i] = (byte)255; // take complete control of joints (remove BDI control), sim only
     }
   }
 
-  public int dim()
-  {
-  	if (mode==1 || mode==2)
-  		return m_num_joints;
-  	else if (mode==3)
-  		return 2*m_num_joints;
-  	else if (mode==4)
-  		return 3*m_num_joints;
-  	else
-  		return -1;
+
+  public void updateGains(double[] k_q_p, double[] k_q_i,double[] k_qd_p, double[] k_f_p, 
+      double[] ff_qd, double[] ff_qd_d, double[] ff_f_d, double[] ff_const) throws Exception {
+
+    if (k_q_p.length != m_num_joints)
+      throw new Exception("Length of k_q_p must be " + m_num_joints);
+    if (k_q_i.length != m_num_joints)
+      throw new Exception("Length of k_q_i must be " + m_num_joints);
+    if (k_qd_p.length != m_num_joints)
+      throw new Exception("Length of k_qd_p must be " + m_num_joints);
+    if (k_f_p.length != m_num_joints)
+      throw new Exception("Length of k_f_p must be " + m_num_joints);
+    if (ff_qd.length != m_num_joints)
+      throw new Exception("Length of ff_qd must be " + m_num_joints);
+    if (ff_qd_d.length != m_num_joints)
+      throw new Exception("Length of ff_qd_d must be " + m_num_joints);
+    if (ff_f_d.length != m_num_joints)
+      throw new Exception("Length of ff_f_d must be " + m_num_joints);
+    if (ff_const.length != m_num_joints)
+      throw new Exception("Length of ff_const must be " + m_num_joints);
+    
+    for (int i=0; i<m_num_joints; i++) {
+      msg.k_q_p[drake_to_atlas_joint_map[i]] = k_q_p[i];
+      msg.k_q_i[drake_to_atlas_joint_map[i]] = k_q_i[i];
+      msg.k_qd_p[drake_to_atlas_joint_map[i]] = k_qd_p[i];
+      msg.k_f_p[drake_to_atlas_joint_map[i]] = k_f_p[i];
+      msg.ff_qd[drake_to_atlas_joint_map[i]] = ff_qd[i];
+      msg.ff_qd_d[drake_to_atlas_joint_map[i]] = ff_qd_d[i];
+      msg.ff_f_d[drake_to_atlas_joint_map[i]] = ff_f_d[i];
+      msg.ff_const[drake_to_atlas_joint_map[i]] = ff_const[i];
+    }
   }
 
-  public drake.util.CoordinateFrameData decode(byte[] data)
-  {
+  public int dim() {
+ 		return 3*m_num_joints;
+  }
+
+  public drake.util.CoordinateFrameData decode(byte[] data) {
     try {
       drc.atlas_command_t msg = new drc.atlas_command_t(data);
       return decode(msg);
@@ -156,75 +160,35 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     return null;
   }
   
-  public drake.util.CoordinateFrameData decode(drc.atlas_command_t msg)
-  { 
+  public drake.util.CoordinateFrameData decode(drc.atlas_command_t msg) { 
     drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
 
-    switch(mode) {
-      case 1:
-      case 2:
-        fdata.val = new double[m_num_joints];
-        break;                
-      case 3:
-        fdata.val = new double[2*m_num_joints];
-        break;        
-      case 4:
-        fdata.val = new double[3*m_num_joints];
-        break;        
-      default:
-      throw new IllegalStateException("Unknown mode: " + mode);    
-    }
-
+    fdata.val = new double[3*m_num_joints];
     fdata.t = (double)msg.utime / 1000000.0;
 
     int j;
     for (int i=0; i<m_num_joints; i++) {
       j = drake_to_atlas_joint_map[i];
-      switch(mode) {
-      case 1:
-        fdata.val[i] = msg.effort[j];
-        break;
-      case 2:
-        fdata.val[i] = msg.position[j];
-        break;
-      case 3:
-        fdata.val[i] = msg.position[j];
-        fdata.val[m_num_joints+i] = msg.velocity[j];
-        break;
-      case 4:
-        fdata.val[i] = msg.position[j];
-        fdata.val[m_num_joints+i] = msg.velocity[j];
-      	fdata.val[2*m_num_joints+i] = msg.effort[j];
-        break;
-      }
+      fdata.val[i] = msg.position[j];
+      fdata.val[m_num_joints+i] = msg.velocity[j];
+    	fdata.val[2*m_num_joints+i] = msg.effort[j];
     }
     return fdata;
   }
 
-  public LCMEncodable encode(drake.util.CoordinateFrameData d)
-  {
+  public LCMEncodable encode(drake.util.CoordinateFrameData d) {
     msg.utime = (long)(d.t*1000000);
     int j;
     for (int i=0; i<m_num_joints; i++) {
       j = drake_to_atlas_joint_map[i];
-      if (mode==1) {
-        msg.effort[j] = d.val[i];
-      } else if (mode==2) {
-        msg.position[j] = d.val[i];
-      } else if (mode==3) {
-        msg.position[j] = d.val[i];
-        msg.velocity[j] = d.val[m_num_joints+i];
-      } else if (mode==4) {
-      	msg.position[j] = d.val[i];
-      	msg.velocity[j] = d.val[m_num_joints+i];
-      	msg.effort[j] = d.val[2*m_num_joints+i];
-      }        
-    }
+    	msg.position[j] = d.val[i];
+    	msg.velocity[j] = d.val[m_num_joints+i];
+    	msg.effort[j] = d.val[2*m_num_joints+i];
+    }        
     return msg;
   }
 
-  public String timestampName()
-  {
+  public String timestampName() {
     return "utime";
   }
 }

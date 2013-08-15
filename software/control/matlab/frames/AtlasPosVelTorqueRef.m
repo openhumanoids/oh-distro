@@ -4,18 +4,20 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrameWCoder & Singleton
     function obj=AtlasPosVelTorqueRef(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasInput',r.getNumInputs(),'x');
+      nu = getNumInputs(r);
+      dim = 3*nu;
+      
+      obj = obj@LCMCoordinateFrameWCoder('AtlasPosVelTorqueRef',dim,'x');
       obj = obj@Singleton();
       
       input_names = r.getInputFrame().coordinates;
       input_names = regexprep(input_names,'_motor',''); % remove motor suffix
-      
       input_frame = getInputFrame(r);
       input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
       
       gains = getAtlasGains(input_frame);
       
-      coder = drc.control.AtlasCommandCoder(input_names,mode,gains.k_q_p,gains.k_q_i,...
+      coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
         gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
       obj = setLCMCoder(obj,JLCMCoder(coder));
       
@@ -27,7 +29,7 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrameWCoder & Singleton
       obj.setDefaultChannel('ATLAS_COMMAND');
       
       if (obj.mex_ptr==0)
-        obj.mex_ptr = AtlasCommandPublisher(input_names,mode,gains.k_q_p,gains.k_q_i,...
+        obj.mex_ptr = AtlasCommandPublisher(input_names,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
         obj = setLCMCoder(obj,JLCMCoder(coder));
       end
@@ -41,6 +43,21 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrameWCoder & Singleton
     function delete(obj)
       AtlasCommandPublisher(obj.mex_ptr);
     end
+    
+    function updateGains(obj,gains)
+      assert(isfield(gains,'k_q_p'));
+      assert(isfield(gains,'k_q_i'));
+      assert(isfield(gains,'k_qd_p'));
+      assert(isfield(gains,'k_f_p'));
+      assert(isfield(gains,'ff_qd'));
+      assert(isfield(gains,'ff_qd_d'));
+      assert(isfield(gains,'ff_f_d'));
+      assert(isfield(gains,'ff_const'));
+      
+      obj.mex_ptr = AtlasCommandPublisher(obj.mex_ptr,gains.k_q_p,gains.k_q_i,...
+          gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
+    end
+    
   end
   
   properties

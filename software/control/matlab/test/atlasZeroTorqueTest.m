@@ -19,6 +19,7 @@ while 1
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
     % do zero torque control
+
     input_frame.publish(t,u,'ATLAS_COMMAND');
   end
 end
