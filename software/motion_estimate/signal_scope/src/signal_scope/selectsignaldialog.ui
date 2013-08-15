@@ -36,9 +36,9 @@
     </widget>
    </item>
    <item row="0" column="3">
-    <widget class="QLabel" name="JointNameLabel">
+    <widget class="QLabel" name="ArrayKeysLabel">
      <property name="text">
-      <string>Joint Name</string>
+      <string>Array Keys</string>
      </property>
     </widget>
    </item>
@@ -62,7 +62,13 @@
     <widget class="QListWidget" name="MessageFieldListBox"/>
    </item>
    <item row="1" column="3">
-    <widget class="QListWidget" name="JointNameListBox"/>
+    <widget class="QWidget" name="ArrayKeysContainer" native="true">
+     <layout class="QVBoxLayout" name="ArrayKeysLayout">
+      <property name="margin">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

@@ -37,6 +37,7 @@ public slots:
 
   void onSignalListItemChanged(QListWidgetItem* item);
   void updateSignalInfoLabel();
+  void onResetYAxisScale();
 
 signals:
 

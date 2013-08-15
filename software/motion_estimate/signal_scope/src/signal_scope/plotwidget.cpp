@@ -18,6 +18,7 @@
 #include <QDialogButtonBox>
 #include <QListWidget>
 #include <QTimer>
+#include <QPushButton>
 
 #include <tr1/cmath>
 
@@ -43,12 +44,16 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   QDoubleSpinBox* yScaleSpin = new QDoubleSpinBox;
   yScaleSpin->setSingleStep(0.1);
 
+
   QVBoxLayout* vLayout1 = new QVBoxLayout();
+
+
+  QPushButton* resetYScaleButton = new QPushButton("Reset Y scale");
+  vLayout1->addWidget(resetYScaleButton);
+
+
   vLayout1->addWidget(timeWindowSpin);
   vLayout1->addWidget(new QLabel("Time Window [s]"));
-  vLayout1->addWidget(yScaleSpin);
-  vLayout1->addWidget(new QLabel("Y Scale [+/-]"));
-
 
   mSignalListWidget = new QListWidget(this);
   vLayout1->addWidget(mSignalListWidget);
@@ -67,9 +72,9 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
           d_plot, SLOT(setTimeWindow(double)));
   timeWindowSpin->setValue(10.0);
 
-  connect(yScaleSpin, SIGNAL(valueChanged(double)),
-          d_plot, SLOT(setYScale(double)));
-  yScaleSpin->setValue(10.0);
+  //connect(yScaleSpin, SIGNAL(valueChanged(double)),
+  //        d_plot, SLOT(setYScale(double)));
+  //yScaleSpin->setValue(10.0);
 
   this->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -97,6 +102,8 @@ void PlotWidget::onShowContextMenu(const QPoint& pos)
 
   QMenu myMenu;
   myMenu.addAction("Add signal");
+  myMenu.addSeparator();
+  myMenu.addAction("Reset Y axis scale");
   myMenu.addAction("Set Y axis scale");
   myMenu.addSeparator();
   myMenu.addAction("Remove plot");
@@ -116,6 +123,10 @@ void PlotWidget::onShowContextMenu(const QPoint& pos)
   else if (selectedAction == "Add signal")
   {
     emit this->addSignalRequested(this);
+  }
+  else if (selectedAction == "Reset Y axis scale")
+  {
+    this->onResetYAxisScale();
   }
   else if (selectedAction == "Set Y axis scale")
   {
@@ -196,6 +207,11 @@ void PlotWidget::updateSignalInfoLabel()
   QString signalInfoText = QString("Freq:  %1  Val: %2").arg(signalData->messageFrequency()).arg(signalValue);
 
   mSignalInfoLabel->setText(signalInfoText);
+}
+
+void PlotWidget::onResetYAxisScale()
+{
+
 }
 
 void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)

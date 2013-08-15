@@ -62,6 +62,7 @@ public:
     void registerClass()
     {
       mConstructors[T::messageType()][T::fieldName()] = &constructorHelper<T>;
+      mValidArrayKeys[T::messageType()][T::fieldName()] = T::validArrayKeys();
     }
 
     SignalHandler* createHandler(SignalDescription* desc) const;
@@ -70,6 +71,7 @@ public:
 
     QList<QString> messageTypes() { return mConstructors.keys(); }
     QList<QString> fieldNames(const QString& messageType) { return mConstructors.value(messageType).keys(); }
+    const QList<QList<QString> >& validArrayKeys(const QString& messageType, const QString& fieldName) { return mValidArrayKeys[messageType][fieldName]; }
 
 private:
   typedef SignalHandler* (*Constructor)(SignalDescription* desc);
@@ -81,6 +83,7 @@ private:
   }
 
   QHash<QString, QHash<QString, Constructor> > mConstructors;
+  QHash<QString, QHash<QString, QList<QList<QString> >  > > mValidArrayKeys;
 };
 
 
@@ -93,6 +96,7 @@ public: \
   virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue); \
   static QString messageType(); \
   static QString fieldName(); \
+  static QList<QList<QString> > validArrayKeys(); \
   virtual QString description(); \
 protected: \
   int mArrayIndex; \

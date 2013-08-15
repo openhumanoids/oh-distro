@@ -6,7 +6,8 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
-#include <lcmtypes/scanmatch.hpp>
+#include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/vicon.hpp>
 
 #include <cassert>
 
@@ -55,23 +56,48 @@ namespace
     return ArrayIndexFromKey(keys[keyIndex]);
   }
 
+  QList<QString> createIndexList(int size)
+  {
+    QList<QString> indexList;
+    for (int i = 0; i < size; ++i)
+    {
+      indexList << QString::number(i);
+    }
+    return indexList;
+  }
+
   int64_t timeOffset = 0;
   // #define timeOffset 1376452800000000  // start of August 14th in microseconds
 }
 
 
 
-
+//-----------------------------------------------------------------------------
 #define compute_time_now \
   if (timeOffset == 0) timeOffset = msg.utime; \
   timeNow = (msg.utime - timeOffset)/1000000.0;
 
-#define define_array_handler(className, _messageType, _fieldName) \
+
+#define default_array_keys_function(className) \
+  QList<QList<QString> > className::validArrayKeys() \
+  { \
+    return QList<QList<QString> >(); \
+  }
+
+
+//-----------------------------------------------------------------------------
+#define define_array_handler(className, _messageType, _fieldName, _arrayKeyFunction) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) \
 { \
    mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
    mArrayKey = desc->mArrayKeys[0]; \
+} \
+QList<QList<QString> > className::validArrayKeys() \
+{ \
+  QList<QList<QString> > arrayKeys; \
+  arrayKeys << _arrayKeyFunction; \
+  return arrayKeys; \
 } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
@@ -89,7 +115,8 @@ QString className::fieldName() { return #_fieldName ; } \
 QString className::description() { return QString("%1.%2[%3]").arg(this->messageType()).arg(this->fieldName()).arg(this->mArrayKey); }
 
 
-#define define_array_array_handler(className, _messageType, _fieldName1, _fieldName2) \
+//-----------------------------------------------------------------------------
+#define define_array_array_handler(className, _messageType, _fieldName1, _fieldName2, _arrayKeyFunction1, _arrayKeyFunction2) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) \
 { \
@@ -97,6 +124,12 @@ className::className(SignalDescription* desc) : SignalHandler(desc) \
    mArrayIndex2 = ArrayIndexFromKeys(desc->mArrayKeys, 1); \
    mArrayKey = desc->mArrayKeys[0]; \
    mArrayKey2 = desc->mArrayKeys[1]; \
+} \
+QList<QList<QString> > className::validArrayKeys() \
+{ \
+  QList<QList<QString> > arrayKeys; \
+  arrayKeys << _arrayKeyFunction1 << _arrayKeyFunction2; \
+  return arrayKeys; \
 } \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
@@ -113,9 +146,63 @@ QString className::messageType() { return #_messageType ; } \
 QString className::fieldName() { return #_fieldName1"."#_fieldName2 ; } \
 QString className::description() { return QString("%1.%2[%3].%4[%5]").arg(this->messageType()).arg(#_fieldName1).arg(this->mArrayKey).arg(#_fieldName2).arg(this->mArrayKey2); }
 
+
+//-----------------------------------------------------------------------------
+#define define_field_array_handler(className, _messageType, _fieldName1, _fieldName2, _arrayKeyFunction) \
+declare_signal_handler(className); \
+className::className(SignalDescription* desc) : SignalHandler(desc) \
+{ \
+   mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
+   mArrayKey = desc->mArrayKeys[0]; \
+} \
+QList<QList<QString> > className::validArrayKeys() \
+{ \
+  QList<QList<QString> > arrayKeys; \
+  arrayKeys << _arrayKeyFunction; \
+  return arrayKeys; \
+} \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+{ \
+  _messageType msg; \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
+  compute_time_now \
+  signalValue = msg._fieldName1._fieldName2[mArrayIndex]; \
+  return true; \
+} \
+QString className::messageType() { return #_messageType ; } \
+QString className::fieldName() { return #_fieldName1"."#_fieldName2 ; } \
+QString className::description() { return QString("%1.%2.%3[%4]").arg(this->messageType()).arg(#_fieldName1).arg(#_fieldName2).arg(this->mArrayKey); }
+
+
+//-----------------------------------------------------------------------------
+#define define_field_handler(className, _messageType, _fieldName) \
+declare_signal_handler(className); \
+className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+default_array_keys_function(className) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+{ \
+  _messageType msg; \
+  if (msg.decode(rbuf->data, 0, 1000000) < 0) \
+  { \
+    return false;\
+  } \
+  compute_time_now \
+  signalValue = msg._fieldName; \
+  return true; \
+} \
+QString className::messageType() { return #_messageType ; } \
+QString className::fieldName() { return #_fieldName ; } \
+QString className::description() { return QString("%1.%2").arg(this->messageType()).arg(this->fieldName()); }
+
+
+//-----------------------------------------------------------------------------
 #define define_field_field_handler(className, _messageType, _fieldName1, _fieldName2) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+default_array_keys_function(className) \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
   _messageType msg; \
@@ -131,10 +218,11 @@ QString className::messageType() { return #_messageType ; } \
 QString className::fieldName() { return #_fieldName1"."#_fieldName2 ; } \
 QString className::description() { return QString("%1.%2").arg(this->messageType()).arg(this->fieldName()); }
 
-
+//-----------------------------------------------------------------------------
 #define define_field_field_field_handler(className, _messageType, _fieldName1, _fieldName2, _fieldName3) \
 declare_signal_handler(className); \
 className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+default_array_keys_function(className) \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
   _messageType msg; \
@@ -153,9 +241,9 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 
 // robot_state_t
 
-define_array_handler(RobotStateJointPositionHandler, drc::robot_state_t, joint_position);
-define_array_handler(RobotStateJointVelocityHandler, drc::robot_state_t, joint_velocity);
-define_array_handler(RobotStateJointEffortHandler, drc::robot_state_t, joint_effort);
+define_array_handler(RobotStateJointPositionHandler, drc::robot_state_t, joint_position, JointNames::jointNames());
+define_array_handler(RobotStateJointVelocityHandler, drc::robot_state_t, joint_velocity, JointNames::jointNames());
+define_array_handler(RobotStateJointEffortHandler, drc::robot_state_t, joint_effort, JointNames::jointNames());
 
 define_field_field_field_handler(RobotStatePoseTranslationXHandler, drc::robot_state_t, pose, translation, x);
 define_field_field_field_handler(RobotStatePoseTranslationYHandler, drc::robot_state_t, pose, translation, y);
@@ -186,9 +274,9 @@ define_field_field_handler(RobotStateForceTorqueRFootTorqueYHandler, drc::robot_
 
 // atlas_state_t
 
-define_array_handler(AtlasStateJointPositionHandler, drc::atlas_state_t, joint_position);
-define_array_handler(AtlasStateJointVelocityHandler, drc::atlas_state_t, joint_velocity);
-define_array_handler(AtlasStateJointEffortHandler, drc::atlas_state_t, joint_effort);
+define_array_handler(AtlasStateJointPositionHandler, drc::atlas_state_t, joint_position, JointNames::jointNames());
+define_array_handler(AtlasStateJointVelocityHandler, drc::atlas_state_t, joint_velocity, JointNames::jointNames());
+define_array_handler(AtlasStateJointEffortHandler, drc::atlas_state_t, joint_effort, JointNames::jointNames());
 
 define_field_field_handler(AtlasStateForceTorqueLFootForceZHandler, drc::atlas_state_t, force_torque, l_foot_force_z);
 define_field_field_handler(AtlasStateForceTorqueLFootTorqueXHandler, drc::atlas_state_t, force_torque, l_foot_torque_x);
@@ -201,15 +289,45 @@ define_field_field_handler(AtlasStateForceTorqueRFootTorqueYHandler, drc::atlas_
 
 // atlas_raw_imu_batch_t
 
-define_array_array_handler(AtlasRawIMUBatchIMUDeltaRotation, drc::atlas_raw_imu_batch_t, raw_imu, delta_rotation);
-define_array_array_handler(AtlasRawIMUBatchIMULinearAcceleration, drc::atlas_raw_imu_batch_t, raw_imu, linear_acceleration);
+define_array_array_handler(AtlasRawIMUBatchIMUDeltaRotation, drc::atlas_raw_imu_batch_t, raw_imu, delta_rotation,  createIndexList(15), createIndexList(3));
+define_array_array_handler(AtlasRawIMUBatchIMULinearAcceleration, drc::atlas_raw_imu_batch_t, raw_imu, linear_acceleration, createIndexList(15), createIndexList(3));
 
 // pose_t
-define_array_handler(PoseTypePositionHandler, sm::pose_t, pos);
-define_array_handler(PoseTypeVelocityHandler, sm::pose_t, vel);
-define_array_handler(PoseTypeOrientationHandler, sm::pose_t, orientation);
-define_array_handler(PoseTypeRotationRateHandler, sm::pose_t, rotation_rate);
-define_array_handler(PoseTypeAcceleration, sm::pose_t, accel);
+define_array_handler(PoseTypePositionHandler, bot_core::pose_t, pos, createIndexList(3));
+define_array_handler(PoseTypeVelocityHandler, bot_core::pose_t, vel, createIndexList(3));
+define_array_handler(PoseTypeOrientationHandler, bot_core::pose_t, orientation, createIndexList(4));
+define_array_handler(PoseTypeRotationRateHandler, bot_core::pose_t, rotation_rate, createIndexList(3));
+define_array_handler(PoseTypeAcceleration, bot_core::pose_t, accel, createIndexList(3));
+
+
+// vicon body_t
+define_array_handler(ViconBodyTransHandler, vicon::body_t, trans, createIndexList(3));
+define_array_handler(ViconBodyQuatHandler, vicon::body_t, quat, createIndexList(4));
+
+// atlas_state_t
+
+define_field_handler(AtlasStatusPumpInletPressure, drc::atlas_status_t, pump_inlet_pressure);
+define_field_handler(AtlasStatusPumpSupplyPressure, drc::atlas_status_t, pump_supply_pressure);
+define_field_handler(AtlasStatusPumpReturnPressure, drc::atlas_status_t, pump_return_pressure);
+define_field_handler(AtlasStatusAirSumpPressure, drc::atlas_status_t, air_sump_pressure);
+define_field_handler(AtlasStatusBehavior, drc::atlas_status_t, behavior);
+
+
+define_field_array_handler(AtlasControlJointsPositionHandler, drc::atlas_control_data_t, joints, position, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsVelocityHandler, drc::atlas_control_data_t, joints, velocity, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsEffortHandler, drc::atlas_control_data_t, joints, effort, JointNames::jointNames());
+
+define_field_array_handler(AtlasControlJointsKQPHandler, drc::atlas_control_data_t, joints, k_q_p, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsKQIHandler, drc::atlas_control_data_t, joints, k_q_i, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsKQDPHandler, drc::atlas_control_data_t, joints, k_qd_p, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsKFPHandler, drc::atlas_control_data_t, joints, k_f_p, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsFFQDHandler, drc::atlas_control_data_t, joints, ff_qd, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsFFQDDPHandler, drc::atlas_control_data_t, joints, ff_qd_d, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsFFFDHandler, drc::atlas_control_data_t, joints, ff_f_d, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsFFConstHandler, drc::atlas_control_data_t, joints, ff_const, JointNames::jointNames());
+define_field_array_handler(AtlasControlJointsKEffortHandler, drc::atlas_control_data_t, joints, k_effort, JointNames::jointNames());
+define_field_field_handler(AtlasControlJointsDesiredControllerPeriodHandler, drc::atlas_control_data_t, joints, desired_controller_period_ms);
+
 
 
 SignalHandler::SignalHandler(SignalDescription* signalDescription)
@@ -304,6 +422,26 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<PoseTypeOrientationHandler>();
     factory.registerClass<PoseTypeRotationRateHandler>();
     factory.registerClass<PoseTypeAcceleration>();
+    factory.registerClass<ViconBodyTransHandler>();
+    factory.registerClass<ViconBodyQuatHandler>();
+    factory.registerClass<AtlasStatusPumpInletPressure>();
+    factory.registerClass<AtlasStatusPumpSupplyPressure>();
+    factory.registerClass<AtlasStatusPumpReturnPressure>();
+    factory.registerClass<AtlasStatusAirSumpPressure>();
+    factory.registerClass<AtlasStatusBehavior>();
+    factory.registerClass<AtlasControlJointsPositionHandler>();
+    factory.registerClass<AtlasControlJointsVelocityHandler>();
+    factory.registerClass<AtlasControlJointsEffortHandler>();
+    factory.registerClass<AtlasControlJointsKQPHandler>();
+    factory.registerClass<AtlasControlJointsKQIHandler>();
+    factory.registerClass<AtlasControlJointsKQDPHandler>();
+    factory.registerClass<AtlasControlJointsKFPHandler>();
+    factory.registerClass<AtlasControlJointsFFQDHandler>();
+    factory.registerClass<AtlasControlJointsFFQDDPHandler>();
+    factory.registerClass<AtlasControlJointsFFFDHandler>();
+    factory.registerClass<AtlasControlJointsFFConstHandler>();
+    factory.registerClass<AtlasControlJointsKEffortHandler>();
+    factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
 
   }
 

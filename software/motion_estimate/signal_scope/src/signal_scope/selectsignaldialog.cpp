@@ -12,6 +12,8 @@ class SelectSignalDialog::Internal : public Ui::SelectSignalDialog
 {
 public:
 
+  QList<QListWidget*> ArrayKeyWidgets;
+
 };
 
 SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
@@ -20,7 +22,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   mInternal->setupUi(this);
 
   QStringList channels;
-  channels << "ATLAS_STATE" << "ATLAS_STATUS" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE";
+  channels << "ATLAS_STATE" << "ATLAS_STATUS" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "VICON_ATLAS";
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
   QStringList messageFields;
@@ -28,12 +30,10 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   mInternal->ChannelListBox->addItems(channels);
   mInternal->MessageTypeListBox->addItems(messageTypes);
   mInternal->MessageFieldListBox->addItems(messageFields);
-  mInternal->JointNameListBox->addItems(JointNames::jointNames());
 
   mInternal->ChannelListBox->setCurrentRow(0);
   mInternal->MessageTypeListBox->setCurrentRow(0);
   mInternal->MessageFieldListBox->setCurrentRow(0);
-  mInternal->JointNameListBox->setCurrentRow(0);
 
   this->connect(mInternal->MessageTypeListBox, SIGNAL(currentRowChanged(int)), SLOT(onMessageTypeChanged()));
   this->connect(mInternal->MessageFieldListBox, SIGNAL(currentRowChanged(int)), SLOT(onFieldNameChanged()));
@@ -66,13 +66,30 @@ void SelectSignalDialog::onFieldNameChanged()
     return;
   }
 
+  QString messageType = mInternal->MessageTypeListBox->currentItem()->text();
   QString fieldName = mInternal->MessageFieldListBox->currentItem()->text();
 
-  bool jointNamesVisible = fieldName.startsWith("joint_");
+  foreach (QListWidget* listWidget, mInternal->ArrayKeyWidgets)
+  {
+    delete listWidget;
+  }
+  mInternal->ArrayKeyWidgets.clear();
 
-  mInternal->JointNameLabel->setVisible(jointNamesVisible);
-  mInternal->JointNameListBox->setVisible(jointNamesVisible);
-  mInternal->JointNameListBox->setVisible(jointNamesVisible);
+  const QList<QList<QString> >& validArrayKeys = SignalHandlerFactory::instance().validArrayKeys(messageType, fieldName);
+
+  bool useArrayKeys = !validArrayKeys.empty();
+  mInternal->ArrayKeysLabel->setVisible(useArrayKeys);
+  mInternal->ArrayKeysContainer->setVisible(useArrayKeys);
+
+  foreach (const QList<QString> & keys, validArrayKeys)
+  {
+    assert(keys.size());
+    QListWidget* listWidget = new QListWidget;
+    listWidget->addItems(keys);
+    listWidget->setCurrentRow(0);    
+    mInternal->ArrayKeyWidgets.append(listWidget);
+    mInternal->ArrayKeysContainer->layout()->addWidget(listWidget);
+  }
 }
 
 
@@ -87,17 +104,17 @@ SignalHandler* SelectSignalDialog::createSignalHandler() const
   QString messageType = mInternal->MessageTypeListBox->currentItem()->text();
   QString messageField = mInternal->MessageFieldListBox->currentItem()->text();
 
-  QString jointName;
-  if (mInternal->JointNameListBox->currentItem())
-  {
-    jointName = mInternal->JointNameListBox->currentItem()->text();
-  }
 
   SignalDescription desc;
   desc.mChannel = channel;
   desc.mMessageType = messageType;
   desc.mFieldName = messageField;
-  desc.mArrayKeys.append(jointName);
+
+  foreach (QListWidget* listWidget, mInternal->ArrayKeyWidgets)
+  {
+    QString arrayKey = listWidget->currentItem()->text();
+    desc.mArrayKeys.append(arrayKey);
+  }
 
   SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&desc);
   assert(signalHandler);
