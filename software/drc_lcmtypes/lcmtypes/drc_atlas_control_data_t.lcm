@@ -7,7 +7,12 @@ struct atlas_control_data_t
 {
   int64_t utime;
   
-  // insert joints here soon...  
+  // Joint Commands
+  // Note: this does not exactly match the API
+  // The following do not exist in the API:
+  // joint_names, desired_controller_period_ms
+  // and k_effort
+  atlas_command_t joints;
 
   atlas_behavior_stand_params_t stand_params;
   atlas_behavior_step_params_t step_params;
