@@ -16,15 +16,15 @@ public class AtlasStateCommandLogParser {
   private final int m_input_hash;
   private final LCMCoder m_state_coder;
   private final LCMCoder m_input_coder;
-  private final int m_state_size;
-  private final int m_input_size;
+  private int m_state_size;
+  private int m_input_size;
 
   private double[] m_t_u;
   private double[] m_t_x;
   private double[] m_x_data;
   private double[] m_u_data;
 
-  public AtlasStateCommandLogParser(int state_size, int input_size, String state_channel, LCMCoder state_coder, String input_channel, LCMCoder input_coder) {
+  public AtlasStateCommandLogParser(String state_channel, LCMCoder state_coder, String input_channel, LCMCoder input_coder) {
     m_state_hash = state_channel.hashCode();
     m_input_hash = input_channel.hashCode();
     m_state_coder = state_coder;
@@ -32,10 +32,6 @@ public class AtlasStateCommandLogParser {
 
     m_t_u = new double[INIT_LOG_SIZE];
     m_t_x = new double[INIT_LOG_SIZE];
-    m_x_data = new double[INIT_LOG_SIZE*state_size];
-    m_u_data = new double[INIT_LOG_SIZE*input_size];
-    m_state_size = state_size;
-    m_input_size = input_size;
   }
 
 /**
@@ -52,6 +48,17 @@ public class AtlasStateCommandLogParser {
 //        System.out.println(e.channel);
         int msg_hash = e.channel.hashCode();
         if (msg_hash == m_state_hash) {
+          CoordinateFrameData data = m_state_coder.decode(e.data);
+
+          if (state_ind == 0) {
+            m_state_size = data.val.length;
+            m_x_data = new double[INIT_LOG_SIZE*m_state_size];
+          } else {
+            if (m_state_size != data.val.length) {
+              throw new IllegalStateException("New state message has length " + data.val.length + ", but expected " + m_state_size);
+            }
+          }
+
           //Resize arrays if necessary
           if (state_ind == m_t_x.length) {
             double[] tmp = new double[2*m_t_x.length*m_state_size];
@@ -64,11 +71,21 @@ public class AtlasStateCommandLogParser {
 //            System.out.println("Resizing state");
           }
 
-          CoordinateFrameData data = m_state_coder.decode(e.data);
           System.arraycopy(data.val, 0, m_x_data, state_ind*m_state_size, m_state_size);
           m_t_x[state_ind] = data.t;
           state_ind++;
         } else if (msg_hash == m_input_hash) {
+          CoordinateFrameData data = m_input_coder.decode(e.data);
+
+          if (input_ind == 0) {
+            m_input_size = data.val.length;
+            m_u_data = new double[INIT_LOG_SIZE*m_input_size];
+          } else {
+            if (m_input_size != data.val.length) {
+              throw new IllegalStateException("New command message has length " + data.val.length + ", but expected " + m_input_size);
+            }
+          }
+
           //Resize arrays if necessary
           if (input_ind == m_t_u.length) {
             double[] tmp = new double[2*m_t_u.length*m_input_size];
@@ -81,7 +98,6 @@ public class AtlasStateCommandLogParser {
 //            System.out.println("Resizing input");
           }
 
-          CoordinateFrameData data = m_input_coder.decode(e.data);
           System.arraycopy(data.val, 0, m_u_data, input_ind*m_input_size, m_input_size);
           m_t_u[input_ind] = data.t;
           input_ind++;

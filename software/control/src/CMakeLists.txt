@@ -47,6 +47,7 @@ set( cmake_jar_dir ${CMAKE_INSTALL_PREFIX}/share/java )
 set( CMAKE_JAVA_INCLUDE_PATH ${LCM_JAR_FILE}:${cmake_jar_dir}/drake.jar:${cmake_jar_dir}/lcmtypes_drake.jar:${cmake_jar_dir}/lcmtypes_drc_lcmtypes.jar:${cmake_jar_dir}/lcmtypes_bot2-core.jar:${CMAKE_CURRENT_SOURCE_DIR} )
 
 set(java_src_files
+  AtlasStateCommandLogParser.java
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java
   CandidateGraspPublisher.java

@@ -16,12 +16,12 @@ use_java = 1;
 
 % Java version is more than 10x faster
 if use_java
-  parser = drc.control.AtlasStateCommandLogParser(plant.getStateFrame.dim,plant.getInputFrame.dim,'EST_ROBOT_STATE', plant.getStateFrame.lcmcoder.jcoder,'ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
+  parser = drc.control.AtlasStateCommandLogParser('EST_ROBOT_STATE', plant.getStateFrame.lcmcoder.jcoder,'ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
   parser.parseLog(logfile);
   t_x = parser.getTx();
   t_u = parser.getTu();
-  x_data = reshape(parser.getStateData, plant.getStateFrame.dim, []);
-  u_data = reshape(parser.getInputData, plant.getInputFrame.dim, []);
+  x_data = reshape(parser.getStateData, [], length(t_x));
+  u_data = reshape(parser.getInputData, [], length(t_u));
   
 else
   lcm_log = lcm.logging.Log(logfile,'r');
