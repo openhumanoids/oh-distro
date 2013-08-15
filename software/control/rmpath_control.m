@@ -17,12 +17,16 @@ javarmpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
 javarmpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
 javarmpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 
+rmpath_drake;
+rmpath_eigen_utils;
+rmpath_matlab_utils;
+
 % add the drake control matlab util directory into the matlab path:
 rmpath(fullfile(pwd,'matlab'));
 rmpath(fullfile(pwd,'matlab','controllers'));
 rmpath(fullfile(pwd,'matlab','planners'));
 rmpath(fullfile(pwd,'matlab','planners','footstep_planner'));
-rmpath(fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
+% rmpath(fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
 rmpath(fullfile(pwd,'matlab','util'));
 rmpath(fullfile(pwd,'matlab','frames'));
 rmpath(fullfile(pwd,'matlab','test'));
