@@ -64,6 +64,10 @@ group "a.1.core" {
         exec = "drc-joints2frames -g -b";
         host = "extra";
     }
+    cmd "ros2lcm-hands" {
+        exec = "rosrun translators ros2lcm_hands";
+        host = "robot";
+    }
 }
 
 # must be individually launched as per hardware setup
