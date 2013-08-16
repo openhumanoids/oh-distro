@@ -10,6 +10,7 @@
 #include <osrf_msgs/JointCommands.h>
 #include <atlas_msgs/AtlasCommand.h>
 #include <sandia_hand_msgs/SimpleGrasp.h>
+#include <handle_msgs/HandleControl.h>
 #include <map>
 #include <ConciseArgs>
 
@@ -26,27 +27,31 @@ class LCM2ROS{
     ros::NodeHandle nh_;
 	  lcm::LCM lcm_publish_ ;
 
-    void sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
-    void sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
-    ros::Publisher sandia_l_hand_joint_cmd_pub_;
-    ros::Publisher sandia_r_hand_joint_cmd_pub_;
+    void LHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
+    void RHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
+    ros::Publisher sandia_l_hand_joint_cmd_pub_,sandia_r_hand_joint_cmd_pub_;
+    ros::Publisher irobot_l_hand_joint_cmd_pub_,irobot_r_hand_joint_cmd_pub_;
+    void publishSandiaHandCommand(const drc::joint_command_t* msg, bool is_left);
+    void publishIrobotHandCommand(const drc::joint_command_t* msg, bool is_left); 
     
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);  
-    
+  
     ros::NodeHandle* rosnode;
 };
 
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
  
-
-  
   /// Sandia Hands joint command API
-  lcm_->subscribe("L_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaLHandJointCommandHandler,this);  
+  lcm_->subscribe("L_HAND_JOINT_COMMANDS",&LCM2ROS::LHandJointCommandHandler,this); 
+  lcm_->subscribe("R_HAND_JOINT_COMMANDS",&LCM2ROS::RHandJointCommandHandler,this);  
+  
+  //advertise sandia hand commands and irobot hand commands
   sandia_l_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/l_hand/joint_commands",10);
-  lcm_->subscribe("R_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaRHandJointCommandHandler,this);  
   sandia_r_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/joint_commands",10); 
+  irobot_l_hand_joint_cmd_pub_ = nh_.advertise<handle_msgs::HandleControl>("/irobot_hands/l_hand/control",10);
+  irobot_r_hand_joint_cmd_pub_ = nh_.advertise<handle_msgs::HandleControl>("/irobot_hands/r_hand/control",10); 
 
   lcm_->subscribe("SIMPLE_GRASP_COMMAND",&LCM2ROS::simpleGraspCmdHandler,this);  
   simple_grasp_pub_left_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/l_hand/simple_grasp",10); 
@@ -84,35 +89,57 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 }
   
 // Sandia Hands joint command handlers
-void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+void LCM2ROS::LHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
-  osrf_msgs::JointCommands joint_command_msg;
-  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-
-  for (int i=0; i<msg->num_joints; i++) {
-    joint_command_msg.name.push_back("sandia_hands::l_hand::" + msg->name[i]); // must use scoped name
-    joint_command_msg.position.push_back(msg->position[i]);
-    joint_command_msg.velocity.push_back(msg->velocity[i]);
-    joint_command_msg.effort.push_back(msg->effort[i]);
-    joint_command_msg.kp_position.push_back(msg->kp_position[i]);
-    joint_command_msg.kd_position.push_back(msg->kd_position[i]);
-    joint_command_msg.ki_position.push_back(msg->ki_position[i]);
-    joint_command_msg.kp_velocity.resize(msg->kp_velocity[i]);
-    joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
-    joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
+  /*
+  // TODO:
+  // use msg->robot_name to determine whether to use sandia_hand_publisher or irobot_hand_publisher
+  if(msg->robot_name="sandia"){
+    bool is_left=true;
+    publishSandiaHandCommand(msg,is_left);
   }
-  if(ros::ok()) {
-    sandia_l_hand_joint_cmd_pub_.publish(joint_command_msg);
-  } 
+  else if (msg->robot_name="irobot"){
+     bool is_left=true;
+    publishIrobotHandCommand(msg,is_left); 
+  }
+  else{
+    ROS_ERROR("robot_name field in drc::joint_command_t for grasp commands should be sandia or irobot");
+  }*/
+  bool is_left=true;
+  publishSandiaHandCommand(msg,is_left);
 } 
 
-void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+void LCM2ROS::RHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
+  /*
+  // TODO:
+  // use msg->robot_name to determine whether to use sandia_hand_publisher or irobot_hand_publisher
+  if(msg->robot_name="sandia"){
+    bool is_left=false;
+    publishSandiaHandCommand(msg,is_left);    
+  }
+  else if (msg->robot_name="irobot"){
+    bool is_left=false;
+    publishIrobotHandCommand(msg,is_left);  
+  }
+  else{
+    ROS_ERROR("robot_name field in drc::joint_command_t for grasp commands should be sandia or irobot");
+  }*/
+  
+  bool is_left=false;
+  publishSandiaHandCommand(msg,is_left);
+}
+  
+  
+void LCM2ROS::publishSandiaHandCommand(const drc::joint_command_t* msg, bool is_left)
+{
   osrf_msgs::JointCommands joint_command_msg;
   joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-
   for (int i=0; i<msg->num_joints; i++) {
-    joint_command_msg.name.push_back("sandia_hands::r_hand::" + msg->name[i]); // must use scoped name
+    if(is_left)
+      joint_command_msg.name.push_back("sandia_hands::l_hand::" + msg->name[i]); // must use scoped name
+    else 
+      joint_command_msg.name.push_back("sandia_hands::r_hand::" + msg->name[i]); // must use scoped name
     joint_command_msg.position.push_back(msg->position[i]);
     joint_command_msg.velocity.push_back(msg->velocity[i]);
     joint_command_msg.effort.push_back(msg->effort[i]);
@@ -124,11 +151,27 @@ void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
     joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
   }
   if(ros::ok()) {
-    sandia_r_hand_joint_cmd_pub_.publish(joint_command_msg);
+    if(is_left)
+      sandia_l_hand_joint_cmd_pub_.publish(joint_command_msg);
+    else
+      sandia_r_hand_joint_cmd_pub_.publish(joint_command_msg);
   } 
-}
   
+}  
 
+void LCM2ROS::publishIrobotHandCommand(const drc::joint_command_t* msg, bool is_left)
+{
+  // TODO:
+    handle_msgs::HandleControl control_msg;
+  /*
+    if(ros::ok()) {
+    if(is_left)
+      irobot_l_hand_joint_cmd_pub_.publish(control_msg);
+    else
+      irobot_r_hand_joint_cmd_pub_.publish(control_msg);
+  } 
+  */
+}
 
 int main(int argc,char** argv) {
 
