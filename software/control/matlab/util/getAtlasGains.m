@@ -45,7 +45,7 @@ k_f_p.r_leg_aky = k_f_p.l_leg_aky;
 k_f_p.r_leg_akx = k_f_p.l_leg_akx;
 
 k_f_p.l_arm_usy = 0.012;
-k_f_p.l_arm_shx = 0.012;
+k_f_p.l_arm_shx = 0.105;
 k_f_p.l_arm_ely = 0.012;
 k_f_p.l_arm_elx = 0.012;
 k_f_p.l_arm_uwy = 0.012;
