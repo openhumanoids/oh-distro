@@ -40,4 +40,4 @@ control/reactive_navigation_2d
 # disabled for now:
 #teleop
 driving
-bdi_step_translator
+bdi_walking
