@@ -11,16 +11,19 @@ using namespace std;
 
 /////////////////////////////////////
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, bool spoof_motion_estimation_):
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, bool bdi_motion_estimate_):
    lcm_(lcm_), standalone_head_(standalone_head_),
    is_sandia_left_(false),is_sandia_right_(false),	
-   spoof_motion_estimation_(spoof_motion_estimation_){
+   bdi_motion_estimate_(bdi_motion_estimate_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
   lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
   lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::irobotLeftHandler,this);  
   lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::irobotRightHandler,this);  
   lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
+  
+  lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
+  pose_BDI_.utime =0; // use this to signify un-initalised
 }
 
 
@@ -80,8 +83,42 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   atlas_joints_.effort = msg->joint_effort;
   
   publishRobotState(msg->utime, msg->force_torque);
-  
 }
+
+
+void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  pose_BDI_.utime = msg->utime;
+  pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+}
+
+
+
+bool state_sync::insertPoseBDI(drc::robot_state_t& msg){
+  // TODO: add comparison of msg->utime and pose_BDI_'s utime  
+  
+  msg.pose.translation.x = pose_BDI_.pos[0];
+  msg.pose.translation.y = pose_BDI_.pos[1];
+  msg.pose.translation.z = pose_BDI_.pos[2];
+  msg.pose.rotation.w = pose_BDI_.orientation[0];
+  msg.pose.rotation.x = pose_BDI_.orientation[1];
+  msg.pose.rotation.y = pose_BDI_.orientation[2];
+  msg.pose.rotation.z = pose_BDI_.orientation[3];
+
+  msg.twist.linear_velocity.x = pose_BDI_.vel[0];
+  msg.twist.linear_velocity.y = pose_BDI_.vel[1];
+  msg.twist.linear_velocity.z = pose_BDI_.vel[2];
+  
+  msg.twist.angular_velocity.x = pose_BDI_.rotation_rate[0];
+  msg.twist.angular_velocity.y = pose_BDI_.rotation_rate[1];
+  msg.twist.angular_velocity.z = pose_BDI_.rotation_rate[2];
+  
+  return true;  
+}
+  
 
 
 void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t& force_torque_msg){
@@ -126,8 +163,10 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   robot_state_msg.force_torque = force_torque_msg;
   
   lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
-  if (spoof_motion_estimation_){
-    lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+  if (bdi_motion_estimate_){
+    if ( insertPoseBDI(robot_state_msg) ){
+      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+    }
   }
 }
 
@@ -145,10 +184,10 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
 int
 main(int argc, char ** argv){
   bool standalone_head = false;
-  bool spoof_motion_estimation = false;
+  bool bdi_motion_estimate = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
-  opt.add(spoof_motion_estimation, "e", "spoof","Spoof EST_ROBOT_STATE message");
+  opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
@@ -157,7 +196,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  state_sync app(lcm, standalone_head,spoof_motion_estimation);
+  state_sync app(lcm, standalone_head,bdi_motion_estimate);
   while(0 == lcm->handle());
   return 0;
 }

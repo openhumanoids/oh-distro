@@ -4,7 +4,7 @@
 #include <iostream>
 #include <limits>       // std::numeric_limits
 
-#include "joints2frames.hpp"
+#include "joints2frames_head.hpp"
 #include <ConciseArgs>
 
 using namespace std;

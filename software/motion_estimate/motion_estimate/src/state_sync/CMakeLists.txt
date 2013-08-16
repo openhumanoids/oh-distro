@@ -5,7 +5,7 @@ project(state_sync)
 
 
 add_executable(drc-state-sync state_sync.cpp  )
-pods_use_pkg_config_packages(drc-state-sync
+pods_use_pkg_config_packages(drc-state-sync eigen3
   lcmtypes_drc_lcmtypes)
 pods_install_executables(drc-state-sync )
 

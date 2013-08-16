@@ -16,9 +16,10 @@ using namespace boost::assign;
 /////////////////////////////////////
 
 joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, bool show_triads_,
-  bool standalone_head_, bool ground_height_):
+  bool standalone_head_, bool ground_height_, bool bdi_motion_estimate_):
           lcm_(lcm_), show_labels_(show_labels_), show_triads_(show_triads_),
-          standalone_head_(standalone_head_), ground_height_(ground_height_){
+          standalone_head_(standalone_head_), ground_height_(ground_height_),
+          bdi_motion_estimate_(bdi_motion_estimate_){
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
@@ -54,24 +55,18 @@ Eigen::Isometry3d DRCTransformToEigen(drc::transform_t tf){
   return tf_out;
 }
 
-void joints2frames::publishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime){
-  if (utime - last_ground_publish_utime_  > 5E5){ // every 0.5sec
-    last_ground_publish_utime_ =utime;
-    bot_core::pose_t pose_msg;
-    pose_msg.utime =   utime;
-    pose_msg.pos[0] = pose.translation().x();
-    pose_msg.pos[1] = pose.translation().y();
-    pose_msg.pos[2] = pose.translation().z();  
-    Eigen::Quaterniond r_x(pose.rotation());
-    pose_msg.orientation[0] =  r_x.w();  
-    pose_msg.orientation[1] =  r_x.x();  
-    pose_msg.orientation[2] =  r_x.y();  
-    pose_msg.orientation[3] =  r_x.z();  
-    lcm_->publish( "POSE_GROUND", &pose_msg);
-    //std::cout << "will sending ground height\n"; 
-  }else{
-    //std::cout << "not sending ground height\n"; 
-  }
+void joints2frames::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();  
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();  
+  pose_msg.orientation[1] =  r_x.x();  
+  pose_msg.orientation[2] =  r_x.y();  
+  pose_msg.orientation[3] =  r_x.z();  
+  lcm_->publish( channel, &pose_msg);
 }
 
 
@@ -189,19 +184,27 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   // 2b. Republish the required BOT_FRAMES transforms:
   if (body_to_head_found){
     /*
-     * DONT PUBLISH THIS - the TF is the opposite direction
-    bot_core::rigid_transform_t tf;
-    tf.utime = msg->utime;
-    tf.trans[0] = body_to_head.translation().x();
-    tf.trans[1] = body_to_head.translation().y();
-    tf.trans[2] = body_to_head.translation().z();
-    Eigen::Quaterniond quat = Eigen::Quaterniond( body_to_head.rotation() );
-    tf.quat[0] = quat.w();
-    tf.quat[1] = quat.x();
-    tf.quat[2] = quat.y();
-    tf.quat[3] = quat.z();
-    lcm_->publish("BODY_TO_HEAD", &tf);
-    */
+     * DONT PUBLISH THIS FOR SIMULATOR - CURRENTLY PUBLISHED BY LEGODO PROCESS
+     */
+    
+    if (bdi_motion_estimate_){
+      Eigen::Isometry3d head_to_body = body_to_head.inverse();
+      bot_core::rigid_transform_t tf;
+      tf.utime = msg->utime;
+      tf.trans[0] = head_to_body.translation().x();
+      tf.trans[1] = head_to_body.translation().y();
+      tf.trans[2] = head_to_body.translation().z();
+      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_body.rotation() );
+      tf.quat[0] = quat.w();
+      tf.quat[1] = quat.x();
+      tf.quat[2] = quat.y();
+      tf.quat[3] = quat.z();
+      lcm_->publish("HEAD_TO_BODY", &tf);
+      
+      Eigen::Isometry3d world_to_head = world_to_body * body_to_head ;
+      publishPose(world_to_head, msg->utime, "POSE_HEAD" );
+    }
+    
     
     if (body_to_hokuyo_link_found){
       Eigen::Isometry3d head_to_hokuyo_link = body_to_head.inverse() * body_to_hokuyo_link ;
@@ -242,6 +245,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     display_tic_toc(tic_toc,"joint2frames");  
   #endif
 
+    
+    
   
   if (ground_height_){ 
     // Publish a pose at the lower of the feet - assumed to be on the ground
@@ -262,11 +267,14 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
               << world_to_r_sole.translation().y() << " " 
               << world_to_r_sole.translation().z() << " R\n" ;
               */
-    // Publish lower of the soles at the ground when it changes by 1cm
-    if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
-      publishGroundHeightPose(world_to_l_sole, msg->utime);
-    }else{
-      publishGroundHeightPose(world_to_r_sole, msg->utime);
+    // Publish lower of the soles at the ground occasionally
+    if (msg->utime - last_ground_publish_utime_  > 5E5){ // every 0.5sec
+      last_ground_publish_utime_ =msg->utime;
+      if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
+        publishPose(world_to_l_sole, msg->utime,"POSE_GROUND");
+      }else{
+        publishPose(world_to_r_sole, msg->utime,"POSE_GROUND");
+      }
     }
   }
     
@@ -309,12 +317,14 @@ main(int argc, char ** argv){
   bool triads = false;
   bool standalone_head = false;
   bool ground_height = false;
+  bool bdi_motion_estimate = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
   opt.add(ground_height, "g", "ground", "Publish the grounded foot pose");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
+  opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make frames [Temporary!]");
   opt.parse();
   if (labels){ // require triads if labels is to be published
     triads=true;
@@ -350,7 +360,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads, standalone_head, ground_height);
+  joints2frames app(lcm,labels,triads, standalone_head, ground_height, bdi_motion_estimate);
   while(0 == lcm->handle());
   return 0;
 }

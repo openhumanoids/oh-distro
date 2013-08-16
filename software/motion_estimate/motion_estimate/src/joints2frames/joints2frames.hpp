@@ -30,7 +30,8 @@
 class joints2frames{
   public:
     joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, 
-                  bool show_triads_, bool standalone_head_, bool show_ground_image_);
+                  bool show_triads_, bool standalone_head_, bool show_ground_image_,
+                  bool bdi_motion_estimate_);
     
     ~joints2frames(){
     }
@@ -47,9 +48,9 @@ class joints2frames{
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
     bool show_labels_, show_triads_, ground_height_;
 
-    bool standalone_head_;
+    bool standalone_head_, bdi_motion_estimate_;
     
-    void publishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime);
+    void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
     void publishRigidTransform(Eigen::Isometry3d pose, int64_t utime, std::string channel);
     
     double last_ground_height_;
