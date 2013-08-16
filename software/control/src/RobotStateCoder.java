@@ -218,6 +218,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
       	msg.twist.angular_velocity.z = (float) omega[2];
       }
       
+      msg.force_torque =  new  drc.force_torque_t();
+      
       return msg;
     }
     
