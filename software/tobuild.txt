@@ -39,11 +39,5 @@ control/reactive_navigation_2d
 
 # disabled for now:
 #teleop
-#porterbot
-#depreciated early viewer
-#interface
-#hubo
 driving
-ptgrey
-ipwebcam
 bdi_step_translator

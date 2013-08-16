@@ -3,3 +3,7 @@
 
 atlas
 multisense
+
+ipwebcam
+ptgrey
+
