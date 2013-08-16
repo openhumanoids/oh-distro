@@ -18,9 +18,9 @@ classdef PositionRefPublisher < DrakeSystem
  
       if isfield(options,'gains_id')
         typecheck(options.gains_id,'char');
-        posref = AtlasPositionRef(r,2,options.gains_id);
+        posref = AtlasPositionRef(r,options.gains_id);
       else
-        posref = AtlasPositionRef(r,2);
+        posref = AtlasPositionRef(r);
       end
   
       coords = AtlasCoordinates(r);

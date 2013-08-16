@@ -8,7 +8,7 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
-ref_frame = AtlasTorquePosRef(r);
+ref_frame = AtlasPosTorqueRef(r);
 
 nu = getNumInputs(r);
 

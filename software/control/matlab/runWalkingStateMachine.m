@@ -18,9 +18,9 @@ else
 end
 
 r = Atlas(urdf,options);
-r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
+% r = setTerrain(r,DRCTerrainMap(true,struct('name','WalkingStateMachine','fill',true)));
 %r = removeCollisionGroupsExcept(r,{'toe','heel'});
-r = compile(r);
+% r = compile(r);
 
 if nargin > 1
   typecheck(state_channel,'char');

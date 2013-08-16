@@ -16,8 +16,8 @@ nu = getNumInputs(r);
 q0 = eval(q_traj,q_traj.tspan(1));
 [u0,r] = inverseDynamics(r,q0,0*q0,0*q0,supports(1));
 actuated = getActuatedJoints(r);
-fr = AtlasPositionRef(r,'crawling',4);
-publish(fr,0,[q0(actuated);zeros(nu,1);u0],defaultChannel(fr));
+fr = AtlasPosTorqueRef(r,'crawling');
+publish(fr,0,[q0(actuated);u0],defaultChannel(fr));
 
 qdot_traj = fnder(q_traj);
 qddot_traj = fnder(qdot_traj);
@@ -32,10 +32,9 @@ for i=1:length(breaks)
 end
 
 q_actuated_traj = q_traj(actuated);
-qdot_actuated_traj = qdot_traj(actuated);
 u_traj = PPTrajectory(spline(breaks,u));
 
-command_traj = setOutputFrame([q_actuated_traj;qdot_actuated_traj;u_traj],fr);
+command_traj = setOutputFrame([q_actuated_traj;u_traj],fr);
 
 options.realtime_factor = simrate;
 options.tspan = command_traj.tspan;

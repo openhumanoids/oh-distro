@@ -1,13 +1,13 @@
-classdef AtlasTorquePosRef < LCMCoordinateFrameWCoder & Singleton
+classdef AtlasPosTorqueRef < LCMCoordinateFrameWCoder & Singleton
   % atlas input coordinate frame
   methods
-    function obj=AtlasTorquePosRef(r)
+    function obj=AtlasPosTorqueRef(r,gains_id)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
       nu = getNumInputs(r);
       dim = 2*nu;
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasTorquePosRef',dim,'x');
+      obj = obj@LCMCoordinateFrameWCoder('AtlasPosTorqueRef',dim,'x');
       obj = obj@Singleton();
       
       obj.nu=nu;
@@ -16,8 +16,25 @@ classdef AtlasTorquePosRef < LCMCoordinateFrameWCoder & Singleton
       input_frame = getInputFrame(r);
       input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
       
-      gains = getAtlasGains(input_frame);
-      
+      if nargin<3 % controlling robot
+        warning('AtlasPosTorqueRef: USING ATLAS GAINS')
+        gains = getAtlasGains(input_frame);
+      else
+        warning('AtlasPosTorqueRef: USING SIMULATION GAINS')
+        typecheck(gains_id,'char');
+        gains = struct();
+        gains.k_qd_p = zeros(obj.nu,1);
+        gains.k_q_i = zeros(obj.nu,1);
+        gains.k_f_p = zeros(obj.nu,1);
+        gains.ff_f_d = zeros(obj.nu,1);
+        gains.ff_qd_d = zeros(obj.nu,1);
+        gains.ff_const = zeros(obj.nu,1);
+
+        [Kp,Kd] = getPDGains(r,gains_id);
+        gains.k_q_p = diag(Kp);
+        gains.ff_qd = diag(Kd);
+      end
+
       coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
         gains.k_qd_p*0,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
       obj = setLCMCoder(obj,JLCMCoder(coder));

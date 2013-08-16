@@ -12,7 +12,7 @@ classdef PosVelFeedForwardBlock < MIMODrakeSystem
       nu = getNumInputs(r);
       
       input_frame = MultiCoordinateFrame({AtlasCoordinates(r),AtlasState(r)});
-      output_frame = AtlasPositionRef(r,4,'crawling');
+      output_frame = AtlasPositionRef(r,'crawling');
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
