@@ -35,7 +35,12 @@ rosbuild_add_executable(ros2lcm_hands src/ros2lcm_hands.cpp)
 target_link_libraries(ros2lcm_hands)
 pods_install_executables(ros2lcm_hands)
 pods_use_pkg_config_packages(ros2lcm_hands lcm lcmtypes_drc_lcmtypes 
-      bot2-core) 
+      bot2-core)
+       
+rosbuild_add_executable(lcm2ros_hands src/lcm2ros_hands.cpp)
+pods_install_executables(lcm2ros_hands)
+pods_use_pkg_config_packages(lcm2ros_hands lcm lcmtypes_drc_lcmtypes bot2-core)     
+      
 
 rosbuild_add_executable(latency src/latency.cpp)
 target_link_libraries(latency boost_signals)
