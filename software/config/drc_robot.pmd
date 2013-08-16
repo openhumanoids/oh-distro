@@ -40,8 +40,9 @@ group "a.0.drivers" {
     cmd "logger-robot-nocams" {
         exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
         host = "robot";
-    }
+    }    
 }
+
 group "a.1.core" {
     cmd "aa-sync" {
         exec = "drc-state-sync -b";
@@ -64,3 +65,23 @@ group "a.1.core" {
         host = "extra";
     }
 }
+
+group "a.2.hand_drivers" {
+    cmd "sandia-right" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
+        host = "robot";
+    }
+    cmd "sandia-left" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA L";
+        host = "robot";
+    }
+    cmd "irobot-right" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49";
+        host = "robot";
+    }
+    cmd "irobot-left" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT L 47";
+        host = "robot";
+    }   
+}
+
