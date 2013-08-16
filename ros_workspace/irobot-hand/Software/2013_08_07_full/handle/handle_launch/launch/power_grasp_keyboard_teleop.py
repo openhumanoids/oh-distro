@@ -123,8 +123,8 @@ if __name__ == '__main__':
   pygame.display.flip()
   print_usage()
   rospy.init_node("power_grasp_keyboard_teleop")
-  g_left_grasp_pub = rospy.Publisher("left_hand/control", HandleControl)
-  g_right_grasp_pub = rospy.Publisher("right_hand/control", HandleControl)
+  g_left_grasp_pub  = rospy.Publisher("irobot_hands/l_hand/control", HandleControl)
+  g_right_grasp_pub = rospy.Publisher("irobot_hands/r_hand/control", HandleControl)
   rate = rospy.Rate(100.0) # todo: something smarter
   done = False
   while not done and not rospy.is_shutdown():
