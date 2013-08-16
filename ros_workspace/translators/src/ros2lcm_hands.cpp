@@ -20,7 +20,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <sandia_hand_msgs/RawFingerState.h>
-
+#include <handle_msgs/HandleSensors.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -30,7 +30,7 @@ using namespace std;
 
 class App{
 public:
-  App(ros::NodeHandle node_);
+  App(ros::NodeHandle node_,bool dumb_fingers);
   ~App();
 
 private:
@@ -38,7 +38,7 @@ private:
   ros::NodeHandle node_;
   
   std::vector<std::string> sandiaJointNames;
-
+  std::vector<std::string> irobotJointNames;
   // msg cache  
   sandia_hand_msgs::RawFingerState  sandia_l_hand_finger_0_state_,sandia_l_hand_finger_1_state_,sandia_l_hand_finger_2_state_,sandia_l_hand_finger_3_state_;
   sandia_hand_msgs::RawFingerState  sandia_r_hand_finger_0_state_,sandia_r_hand_finger_1_state_,sandia_r_hand_finger_2_state_,sandia_r_hand_finger_3_state_; 
@@ -47,8 +47,8 @@ private:
   ros::Subscriber  sandia_l_hand_finger_0_state_sub_, sandia_l_hand_finger_1_state_sub_, sandia_l_hand_finger_2_state_sub_, sandia_l_hand_finger_3_state_sub_;
   ros::Subscriber  sandia_r_hand_finger_0_state_sub_, sandia_r_hand_finger_1_state_sub_, sandia_r_hand_finger_2_state_sub_, sandia_r_hand_finger_3_state_sub_;  
  
-  //TODO: 
-  //Irobot hand subcribersand cache
+  //Irobot hand subcribers and cache
+  handle_msgs::HandleSensors irobot_l_hand_state_,irobot_r_hand_state_;
   ros::Subscriber  irobot_l_hand_joint_states_sub_, irobot_r_hand_joint_states_sub_; 
   
   void sandia_l_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerStatePtr &msg);
@@ -64,15 +64,19 @@ private:
   void appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::RawFingerState& msg_in,int finger_id);
   void publishSandiaHandState(int64_t utime_in,bool is_left);
   
+  void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
+  void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
+  
   // logic params
   bool init_recd_sandia_l_[4];
   bool init_recd_sandia_r_[4];
+  bool dumb_fingers_;
   //////////////////////////////////////////////////////////////////////////
   
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_){
+App::App(ros::NodeHandle node_, bool dumb_fingers) :
+    node_(node_),dumb_fingers_(dumb_fingers){
   ROS_INFO("Initializing Sandia/Irobot Hands Translator (Not for simulation)");
   
   
@@ -89,7 +93,11 @@ App::App(ros::NodeHandle node_) :
 
  //TODO: 
  // Irobot subcribers 
-
+ irobot_l_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/raw"), 100, &App::irobot_l_hand_state_cb,this);
+ irobot_r_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/raw"), 100, &App::irobot_r_hand_state_cb,this);
+  
+ 
+ 
 	sandiaJointNames.push_back("f0_j0");
 	sandiaJointNames.push_back("f0_j1");
 	sandiaJointNames.push_back("f0_j2");
@@ -102,6 +110,17 @@ App::App(ros::NodeHandle node_) :
 	sandiaJointNames.push_back("f3_j0");	 
 	sandiaJointNames.push_back("f3_j1");
 	sandiaJointNames.push_back("f3_j2");
+	
+	
+	irobotJointNames.push_back("finger[0]/joint_base_rotation");	 
+	irobotJointNames.push_back("finger[0]/joint_base");
+	irobotJointNames.push_back("finger[0]/joint_flex");
+	irobotJointNames.push_back("finger[1]/joint_base_rotation");	 
+	irobotJointNames.push_back("finger[1]/joint_base");
+	irobotJointNames.push_back("finger[1]/joint_flex");
+	irobotJointNames.push_back("finger[2]/joint_base");
+	irobotJointNames.push_back("finger[2]/joint_flex");
+
 	
 	init_recd_sandia_l_[0]=false;
 	init_recd_sandia_l_[1]=false;
@@ -124,6 +143,9 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+//----------------------------------------------------------------------------
+// CALLBACKS FOR SANDIA HAND STATE
+//----------------------------------------------------------------------------
 void App::sandia_l_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
  if(!init_recd_sandia_l_[0])
@@ -151,7 +173,7 @@ void App::sandia_l_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
  bool is_left = true;
  publishSandiaHandState(utime,is_left);
 }
-
+//----------------------------------------------------------------------------
 void App::sandia_r_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
  if(!init_recd_sandia_r_[0])
@@ -180,7 +202,7 @@ void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
  publishSandiaHandState(utime,is_left);
 }
 
-
+//----------------------------------------------------------------------------
 void App::publishSandiaHandState(int64_t utime_in,bool is_left){
   // If haven't got all four sandia finger states, exit:
   if((!init_recd_sandia_l_[0])&&(is_left))
@@ -234,7 +256,7 @@ void App::publishSandiaHandState(int64_t utime_in,bool is_left){
   }
    
 }
-
+//----------------------------------------------------------------------------
 void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::RawFingerState& msg_in,int finger_id){
   
     // calculate joint angles based on hall sensor offsets
@@ -255,12 +277,132 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
     msg_out.joint_effort[2+finger_id*3] = 0;//msg_in.fmcb_effort[2];
 }
 
+//----------------------------------------------------------------------------
+// CALLBACKS FOR IROBOT HAND STATE
+//----------------------------------------------------------------------------
+void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+{
 
+ irobot_l_hand_state_ = *msg;
+ int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  
+  drc::hand_state_t msg_out;
+  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  msg_out.num_joints = irobotJointNames.size();
+  for (std::vector<int>::size_type i = 0; i < irobotJointNames.size(); i++)  {
+    std::string name;
+    name ="left_"+irobotJointNames[i];
+    msg_out.joint_name.push_back(name);      
+    msg_out.joint_position.push_back(0);      
+    msg_out.joint_velocity.push_back(0);
+    msg_out.joint_effort.push_back(0);
+  }  
+  /*
+  finger[0]/joint_base_rotation and finger[1]/joint_base_rotation
+  ==============================================================
+  # The encoder on the F1 / F2 base rotation. 8.533 ticks per degree.
+  # 768 ticks to rotate the fingers 90 degrees for a "T" grasp.
+  # 512 ticks to rotate the fingers 60 degrees for a spherical grasp.
+  */
+  {
+    double tick_to_radians = ((0.5*M_PI)/768);
+    msg_out.joint_position[0]=tick_to_radians*msg->fingerSpread;
+    msg_out.joint_position[3]=tick_to_radians*msg->fingerSpread;
+  }
+  
+ // very inaccurate estimate of flexion via hall effect sensor for dumb fingers
+  
+  /*finger[0]/joint_base,finger[1]/joint_base and finger[2]/joint_base
+  ==============================================================
+  # The hall effect sensor on the finger motors.  
+  # 24 counts per motor revolution x 300 motor revolutions for one full spindle
+  # rotation.  
+  # 3500 to put finger at approx. 90 degrees
+  # 6000 to close finger gently
+  # 7000 to close finger tightly
+  #
+  # [F1, F2, F3, F3 Ant.]
+  int32[4] motorHallEncoder
+  */
+ if(dumb_fingers_)
+ {
+    double tick_to_radians = ((0.5*M_PI)/3500); 
+    msg_out.joint_position[1]=tick_to_radians*msg->motorHallEncoder[0];
+    msg_out.joint_position[4]=tick_to_radians*msg->motorHallEncoder[1]; 
+    msg_out.joint_position[6]=tick_to_radians*msg->motorHallEncoder[2];
+ }
+ else
+ {
+ //TODO: USE PROXIMAL JOINT ENCODERS
+ }
+  lcm_publish_.publish("IROBOT_LEFT_STATE", &msg_out);  
+}
+
+//----------------------------------------------------------------------------
+void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+{
+
+ irobot_l_hand_state_ = *msg;
+ int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  
+  drc::hand_state_t msg_out;
+  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  msg_out.num_joints = irobotJointNames.size();
+  for (std::vector<int>::size_type i = 0; i < irobotJointNames.size(); i++)  {
+    std::string name;
+    name ="right_"+irobotJointNames[i];
+    msg_out.joint_name.push_back(name);      
+    msg_out.joint_position.push_back(0);      
+    msg_out.joint_velocity.push_back(0);
+    msg_out.joint_effort.push_back(0);
+  }  
+  /*
+  finger[0]/joint_base_rotation and finger[1]/joint_base_rotation
+  ==============================================================
+  # The encoder on the F1 / F2 base rotation. 8.533 ticks per degree.
+  # 768 ticks to rotate the fingers 90 degrees for a "T" grasp.
+  # 512 ticks to rotate the fingers 60 degrees for a spherical grasp.
+  */
+  {
+    double tick_to_radians = ((0.5*M_PI)/768);
+    msg_out.joint_position[0]=tick_to_radians*msg->fingerSpread;
+    msg_out.joint_position[3]=tick_to_radians*msg->fingerSpread;
+  }
+  
+ // very inaccurate estimate of flexion via hall effect sensor for dumb fingers
+  
+  /*finger[0]/joint_base,finger[1]/joint_base and finger[2]/joint_base
+  ==============================================================
+  # The hall effect sensor on the finger motors.  
+  # 24 counts per motor revolution x 300 motor revolutions for one full spindle
+  # rotation.  
+  # 3500 to put finger at approx. 90 degrees
+  # 6000 to close finger gently
+  # 7000 to close finger tightly
+  #
+  # [F1, F2, F3, F3 Ant.]
+  int32[4] motorHallEncoder
+  */
+ if(dumb_fingers_)
+ {
+    double tick_to_radians = ((0.5*M_PI)/3500); 
+    msg_out.joint_position[1]=tick_to_radians*msg->motorHallEncoder[0];
+    msg_out.joint_position[4]=tick_to_radians*msg->motorHallEncoder[1]; 
+    msg_out.joint_position[6]=tick_to_radians*msg->motorHallEncoder[2];
+ }
+ else
+ {
+ //TODO: USE PROXIMAL JOINT ENCODERS
+ }
+  lcm_publish_.publish("IROBOT_RIGHT_STATE", &msg_out);  
+}
+//----------------------------------------------------------------------------
 int main(int argc, char **argv){
 
   ros::init(argc, argv, "ros2lcm_hands");
   ros::NodeHandle nh;
-  App *app = new App(nh);
+  bool dumb_fingers= true; //irobot hands are configured with dumb fingers
+  App *app = new App(nh,dumb_fingers);
   std::cout << "ros2lcm_hands translator ready\n";
   ros::spin();
   return 0;
