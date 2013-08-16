@@ -39,7 +39,7 @@ public class LCMLogParser {
 
     private void setLength(int length) {
       if (m_message_size == -1) {
-        throw new IllegalStateException("Cannot ensure size if the message size has not been initialized.");
+        return; //do nothing
       }
       int copy_length = length > m_t.length ? m_t.length : length;
 //      System.out.println("Resizing data from " + m_t.length + " to " + length);
