@@ -283,9 +283,7 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
 void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
 
- irobot_l_hand_state_ = *msg;
- int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  
+  irobot_l_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   msg_out.num_joints = irobotJointNames.size();
@@ -342,9 +340,7 @@ void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
 
- irobot_l_hand_state_ = *msg;
- int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  
+  irobot_r_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   msg_out.num_joints = irobotJointNames.size();
