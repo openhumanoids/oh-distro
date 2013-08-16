@@ -286,8 +286,8 @@ Laser::Laser(Channel* driver,
         //
         // Calibration for point cloud topic
 
-        pc_pre_spindle_cal_  = makeFrame(lidar_cal_.laserToSpindle);
-        pc_post_spindle_cal_ = makeFrame(lidar_cal_.cameraToSpindleFixed);        
+        pc_post_spindle_cal_  = makeFrame(lidar_cal_.laserToSpindle);
+        pc_pre_spindle_cal_ = makeFrame(lidar_cal_.cameraToSpindleFixed);        
     }
 
     //
@@ -495,10 +495,10 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
         // The coordinate in left optical frame
 
         const double      rangeMeters = 1e-3 * static_cast<double>(rangesP[i]);  // from millimeters
-        const KDL::Vector pointMotor  = (pc_pre_spindle_cal_ * 
+        const KDL::Vector pointMotor  = (pc_post_spindle_cal_ * 
                                          KDL::Vector(rangeMeters * -std::sin(mirrorTheta), 0.0,
                                                      rangeMeters *  std::cos(mirrorTheta)));
-        const KDL::Vector pointCamera = pc_post_spindle_cal_ * (spindleFromMotor * pointMotor);
+        const KDL::Vector pointCamera = pc_pre_spindle_cal_ * (spindleFromMotor * pointMotor);
         
         //
         // Copy data to point cloud structure
