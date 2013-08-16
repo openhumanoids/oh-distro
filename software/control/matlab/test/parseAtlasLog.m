@@ -16,13 +16,21 @@ use_java = 1;
 
 % Java version is more than 10x faster
 if use_java
-  parser = drc.control.AtlasStateCommandLogParser('EST_ROBOT_STATE', plant.getStateFrame.lcmcoder.jcoder,'ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
-  parser.parseLog(logfile);
-  t_x = parser.getTx();
-  t_u = parser.getTu();
-  x_data = reshape(parser.getStateData, [], length(t_x));
-  u_data = reshape(parser.getInputData, [], length(t_u));
-  
+%   parser = drc.control.AtlasStateCommandLogParser('EST_ROBOT_STATE', plant.getStateFrame.lcmcoder.jcoder,'ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
+%   parser.parseLog(logfile);
+%   t_x = parser.getTx();
+%   t_u = parser.getTu();
+%   x_data = reshape(parser.getStateData, [], length(t_x));
+%   u_data = reshape(parser.getInputData, [], length(t_u));
+
+    parser = drc.control.LCMLogParser;
+    parser.addChannel('EST_ROBOT_STATE',plant.getStateFrame.lcmcoder.jcoder);
+    parser.addChannel('ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
+    parser.parseLog(logfile);  
+    t_x = parser.getT('EST_ROBOT_STATE');
+    t_u = parser.getT('ATLAS_COMMAND');
+    x_data = reshape(parser.getData('EST_ROBOT_STATE'), [], length(t_x));
+    u_data = reshape(parser.getData('ATLAS_COMMAND'), [], length(t_u));
 else
   lcm_log = lcm.logging.Log(logfile,'r');
   state_hash = java.lang.String('EST_ROBOT_STATE').hashCode();
