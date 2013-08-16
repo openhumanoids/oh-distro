@@ -1,4 +1,4 @@
-function atlasJointTuning
+function atlasForceGainTuning
 %NOTEST
 
 % for tuning joint force gains
@@ -27,9 +27,23 @@ gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-% SET JOINT %%%%%%%%%%%%%%%%%%%%%
+input_signals = {'zoh','foh','chirp'};
+% SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'l_arm_elx'; 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+k_f_p = 0.05; 
+ff_f_d = 0.0;
+ff_qd = 0.0;
+
+signal = 'foh';
+amplitude = [0 5];
+T = 10;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~isfield(atlas_joints,joint)
   error ('unknown joint name');
@@ -84,27 +98,22 @@ end
 % set joint position gain to 0
 gains.k_q_p(atlas_joints.joint) = 0;
 
-% SET GAINS %%%%%%%%%%%%%%%%%%%%%
-gains.k_f_p(atlas_joints.joint) = 0.05; 
-gains.ff_f_d(atlas_joints.joint) = 0.0;
-gains.ff_qd(atlas_joints.joint) = 0.0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% set gains
+gains.k_f_p(atlas_joints.joint) = k_f_p; 
+gains.ff_f_d(atlas_joints.joint) = ff_f_d;
+gains.ff_qd(atlas_joints.joint) = ff_qd;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ref_frame.updateGains(gains);
 
-
-% MOVEMENT %%%%%%%%%%%%%%%%%%%%%
-movement = 'foh';
-torque_range = [0 5];
-T = 10;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 udes=zeros(nu,1);
-if strcmp(movement,'zoh')
+if strcmp(signal,'zoh')
   udes_traj = PPTrajectory(zoh(linspace(0,T,4),[torque_range(1) ...
     torque_range(2) torque_range(1) torque_range(1)]));
-elseif strcmp(movement,'foh')
+elseif strcmp(signal,'foh')
   udes_traj = PPTrajectory(foh(linspace(0,T,4),[torque_range(1) ...
     torque_range(2) torque_range(1) torque_range(1)]));
+else
+  error('unknown signal');
 end
 
 toffset = -1;
