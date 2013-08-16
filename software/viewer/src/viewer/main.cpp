@@ -29,6 +29,7 @@
 #include <renderer_drc/renderer_status.hpp>
 #include <renderer_drc/renderer_drcgrid.h>
 #include <renderer_drc/renderer_recovery.hpp>
+#include <renderer_drc/renderer_bdi.hpp>
 
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
@@ -181,43 +182,6 @@ static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
   current_active_posture_preset = (int)active;
  // std::cout << "posture presets combo_box changed to " << (int)active << "\n";
 }
-
-/*
-int current_active_controller_mode=1;
-static void on_controller_mode_combo_box_changed(GtkWidget* cb, void *user_data)
-{
-  BotViewer *self = (BotViewer*) user_data;
-  gint active;
-  active = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
-  current_active_controller_mode = (int)active;
-  std::cout << "CONTROLLER MODE variable changed to " << (int)active << "\n";
-}
-
-static void on_controller_mode_clicked(GtkToggleToolButton *tb, void *user_data)
-{
-  lcm_t * lcm = (lcm_t *) user_data;
-  std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << "\n";
-   
-  drc_controller_mode_t msg;
-  msg.utime = bot_timestamp_now();
-  switch (current_active_controller_mode)                                      
-  {
-    case 0:
-      std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << " [BDI]\n";
-      msg.mode = DRC_CONTROLLER_MODE_T_BDI;
-      drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE",&msg);
-      break;
-    case 1:
-      std::cout << "CONTROLLER MODE published: " << current_active_controller_mode << " [MIT]\n";
-      msg.mode = DRC_CONTROLLER_MODE_T_MIT;
-      drc_controller_mode_t_publish(lcm,"CONTROLLER_MODE", &msg);
-      break;
-    default:
-     std::cout << "Unknown preset. Not found in lcmtype";
-     break;
-  }// end switch case
-}
-*/
 
 static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
 {
@@ -406,20 +370,35 @@ int main(int argc, char *argv[])
 
   // core renderers
   drcgrid_add_renderer_to_viewer(viewer, 1, lcm);
-//  bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-
+  
   // Block of Renderers:  
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef);
   setup_renderer_robot_state(viewer, 0, lcm,0);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
+  
+  // Individual Renderers:
+  maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+  status_add_renderer_to_viewer(viewer, 0, lcm);
+  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
+
+  add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+
+  bdi_add_renderer_to_viewer(viewer, 0, lcm);
+
+  /*
+  // Various Renderers - disabled since VRC
+  // bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   // Renderers for Testing Loopback Quality:
   if (network_debug == 1){    
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,1); // committed
@@ -431,26 +410,16 @@ int main(int argc, char *argv[])
     setup_renderer_robot_state(viewer, 0, lcm, 1);
     // only one debg version needed
   }
-  
-  // Individual Renderers:
-//  add_octomap_renderer_to_viewer(viewer, 1, lcm);
-  maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
-  status_add_renderer_to_viewer(viewer, 0, lcm);
-  //score_add_renderer_to_viewer(viewer, 0, lcm);
-//  setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
-  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
-  //occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
-
-  add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","LIDARSWEEP", bot_param);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA_SGBM", bot_param);
 
-//  tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
-  setup_renderer_crawling_plan(viewer,0, lcm, 0);
+  // add_octomap_renderer_to_viewer(viewer, 1, lcm);
+  // occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
+  // setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
+  // tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  // setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
+  // setup_renderer_crawling_plan(viewer,0, lcm, 0);
+  */
   
   //--------------    Toolbar Additions
   // add custom TOP VIEW button
@@ -529,38 +498,6 @@ int main(int argc, char *argv[])
   gtk_widget_show_all (GTK_WIDGET (toolitem));
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem, -1);
   
-    
-// TODO: this will moved to somewhere else  
-/*
- GtkWidget *controller_mode_button;
-  controller_mode_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_EXECUTE);
-  gtk_tool_button_set_label(GTK_TOOL_BUTTON(controller_mode_button), "Controller_Mode");
-  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(controller_mode_button), viewer->tips, "Set Controller Mode", NULL);
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(controller_mode_button), -1);
-  gtk_widget_show(controller_mode_button);
-  g_signal_connect(G_OBJECT(controller_mode_button), "clicked", G_CALLBACK(on_controller_mode_clicked), lcm);
-  
-  GtkWidget * hbox2 = gtk_hbox_new (FALSE, 5);
-  GtkWidget* vseparator2 = gtk_vseparator_new ();
-  GtkWidget* controller_mode_combo_box=gtk_combo_box_new_text();
-  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "BDI" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( controller_mode_combo_box ), "MIT" );
-  gtk_combo_box_set_active(GTK_COMBO_BOX( controller_mode_combo_box ),(gint) current_active_controller_mode);
-  gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(controller_mode_combo_box), (gint) 1) ;
-  g_signal_connect( G_OBJECT( controller_mode_combo_box ), "changed", G_CALLBACK(on_controller_mode_combo_box_changed), viewer);
-
-  gtk_box_pack_start (GTK_BOX (hbox2), vseparator2, FALSE, FALSE, 0);
-  gtk_box_pack_end (GTK_BOX (hbox2), controller_mode_combo_box, FALSE, FALSE, 0);
-  GtkToolItem * toolitem2 = gtk_tool_item_new ();
-  gtk_container_add (GTK_CONTAINER (toolitem2), hbox2);
-  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem2), viewer->tips, "Cntroller Mode Selection", NULL);
-  gtk_widget_show_all (GTK_WIDGET (toolitem2));
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem2, -1);  
-*/  
-
-    
-  //--------------             
-
   // add custom renderer groups menu
   RendererGroupUtil groupUtil(viewer, bot_param);
   groupUtil.setup();
