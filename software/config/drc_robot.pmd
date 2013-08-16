@@ -66,6 +66,7 @@ group "a.1.core" {
     }
 }
 
+# must be individually launched as per hardware setup
 group "a.2.hand_drivers" {
     cmd "sandia-right" {
         exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
