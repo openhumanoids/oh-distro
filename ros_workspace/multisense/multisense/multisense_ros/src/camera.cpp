@@ -988,8 +988,8 @@ void Camera::queryConfig()
     left_rect_cam_info_.P[0]   = image_config_.fx();       left_rect_cam_info_.P[1]   = 0.0;   
     left_rect_cam_info_.P[4]   = 0.0;                      left_rect_cam_info_.P[5]   = image_config_.fy();  
     left_rect_cam_info_.P[8]   = 0.0;                      left_rect_cam_info_.P[9]   = 0.0;   
-    left_rect_cam_info_.P[2]   = image_config_.width()/2;  left_rect_cam_info_.P[3]   = 0.0;
-    left_rect_cam_info_.P[6]   = image_config_.height()/2; left_rect_cam_info_.P[7]   = 0.0;
+    left_rect_cam_info_.P[2]   = image_config_.cx();       left_rect_cam_info_.P[3]   = 0.0;
+    left_rect_cam_info_.P[6]   = image_config_.cy();       left_rect_cam_info_.P[7]   = 0.0;
     left_rect_cam_info_.P[10]  = 1.0;                      left_rect_cam_info_.P[11]  = 0.0;
     
     right_rect_cam_info_.width  = image_config_.width();
@@ -998,8 +998,8 @@ void Camera::queryConfig()
     right_rect_cam_info_.P[0]  = image_config_.fx();       right_rect_cam_info_.P[1]  = 0.0;  
     right_rect_cam_info_.P[4]  = 0.0;                      right_rect_cam_info_.P[5]  = image_config_.fy();  
     right_rect_cam_info_.P[8]  = 0.0;                      right_rect_cam_info_.P[9]  = 0.0;  
-    right_rect_cam_info_.P[2]  = image_config_.width()/2;  right_rect_cam_info_.P[3]  = image_config_.tx() * image_config_.fx();
-    right_rect_cam_info_.P[6]  = image_config_.height()/2; right_rect_cam_info_.P[7]  = 0.0;
+    right_rect_cam_info_.P[2]  = image_config_.cx();       right_rect_cam_info_.P[3]  = image_config_.tx() * image_config_.fx();
+    right_rect_cam_info_.P[6]  = image_config_.cy();       right_rect_cam_info_.P[7]  = 0.0;
     right_rect_cam_info_.P[10] = 1.0;                      right_rect_cam_info_.P[11] = 0.0;
     
     left_rgb_rect_cam_info_ = left_rect_cam_info_;
