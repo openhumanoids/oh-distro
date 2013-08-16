@@ -37,13 +37,13 @@ classdef BDIStepTranslator < DRCPlanner
       for j = 1:NUM_REQUIRED_WALK_STEPS
         step_data = drc.atlas_step_data_t();
         step_data.step_index = j;
-        step_data.foot_index = footsteps(j).is_right_foot;
+        step_data.foot_index = footsteps(j+2).is_right_foot;
         %% TODO: computer step duration based on target foot speed
         step_data.duration = 0.7;
-        step_data.position = footsteps(j).pos(1:3);
-        step_data.yaw = footsteps(j).pos(6);
-        step_data.normal = rpy2rotmat(footsteps(j).pos(4:6)) * [0;0;1];
-        step_data.swing_height = footsteps(j).step_height;
+        step_data.position = footsteps(j+2).pos(1:3);
+        step_data.yaw = footsteps(j+2).pos(6);
+        step_data.normal = rpy2rotmat(footsteps(j+2).pos(4:6)) * [0;0;1];
+        step_data.swing_height = 0.05; % currently using BDI default % footsteps(j+2).step_height;
         walk_param_msg.step_queue(j) = step_data;
       end
     end
