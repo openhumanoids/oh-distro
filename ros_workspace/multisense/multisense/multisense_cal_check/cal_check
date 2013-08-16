@@ -144,7 +144,7 @@ class CheckCal():
                          os.path.join(self.tmp_dir, "dev_info.txt ") + 
                          os.path.join(self.out_dir, os.path.basename(bag_name).\
                          replace("calCheck.bag", "calResults.txt ")) +
-                         "11 300 300" )
+                         "11 30 30" )
 
 
     #Deletes temporary directory
