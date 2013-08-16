@@ -44,10 +44,10 @@ k_f_p.r_leg_kny = k_f_p.l_leg_kny;
 k_f_p.r_leg_aky = k_f_p.l_leg_aky;
 k_f_p.r_leg_akx = k_f_p.l_leg_akx;
 
-k_f_p.l_arm_usy = 0.012;
+k_f_p.l_arm_usy = 0.105;
 k_f_p.l_arm_shx = 0.105;
-k_f_p.l_arm_ely = 0.155;
-k_f_p.l_arm_elx = 0.012;
+k_f_p.l_arm_ely = 0.075;
+k_f_p.l_arm_elx = 0.13;
 k_f_p.l_arm_uwy = 0.012;
 k_f_p.l_arm_mwx = 0.012;
 
@@ -98,6 +98,11 @@ k_q_p.r_arm_ely = k_q_p.l_arm_ely;
 k_q_p.r_arm_elx = k_q_p.l_arm_elx;
 k_q_p.r_arm_uwy = k_q_p.l_arm_uwy;
 k_q_p.r_arm_mwx = k_q_p.l_arm_mwx;
+
+
+% elx
+%ff_f_d = 0.0125;
+
 
 gains.k_q_p = double(k_q_p);
 
