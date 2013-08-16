@@ -1,14 +1,22 @@
 <robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
-  
+
+
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
-
-  <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="revolute" thumb_angle="0">
-    <origin xyz="0 -0.1 0" rpy="-1.57079 0 -1.57079"/>
-  </xacro:sandia_hand>
+  <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
+  
+<!--  <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="revolute" thumb_angle="0">-->
+<!--    <origin xyz="0 -0.1 0" rpy="-1.57079 0 -1.57079"/>-->
+<!--  </xacro:sandia_hand>-->
   <xacro:sandia_hand side="left" parent="l_hand" reflect="-1" joint_type="revolute" thumb_angle="0">
     <origin xyz="0  0.1 0" rpy=" 1.57079 0  1.57079"/>
   </xacro:sandia_hand>
+  <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
+    <origin rpy="1.57079 0 0" xyz="0 -0.05 0"/>
+  </xacro:irobot_hand>
+<!--  <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">-->
+<!--    <origin rpy="1.57079 0 3.14159" xyz="0 0.05 0"/>-->
+<!--  </xacro:irobot_hand>-->
 
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.gazebo" />
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
