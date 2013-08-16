@@ -1,7 +1,7 @@
 function atlasJointTuning
 %NOTEST
 
-% for tuning arm joint force gains
+% for tuning joint force gains
 
 options.floating = true;
 options.dt = 0.002;
@@ -14,20 +14,10 @@ ref_frame = AtlasPosTorqueRef(r);
 
 nu = getNumInputs(r);
 
-l_arm_usy = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_usy')));
-l_arm_shx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_shx')));
-l_arm_ely = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_ely')));
-l_arm_elx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_elx')));
-l_arm_uwy = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_uwy')));
-l_arm_mwx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'l_arm_mwx')));
-
-r_arm_usy = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_usy')));
-r_arm_shx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_shx')));
-r_arm_ely = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_ely')));
-r_arm_elx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_elx')));
-r_arm_uwy = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_uwy')));
-r_arm_mwx = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm_mwx')));
-
+atlas_joints = struct();   % maps joint names to indices
+for i=1:nu
+  atlas_joints.(input_frame.coordinates{i}) = i;
+end
 
 gains = getAtlasGains(input_frame);
 
@@ -38,14 +28,37 @@ gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % SET JOINT %%%%%%%%%%%%%%%%%%%%%
-joint = l_arm_elx; 
+joint = 'l_arm_elx'; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if ~isfield(atlas_joints,joint)
+  error ('unknown joint name');
+end
+
 % setup arm pose
-if joint==l_arm_shx || joint==r_arm_shx || joint==l_arm_elx || joint==r_arm_elx
-  qdes = zeros(nu,1);
-  qdes(r_arm_shx) = 1.5;
-  qdes(l_arm_shx) = -1.5;
+qdes = zeros(nu,1);
+if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
+    strcmp(joint,'l_arm_elx') || strcmp(joint,'r_arm_elx') || ...
+    strcmp(joint,'l_leg_hpy') || strcmp(joint,'r_arm_hpy') || ... 
+    strcmp(joint,'l_leg_kny') || strcmp(joint,'r_arm_kny') 
+
+  qdes(atlas_joints.r_arm_shx) = 1.45;
+  qdes(atlas_joints.l_arm_shx) = -1.45;
+
+elseif strcmp(joint,'l_arm_usx') || strcmp(joint,'r_arm_usy') || ...
+    strcmp(joint,'l_arm_uwy') || strcmp(joint,'r_arm_uwy') || ...
+    strcmp(joint,'l_arm_mwx') || strcmp(joint,'r_arm_mwx')
+  
+  qdes(atlas_joints.r_arm_shx) = 1.35;
+  qdes(atlas_joints.l_arm_shx) = -1.35;
+
+elseif strcmp(joint,'l_arm_ely') || strcmp(joint,'r_arm_ely')
+  
+  qdes(atlas_joints.r_arm_shx) = -1.57;
+  qdes(atlas_joints.l_arm_shx) = 1.57;
+
+else
+  error ('that joint isnt supported yet');
 end
 
 act_idx = getActuatedJoints(r);
@@ -69,22 +82,19 @@ while tt<movetime
 end
 
 % set joint position gain to 0
-gains.k_q_p(joint) = 0;
+gains.k_q_p(atlas_joints.joint) = 0;
 
 % SET GAINS %%%%%%%%%%%%%%%%%%%%%
-gains.k_f_p(joint) = 0.155; % elx
-% gains.k_f_p(joint) = 0.105; % shx
-gains.ff_f_d(joint) = 0.0;
-gains.ff_qd(joint) = 0.0;
+gains.k_f_p(atlas_joints.joint) = 0.05; 
+gains.ff_f_d(atlas_joints.joint) = 0.0;
+gains.ff_qd(atlas_joints.joint) = 0.0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ref_frame.updateGains(gains);
 
 
 % MOVEMENT %%%%%%%%%%%%%%%%%%%%%
 movement = 'foh';
-%movement = 'zoh';
-torque_range = [0 35]; % elx
-% torque_range = [0 60]; % shx
+torque_range = [0 5];
 T = 10;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -106,7 +116,7 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    udes(joint) = udes_traj.eval(tt);
+    udes(atlas_joints.joint) = udes_traj.eval(tt);
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
   end
 end
