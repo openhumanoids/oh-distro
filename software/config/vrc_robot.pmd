@@ -31,7 +31,7 @@ group "a.1.core" {
         exec = "drc-printf-cache";
         host = "robot";
     }
-    cmd "viewer-REMOVEFORCOMP" {
+    cmd "viewer" {
         exec = "drc-viewer";
         host = "robot";
     }
@@ -40,11 +40,11 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "pserver" {
-        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "extra";
     }
     cmd "LegOdometry" {
@@ -83,8 +83,8 @@ group "a.1.core" {
         exec = "drc-init-laser";
         host = "extra";
     }
-    cmd "logger-robot-nocams" {
-        exec = "lcm-logger -f $HOME/drc/data/latest_robot_log.lcm";
+    cmd "logger-robot" {
+        exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
         host = "robot";
     }
     cmd "drc-frequency" {
@@ -121,23 +121,6 @@ group "a.2.walking" {
     cmd "recovery" {
         exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
         host = "robot";
-    }
-}
-
-
-# Controllers for vrc task 3 (hose manipulation)
-group "a.3.manip" {
-    cmd "WalkingStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
-        host = "robot";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runSimpleGraspExecutionScript;\"";
-       host = "extra";
-    } 
-    cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
-       host = "extra";
     }
 }
 
@@ -197,7 +180,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -209,7 +192,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "base";
     }
     cmd "est_rsp_base" {
@@ -220,8 +203,8 @@ group "b.1.core" {
         exec = "drc-image-receive";
         host = "base";
     }
-    cmd "lcm-logger-base-nocams" {
-        exec = "lcm-logger  -f $HOME/drc/data/latest_base_log.lcm";
+    cmd "lcm-logger-base" {
+        exec = "lcm-logger  -f $DRC_BASE/data/latest_base_log.lcm";
         host = "base";
     }
     cmd "drc-log-vrcscore"{
@@ -253,29 +236,6 @@ group "b.2.walking" {
     }
 }
 
-group "b.3.grasping" {
-
-}
-
-# Planners for Simulataneous Walking and Manipulation
-group "b.3.manip" {
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
-       host = "base";
-    }
-    cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
-       host = "base";
-    }
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
-       host = "base";
-    }
-    cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
-       host = "base";
-    }
-}
 group "b.4.driving" {
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
@@ -290,50 +250,50 @@ group "b.4.driving" {
 
 group "g.0.gazebo" {
     cmd "gz_mit_ingress" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
     cmd "gz_mit_walking" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
     cmd "gz_quals_2" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "robot";
     }
     cmd "gz_quals_3" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
         host = "robot";
     }
     cmd "gz_vrc_driving" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
         host = "robot";
     }
     cmd "gz_vrc_walking" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
     }
     cmd "gz_vrc_manip" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
     cmd "gz_vrc_manip_mating_test" {
-      exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
+      exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
       host = "robot";
     }
     cmd "gz_greg_aas_ingress" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/aas_ingress.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/aas_ingress.world";
         host = "robot";
     }
     cmd "gz_greg_aas_flat" {
-        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/aas_flat.world";
+        exec = "roslaunch atlas_utils vrc_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/aas_flat.world";
         host = "robot";
     }
 }
 
 group "m.simple-control" {
     cmd "hand_in_view" {
-        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  hand_in_view";
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $DRC_BASE/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  hand_in_view";
         host = "robot";
     }
     cmd "individual_joints" {

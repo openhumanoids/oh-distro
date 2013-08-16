@@ -1,10 +1,28 @@
-group "a.1.core" {
-    cmd "sa-right" {
-        exec = "ptgrey-gige -f 5 -q 50 -c CAMERACHEST_RIGHT -s 12502233";
+group "0.development" {
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
+        host = "localhost";
+    }
+    cmd "extra_deputy" {
+        exec = "bot-procman-deputy -n extra";
+        host = "localhost";
+    }
+    cmd "base_deputy" {
+        exec = "bot-procman-deputy -n base";
+        host = "localhost";
+    }
+    cmd "set-sim-rate" {
+        exec = "drc-set-sim-rate 0.15";
         host = "robot";
     }
+}
+group "a.0.drivers" {
     cmd "sa-left" {
         exec = "ptgrey-gige -f 5 -q 50 -c CAMERACHEST_LEFT -s 12502221";
+        host = "robot";
+    }
+    cmd "sa-right" {
+        exec = "ptgrey-gige -f 5 -q 50 -c CAMERACHEST_RIGHT -s 12502233";
         host = "robot";
     }
     cmd "rearcam-NEEDPASSWORD" {
@@ -18,5 +36,31 @@ group "a.1.core" {
     cmd "drc-atlas" {
         exec = "drc-atlas -p off";
         host = "localhost";
+    }
+    cmd "logger-robot-nocams" {
+        exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
+        host = "robot";
+    }
+}
+group "a.1.core" {
+    cmd "aa-sync" {
+        exec = "drc-state-sync -b";
+        host = "robot";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "robot";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
+        host = "extra";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        host = "extra";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -g -b";
+        host = "extra";
     }
 }
