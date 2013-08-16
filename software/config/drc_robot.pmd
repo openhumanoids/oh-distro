@@ -64,8 +64,8 @@ group "a.1.core" {
         exec = "drc-joints2frames -g -b";
         host = "extra";
     }
-    cmd "ros2lcm-hands" {
-        exec = "rosrun translators ros2lcm_hands";
+    cmd "translators-hands" {
+        exec = "roslaunch translators hands_notsim.launch";
         host = "robot";
     }
 }
