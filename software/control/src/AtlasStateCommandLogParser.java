@@ -41,75 +41,79 @@ public class AtlasStateCommandLogParser {
   public int parseLog(String filename) {
     int state_ind = 0;
     int input_ind = 0;
+
     try {
       Log log = new Log(filename,"r");
-      while(true) {
-        Log.Event e = log.readNext();
-//        System.out.println(e.channel);
-        int msg_hash = e.channel.hashCode();
-        if (msg_hash == m_state_hash) {
-          CoordinateFrameData data = m_state_coder.decode(e.data);
+      try {
+        while(true) {
+          Log.Event e = log.readNext();
+  //        System.out.println(e.channel);
+          int msg_hash = e.channel.hashCode();
+          if (msg_hash == m_state_hash) {
+            CoordinateFrameData data = m_state_coder.decode(e.data);
 
-          if (state_ind == 0) {
-            m_state_size = data.val.length;
-            m_x_data = new double[INIT_LOG_SIZE*m_state_size];
-          } else {
-            if (m_state_size != data.val.length) {
-              throw new IllegalStateException("New state message has length " + data.val.length + ", but expected " + m_state_size);
+            if (state_ind == 0) {
+              m_state_size = data.val.length;
+              m_x_data = new double[INIT_LOG_SIZE*m_state_size];
+            } else {
+              if (m_state_size != data.val.length) {
+                throw new IllegalStateException("New state message has length " + data.val.length + ", but expected " + m_state_size);
+              }
             }
-          }
 
-          //Resize arrays if necessary
-          if (state_ind == m_t_x.length) {
-            double[] tmp = new double[2*m_t_x.length*m_state_size];
-            System.arraycopy(m_x_data, 0, tmp, 0, m_t_x.length*m_state_size);
-            m_x_data = tmp;
-            
-            tmp = new double[2*m_t_x.length];
-            System.arraycopy(m_t_x, 0, tmp, 0, m_t_x.length);
-            m_t_x = tmp;
-//            System.out.println("Resizing state");
-          }
-
-          System.arraycopy(data.val, 0, m_x_data, state_ind*m_state_size, m_state_size);
-          m_t_x[state_ind] = data.t;
-          state_ind++;
-        } else if (msg_hash == m_input_hash) {
-          CoordinateFrameData data = m_input_coder.decode(e.data);
-
-          if (input_ind == 0) {
-            m_input_size = data.val.length;
-            m_u_data = new double[INIT_LOG_SIZE*m_input_size];
-          } else {
-            if (m_input_size != data.val.length) {
-              throw new IllegalStateException("New command message has length " + data.val.length + ", but expected " + m_input_size);
+            //Resize arrays if necessary
+            if (state_ind == m_t_x.length) {
+              double[] tmp = new double[2*m_t_x.length*m_state_size];
+              System.arraycopy(m_x_data, 0, tmp, 0, m_t_x.length*m_state_size);
+              m_x_data = tmp;
+              
+              tmp = new double[2*m_t_x.length];
+              System.arraycopy(m_t_x, 0, tmp, 0, m_t_x.length);
+              m_t_x = tmp;
+  //            System.out.println("Resizing state");
             }
-          }
 
-          //Resize arrays if necessary
-          if (input_ind == m_t_u.length) {
-            double[] tmp = new double[2*m_t_u.length*m_input_size];
-            System.arraycopy(m_u_data, 0, tmp, 0, m_t_u.length*m_input_size);
-            m_u_data = tmp;
-            
-            tmp = new double[2*m_t_u.length];
-            System.arraycopy(m_t_u, 0, tmp, 0, m_t_u.length);
-            m_t_u = tmp;
-//            System.out.println("Resizing input");
-          }
+            System.arraycopy(data.val, 0, m_x_data, state_ind*m_state_size, m_state_size);
+            m_t_x[state_ind] = data.t;
+            state_ind++;
+          } else if (msg_hash == m_input_hash) {
+            CoordinateFrameData data = m_input_coder.decode(e.data);
 
-          System.arraycopy(data.val, 0, m_u_data, input_ind*m_input_size, m_input_size);
-          m_t_u[input_ind] = data.t;
-          input_ind++;
+            if (input_ind == 0) {
+              m_input_size = data.val.length;
+              m_u_data = new double[INIT_LOG_SIZE*m_input_size];
+            } else {
+              if (m_input_size != data.val.length) {
+                throw new IllegalStateException("New command message has length " + data.val.length + ", but expected " + m_input_size);
+              }
+            }
+
+            //Resize arrays if necessary
+            if (input_ind == m_t_u.length) {
+              double[] tmp = new double[2*m_t_u.length*m_input_size];
+              System.arraycopy(m_u_data, 0, tmp, 0, m_t_u.length*m_input_size);
+              m_u_data = tmp;
+              
+              tmp = new double[2*m_t_u.length];
+              System.arraycopy(m_t_u, 0, tmp, 0, m_t_u.length);
+              m_t_u = tmp;
+  //            System.out.println("Resizing input");
+            }
+
+            System.arraycopy(data.val, 0, m_u_data, input_ind*m_input_size, m_input_size);
+            m_t_u[input_ind] = data.t;
+            input_ind++;
+          }
         }
+      } catch (EOFException ex) {
+  //      System.out.println(ex);
+      } finally {
+        log.close();
       }
-    } catch (EOFException ex) {
-//      System.out.println(ex);
     } catch (IOException ex) {
-      System.out.println(ex);
+      System.err.println(ex);
       return 1;
     }
-
     //Clean-up sizes
     double[] tmp = new double[state_ind*m_state_size];
     System.arraycopy(m_x_data, 0, tmp, 0, state_ind*m_state_size);
