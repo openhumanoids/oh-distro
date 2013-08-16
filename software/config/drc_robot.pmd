@@ -33,6 +33,10 @@ group "a.0.drivers" {
         exec = "roslaunch multisense_bringup multisense.launch";
         host = "localhost";
     }
+    cmd "ms-subscribe" {
+        exec = "rosrun multisense_command multisense_subscribe -d";
+        host = "localhost";
+    }
     cmd "drc-atlas" {
         exec = "drc-atlas -p off";
         host = "localhost";
@@ -41,6 +45,31 @@ group "a.0.drivers" {
         exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
         host = "robot";
     }    
+}
+
+
+# must be individually launched as per hardware setup
+group "a.0.hand_drivers" {
+    cmd "sandia-right" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
+        host = "robot";
+    }
+    cmd "sandia-left" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA L";
+        host = "robot";
+    }
+    cmd "irobot-right" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49";
+        host = "robot";
+    }
+    cmd "irobot-left" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT L 47";
+        host = "robot";
+    }   
+    cmd "aa-ros2lcm-hands" {
+        exec = "rosrun translators hands_notsim.launch";
+        host = "robot";
+    }
 }
 
 group "a.1.core" {
@@ -64,29 +93,34 @@ group "a.1.core" {
         exec = "drc-joints2frames -g -b";
         host = "extra";
     }
-    cmd "translators-hands" {
-        exec = "roslaunch translators hands_notsim.launch";
-        host = "robot";
+    cmd "ms2image" {
+        exec = "drc-multisense-image-tool -oi";
+        host = "extra";
+    }
+    cmd "maps-server" {
+        exec = "maps-server -l SCAN";
+        host = "extra";
+    }
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "extra";
+    }
+    cmd "data-request-server" {
+        exec = "drc-utime-publisher -f 0";
+        host = "extra";
     }
 }
 
-# must be individually launched as per hardware setup
-group "a.2.hand_drivers" {
-    cmd "sandia-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
-        host = "robot";
+
+group "b.2.walking" {
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
     }
-    cmd "sandia-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA L";
-        host = "robot";
+    cmd "BDIStepTranslator" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; addpath_bdi_step_translator; RunBDIStepTranslator;\"";
+        host = "base";
     }
-    cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49";
-        host = "robot";
-    }
-    cmd "irobot-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT L 47";
-        host = "robot";
-    }   
 }
+
 

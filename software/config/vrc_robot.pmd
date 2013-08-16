@@ -40,7 +40,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/vrc_robot.cfg";
         host = "extra";
     }
     cmd "modelpub" {
@@ -176,7 +176,7 @@ group "a.4.ingress" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
+        exec = "drc-viewer  -r base -c vrc_robot.cfg"; 
         host = "base";
     }
     cmd "modelpub" {
@@ -192,7 +192,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        exec = "bot-param-server $DRC_BASE/software/config/vrc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "base";
     }
     cmd "est_rsp_base" {
