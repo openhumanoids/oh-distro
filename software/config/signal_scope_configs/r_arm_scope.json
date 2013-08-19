@@ -7,7 +7,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_USY"
+            "R_ARM_USY"
           ]
         }, 
         {
@@ -15,7 +15,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_SHX"
+            "R_ARM_SHX"
           ]
         }, 
         {
@@ -23,7 +23,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELY"
+            "R_ARM_ELY"
           ]
         }, 
         {
@@ -31,7 +31,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELX"
+            "R_ARM_ELX"
           ]
         }, 
         {
@@ -39,7 +39,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_UWY"
+            "R_ARM_UWY"
           ]
         }, 
         {
@@ -47,7 +47,7 @@
           "fieldName": "joint_position", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_MWX"
+            "R_ARM_MWX"
           ]
         }, 
         {
@@ -55,7 +55,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_USY"
+            "R_ARM_USY"
           ]
         }, 
         {
@@ -63,7 +63,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_SHX"
+            "R_ARM_SHX"
           ]
         }, 
         {
@@ -71,7 +71,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_ELY"
+            "R_ARM_ELY"
           ]
         }, 
         {
@@ -79,7 +79,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_ELX"
+            "R_ARM_ELX"
           ]
         }, 
         {
@@ -87,7 +87,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_UWY"
+            "R_ARM_UWY"
           ]
         }, 
         {
@@ -95,7 +95,7 @@
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_MWX"
+            "R_ARM_MWX"
           ]
         }
       ], 
@@ -110,7 +110,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_USY"
+            "R_ARM_USY"
           ]
         }, 
         {
@@ -118,7 +118,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_SHX"
+            "R_ARM_SHX"
           ]
         }, 
         {
@@ -126,7 +126,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELY"
+            "R_ARM_ELY"
           ]
         }, 
         {
@@ -134,7 +134,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELX"
+            "R_ARM_ELX"
           ]
         }, 
         {
@@ -142,7 +142,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_UWY"
+            "R_ARM_UWY"
           ]
         }, 
         {
@@ -150,7 +150,7 @@
           "fieldName": "joint_effort", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_MWX"
+            "R_ARM_MWX"
           ]
         }, 
         {
@@ -158,7 +158,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_USY"
+            "R_ARM_USY"
           ]
         }, 
         {
@@ -166,7 +166,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_SHX"
+            "R_ARM_SHX"
           ]
         }, 
         {
@@ -174,7 +174,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_ELY"
+            "R_ARM_ELY"
           ]
         }, 
         {
@@ -182,7 +182,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_ELX"
+            "R_ARM_ELX"
           ]
         }, 
         {
@@ -190,7 +190,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_UWY"
+            "R_ARM_UWY"
           ]
         }, 
         {
@@ -198,7 +198,7 @@
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
-            "L_ARM_MWX"
+            "R_ARM_MWX"
           ]
         }
       ], 
@@ -213,7 +213,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_USY"
+            "R_ARM_USY"
           ]
         }, 
         {
@@ -221,7 +221,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_SHX"
+            "R_ARM_SHX"
           ]
         }, 
         {
@@ -229,7 +229,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELY"
+            "R_ARM_ELY"
           ]
         }, 
         {
@@ -237,7 +237,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_ELX"
+            "R_ARM_ELX"
           ]
         }, 
         {
@@ -245,7 +245,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_UWY"
+            "R_ARM_UWY"
           ]
         }, 
         {
@@ -253,7 +253,7 @@
           "fieldName": "joint_velocity", 
           "channel": "EST_ROBOT_STATE", 
           "arrayKeys": [
-            "L_ARM_MWX"
+            "R_ARM_MWX"
           ]
         }
       ], 
