@@ -18,15 +18,15 @@ group "0.development" {
 }
 group "a.0.drivers" {
     cmd "sa-left" {
-        exec = "ptgrey-gige -f 5 -q 50 -c CAMERACHEST_LEFT -s 12502221";
+        exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270";
         host = "robot";
     }
     cmd "sa-right" {
-        exec = "ptgrey-gige -f 5 -q 50 -c CAMERACHEST_RIGHT -s 12502233";
+        exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
         host = "robot";
     }
     cmd "rearcam-NEEDPASSWORD" {
-        exec = "ipwebcam -f 5 -q 50 -c CAMERAREAR -u http://admin:@10.66.171.26/video2.mjpg";
+        exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:@10.66.171.26/video2.mjpg";
         host = "robot";
     }
     cmd "multisense" {
@@ -41,8 +41,8 @@ group "a.0.drivers" {
         exec = "drc-atlas -p off";
         host = "localhost";
     }
-    cmd "logger-robot-nocams" {
-        exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
+    cmd "logger-robot" {
+        exec = "lcm-logger";
         host = "robot";
     }    
 }
@@ -105,7 +105,7 @@ group "a.1.core" {
         exec = "data-request-server";
         host = "extra";
     }
-    cmd "data-request-server" {
+    cmd "utime-publisher" {
         exec = "drc-utime-publisher -f 0";
         host = "extra";
     }
@@ -124,3 +124,30 @@ group "b.2.walking" {
 }
 
 
+group "m.control" {
+    cmd "NeckPitchCommand" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasNeckControl(0.75);\"";
+        host = "base";
+    }
+}
+
+group "m.perception" {
+    cmd "ms-reconfig" {
+        exec = "rosrun dynamic_reconfigure reconfigure_gui";
+        host = "localhost";
+    }
+}
+
+
+#################################################################
+script "off_start" { 
+    start group "0.development";
+    start cmd "sa-left";
+    start cmd "sa-right";
+    start cmd "multisense";
+    start cmd "ms-subscribe";
+    start cmd "drc-atlas";
+    start cmd "logger-robot";
+    start group "a.1.core";
+    start group "b.2.walking";
+}
