@@ -58,7 +58,7 @@ public class RobotStateAndEffortCoder implements drake.util.LCMCoder
     
     public int dim()
     {
-      return 2*(m_num_joints+m_num_floating_joints);
+      return 3*(m_num_joints+m_num_floating_joints);
     }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
