@@ -67,7 +67,7 @@ group "a.0.hand_drivers" {
         host = "robot";
     }   
     cmd "aa-ros2lcm-hands" {
-        exec = "rosrun translators hands_notsim.launch";
+        exec = "roslaunch translators hands_notsim.launch";
         host = "robot";
     }
 }
