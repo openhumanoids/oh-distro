@@ -1488,11 +1488,6 @@
     <joint name="r_leg_hpz"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="head_root"/>
-  <joint name="head_root_joint" type="fixed">
-    <parent link="head_root"/>
-    <child link="head"/>
-  </joint>
   <link name="head">
     <inertial>
       <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
