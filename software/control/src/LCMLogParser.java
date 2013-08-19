@@ -11,6 +11,15 @@ import drake.util.LCMCoder;
 import drake.util.CoordinateFrameData;
 import java.util.*;
 
+/**
+ *  Class for parsing an LCM log into arrays (designed to be used with MATLAB, which is why ArrayList is not used)
+ *  General use scenario:
+ *  LCMLogParser parser = new LCMLogParser();
+ *  parser.addChannel(String lcm_channel_name, LCMCoder coder);  //Register a channel name to parse and associated coder. Can add more than one
+ *  parser.parseLog(String log_file_name);
+ *  parser.getT(String lcm_channel_name); //Get time series from parsed log
+ *  parser.getData(String lcm_channel_name); //Get data series from parsed log
+ */
 public class LCMLogParser {
   private static final int INIT_LOG_SIZE = 1000;
 
@@ -139,10 +148,16 @@ public class LCMLogParser {
     return c.m_data;
   }
 
+  /**
+  * Add a channel to parse
+  */ 
   public void addChannel(String channel, LCMCoder coder) {
     m_channel_map.put(channel, new ChannelLog(channel,coder));
   }
 
+  /**
+  * Remove channel from list to parse
+  */
   public void removeChannel(String channel) {
     m_channel_map.remove(channel);
   }
