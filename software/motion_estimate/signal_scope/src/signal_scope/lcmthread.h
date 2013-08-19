@@ -22,6 +22,7 @@ public:
   LCMThread()
   {
     mShouldStop = false;
+    mShouldPause = false;
     mLCM = 0;
   }
 
