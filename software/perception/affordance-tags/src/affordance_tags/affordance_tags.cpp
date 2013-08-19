@@ -57,7 +57,7 @@ class Tags{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     bool verbose_;
-    std::string camera_frame_;
+    std::string camera_frame_, camera_channel_;
     int width_, height_;
     double fx_, fy_, cx_, cy_;
     
@@ -66,7 +66,7 @@ class Tags{
 
     void getTagList();
     void processTag(const  bot_core::image_t* msg);
-    void updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose);
+    void updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose, int uid);
 
     BotParam* botparam_;
     bot::frames* botframes_cpp_;
@@ -84,17 +84,20 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_cpp_ = new bot::frames( lcm_ , botparam_ );
  
-  camera_frame_ = "CAMERA";
-  lcm_->subscribe( "CAMLCM_IMAGE" ,&Tags::imageHandler,this);
-  lcm_->subscribe( camera_frame_ ,&Tags::multisenseHandler,this);
+  camera_channel_ = "CAMERA";
+  camera_frame_ = "CAMERA_LEFT";
+  lcm_->subscribe( "WEBCAM" ,&Tags::imageHandler,this);
+  lcm_->subscribe( camera_channel_ ,&Tags::multisenseHandler,this);
   
-  std::string left_str = "cameras." + std::string(camera_frame_) + ".left"; 
-  width_ = bot_param_get_double_or_fail(botparam_, (left_str+".width").c_str());
-  height_ = bot_param_get_double_or_fail(botparam_, (left_str+".height").c_str());
-  fx_ = bot_param_get_double_or_fail(botparam_, (left_str+".fx").c_str());
-  fy_ = bot_param_get_double_or_fail(botparam_, (left_str+".fy").c_str());
-  cx_ = bot_param_get_double_or_fail(botparam_, (left_str+".cx").c_str());
-  cy_ = bot_param_get_double_or_fail(botparam_, (left_str+".cy").c_str());
+  std::string left_str = "cameras."+camera_frame_+".intrinsic_cal";
+  width_ = bot_param_get_int_or_fail(botparam_, (left_str+".width").c_str());
+  height_ = bot_param_get_int_or_fail(botparam_,(left_str+".height").c_str());
+  double vals[10];
+  bot_param_get_double_array_or_fail(botparam_, (left_str+".pinhole").c_str(), vals, 5);
+  fx_ = vals[0];
+  fy_ = vals[1];
+  cx_ = vals[3];
+  cy_ = vals[4];
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
@@ -113,19 +116,43 @@ void Tags::getTagList(){
   // TODO: read this information from a config file:
   /// NB: uids count from 1  
   /// cylinder constructor: length, radius, mass, uid, map id, position  
-  AffPtr aff0(new AffordanceState());
-  aff0->setToCylinder(0.122, 0.0325, 1,0, KDL::Frame(KDL::Vector(0,0,1)), Eigen::Vector3f(0,1,0));  
-  AffPlusPtr aff_plus0(new AffordancePlusState());
-  aff_plus0->aff = aff0;   
-  KDL::Frame tag_to_aff0 = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( 0, 0, -0.061));  
-  tags_.insert( make_pair( 2 , AffTag( "Can", 0.07778755, false, aff_plus0 , tag_to_aff0 ) ) ); 
+  
+  // aff = 0 is reserved .... dont use it here
   
   AffPtr aff1(new AffordanceState());
   aff1->setToCylinder( 0.01, 0.28, 2,0, KDL::Frame(KDL::Vector(0,0,1)), Eigen::Vector3f(0,1,0));  
   AffPlusPtr aff_plus1(new AffordancePlusState());
   aff_plus1->aff = aff1;   
   KDL::Frame tag_to_aff1 = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( 0, 0, 0));  
-  tags_.insert( make_pair( 0 , AffTag( "Table", 0.172244, false, aff_plus1 ,tag_to_aff1 ) ) ); 
+  tags_.insert( make_pair( 1 , AffTag( "Table", 0.172244, false, aff_plus1 ,tag_to_aff1 ) ) ); 
+  
+  AffPtr aff2(new AffordanceState());
+  aff2->setToCylinder(0.122, 0.0325, 1,0, KDL::Frame(KDL::Vector(2.2,0,1)), Eigen::Vector3f(0,1,0));  
+  AffPlusPtr aff_plus2(new AffordancePlusState());
+  aff_plus2->aff = aff2;   
+  KDL::Frame tag_to_aff2 = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( 0, 0, -0.061));  
+  tags_.insert( make_pair( 2 , AffTag( "CanB", 0.07778755, false, aff_plus2 , tag_to_aff2 ) ) ); 
+  
+  AffPtr aff3(new AffordanceState());
+  aff3->setToCylinder(0.122, 0.0325, 1,0, KDL::Frame(KDL::Vector(2,0,1)), Eigen::Vector3f(0,1,0));  
+  AffPlusPtr aff_plus3(new AffordancePlusState());
+  aff_plus3->aff = aff3;   
+  KDL::Frame tag_to_aff3 = KDL::Frame(KDL::Rotation::RPY(0,0,0), KDL::Vector( 0, 0, -0.061));  
+  tags_.insert( make_pair( 3 , AffTag( "Can", 0.07778755, false, aff_plus3 , tag_to_aff3 ) ) ); 
+  
+
+  std::map<int, AffTag >::iterator it;
+  for (int i=1; i<=3; i++){
+    it=tags_.find( i );
+    drc::affordance_plus_t msg;
+    it->second.aff_plus_->toMsg( &msg);
+    msg.aff.aff_store_control = drc::affordance_t::NEW;    
+    msg.aff.uid = i;
+    std::cout << msg.aff.uid << " fit sent\n";
+    lcm_->publish("AFFORDANCE_FIT",&msg);
+    it->second.active_ = true;
+  }
+  
 }
 
 // draw April tag detection on actual image
@@ -178,19 +205,21 @@ KDL::Frame makeKDLFrame( Eigen::Isometry3d input){
 
 
 // Apply offset to tag position and publish affordance position
-void Tags::updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose){
+void Tags::updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose, int tag_uid){
   KDL::Frame aff_pose = makeKDLFrame(tag_pose )* tag.tag_to_aff_;
   tag.aff_plus_->aff->setFrame( aff_pose );
   
   if (!tag.active_){
-    drc::affordance_plus_t msg;
-    tag.aff_plus_->toMsg( &msg);
-    msg.aff.aff_store_control = drc::affordance_t::NEW;    
-    lcm_->publish("AFFORDANCE_FIT",&msg);
-    tag.active_ = true;
+    // inicate the affordance:
+    // drc::affordance_plus_t msg;
+    // tag.aff_plus_->toMsg( &msg);
+    // msg.aff.aff_store_control = drc::affordance_t::NEW;    
+    // lcm_->publish("AFFORDANCE_FIT",&msg);
+    // tag.active_ = true;
   }else{
     drc::affordance_t msg;
     tag.aff_plus_->aff->toMsg( &msg);
+    msg.uid = tag_uid;
     msg.aff_store_control = drc::affordance_t::UPDATE;
     lcm_->publish("AFFORDANCE_TRACK",&msg);
   }
@@ -227,12 +256,14 @@ void Tags::processTag(const  bot_core::image_t* msg){
       Eigen::Isometry3d local_to_camera;
       botframes_cpp_->get_trans_with_utime( camera_frame_ , "local", utime_in, local_to_camera);    
       Eigen::Isometry3d tag_pose = local_to_camera*Eigen::Isometry3d(T);
-      updateAffordance( it->second , tag_pose );
+      updateAffordance( it->second , tag_pose, it->first );
       
       if (verbose_){
         Isometry3dTime poseT = Isometry3dTime(utime_in + detections[i].id, tag_pose);
         detected_posesT.push_back( poseT);
-        std::cout << "detected: " << it->second.name_ << " is name\n";
+        std::cout << "detected: " << detections[i].id << "|" 
+          << it->first << " is tag"
+          << it->second.name_ << " is name\n";
       }
     }
   }
