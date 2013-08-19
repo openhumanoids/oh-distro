@@ -67,7 +67,7 @@ echo $n_joints
 #sed 's/l_leg_lax/l_leg_akx/g' <model.urdf > model_sim.urdf
 
 #${sim[@]}
-cp model.urdf model_sim.urdf 
+cp model_sim.urdf model_sim_gazebo.urdf 
 
 for (( i=0; i<${n_joints}; i++ ));
 do
@@ -77,5 +77,5 @@ do
   pattern='s/'"$strfrom"'/'"$strto"'/g'
   #pattern='s/neck_ay/random/g'
   echo $pattern
-  sed -i $pattern model_sim.urdf 
+  sed -i $pattern model_sim_gazebo.urdf 
 done
