@@ -61,7 +61,7 @@ r_arm_mwx
 r_arm_uwy )
 
 n_joints=${#bdi_joints[@]}
-echo $n_joints
+echo "Renaming $n_joints in model_sim.urdf [BDI] to model_sim_gazebo.urdf [OSRF]"
 
 
 #sed 's/l_leg_lax/l_leg_akx/g' <model.urdf > model_sim.urdf
@@ -73,9 +73,8 @@ for (( i=0; i<${n_joints}; i++ ));
 do
   strfrom=${bdi_joints[$i]}
   strto=${sim_joints[$i]}
-  echo "$i | from $strfrom | to $strto"
   pattern='s/'"$strfrom"'/'"$strto"'/g'
-  #pattern='s/neck_ay/random/g'
-  echo $pattern
+  #echo "$i | from $strfrom | to $strto"
+  #echo $pattern
   sed -i $pattern model_sim_gazebo.urdf 
 done

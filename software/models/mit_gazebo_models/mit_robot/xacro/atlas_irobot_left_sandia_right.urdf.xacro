@@ -1,7 +1,10 @@
 <robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
 
-
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
+  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
+
+  <!-- Hands -->
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
   <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
   
@@ -18,13 +21,4 @@
     <origin rpy="1.57079 0 3.14159" xyz="0 0.05 0"/>
   </xacro:irobot_hand>
 
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.gazebo" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
-  <include filename="$(find multisense_sl_description)/multisense_sl_description.urdf" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
-
-  <gazebo>
-    <!-- include plugin for sandia hands -->
-    <plugin name="sandia_hand_plugin" filename="libSandiaHandPlugin.so"/>
-  </gazebo>
 </robot>
