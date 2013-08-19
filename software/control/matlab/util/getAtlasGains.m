@@ -8,103 +8,114 @@ if atlas_input_frame.dim ~= nq
 end
 
 gains = struct();
-gains.k_q_p = zeros(nq,1);
-gains.k_qd_p = zeros(nq,1);
 gains.k_q_i = zeros(nq,1);
-gains.k_f_p = zeros(nq,1);
 gains.ff_f_d = zeros(nq,1);
 gains.ff_qd = zeros(nq,1);
 gains.ff_qd_d = zeros(nq,1);
-gains.ff_const = zeros(nq,1);
 
-% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-% NOTE: these are the default force gains from BDI---they appear to be crap --sk
-% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 k_f_p = Point(atlas_input_frame);
+k_q_p = Point(atlas_input_frame);
+k_qd_p = Point(atlas_input_frame);
+ff_const = Point(atlas_input_frame);
+
+% set ff_const for subset of joints that need it
+ff_const.l_arm_mwx = -0.1;
+ff_const.r_arm_mwx = -0.25;
+ff_const.r_arm_uwy = -0.1;
 
 k_f_p.back_bkz = 0.012;
 k_f_p.back_bky = 0.012;
 k_f_p.back_bkx = 0.012;
-
 k_f_p.neck_ay = 0.012;
-
 k_f_p.l_leg_hpz = 0.012;
 k_f_p.l_leg_hpx = 0.012;
 k_f_p.l_leg_hpy = 0.012;
 k_f_p.l_leg_kny = 0.012;
 k_f_p.l_leg_aky = 1.4;
 k_f_p.l_leg_akx = 1.4;
-
-% mirror left/right (note, this could potentially change)
-k_f_p.r_leg_hpz = k_f_p.l_leg_hpz;
-k_f_p.r_leg_hpx = k_f_p.l_leg_hpx;
-k_f_p.r_leg_hpy = k_f_p.l_leg_hpy;
-k_f_p.r_leg_kny = k_f_p.l_leg_kny;
-k_f_p.r_leg_aky = k_f_p.l_leg_aky;
-k_f_p.r_leg_akx = k_f_p.l_leg_akx;
-
 k_f_p.l_arm_usy = 0.105;
 k_f_p.l_arm_shx = 0.105;
 k_f_p.l_arm_ely = 0.075;
 k_f_p.l_arm_elx = 0.13;
 k_f_p.l_arm_uwy = 0.012;
 k_f_p.l_arm_mwx = 0.012;
-
-% mirror left/right (note, this could potentially change)
+k_f_p.r_leg_hpz = k_f_p.l_leg_hpz;
+k_f_p.r_leg_hpx = k_f_p.l_leg_hpx;
+k_f_p.r_leg_hpy = k_f_p.l_leg_hpy;
+k_f_p.r_leg_kny = k_f_p.l_leg_kny;
+k_f_p.r_leg_aky = k_f_p.l_leg_aky;
+k_f_p.r_leg_akx = k_f_p.l_leg_akx;
 k_f_p.r_arm_usy = k_f_p.l_arm_usy;
 k_f_p.r_arm_shx = k_f_p.l_arm_shx;
 k_f_p.r_arm_ely = k_f_p.l_arm_ely;
 k_f_p.r_arm_elx = k_f_p.l_arm_elx;
 k_f_p.r_arm_uwy = k_f_p.l_arm_uwy;
 k_f_p.r_arm_mwx = k_f_p.l_arm_mwx;
-
-gains.k_f_p = double(k_f_p);
   
-k_q_p = Point(atlas_input_frame);
-
 k_q_p.back_bkz = 15.0;
 k_q_p.back_bky = 60.0;
 k_q_p.back_bkx = 60.0;
-
 k_q_p.neck_ay = 5.0;
-
 k_q_p.l_leg_hpz = 45.0;
 k_q_p.l_leg_hpx = 30.0;
 k_q_p.l_leg_hpy = 60.0;
 k_q_p.l_leg_kny = 60.0;
 k_q_p.l_leg_aky = 2000.0;
 k_q_p.l_leg_akx = 2000.0;
-
-% mirror left/right (note, this could potentially change)
+k_q_p.l_arm_usy = 8.0;
+k_q_p.l_arm_shx = 10.0;
+k_q_p.l_arm_ely = 16.0;
+k_q_p.l_arm_elx = 15.0;
+k_q_p.l_arm_uwy = 8.5;
+k_q_p.l_arm_mwx = 10.0;
 k_q_p.r_leg_hpz = k_q_p.l_leg_hpz;
 k_q_p.r_leg_hpx = k_q_p.l_leg_hpx;
 k_q_p.r_leg_hpy = k_q_p.l_leg_hpy;
 k_q_p.r_leg_kny = k_q_p.l_leg_kny;
 k_q_p.r_leg_aky = k_q_p.l_leg_aky;
 k_q_p.r_leg_akx = k_q_p.l_leg_akx;
-
-k_q_p.l_arm_usy = 4.0;
-k_q_p.l_arm_shx = 4.0;
-k_q_p.l_arm_ely = 4.0;
-k_q_p.l_arm_elx = 4.0;
-k_q_p.l_arm_uwy = 4.0;
-k_q_p.l_arm_mwx = 4.0;
-
-% mirror left/right (note, this could potentially change)
 k_q_p.r_arm_usy = k_q_p.l_arm_usy;
 k_q_p.r_arm_shx = k_q_p.l_arm_shx;
 k_q_p.r_arm_ely = k_q_p.l_arm_ely;
-k_q_p.r_arm_elx = k_q_p.l_arm_elx;
-k_q_p.r_arm_uwy = k_q_p.l_arm_uwy;
-k_q_p.r_arm_mwx = k_q_p.l_arm_mwx;
+k_q_p.r_arm_elx = 15.0;
+k_q_p.r_arm_uwy = 17.0;
+k_q_p.r_arm_mwx = 13.0;
+
+k_qd_p.back_bkz = 0.0;
+k_qd_p.back_bky = 0.0;
+k_qd_p.back_bkx = 0.0;
+k_qd_p.neck_ay = 0.0;
+k_qd_p.l_leg_hpz = 0.0;
+k_qd_p.l_leg_hpx = 0.0;
+k_qd_p.l_leg_hpy = 0.0;
+k_qd_p.l_leg_kny = 0.0;
+k_qd_p.l_leg_aky = 0.0;
+k_qd_p.l_leg_akx = 0.0;
+k_qd_p.l_arm_usy = 0.6;
+k_qd_p.l_arm_shx = 1.3;
+k_qd_p.l_arm_ely = 1.0;
+k_qd_p.l_arm_elx = 1.0;
+k_qd_p.l_arm_uwy = 0.1;
+k_qd_p.l_arm_mwx = 0.75;
+k_qd_p.r_leg_hpz = k_qd_p.l_leg_hpz;
+k_qd_p.r_leg_hpx = k_qd_p.l_leg_hpx;
+k_qd_p.r_leg_hpy = k_qd_p.l_leg_hpy;
+k_qd_p.r_leg_kny = k_qd_p.l_leg_kny;
+k_qd_p.r_leg_aky = k_qd_p.l_leg_aky;
+k_qd_p.r_leg_akx = k_qd_p.l_leg_akx;
+k_qd_p.r_arm_usy = k_qd_p.l_arm_usy;
+k_qd_p.r_arm_shx = k_qd_p.l_arm_shx;
+k_qd_p.r_arm_ely = k_qd_p.l_arm_ely;
+k_qd_p.r_arm_elx = 0.65;
+k_qd_p.r_arm_uwy = 0.1;
+k_qd_p.r_arm_mwx = 0.25; %note: seems to be sensitive--velocity noise
 
 
-% elx
-%ff_f_d = 0.0125;
-
-
+gains.k_f_p = double(k_f_p);
 gains.k_q_p = double(k_q_p);
+gains.k_qd_p = double(k_qd_p);
+gains.ff_const = double(ff_const);
 
 end
 

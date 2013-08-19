@@ -19,68 +19,84 @@ function atlasGainTuning
 %  ff_const
 
 
+% joint signs:
+%
+% l_usy   + (offset 0)
+% l_shx   + (offset -1.45)
+% l_elx   + (offset 0)
+% l_ely   - (offset 1.57)
+% l_uwy   + (offset 0)
+% l_mwx   + (offset 0)
+
+% r_elx   - (offset 0)
+% r_uwy   + (offset 0)
+% r_mwx   - (offset 0)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_hpy'; 
-control_mode = 'force'; % force, position
-signal = 'chirp'; % zoh, foh, chirp
+joint = 'r_arm_elx';% <---- 
+control_mode = 'position';% <----  force, position
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.0;% <----
+ff_const = 0;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
-  k_f_p = 0.05;% <----
+  k_f_p = 0.0;% <----
   ff_f_d = 0.0;% <----
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p = 4.0;% <----
+  k_q_p = 15.0;% <----
   k_q_i = 0.0;% <----
-  k_qd_p = 0.0;% <----
+  k_qd_p = 0.7;% <----
 else
   error('unknown control mode');
 end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  ts = linspace(0,15,400);
-  amp = 20; % Nm or radians
-  freq = linspace(0.07,0.7,400); % cycles per second
+  ts = linspace(0,25,400);% <----
+  amp = 0.7;% <----  Nm or radians
+  freq = linspace(0.025,0.3,400);% <----  cycles per second
 else
-  ts = linspace(0,30,5); % Nm or radians
-  vals = [0 0 5 0 0]; 
+  ts = linspace(0,12,5);% <----
+  vals = [0 -0.1 -1.6 -0.1 0];% <----  Nm or radians
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+T=ts(end);
 
 % check gain ranges --- TODO: make this more conservative
-rangecheck(ff_const,0,100);
+rangecheck(ff_const,-10,10);
 if strcmp(control_mode,'force')
-  rangecheck(k_f_p,0,100);
-  rangecheck(ff_f_d,0,100);
-  rangecheck(ff_qd,0,100);
+  rangecheck(k_f_p,0.5);
+  rangecheck(ff_f_d,0,1);
+  rangecheck(ff_qd,0,1);
 elseif strcmp(control_mode,'position')  
-  rangecheck(k_q_p,0,100);
-  rangecheck(k_q_i,0,100);
-  rangecheck(k_qd_p,0,100);
+  rangecheck(k_q_p,0,50);
+  rangecheck(k_q_i,0,0.5);
+  rangecheck(k_qd_p,0,50);
 end
 
 % check value ranges --- TODO: should be joint specific
+if ~exist('vals','var')
+  vals=amp;
+end
 if strcmp(control_mode,'force')
-  rangecheck(vals,0,100);
-  if ~rangecheck(vals,0,50)
-    disp('Warning: about to command relatively high torque. Ctrl+C to cancel.');
-    keyboard;
-  end
+  rangecheck(vals,-70,70);
+%   if any(~rangecheck(vals,-50,50))
+%     disp('Warning: about to command relatively high torque. Ctrl+C to cancel.');
+%     keyboard;
+%   end
 elseif strcmp(control_mode,'position')  
-  rangecheck(vals,0,pi/2);
-  if ~rangecheck(vals,0,1)
-    disp('Warning: about to command relatively large position change. Ctrl+C to cancel.');
-    keyboard;
-  end
+  rangecheck(vals,-pi,pi);
+%   if any(~rangecheck(vals,-1,1))
+%     disp('Warning: about to command relatively large position change. Ctrl+C to cancel.');
+%     keyboard;
+%   end
 end
 
 % load robot model
@@ -126,20 +142,22 @@ elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
     strcmp(joint,'l_arm_uwy') || strcmp(joint,'r_arm_uwy') || ...
     strcmp(joint,'l_arm_mwx') || strcmp(joint,'r_arm_mwx')
   
-  qdes(atlas_joints.r_arm_shx) = 1.35;
-  qdes(atlas_joints.l_arm_shx) = -1.35;
+  qdes(atlas_joints.r_arm_shx) = 1.3;
+  qdes(atlas_joints.l_arm_shx) = -1.3;
 
 elseif strcmp(joint,'l_arm_ely')
   
   qdes(atlas_joints.r_arm_shx) = 1.45;
   qdes(atlas_joints.l_arm_elx) = 1.57;
-  qdes(atlas_joints.l_arm_ely) = 3.14;
+%   qdes(atlas_joints.l_arm_ely) = 3.14;
+  qdes(atlas_joints.l_arm_ely) = 1.57;
 
 elseif strcmp(joint,'r_arm_ely')
   
   qdes(atlas_joints.l_arm_shx) = -1.45;
   qdes(atlas_joints.r_arm_elx) = -1.57;
-  qdes(atlas_joints.r_arm_ely) = 3.14;
+%  qdes(atlas_joints.r_arm_ely) = 3.14;
+ qdes(atlas_joints.r_arm_ely) = 1.57;
 
 else
   error ('that joint isnt supported yet');
@@ -165,6 +183,8 @@ while tt<movetime
   end
 end
 
+disp('Ready to send input signal.');
+keyboard;
 
 % set gains to user specified values
 gains.ff_const(atlas_joints.(joint)) = ff_const;
@@ -198,7 +218,8 @@ if strcmp(signal,'zoh')
 elseif strcmp(signal,'foh')
   input_traj = PPTrajectory(foh(ts,vals));
 elseif strcmp(signal,'chirp')
-  input_traj = PPTrajectory(foh(ts,amp*sin(ts.*freq*2*pi)));
+%   input_traj = PPTrajectory(foh(ts,amp*sin(ts.*freq*2*pi)));
+ input_traj = PPTrajectory(foh(ts, -0.5*amp - 0.5*amp*sin(ts.*freq*2*pi)));
 else
   error('unknown signal');
 end
@@ -214,7 +235,7 @@ while tt<T
     tt=t-toffset;
     if strcmp(control_mode,'force')
       udes(atlas_joints.(joint)) = input_traj.eval(tt);
-    elseif strcm(control_mode,'position')
+    elseif strcmp(control_mode,'position')
       qdes(atlas_joints.(joint)) = input_traj.eval(tt);
     end
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
