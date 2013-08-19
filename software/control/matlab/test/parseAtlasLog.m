@@ -1,4 +1,4 @@
-function [t_x,x_data,t_u,u_data] = parseAtlasLog(plant,logfile)
+function [t_x,x_data,t_u,u_data,state_frame,input_frame] = parseAtlasLog(plant,logfile)
 % function [t_x,x_data,t_u,u_data] = parseAtlasLog(plant,logfile)
 %  Read a LCM log file and parse the robot state and commands for
 %  an Atlas robot. The channels parsed are EST_ROBOT_STATE and
@@ -22,16 +22,19 @@ if use_java
 %   t_u = parser.getTu();
 %   x_data = reshape(parser.getStateData, [], length(t_x));
 %   u_data = reshape(parser.getInputData, [], length(t_u));
-
+    input_frame = AtlasPosVelTorqueRef(plant);
+    state_frame = AtlasStateAndEffort(plant);
+    
     parser = drc.control.LCMLogParser;
-    parser.addChannel('EST_ROBOT_STATE',plant.getStateFrame.lcmcoder.jcoder);
-    parser.addChannel('ATLAS_COMMAND',plant.getInputFrame.lcmcoder.jcoder);
+    parser.addChannel('EST_ROBOT_STATE',state_frame.lcmcoder.jcoder);
+    parser.addChannel('ATLAS_COMMAND',input_frame.lcmcoder.jcoder);
     parser.parseLog(logfile);  
     t_x = parser.getT('EST_ROBOT_STATE');
     t_u = parser.getT('ATLAS_COMMAND');
     x_data = reshape(parser.getData('EST_ROBOT_STATE'), [], length(t_x));
     u_data = reshape(parser.getData('ATLAS_COMMAND'), [], length(t_u));
 else
+  warning('Deprecated, and not being updated');
   lcm_log = lcm.logging.Log(logfile,'r');
   state_hash = java.lang.String('EST_ROBOT_STATE').hashCode();
   control_hash = java.lang.String('ATLAS_COMMAND').hashCode();
