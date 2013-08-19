@@ -50,6 +50,28 @@ public:
     }
 };
 
+class MyMagnifier: public QwtPlotMagnifier
+{
+public:
+    MyMagnifier(QwtPlotCanvas *canvas):
+        QwtPlotMagnifier(canvas)
+    {
+
+    }
+
+protected:
+
+    // Normally, a value < 1.0 zooms in, a value > 1.0 zooms out.
+    // This function is overloaded to invert the magnification direction.
+    virtual void rescale( double factor )
+    {
+      factor = qAbs( factor );
+      factor = (1-factor) + 1;
+      this->QwtPlotMagnifier::rescale(factor);
+    }
+
+};
+
 Plot::Plot(QWidget *parent):
   QwtPlot(parent),
   d_interval(0.0, 10.0),
@@ -125,7 +147,7 @@ Plot::Plot(QWidget *parent):
 
 
     // zoom in/out with the wheel
-    QwtPlotMagnifier* magnifier = new QwtPlotMagnifier(canvas());
+    QwtPlotMagnifier* magnifier = new MyMagnifier(canvas());
     magnifier->setMouseButton(Qt::MiddleButton);
 
     const QColor c(Qt::darkBlue);
