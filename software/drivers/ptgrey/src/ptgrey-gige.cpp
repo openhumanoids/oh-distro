@@ -140,7 +140,7 @@ int main(const int iArgc, const char** iArgv) {
     rawImage.Convert(FlyCapture2::PIXEL_FORMAT_RGB, &rgbImage);
 
     // convert to opencv
-    cv::Mat cvImage(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC1,
+    cv::Mat cvImage(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3,
                     rgbImage.GetData(), rgbImage.GetStride());
        
     // rotate

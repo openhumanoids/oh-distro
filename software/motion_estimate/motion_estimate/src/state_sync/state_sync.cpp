@@ -165,8 +165,10 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
   if (bdi_motion_estimate_){
     if ( insertPoseBDI(robot_state_msg) ){
-      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg); 
     }
+  }else if(standalone_head_){
+    lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);
   }
 }
 
