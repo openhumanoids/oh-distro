@@ -19,9 +19,7 @@
 #include <QListWidget>
 #include <QTimer>
 #include <QPushButton>
-
-#include <tr1/cmath>
-
+#include <QColorDialog>
 
 PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
     QWidget(parent),
@@ -157,6 +155,8 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   // QPoint globalPos = myWidget->viewport()->mapToGlobal(pos); 
 
   QMenu myMenu;
+  myMenu.addAction("Change color");
+  myMenu.addSeparator();
   myMenu.addAction("Remove signal");
 
   QAction* selectedItem = myMenu.exec(globalPos);
@@ -167,7 +167,24 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
 
   QString selectedAction = selectedItem->text();
 
-  if (selectedAction == "Remove signal")
+  if (selectedAction == "Change color")
+  {
+    QListWidgetItem* signalItem = mSignalListWidget->currentItem();
+    SignalHandler* signalHandler = signalItem->data(Qt::UserRole).value<SignalHandler*>();
+    QColor initialColor = signalHandler->signalDescription()->mColor;
+    QColor newColor = QColorDialog::getColor(initialColor, this, "Choose signal color");
+
+    if (newColor.isValid())
+    {
+      signalHandler->signalDescription()->mColor = newColor;
+      QPixmap pixmap(24, 24);
+      pixmap.fill(newColor);
+      signalItem->setIcon(QIcon(pixmap));
+      d_plot->setSignalColor(signalHandler->signalData(), newColor);
+    }
+
+  }
+  else if (selectedAction == "Remove signal")
   {
     QListWidgetItem* signalItem = mSignalListWidget->currentItem();
 
@@ -239,6 +256,12 @@ void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
   desc.mFieldName = signalSettings.value("fieldName").toString();
   desc.mArrayKeys = signalSettings.value("arrayKeys").toStringList();
 
+  QList<QVariant> color = signalSettings.value("color").toList();
+  if (color.size() == 3)
+  {
+    desc.mColor = QColor::fromRgb(color[0].toInt(), color[1].toInt(), color[2].toInt());
+  }
+
   SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&desc);
 
   if (signalHandler)
@@ -262,16 +285,24 @@ void PlotWidget::addSignal(SignalHandler* signalHandler)
     return;
   }
 
-  int signalColorIndex = mSignals.size() % mColors.size();
+  QColor color = signalHandler->signalDescription()->mColor;
+  if (!color.isValid())
+  {
+    int signalColorIndex = mSignals.size() % mColors.size();
+    color = mColors[signalColorIndex];
+    signalHandler->signalDescription()->mColor = color;
+  }
+
+
   mLCMThread->addSignalHandler(signalHandler);
   mSignals.append(signalHandler);
-  d_plot->addSignal(signalHandler->signalData(), mColors[signalColorIndex]);
+  d_plot->addSignal(signalHandler->signalData(), color);
 
   QString signalDescription = QString("%2 [%1]").arg(signalHandler->channel()).arg(signalHandler->description().split(".").back());
   QListWidgetItem* signalItem = new QListWidgetItem(signalDescription);
 
   QPixmap pixmap(24, 24);
-  pixmap.fill(mColors[signalColorIndex]);
+  pixmap.fill(color);
   signalItem->setIcon(QIcon(pixmap));
 
   signalItem->setData(Qt::UserRole, qVariantFromValue(signalHandler));
@@ -325,6 +356,10 @@ QMap<QString, QVariant> PlotWidget::saveSignalSettings(SignalHandler* signalHand
   settings["messageType"] = signalDescription->mMessageType;
   settings["fieldName"] = signalDescription->mFieldName;
   settings["arrayKeys"] = QVariant(signalDescription->mArrayKeys);
+
+  QList<QVariant> color;
+  color << signalDescription->mColor.red() << signalDescription->mColor.green() << signalDescription->mColor.blue();
+  settings["color"] = color;
 
   return settings;
 }

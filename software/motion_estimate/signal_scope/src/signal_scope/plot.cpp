@@ -213,6 +213,18 @@ void Plot::setSignalVisible(SignalData* signalData, bool visible)
   }
 }
 
+void Plot::setSignalColor(SignalData* signalData, QColor color)
+{
+  if (!signalData)
+  {
+    return;
+  }
+
+  QwtPlotCurve* curve = mSignals.value(signalData);
+  assert(curve);
+  curve->setPen(QPen(color));
+}
+
 void Plot::initGradient()
 {
   QPalette pal = canvas()->palette();

@@ -24,9 +24,10 @@ public:
 
     virtual void replot();
 
-    void addSignal(SignalData* signalData, QColor color=Qt::green);
+    void addSignal(SignalData* signalData, QColor color);
     void removeSignal(SignalData* signalData);
     void setSignalVisible(SignalData* signalData, bool visible);
+    void setSignalColor(SignalData* signalData, QColor color);
 
     double timeWindow();
 

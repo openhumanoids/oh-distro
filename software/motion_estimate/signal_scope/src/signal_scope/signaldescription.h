@@ -2,6 +2,7 @@
 #define _SIGNALDESCRIPTION_H_
 
 #include <QObject>
+#include <QColor>
 
 class SignalData;
 
@@ -17,6 +18,7 @@ public:
   QString mChannel;
   QString mMessageType;
   QString mFieldName;
+  QColor mColor;
   QList<QString> mArrayKeys;
 
  protected:
