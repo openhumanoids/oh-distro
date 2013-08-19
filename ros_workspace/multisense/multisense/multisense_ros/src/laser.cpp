@@ -543,10 +543,10 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     ROS_ERROR("%s", ss4.str().c_str() );
 
     std::stringstream ss2;
-    ss2 << "pc_pre_spindle_cal_ aka laserToSpindle\n" <<  pc_pre_spindle_cal_ ;
+    ss2 << " pc_post_spindle_cal_  aka laserToSpindle\n" <<  pc_post_spindle_cal_  ;
     ROS_ERROR("%s", ss2.str().c_str() );
     std::stringstream ss3;
-    ss3 << "pc_post_spindle_cal_ aka cameraToSpindleFixed\n" <<  pc_post_spindle_cal_ ;
+    ss3 << "pc_pre_spindle_cal_ aka cameraToSpindleFixed\n" <<  pc_pre_spindle_cal_ ;
     ROS_ERROR("%s\n\n\n", ss3.str().c_str() );
     double roll, pitch, yaw;
     scan_pre_spindle_cal_.M.GetRPY(roll, pitch, yaw);
@@ -638,19 +638,19 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     T_spindleFromMotor.M.GetQuaternion(pre_to_post_frame.quat[1], pre_to_post_frame.quat[2], pre_to_post_frame.quat[3], pre_to_post_frame.quat[0]);
     lcm_publish_.publish("PRE_SPINDLE_TO_POST_SPINDLE", &pre_to_post_frame);
     
-    // Print the calibration to screen if it needs to be updated:
     /*
+    // Print the calibration to screen if it needs to be updated:
     KDL::Frame pre_spindle_T_pre_spindle_rot(KDL::Rotation::RPY(-M_PI/2, -M_PI/2, 0.0) );
     
     std::stringstream ss4;
-    ss4 << "pc_post_spindle_cal_\n" <<  pc_post_spindle_cal_ ;
+    ss4 << "pc_pre_spindle_cal_\n" <<  pc_pre_spindle_cal_ ;
     ROS_ERROR("%s", ss4.str().c_str() );
-    ROS_ERROR("%0.6f, %0.6f, %0.6f", pc_post_spindle_cal_.p[0], pc_post_spindle_cal_.p[1], pc_post_spindle_cal_.p[2] );
+    ROS_ERROR("%0.6f, %0.6f, %0.6f", pc_pre_spindle_cal_.p[0], pc_pre_spindle_cal_.p[1], pc_pre_spindle_cal_.p[2] );
     double quat[4];
-    pc_post_spindle_cal_.M.GetQuaternion(quat[1], quat[2], quat[3], quat[0]);
+    pc_pre_spindle_cal_.M.GetQuaternion(quat[1], quat[2], quat[3], quat[0]);
     ROS_ERROR("%0.6f, %0.6f, %0.6f, %0.6f", quat[0], quat[1], quat[2], quat[3] );
     
-    KDL::Frame post_spindle_to_laser = pc_pre_spindle_cal_ * pre_spindle_T_pre_spindle_rot    ;
+    KDL::Frame post_spindle_to_laser = pc_post_spindle_cal_  * pre_spindle_T_pre_spindle_rot    ;
     std::stringstream ss5;
     ss5 << "post_spindle_to_laser\n" <<  post_spindle_to_laser ;
     ROS_ERROR("%s", ss5.str().c_str() );
@@ -661,7 +661,7 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
     */
   
     /* Deprecated: camera to scan in one go:
-    KDL::Frame cam_to_laser = pc_post_spindle_cal_ * T_spindleFromMotor * pc_pre_spindle_cal_
+    KDL::Frame cam_to_laser = pc_pre_spindle_cal_ * T_spindleFromMotor * pc_post_spindle_cal_ 
                                     * pre_spindle_T_pre_spindle_rot;
 
     bot_core::rigid_transform_t cam_to_hokuyo_frame;

@@ -66,7 +66,7 @@ int main(int    argc,
          char **argvPP)
 {
     std::string        ipAddress = "10.66.171.21";
-    std::string        calFile;
+    std::string        calFile ="lidar_cal.yaml";
     bool               setCal=false;
     bool               prompt=true;
 
