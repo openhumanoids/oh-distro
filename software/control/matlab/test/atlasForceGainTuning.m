@@ -35,12 +35,18 @@ k_f_p = 0.05;
 ff_f_d = 0.0;
 ff_qd = 0.0;
 
-signal = 'foh'; % zoh, foh, chirp
-ts = linspace(0,30,5);
-vals = [0 0 5 0 0];
+signal = 'chirp'; % zoh, foh, chirp
+if strcmp( signal, 'chirp' )
+  ts = linspace(0,15,400);
+  amp = 20;
+  freq = linspace(0.07,0.7,400);
+else
+  ts = linspace(0,30,5);
+  vals = [0 0 5 0 0];
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 T = ts(end);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 if ~isfield(atlas_joints,joint)
@@ -115,6 +121,8 @@ if strcmp(signal,'zoh')
   udes_traj = PPTrajectory(zoh(ts,vals));
 elseif strcmp(signal,'foh')
   udes_traj = PPTrajectory(foh(ts,vals));
+elseif strcmp(signal,'chirp')
+  udes_traj = PPTrajectory(foh(ts,amp*sin(ts.*freq*2*pi)));
 else
   error('unknown signal');
 end
