@@ -20,7 +20,7 @@ group "1.driver" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/ros_workspace/multisense/multisense/multisense_description/urdf/multisense.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/multisense_sl/multisense_sl.urdf";
         host = "localhost";
     }
 }
