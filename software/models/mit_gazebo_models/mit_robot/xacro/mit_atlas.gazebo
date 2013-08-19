@@ -1,15 +1,6 @@
 <robot name="drc_skeleton">
-  <!-- MIT ADDONS MUST BE REMOVED -->
+  <!-- MIT ADDONS START -->  
   <gazebo>
-  <!-- mfallon, sisir: depreciating MIT's cheat [feb 2013]
-    <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>200.0</updateRate>
-        <topicName>true_robot_state</topicName>
-        <synchronization>false</synchronization>
-    </plugin>
-    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
-   -->
     <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
   </gazebo>
   <!-- MIT ADDONS END -->  
