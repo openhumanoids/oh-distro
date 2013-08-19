@@ -199,16 +199,17 @@ static void _draw(BotViewer *viewer, BotRenderer *renderer){
     glRotatef(-90, 1, 0, 0);
     
   }else{
-    // I now assume that the recompute gets the pose and we dont move it then
+    // assume that the recompute gets the pose and we dont move it then
+    //glMultMatrixd(self->camera_to_local_m_opengl);
     
     //project to current frame
-    //double camera_to_local_m[16];
-    //bot_frames_get_trans_mat_4x4_with_utime(self->frames,self->camera_frame,bot_frames_get_root_name(self->frames),
-    //self->msg->utime, camera_to_local_m);
-    //// opengl expects column-major matrices
-    //double camera_to_local_m_opengl[16];
-    //bot_matrix_transpose_4x4d(camera_to_local_m, camera_to_local_m_opengl);
-    glMultMatrixd(self->camera_to_local_m_opengl);
+    double camera_to_local_m[16];
+    bot_frames_get_trans_mat_4x4_with_utime(self->frames,self->camera_frame,bot_frames_get_root_name(self->frames),
+        self->msg->utime, camera_to_local_m);
+    // opengl expects column-major matrices
+    double camera_to_local_m_opengl[16];
+    bot_matrix_transpose_4x4d(camera_to_local_m, camera_to_local_m_opengl);
+    glMultMatrixd(camera_to_local_m_opengl);
   }
   
   cv::Mat_<cv::Vec3f> points( self->height ,self->width, &(self->points_buff_[0]));
