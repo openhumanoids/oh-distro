@@ -86,7 +86,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_ROBOTVARIANTHERE.urdf";
         host = "extra";
     }
     cmd "j2f" {
