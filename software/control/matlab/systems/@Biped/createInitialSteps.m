@@ -13,8 +13,8 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
     X(1) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
     X(2) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
   end
-  
-  p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
+ 
+  p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, options.nom_step_width);
   goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
   goal_pos(3,:) = p0(3);
   if ~options.ignore_terrain

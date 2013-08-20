@@ -83,9 +83,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         nom_step_width = obj.nom_step_width;
       end
       if is_right_foot
-        offs = [0; nom_step_width/2; 0];
-      else
         offs = [0; -nom_step_width/2; 0];
+      else
+        offs = [0; nom_step_width/2; 0];
       end
       for j = 1:length(Xo(1,:))
         M = rpy2rotmat(Xo(4:6,j));
