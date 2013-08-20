@@ -54,9 +54,9 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, options)
       c(2, j) = u(2) - options.max_step_width;
     else
       c(2, j) = options.min_step_width - u(2);
-      if c(2, j) > 0
-        c(2, j) = c(2, j) * 10;
-      end
+%       if c(2, j) > 0
+%         c(2, j) = c(2, j) * 10;
+%       end
     end
   end
   phi = angleDiff(pf(6,:), p0(6,:));
