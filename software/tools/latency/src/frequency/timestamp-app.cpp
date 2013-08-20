@@ -51,14 +51,14 @@ void App::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
   utimes[0] = msg->utime;
   
   int64_t utime_now = _timestamp_now();
-  std::cout << utime_now << " | " << utimes[0]-utime_now << " | " << blank << " | AM\n";
+  std::cout << utime_now << "," << utimes[0]-utime_now << "," << 0 << "\n";
 }
 
 void App::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
   utimes[1] = msg->utime;
 
   int64_t utime_now = _timestamp_now();
-  std::cout << utime_now << " | " << blank << " | " << utimes[1]-utime_now << " | AM\n";
+  std::cout << utime_now << "," << 0 << "," << utimes[1]-utime_now << "\n";
 
 }
 
