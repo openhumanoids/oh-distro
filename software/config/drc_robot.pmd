@@ -44,7 +44,7 @@ group "a.0.drivers" {
     cmd "logger-robot" {
         exec = "lcm-logger";
         host = "robot";
-    }    
+    }  
 }
 
 
@@ -118,7 +118,7 @@ group "b.2.walking" {
        host = "base";
     }
     cmd "BDIStepTranslator" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; addpath_bdi_step_translator; RunBDIStepTranslator;\"";
+        exec = "drc-bdi-step-translator";
         host = "base";
     }
 }
@@ -136,18 +136,21 @@ group "m.perception" {
         exec = "rosrun dynamic_reconfigure reconfigure_gui";
         host = "localhost";
     }
+    cmd "vicon" {
+        exec = "vicon-client 192.168.10.1";
+        host = "localhost";
+    }
 }
 
 
 #################################################################
 script "off_start" { 
     start group "0.development";
-    start cmd "sa-left";
-    start cmd "sa-right";
     start cmd "multisense";
     start cmd "ms-subscribe";
     start cmd "drc-atlas";
     start cmd "logger-robot";
     start group "a.1.core";
     start group "b.2.walking";
+    start cmd "ms-reconfig";
 }
