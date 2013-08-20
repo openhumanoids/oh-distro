@@ -19,3 +19,11 @@ pods_use_pkg_config_packages(drc-frequency lcmtypes_drc_lcmtypes frequency
              bot2-param-client path-util
              lcmtypes_bot2-core lcm)
 pods_install_executables(drc-frequency )
+
+
+
+#################
+add_executable(drc-timestamp-check timestamp-app.cpp  )
+pods_use_pkg_config_packages(drc-timestamp-check 
+   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+pods_install_executables(drc-timestamp-check )

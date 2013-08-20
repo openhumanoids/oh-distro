@@ -10,11 +10,10 @@ pods_install_pkg_config_file(latency
   LIBS -llatency
   VERSION 0.0.1)
 
-  
-  
-  
-  
 add_executable(drc-latency latency-app.cpp  )
 pods_use_pkg_config_packages(drc-latency latency
    lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
 pods_install_executables(drc-latency )
+
+
+

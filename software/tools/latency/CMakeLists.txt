@@ -7,7 +7,7 @@ include(cmake/pods.cmake)
 add_subdirectory(src/latency)
 add_subdirectory(src/frequency)
 add_subdirectory(src/printf-cache)
-add_subdirectory(src/control-hangup)
+#add_subdirectory(src/control-hangup)
 
 # require python
 find_package(PythonInterp REQUIRED)
