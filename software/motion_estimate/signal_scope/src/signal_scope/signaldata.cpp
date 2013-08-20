@@ -128,10 +128,16 @@ void SignalData::updateValues()
 
   // All values that are older than 60 seconds will expire
   float expireTime = d_data->values.back().x() - 60;
-  while (d_data->values.size() && d_data->values.front().x() < expireTime)
+
+  QVector<QPointF>::iterator itr = d_data->values.begin();
+  while (itr != d_data->values.end() && itr->x() < expireTime)
   {
-    d_data->values.pop_front();
+    ++itr;
   }
+
+  // if itr == begin(), then no values will be erased
+  d_data->values.erase(d_data->values.begin(), itr);
+
 
   // recompute bounding rect
   if (d_data->values.size() > 1)
