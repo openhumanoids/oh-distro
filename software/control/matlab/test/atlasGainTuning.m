@@ -28,6 +28,9 @@ function atlasGainTuning
 % l_uwy   + (offset 0)
 % l_mwx   + (offset 0)
 
+% l_usy   - (offset 0)
+% r_shx   - (offset 1.45)
+% r_ely   - (offset 1.57)
 % r_elx   - (offset 0)
 % r_uwy   + (offset 0)
 % r_mwx   - (offset 0)
@@ -35,12 +38,12 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_elx';% <---- 
+joint = 'l_arm_mwx';% <---- 
 control_mode = 'position';% <----  force, position
-signal = 'chirp';% <----  zoh, foh, chirp
+signal = 'zoh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0;% <----
+ff_const = -0.1;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
   k_f_p = 0.0;% <----
@@ -48,9 +51,9 @@ if strcmp(control_mode,'force')
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p = 15.0;% <----
+  k_q_p =  10.0;% <----
   k_q_i = 0.0;% <----
-  k_qd_p = 0.7;% <----
+  k_qd_p = 0.75;% <----
 else
   error('unknown control mode');
 end
@@ -58,11 +61,11 @@ end
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
   ts = linspace(0,25,400);% <----
-  amp = 0.7;% <----  Nm or radians
-  freq = linspace(0.025,0.3,400);% <----  cycles per second
+  amp = 0.2;% <----  Nm or radians
+  freq = linspace(0.025,0.4,400);% <----  cycles per second
 else
-  ts = linspace(0,12,5);% <----
-  vals = [0 -0.1 -1.6 -0.1 0];% <----  Nm or radians
+  ts = linspace(0,15,5);% <----
+  vals = [0 0.1 0.2 0.1 0];% <----  Nm or radians
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -137,27 +140,27 @@ if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
 
   qdes(atlas_joints.r_arm_shx) = 1.45;
   qdes(atlas_joints.l_arm_shx) = -1.45;
-
+  
 elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
     strcmp(joint,'l_arm_uwy') || strcmp(joint,'r_arm_uwy') || ...
     strcmp(joint,'l_arm_mwx') || strcmp(joint,'r_arm_mwx')
   
   qdes(atlas_joints.r_arm_shx) = 1.3;
   qdes(atlas_joints.l_arm_shx) = -1.3;
-
+  
 elseif strcmp(joint,'l_arm_ely')
   
   qdes(atlas_joints.r_arm_shx) = 1.45;
   qdes(atlas_joints.l_arm_elx) = 1.57;
 %   qdes(atlas_joints.l_arm_ely) = 3.14;
   qdes(atlas_joints.l_arm_ely) = 1.57;
-
+  
 elseif strcmp(joint,'r_arm_ely')
   
   qdes(atlas_joints.l_arm_shx) = -1.45;
   qdes(atlas_joints.r_arm_elx) = -1.57;
 %  qdes(atlas_joints.r_arm_ely) = 3.14;
- qdes(atlas_joints.r_arm_ely) = 1.57;
+  qdes(atlas_joints.r_arm_ely) = 1.57;
 
 else
   error ('that joint isnt supported yet');
@@ -219,7 +222,7 @@ elseif strcmp(signal,'foh')
   input_traj = PPTrajectory(foh(ts,vals));
 elseif strcmp(signal,'chirp')
 %   input_traj = PPTrajectory(foh(ts,amp*sin(ts.*freq*2*pi)));
- input_traj = PPTrajectory(foh(ts, -0.5*amp - 0.5*amp*sin(ts.*freq*2*pi)));
+  input_traj = PPTrajectory(foh(ts, 0.5*amp + 0.5*amp*sin(ts.*freq*2*pi)));
 else
   error('unknown signal');
 end

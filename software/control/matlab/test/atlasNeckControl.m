@@ -13,7 +13,7 @@ input_frame = AtlasPositionRef(r);
 
 if nargin < 1
   %%%%%%%%%%%%%%%%%%%%%%%%%%%
-  desired_neck_pitch = 0.75;
+  desired_neck_pitch = 0.0;
   %%%%%%%%%%%%%%%%%%%%%%%%%%%
 else
   desired_neck_pitch = max(-0.2,min(1.0,desired_neck_pitch));
