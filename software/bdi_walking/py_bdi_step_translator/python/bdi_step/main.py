@@ -18,6 +18,7 @@ class BDIWalkTranslator:
         print "Starting new footstep plan"
         msg = drc.footstep_plan_t.decode(msg_data)
         footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
+        footsteps = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
         if len(footsteps) < NUM_REQUIRED_WALK_STEPS:
             msg = 'ERROR: Footstep plan must be at least 4 steps for BDI translation'
             print msg
