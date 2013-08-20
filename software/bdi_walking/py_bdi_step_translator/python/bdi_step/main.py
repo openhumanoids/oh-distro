@@ -66,8 +66,7 @@ class BDIWalkTranslator:
 
     @staticmethod
     def footstep_to_step_data(footstep, step_index, duration=0.6,
-                              use_relative_step_height=True,
-                              swing_height=0.05):
+                              use_relative_step_height=True):
         step_data = drc.atlas_step_data_t()
         step_data.step_index = step_index
         step_data.foot_index = footstep.is_right_foot
@@ -77,7 +76,7 @@ class BDIWalkTranslator:
             step_data.position[2] = 0
         step_data.yaw = footstep.pos[5]
         step_data.normal = ut.rpy2rotmat(footstep.pos[3:6,0]) * np.matrix([[0],[0],[1]])
-        step_data.swing_height = swing_height
+        step_data.swing_height = footstep.step_height
         return step_data
 
 
