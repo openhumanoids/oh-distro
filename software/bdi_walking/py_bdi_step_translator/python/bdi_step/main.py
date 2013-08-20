@@ -32,7 +32,7 @@ class BDIWalkTranslator:
             return
         msg = drc.atlas_status_t.decode(msg_data)
         index_needed = msg.walk_feedback.next_step_index_needed
-        if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 4):
+        if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 2):
             print "Handling request for next step: {:d}".format(index_needed)
             # self.update_drift(msg.walk_feedback.step_queue_saturated)
             self.send_walk_params(index_needed-1)
