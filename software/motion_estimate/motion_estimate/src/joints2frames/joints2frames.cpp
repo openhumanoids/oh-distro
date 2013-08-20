@@ -277,6 +277,11 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       }
     }
   }
+  
+  
+  Eigen::Isometry3d body_to_utorso = DRCTransformToEigen(cartpos_out.find("utorso")->second);
+  publishRigidTransform(body_to_utorso, msg->utime, "BODY_TO_UTORSO");
+  
     
 
   // 4. Loop through joints and extract world positions:
