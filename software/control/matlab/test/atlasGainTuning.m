@@ -127,7 +127,7 @@ if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
 end
 
-gains = getAtlasGains(input_frame);
+gains = getAtlasGains(ref_frame);
 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
