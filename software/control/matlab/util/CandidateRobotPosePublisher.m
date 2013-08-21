@@ -82,9 +82,7 @@ classdef CandidateRobotPosePublisher
                 msg.joint_velocity(j-float_offset) = X(j+offset+num_dofs,i);
             end
                    
-            msg.contacts = drc.contact_state_t();
-            msg.contacts.num_contacts=0;  
- 
+            msg.force_torque = drc.force_torque_t();
         end
         
     end % end methods
