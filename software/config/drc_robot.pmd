@@ -42,7 +42,7 @@ group "a.0.drivers" {
         host = "localhost";
     }
     cmd "logger-robot" {
-        exec = "lcm-logger";
+        exec = "drc-lcm-logger.sh";
         host = "robot";
     }  
 }
