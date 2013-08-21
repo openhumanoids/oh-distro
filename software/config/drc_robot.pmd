@@ -142,6 +142,16 @@ group "m.perception" {
     }
 }
 
+group "m.hands" {
+    cmd "sandia_hand_eigen_grasps" {
+        exec = "roslaunch sandia_hand_teleop keyboard_simple_grasp.launch";
+        host = "base";
+    }
+    cmd "irobot_hand_eigen_grasps" {
+        exec = "rosrun handle_launch power_grasp_keyboard_teleop.py";
+        host = "base";
+    }    
+}
 
 #################################################################
 script "off_start" { 
