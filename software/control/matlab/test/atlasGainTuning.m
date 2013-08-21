@@ -62,7 +62,7 @@ T=ts(end);
 % check gain ranges --- TODO: make this more conservative
 rangecheck(ff_const,-10,10);
 if strcmp(control_mode,'force')
-  rangecheck(k_f_p,0.5);
+  rangecheck(k_f_p,0,1);
   rangecheck(ff_f_d,0,1);
   rangecheck(ff_qd,0,1);
 elseif strcmp(control_mode,'position')  
@@ -127,7 +127,7 @@ if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
 end
 
-gains = getAtlasGains(ref_frame);
+gains = getAtlasGains(input_frame); 
 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
@@ -140,7 +140,8 @@ qdes = zeros(nu,1);
 if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
     strcmp(joint,'l_arm_elx') || strcmp(joint,'r_arm_elx') || ...
     strcmp(joint,'l_leg_hpy') || strcmp(joint,'r_arm_hpy') || ... 
-    strcmp(joint,'l_leg_kny') || strcmp(joint,'r_arm_kny') 
+    strcmp(joint,'l_leg_kny') || strcmp(joint,'r_arm_kny') || ...
+    strcmp(joint,'neck_ay')
 
   qdes(joint_index_map.r_arm_shx) = 1.45;
   qdes(joint_index_map.l_arm_shx) = -1.45;
