@@ -135,6 +135,28 @@ set_selected_link(const std::string& link_name, Vector3f color){
   }
 }
 
+void
+OpenGL_Object_GFE::
+set_selected_links(const std::vector<std::string>& link_names, Vector3f select_color, Vector3f not_select_color){
+  for ( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
+    if ( _opengl_objects[i] != NULL ){
+      bool found = false;
+      for (int j=0; j < link_names.size(); j++){
+        if ( link_names[j].compare(_opengl_objects[i]->id()) == 0 ){
+          found = true;
+          if (_opengl_objects[i]->color() != select_color ){
+            _opengl_objects[i]->set_color(select_color);
+          }
+          break;
+        }
+      }
+      if (!found){
+        _opengl_objects[i]->set_color(not_select_color);
+      }
+    }
+  }
+}
+
 /**
  * draw
  * draws the opengl object representing the GFE

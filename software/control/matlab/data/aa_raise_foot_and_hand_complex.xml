@@ -1,0 +1,34 @@
+<constraint_sequence>
+  <constraint_task_space_region id="C0" active="T" visible="T" start="0.1" end="8" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="l_foot-heel,l_foot-toe" child="/box1" offset="0,-0.351,0">
+    <range index="X_MIN" active="T" value="-0.194961"/>
+    <range index="X_MAX" active="T" value="0.183"/>
+    <range index="Y_MIN" active="T" value="0.387"/>
+    <range index="Y_MAX" active="T" value="0.561"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.0308634"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C1" active="T" visible="T" start="0.1" end="2" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="0,0,0">
+    <range index="X_MIN" active="T" value="-0.208442"/>
+    <range index="X_MAX" active="T" value="0.198365"/>
+    <range index="Y_MIN" active="T" value="-0.210111"/>
+    <range index="Y_MAX" active="T" value="-0.0359799"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.0293952"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C3" active="T" visible="T" start="3" end="4" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="r_foot-default" child="/box1" offset="0,-0.233541,0.244081">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.267892"/>
+    <range index="Y_MIN" active="T" value="0"/>
+    <range index="Y_MAX" active="T" value="0.216707"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.101457"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C4" active="T" visible="T" start="6" end="8" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="-0.191,-0.527,0">
+    <range index="X_MIN" active="T" value="0.049"/>
+    <range index="X_MAX" active="T" value="0.341"/>
+    <range index="Y_MIN" active="T" value="0.036"/>
+    <range index="Y_MAX" active="T" value="0.205"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.001"/>
+  </constraint_task_space_region>
+</constraint_sequence>

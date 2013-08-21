@@ -12,7 +12,7 @@
 namespace authoring {
   class Constraint_Sequence {
   public:
-    Constraint_Sequence( unsigned int numConstraints = 128 );
+    Constraint_Sequence( unsigned int numConstraints = 1 );
     ~Constraint_Sequence();
     Constraint_Sequence( const Constraint_Sequence& other );
     Constraint_Sequence& operator=( const Constraint_Sequence& other );
@@ -21,7 +21,7 @@ namespace authoring {
     void from_xml( xmlNodePtr root ); 
     void to_xml( const std::string& filename )const;
     void to_xml( std::ofstream& out, unsigned int indent = 0 )const;
-    void to_msg( drc::action_sequence_t& msg, std::vector< affordance::AffordanceState >& affordanceCollection );
+    void to_msg( drc::action_sequence_t& msg, std::vector< affordance::AffordanceState >& affordanceCollection, float ik_time_of_interest = -1.0 );
     void from_msg( const drc::action_sequence_t& msg );
     static void print_msg( const drc::action_sequence_t& msg );
 

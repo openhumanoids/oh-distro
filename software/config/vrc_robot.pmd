@@ -448,6 +448,10 @@ group "m.authoring" {
        exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
     }
 
+    cmd "MotionPlanServer_from_standing_oneshot" {
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(1,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+    }
+    
     cmd "MotionPlanServer_from_turtled" {
        exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
        host = "localhost";
@@ -625,6 +629,7 @@ script "dev.greg.aa.ingress" {
     wait ms 1000;
     start cmd "AuthoringGUI";
     start cmd "MotionPlanServer_from_standing";
+    start cmd "MotionPlanServer_from_standing_oneshot";
     wait ms 4000;
     start cmd "gz_greg_aas_ingress";
 }
@@ -635,11 +640,12 @@ script "dev.greg.aa.flat" {
     start group "a.2.walking";
     start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
-    wait ms 1000;
+    wait ms 5000;
+    start cmd "gz_greg_aas_flat";
+    wait ms 5000;
     start cmd "AuthoringGUI";
     start cmd "MotionPlanServer_from_standing";
-    wait ms 4000;
-    start cmd "gz_greg_aas_flat";
+    start cmd "MotionPlanServer_from_standing_oneshot";
 }
 
 ############ System Tests ############

@@ -77,7 +77,7 @@ set_transparency( double transparency ){
 void
 OpenGL_Object_Constraint_Sequence::
 set_highlight( const std::vector< std::string >& highlightIds, highlight_class_t highlight_class ){
-  if (highlight_class > HIGHLIGHT_PURPLE){
+  if (highlight_class > HIGHLIGHT_BLUE){
     printf("Unknown highlight class.\n");
   }
   _highlight_ids_strings[(int)highlight_class] = highlightIds;
@@ -142,7 +142,6 @@ void
 OpenGL_Object_Constraint_Sequence::
 add_to_collision( Collision_Detector& detector ){
   int iter = 0;
-  char tmpstring[100];
   if( visible() ){
     for( vector< Constraint_Task_Space_Region >::const_iterator it = _constraint_sequence.constraints().begin(); it != _constraint_sequence.constraints().end(); it++ ){
       if( it->visible() ){
@@ -152,8 +151,7 @@ add_to_collision( Collision_Detector& detector ){
           }
         }
         _opengl_object_constraint_task_space_region.set( *it );
-        sprintf(tmpstring, "C%d", iter);
-        _opengl_object_constraint_task_space_region.add_to_collision(detector, tmpstring);
+        _opengl_object_constraint_task_space_region.add_to_collision(detector);
         //printf("Added %s to collision model...\n", tmpstring);
         iter++;
       }

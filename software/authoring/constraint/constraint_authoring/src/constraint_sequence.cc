@@ -50,6 +50,25 @@ from_xml( const string& filename ){
 void
 Constraint_Sequence::
 from_xml( xmlNodePtr root ){
+  // clean up the vector
+  _constraints.erase(_constraints.begin(), _constraints.end());
+  vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin();
+  if( root->type == XML_ELEMENT_NODE ){
+    xmlNodePtr l1 = NULL;
+    for( l1 = root->children; l1; l1 = l1->next ){
+      if( l1->type == XML_ELEMENT_NODE ){
+        if( xmlStrcmp( l1->name, ( const xmlChar* )( "constraint_task_space_region" ) ) == 0 ){
+          cout << "found constraint task space region" << endl;
+          Constraint_Task_Space_Region new_ctsr = Constraint_Task_Space_Region();
+          new_ctsr.from_xml( l1 );
+          _constraints.push_back(new_ctsr);
+        }         
+      }
+    }
+  }
+  return;
+
+  /*
   for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     it->active() = false;
   }
@@ -71,6 +90,7 @@ from_xml( xmlNodePtr root ){
     }
   }
   return;
+  */
 }
 
 void
@@ -100,16 +120,17 @@ to_xml( ofstream& out,
 void
 Constraint_Sequence::
 to_msg( action_sequence_t& msg, 
-        vector< AffordanceState >& affordanceCollection ){ 
+        vector< AffordanceState >& affordanceCollection,
+        float ik_time_of_interest ){
   msg.utime = 0;
   msg.num_contact_goals = 0;
   msg.contact_goals.clear();
   msg.robot_name = "atlas";
   _q0.to_lcm( &msg.q0 );
-  msg.q0.robot_name = msg.robot_name;
+  //msg.q0.robot_name = msg.robot_name;
   for( vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     cout << it->id() << ": " << it->active() << endl;
-    if( it->active() ) {
+    if( it->active() && (ik_time_of_interest==-1 || (it->start()<=ik_time_of_interest&&it->end()>=ik_time_of_interest))) {
       it->add_to_drc_action_sequence_t( msg, affordanceCollection );
     }
   }
@@ -126,31 +147,31 @@ from_msg( const action_sequence_t& msg ){
   }
   cout << "found " << msg.num_contact_goals << " contact_goals" << endl;
   vector< Constraint_Task_Space_Region >::iterator it = _constraints.begin();
-  for( unsigned int i = 0; i < msg.num_contact_goals/2; i++ ){
+  for( unsigned int i = 0; i < msg.num_contact_goals; i++ ){
     it->active() = true;
     it->metadata() = "NA";
-    it->start() = msg.contact_goals[2*i].lower_bound_completion_time;
-    it->end() = msg.contact_goals[2*i].upper_bound_completion_time;
+    it->start() = msg.contact_goals[i].lower_bound_completion_time;
+    it->end() = msg.contact_goals[i].upper_bound_completion_time;
     it->relation_type() = CONSTRAINT_TASK_SPACE_REGION_AFFORDANCE_RELATION_TYPE;
-    if( msg.contact_goals[2*i].contact_type == contact_goal_t::WITHIN_REGION ){
+    if( msg.contact_goals[i].contact_type == contact_goal_t::WITHIN_REGION ){
       it->contact_type() = CONSTRAINT_TASK_SPACE_REGION_WITHIN_REGION_CONTACT_TYPE;
     } else {
       it->contact_type() = CONSTRAINT_TASK_SPACE_REGION_SUPPORTED_WITHIN_REGION_CONTACT_TYPE;
     }
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first = ( msg.contact_goals[2*i].x_offset > -1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].x_offset < 1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first = ( msg.contact_goals[2*i].y_offset > -1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].y_offset < 1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first = ( msg.contact_goals[2*i].z_offset > -1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first = ( msg.contact_goals[2*i+1].z_offset < 1000.0 );
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second = msg.contact_goals[2*i].x_offset;
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second = msg.contact_goals[2*i+1].x_offset;
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second = msg.contact_goals[2*i].y_offset;
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second = msg.contact_goals[2*i+1].y_offset;
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second = msg.contact_goals[2*i].z_offset;
-    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second = msg.contact_goals[2*i+1].z_offset;
-    it->parents().push_back( msg.contact_goals[2*i].object_1_name + "-" + msg.contact_goals[2*i].object_1_contact_grp );
-    it->child() = ( msg.contact_goals[2*i].object_2_name + "/" + msg.contact_goals[2*i].object_2_contact_grp );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first = ( msg.contact_goals[i].x_offset_lower > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first = ( msg.contact_goals[i].x_offset_upper < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first = ( msg.contact_goals[i].y_offset_lower > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first = ( msg.contact_goals[i].y_offset_upper < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first = ( msg.contact_goals[i].z_offset_lower > -1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first = ( msg.contact_goals[i].z_offset_upper < 1000.0 );
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second = msg.contact_goals[i].x_offset_lower;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second = msg.contact_goals[i].x_offset_upper;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second = msg.contact_goals[i].y_offset_lower;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second = msg.contact_goals[i].y_offset_upper;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second = msg.contact_goals[i].z_offset_lower;
+    it->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second = msg.contact_goals[i].z_offset_upper;
+    it->parents().push_back( msg.contact_goals[i].object_1_name + "-" + msg.contact_goals[i].object_1_contact_grp );
+    it->child() = ( msg.contact_goals[i].object_2_name + "/" + msg.contact_goals[i].object_2_contact_grp );
     it++;
   }
   
@@ -175,26 +196,47 @@ print_msg( const action_sequence_t& msg ){
     } else {
       cout << "(UNKNOWN),";
     }
-    if( it->x_relation == contact_goal_t::REL_EQUAL ){
-      cout << "(x=" << it->x_offset << "),";
-    } else if( it->x_relation == contact_goal_t::REL_LESS_THAN ){
-      cout << "(x<" << it->x_offset << "),";
-    } else if ( it->x_relation == contact_goal_t::REL_GREATER_THAN ){
-      cout << "(x>" << it->x_offset << "),";
+    if( it->x_relation_lower == contact_goal_t::REL_EQUAL ){
+      cout << "(xl=" << it->x_offset_lower << "),";
+    } else if( it->x_relation_lower == contact_goal_t::REL_LESS_THAN ){
+      cout << "(xl<" << it->x_offset_lower << "),";
+    } else if ( it->x_relation_lower == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(xl>" << it->x_offset_lower << "),";
     }
-    if( it->y_relation == contact_goal_t::REL_EQUAL ){
-      cout << "(y=" << it->y_offset << "),";
-    } else if( it->y_relation == contact_goal_t::REL_LESS_THAN ){
-      cout << "(y<" << it->y_offset << "),";
-    } else if ( it->y_relation == contact_goal_t::REL_GREATER_THAN ){
-      cout << "(y>" << it->y_offset << "),";
+    if( it->y_relation_lower == contact_goal_t::REL_EQUAL ){
+      cout << "(yl=" << it->y_offset_lower << "),";
+    } else if( it->y_relation_lower == contact_goal_t::REL_LESS_THAN ){
+      cout << "(yl<" << it->y_offset_lower << "),";
+    } else if ( it->y_relation_lower == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(yl>" << it->y_offset_lower << "),";
     }
-    if( it->z_relation == contact_goal_t::REL_EQUAL ){
-      cout << "(z=" << it->z_offset << ")";
-    } else if( it->z_relation == contact_goal_t::REL_LESS_THAN ){
-      cout << "(z<" << it->z_offset << ")";
-    } else if ( it->z_relation == contact_goal_t::REL_GREATER_THAN ){
-      cout << "(z>" << it->z_offset << ")";
+    if( it->z_relation_lower == contact_goal_t::REL_EQUAL ){
+      cout << "(zl=" << it->z_offset_lower << ")";
+    } else if( it->z_relation_lower == contact_goal_t::REL_LESS_THAN ){
+      cout << "(zl<" << it->z_offset_lower << ")";
+    } else if ( it->z_relation_lower == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(zl>" << it->z_offset_lower << ")";
+    }
+    if( it->x_relation_upper == contact_goal_t::REL_EQUAL ){
+      cout << "(xu=" << it->x_offset_upper << "),";
+    } else if( it->x_relation_upper == contact_goal_t::REL_LESS_THAN ){
+      cout << "(xu<" << it->x_offset_upper << "),";
+    } else if ( it->x_relation_upper == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(xu>" << it->x_offset_upper << "),";
+    }
+    if( it->y_relation_upper == contact_goal_t::REL_EQUAL ){
+      cout << "(yu=" << it->y_offset_upper << "),";
+    } else if( it->y_relation_upper == contact_goal_t::REL_LESS_THAN ){
+      cout << "(yu<" << it->y_offset_upper << "),";
+    } else if ( it->y_relation_upper == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(yu>" << it->y_offset_upper << "),";
+    }
+    if( it->z_relation_upper == contact_goal_t::REL_EQUAL ){
+      cout << "(zu=" << it->z_offset_upper << ")";
+    } else if( it->z_relation_upper == contact_goal_t::REL_LESS_THAN ){
+      cout << "(zu<" << it->z_offset_upper << ")";
+    } else if ( it->z_relation_upper == contact_goal_t::REL_GREATER_THAN ){
+      cout << "(zu>" << it->z_offset_upper << ")";
     }
     cout << "}";
   }

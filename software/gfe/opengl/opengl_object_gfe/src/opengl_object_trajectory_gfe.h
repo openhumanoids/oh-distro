@@ -32,6 +32,7 @@ namespace opengl {
     OpenGL_Object_Trajectory_GFE& operator=( const OpenGL_Object_Trajectory_GFE& other );
 
     void set( const std::vector< state::State_GFE >& trajectory );
+    void set_selected_links(const std::vector<std::string>& link_names, Eigen::Vector3f select_color, Eigen::Vector3f not_select_color);
     inline void set_current_index( unsigned int currentIndex ){ _current_index = currentIndex; return; };
     inline void set_visible_current_index( bool visibleCurrentIndex ){ _visible_current_index = visibleCurrentIndex; return; };      
     inline void set_visible_trajectory( bool visibleTrajectory ){ _visible_trajectory = visibleTrajectory; return; };      
@@ -47,6 +48,9 @@ namespace opengl {
     bool _visible_current_index;
     bool _visible_trajectory;
     bool _visible_trajectory_wrist;
+    std::vector<std::string> _selected_link_names;
+    Eigen::Vector3f _selected_color;
+    Eigen::Vector3f _not_selected_color;
 
   private:
 

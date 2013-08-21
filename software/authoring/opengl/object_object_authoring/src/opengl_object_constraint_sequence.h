@@ -29,10 +29,10 @@ namespace authoring {
   // a highlight of a higher index shows up over one of a lower index
   enum highlight_class_t{
     HIGHLIGHT_NONE = -1,
-    HIGHLIGHT_RED = 0,
-    HIGHLIGHT_GREEN = 1,
-    HIGHLIGHT_BLUE = 2,
-    HIGHLIGHT_PURPLE = 3
+    HIGHLIGHT_PURPLE = 0,
+    HIGHLIGHT_RED = 1,
+    HIGHLIGHT_GREEN = 2,
+    HIGHLIGHT_BLUE = 3
   };
 
   class OpenGL_Object_Constraint_Sequence: public opengl::OpenGL_Object {

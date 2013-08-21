@@ -23,7 +23,7 @@ namespace authoring {
     virtual void set_affordance( affordance::AffordanceState& affordanceState );  
   
     virtual void draw( void );
-    virtual void add_to_collision( collision::Collision_Detector& detector, std::string id );
+    virtual void add_to_collision( collision::Collision_Detector& detector );
   protected:
     opengl::OpenGL_Object_Box _opengl_object_box;
     affordance::AffordanceState _affordance_state;

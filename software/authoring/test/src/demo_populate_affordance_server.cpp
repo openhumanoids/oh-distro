@@ -42,6 +42,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     car.setType( AffordanceState::CAR );
     wrapper.addNewlyFittedAffordance(car);
 */
+    
     ////--------------wait a few second so we get an update from the server
     boost::this_thread::sleep(boost::posix_time::seconds(3));
 

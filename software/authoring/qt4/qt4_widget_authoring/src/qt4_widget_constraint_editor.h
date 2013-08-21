@@ -43,7 +43,8 @@ namespace authoring {
     void child_highlight( const QString& id, const QString& child, bool highlight );
     void update_collision_info( void );
     void bind_axes_to_constraint( Constraint_Task_Space_Region * cnst, bool unbind_if_duplicate );
-    
+    void unbind_axes_from_constraint( Constraint_Task_Space_Region * cnst );
+
   public slots:
     void update_constraint( const Constraint_Task_Space_Region& constraint );
     void update_description( const QString& description );
@@ -83,6 +84,7 @@ namespace authoring {
     QLineEdit * _line_edit_description;
     QWidget * _constraint_editor_popup;
     QWidget * _constraint_visualizer_popup;
+
   private:
 
   };

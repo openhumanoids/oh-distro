@@ -20,12 +20,12 @@ using namespace state;
 State_GFE_Leg::
 State_GFE_Leg( string jointIdPrefix ) : State(),
                                         _joints(){
-  _joints[ STATE_GFE_LEG_UHZ_JOINT ].set_id( jointIdPrefix + "uhz" );
-  _joints[ STATE_GFE_LEG_MHX_JOINT ].set_id( jointIdPrefix + "mhx" );
-  _joints[ STATE_GFE_LEG_LHY_JOINT ].set_id( jointIdPrefix + "lhy" );
+  _joints[ STATE_GFE_LEG_UHZ_JOINT ].set_id( jointIdPrefix + "hpz" );
+  _joints[ STATE_GFE_LEG_MHX_JOINT ].set_id( jointIdPrefix + "hpx" );
+  _joints[ STATE_GFE_LEG_LHY_JOINT ].set_id( jointIdPrefix + "hpy" );
   _joints[ STATE_GFE_LEG_KNY_JOINT ].set_id( jointIdPrefix + "kny" );
-  _joints[ STATE_GFE_LEG_UAY_JOINT ].set_id( jointIdPrefix + "uay" );
-  _joints[ STATE_GFE_LEG_LAX_JOINT ].set_id( jointIdPrefix + "lax" );
+  _joints[ STATE_GFE_LEG_UAY_JOINT ].set_id( jointIdPrefix + "aky" );
+  _joints[ STATE_GFE_LEG_LAX_JOINT ].set_id( jointIdPrefix + "akx" );
 }
 
 State_GFE_Leg::

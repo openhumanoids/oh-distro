@@ -289,7 +289,7 @@ add_to_drc_action_sequence_t( action_sequence_t& actionSequence,
         Frame target_frame = Frame( KDL::Rotation::RPY( child->getRPY().x(), child->getRPY().y(), child->getRPY().z() ), KDL::Vector( child->getXYZ().x(), child->getXYZ().y(), child->getXYZ().z() ) ) * _offset;
         string parent_link_name = parent_strings[ 0 ];
         string parent_group_name = parent_strings[ 1 ];
-        for( unsigned int i = 0; i < ( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES/3 ); i++ ){
+        //for( unsigned int i = 0; i < ( NUM_CONSTRAINT_TASK_SPACE_REGION_RANGES/3 ); i++ ){
           if( _active ){
             actionSequence.num_contact_goals++;
             contact_goal_t contact_goal;
@@ -305,23 +305,23 @@ add_to_drc_action_sequence_t( action_sequence_t& actionSequence,
             actionSequence.contact_goals.back().target_pt.x = target_frame.p[0];
             actionSequence.contact_goals.back().target_pt.y = target_frame.p[1];
             actionSequence.contact_goals.back().target_pt.z = target_frame.p[2];
-            if( i == 0 ){
-              actionSequence.contact_goals.back().x_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : -1000.0 );
-              actionSequence.contact_goals.back().y_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second : -1000.0 );
-              actionSequence.contact_goals.back().z_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second : -1000.0 );
-              actionSequence.contact_goals.back().x_relation = contact_goal_t::REL_GREATER_THAN;
-              actionSequence.contact_goals.back().y_relation = contact_goal_t::REL_GREATER_THAN;
-              actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_GREATER_THAN;
-            } else if ( i == 1 ){
-              actionSequence.contact_goals.back().x_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 1000.0 );
-              actionSequence.contact_goals.back().y_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second : 1000.0 );
-              actionSequence.contact_goals.back().z_offset = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second : 1000.0 );
-              actionSequence.contact_goals.back().x_relation = contact_goal_t::REL_LESS_THAN;
-              actionSequence.contact_goals.back().y_relation = contact_goal_t::REL_LESS_THAN;
-              actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_LESS_THAN;
-            }
+            //if( i == 0 ){
+              actionSequence.contact_goals.back().x_offset_lower = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : -1000.0 );
+              actionSequence.contact_goals.back().y_offset_lower = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second : -1000.0 );
+              actionSequence.contact_goals.back().z_offset_lower = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second : -1000.0 );
+              actionSequence.contact_goals.back().x_relation_lower = contact_goal_t::REL_GREATER_THAN;
+              actionSequence.contact_goals.back().y_relation_lower = contact_goal_t::REL_GREATER_THAN;
+              actionSequence.contact_goals.back().z_relation_lower = contact_goal_t::REL_GREATER_THAN;
+            //} else if ( i == 1 ){
+              actionSequence.contact_goals.back().x_offset_upper = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 1000.0 );
+              actionSequence.contact_goals.back().y_offset_upper = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second : 1000.0 );
+              actionSequence.contact_goals.back().z_offset_upper = ( _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first ? _ranges[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second : 1000.0 );
+              actionSequence.contact_goals.back().x_relation_upper = contact_goal_t::REL_LESS_THAN;
+              actionSequence.contact_goals.back().y_relation_upper = contact_goal_t::REL_LESS_THAN;
+              actionSequence.contact_goals.back().z_relation_upper = contact_goal_t::REL_LESS_THAN;
+            //}
           }
-        } 
+        //} 
       }
     }
   }

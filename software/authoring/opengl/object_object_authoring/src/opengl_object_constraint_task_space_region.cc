@@ -58,6 +58,7 @@ operator=( const OpenGL_Object_Constraint_Task_Space_Region& other ) {
 void 
 OpenGL_Object_Constraint_Task_Space_Region::
 set( const Constraint_Task_Space_Region& constraint ){
+  _id = constraint.id();
   _opengl_object_box.set_visible( constraint.active() && constraint.visible() );
   double xmin = constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : -1000.0;
   double xmax = constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? constraint.ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 1000.0;
@@ -108,9 +109,9 @@ draw( void ){
 /* Add to specified collision detector */
 void
 OpenGL_Object_Constraint_Task_Space_Region::
-add_to_collision( Collision_Detector& detector, string id ){
+add_to_collision( Collision_Detector& detector ){
   // Spawn collision box
-  Collision_Object_Box * tmp = new Collision_Object_Box( id, 
+  Collision_Object_Box * tmp = new Collision_Object_Box( _id, 
       _opengl_object_box.dimensions(), _opengl_object_box.offset(), 
       _opengl_object_box.transform() );
   // populate into detector

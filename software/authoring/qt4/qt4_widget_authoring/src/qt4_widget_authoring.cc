@@ -1,4 +1,3 @@
-#include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QGroupBox>
 #include <QtGui/QSplitter>
@@ -21,7 +20,8 @@ Qt4_Widget_Authoring::
 Qt4_Widget_Authoring( const std::string& xmlString, 
                       unsigned int numConstraints,
                       QWidget * parent ) : QWidget( parent ),
-                                           _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( xmlString, this ) ),
+                                            _xmlString(xmlString),
+                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( xmlString, this ) ),
                                             _text_edit_info( new QTextEdit( "[<b>OK</b>] authoring widget started", this ) ),
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
                                             _push_button_import( new QPushButton( QString( "import..." ), this ) ),
@@ -29,12 +29,16 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _push_button_publish( new QPushButton( QString( "publish constraints" ), this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
                                             _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
+                                            _label_plan_step_count( new QLabel("")),
                                             _check_box_visible_current_index( new QCheckBox( "current index", this ) ),
                                             _check_box_visible_trajectory( new QCheckBox( "trajectory", this ) ),
                                             _check_box_visible_trajectory_wrist( new QCheckBox( "wrist trajectory", this ) ),
                                             _check_box_visible_initial_state( new QCheckBox( "initial state", this ) ),
                                             _push_button_publish_plan( new QPushButton( QString( "publish plan" ), this ) ),
                                             _push_button_publish_reverse_plan( new QPushButton( QString( "reverse plan" ), this ) ),
+                                            _double_spin_box_publish_start( new QDoubleSpinBox( this ) ),
+                                            _double_spin_box_publish_range_label( new QLabel( "to" ) ),
+                                            _double_spin_box_publish_end( new QDoubleSpinBox( this ) ),
                                             _progress_bar_planner( new QProgressBar( ) ),
                                             _label_planner_feedback( new QLabel( "No plan submitted.\n" ) ),
                                             _slider_current_time( new QLabel("frame 0") ),
@@ -44,14 +48,24 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _affordance_collection_ghost(),
                                             _robot_plan(),
                                             _state_gfe_ghost(),
-                                            _constraint_sequence( numConstraints ){
+                                            _constraint_sequence( numConstraints ),
+                                            _double_spin_box_insert_remove( new QDoubleSpinBox( this ) ),
+                                            _push_button_insert_before( new QPushButton( QString( "insert before "), this )),
+                                            _push_button_insert_after( new QPushButton( QString( "insert after "), this )),
+                                            _push_button_remove_at( new QPushButton( QString( "delete at "), this )),
+                                            _constraints_layout( new QGridLayout () ),
+                                            _constraints_widget( new QWidget( this ) ),
+                                            _constraints_layout_labels( new QWidget( this ) ),
+                                            _constraints_scroll_area( new QScrollArea( this ) ),
+                                            _constraint_ctr( 0 )
+                                            {
   _robot_model.initString( xmlString );
 
   for( unsigned int i = 0; i < numConstraints; i++ ){
-    _constraint_sequence.constraints()[ i ].id() = QString( "C%1" ).arg( i ).toStdString();
+    _constraint_sequence.constraints()[ i ].id() = QString( "C%1" ).arg( _constraint_ctr ).toStdString();
     _constraint_sequence.constraints()[ i ].active() = false;
     _constraint_sequence.constraints()[ i ].visible() = false;
-    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, xmlString, i, this ) );
+    _constraint_ctr++;
   }
 
   _push_button_publish->setEnabled( false );
@@ -69,7 +83,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
 
   _label_planner_feedback->setFrameStyle( QFrame::Panel | QFrame::Sunken );
   _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
-
+  _label_plan_step_count->setAlignment( Qt::AlignCenter );
   _text_edit_info->setFixedHeight( 75 );
 
   _text_edit_info->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -83,6 +97,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   _push_button_publish_reverse_plan->setEnabled( false );
   _push_button_publish_plan->setToolTip("broadcast current plan as a candidate plan");
   _push_button_publish_reverse_plan->setToolTip("broadcast current plan, time-reversed, as a candidate plan");
+  _double_spin_box_publish_start->setEnabled( false );
+  _double_spin_box_publish_end->setEnabled( false );
 
   QGroupBox * controls_group_box = new QGroupBox( QString( "controls" ) );
   QGridLayout * controls_layout = new QGridLayout();
@@ -97,15 +113,57 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   affordances_layout->addWidget( _text_edit_affordance_collection );
   affordances_widget->setLayout( affordances_layout );
  
-  QScrollArea * constraints_scroll_area = new QScrollArea( this );
-  constraints_scroll_area->setFrameStyle( QFrame::NoFrame );
-  QWidget * constraints_widget = new QWidget( this );
-  QGridLayout * constraints_layout = new QGridLayout();
-  for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
-    constraints_layout->addWidget( *it );
-  }
-  constraints_widget->setLayout( constraints_layout );
-  constraints_scroll_area->setWidget( constraints_widget ); 
+  QWidget * constraints_meta_widget  = new QWidget( this );
+  QGridLayout * constraints_meta_layout = new QGridLayout();
+  _constraints_scroll_area->setFrameStyle( QFrame::NoFrame );
+
+  // Insert / remove constraint controls
+  _double_spin_box_insert_remove->setDecimals(0);
+  constraints_meta_layout->addWidget(_double_spin_box_insert_remove, 0, 0);
+  constraints_meta_layout->addWidget(_push_button_insert_before, 1, 0);
+  constraints_meta_layout->addWidget(_push_button_insert_after, 2, 0);
+  constraints_meta_layout->addWidget(_push_button_remove_at, 3, 0);
+
+  // prepare labels for constraint editor bars
+  char stylesheet[] = "QLabel { border: 2px solid rgba(0, 0, 0, 150); background-color: rgba(255, 0, 0, 0); color : black; }";
+  QHBoxLayout * constraints_layout_labels_layout = new QHBoxLayout();
+  QWidget * tmp =  new QLabel("");
+  //tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 35 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("En") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 40 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("Vis") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 40 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 50 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 50 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("Start") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 70 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("End") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 70 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("Comment") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 200 ); constraints_layout_labels_layout->addWidget( tmp );
+  tmp =  new QLabel( QString("") );
+  tmp->setStyleSheet(stylesheet);
+  tmp->setFixedWidth( 1024 ); constraints_layout_labels_layout->addWidget( tmp );
+  // layout for now contains just labels; we'll sync up and get editors for
+  //  existing constraints in just a bit
+  _constraints_layout_labels->setLayout(constraints_layout_labels_layout);
+  _constraints_layout->addWidget(_constraints_layout_labels, 0, 1);
+  _constraints_widget->setLayout( _constraints_layout );
+  _constraints_scroll_area->setWidget( _constraints_widget ); 
+  constraints_meta_layout->addWidget(_constraints_scroll_area, 0, 1, 8, 1);
+  constraints_meta_widget->setLayout(constraints_meta_layout);
+
+  _slider_plan_current_index->setTickPosition(QSlider::TicksBelow);
   
   QScrollArea * plan_scroll_area = new QScrollArea( this );
   plan_scroll_area->setFrameStyle( QFrame::NoFrame );
@@ -117,17 +175,21 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   plan_layout->addWidget( _check_box_visible_trajectory, 0, 3 );
   plan_layout->addWidget( _check_box_visible_trajectory_wrist, 0, 4 );
   plan_layout->addWidget( _slider_plan_current_index, 1, 0, 1, 4 );
+  plan_layout->addWidget( _label_plan_step_count, 1, 4, 1, 1);
   plan_layout->addWidget( _slider_current_time, 2, 0, 1, 5 );
   plan_layout->addWidget( _progress_bar_planner, 3, 0, 1, 2);
   plan_layout->addWidget( _push_button_publish_plan, 3, 2);
   plan_layout->addWidget( _push_button_publish_reverse_plan, 3, 3);
   plan_layout->addWidget( _label_planner_feedback, 4, 0, 1, 4);
+  plan_layout->addWidget( _double_spin_box_publish_start, 2, 2, 1, 1);
+  plan_layout->addWidget( _double_spin_box_publish_range_label, 2, 3, 1, 1);
+  plan_layout->addWidget( _double_spin_box_publish_end, 2, 4, 1, 1);
   plan_widget->setLayout( plan_layout );
 
   plan_scroll_area->setWidget( plan_widget );
 
   QTabWidget * tab_widget = new QTabWidget( this );
-  tab_widget->addTab( constraints_scroll_area, QString( "constraints" ) ); 
+  tab_widget->addTab( constraints_meta_widget, QString( "constraints" ) ); 
   tab_widget->addTab( plan_scroll_area, QString( "plan" ) ); 
   tab_widget->addTab( affordances_widget, QString( "affordances" ) ); 
 
@@ -151,6 +213,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   widget_layout->addWidget(splitter);
   setLayout( widget_layout );
 
+  _refresh_constraint_editors();
+
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
               _widget_opengl_authoring, SLOT( update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _widget_opengl_authoring, SLOT( update_opengl_object_gfe( state::State_GFE& ) ) );
@@ -164,20 +228,16 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( _push_button_publish_reverse_plan, SIGNAL( clicked() ), this, SLOT( _push_button_publish_reverse_plan_pressed() ) );
 
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
-  connect( _widget_opengl_authoring, SIGNAL( publish_constraints( void ) ), this, SLOT( publish_constraints( void ) ) );
-  for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
-    connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
-    connect( *it, SIGNAL( constraint_update( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
-    connect( *it, SIGNAL( constraint_highlight ( const QString&, highlight_class_t, bool ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString&, highlight_class_t, bool ) ) );
-    connect( *it, SIGNAL( child_highlight ( const QString&, const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_child( const QString&, const QString&, bool ) ) );
-    connect( *it, SIGNAL( bind_axes_to_constraint ( Constraint_Task_Space_Region *, bool ) ), _widget_opengl_authoring, SLOT( bind_axes_to_constraint( Constraint_Task_Space_Region *, bool ) ) );
-    connect( _widget_opengl_authoring, SIGNAL( update_constraint ( const Constraint_Task_Space_Region&, unsigned int ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region&, unsigned int ) ) );
-    connect( _widget_opengl_authoring, SIGNAL( select_constraint( const QString&, select_class_t) ), *it, SLOT( select_constraint( const QString&, select_class_t) ) );
-  }
+  connect( _widget_opengl_authoring, SIGNAL( publish_constraints( float ) ), this, SLOT( publish_constraints( float ) ) );
+
   connect( _push_button_grab, SIGNAL( clicked() ), this, SLOT( _push_button_grab_pressed() ) );
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
   connect( _push_button_export, SIGNAL( clicked() ), this, SLOT( _push_button_export_pressed() ) );
   connect( _push_button_publish, SIGNAL( clicked() ), this, SLOT( _push_button_publish_pressed() ) );
+
+  connect( _push_button_insert_before, SIGNAL( clicked() ), this, SLOT( _push_button_insert_before_pressed() ) );
+  connect( _push_button_insert_after, SIGNAL( clicked() ), this, SLOT( _push_button_insert_after_pressed() ) );
+  connect( _push_button_remove_at, SIGNAL( clicked() ), this, SLOT( _push_button_remove_at_pressed() ) );
 }
 
 Qt4_Widget_Authoring::
@@ -209,12 +269,15 @@ update_info( const QString& info ){
 
 void
 Qt4_Widget_Authoring::
-update_constraint( const Constraint_Task_Space_Region& constraint,
-                    unsigned int constraintIndex ){
-  if( constraintIndex < _constraint_sequence.constraints().size() ){
-    _constraint_sequence.constraints()[ constraintIndex ] = constraint;
-    _widget_opengl_authoring->update_opengl_object_constraint_sequence( _constraint_sequence );
+update_constraint( const Constraint_Task_Space_Region& constraint ){
+  for (int i=0; i<_constraint_sequence.constraints().size(); i++){
+    if (_constraint_sequence.constraints()[i].id() == constraint.id()){
+      _constraint_sequence.constraints()[i] = constraint;
+      _widget_opengl_authoring->update_opengl_object_constraint_sequence( _constraint_sequence );
+      return;
+    }
   }
+  cout << "update_constraint couldn't find constraint " << constraint.id() << endl;
   return;
 }
 
@@ -229,8 +292,69 @@ void
 Qt4_Widget_Authoring::
 update_robot_plan( vector< State_GFE >& robotPlan ){
   emit info_update( QString( "[<b>OK</b>] received plan" ) );
+  int old_pos = _slider_plan_current_index->value();
+  long long int old_tpos = 0.0;
+  if (old_pos < _robot_plan.size())
+    old_tpos = _robot_plan[old_pos].time();
+
   _robot_plan = robotPlan;
   _slider_plan_current_index->setRange( 0, ( robotPlan.size() - 1 ) );
+
+  // try to time point that we used to be on, otherwise jump to end
+  int new_pos = _robot_plan.size()-1;
+  for (int i=0; i<_robot_plan.size(); i++){
+    if (_robot_plan[i].time() == old_tpos){
+      new_pos = i;
+      break;
+    }
+  }
+  _slider_plan_current_index->setSliderPosition( new_pos );
+
+  // update plan slice ctr
+  char tmp[100];
+  sprintf(tmp, "%u time points", (unsigned int)_robot_plan.size());
+  _label_plan_step_count->setText(tmp);
+
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+insert_robot_plan( State_GFE& robotPlanSlice ){
+  emit info_update( QString( "[<b>OK</b>] received plan slice" ) );
+  // figure out where it fits into current plan
+  bool inserted = false;
+  int fit_index = 0;
+  for (int i=0; i<_robot_plan.size(); i++){
+    if (_robot_plan[i].time() == robotPlanSlice.time()){
+      _robot_plan[i] = robotPlanSlice;
+      inserted = true;
+      fit_index = i;
+      break;
+    }
+    if (_robot_plan[i].time() > robotPlanSlice.time()){
+      // it fits in the middle somewhere but time slice is novel
+      _robot_plan.insert(_robot_plan.begin()+i, robotPlanSlice);
+      inserted = true;
+      fit_index = i;
+      break;
+    }
+  }
+  if (!inserted){
+    // tack on to end
+    _robot_plan.push_back(robotPlanSlice);
+    fit_index = _robot_plan.size()-1;
+  }
+
+  _widget_opengl_authoring->update_opengl_object_robot_plan(_robot_plan);
+  _slider_plan_current_index->setRange( 0, ( _robot_plan.size() - 1 ) );
+  _slider_plan_current_index->setSliderPosition( fit_index );
+  _slider_updated( fit_index );
+
+  // update plan slice ctr
+  char tmp[100];
+  sprintf(tmp, "%u time points", (unsigned int)_robot_plan.size());
+  _label_plan_step_count->setText(tmp);
   return;
 }
 
@@ -276,6 +400,15 @@ aas_got_status_msg( float last_time_solved,  float total_time_to_solve,
         _progress_bar_planner->setFormat( QString("Fully planned!") );
         _push_button_publish_plan->setEnabled( true );
         _push_button_publish_reverse_plan->setEnabled( true );
+        // and enable range buttons
+        _double_spin_box_publish_start->setEnabled( true );
+        _double_spin_box_publish_end->setEnabled( true );
+        _double_spin_box_publish_start->setMinimum( 0.0 );
+        _double_spin_box_publish_end->setMinimum( 0.0 );
+        _double_spin_box_publish_start->setMaximum( total_time_to_solve );
+        _double_spin_box_publish_end->setMaximum( total_time_to_solve );
+        _double_spin_box_publish_start->setValue( 0.0 );
+        _double_spin_box_publish_end->setValue( total_time_to_solve );
         if (plan_is_warn){
           _label_planner_feedback->setText("Plan ready for publish, with warnings.");
           _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(255, 255, 0, 150); background-color: rgba(255, 0, 0, 0); color : black; }");
@@ -300,8 +433,26 @@ aas_got_status_msg( float last_time_solved,  float total_time_to_solve,
 
 void 
 Qt4_Widget_Authoring::
-publish_constraints( void ){
+publish_constraints( float ik_time_of_interest ){
+  // publish a single-shot at just our current time
+  action_sequence_t msg; 
+  _constraint_sequence.to_msg( msg, _affordance_collection, ik_time_of_interest ); 
+  Constraint_Sequence::print_msg( msg );
+  msg.ik_time = ik_time_of_interest;
+  if (ik_time_of_interest != -1 && _robot_plan.size() > 0){
+    _robot_plan[_slider_plan_current_index->value()].to_lcm(&msg.q0);
+  }
+
+  emit drc_action_sequence_t_oneshot_publish( msg );  
+  _push_button_publish_plan->setEnabled( false );
+  _push_button_publish_reverse_plan->setEnabled( false );
+  emit info_update( QString( "[<b>OK</b>] published one-shot constraint sequence as drc::action_sequence_t" ) ); 
+  
+  // also get to work on the full plan
   _push_button_publish_pressed();
+
+  return;
+
 }
 
 void
@@ -335,9 +486,8 @@ _push_button_import_pressed( void ){
 
   _constraint_sequence.from_xml( filename.toStdString() );
   emit info_update( QString( "[<b>OK</b>] imported constraint sequence to file %1" ).arg( filename ) );
-  for( unsigned int i = 0; i < _constraint_editors.size(); i++ ){
-    _constraint_editors[ i ]->update_constraint( _constraint_sequence.constraints()[ i ] );
-  } 
+  _widget_opengl_authoring->update_opengl_object_constraint_sequence(_constraint_sequence);
+  _refresh_constraint_editors();
   return;
 }
 
@@ -379,70 +529,211 @@ _push_button_publish_pressed( void ){
 void
 Qt4_Widget_Authoring::
 _push_button_publish_plan_pressed( void ){
-  robot_plan_t msg;
+  robot_plan_w_keyframes_t msg;
   robot_state_t tmp;
   msg.robot_name = "atlas";
   msg.utime = 0;
-  // set up states
-  msg.num_states = _robot_plan.size();
-  for ( unsigned int i = 0; i < _robot_plan.size(); i++){
-    _robot_plan[i].to_lcm_minimal( &tmp );
-    tmp.robot_name = "atlas";
-    msg.plan.push_back(tmp); 
+  long start_time = (long) (1000000.0 * _double_spin_box_publish_start->value());
+  long end_time = (long) (1000000.0 * _double_spin_box_publish_end->value());
+  if (end_time <= start_time){
+    emit info_update( QString( "[<b>ERROR</b>] not publishing robot plan: invalid time range" ) ); 
+    return;
   }
-  // and grasps
+
+  for ( unsigned int i = 0; i < _robot_plan.size(); i++){
+    if (_robot_plan[i].time() >= start_time && _robot_plan[i].time() <= end_time){
+      _robot_plan[i].to_lcm_minimal( &tmp );
+      //tmp.robot_name = "atlas";
+      tmp.utime -= start_time;
+      msg.plan.push_back(tmp);
+    }
+  }
+  msg.num_states = msg.plan.size();
+  // and grasps (none)
   msg.num_grasp_transitions = 0;
-  // and control types
-  msg.left_arm_control_type = 0;
-  msg.right_arm_control_type = 0;
-  msg.left_leg_control_type = 0;
-  msg.right_leg_control_type = 0;
   // and matlab payload (none)
   msg.num_bytes = 0;
+  // and key/breakpoints, of which we use none
+  msg.num_keyframes = 0;
+  msg.num_breakpoints = 0;
+  for (int i=0; i<msg.num_states; i++){
+    msg.is_keyframe.push_back(false);
+    msg.is_breakpoint.push_back(false);
+  }
 
-  emit robot_plan_t_publish( msg ); 
+  emit robot_plan_w_keyframes_t_publish( msg ); 
   _label_planner_feedback->setText("No plan submitted.\n");
   _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
-  emit info_update( QString( "[<b>OK</b>] published robot plan as drc::robot_plan_t" ) ); 
+  emit info_update( QString( "[<b>OK</b>] published robot plan as drc::robot_plan_w_keyframes_t" ) ); 
   return;
 }
 
 void
 Qt4_Widget_Authoring::
 _push_button_publish_reverse_plan_pressed( void ){
-  robot_plan_t msg;
+  robot_plan_w_keyframes_t msg;
   robot_state_t tmp;
   msg.robot_name = "atlas";
   msg.utime = 0;
-  // set up states
-  msg.num_states = _robot_plan.size();
-  // get the "starting time"
-  _robot_plan[_robot_plan.size()-1].to_lcm_minimal( &tmp );
-  tmp.robot_name = "atlas";
-  long last_state_time = tmp.utime;
-  tmp.utime = 0;
-  msg.plan.push_back(tmp);
-  for ( int i = _robot_plan.size() - 2; i >= 0; i--){
-    _robot_plan[i].to_lcm_minimal( &tmp );
-    tmp.robot_name = "atlas";
-    tmp.utime = last_state_time - tmp.utime;
-    msg.plan.push_back(tmp); 
+
+  long start_time = (long) (1000000.0 * _double_spin_box_publish_start->value());
+  long end_time = (long) (1000000.0 * _double_spin_box_publish_end->value());
+  if (end_time <= start_time){
+    emit info_update( QString( "[<b>ERROR</b>] not publishing robot plan: invalid time range" ) ); 
+    return;
   }
-  // and grasps
+
+  long last_state_time;
+  bool found_starting_point = false;
+  for ( int i = _robot_plan.size() - 1; i >= 0; i--){
+    _robot_plan[i].to_lcm_minimal( &tmp );
+    if (found_starting_point){
+      //tmp.robot_name = "atlas";
+      if (tmp.utime < start_time) break;
+      tmp.utime = last_state_time - tmp.utime;
+      msg.plan.push_back(tmp); 
+    } else {
+      if (tmp.utime <= end_time){
+        last_state_time = tmp.utime;
+        found_starting_point = true;
+        tmp.utime = end_time - tmp.utime;
+        msg.plan.push_back(tmp); 
+      }
+    }
+  }
+  msg.num_states = msg.plan.size();
+  // and grasps (none)
   msg.num_grasp_transitions = 0;
-  // and control types
-  msg.left_arm_control_type = 0;
-  msg.right_arm_control_type = 0;
-  msg.left_leg_control_type = 0;
-  msg.right_leg_control_type = 0;
   // and matlab payload (none)
   msg.num_bytes = 0;
+  // and key/breakpoints, of which we use none
+  msg.num_keyframes = 0;
+  msg.num_breakpoints = 0;
+  for (int i=0; i<msg.num_states; i++){
+    msg.is_keyframe.push_back(false);
+    msg.is_breakpoint.push_back(false);
+  }
 
-  emit robot_plan_t_publish( msg ); 
+  emit robot_plan_w_keyframes_t_publish( msg ); 
   _label_planner_feedback->setText("No plan submitted.\n");
   _label_planner_feedback->setStyleSheet("QLabel { border: 2px solid rgba(0, 0, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
-  emit info_update( QString( "[<b>OK</b>] published reversed robot plan as drc::robot_plan_t" ) ); 
+  emit info_update( QString( "[<b>OK</b>] published reversed robot plan as drc::robot_plan_w_keyframes_t" ) ); 
   return;
+}
+
+void 
+Qt4_Widget_Authoring::
+_push_button_insert_before_pressed( void ){
+  _add_new_constraint( ((int) _double_spin_box_insert_remove->value()) );
+  return;
+}
+void 
+Qt4_Widget_Authoring::
+_push_button_insert_after_pressed( void ){
+  _add_new_constraint( ((int) _double_spin_box_insert_remove->value()) + 1 );
+  return;
+}
+void 
+Qt4_Widget_Authoring::
+_add_new_constraint( int constraint_num ){
+  if (constraint_num < 0 || constraint_num > _constraint_sequence.constraints().size())
+    return;
+
+  //otherwise, this is a valid call, so modify constraint list appropriately
+  Constraint_Task_Space_Region new_ctsr = Constraint_Task_Space_Region(
+              QString( "C%1" ).arg( _constraint_ctr ).toStdString());
+  new_ctsr.active() = false;
+  new_ctsr.visible() = false;
+  _constraint_ctr++;
+  _constraint_sequence.constraints().insert(_constraint_sequence.constraints().begin()+constraint_num, new_ctsr);
+
+  // selections are likely to be messed up so disable
+  _widget_opengl_authoring->bind_axes_to_constraint(NULL, true);
+
+  //do the same for the opengl constraints
+  _widget_opengl_authoring->update_opengl_object_constraint_sequence(_constraint_sequence);
+
+  //do the same for the constraint editor list
+  _refresh_constraint_editors();
+  return;
+}
+
+void 
+Qt4_Widget_Authoring::
+_push_button_remove_at_pressed( void ){
+  int constraint_num = (int) _double_spin_box_insert_remove->value();
+
+  if (constraint_num < 0 || constraint_num >= _constraint_sequence.constraints().size())
+    return;
+
+  // valid call; modify constraint list to remove this constraint
+  _constraint_sequence.constraints().erase(_constraint_sequence.constraints().begin()+constraint_num);
+
+  // selections are likely to be messed up so disable
+  _widget_opengl_authoring->bind_axes_to_constraint(NULL, true);
+  
+  //do the same for the opengl constraints
+  _widget_opengl_authoring->update_opengl_object_constraint_sequence(_constraint_sequence);
+
+  //do the same for the constraint editor list
+  _refresh_constraint_editors();
+  return;
+}
+
+// Regenerates constraint editor list to conform to current
+// _constraint_sequence
+void
+Qt4_Widget_Authoring::
+_refresh_constraint_editors( void ){
+  // clear out old editors if any
+  for (int i=0; i<_constraint_editors.size(); i++){
+    _constraints_layout->removeWidget(_constraint_editors[i]);
+    delete _constraint_editors[i];
+  }
+  _constraint_editors.erase(_constraint_editors.begin(), _constraint_editors.end());
+  delete _constraints_layout;
+
+  // spawn a bunch of new ones
+  for (int i=0; i<_constraint_sequence.constraints().size(); i++){
+    _constraint_editors.push_back( new Qt4_Widget_Constraint_Editor( _constraint_sequence.constraints()[ i ], _robot_model, _affordance_collection, _xmlString, i, this ) );
+  }
+
+  // hook them up to appropriate handlers
+  for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
+    connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
+    connect( *it, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+    connect( *it, SIGNAL( constraint_highlight ( const QString&, highlight_class_t, bool ) ), _widget_opengl_authoring, SLOT( highlight_constraint( const QString&, highlight_class_t, bool ) ) );
+    connect( *it, SIGNAL( child_highlight ( const QString&, const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_child( const QString&, const QString&, bool ) ) );
+    connect( *it, SIGNAL( bind_axes_to_constraint ( Constraint_Task_Space_Region *, bool ) ), _widget_opengl_authoring, SLOT( bind_axes_to_constraint( Constraint_Task_Space_Region *, bool ) ) );
+    connect( *it, SIGNAL( unbind_axes_from_constraint ( Constraint_Task_Space_Region * ) ), _widget_opengl_authoring, SLOT( unbind_axes_from_constraint( Constraint_Task_Space_Region * ) ) );
+    connect( _widget_opengl_authoring, SIGNAL( update_constraint ( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+    connect( _widget_opengl_authoring, SIGNAL( select_constraint( const QString&, select_class_t) ), *it, SLOT( select_constraint( const QString&, select_class_t) ) );
+  }
+
+  // re-add editor bars to layout
+  _constraints_layout = new QGridLayout();
+  _constraints_layout->addWidget( _constraints_layout_labels, 0, 1);
+  for( int i=0; i<_constraint_editors.size(); i++ ){
+    _constraints_layout->addWidget( _constraint_editors[i], i+1, 1 );
+  }
+  _constraints_widget = _constraints_scroll_area->takeWidget( );
+  // enforce 60 pixels per row
+  _constraints_widget->setMaximumHeight((_constraint_editors.size()+1) * 60);
+  _constraints_widget->setLayout( _constraints_layout );
+  _constraints_widget->show();
+  _constraints_scroll_area->setWidget( _constraints_widget ); 
+
+  // While we're here, ensure that our _constraint_ctr is greater than any existing
+  //  current constraint.
+  for (int i=0; i<_constraint_sequence.constraints().size(); i++){
+    int cnt = atoi(&_constraint_sequence.constraints()[i].id().c_str()[1]);
+    if (cnt >= _constraint_ctr)
+      _constraint_ctr = cnt+1;
+  }
+
+  // and set limits on constraint spinbox
+  _double_spin_box_insert_remove->setMinimum(0);
+  _double_spin_box_insert_remove->setMaximum(_constraint_editors.size()-1);
 }
 
 void

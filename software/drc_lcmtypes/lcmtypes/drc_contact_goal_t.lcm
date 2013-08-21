@@ -21,17 +21,25 @@ struct contact_goal_t
 	int32_t contact_type;
 
 	vector_3d_t target_pt; // only used for ON_GROUND_PLANE
-	double x_offset;
-    double y_offset;        
-    double z_offset;        
-    
+
     const int32_t REL_EQUAL          = 0, 
                   REL_LESS_THAN      = 1, 
                   REL_GREATER_THAN   = 2, 
                   UNDEFINED          = 3;
-    int32_t x_relation;
-    int32_t y_relation;
-    int32_t z_relation;
+                  
+	double x_offset_lower;
+    double y_offset_lower;        
+    double z_offset_lower;        
+    int32_t x_relation_lower;
+    int32_t y_relation_lower;
+    int32_t z_relation_lower;
+
+	double x_offset_upper;
+    double y_offset_upper;        
+    double z_offset_upper;  
+    int32_t x_relation_upper;
+    int32_t y_relation_upper;
+    int32_t z_relation_upper;
 
 	// int32_t num_robot_contact_pts;
 	// vector_3d_t robot_contact_pts[num_robot_contact_pts]; // in the frame of link_name

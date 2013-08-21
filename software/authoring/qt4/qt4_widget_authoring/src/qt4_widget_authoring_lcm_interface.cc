@@ -12,7 +12,7 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
                                     QWidget * parent ) : QMainWindow( parent ),
                                                           _lcm( new LCM() ),
                                                           _lcm_timer( new QTimer( this ) ),
-                                                          _qt4_widget_authoring( new Qt4_Widget_Authoring( xmlString, 128, this ) ) {
+                                                          _qt4_widget_authoring( new Qt4_Widget_Authoring( xmlString, 1, this ) ) {
   setCentralWidget( _qt4_widget_authoring );
 
   connect( _lcm_timer, SIGNAL( timeout() ), this, SLOT( _handle_lcm_timer_timeout() ) ); 
@@ -22,6 +22,8 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
             _qt4_widget_authoring, SLOT( update_robot_plan( std::vector< state::State_GFE >& ) ) );
+  connect( this, SIGNAL( robot_plan_insert( state::State_GFE& ) ),
+            _qt4_widget_authoring, SLOT( insert_robot_plan( state::State_GFE& ) ) );
   connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_robot_plan( std::vector< state::State_GFE >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring, SLOT( update_state_gfe( state::State_GFE& ) ) );
@@ -29,11 +31,16 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
   connect( this, SIGNAL( aas_got_status_msg( float, float, bool, bool, bool ) ), _qt4_widget_authoring, SLOT( aas_got_status_msg( float, float, bool, bool, bool ) ) );
   
   connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t( const drc::action_sequence_t& ) ) );
-  connect( _qt4_widget_authoring, SIGNAL( robot_plan_t_publish( const drc::robot_plan_t& ) ), this, SLOT( publish_robot_plan_t( const drc::robot_plan_t& ) ) );
+  connect( _qt4_widget_authoring, SIGNAL( robot_plan_w_keyframes_t_publish( const drc::robot_plan_w_keyframes_t& ) ), this, SLOT( publish_robot_plan_w_keyframes_t( const drc::robot_plan_w_keyframes_t& ) ) );
+  connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_oneshot_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t_oneshot( const drc::action_sequence_t& ) ) );
+  
   _lcm->subscribe( "EST_ROBOT_STATE", &Qt4_Widget_Authoring_LCM_Interface::_handle_est_robot_state_msg, this );
   _lcm->subscribe( "AFFORDANCE_COLLECTION", &Qt4_Widget_Authoring_LCM_Interface::_handle_affordance_collection_msg, this );
   _lcm->subscribe( "RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE", &Qt4_Widget_Authoring_LCM_Interface::_handle_candidate_robot_plan_msg, this );
   _lcm->subscribe( "ACTION_AUTHORING_SERVER_STATUS", &Qt4_Widget_Authoring_LCM_Interface::_handle_action_authoring_server_status_msg, this );
+  _lcm->subscribe( "RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE", &Qt4_Widget_Authoring_LCM_Interface::_handle_single_shot_msg, this );
+
+
   _lcm_timer->start( 10 );
 }
 
@@ -65,8 +72,15 @@ publish_drc_action_sequence_t( const action_sequence_t& msg ){
 
 void 
 Qt4_Widget_Authoring_LCM_Interface::
-publish_robot_plan_t( const robot_plan_t& msg ){
-  _lcm->publish( "CANDIDATE_ROBOT_PLAN", &msg );
+publish_robot_plan_w_keyframes_t( const robot_plan_w_keyframes_t& msg ){
+  _lcm->publish( "CANDIDATE_MANIP_PLAN", &msg );
+  return;
+}
+
+void 
+Qt4_Widget_Authoring_LCM_Interface::
+publish_drc_action_sequence_t_oneshot( const action_sequence_t& msg ){
+  _lcm->publish( "REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE", &msg );
   return;
 }
 
@@ -165,6 +179,21 @@ _handle_action_authoring_server_status_msg( const lcm::ReceiveBuffer* rbuf,
   return;
 }
 
+void
+Qt4_Widget_Authoring_LCM_Interface::
+_handle_single_shot_msg( const lcm::ReceiveBuffer* rbuf, 
+                         const std::string& channel, 
+                         const drc::robot_plan_t* msg ){
+  if( msg != NULL ){
+    // Replace our plan at the specified timepoint with the one
+    //  we got back
+    State_GFE robot_plan_slice;
+    robot_plan_slice.from_lcm(msg->plan[ 0 ]);
+    emit robot_plan_insert( robot_plan_slice );
+  }
+
+  return;
+}
 
 namespace authoring {
   ostream&

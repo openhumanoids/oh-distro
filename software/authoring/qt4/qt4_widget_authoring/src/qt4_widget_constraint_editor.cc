@@ -34,7 +34,7 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
                                                     _line_edit_metadata( new QLineEdit( QString::fromStdString( _constraint.metadata() ), this ) ),
                                                     _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
                                                     _constraint_editor_popup( NULL ),
-                                                    _select_class(SELECT_NONE) {
+                                                    _select_class(SELECT_NONE){
 
   _double_spin_box_time_start->setToolTip("the absolute start time for this constraint, in seconds");
   _double_spin_box_time_end->setToolTip("the absolute end time for this constraint, in seconds");
@@ -55,9 +55,9 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
 
   _label_id->setStyleSheet("QLabel { border: 2px solid rgba(0, 255, 0, 0); background-color: rgba(255, 0, 0, 0); color : black; }");
 
-  _check_box_active->setFixedWidth( 25 );
+  _check_box_active->setFixedWidth( 40 );
   _check_box_active->setEnabled( true );
-  _check_box_visible->setFixedWidth( 25 );
+  _check_box_visible->setFixedWidth( 40 );
   _check_box_visible->setEnabled( false );
   _push_button_edit_3D->setFixedWidth( 50 );
   _push_button_edit->setFixedWidth( 50 );
@@ -128,6 +128,7 @@ void
 Qt4_Widget_Constraint_Editor::
 update_constraint( const Constraint_Task_Space_Region& constraint ){
   _constraint = constraint;
+  _label_id->setText( QString::fromStdString( constraint.id() ) );
   _check_box_active->setCheckState( ( _constraint.active() ? Qt::Checked : Qt::Unchecked ) );
   _check_box_visible->setEnabled( _constraint.active() );
   _check_box_visible->setCheckState( ( _constraint.visible() ? Qt::Checked : Qt::Unchecked ) );
@@ -143,7 +144,7 @@ update_constraint( const Constraint_Task_Space_Region& constraint ){
   _line_edit_description->setEnabled( _constraint.active() );
   _line_edit_description->clear();
   _line_edit_description->setText( QString::fromStdString( _constraint.description() ) );
-  emit constraint_update( _constraint, _constraint_index );
+  emit constraint_update( _constraint );
   return;
 }
 
@@ -217,7 +218,6 @@ _double_spin_box_time_start_value_changed( double start ){
   check_valid_times();
   update_description( QString::fromStdString( _constraint.description() ) );
   emit constraint_update( _constraint );
-  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
@@ -228,7 +228,6 @@ _double_spin_box_time_end_value_changed( double end ){
   check_valid_times();
   update_description( QString::fromStdString( _constraint.description() ) );
   emit constraint_update( _constraint );
-  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
@@ -237,7 +236,6 @@ Qt4_Widget_Constraint_Editor::
 _line_edit_metadata_text_changed( const QString& text ){
   _constraint.metadata() = _line_edit_metadata->text().toStdString();
   emit constraint_update( _constraint );
-  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
@@ -263,6 +261,7 @@ _check_box_active_changed( int state ){
     }
     _constraint.active() = false;
     emit info_update( QString( "[<b>OK</b>] deactivating constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
+    emit unbind_axes_from_constraint( &_constraint );
     break;
   case ( Qt::Checked ):
     _constraint.active() = true;
@@ -279,15 +278,18 @@ void
 Qt4_Widget_Constraint_Editor::
 _check_box_visible_changed( int state ){
   _constraint.visible() = ( _check_box_visible->checkState() == Qt::Checked );
+  if (!_constraint.visible())
+    emit unbind_axes_from_constraint(&_constraint);
+
   emit constraint_update( _constraint );
-  emit constraint_update( _constraint, _constraint_index );
   return;
 }
 
 void
 Qt4_Widget_Constraint_Editor::
 _push_button_edit_3D_pressed( void ){
-  emit bind_axes_to_constraint( &_constraint, true );
+  if (_constraint.visible())
+    emit bind_axes_to_constraint( &_constraint, true );
   return;
 }
 

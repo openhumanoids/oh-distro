@@ -28,17 +28,6 @@ Qt4_Widget_OpenGL_Authoring( const string& xmlString,
                                                   _timer_update( new QTimer( this ) ),
                                                   _bound_constraint_midpoint(),
                                                   _mouse_capture_last_point() {
-  // ugly stopgap until I can figure out a better way to organize this:
-  // I want to create a special subclass of interface_handler over in the
-  // authoring code to create custom inteface logic (that will depend pretty
-  // heavily on other authoring system code and structures), but to do that
-  // I need to unlink the previous interface handler (the more basic kind from
-  // over in utils) from this class (which comes in inherited from Qt4_Widget_OpenGL
-  // in utils, our base class). So for now, I just trust scoping to deal with it
-  // for us, but it does leave the old interface handler hanging around not being
-  // utilized and wasting memory... so that should be cleaned up sometime. -greg
-  //_interface_handler_authoring = new Interface_Handler_Authoring(
-  //    &_opengl_object_constraint_sequence);
   setMinimumSize( 800, 400 );
 
   _opengl_object_affordance_collection.set_visible( false );
@@ -167,8 +156,15 @@ update_opengl_object_gfe( State_GFE& stateGFE ){
 
 void
 Qt4_Widget_OpenGL_Authoring::
-update_opengl_object_gfe_selected_link( const QString& linkName ){
- _opengl_object_gfe.set_selected_link( linkName.toStdString(), Eigen::Vector3f( 1.0, 0.0, 0.0 ) );
+update_opengl_object_gfe_selected_links( const vector<string>& linkNames ){
+  vector<string> linkNamesShortened;
+  for (int i=0; i<linkNames.size(); i++){
+    // take everything up to the dash, not inclusive
+    int dash_pos = linkNames[i].find("-");
+    linkNamesShortened.push_back(linkNames[i].substr(0, dash_pos));
+  }
+  _opengl_object_gfe.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 0.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
+  _opengl_object_robot_plan.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 0.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
   return;
 }
 
@@ -306,73 +302,83 @@ set_collision_to_axes( void ){
  bind_axes_to_constraint( Constraint_Task_Space_Region * constraint, bool unbind_if_duplicate ){
   // Find relevant constraint
   //Constraint_Task_Space_Region * cnst = _opengl_object_constraint_sequence.get_constraint_task_space_region( id.toStdString() );
-  if (constraint) {
-    if (unbind_if_duplicate && constraint == _bound_constraint_task_space_region){
-      /* Remove */
-      // set things invisible
-      _opengl_object_xyz_axis.set_visible( false );
-      _opengl_object_rpy_axis.set_visible( false );
+  if (!constraint || (unbind_if_duplicate && constraint == _bound_constraint_task_space_region)){
+     unbind_axes_from_constraint( _bound_constraint_task_space_region );
+     update_opengl_object_gfe_selected_links( vector<string>() );
 
-      // clear out collision detector
-      _collision_object_container_xyz_axis.remove_from_collision_detector(&_interface_handler->collision_detector());
-      _collision_object_container_rpy_axis.remove_from_collision_detector(&_interface_handler->collision_detector());
-
-      // no more bound constraint!
-      _bound_constraint_task_space_region = NULL;
-
-      highlight_constraint(QString(), HIGHLIGHT_PURPLE, true);
-      select_constraint(QString(), SELECT_EDIT);
-
-    } else {
-      _bound_constraint_task_space_region = constraint;
-      // convert it to a frame (should this functionality be wrapped into the constraints themselves?)
-      double xmin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : 0.0;
-      double xmax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 0.0;
-      double ymin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second : 0.0;
-      double ymax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second : 0.0;
-      double zmin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second : 0.0;
-      double zmax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second : 0.0;
-      // get child affordance to which this constraint is relative
-      AffordanceState * child = NULL;
-      for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
-        if( it->getName() == constraint->child() ){
-          child = &(*it);
-        }
-      }
-      if (child){
-        Frame affordance_frame = Frame( Rotation::RPY( child->getRPY().x(), child->getRPY().y(), child->getRPY().z() ),
-                                Vector( child->getXYZ().x(), child->getXYZ().y(), child->getXYZ().z() ) );
-
-
-        // frame is centered around the midpoint of the constraint bounding box
-        _bound_constraint_midpoint = 
-              affordance_frame * constraint->offset() * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), 
-              Vector( 0.5 * ( xmax + xmin ), 0.5 * ( ymax + ymin ), 0.5 * ( zmax + zmin ) ) ); 
-        _opengl_object_xyz_axis.set_transform( _bound_constraint_midpoint );
-        _opengl_object_rpy_axis.set_transform( _bound_constraint_midpoint );
-        // And scaling is average length of axes
-        double scaling = 1.0 / 3.0 * ( (xmax-xmin) + (ymax-ymin) + (zmax-zmin) );
-        _opengl_object_xyz_axis.set_scale( scaling );
-        _opengl_object_rpy_axis.set_scale( scaling );
-        // Good to be shown
-        _opengl_object_xyz_axis.set_visible( true );
-        _opengl_object_rpy_axis.set_visible( true );
-
-        // And now handle collision detector side
-        _interface_handler->collision_detector().clear_collision_objects();
-        _collision_object_container_xyz_axis.set_transform( _bound_constraint_midpoint, scaling );
-        _collision_object_container_rpy_axis.set_transform( _bound_constraint_midpoint, scaling );
-        _collision_object_container_xyz_axis.add_to_collision_detector(&_interface_handler->collision_detector());
-        _collision_object_container_rpy_axis.add_to_collision_detector(&_interface_handler->collision_detector());
-     
-        // highlight it in viewer and list
-        highlight_constraint(QString::fromStdString(constraint->id()), HIGHLIGHT_PURPLE, true);
-        select_constraint(QString::fromStdString(constraint->id()), SELECT_EDIT);
+  } else {
+    _bound_constraint_task_space_region = constraint;
+    // select urdf part this constraints
+    update_opengl_object_gfe_selected_links( _bound_constraint_task_space_region->parents() );
+    // convert it to a frame (should this functionality be wrapped into the constraints themselves?)
+    double xmin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MIN_RANGE ].second : 0.0;
+    double xmax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_X_MAX_RANGE ].second : 0.0;
+    double ymin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MIN_RANGE ].second : 0.0;
+    double ymax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Y_MAX_RANGE ].second : 0.0;
+    double zmin = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MIN_RANGE ].second : 0.0;
+    double zmax = constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].first ? constraint->ranges()[ CONSTRAINT_TASK_SPACE_REGION_Z_MAX_RANGE ].second : 0.0;
+    // get child affordance to which this constraint is relative
+    AffordanceState * child = NULL;
+    for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
+      if( it->getName() == constraint->child() ){
+        child = &(*it);
       }
     }
-  } else {
-    printf("Why was bind_axes_to_constraint called with null constraint arg?\n");
-    printf("That doesn't even make sense??\n");
+    if (child){
+      Frame affordance_frame = Frame( Rotation::RPY( child->getRPY().x(), child->getRPY().y(), child->getRPY().z() ),
+                              Vector( child->getXYZ().x(), child->getXYZ().y(), child->getXYZ().z() ) );
+
+
+      // frame is centered around the midpoint of the constraint bounding box
+      _bound_constraint_midpoint = 
+            affordance_frame * constraint->offset() * Frame( Rotation::RPY( 0.0, 0.0, 0.0 ), 
+            Vector( 0.5 * ( xmax + xmin ), 0.5 * ( ymax + ymin ), 0.5 * ( zmax + zmin ) ) ); 
+      _opengl_object_xyz_axis.set_transform( _bound_constraint_midpoint );
+      _opengl_object_rpy_axis.set_transform( _bound_constraint_midpoint );
+      // And scaling is average length of axes
+      double scaling = 1.0 / 3.0 * ( (xmax-xmin) + (ymax-ymin) + (zmax-zmin) );
+      _opengl_object_xyz_axis.set_scale( scaling );
+      _opengl_object_rpy_axis.set_scale( scaling );
+      // Good to be shown
+      _opengl_object_xyz_axis.set_visible( true );
+      _opengl_object_rpy_axis.set_visible( true );
+
+      // And now handle collision detector side
+      _interface_handler->collision_detector().clear_collision_objects();
+      _collision_object_container_xyz_axis.set_transform( _bound_constraint_midpoint, scaling );
+      _collision_object_container_rpy_axis.set_transform( _bound_constraint_midpoint, scaling );
+      _collision_object_container_xyz_axis.add_to_collision_detector(&_interface_handler->collision_detector());
+      _collision_object_container_rpy_axis.add_to_collision_detector(&_interface_handler->collision_detector());
+   
+      // highlight it in viewer and list
+      highlight_constraint(QString::fromStdString(constraint->id()), HIGHLIGHT_PURPLE, true);
+      emit select_constraint(QString::fromStdString(constraint->id()), SELECT_EDIT);
+    }
+  }
+}
+/**
+ * unbind_axes_from_constraint
+ * Removes manipulation axes from given constraint if it is the one bound.
+ */
+ void
+ Qt4_Widget_OpenGL_Authoring::
+ unbind_axes_from_constraint( Constraint_Task_Space_Region * constraint ){
+  if (constraint && (constraint == _bound_constraint_task_space_region)){
+    /* Remove */
+    update_opengl_object_gfe_selected_links( vector<string>() );
+    // set things invisible
+    _opengl_object_xyz_axis.set_visible( false );
+    _opengl_object_rpy_axis.set_visible( false );
+
+    // clear out collision detector
+    _collision_object_container_xyz_axis.remove_from_collision_detector(&_interface_handler->collision_detector());
+    _collision_object_container_rpy_axis.remove_from_collision_detector(&_interface_handler->collision_detector());
+
+    // no more bound constraint!
+    _bound_constraint_task_space_region = NULL;
+
+    highlight_constraint(QString(), HIGHLIGHT_PURPLE, true);
+    emit select_constraint(QString(), SELECT_EDIT);
   }
 }
 
@@ -449,10 +455,6 @@ mouseMoveEvent( QMouseEvent * event ){
   }
   // IF mouse is captured, we're doing a move!
   if ( _mouse_captured ){
-    // Figure out constraint #
-    string tmp = _bound_constraint_task_space_region->id();
-    tmp.erase(0, 1);
-    int idnum = atoi(tmp.c_str());
     Vector new_pos;
     Vector axes(0.0, 0.0, 0.0);
     // Do adjustment based on whatever we're modifying at the moment
@@ -503,7 +505,7 @@ mouseMoveEvent( QMouseEvent * event ){
           default:
             break;
         }
-        emit update_constraint(*_bound_constraint_task_space_region, idnum);
+        emit update_constraint(*_bound_constraint_task_space_region);
         bind_axes_to_constraint( _bound_constraint_task_space_region );
         _mouse_capture_last_point = new_pos;
         break;
@@ -540,7 +542,7 @@ mouseMoveEvent( QMouseEvent * event ){
           default:
             break;
         }
-        emit update_constraint(*_bound_constraint_task_space_region, idnum);
+        emit update_constraint(*_bound_constraint_task_space_region);
         bind_axes_to_constraint( _bound_constraint_task_space_region );
         _mouse_capture_last_point = new_pos;
         break;
@@ -676,7 +678,7 @@ mousePressEvent( QMouseEvent * event ){
     else {
       tmp = _interface_handler->intersected_object()->id();
       highlight_constraint(QString::fromStdString(tmp), HIGHLIGHT_BLUE, true);
-      select_constraint(QString::fromStdString(tmp), SELECT_OPENGL);
+      emit select_constraint(QString::fromStdString(tmp), SELECT_OPENGL);
     }
   }
 
@@ -734,7 +736,9 @@ mouseReleaseEvent( QMouseEvent * event ){
   }
   if (_mouse_captured){
     // submit plan to server
-    emit publish_constraints();
+    emit publish_constraints( _bound_constraint_task_space_region->start() );
+    // clear error highlighting
+    highlight_constraints( vector<string>(), HIGHLIGHT_RED );
   }
   _mouse_captured = false;
   set_collision_to_axes();

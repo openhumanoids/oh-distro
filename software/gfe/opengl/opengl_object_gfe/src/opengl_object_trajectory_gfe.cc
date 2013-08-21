@@ -21,6 +21,7 @@ using namespace KDL;
 using namespace kinematics;
 using namespace state;
 using namespace opengl;
+using namespace Eigen;
 
 OpenGL_Object_Trajectory_GFE::
 OpenGL_Object_Trajectory_GFE( void ) : OpenGL_Object(),
@@ -30,18 +31,25 @@ OpenGL_Object_Trajectory_GFE( void ) : OpenGL_Object(),
                                   _current_index( 0 ),
                                   _visible_current_index( true ),
                                   _visible_trajectory( true ),
-                                  _visible_trajectory_wrist( false ){
+                                  _visible_trajectory_wrist( false ),
+                                  _selected_link_names( vector<string>() ),
+                                  _selected_color(Vector3f(1.0, 0.0, 0.0)),
+                                  _not_selected_color(Vector3f(1.0, 1.0, 1.0))
+                                  {
   _opengl_object_gfe_ghost.set_transparency( 0.25 );
 }
 
 OpenGL_Object_Trajectory_GFE::
 OpenGL_Object_Trajectory_GFE( std::string urdfFilename ) : OpenGL_Object(),
-                                                                                        _trajectory(),
-                                                                                        _opengl_object_gfe( urdfFilename ),
-                                                                                        _current_index( 0 ),
-                                                                                        _visible_current_index( true ),
-                                                                                        _visible_trajectory( true ),
-                                                                                        _visible_trajectory_wrist( false ){
+                                                           _trajectory(),
+                                                           _opengl_object_gfe( urdfFilename ),
+                                                           _current_index( 0 ),
+                                                           _visible_current_index( true ),
+                                                           _visible_trajectory( true ),
+                                                           _visible_trajectory_wrist( false ),
+                                                           _selected_link_names( vector<string>() ),
+                                                           _selected_color(Vector3f(1.0, 0.0, 0.0)),
+                                                           _not_selected_color(Vector3f(1.0, 1.0, 1.0)){
 
 }
 
@@ -71,12 +79,22 @@ set( const vector< State_GFE >& trajectory ){
 
 void
 OpenGL_Object_Trajectory_GFE::
+set_selected_links(const vector<string>& link_names, 
+  Vector3f select_color, Vector3f not_select_color){
+  _selected_link_names = link_names;
+  _selected_color = select_color;
+  _not_selected_color = not_select_color;
+}
+
+void
+OpenGL_Object_Trajectory_GFE::
 draw( void ){
   if( visible() ){
     Kinematics_Model_GFE& kinematics_model = _opengl_object_gfe.kinematics_model();
     if( _visible_current_index ){
       if( _current_index < _trajectory.size() ){
         _opengl_object_gfe.set( _trajectory[ _current_index ] );
+        _opengl_object_gfe.set_selected_links(_selected_link_names, _selected_color, _not_selected_color);
         _opengl_object_gfe.draw();
       }
     }

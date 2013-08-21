@@ -24,6 +24,7 @@ namespace opengl {
     void set( state::State_GFE& stateGFE );
     virtual void set_transparency( double transparency ); 
     void set_selected_link(const std::string& link_name, Eigen::Vector3f color);
+    void set_selected_links(const std::vector<std::string>& link_names, Eigen::Vector3f select_color, Eigen::Vector3f not_select_color);
  
     virtual void draw( void );
 

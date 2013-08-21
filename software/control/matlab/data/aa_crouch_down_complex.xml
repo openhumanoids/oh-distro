@@ -1,0 +1,66 @@
+<constraint_sequence>
+  <constraint_task_space_region id="C0" active="T" visible="F" start="0.1" end="16" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="l_foot-heel,l_foot-toe" child="/box1" offset="0,-0.351,0">
+    <range index="X_MIN" active="T" value="-0.195"/>
+    <range index="X_MAX" active="T" value="0.183"/>
+    <range index="Y_MIN" active="T" value="0.387"/>
+    <range index="Y_MAX" active="T" value="0.561"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.005"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C1" active="T" visible="F" start="0.1" end="2" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="0,0,0">
+    <range index="X_MIN" active="T" value="-0.208"/>
+    <range index="X_MAX" active="T" value="0.198"/>
+    <range index="Y_MIN" active="T" value="-0.21"/>
+    <range index="Y_MAX" active="T" value="-0.036"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.005"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C3" active="T" visible="F" start="3" end="4" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="r_foot-default" child="/box1" offset="0,-0.233541,0.244081">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.267892"/>
+    <range index="Y_MIN" active="T" value="0"/>
+    <range index="Y_MAX" active="T" value="0.216707"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.101457"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C8" active="T" visible="T" start="5" end="5.1" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="-0.199039,-0.388445,0.0868872">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.367441"/>
+    <range index="Y_MIN" active="T" value="-0.0906084"/>
+    <range index="Y_MAX" active="T" value="0.0954157"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.0861514"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C4" active="T" visible="T" start="6" end="16" metadata="NA" relation_type="AFFORDANCE" contact_type="SUPPORTED_WITHIN_REGION" parents="r_foot-heel,r_foot-toe" child="/box1" offset="-0.191,-0.527,0">
+    <range index="X_MIN" active="T" value="0.049"/>
+    <range index="X_MAX" active="T" value="0.341"/>
+    <range index="Y_MIN" active="T" value="0.036"/>
+    <range index="Y_MAX" active="T" value="0.205"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.005"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C5" active="T" visible="T" start="10" end="16" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="pelvis-butt" child="/box1" offset="-0.258933,-0.320593,0.233846">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.326649"/>
+    <range index="Y_MIN" active="T" value="-0.0785928"/>
+    <range index="Y_MAX" active="T" value="0.451172"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.207308"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C6" active="T" visible="T" start="10" end="11" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="utorso-front" child="/box1" offset="0.172507,0,0.558897">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.38739"/>
+    <range index="Y_MIN" active="T" value="-0.331574"/>
+    <range index="Y_MAX" active="T" value="0.371485"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.410044"/>
+  </constraint_task_space_region>
+  <constraint_task_space_region id="C7" active="T" visible="T" start="15" end="16" metadata="NA" relation_type="AFFORDANCE" contact_type="WITHIN_REGION" parents="left_palm-knuckle" child="/box1" offset="0.776153,0.337949,-0.000994484">
+    <range index="X_MIN" active="T" value="0"/>
+    <range index="X_MAX" active="T" value="0.125542"/>
+    <range index="Y_MIN" active="T" value="0"/>
+    <range index="Y_MAX" active="T" value="0.145526"/>
+    <range index="Z_MIN" active="T" value="0"/>
+    <range index="Z_MAX" active="T" value="0.0851914"/>
+  </constraint_task_space_region>
+</constraint_sequence>

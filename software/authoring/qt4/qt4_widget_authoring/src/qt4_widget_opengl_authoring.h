@@ -48,9 +48,9 @@ namespace authoring {
     Qt4_Widget_OpenGL_Authoring& operator=( const Qt4_Widget_OpenGL_Authoring& other );
 
   signals:
-    void update_constraint( const Constraint_Task_Space_Region & cnst, unsigned int idnum );
+    void update_constraint( const Constraint_Task_Space_Region & cnst );
     void select_constraint( const QString& id, select_class_t select_class );
-    void publish_constraints( void );
+    void publish_constraints( float ik_time_of_interest );
 
   public slots:
     void set_affordance_collection( const std::vector< affordance::AffordanceState >& affordanceCollection );
@@ -60,7 +60,7 @@ namespace authoring {
     void update_opengl_object_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void update_opengl_object_gfe( state::State_GFE& stateGFE );
     void update_opengl_object_gfe_ghost( state::State_GFE& stateGFE );
-    void update_opengl_object_gfe_selected_link( const QString& linkName );
+    void update_opengl_object_gfe_selected_links( const std::vector<std::string>& linkNames );
     void update_opengl_object_robot_plan_current_index( int currentIndex );
     void update_opengl_object_robot_plan_visible_current_index( int visibleCurrentIndex );
     void update_opengl_object_robot_plan_visible_trajectory( int visibleTrajectory );
@@ -74,6 +74,7 @@ namespace authoring {
     void set_collision_to_constraints( void );
     void set_collision_to_axes( void );
     void bind_axes_to_constraint( Constraint_Task_Space_Region * cnst, bool unbind_if_duplicate = false );
+    void unbind_axes_from_constraint( Constraint_Task_Space_Region * cnst );
 
     //virtual void add_collision_object( collision::Collision_Object& collisionObject );
     //virtual Interface_Handler_Authoring& interface_handler( void );
