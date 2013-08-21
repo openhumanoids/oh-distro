@@ -14,4 +14,5 @@ execute_process(COMMAND rosrun xacro xacro.py irobot_hand_drake_left.urdf.xacro
 execute_process(COMMAND rosrun xacro xacro.py irobot_hand_drake_right.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/drake_urdfs/xacro OUTPUT_FILE ../irobot_hand_drake_right.urdf)
    
-message(STATUS "Generated \n sandia_hand_drake_left.urdf\n and \n sandia_hand_drake_right.urdf \n irobot_hand_drake_left.urdf\n and \n irobot_hand_drake_right.urdf")
+message(STATUS "Generated \n sandia_hand_drake_left.urdf\n and \n sandia_hand_drake_right.urdf \n irobot_hand_drake_left.urdf\n and \n irobot_hand_drake_right.urdf in debug")
+

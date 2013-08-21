@@ -7,8 +7,8 @@ include(cmake/pods.cmake)
 #tell cmake to build these subdirectories
 #add_subdirectory(xacro)
 add_subdirectory(drake_urdfs/xacro)
+#add_subdirectory(drake_urdfs/debug/xacro)
 #add_subdirectory(floatingbase_urdfs/xacro)
-#add_subdirectory(visual_contact_spheres/xacro)
 message(STATUS "Regenerating xacro files")
   
 

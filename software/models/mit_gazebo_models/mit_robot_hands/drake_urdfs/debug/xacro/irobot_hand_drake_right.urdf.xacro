@@ -1,0 +1,21 @@
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="irobot_hand_right" >
+
+<!--  <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />-->
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/visual_contact_spheres/xacro/irobot_hand_simple_drake_w_contact_sphere_visuals.urdf.xacro" />
+
+  <link name="base">
+    <inertial>
+        <mass value="0.1" />
+        <origin xyz="0 0 0.25" rpy="0 0 0" />
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+    </inertial>
+  </link>
+  
+  <xacro:irobot_hand side="right" parent="base" reflect="1">
+    <origin rpy="0 0 0" xyz="0 -0.05 0"/>
+  </xacro:irobot_hand>  
+</robot>
