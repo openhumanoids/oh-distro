@@ -535,8 +535,69 @@ void Laser::pointCloudPublish(const lidar::Header&        header,
 }
 
 
+std::string printYML(KDL::Frame frame_in)
+{
+  std::stringstream ss;
+  ss << std::setprecision(12) ;
+  ss << "\n";
+    for (int i=0; i < 3; i++) {
+        for (int j=0; j < 3; j++){
+            ss << frame_in.M(i,j) << ", ";
+        }
+        ss << frame_in.p[i] << ",\n";
+    }
+  ss << "0,0,0,1\n";
+  return ss.str();
+}
 
 void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
+
+  // Matt's new calibrations - 20 Aug 2013
+  /////////////////////////////////////////////////////////////////////////////////////
+  // 1-3m claibration:
+  // matt provided wxyz
+  // translation = [0.0336326109089919, -0.0918886920075512, 0.0173175321077842];
+  // quat = (0.711012055836348, 0.0102615250600033, -0.0143234112220476, 0.702959029709255);  
+  // kdl uses xyz w
+  // translation = [0.0336326109089919, -0.0918886920075512, 0.0173175321077842];
+  // quat = (0.0102615250600033, -0.0143234112220476, 0.702959029709255, 0.711012055836348);   
+  /*  KDL::Frame matt_new;
+  matt_new.p[0]= 0.0336326109089919;
+  matt_new.p[1]= -0.0918886920075512;
+  matt_new.p[2]= 0.0173175321077842;
+  KDL::Rotation rot= KDL::Rotation::Quaternion(0.0102615250600033, -0.0143234112220476, 0.702959029709255, 0.711012055836348);
+  matt_new.M = rot;
+  */
+  
+  /*
+  // 0.5-2m calibration:
+  // matt provided wxyz  
+  // translation = [-0.00356594047228134, -0.0987599741241146, -0.0132431813457949];
+  // quat = [0.712698928435219, 0.0143598777448354, -0.00577727870739663, 0.701299261634561];  
+  // kdl uses xyz w
+  // translation = [-0.00356594047228134, -0.0987599741241146, -0.0132431813457949];
+  // quat = [0.0143598777448354, -0.00577727870739663, 0.701299261634561, 0.712698928435219];  
+  KDL::Frame matt_new;
+  matt_new.p[0]= -0.00356594047228134;
+  matt_new.p[1]= -0.0987599741241146;
+  matt_new.p[2]= -0.0132431813457949;
+  KDL::Rotation rot= KDL::Rotation::Quaternion(0.0143598777448354, -0.00577727870739663, 0.701299261634561, 0.712698928435219);
+  matt_new.M = rot;
+  
+  double quat_wxyz[4];
+  matt_new.M.GetQuaternion(quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]);
+  std::stringstream ss2;
+  ss2 << "matt_new quat_wxyz\n" 
+      <<  quat_wxyz[0] << ","
+      <<  quat_wxyz[1] << ","
+      <<  quat_wxyz[2] << ","
+      <<  quat_wxyz[3] << "\n";
+  ss2 << matt_new << "\n";
+  ROS_ERROR("%s", ss2.str().c_str() );
+  ROS_ERROR("%s", printYML(matt_new).c_str() );
+  */
+  /////////////////////////////////////////////////////////////////////////////////////
+  
   /*
     std::stringstream ss4;
     ss4 << "scan_pre_spindle_cal_\n" <<  scan_pre_spindle_cal_ ;
