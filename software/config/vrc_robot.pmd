@@ -44,7 +44,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
         host = "extra";
     }
     cmd "LegOdometry" {
@@ -142,6 +142,20 @@ group "a.4.driving.utils" {
         host = "robot";
     }
 }
+group "a.3.manip" {
+    cmd "WalkingManipStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']);runWalkingStateMachine;\"";
+        host = "robot";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']) ; runSimpleGraspExecutionScript;\"";
+        host = "extra";
+    } 
+    cmd "BotWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planner']); runWalkingPlanner('robot');\"";
+        host = "extra";
+}
+    }
 
 group "a.4.driving" {
     cmd "drc-driving-control" {
@@ -180,7 +194,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -232,6 +246,25 @@ group "b.2.walking" {
     }
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       host = "base";
+    }
+}
+
+group "b.3.manip" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
+    }
+    cmd "BaseWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
 }

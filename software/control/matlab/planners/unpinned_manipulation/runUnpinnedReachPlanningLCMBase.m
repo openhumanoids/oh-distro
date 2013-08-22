@@ -29,44 +29,30 @@ state_frame = r.getStateFrame();
 state_frame.subscribe('EST_ROBOT_STATE');
 
 % individual end effector goal subscribers
-rh_ee = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GOAL');
-rh_ee.frame.subscribe('RIGHT_PALM_GOAL');
-lh_ee = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GOAL');
-lh_ee.frame.subscribe('LEFT_PALM_GOAL');
+rh_ee = EndEffectorListener('RIGHT_PALM_GOAL');
+lh_ee = EndEffectorListener('LEFT_PALM_GOAL');
 rfoot = r.findLinkInd('r_foot');
 lfoot = r.findLinkInd('l_foot');
 rfoot_pts = getContactPoints(getBody(r,rfoot));
 lfoot_pts = getContactPoints(getBody(r,lfoot));
-rf_ee = EndEffector(r,'atlas','r_foot',rfoot_pts,'R_FOOT_GOAL');
-rf_ee.frame.subscribe('R_FOOT_GOAL');
-lf_ee = EndEffector(r,'atlas','l_foot',lfoot_pts,'L_FOOT_GOAL');
-lf_ee.frame.subscribe('L_FOOT_GOAL');
+rf_ee = EndEffectorListener('R_FOOT_GOAL');
+lf_ee = EndEffectorListener('L_FOOT_GOAL');
 
 
-h_ee = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL');
-h_ee.frame.subscribe('HEAD_GOAL');
-h_ee_clear = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GOAL_CLEAR');
-h_ee_clear.frame.subscribe('HEAD_GOAL_CLEAR');
+h_ee = EndEffectorListener('HEAD_GOAL');
+h_ee_clear = EndEffectorListener('HEAD_GOAL_CLEAR');
 
-h_ee_orientation = EndEffector(r,'atlas','head',[0;0;0],'HEAD_ORIENTATION_GOAL');
-h_ee_orientation.frame.subscribe('HEAD_ORIENTATION_GOAL');
-lh_ee_orientation = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_ORIENTATION_GOAL');
-lh_ee_orientation.frame.subscribe('LEFT_PALM_ORIENTATION_GOAL');
-rh_ee_orientation = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_ORIENTATION_GOAL');
-rh_ee_orientation.frame.subscribe('RIGHT_PALM_ORIENTATION_GOAL');
+h_ee_orientation = EndEffectorListener('HEAD_ORIENTATION_GOAL');
+lh_ee_orientation = EndEffectorListener('LEFT_PALM_ORIENTATION_GOAL');
+rh_ee_orientation = EndEffectorListener('RIGHT_PALM_ORIENTATION_GOAL');
 
 
-h_ee_gaze = EndEffector(r,'atlas','head',[0;0;0],'HEAD_GAZE_GOAL');
-h_ee_gaze.frame.subscribe('HEAD_GAZE_GOAL');
-lh_ee_gaze = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GAZE_GOAL');
-lh_ee_gaze.frame.subscribe('LEFT_PALM_GAZE_GOAL');
-rh_ee_gaze = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GAZE_GOAL');
-rh_ee_gaze.frame.subscribe('RIGHT_PALM_GAZE_GOAL');
+h_ee_gaze = EndEffectorListener('HEAD_GAZE_GOAL');
+lh_ee_gaze = EndEffectorListener('LEFT_PALM_GAZE_GOAL');
+rh_ee_gaze = EndEffectorListener('RIGHT_PALM_GAZE_GOAL');
 
-lh_ee_clear = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GOAL_CLEAR');
-lh_ee_clear.frame.subscribe('LEFT_PALM_GOAL_CLEAR');
-rh_ee_clear = EndEffector(r,'atlas','right_palm',[0;0;0],'RIGHT_PALM_GOAL_CLEAR');
-rh_ee_clear.frame.subscribe('RIGHT_PALM_GOAL_CLEAR');
+lh_ee_clear = EndEffectorListener('LEFT_PALM_GOAL_CLEAR');
+rh_ee_clear = EndEffectorListener('RIGHT_PALM_GOAL_CLEAR');
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
@@ -155,7 +141,7 @@ while(1)
 
   % Pose Goals
   % ----------------------------------------
-  rep = getNextMessage(rh_ee.frame,msg_timeout); 
+  rep = getNextMessage(rh_ee,msg_timeout); 
   if (~isempty(rep))
     disp('Right hand goal received.');
     p=rep(2:4);   rpy=rep(5:7);
@@ -164,7 +150,7 @@ while(1)
     ee_goal_type_flags.rh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL  
   end
   
-  lep = getNextMessage(lh_ee.frame,msg_timeout);
+  lep = getNextMessage(lh_ee,msg_timeout);
   if (~isempty(lep))
     disp('Left hand goal received.');
     p=lep(2:4);   rpy=lep(5:7);
@@ -173,7 +159,7 @@ while(1)
     ee_goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL  
   end
   
-  rfep = getNextMessage(rf_ee.frame,msg_timeout); 
+  rfep = getNextMessage(rf_ee,msg_timeout); 
   if (~isempty(rfep))
     disp('Right foot goal received.');
     p=rfep(2:4);   rpy=rfep(5:7);
@@ -182,7 +168,7 @@ while(1)
     ee_goal_type_flags.rf = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL 
   end
   
-  lfep = getNextMessage(lf_ee.frame,msg_timeout);
+  lfep = getNextMessage(lf_ee,msg_timeout);
   if (~isempty(lfep))
     disp('Left foot goal received.');
     p=lfep(2:4);   rpy=lfep(5:7);
@@ -191,7 +177,7 @@ while(1)
      ee_goal_type_flags.lf = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
-  hep = getNextMessage(h_ee.frame,msg_timeout);
+  hep = getNextMessage(h_ee,msg_timeout);
   if (~isempty(hep))
     disp('head goal received.');
     p = hep(2:4);   
@@ -203,7 +189,7 @@ while(1)
   
   % Orientation Goals
   % ----------------------------------------
-  hep_orient = getNextMessage(h_ee_orientation.frame,msg_timeout);
+  hep_orient = getNextMessage(h_ee_orientation,msg_timeout);
   if (~isempty(hep_orient))
     disp('head goal received.');
     p = nan(3,1);   
@@ -213,7 +199,7 @@ while(1)
     ee_goal_type_flags.h = 1; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
-  lep_orient = getNextMessage(lh_ee_orientation.frame,msg_timeout);
+  lep_orient = getNextMessage(lh_ee_orientation,msg_timeout);
   if (~isempty(lep_orient))
     disp('left hand orientation goal received.');
     p = nan(3,1);   
@@ -223,7 +209,7 @@ while(1)
     ee_goal_type_flags.lh = 1; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
     
-  rep_orient = getNextMessage(rh_ee_orientation.frame,msg_timeout);
+  rep_orient = getNextMessage(rh_ee_orientation,msg_timeout);
   if (~isempty(rep_orient))
     disp('right hand orientation goal received.');
     p = nan(3,1);   
@@ -235,7 +221,7 @@ while(1)
   
   % Gaze Goals
   % ----------------------------------------
-  hep_gaze = getNextMessage(h_ee_gaze.frame,msg_timeout);
+  hep_gaze = getNextMessage(h_ee_gaze,msg_timeout);
   if (~isempty(hep_gaze))
     disp('head gaze goal received.');
     p = hep_gaze(2:4);  
@@ -244,7 +230,7 @@ while(1)
     ee_goal_type_flags.h = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
   
-  lep_gaze = getNextMessage(lh_ee_gaze.frame,msg_timeout);
+  lep_gaze = getNextMessage(lh_ee_gaze,msg_timeout);
   if (~isempty(lep_gaze))
     disp('left hand gaze goal received.');
     p = lep_gaze(2:4);
@@ -253,7 +239,7 @@ while(1)
     ee_goal_type_flags.lh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
   end
     
-  rep_gaze = getNextMessage(rh_ee_gaze.frame,msg_timeout);
+  rep_gaze = getNextMessage(rh_ee_gaze,msg_timeout);
   if (~isempty(rep_gaze))
     disp('right hand gaze goal received.');
     p = rep_gaze(2:4);    
@@ -595,21 +581,21 @@ while(1)
      %h_ee_goal = [];
   end
   
-  p = getNextMessage (h_ee_clear.frame, msg_timeout);
+  p = getNextMessage (h_ee_clear, msg_timeout);
   if (~isempty(p))
       disp ('Clearing head goal pose');
       h_ee_goal = [];
       ee_goal_type_flags.h = -1;
   end
   
-  p = getNextMessage (lh_ee_clear.frame, msg_timeout);
+  p = getNextMessage (lh_ee_clear, msg_timeout);
   if (~isempty(p))
       disp ('Clearing left hand goal pose');
       lh_ee_goal = [];
       ee_goal_type_flags.lh = -1;
   end
   
-  p = getNextMessage (rh_ee_clear.frame, msg_timeout);
+  p = getNextMessage (rh_ee_clear, msg_timeout);
   if (~isempty(p))
       disp ('Clearing right hand  goal pose');
       rh_ee_goal = [];
