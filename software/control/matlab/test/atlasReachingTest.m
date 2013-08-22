@@ -5,6 +5,7 @@ function atlasReachingTest
 % hand goal positions (pelvis pos) ---ROTATIONS NOT SUPPORTED YET
 rhand_goal = [0.33; -0.5; 0.3];
 lhand_goal = [0.3; 0.15; 0.2];
+neck_pitch = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 options.floating = true;
@@ -22,13 +23,15 @@ nq = getNumDOF(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 qstar = xstar(1:nq);
 
+neck_idx = find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),'neck_ay')));
+qstar(neck_idx) = neck_pitch;
+
 act_idx = getActuatedJoints(r);
 
-
-disp('Moving to nominal pose (10 sec).');
+disp('Moving to nominal pose (8 sec).');
 
 % move to desired initial pose
-movetime = 10.0;
+movetime = 5.0;
 toffset = -1;
 tt=-1;
 while tt<movetime
