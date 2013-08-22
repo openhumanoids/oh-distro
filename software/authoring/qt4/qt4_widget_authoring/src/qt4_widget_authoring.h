@@ -49,7 +49,7 @@ namespace authoring {
     void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
     void insert_robot_plan( state::State_GFE& robotPlanSlice );
     void update_state_gfe( state::State_GFE& stateGFE );
-    void aas_got_status_msg( float last_time_solved, float total_time_to_solve,
+    void aas_got_status_msg( bool server_ready_status, float last_time_solved, float total_time_to_solve,
              bool solving_highres, bool plan_is_good, bool plan_is_warn );
     void publish_constraints( float ik_time_of_interest = 0.0 );
     

@@ -29,8 +29,9 @@ namespace authoring {
     void state_gfe_update( state::State_GFE& stateGFE );
     void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
     void robot_plan_insert( state::State_GFE& robotPlanSlice );
-    void aas_got_status_msg( float last_time_solved, float total_time_to_solve,
-             bool solving_highres, bool plan_is_good, bool plan_is_warn );
+    void aas_got_status_msg( bool server_ready_status, float last_time_solved, 
+        float total_time_to_solve, bool solving_highres, bool plan_is_good, 
+        bool plan_is_warn );
 
   public slots:
     void publish_drc_action_sequence_t( const drc::action_sequence_t& msg );

@@ -22,6 +22,10 @@ group "g.0.gazebo" {
         exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
+    cmd "greg_standing" {
+    exec = "roslaunch atlas_utils atlas_sandia_hands.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+    host = "robot";
+    }
 }
 
 group "a.1.core" {
@@ -42,7 +46,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
         host = "extra";
     }
     cmd "estpub" {
@@ -105,21 +109,30 @@ group "authoring" {
     }
 
     cmd "MotionPlanServer_from_standing" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
     }
 
-    cmd "MotionPlanServer_from_turtled" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
+    cmd "MotionPlanServer_from_standing_oneshot" {
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(1,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
+    }
+
+    cmd "MotionPlanServer_from_prone" {
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'r_foot', 'right_palm','l_foot','left_palm'}},'groupnames',{{'toe','knuckle','toe','knuckle'}})));\"";
+       host = "localhost";
+    }
+
+    cmd "MotionPlanServer_from_prone_oneshot" {
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(1,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'r_foot', 'right_palm','l_foot','left_palm'}},'groupnames',{{'toe','knuckle','toe','knuckle'}})));\"";
        host = "localhost";
     }
 
     cmd "MotionPlanServer_online" {
-       exec = "matlab -nosplash -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
+       exec = "matlab -nosplash -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
        host = "localhost";
     }
 
     cmd "AuthoringGUI" {
-       exec = "qt4-widget-authoring-lcm-interface-test ../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals_point_hands.urdf";
+       exec = "qt4-widget-authoring-lcm-interface-test ../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf";
        host = "localhost";
     }
 }
@@ -131,17 +144,27 @@ group "dev_tools" {
     }
 
     cmd "PublishPassengerSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);addpath dev_tools;load data/aa_atlas_seated_passenger.mat;publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_passenger.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 
     cmd "PublishDriverSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);addpath dev_tools;load data/aa_atlas_seated_forward.mat;publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_forward.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 
     cmd "PublishStandingState" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);addpath dev_tools;load data/atlas_fp.mat;publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_fp.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+
+    cmd "PublishProneState" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_prone.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
+       host = "localhost";
+    }
+
+    cmd "PublishPreingressState" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_preingress.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotState(xstar,'EST_ROBOT_STATE');\"";
        host = "localhost";
     }
 }
@@ -174,16 +197,20 @@ script "dev.authoring_from_standing" {
     start cmd "DemoAffordanceServer";
     start cmd "AuthoringGUI";
     start cmd "MotionPlanServer_from_standing";
-    stop cmd "DemoAffordanceServer";
+    start cmd "MotionPlanServer_from_standing_oneshot";
+    wait ms 5000;
+    start cmd "PublishStandingState";
 }
 
-script "dev.authoring_from_turtled" { 
+script "dev.authoring_from_prone" { 
     start group "0.development";
     start group "a.1.core";
     start cmd "DemoAffordanceServer";
     start cmd "AuthoringGUI";
-    start cmd "MotionPlanServer_from_turtled";
-    stop cmd "DemoAffordanceServer";
+    start cmd "MotionPlanServer_from_prone";
+    start cmd "MotionPlanServer_from_prone_oneshot";
+    wait ms 5000;
+    start cmd "PublishProneState";
 }
 
 script "dev.authoring_online" { 

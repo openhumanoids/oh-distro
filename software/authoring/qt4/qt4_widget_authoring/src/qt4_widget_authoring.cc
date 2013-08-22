@@ -367,9 +367,17 @@ update_state_gfe( State_GFE& stateGFE ){
 
 void 
 Qt4_Widget_Authoring::
-aas_got_status_msg( float last_time_solved,  float total_time_to_solve,
+aas_got_status_msg( bool server_ready_msg, float last_time_solved,  float total_time_to_solve,
       bool solving_highres, bool plan_is_good, bool plan_is_warn ){
   char tmp[100];
+
+  _push_button_publish->setEnabled(true);
+  // if it's a "server is ready" message, that's everything
+  if (server_ready_msg){
+    return;
+  }
+
+  // otherwise, update more complex status.
   _progress_bar_planner->setMinimum( 0.0 );
   _progress_bar_planner->setMaximum( 100.0 );
   _progress_bar_planner->setValue( (int)(100.0 * last_time_solved / total_time_to_solve) );
@@ -459,9 +467,9 @@ void
 Qt4_Widget_Authoring::
 _push_button_grab_pressed( void ){
   emit info_update( QString( "[<b>OK</b>] grab pressed" ) );
+  emit info_update( QString( "[<b>OK</b>] waiting on ready message from server before publishing is enabled" ) );
   _push_button_import->setEnabled( true );
   _push_button_export->setEnabled( true );
-  _push_button_publish->setEnabled( true );
   _affordance_collection = _affordance_collection_ghost;
   _text_edit_affordance_collection->clear();
   for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
@@ -671,7 +679,7 @@ _push_button_remove_at_pressed( void ){
 
   // selections are likely to be messed up so disable
   _widget_opengl_authoring->bind_axes_to_constraint(NULL, true);
-  
+
   //do the same for the opengl constraints
   _widget_opengl_authoring->update_opengl_object_constraint_sequence(_constraint_sequence);
 

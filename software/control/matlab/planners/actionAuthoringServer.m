@@ -152,10 +152,19 @@ end
 
 clear jointLimitShrink jointLimitHalfLength jointLimitHalfLength jointLimitMid jointLimitMin jointLimitMax knee_idx elbow_idx back_idx hip_idx joint_names cost arm_cost IK ustar zstar xstar;
 
+% Send status update indicating that AAS is online
+if (~action_options.IK)
+    status_msg.utime = 0;
+    status_msg.server_status = status_msg.SERVER_READY;
+    % other fields dont matter
+    lc.publish(status_channel, status_msg);
+end
+
 newdata = [];
 
 timeout=10;
 display('Listening ...');
+starttime = cputime;
 while (1)
     warning on
     if ~isempty(newdata)
@@ -171,6 +180,14 @@ while (1)
         data = newdata
         newdata = []
     else
+        cputime - starttime
+        if (~action_options.IK && (cputime - starttime > 0.4))
+            % Send status update indicating that AAS is online
+            status_msg.utime = 0;
+            status_msg.server_status = status_msg.SERVER_READY;
+            % other fields dont matter
+            lc.publish(status_channel, status_msg);
+        end 
         data = getNextMessage(monitor,timeout);
     end
     if ~isempty(data)
@@ -377,6 +394,7 @@ while (1)
                     
                     %% Publish status
                     status_msg.utime = 0;
+                    status_msg.server_status = status_msg.SERVER_PLANNING;
                     status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
                     status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
                     status_msg.solving_highres = false;
@@ -392,6 +410,7 @@ while (1)
                 if(key_time_IK_failed)
                     %% Publish failure status
                     status_msg.utime = 0;
+                    status_msg.server_status = status_msg.SERVER_PLANNING;
                     status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
                     status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
                     status_msg.solving_highres = false;
@@ -558,6 +577,7 @@ while (1)
                     
                     %% Publish status
                     status_msg.utime = 0;
+                    status_msg.server_status = status_msg.SERVER_PLANNING;
                     status_msg.last_ik_time_solved = t_qs_breaks(i);
                     status_msg.total_ik_time_to_solve = t_qs_breaks(end);
                     status_msg.solving_highres = true;
@@ -766,6 +786,7 @@ while (1)
                 end
                 status_msg.solving_highres = false;
                 status_msg.plan_is_warn = false;
+                status_msg.server_status = status_msg.SERVER_PLANNING;
                 lc.publish(status_channel, status_msg);
                 toc
             end

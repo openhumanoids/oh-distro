@@ -28,7 +28,7 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_robot_plan( std::vector< state::State_GFE >& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring, SLOT( update_state_gfe( state::State_GFE& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_gfe_ghost( state::State_GFE& ) ) ); 
-  connect( this, SIGNAL( aas_got_status_msg( float, float, bool, bool, bool ) ), _qt4_widget_authoring, SLOT( aas_got_status_msg( float, float, bool, bool, bool ) ) );
+  connect( this, SIGNAL( aas_got_status_msg( bool, float, float, bool, bool, bool ) ), _qt4_widget_authoring, SLOT( aas_got_status_msg( bool, float, float, bool, bool, bool ) ) );
   
   connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t( const drc::action_sequence_t& ) ) );
   connect( _qt4_widget_authoring, SIGNAL( robot_plan_w_keyframes_t_publish( const drc::robot_plan_w_keyframes_t& ) ), this, SLOT( publish_robot_plan_w_keyframes_t( const drc::robot_plan_w_keyframes_t& ) ) );
@@ -172,9 +172,9 @@ _handle_action_authoring_server_status_msg( const lcm::ReceiveBuffer* rbuf,
                                             const std::string& channel, 
                                             const drc::action_authoring_server_status_t* msg ){
   if( msg != NULL ){
-    emit aas_got_status_msg( msg->last_ik_time_solved, msg->total_ik_time_to_solve,
-                             msg->solving_highres, msg->plan_is_good,
-                             msg->plan_is_warn );
+    emit aas_got_status_msg( msg->server_status==msg->SERVER_READY, msg->last_ik_time_solved, 
+        msg->total_ik_time_to_solve, msg->solving_highres, msg->plan_is_good,
+        msg->plan_is_warn );
   }
   return;
 }
