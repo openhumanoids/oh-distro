@@ -72,14 +72,14 @@ classdef StepRecoveryPlanner < DRCPlanner
         else
           r_a1_des = r_ic0 * exp(dt*omega_0) + r_a0(1:2) * (1 - exp(dt*omega_0)) + exp(-dt*omega_0) * R * [0; -obj.biped.nom_step_width / 2];
         end
-        M = rotmat(r_a0(6));
+        M = rotmat(-r_a0(6));
         des_rel = [M * (r_a1_des - r_a0(1:2)); zeros(4,1)];
         % desired = fitStepToTerrain(obj.biped, [desired; r_a0(3:6)], 'center'); 
         [A, b] = getFootstepLinearCons(obj.biped, is_right_foot, struct('max_step_width', 1.5*obj.biped.max_step_width, 'backward_step', obj.biped.max_forward_step, 'forward_step', obj.biped.max_forward_step));
 
         x = quadprog(diag([1,1,1,1,1,1]), zeros(6,1), A, b - A * des_rel,[],[],[-inf,-inf,0,0,0,0],[inf,inf,0,0,0,0],[],optimset('Algorithm', 'interior-point-convex'));
         r_a1_rel = des_rel + x;
-        r_a1 = [rotmat(-r_a0(6)) * r_a1_rel(1:2) + r_a0(1:2); r_a0(3:6)];
+        r_a1 = [rotmat(r_a0(6)) * r_a1_rel(1:2) + r_a0(1:2); r_a0(3:6)];
 
         % r_a1 = fmincon(@(x) norm(x-b), b, [],[],[],[],r_a0(1:2)-[2;2], r_a0(1:2)+[2;2],@(r_a1) deal(checkStepReach(obj.biped, [r_a0], [r_a1;r_a0(3:6)], is_right_foot, struct('max_step_width', 1.5*obj.biped.max_step_width)),[]),optimset('Algorithm','interior-point'));
         % X(:,end+1) = fitStepToTerrain(obj.biped, [r_a1; r_a0(3:6)], 'center');
