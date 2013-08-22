@@ -24,9 +24,9 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_arm_mwx';% <---- 
+joint = 'l_arm_elx';% <---- 
 control_mode = 'position';% <----  force, position
-signal = 'zoh';% <----  zoh, foh, chirp
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
 ff_const = 0.0;% <----
@@ -37,9 +37,9 @@ if strcmp(control_mode,'force')
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p =  0.0;% <----
+  k_q_p =  15.0;% <----
   k_q_i = 0.0;% <----
-  k_qd_p = 0.0;% <----
+  k_qd_p = 0.85;% <----
 else
   error('unknown control mode');
 end
@@ -48,8 +48,8 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,25,400);% <----
-  amp = 0.1;% <----  Nm or radians
-  freq = linspace(0.025,0.4,400);% <----  cycles per second
+  amp = 1.0;% <----  Nm or radians
+  freq = linspace(0.05,0.75,400);% <----  cycles per second
 else
   ts = linspace(0,15,5);% <----
   vals = [0 0.1 0.2 0.1 0];% <----  Nm or radians
@@ -170,6 +170,8 @@ elseif strcmp(joint,'r_arm_ely')
 else
   error ('that joint isnt supported yet');
 end
+
+qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 
 act_idx = getActuatedJoints(r);
 
