@@ -117,9 +117,9 @@ Camera::Camera(Channel* driver) :
     // allocate space for zlib compressing depth data
     depth_compress_buf_size_ = 1024 * 544 * sizeof(int16_t) * 4;
     depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
-    do_jpeg_compress_=false;
     jpeg_quality_ = 94;
-    do_zlib_compress_ = false;  
+    do_jpeg_compress_=true;
+    do_zlib_compress_ = true;  
     
     //
     // Create topic publishers

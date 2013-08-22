@@ -493,7 +493,7 @@ CameraConfig::GroupDescription<CameraConfig::DEFAULT, CameraConfig> Default("Def
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       __max__.fps = 30.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
-      __default__.fps = 10.0;
+      __default__.fps = 1.0;
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"
       Default.abstract_parameters.push_back(CameraConfig::AbstractParamDescriptionConstPtr(new CameraConfig::ParamDescription<double>("fps", "double", 0, "FPS", "", &CameraConfig::fps)));
 //#line 259 "/opt/ros/fuerte/stacks/dynamic_reconfigure/src/dynamic_reconfigure/parameter_generator.py"

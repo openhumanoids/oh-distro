@@ -24,10 +24,10 @@ class LCM2ROS{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
-	  lcm::LCM lcm_publish_ ;
+    lcm::LCM lcm_publish_ ;
 
-		std::map<std::string,std::string> jointNameMap;
-		int last_command_timestamp;
+    std::map<std::string,std::string> jointNameMap;
+    int last_command_timestamp;
     
     // DRCSIM 2.6 atlas command API
     void atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg);
@@ -45,9 +45,7 @@ class LCM2ROS{
     ros::Publisher body_twist_cmd_pub_;
     void actuatorCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::actuator_cmd_t* msg);
     void bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg);
-    ros::Publisher gas_pedal_pub_, brake_pedal_pub_;
-    void estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg);   
-    
+   
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
     
@@ -64,7 +62,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   have_set_multisense_rate_= false;
   
   lcm_->subscribe("CONTROLLER_MODE",&LCM2ROS::controllerModeHandler, this);
-	     
+       
   /// DRCSIM 2.6 atlas command API
   lcm_->subscribe("ATLAS_COMMAND",&LCM2ROS::atlasCommandHandler,this);  
   // hang up to the bdi controller:
@@ -77,9 +75,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   /// Spinning Laser control:
   lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
   spindle_speed_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
-  //head_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_head_fps",10);
-  hand_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_hand_fps",10);
-  
+  hand_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_hand_fps",10); 
   multisense_sl_fps_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/fps",10);
   
   /// Sandia Hands joint command API
@@ -94,45 +90,39 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 //drc_robot.pmd:        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
   
   
-  
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
   body_twist_cmd_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel",10);
 
-  /// Experiments with car control:
-  lcm_->subscribe("NAV_GOAL_ESTOP",&LCM2ROS::estopHandler,this);
-  gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/gas_pedal/cmd", 1000);
-  brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/brake_pedal/cmd", 1000);
-  
-	// maps joint names from BDI format to sim/VRC format
-	jointNameMap["back_bkx"] = "back_ubx";
-	jointNameMap["back_bky"] = "back_mby";
-	jointNameMap["back_bkz"] = "back_lbz";
-	jointNameMap["l_leg_akx"] = "l_leg_lax";
-	jointNameMap["l_leg_aky"] = "l_leg_uay";
-	jointNameMap["l_leg_kny"] = "l_leg_kny";
-	jointNameMap["l_leg_hpx"] = "l_leg_mhx";
-	jointNameMap["l_leg_hpy"] = "l_leg_lhy";
-	jointNameMap["l_leg_hpz"] = "l_leg_uhz";
-	jointNameMap["r_leg_akx"] = "r_leg_lax";
-	jointNameMap["r_leg_aky"] = "r_leg_uay";
-	jointNameMap["r_leg_kny"] = "r_leg_kny";
-	jointNameMap["r_leg_hpx"] = "r_leg_mhx";
-	jointNameMap["r_leg_hpy"] = "r_leg_lhy";
-	jointNameMap["r_leg_hpz"] = "r_leg_uhz";
-	jointNameMap["l_arm_mwx"] = "l_arm_mwx";
-	jointNameMap["l_arm_uwy"] = "l_arm_uwy";
-	jointNameMap["l_arm_elx"] = "l_arm_elx";
-	jointNameMap["l_arm_ely"] = "l_arm_ely";
-	jointNameMap["l_arm_shx"] = "l_arm_shx";
-	jointNameMap["l_arm_usy"] = "l_arm_usy";
-	jointNameMap["r_arm_mwx"] = "r_arm_mwx";
-	jointNameMap["r_arm_uwy"] = "r_arm_uwy";
-	jointNameMap["r_arm_elx"] = "r_arm_elx";
-	jointNameMap["r_arm_ely"] = "r_arm_ely";
-	jointNameMap["r_arm_shx"] = "r_arm_shx";
-	jointNameMap["r_arm_usy"] = "r_arm_usy";
+  // maps joint names from BDI format to sim/VRC format
+  jointNameMap["back_bkx"] = "back_ubx";
+  jointNameMap["back_bky"] = "back_mby";
+  jointNameMap["back_bkz"] = "back_lbz";
+  jointNameMap["l_leg_akx"] = "l_leg_lax";
+  jointNameMap["l_leg_aky"] = "l_leg_uay";
+  jointNameMap["l_leg_kny"] = "l_leg_kny";
+  jointNameMap["l_leg_hpx"] = "l_leg_mhx";
+  jointNameMap["l_leg_hpy"] = "l_leg_lhy";
+  jointNameMap["l_leg_hpz"] = "l_leg_uhz";
+  jointNameMap["r_leg_akx"] = "r_leg_lax";
+  jointNameMap["r_leg_aky"] = "r_leg_uay";
+  jointNameMap["r_leg_kny"] = "r_leg_kny";
+  jointNameMap["r_leg_hpx"] = "r_leg_mhx";
+  jointNameMap["r_leg_hpy"] = "r_leg_lhy";
+  jointNameMap["r_leg_hpz"] = "r_leg_uhz";
+  jointNameMap["l_arm_mwx"] = "l_arm_mwx";
+  jointNameMap["l_arm_uwy"] = "l_arm_uwy";
+  jointNameMap["l_arm_elx"] = "l_arm_elx";
+  jointNameMap["l_arm_ely"] = "l_arm_ely";
+  jointNameMap["l_arm_shx"] = "l_arm_shx";
+  jointNameMap["l_arm_usy"] = "l_arm_usy";
+  jointNameMap["r_arm_mwx"] = "r_arm_mwx";
+  jointNameMap["r_arm_uwy"] = "r_arm_uwy";
+  jointNameMap["r_arm_elx"] = "r_arm_elx";
+  jointNameMap["r_arm_ely"] = "r_arm_ely";
+  jointNameMap["r_arm_shx"] = "r_arm_shx";
+  jointNameMap["r_arm_usy"] = "r_arm_usy";
 
-	last_command_timestamp = -1;
+  last_command_timestamp = -1;
 
   rosnode = new ros::NodeHandle();
 }
@@ -168,41 +158,41 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 //    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
 //  }
   
-//	if (msg->utime > last_command_timestamp) {
+//  if (msg->utime > last_command_timestamp) {
 //    ROS_ERROR("NEW COMMAND: %d > %d", msg->utime, last_command_timestamp);
-//		last_command_timestamp = msg->utime;
+//    last_command_timestamp = msg->utime;
 
-		atlas_msgs::AtlasCommand atlas_command_msg;
-		atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-		
-		atlas_command_msg.ki_position.resize(msg->num_joints);
-		atlas_command_msg.kp_velocity.resize(msg->num_joints);
-		atlas_command_msg.i_effort_min.resize(msg->num_joints);
-		atlas_command_msg.i_effort_max.resize(msg->num_joints);
+    atlas_msgs::AtlasCommand atlas_command_msg;
+    atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+    
+    atlas_command_msg.ki_position.resize(msg->num_joints);
+    atlas_command_msg.kp_velocity.resize(msg->num_joints);
+    atlas_command_msg.i_effort_min.resize(msg->num_joints);
+    atlas_command_msg.i_effort_max.resize(msg->num_joints);
 
     atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
-		for (int i=0; i<msg->num_joints; i++) {
-		  //atlas_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
-		  atlas_command_msg.position.push_back(msg->position[i]);
-		  atlas_command_msg.velocity.push_back(msg->velocity[i]);
-		  atlas_command_msg.effort.push_back(msg->effort[i]);
+    for (int i=0; i<msg->num_joints; i++) {
+      //atlas_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
+      atlas_command_msg.position.push_back(msg->position[i]);
+      atlas_command_msg.velocity.push_back(msg->velocity[i]);
+      atlas_command_msg.effort.push_back(msg->effort[i]);
 
-			if (use_bdi) // use the bdi controller, but this does set though the message
-			  atlas_command_msg.k_effort.push_back(0);
-			else
-			  atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
+      if (use_bdi) // use the bdi controller, but this does set though the message
+        atlas_command_msg.k_effort.push_back(0);
+      else
+        atlas_command_msg.k_effort.push_back(msg->k_effort[i]);
 
-		  atlas_command_msg.kp_position.push_back(msg->k_q_p[i]);
-		  atlas_command_msg.kd_position.push_back(msg->ff_qd[i]);
-		}
-		if(ros::ok()) {
-		  atlas_cmd_pub_.publish(atlas_command_msg);
-		} 
-//	}
-//	else {
+      atlas_command_msg.kp_position.push_back(msg->k_q_p[i]);
+      atlas_command_msg.kd_position.push_back(msg->ff_qd[i]);
+    }
+    if(ros::ok()) {
+      atlas_cmd_pub_.publish(atlas_command_msg);
+    } 
+//  }
+//  else {
 //    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
-//	}
+//  }
 }  
 
 
@@ -216,7 +206,7 @@ void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::s
     m.importance = drc::system_status_t::VERY_IMPORTANT;
     m.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-    m.value = "lcm2ros: Switching to BDI control.";	
+    m.value = "lcm2ros: Switching to BDI control.";  
     lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
 
     use_bdi = true;
@@ -228,55 +218,66 @@ void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::s
     m.importance = drc::system_status_t::VERY_IMPORTANT;
     m.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-    m.value = "lcm2ros: Switching to MIT control.";	
+    m.value = "lcm2ros: Switching to MIT control.";  
     lcm_publish_.publish("SYSTEM_STATUS", &m); // for simplicity stick this out
 
     use_bdi = false;
   }
 }  
 
+
+// command line dynamic reconfigure:
+// rosrun dynamic_reconfigure dynparam set /multisense_sl motor_speed 1
+// rosrun dynamic_reconfigure dynparam set /multisense_sl fps 30
+// C++ control of dynamic reconfigure is not implemented - need to use system call:
+// http://ros.org/wiki/hokuyo_node/Tutorials/UsingDynparamToChangeHokuyoLaserParameters#PythonAPI
 void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
   std::cout << "Got SENSOR_REQUEST setting sensor rates\n";
-  if(ros::ok()){
-    if (msg->spindle_rpm >=0){
-      std_msgs::Float64 spindle_speed_msg;
-      spindle_speed_msg.data = msg->spindle_rpm * (2*M_PI)/60; // convert from RPM to rad/sec
-      spindle_speed_pub_.publish(spindle_speed_msg);    
-      ROS_ERROR("LCM2ROS Setting Spindle RPM: %d", ((int) msg->spindle_rpm) );
-      ROS_ERROR("                    rad/sec: %f", spindle_speed_msg.data );
-    }else {
-      ROS_ERROR("LCM2ROS Ignoring negative Spindle RPM: %d", ((int) msg->spindle_rpm) );
-    }
-    
-    if (msg->head_fps >=0){
-      std_msgs::Float64 head_fps_msg;
-      head_fps_msg.data = msg->head_fps;
-      //head_fps_pub_.publish(head_fps_msg); // disabled:
-      multisense_sl_fps_pub_.publish(head_fps_msg);
-      ROS_ERROR("LCM2ROS Setting Head Camera FPS: %d [from Gazebo]", ((int) msg->head_fps) );
-    }else {
-      ROS_ERROR("LCM2ROS Ignoring Negative Head FPS: %d", ((int) msg->head_fps) );
-    }
-    
-    if (msg->hand_fps >=0){
-      std_msgs::Float64 hand_fps_msg;
-      hand_fps_msg.data = msg->hand_fps;
-      hand_fps_pub_.publish(hand_fps_msg);    
-      ROS_ERROR("LCM2ROS Setting Hand Camera FPS: %d [discard in Translator]", ((int) msg->hand_fps) );
-    }else {
-      ROS_ERROR("LCM2ROS Ignoring Negative Hand FPS: %d", ((int) msg->hand_fps) );
-    }    
+  if ((msg->spindle_rpm >=0) && (msg->spindle_rpm <=49) ){ // driver sets max at 5.2rpm
+    // Real device:
+    double spindle_rads = msg->spindle_rpm * (2*M_PI)/60; // convert from RPM to rad/sec
+    std::stringstream ss;
+    ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl motor_speed " << spindle_rads;
+    //ROS_ERROR("[%s]", ss.str().c_str() );    
+    system( ss.str().c_str() );
+
+    // Simulation:
+    std_msgs::Float64 spindle_speed_msg;
+    spindle_speed_msg.data = spindle_rads;
+    spindle_speed_pub_.publish(spindle_speed_msg);    
+    ROS_ERROR("LCM2ROS Setting Spindle RPM: %d", ((int) msg->spindle_rpm) );
+    ROS_ERROR("                    rad/sec: %f", spindle_rads );
+  }else {
+    ROS_ERROR("App Ignoring Out of Range Spindle RPM: %d", ((int) msg->spindle_rpm) );
   }
-  
-  std::cout << "\n";
+    
+  if ((msg->head_fps >=0) && (msg->head_fps <=30) ){ // driver sets minimum at 1fps
+    // Real device:
+    std::stringstream ss;
+    ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl fps " << (int) msg->head_fps;
+    //ROS_ERROR("[%s]", ss.str().c_str() );    
+    system( ss.str().c_str() );
+
+    // Simulation:
+    std_msgs::Float64 head_fps_msg;
+    head_fps_msg.data = msg->head_fps;
+    multisense_sl_fps_pub_.publish(head_fps_msg);
+    ROS_ERROR("LCM2ROS Setting Head Camera FPS: %d", ((int) msg->head_fps) );
+  }else {
+    ROS_ERROR("LCM2ROS Ignoring Negative Head FPS: %d", ((int) msg->head_fps) );
+  }
+    
+  if (msg->hand_fps >=0){
+    std_msgs::Float64 hand_fps_msg;
+    hand_fps_msg.data = msg->hand_fps;
+    hand_fps_pub_.publish(hand_fps_msg);    
+    ROS_ERROR("LCM2ROS Setting Hand Camera FPS: %d [discard in Translator]", ((int) msg->hand_fps) );
+  }else {
+    ROS_ERROR("LCM2ROS Ignoring Negative Hand FPS: %d", ((int) msg->hand_fps) );
+  }    
+
 }
 
-
-//void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg){
-//  std_msgs::Float64 rot_scan_cmd_msg;
-//  rot_scan_cmd_msg.data = msg->angular_velocity.x;
-//  }
-//}  
 
 // Sandia Hands joint command handlers
 void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
@@ -336,19 +337,6 @@ void LCM2ROS::bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::stri
   body_twist_cmd_msg.angular.z =  msg->angular_velocity.z;
   if(ros::ok()){
     body_twist_cmd_pub_.publish(body_twist_cmd_msg);
-  }
-}
-
-
-// Transmit an estop to the car - here only for demonstration:
-void LCM2ROS::estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg){
-  if(ros::ok()){
-    std_msgs::Float64 msg;
-    msg.data = 1.0;
-    brake_pedal_pub_.publish(msg);
-    std_msgs::Float64 gasmsg;
-    gasmsg.data = 0.0;
-    gas_pedal_pub_.publish(gasmsg);
   }
 }
 

@@ -10,6 +10,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(multisense_subscribe src/multisense_subscribe.cpp)
-# this is required for Conside args... grrr...
 pods_use_pkg_config_packages(multisense_subscribe  bot2-core)
 pods_install_executables( multisense_subscribe )
+
+rosbuild_add_executable(multisense_command src/multisense_command.cpp)
+pods_use_pkg_config_packages(multisense_command  bot2-core)
+pods_install_executables( multisense_command )

@@ -3,7 +3,7 @@
 Reads and maintains the following parameters on the ROS server
 
 - \b "~resolution" : \b [str] sensor resolution min: , default: 1024x544, max: 
-- \b "~fps" : \b [double] FPS min: 1.0, default: 10.0, max: 30.0
+- \b "~fps" : \b [double] FPS min: 1.0, default: 1.0, max: 30.0
 - \b "~gain" : \b [double] sensor gain min: 1.0, default: 1.0, max: 8.0
 - \b "~auto_exposure" : \b [bool] AutoExposure min: False, default: True, max: True
 - \b "~auto_exposure_max_time" : \b [double] AutoExposureMaxTime min: 0.0, default: 0.5, max: 0.5

@@ -2,7 +2,7 @@
 \verbatim
 <node name="Camera" pkg="multisense_ros" type="Camera">
   <param name="resolution" type="str" value="1024x544" />
-  <param name="fps" type="double" value="10.0" />
+  <param name="fps" type="double" value="1.0" />
   <param name="gain" type="double" value="1.0" />
   <param name="auto_exposure" type="bool" value="True" />
   <param name="auto_exposure_max_time" type="double" value="0.5" />
