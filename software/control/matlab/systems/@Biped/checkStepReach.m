@@ -1,4 +1,4 @@
-function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, options)
+function c = checkStepReach(biped, p0, pf, p0_is_right_foot, options)
 
 
   if nargin < 5
