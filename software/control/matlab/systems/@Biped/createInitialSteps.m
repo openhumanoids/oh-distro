@@ -74,9 +74,7 @@ min_progress = [0.05;0.05;1;0.4;0.4;0.4];
     potential_poses = foot_centers.(m_foot)(:, last_ndx.(m_foot):end);
     feas_opts = struct('forward_step', options.nom_forward_step,...
                        'nom_step_width', options.nom_step_width);
-    reach = biped.checkStepReach(repmat(X(end).pos, 1, size(potential_poses, 2)),...
-      potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), feas_opts);
-    reach = reshape(reach, [], size(potential_poses, 2));
+    reach = biped.checkStepReach(X(end).pos, potential_poses, ~is_right_foot, feas_opts);
     valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + (last_ndx.(m_foot) - 1);
     if isempty(valid_pose_ndx)
       novalid = true;
@@ -94,9 +92,7 @@ min_progress = [0.05;0.05;1;0.4;0.4;0.4];
     if (novalid || noprogress)
       % Try again with a longer maximum step
       feas_opts.forward_step = options.max_forward_step;
-      reach = biped.checkStepReach(repmat(X(end).pos, 1, size(potential_poses, 2)),...
-        potential_poses, repmat(~is_right_foot, 1, size(potential_poses, 2)), feas_opts);
-      reach = reshape(reach, [], size(potential_poses, 2));
+      reach = biped.checkStepReach(X(end).pos, potential_poses, ~is_right_foot, feas_opts);
       valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
       if isempty(valid_pose_ndx)
         novalid = true;

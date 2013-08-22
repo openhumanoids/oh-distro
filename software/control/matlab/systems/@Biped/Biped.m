@@ -140,7 +140,70 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew, options);
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
+
+    function [A, b] = getFootstepLinearCons(obj, options)
+      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps()
+
+      A = [1 0 0 0 0 0;
+           -1 0 0 0 0 0;
+           0 1 0 0 0 0;
+           0 -1 0 0 0 0;
+           0 0 1 0 0 0;
+           0 0 -1 0 0 0;
+           0 0 0 0 0 1;
+           0 0 0 0 0 -1];
+      if nargin < 2
+        options = struct();
+      end
+      if ~isfield(options, 'forward_step')
+        options.forward_step = obj.max_forward_step;
+      end
+      if ~isfield(options, 'nom_step_width')
+        options.nom_step_width = obj.nom_step_width;
+      end
+      if ~isfield(options, 'max_step_width')
+        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.01]);
+      end
+      if ~isfield(options, 'min_step_width')
+        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
+      end
+      if ~isfield(options, 'backward_step')
+        options.backward_step = obj.max_backward_step;
+      end
+      if ~isfield(options, 'max_step_rot')
+        options.max_step_rot = obj.max_step_rot;
+      end
+      if ~isfield(options, 'max_step_dz')
+        options.max_step_dz = obj.max_step_dz;
+      end
+      b = [options.forward_step;
+           options.backward_step;
+           options.max_step_width;
+           -options.min_step_width;
+           options.max_step_dz;
+           options.max_step_dz;
+           options.max_step_rot;
+           options.max_step_rot];
+    end
   end
+
+  methods (Static)
+    function u = relativeSteps(p0, pf, p0_is_right_foot)
+      % For each final step in pf, compute its offset from the foot position given by p0. Automatically flips the y direction for left steps to make them equivalent to right steps. 
+
+      sizecheck(p0, [6, 1]);
+      sizecheck(pf, [6, nan]);
+      sn = sin(-p0(6));
+      cs = cos(-p0(6));
+      M = [cs,-sn,0; sn,cs,0; 0,0,1];
+      u = M * bsxfun(@minus, pf(1:3,:), p0(1:3,:));
+      u = [u; zeros(2, size(u,2)); bsxfun(@angleDiff, pf(6,:), p0(6))];
+      if ~p0_is_right_foot
+        u(2,:) = -u(2,:);
+      end
+    end
+  end
+
 end
 
       
