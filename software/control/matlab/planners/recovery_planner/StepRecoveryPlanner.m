@@ -40,36 +40,85 @@ classdef StepRecoveryPlanner < DRCPlanner
       g = 9.81;
       dt = 0.3; % step duration, seconds
       omega_0 = sqrt(g / (xcom(3)-limp_base(3)));
-      capture_pt = xlimp(1:2) + 1/omega_0 * xlimp(3:4);
 
-      plot_lcm_points([capture_pt', limp_base(3)], [1,0,0], 250, 'r_ic0', 1, 1);
 
       r_0 = xlimp(1:2);
       rd_0 = xlimp(3:4);
-      r_ic0 = capture_pt;
       % if obj.last_contact_state.right_contact && obj.last_contact_state.left_contact
         %% choose a foot to step with
       if obj.last_contact_state.right_contact
-        %% step with left first
-        r_a0 = forwardKin(obj.biped, kinsol, obj.biped.foot_bodies_idx(1), obj.biped.foot_contact_offsets.right.center, 1);
-        R = rotmat(r_a0(6));
-        b = r_0(1:2) * exp(dt*omega_0) + 1/omega_0 * rd_0(1:2) * exp(dt*omega_0) + r_a0(1:2) * (1 - exp(dt*omega_0)) + exp(-dt*omega_0) * R * [0; obj.biped.nom_step_width / 2];
-        r_a1 = fmincon(@(x) norm(x-b), b, [],[],[],[],r_a0(1:2)-[2;2], r_a0(1:2)+[2;2],@(r_a1) deal(checkStepFeasibility(obj.biped, [r_a0], [r_a1;r_a0(3:6)], 1, struct('max_step_width', 1.5*obj.biped.max_step_width)),[]),optimset('Algorithm','interior-point'));
+        is_right_foot = 1;
       else
-        r_a0 = forwardKin(obj.biped, kinsol, obj.biped.foot_bodies_idx(2), obj.biped.foot_contact_offsets.left.center, 1);
-        R = rotmat(r_a0(6));
-        b = r_0(1:2) * exp(dt*omega_0) + 1/omega_0 * rd_0(1:2) * exp(dt*omega_0) + r_a0(1:2) * (1 - exp(dt*omega_0)) + exp(-dt*omega_0) * R * [0; -obj.biped.nom_step_width / 2];
-        r_a1 = fmincon(@(x) norm(x-b), b, [],[],[],[],r_a0(1:2)-[2;2], r_a0(1:2)+[2;2],@(r_a1) deal(checkStepFeasibility(obj.biped, [r_a0], [r_a1;r_a0(3:6)], 0, struct('max_step_width', 1.5*obj.biped.max_step_width)),[]),optimset('Algorithm','interior-point'));
-        %% step with right first
+        is_right_foot = 0;
       end
-      plot_lcm_points([r_a0(1:3)'], [1,1,0], 253, 'r_a0', 1,1);
-      r_ic1 = (r_ic0 - r_a0(1:2)) * exp(dt*omega_0) + r_a0(1:2);
-      plot_lcm_points([r_ic1', r_a0(3)], [1,.5,0], 252, 'r_ic1', 1, 1);
-      % r_a1 = b;
-      plot_lcm_points([b', r_a0(3)], [0,0,1], 255, 'b', 1, 1);
-      plot_lcm_points([r_a1', r_a0(3)], [0,1,0], 251, 'r_a1', 1, 1);
-      r_ic2 = (r_ic1 - r_a1(1:2)) * exp(dt*omega_0) + r_a1(1:2);
-      plot_lcm_points([r_ic2', r_a0(3)], [1,.8,0], 254, 'r_ic2', 1, 1);
+
+      rpos = forwardKin(obj.biped, kinsol, obj.biped.foot_bodies_idx(1), obj.biped.foot_contact_offsets.right.center, 1);
+      lpos = forwardKin(obj.biped, kinsol, obj.biped.foot_bodies_idx(2), obj.biped.foot_contact_offsets.left.center, 1);
+      if is_right_foot
+        X = [lpos, rpos];
+      else
+        X = [rpos, lpos];
+      end
+      footsteps = struct('pos', X(:,1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6,1), 'is_right_foot', ~is_right_foot, 'is_in_contact', true);
+      footsteps(end+1) = struct('pos', X(:,2), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6,1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
+
+      r_ic0 = r_0(1:2) + rd_0(1:2) / omega_0;
+      while 1
+        % r_a0 = obj.biped.footOrig2Contact(X(:,end), 'center', is_right_foot);
+        r_a0 = X(:,end);
+        R = rotmat(r_a0(6));
+        if is_right_foot
+          r_a1_des = r_ic0 * exp(dt*omega_0) + r_a0(1:2) * (1 - exp(dt*omega_0)) + exp(-dt*omega_0) * R * [0; obj.biped.nom_step_width / 2];
+        else
+          r_a1_des = r_ic0 * exp(dt*omega_0) + r_a0(1:2) * (1 - exp(dt*omega_0)) + exp(-dt*omega_0) * R * [0; -obj.biped.nom_step_width / 2];
+        end
+        M = rotmat(r_a0(6));
+        des_rel = [M * (r_a1_des - r_a0(1:2)); zeros(4,1)];
+        % desired = fitStepToTerrain(obj.biped, [desired; r_a0(3:6)], 'center'); 
+        [A, b] = getFootstepLinearCons(obj.biped, is_right_foot, struct('max_step_width', 1.5*obj.biped.max_step_width, 'backward_step', obj.biped.max_forward_step, 'forward_step', obj.biped.max_forward_step));
+
+        x = quadprog(diag([1,1,1,1,1,1]), zeros(6,1), A, b - A * des_rel,[],[],[-inf,-inf,0,0,0,0],[inf,inf,0,0,0,0],[],optimset('Algorithm', 'interior-point-convex'));
+        r_a1_rel = des_rel + x;
+        r_a1 = [rotmat(-r_a0(6)) * r_a1_rel(1:2) + r_a0(1:2); r_a0(3:6)];
+
+        % r_a1 = fmincon(@(x) norm(x-b), b, [],[],[],[],r_a0(1:2)-[2;2], r_a0(1:2)+[2;2],@(r_a1) deal(checkStepReach(obj.biped, [r_a0], [r_a1;r_a0(3:6)], is_right_foot, struct('max_step_width', 1.5*obj.biped.max_step_width)),[]),optimset('Algorithm','interior-point'));
+        % X(:,end+1) = fitStepToTerrain(obj.biped, [r_a1; r_a0(3:6)], 'center');
+        X(:,end+1) = fitStepToTerrain(obj.biped, r_a1, 'center');
+        % X(:,end+1) = fitStepToTerrain(obj.biped, obj.biped.footContact2Orig([r_a1; r_a0(3:6)], 'center', ~is_right_foot));
+
+        corners = [obj.biped.footOrig2Contact(X(:,end-1), 'toe', is_right_foot),...
+                   obj.biped.footOrig2Contact(X(:,end-1), 'heel', is_right_foot),...
+                   obj.biped.footOrig2Contact(X(:,end), 'toe', ~is_right_foot),...
+                   obj.biped.footOrig2Contact(X(:,end), 'heel', ~is_right_foot)];
+        r_ic1 = (r_ic0 - r_a0(1:2)) * exp(dt*omega_0) + r_a0(1:2);
+        r_ic2 = (r_ic1 - r_a1(1:2)) * exp(dt*omega_0) + r_a1(1:2);
+        final_ok = inpolygon(r_ic2(1), r_ic2(2), corners(1,:), corners(2,:));
+        footsteps(end+1) = struct('pos', X(:,end), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', ~is_right_foot, 'is_in_contact', true);
+
+        plot_lcm_points([r_ic0', limp_base(3)], [1,0,0], 250, 'r_ic0', 1, 1);
+        plot_lcm_points([r_a0(1:3)'], [1,1,0], 253, 'r_a0', 1,1);
+        r_ic1 = (r_ic0 - r_a0(1:2)) * exp(dt*omega_0) + r_a0(1:2);
+        plot_lcm_points([r_ic1', r_a0(3)], [1,.5,0], 252, 'r_ic1', 1, 1);
+        plot_lcm_points([r_a1_des', r_a0(3)], [0,0,1], 255, 'desired', 1, 1);
+        plot_lcm_points([r_a1', r_a0(3)], [0,1,0], 251, 'r_a1', 1, 1);
+        r_ic2 = (r_ic1 - r_a1(1:2)) * exp(dt*omega_0) + r_a1(1:2);
+        plot_lcm_points([r_ic2', r_a0(3)], [1,.8,0], 260, 'r_ic2', 1, 1);
+        if final_ok || size(X,2) > 5
+          break
+        end
+        r_ic0 = r_ic1;
+        is_right_foot = ~is_right_foot;
+      end
+      plot_lcm_poses(X(1:3,1:2:size(X,2))', X(6:-1:4,1:2:size(X,2))', 256, 'Odd', 1, true, false, 257);
+      plot_lcm_poses(X(1:3,2:2:size(X,2))', X(6:-1:4,2:2:size(X,2))', 258, 'Even', 1, true, false, 258);
+
+      for j = 1:length(footsteps)
+        footsteps(j).id = obj.biped.getNextStepID();
+        footsteps(j).step_speed = 1;
+        footsteps(j).step_height = 0.05;
+        footsteps(j).pos = obj.biped.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+      end
+      obj.biped.publish_footstep_plan(footsteps, etime(clock,[1970 1 1 0 0 0])*1000000, 1, struct('ignore_terrain', 1, 'mu', 1));
 
     end
   end
