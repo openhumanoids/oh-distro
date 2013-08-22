@@ -8,4 +8,4 @@ centroid of vicon plate on robot pelvis wrt approximate robot origin
 8 cm forward (+x)
 1 cm right (-y)
 6.6 cm up (+z)
-(accurate to approximately +/- 1mm)
+(accurate to approximately +/- 1cm)
