@@ -8,6 +8,6 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = setTerrain(r,DRCTerrainMap(false,struct('name','Recovery Plan','status_code',6,'fill', true,'normal_radius',2)));
 r = compile(r);
 p = StepRecoveryPlanner(r);
-p.run()
+p.run(0.1)
 
 end
