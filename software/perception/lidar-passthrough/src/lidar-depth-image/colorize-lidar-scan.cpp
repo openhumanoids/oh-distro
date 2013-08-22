@@ -201,6 +201,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
 int main( int argc, char** argv ){
   CommandLineConfig cl_cfg;
   cl_cfg.batch_size =200;
+  cl_cfg.lidar_channel = "SCAN";
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg.lidar_channel, "l", "lidar_channel","lidar_channel");
