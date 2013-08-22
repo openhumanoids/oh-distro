@@ -37,6 +37,10 @@ group "a.0.drivers" {
         exec = "rosrun multisense_command multisense_subscribe -d";
         host = "localhost";
     }
+    cmd "ms-command" {
+        exec = "rosrun multisense_command multisense_command";
+        host = "localhost";
+    }
     cmd "drc-atlas" {
         exec = "drc-atlas -p off";
         host = "localhost";
@@ -158,9 +162,9 @@ script "off_start" {
     start group "0.development";
     start cmd "multisense";
     start cmd "ms-subscribe";
+    start cmd "ms-command";
     start cmd "drc-atlas";
     start cmd "logger-robot";
     start group "a.1.core";
     start group "b.2.walking";
-    start cmd "ms-reconfig";
 }
