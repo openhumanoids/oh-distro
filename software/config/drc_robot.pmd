@@ -26,7 +26,7 @@ group "a.0.drivers" {
         host = "robot";
     }
     cmd "rearcam-NEEDPASSWORD" {
-        exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:@10.66.171.26/video2.mjpg";
+        exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
         host = "robot";
     }
     cmd "multisense" {
