@@ -723,7 +723,6 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     }
     int64_t now = bot_timestamp_now();
     double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
-    std::cout << "last_draw_dt "<<dt<< std::endl;   
     if((dt>0.05))
     {
       return 1;
@@ -934,7 +933,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     self->num_urdfs = urdf_files.size();
     self->urdf_names =(char **) calloc(self->num_urdfs, sizeof(char *));
     self->urdf_nums = (int *)calloc(self->num_urdfs, sizeof(int));   
-  
+
     for(size_t i=0;i<urdf_files.size();i++){
         cout << urdf_files[i] << endl;
         self->urdf_filenames.push_back(urdf_files[i]);
@@ -987,8 +986,19 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
     self->otdf_id= 0; // default file
-    self->lhand_urdf_id= 0; // default file
-    self->rhand_urdf_id= 1; // default file
+    
+    
+     std::vector<std::string>::const_iterator found;
+     found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "sandia_hand_left");
+     if (found != self->urdf_filenames.end()) 
+         self->lhand_urdf_id= found - self->urdf_filenames.begin();
+     else    
+         self->lhand_urdf_id= 1; // default file
+     found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "sandia_hand_right");
+     if (found != self->urdf_filenames.end()) 
+         self->rhand_urdf_id= found - self->urdf_filenames.begin();
+     else    
+         self->rhand_urdf_id= 3; // default file     
     self->alpha = 1.0; // default opacity is full on
     self->showMesh = false;
     self->enableReachabilityFilter = false;

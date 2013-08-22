@@ -603,6 +603,9 @@ namespace renderer_affordances_gui_utils
        bot_viewer_request_redraw(self->viewer);
     } 
     else if ((!strcmp(name, PARAM_SEED_LH))||(!strcmp(name, PARAM_SEED_RH))) {
+      bool is_sandia_left = (self->urdf_filenames[self->lhand_urdf_id]=="sandia_hand_left");
+      bool is_sandia_right = (self->urdf_filenames[self->rhand_urdf_id]=="sandia_hand_right");
+
       drc::grasp_opt_control_t msg;
       int grasp_type;
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
@@ -610,12 +613,18 @@ namespace renderer_affordances_gui_utils
       
       if(!strcmp(name, PARAM_SEED_LH))
       {
-        grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        if(is_sandia_left)
+          grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        else
+          grasp_type = msg.IROBOT_LEFT; 
         T_geom_lhandpose = self->T_graspgeometry_lhandinitpos;
       }
       else if(!strcmp(name, PARAM_SEED_RH))
       {
-        grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        if(is_sandia_right)
+         grasp_type = msg.SANDIA_RIGHT;//or SANDIA_LEFT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        else
+        grasp_type = msg.IROBOT_RIGHT; 
         T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
       }
       
@@ -624,7 +633,7 @@ namespace renderer_affordances_gui_utils
       self->stickyHandCollection->free_running_sticky_hand_cnt++;
       int uid = self->stickyHandCollection->free_running_sticky_hand_cnt;
        std::string channel;
-      if(self->graspOptStatusListener->isOptPoolReady())
+       if(self->graspOptStatusListener->isOptPoolReady())
        {
           int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
           if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
