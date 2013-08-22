@@ -59,24 +59,11 @@ classdef DRCPlanner < handle
       changed=false; changelist=struct();
       for i=1:length(obj.monitors)
         changelist.(obj.name{i})=false;
-        % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>=data.utime)
-        % if obj.updatable(i)
         if obj.updatable(i) && (getLastTimestamp(obj.monitors{i}) >= obj.last_msg_utimes(i))
-        % if (obj.updatable(i) ...
-        %     && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i) ...
-        %         || obj.always_process(i)))
-          % data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
           obj.last_msg_utimes(i) = getLastTimestamp(obj.monitors{i});
-          % d = getNextMessage(obj.monitors{i}, 0);
           d = getNextMessage(obj.monitors{i}, 0);
-          % if obj.always_process(i)
-          %   d = getNextMessage(obj.monitors{i}, 1);
-          % else
-          %   d = getMessage(obj.monitors{i});
-          % end
           if ~isempty(d)
             if isempty(obj.coders{i})
-              % data.(obj.name{i})=obj.lcmtype_constructor.newInstance(d);
               data.(obj.name{i})=obj.constructors{i}.newInstance(d);
             else
               data.(obj.name{i})=obj.coders{i}.decode(d);
@@ -88,10 +75,13 @@ classdef DRCPlanner < handle
       end
     end
     
-    function run(obj)
+    function run(obj, interval)
       % waits for plan requests and, upon receipt, checks to make we've
       % received all of the required bits and then calls the plan method
       % note: this method will never return (hit ctrl-c to cancel)
+      if nargin < 2
+        interval = 1; % time between updates, s
+      end
       
       tic;
       data = struct('utime', 0);
@@ -117,7 +107,7 @@ classdef DRCPlanner < handle
             disp('missing required inputs.  this plan request will be ignored.');
           end
         end
-        pause(1);
+        pause(interval);
         fprintf(1, 'waiting... (t=%f)\n', toc);
       end
     end
