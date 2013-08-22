@@ -8,3 +8,13 @@ pods_use_pkg_config_packages(drc-get-lidar-depth-image maps bot2-lcmgl-client
               image_io_utils)
 pods_install_executables(drc-get-lidar-depth-image)
 
+
+
+add_executable(drc-colorize-lidar-scan colorize-lidar-scan.cpp)
+pods_use_pkg_config_packages(drc-colorize-lidar-scan maps bot2-lcmgl-client
+              pointcloud_vis bot2-frames bot2-frames_cpp
+              lcmtypes_multisense
+              camera_params
+              image_io_utils)
+pods_install_executables(drc-colorize-lidar-scan)
+

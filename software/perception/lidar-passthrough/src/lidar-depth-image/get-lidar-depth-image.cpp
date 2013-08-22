@@ -132,7 +132,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
   camera_params_ = CameraParams();
 
   lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
-  camera_params_.setParams(botparam_, "cameras.CAMERA.left");
+  camera_params_.setParams(botparam_, "cameras.CAMERA_LEFT");
 
   // Previous:
   //lcm_->subscribe( "CAMERALEFT" ,&Pass::imageHandler,this);
@@ -146,6 +146,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
   camera_calib_(0,0) = camera_calib_(1,1) = camera_params_.fx;  // focal length
   camera_calib_(0,2) = camera_params_.cx;                       // cop at center of image
   camera_calib_(1,2) = camera_params_.cy;
+  
+  std::cout << camera_calib_ << " cam calib\n";
 
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), camera_params_.width, 
                                   camera_params_.height );
@@ -179,6 +181,9 @@ bool Pass::getSweep(LocalMap::SpaceTimeBounds bounds, Eigen::Vector3f bounds_cen
   int64_t timeMin, timeMax;
   double ang_min = 0.0 *M_PI/180; // leading edge from the right hand side of sweep
   double ang_max = 179.99 *M_PI/180;  // 0 and 180 fails
+  
+//  double ang_min = 30.0 *M_PI/180; // leading edge from the right hand side of sweep
+ // double ang_max = 170.99 *M_PI/180;  // 0 and 180 fails
   
   //cout << ang_min << " min | " << ang_max << " max\n";
         
@@ -231,8 +236,8 @@ void Pass::getSweepDepthImage(LocalMap::SpaceTimeBounds bounds){
 // Publish Various Representations of the Depth Image:
 void Pass::sendSweepDepthImage(){
   bool write_raw = false;
-  bool publish_raw = false;
-  bool publish_range_image = true;
+  bool publish_raw = true;
+  bool publish_range_image = false;
   
   // a. Write raw depths to file
   if (write_raw){
@@ -355,7 +360,8 @@ void Pass::sendSweepCloud(){
       stringstream ss2;
       ss2 << "/tmp/sweep_cloud_"  << current_utime_ << ".pcd";
       writer.write (ss2.str(), *cloud_, false);
-      cout << "finished writing PCD to:\n" << ss2.str() <<"\n";
+      cout << "finished writing "<< cloud_->points.size() <<" points to:\n" << ss2.str() <<"\n";
+      
     }
   }
 
@@ -395,19 +401,19 @@ void Pass::queryNewSweep(){
   botframes_cpp_->get_trans_with_utime( botframes_ , "head", "local"  , current_utime_, head_to_local);
 
   // 3. Create a depth image object:
-  botframes_cpp_->get_trans_with_utime( botframes_ ,  "CAMERA", "local", current_utime_, camera_pose_);   // ...? not sure what to use
+  botframes_cpp_->get_trans_with_utime( botframes_ ,  "CAMERA_LEFT", "local", current_utime_, camera_pose_);   // ...? not sure what to use
 
 
   LocalMap::SpaceTimeBounds bounds;
   if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
 
     // use the time and space bounds to get a new cloud
-    //getSweepCloud(bounds);
-    //sendSweepCloud();
+    getSweepCloud(bounds);
+    sendSweepCloud();
 
     // use the time and space bounds to get a new depth image
-    getSweepDepthImage(bounds);
-    sendSweepDepthImage();
+    //getSweepDepthImage(bounds);
+    //sendSweepDepthImage();
   }
 }
 
