@@ -141,9 +141,12 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
 
-    function [A, b] = getFootstepLinearCons(obj, options)
-      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps()
+    function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)
+      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps(). Automatically flips the y direction for left steps to make them equivalent to right steps. 
 
+      if nargin < 3
+        options = struct();
+      end
       A = [1 0 0 0 0 0;
            -1 0 0 0 0 0;
            0 1 0 0 0 0;
@@ -152,8 +155,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
            0 0 -1 0 0 0;
            0 0 0 0 0 1;
            0 0 0 0 0 -1];
-      if nargin < 2
-        options = struct();
+      if ~p0_is_right_foot
+        A(:,2) = -A(:,2);
       end
       if ~isfield(options, 'forward_step')
         options.forward_step = obj.max_forward_step;
@@ -188,8 +191,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
   end
 
   methods (Static)
-    function u = relativeSteps(p0, pf, p0_is_right_foot)
-      % For each final step in pf, compute its offset from the foot position given by p0. Automatically flips the y direction for left steps to make them equivalent to right steps. 
+    function u = relativeSteps(p0, pf)
+      % For each final step in pf, compute its offset from the foot position given by p0. 
 
       sizecheck(p0, [6, 1]);
       sizecheck(pf, [6, nan]);
@@ -198,9 +201,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       M = [cs,-sn,0; sn,cs,0; 0,0,1];
       u = M * bsxfun(@minus, pf(1:3,:), p0(1:3,:));
       u = [u; zeros(2, size(u,2)); bsxfun(@angleDiff, pf(6,:), p0(6))];
-      if ~p0_is_right_foot
-        u(2,:) = -u(2,:);
-      end
     end
   end
 
