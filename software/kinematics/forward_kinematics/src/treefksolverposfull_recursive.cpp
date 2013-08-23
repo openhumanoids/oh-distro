@@ -58,13 +58,13 @@ void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_i
 {
   // get pose of this segment
   KDL::Frame this_frame;
-  
+
   double jnt_p = 0;
   if (this_segment->second.segment.getJoint().getType() != Joint::None){
     map<string, double>::const_iterator jnt_pos = q_in.find(this_segment->second.segment.getJoint().getName());
     if (jnt_pos == q_in.end()){
      // ROS_DEBUG("Warning: TreeFKSolverPosFull Could not find value for joint '%s'. Skipping this tree branch", this_segment->first.c_str());
-      std::cout<<"Warning: TreeFKSolverPosFull Could not find value for joint"<< this_segment->first.c_str() << " Skipping this tree branch" << std::endl;
+      std::cout<<"Warning: TreeFKSolverPosFull Could not find value for joint "<< this_segment->second.segment.getJoint().getName() << " Skipping this tree branch" << std::endl;
       return;
     }
     jnt_p = jnt_pos->second;
@@ -111,7 +111,7 @@ void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_i
     map<string, double>::const_iterator jnt_pos = q_in.find(this_segment->second.segment.getJoint().getName());
     if (jnt_pos == q_in.end()){
      // ROS_DEBUG("Warning: TreeFKSolverPosFull Could not find value for joint '%s'. Skipping this tree branch", this_segment->first.c_str());
-      std::cout<<"Warning: TreeFKSolverPosFull Could not find value for joint"<< this_segment->first.c_str() << " Skipping this tree branch" << std::endl;
+      std::cout<<"Warning: TreeFKSolverPosFull Could not find value for joint "<< this_segment->second.segment.getJoint().getName() <<" "<< " Skipping this tree branch" << std::endl;
       return;
     }
     jnt_p = jnt_pos->second;
