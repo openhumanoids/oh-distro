@@ -231,15 +231,17 @@ void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 // rosrun dynamic_reconfigure dynparam set /multisense_sl fps 30
 // C++ control of dynamic reconfigure is not implemented - need to use system call:
 // http://ros.org/wiki/hokuyo_node/Tutorials/UsingDynparamToChangeHokuyoLaserParameters#PythonAPI
+// UPDATE: Dynamic Reconfigure Conflicts with messaging if no reconfig server is running - disabled here
 void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
   std::cout << "Got SENSOR_REQUEST setting sensor rates\n";
   if ((msg->spindle_rpm >=0) && (msg->spindle_rpm <=49) ){ // driver sets max at 5.2rpm
-    // Real device:
     double spindle_rads = msg->spindle_rpm * (2*M_PI)/60; // convert from RPM to rad/sec
-    std::stringstream ss;
-    ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl motor_speed " << spindle_rads;
+
+    // Real device:
+    //std::stringstream ss;
+    //ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl motor_speed " << spindle_rads;
     //ROS_ERROR("[%s]", ss.str().c_str() );    
-    system( ss.str().c_str() );
+    //system( ss.str().c_str() );
 
     // Simulation:
     std_msgs::Float64 spindle_speed_msg;
@@ -253,10 +255,10 @@ void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::
     
   if ((msg->head_fps >=0) && (msg->head_fps <=30) ){ // driver sets minimum at 1fps
     // Real device:
-    std::stringstream ss;
-    ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl fps " << (int) msg->head_fps;
+    //std::stringstream ss;
+    //ss << "rosrun dynamic_reconfigure dynparam set /multisense_sl fps " << (int) msg->head_fps;
     //ROS_ERROR("[%s]", ss.str().c_str() );    
-    system( ss.str().c_str() );
+    //system( ss.str().c_str() );
 
     // Simulation:
     std_msgs::Float64 head_fps_msg;
