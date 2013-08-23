@@ -420,7 +420,7 @@
   </joint>
   <joint name="left_f0_2_accel" type="fixed">
     <parent link="left_f0_2"/>
-    <child link="left_f0_2_accel"/>/tmp/tmpnQhCgX-meld/sandia_hand_left.urdf
+    <child link="left_f0_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
   <transmission name="left_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
