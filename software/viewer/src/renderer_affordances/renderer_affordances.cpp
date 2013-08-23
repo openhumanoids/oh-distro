@@ -235,7 +235,6 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                     reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
                 }
                 if(reachable){
-                    cout << "set to green" << endl;
                     ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
                 }
                 else{
@@ -258,15 +257,13 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
                     reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
                 if(reachable){
-                    cout << "set to yellow" << endl;
+   
                     ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
                 }
                 else{
                     ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
                 }
-            }            
-                       
-            cout << ch[0] << ch[1] << ch[2] << endl;
+            }   
             hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
             string hand_name = hand_it->first;
             int order = self->seedSelectionManager->get_selection_order(hand_name);
