@@ -409,6 +409,25 @@
     <child link="left_f0_2_accel_dummy1"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
+  <link name="left_f0_2_accel_dummy2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_f0_2_accel_dummy2" type="fixed">
+    <parent link="left_f0_2"/>
+    <child link="left_f0_2_accel_dummy2"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="left_f0_base" type="fixed">
     <parent link="left_palm"/>
     <child link="left_f0_base"/>
@@ -722,6 +741,25 @@
   <joint name="left_f1_2_accel_dummy1" type="fixed">
     <parent link="left_f1_2"/>
     <child link="left_f1_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
+  <link name="left_f1_2_accel_dummy2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_f1_2_accel_dummy2" type="fixed">
+    <parent link="left_f1_2"/>
+    <child link="left_f1_2_accel_dummy2"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
   <joint name="left_f1_base" type="fixed">
@@ -1039,6 +1077,25 @@
     <child link="left_f2_2_accel_dummy1"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
+  <link name="left_f2_2_accel_dummy2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_f2_2_accel_dummy2" type="fixed">
+    <parent link="left_f2_2"/>
+    <child link="left_f2_2_accel_dummy2"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="left_f2_base" type="fixed">
     <parent link="left_palm"/>
     <child link="left_f2_base"/>
@@ -1336,6 +1393,25 @@
   <joint name="left_f3_2_accel_dummy1" type="fixed">
     <parent link="left_f3_2"/>
     <child link="left_f3_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
+  <link name="left_f3_2_accel_dummy2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_f3_2_accel_dummy2" type="fixed">
+    <parent link="left_f3_2"/>
+    <child link="left_f3_2_accel_dummy2"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
   <joint name="left_f3_base" type="fixed">

@@ -19,6 +19,9 @@
 <xacro:property name="base_contact2x" value="0.00" />
 <xacro:property name="base_contact2y" value="-0.005" />
 <xacro:property name="base_contact2z" value="0.083" />
+<xacro:property name="base_contact3x" value="0.012" />
+<xacro:property name="base_contact3y" value="0.0" />
+<xacro:property name="base_contact3z" value="0.083" />
 <xacro:property name="proximal_contactx" value="0.00" />
 <xacro:property name="proximal_contacty" value="0.01" />
 <xacro:property name="proximal_contactz" value="0.034" />
@@ -270,7 +273,19 @@
         <geometry>
           <sphere radius="0"/>
         </geometry>
-      </collision>       
+      </collision>   
+      <collision>
+        <origin rpy="0 0 0" xyz="${base_contact3x} ${base_contact3y} ${base_contact3z}"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>     
+       <collision>
+        <origin rpy="0 0 0" xyz="${-base_contact3x} ${base_contact3y} ${base_contact3z}"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>             
     <visual>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/palm.wrl"/>
@@ -359,6 +374,12 @@
           <sphere radius="0"/>
         </geometry>
       </collision> 
+       <collision>
+        <origin rpy="0 0 0" xyz="${distal_contactx} ${-distal_contacty} ${distal_contactz}"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>       
     <visual>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>
@@ -446,6 +467,12 @@
           <sphere radius="0"/>
         </geometry>
       </collision> 
+       <collision>
+        <origin rpy="0 0 0" xyz="${distal_contactx} ${-distal_contacty} ${distal_contactz}"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>         
     <visual>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>
@@ -510,6 +537,12 @@
           <sphere radius="0"/>
         </geometry>
       </collision> 
+       <collision>
+        <origin rpy="0 0 0" xyz="${distal_contactx} ${-distal_contacty} ${distal_contactz}"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>         
     <visual>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>

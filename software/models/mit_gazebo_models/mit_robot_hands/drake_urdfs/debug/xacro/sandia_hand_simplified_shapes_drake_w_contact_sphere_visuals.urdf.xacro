@@ -288,6 +288,35 @@
       <child link="${side}_f${idx}_2_accel_dummy1"/>
       <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
+    
+    <link name="${side}_f${idx}_2_accel_dummy2">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+        <geometry>
+          <sphere radius="0.005"/>
+        </geometry>
+      </visual> 
+      <collision>
+        <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision> 
+    </link>
+
+    
+     <joint name="${side}_f${idx}_2_accel_dummy2" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel_dummy2"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
       <!-- ############    END     ############ --> 
       
        
@@ -614,12 +643,38 @@
       </collision> 
     </link>
 
-    
      <joint name="${side}_f${idx}_2_accel_dummy1" type="fixed">
       <parent link="${side}_f${idx}_2"/>
       <child link="${side}_f${idx}_2_accel_dummy1"/>
       <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
+    
+    <link name="${side}_f${idx}_2_accel_dummy2">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+        <geometry>
+          <sphere radius="0.005"/>
+        </geometry>
+      </visual> 
+      <collision>
+        <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision> 
+    </link>
+    
+     <joint name="${side}_f${idx}_2_accel_dummy2" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel_dummy2"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>    
 
       <!-- ############    END     ############ --> 
 
