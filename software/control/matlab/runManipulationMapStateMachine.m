@@ -2,8 +2,6 @@ function runManipulationMapStateMachine()%or runPreComputedPoseGraphServer()
   % listens to COMMITTED_MANIP_MAP, AFF_GOAL,AFF_STATE and EST_ROBOT_STATE
   % and generates a COMMITTED_ROBOT_PLAN msg.
   
-  addpath(fullfile(pwd,'frames'));
-
   % load atlas model
   options.floating = true;
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);

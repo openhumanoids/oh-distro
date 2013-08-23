@@ -1,6 +1,5 @@
 function runWalkingStateMachine(options,state_channel)
 
-addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.namesuffix = '';

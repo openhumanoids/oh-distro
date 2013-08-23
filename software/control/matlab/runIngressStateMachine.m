@@ -1,6 +1,5 @@
 function runIngressStateMachine(options)
 
-addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.namesuffix = '';

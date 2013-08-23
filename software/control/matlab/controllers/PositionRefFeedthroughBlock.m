@@ -1,4 +1,4 @@
-classdef PositionRefPublisher < DrakeSystem
+classdef PositionRefFeedthroughBlock < DrakeSystem
   % sends joint position references and gains as joint commands to atlas
   
   properties
@@ -7,7 +7,7 @@ classdef PositionRefPublisher < DrakeSystem
   end
   
   methods
-    function obj = PositionRefPublisher(r,options)
+    function obj = PositionRefFeedthroughBlock(r,options)
       typecheck(r,'Atlas');
   
       if nargin<2

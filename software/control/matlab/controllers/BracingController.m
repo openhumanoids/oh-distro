@@ -11,7 +11,7 @@ classdef BracingController < DRCController
             
             ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));
             
-            refpub = PositionRefPublisher(r,struct('gains_id','bracing'));
+            refpub = PositionRefFeedthroughBlock(r,struct('gains_id','bracing'));
             
             % cascade qtraj eval block
             qt = QTrajEvalBlock(r,ctrl_data);

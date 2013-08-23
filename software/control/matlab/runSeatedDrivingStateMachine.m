@@ -1,6 +1,5 @@
 function runSeatedDrivingStateMachine(options)
 
-addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 % load atlas model
