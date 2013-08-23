@@ -164,12 +164,10 @@ namespace visualization_utils
   //-------
   // Hand is now with the palm facing the object.
   
-   KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
-   T_rotatedhand_lhand.p[0]=0;
-   T_rotatedhand_lhand.p[1]=0;
-   T_rotatedhand_lhand.p[2]=0;
+   KDL::Frame T_rotatedhand_lhand = KDL::Frame::Identity();
+   KDL::Frame T_rotatedhand_rhand = KDL::Frame::Identity(); //dependent on hand model and object dimensions
    if(is_sandia)
-   T_rotatedhand_lhand.p[2]=0.125;
+    T_rotatedhand_lhand.p[2]=0.125;
    T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
    
    objectframe_finger_dir.normalize(); // finger dir in object frame.
@@ -182,10 +180,17 @@ namespace visualization_utils
   
    double theta = atan2(desired_finger_dir[2],desired_finger_dir[1]);
    //depending on left or right hand, sign of rotation will change.
-   std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
+   //std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
     
-   T_rotatedhand_lhand.M =  KDL::Rotation::RPY(5*(M_PI/8)-theta,0,0);
-   T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
+   if(is_sandia)
+   { 
+    T_rotatedhand_lhand.M =  KDL::Rotation::RPY(5*(M_PI/8)-theta,0,0);
+    T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
+   }
+   else{
+    T_rotatedhand_lhand.M =  KDL::Rotation::RPY((M_PI/2)-theta,0,0);
+    T_rotatedhand_rhand.M =  KDL::Rotation::RPY((M_PI/2)-theta,0,0);
+   }
    T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//gets T_objectgeometry_rotatedhand 
    T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//gets T_objectgeometry_rotatedhand 
    
@@ -302,22 +307,34 @@ namespace visualization_utils
     }//end if
       
      //depending on left or right hand, sign of rotation will change.
-     KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
-     T_rotatedhand_lhand.p[0]=0;
-     T_rotatedhand_lhand.p[1]=0;
-     T_rotatedhand_lhand.p[2]=0;
+     KDL::Frame T_rotatedhand_lhand = KDL::Frame::Identity();
+     KDL::Frame T_rotatedhand_rhand = KDL::Frame::Identity(); //dependent on hand model and object dimensions
      if(is_sandia)
-      T_rotatedhand_lhand.p[2]=0.125;
-      
-     T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
-     if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){
-      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-3*(M_PI/8),0,0);
-      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8),0,0);
-     }
-     else if(min_dimension_tag=="Z"){ 
-      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
-      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
-     }
+     {
+       T_rotatedhand_lhand.p[0]=0;
+       T_rotatedhand_lhand.p[1]=0;
+       T_rotatedhand_lhand.p[2]=0.125;
+        
+       T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
+       if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){     
+        T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-3*(M_PI/8),0,0);
+        T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8),0,0);
+       }
+       else if(min_dimension_tag=="Z"){ 
+        T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
+        T_rotatedhand_rhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
+       }
+      }
+      else{
+        if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){     
+          T_rotatedhand_lhand.M =  KDL::Rotation::RPY((M_PI/2),0,0);
+          T_rotatedhand_rhand.M =  KDL::Rotation::RPY((M_PI/2),0,0);
+         }
+         else if(min_dimension_tag=="Z"){ 
+          T_rotatedhand_lhand.M =  KDL::Rotation::RPY(0,0,0);
+          T_rotatedhand_rhand.M =  KDL::Rotation::RPY(0,0,0);
+        } 
+      }
 
     T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//T_objectgeometry_rotatedhand 
     T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//T_objectgeometry_rotatedhand 
