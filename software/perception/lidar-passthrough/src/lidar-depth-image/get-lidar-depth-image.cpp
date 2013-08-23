@@ -91,7 +91,7 @@ class Pass{
     void queryNewSweep();
     // Get a sweep of lidar
     // True if we have a new sweep, different from before
-    bool getSweep(LocalMap::SpaceTimeBounds bounds, Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0), 
+    bool getSweep(LocalMap::SpaceTimeBounds& bounds, Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0), 
 		 Eigen::Vector3f bounds_size = Eigen::Vector3f(1e10, 1e10, 1e10) );
 
     void getSweepCloud(LocalMap::SpaceTimeBounds bounds);
@@ -173,7 +173,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
 
 
 
-bool Pass::getSweep(LocalMap::SpaceTimeBounds bounds, Eigen::Vector3f bounds_center, Eigen::Vector3f bounds_size){
+bool Pass::getSweep(LocalMap::SpaceTimeBounds& bounds, Eigen::Vector3f bounds_center, Eigen::Vector3f bounds_size){
   // get submap we created earlier
   LocalMap::Ptr localMap = mState->mCollector->getMapManager()->getMap(mState->mActiveMapId);
 
