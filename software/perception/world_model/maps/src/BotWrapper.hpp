@@ -36,11 +36,15 @@ public:
   BotFrames* getBotFrames() const;
 
   int64_t getLatestTime(const std::string& iFrom, const std::string& iTo) const;
+
+  template <typename T>
   bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Isometry3f& oTransform,
+                    Eigen::Transform<T,3,Eigen::Isometry>& oTransform,
                     const int64_t iTime=-1) const;
+
+  template <typename T>
   bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Quaternionf& oRot, Eigen::Vector3f& oTrans,
+                    Eigen::Quaternion<T>& oRot, Eigen::Matrix<T,3,1>& oTrans,
                     const int64_t iTime=-1) const;
 
 

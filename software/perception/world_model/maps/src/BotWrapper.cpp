@@ -84,9 +84,11 @@ getLatestTime(const std::string& iFrom, const std::string& iTo) const {
   return latestTime;
 }
 
+template <typename T>
 bool BotWrapper::
 getTransform(const std::string& iFrom, const std::string& iTo,
-             Eigen::Isometry3f& oTransform, const int64_t iTime) const {
+             Eigen::Transform<T,3,Eigen::Isometry>& oTransform,
+             const int64_t iTime) const {
   if (mBotFrames == NULL) return false;
   double mat[16];
   if (iTime < 0) {
@@ -109,9 +111,10 @@ getTransform(const std::string& iFrom, const std::string& iTo,
   return true;
 }
 
+template <typename T>
 bool BotWrapper::
 getTransform(const std::string& iFrom, const std::string& iTo,
-             Eigen::Quaternionf& oRot, Eigen::Vector3f& oTrans,
+             Eigen::Quaternion<T>& oRot, Eigen::Matrix<T,3,1>& oTrans,
              const int64_t iTime) const {
   if (mBotFrames == NULL) return false;
   BotTrans trans;
@@ -127,9 +130,26 @@ getTransform(const std::string& iFrom, const std::string& iTo,
       return false;
     }
   }
-  oRot = Eigen::Quaternionf(trans.rot_quat[0], trans.rot_quat[1],
-                            trans.rot_quat[2], trans.rot_quat[3]);
-  oTrans = Eigen::Vector3f(trans.trans_vec[0], trans.trans_vec[1],
-                           trans.trans_vec[2]);
+  oRot = Eigen::Quaternion<T>(trans.rot_quat[0], trans.rot_quat[1],
+                              trans.rot_quat[2], trans.rot_quat[3]);
+  oTrans << trans.trans_vec[0], trans.trans_vec[1], trans.trans_vec[2];
   return true;
+}
+
+namespace maps {
+  // explicit instantiations
+  template bool BotWrapper::
+  getTransform(const std::string& iFrom, const std::string& iTo,
+               Eigen::Isometry3f& oTransform, const int64_t iTime) const;
+  template bool BotWrapper::
+  getTransform(const std::string& iFrom, const std::string& iTo,
+               Eigen::Isometry3d& oTransform, const int64_t iTime) const;
+  template bool BotWrapper::
+  getTransform(const std::string& iFrom, const std::string& iTo,
+               Eigen::Quaternionf& oRot, Eigen::Vector3f& oTrans,
+               const int64_t iTime) const;
+  template bool BotWrapper::
+  getTransform(const std::string& iFrom, const std::string& iTo,
+               Eigen::Quaterniond& oRot, Eigen::Vector3d& oTrans,
+               const int64_t iTime) const;
 }
