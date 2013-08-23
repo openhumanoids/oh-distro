@@ -11,7 +11,7 @@ endif(NOT BOT2_VIS_FOUND)
 #add_definitions(-Wall -std=gnu99)
 
 add_library(multisense-renderer SHARED 
-    multisense_renderer.cpp
+    multisense_renderer.cpp ../multisense-glview/jpeg-utils-ijg.c
     )
 
 target_link_libraries(multisense-renderer
