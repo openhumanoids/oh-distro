@@ -16,6 +16,7 @@
   </link>
   
   <xacro:irobot_hand side="right" parent="base" reflect="1">
-    <origin rpy="0 0 0" xyz="0 -0.05 0"/>
+ <!--  <origin rpy="0 0 0" xyz="0 -0.05 0"/>-->
+    <origin rpy="1.57 0 -1.57" xyz="0 0 0"/>   
   </xacro:irobot_hand>  
 </robot>

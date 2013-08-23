@@ -4,7 +4,7 @@
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        name="irobot_hand_left" >
 
-  <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/xacro/irobot_hand_simple.urdf.xacro" />
 
   <link name="base">
     <inertial>
@@ -14,6 +14,7 @@
     </inertial>
   </link>
   <xacro:irobot_hand side="left" parent="base" reflect="-1">
-    <origin rpy="0 0 3.14159" xyz="0 0.05 0"/>
+<!--    <origin rpy="0 0 3.14159" xyz="0 0.05 0"/>-->
+    <origin rpy="1.57 0 -1.57" xyz="0 0 0"/>
   </xacro:irobot_hand>
 </robot>

@@ -1,33 +1,22 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="irobot_hand">
-
-<!-- Changes from irobot_hand_simple.urdf.xacro in  handle_description package -->
-<!-- 
- 1) Commented out all collision elements
- 2) Added custom  collision elements to base link and proximal and distal finger links (excluding base rotation links).
- 3) Adding dummy elements to visualize custom collision elements
--->
+<!-- roslaunch urdf_tutorial display.launch model:=handle.urdf gui:=True -->
+<!-- rosrun xacro xacro.py handle_urdf.xacro > handle.urdf -->
+<!-- tip: use measurements from solid to find the origins and length -->
+<!-- ########################################### -->
+<!-- MIT changes (8th August 2013) -->
+<!-- ########################################### -->
+<!-- Simplified irobot hand urdf. Not modelling flex joints as series of 9 flex and twist joints -->
+<!-- Replacing series of 9 flex and 9 twist joints with a simple 1DoF flex joint.  -->
+<!-- Increased joint limit of nase flexion joint to 120 from 90 -->
+<!-- ########################################### -->
 
 
 <xacro:property name="flex_joint_length" value=".016" />
 <xacro:property name="flex_joint_steps" value="9" />
 <xacro:property name="proximal_link_length" value=".062" />
 <xacro:property name="pi" value="3.14" />
-<xacro:property name="base_contactx" value="0.00" />
-<xacro:property name="base_contacty" value="0.012" />
-<xacro:property name="base_contactz" value="0.083" />
-<xacro:property name="base_contact2x" value="0.00" />
-<xacro:property name="base_contact2y" value="-0.005" />
-<xacro:property name="base_contact2z" value="0.083" />
-<xacro:property name="proximal_contactx" value="0.00" />
-<xacro:property name="proximal_contacty" value="0.01" />
-<xacro:property name="proximal_contactz" value="0.034" />
-<xacro:property name="proximal_contact2x" value="0.00" />
-<xacro:property name="proximal_contact2y" value="0.01" />
-<xacro:property name="proximal_contact2z" value="0.051" />
-<xacro:property name="distal_contactx" value="0.00" />
-<xacro:property name="distal_contacty" value="0.01" />
-<xacro:property name="distal_contactz" value="0.02" />
+
 
 <xacro:macro name="flex_link" params="side finger_id link_id">
   <link name="${side}_finger[${finger_id}]/flexible_link_${link_id}">
@@ -36,6 +25,12 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
+    <collision>
+      <geometry>
+        <box size=".014 ${(flex_joint_length/flex_joint_steps)*0.99} .006"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+    </collision>
     <visual>
       <geometry>
         <box size=".014 ${(flex_joint_length/flex_joint_steps)*0.99} .006"/>
@@ -63,6 +58,12 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
+    <collision>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
         <box size="0 0 0"/>
@@ -95,6 +96,12 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
+    <collision>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
         <box size="0 0 0"/>
@@ -102,7 +109,6 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </visual>
   </link>
-  
   <joint name="${side}_finger[${finger_id}]/flexible_joint_twist_from_proximal_to_1" type="revolute">
     <parent link="${side}_finger[${finger_id}]/flexible_link_hidden_between_proximal_link_and_1"/>
     <child link="${side}_finger[${finger_id}]/flexible_link_1"/>
@@ -126,6 +132,12 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
+    <collision>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
         <box size="0 0 0"/>
@@ -253,30 +265,17 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/palm.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="0 0 0" xyz="0 -0.038 -0.023"/>-->
-<!--    </collision>-->
-      <collision>
-        <origin rpy="0 0 0" xyz="${base_contactx} ${base_contacty} ${base_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision>     
-       <collision>
-        <origin rpy="0 0 0" xyz="${base_contact2x} ${base_contact2y} ${base_contact2z}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision>       
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/palm.stl"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 -0.038 -0.023"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/palm.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/palm.stl"/>
       </geometry>
       <material name="darkgray">
-
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
       <origin rpy="0 0 0" xyz="0 -0.038 -0.023"/>
@@ -289,15 +288,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_base.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="${pi/2} 0 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_base.stl"/>
+      </geometry>
+      <origin rpy="${pi/2} 0 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_base.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_base.stl"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -312,27 +311,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-       <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
-      <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
+      </geometry>
+      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -347,21 +334,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-       <collision>
-        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
+      </geometry>
+      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -376,15 +357,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_base.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="${pi/2} 0 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_base.stl"/>
+      </geometry>
+      <origin rpy="${pi/2} 0 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_base.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_base.stl"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -399,27 +380,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-       <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
-      <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision>     
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
+      </geometry>
+      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -434,21 +403,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-       <collision>
-        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
+      </geometry>
+      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -463,27 +426,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-        <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision>
-      <collision>
-        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision>            
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
+      </geometry>
+      <origin rpy="${pi/2} -${pi/2} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_proximal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_proximal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -498,21 +449,15 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       </inertial>
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-       <collision>
-        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>
-        <geometry>
-          <sphere radius="0"/>
-        </geometry>
-      </collision> 
+    <collision>
+      <geometry>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
+      </geometry>
+      <origin rpy="0 ${pi} 0" xyz="0 0 0"/>
+    </collision>
     <visual>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/irobot_hand/meshes/finger_distal.wrl"/>
+        <mesh filename="package://irobot_hand/meshes/finger_distal.stl"/>
       </geometry>
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
@@ -562,227 +507,6 @@
     <axis xyz="-1 0 0"/>
     <limit effort="1000.0" lower="0.0" upper="${pi/2}" velocity="0.5"/>
   </joint>
-  
-  
- 
-<!-- ########################################### -->
-<!--  DUMMY LINKS WITH VISUAL CONTACT SPHERES -->
-<!-- ########################################### -->
-
-<!--<joint name="${side}_base_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_base_link"/>-->
-<!--    <child link="${side}_base_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_base_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${base_contactx} ${base_contacty} ${base_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-<!--  <joint name="${side}_base_link_dummy2_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_base_link"/>-->
-<!--    <child link="${side}_base_link_dummy2"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_base_link_dummy2">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${base_contact2x} ${base_contact2y} ${base_contact2z}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>  -->
-<!--  -->
-<!--  -->
-<!--  -->
-<!--  <joint name="${side}_finger[0]/proximal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[0]/proximal_link"/>-->
-<!--    <child link="${side}_finger[0]/proximal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[0]/proximal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-<!--  -->
-<!--   <joint name="${side}_finger[0]/proximal_link_dummy2_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[0]/proximal_link"/>-->
-<!--    <child link="${side}_finger[0]/proximal_link_dummy2"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[0]/proximal_link_dummy2">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-
-<!--  <joint name="${side}_finger[0]/distal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[0]/distal_link"/>-->
-<!--    <child link="${side}_finger[0]/distal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[0]/distal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-
-
-<!--  -->
-<!--  <joint name="${side}_finger[1]/proximal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[1]/proximal_link"/>-->
-<!--    <child link="${side}_finger[1]/proximal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[1]/proximal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-<!--  -->
-<!--    <joint name="${side}_finger[1]/proximal_link_dummy2_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[1]/proximal_link"/>-->
-<!--    <child link="${side}_finger[1]/proximal_link_dummy2"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[1]/proximal_link_dummy2">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link> -->
-
-<!--  <joint name="${side}_finger[1]/distal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[1]/distal_link"/>-->
-<!--    <child link="${side}_finger[1]/distal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[1]/distal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-
-<!--  -->
-<!--  <joint name="${side}_finger[2]/proximal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[2]/proximal_link"/>-->
-<!--    <child link="${side}_finger[2]/proximal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[2]/proximal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contactx} ${proximal_contacty} ${proximal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
-<!--  -->
-<!--  <joint name="${side}_finger[2]/proximal_link_dummy2_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[2]/proximal_link"/>-->
-<!--    <child link="${side}_finger[2]/proximal_link_dummy2"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[2]/proximal_link_dummy2">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${proximal_contact2x} ${proximal_contact2y} ${proximal_contact2z}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>  -->
-
-<!--  <joint name="${side}_finger[2]/distal_link_dummy_joint" type="fixed">-->
-<!--    <origin xyz="0 0 0"/>-->
-<!--    <parent link="${side}_finger[2]/distal_link"/>-->
-<!--    <child link="${side}_finger[2]/distal_link_dummy"/>-->
-<!--  </joint>-->
-<!--  <link name="${side}_finger[2]/distal_link_dummy">-->
-<!--      <inertial>-->
-<!--        <mass value="0.1"/>-->
-<!--        <origin xyz="0 0 0"/>-->
-<!--        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>-->
-<!--      </inertial>-->
-<!--      <visual>-->
-<!--        <origin rpy="0 0 0" xyz="${distal_contactx} ${distal_contacty} ${distal_contactz}"/>-->
-<!--        <geometry>-->
-<!--          <sphere radius="0.005"/>-->
-<!--        </geometry>-->
-<!--      </visual> -->
-<!--  </link>-->
- <!-- ########################################### --> 
-
 </xacro:macro>
 
 </robot>

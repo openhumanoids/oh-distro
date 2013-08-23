@@ -5,9 +5,9 @@ set(POD_NAME mit_robot_hands)
 include(cmake/pods.cmake)
 
 #tell cmake to build these subdirectories
-#add_subdirectory(xacro)
+add_subdirectory(xacro)
 add_subdirectory(drake_urdfs/xacro)
-#add_subdirectory(drake_urdfs/debug/xacro)
+add_subdirectory(drake_urdfs/debug/xacro)
 #add_subdirectory(floatingbase_urdfs/xacro)
 message(STATUS "Regenerating xacro files")
   

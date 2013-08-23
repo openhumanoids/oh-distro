@@ -29,7 +29,8 @@
         </geometry>
     </collision> -->
   </link>
-  <xacro:sandia_hand side="right" parent="base" reflect="1">
+ 
+  <xacro:sandia_hand side="right" parent="base" reflect="1" joint_type="revolute" thumb_angle="0">
     <origin xyz="0 0 0.0" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>

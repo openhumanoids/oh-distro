@@ -7,5 +7,11 @@ execute_process(COMMAND rosrun xacro xacro.py sandia_hand_left.urdf.xacro
     
 execute_process(COMMAND rosrun xacro xacro.py sandia_hand_right.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../sandia_hand_right.urdf)
+    
+execute_process(COMMAND rosrun xacro xacro.py irobot_hand_left.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../irobot_hand_left.urdf)
+    
+execute_process(COMMAND rosrun xacro xacro.py irobot_hand_right.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../irobot_hand_right.urdf)
    
-message(STATUS "Generated \n sandia_hand_left.urdf\n and \n sandia_hand_right.urdf")
+message(STATUS "Generated \n sandia_hand_left.urdf\n and \n sandia_hand_right.urdf and \n irobot_hand_left.urdf\n and \n irobot_hand_right.urdf\n ")
