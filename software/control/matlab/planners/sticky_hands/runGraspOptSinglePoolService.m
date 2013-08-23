@@ -7,18 +7,25 @@ end
 
 drc_path= getenv('DRC_PATH');% set this in startup.m
 %filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake.sdf'];
-r_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_right.urdf');
-l_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_left.urdf');
+rs_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_right.urdf');
+ls_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_left.urdf');
+ri_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake_right.urdf');
+li_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake_left.urdf');
 
 options=struct();
 options.ground =true;
 options.floating = true;
-m_l = RigidBodyManipulatorWImplicitSurfaces(l_filename,options);
-m_r = RigidBodyManipulatorWImplicitSurfaces(r_filename,options);
+is_sandia = true; %default sandia 
+m_ls = RigidBodyManipulatorWImplicitSurfaces(ls_filename,options);
+m_rs = RigidBodyManipulatorWImplicitSurfaces(rs_filename,options);
+m_li = RigidBodyManipulatorWImplicitSurfaces(li_filename,options);
+m_ri = RigidBodyManipulatorWImplicitSurfaces(ri_filename,options);
 
 dt = 0.001;
-r_l = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_l,dt);
-r_r = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_r,dt);
+r_ls = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_ls,dt);
+r_rs = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_rs,dt);
+r_li = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_li,dt);
+r_ri = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_ri,dt);
 
 lcmcoder = JLCMCoder(drc.control.GraspSeedOptCoder('atlas'));
 nx=22; 
@@ -64,18 +71,18 @@ while(1)
         end
         
         if(msg.grasp_type ==msg.SANDIA_LEFT)
-            
-            r_l = setManipulandParams(r_l,manipuland_params);
+            is_sandia=true;
+            r_ls = setManipulandParams(r_ls,manipuland_params);
             hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
-            size_x = size(r_l.getStateFrame.coordinates,1);
+            size_x = size(r_ls.getStateFrame.coordinates,1);
             size_q = size_x/2;
-            ljoint_names = (char(r_l.getStateFrame.coordinates{7:size_q}));
+            ljoint_names = (char(r_ls.getStateFrame.coordinates{7:size_q}));
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
-            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,0,ljoint_names,[' '],'CANDIDATE_GRASP');
-            x0 = Point(r_l.getStateFrame);
-            x0 =double(x0);% resolveConstraints(r_l,double(x0)); % resolve constraints is slow
+            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,msg.SANDIA_LEFT,ljoint_names,[' '],'CANDIDATE_GRASP');
+            x0 = Point(r_ls.getStateFrame);
+            x0 =double(x0);% resolveConstraints(r_ls,double(x0)); % resolve constraints is slow
    
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1);
@@ -87,22 +94,23 @@ while(1)
             
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
             
-            [xstar] = iterativeGraspSearch(r_l,double(x0));
-            %[xstar,zstar] = iterativeGraspSearch2(r_l,double(xstar));
+            [xstar] = iterativeGraspSearch(r_ls,double(x0));
+            %[xstar,zstar] = iterativeGraspSearch2(r_ls,double(xstar));
             
         elseif (msg.grasp_type ==msg.SANDIA_RIGHT)
-            r_r = setManipulandParams(r_r,manipuland_params);
+            is_sandia=true;
+            r_rs = setManipulandParams(r_rs,manipuland_params);
             hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
             hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
-            size_x = size(r_r.getStateFrame.coordinates,1);
+            size_x = size(r_rs.getStateFrame.coordinates,1);
             size_q = size_x/2;
-            rjoint_names = (char(r_r.getStateFrame.coordinates{7:size_q}));
+            rjoint_names = (char(r_rs.getStateFrame.coordinates{7:size_q}));
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
-            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,1,[' '],rjoint_names,'CANDIDATE_GRASP');
+            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,msg.SANDIA_RIGHT,[' '],rjoint_names,'CANDIDATE_GRASP');
             
-            x0 = Point(r_r.getStateFrame);
-            x0 =double(x0);%resolveConstraints(r_r,double(x0));
+            x0 = Point(r_rs.getStateFrame);
+            x0 =double(x0);%resolveConstraints(r_rs,double(x0));
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1);
             q2 = hand_rot(2);
@@ -113,9 +121,74 @@ while(1)
             %rpy(1:3) = quat2angle([qw q1 q2 q3],'XYZ')
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
-            [xstar] = iterativeGraspSearch(r_r,double(x0));
-            %[xstar,zstar] = iterativeGraspSearch2(r_r,double(xstar));
+            [xstar] = iterativeGraspSearch(r_rs,double(x0));
+            %[xstar,zstar] = iterativeGraspSearch2(r_rs,double(xstar));
+            
+        elseif(msg.grasp_type ==msg.IROBOT_LEFT)
+            is_sandia=false;            
+            r_li = setManipulandParams(r_li,manipuland_params);
+            hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
+            hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
+            size_x = size(r_li.getStateFrame.coordinates,1);
+            size_q = size_x/2;
+            %ljoint_names = (char(r_li.getStateFrame.coordinates{7:size_q}));
+            temp_names={(r_li.getStateFrame.coordinates{7:size_q})};
+            ljoint_names=javaArray('java.lang.String', length(temp_names));
+            for j=1:length(temp_names)
+                ljoint_names(j) = java.lang.String(temp_names{j});
+            end
+            
+            % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
+            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,msg.IROBOT_LEFT,ljoint_names,[' '],'CANDIDATE_GRASP');
+            x0 = Point(r_li.getStateFrame);
+            x0 =double(x0);% resolveConstraints(r_li,double(x0)); % resolve constraints is slow
+   
+            x0(1:3) = hand_trans(1:3);
+            q1=  hand_rot(1);
+            q2 = hand_rot(2);
+            q3 = hand_rot(3);
+            qw = hand_rot(4);
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            
+            candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
+            
+            [xstar] = iterativeGraspSearch(r_li,double(x0));
+            %[xstar,zstar] = iterativeGraspSearch2(r_li,double(xstar));
+            
+        elseif (msg.grasp_type ==msg.IROBOT_RIGHT)
+            is_sandia=false;   
+            r_ri = setManipulandParams(r_ri,manipuland_params);
+            hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
+            hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
+            size_x = size(r_ri.getStateFrame.coordinates,1);
+            size_q = size_x/2;
+            %rjoint_names = (char(r_ri.getStateFrame.coordinates{7:size_q}));
+            temp_names={(r_ri.getStateFrame.coordinates{7:size_q})};
+            rjoint_names=javaArray('java.lang.String', length(temp_names));
+            for j=1:length(temp_names)
+                rjoint_names(j) = java.lang.String(temp_names{j});
+            end
+            
+            % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
+            candidate_grasp_publisher = drc.control.CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,msg.IROBOT_RIGHT,[' '],rjoint_names,'CANDIDATE_GRASP');
+            
+            x0 = Point(r_ri.getStateFrame);
+            x0 =double(x0);%resolveConstraints(r_ri,double(x0));
+            x0(1:3) = hand_trans(1:3);
+            q1=  hand_rot(1);
+            q2 = hand_rot(2);
+            q3 = hand_rot(3);
+            qw = hand_rot(4);
+            %[qw q1 q2 q3]
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %rpy(1:3) = quat2angle([qw q1 q2 q3],'XYZ')
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
+            [xstar] = iterativeGraspSearch(r_ri,double(x0));
+            %[xstar,zstar] = iterativeGraspSearch2(r_ri,double(xstar)); 
         end
+        
         if(~reset_optimization)
             grasp_opt_status_publisher.publish(ts,matlabpool_id,true);
         end
@@ -123,21 +196,41 @@ while(1)
     
     while(reset_optimization)
         if(msg.grasp_type ==msg.SANDIA_LEFT)
+            is_sandia=true;   
             hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
             x0(4:6)=quat2rpy([qw q1 q2 q3]);
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
-            [xstar] = iterativeGraspSearch(r_l,double(x0));
+            [xstar] = iterativeGraspSearch(r_ls,double(x0));
         elseif (msg.grasp_type ==msg.SANDIA_RIGHT)
+            is_sandia=true;
             hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
             hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
             x0(4:6)=quat2rpy([qw q1 q2 q3]);
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
-            [xstar] = iterativeGraspSearch(r_r,double(x0));
+            [xstar] = iterativeGraspSearch(r_rs,double(x0));
+        elseif(msg.grasp_type ==msg.IROBOT_LEFT)
+            is_sandia=false;
+            hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
+            hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
+            x0(1:3) = hand_trans(1:3);
+            q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            [xstar] = iterativeGraspSearch(r_li,double(x0));
+        elseif (msg.grasp_type ==msg.IROBOT_RIGHT)
+            is_sandia=false;
+            hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
+            hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
+            x0(1:3) = hand_trans(1:3);
+            q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            [xstar] = iterativeGraspSearch(r_ri,double(x0));  
         end
         if(~reset_optimization)
             grasp_opt_status_publisher.publish(ts,matlabpool_id,true);
@@ -175,6 +268,7 @@ end %end while
         problem.solver = 'fmincon';
         
         acc = 1e-04; %sub-mm accuracy
+        
         %problem.options=optimset('DerivativeCheck','on','GradConstr','on','Algorithm','interior-point','Display','iter','OutputFcn',@drawme,'TolX',1e-14,,'TolFun',acc,'TolCon',acc,'MaxFunEvals',15000);
         % problem.options=optimset('GradConstr','on','Algorithm','interior-point','Display','iter','OutputFcn',@drawme,'TolX',1e-14,'TolFun',acc,'TolCon',acc,'MaxFunEvals',15000);
         
@@ -269,6 +363,10 @@ end %end while
                 angles = q(7:7+size(ljoint_names,1)-1);
             elseif(msg.grasp_type ==msg.SANDIA_RIGHT)
                 angles = q(7:7+size(rjoint_names,1)-1);
+            elseif(msg.grasp_type ==msg.IROBOT_LEFT)
+                angles = q(7:7+size(ljoint_names,1)-1);
+            elseif(msg.grasp_type ==msg.IROBOT_RIGHT)
+                angles = q(7:7+size(rjoint_names,1)-1);
             end
             
             candidate_grasp_publisher.publish(ts,trans,rot,angles);
@@ -308,9 +406,16 @@ end %end while
             
             %ceq = W*z; % 6 x1
             %GCeq = dWz';  % must be nq x 6
-            
+            if(is_sandia)
             ceq = 0;
             GCeq = zeros(nq,1);
+            else
+             % irobot is underactuated (spread joints 6+1 and 6+4 must be equal)
+             A = zeros(1,nq);
+             A(1,1+6)=1;A(1,4+6)=-1;
+             ceq = A*q;
+             GCeq = A';
+            end
         end
         function [f,df] = myobj(q)
             q=q(1:nq);
@@ -319,21 +424,31 @@ end %end while
             [phiC,JC] = obj.contactConstraints(q);
             
             mask=[1:size(phiC,1)];
-            if(usefingermask)
+            if((usefingermask)&&(is_sandia))
                 mask =[8 10 12 13];
                 mask =[8:1:14];
+            elseif((usefingermask)&&(~is_sandia))
+                %TODO:              
             end
             phiC = phiC(mask);
             JC = JC(mask,:);
+            
             f = phiC'*phiC;% + 0.1*q([7,13])'*q([7,13]); % second term penalizes finger spread
             df = [2*phiC'*JC]';
             
-            f = phiC'*phiC + 0.1*q([7,13])'*q([7,13]); % second term penalizes finger spread
-            addendum = 2*0.1*q';
-            filter = zeros(1,nq);
-            filter([7,13]) = 1;
-            addendum=filter.*addendum;
-            df = [2*phiC'*JC+addendum]';
+            
+            if(is_sandia)
+              f = phiC'*phiC + 0.1*q([7,13])'*q([7,13]); % second term penalizes finger spread
+              addendum = 2*0.1*q';
+              filter = zeros(1,nq);
+              filter([7,13]) = 1;
+              addendum=filter.*addendum;
+              df = [2*phiC'*JC+addendum]';
+            else
+              f = phiC'*phiC;
+              df = [2*phiC'*JC]';
+            end
+
         end
         
 
