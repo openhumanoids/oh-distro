@@ -220,8 +220,8 @@ struct Worker {
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
-    msg.resolution = 0.02;
-    msg.width = msg.height = 200;
+    msg.resolution = 0.01;
+    msg.width = msg.height = 400;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     for (int i = 0; i < 6; ++i) {
       msg.clip_planes[i][3] = 2;
