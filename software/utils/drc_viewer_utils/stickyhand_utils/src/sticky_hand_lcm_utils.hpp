@@ -392,10 +392,14 @@ inline static void get_pose_constraint_to_sticky_hand(StickyHandStruc &handstruc
 {
 
       string ee_name;
-      if(handstruc.hand_type==0)
+      if(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
           ee_name ="left_palm";    
-      else if(handstruc.hand_type==1)   
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
           ee_name ="right_palm";    
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)   
+          ee_name ="left_base_link";
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+          ee_name ="right_base_link";        
       else
           cout << "unknown hand_type in publish_pose_goal_to_sticky_hand\n";   
 

@@ -236,9 +236,11 @@ struct RendererAffordances {
   KDL::Frame otdf_T_world_body_hold; //store position in the world
   std::map<std::string, double> otdf_current_jointpos_hold;
   
-  KDL::Frame T_graspgeometry_lhandinitpos;
-  KDL::Frame T_graspgeometry_rhandinitpos;
-
+  KDL::Frame T_graspgeometry_lhandinitpos_sandia;
+  KDL::Frame T_graspgeometry_rhandinitpos_sandia;
+  KDL::Frame T_graspgeometry_lhandinitpos_irobot;
+  KDL::Frame T_graspgeometry_rhandinitpos_irobot;
+  
   int otdf_id;
   // otdf models
   int num_otdfs;
@@ -355,9 +357,11 @@ struct RendererAffordances {
     size_t found = object_geometry_name.find(object_name_token);  
     string geometry_name =object_geometry_name.substr(found+object_name_token.size());
     
-    self->T_graspgeometry_lhandinitpos = KDL::Frame::Identity();
-    self->T_graspgeometry_rhandinitpos = KDL::Frame::Identity();
-    
+    self->T_graspgeometry_lhandinitpos_sandia = KDL::Frame::Identity();
+    self->T_graspgeometry_rhandinitpos_sandia = KDL::Frame::Identity();
+    self->T_graspgeometry_lhandinitpos_irobot = KDL::Frame::Identity();
+    self->T_graspgeometry_rhandinitpos_irobot = KDL::Frame::Identity();
+       
   //Get initial position of hand relative to object geometry.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(self->object_selection);
@@ -367,8 +371,10 @@ struct RendererAffordances {
     //#include <vizualization_utils/stickyhand_utils/sticky_hand_utils.hpp>
     bool success = get_stickyhand_init_positions(self->object_selection, geometry_name ,obj_it->second,
                                   self->ray_start,self->ray_hit,self->ray_hit_drag,self->dragging,
-                                  self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
-
+                                  self->T_graspgeometry_lhandinitpos_sandia,self->T_graspgeometry_rhandinitpos_sandia,true);
+    success = get_stickyhand_init_positions(self->object_selection, geometry_name ,obj_it->second,
+                                  self->ray_start,self->ray_hit,self->ray_hit_drag,self->dragging,
+                                  self->T_graspgeometry_lhandinitpos_irobot,self->T_graspgeometry_rhandinitpos_irobot,false);
   }// end void set_hand_init_position(void *user)
   //------------------------------------------------------------------------------- 
   

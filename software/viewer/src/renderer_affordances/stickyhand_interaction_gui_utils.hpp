@@ -44,6 +44,12 @@ namespace renderer_affordances_gui_utils
         else if(grasp_type== msg.SANDIA_RIGHT){
           publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
         }
+        else if(grasp_type== msg.IROBOT_LEFT){
+          publish_desired_hand_motion( hand_it->second,"left_base_link","DESIRED_LEFT_PALM_MOTION",self);
+        }
+        else if(grasp_type== msg.IROBOT_RIGHT){
+          publish_desired_hand_motion( hand_it->second,"right_base_link","DESIRED_RIGHT_PALM_MOTION",self);
+        }                
     }
     
     else if ((!strcmp(name, PARAM_GRASP_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
@@ -73,7 +79,10 @@ namespace renderer_affordances_gui_utils
           publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
           publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
-          
+        else if(grasp_type== msg.IROBOT_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_base_link","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+        else if(grasp_type== msg.IROBOT_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_base_link","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);            
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
      
@@ -99,6 +108,10 @@ namespace renderer_affordances_gui_utils
           publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
         else if(grasp_type== msg.SANDIA_RIGHT)
           publish_partial_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+        else if(grasp_type== msg.IROBOT_LEFT)
+          publish_partial_grasp_state_for_execution(hand_it->second,"left_base_link","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+        else if(grasp_type== msg.IROBOT_RIGHT)
+          publish_partial_grasp_state_for_execution(hand_it->second,"right_base_link","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
           
         //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 
@@ -143,7 +156,12 @@ namespace renderer_affordances_gui_utils
         }
         else if(grasp_type== msg.SANDIA_RIGHT) {
           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
-
+        }
+        else if(grasp_type== msg.IROBOT_LEFT) {
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
+        }
+        else if(grasp_type== msg.IROBOT_RIGHT) {
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
         }
       }
  
@@ -191,10 +209,15 @@ namespace renderer_affordances_gui_utils
           
           KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase; 
           std::string ee_name;
-          if(hand_it->second.hand_type==0)
+          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
              ee_name = "left_palm";
-          else
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)
              ee_name = "right_palm";
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+             ee_name = "left_base_link";
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)
+             ee_name = "right_base_link";
+             
           T_geometry_stickyhandbase = hand_it->second._gl_hand->_T_world_body;
           hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm);         
           T_palm_stickyhandbase = T_geometry_palm.Inverse()*T_geometry_stickyhandbase;

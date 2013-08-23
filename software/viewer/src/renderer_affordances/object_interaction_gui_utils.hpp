@@ -613,19 +613,26 @@ namespace renderer_affordances_gui_utils
       
       if(!strcmp(name, PARAM_SEED_LH))
       {
-        if(is_sandia_left)
+        if(is_sandia_left){
           grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-        else
-          grasp_type = msg.IROBOT_LEFT; 
-        T_geom_lhandpose = self->T_graspgeometry_lhandinitpos;
+          T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_sandia;
+        }
+        else {
+          grasp_type = msg.IROBOT_LEFT;
+          T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_irobot;
+        }
+        
       }
       else if(!strcmp(name, PARAM_SEED_RH))
       {
-        if(is_sandia_right)
+        if(is_sandia_right){
          grasp_type = msg.SANDIA_RIGHT;//or SANDIA_LEFT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
-        else
-        grasp_type = msg.IROBOT_RIGHT; 
-        T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
+           T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_sandia;
+        }
+        else{
+          grasp_type = msg.IROBOT_RIGHT; 
+          T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_irobot;
+        }
       }
       
       int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);  

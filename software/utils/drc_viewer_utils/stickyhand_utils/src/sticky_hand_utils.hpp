@@ -102,7 +102,7 @@ namespace visualization_utils
   
 
  //-------------------------------------------------------------------------------
-  inline static void get_user_specified_hand_approach(Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand, KDL::Frame &T_objectgeometry_rhand)
+  inline static void get_user_specified_hand_approach(Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand, KDL::Frame &T_objectgeometry_rhand,bool is_sandia)
   {
   
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand. 
@@ -123,7 +123,7 @@ namespace visualization_utils
 
    Eigen::Vector3d cross_prod;
    double dot_prod;
-  
+
   // no need to normalize vectors
     nray = -(to - from);
     if(nray[0]>=0){
@@ -167,6 +167,8 @@ namespace visualization_utils
    KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
    T_rotatedhand_lhand.p[0]=0;
    T_rotatedhand_lhand.p[1]=0;
+   T_rotatedhand_lhand.p[2]=0;
+   if(is_sandia)
    T_rotatedhand_lhand.p[2]=0.125;
    T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
    
@@ -190,7 +192,7 @@ namespace visualization_utils
   } // end get_user_specified_hand_approach
   
    //-------------------------------------------------------------------------------
-  inline static void get_hand_approach(Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand,KDL::Frame &T_objectgeometry_rhand)
+  inline static void get_hand_approach(Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand,KDL::Frame &T_objectgeometry_rhand,bool is_sandia)
   {
 
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand.  
@@ -303,7 +305,10 @@ namespace visualization_utils
      KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
      T_rotatedhand_lhand.p[0]=0;
      T_rotatedhand_lhand.p[1]=0;
-     T_rotatedhand_lhand.p[2]=0.125;
+     T_rotatedhand_lhand.p[2]=0;
+     if(is_sandia)
+      T_rotatedhand_lhand.p[2]=0.125;
+      
      T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
      if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){
       T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-3*(M_PI/8),0,0);
@@ -323,7 +328,7 @@ namespace visualization_utils
   //---------------------------------------------------------------------------------------------------------------
   inline static bool get_stickyhand_init_positions(string& object_name, string& geometry_name,OtdfInstanceStruc &obj,
                          Eigen::Vector3f &ray_start,Eigen::Vector3f &ray_hit,Eigen::Vector3f &ray_hit_drag, bool dragging,
-                         KDL::Frame &T_graspgeometry_lhandinitpos, KDL::Frame &T_graspgeometry_rhandinitpos)
+                         KDL::Frame &T_graspgeometry_lhandinitpos, KDL::Frame &T_graspgeometry_rhandinitpos, bool is_sandia)
   {
   
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
@@ -355,10 +360,10 @@ namespace visualization_utils
            temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
            rotate_eigen_vector_given_kdl_frame(diff,temp_frame,fingerdir_geomframe);//something wrong here.
            fingerdir_geomframe.normalize();
-           get_user_specified_hand_approach(fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,T_graspgeometry_lhandinitpos,T_graspgeometry_rhandinitpos);
+           get_user_specified_hand_approach(fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,T_graspgeometry_lhandinitpos,T_graspgeometry_rhandinitpos,is_sandia);
         }
         else{
-           get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,T_graspgeometry_lhandinitpos,T_graspgeometry_rhandinitpos);
+           get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,T_graspgeometry_lhandinitpos,T_graspgeometry_rhandinitpos,is_sandia);
         }//end else
               
         return true;

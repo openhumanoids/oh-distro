@@ -570,9 +570,11 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint
   _T_world_body  = T_world_body;
 
   std::map<std::string, double> jointpos_in;
-  for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
+  for (uint i=0; i< (uint) msg.num_joints; i++){ //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i]));
-    
+    //cout << "joint name:" << msg.joint_name[i] << endl;
+   }
+
   _current_jointpos.clear();
   _current_jointpos = jointpos_in;   
 

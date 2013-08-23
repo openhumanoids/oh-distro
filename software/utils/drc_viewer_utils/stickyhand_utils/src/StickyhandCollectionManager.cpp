@@ -22,8 +22,10 @@ StickyhandCollectionManager::StickyhandCollectionManager(boost::shared_ptr<lcm::
   _hands.clear();
   drc::desired_grasp_state_t msg;
   _handtype_id_map.clear();
-  _handtype_id_map[msg.SANDIA_LEFT]=0; // maps handtype to id of glhand list
+  _handtype_id_map[msg.SANDIA_LEFT]= 0; // maps handtype to id of glhand list
   _handtype_id_map[msg.SANDIA_RIGHT]=1;
+  _handtype_id_map[msg.IROBOT_LEFT]= 2; // maps handtype to id of glhand list
+  _handtype_id_map[msg.IROBOT_RIGHT]=3;
    // load and pre-parse base_gl_hands for left and right hand
   boost::shared_ptr<GlKinematicBody> new_hand;
   _urdf_found=true;
@@ -74,7 +76,7 @@ bool StickyhandCollectionManager::remove_selected(boost::shared_ptr<visualizatio
      string id = hand_it->first;
      if(selectionManager->is_selected(id))
      { 
-         selectionManager->remove(id); 
+         selectionManager->remove(id);
         _hands.erase(hand_it++);
      }
      else
@@ -306,6 +308,7 @@ void StickyhandCollectionManager::add_or_update_sticky_hand(int uid, string& uni
       sticky_hand_struc._gl_hand->set_state(T_world_hand, posture_msg);
       sticky_hand_struc.hand_type = _grasp_type;
       sticky_hand_struc.T_geometry_hand = T_world_hand;
+       
 
       /*double ro,pi,ya;  
       T_world_hand.M.GetRPY(ro,pi,ya);
@@ -321,7 +324,9 @@ void StickyhandCollectionManager::add_or_update_sticky_hand(int uid, string& uni
       _hands.insert(make_pair(unique_hand_name, sticky_hand_struc));
     }
     else {
+      cout <<"update sticky hand \n";
       it->second._gl_hand->set_state(T_world_hand, posture_msg);
+      cout <<"end update sticky hand \n";
       it->second.T_geometry_hand = T_world_hand; 
       it->second.joint_position = posture_msg.joint_position;
       it->second.optimized_T_geometry_hand = T_world_hand;
@@ -343,9 +348,13 @@ bool StickyhandCollectionManager::load_hand_urdf(int grasp_type)
     filename ="sandia_hand_right";
     ext=".urdf";
   }
-  else if ((grasp_type  == msg.IROBOT_LEFT)||(grasp_type  == msg.IROBOT_RIGHT)){
-    filename ="irobot_hand";
-    ext=".sdf";
+  else if (grasp_type  == msg.IROBOT_LEFT){
+    filename ="irobot_hand_left";
+    ext=".urdf";
+  }
+  else if (grasp_type  == msg.IROBOT_RIGHT){
+    filename ="irobot_hand_right";
+    ext=".urdf";
   }
   found = std::find(_urdf_filenames.begin(), _urdf_filenames.end(), filename);
   if (found != _urdf_filenames.end()) {
@@ -380,10 +389,14 @@ void StickyhandCollectionManager::get_motion_constraints(string object_name, Otd
       if (host_name == (object_name))
       {
           string ee_name;
-          if(hand_it->second.hand_type==0)
+          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
               ee_name ="left_palm";    
-          else if(hand_it->second.hand_type==1)   
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
               ee_name ="right_palm";    
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+              ee_name ="left_base_link";    
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+              ee_name ="right_base_link";    
           else
               cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
 
@@ -486,10 +499,14 @@ void StickyhandCollectionManager::get_pose_constraints(string object_name, OtdfI
           if (host_name == (object_name))
               {
                   string ee_name;
-                  if(hand_it->second.hand_type==0)
+                  if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
                       ee_name ="left_palm";    
-                  else if(hand_it->second.hand_type==1)   
-                      ee_name ="right_palm";    
+                  else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
+                      ee_name ="right_palm";  
+                  else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+                      ee_name ="left_base_link";    
+                  else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+                      ee_name ="right_base_link";                          
                   else
                       cout << "unknown hand_type in StickyhandCollectionManager::get_pose_constraints\n";   
          
@@ -582,10 +599,14 @@ void StickyhandCollectionManager::get_time_ordered_pose_constraints(boost::share
           if ((selectionManager->is_selected(id))&&(obj_it!=affCollectionManager->_objects.end()))
           {
               string ee_name;
-              if(hand_it->second.hand_type==0)
+              if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
                   ee_name ="left_palm";    
-              else if(hand_it->second.hand_type==1)   
-                  ee_name ="right_palm";    
+              else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
+                  ee_name ="right_palm";  
+              else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+                  ee_name ="left_base_link";    
+              else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+                  ee_name ="right_base_link";     
               else
                   cout << "unknown hand_type in StickyhandCollectionManager::get_time_ordered_pose_constraints\n";   
       
@@ -674,10 +695,14 @@ void StickyhandCollectionManager::get_aff_indexed_ee_constraints(string& object_
       if (host_name == (object_name)) {
 
           string ee_name;
-          if(hand_it->second.hand_type==0)
+          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
               ee_name ="left_palm";    
-          else if(hand_it->second.hand_type==1)   
-              ee_name ="right_palm";    
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
+              ee_name ="right_palm";  
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+              ee_name ="left_base_link";    
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+              ee_name ="right_base_link";      
           else
               cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
           
