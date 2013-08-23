@@ -27,11 +27,11 @@ namespace authoring {
   signals:
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
     void state_gfe_update( state::State_GFE& stateGFE );
-    void robot_plan_update( std::vector< state::State_GFE >& robotPlan );
-    void robot_plan_insert( state::State_GFE& robotPlanSlice );
-    void aas_got_status_msg( bool server_ready_status, float last_time_solved, 
-        float total_time_to_solve, bool solving_highres, bool plan_is_good, 
-        bool plan_is_warn );
+    void robot_plan_update( const std::vector< state::State_GFE >& robotPlan );
+    void robot_plan_insert( const state::State_GFE& robotPlanSlice );
+    void aas_got_status_msg( long int plan_index, bool server_ready_status, 
+        float last_time_solved, float total_time_to_solve, bool solving_highres, 
+        bool plan_is_good, bool plan_is_warn );
 
   public slots:
     void publish_drc_action_sequence_t( const drc::action_sequence_t& msg );
@@ -49,7 +49,6 @@ namespace authoring {
   protected:
     lcm::LCM *  _lcm;
     QTimer *    _lcm_timer;
-
     Qt4_Widget_Authoring * _qt4_widget_authoring;
 
   private:

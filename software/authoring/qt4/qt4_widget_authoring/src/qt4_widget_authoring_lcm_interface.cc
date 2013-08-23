@@ -20,15 +20,14 @@ Qt4_Widget_Authoring_LCM_Interface( const string& xmlString,
             _qt4_widget_authoring, SLOT( update_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
             _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& ) ) );
-  connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
-            _qt4_widget_authoring, SLOT( update_robot_plan( std::vector< state::State_GFE >& ) ) );
-  connect( this, SIGNAL( robot_plan_insert( state::State_GFE& ) ),
-            _qt4_widget_authoring, SLOT( insert_robot_plan( state::State_GFE& ) ) );
-  connect( this, SIGNAL( robot_plan_update( std::vector< state::State_GFE >& ) ),
-            _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_robot_plan( std::vector< state::State_GFE >& ) ) );
+  connect( this, SIGNAL( robot_plan_update( const std::vector< state::State_GFE >& ) ),
+            _qt4_widget_authoring, SLOT( update_robot_plan( const std::vector< state::State_GFE >& ) ) );
+  connect( this, SIGNAL( robot_plan_insert( const state::State_GFE& ) ),
+            _qt4_widget_authoring, SLOT( insert_robot_plan( const state::State_GFE& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring, SLOT( update_state_gfe( state::State_GFE& ) ) );
   connect( this, SIGNAL( state_gfe_update( state::State_GFE& ) ), _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_gfe_ghost( state::State_GFE& ) ) ); 
-  connect( this, SIGNAL( aas_got_status_msg( bool, float, float, bool, bool, bool ) ), _qt4_widget_authoring, SLOT( aas_got_status_msg( bool, float, float, bool, bool, bool ) ) );
+  connect( this, SIGNAL( aas_got_status_msg( long int, bool, float, float, bool, bool, bool ) ), 
+    _qt4_widget_authoring, SLOT( aas_got_status_msg( long int, bool, float, float, bool, bool, bool ) ) );
   
   connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t( const drc::action_sequence_t& ) ) );
   connect( _qt4_widget_authoring, SIGNAL( robot_plan_w_keyframes_t_publish( const drc::robot_plan_w_keyframes_t& ) ), this, SLOT( publish_robot_plan_w_keyframes_t( const drc::robot_plan_w_keyframes_t& ) ) );
@@ -98,11 +97,17 @@ _handle_lcm_timer_timeout( void ){
   return;
 }
 
+int skip_counter_robot_state = 0;
 void
 Qt4_Widget_Authoring_LCM_Interface::
 _handle_est_robot_state_msg( const ReceiveBuffer * rbuf,
                               const string& channel,
                               const robot_state_t* msg ){
+  skip_counter_robot_state++;
+  if( skip_counter_robot_state % 20 != 0){
+    return;
+  }
+  skip_counter_robot_state = 0;
   if( msg != NULL ){
     State_GFE state_gfe;  
     state_gfe.from_lcm( msg );
@@ -110,16 +115,17 @@ _handle_est_robot_state_msg( const ReceiveBuffer * rbuf,
   }
   return;
 }
-int skip_counter = 0;
+int skip_counter_aff_collection = 0;
 void
 Qt4_Widget_Authoring_LCM_Interface::
 _handle_affordance_collection_msg( const ReceiveBuffer * rbuf,
                                     const string& channel,
                                     const affordance_collection_t* msg ){
-  if( skip_counter++ % 100 != 0){
+  skip_counter_aff_collection++;
+  if( skip_counter_aff_collection % 20 != 0){
     return;
   }
-  skip_counter = 0;
+  skip_counter_aff_collection = 0;
   if( msg != NULL ){
     vector< AffordanceState > affordance_collection;
     for( unsigned int i = 0; i < msg->naffs; i++ )
@@ -156,6 +162,7 @@ _handle_candidate_robot_plan_msg( const ReceiveBuffer * rbuf,
                                   const robot_plan_t* msg ){
   if( msg != NULL ){
     vector< State_GFE > robot_plan;
+    printf("Handling robot plan msg.\n");
     for( unsigned int i = 0; i < msg->num_states; i++ ){
       State_GFE state;
       state.from_lcm( msg->plan[ i ] );
@@ -172,7 +179,7 @@ _handle_action_authoring_server_status_msg( const lcm::ReceiveBuffer* rbuf,
                                             const std::string& channel, 
                                             const drc::action_authoring_server_status_t* msg ){
   if( msg != NULL ){
-    emit aas_got_status_msg( msg->server_status==msg->SERVER_READY, msg->last_ik_time_solved, 
+    emit aas_got_status_msg( msg->utime, msg->server_status==msg->SERVER_READY, msg->last_ik_time_solved, 
         msg->total_ik_time_to_solve, msg->solving_highres, msg->plan_is_good,
         msg->plan_is_warn );
   }

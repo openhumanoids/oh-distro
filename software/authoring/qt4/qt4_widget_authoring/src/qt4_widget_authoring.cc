@@ -57,7 +57,8 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _constraints_widget( new QWidget( this ) ),
                                             _constraints_layout_labels( new QWidget( this ) ),
                                             _constraints_scroll_area( new QScrollArea( this ) ),
-                                            _constraint_ctr( 0 )
+                                            _constraint_ctr( 0 ),
+                                            _current_plan_index( 0 )
                                             {
   _robot_model.initString( xmlString );
 
@@ -290,7 +291,8 @@ update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
 
 void
 Qt4_Widget_Authoring::
-update_robot_plan( vector< State_GFE >& robotPlan ){
+update_robot_plan( const vector< State_GFE >& robotPlan ){
+
   emit info_update( QString( "[<b>OK</b>] received plan" ) );
   int old_pos = _slider_plan_current_index->value();
   long long int old_tpos = 0.0;
@@ -315,12 +317,19 @@ update_robot_plan( vector< State_GFE >& robotPlan ){
   sprintf(tmp, "%u time points", (unsigned int)_robot_plan.size());
   _label_plan_step_count->setText(tmp);
 
+  // we CAN publish this, even if it's a dangerous idea
+  _push_button_publish_plan->setEnabled( true );
+  _push_button_publish_reverse_plan->setEnabled( true );
+
+  // update opengl side
+  _widget_opengl_authoring->update_opengl_object_robot_plan( robotPlan );
   return;
 }
 
 void
 Qt4_Widget_Authoring::
-insert_robot_plan( State_GFE& robotPlanSlice ){
+insert_robot_plan( const State_GFE& robotPlanSlice ){
+
   emit info_update( QString( "[<b>OK</b>] received plan slice" ) );
   // figure out where it fits into current plan
   bool inserted = false;
@@ -367,15 +376,19 @@ update_state_gfe( State_GFE& stateGFE ){
 
 void 
 Qt4_Widget_Authoring::
-aas_got_status_msg( bool server_ready_msg, float last_time_solved,  float total_time_to_solve,
+aas_got_status_msg( long int plan_index, bool server_ready_msg, float last_time_solved,  float total_time_to_solve,
       bool solving_highres, bool plan_is_good, bool plan_is_warn ){
   char tmp[100];
 
-  _push_button_publish->setEnabled(true);
   // if it's a "server is ready" message, that's everything
   if (server_ready_msg){
+    _push_button_publish->setEnabled(true);
     return;
   }
+
+  // if this is for a different plan submission, save some processing time and ignore
+  if (plan_index != _current_plan_index)
+    return;
 
   // otherwise, update more complex status.
   _progress_bar_planner->setMinimum( 0.0 );
@@ -447,6 +460,7 @@ publish_constraints( float ik_time_of_interest ){
   _constraint_sequence.to_msg( msg, _affordance_collection, ik_time_of_interest ); 
   Constraint_Sequence::print_msg( msg );
   msg.ik_time = ik_time_of_interest;
+  msg.utime = _current_plan_index+1;
   if (ik_time_of_interest != -1 && _robot_plan.size() > 0){
     _robot_plan[_slider_plan_current_index->value()].to_lcm(&msg.q0);
   }
@@ -467,7 +481,8 @@ void
 Qt4_Widget_Authoring::
 _push_button_grab_pressed( void ){
   emit info_update( QString( "[<b>OK</b>] grab pressed" ) );
-  emit info_update( QString( "[<b>OK</b>] waiting on ready message from server before publishing is enabled" ) );
+  if (_push_button_publish->isEnabled() == false)
+    emit info_update( QString( "[<b>OK</b>] waiting on ready message from server before publishing is enabled" ) );
   _push_button_import->setEnabled( true );
   _push_button_export->setEnabled( true );
   _affordance_collection = _affordance_collection_ghost;
@@ -523,6 +538,8 @@ Qt4_Widget_Authoring::
 _push_button_publish_pressed( void ){
   action_sequence_t msg; 
   _constraint_sequence.to_msg( msg, _affordance_collection ); 
+  msg.utime = _current_plan_index+1;
+  _current_plan_index++;
   Constraint_Sequence::print_msg( msg );
   emit drc_action_sequence_t_publish( msg );  
   _push_button_publish_plan->setEnabled( false );

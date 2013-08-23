@@ -180,8 +180,8 @@ while (1)
         data = newdata
         newdata = []
     else
-        cputime - starttime
-        if (~action_options.IK && (cputime - starttime > 0.4))
+        if (~action_options.IK && (cputime - starttime > 0.1))
+            starttime = cputime;
             % Send status update indicating that AAS is online
             status_msg.utime = 0;
             status_msg.server_status = status_msg.SERVER_READY;
@@ -193,6 +193,7 @@ while (1)
     if ~isempty(data)
         msg = drc.action_sequence_t(data);
         ik_time = msg.ik_time;
+        plan_index = msg.utime;
         action_sequence = ActionSequence();
         q_bk = q;
         % Get initial conditions from msg.q0
@@ -393,7 +394,7 @@ while (1)
                     com_key_time_samples(:,i) = getCOM(r,kinsol);
                     
                     %% Publish status
-                    status_msg.utime = 0;
+                    status_msg.utime = plan_index;
                     status_msg.server_status = status_msg.SERVER_PLANNING;
                     status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
                     status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
@@ -409,7 +410,7 @@ while (1)
                     [q_key_time_samples(:,1:i); 0*q_key_time_samples(:,1:i)]);
                 if(key_time_IK_failed)
                     %% Publish failure status
-                    status_msg.utime = 0;
+                    status_msg.utime = plan_index;
                     status_msg.server_status = status_msg.SERVER_PLANNING;
                     status_msg.last_ik_time_solved = action_sequence.key_time_samples(i);
                     status_msg.total_ik_time_to_solve = action_sequence.key_time_samples(end);
@@ -575,16 +576,19 @@ while (1)
                         end
                     end
                     
-                    %% Publish status
-                    status_msg.utime = 0;
-                    status_msg.server_status = status_msg.SERVER_PLANNING;
-                    status_msg.last_ik_time_solved = t_qs_breaks(i);
-                    status_msg.total_ik_time_to_solve = t_qs_breaks(end);
-                    status_msg.solving_highres = true;
-                    status_msg.plan_is_good = true;
-                    status_msg.plan_is_warn = highres_had_warnings;
-                    lc.publish(status_channel, status_msg);
-                    
+                    %% Publish status ever 8 steps as well as at critical
+                    %% steps (start, end)
+                    if (i==1 || i==numel(t_qs_breaks) || ...
+                        mod(i, 8) == 0)
+                        status_msg.utime = plan_index;
+                        status_msg.server_status = status_msg.SERVER_PLANNING;
+                        status_msg.last_ik_time_solved = t_qs_breaks(i);
+                        status_msg.total_ik_time_to_solve = t_qs_breaks(end);
+                        status_msg.solving_highres = true;
+                        status_msg.plan_is_good = true;
+                        status_msg.plan_is_warn = highres_had_warnings;
+                        lc.publish(status_channel, status_msg);
+                    end
                 end
                 if ~isempty(newdata)
                     continue
@@ -776,7 +780,7 @@ while (1)
                     x);
 
                 % Send out status msg
-                status_msg.utime = 0;
+                status_msg.utime = plan_index;
                 status_msg.last_ik_time_solved = ik_time;
                 status_msg.total_ik_time_to_solve = ik_time;
                 if (info>10)

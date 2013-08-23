@@ -57,7 +57,7 @@ namespace authoring {
     void update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_opengl_object_constraint_sequence( const Constraint_Sequence& constraintSequence );
-    void update_opengl_object_robot_plan( std::vector< state::State_GFE >& robotPlan );
+    void update_opengl_object_robot_plan( const std::vector< state::State_GFE >& robotPlan );
     void update_opengl_object_gfe( state::State_GFE& stateGFE );
     void update_opengl_object_gfe_ghost( state::State_GFE& stateGFE );
     void update_opengl_object_gfe_selected_links( const std::vector<std::string>& linkNames );

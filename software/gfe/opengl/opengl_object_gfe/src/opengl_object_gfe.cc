@@ -122,22 +122,7 @@ set_transparency( double transparency ){
 
 void
 OpenGL_Object_GFE::
-set_selected_link(const std::string& link_name, Vector3f color){
-  for ( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
-    if ( _opengl_objects[i] != NULL ){
-      if ( link_name.compare(_opengl_objects[i]->id()) == 0 && _opengl_objects[i]->color() != color ){
-        last_selected_link_color = _opengl_objects[i]->color();
-        _opengl_objects[i]->set_color(color);
-      } else {
-        _opengl_objects[i]->set_color(last_selected_link_color);
-      }
-    }
-  }
-}
-
-void
-OpenGL_Object_GFE::
-set_selected_links(const std::vector<std::string>& link_names, Vector3f select_color, Vector3f not_select_color){
+set_selected_links(const std::vector<std::string>& link_names, const Vector3f& select_color, const Vector3f& not_select_color){
   for ( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
     if ( _opengl_objects[i] != NULL ){
       bool found = false;

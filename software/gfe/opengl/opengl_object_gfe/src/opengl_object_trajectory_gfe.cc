@@ -80,10 +80,11 @@ set( const vector< State_GFE >& trajectory ){
 void
 OpenGL_Object_Trajectory_GFE::
 set_selected_links(const vector<string>& link_names, 
-  Vector3f select_color, Vector3f not_select_color){
+  const Vector3f& select_color, const Vector3f& not_select_color){
   _selected_link_names = link_names;
   _selected_color = select_color;
   _not_selected_color = not_select_color;
+  _opengl_object_gfe.set_selected_links(_selected_link_names, _selected_color, _not_selected_color);
 }
 
 void
@@ -94,7 +95,6 @@ draw( void ){
     if( _visible_current_index ){
       if( _current_index < _trajectory.size() ){
         _opengl_object_gfe.set( _trajectory[ _current_index ] );
-        _opengl_object_gfe.set_selected_links(_selected_link_names, _selected_color, _not_selected_color);
         _opengl_object_gfe.draw();
       }
     }

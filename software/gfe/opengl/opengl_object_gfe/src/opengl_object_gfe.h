@@ -23,8 +23,7 @@ namespace opengl {
     void set( const drc::robot_state_t& robotState );
     void set( state::State_GFE& stateGFE );
     virtual void set_transparency( double transparency ); 
-    void set_selected_link(const std::string& link_name, Eigen::Vector3f color);
-    void set_selected_links(const std::vector<std::string>& link_names, Eigen::Vector3f select_color, Eigen::Vector3f not_select_color);
+    void set_selected_links(const std::vector<std::string>& link_names, const Eigen::Vector3f& select_color, const Eigen::Vector3f& not_select_color);
  
     virtual void draw( void );
 
@@ -36,8 +35,6 @@ namespace opengl {
     kinematics::Kinematics_Model_GFE _kinematics_model;
     std::vector< OpenGL_Object* > _opengl_objects;
     OpenGL_Object_Coordinate_Axis _opengl_object_coordinate_axis;
-    Eigen::Vector3f last_selected_link_color;
-    std::string last_selected_link_name;
 
   private:
 

@@ -46,11 +46,12 @@ namespace authoring {
     void update_info( const QString& info );
     void update_constraint( const Constraint_Task_Space_Region& constraint );
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
-    void update_robot_plan( std::vector< state::State_GFE >& robotPlan );
-    void insert_robot_plan( state::State_GFE& robotPlanSlice );
+    void update_robot_plan( const std::vector< state::State_GFE >& robotPlan );
+    void insert_robot_plan( const state::State_GFE& robotPlanSlice );
     void update_state_gfe( state::State_GFE& stateGFE );
-    void aas_got_status_msg( bool server_ready_status, float last_time_solved, float total_time_to_solve,
-             bool solving_highres, bool plan_is_good, bool plan_is_warn );
+    void aas_got_status_msg( long int plan_index, bool server_ready_status, 
+        float last_time_solved, float total_time_to_solve,
+        bool solving_highres, bool plan_is_good, bool plan_is_warn );
     void publish_constraints( float ik_time_of_interest = 0.0 );
     
   protected slots:
@@ -109,6 +110,7 @@ namespace authoring {
     std::vector< Qt4_Widget_Constraint_Editor* > _constraint_editors;
 
     int _constraint_ctr;
+    long int _current_plan_index;
     
   private:
     

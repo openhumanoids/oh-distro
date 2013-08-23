@@ -139,7 +139,7 @@ update_opengl_object_constraint_sequence( const Constraint_Sequence& constraintS
 
 void
 Qt4_Widget_OpenGL_Authoring::
-update_opengl_object_robot_plan( vector< State_GFE >& robotPlan ){
+update_opengl_object_robot_plan( const vector< State_GFE >& robotPlan ){
   _opengl_object_robot_plan.set_visible( true );
   _opengl_object_robot_plan.set( robotPlan );
   update();
