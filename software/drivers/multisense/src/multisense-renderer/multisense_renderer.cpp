@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "multisense_renderer.h"
+#include <zlib.h>
 
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
@@ -10,6 +11,7 @@
 #include <bot_frames/bot_frames.h>
 
 #include <lcmtypes/multisense_images_t.h>
+#include "../multisense-glview/jpeg-utils-ijg.h"
 
 #define PARAM_HISTORY_FREQUENCY "Scan Hist. Freq."
 #define MAX_REFERSH_RATE_USEC 30000 //not sure whether we really need this part
@@ -39,6 +41,11 @@ typedef struct _MultisenseRenderer {
   char * renderer_name;
 
   multisense_images_t* msg;
+  
+  uint8_t* depth_uncompress_buffer;
+  uint8_t* left_img_data;
+  int left_color_format;
+  int left_ncolors;
 
   int64_t last_utime;
 
@@ -82,10 +89,21 @@ recompute_frame_data(MultisenseRenderer* self)
   cv::Mat_<cv::Vec3f> points(h, w, &(self->points_buff_[0]));
   
   //std::cout << (int) self->msg->image_types[1]  << " types are\n";
-  if( self->msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY){
-    // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+  if ( (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY) ||
+       (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED) )  {
     cv::Mat disparity_orig_temp = cv::Mat::zeros(h,w,CV_16UC1); // h,w
-    disparity_orig_temp.data = self->msg->images[1].data;  
+
+    // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+    if(self->msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY) {
+      disparity_orig_temp.data = self->msg->images[1].data;  
+      //depth = (uint16_t*) self->msg->images[1].data;
+      
+    }else if (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
+      unsigned long dlen = w*h*2 ;//msg->depth.uncompressed_size;
+      uncompress(self->depth_uncompress_buffer, &dlen, self->msg->images[1].data, self->msg->images[1].size);
+      disparity_orig_temp.data = self->depth_uncompress_buffer;  
+    }
+        
     cv::Mat_<uint16_t> disparity_orig(h, w);
     disparity_orig = disparity_orig_temp;
 
@@ -110,6 +128,24 @@ recompute_frame_data(MultisenseRenderer* self)
     }
   }
 
+  
+  self->left_color_format =  self->msg->images[0].pixelformat;
+  if(self->left_color_format == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB) {
+    self->left_ncolors = 3;
+    memcpy(self->left_img_data, self->msg->images[0].data, w* h* 3);
+  } else if(self->left_color_format == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG) {
+    self->left_ncolors = 3;
+    jpegijg_decompress_8u_rgb (self->msg->images[0].data, self->msg->images[0].size,
+            self->left_img_data, w, h, w* 3);
+  }else if (self->left_color_format == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY) {
+    self->left_ncolors = 1;
+    memcpy(self->left_img_data, self->msg->images[0].data, w*h);
+  }else{
+    self->left_ncolors =0;
+  }
+  
+  
+  
   
   if (self->frames!=NULL && bot_frames_have_trans(self->frames,self->camera_frame,bot_frames_get_root_name(self->frames))){
     double camera_to_local_m[16];
@@ -226,13 +262,13 @@ static void _draw(BotViewer *viewer, BotRenderer *renderer){
     for(int u=0; u<self->width; u++) {
       if ((IsFiniteNumber(points(v,u)[0])) && (IsFiniteNumber(points(v,u)[1])) ){
         uint8_t r, g, b;
-        if( self->msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY){
-          r = g = b = self->msg->images[0].data[ v*self->width + u ];
-        }else if(self->msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB){
+        if( self->left_ncolors == 1){ // gray
+          r = g = b = self->left_img_data[ v*self->width + u ];
+        }else if(self->left_ncolors == 3){ // rgb or jpeg
           int pixel = v*self->width + u;
-          r = self->msg->images[0].data[ pixel*3 ];
-          g = self->msg->images[0].data[ pixel*3 +1];
-          b = self->msg->images[0].data[ pixel*3 +2];
+          r = self->left_img_data[ pixel*3 ];
+          g = self->left_img_data[ pixel*3 +1];
+          b = self->left_img_data[ pixel*3 +2];
         }
         glColor3f(r / 255.0, g / 255.0, b / 255.0);
         glVertex3f(points(v,u)[0], points(v,u)[1], points(v,u)[2]);
@@ -328,6 +364,10 @@ multisense_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lcm,
   Q_(2,3) =  self->right_fx;
   Q_(3,3) = (self->right_cx - self->left_cx ) / self->baseline;
   std::cout << Q_ << " is reprojectionMatrix\n";
+  
+  self->left_img_data = (uint8_t*) malloc(  self->width*self->height*3);
+  self->left_ncolors =0;
+  self->depth_uncompress_buffer = (uint8_t*) malloc( self->width*self->height*sizeof(uint16_t));
   
   self->frames = frames;
   if ( camera_channel )
