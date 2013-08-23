@@ -23,33 +23,15 @@ nq = getNumDOF(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 qstar = xstar(1:nq);
 
-neck_idx = find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),'neck_ay')));
+neck_idx = ~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),'neck_ay'));
 qstar(neck_idx) = neck_pitch;
 
-act_idx = getActuatedJoints(r);
-
 disp('Moving to nominal pose (8 sec).');
-
-% move to desired initial pose
-movetime = 5.0;
-toffset = -1;
-tt=-1;
-while tt<movetime
-  [x,t] = getNextMessage(state_frame,1);
-  if ~isempty(x)
-    q0=x(1:nq);
-    if toffset==-1
-      toffset=t;
-      qtraj = PPTrajectory(foh([0,movetime],[q0,qstar]));
-    end
-    tt=t-toffset;
-    qdes = qtraj.eval(tt);
-
-    input_frame.publish(t,qdes(act_idx),'ATLAS_COMMAND');
-  end
-end
-
+act_idx = getActuatedJoints(r);
+x=atlasLinearMoveToPos(qstar,state_frame,input_frame,act_idx,8);
+q0=x(1:nq);
 q0(4:6)=qstar(4:6); % temp: override rotations
+
 
 kinsol = doKinematics(r,q0);
  

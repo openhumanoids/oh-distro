@@ -116,23 +116,7 @@ end
 qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 
 act_idx = getActuatedJoints(r);
-% move to desired pos
-movetime = 4.5;
-toffset = -1;
-tt=-1;
-while tt<movetime
-  [x,t] = getNextMessage(state_frame,1);
-  if ~isempty(x)
-    if toffset==-1
-      toffset=t;
-      q0 = x(act_idx);
-      qdes_traj = PPTrajectory(foh([0,movetime],[q0,qdes]));
-    end
-    tt=t-toffset;
-    q_d = qdes_traj.eval(tt);
-    ref_frame.publish(t,[q_d;0*q_d],'ATLAS_COMMAND');
-  end
-end
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
 
 disp('Ready to send input signal.');
 keyboard;
