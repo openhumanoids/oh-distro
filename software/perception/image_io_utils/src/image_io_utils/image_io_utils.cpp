@@ -96,6 +96,26 @@ void image_io_utils::decodeImageToGray(const  bot_core::image_t* msg, uint8_t* i
   }  
 }
 
+void image_io_utils::decodeImageToRGB(const  bot_core::image_t* msg, uint8_t* img_buf){
+  int h = msg->height;
+  int w = msg->width;
+  int buf_size = w*h*3;
+  
+  switch (msg->pixelformat) {
+    // Other formats not supported yet
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      jpeg_decompress_8u_rgb(msg->data.data(), msg->size, local_img_buffer_,
+                              w, h, w*3);  
+      std::copy(local_img_buffer_          , local_img_buffer_+buf_size   , img_buf);
+      break;
+    default:
+      std::cout << "Unrecognized image format\n";
+      exit(-1);
+      break;
+  }    
+}
+
+
 
 void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel, int n_colors){
 

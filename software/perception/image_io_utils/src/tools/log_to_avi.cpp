@@ -51,8 +51,7 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, string camera_chan_):
 
    int codec = CV_FOURCC('M', 'J', 'P', 'G');
   cv::VideoWriter aoutputVideo = cv::VideoWriter("video.avi",codec,15.0,size2,true);  
-  aoutputVideo.open("video_.avi",codec,15.0,size2,true);
-
+  
   if (!aoutputVideo.isOpened())
   {
     cout  << "Could not open the output video for write" << endl;
@@ -62,7 +61,7 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, string camera_chan_):
 }
     
 
-
+int counter =0;
 void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
   std::cout << msg->utime << " chans\n";
   
@@ -71,6 +70,12 @@ void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   outputVideo << img;
 
+  counter++;
+  if (counter > 100){
+    outputVideo.release();
+
+    exit(-1);
+  }
 }
 
 
@@ -82,7 +87,7 @@ int main( int argc, char** argv ){
   parser.parse();
   cout << camera_chan << " is camera_chan\n";
   
-  std::string filename = "/home/mfallon/data/atlas/2013-08-14-bdi-manipulation-params-test/lcmlog-2013-08-15.00";
+  std::string filename = "/home/mfallon/data/atlas/2013-08-20-atlas-walking/lcmlog-2013-08-20.07_log03";
   std::string filename_url = "file://" + filename;
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM ( filename_url    )  );
   if(!lcm->good()){

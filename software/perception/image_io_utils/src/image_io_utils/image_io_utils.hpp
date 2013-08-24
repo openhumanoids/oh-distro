@@ -16,6 +16,8 @@ class image_io_utils {
     
     void decodeStereoImageToGray(const  bot_core::image_t* msg, uint8_t* left_buf, uint8_t* right_buf);
     void decodeImageToGray(const  bot_core::image_t* msg, uint8_t* img_buf);
+
+    void decodeImageToRGB(const  bot_core::image_t* msg, uint8_t* img_buf);
     
     void unzipImageThenSend(const bot_core_image_t *msg, std::string channel);
     void unzipImageThenSend(const bot_core::image_t *msg, std::string channel);
