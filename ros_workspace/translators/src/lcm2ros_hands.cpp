@@ -91,43 +91,38 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 // Sandia Hands joint command handlers
 void LCM2ROS::LHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
-  /*
-  // TODO:
+ 
+
   // use msg->robot_name to determine whether to use sandia_hand_publisher or irobot_hand_publisher
-  if(msg->robot_name="sandia"){
+  if(msg->robot_name=="sandia"){
     bool is_left=true;
     publishSandiaHandCommand(msg,is_left);
   }
-  else if (msg->robot_name="irobot"){
+  else if (msg->robot_name=="irobot"){
      bool is_left=true;
     publishIrobotHandCommand(msg,is_left); 
   }
   else{
     ROS_ERROR("robot_name field in drc::joint_command_t for grasp commands should be sandia or irobot");
-  }*/
-  bool is_left=true;
-  publishSandiaHandCommand(msg,is_left);
+  }
 } 
 
 void LCM2ROS::RHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
 
-  /*
-  // TODO:
+
   // use msg->robot_name to determine whether to use sandia_hand_publisher or irobot_hand_publisher
-  if(msg->robot_name="sandia"){
+  if(msg->robot_name=="sandia"){
     bool is_left=false;
     publishSandiaHandCommand(msg,is_left);    
   }
-  else if (msg->robot_name="irobot"){
+  else if (msg->robot_name=="irobot"){
     bool is_left=false;
     publishIrobotHandCommand(msg,is_left);  
   }
   else{
     ROS_ERROR("robot_name field in drc::joint_command_t for grasp commands should be sandia or irobot");
-  }*/
-  
-  bool is_left=false;
-  publishSandiaHandCommand(msg,is_left);
+  }
+
 }
   
   
@@ -161,16 +156,74 @@ void LCM2ROS::publishSandiaHandCommand(const drc::joint_command_t* msg, bool is_
 
 void LCM2ROS::publishIrobotHandCommand(const drc::joint_command_t* msg, bool is_left)
 {
-  // TODO:
+
     handle_msgs::HandleControl control_msg;
-  /*
+    for (size_t i=0;i<5;i++){
+     control_msg.type[i] = control_msg.POSITION;
+     control_msg.value[i] = 0;
+     control_msg.valid[i]=false;
+    }
+     
+    
+    std::vector<std::string>::const_iterator found;
+    std::string joint_name;
+    if(is_left)
+      joint_name = "left_finger[0]/joint_base";
+    else
+      joint_name = "right_finger[0]/joint_base";
+    found = std::find (msg->name.begin(), msg->name.end(),joint_name);
+    if (found != msg->name.end()) { 
+     unsigned int index = found - msg->name.begin();
+     double radians_to_ticks = (3500/(0.5*M_PI));  
+     control_msg.value[0] = radians_to_ticks*msg->position[index];
+     control_msg.valid[0] = true;
+    }
+      
+   if(is_left)
+      joint_name = "left_finger[1]/joint_base";
+    else
+      joint_name = "right_finger[1]/joint_base";
+    found = std::find (msg->name.begin(), msg->name.end(),joint_name);
+    if (found != msg->name.end()) { 
+     unsigned int index = found - msg->name.begin();
+     double radians_to_ticks = (3500/(0.5*M_PI));  
+     control_msg.value[1] = radians_to_ticks*msg->position[index];
+     control_msg.valid[1] = true;
+    }     
+        
+    if(is_left)
+      joint_name = "left_finger[2]/joint_base";
+    else
+      joint_name = "right_finger[2]/joint_base";
+    found = std::find (msg->name.begin(), msg->name.end(),joint_name);
+    if (found != msg->name.end()) { 
+     unsigned int index = found - msg->name.begin();
+     double radians_to_ticks = (3500/(0.5*M_PI));  
+     control_msg.value[2] = radians_to_ticks*msg->position[index];
+     control_msg.valid[2] = true;
+    }     
+     
+    // IGNORE ANTAGONISTIC TENDON
+    
+    if(is_left)
+      joint_name = "left_finger[0]/joint_base_rotation";
+    else
+      joint_name = "right_finger[0]/joint_base_rotation";
+    found = std::find (msg->name.begin(), msg->name.end(),joint_name);
+    if (found != msg->name.end()) { 
+     unsigned int index = found - msg->name.begin();
+     double radians_to_ticks = (768/(0.5*M_PI)); 
+     control_msg.value[4] = radians_to_ticks*msg->position[index];
+     control_msg.valid[4] = true;
+    }  
+    
     if(ros::ok()) {
     if(is_left)
       irobot_l_hand_joint_cmd_pub_.publish(control_msg);
     else
       irobot_r_hand_joint_cmd_pub_.publish(control_msg);
   } 
-  */
+ 
 }
 
 int main(int argc,char** argv) {
