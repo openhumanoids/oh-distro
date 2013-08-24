@@ -76,13 +76,13 @@ namespace renderer_affordances_gui_utils
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.IROBOT_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_base_link","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
         else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_base_link","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);            
+          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);            
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
      
@@ -105,13 +105,13 @@ namespace renderer_affordances_gui_utils
             //publish ee goal msg.
         int grasp_type = hand_it->second.hand_type;
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+          publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+          publish_partial_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
         else if(grasp_type== msg.IROBOT_LEFT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"left_base_link","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+          publish_partial_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
         else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"right_base_link","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
+          publish_partial_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
           
         //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 

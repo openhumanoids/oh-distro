@@ -145,7 +145,7 @@ public class GraspStateCoder implements drake.util.LCMCoder
           }          
        
           return fdata;
-       // }
+       //}
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
       }

@@ -25,7 +25,7 @@ namespace renderer_affordances_lcm_utils
         self->lcm->publish(channel, &trajmsg);
     }
     //----------------------------------------------------------------------------------------------------  
-     static void publish_partial_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name, string channel,KDL::Frame &T_world_geometry, 
+     static void publish_partial_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name,string robot_name, string channel,KDL::Frame &T_world_geometry, 
                                                            int grasp_state, void *user)
     {
         //grasp state = 0 - open
@@ -33,7 +33,7 @@ namespace renderer_affordances_lcm_utils
         //grasp state = 2 - full grasp 
         RendererAffordances *self = (RendererAffordances*) user;
         drc::desired_grasp_state_t msg;
-        msg=get_partial_grasp_state(self->last_state_msg_timestamp,self->robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_state);
+        msg=get_partial_grasp_state(self->last_state_msg_timestamp,robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_state);
         // Publish the message 
         self->lcm->publish(channel, &msg);
     }
@@ -118,11 +118,11 @@ namespace renderer_affordances_lcm_utils
     }
   
     //----------------------------------------------------------------------------------------------------
-    static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag, void *user)
+    static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name,string robot_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag, void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         drc::desired_grasp_state_t msg;
-        msg=get_grasp_state(self->last_state_msg_timestamp,self->robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_flag,power_flag);
+        msg=get_grasp_state(self->last_state_msg_timestamp,robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_flag,power_flag);
         // Publish the message 
         self->lcm->publish(channel, &msg);
     }

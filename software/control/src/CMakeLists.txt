@@ -67,6 +67,7 @@ set(java_src_files
   RobotNavGoalListener.java
   RobotPlanPublisher.java
   RobotStateCoder.java
+  IrobotJointCommandCoder.java
   SandiaJointCommandCoder.java
   )
 

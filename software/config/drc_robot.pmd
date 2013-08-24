@@ -115,6 +115,16 @@ group "a.1.core" {
     }
 }
 
+group "a.2.manip" {
+    cmd "SandiaGraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
+       host = "extra";
+    } 
+    cmd "IrobotGraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForIRobotHand;\"";
+       host = "extra";
+    }     
+}
 
 group "b.2.walking" {
     cmd "FootstepPlanner" {
@@ -127,6 +137,12 @@ group "b.2.walking" {
     }
 }
 
+group "b.3.manip" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       host = "base";
+    }
+}
 
 group "m.control" {
     cmd "NeckPitchCommand" {

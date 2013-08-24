@@ -77,6 +77,7 @@ while(1)
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
             size_x = size(r_ls.getStateFrame.coordinates,1);
             size_q = size_x/2;
+
             ljoint_names = (char(r_ls.getStateFrame.coordinates{7:size_q}));
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
@@ -425,10 +426,9 @@ end %end while
             
             mask=[1:size(phiC,1)];
             if((usefingermask)&&(is_sandia))
-                mask =[8 10 12 13];
-                mask =[8:1:14];
+                mask =[8:1:18]; % used to be [8:1:14];
             elseif((usefingermask)&&(~is_sandia))
-                %TODO:              
+                mask =[5:1:16];              
             end
             phiC = phiC(mask);
             JC = JC(mask,:);
@@ -445,8 +445,12 @@ end %end while
               addendum=filter.*addendum;
               df = [2*phiC'*JC+addendum]';
             else
-              f = phiC'*phiC;
-              df = [2*phiC'*JC]';
+              f = phiC'*phiC + 0.1*q([7,10])'*q([7,10]); % second term penalizes finger spread
+              addendum = 2*0.1*q';
+              filter = zeros(1,nq);
+              filter([7,10]) = 1;
+              addendum=filter.*addendum;
+              df = [2*phiC'*JC+addendum]';
             end
 
         end
