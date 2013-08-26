@@ -11,10 +11,6 @@ group "0.development" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
     }
-    cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.15";
-        host = "robot";
-    }
 }
 group "a.0.drivers" {
     cmd "sa-left" {
@@ -94,7 +90,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -147,7 +143,7 @@ group "b.3.manip" {
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "base";
     }    
     cmd "AtlasManipController" {
@@ -160,6 +156,10 @@ group "m.control" {
     cmd "NeckPitchCommand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasNeckControl(0.75);\"";
         host = "base";
+    }
+    cmd "atlas-high" {
+        exec = "drc-atlas -p high";
+        host = "robot";
     }
 }
 
@@ -186,13 +186,29 @@ group "m.hands" {
 }
 
 #################################################################
-script "pressure_off_start" { 
+
+script "hands_start_sandia" { 
+    start cmd "aa-ros2lcm-hands";
+    start cmd "sandia-left";
+    start cmd "sandia-right";
+}
+
+script "core_start" { 
     start group "0.development";
+    start group "a.1.core";
+    start cmd "logger-robot";
+    start group "b.2.walking";
+    start group "b.3.manip";
+    start cmd "SandiaGraspController";
     start cmd "multisense";
     start cmd "ms-subscribe";
     start cmd "ms-command";
+    run_script "hands_start_sandia";  
     start cmd "drc-atlas";
-    start cmd "logger-robot";
-    start group "a.1.core";
-    start group "b.2.walking";
+}
+
+script "robot_start" { 
+    stop cmd "drc-atlas";
+    wait ms 2000;
+    stop cmd "atlas-high";
 }
