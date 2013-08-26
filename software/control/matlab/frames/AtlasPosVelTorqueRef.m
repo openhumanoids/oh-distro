@@ -60,6 +60,13 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrameWCoder & Singleton
     
   end
   
+  methods (Static)
+    function obj = loadobj(a)
+      a.mex_ptr = 0;
+      obj=a;
+    end
+  end
+  
   properties
     mex_ptr=0;
   end
