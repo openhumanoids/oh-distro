@@ -150,20 +150,16 @@ group "b.3.manip" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
        host = "base";
     }    
+    cmd "AtlasManipController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        host = "base";
+    }
 }
 
 group "m.control" {
     cmd "NeckPitchCommand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasNeckControl(0.75);\"";
         host = "base";
-    }
-    cmd "AtlasManipController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
-        host = "base";
-    }
-    cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
-       host = "base";
     }
 }
 
