@@ -94,7 +94,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_ROBOTVARIANTHERE.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -157,6 +157,14 @@ group "m.control" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasNeckControl(0.75);\"";
         host = "base";
     }
+    cmd "AtlasManipController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \" addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       host = "base";
+    }
 }
 
 group "m.perception" {
@@ -182,7 +190,7 @@ group "m.hands" {
 }
 
 #################################################################
-script "off_start" { 
+script "pressure_off_start" { 
     start group "0.development";
     start cmd "multisense";
     start cmd "ms-subscribe";
