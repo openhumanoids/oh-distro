@@ -210,5 +210,5 @@ script "core_start" {
 script "robot_start" { 
     stop cmd "drc-atlas";
     wait ms 2000;
-    stop cmd "atlas-high";
+    start cmd "atlas-high";
 }
