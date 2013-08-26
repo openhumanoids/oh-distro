@@ -1,4 +1,4 @@
-classdef ManipulationPlanner < handle
+classdef PinnedManipulationPlanner < handle
     
     properties
 
@@ -38,7 +38,7 @@ classdef ManipulationPlanner < handle
     end
     
     methods
-        function obj = ManipulationPlanner(r)
+        function obj = PinnedManipulationPlanner(r)
             obj.r = r;
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
@@ -2109,7 +2109,7 @@ classdef ManipulationPlanner < handle
             ikoptions = struct();
             ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
             ikoptions.q_nom = q0;
-            ikoptions.quasiStaticFlag = true;
+            ikoptions.quasiStaticFlag = false; % MAKING THIS FALSE FOR PINNED MANIPULATION
             ikoptions.shrinkFactor = 0.85;
             if(is_keyframe_constraint)
                 ikoptions.MajorIterationsLimit = 300;
@@ -2122,7 +2122,8 @@ classdef ManipulationPlanner < handle
             coords = obj.r.getStateFrame();
             [joint_min,joint_max] = obj.r.getJointLimits();
             joint_min = Point(coords,[joint_min;0*joint_min]);
-            joint_min.back_bky = -.2;
+            joint_min.back_bky = -.05;
+	    joint_min.back_bkx = -.05;
             joint_min.l_leg_kny = 0.2;
             joint_min.r_leg_kny = 0.2;
             joint_min = double(joint_min);
@@ -2133,7 +2134,8 @@ classdef ManipulationPlanner < handle
             %Setting a max joint limit on the back also 
             
             joint_max = Point(coords,[joint_max;0*joint_max]);
-            joint_max.back_bky = 0.2;
+            joint_max.back_bky = 0.05;
+	    joint_min.back_bkx = 0.05;
             joint_max = double(joint_max);
             ikoptions.jointLimitMax = joint_max(1:obj.r.getNumDOF());
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2514,8 +2516,10 @@ classdef ManipulationPlanner < handle
                       end
                     end
                     if(obj.restrict_feet)
-                        %obj.pelvis_body,[0;0;0],pelvis_pose0,...
+			% ADDING BACK PELVIS FOR PINNED MANIPULATION and getting rid of quasistatic flag
+                        %obj.pelvis_body,[0;0;0],pelvis_pose0,... 
                         [q_final_guess,snopt_info] = inverseKin(obj.r,q_start,...
+			    obj.pelvis_body,[0;0;0],pelvis_pose0,... 
                             obj.r_foot_body,r_foot_pts,r_foot_pose0_static_contact,...
                             obj.l_foot_body,l_foot_pts,l_foot_pose0_static_contact, ...
                             obj.r_hand_body,[0;0;0],rhand_const, ...
@@ -2558,16 +2562,16 @@ classdef ManipulationPlanner < handle
               ikseq_options.nSample = obj.num_breaks-1;
               ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
               ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
-              ikseq_options.quasiStaticFlag=true;
+              ikseq_options.quasiStaticFlag = false; % MAKING THIS FALSE FOR PINNED MANIPULATION
               ikseq_options.shrinkFactor = 0.9;
               ikseq_options.jointLimitMin = ikoptions.jointLimitMin;
               ikseq_options.jointLimitMax = ikoptions.jointLimitMax;
               if(is_keyframe_constraint)
-                  ikseq_options.MajorIterationsLimit = 200;
+                  ikseq_options.MajorIterationsLimit = 1000;
                   ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
                   q0 = obj.qtraj_guess_fine.eval(0); % use start of cached trajectory instead of current
               else
-                      ikseq_options.MajorIterationsLimit = 200;
+                      ikseq_options.MajorIterationsLimit = 1000;
                       ikseq_options.qtraj0 = qtraj_guess;
               end
               ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
