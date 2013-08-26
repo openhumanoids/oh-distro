@@ -17,6 +17,7 @@ matlabpool(no_of_workers)
 end
 %
 spmd
+    addpath_control;
     runGraspOptSinglePoolService(no_of_workers);    
 end % end spmd
 
