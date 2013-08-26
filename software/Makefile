@@ -32,7 +32,7 @@ test:
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
 		echo "-------------------------------------------"; \
-		$(MAKE) -C $$subdir test || exit 2; \
+		$(MAKE) -C $$subdir test || true; \
 	done
 	@# Place additional commands here if you have any
 
