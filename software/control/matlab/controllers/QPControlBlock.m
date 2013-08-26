@@ -26,10 +26,10 @@ classdef QPControlBlock < MIMODrakeSystem
       % IMPORTANT NOTE: I'm assuming the atlas state is always the first
       % frame in a multi coordinate frame
       if typecheck(fr,'MultiCoordinateFrame')
-        input_frame = MultiCoordinateFrame({qddframe,ft_frame,fr.frame{:}});
+        input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame,fr.frame{2:end}});
         num_state_fr = length(options.multi_robot.getStateFrame.frame);
       else
-        input_frame = MultiCoordinateFrame({qddframe,ft_frame,fr});
+        input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
         num_state_fr = 1;
       end
     else
