@@ -9,3 +9,12 @@ centroid of vicon plate on robot pelvis wrt approximate robot origin
 1 cm right (-y)
 6.6 cm up (+z)
 (accurate to approximately +/- 1cm)
+
+
+
+
+  # gazebo_ros_camera_utils.cpp, 
+  # 1.5708 (90degrees) as of 6dec 2012
+  # 1.3962634 (80degrees) in april 2013
+  # fx = fy = w / (2 * tan( hfov/2))
+  # cx = (w+1)/2  |  cy = (h+1)/2
