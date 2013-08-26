@@ -1,3 +1,5 @@
+
+# DRC_BASE will be the toplevel source directory that contains software/
 export DRC_BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
 
 DRC_SOFTWARE=$DRC_BASE/software

@@ -8,9 +8,9 @@ include(cmake/pods.cmake)
 include(cmake/mex.cmake)
 mex_setup()
 
-find_file(ROS_MODEL_PKG mit_drcsim_scripts PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV{HOME} $ENV{DRC_BASE}/../ros_workspace)
+find_file(ROS_MODEL_PKG mit_drcsim_scripts PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV{HOME} $ENV{DRC_BASE}/ros_workspace)
 if (NOT ROS_MODEL_PKG)
-   message(FATAL_ERROR "mit_drcsim_scripts not found (checked ${CMAKE_INSTALL_PREFIX}/.. and $ENV{HOME} and $ENV{DRC_BASE}/../ros_workspace )")
+   message(FATAL_ERROR "mit_drcsim_scripts not found (checked ${CMAKE_INSTALL_PREFIX}/.. and $ENV{HOME} and $ENV{DRC_BASE}/ros_workspace )")
 endif()
 set(ROS_MODEL_PKG "${ROS_MODEL_PKG}" CACHE STRING "${ROS_MODEL_PKG}" )
 
