@@ -36,6 +36,13 @@ else()
 
 endif()
 
+pods_find_pkg_config(bullet)
+if (bullet_FOUND)
+  add_definitions( -DBULLET_COLLISION )   
+endif()
+
+
+
 find_package(Java)
 include(UseJava)
 
