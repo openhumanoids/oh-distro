@@ -119,20 +119,6 @@ void SimExample::setCameraIntrinsicsParameters (int camera_width_in, int camera_
         camera_cx_in, camera_cy_in);
 }
 
-
-
-Eigen::Isometry3f SimExample::isometryDoubleToFloat(Eigen::Isometry3d pose_in){
-  Eigen::Quaterniond r(pose_in.rotation());
-  Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
-
-  Eigen::Isometry3f pose_out;
-  pose_out.setIdentity();
-  pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
-  pose_out.rotate(rf);
-
-  return pose_out;
-}
-
 void 
 SimExample::initializeGL (int argc, char** argv)
 {
@@ -159,8 +145,8 @@ SimExample::initializeGL (int argc, char** argv)
     exit(1);
   }
   
-  std::cout << "GL_MAX_VIEWPORTS: " << GL_MAX_VIEWPORTS << std::endl;
   const GLubyte* version = glGetString (GL_VERSION);
+  std::cout << "GL_MAX_VIEWPORTS: " << GL_MAX_VIEWPORTS << std::endl;
   std::cout << "OpenGL Version: " << version << std::endl;  
 }
 
@@ -301,13 +287,15 @@ void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
 }
 
 void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
-                                  std::vector< std::string > file_paths_in){
+                                  std::vector< std::string > file_paths_in,
+                                  std::vector< Eigen::Isometry3d > origins_in){
   
   for(size_t i=0; i < link_names_in.size() ; i++){ 
     PolygonMeshStruct mesh_struct;
     mesh_struct.link_name = link_names_in[i];
     mesh_struct.file_path = file_paths_in[i];
     mesh_struct.polygon_mesh = getPolygonMesh(mesh_struct.file_path);          
+    mesh_struct.origin = origins_in[i];
     
     if(output_color_mode_==0){ // Set the mesh to a false color:
       int j =i%(colors_.size()/3);
@@ -336,6 +324,7 @@ int64_t _timestamp_now(){
     gettimeofday (&tv, NULL);
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
+
 
 void
 SimExample::createScene (std::vector<std::string> object_names, 
@@ -373,8 +362,9 @@ SimExample::createScene (std::vector<std::string> object_names,
     pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
     pcl::fromROSMsg(mesh_ptr_1st_transformed->cloud, mesh_cloud_1st);
 
-    // transform
-    Eigen::Isometry3f pose_f_1st = isometryDoubleToFloat( object_tfs[i] );
+    // transform mesh to location on robot:
+    // Added August 2013: support for non-zero origin mesh offsets:
+    Eigen::Isometry3f pose_f_1st = ( object_tfs[i] * polymesh_map_.find( object_names[i] )->second.origin ).cast<float>();
     Eigen::Quaternionf pose_quat_1st(pose_f_1st.rotation());
     pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, pose_f_1st.translation(), pose_quat_1st);  
     pcl::toROSMsg (mesh_cloud_1st, mesh_ptr_1st_transformed->cloud);  

@@ -39,6 +39,8 @@ struct PolygonMeshStruct
   std::string file_path;
   // Contents of the file:
   pcl::PolygonMesh::Ptr polygon_mesh;
+  // Offset from polygon mesh orgain to visualization origin
+  Eigen::Isometry3d origin;
 };
 
 
@@ -62,12 +64,10 @@ class SimExample
     // Create a mapping between link names and meshes 
     // and then read in the meshes from file
     void setPolygonMeshs (std::vector< std::string > link_names_in,
-                          std::vector< std::string > file_paths_in);
+                          std::vector< std::string > file_paths_in,
+                          std::vector< Eigen::Isometry3d > origins_in );
     
     bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
-    
-    // generic double to float converter: [remove if something in eigen works instead]
-    Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d );    
     
     // Create a scene using a robot's joint positions
     // NOTE: generalised to allow rendering of any set of objects. link = object

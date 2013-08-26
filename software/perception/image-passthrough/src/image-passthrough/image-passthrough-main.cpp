@@ -1,5 +1,7 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
+#include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/multisense.hpp"
 
 #include <image-passthrough/image-passthrough-app.hpp>
 
@@ -17,29 +19,56 @@ class Main{
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                           const  multisense::images_t* msg);  
     Pass::Ptr pass;
+    
+    image_io_utils*  imgutils_; 
+    BotParam* botparam_; 
+    CameraParams camera_params_;   
+    uint8_t* img_buf_;
 };
     
     
 Main::Main(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel,
     int output_color_mode, bool use_convex_hulls, std::string camera_frame): lcm_(lcm_){
-     
-  pass = Pass::Ptr (new Pass (argc, argv, lcm_, camera_channel, output_color_mode, use_convex_hulls,
-                    camera_frame));
-  lcm_->subscribe(camera_channel,&Main::imageHandler,this);  
+
+  // Get Camera Parameters:
+  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  camera_params_.setParams(botparam_, string("cameras." + camera_channel) );
+      
+  pass = Pass::Ptr (new Pass (argc, argv, lcm_, camera_channel, 
+                              output_color_mode, use_convex_hulls,
+                              camera_frame, camera_params_));
+  lcm_->subscribe("CAMERA",&Main::multisenseHandler,this);  
+  
+  
+  img_buf_= (uint8_t*) malloc(3* camera_params_.width  * camera_params_.height);
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 
+                                  camera_params_.width, 
+                                  3*camera_params_.height );
+  
 }
 
-void Main::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
+void Main::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                             const  multisense::images_t* msg){
   int64_t msg_time = msg->utime;
   if (pass->createMask(msg_time) ){
     pass->sendOutput(msg_time);  
+    
+    imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );
+    
+    pass->sendOutputOverlay(msg_time, img_buf_);  
+    
   }
+  
+  
+  
 }
 
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string camera_channel="CAMERALEFT";
+  string camera_channel="CAMERA_LEFT";
   int output_color_mode=1; // 0 =rgb, 1=grayscale mask, 2=binary black/white grayscale mask
   bool use_convex_hulls=false;
   string camera_frame = "left_camera_optical_frame";

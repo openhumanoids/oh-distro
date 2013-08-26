@@ -81,27 +81,18 @@ using namespace boost::assign; // bring 'operator+()' into scope
 
 
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
-    int output_color_mode_, bool use_convex_hulls_, string camera_frame_):          
+    int output_color_mode_, bool use_convex_hulls_, string camera_frame_,
+    CameraParams camera_params_):          
     lcm_(lcm_), output_color_mode_(output_color_mode_), use_convex_hulls_(use_convex_hulls_), 
-    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_), camera_frame_(camera_frame_){
+    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_), camera_frame_(camera_frame_),
+    camera_params_(camera_params_){
 
   // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
   urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
-  ////////////////////////////////////////////////////////
 
-  // Get Camera Parameters:
-  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-  std::string key_prefix_str = "cameras."+camera_channel_+".intrinsic_cal";
-  width_ = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
-  height_ = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
-  double fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
-  double fy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
-  double cx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
-  double cy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());  
-  
   // Visual I-O:
   float colors_b[] ={0.0,0.0,0.0};
   std::vector<float> colors_v;
@@ -116,12 +107,18 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"iPass - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
   verbose_ =false;  
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ ); // Actually outputs the Mask Image:
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 
+                                  camera_params_.width, 
+                                  camera_params_.height ); // Actually outputs the Mask Image:
 
   // Construct the simulation method:
   std::string path_to_shaders = string(getBasePath()) + "/bin/";
-  simexample = SimExample::Ptr (new SimExample (argc, argv, height_, width_ , lcm_, output_color_mode_, path_to_shaders));
-  simexample->setCameraIntrinsicsParameters (width_, height_, fx, fy, cx, cy);
+  simexample = SimExample::Ptr (new SimExample (argc, argv, 
+                                                camera_params_.height, camera_params_.width , 
+                                                lcm_, output_color_mode_, path_to_shaders));
+  simexample->setCameraIntrinsicsParameters (camera_params_.width, camera_params_.height, 
+                                             camera_params_.fx, camera_params_.fy, 
+                                             camera_params_.cx, camera_params_.cy);
   // Keep a mesh for the affordances:
   pcl::PolygonMesh::Ptr combined_aff_mesh_ptr_temp(new pcl::PolygonMesh());
   combined_aff_mesh_ = combined_aff_mesh_ptr_temp;   
@@ -234,6 +231,7 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
     cout<< "Size of Links Map: " << links_map_.size() <<endl;
     
     std::vector< std::string > mesh_link_names, mesh_file_paths ;
+    std::vector< Eigen::Isometry3d > mesh_origins;
     
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
     for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
@@ -241,19 +239,32 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
       if(it->second->visual){
         std::cout << it->first<< " link"
           << it->second->visual->geometry->type << " type [visual only]\n";
-
+          
         int type = it->second->visual->geometry->type;
         enum {SPHERE, BOX, CYLINDER, MESH}; 
+        // TODO: support simple meshes
         if  (type == MESH){
           shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
           
           mesh_link_names.push_back( it->first );
           // Verify the existance of the file:
           mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_) );
+          
+          Eigen::Isometry3d origin;
+          origin.setIdentity();
+          origin.translation()  << it->second->visual->origin.position.x,
+                                  it->second->visual->origin.position.y,
+                                  it->second->visual->origin.position.z;
+          Eigen::Quaterniond quat = Eigen::Quaterniond(it->second->visual->origin.rotation.w, 
+                                                      it->second->visual->origin.rotation.x,
+                                                      it->second->visual->origin.rotation.y,
+                                                      it->second->visual->origin.rotation.z);
+          origin.rotate(quat);    
+          mesh_origins.push_back(origin);
         }
       }
     }
-    simexample->setPolygonMeshs(mesh_link_names, mesh_file_paths );
+    simexample->setPolygonMeshs(mesh_link_names, mesh_file_paths , mesh_origins);
     
     //////////////////////////////////////////////////////////////////
     // Get a urdf Model from the xml string and get all the joint names.
@@ -463,17 +474,43 @@ void Pass::sendOutput(int64_t utime){
     tic_toc.push_back(_timestamp_now());
   }
 
-  //imgutils_->sendImage( simexample->getDepthBufferAsColor(), utime, width_, height_, 3, string( camera_channel_ +  "_DEPTH") );
+  //imgutils_->sendImage( simexample->getDepthBufferAsColor(), utime, camera_params_.width, camera_params_.height, 3, string( camera_channel_ +  "_DEPTH") );
   if (output_color_mode_==0){
     // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
-    imgutils_->sendImage( simexample->getColorBuffer(3), utime, width_, height_, 3, string( camera_channel_ +  "_MASK") );
+    imgutils_->sendImage( simexample->getColorBuffer(3), utime, 
+                          camera_params_.width, camera_params_.height, 3, 
+                          string( camera_channel_ +  "_MASK") );
   }else{
-    //imgutils_->sendImage( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASK")  );
-    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASKZIPPED")  );
+    //imgutils_->sendImage( simexample->getColorBuffer(1), utime, camera_params_.width, camera_params_.height, 1, string( camera_channel_ +  "_MASK")  );
+    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, 
+                                camera_params_.width, camera_params_.height, 1, 
+                                string( camera_channel_ +  "_MASKZIPPED")  );
   }
   
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"sendOutput");
   }
+}
+
+// Blend the simulated output with the input image:
+void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){ 
+
+  float blend =0.7;
+  uint8_t* mask_buf = simexample->getColorBuffer(1);
+  
+  for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
+    img_buf[i*3] = int( blend*img_buf[i*3] + (1.0-blend)*mask_buf[i] );
+    img_buf[i*3+1] =int( blend*img_buf[i*3+1] + (1.0-blend)*mask_buf[i] );
+    img_buf[i*3+2] =int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i] );
+  }
+  
+  
+  // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
+  imgutils_->sendImage( img_buf, utime, 
+                          camera_params_.width, camera_params_.height, 3, 
+                          string( camera_channel_ +  "_OVERLAY") );
+  
+  
+
 }

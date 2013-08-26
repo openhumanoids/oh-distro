@@ -13,6 +13,7 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
+#include <camera_params/camera_params.hpp>     // Camera Parameters
 
 #include <path_util/path_util.h>
 #include <affordance/AffordanceUtils.hpp>
@@ -33,13 +34,16 @@ class Pass{
     typedef boost::shared_ptr<const Pass> ConstPtr;
     
     Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
-         std::string camera_channel_, int output_color_mode_, bool use_convex_hulls_, string camera_frame_);
+         std::string camera_channel_, int output_color_mode_, 
+         bool use_convex_hulls_, string camera_frame_, CameraParams camera_params_);
     
     ~Pass(){
     }
     
     bool createMask(int64_t msg_time);
     void sendOutput(int64_t utime);
+    
+    void sendOutputOverlay(int64_t utime, uint8_t* img_buf);
     
     // Get the GL depth buffer, flip up/down it, color mask it. always 3 colors
     uint8_t* getDepthBufferAsColor(){
@@ -79,7 +83,7 @@ class Pass{
 
 
     // Config:
-    int width_, height_;
+    CameraParams camera_params_;   
     std::string camera_channel_, camera_frame_; // what channel and what frame
     
     // State:
