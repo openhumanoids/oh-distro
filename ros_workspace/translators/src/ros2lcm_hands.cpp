@@ -63,6 +63,7 @@ private:
 
   void appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::RawFingerState& msg_in,int finger_id);
   void publishSandiaHandState(int64_t utime_in,bool is_left);
+  void publishHandStateOnSystemStatus(bool is_sandia, bool is_left);
   
   void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
@@ -70,6 +71,9 @@ private:
   // logic params
   bool init_recd_sandia_l_[4];
   bool init_recd_sandia_r_[4];
+  bool init_recd_irobot_l_;
+  bool init_recd_irobot_r_;
+  
   bool dumb_fingers_;
   //////////////////////////////////////////////////////////////////////////
   
@@ -130,7 +134,8 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
 	init_recd_sandia_r_[1]=false;
 	init_recd_sandia_r_[2]=false;
 	init_recd_sandia_r_[3]=false;	
-
+  init_recd_irobot_l_ = false;
+  init_recd_irobot_r_ = false;
 };
 
 App::~App()  {
@@ -166,8 +171,11 @@ void App::sandia_l_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerState
 }
 void App::sandia_l_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
- if(!init_recd_sandia_l_[3])
-   init_recd_sandia_l_[3]=true;
+ if(!init_recd_sandia_l_[3]){
+   init_recd_sandia_l_[3]=true;   
+   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+   publishHandStateOnSystemStatus(true, true);
+  }
  sandia_l_hand_finger_3_state_= *msg;
  int64_t utime = _timestamp_now();//has no header::(int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
  bool is_left = true;
@@ -194,8 +202,12 @@ void App::sandia_r_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerState
 }
 void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
- if(!init_recd_sandia_r_[3])
+ if(!init_recd_sandia_r_[3]){
    init_recd_sandia_r_[3]=true;
+   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+   publishHandStateOnSystemStatus(true, false);
+  }
+
  sandia_r_hand_finger_3_state_= *msg;
  int64_t utime = _timestamp_now();// has no header::(int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
  bool is_left = false;
@@ -222,7 +234,7 @@ void App::publishSandiaHandState(int64_t utime_in,bool is_left){
     return;
   if((!init_recd_sandia_r_[3])&&(!is_left))
     return;  
-    
+
   drc::hand_state_t msg_out;
   msg_out.utime = utime_in; // from nsec to usec
   
@@ -282,7 +294,12 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
 //----------------------------------------------------------------------------
 void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
-
+ if(!init_recd_irobot_l_){
+   init_recd_irobot_l_=true;
+   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+   publishHandStateOnSystemStatus(false, true);
+  }
+   
   irobot_l_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -339,7 +356,12 @@ void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 //----------------------------------------------------------------------------
 void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
-
+ if(!init_recd_irobot_r_){
+   init_recd_irobot_r_=true;
+   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+   publishHandStateOnSystemStatus(false, false);
+  }
+  
   irobot_r_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -391,6 +413,27 @@ void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
  //TODO: USE PROXIMAL JOINT ENCODERS
  }
   lcm_publish_.publish("IROBOT_RIGHT_STATE", &msg_out);  
+}
+//----------------------------------------------------------------------------
+void App::publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+{
+  drc::system_status_t msg;
+  msg.utime = _timestamp_now();
+  msg.system = msg.GRASPING;
+  msg.importance = 0x00;
+  msg.frequency = 0x03;
+  
+  if((is_sandia)&&(is_left))
+  msg.value = "LEFT SANDIA HAND ACTIVE: Receiving state messages";
+  else if((is_sandia)&&(!is_left))
+    msg.value = "RIGHT SANDIA HAND ACTIVE: Receiving state messages";
+  else if((!is_sandia)&&(is_left))
+    msg.value = "LEFT IROBOT HAND ACTIVE: Receiving state messages";
+  else if((!is_sandia)&&(!is_left))
+    msg.value = "RIGHT IROBOT HAND ACTIVE: Receiving state messages";
+    
+  lcm_publish_.publish("SYSTEM_STATUS", &msg); 
+
 }
 //----------------------------------------------------------------------------
 int main(int argc, char **argv){
