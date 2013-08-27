@@ -324,9 +324,8 @@ void StickyhandCollectionManager::add_or_update_sticky_hand(int uid, string& uni
       _hands.insert(make_pair(unique_hand_name, sticky_hand_struc));
     }
     else {
-      cout <<"update sticky hand \n";
+
       it->second._gl_hand->set_state(T_world_hand, posture_msg);
-      cout <<"end update sticky hand \n";
       it->second.T_geometry_hand = T_world_hand; 
       it->second.joint_position = posture_msg.joint_position;
       it->second.optimized_T_geometry_hand = T_world_hand;

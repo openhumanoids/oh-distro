@@ -319,6 +319,7 @@ namespace visualization_utils
         msg.num_r_joints  = 0;
         msg.l_joint_name.resize(msg.num_l_joints);
         msg.l_joint_position.resize(msg.num_l_joints);
+        
         for(int i = 0; i < msg.num_l_joints; i++){
             //if(grasp_flag){
             if(grasp_state == 2){
@@ -327,7 +328,7 @@ namespace visualization_utils
             else if(grasp_state == 1){
                 if(i>=9)
                     msg.l_joint_position[i]=0;
-                else  if(i %3 == 1){
+                else  if(i%3 == 1){
                     msg.l_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
                 }
                 else{
@@ -346,6 +347,7 @@ namespace visualization_utils
             }
             msg.l_joint_name[i]= sticky_hand_struc.joint_name[i];
         }
+   
     }
     else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
         msg.r_hand_pose = hand_pose;
@@ -360,7 +362,7 @@ namespace visualization_utils
             else if(grasp_state == 1){
                 if(i>=9)
                     msg.r_joint_position[i]=0;
-                else if(i %3 == 1){
+                else if(i%3 == 1){
                     msg.r_joint_position[i]= sticky_hand_struc.joint_position[i]; ///2.0;
                 }
                 else{
@@ -380,6 +382,8 @@ namespace visualization_utils
             msg.r_joint_name[i]= sticky_hand_struc.joint_name[i];
         }
     }// end if else
+    
+     return msg;
 
   }  // end get_partial_grasp_state   
 //----------------------------------------------------------------------------------------------------------   
