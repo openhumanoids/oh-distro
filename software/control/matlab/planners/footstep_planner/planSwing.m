@@ -1,14 +1,22 @@
 function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
 % Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
 
-if ~isfield(options, 'foot_speed')
-  options.foot_speed = 0.5; % m/s
+if ~isfield(options, 'step_speed')
+  options.step_speed = 0.5; % m/s
 end
 if ~isfield(options, 'step_height')
   options.step_height = biped.nom_step_clearance; %m
 end
 if ~isfield(options, 'ignore_terrain')
   options.ignore_terrain = false;
+end
+
+if options.step_speed < 0
+  % negative step speed is an indicator to take a fast, fixed-duration step (e.g. for recovery)
+  fixed_duration = -options.step_speed;
+  options.step_speed = 1;
+else
+  fixed_duration = 0;
 end
 
 debug = false;
@@ -33,7 +41,7 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame, which we enforce with the toe_height constraint later
+effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
 
 % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
 contact_length = effective_length / 2 + planar_clearance;
@@ -42,13 +50,15 @@ contact_height = effective_height + nom_z_clearance;
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
-apex_fracs = [0.15, 0.85];
+if fixed_duration
+  apex_fracs = [0.5];
+else
+  apex_fracs = [0.15, 0.85];
+end
 next_pos = last_pos + angleDiff(last_pos, next_pos);
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
 apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
-% apex_pos(3,:) = max([last_pos(3), next_pos(3)]) + options.step_height;
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
-% apex_pos(3) = apex_pos(3) + effective_height;
 
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos
@@ -93,14 +103,23 @@ traj_pts_xyz = [last_pos(1) + (next_pos(1) - last_pos(1)) * traj_pts(1,:) / step
 %% Compute time required for swing from cartesian distance of poses as well as yaw distance
 d_dist = sqrt(sum(diff(traj_pts_xyz, 1, 2).^2, 1));
 total_dist_traveled = sum(d_dist);
-traj_dts = max([d_dist / options.foot_speed;
+traj_dts = max([d_dist / options.step_speed;
                 (d_dist / total_dist_traveled) .* (abs(angleDiff(next_pos(6), last_pos(6))) / foot_yaw_rate)],[],1);
 traj_ts = [0, cumsum(traj_dts)] ;
 
 %% Add time to shift weight
-hold_time = traj_ts(end) * hold_frac;
-hold_time = max([hold_time, min_hold_time]);
-traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+if fixed_duration
+  hold_time = 0.1;
+  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+  traj_ts = traj_ts * (fixed_duration / traj_ts(end));
+else
+  hold_time = traj_ts(end) * hold_frac;
+  hold_time = max([hold_time, min_hold_time]);
+  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+end
+
+
+
 traj_pts = [traj_pts(:,1), traj_pts, traj_pts(:,end)];
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
 landing_time = traj_ts(end-1);
@@ -111,31 +130,9 @@ rpy_pts = [last_pos(4:6), interp1(traj_ts([2,end-1]), [last_pos(4:6), next_pos(4
 
 swing_poses.center = [traj_pts_xyz; rpy_pts];
 
-toe_start = biped.footOrig2Contact(biped.footContact2Orig(last_pos, 'center', 1), 'toe', 1);
-toe_end = biped.footOrig2Contact(biped.footContact2Orig(next_pos, 'center', 1), 'toe', 1);
 if ~has_terrain
   effective_height = 0.02;
 end
-% toe.min = max([traj_pts(2,:) - effective_height; 
-%                (traj_pts(1,:) / step_dist_xy) * (toe_end(3) - toe_start(3)) + toe_start(3)]);
-toe.min = traj_pts(2,:) - effective_height;
-% toe.min(end-1:end) = toe.min(end-1:end) - 0.01;
-toe.min = [nan*ones(2, length(toe.min)); toe.min];
-toe.max = nan * toe.min;
-
-heel_start = biped.footOrig2Contact(biped.footContact2Orig(last_pos, 'center', 1), 'heel', 1);
-heel_end = biped.footOrig2Contact(biped.footContact2Orig(next_pos, 'center', 1), 'heel', 1);
-heel.min = traj_pts(2,:) - effective_height;
-% heel.min = max([traj_pts(2,:) - effective_height;
-%                 (traj_pts(1,:) / step_dist_xy) * (heel_end(3) - heel_start(3)) + heel_start(3)]);
-heel.min = [nan*ones(2,length(heel.min)); heel.min];
-heel.max = nan * heel.min;
-
-toe.min = nan*toe.min;
-heel.min = nan*heel.min;
-
-swing_poses.toe = toe;
-swing_poses.heel = heel;
 swing_ts = traj_ts;
 
 
