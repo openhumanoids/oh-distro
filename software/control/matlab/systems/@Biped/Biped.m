@@ -136,9 +136,11 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       if nargin < 3
         t = now() * 24 * 60 * 60;
       end
-
+      if ~isfield(options, 'channel')
+        options.channel = 'CANDIDATE_FOOTSTEP_PLAN';
+      end
       msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew, options);
-      obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
+      obj.lc.publish(options.channel, msg);
     end
 
     function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)
