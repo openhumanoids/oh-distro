@@ -26,7 +26,7 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'l_arm_elx';% <---- 
 control_mode = 'position';% <----  force, position
-signal = 'chirp';% <----  zoh, foh, chirp
+signal = 'foh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
 ff_const = 0.0;% <----
@@ -48,7 +48,7 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,25,400);% <----
-  amp = 1.0;% <----  Nm or radians
+  amp = 0.1;% <----  Nm or radians
   freq = linspace(0.05,0.75,400);% <----  cycles per second
 else
   ts = linspace(0,15,5);% <----
@@ -100,14 +100,15 @@ input_frame = getInputFrame(r);
 ref_frame = AtlasPosTorqueRef(r);
 
 nu = getNumInputs(r);
+nq = getNumDOF(r);
 
 joint_index_map = struct(); % maps joint names to indices
 joint_offset_map = struct(); % maps joint names to nominal angle offsets
 joint_sign_map = struct(); % maps joint names to signs in the direction of desired motion
-for i=1:nu
-  joint_index_map.(input_frame.coordinates{i}) = i;
-  joint_offset_map.(input_frame.coordinates{i}) = 0;
-  joint_sign_map.(input_frame.coordinates{i}) = 1;
+for i=1:nq
+  joint_index_map.(state_frame.coordinates{i}) = i;
+  joint_offset_map.(state_frame.coordinates{i}) = 0;
+  joint_sign_map.(state_frame.coordinates{i}) = 1;
 end
 % set nonzero offsets
 joint_offset_map.l_arm_shx = -1.45;
@@ -135,7 +136,7 @@ gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
-qdes = zeros(nu,1);
+qdes = zeros(nq,1);
 if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
     strcmp(joint,'l_arm_elx') || strcmp(joint,'r_arm_elx') || ...
     strcmp(joint,'l_leg_hpy') || strcmp(joint,'r_arm_hpy') || ... 
@@ -220,6 +221,7 @@ else
   error('unknown signal');
 end
 
+qdes=qdes(act_idx);
 toffset = -1;
 tt=-1;
 while tt<T
@@ -230,9 +232,9 @@ while tt<T
     end
     tt=t-toffset;
     if strcmp(control_mode,'force')
-      udes(joint_index_map.(joint)) = input_traj.eval(tt);
+      udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
     elseif strcmp(control_mode,'position')
-      qdes(joint_index_map.(joint)) = input_traj.eval(tt);
+      qdes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
     end
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
   end

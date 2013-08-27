@@ -12,24 +12,24 @@ input_frame = AtlasPositionRef(r);
 
 if nargin < 1
   %%%%%%%%%%%%%%%%%%%%%%%%%%%
-  desired_neck_pitch = 0.0;
+  desired_neck_pitch = 0.2;
   %%%%%%%%%%%%%%%%%%%%%%%%%%%
 else
   desired_neck_pitch = max(-0.2,min(1.0,desired_neck_pitch));
 end
 
-neck_idx = ~cellfun(@isempty,strfind(input_frame.coordinates,'neck_ay'));
+neck_idx = ~cellfun(@isempty,strfind(state_frame.coordinates,'neck_ay'));
 act_idx = getActuatedJoints(r);
 
 while 1
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
-    q0=x(1:getNumDOF(r));
-    qdes = q0(act_idx);
+    qdes=x(1:getNumDOF(r));
     qdes(neck_idx) = desired_neck_pitch;
-    input_frame.publish(t,qdes,'ATLAS_COMMAND');
     break;
   end
 end
+
+atlasLinearMoveToPos(qdes,state_frame,input_frame,act_idx,4.0);
 
 end

@@ -22,5 +22,5 @@ qstar(neck_idx) = desired_neck_pitch;
 act_idx = getActuatedJoints(r);
 
 disp('Moving to nominal pose (10 sec).');
-atlasLinearMoveToPos(qstar,state_frame,input_frame,act_idx,10);
+atlasLinearMoveToPos(qstar,state_frame,input_frame,act_idx,4);
 

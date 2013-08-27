@@ -4,8 +4,8 @@ function atlasReachingTest
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % hand goal positions (pelvis pos) ---ROTATIONS NOT SUPPORTED YET
 rhand_goal = [0.33; -0.5; 0.3];
-lhand_goal = [0.3; 0.15; 0.2];
-neck_pitch = 0;
+lhand_goal = [0.45; 0.15; 0.4];
+neck_pitch = 0.6;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 options.floating = true;
