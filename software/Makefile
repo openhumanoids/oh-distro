@@ -13,6 +13,8 @@ BUILD_PREFIX=$(shell for pfx in ./ .. ../..; do d=`pwd`/$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
 
+export BUILD_PREFIX
+
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
 
@@ -27,7 +29,6 @@ all:
 	@# Place additional commands here if you have any
 
 test:	
-	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(TESTDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
