@@ -1,6 +1,7 @@
 #ifndef OBJECT_INTERACTION_GUI_UTILS_HPP
 #define OBJECT_INTERACTION_GUI_UTILS_HPP
 
+#define PARAM_DIL_FACTOR "Obj Dilation"
 #define PARAM_SEED_LH "Seed LHand"
 #define PARAM_SEED_RH "Seed RHand"
 #define PARAM_SEED_LF "Seed LFoot"
@@ -650,7 +651,8 @@ namespace renderer_affordances_gui_utils
             oss << "INIT_GRASP_OPT_" << id; 
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
-            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
+            double dilation_factor = bot_gtk_param_widget_get_double(pw,PARAM_DIL_FACTOR);
+            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid,dilation_factor);
            }             
        }
     }
@@ -721,7 +723,7 @@ namespace renderer_affordances_gui_utils
         oss << "INIT_GRASP_OPT_" << OptChannelIdList[i];
         channel = oss.str();
         uid = OptChannelHandUidList[i];
-        self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
+        self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid,1.0);
       }
 
     }
@@ -905,7 +907,7 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
+    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -1002,6 +1004,9 @@ namespace renderer_affordances_gui_utils
 			                              (const char **)  foot_contact_masks,
 			                              foot_contact_nums);                              
 			bot_gtk_param_widget_add_separator (pw,"(seed-opt control)");
+			//spinbox for dil factor from -2 to 2 in 0.1 inc, 1 by default
+		  bot_gtk_param_widget_add_double(pw,PARAM_DIL_FACTOR, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                0.1, 2.0, 0.1, 1);			
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);

@@ -32,7 +32,7 @@ namespace renderer_affordances_lcm_utils
         //grasp state = 1 - partial 
         //grasp state = 2 - full grasp 
         RendererAffordances *self = (RendererAffordances*) user;
-        drc::desired_grasp_state_t msg;
+        drc::desired_grasp_state_t msg;       
         msg=get_partial_grasp_state(self->last_state_msg_timestamp,robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_state);
         // Publish the message 
         self->lcm->publish(channel, &msg);

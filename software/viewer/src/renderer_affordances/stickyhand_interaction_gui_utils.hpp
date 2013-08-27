@@ -96,13 +96,14 @@ namespace renderer_affordances_gui_utils
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
-
+      
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
         drc::desired_grasp_state_t msg; // just to access types
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
+    
         int grasp_type = hand_it->second.hand_type;
         if(grasp_type == msg.SANDIA_LEFT)
           publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
@@ -112,10 +113,11 @@ namespace renderer_affordances_gui_utils
           publish_partial_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
         else if(grasp_type== msg.IROBOT_RIGHT)
           publish_partial_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
-          
-        //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+    
+            //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 
       }
+      
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL3)){
       string channel = "POSE_GOAL";

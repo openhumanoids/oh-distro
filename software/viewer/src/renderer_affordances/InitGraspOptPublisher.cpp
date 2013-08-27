@@ -37,7 +37,7 @@ namespace renderer_affordances
 //std::string channel = "INIT_GRASP_OPT"+next_available_opt;
 //publishGraspOptControlMsg("INIT_GRASP_OPT",T_geom_approach,KDL::Frame::Identity(),0,0,0);
 
-  void InitGraspOptPublisher::publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,const int drake_control, const int uid)				 
+  void InitGraspOptPublisher::publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,const int drake_control, const int uid, double dilation)				 
   {
     
     drc::grasp_opt_control_t msg;
@@ -76,16 +76,16 @@ namespace renderer_affordances
         boost::shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link_geom));	
         msg.geometry_type = msg.SPHERE;
         msg.num_dims = 1;
-        msg.dims.push_back(sphere->radius);
+        msg.dims.push_back(dilation*sphere->radius);
 
       }
       else if(type==BOX)  {
         boost::shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link_geom));
         msg.geometry_type = msg.BOX;
         msg.num_dims = 3;
-        msg.dims.push_back(box->dim.x);
-        msg.dims.push_back(box->dim.y);
-        msg.dims.push_back(box->dim.z);
+        msg.dims.push_back(dilation*box->dim.x);
+        msg.dims.push_back(dilation*box->dim.y);
+        msg.dims.push_back(dilation*box->dim.z);
       }
       else if(type==CYLINDER) {
    
@@ -93,8 +93,8 @@ namespace renderer_affordances
    
         msg.geometry_type = msg.CYLINDER;
         msg.num_dims = 2;
-        msg.dims.push_back(cyl->radius);
-        msg.dims.push_back(cyl->length);
+        msg.dims.push_back(dilation*cyl->radius);
+        msg.dims.push_back(dilation*cyl->length);
         
       }
       else if(type==MESH) { // meshes are not supported for grasping (for the moment treat them as boxes?)
@@ -103,17 +103,17 @@ namespace renderer_affordances
         {
             msg.geometry_type = msg.BOX;
             msg.num_dims = 3;
-            msg.dims.push_back(mesh_struct.span_x);
-            msg.dims.push_back(mesh_struct.span_y);
-            msg.dims.push_back(mesh_struct.span_z);
+            msg.dims.push_back(dilation*mesh_struct.span_x);
+            msg.dims.push_back(dilation*mesh_struct.span_y);
+            msg.dims.push_back(dilation*mesh_struct.span_z);
         }
       }
       else if(type==TORUS)  {
        boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link_geom));
         msg.geometry_type = msg.TORUS;
         msg.num_dims = 2;
-        msg.dims.push_back(torus->radius);
-        msg.dims.push_back(torus->tube_radius);
+        msg.dims.push_back(dilation*torus->radius);
+        msg.dims.push_back(dilation*torus->tube_radius);
       }
     } // end else
     
