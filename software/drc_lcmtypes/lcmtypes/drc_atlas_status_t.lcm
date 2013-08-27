@@ -17,6 +17,8 @@ struct atlas_status_t
   float pump_supply_pressure;  
   float pump_return_pressure;  
   float air_sump_pressure;     
+  float pump_time_meter;     
+  float current_pump_rpm;     
 
   int32_t behavior;
 
