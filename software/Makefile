@@ -28,7 +28,7 @@ all:
 	done
 	@# Place additional commands here if you have any
 
-test:	
+test:	all
 	@for subdir in $(TESTDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
