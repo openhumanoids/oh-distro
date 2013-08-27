@@ -21,10 +21,11 @@ pods_use_pkg_config_packages(drc-camera-capture
   opencv)
 pods_install_executables(drc-camera-capture)
 
-add_executable(drc-camera-to-avi log_to_avi.cpp)
-pods_use_pkg_config_packages(drc-camera-to-avi lcm 
+add_executable(lcm-log-to-avi log_to_avi.cpp)
+pods_use_pkg_config_packages(lcm-log-to-avi lcm 
+  image_io_utils
   opencv)
-pods_install_executables(drc-camera-to-avi)
+pods_install_executables(lcm-log-to-avi)
 
 #add_executable(old-robot-state-upgrade old-robot-state-upgrade.cpp  )
 #pods_use_pkg_config_packages(old-robot-state-upgrade
