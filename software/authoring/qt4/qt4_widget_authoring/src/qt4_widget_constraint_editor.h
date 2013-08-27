@@ -44,10 +44,10 @@ namespace authoring {
     void update_collision_info( void );
     void bind_axes_to_constraint( Constraint_Task_Space_Region * cnst, bool unbind_if_duplicate );
     void unbind_axes_from_constraint( Constraint_Task_Space_Region * cnst );
+    void publish_constraints ( float ik_time_of_interest = -1.0 );
 
   public slots:
     void update_constraint( const Constraint_Task_Space_Region& constraint );
-    void update_description( const QString& description );
     void highlight_constraint( const QString& id, highlight_class_t highlight_class, bool highlight );
     void highlight_child( const QString& id, const QString& child, bool highlight );
     void select_constraint( const QString& id, select_class_t select_class);
@@ -81,7 +81,6 @@ namespace authoring {
     QDoubleSpinBox * _double_spin_box_time_start;
     QDoubleSpinBox * _double_spin_box_time_end;
     QLineEdit * _line_edit_metadata;
-    QLineEdit * _line_edit_description;
     QWidget * _constraint_editor_popup;
     QWidget * _constraint_visualizer_popup;
 

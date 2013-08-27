@@ -52,7 +52,7 @@ namespace authoring {
     void aas_got_status_msg( long int plan_index, bool server_ready_status, 
         float last_time_solved, float total_time_to_solve,
         bool solving_highres, bool plan_is_good, bool plan_is_warn );
-    void publish_constraints( float ik_time_of_interest = 0.0 );
+    void publish_constraints( float ik_time_of_interest = -1.0 );
     
   protected slots:
     void _push_button_grab_pressed( void );

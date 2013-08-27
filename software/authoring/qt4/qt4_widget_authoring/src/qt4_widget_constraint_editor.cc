@@ -32,14 +32,11 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
                                                     _double_spin_box_time_start( new QDoubleSpinBox( this ) ),
                                                     _double_spin_box_time_end( new QDoubleSpinBox( this ) ),
                                                     _line_edit_metadata( new QLineEdit( QString::fromStdString( _constraint.metadata() ), this ) ),
-                                                    _line_edit_description( new QLineEdit( description_from_constraint( _constraint ), this ) ),
                                                     _constraint_editor_popup( NULL ),
                                                     _select_class(SELECT_NONE){
 
   _double_spin_box_time_start->setToolTip("the absolute start time for this constraint, in seconds");
   _double_spin_box_time_end->setToolTip("the absolute end time for this constraint, in seconds");
-
-  _line_edit_description->setReadOnly(true);
 
   _urdf_xml_string = urdf_xml_string;
   vector< shared_ptr< Link > > links;
@@ -70,7 +67,6 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
   _double_spin_box_time_end->setSingleStep( 0.1 );
   _double_spin_box_time_end->setSuffix( " s" );
   _line_edit_metadata->setFixedWidth( 200 );
-  _line_edit_description->setFixedWidth( 1024 );
 
   _double_spin_box_time_start->setValue( _constraint.start() );
   _double_spin_box_time_end->setValue( _constraint.end() );
@@ -84,7 +80,6 @@ Qt4_Widget_Constraint_Editor( const Constraint_Task_Space_Region& constraint,
   widget_layout->addWidget( _double_spin_box_time_start );
   widget_layout->addWidget( _double_spin_box_time_end );
   widget_layout->addWidget( _line_edit_metadata );
-  widget_layout->addWidget( _line_edit_description );
   setLayout( widget_layout );
 
   update_constraint( _constraint );
@@ -128,7 +123,7 @@ void
 Qt4_Widget_Constraint_Editor::
 update_constraint( const Constraint_Task_Space_Region& constraint ){
   _constraint = constraint;
-  _label_id->setText( QString::fromStdString( constraint.id() ) );
+  //_label_id->setText( QString::fromStdString( constraint.id() ) );
   _check_box_active->setCheckState( ( _constraint.active() ? Qt::Checked : Qt::Unchecked ) );
   _check_box_visible->setEnabled( _constraint.active() );
   _check_box_visible->setCheckState( ( _constraint.visible() ? Qt::Checked : Qt::Unchecked ) );
@@ -141,19 +136,8 @@ update_constraint( const Constraint_Task_Space_Region& constraint ){
   _line_edit_metadata->setEnabled( _constraint.active() );
   _line_edit_metadata->clear();
   _line_edit_metadata->setText( QString::fromStdString( _constraint.metadata() ) );
-  _line_edit_description->setEnabled( _constraint.active() );
-  _line_edit_description->clear();
-  _line_edit_description->setText( QString::fromStdString( _constraint.description() ) );
   emit constraint_update( _constraint );
-  return;
-}
-
-void
-Qt4_Widget_Constraint_Editor::
-update_description( const QString& description ){
-  _line_edit_description->clear();
-  _line_edit_description->setText( description );
-  update();
+  emit publish_constraints( -1.0 );
   return;
 }
 
@@ -216,8 +200,8 @@ Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_start_value_changed( double start ){
   _constraint.start() = _double_spin_box_time_start->value();
   check_valid_times();
-  update_description( QString::fromStdString( _constraint.description() ) );
   emit constraint_update( _constraint );
+  emit publish_constraints( -1.0 );
   return;
 }
 
@@ -226,8 +210,8 @@ Qt4_Widget_Constraint_Editor::
 _double_spin_box_time_end_value_changed( double end ){
   _constraint.end() = _double_spin_box_time_end->value();
   check_valid_times();
-  update_description( QString::fromStdString( _constraint.description() ) );
   emit constraint_update( _constraint );
+  emit publish_constraints( -1.0 );
   return;
 }
 
@@ -288,6 +272,13 @@ _check_box_visible_changed( int state ){
 void
 Qt4_Widget_Constraint_Editor::
 _push_button_edit_3D_pressed( void ){
+  // force detail edit window to close
+  if (_constraint_editor_popup){
+    _constraint_editor_popup->close();
+    // I think QT will handle cleanup after that?
+    _constraint_editor_popup = NULL;
+  }
+
   if (_constraint.visible())
     emit bind_axes_to_constraint( &_constraint, true );
   return;
@@ -296,22 +287,31 @@ _push_button_edit_3D_pressed( void ){
 void
 Qt4_Widget_Constraint_Editor::
 _push_button_edit_pressed( void ){
-  switch( _constraint.type() ){
-  case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-    _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( _constraint, _robot_model, _object_affordances, this );
-    connect( this, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), _constraint_editor_popup, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
-    connect( _constraint_editor_popup, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
-    connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString&, highlight_class_t highlight_class, bool ) ), this, SLOT( highlight_constraint( const QString&, highlight_class_t highlight_class, bool ) ) );
-    connect( _constraint_editor_popup, SIGNAL( child_highlight( const QString&, const QString&, bool ) ), this, SLOT( highlight_child( const QString&, const QString&,  bool ) ) );
-    _constraint_editor_popup->show();
-    emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
-    break;
-  case ( CONSTRAINT_CONFIGURATION_TYPE ):
-  case ( CONSTRAINT_UNKNOWN_TYPE ):
-  default:
-    break;
+  // force axis to not bind to anything during detail edit
+  emit unbind_axes_from_constraint( &_constraint );
+
+  // if one is already open, close it
+  if (_constraint_editor_popup){
+    _constraint_editor_popup->close();
+    // I think QT will handle cleanup after that?
+    _constraint_editor_popup = NULL;
+  } else {
+    switch( _constraint.type() ){
+    case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
+        _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( _constraint, _robot_model, _object_affordances, this );
+        connect( this, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), _constraint_editor_popup, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+        connect( _constraint_editor_popup, SIGNAL( constraint_update( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
+        connect( _constraint_editor_popup, SIGNAL( constraint_highlight( const QString&, highlight_class_t highlight_class, bool ) ), this, SLOT( highlight_constraint( const QString&, highlight_class_t highlight_class, bool ) ) );
+        connect( _constraint_editor_popup, SIGNAL( child_highlight( const QString&, const QString&, bool ) ), this, SLOT( highlight_child( const QString&, const QString&,  bool ) ) );
+        _constraint_editor_popup->show();
+        emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint.id() ) ) );
+        break;
+      case ( CONSTRAINT_CONFIGURATION_TYPE ):
+      case ( CONSTRAINT_UNKNOWN_TYPE ):
+      default:
+        break;
+    }
   }
-  update_description( QString::fromStdString( _constraint.description() ) );
   return;
 }
 

@@ -28,7 +28,7 @@ Qt4_Widget_OpenGL_Authoring( const string& xmlString,
                                                   _timer_update( new QTimer( this ) ),
                                                   _bound_constraint_midpoint(),
                                                   _mouse_capture_last_point() {
-  setMinimumSize( 800, 400 );
+  setMinimumSize( 500, 300 );
 
   _opengl_object_affordance_collection.set_visible( false );
   _opengl_object_affordance_collection_ghost.set_visible( false );
@@ -163,8 +163,8 @@ update_opengl_object_gfe_selected_links( const vector<string>& linkNames ){
     int dash_pos = linkNames[i].find("-");
     linkNamesShortened.push_back(linkNames[i].substr(0, dash_pos));
   }
-  _opengl_object_gfe.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 0.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
-  _opengl_object_robot_plan.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 0.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
+  _opengl_object_gfe.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 1.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
+  _opengl_object_robot_plan.set_selected_links( linkNamesShortened, Eigen::Vector3f( 1.0, 0.0, 1.0 ), Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
   return;
 }
 

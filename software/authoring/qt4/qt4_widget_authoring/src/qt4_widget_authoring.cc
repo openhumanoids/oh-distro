@@ -26,7 +26,7 @@ Qt4_Widget_Authoring( const std::string& xmlString,
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
                                             _push_button_import( new QPushButton( QString( "import..." ), this ) ),
                                             _push_button_export( new QPushButton( QString( "export..." ), this ) ),
-                                            _push_button_publish( new QPushButton( QString( "publish constraints" ), this ) ),
+                                            _push_button_publish( new QPushButton( QString( "force publish constraints" ), this ) ),
                                             _text_edit_affordance_collection( new QTextEdit( "N/A", this ) ),
                                             _slider_plan_current_index( new QSlider( Qt::Horizontal, this ) ),
                                             _label_plan_step_count( new QLabel("")),
@@ -152,9 +152,6 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   tmp =  new QLabel( QString("Comment") );
   tmp->setStyleSheet(stylesheet);
   tmp->setFixedWidth( 200 ); constraints_layout_labels_layout->addWidget( tmp );
-  tmp =  new QLabel( QString("") );
-  tmp->setStyleSheet(stylesheet);
-  tmp->setFixedWidth( 1024 ); constraints_layout_labels_layout->addWidget( tmp );
   // layout for now contains just labels; we'll sync up and get editors for
   //  existing constraints in just a bit
   _constraints_layout_labels->setLayout(constraints_layout_labels_layout);
@@ -196,19 +193,19 @@ Qt4_Widget_Authoring( const std::string& xmlString,
 
 
   QVBoxLayout * widget_layout_lower = new QVBoxLayout();
-  widget_layout_lower->addWidget( _text_edit_info );
   widget_layout_lower->addWidget( controls_group_box );
   widget_layout_lower->addWidget( tab_widget );
+  widget_layout_lower->addWidget( _text_edit_info );
   QWidget * widget_lower = new QWidget();
   widget_lower->setLayout( widget_layout_lower );
 
   QSplitter *splitter = new QSplitter();
 
-  splitter->addWidget( _widget_opengl_authoring );
   splitter->addWidget( widget_lower );
-  splitter->setOrientation( Qt::Vertical );
-  splitter->setStretchFactor( 0, 1 ); // give the top as much space as possible
-  splitter->setStretchFactor( 1, 0 ); // give the bottom a stretch factor of 0
+  splitter->addWidget( _widget_opengl_authoring );
+  splitter->setOrientation( Qt::Horizontal );
+  splitter->setStretchFactor( 0, 1 ); // give the right as much space as possible
+  splitter->setStretchFactor( 1, 0 ); // give the left a stretch factor of 0
 
   QGridLayout * widget_layout = new QGridLayout();
   widget_layout->addWidget(splitter);
@@ -235,7 +232,6 @@ Qt4_Widget_Authoring( const std::string& xmlString,
   connect( _push_button_import, SIGNAL( clicked() ), this, SLOT( _push_button_import_pressed() ) );
   connect( _push_button_export, SIGNAL( clicked() ), this, SLOT( _push_button_export_pressed() ) );
   connect( _push_button_publish, SIGNAL( clicked() ), this, SLOT( _push_button_publish_pressed() ) );
-
   connect( _push_button_insert_before, SIGNAL( clicked() ), this, SLOT( _push_button_insert_before_pressed() ) );
   connect( _push_button_insert_after, SIGNAL( clicked() ), this, SLOT( _push_button_insert_after_pressed() ) );
   connect( _push_button_remove_at, SIGNAL( clicked() ), this, SLOT( _push_button_remove_at_pressed() ) );
@@ -455,22 +451,25 @@ aas_got_status_msg( long int plan_index, bool server_ready_msg, float last_time_
 void 
 Qt4_Widget_Authoring::
 publish_constraints( float ik_time_of_interest ){
-  // publish a single-shot at just our current time
-  action_sequence_t msg; 
-  _constraint_sequence.to_msg( msg, _affordance_collection, ik_time_of_interest ); 
-  Constraint_Sequence::print_msg( msg );
-  msg.ik_time = ik_time_of_interest;
-  msg.utime = _current_plan_index+1;
-  if (ik_time_of_interest != -1 && _robot_plan.size() > 0){
-    _robot_plan[_slider_plan_current_index->value()].to_lcm(&msg.q0);
+  // publish a single-shot at just our current time if ik_time_of_interest isn't
+  // -1 (i.e. publish whole plan)
+  if (ik_time_of_interest != -1.0){
+    action_sequence_t msg; 
+    _constraint_sequence.to_msg( msg, _affordance_collection, ik_time_of_interest ); 
+    Constraint_Sequence::print_msg( msg );
+    msg.ik_time = ik_time_of_interest;
+    msg.utime = _current_plan_index+1;
+    if (_robot_plan.size() > 0){
+      _robot_plan[_slider_plan_current_index->value()].to_lcm(&msg.q0);
+    }
+
+    emit drc_action_sequence_t_oneshot_publish( msg );  
+    _push_button_publish_plan->setEnabled( false );
+    _push_button_publish_reverse_plan->setEnabled( false );
+    emit info_update( QString( "[<b>OK</b>] published one-shot constraint sequence as drc::action_sequence_t" ) ); 
   }
 
-  emit drc_action_sequence_t_oneshot_publish( msg );  
-  _push_button_publish_plan->setEnabled( false );
-  _push_button_publish_reverse_plan->setEnabled( false );
-  emit info_update( QString( "[<b>OK</b>] published one-shot constraint sequence as drc::action_sequence_t" ) ); 
-  
-  // also get to work on the full plan
+    // always get to work on full plan
   _push_button_publish_pressed();
 
   return;
@@ -731,6 +730,7 @@ _refresh_constraint_editors( void ){
     connect( *it, SIGNAL( child_highlight ( const QString&, const QString&, bool ) ), _widget_opengl_authoring, SLOT( highlight_child( const QString&, const QString&, bool ) ) );
     connect( *it, SIGNAL( bind_axes_to_constraint ( Constraint_Task_Space_Region *, bool ) ), _widget_opengl_authoring, SLOT( bind_axes_to_constraint( Constraint_Task_Space_Region *, bool ) ) );
     connect( *it, SIGNAL( unbind_axes_from_constraint ( Constraint_Task_Space_Region * ) ), _widget_opengl_authoring, SLOT( unbind_axes_from_constraint( Constraint_Task_Space_Region * ) ) );
+    connect( *it, SIGNAL( publish_constraints ( float ) ), this, SLOT( publish_constraints ( float ) ) );
     connect( _widget_opengl_authoring, SIGNAL( update_constraint ( const Constraint_Task_Space_Region& ) ), this, SLOT( update_constraint( const Constraint_Task_Space_Region& ) ) );
     connect( _widget_opengl_authoring, SIGNAL( select_constraint( const QString&, select_class_t) ), *it, SLOT( select_constraint( const QString&, select_class_t) ) );
   }
