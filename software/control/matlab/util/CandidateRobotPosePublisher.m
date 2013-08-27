@@ -44,8 +44,7 @@ classdef CandidateRobotPosePublisher
             
             msg = drc.robot_state_t();
             msg.utime = t * 1000000;
-            msg.robot_name = 'atlas';
-            i=1;
+                        i=1;
             msg.pose = drc.position_3d_t();
             msg.pose.translation = drc.vector_3d_t();
             msg.pose.rotation = drc.quaternion_t();
