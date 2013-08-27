@@ -9,14 +9,18 @@ classdef StepRecoveryPlanner < DRCPlanner
       obj = obj@DRCPlanner();
       obj.biped = biped;
       obj = addInput(obj, 'foot_contact', 'FOOT_CONTACT_ESTIMATE', 'drc.foot_contact_estimate_t', 1, 1, 0);
-      obj = addInput(obj, 'x0', 'EST_ROBOT_STATE', obj.biped.getStateFrame().lcmcoder, 1, 1, 1);
+      obj = addInput(obj, 'x0', 'EST_ROBOT_STATE', obj.biped.getStateFrame().lcmcoder, 1, 1, 0);
+      obj = addInput(obj, 'stop_walking', 'STOP_WALKING', 'drc.plan_control_t', 1, 1, 1);
     end
 
 
     function plan(obj, data)
-      % if data.foot_contact.left_contact == obj.last_contact_state.left_contact && data.foot_contact.right_contact == obj.last_contact_state.right_contact
-      %   return;
-      % end
+      persistent has_run
+      if isempty(has_run)
+        has_run = true;
+      else
+        return
+      end
       if data.foot_contact.left_contact || data.foot_contact.right_contact
         obj.last_contact_state = data.foot_contact; % remember the last foot contact in case both feet are in the air while we're falling 
       end
@@ -38,7 +42,7 @@ classdef StepRecoveryPlanner < DRCPlanner
       [xcom, J] = getCOM(obj.biped, kinsol);
       xlimp = [xcom(1:2); J*qd];
       g = 9.81;
-      dt = 0.3; % step duration, seconds
+      dt = 0.5; % step duration, seconds
       omega_0 = sqrt(g / (xcom(3)-limp_base(3)));
 
 
@@ -47,9 +51,9 @@ classdef StepRecoveryPlanner < DRCPlanner
       % if obj.last_contact_state.right_contact && obj.last_contact_state.left_contact
         %% choose a foot to step with
       if obj.last_contact_state.right_contact
-        is_right_foot = 1;
+        is_right_foot = true;
       else
-        is_right_foot = 0;
+        is_right_foot = false;
       end
 
       rpos = forwardKin(obj.biped, kinsol, obj.biped.foot_bodies_idx(1), obj.biped.foot_contact_offsets.right.center, 1);
@@ -59,7 +63,7 @@ classdef StepRecoveryPlanner < DRCPlanner
       else
         X = [rpos, lpos];
       end
-      footsteps = struct('pos', X(:,1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6,1), 'is_right_foot', ~is_right_foot, 'is_in_contact', true);
+      footsteps = struct('pos', X(:,1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6,1), 'is_right_foot', ~is_right_foot, 'is_in_contact', false);
       footsteps(end+1) = struct('pos', X(:,2), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6,1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
       r_ic0 = r_0(1:2) + rd_0(1:2) / omega_0;
@@ -92,7 +96,7 @@ classdef StepRecoveryPlanner < DRCPlanner
                    obj.biped.footOrig2Contact(X(:,end), 'heel', ~is_right_foot)];
         r_ic1 = (r_ic0 - r_a0(1:2)) * exp(dt*omega_0) + r_a0(1:2);
         r_ic2 = (r_ic1 - r_a1(1:2)) * exp(dt*omega_0) + r_a1(1:2);
-        final_ok = inpolygon(r_ic2(1), r_ic2(2), corners(1,:), corners(2,:));
+        final_ok = inpolygon(r_ic1(1), r_ic1(2), corners(1,:), corners(2,:));
         footsteps(end+1) = struct('pos', X(:,end), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', ~is_right_foot, 'is_in_contact', true);
 
         plot_lcm_points([r_ic0', limp_base(3)], [1,0,0], 250, 'r_ic0', 1, 1);
@@ -114,12 +118,24 @@ classdef StepRecoveryPlanner < DRCPlanner
 
       for j = 1:length(footsteps)
         footsteps(j).id = obj.biped.getNextStepID();
-        footsteps(j).step_speed = 1;
+        footsteps(j).step_speed = -dt; % negative speed signals a fixed duration
         footsteps(j).step_height = 0.05;
         footsteps(j).pos = obj.biped.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
       end
-      obj.biped.publish_footstep_plan(footsteps, etime(clock,[1970 1 1 0 0 0])*1000000, 1, struct('ignore_terrain', 1, 'mu', 1));
-
+      footstep_opts = struct('ignore_terrain', 1, 'mu', 1);
+      obj.biped.publish_footstep_plan(footsteps, etime(clock,[1970 1 1 0 0 0])*1000000, 1, footstep_opts);
+      [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(obj.biped, data.x0, footsteps, footstep_opts);
+      link_constraints = buildLinkConstraints(obj.biped, q, foottraj, []);
+      s1dot = fnder(V.s1,1);
+      s2dot = fnder(V.s2,1);
+      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      xstar = d.xstar;     
+      qstar = xstar(1:nq);
+      walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'s1dot',s1dot,'s2dot',s2dot,...
+          'support_times',support_times,'supports',{supports},'comtraj',comtraj,'mu',footstep_opts.mu,'t_offset',0,...
+          'link_constraints',link_constraints,'zmptraj',zmptraj,'qtraj',qstar,'ignore_terrain',footstep_opts.ignore_terrain)
+      walking_pub = WalkingPlanPublisher('WALKING_PLAN');
+      walking_pub.publish(0,walking_plan);
     end
   end
 end
