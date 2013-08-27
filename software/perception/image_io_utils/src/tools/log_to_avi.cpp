@@ -105,7 +105,8 @@ void Tags::doEncode(){
     output_video = cv::VideoWriter( cl_cfg_.outputfile ,codec_val_,15.0,size2,true);  
     
     if (!output_video.isOpened()){
-      cout  << "Could not open the output 'video.avi' for write" << endl;
+      cout  << "Could not open the output to write:" << endl;
+      cout  << cl_cfg_.outputfile << "\n";
       exit(-1);
     }    
   }
@@ -156,7 +157,7 @@ int main( int argc, char** argv ){
   cl_cfg.codec ="divx";
   cl_cfg.camera_chan = "WEBCAM";  
   cl_cfg.frames = -1;
-  cl_cfg.outputfile = "video.avi";
+  cl_cfg.outputfile = "";
   
   cout << "Convert images within LCM log to avi\n";
   cout << "Example Usage:\n";
@@ -168,15 +169,18 @@ int main( int argc, char** argv ){
   parser.add(cl_cfg.codec, "c", "codec", "Codec: none, divx, flv1, h264");
   parser.add(cl_cfg.frames, "f", "frames", "No. of Frames to process (-1 = all)");
   parser.add(cl_cfg.logfile, "l", "logfile", "Path to the LCM log");
-  parser.add(cl_cfg.outputfile, "o", "outputfile", "Output AVI file");
+  parser.add(cl_cfg.outputfile, "o", "outputfile", "Output AVI file (empty means use logfile.avi)");
   parser.parse();
   cout << cl_cfg.codec << " is codec\n";
   cout << cl_cfg.camera_chan << " is camera_chan\n";
   cout << cl_cfg.frames << " is frames\n";
   cout << cl_cfg.logfile << " is logfile\n";
+  if (cl_cfg.outputfile.empty()){
+    cl_cfg.outputfile = string(cl_cfg.logfile + ".avi");
+  }
   cout << cl_cfg.outputfile << " is outputfile\n";
   
-  std::string filename_url = "file://" + cl_cfg.logfile;
+  std::string filename_url = "file://" + cl_cfg.logfile + "?speed=0"; // as quick as it can
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM ( filename_url    )  );
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
