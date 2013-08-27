@@ -7,19 +7,33 @@ import bdi_step.footsteps
 
 NUM_REQUIRED_WALK_STEPS = 4
 
+class Behavior:
+    WALKING = 0
+    CRAWLING = 1
+    BDI_WALKING = 2
+    BDI_STEPPING = 3
+
 class BDIWalkTranslator:
     def __init__(self):
         self.lc = lcm.LCM()
         self.bdi_step_queue = []
         self.delivered_index = None
         self.drift_from_plan = np.zeros((3,1))
+        self.behavior = None
 
     def handle_footstep_plan(self, channel, msg_data):
         print "Starting new footstep plan"
         msg = drc.footstep_plan_t.decode(msg_data)
         footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
         footsteps = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
-        if len(footsteps) < NUM_REQUIRED_WALK_STEPS:
+        behavior = opts['behavior']
+        if behavior != Behavior.BDI_WALKING and behavior != Behavior.BDI_STEPPING:
+            m = "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
+            print m
+            ut.send_status(6,0,0,m)
+            return
+        self.behavior = behavior
+        if self.behavior == Behavior.BDI_WALKING and len(footsteps) < NUM_REQUIRED_WALK_STEPS:
             msg = 'ERROR: Footstep plan must be at least 4 steps for BDI translation'
             print msg
             ut.send_status(6,0,0,msg)
@@ -32,11 +46,18 @@ class BDIWalkTranslator:
         if self.delivered_index is None:
             return
         msg = drc.atlas_status_t.decode(msg_data)
-        index_needed = msg.walk_feedback.next_step_index_needed
-        if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 2):
-            print "Handling request for next step: {:d}".format(index_needed)
-            # self.update_drift(msg.walk_feedback.step_queue_saturated)
-            self.send_walk_params(index_needed-1)
+        if self.behavior == Behavior.BDI_WALKING:
+            index_needed = msg.walk_feedback.next_step_index_needed
+            if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 2):
+                print "Handling request for next step: {:d}".format(index_needed)
+                # self.update_drift(msg.walk_feedback.step_queue_saturated)
+                self.send_walk_params(index_needed-1)
+        else:
+            index_needed = msg.step_feedback.next_step_index_needed
+            if index_needed > self.delivered_index and len(self.bdi_step_queue) >= index_needed:
+                print "Handling request for next step: {:d}".format(index_needed)
+                self.send_walk_params(index_needed-1)
+
 
     def update_drift(self,step_queue):
         print "Updating drift calculation"
@@ -49,14 +70,24 @@ class BDIWalkTranslator:
             s.position[:2,0] += self.drift_from_plan[:2,0]
 
     def send_walk_params(self,step_index):
-        walk_param_msg = drc.atlas_behavior_walk_params_t()
-        walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
-        walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
-        walk_param_msg.use_demo_walk = 0
-        walk_param_msg.step_queue = self.bdi_step_queue[step_index-1:step_index+3]
-        self.lc.publish('ATLAS_WALK_PARAMS', walk_param_msg.encode())
-        self.delivered_index = walk_param_msg.step_queue[0].step_index
-        print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.step_queue[0].step_index, walk_param_msg.step_queue[-1].step_index)
+        if self.behavior == Behavior.BDI_WALKING:
+            walk_param_msg = drc.atlas_behavior_walk_params_t()
+            walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
+            walk_param_msg.step_queue = self.bdi_step_queue[step_index-1:step_index+3]
+            walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
+            walk_param_msg.use_demo_walk = 0
+            self.lc.publish('ATLAS_WALK_PARAMS', walk_param_msg.encode())
+            self.delivered_index = walk_param_msg.step_queue[0].step_index
+            print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.step_queue[0].step_index, walk_param_msg.step_queue[-1].step_index)
+        else:
+            walk_param_msg = drc.atlas_behavior_step_params_t()
+            walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
+            walk_param_msg.use_demo_walk = 0
+            walk_param_msg.desired_step = self.bdi_step_queue[step_index-1]
+            self.lc.publish('ATLAS_STEP_PARAMS', walk_param_msg.encode())
+            self.delivered_index = walk_param_msg.desired_step.step_index
+            print "Sent step params for step index {:d}".format(walk_param_msg.desired_step.step_index)
+
 
     def run(self):
         print "Ready to start translating footstep plans"

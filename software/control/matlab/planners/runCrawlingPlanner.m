@@ -100,7 +100,7 @@ while true
       data = goal_mon.getNextMessage(10);
       if (~isempty(data) && strcmp(location,'base'))
         goal = drc.walking_goal_t(data);
-        if (goal.crawling)
+        if (goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING)
           msg =['Crawl Plan (', location, '): plan received']; disp(msg); send_status(status_code,0,0,msg);
           waiting = false;
           committed = false;

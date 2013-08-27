@@ -32,7 +32,16 @@ struct walking_goal_t
 
 	boolean ignore_terrain;
 
-    boolean crawling;
+    int8_t behavior;
+    const int8_t BEHAVIOR_WALKING = 0;
+    const int8_t BEHAVIOR_CRAWLING = 1;
+    const int8_t BEHAVIOR_BDI_WALKING = 2;
+    const int8_t BEHAVIOR_BDI_STEPPING = 3;
+
+    int8_t goal_type;
+    const int8_t GOAL_TYPE_CENTER = 0;
+    const int8_t GOAL_TYPE_RIGHT_FOOT = 1;
+    const int8_t GOAL_TYPE_LEFT_FOOT = 2;
 
 	float mu;
 

@@ -29,7 +29,7 @@ classdef FootstepPlanner < DRCPlanner
       if changelist.goal || isempty(X)
         msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
         info = struct(data.goal);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior'}
           if isfield(info, x{1})
             obj.options.(x{1}) = info.(x{1});
           elseif isfield(obj.biped, x{1})
@@ -92,7 +92,7 @@ classdef FootstepPlanner < DRCPlanner
           planning = false;
           msg ='Foot Plan : Committed'; disp(msg); send_status(6,0,0,msg);
         end
-        if data.goal.crawling
+        if data.goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING
           planning = false;
         end
         if planning
@@ -109,7 +109,7 @@ classdef FootstepPlanner < DRCPlanner
         end
 
         % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
-        if (modified || changelist.goal) && (~data.goal.crawling)
+        if (modified || changelist.goal) && ~(data.goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING)
           Xout = X;
           % Convert from foot center to foot origin
           for j = 1:length(X)

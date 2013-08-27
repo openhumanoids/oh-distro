@@ -79,6 +79,7 @@ classdef FootstepPlanPublisher
 		    msg.footstep_opts = drc.footstep_opts_t();
 		    msg.footstep_opts.ignore_terrain = options.ignore_terrain;
 		    msg.footstep_opts.mu = options.mu;
+		    msg.footstep_opts.behavior = options.behavior;
 		end
 	end
 end

@@ -34,5 +34,7 @@ def decode_footstep_plan(plan_msg):
     footsteps = []
     for goal in plan_msg.footstep_goals:
         footsteps.append(decode_footstep_goal(goal))
-    options = {'ignore_terrain': plan_msg.footstep_opts.ignore_terrain, 'mu': plan_msg.footstep_opts.mu}
+    options = {'ignore_terrain': plan_msg.footstep_opts.ignore_terrain,
+               'mu': plan_msg.footstep_opts.mu,
+               'behavior': plan_msg.footstep_opts.behavior}
     return footsteps, options
