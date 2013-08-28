@@ -21,9 +21,25 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_,
   lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::irobotLeftHandler,this);  
   lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::irobotRightHandler,this);  
   lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
+
+  lcm_->subscribe("ATLAS_OFFSETS",&state_sync::offsetHandler,this);  
+  
   
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
+  
+  manual_joint_offsets_.assign(28,0.0);
+}
+
+
+void state_sync::offsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
+  std::cout << "got offsetHandler\n";
+  manual_joint_offsets_ = msg->joint_position;
+  
+  for (size_t i=0; i < manual_joint_offsets_.size(); i++){
+    std::cout << manual_joint_offsets_[i] << ", ";
+  }
+  std::cout << "\n";
 }
 
 
@@ -78,7 +94,15 @@ void state_sync::irobotRightHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   //std::cout << "got atlasHandler\n";
   atlas_joints_.name = msg->joint_name;
-  atlas_joints_.position = msg->joint_position;
+  
+  std::vector <float> mod_positions;
+  mod_positions.assign(28,0.0);
+  for (size_t i=0; i < manual_joint_offsets_.size(); i++){
+    mod_positions[i] = msg->joint_position[i] + manual_joint_offsets_[i]; 
+    ///std::cout << manual_joint_offsets_[i] << ", ";
+  }  
+  
+  atlas_joints_.position = mod_positions;
   atlas_joints_.velocity = msg->joint_velocity;
   atlas_joints_.effort = msg->joint_effort;
   

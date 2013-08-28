@@ -71,6 +71,10 @@ class state_sync{
     bool is_sandia_right_;
     
     PoseT pose_BDI_;
+    
+    
+    void offsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
+    std::vector<float> manual_joint_offsets_;
 };    
 
 #endif

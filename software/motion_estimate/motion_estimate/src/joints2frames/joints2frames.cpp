@@ -150,6 +150,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   lcm_->publish("HEAD_TO_BODY", &tf);    
   */  
     
+  Eigen::Isometry3d body_to_r_larm, body_to_r_hand;
+
   // 2a. Determine the required BOT_FRAMES transforms:
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
   bool body_to_head_found =false;
@@ -173,8 +175,17 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
         publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
       }
-    }
+    }/*else if(  (*ii).first.compare( "r_larm" ) == 0 ){
+      body_to_r_larm = DRCTransformToEigen( (*ii).second );
+    }else if(  (*ii).first.compare( "r_hand" ) == 0 ){
+      body_to_r_hand = DRCTransformToEigen( (*ii).second );
+    }*/
   }
+
+  /*
+  Eigen::Isometry3d r_larm_to_r_hand = body_to_r_larm.inverse() * body_to_r_hand ;
+  std::cout << r_larm_to_r_hand.translation() << " is r_larm to r_hand trans\n";
+  */
 
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
