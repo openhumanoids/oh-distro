@@ -102,6 +102,9 @@ typedef struct
     int64_t controller_utime;
     int8_t controller_state;
     
+    int64_t atlas_utime; // time from the atlas driver
+    int atlas_state;    
+    
     drc_system_status_t_subscription_t *status_sub;
     
     // Information to be displayed:
@@ -283,11 +286,21 @@ on_foot_contact(const lcm_recv_buf_t * buf, const char *channel, const drc_foot_
 
 static void
 on_score(const lcm_recv_buf_t * buf, const char *channel, const drc_score_t *msg, void *user_data){
-    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
-    if(self->score){
-        drc_score_t_destroy(self->score);
-    }
-    self->score = drc_score_t_copy(msg);
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+  if(self->score){
+    drc_score_t_destroy(self->score);
+  }
+  self->score = drc_score_t_copy(msg);
+}
+
+
+
+static void
+on_atlas_status(const lcm_recv_buf_t * buf, const char *channel, const drc_atlas_status_t *msg, void *user_data){
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+  self->atlas_state = msg->behavior;
+  self->atlas_utime = msg->utime;
+  
 }
 
 
@@ -504,32 +517,46 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     snprintf(line3,70, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
     snprintf(line4,70, "height %5.1f hd %5.1f",self->height,self->head_height); 
     snprintf(line5,70, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
-    snprintf(line6,70, "bias %.2f %.2f %.2f",self->estimated_biases[0] ,self->estimated_biases[1] ,self->estimated_biases[2] );
     if ((self->left_contact==1)&& (self->right_contact==1) ){
-      snprintf(line7,70, "  feet <--BOTH-->");
+      snprintf(line6,70, "  feet <--BOTH-->");
     }else if(self->left_contact==1){
-      snprintf(line7,70, "  feet <-LEFT");
+      snprintf(line6,70, "  feet <-LEFT");
     }else if(self->right_contact==1){
-      snprintf(line7,70, "  feet     RIGHT->");
+      snprintf(line6,70, "  feet     RIGHT->");
     }else{
-      snprintf(line7,70, "  feet  **NONE**");
+      snprintf(line6,70, "  feet  **NONE**");
     }     
-    //format_time_str ( self->last_utime, line8 ); 
-    snprintf(line8,70, "%.4f SIM", ((double)self->last_utime/1E6) );
 
     float elapsed_control_time =  (self->last_utime - self->controller_utime)*1E-6;
-    std::string status;
-    if (self->controller_state == DRC_CONTROLLER_STATUS_T_UNKNOWN){ status ="UNKNOWN"; 
-    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_STANDING){ status ="STANDING";
-    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_WALKING){ status ="WALKING"; 
-    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_HARNESSED){ status ="HARNESS"; 
-    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_QUASISTATIC){ status ="QUASISTATIC"; 
-    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_BRACING){ status ="BRACING"; 
-    }else{ status ="UNKNOWNX"; // shouldnt happen
+    std::string control_status;
+    if (self->controller_state == DRC_CONTROLLER_STATUS_T_UNKNOWN){ control_status ="UNKNOWN"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_STANDING){ control_status ="STANDING";
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_WALKING){ control_status ="WALKING"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_HARNESSED){ control_status ="HARNESS"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_QUASISTATIC){ control_status ="QUASISTATIC"; 
+    }else if (self->controller_state == DRC_CONTROLLER_STATUS_T_BRACING){ control_status ="BRACING"; 
+    }else{ control_status ="UNKNOWNX"; // shouldnt happen
     }
-    snprintf(line9,70, "%s [AGE %.1f]", status.c_str() , elapsed_control_time);
-      
-     
+    snprintf(line7,70, "%s [AGE %.1f]", control_status.c_str() , elapsed_control_time);
+
+    
+    float elapsed_atlas_time =  (self->last_utime - self->atlas_utime )*1E-6;
+    std::string atlas_status;
+    if (self->atlas_state == 0){ atlas_status ="NONE"; 
+    }else if (self->atlas_state == 1){ atlas_status ="FREEZE";      
+    }else if (self->atlas_state == 2){ atlas_status ="PREP";
+    }else if (self->atlas_state == 3){ atlas_status ="STAND";
+    }else if (self->atlas_state == 4){ atlas_status ="WALKING"; 
+    }else if (self->atlas_state == 5){ atlas_status ="STEP"; 
+    }else if (self->atlas_state == 6){ atlas_status ="MANIP"; 
+    }else if (self->atlas_state == 7){ atlas_status ="USER"; 
+    }else{ atlas_status ="UNKNOWN";
+    }
+    
+    snprintf(line8,70, "%s [AGE %.1f]", atlas_status.c_str() , elapsed_atlas_time);
+    
+    snprintf(line9,70, "%.3f", ((double)self->last_utime/1E6) );
+    
       
     double x = 0;
     double y = gl_height - 8 * line_height;
@@ -820,6 +847,9 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->estimated_biases_converged=0.0;
     self->controller_state= DRC_CONTROLLER_STATUS_T_UNKNOWN;
     self->controller_utime= 0;
+
+    self->atlas_state= -1;
+    self->atlas_utime= 0;
     
     
     std::string channel_name ="SAM";
@@ -839,6 +869,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     drc_frequency_t_subscribe(self->lcm,"FREQUENCY_LCM",on_frequency,self);
     drc_foot_contact_estimate_t_subscribe(self->lcm,"FOOT_CONTACT_ESTIMATE",on_foot_contact,self);
     drc_score_t_subscribe(self->lcm,"VRC_SCORE",on_score,self);
+    drc_atlas_status_t_subscribe(self->lcm,"ATLAS_STATUS",on_atlas_status,self);
+    
     drc_controller_status_t_subscribe(self->lcm,"CONTROLLER_STATUS",on_controller_status,self);
     drc_estimated_biases_t_subscribe(self->lcm,"ESTIMATED_ACCEL_BIASES",on_estimated_bias,self);
     

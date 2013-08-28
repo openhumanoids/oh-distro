@@ -6,9 +6,9 @@
 #
 
 find_package(PkgConfig REQUIRED)
-add_definitions(-Wall -std=gnu99)
+#add_definitions(-Wall -std=gnu99)
 
-add_library(renderer_drcgrid SHARED renderer_drcgrid.c )
+add_library(renderer_drcgrid SHARED renderer_drcgrid.cpp )
   
 set_target_properties(renderer_drcgrid PROPERTIES SOVERSION 1)
 
@@ -17,7 +17,7 @@ pods_install_headers(renderer_drcgrid.h DESTINATION renderer_drc)
   
 pods_install_pkg_config_file(renderer_drcgrid
     LIBS -lrenderer_drcgrid
-    REQUIRES bot2-core bot2-vis bot2-frames 
+    REQUIRES bot2-core bot2-vis bot2-frames  visualization-utils
     VERSION 0.0.1)
 
 pods_use_pkg_config_packages(renderer_drcgrid

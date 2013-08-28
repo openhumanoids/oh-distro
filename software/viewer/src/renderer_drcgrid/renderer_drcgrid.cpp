@@ -4,6 +4,8 @@
 
 #include <bot_core/bot_core.h>
 #include <bot_vis/bot_vis.h>
+#include <iostream>
+#include <visualization_utils/keyboard_signal_utils.hpp>
 
 #define PARAM_AZIMUTH "Rotation"
 #define PARAM_BGLIGHT "Light"
@@ -18,12 +20,17 @@
 
 
 #define RENDERER_NAME "Advanced Grid"
+#define HEIGHT_OFFSET_DELTA 0.01
 
 typedef struct _RendererGrid RendererGrid;
+using namespace visualization_utils;
+
 
 struct _RendererGrid {
     BotRenderer renderer;
 
+    boost::shared_ptr<visualization_utils::KeyboardSignalHandler> keyboardSignalHndlr;
+    
     BotGtkParamWidget *pw;
     double             last_meters_per_grid;
     GtkWidget         *label;
@@ -33,6 +40,38 @@ struct _RendererGrid {
     double height_ground;
     double height_body;
     double height_head;
+    
+    double height_offset;
+    
+  void keyboardSignalCallback(int keyval, bool is_pressed)
+  {
+    double delta =0;
+    if(is_pressed) {
+      if (keyval ==49){
+        height_offset= height_offset- HEIGHT_OFFSET_DELTA;
+        cout << "- Received offset: " << height_offset << endl;
+        delta  = - HEIGHT_OFFSET_DELTA;
+      }else if (keyval == 50){
+        height_offset= height_offset+ HEIGHT_OFFSET_DELTA;
+        cout << "+ Received offset: " << height_offset << endl;
+        
+        delta = HEIGHT_OFFSET_DELTA;
+      }
+    }
+    
+    
+    double eye[3];
+    double look[3];
+    double up[3];
+    viewer->view_handler->get_eye_look(viewer->view_handler, eye, look, up);
+    look[2] = look[2] + delta;
+    eye[2] = eye[2] + delta;
+    viewer->view_handler->set_look_at(viewer->view_handler, eye, look, up);
+    bot_viewer_request_redraw (viewer);
+    
+    
+  }    
+    
 };
 
 enum {
@@ -74,6 +113,14 @@ static void on_pose_ground(const lcm_recv_buf_t * buf, const char *channel, cons
 }
 
 
+static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, void *user_data) {
+  RendererGrid *self = (RendererGrid*) user_data;
+  if (! strcmp(param, PARAM_HEIGHT_VIEW)) {
+    self->height_offset=0;
+    bot_viewer_request_redraw (self->viewer);
+  }
+
+}
 
 static void
 grid_draw (BotViewer *viewer, BotRenderer *renderer)
@@ -92,12 +139,15 @@ grid_draw (BotViewer *viewer, BotRenderer *renderer)
     }else if(height_view_mode == MODE_HEIGHT_HEAD){
       view_z=self->height_head;
     }
+    
+    view_z = view_z+self->height_offset;
 
     double eye[3];
     double look[3];
     double up[3];
     viewer->view_handler->get_eye_look(viewer->view_handler, eye, look, up);
     look[2] = view_z;
+    
     viewer->view_handler->set_look_at(viewer->view_handler, eye, look, up);
     
     if(!bot_gtk_param_widget_get_bool(self->pw, PARAM_DRAW_GRID)) {
@@ -226,29 +276,24 @@ grid_free (BotRenderer *renderer)
     free (renderer);
 }
 
-static void 
-on_param_widget_changed (BotGtkParamWidget *pw, const char *param,
-        void *user_data)
-{
-    RendererGrid *self = (RendererGrid*) user_data;
-    bot_viewer_request_redraw (self->viewer);
-}
-
 static void
 on_load_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data)
 {
-    RendererGrid *self = user_data;
+  RendererGrid  *self = (RendererGrid *) user_data;
     bot_gtk_param_widget_load_from_key_file (self->pw, keyfile, RENDERER_NAME);
 }
 
 static void
 on_save_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data)
 {
-    RendererGrid *self = user_data;
+  RendererGrid  *self = (RendererGrid *) user_data;
+  
     bot_gtk_param_widget_save_to_key_file (self->pw, keyfile, RENDERER_NAME);
 }
 
-static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm)
+
+
+static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm, visualization_utils::KeyboardSignalRef signalRef)
 {
     RendererGrid *self = (RendererGrid*) calloc (1, sizeof (RendererGrid));
     self->lcm = lcm;
@@ -260,10 +305,15 @@ static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm)
     self->renderer.enabled = 1;
 
     self->renderer.widget = gtk_alignment_new (0, 0.5, 1.0, 0);
+
+    
+    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererGrid::keyboardSignalCallback,self,_1,_2)));
+    
     
     self->height_ground = 0.0;
     self->height_body = 0.0;
     self->height_head = 0.0;
+    self->height_offset = 0.0;
     
     bot_core_pose_t_subscribe(self->lcm,"POSE_BODY",on_pose_body,self);
     bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
@@ -298,10 +348,10 @@ static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm)
     bot_gtk_param_widget_add_double(self->pw, 
             PARAM_GRID_SPACING, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 10000, 0.1, 1);
     
-    bot_gtk_param_widget_add_enum (self->pw, PARAM_HEIGHT_VIEW, 0, MODE_HEIGHT_ZERO, 
+    bot_gtk_param_widget_add_enum (self->pw, PARAM_HEIGHT_VIEW, (BotGtkParamWidgetUIHint)0, MODE_HEIGHT_ZERO, 
               "Zero", MODE_HEIGHT_ZERO, "Ground", MODE_HEIGHT_GROUND, 
               "Body", MODE_HEIGHT_BODY, "Head", MODE_HEIGHT_HEAD, NULL);    
-    bot_gtk_param_widget_add_enum (self->pw, PARAM_HEIGHT_GRID, 0, MODE_HEIGHT_ZERO, 
+    bot_gtk_param_widget_add_enum (self->pw, PARAM_HEIGHT_GRID, (BotGtkParamWidgetUIHint)0, MODE_HEIGHT_ZERO, 
               "Zero", MODE_HEIGHT_ZERO, "Ground", MODE_HEIGHT_GROUND, 
               "Body", MODE_HEIGHT_BODY, "Head", MODE_HEIGHT_HEAD, NULL);    
     
@@ -316,7 +366,7 @@ static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm)
     return &self->renderer;
 }
 
-void drcgrid_add_renderer_to_viewer(BotViewer* viewer, int priority,lcm_t* lcm)
+void drcgrid_add_renderer_to_viewer(BotViewer* viewer, int priority,lcm_t* lcm, visualization_utils::KeyboardSignalRef signalRef)
 {
-    bot_viewer_add_renderer(viewer, renderer_drcgrid_new(viewer, lcm), priority);
+    bot_viewer_add_renderer(viewer, renderer_drcgrid_new(viewer, lcm, signalRef), priority);
 }
