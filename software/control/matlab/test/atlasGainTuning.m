@@ -26,10 +26,10 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'l_arm_elx';% <---- 
 control_mode = 'position';% <----  force, position
-signal = 'foh';% <----  zoh, foh, chirp
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.0;% <----
+ff_const = 0.1;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
   k_f_p = 0.0;% <----
@@ -37,9 +37,9 @@ if strcmp(control_mode,'force')
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p =  15.0;% <----
+  k_q_p =  10.0;% <----
   k_q_i = 0.0;% <----
-  k_qd_p = 0.85;% <----
+  k_qd_p = 0.5;% <----
 else
   error('unknown control mode');
 end
@@ -47,12 +47,12 @@ end
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
-  ts = linspace(0,25,400);% <----
-  amp = 0.1;% <----  Nm or radians
-  freq = linspace(0.05,0.75,400);% <----  cycles per second
+  ts = linspace(0,20,400);% <----
+  amp = 0.5;% <----  Nm or radians
+  freq = linspace(0.05,0.4,400);% <----  cycles per second
 else
-  ts = linspace(0,15,5);% <----
-  vals = [0 0.1 0.2 0.1 0];% <----  Nm or radians
+  ts = linspace(0,10,5);% <----
+  vals = [0 1.5 1.5 1.5 0];% <----  Nm or radians
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,6 +117,7 @@ joint_offset_map.r_arm_shx = 1.45;
 joint_offset_map.r_arm_ely = 1.57;
 % set negative joints
 joint_sign_map.l_arm_ely = -1;
+joint_sign_map.l_arm_usy = -1;
 joint_sign_map.r_arm_usy = -1;
 joint_sign_map.r_arm_shx = -1;
 joint_sign_map.r_arm_ely = -1;
@@ -174,31 +175,31 @@ qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 act_idx = getActuatedJoints(r);
 
 % move to desired pos
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
 disp('Ready to send input signal.');
 keyboard;
 
 % set gains to user specified values
-gains.ff_const(joint_index_map.(joint)) = ff_const;
+gains.ff_const(act_idx==joint_index_map.(joint)) = ff_const;
 if strcmp(control_mode,'force')
   % set force gains
-  gains.k_f_p(joint_index_map.(joint)) = k_f_p; 
-  gains.ff_f_d(joint_index_map.(joint)) = ff_f_d;
-  gains.ff_qd(joint_index_map.(joint)) = ff_qd;
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = k_f_p; 
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = ff_f_d;
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = ff_qd;
   % set joint position gains to 0
-  gains.k_q_p(joint_index_map.(joint)) = 0;
-  gains.k_q_i(joint_index_map.(joint)) = 0;
-  gains.k_qd_p(joint_index_map.(joint)) = 0;
+  gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
+  gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
+  gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
 elseif strcmp(control_mode,'position')  
   % set force gains to 0
-  gains.k_f_p(joint_index_map.(joint)) = 0; 
-  gains.ff_f_d(joint_index_map.(joint)) = 0;
-  gains.ff_qd(joint_index_map.(joint)) = 0;
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = 0; 
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = 0;
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = 0;
   % set joint position gains 
-  gains.k_q_p(joint_index_map.(joint)) = k_q_p;
-  gains.k_q_i(joint_index_map.(joint)) = k_q_i;
-  gains.k_qd_p(joint_index_map.(joint)) = k_qd_p;
+  gains.k_q_p(act_idx==joint_index_map.(joint)) = k_q_p;
+  gains.k_q_i(act_idx==joint_index_map.(joint)) = k_q_i;
+  gains.k_qd_p(act_idx==joint_index_map.(joint)) = k_qd_p;
 else
   error('unknown control mode');
 end 
