@@ -37,6 +37,7 @@
 #define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
 #define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
 #define PARAM_BEHAVIOR "Behavior"
+#define PARAM_GOAL_TYPE "Goal sets pose of: "
 #define PARAM_LEADING_FOOT "Leading foot"
 #define PARAM_STEP_SPEED "Foot speed (1.5 m/s)"
 #define PARAM_STEP_HEIGHT "Step clearance (0.1 m)"
@@ -60,6 +61,10 @@ typedef enum _walking_mode_t {
 typedef enum _behavior_t {
   BEHAVIOR_WALKING, BEHAVIOR_CRAWLING, BEHAVIOR_BDI_WALKING, BEHAVIOR_BDI_STEPPING
 } behavior_t;
+
+typedef enum _walking_goal_type_t {
+  GOAL_TYPE_CENTER, GOAL_TYPE_RIGHT_FOOT, GOAL_TYPE_LEFT_FOOT
+} walking_goal_type_t;
 
 
 #define DRAW_PERSIST_SEC 4
@@ -165,6 +170,7 @@ typedef struct _RendererWalking {
   bool follow_spline;
   bool ignore_terrain;
   behavior_t behavior;
+  walking_goal_type_t goal_type;
   bool allow_optimization;
   drc_walking_goal_t last_walking_msg;
   
@@ -362,6 +368,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     msg.follow_spline = self->follow_spline;
     msg.ignore_terrain = self->ignore_terrain;
     msg.behavior = self->behavior;
+    msg.goal_type = self->goal_type;
     if (self->leading_foot == LEADING_FOOT_RIGHT) {
       msg.right_foot_lead = true;
     } else {
@@ -497,6 +504,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
   self->behavior = (behavior_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_BEHAVIOR);
+  self->goal_type = (walking_goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
 
   // if (msg_changed) {
@@ -508,6 +516,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->last_walking_msg.follow_spline = self->follow_spline;
       self->last_walking_msg.ignore_terrain = self->ignore_terrain;
       self->last_walking_msg.behavior = self->behavior;
+      self->last_walking_msg.goal_type = self->goal_type;
       self->last_walking_msg.step_speed = self->step_speed;
       self->last_walking_msg.nom_step_width = self->nom_step_width;
       self->last_walking_msg.nom_forward_step = self->nom_forward_step;
@@ -596,6 +605,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->follow_spline = true;
   self->ignore_terrain = false;
   self->behavior = BEHAVIOR_WALKING;
+  self->goal_type = GOAL_TYPE_CENTER;
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
   self->step_speed = 1.0; // m/s
@@ -619,6 +629,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_UPDATE, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "Crawling", BEHAVIOR_CRAWLING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, self->goal_type, "Bot center", GOAL_TYPE_CENTER, "Right foot", GOAL_TYPE_RIGHT_FOOT, "Left foot", GOAL_TYPE_LEFT_FOOT, NULL);
   bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, 30);  
   bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, 0);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);

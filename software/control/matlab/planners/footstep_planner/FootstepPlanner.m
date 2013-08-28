@@ -29,7 +29,7 @@ classdef FootstepPlanner < DRCPlanner
       if changelist.goal || isempty(X)
         msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
         info = struct(data.goal);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'goal_type'}
           if isfield(info, x{1})
             obj.options.(x{1}) = info.(x{1});
           elseif isfield(obj.biped, x{1})
