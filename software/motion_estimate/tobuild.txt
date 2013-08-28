@@ -8,6 +8,4 @@ vo_estimate
 
 motion_estimate
 
-# Pat's signal plotting tool
-#signal_scope
-
+signal_scope
