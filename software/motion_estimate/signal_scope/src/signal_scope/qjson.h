@@ -78,6 +78,8 @@ public:
               obj.setProperty(i.key(), i.value().toInt());
           else if (i.value().type() == QVariant::Double)
               obj.setProperty(i.key(), i.value().toDouble());
+          else if (i.value().type() == QVariant::Bool)
+              obj.setProperty(i.key(), i.value().toBool());
           else if (i.value().type() == QVariant::List)
               obj.setProperty(i.key(), qScriptValueFromSequence(engine, i.value().toList()));
           else if (i.value().type() == QVariant::Map)
@@ -97,6 +99,8 @@ public:
               map.insert(it.name(),QVariant(decodeInnerToList(it.value())));
           else if (it.value().isNumber())
               map.insert(it.name(),QVariant(it.value().toNumber()));
+          else if (it.value().isBool())
+              map.insert(it.name(),QVariant(it.value().toBool()));
           else if (it.value().isString())
               map.insert(it.name(),QVariant(it.value().toString()));
           else if (it.value().isNull())
@@ -120,6 +124,8 @@ public:
               list.append(QVariant(decodeInnerToList(it.value())));
           else if (it.value().isNumber())
               list.append(QVariant(it.value().toNumber()));
+          else if (it.value().isBool())
+              list.append(QVariant(it.value().toBool()));
           else if (it.value().isString())
               list.append(QVariant(it.value().toString()));
           else if (it.value().isNull())
