@@ -233,9 +233,51 @@ void PlotWidget::onResetYAxisScale()
 
 void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)
 {
-  SignalHandler* signalHandler = item->data(Qt::UserRole).value<SignalHandler*>();
+  SignalHandler* signalHandler = this->signalForItem(item);
   bool checked = (item->checkState() == Qt::Checked);
   d_plot->setSignalVisible(signalHandler->signalData(), checked);
+}
+
+QListWidgetItem* PlotWidget::itemForSignal(SignalHandler* signalHandler)
+{
+  for (int row = 0; row < mSignalListWidget->count(); ++row)
+  {
+    QListWidgetItem* item = mSignalListWidget->item(row);
+    if (signalHandler == item->data(Qt::UserRole).value<SignalHandler*>())
+    {
+      return item;
+    }
+  }
+  return 0;
+}
+
+SignalHandler* PlotWidget::signalForItem(QListWidgetItem* item)
+{
+  if (!item)
+  {
+    return 0;
+  }
+
+  return item->data(Qt::UserRole).value<SignalHandler*>();
+}
+
+bool PlotWidget::signalIsVisible(SignalHandler* signalHandler)
+{
+  if (!signalHandler)
+  {
+    return false;
+  }
+
+  return (this->itemForSignal(signalHandler)->checkState() == Qt::Checked);
+}
+
+void PlotWidget::setSignalVisibility(SignalHandler* signalHandler, bool visible)
+{
+  QListWidgetItem* item = this->itemForSignal(signalHandler);
+  if (item)
+  {
+    item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+  }
 }
 
 void PlotWidget::start()
@@ -262,6 +304,8 @@ void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
     desc.mColor = QColor::fromRgb(color[0].toInt(), color[1].toInt(), color[2].toInt());
   }
 
+  bool visible = signalSettings.value("visible", true).toBool();
+
   SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&desc);
 
   if (signalHandler)
@@ -274,6 +318,7 @@ void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
   }
 
   this->addSignal(signalHandler);
+  this->setSignalVisibility(signalHandler, visible);
 }
 
 Q_DECLARE_METATYPE(SignalHandler*);
@@ -356,6 +401,7 @@ QMap<QString, QVariant> PlotWidget::saveSignalSettings(SignalHandler* signalHand
   settings["messageType"] = signalDescription->mMessageType;
   settings["fieldName"] = signalDescription->mFieldName;
   settings["arrayKeys"] = QVariant(signalDescription->mArrayKeys);
+  settings["visible"] = QVariant(this->itemForSignal(signalHandler)->checkState() == Qt::Checked);
 
   QList<QVariant> color;
   color << signalDescription->mColor.red() << signalDescription->mColor.green() << signalDescription->mColor.blue();

@@ -27,8 +27,14 @@ public:
   void addSignal(const QMap<QString, QVariant>& signalSettings);
   void addSignal(SignalHandler* signalHandler);
 
+  void setSignalVisibility(SignalHandler* signalHandler, bool visible);
+  bool signalIsVisible(SignalHandler* signalHandler);
+
   QMap<QString, QVariant> saveSettings();
   QMap<QString, QVariant> saveSignalSettings(SignalHandler* signalHandler);
+
+  QListWidgetItem* itemForSignal(SignalHandler* signalHandler);
+  SignalHandler* signalForItem(QListWidgetItem* item);
 
 public slots:
 
