@@ -211,6 +211,8 @@ void Plot::setSignalVisible(SignalData* signalData, bool visible)
   {
     curve->detach();
   }
+
+  this->replot();
 }
 
 void Plot::setSignalColor(SignalData* signalData, QColor color)
