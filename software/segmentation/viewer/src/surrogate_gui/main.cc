@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
   setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef);
 
     // setup renderers
-    drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM());
+    drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM(), _keyboardSignalRef);
     // bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
     //KinectRendererXYZRGB *krxyzrgb = kinect_add_renderer_xyzrgb_to_viewer(viewer, 0,NULL,NULL);
 
