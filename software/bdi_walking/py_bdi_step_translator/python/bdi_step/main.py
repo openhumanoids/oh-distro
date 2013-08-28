@@ -27,19 +27,22 @@ class BDIWalkTranslator:
         footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
         footsteps = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
         behavior = opts['behavior']
-        if behavior != Behavior.BDI_WALKING and behavior != Behavior.BDI_STEPPING:
+        if behavior == Behavior.BDI_STEPPING:
+            duration = 2.0
+        elif behavior == Behavior.BDI_WALKING:
+            duration = 0.6
+            if len(footsteps) < NUM_REQUIRED_WALK_STEPS:
+                msg = 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
+                print msg
+                ut.send_status(6,0,0,msg)
+                return
+        else:
             m = "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
             print m
             ut.send_status(6,0,0,m)
             return
         self.behavior = behavior
-        if self.behavior == Behavior.BDI_WALKING and len(footsteps) < NUM_REQUIRED_WALK_STEPS:
-            msg = 'ERROR: Footstep plan must be at least 4 steps for BDI translation'
-            print msg
-            ut.send_status(6,0,0,msg)
-            return
-
-        self.bdi_step_queue = [BDIWalkTranslator.footstep_to_step_data(f,j+1) for j,f in enumerate(footsteps)]
+        self.bdi_step_queue = [BDIWalkTranslator.footstep_to_step_data(f,j+1,duration=duration) for j,f in enumerate(footsteps)]
         self.send_walk_params(1)
 
     def handle_atlas_status(self, channel, msg_data):
@@ -56,7 +59,7 @@ class BDIWalkTranslator:
             index_needed = msg.step_feedback.next_step_index_needed
             if index_needed > self.delivered_index and len(self.bdi_step_queue) >= index_needed:
                 print "Handling request for next step: {:d}".format(index_needed)
-                self.send_walk_params(index_needed-1)
+                self.send_walk_params(index_needed)
 
 
     def update_drift(self,step_queue):
