@@ -1495,9 +1495,9 @@
       <inertia ixx="0.0039688" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.0041178" iyz="-6.8415E-07" izz="0.0035243"/>
     </inertial>
     <visual>
-      <origin rpy="0 0 1.570795" xyz="-0.0446 0 0.0880"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.STL"/>
+        <mesh filename="package://multisense_sl/meshes/head.dae"/>
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1"/>
@@ -1608,9 +1608,9 @@
       <inertia ixx="3.7174E-05" ixy="4.9927E-08" ixz="1.1015E-05" iyy="4.2412E-05" iyz="-9.8165E-09" izz="4.167E-05"/>
     </inertial>
     <visual>
-      <origin rpy="1.5707963267949 0 1.5707963267949" xyz="0 0 0"/>
+      <origin rpy="-0.314 0 0" xyz="0.045 -0.0261018277 -0.08342369"/>
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL"/>
+        <mesh filename="package://multisense_sl/meshes/head_camera.dae"/>
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1"/>
