@@ -8,8 +8,14 @@
 
 using namespace std;
 
-// set all unlikely returns to this range (same produced by sensor
-#define MAX_RANGE 30.0
+// set all unlikely returns to this range (same produced by sensor)
+#define MAX_RANGE 60.0
+// all ranges shorter than this are assumed to be with the head
+#define ASSUMED_HEAD 0.85//0.3
+// all ranges longer than this are assumed to be free
+#define ASSUMED_FAR 2.0// 2.0
+// set all collisions to this range
+#define COLLISION_RANGE 0.0
 
 class Pass{
   public:
@@ -51,6 +57,9 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     if (( right_diff > threshold_) || (left_diff > threshold_ )){
       // cout << i<< ": " << right_diff << " and " << left_diff <<"\n";
       ranges[i] = MAX_RANGE;
+    }else if( ranges[i] < ASSUMED_HEAD){
+      ranges[i] = COLLISION_RANGE;
+      
     }
   }
   lidar_msgout_.ranges = ranges;
