@@ -38,6 +38,11 @@ build_gazebo()
   echo "CHECKING OUT GAZEBO ====================================="
   hg clone https://bitbucket.org/osrf/gazebo $work_dir/gazebo
 
+  echo "Removing bullet ====================="
+  cd $drc_dir/software/externals/bullet
+  make clean
+
+
   echo "Applying Specific Revision of Gazebo ===================="
   cd $work_dir/gazebo
   hg update -r$GAZEBO_REV
@@ -53,7 +58,6 @@ build_gazebo()
 
   echo "Performing a clean build of bullet ====================="
   cd $drc_dir/software/externals/bullet
-  make clean
   make $make_parallel
 
   echo "Finished Installing Gazebo==================="
