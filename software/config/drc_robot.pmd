@@ -21,7 +21,7 @@ group "a.0.drivers" {
         exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
         host = "robot";
     }
-    cmd "rearcam-NEEDPASSWORD" {
+    cmd "rearcam" {
         exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
         host = "robot";
     }
@@ -172,6 +172,15 @@ group "m.perception" {
         exec = "vicon-client 192.168.10.1";
         host = "localhost";
     }
+    cmd "ipwebcam" {
+        exec = "ipwebcam -f 10 -q 90 -c IPWEBCAM -u http://admin:@192.168.0.20/video2.mjpg";
+        host = "robot";
+    }
+    cmd "webcam" {
+        exec = "camview -c webcam.camview";
+        host = "robot";
+    }
+
 }
 
 group "m.hands" {
