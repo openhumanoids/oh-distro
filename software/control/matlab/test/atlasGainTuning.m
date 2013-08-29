@@ -24,12 +24,12 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_arm_elx';% <---- 
+joint = 'r_arm_shx';% <---- 
 control_mode = 'position';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.1;% <----
+ff_const = 0.0;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
   k_f_p = 0.0;% <----
@@ -37,9 +37,9 @@ if strcmp(control_mode,'force')
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p =  10.0;% <----
+  k_q_p =  4.0;% <----
   k_q_i = 0.0;% <----
-  k_qd_p = 0.5;% <----
+  k_qd_p = 0.0;% <----
 else
   error('unknown control mode');
 end
@@ -48,11 +48,11 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,20,400);% <----
-  amp = 0.5;% <----  Nm or radians
-  freq = linspace(0.05,0.4,400);% <----  cycles per second
+  amp = pi/4;% <----  Nm or radians
+  freq = linspace(0.05,0.25,400);% <----  cycles per second
 else
   ts = linspace(0,10,5);% <----
-  vals = [0 1.5 1.5 1.5 0];% <----  Nm or radians
+  vals = [0 1.0 1.6 1.0 0];% <----  Nm or radians
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

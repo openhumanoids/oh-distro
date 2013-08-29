@@ -26,7 +26,7 @@ end
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
-ref_frame = AtlasPosTorqueRef(r);
+ref_frame = AtlasPositionRef(r);
 
 nu = getNumInputs(r);
 nq = getNumDOF(r);
@@ -59,7 +59,6 @@ for config_id=config_ids
     atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4.0);
     
     tf = qtraj.tspan(end);
-    udes = zeros(nu,1);
     toffset = -1;
     tt=-1;
     while tt<tf
@@ -70,7 +69,7 @@ for config_id=config_ids
         end
         tt=t-toffset;
         qdes = qtraj.eval(tt);
-        ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
+        ref_frame.publish(t,[qdes(act_idx)],'ATLAS_COMMAND');
       end
     end
   end
