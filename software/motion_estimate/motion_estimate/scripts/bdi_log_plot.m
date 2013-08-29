@@ -1,6 +1,6 @@
 close all; clear all
 lc = lcm.lcm.LCM.getSingleton();
-load('20130802_171021_walk.mat');
+load('/home/mfallon/data/atlas/2013-08-02-sample-from-bdi/20130802_171021_walk.mat');
 
 joints={'j_back',	'bkx',	'back_ubx';
 'j_back',	'bky',	'back_lbz';

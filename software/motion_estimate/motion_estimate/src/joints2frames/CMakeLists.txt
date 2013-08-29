@@ -16,12 +16,3 @@ pods_use_pkg_config_packages(drc-joints2frames
 	lcmtypes_drc_lcmtypes  lcmtypes_visualization
        ${PCL_LIBRARIES} ${REQUIRED_PACKAGES})
 pods_install_executables(drc-joints2frames )
-
-
-add_executable(drc-joints2frames-head joints2frames_head.cpp  )
-pods_use_pkg_config_packages(drc-joints2frames-head
-    path-util model-client   bot2-param-client
-        pointcloud_lcm        pointcloud_vis        pointcloud_math
-	lcmtypes_drc_lcmtypes  lcmtypes_visualization
-       ${PCL_LIBRARIES} ${REQUIRED_PACKAGES})
-pods_install_executables(drc-joints2frames-head )

@@ -15,3 +15,5 @@ add_subdirectory(src/robot_state_publisher)
 add_subdirectory(src/state_sync)
 add_subdirectory(src/utime_publisher)
 add_subdirectory(src/pseudo_pose_publisher)
+
+add_subdirectory(src/frames_changer)

@@ -2,7 +2,7 @@
 #include <inttypes.h>
 #include <lcm/lcm.h>
 #include <iostream>
-#include <limits>       // std::numeric_limits
+#include <limits>
 
 #include "joints2frames.hpp"
 #include <ConciseArgs>
@@ -35,23 +35,15 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
   
   last_ground_publish_utime_ =0;
-  last_joint_publish_utime_ =0;
 }
 
-// same as bot_timestamp_now():
-int64_t _timestamp_now(){
-    struct timeval tv;
-    gettimeofday (&tv, NULL);
-    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
-}
-
-Eigen::Isometry3d DRCTransformToEigen(drc::transform_t tf){
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
   Eigen::Isometry3d tf_out;
   tf_out.setIdentity();
-  tf_out.translation()  << tf.translation.x, tf.translation.y, tf.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(tf.rotation.w, tf.rotation.x, 
-                                               tf.rotation.y, tf.rotation.z);
-  tf_out.rotate(quat);    
+  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
+  Eigen::Quaterniond q;
+  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
+  tf_out.rotate(q);    
   return tf_out;
 }
 
@@ -87,10 +79,6 @@ void joints2frames::publishRigidTransform(Eigen::Isometry3d pose, int64_t utime,
 
 void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
-  #if DO_TIMING_PROFILE
-    std::vector<int64_t> tic_toc;
-    tic_toc.push_back(_timestamp_now());
-  #endif
   // 0. Extract World Pose of body:
   Eigen::Isometry3d world_to_body;
   world_to_body.setIdentity();
@@ -98,17 +86,14 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
                                                msg->pose.rotation.y, msg->pose.rotation.z);
   world_to_body.rotate(quat);    
+  publishPose(world_to_body, msg->utime, "POSE_BODY" );
     
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
-  map<string, drc::transform_t > cartpos_out;
+  map<string, KDL::Frame > cartpos_out;
   for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
-
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
   
   // Calculate forward position kinematics
   bool kinematics_status;
@@ -121,76 +106,28 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     return;
   }
   
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-  
-    
-  // 1b. Publihs Head to Body - which needs to be intverted
-    /*
-  map<string, drc::transform_t>::const_iterator transform_it;
-  drc::transform_t  T_body_head;
-  transform_it=cartpos_out.find("head");
-  if(transform_it!=cartpos_out.end()){// fk cart pos exists
-    T_body_head= transform_it->second;
-  }else{
-    std::cout<< "fk position does not exist" <<std::endl;
-  }
-  Eigen::Isometry3d T_head_body = Eigen::Isometry3d( DRCTransformToEigen( T_body_head ) ).inverse();
-  bot_core::rigid_transform_t tf;
-  tf.utime = msg->utime;
-  tf.trans[0] = T_head_body.translation().x();
-  tf.trans[1] = T_head_body.translation().y();
-  tf.trans[2] = T_head_body.translation().z();
-  Eigen::Quaterniond quat2 = Eigen::Quaterniond(T_head_body.rotation());
-  tf.quat[0] = quat2.w();
-  tf.quat[1] = quat2.x();
-  tf.quat[2] = quat2.y();
-  tf.quat[3] = quat2.z();
-  lcm_->publish("HEAD_TO_BODY", &tf);    
-  */  
-    
-  Eigen::Isometry3d body_to_r_larm, body_to_r_hand;
 
   // 2a. Determine the required BOT_FRAMES transforms:
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
   bool body_to_head_found =false;
   bool body_to_hokuyo_link_found = false;
-  bool joint_publish_ok = (msg->utime - last_joint_publish_utime_)  > 1E6/200;  // 200Hz update for joints
-  if (joint_publish_ok) {
-    last_joint_publish_utime_ = msg->utime;
-  }
 
-  for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
+  for( map<string, KDL::Frame >::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string joint = (*ii).first;
     if (   (*ii).first.compare( "head" ) == 0 ){
-      body_to_head = DRCTransformToEigen( (*ii).second );
+      body_to_head = KDLToEigen( (*ii).second );
       body_to_head_found=true;
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
-      body_to_hokuyo_link = DRCTransformToEigen( (*ii).second );
+      body_to_hokuyo_link = KDLToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    }else if (joint_publish_ok){
-      if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
-        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
-      }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
-        publishRigidTransform( DRCTransformToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
-      }
-    }/*else if(  (*ii).first.compare( "r_larm" ) == 0 ){
-      body_to_r_larm = DRCTransformToEigen( (*ii).second );
-    }else if(  (*ii).first.compare( "r_hand" ) == 0 ){
-      body_to_r_hand = DRCTransformToEigen( (*ii).second );
-    }*/
+    }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
+    }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
+    }
   }
 
-  /*
-  Eigen::Isometry3d r_larm_to_r_hand = body_to_r_larm.inverse() * body_to_r_hand ;
-  std::cout << r_larm_to_r_hand.translation() << " is r_larm to r_hand trans\n";
-  */
 
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-  
   
   // 2b. Republish the required BOT_FRAMES transforms:
   if (body_to_head_found){
@@ -199,71 +136,28 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
      */
     
     if (bdi_motion_estimate_){
-      Eigen::Isometry3d head_to_body = body_to_head.inverse();
-      bot_core::rigid_transform_t tf;
-      tf.utime = msg->utime;
-      tf.trans[0] = head_to_body.translation().x();
-      tf.trans[1] = head_to_body.translation().y();
-      tf.trans[2] = head_to_body.translation().z();
-      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_body.rotation() );
-      tf.quat[0] = quat.w();
-      tf.quat[1] = quat.x();
-      tf.quat[2] = quat.y();
-      tf.quat[3] = quat.z();
-      lcm_->publish("HEAD_TO_BODY", &tf);
+      publishRigidTransform(body_to_head.inverse(), msg->utime, "HEAD_TO_BODY");
       
       Eigen::Isometry3d world_to_head = world_to_body * body_to_head ;
       publishPose(world_to_head, msg->utime, "POSE_HEAD" );
     }
     
-    
     if (body_to_hokuyo_link_found){
       Eigen::Isometry3d head_to_hokuyo_link = body_to_head.inverse() * body_to_hokuyo_link ;
-      
-      bot_core::rigid_transform_t tf;
-      tf.utime = msg->utime;
-      tf.trans[0] = head_to_hokuyo_link.translation().x();
-      tf.trans[1] = head_to_hokuyo_link.translation().y();
-      tf.trans[2] = head_to_hokuyo_link.translation().z();
-      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_hokuyo_link.rotation() );
-      tf.quat[0] = quat.w();
-      tf.quat[1] = quat.x();
-      tf.quat[2] = quat.y();
-      tf.quat[3] = quat.z();
-      lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);     
+      publishRigidTransform(head_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK");
     }
   }
   
   if (standalone_head_){
-    // If publish from the head alone - then the head is the root linl:
-      Eigen::Isometry3d head_to_hokuyo_link = body_to_hokuyo_link ;
-      
-      bot_core::rigid_transform_t tf;
-      tf.utime = msg->utime;
-      tf.trans[0] = head_to_hokuyo_link.translation().x();
-      tf.trans[1] = head_to_hokuyo_link.translation().y();
-      tf.trans[2] = head_to_hokuyo_link.translation().z();
-      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_hokuyo_link.rotation() );
-      tf.quat[0] = quat.w();
-      tf.quat[1] = quat.x();
-      tf.quat[2] = quat.y();
-      tf.quat[3] = quat.z();
-      lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);     
+    // If publishing from the head alone, then the head is also the body link:
+      publishRigidTransform(body_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK" ); 
   }
-  
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"joint2frames");  
-  #endif
-
-    
-    
   
   if (ground_height_){ 
     // Publish a pose at the lower of the feet - assumed to be on the ground
     // TODO: This doesnt need to be published at 1000Hz
-    Eigen::Isometry3d body_to_l_foot = DRCTransformToEigen(cartpos_out.find("l_foot")->second);
-    Eigen::Isometry3d body_to_r_foot = DRCTransformToEigen(cartpos_out.find("r_foot")->second);
+    Eigen::Isometry3d body_to_l_foot = KDLToEigen(cartpos_out.find("l_foot")->second);
+    Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find("r_foot")->second);
 
     Eigen::Isometry3d foot_to_sole;
     foot_to_sole.setIdentity();
@@ -271,13 +165,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     
     Eigen::Isometry3d world_to_l_sole = world_to_body * body_to_l_foot * foot_to_sole;
     Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
-    /*std::cout << world_to_l_sole.translation().x() << " " foot_to_sole
-              << world_to_l_sole.translation().y() << " " 
-              << world_to_l_sole.translation().z() << " L\n" ;
-    std::cout << world_to_r_sole.translation().x() << " " 
-              << world_to_r_sole.translation().y() << " " 
-              << world_to_r_sole.translation().z() << " R\n" ;
-              */
+
     // Publish lower of the soles at the ground occasionally
     if (msg->utime - last_ground_publish_utime_  > 5E5){ // every 0.5sec
       last_ground_publish_utime_ =msg->utime;
@@ -289,40 +177,36 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }
   }
   
-  
-  Eigen::Isometry3d body_to_utorso = DRCTransformToEigen(cartpos_out.find("utorso")->second);
+  Eigen::Isometry3d body_to_utorso = KDLToEigen(cartpos_out.find("utorso")->second);
   publishRigidTransform(body_to_utorso, msg->utime, "BODY_TO_UTORSO");
   
-    
 
   // 4. Loop through joints and extract world positions:
-  if (!show_triads_){     return;    }
-  int counter =msg->utime;  
-  std::vector<Isometry3dTime> body_to_jointTs, world_to_jointsT;
-  std::vector< int64_t > body_to_joint_utimes;
-  std::vector< std::string > joint_names;
-  for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
-    std::string joint = (*ii).first;
-    //cout << joint  << ": \n";
-    joint_names.push_back( joint  );
-    body_to_joint_utimes.push_back( counter);
+  if (show_triads_){
+    int counter =msg->utime;  
+    std::vector<Isometry3dTime> body_to_jointTs, world_to_jointsT;
+    std::vector< int64_t > body_to_joint_utimes;
+    std::vector< std::string > joint_names;
+    for( map<string, KDL::Frame >::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
+      std::string joint = (*ii).first;
+      //cout << joint  << ": \n";
+      joint_names.push_back( joint  );
+      body_to_joint_utimes.push_back( counter);
+      
+      Eigen::Isometry3d body_to_joint = KDLToEigen( (*ii).second );
+      Isometry3dTime body_to_jointT(counter, body_to_joint);
+      body_to_jointTs.push_back(body_to_jointT);
+      // convert to world positions
+      Isometry3dTime world_to_jointT(counter, world_to_body*body_to_joint);
+      world_to_jointsT.push_back(world_to_jointT);
+      counter++;
+    }
     
-    Eigen::Isometry3d body_to_joint;
-    body_to_joint.setIdentity();
-    body_to_joint.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
-    Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
-    body_to_joint.rotate(quat);    
-    Isometry3dTime body_to_jointT(counter, body_to_joint);
-    body_to_jointTs.push_back(body_to_jointT);
-    // convert to world positions
-    Isometry3dTime world_to_jointT(counter, world_to_body*body_to_joint);
-    world_to_jointsT.push_back(world_to_jointT);
-    counter++;
-  }
+    pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
+    if (show_labels_)
+      pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
   
-  pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
-  if (show_labels_)
-    pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
+  }
 }
 
 
