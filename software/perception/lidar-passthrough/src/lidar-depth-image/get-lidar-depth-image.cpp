@@ -181,10 +181,6 @@ bool Pass::getSweep(LocalMap::SpaceTimeBounds& bounds, Eigen::Vector3f bounds_ce
   int64_t timeMin, timeMax;
   double ang_min = 0.0 *M_PI/180; // leading edge from the right hand side of sweep
   double ang_max = 179.99 *M_PI/180;  // 0 and 180 fails
-  
-//  double ang_min = 30.0 *M_PI/180; // leading edge from the right hand side of sweep
- // double ang_max = 170.99 *M_PI/180;  // 0 and 180 fails
-  
   //cout << ang_min << " min | " << ang_max << " max\n";
         
   bool gotFirstSweep = mState->mCollector->getLatestSwath(ang_min, ang_max,
@@ -205,8 +201,6 @@ bool Pass::getSweep(LocalMap::SpaceTimeBounds& bounds, Eigen::Vector3f bounds_ce
   bounds.mTimeMax = timeMax;
   // Also add constraints to that the points are around the robot:
   // axis aligned box thats 6x6x6m
-//  bounds.mPlanes = Utils::planesFromBox(   Eigen::Vector3f(-3,-3,-3),
-//                                          Eigen::Vector3f(3,3,3));
   bounds.mPlanes = Utils::planesFromBox( bounds_center - bounds_size, bounds_center + bounds_size );
 
   return true;
@@ -405,7 +399,7 @@ void Pass::queryNewSweep(){
 
 
   LocalMap::SpaceTimeBounds bounds;
-  if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
+  if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 1.3, 1.3, 1.3)) ){ 
 
     // use the time and space bounds to get a new cloud
     getSweepCloud(bounds);
