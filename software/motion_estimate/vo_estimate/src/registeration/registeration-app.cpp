@@ -187,7 +187,7 @@ void deque_to_cloud(deque<bot_core::planar_lidar_t > * laser_queue,
     local_to_lidar.translation()  << transform.trans_vec[0], transform.trans_vec[1], transform.trans_vec[2];
     local_to_lidar.rotate(quat);
 
-    Eigen::Isometry3f pose_f = Isometry_d2f(local_to_lidar);
+    Eigen::Isometry3f pose_f = local_to_lidar.cast<float>();
     Eigen::Quaternionf pose_quat(pose_f.rotation());
     pcl::transformPointCloud (*lidar_cloud, *lidar_cloud,
         pose_f.translation(), pose_quat); // !! modifies lidar_cloud
@@ -364,7 +364,7 @@ void RegApp::featuresReferenceHandler(const lcm::ReceiveBuffer* rbuf, const std:
   print_Isometry3d(ref_pose_, ss2);
   std::cout << "Received refpose: " << ss2.str() << "\n";
 
-  Eigen::Isometry3f pose_f = Isometry_d2f(ref_pose_.inverse() );
+  Eigen::Isometry3f pose_f = ref_pose_.inverse().cast<float>();
   Eigen::Quaternionf pose_quat(pose_f.rotation());
   pcl::transformPointCloud (*accum_cloud, *accum_cloud,
       pose_f.translation(), pose_quat); // !! modifies accum_cloud

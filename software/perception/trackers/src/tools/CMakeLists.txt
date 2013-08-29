@@ -11,6 +11,7 @@ set(REQUIRED_LIBS  lcm   model-client  bot2-param-client bot2-lcmgl-client
   pointcloud_filters  pointcloud_vis pointcloud_lcm)
 
 add_executable(drc-ply-filter ply_filter.cpp)
+target_link_libraries(drc-ply-filter boost_system  boost_random)
 pods_use_pkg_config_packages(drc-ply-filter ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-ply-filter)
 

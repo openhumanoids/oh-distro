@@ -218,7 +218,7 @@ void Pass::getSweepDepthImage(LocalMap::SpaceTimeBounds bounds){
   LocalMap::Ptr localMap = mState->mCollector->getMapManager()->getMap(mState->mActiveMapId);
 
   Eigen::Projective3f projector;
-  Utils::composeViewMatrix(projector, camera_calib_, isometryDoubleToFloat(camera_pose_), false);
+  Utils::composeViewMatrix(projector, camera_calib_, camera_pose_.cast<float>() , false);
   DepthImageView::Ptr depthImageView = localMap->getAsDepthImage( camera_params_.width  , 
                                                                   camera_params_.height , 
                                                                   projector, bounds);  

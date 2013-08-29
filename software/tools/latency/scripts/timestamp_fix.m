@@ -1,6 +1,6 @@
 close all; clear all
-%d = importdata('~/Desktop/timestamp_pre_fix.txt')
-d = importdata('~/Desktop/timestamp_post_fix.txt')
+d = importdata('~/Desktop/timestamp_sync/timestamp_pre_fix.txt')
+%d = importdata('~/Desktop/timestamp_sync/timestamp_post_fix.txt')
 
 nz_bdi = d(:,2) ~=0
 nz_crl = d(:,3) ~=0
@@ -17,3 +17,4 @@ subplot(3,1,3)
 hold on
 plot( 1E-6*(d(nz_bdi,1) - min_t), d(nz_bdi,2), '.r')
 plot( 1E-6*(d(nz_crl,1) - min_t), d(nz_crl,3), '.b')
+title('Latency of timestamp in external callback. Red: ATLAS-STATE, Blue: CAMERA')

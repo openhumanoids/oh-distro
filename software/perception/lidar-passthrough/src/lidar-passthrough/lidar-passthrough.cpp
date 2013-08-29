@@ -294,7 +294,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   // 2. Project the scan into local frame:
   Eigen::Isometry3d scan_to_local;
   frames_cpp_->get_trans_with_utime( botframes_ ,  lidar_channel_.c_str() , "local", msg->utime, scan_to_local);
-  Eigen::Isometry3f pose_f = isometryDoubleToFloat(scan_to_local);
+  Eigen::Isometry3f pose_f = scan_to_local.cast<float>();
   Eigen::Quaternionf pose_quat(pose_f.rotation());
   pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l_,
       pose_f.translation(), pose_quat);  

@@ -221,7 +221,7 @@ void StatePub::transformMesh(){
     pcl::fromROSMsg(prim_mesh_->cloud, mesh_cloud_1st);
 
     // transform
-    Eigen::Isometry3f pose_f_1st =isometryDoubleToFloat(transform);
+    Eigen::Isometry3f pose_f_1st = transform.cast<float>();
     Eigen::Quaternionf pose_quat_1st(pose_f_1st.rotation());
     pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, pose_f_1st.translation(), pose_quat_1st);  
     pcl::toROSMsg (mesh_cloud_1st, prim_mesh_->cloud);  

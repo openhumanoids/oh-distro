@@ -3,6 +3,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
 set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6 pcl_filters-1.6)
 
 
+# dump the affordance store to file:
+add_executable (affordance_to_xmlfile affordance_to_xmlfile.cpp )
+pods_use_pkg_config_packages(affordance_to_xmlfile otdf_dom lcm)
+pods_install_executables(affordance_to_xmlfile)
+
 ############ Demo Apps: ###########################
 # send one poly:
 add_executable (affordance_points_demo affordance_points_demo.cpp )

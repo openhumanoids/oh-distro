@@ -474,6 +474,8 @@ void Pass::doDemo(int which_publish, bool add_filename){
 
     
     //drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 , add_filename );
+    a1.aff.modelfile = "firehose.ply";
+    
     a1.aff.bounding_lwh[0]=0.16;       a1.aff.bounding_lwh[1]=0.16;      a1.aff.bounding_lwh[2]=0.3;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
     a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   

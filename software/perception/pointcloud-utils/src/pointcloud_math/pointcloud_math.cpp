@@ -38,22 +38,6 @@ Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
 }
 
 
-/*
-Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll) {
-  double sy = sin(yaw*0.5);
-  double cy = cos(yaw*0.5);
-  double sp = sin(pitch*0.5);
-  double cp = cos(pitch*0.5);
-  double sr = sin(roll*0.5);
-  double cr = cos(roll*0.5);
-  double w = cr*cp*cy + sr*sp*sy;
-  double x = sr*cp*cy - cr*sp*sy;
-  double y = cr*sp*cy + sr*cp*sy;
-  double z = cr*cp*sy - sr*sp*cy;
-  return Eigen::Quaternionf(w,x,y,z);
-}
-*/
-
 void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& yaw) {
   const double q0 = q.w();
   const double q1 = q.x();
@@ -62,34 +46,6 @@ void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& ya
   roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2));
   pitch = asin(2*(q0*q2-q3*q1));
   yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
-}
-
-Eigen::Isometry3d isometryFloatToDouble(Eigen::Isometry3f pose_in){
-  Eigen::Quaternionf r(pose_in.rotation());
-  Eigen::Quaterniond rf(r.w() , r.x() , r.y() , r.z() );
-  Eigen::Isometry3d pose_out;
-  pose_out.setIdentity();
-  pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
-  pose_out.rotate(rf);
-  return pose_out;
-}
-
-
-Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d pose_in){
-  Eigen::Quaterniond r(pose_in.rotation());
-  Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
-  Eigen::Isometry3f pose_out;
-  pose_out.setIdentity();
-  pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
-  pose_out.rotate(rf);
-  return pose_out;
-}
-
-
-
-Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
-  std::cout <<"pointcloud_math::Isometry_d2f is depreciated use isometryDoubleToFloat\n";
-  return isometryDoubleToFloat(pose_in);
 }
 
 
