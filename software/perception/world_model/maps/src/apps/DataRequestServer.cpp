@@ -53,6 +53,8 @@ struct Worker {
       case drc::data_request_t::CAMERA_IMAGE_HEAD:
       case drc::data_request_t::CAMERA_IMAGE_LHAND:
       case drc::data_request_t::CAMERA_IMAGE_RHAND:
+      case drc::data_request_t::CAMERA_IMAGE_LCHEST:
+      case drc::data_request_t::CAMERA_IMAGE_RCHEST:
         sendCameraImageRequest();
         break;
       case drc::data_request_t::MINIMAL_ROBOT_STATE:

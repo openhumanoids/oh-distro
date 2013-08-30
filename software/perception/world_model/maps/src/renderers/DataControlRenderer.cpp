@@ -238,11 +238,17 @@ public:
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD, "Camera Head",
-               "CAMERALEFT", ChannelTypeAnonymous);
+               "CAMERA_LEFT", ChannelTypeAnonymous);
+    /* TODO: temporarily disabled until we decide to use hand cameras
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
                "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
                "CAMERA_RHANDLEFT", ChannelTypeAnonymous);
+    */
+    addControl(drc::data_request_t::CAMERA_IMAGE_LCHEST, "Camera L.Chest",
+               "CAMERA_LCHEST", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::CAMERA_IMAGE_RCHEST, "Camera R.Chest",
+               "CAMERA_RCHEST", ChannelTypeAnonymous);
     mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     
     /*
