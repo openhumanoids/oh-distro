@@ -58,7 +58,7 @@ k_f_p.r_arm_mwx = k_f_p.l_arm_mwx;
 k_q_p.back_bkz = 15.0;
 k_q_p.back_bky = 60.0;
 k_q_p.back_bkx = 60.0;
-k_q_p.neck_ay = 4.0;
+k_q_p.neck_ay = 8.0;
 k_q_p.l_leg_hpz = 45.0;
 k_q_p.l_leg_hpx = 30.0;
 k_q_p.l_leg_hpy = 60.0;
@@ -87,7 +87,7 @@ k_q_p.r_arm_mwx = 13.0;
 k_qd_p.back_bkz = 0.0;
 k_qd_p.back_bky = 0.0;
 k_qd_p.back_bkx = 0.0;
-k_qd_p.neck_ay = 1.0;
+k_qd_p.neck_ay = 0.1;
 k_qd_p.l_leg_hpz = 0.0;
 k_qd_p.l_leg_hpx = 0.0;
 k_qd_p.l_leg_hpy = 0.0;
@@ -112,7 +112,6 @@ k_qd_p.r_arm_ely = 0.5;
 k_qd_p.r_arm_elx = 0.65;
 k_qd_p.r_arm_uwy = 0.1;
 k_qd_p.r_arm_mwx = 0.25; %note: seems to be sensitive--velocity noise
-
 
 gains.k_f_p = double(k_f_p);
 gains.k_q_p = double(k_q_p);

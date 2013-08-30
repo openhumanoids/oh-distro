@@ -53,11 +53,8 @@ classdef NeckControlBlock < MIMODrakeSystem
       neckpitch = varargin{1};
       x = varargin{2};
       q = x(1:obj.nq);
-      qd = x(obj.nq+(1:obj.nq));
 
-      Kp = 60;
-      Kd = 5;
-      neck_max_delta = 0.075;
+      neck_max_delta = 0.05;
 
       % OPT: all of these interactions with PPTrajectories are expensive
       qtraj = obj.controller_data.data.qtraj;
@@ -68,7 +65,7 @@ classdef NeckControlBlock < MIMODrakeSystem
         qdes = fasteval(qtraj,t);
       end
       
-      delta = Kp*(neckpitch-q(obj.neck_idx)) - Kd*qd(obj.neck_idx);
+      delta = neckpitch-q(obj.neck_idx);
       delta = min(neck_max_delta,max(-neck_max_delta,delta)); % threshold to prevent jumps
       qdes(obj.neck_idx) = q(obj.neck_idx) + delta; 
       
