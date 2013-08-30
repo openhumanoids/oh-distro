@@ -18,5 +18,6 @@ pods_install_executables(test-morphology-gradient)
 
 add_executable(drc-disparity-filter disparity_filter.cpp)
 target_link_libraries(drc-disparity-filter )
-pods_use_pkg_config_packages(drc-disparity-filter opencv lcm)
+pods_use_pkg_config_packages(drc-disparity-filter opencv 
+        image_io_utils lcm)
 pods_install_executables(drc-disparity-filter)

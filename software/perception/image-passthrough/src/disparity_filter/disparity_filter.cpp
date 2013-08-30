@@ -7,9 +7,12 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include "opencv2/calib3d/calib3d.hpp"
+
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
+#include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <ConciseArgs>
 
@@ -30,13 +33,14 @@ class Pass{
     
     void doGradient(cv::Mat &src, cv::Mat &dst);
 
-
+    image_io_utils*  imgutils_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
 
   lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
 
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 1024, 4*544); 
     
 }
 
@@ -66,6 +70,12 @@ void removeEdges(cv::Mat &src) {
         src.at<short unsigned int>(i,j)  = 0;
 }
 
+/*
+void filterSpeckles(cv::Mat &src) {
+  // 1 Convert to 16S as morphologyEx doesnt support 16U
+ 
+  filterSpeckles(src , double newVal, int maxSpeckleSize, double maxDiff, InputOutputArray buf=noArray()
+}*/
 
 
 
@@ -73,10 +83,26 @@ void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
                         const std::string& channel, const  multisense::images_t* msg){
   int h = msg->images[1].height;
   int w = msg->images[1].width;
-
   cv::Mat disparity_orig_temp = cv::Mat::zeros(h,w,CV_16UC1); // h,w
-  memcpy ( disparity_orig_temp.data , msg->images[1].data.data() , h*w*sizeof(short) ) ;    
+
+  if ( msg->image_types[1] == msg->DISPARITY_ZIPPED){
+    uint8_t* data = (uint8_t*) imgutils_->unzipImage( &(msg->images[1]) );
+    disparity_orig_temp.data=data;    
+  }else{
+    memcpy ( disparity_orig_temp.data , msg->images[1].data.data() , h*w*sizeof(short) ) ;    
+  }
+
+
+  // Remove Speckles:
+  Mat src_16s;  
+  disparity_orig_temp.convertTo(src_16s, CV_16S);
+  cv::filterSpeckles(src_16s, 0, 300, 100 );
+  src_16s.convertTo(disparity_orig_temp, CV_16UC1);
+
+  // Remove boundary edges:
+  // Also helps, but could be slow: (TODO: test more)
   removeEdges(disparity_orig_temp);
+
   
   // form new image message
   bot_core::image_t disp_msg;
@@ -84,7 +110,7 @@ void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
   disp_msg.width = msg->images[1].width;
   disp_msg.height = msg->images[1].height;
   disp_msg.row_stride = 2*msg->images[1].width;
-  disp_msg.pixelformat = msg->images[1].pixelformat;
+  disp_msg.pixelformat =  msg->images[1].pixelformat;
   disp_msg.nmetadata = 0;
   disp_msg.data.resize( h*w*sizeof(short) );
   memcpy(&disp_msg.data[ 0 ], disparity_orig_temp.data,  h*w*sizeof(short)  );
@@ -92,7 +118,8 @@ void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
   
   multisense::images_t msg_out = *msg;
   msg_out.images[1] = disp_msg;
-  lcm_->publish("CAMERA_SGBM", &msg_out);
+  msg_out.image_types[1] =  msg->DISPARITY;
+  lcm_->publish("CAMERA_FILTERED", &msg_out);
 }
 
 
