@@ -159,28 +159,29 @@ void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width
 
 // assumes a zipped gray scale image:
 void image_io_utils::unzipImageThenSend(const bot_core_image_t *msg, std::string channel){
-  unsigned long dlen = msg->width*msg->height;
+  unsigned long dlen = msg->row_stride*msg->height;
   uncompress(local_img_buffer_, &dlen, msg->data, msg->size);
   sendImage(local_img_buffer_, msg->utime, msg->width, msg->height, 1, string(channel + "_UNZIPPED")  );
 }
 
 // assumes a zipped gray scale image:
 void image_io_utils::unzipImageThenSend(const bot_core::image_t *msg, std::string channel){
-  unsigned long dlen = msg->width*msg->height;
+  unsigned long dlen = msg->row_stride*msg->height;
   uncompress(local_img_buffer_, &dlen, msg->data.data(), msg->size);
   sendImage(local_img_buffer_, msg->utime, msg->width, msg->height, 1, string(channel + "_UNZIPPED")  );
 }
 
 // assumes a zipped gray scale image: 
 uint8_t* image_io_utils::unzipImage(const bot_core_image_t *msg){
-  unsigned long dlen = msg->width*msg->height; // msg->depth.uncompressed_size;
+  // unsigned long dlen = msg->width*msg->height; // msg->depth.uncompressed_size;
+  unsigned long dlen = msg->row_stride*msg->height; // msg->depth.uncompressed_size;
   uncompress(local_img_buffer_, &dlen, msg->data, msg->size);
   return local_img_buffer_;
 }
 
 // assumes a zipped gray scale image: CPP CPP CPP CPP
 uint8_t* image_io_utils::unzipImage(const bot_core::image_t *msg){
-  unsigned long dlen = msg->width*msg->height; // msg->depth.uncompressed_size;
+  unsigned long dlen = msg->row_stride*msg->height; // msg->depth.uncompressed_size;
   uncompress(local_img_buffer_, &dlen, msg->data.data(), msg->size);
   return local_img_buffer_;
 }
