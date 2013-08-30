@@ -426,7 +426,9 @@ classdef ManipulationPlanner < KeyframePlanner
                 toc;
                 if(snopt_info > 10)
                     warning(['The IK fails at ',num2str(i)]);
+		    send_status(4,0,0,sprintf('snopt_info = %d. Manip plan IK is not good at %d.',snopt_info,i));
                 end
+
                 %q_d(:,i) = q(ind,i);
             end
             
