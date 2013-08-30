@@ -68,23 +68,23 @@ pods_install_pkg_config_file(renderer_maps
 
 
 #####################################################################
-add_library(renderer_lidartest SHARED 
-  MeshRenderer.cpp
-  LidarTestRenderer.cpp
-)
+# add_library(renderer_lidartest SHARED 
+#   MeshRenderer.cpp
+#   LidarTestRenderer.cpp
+# )
 
-set_target_properties(renderer_lidartest PROPERTIES SOVERSION 1)
+# set_target_properties(renderer_lidartest PROPERTIES SOVERSION 1)
 
-pods_use_pkg_config_packages(renderer_lidartest
-  lcmtypes_drc_lcmtypes eigen3
-  bot2-frames jpeg-utils maps gtkmm-renderer gtkmm-2.4)
+# pods_use_pkg_config_packages(renderer_lidartest
+#   lcmtypes_drc_lcmtypes eigen3
+#   bot2-frames jpeg-utils maps gtkmm-renderer gtkmm-2.4)
 
-pods_install_headers(LidarTestRenderer.hpp
-  DESTINATION renderer_lidartest)
+# pods_install_headers(LidarTestRenderer.hpp
+#   DESTINATION renderer_lidartest)
 
-pods_install_libraries(renderer_lidartest)
+# pods_install_libraries(renderer_lidartest)
   
-pods_install_pkg_config_file(renderer_lidartest
-    LIBS -lrenderer_lidartest
-    REQUIRES bot2-frames gtkmm-renderer gtkmm-2.4
-    VERSION 0.0.1)
+# pods_install_pkg_config_file(renderer_lidartest
+#     LIBS -lrenderer_lidartest
+#     REQUIRES bot2-frames gtkmm-renderer gtkmm-2.4
+#     VERSION 0.0.1)

@@ -1,6 +1,8 @@
 #include "MeshRenderer.hpp"
 
+#include <iostream>
 #include <thread>
+#include <unordered_map>
 
 // image related includes
 #include <lcm/lcm-cpp.hpp>
@@ -16,22 +18,51 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <iostream>
 
 using namespace maps;
 
 struct MeshRenderer::InternalState {
-  // camera data
-  std::string mCameraChannel;
-  std::string mCameraFrame;
-  lcm::Subscription* mCameraSubscription;
-  bot_core::image_t mCameraImage; 
-  Eigen::Isometry3f mLocalToCamera;
+
+  // struct to hold camera subscriptions for texture mapping
+  struct CameraSubscription {
+    typedef std::shared_ptr<CameraSubscription> Ptr;
+
+    std::string mChannel;
+    lcm::Subscription* mSubscription;
+    bool mImagesWrapper;
+    std::string mCoordFrame;
+    Eigen::Isometry3f mLocalToCamera;
+    bot_core::image_t mImage; 
+    BotCamTrans* mCamTrans;
+    Eigen::Matrix4f mProjectionMatrix;
+    GLuint mTextureId;
+    InternalState* mState;
+
+    CameraSubscription(InternalState* iState) {
+      mSubscription = NULL;
+      mCamTrans = NULL;
+      mImage.size = 0;
+      mImagesWrapper = false;
+      mTextureId = 0;
+    }
+
+    ~CameraSubscription() {
+      if ((mSubscription != NULL) && (mState->mBotWrapper->getLcm() != NULL)) {
+        mState->mBotWrapper->getLcm()->unsubscribe(mSubscription);
+      }
+      if (mCamTrans != NULL) {
+        bot_camtrans_destroy(mCamTrans);
+      }
+    }
+  };
 
   BotWrapper::Ptr mBotWrapper;
-  BotCamTrans* mCamTrans;
-  Eigen::Matrix4f mProjectionMatrix;
 
+  // camera data
+  std::unordered_map<std::string, CameraSubscription::Ptr> mCameraSubscriptions;
+  std::string mActiveCameraChannel;
+
+  // external texture map data
   bot_core::image_t mTextureImage;
   Eigen::Projective3f mLocalToTexture;
 
@@ -54,7 +85,6 @@ struct MeshRenderer::InternalState {
   GLuint mTexCoordBufferId;
   GLuint mFaceBufferId;
   GLuint mGenericTextureId;
-  GLuint mCameraTextureId;
   bool mFirstDraw;
 
   // mesh data
@@ -71,55 +101,65 @@ struct MeshRenderer::InternalState {
 
 
   void onCameraImage(const lcm::ReceiveBuffer* iBuf,
-                     const std::string& iChannel,
-                     const bot_core::image_t* iMessage) {
-    mCameraImage = *iMessage;
-    if (iMessage->pixelformat == bot_core::image_t::PIXEL_FORMAT_MJPEG) {
-      int stride = iMessage->width * 3;
-      mCameraImage.data.resize(iMessage->height * stride);
-      mCameraImage.pixelformat = 0;
-      jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
-                             &mCameraImage.data[0],
-                             iMessage->width, iMessage->height, stride);
+                     const std::string& iChannel) {
+    auto item = mCameraSubscriptions.find(iChannel);
+    if (item == mCameraSubscriptions.end()) return;
+    CameraSubscription::Ptr sub = item->second;
+
+    bot_core::image_t img;
+    if (sub->mImagesWrapper) {
+      // TODO: handle images_t
+    }
+    else {
+      img.decode(iBuf->data, 0, 100000000);
+    }
+
+    sub->mImage = img;
+    if (img.pixelformat == bot_core::image_t::PIXEL_FORMAT_MJPEG) {
+      int stride = img.width * 3;
+      sub->mImage.data.resize(img.height * stride);
+      sub->mImage.pixelformat = 0;
+      jpeg_decompress_8u_rgb(&img.data[0], img.size, &sub->mImage.data[0],
+                             img.width, img.height, stride);
     }
     else {
       // TODO: this will break unless rgb3
     }
 
-    if (mCamTrans == NULL) {
-      mCamTrans = bot_param_get_new_camtrans
-        (mBotWrapper->getBotParam(), mCameraChannel.c_str());
-      if (mCamTrans == NULL) {
+    if (sub->mCamTrans == NULL) {
+      sub->mCamTrans = bot_param_get_new_camtrans
+        (mBotWrapper->getBotParam(), sub->mChannel.c_str());
+      if (sub->mCamTrans == NULL) {
         std::cout << "Error: cannot get camtrans for " <<
-          mCameraChannel << std::endl;
+          sub->mChannel << std::endl;
         return;
       }
-      double K00 = bot_camtrans_get_focal_length_x(mCamTrans);
-      double K11 = bot_camtrans_get_focal_length_y(mCamTrans);
-      double K01 = bot_camtrans_get_skew(mCamTrans);
-      double K02 = bot_camtrans_get_principal_x(mCamTrans);
-      double K12 = bot_camtrans_get_principal_y(mCamTrans);
-      mProjectionMatrix = Eigen::Matrix4f::Zero();
-      mProjectionMatrix(0,0) = K00;
-      mProjectionMatrix(0,1) = K01;
-      mProjectionMatrix(0,2) = K02;
-      mProjectionMatrix(1,1) = K11;
-      mProjectionMatrix(1,2) = K12;
-      mProjectionMatrix(2,3) = 1;
-      mProjectionMatrix(3,2) = 1;
+      double K00 = bot_camtrans_get_focal_length_x(sub->mCamTrans);
+      double K11 = bot_camtrans_get_focal_length_y(sub->mCamTrans);
+      double K01 = bot_camtrans_get_skew(sub->mCamTrans);
+      double K02 = bot_camtrans_get_principal_x(sub->mCamTrans);
+      double K12 = bot_camtrans_get_principal_y(sub->mCamTrans);
+      sub->mProjectionMatrix = Eigen::Matrix4f::Zero();
+      sub->mProjectionMatrix(0,0) = K00;
+      sub->mProjectionMatrix(0,1) = K01;
+      sub->mProjectionMatrix(0,2) = K02;
+      sub->mProjectionMatrix(1,1) = K11;
+      sub->mProjectionMatrix(1,2) = K12;
+      sub->mProjectionMatrix(2,3) = 1;
+      sub->mProjectionMatrix(3,2) = 1;
 
       std::string key("cameras.");
-      key += (mCameraChannel + ".coord_frame");
+      key += (sub->mChannel + ".coord_frame");
       char* val = NULL;
       if (bot_param_get_str(mBotWrapper->getBotParam(),
                             key.c_str(), &val) == 0) {
-        mCameraFrame = val;
+        sub->mCoordFrame = val;
         free(val);
       }
     }
 
-    mBotWrapper->getTransform("local", mCameraFrame,
-                              mLocalToCamera, mCameraImage.utime);
+    mBotWrapper->getTransform("local", sub->mCoordFrame,
+                              sub->mLocalToCamera, sub->mImage.utime);
 
     mNeedsUpdate = true;
   }
@@ -180,9 +220,6 @@ MeshRenderer::
 MeshRenderer() {
   mState.reset(new InternalState());
 
-  mState->mCameraSubscription = NULL;
-  mState->mCamTrans = NULL;
-  mState->mCameraImage.size = 0;
   mState->mNeedsUpdate = true;  //TODO: REPLACE WITH NOTIFY?
   mState->mFirstDraw = true;
 
@@ -199,34 +236,30 @@ MeshRenderer() {
 
 MeshRenderer::
 ~MeshRenderer() {
-  if (mState->mBotWrapper->getLcm() != NULL) {
-    if (mState->mCameraSubscription != NULL) {
-      mState->mBotWrapper->getLcm()->unsubscribe(mState->mCameraSubscription);
-    }
-  }
-  if (mState->mCamTrans != NULL) {
-    bot_camtrans_destroy(mState->mCamTrans);
-  }
 }
 
 void MeshRenderer::
 setBotObjects(const std::shared_ptr<lcm::LCM> iLcm,
               const BotParam* iParam, const BotFrames* iFrames) {
   mState->mBotWrapper.reset(new BotWrapper(iLcm, iParam, iFrames));
-  setCameraChannel(mState->mCameraChannel);
+  for (auto item : mState->mCameraSubscriptions) {
+    addCameraChannel(item.second->mChannel, item.second->mImagesWrapper);
+  }
 }
 
 void MeshRenderer::
-setCameraChannel(const std::string& iChannel) {
-  mState->mCameraChannel = iChannel;
-  if (mState->mCameraSubscription != NULL) {
-    mState->mBotWrapper->getLcm()->unsubscribe(mState->mCameraSubscription);
-  }
+addCameraChannel(const std::string& iChannel, const bool iImagesWrapper) {
+  auto sub = InternalState::CameraSubscription::Ptr
+    (new InternalState::CameraSubscription(mState.get()));
+  sub->mChannel = iChannel;
+  sub->mImagesWrapper = iImagesWrapper;
   if (mState->mBotWrapper->getLcm() != NULL) {
-    mState->mCameraSubscription =
+    sub->mSubscription =
       mState->mBotWrapper->getLcm()->subscribe
-      (mState->mCameraChannel, &InternalState::onCameraImage, mState.get());
+      (sub->mChannel, &InternalState::onCameraImage, mState.get());
   }
+  mState->mCameraSubscriptions[iChannel] = sub;
+  mState->mActiveCameraChannel = iChannel;
 }
 
 void MeshRenderer::
@@ -409,9 +442,13 @@ draw() {
     glGenBuffers(1, &mState->mColorBufferId);
     glGenBuffers(1, &mState->mTexCoordBufferId);
     glGenBuffers(1, &mState->mFaceBufferId);
-    glGenTextures(1, &mState->mCameraTextureId);
     glGenTextures(1, &mState->mGenericTextureId);
     mState->mFirstDraw = false;
+  }
+  for (auto item : mState->mCameraSubscriptions) {
+    if (item.second->mTextureId == 0) {
+      glGenTextures(1, &item.second->mTextureId);
+    }
   }
 
   // create vertex buffer
@@ -431,6 +468,11 @@ draw() {
     glVertexPointer(3, GL_FLOAT, 0, 0);
   }
   */
+
+  // determine which camera channel is active
+  InternalState::CameraSubscription::Ptr sub;
+  auto item = mState->mCameraSubscriptions.find(mState->mActiveCameraChannel);
+  if (item != mState->mCameraSubscriptions.end()) sub = item->second;
 
   // create color buffer
   if (mState->mColorMode == ColorModeFlat) {
@@ -507,29 +549,27 @@ draw() {
   }
 
   else if ((mState->mColorMode == ColorModeCamera) &&
-           (mState->mCameraImage.size>0)) {
+           (sub != NULL) && (sub->mImage.size>0)) {
     // texture coordinates transformation
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
-    glScalef(1.0/mState->mCameraImage.width,
-             1.0/mState->mCameraImage.height,1);
-    glMultMatrixf(mState->mProjectionMatrix.data());
-    glMultMatrixf(mState->mLocalToCamera.data());
+    glScalef(1.0/sub->mImage.width, 1.0/sub->mImage.height,1);
+    glMultMatrixf(sub->mProjectionMatrix.data());
+    glMultMatrixf(sub->mLocalToCamera.data());
     glMultMatrixf(mState->mTransform.data());
 
     // draw texture
     GLfloat color[] = {mState->mColor[0], mState->mColor[1], mState->mColor[2],
                        mState->mColorAlpha};
     glColor4ub(255,255,255,255*mState->mColorAlpha);
-    glBindTexture(GL_TEXTURE_2D, mState->mCameraTextureId);
+    glBindTexture(GL_TEXTURE_2D, sub->mTextureId);
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, mState->mCameraImage.width,
-                 mState->mCameraImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                 &mState->mCameraImage.data[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, sub->mImage.width, sub->mImage.height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, &sub->mImage.data[0]);
     glBindBuffer(GL_ARRAY_BUFFER, mState->mTexCoordBufferId);
     glBufferData(GL_ARRAY_BUFFER, mState->mVertexBuffer.size()*sizeof(float),
                  &mState->mVertexBuffer[0], GL_STATIC_DRAW);
