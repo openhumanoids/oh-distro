@@ -72,7 +72,7 @@ classdef PosturePlanner < KeyframePlanner
                 pelvis_const.gaze_dir = pelvis_des_dir;
                 pelvis_const.gaze_axis = [0;0;1];
                 if(obj.isBDIManipMode()) % Dont adjust pelvis in BDIManipMode
-                    pelvis_const = forwardKin(obj.r,kinsol0,obj.pejointLimitMinlvis_body,[0;0;0],2);
+                    pelvis_const = forwardKin(obj.r,kinsol0,obj.pelvis_body,[0;0;0],2);
                 end
                 ikargs = {obj.r_foot_body,[0;0;0],rfoot0,obj.l_foot_body,[0;0;0],lfoot0,...
                     obj.pelvis_body,[0;0;0],pelvis_const};

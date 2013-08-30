@@ -40,8 +40,8 @@ classdef KeyframePlanner < handle
             coords = obj.r.getStateFrame();
             [joint_min,joint_max] = obj.r.getJointLimits();
             joint_min = Point(coords,[joint_min;0*joint_min]);
-            joint_min.back_bky = -.1;
-            joint_min.back_bkx = -.1;
+            joint_min.back_bky = -0.1;
+            joint_min.back_bkx = -0.1;
             joint_min.l_leg_kny = 0.2;
             joint_min.r_leg_kny = 0.2;
             obj.joint_min = double(joint_min);
