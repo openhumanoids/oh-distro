@@ -143,7 +143,7 @@ group "b.3.manip" {
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
     }    
     cmd "AtlasManipController" {

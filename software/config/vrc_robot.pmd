@@ -241,7 +241,7 @@ group "b.2.walking" {
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(1);\"";
        host = "base";
     }
     cmd "sticky_hands" {
@@ -256,7 +256,7 @@ group "b.3.manip" {
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/unpinned_manipulation']); runUnpinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(1);\"";
        host = "base";
     }
     cmd "FootstepPlanner" {
@@ -275,7 +275,7 @@ group "b.4.driving" {
        host = "base";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
     }
 }
