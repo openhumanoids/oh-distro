@@ -15,10 +15,12 @@ classdef AtlasManipController < DRCController
       qref = PositionRefFeedthroughBlock(r);
 
       % instantiate qtraj eval block
-      qt = QTrajEvalBlock(r,ctrl_data);
+      qt = NeckControlBlock(r,ctrl_data);
       
       ins(1).system = 1;
       ins(1).input = 1;
+      ins(2).system = 1;
+      ins(2).input = 2;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(qt,qref,[],ins,outs);
