@@ -17,7 +17,6 @@
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
   std::string mChannelBase;
-  std::string mChannelLeft;
   std::string mChannelTransmit;
   bot_core::image_t mLatestImage;
   int mRequestType;
@@ -42,7 +41,6 @@ struct ImageTransmit {
 
   int mJpegQuality;
   int mDownSampleFactor;
-  bool mShouldPublishLeft;
 
   ImageTransmit() {
     mLcmWrapper.reset(new drc::LcmWrapper());
@@ -55,15 +53,10 @@ struct ImageTransmit {
   void addChannel(const std::string& iChannel, const int iRequestType) {
     ChannelData::Ptr data(new ChannelData());
     data->mChannelBase = iChannel;
-    data->mChannelLeft = iChannel + "LEFT";
-    data->mChannelTransmit = data->mChannelLeft + "_TX";
+    data->mChannelTransmit = data->mChannelBase + "_TX";
     data->mRequestType = iRequestType;
 
-    // TODO: hack to handle left color image as special case
     std::string subscriptionChannel = data->mChannelBase;
-    if (iRequestType == drc::data_request_t::CAMERA_IMAGE_HEAD) {
-      subscriptionChannel = data->mChannelLeft;
-    }
     mLcm->subscribe(subscriptionChannel, &ChannelData::onImage, data.get());
 
     mChannels[iRequestType] = data;
@@ -147,19 +140,6 @@ struct ImageTransmit {
       return;
     }
 
-    // chop off top half
-    // TODO: for now just assume that tall images are stereo
-    if (img.height > img.width) {
-      img.data.resize(img.data.size()/2);
-      img.size = img.data.size();
-      img.height /= 2;
-    }
-
-    // publish top half (left image) if necessary
-    if (mShouldPublishLeft) {
-      mLcm->publish(data->mChannelLeft, &img);
-    }
-
     void* bytes = const_cast<void*>(static_cast<const void*>(img.data.data()));
     cv::Mat imgOrig(img.height, img.width, imgType, bytes, img.row_stride);
 
@@ -195,16 +175,14 @@ struct ImageTransmit {
 };
 
 int main(const int iArgc, const char** iArgv) {
-  bool shouldPublishLeft = false;
   ConciseArgs opt(iArgc, (char**)iArgv);
-  opt.add(shouldPublishLeft, "l", "left_publish",
-          "whether to publish left images");
   opt.parse();
 
   ImageTransmit obj;
-  obj.mShouldPublishLeft = shouldPublishLeft;
-  obj.addChannel("CAMERA", drc::data_request_t::CAMERA_IMAGE_HEAD);
-  obj.addChannel("CAMERA_LHAND", drc::data_request_t::CAMERA_IMAGE_LHAND);
-  obj.addChannel("CAMERA_RHAND", drc::data_request_t::CAMERA_IMAGE_RHAND);
+  obj.addChannel("CAMERA_LEFT", drc::data_request_t::CAMERA_IMAGE_HEAD);
+  //obj.addChannel("CAMERA_LHAND", drc::data_request_t::CAMERA_IMAGE_LHAND);
+  //obj.addChannel("CAMERA_RHAND", drc::data_request_t::CAMERA_IMAGE_RHAND);
+  obj.addChannel("CAMERACHEST_LEFT", drc::data_request_t::CAMERA_IMAGE_LCHEST);
+  obj.addChannel("CAMERACHEST_RIGHT", drc::data_request_t::CAMERA_IMAGE_RCHEST);
   obj.start();
 }

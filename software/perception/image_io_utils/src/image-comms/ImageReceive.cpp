@@ -4,6 +4,9 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>
+#include <bot_param/param_client.h>
+#include <bot_param/param_util.h>
+#include <bot_core/camtrans.h>
 
 #include <lcmtypes/bot_core/image_t.hpp>
 
@@ -65,20 +68,23 @@ struct ImageReceive {
   std::shared_ptr<lcm::LCM> mLcm;
   typedef std::unordered_map<std::string, ChannelData::Ptr> ChannelGroup;
   ChannelGroup mChannels;
+  BotParam* mBotParam;
 
   ImageReceive() {
     mLcmWrapper.reset(new drc::LcmWrapper());
     mLcm = mLcmWrapper->get();
+    mBotParam = bot_param_get_global(mLcmWrapper->get()->getUnderlyingLCM(),0);
   }
 
-  void addChannel(const std::string& iChannel,
-                  const int iWidth, const int iHeight) {
+  void addChannel(const std::string& iChannel) {
     ChannelData::Ptr data(new ChannelData());
     data->mChannelBase = iChannel;
-    data->mChannelReceive = iChannel + "LEFT_TX";
-    data->mChannelTransmit = iChannel + "LEFT";
-    data->mWidth = iWidth;
-    data->mHeight = iHeight;
+    data->mChannelReceive = iChannel + "_TX";
+    data->mChannelTransmit = iChannel;
+    BotCamTrans* camTrans =
+      bot_param_get_new_camtrans(mBotParam, iChannel.c_str());
+    data->mWidth = bot_camtrans_get_width(camTrans);
+    data->mHeight = bot_camtrans_get_height(camTrans);
     data->mLcm = mLcm;
     mChannels[data->mChannelReceive] = data;
     mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
@@ -91,9 +97,12 @@ struct ImageReceive {
 
 int main() {
   ImageReceive obj;
+
   // TODO: don't hard-code these, read from config
-  obj.addChannel("CAMERA", 800, 800);
-  obj.addChannel("CAMERA_LHAND", 752, 480);
-  obj.addChannel("CAMERA_RHAND", 752, 480);
+  obj.addChannel("CAMERA_LEFT");
+  //obj.addChannel("CAMERA_LHAND", 752, 480);
+  //obj.addChannel("CAMERA_RHAND", 752, 480);
+  obj.addChannel("CAMERACHEST_LEFT");
+  obj.addChannel("CAMERACHEST_RIGHT");
   obj.start();
 }
