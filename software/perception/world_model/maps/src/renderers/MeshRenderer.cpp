@@ -37,6 +37,7 @@ struct MeshRenderer::InternalState {
     Eigen::Matrix4f mProjectionMatrix;
     GLuint mTextureId;
     InternalState* mState;
+    bool mIdealPinhole;
 
     CameraSubscription(InternalState* iState) {
       mSubscription = NULL;
@@ -44,6 +45,7 @@ struct MeshRenderer::InternalState {
       mImage.size = 0;
       mImagesWrapper = false;
       mTextureId = 0;
+      mIdealPinhole = true;
     }
 
     ~CameraSubscription() {

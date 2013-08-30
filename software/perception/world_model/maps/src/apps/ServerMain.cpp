@@ -11,9 +11,9 @@
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_params_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
-#include <lcmtypes/drc/map_macro_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
+#include <lcmtypes/multisense/images_t.hpp>
 
 #include <maps/MapManager.hpp>
 #include <maps/PointCloudView.hpp>
@@ -38,6 +38,8 @@
 #include <stereo-bm/stereo-bm.hpp>
 #include <bot_param/param_util.h>
 
+#include <zlib.h>
+
 using namespace std;
 using namespace maps;
 
@@ -46,6 +48,7 @@ class State;
 struct StereoHandler {
   BotWrapper::Ptr mBotWrapper;
   bot_core::image_t mLatestImage;
+  multisense::images_t mLatestImages;
   std::shared_ptr<StereoB> mStereoMatcher;
   BotCamTrans* mCamTrans;
   Eigen::Matrix3f mCalibMatrix;
@@ -57,6 +60,7 @@ struct StereoHandler {
     mBotWrapper = iBotWrapper;
     auto lcm = mBotWrapper->getLcm();
     mLatestImage.size = 0;
+    mLatestImages.n_images = 0;
 
     std::string cameraName = iCameraBaseName + "_LEFT";
     mCamTrans = bot_param_get_new_camtrans
@@ -85,7 +89,7 @@ struct StereoHandler {
       }
       mDisparityFactor = 1/k00/baseline;
 
-      lcm->subscribe(iCameraBaseName, &StereoHandler::onImage, this);
+      lcm->subscribe(iCameraBaseName, &StereoHandler::onImages, this);
 
       auto boostLcm = drc::PointerUtils::boostPtr(lcm);
       mStereoMatcher.reset(new StereoB(boostLcm));
@@ -109,6 +113,11 @@ struct StereoHandler {
     mLatestImage = *iMessage;
   }
 
+  void onImages(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
+                const multisense::images_t* iMessage) {
+    mLatestImages = *iMessage;
+  }
+
   bool cropPoint(const Eigen::Vector3f& iPoint,
                  const std::vector<Eigen::Vector4f>& iBoundPlanes) {
     for (size_t k = 0; k < iBoundPlanes.size(); ++k) {
@@ -122,18 +131,31 @@ struct StereoHandler {
   DepthImageView::Ptr
   getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
     DepthImageView::Ptr view;
-    if (mLatestImage.size == 0) {
+    if ((mLatestImage.size == 0) && (mLatestImages.n_images == 0)) {
       return view;
     }
 
+    bool usingWrapper = mLatestImages.n_images>0;
+    bot_core::image_t dispMsg;
+    int dispIndex = -1;
+    for (int i = 0; i < mLatestImages.n_images; ++i) {
+      if ((mLatestImages.image_types[i] == multisense::images_t::DISPARITY) ||
+          (mLatestImages.image_types[i] ==
+           multisense::images_t::DISPARITY_ZIPPED)) {
+        dispMsg = mLatestImages.images[i];
+        dispIndex = i;
+      }
+    }
+
     // project bound polyhedron onto camera
-    int w(mLatestImage.width), h(mLatestImage.height/2);
+    int w = usingWrapper ? dispMsg.width : mLatestImage.width;
+    int h = usingWrapper ? dispMsg.height : mLatestImage.height;
+    int64_t t = usingWrapper ? dispMsg.utime : mLatestImage.utime;
     std::vector<Eigen::Vector3f> vertices;
     std::vector<std::vector<int> > faces;
     Utils::polyhedronFromPlanes(iBoundPlanes, vertices, faces);
     Eigen::Isometry3f localToCamera;
-    mBotWrapper->getTransform("local", mCameraFrame, localToCamera,
-                              mLatestImage.utime);
+    mBotWrapper->getTransform("local", mCameraFrame, localToCamera, t);
     Eigen::Vector2i minPt(1000000,1000000), maxPt(-1000000,-1000000);
     for (size_t i = 0; i < vertices.size(); ++i) {
       Eigen::Vector3f pt = localToCamera*vertices[i];
@@ -156,24 +178,40 @@ struct StereoHandler {
 
     view.reset(new DepthImageView());
 
-    // uncompress image if necessary
-    cv::Mat img;
-    if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
-      img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
+    cv::Mat disparityMat;
+    if (usingWrapper) {
+      if (mLatestImages.image_types[dispIndex] ==
+          multisense::images_t::DISPARITY_ZIPPED) {
+        std::vector<uint8_t> buf(w*h*2);
+        unsigned long len;
+        uncompress(buf.data(), &len, dispMsg.data.data(), dispMsg.data.size());
+        cv::Mat(h, w, CV_16UC1, buf.data()).
+          convertTo(disparityMat, CV_32F, 1.0/16);
+      }
+      else {
+        cv::Mat(h, w, CV_16UC1, dispMsg.data.data()).
+          convertTo(disparityMat, CV_32F, 1.0f/16);
+      }
     }
     else {
-      img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
+      // uncompress image if necessary
+      cv::Mat img;
+      if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
+        img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
+      }
+      else {
+        img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
+      }
+
+      // split images
+      cv::Mat leftImage = img.rowRange(0, h).clone();
+      cv::Mat rightImage = img.rowRange(h, 2*h).clone();
+
+      // compute disparity
+      mStereoMatcher->doStereoB(leftImage, rightImage);
+      cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
+        convertTo(disparityMat, CV_32F, 1.0f/16);
     }
-
-    // split images
-    cv::Mat leftImage = img.rowRange(0, h).clone();
-    cv::Mat rightImage = img.rowRange(h, 2*h).clone();
-
-    // compute disparity
-    mStereoMatcher->doStereoB(leftImage, rightImage);
-    cv::Mat disparityMat;
-    cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
-      convertTo(disparityMat, CV_32F, 1.0f/16);
 
     // form output depth image
     DepthImage depthImage;
@@ -446,7 +484,6 @@ public:
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
   lcm::Subscription* mMapCommandSubscription;
-  lcm::Subscription* mMapMacroSubscription;
   lcm::Subscription* mCatalogTriggerSubscription;
 
   float mCatalogPublishPeriod;
@@ -463,14 +500,15 @@ public:
     mCollector->setBotWrapper(mBotWrapper);
     mStereoHandlerHead.reset(new StereoHandler(mBotWrapper, "CAMERA"));
     if (mStereoHandlerHead->mCamTrans == NULL) mStereoHandlerHead.reset();
+    /* TODO: disabled until/unless we actually use the hand stereo cams
     mStereoHandlerLeft.reset(new StereoHandler(mBotWrapper, "CAMERALHAND"));
     if (mStereoHandlerLeft->mCamTrans == NULL) mStereoHandlerLeft.reset();
     mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERARHAND"));
     if (mStereoHandlerRight->mCamTrans == NULL) mStereoHandlerRight.reset();
+    */
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
-    mMapMacroSubscription = NULL;
     mCatalogTriggerSubscription = NULL;
     mCatalogPublishPeriod = 0;
   }
@@ -480,7 +518,6 @@ public:
     lcm->unsubscribe(mRequestSubscription);
     lcm->unsubscribe(mMapParamsSubscription);
     lcm->unsubscribe(mMapCommandSubscription);
-    lcm->unsubscribe(mMapMacroSubscription);
     lcm->unsubscribe(mCatalogTriggerSubscription);
   }
 
@@ -526,71 +563,6 @@ public:
     LocalMap::Spec spec;
     LcmTranslator::fromLcm(*iMessage, spec);
     mCollector->getMapManager()->createMap(spec);
-  }
-
-  void onMapMacro(const lcm::ReceiveBuffer* iBuf,
-                  const std::string& iChannel,
-                  const drc::map_macro_t* iMessage) {
-    struct MacroWorker {
-      State* mState;
-      drc::map_macro_t mMacro;
-
-      void operator()() {
-        // create single-scan dense map
-        auto lcm = mState->mBotWrapper->getLcm();
-        if (mMacro.command == drc::map_macro_t::CREATE_DENSE_MAP) {
-          std::cout << "About to create dense map" << std::endl;
-
-          // TODO: could move rate controls into renderer
-          std::cout << "Slowing spindle..." << std::endl;
-          const double kPi = 4*atan(1);
-          drc::twist_timed_t rate;
-          rate.utime = drc::Clock::instance()->getCurrentTime();
-          rate.angular_velocity.x = 2*kPi/12;
-          rate.angular_velocity.y = 0.0;
-          rate.angular_velocity.z = 0.0;
-          rate.linear_velocity.x = 0.0;
-          rate.linear_velocity.y = 0.0;
-          rate.linear_velocity.z = 0.0;
-          lcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
-
-          std::cout << "Creating new map..." << std::endl;
-          LocalMap::Spec spec;
-          spec.mResolution = 0.01;
-          int id = mState->mCollector->getMapManager()->createMap(spec);
-
-          std::cout << "Waiting for accumulation..." << std::endl;
-          int64_t baseTime = drc::Clock::instance()->getCurrentTime();
-          double minTime = kPi/rate.angular_velocity.x;
-          while (true) {
-            int64_t curTime = drc::Clock::instance()->getCurrentTime();
-            double dt = double(curTime-baseTime)/1e6;
-            if (dt > minTime) break;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-
-          std::cout << "Stopping accumulation..." << std::endl;
-          mState->mCollector->getMapManager()->stopUpdatingMap(id);
-
-          std::cout << "Resetting spindle speed..." << std::endl;
-          rate.angular_velocity.x = 2*kPi;
-          lcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
-
-          std::cout << "Done creating dense map" << std::endl;
-        }
-        else if (drc::map_macro_t::GROUND_SCAN_MODE) {
-          // TODO: may need to rework this; maybe a single thread for all time
-          // that can switch modes if it's interrupted by new macro
-        }
-        else {
-          std::cout << "Invalid macro" << std::endl;
-        }
-      }
-    };
-    MacroWorker worker;
-    worker.mMacro = *iMessage;
-    worker.mState = this;
-    std::thread thread(worker);
   }
 
   void onCatalogTrigger(const lcm::ReceiveBuffer* iBuf,
@@ -737,8 +709,6 @@ int main(const int iArgc, const char** iArgv) {
     lcm->subscribe("MAP_COMMAND", &State::onMapCommand, &state);
   state.mMapParamsSubscription =
     lcm->subscribe("MAP_PARAMS", &State::onMapParams, &state);
-  state.mMapMacroSubscription =
-    lcm->subscribe("MAP_MACRO", &State::onMapMacro, &state);
   state.mCatalogTriggerSubscription =
     lcm->subscribe("TRIGGER_MAP_CATALOG", &State::onCatalogTrigger, &state);
 
