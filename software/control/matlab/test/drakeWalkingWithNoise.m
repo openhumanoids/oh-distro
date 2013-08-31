@@ -45,6 +45,8 @@ step_options.ignore_terrain = false;
 step_options.nom_step_width = rctrl.nom_step_width;
 step_options.nom_forward_step = rctrl.nom_forward_step;
 step_options.max_forward_step = rctrl.max_forward_step;
+step_options.goal_type = drc.walking_goal_t.GOAL_TYPE_CENTER;
+step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
 
 footsteps = rctrl.createInitialSteps(x0, navgoal, step_options);
 [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(rctrl, x0, footsteps,step_options);
