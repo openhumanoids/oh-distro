@@ -82,7 +82,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "extra";
     }
     cmd "aff_server" {
