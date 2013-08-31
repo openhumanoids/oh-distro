@@ -989,7 +989,7 @@ _free (BotRenderer *renderer)
     //free (renderer);
 }
 
-BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef)
+BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
 {
 
     //RendererAffordances *self = (RendererAffordances*) calloc (1, sizeof (RendererAffordances)); // Calloc is bad as it prevents having string as members as strings can change size
@@ -1045,6 +1045,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 
     self->reachabilityVerifier=boost::shared_ptr<ReachabilityVerifier>(new ReachabilityVerifier(self));
     //self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,RendererAffordances::keyboardSignalCallback));
+    self->affTriggerSignalsRef = affTriggerSignalsRef;        
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererAffordances::keyboardSignalCallback,self,_1,_2)));
     self->seedSelectionManager = boost::shared_ptr<SelectionManager>(new SelectionManager(signalRef));
     
@@ -1152,12 +1153,12 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
    return &self->renderer;
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames,signalRef), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames,signalRef,affTriggerSignalsRef), render_priority, 0); // 0= add on left hand side
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, KeyboardSignalRef signalRef)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef,affTriggerSignalsRef), render_priority, 0); // 0= add on left hand side
 }

@@ -56,6 +56,7 @@
 #include <visualization_utils/gl_draw_utils.hpp>
 #include <visualization_utils/keyboard_signal_utils.hpp>
 #include <visualization_utils/SelectionManager.hpp>
+#include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/affordance_utils.hpp>
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
 #include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
@@ -312,7 +313,7 @@ struct RendererAffordances {
   bool doBatchFK;
   
   
-  
+  AffTriggerSignalsRef affTriggerSignalsRef;
   void keyboardSignalCallback(int keyval, bool is_pressed)
   {
     /*if(is_pressed) 
@@ -1074,8 +1075,8 @@ struct RendererAffordances {
   
 }//end_namespace
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames, KeyboardSignalRef signalRef);
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, KeyboardSignalRef signalRef);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
 
 
 #endif //RENDERER_AFFORDANCES_HPP

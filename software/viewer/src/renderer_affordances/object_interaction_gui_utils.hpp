@@ -10,6 +10,7 @@
 #define PARAM_STORE "Store to otdf file" 
 #define PARAM_UNSTORE "Unstore from otdf file" 
 
+
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
 #define PARAM_REACH "Reach" 
@@ -54,6 +55,7 @@
 #define PARAM_EE_RIGHT_HAND "Right hand"
 #define PARAM_EE_LEFT_HAND "Left hand"
 #define PARAM_USE_CURRENT_POSE "Use current pose"
+#define PARAM_STORE_PLAN "Store Current Plan" 
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
 #define PARAM_CURRENT_ORIENTATION "Maintain EE orientation"
@@ -697,7 +699,11 @@ namespace renderer_affordances_gui_utils
     else if (! strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)) {
         spawn_adjust_dofs_popup_2(self);
     }
+    else if (! strcmp(name, PARAM_STORE_PLAN)) {
+        (*self->affTriggerSignalsRef).plan_store(it->second.otdf_type,it->second._gl_object->_T_world_body);
+    }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
+      // emit global keyboard signal
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
       KDL::Frame T_geom_rhandpose = KDL::Frame::Identity();
       
@@ -1073,7 +1079,10 @@ namespace renderer_affordances_gui_utils
                 bot_gtk_param_widget_add_buttons(pw,PARAM_ENGAGE_EE_TELEOP, NULL);
           }
       
-      }// end if 
+      }// end if
+      
+      
+    bot_gtk_param_widget_add_buttons(pw,PARAM_STORE_PLAN, NULL); 
 
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);

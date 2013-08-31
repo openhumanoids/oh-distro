@@ -20,6 +20,7 @@
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 #include "RobotPlanListener.hpp"
 
 using namespace std;
@@ -38,6 +39,7 @@ namespace renderer_robot_plan
     BotGtkParamWidget *pw;
     boost::shared_ptr<RobotPlanListener> robotPlanListener;
     boost::shared_ptr<KeyboardSignalHandler> keyboardSignalHndlr;
+    boost::shared_ptr<AffTriggerSignalsHandler> affTriggerSignalsHndlr;
     boost::shared_ptr<lcm::LCM> lcm;
     int64_t max_draw_utime;
     BotEventHandler ehandler;
@@ -77,6 +79,17 @@ namespace renderer_robot_plan
     int vicon_n_plan_samples;
     double vicon_sample_period;
     int8_t vicon_type;
+    
+    void affTriggerSignalsCallback(aff_trigger_type type, string otdf_id, KDL::Frame T_world_aff)
+    {
+      if(type==PLAN_STORE){
+          cout<< otdf_id << " got triggered to store currently active plan"<< endl;
+          cout<<"Storage is TODO:" << endl;
+          cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+      }
+      else
+          cerr<<  " unknown trigger "<< endl;
+    }
     
   } RendererRobotPlan;
   
@@ -625,5 +638,5 @@ namespace renderer_robot_plan
 
 
 // 0 = typical mode, 1 = robot_plan 2 = robot_plan_compressed
-void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef);
+void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
 #endif //RENDERER_ROBOTPLAN_HPP

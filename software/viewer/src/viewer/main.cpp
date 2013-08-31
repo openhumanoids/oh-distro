@@ -46,6 +46,7 @@
 #include "RendererGroupUtil.hpp"
 #include <lcmtypes/drc_lcmtypes.h>
 #include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 
 using namespace std;
 using namespace visualization_utils;
@@ -56,6 +57,7 @@ using namespace visualization_utils;
 // slot to handle global key events. Using a shared ptr to the boost signal. Renderers that require access
 // to keyboard signals will receive the signal ref as an argument in their setup function.
 KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
+AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTriggerSignals()); 
 
 static int
 logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
@@ -119,6 +121,7 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       default:
           return 0;
     }
+
 
     return 1;
 }
@@ -379,9 +382,9 @@ int main(int argc, char *argv[])
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   
   // Block of Renderers:  
-  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef);
+  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef);
   setup_renderer_robot_state(viewer, 0, lcm,0);
-  setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef);
+  setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   
   // Individual Renderers:

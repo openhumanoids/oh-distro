@@ -620,14 +620,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef)
+setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
 {
     RendererRobotPlan *self = (RendererRobotPlan*) calloc (1, sizeof (RendererRobotPlan));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
     
-    self->robotPlanListener = boost::shared_ptr<RobotPlanListener>(new RobotPlanListener(self->lcm, 
-					  viewer, operation_mode));
+    self->robotPlanListener = boost::shared_ptr<RobotPlanListener>(new RobotPlanListener(self->lcm, viewer, operation_mode));
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
+    self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RendererRobotPlan::affTriggerSignalsCallback,self,_1,_2,_3)));
+
     
     BotRenderer *renderer = &self->renderer;
 
