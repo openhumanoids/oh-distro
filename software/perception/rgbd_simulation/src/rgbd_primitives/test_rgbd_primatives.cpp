@@ -51,11 +51,13 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9986,"RGBD Primitive - Cylinder"     ,7,1, 9995,0, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9987,"RGBD Primitive - Cube"     ,7,1, 9995,0, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9988,"RGBD Primitive - Disc"     ,7,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9989,"RGBD Primitive - Sphere"     ,7,1, 9995,0, colors_v ));
   // 3 gives a wireframe
   
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"RGBD Primitive - Points on Cylinder"     ,1,1, 9995,0, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9997,"RGBD Primitive - Points on Cube"     ,1,1, 9995,0, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9998,"RGBD Primitive - Points on Disc"     ,1,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9999,"RGBD Primitive - Points on Sphere"     ,1,1, 9995,0, colors_v ));
 
   
   verbose_ =false;  
@@ -93,12 +95,22 @@ void Pass::doTest(std::string fname){
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts2 =prim_->sampleMesh(mesh_cube, 400);
   pc_vis_->ptcld_to_lcm_from_list(9997, *pts2, pose_id , pose_id);  
 
+  // Disc
   transform.translation()  << 0.18,-0.8,0.0;
   pcl::PolygonMesh::Ptr mesh_disc = prim_->getCylinderWithTransform(transform, radius, 0.0, 0);
   pc_vis_->mesh_to_lcm_from_list(9988, mesh_disc, pose_id , pose_id);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts3 =prim_->sampleMesh(mesh_disc, 400); // NB: disc sampled for both top and bottom lid - givine twice the density
   pc_vis_->ptcld_to_lcm_from_list(9998, *pts3, pose_id , pose_id);  
  
+  // Sphere
+  // NB: this sampled sphere isnt correct:
+  {
+  transform.translation()  << 0.18,-1.6,0.0;
+  pcl::PolygonMesh::Ptr mesh_sphere = prim_->getSphereWithTransform(transform, 0.3);
+  pc_vis_->mesh_to_lcm_from_list(9989, mesh_sphere, pose_id , pose_id);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts3 =prim_->sampleMesh(mesh_sphere, 4000); // NB: disc sampled for both top and bottom lid - givine twice the density
+  pc_vis_->ptcld_to_lcm_from_list(9999, *pts3, pose_id , pose_id);  
+  }
   
   
   

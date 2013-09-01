@@ -79,13 +79,18 @@ using namespace Eigen;
 using namespace boost;
 using namespace boost::assign; // bring 'operator+()' into scope
 
+#define LINK_OFFSET 128
 
-Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
-    int output_color_mode_, bool use_convex_hulls_, string camera_frame_,
-    CameraParams camera_params_):          
-    lcm_(lcm_), output_color_mode_(output_color_mode_), use_convex_hulls_(use_convex_hulls_), 
-    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_), camera_frame_(camera_frame_),
-    camera_params_(camera_params_){
+
+Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, 
+           std::string camera_channel_, int output_color_mode_, 
+           bool use_convex_hulls_, string camera_frame_,
+           CameraParams camera_params_, bool verbose_):          
+           lcm_(lcm_), output_color_mode_(output_color_mode_), 
+           use_convex_hulls_(use_convex_hulls_), urdf_parsed_(false), 
+           init_rstate_(false), camera_channel_(camera_channel_), 
+           camera_frame_(camera_frame_), camera_params_(camera_params_),
+           verbose_(verbose_){
 
   // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
@@ -106,7 +111,6 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"iPass - Sim Cloud"     ,1,1, 9995,0, colors_v ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"iPass - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
-  verbose_ =false;  
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 
                                   camera_params_.width, 
                                   camera_params_.height ); // Actually outputs the Mask Image:
@@ -216,6 +220,20 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 
 
 
+Eigen::Isometry3d URDFPoseToEigen(urdf::Pose& pose_in){
+  Eigen::Isometry3d pose_out = Eigen::Isometry3d::Identity();
+  
+  pose_out.translation()  << pose_in.position.x,
+                          pose_in.position.y,
+                          pose_in.position.z;
+  pose_out.rotate( Eigen::Quaterniond(pose_in.rotation.w, 
+                                    pose_in.rotation.x,
+                                    pose_in.rotation.y,
+                                    pose_in.rotation.z) );   
+  return pose_out;
+}
+
+
 void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
   if(urdf_parsed_ ==false){
     cout<< "URDF handler"<< endl;
@@ -230,41 +248,95 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
     links_map_ = gl_robot_->get_links_map();
     cout<< "Size of Links Map: " << links_map_.size() <<endl;
     
-    std::vector< std::string > mesh_link_names, mesh_file_paths ;
-    std::vector< Eigen::Isometry3d > mesh_origins;
-    
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
+    
+    int i =0;
     for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
       cout << it->first << endl;
       if(it->second->visual){
-        std::cout << it->first<< " link"
-          << it->second->visual->geometry->type << " type [visual only]\n";
+        
+
+        
+        
+        std::cout << it->first<< " link" << it->second->visual->geometry->type << " type\n"; // visual type
           
-        int type = it->second->visual->geometry->type;
-        enum {SPHERE, BOX, CYLINDER, MESH}; 
-        // TODO: support simple meshes
-        if  (type == MESH){
-          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
+        Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();// = URDFPoseToEigen( it->second->visual->origin );    
+        pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
+        
+        typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+        std:cout << "I have     ......... " << v_grp_it->second->size() << "\n";
+        
+        for (size_t iv = 0;iv < v_grp_it->second->size();iv++){  // 
+          vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+          shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
+          std::cout << iv << " of type " << geom->type  << "\n";
+          Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
           
-          mesh_link_names.push_back( it->first );
-          // Verify the existance of the file:
-          mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_) );
           
-          Eigen::Isometry3d origin;
-          origin.setIdentity();
-          origin.translation()  << it->second->visual->origin.position.x,
-                                  it->second->visual->origin.position.y,
-                                  it->second->visual->origin.position.z;
-          Eigen::Quaterniond quat = Eigen::Quaterniond(it->second->visual->origin.rotation.w, 
-                                                      it->second->visual->origin.rotation.x,
-                                                      it->second->visual->origin.rotation.y,
-                                                      it->second->visual->origin.rotation.z);
-          origin.rotate(quat);    
-          mesh_origins.push_back(origin);
+          int type = geom->type; // it->second->visual->geometry->type;
+          // TODO: support simple meshes
+          if  (type == urdf::Geometry::MESH){
+            shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
+            // TODO: Verify the existance of the file:
+            std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
+
+            // Read the Mesh, transform by the visual component origin:
+            pcl::PolygonMesh::Ptr this_mesh = getPolygonMesh(file_path);
+            pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
+            pcl::fromROSMsg(this_mesh->cloud, mesh_cloud_1st);
+            Eigen::Isometry3f visual_origin_f= visual_origin.cast<float>();
+            Eigen::Quaternionf visual_origin_quat(visual_origin_f.rotation());
+            pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, visual_origin_f.translation(), visual_origin_quat);  
+            pcl::toROSMsg (mesh_cloud_1st, this_mesh->cloud);  
+            simexample->mergePolygonMesh(mesh_ptr, this_mesh );
+            
+          }else if(type == urdf::Geometry::BOX){
+            
+            
+            shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
+            simexample->mergePolygonMesh(mesh_ptr, 
+                                        prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
+            std::cout << "Box: " << type << "\n";    
+          }else if(type == urdf::Geometry::CYLINDER){
+            shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
+            simexample->mergePolygonMesh(mesh_ptr, 
+                                        prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
+            std::cout << "Cylinder: " << type << "\n";    
+          }else if(type == urdf::Geometry::SPHERE){
+            std::cout << "Sphere: " << type << "\n";
+            shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
+            std::cout << sphere->radius << "\n";
+            simexample->mergePolygonMesh(mesh_ptr, 
+                                        prim_->getSphereWithTransform(visual_origin, sphere->radius) );
+          }else{
+            std::cout << "Pass::urdfHandler Unrecognised urdf object\n";
+            exit(-1);
+          }
         }
+
+        // Apply Some Coloring:
+        if(output_color_mode_==0){ // Set the mesh to a false color:
+          int j =i%(simexample->colors_.size()/3);
+          simexample->setPolygonMeshColor(mesh_ptr, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
+        }else if(output_color_mode_==1){ // set link mesh in link range
+          simexample->setPolygonMeshColor(mesh_ptr, LINK_OFFSET + (int) i, 0, 0 );
+        }else{ // black or white
+          simexample->setPolygonMeshColor(mesh_ptr, 255,0,0 ); // last two are not used
+        }          
+        
+        
+        PolygonMeshStruct mesh_struct;
+        mesh_struct.origin = origin;          
+        mesh_struct.link_name = it->first ;
+        mesh_struct.file_path = ""; // to be deprecated
+        mesh_struct.polygon_mesh = mesh_ptr;
+        simexample->polymesh_map_.insert(make_pair( it->first , mesh_struct));
+        
+        
+        i++;
       }
     }
-    simexample->setPolygonMeshs(mesh_link_names, mesh_file_paths , mesh_origins);
     
     //////////////////////////////////////////////////////////////////
     // Get a urdf Model from the xml string and get all the joint names.

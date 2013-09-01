@@ -286,9 +286,14 @@ void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
   //mergePolygonMesh(combined_mesh_ptr_,simple_mesh);  
 }
 
+
+
 void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
                                   std::vector< std::string > file_paths_in,
                                   std::vector< Eigen::Isometry3d > origins_in){
+  
+  std::cout << "This SimExample::setPolygonMeshs is deprecated\n";
+  return;
   
   for(size_t i=0; i < link_names_in.size() ; i++){ 
     PolygonMeshStruct mesh_struct;

@@ -108,8 +108,6 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinderWithTransform(Eigen::Isometry3
 }
 
 
-
-
 pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d transform, double xdim, double ydim, double zdim){
 
   pcl::PolygonMesh::Ptr mesh_cylinder = getCube(xdim, ydim, zdim);
@@ -131,6 +129,22 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d tr
 }
 
 
+pcl::PolygonMesh::Ptr rgbd_primitives::getSphereWithTransform(Eigen::Isometry3d transform, double radius){
+
+  pcl::PolygonMesh::Ptr mesh_cylinder = getSphere( radius);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::fromROSMsg(mesh_cylinder->cloud, *cloud);  
+  
+  Eigen::Isometry3f pose_f = IsometryDoubleToFloat(transform);
+  Eigen::Quaternionf quat_f(pose_f.rotation());
+  pcl::transformPointCloud (*cloud, *cloud,
+      pose_f.translation(), quat_f); // !! modifies cloud
+  
+  pcl::toROSMsg(*cloud, mesh_cylinder->cloud);
+    
+  return mesh_cylinder;
+  
+}
 
 // create a polygon mesh of a cylinder (similar to clones gluCylinder)
 // This actually creates a triangle fan in a ring. 
@@ -189,6 +203,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, doub
   //std::cout << *mesh_ptr << "\n";
   return mesh_ptr;
 }
+
 
 pcl::PolygonMesh::Ptr rgbd_primitives::getCube(double xdim, double ydim, double zdim){ 
   pcl::PolygonMesh mesh;   
@@ -274,7 +289,29 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCube(double xdim, double ydim, double 
 }
 
 
+// Get a Sphere polygon mesh
+// NB: uses getCylinder to get slices of the cylinder
+pcl::PolygonMesh::Ptr rgbd_primitives::getSphere(double radius){
+  pcl::PolygonMesh::Ptr mesh_ptr (new pcl::PolygonMesh ());  
 
+  // TODO: this would be much more efficient if the getCylinder() 
+  // and mergePolygonMesh methods didn't convert between PCL types many times
+  
+  // TODO: this has a fixed set of 18 stacks and doesnt use the parameter
+  // I should modify this code to support that
+  for (int d=-90; d <=80; d=d+10){ 
+    double  h0 =  radius * sin( d*M_PI/180);
+    double w0 = sqrt(radius*radius - h0*h0);
+  
+    double h1 =  radius * sin( (d+10)*M_PI/180);
+    double w1 = sqrt(radius*radius - h1*h1);
+
+    pcl::PolygonMesh::Ptr mesh_base_lid = getCylinder(w0 ,w1, h0, h1, 36,1);
+    mergePolygonMesh(mesh_ptr, mesh_base_lid);  
+  }
+   
+  return mesh_ptr;
+}
 
 double areaOfTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1, pcl::PointXYZRGB p2){
   // heron's formula
@@ -286,7 +323,7 @@ double areaOfTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1, pcl::PointXYZRGB
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgbd_primitives::sampleMesh(pcl::PolygonMesh::Ptr &mesh, double pts_per_msquared){
-  // this functions samples points per triangle - so will be biased for small sized of triangles
+  // this functions samples points per triangle - so will be biased against small sized of triangles
   // TODO: fix this!
   
   int N_polygonsB = mesh->polygons.size ();

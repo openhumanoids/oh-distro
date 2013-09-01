@@ -35,7 +35,8 @@ class Pass{
     
     Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
          std::string camera_channel_, int output_color_mode_, 
-         bool use_convex_hulls_, string camera_frame_, CameraParams camera_params_);
+         bool use_convex_hulls_, string camera_frame_,
+         CameraParams camera_params_, bool verbose_);
     
     ~Pass(){
     }
