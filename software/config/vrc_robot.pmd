@@ -68,7 +68,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "lidarfilt" {
-        exec = "drc-lidar-passthrough";
+        exec = "drc-lidar-passthrough -s";
         host = "extra";
     }
     cmd "image-tx" {
