@@ -5,6 +5,12 @@
 // - Collision is done by intersecting spheres with the model. The spheres size is set in collision_object_point_cloud.cc
 //   as of march 2013 it was increased from 0.01m to 0.04m
 
+// UPDATE:
+// Computation/Timing is dependent on the number of points tested
+// When the lidar is horizontal, few points are tested. When intersecting the arms, lots are
+// ASSUMED_HEAD = 0.3 achieves ~30Hz worse case (previous default)
+// ASSUMED_HEAD = 0.85 achieves ~100Hz worse case
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
@@ -37,17 +43,22 @@ using namespace Eigen;
 using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
 
+#define DO_TIMING_PROFILE TRUE
+
 // all ranges shorter than this are assumed to be with the head
-#define ASSUMED_HEAD 0.3//0.3
+#define ASSUMED_HEAD 0.85//0.3
 // all ranges longer than this are assumed to be free
 #define ASSUMED_FAR 2.0// 2.0
 // set all collisions to this range
 #define COLLISION_RANGE 0.0
+// set all unlikely returns to this range (same range is produced by real sensor)
+#define MAX_RANGE 60.0
 
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, double radius_threshold_);
+         std::string lidar_channel_, double collision_threshold_,
+         bool simulated_data_, double delta_threshold_);
     
     ~Pass(){
     }    
@@ -55,9 +66,11 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     bool verbose_;
+    bool simulated_data_;
     std::string lidar_channel_;
     
-    double radius_threshold_;
+    double collision_threshold_;
+    double delta_threshold_;
     
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
@@ -94,9 +107,11 @@ class Pass{
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, double radius_threshold_):
+         std::string lidar_channel_, double collision_threshold_,
+         bool simulated_data_, double delta_threshold_):
     lcm_(lcm_), verbose_(verbose_), 
-    lidar_channel_(lidar_channel_),urdf_parsed_(false){
+    lidar_channel_(lidar_channel_),urdf_parsed_(false),
+    simulated_data_(simulated_data_), delta_threshold_(delta_threshold_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   
@@ -106,7 +121,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL );
   n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
   
-  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , radius_threshold_);
+  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , collision_threshold_);
   // create the collision detector
   collision_detector_ = new Collision_Detector();
   // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
@@ -146,10 +161,16 @@ int64_t _timestamp_now(){
 
 
 void Pass::DoCollisionCheck(int64_t current_utime ){
+  
+  #if DO_TIMING_PROFILE
+    std::vector<int64_t> tic_toc;
+    tic_toc.push_back(_timestamp_now());
+  #endif  
+  
   // 1. create the list of points to be considered:
   vector< Vector3f > points;
   std::vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
-  int which=0; // 1 the actual lidar returns, 1 random points in a box [for testing], 2 a line [for testing], 3 a 2d grid for testing
+  int which=0; // 0 actual lidar returns | Test modes: 1 random points in a box, 2 a line [for testing], 3 a 2d grid
   if (which==0){
     for( unsigned int i = 0; i < scan_cloud_s2l_->points.size() ; i++ ){
       if ( (lidar_msgout_.ranges[i] > ASSUMED_HEAD  ) &&(lidar_msgout_.ranges[i] < ASSUMED_FAR )){
@@ -203,6 +224,9 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
   
   
   // 3. Extract the incidices and modify the outgoing ranges as a result:
+  std::vector<float> original_ranges =  lidar_msgout_.ranges;
+  
+  
   vector< Vector3f > free_points;
   vector< Vector3f > colliding_points;      
   vector< unsigned int > filtered_point_indices;
@@ -217,9 +241,32 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     }
   }
   for( unsigned int j = 0; j < lidar_msgout_.ranges.size(); j++ ){
-    if (lidar_msgout_.ranges[j] < ASSUMED_HEAD ){
+    if (original_ranges[j] < ASSUMED_HEAD ){
         lidar_msgout_.ranges[j] = COLLISION_RANGE;//20.0; // Set filtered returns to max range
     }  
+    
+    // For Real Data: apply an addition set of filters
+    // NB: These filters are not compatable with Gazebo Simulation output NBNBNB
+    if (!simulated_data_){
+      // heuristic filtering of the weak intensity lidar returns
+      if (( lidar_msgout_.intensities[j] < 2000 ) && ( original_ranges[j] < 2) ){
+        lidar_msgout_.ranges[j] = MAX_RANGE;
+      }
+      
+      // Edge effect filter
+      if ( (j>0) && (j<lidar_msgout_.ranges.size()) ){
+        float right_diff = fabs(original_ranges[j] - original_ranges[j-1]);
+        float left_diff = fabs(original_ranges[j] - original_ranges[j+1]);
+        if (( right_diff > delta_threshold_) || (left_diff > delta_threshold_ )){
+          // cout << i<< ": " << right_diff << " and " << left_diff <<"\n";
+          if (original_ranges[j] < 2){
+            lidar_msgout_.ranges[j] = MAX_RANGE;
+          }
+        }
+      }      
+      
+    }
+    
   }
   
   // 4. Output channel is incoming channel appended with FREE
@@ -260,6 +307,14 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     }
     bot_lcmgl_switch_buffer(lcmgl_);  
   }
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+    double dt =  ((tic_toc[1] - tic_toc[0])*1E-6);
+    
+    std::cout << dt << " | " << 1/dt << "\n";
+  #endif    
+  
 }
 
 
@@ -284,12 +339,19 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   // 1. Convert scan into simple XY point cloud:  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   // consider everything - don't remove any points
-  double minRange =0.0;
+  double minRange =-100.0;
   double maxRange = 100.0;
   double validBeamAngles[] ={-10,10}; 
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
       msg->radstep, scan_cloud, minRange, maxRange,
       validBeamAngles[0], validBeamAngles[1]);  
+  
+  if (scan_cloud->points.size() !=  msg->nranges ){
+    std::cout << "npoints and nranges are not equal\n";
+    std::cout << scan_cloud->points.size() << "\n";
+    std::cout << msg->nranges << "\n";
+    exit(-1); 
+  }  
   
   // 2. Project the scan into local frame:
   Eigen::Isometry3d scan_to_local;
@@ -337,20 +399,29 @@ int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
   string lidar_channel="SCAN";
-  double radius_threshold = 0.06; // was 0.04 for a long time
+  // was 0.04 for a long time
+  // using 0.06 for the simulator
+  // using 0.1 for the real robot - until the new urdf arrives ... aug 2013
+  double collision_threshold = 0.06; 
+  double delta_threshold = 0.03; 
+  bool simulated_data = FALSE;
   parser.add(verbose, "v", "verbose", "Verbosity");
+  parser.add(simulated_data, "s", "simulated_data", "Simulated Data expected (don't filter with intensities)");  
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
-  parser.add(radius_threshold, "r", "radius_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
+  parser.add(collision_threshold, "c", "collision_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
+  parser.add(delta_threshold, "d", "delta_threshold", "Maximum Delta in Lidar Range allowed in workspace");
   parser.parse();
   cout << verbose << " is verbose\n";
   cout << lidar_channel << " is lidar_channel\n";
+  cout << simulated_data << " is simulated_data\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm,verbose,lidar_channel, radius_threshold);
+  Pass app(lcm,verbose,lidar_channel, collision_threshold, 
+           simulated_data, delta_threshold);
   cout << "Ready to filter lidar points" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
