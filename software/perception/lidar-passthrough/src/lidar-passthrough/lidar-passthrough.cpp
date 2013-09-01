@@ -43,7 +43,7 @@ using namespace Eigen;
 using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
 
-#define DO_TIMING_PROFILE TRUE
+#define DO_TIMING_PROFILE FALSE
 
 // all ranges shorter than this are assumed to be with the head
 #define ASSUMED_HEAD 0.85//0.3
