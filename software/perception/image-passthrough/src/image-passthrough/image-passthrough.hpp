@@ -35,9 +35,7 @@ struct PolygonMeshStruct
 {
   // Name of the link
   std::string link_name;
-  // Location of obj file (or other)
-  std::string file_path;
-  // Contents of the file:
+  // Mesh: (if originally a simple geometry, these are converted to this mesh)
   pcl::PolygonMesh::Ptr polygon_mesh;
   // Offset from polygon mesh orgain to visualization origin
   Eigen::Isometry3d origin;
@@ -60,12 +58,6 @@ class SimExample
     RangeLikelihood::Ptr rl_;  
 
     std::map<std::string, PolygonMeshStruct > polymesh_map_; // associates link name with pcl::PolyMesh struct
-
-    // Create a mapping between link names and meshes 
-    // and then read in the meshes from file
-    void setPolygonMeshs (std::vector< std::string > link_names_in,
-                          std::vector< std::string > file_paths_in,
-                          std::vector< Eigen::Isometry3d > origins_in );
     
     bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
     
@@ -121,7 +113,6 @@ class SimExample
 
     // either output a (0) color mash or (1) grey mask or (2) a binary b/w mask
     int output_color_mode_;
-    
     
     // of platter, usually 640x480
     int width_;

@@ -286,43 +286,6 @@ void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
   //mergePolygonMesh(combined_mesh_ptr_,simple_mesh);  
 }
 
-
-
-void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
-                                  std::vector< std::string > file_paths_in,
-                                  std::vector< Eigen::Isometry3d > origins_in){
-  
-  std::cout << "This SimExample::setPolygonMeshs is deprecated\n";
-  return;
-  
-  for(size_t i=0; i < link_names_in.size() ; i++){ 
-    PolygonMeshStruct mesh_struct;
-    mesh_struct.link_name = link_names_in[i];
-    mesh_struct.file_path = file_paths_in[i];
-    mesh_struct.polygon_mesh = getPolygonMesh(mesh_struct.file_path);          
-    mesh_struct.origin = origins_in[i];
-    
-    if(output_color_mode_==0){ // Set the mesh to a false color:
-      int j =i%(colors_.size()/3);
-      setPolygonMeshColor(mesh_struct.polygon_mesh, colors_[j*3], colors_[j*3+1], colors_[j*3+2] );
-    }else if(output_color_mode_==1){ // set link mesh in link range
-      setPolygonMeshColor(mesh_struct.polygon_mesh, LINK_OFFSET + (int) i ,
-                          0,0 );
-    }else{ // black or white
-      setPolygonMeshColor(mesh_struct.polygon_mesh, 255,0,0 ); // last two are not used
-    }
-    polymesh_map_.insert(make_pair( link_names_in[i] , mesh_struct));
-  }
-    
-  std::cout << polymesh_map_.size() << " meshes stored:\n";
-  typedef std::map<std::string, PolygonMeshStruct > mesh_map_it;
-  for(mesh_map_it::const_iterator it =  polymesh_map_.begin(); it!= polymesh_map_.end(); it++){
-    std::cout << it->first<< " link \t [...]"
-        << it->second.file_path.substr (  it->second.file_path.size() - 30 ) << " file_path \t " 
-        << it->second.polygon_mesh->polygons.size() << " polygons\n";
-  }  
-}
-
 // same as bot_timestamp_now():
 int64_t _timestamp_now(){
     struct timeval tv;

@@ -241,10 +241,8 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
     robot_name_      = msg->robot_name;
     urdf_xml_string_ = msg->urdf_xml_string;
     cout<< "Received urdf_xml_string of robot [" << msg->robot_name << "], storing it internally as a param" << endl;
-    
     gl_robot_ = shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(urdf_xml_string_));
     cout<< "Number of Joints: " << gl_robot_->get_num_joints() <<endl;
-    
     links_map_ = gl_robot_->get_links_map();
     cout<< "Size of Links Map: " << links_map_.size() <<endl;
     
@@ -254,29 +252,20 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
     for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
       cout << it->first << endl;
       if(it->second->visual){
-        
-
-        
-        
         std::cout << it->first<< " link" << it->second->visual->geometry->type << " type\n"; // visual type
           
-        Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();// = URDFPoseToEigen( it->second->visual->origin );    
+        Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();
         pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
         
+        // For each visual element within the link geometry:
         typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
         visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
-        std:cout << "I have     ......... " << v_grp_it->second->size() << "\n";
-        
         for (size_t iv = 0;iv < v_grp_it->second->size();iv++){  // 
           vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
           shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
-          std::cout << iv << " of type " << geom->type  << "\n";
           Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
           
-          
-          int type = geom->type; // it->second->visual->geometry->type;
-          // TODO: support simple meshes
-          if  (type == urdf::Geometry::MESH){
+          if  (geom->type == urdf::Geometry::MESH){
             shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
             // TODO: Verify the existance of the file:
             std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
@@ -291,26 +280,20 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
             pcl::toROSMsg (mesh_cloud_1st, this_mesh->cloud);  
             simexample->mergePolygonMesh(mesh_ptr, this_mesh );
             
-          }else if(type == urdf::Geometry::BOX){
-            
-            
+          }else if(geom->type == urdf::Geometry::BOX){
             shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
             simexample->mergePolygonMesh(mesh_ptr, 
                                         prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
-            std::cout << "Box: " << type << "\n";    
-          }else if(type == urdf::Geometry::CYLINDER){
+          }else if(geom->type == urdf::Geometry::CYLINDER){
             shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
             simexample->mergePolygonMesh(mesh_ptr, 
                                         prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
-            std::cout << "Cylinder: " << type << "\n";    
-          }else if(type == urdf::Geometry::SPHERE){
-            std::cout << "Sphere: " << type << "\n";
+          }else if(geom->type == urdf::Geometry::SPHERE){
             shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
-            std::cout << sphere->radius << "\n";
             simexample->mergePolygonMesh(mesh_ptr, 
                                         prim_->getSphereWithTransform(visual_origin, sphere->radius) );
           }else{
-            std::cout << "Pass::urdfHandler Unrecognised urdf object\n";
+            std::cout << "Pass::urdfHandler() Unrecognised urdf object\n";
             exit(-1);
           }
         }
@@ -325,14 +308,12 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
           simexample->setPolygonMeshColor(mesh_ptr, 255,0,0 ); // last two are not used
         }          
         
-        
+
         PolygonMeshStruct mesh_struct;
         mesh_struct.origin = origin;          
         mesh_struct.link_name = it->first ;
-        mesh_struct.file_path = ""; // to be deprecated
         mesh_struct.polygon_mesh = mesh_ptr;
         simexample->polymesh_map_.insert(make_pair( it->first , mesh_struct));
-        
         
         i++;
       }
