@@ -143,6 +143,8 @@ private:
     int depth_compress_buf_size_;
     uint8_t* depth_compress_buf_;
     
+
+    bool verbose_;
   
 };
 

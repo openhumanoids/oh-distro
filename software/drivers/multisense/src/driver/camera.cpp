@@ -133,6 +133,8 @@ Camera::Camera(Channel* driver) :
     CameraConfig config;
     applyConfig(config);
     
+
+    verbose_=false;
 }
 
 Camera::~Camera( )
@@ -263,7 +265,10 @@ void Camera::rectCallback(const image::Header& header,
 void Camera::depthCallback(const image::Header& header,
                            const void*          imageDataP)
 {
-    printf("depth\n");
+    if (verbose_){
+      printf("depth\n");
+    }
+
     if (Source_Disparity != header.source) {
         printf("Unexpected image source: 0x%x\n", header.source);
         return;
@@ -316,7 +321,7 @@ void Camera::depthCallback(const image::Header& header,
 void Camera::colorImageCallback(const image::Header& header,
                                 const void*          imageDataP)
 {
-    printf("colorImageCallback\n");
+    if (verbose_) printf("colorImageCallback\n");
 
     // The left-luma image is currently published before
     // the matching chroma image. 
@@ -442,7 +447,7 @@ void Camera::colorImageCallback(const image::Header& header,
                       //printf("Syncd frames. publish pair [id %lld]", header.frameId);
                       lcm_publish_.publish("CAMERA", &multisense_msg_out_);
                     }else{
-                      printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, header.frameId);
+                      printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, lcm_disp_frame_id_);
                     }
 
                     cvReleaseImageHeader(&sourceImageP);
