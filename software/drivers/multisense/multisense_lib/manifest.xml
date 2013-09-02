@@ -1,0 +1,14 @@
+<package>
+  <description brief="multisense_lib">
+
+     multisense_lib
+
+  </description>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lMultiSense" />
+  </export>
+
+</package>
+
+

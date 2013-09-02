@@ -23,10 +23,13 @@ ifeq "$(BUILD_TYPE)" ""
 BUILD_TYPE="Release"
 endif
 
+LIBRARY_DIR = "multisense_lib"
+
 all: pod-build/Makefile
 	$(MAKE) -C pod-build all install
 
 pod-build/Makefile:
+	make -C $(LIBRARY_DIR)
 	$(MAKE) configure
 
 .PHONY: configure
