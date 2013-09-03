@@ -27,6 +27,7 @@
 //#include <otdf_renderer/renderer_otdf.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 #include <ConciseArgs>
 
 using namespace surrogate_gui;
@@ -42,6 +43,7 @@ typedef struct {
 // slot to handle global key events. Using a shared ptr to the boost signal. Renderers that require access
 // to keyboard signals will receive the signal ref as an argument in their setup function.
 KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
+AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTriggerSignals()); 
 
 static int
 on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
@@ -178,7 +180,7 @@ int main(int argc, char *argv[])
   bot_viewer_add_event_handler(viewer, ehandler, 0);
 
  
-  setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef);
+  setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef,_affTriggerSignalsRef);
 
     // setup renderers
     drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM(), _keyboardSignalRef);
