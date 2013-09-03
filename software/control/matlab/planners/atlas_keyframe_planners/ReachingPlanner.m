@@ -376,16 +376,16 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             % Solve IK at final pose and pass as input to sequence search
-            rhand_const.min = r_hand_poseT-1e-3;
-            rhand_const.max = r_hand_poseT+1e-3;
-            lhand_const.min = l_hand_poseT-1e-3;
-            lhand_const.max = l_hand_poseT+1e-3;
-            rfoot_const.min = r_foot_poseT-1e-3;
-            rfoot_const.max = r_foot_poseT+1e-3;
-            lfoot_const.min = l_foot_poseT-1e-3;
-            lfoot_const.max = l_foot_poseT+1e-3;
-            head_const.min = head_poseT-1e-3;
-            head_const.max = head_poseT+1e-3;
+            rhand_const.min = addPert(obj,r_hand_poseT,-1e-3,-1e-2);
+            rhand_const.max = addPert(obj,r_hand_poseT,1e-3,1e-2);
+            lhand_const.min = addPert(obj,l_hand_poseT,-1e-3,-1e-2);
+            lhand_const.max = addPert(obj,l_hand_poseT,1e-3,1e-2);
+            rfoot_const.min = addPert(obj,r_foot_poseT,-1e-3,-1e-2);
+            rfoot_const.max = addPert(obj,r_foot_poseT,1e-3,1e-2);
+            lfoot_const.min = addPert(obj,l_foot_poseT,-1e-3,-1e-2);
+            lfoot_const.max = addPert(obj,l_foot_poseT,1e-3,1e-2);
+            head_const.min = addPert(obj,head_poseT,-1e-3,-1e-2);
+            head_const.max = addPert(obj,head_poseT,1e-3,1e-2);
             if(~isempty(head_gaze_target))
                 head_const.type = 'gaze';
                 head_const.gaze_target = head_gaze_target;
@@ -650,6 +650,16 @@ classdef ReachingPlanner < KeyframePlanner
             cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
             
+        end
+        
+        function newpose = addPert(obj,pose,xyz_pert,axis_pert)
+          xyz_pert = xyz_pert*ones(3,1);
+          axis_pert = [axis_pert*ones(3,1); 0];
+          newpose = zeros(size(pose));
+          for i=1:size(pose,2)
+            newpose(1:3,i) = pose(1:3,i) + xyz_pert;
+            newpose(4:end,i) = axis2quat(quat2axis(pose(4:end,i)) + axis_pert);
+          end
         end
         
     end% end methods

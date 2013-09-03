@@ -245,7 +245,7 @@ while(1)
   [x,ts] = getNextMessage(state_frame,msg_timeout);
   if (~isempty(x))
     %  fprintf('received state at time %f\n',ts);
-     disp('Robot state received.');
+    % disp('Robot state received.');
     % note: setting the desired to actual at 
     % the start of the plan might cause an impulse from gravity sag
     x0 = x;
