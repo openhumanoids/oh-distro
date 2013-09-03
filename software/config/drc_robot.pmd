@@ -37,7 +37,7 @@ group "a.0.drivers" {
         exec = "rosrun multisense_command multisense_command";
         host = "localhost";
     }
-    cmd "drc-atlas" {
+    cmd "atlas-off" {
         exec = "drc-atlas -p off";
         host = "localhost";
     }
@@ -90,7 +90,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -200,28 +200,36 @@ group "m.hands" {
 
 #################################################################
 
-script "hands_start_sandia" { 
+script "prep_no_hands" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.walking";
+    start group "b.3.manip";
+    start cmd "atlas-off";
+    start cmd "logger-robot";
+    start cmd "multisense";
+    start cmd "ms-subscribe";
+    start cmd "ms-command";
+}
+
+script "prep_sandia_hands" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.walking";
+    start group "b.3.manip";
+    start cmd "SandiaGraspController";
+    start cmd "atlas-off";
+    start cmd "logger-robot";
+    start cmd "multisense";
+    start cmd "ms-subscribe";
+    start cmd "ms-command";
     start cmd "aa-ros2lcm-hands";
     start cmd "sandia-left";
     start cmd "sandia-right";
 }
 
-script "core_start" { 
-    start group "0.development";
-    start group "a.1.core";
-    start cmd "logger-robot";
-    start group "b.2.walking";
-    start group "b.3.manip";
-    start cmd "SandiaGraspController";
-    start cmd "multisense";
-    start cmd "ms-subscribe";
-    start cmd "ms-command";
-    run_script "hands_start_sandia";  
-    start cmd "drc-atlas";
-}
-
 script "robot_start" { 
-    stop cmd "drc-atlas";
+    stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
 }
