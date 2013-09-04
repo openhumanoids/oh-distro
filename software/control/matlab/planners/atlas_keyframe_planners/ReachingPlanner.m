@@ -376,10 +376,10 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             % Solve IK at final pose and pass as input to sequence search
-            rhand_const.min = addPert(obj,r_hand_poseT,-1e-3,-1e-2);
-            rhand_const.max = addPert(obj,r_hand_poseT,1e-3,1e-2);
-            lhand_const.min = addPert(obj,l_hand_poseT,-1e-3,-1e-2);
-            lhand_const.max = addPert(obj,l_hand_poseT,1e-3,1e-2);
+            rhand_const.min = addPert(obj,r_hand_poseT,-1e-3,-5e-2);
+            rhand_const.max = addPert(obj,r_hand_poseT,1e-3,5e-2);
+            lhand_const.min = addPert(obj,l_hand_poseT,-1e-3,-5e-2);
+            lhand_const.max = addPert(obj,l_hand_poseT,1e-3,5e-2);
             rfoot_const.min = addPert(obj,r_foot_poseT,-1e-3,-1e-2);
             rfoot_const.max = addPert(obj,r_foot_poseT,1e-3,1e-2);
             lfoot_const.min = addPert(obj,l_foot_poseT,-1e-3,-1e-2);
