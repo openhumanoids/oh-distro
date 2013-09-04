@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <boost/shared_ptr.hpp>
+#include <lcm/lcm-cpp.hpp>
 
 struct Counter {
   int count;
@@ -16,7 +18,7 @@ class Frequency {
   public:
     Frequency (float window, bool verbose_, std::string system_);
 
-    void readChannels();
+    void readChannels(boost::shared_ptr<lcm::LCM> &lcm);
     
     bool setUtime(int64_t current_utime, std::vector<float> &freqs);
 

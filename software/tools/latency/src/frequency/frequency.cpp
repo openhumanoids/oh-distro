@@ -22,13 +22,12 @@ Frequency::Frequency(float window_, bool verbose_, std::string system_): window_
 
 
 
-void Frequency::readChannels(){
+void Frequency::readChannels(boost::shared_ptr<lcm::LCM> &lcm){
   BotParam * bot_param;  
-  std::string config_path = std::string(getConfigPath()) + "/drc_robot.cfg";
-  std::cout << config_path <<"\n";
-  bot_param = bot_param_new_from_file(config_path.c_str());
+  bot_param = bot_param_new_from_server(lcm->getUnderlyingLCM(), 0);
+  
   if (bot_param == NULL) {
-    std::cerr << "Couldn't get bot param from file " << config_path << std::endl;
+    std::cerr << "Couldn't get bot param " << std::endl;
     exit(-1);
   }
 
