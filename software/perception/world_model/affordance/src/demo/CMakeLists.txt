@@ -2,6 +2,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
  
 set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6 pcl_filters-1.6)
 
+# spoof a CANDIDATE_GRASP or a the input to the planner:
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
+add_executable (affordance_to_grasp_plan affordance_to_grasp_plan.cpp )
+target_link_libraries(affordance_to_grasp_plan boost_system)
+pods_use_pkg_config_packages(affordance_to_grasp_plan 
+model-client ${REQUIRED_PACKAGES} pointcloud_vis
+   affordance-utils lcm)
+pods_install_executables(affordance_to_grasp_plan)
+
 
 # dump the affordance store to file:
 add_executable (affordance_to_xmlfile affordance_to_xmlfile.cpp )
