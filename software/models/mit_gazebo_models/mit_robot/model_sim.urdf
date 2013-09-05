@@ -4779,6 +4779,9 @@
     <plugin filename="librateset_plugin.so" name="rateset_plugin"/>
   </gazebo>
   <gazebo>
+    <plugin filename="libatlas_push_plugin.so" name="atlas_push_plugin"/>
+  </gazebo>
+  <gazebo>
     <!-- include plugin for sandia hands -->
     <plugin filename="libSandiaHandPlugin.so" name="sandia_hand_plugin"/>
   </gazebo>
