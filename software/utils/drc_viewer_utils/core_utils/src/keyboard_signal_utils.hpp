@@ -55,7 +55,7 @@ namespace visualization_utils {
         
         private:
         boost::signals2::connection _connection; 
-        boost::function<void (int,bool)> _user_callback; // Must be a static method.
+        boost::function<void (int,bool)> _user_callback; 
         
     };
 
