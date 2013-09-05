@@ -1,0 +1,7 @@
+<robot name="drc_skeleton">
+  <!-- MIT ADDONS START -->  
+  <gazebo>
+    <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
+  </gazebo>
+  <!-- MIT ADDONS END -->  
+</robot>

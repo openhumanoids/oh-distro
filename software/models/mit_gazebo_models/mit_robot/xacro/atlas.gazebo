@@ -62,7 +62,7 @@
                the biases are fixed additive offsets.  We choose
                bias means and stddevs to produce biases close to the provided
                data. -->
-          <rate>$(find mit_drcsim_scripts)/models/mit_robot/xacro/
+          <rate>
             <mean>0.0</mean>
             <stddev>2e-4</stddev>
             <bias_mean>0.0000075</bias_mean>
@@ -204,7 +204,7 @@
     <mu2>0.9</mu2>
   </gazebo>
   <gazebo reference="r_uglut">
-    <mu1>0.9</mu1>$(find mit_drcsim_scripts)/models/mit_robot/xacro/
+    <mu1>0.9</mu1>
     <mu2>0.9</mu2>
   </gazebo>
   <gazebo reference="r_uleg">

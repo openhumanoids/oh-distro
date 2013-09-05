@@ -4,7 +4,7 @@
     <actuator name="hokuyo_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
- <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
+  <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_bkz"/>
     <actuator name="back_bkz_motor"/>
     <mechanicalReduction>1</mechanicalReduction>

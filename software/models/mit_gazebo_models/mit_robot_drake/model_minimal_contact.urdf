@@ -6,12 +6,12 @@
 <robot name="atlas" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <link name="l_clav">
     <inertial>
-      <mass value="2.369"/>
-      <origin rpy="0 -0 0" xyz="0.014 0.058 0.029"/>
-      <inertia ixx="0.004" ixy="0.001" ixz="0" iyy="0.006" iyz="0" izz="0.007"/>
+      <mass value="3.45"/>
+      <origin rpy="0 -0 0" xyz="0 0.048 0.084"/>
+      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="-0.004" izz="0.004"/>
     </inertial>
     <visual>
-      <origin rpy="1.04719755 0 0" xyz="0 0 0"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl" scale="1 1 1"/>
       </geometry>
@@ -19,12 +19,12 @@
   </link>
   <link name="l_farm">
     <inertial>
-      <mass value="0.981"/>
-      <origin rpy="0 -0 0" xyz="0 0.041 0"/>
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003"/>
+      <mass value="3.388"/>
+      <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
+      <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 -0.06 0"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl" scale="1 1 1"/>
       </geometry>
@@ -32,9 +32,9 @@
   </link>
   <link name="l_foot">
     <inertial>
-      <mass value="0.867"/>
+      <mass value="2.05"/>
       <origin rpy="0 -0 0" xyz="0.027 0 -0.067"/>
-      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651"/>
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -99,9 +99,9 @@
   </link>
   <link name="l_hand">
     <inertial>
-      <mass value="2.263"/>
-      <origin rpy="0 -0 0" xyz="0 0.093 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.01"/>
+      <mass value="2.509"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -136,22 +136,22 @@
   </link>
   <link name="l_larm">
     <inertial>
-      <mass value="2.148"/>
-      <origin rpy="0 -0 0" xyz="-0.003 0.099 -0.014"/>
-      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.006"/>
+      <mass value="2.509"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_larm.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_rx.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="l_lglut">
     <inertial>
-      <mass value="0.803"/>
+      <mass value="0.866"/>
       <origin rpy="0 -0 0" xyz="0.0133341 0.0170484 -0.0312052"/>
-      <inertia ixx="0.0453457" ixy="-2.24344e-05" ixz="2.50508e-06" iyy="0.0174182" iyz="0.000137862" izz="0.0071591"/>
+      <inertia ixx="0.000691326" ixy="-2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="0.000137862" izz="0.00106487"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -162,7 +162,7 @@
   </link>
   <link name="l_lleg">
     <inertial>
-      <mass value="4.367"/>
+      <mass value="5.479"/>
       <origin rpy="0 -0 0" xyz="0.001 0 -0.187"/>
       <inertia ixx="0.077" ixy="0" ixz="-0.003" iyy="0.076" iyz="0" izz="0.01"/>
     </inertial>
@@ -187,22 +187,22 @@
   </link>
   <link name="l_scap">
     <inertial>
-      <mass value="2.707"/>
-      <origin rpy="0 -0 0" xyz="-0.002 0.108 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.013"/>
+      <mass value="3.012"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00319" ixy="0" ixz="0" iyy="0.00583" iyz="0" izz="0.00583"/>
     </inertial>
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_scap.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_sh_rx.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="l_talus">
     <inertial>
-      <mass value="0.867"/>
+      <mass value="0.125"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651"/>
+      <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -213,22 +213,22 @@
   </link>
   <link name="l_uarm">
     <inertial>
-      <mass value="1.881"/>
-      <origin rpy="0 -0 0" xyz="0.007 0.114 0.008"/>
-      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003"/>
+      <mass value="3.388"/>
+      <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
+      <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uarm.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_ry.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="l_uglut">
     <inertial>
-      <mass value="1.51622"/>
+      <mass value="0.648"/>
       <origin rpy="0 -0 0" xyz="0.00529262 -0.00344732 0.00313046"/>
-      <inertia ixx="0.0327037" ixy="-3.79607e-08" ixz="-2.79549e-05" iyy="0.0174182" iyz="-3.2735e-08" izz="0.0071591"/>
+      <inertia ixx="0.00074276" ixy="-3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="-3.2735e-08" izz="0.00041242"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -239,14 +239,14 @@
   </link>
   <link name="l_uleg">
     <inertial>
-      <mass value="7.227"/>
+      <mass value="9.209"/>
       <origin rpy="0 -0 0" xyz="0 0 -0.21"/>
-      <inertia ixx="0.0453457" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.0071591"/>
+      <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="hamstring">
@@ -276,9 +276,9 @@
   </link>
   <link name="ltorso">
     <inertial>
-      <mass value="1.62729"/>
+      <mass value="2.409"/>
       <origin rpy="0 -0 0" xyz="-0.0112984 -3.15366e-06 0.0746835"/>
-      <inertia ixx="0.0646646" ixy="-5.04491e-08" ixz="-0.000342157" iyy="0.050298" iyz="4.87119e-07" izz="0.10973"/>
+      <inertia ixx="0.0039092" ixy="-5.04491e-08" ixz="-0.000342157" iyy="0.00341694" iyz="4.87119e-07" izz="0.00174492"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -289,9 +289,9 @@
   </link>
   <link name="mtorso">
     <inertial>
-      <mass value="3.8068"/>
+      <mass value="0.69"/>
       <origin rpy="0 -0 0" xyz="-0.00816266 -0.0131245 0.0305974"/>
-      <inertia ixx="0.1975" ixy="-6.10764e-05" ixz="3.94009e-05" iyy="0.544742" iyz="5.27463e-05" izz="0.10973"/>
+      <inertia ixx="0.000454181" ixy="-6.10764e-05" ixz="3.94009e-05" iyy="0.000483282" iyz="5.27463e-05" izz="0.000444215"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -301,147 +301,146 @@
     </visual>
   </link>
   <link name="pelvis">
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="front">
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="back">
-      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="back">
-      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="back">
-      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="back">
-      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="butt">
-      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="butt">
-      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <visual>
-      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
     <inertial>
-      <mass value="12.64638"/>
-      <!-- 0.1 added to adjust for IMU link -->
+      <mass value="17.882"/>
       <origin rpy="0 -0 0" xyz="0.0111 0 0.0271"/>
-      <inertia ixx="0.0327037" ixy="0.0008" ixz="-0.0007" iyy="0.0174182" iyz="-0.0005" izz="0.118059"/>
+      <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="front">
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.17 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.115"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="back">
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.042 0.065"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.15 -0.075 -0.15"/>
+      <geometry>
+        <sphere radius="0.01"/>
       </geometry>
     </visual>
   </link>
   <link name="r_clav">
     <inertial>
-      <mass value="2.369"/>
-      <origin rpy="0 -0 0" xyz="0.014 -0.058 0.029"/>
-      <inertia ixx="0.004" ixy="-0.001" ixz="0" iyy="0.006" iyz="0" izz="0.007"/>
+      <mass value="3.45"/>
+      <origin rpy="0 -0 0" xyz="0 -0.048 0.084"/>
+      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="0.004" izz="0.004"/>
     </inertial>
     <visual>
-      <origin rpy="-1.04719755 0 0" xyz="0 0 0"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl" scale="1 1 1"/>
       </geometry>
@@ -449,12 +448,12 @@
   </link>
   <link name="r_farm">
     <inertial>
-      <mass value="0.981"/>
-      <origin rpy="0 -0 0" xyz="0 -0.041 0"/>
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003"/>
+      <mass value="3.388"/>
+      <origin rpy="0 -0 0" xyz="0 0.065 0"/>
+      <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0.06 0"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl" scale="1 1 1"/>
       </geometry>
@@ -462,9 +461,9 @@
   </link>
   <link name="r_foot">
     <inertial>
-      <mass value="0.867"/>
+      <mass value="2.05"/>
       <origin rpy="0 -0 0" xyz="0.027 0 -0.067"/>
-      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651"/>
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -529,9 +528,9 @@
   </link>
   <link name="r_hand">
     <inertial>
-      <mass value="2.263"/>
-      <origin rpy="0 -0 0" xyz="0 -0.093 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.01"/>
+      <mass value="2.509"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -566,40 +565,40 @@
   </link>
   <link name="r_larm">
     <inertial>
-      <mass value="2.148"/>
-      <origin rpy="0 -0 0" xyz="-0.003 -0.099 -0.014"/>
-      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.006"/>
+      <mass value="2.509"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_larm.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_rx.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="r_lglut">
     <inertial>
-      <mass value="0.803"/>
+      <mass value="0.866"/>
       <origin rpy="0 -0 0" xyz="0.0133341 -0.0170484 -0.0312052"/>
-      <inertia ixx="0.0453457" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.0174182" iyz="-0.000137862" izz="0.0071591"/>
+      <inertia ixx="0.000691326" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="-0.000137862" izz="0.00106487"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="r_lleg">
     <inertial>
-      <mass value="4.367"/>
+      <mass value="5.479"/>
       <origin rpy="0 -0 0" xyz="0.001 0 -0.187"/>
       <inertia ixx="0.077" ixy="-0" ixz="-0.003" iyy="0.076" iyz="-0" izz="0.01"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="knee">
@@ -617,22 +616,22 @@
   </link>
   <link name="r_scap">
     <inertial>
-      <mass value="2.707"/>
-      <origin rpy="0 -0 0" xyz="-0.002 -0.108 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.013"/>
+      <mass value="3.012"/>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00319" ixy="0" ixz="0" iyy="0.00583" iyz="0" izz="0.00583"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_scap.wrl" scale="1 1 1"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_sh_rx.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="r_talus">
     <inertial>
-      <mass value="0.867"/>
+      <mass value="0.125"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651"/>
+      <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
@@ -643,40 +642,40 @@
   </link>
   <link name="r_uarm">
     <inertial>
-      <mass value="1.881"/>
-      <origin rpy="0 -0 0" xyz="0.007 -0.114 0.008"/>
-      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003"/>
+      <mass value="3.388"/>
+      <origin rpy="0 -0 0" xyz="0 0.065 0"/>
+      <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_ry.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="r_uglut">
     <inertial>
-      <mass value="1.51622"/>
+      <mass value="0.648"/>
       <origin rpy="0 -0 0" xyz="0.00529262 0.00344732 0.00313046"/>
-      <inertia ixx="0.0327037" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.0174182" iyz="3.2735e-08" izz="0.0071591"/>
+      <inertia ixx="0.00074276" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="3.2735e-08" izz="0.00041242"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
   <link name="r_uleg">
     <inertial>
-      <mass value="7.227"/>
+      <mass value="9.209"/>
       <origin rpy="0 -0 0" xyz="0 0 -0.21"/>
-      <inertia ixx="0.0453457" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.0071591"/>
+      <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1. 1. 1."/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="hamstring">
@@ -706,14 +705,20 @@
   </link>
   <link name="utorso">
     <inertial>
-      <mass value="15.2272"/>
-      <origin rpy="0 -0 0" xyz="0.02 -0.001 0.211"/>
-      <inertia ixx="0.395" ixy="0" ixz="0.083" iyy="0.544742" iyz="-0.003" izz="0.10973"/>
+      <mass value="52.007"/>
+      <origin rpy="0 -0 0" xyz="-0.0923 0 0.3"/>
+      <inertia ixx="1.466" ixy="0.00362" ixz="0.336" iyy="1.51" iyz="0.001" izz="1.3"/>
     </inertial>
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/utorso.wrl" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <visual>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/utorso_pack.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="front">
@@ -813,259 +818,257 @@
       </geometry>
     </visual>
   </link>
-  <joint name="back_bkz" type="revolute">
-    <origin rpy="0 -0 0" xyz="-0.0125 0 0"/>
-    <axis xyz="0 0 1"/>
-    <parent link="pelvis"/>
-    <child link="ltorso"/>
-    <dynamics damping="10" friction="0"/>
-    <limit effort="124.016" lower="-0.610865" upper="0.610865" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6109" soft_upper_limit="10.6109"/>
-  </joint>
-  <joint name="back_bky" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0 0.09"/>
-    <axis xyz="0 1 0"/>
-    <parent link="ltorso"/>
-    <child link="mtorso"/>
-    <dynamics damping="10" friction="0"/>
-    <limit effort="206.843" lower="-0.62" upper="0.46" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2" soft_upper_limit="11.28"/>
-  </joint>
   <joint name="back_bkx" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 0.05"/>
     <axis xyz="1 0 0"/>
     <parent link="mtorso"/>
     <child link="utorso"/>
-    <dynamics damping="10" friction="0"/>
-    <limit effort="94.91" lower="-0.5" upper="0.5" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.7908" soft_upper_limit="10.7908"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="200" lower="-0.698132" upper="0.698132" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6981" soft_upper_limit="10.6981"/>
+  </joint>
+  <joint name="back_bky" type="revolute">
+    <origin rpy="0 -0 0" xyz="0 0 0.16197"/>
+    <axis xyz="0 1 0"/>
+    <parent link="ltorso"/>
+    <child link="mtorso"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="206.843" lower="-0.610691" upper="0.438427" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384"/>
+  </joint>
+  <joint name="back_bkz" type="revolute">
+    <origin rpy="0 -0 0" xyz="-0.0125 0 0"/>
+    <axis xyz="0 0 1"/>
+    <parent link="pelvis"/>
+    <child link="ltorso"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="124.016" lower="-0.663225" upper="0.663225" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6632" soft_upper_limit="10.6632"/>
   </joint>
   <joint name="l_arm_elx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.121 0.013"/>
+    <origin rpy="0 -0 0" xyz="0 0.119 0.00921"/>
     <axis xyz="1 0 0"/>
     <parent link="l_uarm"/>
     <child link="l_larm"/>
-    <dynamics damping="1.0" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
     <limit effort="114" lower="0" upper="2.35619" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3562"/>
   </joint>
   <joint name="l_arm_ely" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.185 0"/>
+    <origin rpy="0 -0 0" xyz="0 0.187 0.016"/>
     <axis xyz="0 1 0"/>
     <parent link="l_scap"/>
     <child link="l_uarm"/>
-    <dynamics damping="1.0" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
     <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
-  <joint name="l_arm_mwx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.058 0"/>
-    <axis xyz="1 0 0"/>
-    <parent link="l_farm"/>
-    <child link="l_hand"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="60" lower="-1.165" upper="1.125" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="11.571"/>
-  </joint>
   <joint name="l_arm_shx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.075 0.036"/>
+    <origin rpy="0 -0 0" xyz="0 0.14035 0.19609"/>
     <axis xyz="1 0 0"/>
     <parent link="l_clav"/>
     <child link="l_scap"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="170" lower="-1.54" upper="1.45" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.3963" soft_upper_limit="11.7453"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="170" lower="-1.5708" upper="1.5708" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
   <joint name="l_arm_usy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.024 0.221 0.289"/>
+    <origin rpy="0 -0 0" xyz="0.06441 0.13866 0.10718"/>
     <axis xyz="0 0.5 0.866025"/>
     <parent link="utorso"/>
     <child link="l_clav"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="212" lower="-1.55" upper="0.75" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.9635" soft_upper_limit="11.9635"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="212" lower="-1.5708" upper="0.785398" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="10.7854"/>
+  </joint>
+  <joint name="l_arm_mwx" type="revolute">
+    <origin rpy="0 -0 0" xyz="0 0.119 0.00921"/>
+    <axis xyz="1 0 0"/>
+    <parent link="l_farm"/>
+    <child link="l_hand"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="60" lower="-1.1781" upper="1.1781" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.1781" soft_upper_limit="11.1781"/>
   </joint>
   <joint name="l_arm_uwy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.188 -0.013"/>
+    <origin rpy="0 -0 0" xyz="0 0.187 -0.00921"/>
     <axis xyz="0 1 0"/>
     <parent link="l_larm"/>
     <child link="l_farm"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="114" lower="0.0" upper="3.07" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="11.571"/>
-  </joint>
-  <joint name="l_leg_kny" type="revolute">
-    <origin rpy="0 -0 0" xyz="-0.05 0 -0.374"/>
-    <axis xyz="0 1 0"/>
-    <parent link="l_uleg"/>
-    <child link="l_lleg"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="400" lower="0" upper="2.45" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
   <joint name="l_leg_akx" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="l_talus"/>
     <child link="l_foot"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="90" lower="-0.436" upper="0.436" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436"/>
-  </joint>
-  <joint name="l_leg_hpy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.05 0 -0.05"/>
-    <axis xyz="0 1 0"/>
-    <parent link="l_lglut"/>
-    <child link="l_uleg"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="260" lower="-1.75" upper="0.524" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.75" soft_upper_limit="10.524"/>
-  </joint>
-  <joint name="l_leg_hpx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0 0"/>
-    <axis xyz="1 0 0"/>
-    <parent link="l_uglut"/>
-    <child link="l_lglut"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="180" lower="-0.47" upper="0.495" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.47" soft_upper_limit="10.495"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="90" lower="-0.8" upper="0.8" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
   <joint name="l_leg_aky" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 -0.422"/>
     <axis xyz="0 1 0"/>
     <parent link="l_lleg"/>
     <child link="l_talus"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="-0.9" upper="0.698" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="700" lower="-1" upper="0.7" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
+  </joint>
+  <joint name="l_leg_hpx" type="revolute">
+    <origin rpy="0 -0 0" xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <parent link="l_uglut"/>
+    <child link="l_lglut"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="180" lower="-0.523599" upper="0.523599" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
+  </joint>
+  <joint name="l_leg_hpy" type="revolute">
+    <origin rpy="0 -0 0" xyz="0.05 0 -0.05"/>
+    <axis xyz="0 1 0"/>
+    <parent link="l_lglut"/>
+    <child link="l_uleg"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="260" lower="-1.72072" upper="0.524821" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248"/>
   </joint>
   <joint name="l_leg_hpz" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0.089 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="l_uglut"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="110" lower="-0.32" upper="1.14" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="110" lower="-0.174533" upper="1.22173" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.1745" soft_upper_limit="11.2217"/>
+  </joint>
+  <joint name="l_leg_kny" type="revolute">
+    <origin rpy="0 -0 0" xyz="-0.05 0 -0.374"/>
+    <axis xyz="0 1 0"/>
+    <parent link="l_uleg"/>
+    <child link="l_lleg"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="220" lower="0" upper="2.38569" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857"/>
   </joint>
   <joint name="neck_ay" type="revolute">
-    <!-- per slides on sensor head kinematics 2013-02-13 -->
     <origin rpy="0 -0 0" xyz="0.21672 0 0.53796"/>
     <axis xyz="0 1 0"/>
     <parent link="utorso"/>
     <child link="head"/>
-    <dynamics damping="1.0" friction="0"/>
-    <!-- per slides on sensor head kinematics 2012-12-14 -->
-    <limit effort="10" lower="-0.594" upper="1.147" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.610865238" soft_upper_limit="11.13446401"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="5" lower="-0.602139" upper="1.14494" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6021" soft_upper_limit="11.1449"/>
   </joint>
   <joint name="r_arm_elx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 -0.121 0.013"/>
+    <origin rpy="0 -0 0" xyz="0 -0.119 0.00921"/>
     <axis xyz="1 0 0"/>
     <parent link="r_uarm"/>
     <child link="r_larm"/>
-    <dynamics damping="1.0" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
     <limit effort="114" lower="-2.35619" upper="0" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-12.3562" soft_upper_limit="10"/>
   </joint>
   <joint name="r_arm_ely" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 -0.185 0"/>
+    <origin rpy="0 -0 0" xyz="0 -0.187 0.016"/>
     <axis xyz="0 1 0"/>
     <parent link="r_scap"/>
     <child link="r_uarm"/>
-    <dynamics damping="1.0" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
     <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
-  <joint name="r_arm_mwx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 -0.058 0"/>
-    <axis xyz="1 0 0"/>
-    <parent link="r_farm"/>
-    <child link="r_hand"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="60" lower="-1.165" upper="1.125" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="10.436"/>
-  </joint>
   <joint name="r_arm_shx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 -0.075 0.036"/>
+    <origin rpy="0 -0 0" xyz="0 -0.14035 0.19609"/>
     <axis xyz="1 0 0"/>
     <parent link="r_clav"/>
     <child link="r_scap"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="170" lower="-1.45" upper="1.54" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7453" soft_upper_limit="11.3963"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="170" lower="-1.5708" upper="1.5708" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
   <joint name="r_arm_usy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.024 -0.221 0.289"/>
+    <origin rpy="0 -0 0" xyz="0.06441 -0.13866 0.10718"/>
     <axis xyz="0 0.5 -0.866025"/>
     <parent link="utorso"/>
     <child link="r_clav"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="212" lower="-1.55" upper="0.75" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.9635" soft_upper_limit="11.9635"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="212" lower="-1.5708" upper="0.785398" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="10.7854"/>
+  </joint>
+  <joint name="r_arm_mwx" type="revolute">
+    <origin rpy="0 -0 0" xyz="0 -0.119 0.00921"/>
+    <axis xyz="1 0 0"/>
+    <parent link="r_farm"/>
+    <child link="r_hand"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="60" lower="-1.1781" upper="1.1781" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.1781" soft_upper_limit="11.1781"/>
   </joint>
   <joint name="r_arm_uwy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 -0.188 -0.013"/>
+    <origin rpy="0 -0 0" xyz="0 -0.187 -0.00921"/>
     <axis xyz="0 1 0"/>
     <parent link="r_larm"/>
     <child link="r_farm"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="114" lower="0.0" upper="3.07" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.571" soft_upper_limit="11.571"/>
-  </joint>
-  <joint name="r_leg_kny" type="revolute">
-    <origin rpy="0 -0 0" xyz="-0.05 0 -0.374"/>
-    <axis xyz="0 1 0"/>
-    <parent link="r_uleg"/>
-    <child link="r_lleg"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="400" lower="0" upper="2.45" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.45"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="114" lower="0" upper="3.14159" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
   <joint name="r_leg_akx" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <parent link="r_talus"/>
     <child link="r_foot"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="90" lower="-0.436" upper="0.436" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436"/>
-  </joint>
-  <joint name="r_leg_hpy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.05 0 -0.05"/>
-    <axis xyz="0 1 0"/>
-    <parent link="r_lglut"/>
-    <child link="r_uleg"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="260" lower="-1.745" upper="0.524" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.745" soft_upper_limit="10.524"/>
-  </joint>
-  <joint name="r_leg_hpx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0 0"/>
-    <axis xyz="1 0 0"/>
-    <parent link="r_uglut"/>
-    <child link="r_lglut"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="180" lower="-0.495" upper="0.47" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.495" soft_upper_limit="10.47"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="90" lower="-0.8" upper="0.8" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
   <joint name="r_leg_aky" type="revolute">
     <origin rpy="0 -0 0" xyz="0 0 -0.422"/>
     <axis xyz="0 1 0"/>
     <parent link="r_lleg"/>
     <child link="r_talus"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="220" lower="-0.9" upper="0.698" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="700" lower="-1" upper="0.7" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
+  </joint>
+  <joint name="r_leg_hpx" type="revolute">
+    <origin rpy="0 -0 0" xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <parent link="r_uglut"/>
+    <child link="r_lglut"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="180" lower="-0.523599" upper="0.523599" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
+  </joint>
+  <joint name="r_leg_hpy" type="revolute">
+    <origin rpy="0 -0 0" xyz="0.05 0 -0.05"/>
+    <axis xyz="0 1 0"/>
+    <parent link="r_lglut"/>
+    <child link="r_uleg"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="260" lower="-1.72072" upper="0.524821" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248"/>
   </joint>
   <joint name="r_leg_hpz" type="revolute">
     <origin rpy="0 -0 0" xyz="0 -0.089 0"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="r_uglut"/>
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="110" lower="-1.14" upper="0.32" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="260" lower="-1.22173" upper="0.174533" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2217" soft_upper_limit="10.1745"/>
+  </joint>
+  <joint name="r_leg_kny" type="revolute">
+    <origin rpy="0 -0 0" xyz="-0.05 0 -0.374"/>
+    <axis xyz="0 1 0"/>
+    <parent link="r_uleg"/>
+    <child link="r_lleg"/>
+    <dynamics damping="0.1" friction="0"/>
+    <limit effort="220" lower="0" upper="2.38569" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857"/>
   </joint>
   <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_bkz"/>

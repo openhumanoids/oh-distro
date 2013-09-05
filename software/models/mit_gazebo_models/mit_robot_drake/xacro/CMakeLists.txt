@@ -10,8 +10,5 @@ execute_process(COMMAND rosrun xacro xacro.py atlas_fixedjoint_hands.urdf.xacro
     
 execute_process(COMMAND rosrun xacro xacro.py atlas_point_hands.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_point_hands.urdf)    
-
-execute_process(COMMAND rosrun xacro xacro.py atlas_simple_visuals.urdf.xacro
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_simple_visuals.urdf)
    
-message(STATUS "Generated \n model_minimal_contact.urdf  \n model_minimal_contact_fixedjoint_hands.urdf \n model_simple_visuals.urdf")
+message(STATUS "Generated \n model_minimal_contact.urdf  \n model_minimal_contact_fixedjoint_hands.urdf")

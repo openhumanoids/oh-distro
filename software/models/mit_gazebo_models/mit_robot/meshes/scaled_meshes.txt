@@ -1,0 +1,12 @@
+Meshes I scaled 100x:
+
+l_lleg
+r_lleg
+l_uleg
+r_uleg
+r_uglut
+r_lglut
+pelvis
+
+
+
