@@ -57,7 +57,7 @@
 #define PARAM_USE_CURRENT_POSE "Use current pose"
 
 #define PARAM_STORE_PLAN "Store Current Plan" 
-#define PARAM_PLAN_SEED_LIST "PlanSeed Selection" 
+#define PARAM_PLAN_SEED_LIST "Plan Select" 
 #define PARAM_LOAD_PLAN "Load PlanSeed" 
 #define PARAM_UNSTORE_PLAN "Unstore  PlanSeed" 
 
@@ -710,12 +710,12 @@ namespace renderer_affordances_gui_utils
     else if (! strcmp(name, PARAM_LOAD_PLAN)) {
         // Send aff trigger signal to plan renderer to load a plan from plan storage 
         string selected_plan;
-        selected_plan = string(bot_gtk_param_widget_get_enum_str (pw, PARAM_PLAN_SEED_LIST));
+        selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
         (*self->affTriggerSignalsRef).plan_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_plan);
     }
     else if (! strcmp(name, PARAM_UNSTORE_PLAN)) {
       string selected_plan;
-      selected_plan = string(bot_gtk_param_widget_get_enum_str (pw, PARAM_PLAN_SEED_LIST));
+      selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
       string otdf_models_path = string(getModelsPath()) + "/otdf/"; 
       string otdf_filepath,plan_xml_dirpath;
       otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
@@ -951,7 +951,7 @@ namespace renderer_affordances_gui_utils
 
   static void spawn_object_geometry_dblclk_popup (RendererAffordances *self)
   {
-
+ 
     bool has_seeds = otdf_instance_has_seeds(self,self->object_selection);
     if((self->marker_selection  == " "))
        set_hand_init_position(self); 
@@ -999,6 +999,8 @@ namespace renderer_affordances_gui_utils
       ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
       ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) */
     //if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
+    
+    
     if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
@@ -1101,33 +1103,38 @@ namespace renderer_affordances_gui_utils
           }
       
       }// end if
-      
+ 
     bot_gtk_param_widget_add_separator (pw,"Plan Seed Management");
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE_PLAN, NULL); 
    
-    
-    vector<string> planseeds = vector<string>();
-    std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
-    std::string otdf_filepath;
-    otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
-    PlanSeed::getList(otdf_filepath,planseeds);
-    cout <<planseeds.size() << endl;
-    if(planseeds.size()>0)
+    if((self->marker_selection  == " ")&&(it!=self->affCollection->_objects.end())) 
     {
-      vector<const char*> seed_names;
-      vector<int> seed_nums;
-      for(int i = 0; i < planseeds.size(); ++i)
+      self->_planseeds = vector<string>();
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string otdf_filepath;
+      otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
+      PlanSeed::getList(otdf_filepath,self->_planseeds);
+      if(self->_planseeds.size()>0)
       {
-         seed_names.push_back(planseeds[i].c_str());
-         seed_nums.push_back(i);
+        vector<string> _names;
+        vector<const char*> seed_names;
+        vector<int> seed_nums;
+        for(int i = 0; i < self->_planseeds.size(); ++i)
+        {
+           string token  = "::";
+           size_t found = self->_planseeds[i].find(token);  
+           _names.push_back(self->_planseeds[i].substr(found+token.size()));
+           seed_names.push_back(_names[i].c_str());
+           seed_nums.push_back(i);
+        }
+        bot_gtk_param_widget_add_enumv (pw, PARAM_PLAN_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
+                                        NULL,
+                                        self->_planseeds.size(),
+                                        &seed_names[0],
+                                        &seed_nums[0]);
+        bot_gtk_param_widget_add_buttons(pw,PARAM_LOAD_PLAN, NULL);
+        bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE_PLAN, NULL); 
       }
-      bot_gtk_param_widget_add_enumv (pw, PARAM_PLAN_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
-                                      NULL,
-                                      planseeds.size(),
-                                      &seed_names[0],
-                                      &seed_nums[0]);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_LOAD_PLAN, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE_PLAN, NULL); 
     }
 
 

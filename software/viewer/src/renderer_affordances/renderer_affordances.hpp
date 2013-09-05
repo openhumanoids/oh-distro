@@ -271,6 +271,7 @@ struct RendererAffordances {
  std::string otdf_dir_name;
  std::vector<std::string> otdf_filenames;
  std::vector<std::string> popup_widget_name_list;
+ std::vector<std::string> _planseeds;
 
  std::map<std::string, int > instance_cnt; // templateName, value. keeps track of how many times each template is instantiated. (only used for creating a local aff store)
 
