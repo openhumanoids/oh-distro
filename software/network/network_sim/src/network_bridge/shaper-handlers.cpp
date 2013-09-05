@@ -99,7 +99,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
     // mfallon, sept 2013
     bool disable_custom_codecs = true;
-    if (disable_custom_codecs){    
+    if (!disable_custom_codecs){    
         custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
         custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
 
