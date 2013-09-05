@@ -20,11 +20,11 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <sandia_hand_msgs/RawFingerState.h>
+#include <sandia_hand_msgs/RawPalmState.h>
 #include <handle_msgs/HandleSensors.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
-
 
 using namespace std;
 
@@ -39,13 +39,19 @@ private:
   
   std::vector<std::string> sandiaJointNames;
   std::vector<std::string> irobotJointNames;
+
   // msg cache  
   sandia_hand_msgs::RawFingerState  sandia_l_hand_finger_0_state_,sandia_l_hand_finger_1_state_,sandia_l_hand_finger_2_state_,sandia_l_hand_finger_3_state_;
   sandia_hand_msgs::RawFingerState  sandia_r_hand_finger_0_state_,sandia_r_hand_finger_1_state_,sandia_r_hand_finger_2_state_,sandia_r_hand_finger_3_state_; 
   
+  
+  sandia_hand_msgs::RawPalmState sandia_l_hand_palm_state_,sandia_r_hand_palm_state_;
+  sandia_hand_msgs::RawPalmState sandia_l_hand_palm_state_filtered_,sandia_r_hand_palm_state_filtered_;
+  sandia_hand_msgs::RawPalmState sandia_l_hand_palm_diffstate_,sandia_r_hand_palm_diffstate_;
+  
   // sandia hand publishes raw finger state on separate messages. There is also cal_state, but it clear what that adds.
-  ros::Subscriber  sandia_l_hand_finger_0_state_sub_, sandia_l_hand_finger_1_state_sub_, sandia_l_hand_finger_2_state_sub_, sandia_l_hand_finger_3_state_sub_;
-  ros::Subscriber  sandia_r_hand_finger_0_state_sub_, sandia_r_hand_finger_1_state_sub_, sandia_r_hand_finger_2_state_sub_, sandia_r_hand_finger_3_state_sub_;  
+  ros::Subscriber  sandia_l_hand_finger_0_state_sub_, sandia_l_hand_finger_1_state_sub_, sandia_l_hand_finger_2_state_sub_, sandia_l_hand_finger_3_state_sub_,sandia_l_hand_palm_state_sub_;
+  ros::Subscriber  sandia_r_hand_finger_0_state_sub_, sandia_r_hand_finger_1_state_sub_, sandia_r_hand_finger_2_state_sub_, sandia_r_hand_finger_3_state_sub_,sandia_r_hand_palm_state_sub_;  
  
   //Irobot hand subcribers and cache
   handle_msgs::HandleSensors irobot_l_hand_state_,irobot_r_hand_state_;
@@ -60,17 +66,21 @@ private:
   void sandia_r_hand_finger_1_state_cb(const sandia_hand_msgs::RawFingerStatePtr &msg);
   void sandia_r_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerStatePtr &msg);
   void sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr &msg);
+  
+  void sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr &msg);
+  void sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr &msg);
 
   void appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::RawFingerState& msg_in,int finger_id);
   void publishSandiaHandState(int64_t utime_in,bool is_left);
   void publishHandStateOnSystemStatus(bool is_sandia, bool is_left);
+  void publishRawTactile(int64_t utime_in,bool is_left);
   
   void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   
   // logic params
-  bool init_recd_sandia_l_[4];
-  bool init_recd_sandia_r_[4];
+  bool init_recd_sandia_l_[5];
+  bool init_recd_sandia_r_[5];
   bool init_recd_irobot_l_;
   bool init_recd_irobot_r_;
   
@@ -94,6 +104,9 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
  sandia_r_hand_finger_1_state_sub_ = node_.subscribe(string("/sandia_hands/r_hand/finger_1/raw_state"), 100, &App::sandia_r_hand_finger_1_state_cb,this);
  sandia_r_hand_finger_2_state_sub_ = node_.subscribe(string("/sandia_hands/r_hand/finger_2/raw_state"), 100, &App::sandia_r_hand_finger_2_state_cb,this);
  sandia_r_hand_finger_3_state_sub_ = node_.subscribe(string("/sandia_hands/r_hand/finger_3/raw_state"), 100, &App::sandia_r_hand_finger_3_state_cb,this);
+ 
+ sandia_l_hand_palm_state_sub_ = node_.subscribe(string("/sandia_hands/l_hand/palm/raw_state"), 100, &App::sandia_l_hand_palm_state_cb,this);
+ sandia_r_hand_palm_state_sub_ = node_.subscribe(string("/sandia_hands/r_hand/palm/raw_state"), 100, &App::sandia_r_hand_palm_state_cb,this);
 
  //TODO: 
  // Irobot subcribers 
@@ -130,10 +143,12 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
 	init_recd_sandia_l_[1]=false;
 	init_recd_sandia_l_[2]=false;
 	init_recd_sandia_l_[3]=false;
+	init_recd_sandia_l_[4]=false;
 	init_recd_sandia_r_[0]=false;
 	init_recd_sandia_r_[1]=false;
 	init_recd_sandia_r_[2]=false;
 	init_recd_sandia_r_[3]=false;	
+	init_recd_sandia_r_[4]=false;
   init_recd_irobot_l_ = false;
   init_recd_irobot_r_ = false;
 };
@@ -150,6 +165,102 @@ int64_t _timestamp_now(){
 
 //----------------------------------------------------------------------------
 // CALLBACKS FOR SANDIA HAND STATE
+//----------------------------------------------------------------------------
+
+
+void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
+{
+ if(!init_recd_sandia_l_[4]){
+   init_recd_sandia_l_[4]=true;
+   sandia_l_hand_palm_state_= *msg;
+ }
+ else
+ {
+  double vmax=0; double vmin=0;
+  for(size_t i=0;i<msg->palm_tactile.size();i++)
+  {
+    double diff_val;
+    diff_val=msg->palm_tactile[i]-sandia_l_hand_palm_state_.palm_tactile[i];
+    sandia_l_hand_palm_diffstate_.palm_tactile[i]=(int)diff_val;
+    // low pass filter
+    double old_val, alpha, new_val;
+     old_val = sandia_l_hand_palm_state_.palm_tactile[i];
+    alpha=0.3;
+    new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
+    sandia_l_hand_palm_state_.palm_tactile[i] = new_val;
+    vmax = std::max(vmax,diff_val);
+    vmin = std::min(vmin,diff_val);
+  }
+    //cout <<"tactile_signal " << fabs(vmax-vmin) << endl; // This shows great signal
+ }
+  //sandia_l_hand_palm_state_= *msg;
+  int64_t utime = _timestamp_now();
+  publishRawTactile(utime,true); 
+}
+
+//----------------------------------------------------------------------------
+void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
+{
+ if(!init_recd_sandia_r_[4]){
+   init_recd_sandia_r_[4]=true;
+   sandia_r_hand_palm_state_= *msg;
+ }
+ else
+ {
+  double vmax=0; double vmin=0;
+  for(size_t i=0;i<msg->palm_tactile.size();i++)
+  {
+    double diff_val;
+    diff_val=msg->palm_tactile[i]-sandia_r_hand_palm_state_.palm_tactile[i];
+    sandia_r_hand_palm_diffstate_.palm_tactile[i]=(int)diff_val;
+    // low pass filter
+    double old_val, alpha, new_val;
+     old_val = sandia_r_hand_palm_state_.palm_tactile[i];
+    alpha=0.3;
+    new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
+    sandia_r_hand_palm_state_.palm_tactile[i] = new_val;
+    vmax = std::max(vmax,diff_val);
+    vmin = std::min(vmin,diff_val);
+  }
+    //cout <<"tactile_signal " << fabs(vmax-vmin) << endl; // This shows great signal
+ }
+  //sandia_r_hand_palm_state_= *msg;
+  int64_t utime = _timestamp_now();
+  publishRawTactile(utime,false); 
+}
+
+//----------------------------------------------------------------------------
+void App::publishRawTactile(int64_t utime_in,bool is_left)
+{
+
+  drc:: raw_tactile_t msg_out;
+  msg_out.utime = utime_in; // from nsec to usec
+  
+  msg_out.n_f0 = 0;
+  msg_out.n_f1 = 0;
+  msg_out.n_f2 = 0;
+  msg_out.n_f3 = 0;
+
+  if(is_left)
+  {
+     msg_out.n_palm=sandia_l_hand_palm_diffstate_.palm_tactile.size();
+     for (std::vector<int>::size_type i = 0; i < msg_out.n_palm; i++)  
+     {
+        msg_out.palm.push_back(sandia_l_hand_palm_diffstate_.palm_tactile[i]);
+     }
+     lcm_publish_.publish("SANDIA_LEFT_RAW_TACTILE_STATE", &msg_out); 
+  } 
+  else
+  {
+     msg_out.n_palm=sandia_r_hand_palm_diffstate_.palm_tactile.size();
+     for (std::vector<int>::size_type i = 0; i < msg_out.n_palm; i++)  
+     {
+        msg_out.palm.push_back(sandia_r_hand_palm_diffstate_.palm_tactile[i]);
+     }
+     lcm_publish_.publish("SANDIA_RIGHT_RAW_TACTILE_STATE", &msg_out); 
+  }
+  
+}
 //----------------------------------------------------------------------------
 void App::sandia_l_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
