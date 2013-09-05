@@ -9,6 +9,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <ConciseArgs>
 
 using namespace crl::multisense;
 Channel *d;
@@ -43,15 +44,21 @@ void Pass::requestHandler(const lcm::ReceiveBuffer* rbuf,
                           const std::string& channel, const  drc::sensor_request_t* msg){
    std::cout << "Config Message Received\n";
    CameraConfig config;
-   config.spindle_rpm = (float) msg->spindle_rpm;
+   config.spindle_rpm_ = (float) msg->spindle_rpm;
    
-   config.fps = (float) msg->head_fps;
+   config.fps_ = (float) msg->head_fps;
    camera->applyConfig(config);
 }
 
 
 
 int main(int    argc, char** argv){
+  CameraConfig config;
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(config.do_jpeg_compress_, "j", "do_jpeg_compress","Do JPEG compression");
+  opt.add(config.do_zlib_compress_, "z", "do_zlib_compress","Do Z compression");
+  opt.parse();
+  
   
   struct sigaction sigIntHandler;
   sigIntHandler.sa_handler = signal_handler;
@@ -75,9 +82,10 @@ int main(int    argc, char** argv){
 
     if (Status_Ok != d->setMtu(sensor_mtu))
         printf("failed to set sensor MTU to %d", sensor_mtu);
-
+    
+    
     l = new multisense_ros::Laser(d, robot_desc_string);
-    camera = new multisense_ros::Camera(d);
+    camera = new multisense_ros::Camera(d, config );
     
     while(1){
       // This is what I'm most unsure about in this driver:

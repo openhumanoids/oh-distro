@@ -58,14 +58,15 @@ void colorCB(const image::Header& header, const void* imageDataP, void* userData
 
 }; // anonymous
 
-Camera::Camera(Channel* driver) :
+Camera::Camera(Channel* driver, CameraConfig& config_) :
     driver_(driver),
     got_left_luma_(false),
     left_luma_frame_id_(0),
     left_rect_frame_id_(0),
     calibration_map_left_1_(NULL),
     calibration_map_left_2_(NULL),
-    capture_fps_(0.0f)
+    capture_fps_(0.0f),
+    config_(config_)
 {
 
     if(!lcm_publish_.good()){
@@ -81,9 +82,6 @@ Camera::Camera(Channel* driver) :
     // allocate space for zlib compressing depth data
     depth_compress_buf_size_ = 1024 * 544 * sizeof(int16_t) * 4;
     depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
-    jpeg_quality_ = 94;
-    do_jpeg_compress_=false;
-    do_zlib_compress_ = false;  
     
     int npixels = 1024*544;
     rgbP = (uint8_t*) malloc(npixels*3);
@@ -129,9 +127,8 @@ Camera::Camera(Channel* driver) :
       connectStream(Source_Chroma_Left);
     }
 
-    // Construct a safe config and apply:
-    CameraConfig config;
-    applyConfig(config);
+    // Apply input config:
+    applyConfig(config_);
     
 
     verbose_=false;
@@ -146,9 +143,13 @@ Camera::~Camera( )
 
 
 void Camera::applyConfig(CameraConfig& config){
+  std::cout << "Applying new config:\n";  
+  std::cout << "do_jpeg_compress_ " << config.do_jpeg_compress_ << "\n"; 
+  std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n"; 
+  
+  
   const float radiansPerSecondToRpm = 9.54929659643;
-
-  driver_->setMotorSpeed(config.spindle_rpm);
+  driver_->setMotorSpeed(config.spindle_rpm_);
   
   
   image::Config cfg;
@@ -158,7 +159,7 @@ void Camera::applyConfig(CameraConfig& config){
       printf("Failed to query image config. Error code %d", status);
       return;
   }  
-  cfg.setFps(config.fps);
+  cfg.setFps(config.fps_);
     
   status = driver_->setImageConfig(cfg);
   if (Status_Ok != status)
@@ -209,6 +210,8 @@ void Camera::rectCallback(const image::Header& header,
     
     
     const uint32_t imageSize = header.width * header.height;
+    
+    // TODO: add compression to left/right camera images
 
     switch(header.source) {
     case Source_Luma_Rectified_Left:
@@ -289,7 +292,7 @@ void Camera::depthCallback(const image::Header& header,
         lcm_disp_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY;
         lcm_disp_.nmetadata = 0;
         lcm_disp_.row_stride = n_bytes*header.width;
-        if (do_zlib_compress_){
+        if (config_.do_zlib_compress_){
           int uncompressed_size = isize;
           unsigned long compressed_size = depth_compress_buf_size_;
           compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
@@ -408,10 +411,10 @@ void Camera::colorImageCallback(const image::Header& header,
                   
                     ///////////////////////////////////////////////////////////////////////////////
                     // LCM:
-                    if (do_jpeg_compress_){
+                    if (config_.do_jpeg_compress_){
                       std::vector<int> params;
                       params.push_back(cv::IMWRITE_JPEG_QUALITY);
-                      params.push_back( jpeg_quality_);
+                      params.push_back( config_.jpeg_quality_);
                       
                       cvCvtColor( destImageP, destImageP, CV_BGR2RGB);
                       cv::Mat img = cv::cvarrToMat(destImageP);

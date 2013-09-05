@@ -41,12 +41,18 @@
 //
 struct CameraConfig{
   
-  float spindle_rpm;
-  float fps;
+  float spindle_rpm_;
+  float fps_;
+  bool do_jpeg_compress_;
+  bool do_zlib_compress_;
+  int jpeg_quality_;
   
   CameraConfig () {
-        fps = 1;
-        spindle_rpm =0;
+        fps_ = 1;
+        spindle_rpm_ = 0;
+        do_jpeg_compress_ = true;
+        do_zlib_compress_ = true;
+        jpeg_quality_ = 94;
   }
 };
 
@@ -54,7 +60,7 @@ namespace multisense_ros {
 
 class Camera {
 public:
-    Camera(crl::multisense::Channel* driver);
+    Camera(crl::multisense::Channel* driver, CameraConfig& config_);
     ~Camera();
 
     void rectCallback(const crl::multisense::image::Header& header,
@@ -137,14 +143,11 @@ private:
     int64_t lcm_left_frame_id_;
     int64_t lcm_right_frame_id_;
     
-    bool do_jpeg_compress_;
-    int jpeg_quality_;
-    bool do_zlib_compress_;
     int depth_compress_buf_size_;
     uint8_t* depth_compress_buf_;
-    
 
     bool verbose_;
+    CameraConfig& config_;
   
 };
 
