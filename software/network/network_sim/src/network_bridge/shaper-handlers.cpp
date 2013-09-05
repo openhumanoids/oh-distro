@@ -96,35 +96,38 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
 
-    
-    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
-    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
 
-    //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
+    // mfallon, sept 2013
+    bool disable_custom_codecs = true;
+    if (disable_custom_codecs){    
+        custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
+        custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
 
-    const std::string& ers_channel = "EST_ROBOT_STATE";
-    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
-    custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
+        //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
 
-    
-    const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
-    custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
-    custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
-
-    const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
-    custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
+        const std::string& ers_channel = "EST_ROBOT_STATE";
+        custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
+        custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
 
     
-    const std::string& grasp_channel = "COMMITTED_GRASP";
-    custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
+        const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
+        custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
+        custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
+
+        const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
+        custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
+        custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
+
+    
+        const std::string& grasp_channel = "COMMITTED_GRASP";
+        custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
+        custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
 
 
-    const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
-    custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
-
+        const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
+        custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
+        custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
+    }
     
     dccl_->validate<drc::ShaperHeader>();
     
