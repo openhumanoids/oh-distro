@@ -583,7 +583,12 @@ classdef ReachingPlanner < KeyframePlanner
             obj.plan_cache.ks = ks; % Cache Boundary Constraints
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
-            obj.plan_cache.quasiStaticFlag = ikseq_options.quasiStaticFlag;
+            if(obj.planning_mode==1)
+              obj.plan_cache.quasiStaticFlag = ikseq_options.quasiStaticFlag;
+            else
+              obj.plan_cache.quasiStaticFlag = false;
+            end
+
             % publish robot plan
             disp('Publishing plan...');
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
