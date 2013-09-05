@@ -46,7 +46,7 @@ using namespace boost::assign; // bring 'operator+()' into scope
 #define DO_TIMING_PROFILE FALSE
 
 // all ranges shorter than this are assumed to be with the head
-#define ASSUMED_HEAD 0.85//0.3
+#define ASSUMED_HEAD 0.3//0.3
 // all ranges longer than this are assumed to be free
 #define ASSUMED_FAR 2.0// 2.0
 // set all collisions to this range
