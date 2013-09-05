@@ -62,8 +62,16 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0" />
-        <relative_pose rpy="1.22346 -0.327787 1.07828" xyz="-0.0679147 0.0894694 0.0904876" />
-        <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141798 1.55023 1.50258 0.0129143 1.50179 1.02966 0.014406 1.36938 0.794768 -0.33745 0.939937 0.516387 " />
+        <relative_pose rpy="-1.34813 -0.110602 -1.45526" xyz="-0.11235 -0.101719 0.0279718" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0139285 1.1484 0.439871 0.00490044 0.92284 0.488622 0.014106 0.733501 0.494476 0.628309 0.0206538 0.176477 " />
     </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="1.30732 0.0262339 0.710848" xyz="-0.00975798 0.146369 -0.0801049" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0144491 1.12633 0.62465 -0.00496385 0.964135 0.554495 0.01353 0.787397 0.517136 0.28348 0.218039 0.237527 " />
+    </grasp_seed>
+    <plan_seed name="2013-09-04-09-22::test1" />
 </object>

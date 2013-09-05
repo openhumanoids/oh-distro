@@ -10,182 +10,181 @@
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <!-- Size of the outer most bounding volume -->
-    <param name="tube_radius" default_value="0.03" inc="0.0025" min="0" max="100" />
+    <param name="tube_radius" default_value="0.019" inc="0.0025" min="0" max="100" />
     <param name="ring_radius" default_value="0.1016" inc="0.0025" min="0" max="100" />
     <param name="spoke_radius" default_value="0.015" inc="0.0025" min="0" max="100" />
     <param name="center_radius" default_value="0.03" inc="0.0025" min="0" max="100" />
     <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
-    <param name="no_of_cyls" default_value="18" inc="1" min="1" max="20" />
+    <param name="no_of_cyls" default_value="8" inc="1" min="1" max="20" />
     <param name="no_of_spokes" default_value="3" inc="1" min="1" max="8" />
-
-    <link name="base_link"/>
-<!-- ================ -->
-<!-- Valve Base Links -->
-<!-- ================ -->
+    <link name="base_link" />
+    <!-- ================ -->
+    <!-- Valve Base Links -->
+    <!-- ================ -->
     <link name="valve_base">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base2">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base3">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base4">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base5">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base6">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base7">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base8">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base9">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base10">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
     <link name="valve_base11">
         <visual>
-   	    <origin rpy="0 0 0" xyz="0 0 0" />
-	    <geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-   	    </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
         </visual>
-    	<collision>
-        	<origin rpy="0 0 0" xyz="0 0 0" />
-		<geometry>
-		    <cylinder radius="${center_radius}" length="${center_radius}"/> 
-		</geometry>
-    	</collision>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${center_radius}" length="${center_radius}" />
+            </geometry>
+        </collision>
     </link>
-<!-- ================ -->
-<!-- Valve Ring Links -->
-<!-- ================ -->
+    <!-- ================ -->
+    <!-- Valve Ring Links -->
+    <!-- ================ -->
     <link_pattern name="RING" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -197,14 +196,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING2" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -216,14 +214,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING3" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -235,14 +232,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING4" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -254,14 +250,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING5" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -273,14 +268,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING6" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -292,14 +286,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING7" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -311,14 +304,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING8" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -330,14 +322,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING9" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -349,14 +340,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING10" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -368,14 +358,13 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="RING11" noofrepetitions="${no_of_cyls}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="0 ${ring_radius} 0" />
             <geometry>
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
@@ -387,16 +376,16 @@
                 <cylinder radius="${tube_radius}" length="${1.2*(ring_radius*((2*3.1416)/no_of_cyls))}" />
             </geometry>
         </collision>
-     </link_pattern>  
-<!-- ================= -->
-<!-- Valve Spoke Links -->
-<!-- ================= -->
+    </link_pattern>
+    <!-- ================= -->
+    <!-- Valve Spoke Links -->
+    <!-- ================= -->
     <link_pattern name="Spokes" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -408,14 +397,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes2" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -427,14 +415,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes3" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -446,14 +433,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes4" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -465,14 +451,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes5" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -484,14 +469,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>
-
+    </link_pattern>
     <link_pattern name="Spokes6" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -503,14 +487,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>    
-
+    </link_pattern>
     <link_pattern name="Spokes7" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -522,14 +505,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes8" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -541,14 +523,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes9" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -560,14 +541,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes10" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -579,14 +559,13 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
+    </link_pattern>
     <link_pattern name="Spokes11" noofrepetitions="${no_of_spokes}">
         <inertial>
             <mass value="${mass}" />
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
-         <visual>
+        <visual>
             <origin rpy="0 1.57 0" xyz="${ring_radius/2} 0 0" />
             <geometry>
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
@@ -598,24 +577,23 @@
                 <cylinder radius="${spoke_radius}" length="${ring_radius}" />
             </geometry>
         </collision>
-     </link_pattern>  
-
-<!-- ================= -->
-<!-- JOINTS -->
-<!-- ================= -->
-<!-- ================= -->
-<!-- Joint 1-->
-<!-- ================= -->
+    </link_pattern>
+    <!-- ================= -->
+    <!-- JOINTS -->
+    <!-- ================= -->
+    <!-- ================= -->
+    <!-- Joint 1-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint" type="revolute">	
+    <joint name="base_joint" type="revolute">
         <origin rpy="0 0 0" xyz="0 0 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
@@ -623,288 +601,288 @@
         <child link="RING" type="link_pattern" />
     </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base" type="link" />
         <child link="Spokes" type="link_pattern" />
-    </joint_pattern>    
-<!-- ================= -->
-<!-- Joint 2-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 2-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint2" type="revolute">	
+    <joint name="base_joint2" type="revolute">
         <origin rpy="0 0 0" xyz="0.6096 0 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base2" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base2" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints2" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints2" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base2" type="link" />
         <child link="RING2" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints2" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints2" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base2" type="link" />
         <child link="Spokes2" type="link_pattern" />
-    </joint_pattern>    
-<!-- ================= -->
-<!-- Joint 3-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 3-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint3" type="revolute">	
+    <joint name="base_joint3" type="revolute">
         <origin rpy="0 0 0" xyz="0.3048 -0.3048 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base3" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base3" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints3" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints3" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base3" type="link" />
         <child link="RING3" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints3" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints3" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base3" type="link" />
         <child link="Spokes3" type="link_pattern" />
-    </joint_pattern>    
-<!-- ================= -->
-<!-- Joint 4-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 4-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint4" type="revolute">	
+    <joint name="base_joint4" type="revolute">
         <origin rpy="0 0 0" xyz="0 -0.6096 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base4" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base4" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints4" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints4" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base4" type="link" />
         <child link="RING4" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints4" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints4" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base4" type="link" />
         <child link="Spokes4" type="link_pattern" />
-    </joint_pattern>    
-<!-- ================= -->
-<!-- Joint 5-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 5-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint5" type="revolute">	
+    <joint name="base_joint5" type="revolute">
         <origin rpy="0 0 0" xyz="0.6096 -0.6096 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base5" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base5" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints5" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints5" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base5" type="link" />
         <child link="RING5" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints5" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints5" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base5" type="link" />
         <child link="Spokes5" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 6-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 6-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint6" type="revolute">	
+    <joint name="base_joint6" type="revolute">
         <origin rpy="0 0 0" xyz="0.3048 ${-0.6096-0.3048} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base6" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base6" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints6" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints6" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base6" type="link" />
         <child link="RING6" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints6" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints6" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base6" type="link" />
         <child link="Spokes6" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 7-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 7-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint7" type="revolute">	
+    <joint name="base_joint7" type="revolute">
         <origin rpy="0 0 0" xyz="0 ${-0.60968*2} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base7" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base7" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints7" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints7" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base7" type="link" />
         <child link="RING7" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints7" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints7" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base7" type="link" />
         <child link="Spokes7" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 8-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 8-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint8" type="revolute">	
+    <joint name="base_joint8" type="revolute">
         <origin rpy="0 0 0" xyz="0.60968 ${-0.60968*2} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base8" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base8" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints8" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints8" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base8" type="link" />
         <child link="RING8" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints8" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints8" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base8" type="link" />
         <child link="Spokes8" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 9-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 9-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint9" type="revolute">	
+    <joint name="base_joint9" type="revolute">
         <origin rpy="0 0 0" xyz="0.3048 ${-0.60968*2-0.3048} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base9" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base9" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints9" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints9" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base9" type="link" />
         <child link="RING9" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints9" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints9" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base9" type="link" />
         <child link="Spokes9" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 10-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 10-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint10" type="revolute">	
+    <joint name="base_joint10" type="revolute">
         <origin rpy="0 0 0" xyz="0.0 ${-0.60968*3} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base10" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base10" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints10" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints10" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base10" type="link" />
         <child link="RING10" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints10" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints10" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base10" type="link" />
         <child link="Spokes10" type="link_pattern" />
-    </joint_pattern>    
-
-<!-- ================= -->
-<!-- Joint 11-->
-<!-- ================= -->
+    </joint_pattern>
+    <!-- ================= -->
+    <!-- Joint 11-->
+    <!-- ================= -->
     <!-- Base Revolute Joint-->
-    <joint name="base_joint11" type="revolute">	
+    <joint name="base_joint11" type="revolute">
         <origin rpy="0 0 0" xyz="0.60968 ${-0.60968*3} 0" />
-	<parent link="base_link" type="link"/>
-	<child link="valve_base11" type="link"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
+        <parent link="base_link" type="link" />
+        <child link="valve_base11" type="link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!-- Ring Fixed Joint -->
-    <joint_pattern name="RING_joints11" noofrepetitions="${no_of_cyls}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="RING_joints11" noofrepetitions="${no_of_cyls}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_cyls}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base11" type="link" />
         <child link="RING11" type="link_pattern" />
-    </joint_pattern>    
+    </joint_pattern>
     <!--Spoke Fixed Joint -->
-    <joint_pattern name="spoke_joints11" noofrepetitions="${no_of_spokes}" type="fixed"  arrangement="parallel">
+    <joint_pattern name="spoke_joints11" noofrepetitions="${no_of_spokes}" type="fixed" arrangement="parallel">
         <origin rpy="0 0 0" xyz="0 0 0" />
         <pattern_offset rpy="0.0 0.0 ${(2*3.1416)/no_of_spokes}" xyz="0.0 0.0 0.0" />
         <!--relative offsets between links-->
         <parent link="valve_base11" type="link" />
         <child link="Spokes11" type="link_pattern" />
-    </joint_pattern>    
-
+    </joint_pattern>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="RING4_6_0" />
+        <relative_pose rpy="-2.16032 0.158863 1.94579" xyz="0.0704483 0.0826622 0.0232145" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141913 1.51426 1.22276 -0.00272891 1.50587 1.05082 0.0140166 1.48121 0.912398 0.882849 0.889172 0.700921 " />
+    </grasp_seed>
 </object>
