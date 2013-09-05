@@ -13,6 +13,7 @@ lcmtypes_build()
 #add_subdirectory(src/oracle_plugin)
 
 add_subdirectory(src/rateset_plugin)
+add_subdirectory(src/atlas_push_plugin)
 
 # pops the oracle collections over to the affordance_collection message
 pods_install_python_script(drc-oracle2collection scripts/oracle2collection.py)
