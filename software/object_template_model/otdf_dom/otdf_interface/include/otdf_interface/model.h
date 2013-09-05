@@ -44,6 +44,7 @@
 #include "link.h"
 #include "joint.h"
 #include "GraspSeed.h"
+#include "PlanSeed.h"
 #include "expression_parsing.h"
 #include "otdf_addendum.h"
 
