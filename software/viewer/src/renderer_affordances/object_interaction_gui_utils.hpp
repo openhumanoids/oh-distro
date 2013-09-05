@@ -9,7 +9,7 @@
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_STORE "Store to otdf file" 
 #define PARAM_UNSTORE "Unstore from otdf file" 
-#define PARAM_COMMIT_TO_COLLISION_SERVER "Commit to collision-server"
+
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
@@ -59,8 +59,10 @@
 #define PARAM_STORE_PLAN "Store Current Plan" 
 #define PARAM_PLAN_SEED_LIST "Plan Select" 
 #define PARAM_LOAD_PLAN "Load PlanSeed" 
-#define PARAM_REACH_STARTING_POSTURE "Reach Starting Posture" 
-#define PARAM_UNSTORE_PLAN "Unstore  PlanSeed" 
+#define PARAM_REACH_STARTING_POSTURE "Reach Starting Posture"
+#define PARAM_REACH_STARTING_POSE "Reach Starting Pose"
+#define PARAM_UNSTORE_PLAN "Unstore  PlanSeed"
+#define PARAM_COMMIT_TO_COLLISION_SERVER "Commit to collision-server"
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
 #define PARAM_CURRENT_ORIENTATION "Maintain EE orientation"
@@ -714,7 +716,7 @@ namespace renderer_affordances_gui_utils
         selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
         (*self->affTriggerSignalsRef).plan_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_plan);
     }
-    else if (! strcmp(name,PARAM_REACH_STARTING_POSTURE))
+    else if ((! strcmp(name,PARAM_REACH_STARTING_POSTURE))||(! strcmp(name,PARAM_REACH_STARTING_POSE)))
     {
       string selected_plan;
       selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
@@ -727,6 +729,8 @@ namespace renderer_affordances_gui_utils
       plan_xml_dirpath =  otdf_models_path + "stored_plans/";
       PlanSeed planSeed;
       planSeed.loadFromOTDF(otdf_filepath,plan_xml_dirpath,selected_plan);
+      
+      if(! strcmp(name,PARAM_REACH_STARTING_POSTURE)){
       drc::joint_angles_t posture_goal_msg;
       visualization_utils::getFirstFrameInPlanAsPostureGoal(T_world_aff,
                                                             planSeed.stateframe_ids,
@@ -734,6 +738,17 @@ namespace renderer_affordances_gui_utils
                                                             posture_goal_msg);
       string channel = "POSTURE_GOAL";
       self->lcm->publish(channel, &posture_goal_msg);
+      }
+      else if(! strcmp(name,PARAM_REACH_STARTING_POSE)){
+      drc::robot_state_t pose_goal_msg;
+      visualization_utils::decodeAndExtractFirstFrameInKeyframePlanFromStorage(T_world_aff,
+                                                            planSeed.stateframe_ids,
+                                                            planSeed.stateframe_values,
+                                                           pose_goal_msg);
+      string channel = "CANDIDATE_ROBOT_ENDPOSE";
+      self->lcm->publish(channel, &pose_goal_msg);
+      }
+
     }
     else if (! strcmp(name, PARAM_UNSTORE_PLAN)) {
       string selected_plan;
@@ -1185,6 +1200,7 @@ namespace renderer_affordances_gui_utils
                                         &seed_names[0],
                                         &seed_nums[0]);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_STARTING_POSTURE, NULL);
+        bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_STARTING_POSE, NULL);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_LOAD_PLAN, NULL);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_UNSTORE_PLAN, NULL); 
       }
@@ -1218,6 +1234,8 @@ namespace renderer_affordances_gui_utils
     gtk_container_add (GTK_CONTAINER (mating_pane), GTK_WIDGET( mating_pw));
     GtkWidget * planseed_pane =  gtk_expander_new("Plan Seed Management");
     gtk_container_add (GTK_CONTAINER (planseed_pane), GTK_WIDGET( planseed_pw));
+    gtk_expander_set_expanded(GTK_EXPANDER(planseed_pane),(gboolean) TRUE);
+    
     GtkWidget *col_server_pane =  gtk_expander_new("collision_server_comms");
     gtk_container_add (GTK_CONTAINER (col_server_pane), GTK_WIDGET(col_server_pw));
 
