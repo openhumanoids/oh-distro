@@ -33,6 +33,7 @@
 #define PARAM_SSE_KP_RIGHT "Kp_R"  
 #define PARAM_SSE_KD_RIGHT "Kd_R"
 #define PARAM_MANIP_PLAN_MODE "ManipPlnr Mode"
+#define PARAM_EXEC_SPEED "EE Speed (m/s)"
 
 using namespace std;
 using namespace boost;
@@ -582,6 +583,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
     self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
   }
+  else if(!strcmp(name,  PARAM_EXEC_SPEED)){ 
+    drc::plan_execution_arc_speed_t msg;
+    msg.utime = bot_timestamp_now();
+    msg.speed = bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);
+    self->lcm->publish("DESIRED_EE_SPEED", &msg);
+  }
   else if(!strcmp(name,PARAM_SSE_KP_LEFT)){
     double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
     double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_LEFT);
@@ -679,6 +686,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
                                        "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
                                         "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
+                                        
+   bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                0.01, 0.2, 0.005, 0.02);                                     
     
    /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,

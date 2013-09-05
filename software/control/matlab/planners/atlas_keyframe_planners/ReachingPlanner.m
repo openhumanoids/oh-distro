@@ -17,12 +17,17 @@ classdef ReachingPlanner < KeyframePlanner
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_cache.num_breaks = 4;
-            obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+            if(obj.isSimMode())
+              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+            else
+              obj.plan_cache.v_desired = 0.02; % 2cm/sec seconds, hard coded for now
+            end
+              
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.restrict_feet=true;
             obj.planning_mode = 1;
         end
-        
+       
         function setPlanningMode(obj,val)
             obj.planning_mode  = val;
         end
@@ -558,6 +563,8 @@ classdef ReachingPlanner < KeyframePlanner
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
                 lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
+                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2);  
             end
             
             q = q_breaks(:,1);
@@ -566,8 +573,10 @@ classdef ReachingPlanner < KeyframePlanner
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
             s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
+            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
             s_total = max(s_total,0.01);
             
             res = 0.15; % 20cm res

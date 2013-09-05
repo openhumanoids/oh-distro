@@ -23,7 +23,11 @@ classdef WholeBodyPlanner < KeyframePlanner
             obj.restrict_feet=true;
             
             obj.plan_cache.num_breaks = 1;
-            obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds
+            if(obj.isSimMode())
+              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+            else
+              obj.plan_cache.v_desired = 0.02; % 2cm/sec seconds, hard coded for now
+            end
         end
         
         function generateAndPublishWholeBodyPlan(obj,varargin)
@@ -348,6 +352,8 @@ classdef WholeBodyPlanner < KeyframePlanner
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
                 lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
+                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2);  
                 %pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
                 %obj.cachePelvisPose([brk/length(s_breaks) brk/length(s_breaks)],'pelvis',pelvis_pose);
             end
@@ -355,8 +361,10 @@ classdef WholeBodyPlanner < KeyframePlanner
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
             s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
+            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
             s_total = max(s_total,0.01);
             
             ts = s.*(s_total/obj.plan_cache.v_desired); % plan timesteps

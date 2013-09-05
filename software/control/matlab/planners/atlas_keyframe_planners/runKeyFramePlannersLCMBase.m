@@ -28,7 +28,7 @@ rfoot_pts = getContactPoints(getBody(r,rfoot));
 lfoot_pts = getContactPoints(getBody(r,lfoot));
 rf_ee = EndEffectorListener('R_FOOT_GOAL');
 lf_ee = EndEffectorListener('L_FOOT_GOAL');
-
+des_speed_listener =DesiredArcSpeedListener('DESIRED_EE_SPEED');
 
 h_ee = EndEffectorListener('HEAD_GOAL');
 h_ee_clear = EndEffectorListener('HEAD_GOAL_CLEAR');
@@ -559,6 +559,16 @@ while(1)
     keyframe_adjustment_engine.setCacheViaPlanMsg(X,T,G,L);
   end
   
+  X = des_speed_listener.getNextMessage(msg_timeout);
+  if (~isempty(X))
+        send_status(3,0,0,'KeyframePlanners:  desired arc speed was set');
+     reaching_planner.setVDesired(X.speed);
+     manip_planner.setVDesired(X.speed);
+     posture_planner.setVDesired(X.speed);
+     endpose_planner.setVDesired(X.speed);
+     wholebody_planner.setVDesired(X.speed);
+  end
+    
   p = getNextMessage (h_ee_clear, msg_timeout);
   if (~isempty(p))
       disp ('Clearing head goal pose');

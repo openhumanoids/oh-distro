@@ -18,6 +18,8 @@ classdef KeyframePlanner < handle
         r_foot_body
         pelvis_body
         utorso_body
+        l_uarm_body 
+        r_uarm_body 
         
         joint_min
         joint_max
@@ -35,8 +37,9 @@ classdef KeyframePlanner < handle
             obj.head_body = obj.r.findLinkInd('head');
             obj.pelvis_body = findLinkInd(obj.r,'pelvis');
             obj.utorso_body = findLinkInd(obj.r,'utorso');
-            
-            
+            obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
+            obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
+
             coords = obj.r.getStateFrame();
             [joint_min,joint_max] = obj.r.getJointLimits();
             joint_min = Point(coords,[joint_min;0*joint_min]);
@@ -58,6 +61,10 @@ classdef KeyframePlanner < handle
         function [cache] = getPlanCache(obj)
             cache  = obj.plan_cache;
         end
+        
+        function setVDesired(obj,val)
+            obj.plan_cache.v_desired  = val;
+        end       
         
         function setHardwareMode(obj,mode)
             obj.hardware_mode = mode;

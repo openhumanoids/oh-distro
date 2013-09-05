@@ -17,7 +17,11 @@ classdef EndPosePlanner < KeyframePlanner
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             
             obj.plan_cache.num_breaks = 1;
-            obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds
+            if(obj.isSimMode())
+              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+            else
+              obj.plan_cache.v_desired = 0.02; % 2cm/sec seconds, hard coded for now
+            end
             % Caches a Redundant two element plan.
             % Flag indicates KeyframeAdjustmentEngine to
             % publish an single keyframe endpose instead
