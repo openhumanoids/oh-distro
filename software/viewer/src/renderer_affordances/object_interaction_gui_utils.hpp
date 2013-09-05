@@ -9,7 +9,7 @@
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_STORE "Store to otdf file" 
 #define PARAM_UNSTORE "Unstore from otdf file" 
-
+#define PARAM_COMMIT_TO_COLLISION_SERVER "Commit to collision-server"
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
@@ -59,6 +59,7 @@
 #define PARAM_STORE_PLAN "Store Current Plan" 
 #define PARAM_PLAN_SEED_LIST "Plan Select" 
 #define PARAM_LOAD_PLAN "Load PlanSeed" 
+#define PARAM_REACH_STARTING_POSTURE "Reach Starting Posture" 
 #define PARAM_UNSTORE_PLAN "Unstore  PlanSeed" 
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
@@ -713,6 +714,27 @@ namespace renderer_affordances_gui_utils
         selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
         (*self->affTriggerSignalsRef).plan_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_plan);
     }
+    else if (! strcmp(name,PARAM_REACH_STARTING_POSTURE))
+    {
+      string selected_plan;
+      selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
+      KDL::Frame T_world_aff;
+      T_world_aff = it->second._gl_object->_T_world_body;
+      std::string otdf_id = it->second.otdf_type;
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string otdf_filepath,plan_xml_dirpath;
+      otdf_filepath =  otdf_models_path + otdf_id +".otdf";
+      plan_xml_dirpath =  otdf_models_path + "stored_plans/";
+      PlanSeed planSeed;
+      planSeed.loadFromOTDF(otdf_filepath,plan_xml_dirpath,selected_plan);
+      drc::joint_angles_t posture_goal_msg;
+      visualization_utils::getFirstFrameInPlanAsPostureGoal(T_world_aff,
+                                                            planSeed.stateframe_ids,
+                                                            planSeed.stateframe_values,
+                                                            posture_goal_msg);
+      string channel = "POSTURE_GOAL";
+      self->lcm->publish(channel, &posture_goal_msg);
+    }
     else if (! strcmp(name, PARAM_UNSTORE_PLAN)) {
       string selected_plan;
       selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
@@ -722,6 +744,16 @@ namespace renderer_affordances_gui_utils
       plan_xml_dirpath=  otdf_models_path + "stored_plans/"; 
       cout << "Unstoring Plan : " <<selected_plan << endl;
       PlanSeed::unstoreFromOtdf(otdf_filepath,plan_xml_dirpath,selected_plan);
+    }
+    else if(!strcmp(name, PARAM_COMMIT_TO_COLLISION_SERVER) )
+    {
+      drc::workspace_object_urdf_t msg;
+      msg.utime =bot_timestamp_now();
+      msg.otdf_type =it->second.otdf_type;
+      msg.uid =it->second.uid;
+      msg.urdf_xml_string =otdf::convertObjectInstanceToURDFstring(it->second._otdf_instance);
+      string channel = "COLLISION_AVOIDANCE_URDFS";
+      self->lcm->publish(channel, &msg);
     }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
       // emit global keyboard signal
@@ -957,7 +989,7 @@ namespace renderer_affordances_gui_utils
        set_hand_init_position(self); 
  
     GtkWidget *window, *close_button, *vbox;
-    BotGtkParamWidget *pw;
+    
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
@@ -975,7 +1007,8 @@ namespace renderer_affordances_gui_utils
     //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_title(GTK_WINDOW(window), "dblclk");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+    
+
     
 
     int num_hand_contact_masks =  2;
@@ -1000,10 +1033,15 @@ namespace renderer_affordances_gui_utils
       ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) */
     //if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
     
+   
+    
+    
+    BotGtkParamWidget *pw;
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     
     if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
-      bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
+      //bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
       bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
@@ -1018,34 +1056,44 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT, val2, NULL);
     }
+    
+    BotGtkParamWidget *ee_seeds_pw;
+    ee_seeds_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     if((self->marker_selection  == " ")) 
     {
-     bot_gtk_param_widget_add_separator (pw,"Seed Management");
-      bot_gtk_param_widget_add_separator (pw,"(contact filter)");
-      bot_gtk_param_widget_add_enumv (pw, PARAM_HAND_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+      //bot_gtk_param_widget_add_separator (ee_seeds_pw,"Seed Management");
+      bot_gtk_param_widget_add_separator (ee_seeds_pw,"(contact filter)");
+      bot_gtk_param_widget_add_enumv (ee_seeds_pw, PARAM_HAND_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                            drc::grasp_opt_control_t::ALL,
 				                            num_hand_contact_masks,
 			                              (const char **)  hand_contact_masks,
 			                              hand_contact_nums);
-			bot_gtk_param_widget_add_enumv (pw, PARAM_FOOT_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+			bot_gtk_param_widget_add_enumv (ee_seeds_pw, PARAM_FOOT_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                            visualization_utils::ORG,
 				                            num_foot_contact_masks,
 			                              (const char **)  foot_contact_masks,
 			                              foot_contact_nums);                              
-			bot_gtk_param_widget_add_separator (pw,"(seed-opt control)");
+			bot_gtk_param_widget_add_separator (ee_seeds_pw,"(seed-opt control)");
 			//spinbox for dil factor from -2 to 2 in 0.1 inc, 1 by default
-		  bot_gtk_param_widget_add_double(pw,PARAM_DIL_FACTOR, BOT_GTK_PARAM_WIDGET_SPINBOX,
+		  bot_gtk_param_widget_add_double(ee_seeds_pw,PARAM_DIL_FACTOR, BOT_GTK_PARAM_WIDGET_SPINBOX,
                                                 0.1, 2.0, 0.1, 1);			
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
-      bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_SET_EE_CONSTRAINT, NULL);    
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_LH, NULL);
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_RH, NULL);
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_LF, NULL);
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_RF, NULL);    
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_CLEAR_SEEDS, NULL);
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_HALT_ALL_OPT, NULL);
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SET_EE_CONSTRAINT, NULL);    
       
     }
-
+     BotGtkParamWidget *set_des_state_pw;
+     set_des_state_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+     
+     BotGtkParamWidget *get_plan_pw;
+     get_plan_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new()); 
+     BotGtkParamWidget *mating_pw;
+     mating_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+        
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it= self->affCollection->_objects.find(self->object_selection);
       if(it!=self->affCollection->_objects.end())
@@ -1062,50 +1110,54 @@ namespace renderer_affordances_gui_utils
              val2 = it->second._gl_object->is_jointdof_adjustment_enabled();
             }   
             
-            bot_gtk_param_widget_add_separator (pw,"Set desired state");
-            bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+            //bot_gtk_param_widget_add_separator (set_des_state_pw,"Set desired state");
+            bot_gtk_param_widget_add_separator (set_des_state_pw,"(via markers/sliders)");
 
            
-            bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
-            bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
-            bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);
-            bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
+            bot_gtk_param_widget_add_booleans(set_des_state_pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
+            bot_gtk_param_widget_add_booleans(set_des_state_pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
+            bot_gtk_param_widget_add_buttons(set_des_state_pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);
+            bot_gtk_param_widget_add_buttons(set_des_state_pw, PARAM_RESET_DESIRED_STATE,NULL);
             
-            bot_gtk_param_widget_add_separator (pw,"Get Manip Plan/Map");
-            bot_gtk_param_widget_add_separator (pw,"(via EE pt/motion/range goal)");     
-            bot_gtk_param_widget_add_separator (pw,"(for approval)");
-            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
-            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
-            bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP,NULL);
-            bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL,NULL);
+            //bot_gtk_param_widget_add_separator (get_plan_pw,"Get Manip Plan/Map");
+            bot_gtk_param_widget_add_separator (get_plan_pw,"(via EE pt/motion/range goal)");     
+            bot_gtk_param_widget_add_separator (get_plan_pw,"(for approval)");
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_GET_MANIP_PLAN, NULL);
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_GET_RETRACTABLE_MANIP_PLAN, NULL);
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_GET_MANIP_MAP,NULL);
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_SEND_POSE_GOAL,NULL);
             //if(it->second._gl_object->is_future_display_active())
-            bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL2,NULL);
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_SEND_POSE_GOAL2,NULL);
          }
-          
-          bot_gtk_param_widget_add_buttons(pw,PARAM_MATE, NULL);
+      
+          bot_gtk_param_widget_add_buttons(mating_pw,PARAM_MATE, NULL);
 
           // If affordance is mateable SHOW ee teleop settings.
           
           //To engage EE teleop the object must have a valid melded sticky hand, and it must be melded to robot state as well
           if((it->second._gl_object->is_mateable())&&(it->second.is_melded) ) {
             //bool has_melded_seeds = object_has_melded_sticky_hands(it->first);
-              bot_gtk_param_widget_add_separator (pw,"EE Teleop Settings");
+              bot_gtk_param_widget_add_separator (mating_pw,"EE Teleop Settings");
                 /*bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_EE_TYPE, 
                                      BOT_GTK_PARAM_WIDGET_MENU,self->active_ee, 
                                     "Left hand", drc::ee_teleop_transform_t::LEFT_HAND,
                                     "Right Hand", drc::ee_teleop_transform_t::RIGHT_HAND, NULL);*/
-                bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP,
+                bot_gtk_param_widget_add_enum(mating_pw, PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP,
                                      BOT_GTK_PARAM_WIDGET_MENU,self->active_mate_axis,
                                      "MATE::X",0,
                                      "MATE::Y",1,
                                      "MATE::Z",2, NULL); 
-                bot_gtk_param_widget_add_buttons(pw,PARAM_ENGAGE_EE_TELEOP, NULL);
+                bot_gtk_param_widget_add_buttons(mating_pw,PARAM_ENGAGE_EE_TELEOP, NULL);
           }
       
       }// end if
  
-    bot_gtk_param_widget_add_separator (pw,"Plan Seed Management");
-    bot_gtk_param_widget_add_buttons(pw,PARAM_STORE_PLAN, NULL); 
+ 
+    BotGtkParamWidget *planseed_pw;
+    planseed_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+ 
+    //bot_gtk_param_widget_add_separator (planseed_pw,"Plan Seed Management");
+    bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_STORE_PLAN, NULL); 
    
     if((self->marker_selection  == " ")&&(it!=self->affCollection->_objects.end())) 
     {
@@ -1127,30 +1179,84 @@ namespace renderer_affordances_gui_utils
            seed_names.push_back(_names[i].c_str());
            seed_nums.push_back(i);
         }
-        bot_gtk_param_widget_add_enumv (pw, PARAM_PLAN_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
-                                        NULL,
+        bot_gtk_param_widget_add_enumv (planseed_pw, PARAM_PLAN_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
+                                        0,
                                         self->_planseeds.size(),
                                         &seed_names[0],
                                         &seed_nums[0]);
-        bot_gtk_param_widget_add_buttons(pw,PARAM_LOAD_PLAN, NULL);
-        bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE_PLAN, NULL); 
+        bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_STARTING_POSTURE, NULL);
+        bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_LOAD_PLAN, NULL);
+        bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_UNSTORE_PLAN, NULL); 
       }
     }
-
+    
+   
+    
+    BotGtkParamWidget *col_server_pw;
+    col_server_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+    bot_gtk_param_widget_add_buttons(col_server_pw,PARAM_COMMIT_TO_COLLISION_SERVER, NULL);     
+    
 
     //cout <<self->selection << endl; // otdf_type::geom_name
-    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    GtkWidget * param_adjust_pane =  gtk_expander_new("Post-fitting adjust");
+    gtk_container_add (GTK_CONTAINER (param_adjust_pane), GTK_WIDGET( pw));    
+    gtk_expander_set_expanded(GTK_EXPANDER(param_adjust_pane),(gboolean) TRUE);
+    
+    GtkWidget * ee_seeds_pane =  gtk_expander_new("Seed Management");
+    gtk_container_add (GTK_CONTAINER (ee_seeds_pane), GTK_WIDGET( ee_seeds_pw));
+    gtk_expander_set_expanded(GTK_EXPANDER(ee_seeds_pane),(gboolean) TRUE);
+    
+    GtkWidget * set_des_state_pane =  gtk_expander_new("Set Desired State");
+    gtk_container_add (GTK_CONTAINER (set_des_state_pane), GTK_WIDGET( set_des_state_pw));   
+    gtk_expander_set_expanded(GTK_EXPANDER(set_des_state_pane),(gboolean) TRUE);
+    
+    GtkWidget * get_plan_pane =  gtk_expander_new("Get Manip Plan/Map");
+    gtk_container_add (GTK_CONTAINER (get_plan_pane), GTK_WIDGET( get_plan_pw));
+    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) TRUE);
+    
+    GtkWidget * mating_pane =  gtk_expander_new("Mating");
+    gtk_container_add (GTK_CONTAINER (mating_pane), GTK_WIDGET( mating_pw));
+    GtkWidget * planseed_pane =  gtk_expander_new("Plan Seed Management");
+    gtk_container_add (GTK_CONTAINER (planseed_pane), GTK_WIDGET( planseed_pw));
+    GtkWidget *col_server_pane =  gtk_expander_new("collision_server_comms");
+    gtk_container_add (GTK_CONTAINER (col_server_pane), GTK_WIDGET(col_server_pw));
 
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(ee_seeds_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(set_des_state_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(get_plan_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);  
+    g_signal_connect(G_OBJECT(mating_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);      
+    g_signal_connect(G_OBJECT(planseed_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(col_server_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    
     self->dblclk_popup  = window;
 
     close_button = gtk_button_new_with_label ("Close");
     g_signal_connect (G_OBJECT (close_button),"clicked",G_CALLBACK (on_popup_close),(gpointer) window);
     g_signal_connect(G_OBJECT(pw), "destroy", G_CALLBACK(on_dblclk_popup_close), self); 
 
+
     vbox = gtk_vbox_new (FALSE, 3);
-    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    
     gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+  
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(param_adjust_pane), FALSE, FALSE, 5);
+    if((self->marker_selection  == " ")) 
+      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(ee_seeds_pane), FALSE, FALSE, 5);
+    if(it!=self->affCollection->_objects.end())
+    {
+      //has_seeds = true;
+      if((has_seeds)&&(!self->selection_hold_on))  
+      {
+        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(set_des_state_pane), FALSE, FALSE, 5);
+        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(get_plan_pane), FALSE, FALSE, 5);  
+      }
+      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(mating_pane), FALSE, FALSE, 5);
+    }
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(planseed_pane), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(col_server_pane), FALSE, FALSE, 5);
+
     gtk_widget_show_all(window); 
 
  

@@ -58,6 +58,7 @@
 #include <visualization_utils/SelectionManager.hpp>
 #include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/affordance_utils.hpp>
+#include <visualization_utils/affordance_utils/affordance_seed_utils.hpp>
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
 #include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
 #include <visualization_utils/stickyhand_utils/sticky_hand_utils.hpp>
