@@ -31,6 +31,66 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
         
+        function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
+            
+            obj.plan_cache.num_breaks = sum(logictraj(1,:));
+            obj.plan_cache.time_2_index_scale = 1;
+            obj.plan_cache.v_desired = 0.1;
+            obj.plan_cache.ks = ActionSequence(); % Plan Boundary Conditions
+            s_breaks = linspace(0,1,length(find(logictraj(1,:)==1)));%ts(find(logictraj(1,:)==1));
+            obj.plan_cache.s_breaks = s_breaks;
+            s = linspace(0,1,length(ts));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
+            obj.plan_cache.quasiStaticFlag = false;
+            
+            nq = obj.r.getNumDOF();
+            q_break = zeros(nq,length(s_breaks));
+            rhand_breaks = zeros(7,length(s_breaks));
+            lhand_breaks = zeros(7,length(s_breaks));
+            head_breaks = zeros(7,length(s_breaks));
+            rfoot_breaks = zeros(7,length(s_breaks));
+            lfoot_breaks = zeros(7,length(s_breaks));
+            for brk =1:length(s_breaks),
+                q_break(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
+                kinsol_tmp = doKinematics(obj.r,q_break(:,brk));
+                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
+                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
+                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
+                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
+                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+                if((brk==1)||brk==length(s_breaks))
+                    Tag =    num2str(brk-1);
+                    if(brk==length(s_breaks))
+                        Tag ='T';
+                    end
+                    s_val = s_breaks(brk);                    
+                    obj.cacheLHandPose([s_val s_val],['lhand' Tag],lhand_breaks(:,brk));                 
+                    obj.cacheRHandPose([s_val s_val],['rhand' Tag],rhand_breaks(:,brk));
+                    if(brk==1)
+                        if(~obj.isBDIManipMode()) % Ignore Foot Constraints in BDIManipMode
+                            obj.cacheLFootPoseAsContactConstraint([0 1],['lfoot' Tag],lfoot_breaks(:,brk));
+                            obj.cacheRFootPoseAsContactConstraint([0 1],['rfoot' Tag],rfoot_breaks(:,brk));
+                            pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
+                            obj.cachePelvisPose([0 1],'pelvis',pelvis_pose);
+                        else
+                            pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
+                            obj.cachePelvisPose([0 1],'pelvis',pelvis_pose);
+                        end
+                    end
+               end
+            end
+            s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
+            s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
+            s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+%           s_total = max(max(s_total_lh,s_total_rh),s_total_head);
+            s_total = max(s_total,0.01);
+            ts = s.*(s_total/obj.plan_cache.v_desired); % plan timesteps
+            obj.plan_cache.time_2_index_scale = (obj.plan_cache.v_desired/s_total);            
+        end
+        
         
         function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags)
             
@@ -116,7 +176,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     s_int_rf = rf_ee_constraint.time*obj.plan_cache.time_2_index_scale;
                     % Desired position of palm in world frame
                     rpy = quat2rpy(rf_ee_constraint.desired_pose(4:7,1));
-                    for k = 1:num_r_foot_pts
+                    for k = 1:num_r_foot_ptsobj.plan_cache.s_breaks
                         T_world_foot_r = HT(rf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
                         rfoot_int_constraint(1:3,k) = T_world_foot_r(1:3,4);
                         rfoot_int_constraint(4:6,k) =rotmat2rpy(T_world_foot_r(1:3,1:3));

@@ -197,7 +197,7 @@ classdef ReachingPlanner < KeyframePlanner
                     lfootT(4:6,k) =rotmat2rpy(T_world_foot_l(1:3,1:3));
                 end
             end
-            4;%;
+    
             if(isempty(h_ee_goal))
                 h_ee_goal = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
                 headT  = h_ee_goal(1:6);

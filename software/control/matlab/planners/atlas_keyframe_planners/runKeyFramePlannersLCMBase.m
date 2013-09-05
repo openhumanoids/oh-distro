@@ -71,6 +71,7 @@ plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN
 % rejected_plan_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
 committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_names);
 rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_names);
+stored_plan_listener = RobotKeyframePlanListener('STORED_ROBOT_PLAN',true,joint_names);
 
 % Listens to teleop commands
 lc = lcm.lcm.LCM.getSingleton();
@@ -550,6 +551,12 @@ while(1)
      lf_ee_constraint = [];
      rf_ee_constraint = [];
      %h_ee_goal = [];
+  end
+  
+  [X,T,G,L]=stored_plan_listener.getNextMessage(msg_timeout);
+  if (~isempty(X))
+    disp('A stored plan was loaded, updating plan cache in keyframe adjustment engine.');
+    keyframe_adjustment_engine.setCacheViaPlanMsg(X,T,G,L);
   end
   
   p = getNextMessage (h_ee_clear, msg_timeout);
