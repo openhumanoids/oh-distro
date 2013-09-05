@@ -81,8 +81,5 @@ namespace renderer_robot_plan_gui_utils
 
   }
 
-  
-  
-  
 }
 #endif

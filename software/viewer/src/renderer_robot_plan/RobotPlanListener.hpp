@@ -13,6 +13,8 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include <visualization_utils/file_access_utils.hpp>
+#include <visualization_utils/eigen_kdl_conversions.hpp>
+#include <visualization_utils/affordance_utils/affordance_seed_utils.hpp>
 #include <sys/time.h>
 #include <time.h>
 
@@ -76,6 +78,7 @@ namespace renderer_robot_plan
     //-------------message callback
     
     drc::robot_plan_t _received_plan;
+    drc::robot_plan_w_keyframes_t _received_keyframe_plan;
     drc::aff_indexed_robot_plan_t _received_map;
     drc::footstep_plan_t _received_footstep_plan;
     
@@ -392,9 +395,89 @@ namespace renderer_robot_plan
     }// end if	 
   };
 			      
-	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
-   bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
+  bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
+  bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
 
+  public:
+  //-------------------------------
+  void prepareActivePlanForStorage(KDL::Frame &T_world_aff, 
+                                   std::string &type,
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values,
+                                   std::vector<std::string> &graspframe_ids,
+                                   std::vector< std::vector<double> > &graspframe_values)
+  { 
+    if(is_manip_plan()){// uses _received_keyframe_plan
+      type = "manip";
+      visualization_utils::prepareKeyframePlanForStorage(T_world_aff,_received_keyframe_plan,stateframe_ids,stateframe_values,graspframe_ids,graspframe_values);
+    }
+    else if(is_walking_plan()){// uses _received_plan
+      type = "walking"; 
+      
+      drc::robot_plan_w_keyframes_t msg;
+      msg.utime = _received_plan.utime;
+      msg.robot_name = _received_plan.robot_name;
+      msg.num_states = _received_plan.num_states;
+      for (uint i = 0; i <(uint)msg.num_states; i++)
+      {
+      msg.is_keyframe[i] = false;
+      msg.is_breakpoint[i] = false;
+      }
+      msg.plan = _received_plan.plan;
+      msg.num_bytes = _received_plan.num_bytes;
+      msg.matlab_data = _received_plan.matlab_data;
+      msg.num_grasp_transitions = _received_plan.num_grasp_transitions;  
+      visualization_utils::prepareKeyframePlanForStorage(T_world_aff,msg,stateframe_ids,stateframe_values,graspframe_ids,graspframe_values);
+    }
+    else
+      type= "unknown";
+  }; // end method
+  
+  
+  void setPlanFromStorage(KDL::Frame &T_world_aff, 
+                                   std::string &type,
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values,
+                                   std::vector<std::string> &graspframe_ids,
+                                   std::vector< std::vector<double> > &graspframe_values)
+  {
+
+    drc::robot_plan_w_keyframes_t msg;                              
+    visualization_utils::decodeKeyframePlanFromStorage(T_world_aff,stateframe_ids,stateframe_values,graspframe_ids,graspframe_values,msg);
+
+    if(type == "manip")
+    {
+      handleManipPlanMsg(NULL," ",&msg);
+     std::string channel = "STORED_ROBOT_PLAN";
+      _lcm->publish(channel, &msg);  // Msg used to update plan cache in KEYFRAME ADJUSTMENT ENGINE. 
+    }
+    else if(type == "walking")
+    {
+      drc::robot_plan_t msg_subset;  
+      msg_subset.left_arm_control_type = msg_subset.NONE;
+      msg_subset.right_arm_control_type = msg_subset.NONE;
+      msg_subset.left_leg_control_type = msg_subset.NONE;
+      msg_subset.right_leg_control_type = msg_subset.NONE;
+      msg_subset.utime = msg.utime;
+      msg_subset.robot_name = msg.robot_name;
+      msg_subset.num_states = msg.num_states;
+      msg_subset.plan = msg.plan;
+      msg_subset.num_bytes = msg.num_bytes;
+      msg_subset.matlab_data = msg.matlab_data;
+      msg_subset.num_grasp_transitions = msg.num_grasp_transitions;
+      if(msg.num_grasp_transitions>0)
+        msg_subset.grasps = msg.grasps;
+      handleRobotPlanMsg(NULL," ",&msg_subset);
+      //std::string channel = "STORED_ROBOT_PLAN";
+      // Msg used to update plan cache in KEYFRAME ADJUSTMENT ENGINE. (Walking plan are currently not adjustable)
+      //_lcm->publish(channel, &msg_subset);  
+      // TODO: also publish a SEEDED footstep plan? piping with robin? 
+    }
+    else
+     cout <<"Unknown Plan type in RobotPlanListener::setPlanFromStorage\n";
+  };
+    
+ 
 }; //class RobotPlanListener
   
 

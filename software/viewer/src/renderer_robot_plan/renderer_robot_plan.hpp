@@ -28,7 +28,9 @@ using namespace boost;
 using namespace Eigen;
 using namespace visualization_utils;
 //using namespace renderer_robot_plan;
-
+namespace renderer_robot_plan_gui_utils{
+ static void spawn_plan_storage_addition_popup(void* user);
+}
 namespace renderer_robot_plan 
 {
 
@@ -74,18 +76,41 @@ namespace renderer_robot_plan
     GtkWidget *multiapprove_plan_execution_dock;
     GtkWidget *plan_approval_dock;
     GtkWidget *breakpoint_entry;
+    GtkWidget *afftriggered_popup;
+    std::string* trigger_source_otdf_id;
+    KDL::Frame T_world_trigger_aff;
     
     // Vicon seed planning collection settings:
     int vicon_n_plan_samples;
     double vicon_sample_period;
     int8_t vicon_type;
     
-    void affTriggerSignalsCallback(aff_trigger_type type, string otdf_id, KDL::Frame T_world_aff)
+    void affTriggerSignalsCallback(aff_trigger_type type,string otdf_id,KDL::Frame T_world_aff,string plan_id)
     {
       if(type==PLAN_STORE){
           cout<< otdf_id << " got triggered to store currently active plan"<< endl;
-          cout<<"Storage is TODO:" << endl;
-          cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          (*this->trigger_source_otdf_id) = otdf_id;
+          this->T_world_trigger_aff = T_world_aff;
+          //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          renderer_robot_plan_gui_utils::spawn_plan_storage_addition_popup(this);
+      }
+      else if(type==PLAN_LOAD){
+        cout<< otdf_id << " got triggered to load stored plan : "<< plan_id << endl;
+        (*this->trigger_source_otdf_id) = otdf_id;
+          this->T_world_trigger_aff = T_world_aff;
+          //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+          std::string otdf_filepath,plan_xml_dirpath;
+          otdf_filepath =  otdf_models_path + (*this->trigger_source_otdf_id) +".otdf";
+          plan_xml_dirpath =  otdf_models_path + "stored_plans/";
+          PlanSeed planSeed;
+          planSeed.loadFromOTDF(otdf_filepath,plan_xml_dirpath,plan_id);
+          this->robotPlanListener->setPlanFromStorage(this->T_world_trigger_aff,
+                                                      planSeed.plan_type,
+                                                      planSeed.stateframe_ids,
+                                                      planSeed.stateframe_values,
+                                                      planSeed.graspframe_ids,
+                                                      planSeed.graspframe_values);
       }
       else
           cerr<<  " unknown trigger "<< endl;

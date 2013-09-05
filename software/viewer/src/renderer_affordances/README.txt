@@ -18,7 +18,7 @@ Host-Parasite model
 ----------------------------------------------------------------------------------
 Description:
 ------------
-An attempt at managing complexity as we create instances of objects and associate many `stuff/features'(parasites) that are stuck to it. Example `Parasites' could include sticky hands, sticky feet or sticky manipulation plans that are defined in object frame. As an object is tracked in world frame, all the dependent parasites get rendered with it.
+An attempt at managing complexity as we create instances of objects and associate many `stuff/features'(parasites) that are stuck to it. Example `Parasites' could include sticky hands or sticky feet  that are defined in object frame. As an object is tracked in world frame, all the dependent parasites get rendered with it.
 
 Notes:
 ------

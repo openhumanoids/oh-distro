@@ -3,6 +3,7 @@
 #include "RobotPlanListener.hpp"
 #include "plan_execution_gui_utils.hpp" 
 #include "plan_approval_gui_utils.hpp"
+#include "plan_store_gui_utils.hpp"
 
 #define PARAM_KP_DEFAULT 5
 #define PARAM_KD_DEFAULT 1
@@ -627,7 +628,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     self->robotPlanListener = boost::shared_ptr<RobotPlanListener>(new RobotPlanListener(self->lcm, viewer, operation_mode));
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
-    self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RendererRobotPlan::affTriggerSignalsCallback,self,_1,_2,_3)));
+    self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RendererRobotPlan::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
 
     
     BotRenderer *renderer = &self->renderer;
@@ -696,13 +697,15 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->clicked = 0;	
     self->dragging = 0;    
   	self->selection = new std::string(" ");
-    self->marker_selection = new std::string(" ");  	
+    self->marker_selection = new std::string(" ");  
+    self->trigger_source_otdf_id = new std::string(" "); 
     self->is_left_in_motion =  true;
     self->is_hand_in_motion =  true;
     self->visualize_bbox = false;
     self->multiapprove_plan_execution_dock= NULL; 
     self->plan_execution_dock= NULL; 
     self->plan_approval_dock= NULL; 
+    self->afftriggered_popup = NULL;
     self->selected_plan_index= -1;
     self->selected_keyframe_index = -1;
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();

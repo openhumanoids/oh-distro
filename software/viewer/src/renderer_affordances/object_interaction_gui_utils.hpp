@@ -55,7 +55,11 @@
 #define PARAM_EE_RIGHT_HAND "Right hand"
 #define PARAM_EE_LEFT_HAND "Left hand"
 #define PARAM_USE_CURRENT_POSE "Use current pose"
+
 #define PARAM_STORE_PLAN "Store Current Plan" 
+#define PARAM_PLAN_SEED_LIST "PlanSeed Selection" 
+#define PARAM_LOAD_PLAN "Load PlanSeed" 
+#define PARAM_UNSTORE_PLAN "Unstore  PlanSeed" 
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
 #define PARAM_CURRENT_ORIENTATION "Maintain EE orientation"
@@ -700,7 +704,24 @@ namespace renderer_affordances_gui_utils
         spawn_adjust_dofs_popup_2(self);
     }
     else if (! strcmp(name, PARAM_STORE_PLAN)) {
+        // Send aff trigger signal to plan renderer to store current active plan to otdf associated xml file
         (*self->affTriggerSignalsRef).plan_store(it->second.otdf_type,it->second._gl_object->_T_world_body);
+    }
+    else if (! strcmp(name, PARAM_LOAD_PLAN)) {
+        // Send aff trigger signal to plan renderer to load a plan from plan storage 
+        string selected_plan;
+        selected_plan = string(bot_gtk_param_widget_get_enum_str (pw, PARAM_PLAN_SEED_LIST));
+        (*self->affTriggerSignalsRef).plan_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_plan);
+    }
+    else if (! strcmp(name, PARAM_UNSTORE_PLAN)) {
+      string selected_plan;
+      selected_plan = string(bot_gtk_param_widget_get_enum_str (pw, PARAM_PLAN_SEED_LIST));
+      string otdf_models_path = string(getModelsPath()) + "/otdf/"; 
+      string otdf_filepath,plan_xml_dirpath;
+      otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
+      plan_xml_dirpath=  otdf_models_path + "stored_plans/"; 
+      cout << "Unstoring Plan : " <<selected_plan << endl;
+      PlanSeed::unstoreFromOtdf(otdf_filepath,plan_xml_dirpath,selected_plan);
     }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
       // emit global keyboard signal
@@ -913,7 +934,7 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE))
+    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE)&&strcmp(name,PARAM_PLAN_SEED_LIST))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -1081,8 +1102,34 @@ namespace renderer_affordances_gui_utils
       
       }// end if
       
-      
+    bot_gtk_param_widget_add_separator (pw,"Plan Seed Management");
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE_PLAN, NULL); 
+   
+    
+    vector<string> planseeds = vector<string>();
+    std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+    std::string otdf_filepath;
+    otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
+    PlanSeed::getList(otdf_filepath,planseeds);
+    cout <<planseeds.size() << endl;
+    if(planseeds.size()>0)
+    {
+      vector<const char*> seed_names;
+      vector<int> seed_nums;
+      for(int i = 0; i < planseeds.size(); ++i)
+      {
+         seed_names.push_back(planseeds[i].c_str());
+         seed_nums.push_back(i);
+      }
+      bot_gtk_param_widget_add_enumv (pw, PARAM_PLAN_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
+                                      NULL,
+                                      planseeds.size(),
+                                      &seed_names[0],
+                                      &seed_nums[0]);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_LOAD_PLAN, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE_PLAN, NULL); 
+    }
+
 
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
