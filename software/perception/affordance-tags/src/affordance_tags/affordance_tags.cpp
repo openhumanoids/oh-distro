@@ -6,6 +6,10 @@
 // TODO: read library from file
 // TODO: add rate limiting (process is at about 15Hz)
 
+// pre-sept: Tag36h11
+// post sept: Tag16h5
+//
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
@@ -25,7 +29,7 @@
 #include <lcmtypes/bot_core.hpp>
 
 #include <AprilTags/TagDetector.h>
-#include <AprilTags/Tag36h11.h>
+#include <AprilTags/Tag16h5.h>
 
 #include <ConciseArgs>
 
@@ -65,7 +69,7 @@ class Tags{
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
 
     void getTagList();
-    void processTag(const  bot_core::image_t* msg);
+    void processTag();//const  bot_core::image_t* msg);
     void updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose, int uid);
 
     BotParam* botparam_;
@@ -74,6 +78,7 @@ class Tags{
     pointcloud_vis* pc_vis_;
     pointcloud_lcm* pc_lcm_;
     image_io_utils*  imgutils_;     
+    uint8_t* img_buf_;
     
     AprilTags::TagDetector* tag_detector_;
     std::map<int,AffTag> tags_; // map of tag details    
@@ -104,8 +109,9 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,1) );
-  
-  tag_detector_ = new AprilTags::TagDetector (AprilTags::tagCodes36h11);
+   
+  tag_detector_ = new AprilTags::TagDetector (AprilTags::tagCodes16h5);
+  img_buf_= (uint8_t*) malloc(3* width_  *  height_);
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_); // extra space for stereo tasks
   
   Tags::getTagList();
@@ -182,13 +188,16 @@ void draw_detection(cv::Mat& image, const AprilTags::TagDetection& detection) {
 
 
 void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
-  processTag(msg);
+  //processTag(msg);
 }
 
 
 void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
   // TODO: check that this is the left image
-  processTag(&(msg->images[0]));
+  
+  imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );
+  
+  processTag();//&(msg->images[0]));
 }
 
 KDL::Frame makeKDLFrame( Eigen::Isometry3d input){
@@ -226,12 +235,16 @@ void Tags::updateAffordance(AffTag &tag, Eigen::Isometry3d tag_pose, int tag_uid
 }
 
 
-void Tags::processTag(const  bot_core::image_t* msg){
-  int64_t utime_in = msg->utime;
+void Tags::processTag(){
+  int64_t utime_in =  0;//msg->utime;
+  
   // TODO: support jpeg compression
+  std::cout << "111\n";
   
   cv::Mat img = cv::Mat::zeros(height_, width_,CV_8UC3);
-  memcpy(img.data,  msg->data.data() , width_*height_*3 );  
+  //memcpy(img.data,  msg->data.data() , width_*height_*3 );  
+  img.data = img_buf_;
+  
   //cv::Mat img = cv::imdecode(cv::Mat(msg->images[0].data), -1);
   
   // I'm assuming incoming data has LCM RGB convention

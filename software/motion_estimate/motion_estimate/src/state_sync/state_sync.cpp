@@ -11,10 +11,11 @@ using namespace std;
 
 /////////////////////////////////////
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, bool bdi_motion_estimate_):
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, 
+                       bool bdi_motion_estimate_, bool simulation_mode):
    lcm_(lcm_), standalone_head_(standalone_head_),
    is_sandia_left_(false),is_sandia_right_(false),	
-   bdi_motion_estimate_(bdi_motion_estimate_){
+   bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
   lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
@@ -186,7 +187,10 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   // Limb Sensor states
   robot_state_msg.force_torque = force_torque_msg;
   
-  lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  if (simulation_mode_){ // to be deprecated..
+    lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+  }
+  
   if (bdi_motion_estimate_){
     if ( insertPoseBDI(robot_state_msg) ){
       lcm_->publish("EST_ROBOT_STATE", &robot_state_msg); 
@@ -211,9 +215,11 @@ int
 main(int argc, char ** argv){
   bool standalone_head = false;
   bool bdi_motion_estimate = false;
+  bool simulation_mode = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
   opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
+  opt.add(simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
@@ -222,7 +228,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  state_sync app(lcm, standalone_head,bdi_motion_estimate);
+  state_sync app(lcm, standalone_head,bdi_motion_estimate, simulation_mode);
   while(0 == lcm->handle());
   return 0;
 }
