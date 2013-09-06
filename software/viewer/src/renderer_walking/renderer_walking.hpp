@@ -1,6 +1,9 @@
 #ifndef __renderer_walking_h__
 #define ___renderer_walking_h__
 
+#include <maps/ViewClient.hpp>
+#include <maps/BotWrapper.hpp>
+
 /**
  * @defgroup scrollingplotsBotRenderer scrollingplotsBotRenderer renderer
  * @brief BotVis Viewer renderer plugin
@@ -19,9 +22,99 @@
 
 #define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
 
+struct PerceptionData {
+  maps::ViewClient mViewClient;
+  maps::BotWrapper::Ptr mBotWrapper;
+};
+
+typedef enum _leading_foot_t {
+  LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
+} leading_foot_t;
+
+typedef enum _walking_mode_t {
+  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI
+} walking_mode_t;
+
+typedef enum _behavior_t {
+  BEHAVIOR_WALKING, BEHAVIOR_CRAWLING, BEHAVIOR_BDI_WALKING, BEHAVIOR_BDI_STEPPING
+} behavior_t;
+
+typedef enum _walking_goal_type_t {
+  GOAL_TYPE_CENTER, GOAL_TYPE_RIGHT_FOOT, GOAL_TYPE_LEFT_FOOT
+} walking_goal_type_t;
+
+// ===== 2 dimensional structure =====
+#ifndef _point2d_t_h
+typedef struct _point2d {
+  double x;
+  double y;
+} point2d_t;
+#endif
+
+// ===== 3 dimensional strucutres =====
+// double 
+typedef struct _point3d {
+  double x;
+  double y;
+  double z;
+} point3d_t;
+
+
+typedef struct _RendererWalking {
+  BotRenderer renderer;
+  BotEventHandler ehandler;
+  BotViewer *viewer;
+  lcm_t *lc;
+
+  BotGtkParamWidget *pw;
+  
+  PerceptionData *perceptionData;
+
+  bool has_walking_msg;
+  bool follow_spline;
+  bool ignore_terrain;
+  behavior_t behavior;
+  walking_goal_type_t goal_type;
+  bool allow_optimization;
+  
+  int dragging;
+  bool active;
+  point2d_t drag_start_local;
+  point2d_t drag_finish_local;
+  point2d_t click_pos;
+  point2d_t goal_pos;
+  double goal_yaw;
+
+  double support_surface_z;
+
+  double goal_std;
+
+  int max_num_steps;
+  int min_num_steps;
+  leading_foot_t leading_foot;
+  double step_speed;
+  double step_height;
+  double nom_forward_step;
+  double max_forward_step;
+  double nom_step_width;
+  double mu;
+  int walking_settings;
+
+  int64_t max_draw_utime;
+  double circle_color[3];
+  
+  // Most recent robot position, rotation and utime
+  int64_t robot_utime;
+  double robot_pos[3];
+  double robot_rot[4]; // quaternion in xywz
+  
+}RendererWalking;
 
 void setup_renderer_walking(BotViewer *viewer, int render_priority, lcm_t* lcm, BotParam * param,
     BotFrames * frames);
+
+void publish_simple_nav(RendererWalking* self, double x, double y, double yaw);
+void publish_walking_goal(RendererWalking* self, bool is_new);
 
 /**
  * @}

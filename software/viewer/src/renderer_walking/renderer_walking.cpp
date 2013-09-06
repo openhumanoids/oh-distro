@@ -28,11 +28,11 @@
 //#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 
-#include <maps/ViewClient.hpp>
-#include <maps/BotWrapper.hpp>
 #include <string>
+#include "renderer_walking.hpp"
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "Place New Walking Goal"
+#define PARAM_GO_FORWARD "Go Forward"
 #define PARAM_GOAL_UPDATE "Update Current Goal"
 #define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
 #define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
@@ -50,22 +50,6 @@
 
 #define WALKING_MODE "Preset"
 
-typedef enum _leading_foot_t {
-  LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
-} leading_foot_t;
-
-typedef enum _walking_mode_t {
-  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI
-} walking_mode_t;
-
-typedef enum _behavior_t {
-  BEHAVIOR_WALKING, BEHAVIOR_CRAWLING, BEHAVIOR_BDI_WALKING, BEHAVIOR_BDI_STEPPING
-} behavior_t;
-
-typedef enum _walking_goal_type_t {
-  GOAL_TYPE_CENTER, GOAL_TYPE_RIGHT_FOOT, GOAL_TYPE_LEFT_FOOT
-} walking_goal_type_t;
-
 
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
@@ -76,22 +60,6 @@ typedef enum _walking_goal_type_t {
 ////////////////// THE FOLLOWING CODE WAS COPIED IN HERE TO AVOID
 ////////////////// DEPENDENCY WITH THE COMMON_UTILS/GEOM_UTILS POD [MFALLON]
 #define GEOM_EPSILON 1e-9
-
-// ===== 2 dimensional structure =====
-#ifndef _point2d_t_h
-typedef struct _point2d {
-  double x;
-  double y;
-} point2d_t;
-#endif
-
-// ===== 3 dimensional strucutres =====
-// double 
-typedef struct _point3d {
-  double x;
-  double y;
-  double z;
-} point3d_t;
 
 #define point3d_as_array(p) ((double*)p)
 
@@ -151,59 +119,6 @@ int geom_ray_z_plane_intersect_3d(const point3d_t *ray_point,
 
 ////////////////////////////// END OF CODE COPIED IN FROM COMMON_UTILS
 
-struct PerceptionData {
-  maps::ViewClient mViewClient;
-  maps::BotWrapper::Ptr mBotWrapper;
-};
-
-typedef struct _RendererWalking {
-  BotRenderer renderer;
-  BotEventHandler ehandler;
-  BotViewer *viewer;
-  lcm_t *lc;
-
-  BotGtkParamWidget *pw;
-  
-  PerceptionData *perceptionData;
-
-  bool has_walking_msg;
-  bool follow_spline;
-  bool ignore_terrain;
-  behavior_t behavior;
-  walking_goal_type_t goal_type;
-  bool allow_optimization;
-  drc_walking_goal_t last_walking_msg;
-  
-  int dragging;
-  bool active;
-  point2d_t drag_start_local;
-  point2d_t drag_finish_local;
-
-  point2d_t click_pos;
-  double support_surface_z;
-  double theta;
-  double goal_std;
-  int max_num_steps;
-  int min_num_steps;
-  leading_foot_t leading_foot;
-
-  int64_t max_draw_utime;
-  double circle_color[3];
-  
-  // Most recent robot position, rotation and utime
-  int64_t robot_utime;
-  // int64_t time_per_step_ns;
-  double step_speed;
-  double step_height;
-  double nom_forward_step;
-  double max_forward_step;
-  double nom_step_width;
-  double mu;
-  double robot_pos[3];
-  double robot_rot[4]; // quaternion in xywz
-  
-  int walking_settings;
-}RendererWalking;
 
 static void
 _draw (BotViewer *viewer, BotRenderer *renderer)
@@ -225,7 +140,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 
   glBegin(GL_LINE_STRIP);
   glVertex2f(0.0,0.0);
-  glVertex2f(self->goal_std*cos(self->theta),self->goal_std*sin(self->theta));
+  glVertex2f(self->goal_std*cos(self->goal_yaw),self->goal_std*sin(self->goal_yaw));
   glEnd();
   glPopMatrix();
 }
@@ -239,7 +154,7 @@ recompute_2d_goal_pose(RendererWalking *self)
   double dy = self->drag_finish_local.y - self->drag_start_local.y;
 
   double theta = atan2(dy,dx);
-  self->theta = theta;
+  self->goal_yaw = theta;
 
   self->goal_std = sqrt(dx*dx + dy*dy);
   if(self->goal_std < MIN_STD)
@@ -336,51 +251,15 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     // check drag points and publish
 
     printf("x,y,t: %f %f %f.    std: %f\n",self->click_pos.x
-        ,self->click_pos.y,self->theta,self->goal_std);
+        ,self->click_pos.y,self->goal_yaw,self->goal_std);
 
     fprintf(stderr,"Walking Button Released => Activate Value : %d\n", self->active);
 
-    drc_walking_goal_t msg;
-    msg.utime = self->robot_utime; //bot_timestamp_now();
-    msg.max_num_steps = (int32_t) self->max_num_steps;
-    msg.min_num_steps = (int32_t) self->min_num_steps;
-    //msg.robot_name = "atlas"; // this should be set from robot state message
-
-    msg.goal_pos.translation.x = self->click_pos.x;
-    msg.goal_pos.translation.y = self->click_pos.y;
-    msg.goal_pos.translation.z = 0;
-    double rpy[] = {0,0,self->theta};
-    double quat_out[4];
-    bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
-    msg.goal_pos.rotation.w = quat_out[0];
-    msg.goal_pos.rotation.x = quat_out[1];
-    msg.goal_pos.rotation.y = quat_out[2];
-    msg.goal_pos.rotation.z = quat_out[3];
-    msg.is_new_goal = true;
-    msg.allow_optimization = self->allow_optimization;
-    // msg.time_per_step = self->time_per_step_ns;
-    msg.step_speed = self->step_speed;
-    msg.nom_step_width = self->nom_step_width;
-    msg.nom_forward_step = self->nom_forward_step;
-    msg.max_forward_step = self->max_forward_step;
-    msg.step_height = self->step_height;
-    msg.mu = self->mu;
-    msg.follow_spline = self->follow_spline;
-    msg.ignore_terrain = self->ignore_terrain;
-    msg.behavior = self->behavior;
-    msg.goal_type = self->goal_type;
-    if (self->leading_foot == LEADING_FOOT_RIGHT) {
-      msg.right_foot_lead = true;
-    } else {
-      msg.right_foot_lead = false;
-    }
     self->has_walking_msg = true;
-    self->last_walking_msg = msg;
+    self->goal_pos.x = self->click_pos.x;
+    self->goal_pos.y = self->click_pos.y;
 
-    std::string channel = (msg.behavior == BEHAVIOR_CRAWLING) ? "CRAWLING_GOAL" : "WALKING_GOAL";
-    fprintf(stderr, ("Sending " + channel + "\n").c_str());
-    drc_walking_goal_t_publish(self->lc, channel.c_str(), &msg);
-    bot_viewer_set_status_bar_message(self->viewer, ("Sent " + channel).c_str());
+    publish_walking_goal(self, TRUE);
     
     self->active = false;
 
@@ -480,13 +359,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
     }else if (mode == WALKING_BDI){
       std::cout << "Using preset mode: BDI\n";            
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 4);  
+      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10);  
       bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.1);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.22);  
+      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
       bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
       bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_WALKING);
     }
@@ -507,53 +386,109 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->goal_type = (walking_goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
 
-  // if (msg_changed) {
-    if (self->has_walking_msg) {
-      self->last_walking_msg.utime = self->robot_utime; //bot_timestamp_now();
-      self->last_walking_msg.max_num_steps = self->max_num_steps;
-      self->last_walking_msg.min_num_steps = self->min_num_steps;
-      self->last_walking_msg.is_new_goal = false;
-      self->last_walking_msg.follow_spline = self->follow_spline;
-      self->last_walking_msg.ignore_terrain = self->ignore_terrain;
-      self->last_walking_msg.behavior = self->behavior;
-      self->last_walking_msg.goal_type = self->goal_type;
-      self->last_walking_msg.step_speed = self->step_speed;
-      self->last_walking_msg.nom_step_width = self->nom_step_width;
-      self->last_walking_msg.nom_forward_step = self->nom_forward_step;
-      self->last_walking_msg.max_forward_step = self->max_forward_step;
-      self->last_walking_msg.step_height = self->step_height;
-      self->last_walking_msg.mu = self->mu;
-      self->last_walking_msg.allow_optimization = self->allow_optimization;
-      // self->last_walking_msg.time_per_step = self->time_per_step_ns;
-      if (self->leading_foot == LEADING_FOOT_RIGHT) {
-        self->last_walking_msg.right_foot_lead = true;
-      } else {
-        self->last_walking_msg.right_foot_lead = false;
-      }
-    }
-  // }
-
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
     if (self->has_walking_msg) {
-      fprintf(stderr, "Sending WALKING_GOAL\n");
-      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
-      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+      publish_walking_goal(self, FALSE);
     }
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked WALKING_GOAL\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self);
   }
-  
-  
+}
+
+void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
+  double rpy[3];
+  double quat[4];
+  bot_quat_to_roll_pitch_yaw(self->robot_rot, rpy);
+  rpy[2] += yaw;
+  self->goal_yaw = rpy[2];
+  bot_roll_pitch_yaw_to_quat(rpy, quat);
+  self->goal_pos.x = self->robot_pos[0] + x * cos(rpy[2]) - y * sin(rpy[2]);
+  self->goal_pos.y = self->robot_pos[1] + x * sin(rpy[2]) + y * cos(rpy[2]);
+  bool old_follow_spline = self->follow_spline;
+  self->follow_spline = FALSE;
+  publish_walking_goal(self, TRUE);
+  self->follow_spline = old_follow_spline;
+}
+
+void publish_walking_goal(RendererWalking* self, bool is_new) {
+  drc_walking_goal_t walking_goal_msg;
+  self->has_walking_msg = TRUE;
+  double rpy[] = {0,0,self->goal_yaw};
+  double quat_out[4];
+  bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
+  walking_goal_msg.utime = self->robot_utime; //bot_timestamp_now();
+  walking_goal_msg.max_num_steps = (int32_t) self->max_num_steps;
+  walking_goal_msg.min_num_steps = (int32_t) self->min_num_steps;
+  walking_goal_msg.goal_pos.translation.x = self->goal_pos.x;
+  walking_goal_msg.goal_pos.translation.y = self->goal_pos.y;
+  walking_goal_msg.goal_pos.translation.z = 0;
+  walking_goal_msg.goal_pos.rotation.w = quat_out[0];
+  walking_goal_msg.goal_pos.rotation.x = quat_out[1];
+  walking_goal_msg.goal_pos.rotation.y = quat_out[2];
+  walking_goal_msg.goal_pos.rotation.z = quat_out[3];
+  walking_goal_msg.is_new_goal = is_new;
+  walking_goal_msg.allow_optimization = self->allow_optimization;
+  walking_goal_msg.step_speed = self->step_speed;
+  walking_goal_msg.nom_step_width = self->nom_step_width;
+  walking_goal_msg.nom_forward_step = self->nom_forward_step;
+  walking_goal_msg.max_forward_step = self->max_forward_step;
+  walking_goal_msg.step_height = self->step_height;
+  walking_goal_msg.mu = self->mu;
+  walking_goal_msg.follow_spline = self->follow_spline;
+  walking_goal_msg.ignore_terrain = self->ignore_terrain;
+  walking_goal_msg.behavior = self->behavior;
+  walking_goal_msg.goal_type = self->goal_type;
+  if (self->leading_foot == LEADING_FOOT_RIGHT) {
+    walking_goal_msg.right_foot_lead = true;
+  } else {
+    walking_goal_msg.right_foot_lead = false;
+  }
+  std::string channel = (self->behavior == BEHAVIOR_CRAWLING) ? "CRAWLING_GOAL" : "WALKING_GOAL";
+  fprintf(stderr, "Sending %s \n", channel.c_str());
+  drc_walking_goal_t_publish(self->lc, channel.c_str(), &(walking_goal_msg));
+  bot_viewer_set_status_bar_message(self->viewer, ("Sent " + channel).c_str());
+}
+
+
+static gboolean on_turn_left_clicked(GtkButton* button, void *user) {
+  std::cout << "turn left" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, 0, 0, M_PI / 2);
+}
+static gboolean on_go_forward_clicked(GtkButton* button, void *user) {
+  std::cout << "go forward" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, self->max_forward_step * self->max_num_steps, 0, 0);
+}
+static gboolean on_turn_right_clicked(GtkButton* button, void *user) {
+  std::cout << "turn right" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, 0, 0, -M_PI / 2);
+}
+static gboolean on_go_left_clicked(GtkButton* button, void *user) {
+  std::cout << "go left" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, 0, self->max_forward_step * self->max_num_steps, 0);
+}
+static gboolean on_go_backward_clicked(GtkButton* button, void *user) {
+  std::cout << "go backward" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, -self->max_forward_step * self->max_num_steps, 0, 0);
+}
+static gboolean on_go_right_clicked(GtkButton* button, void *user) {
+  std::cout << "go right" << std::endl;
+  RendererWalking *self = (RendererWalking*) user;
+  publish_simple_nav(self, 0, -self->max_forward_step * self->max_num_steps, 0);
 }
 
 static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel, 
                                const drc_robot_state_t *msg, void *user){
   RendererWalking *self = (RendererWalking*) user;
   
-  self->robot_utime =msg->utime;
+  self->robot_utime = msg->utime;
   self->robot_pos[0] = msg->pose.translation.x;
   self->robot_pos[1] = msg->pose.translation.y;
   self->robot_pos[2] = msg->pose.translation.z;
@@ -600,22 +535,26 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   
   
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
-
   self->has_walking_msg = false;
+  self->max_num_steps = 10;
+  self->min_num_steps = 0;
+  self->step_speed = 1.0; // m/s
+  self->step_height = 0.05; // m
+  self->nom_forward_step = 0.10; // m
+  self->max_forward_step = 0.5; // m
+  self->nom_step_width = 0.26; // m
+  self->behavior = BEHAVIOR_BDI_WALKING;
+  self->walking_settings = WALKING_BDI;
   self->follow_spline = true;
   self->ignore_terrain = false;
-  self->behavior = BEHAVIOR_WALKING;
   self->goal_type = GOAL_TYPE_CENTER;
   self->allow_optimization = false;
-  // self->time_per_step_ns = 1.3e9;
-  self->step_speed = 1.0; // m/s
-  self->nom_step_width = 0.26; // m
-  self->nom_forward_step = 0.20; // m
-  self->max_forward_step = 0.5; // m
-  self->step_height = 0.1; // m
-
   self->mu = 1.0;
   self->leading_foot = LEADING_FOOT_RIGHT;
+  self->robot_rot[0] = 1;
+  self->robot_rot[1] = 0;
+  self->robot_rot[2] = 0;
+  self->robot_rot[3] = 0;
   
   self->perceptionData = new PerceptionData();
   self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
@@ -624,14 +563,79 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
+  self->renderer.widget = gtk_alignment_new(0,0.5,1.0,0);
+
+  GtkWidget *box;
+  GtkWidget *arrow_table;
+  // go_forward_button = gtk_button_new_with_label(PARAM_GO_FORWARD);
+
+  box = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(self->renderer.widget), box);
+  gtk_widget_show(box);
+
+  arrow_table = gtk_table_new(1, 4, FALSE);
+  gtk_box_pack_start(GTK_BOX(box), arrow_table, FALSE, TRUE, 0);
+  gtk_widget_show(arrow_table);
+
+  GtkWidget *go_forward_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);
+  GtkWidget *turn_left_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_UNDO);
+  GtkWidget *turn_right_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_REDO);
+  GtkWidget *go_left_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+  GtkWidget *go_backward_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);
+  GtkWidget *go_right_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+  GtkWidget *nav_label = gtk_label_new("Quick Navigation:");
+
+  gtk_table_attach(GTK_TABLE(arrow_table), nav_label, 0,1,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(nav_label);
+  gtk_table_attach(GTK_TABLE(arrow_table), turn_left_button, 1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(turn_left_button);
+  gtk_table_attach(GTK_TABLE(arrow_table), go_forward_button, 2, 3, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(go_forward_button);
+  gtk_table_attach(GTK_TABLE(arrow_table), turn_right_button, 3, 4, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(turn_right_button);
+  gtk_table_attach(GTK_TABLE(arrow_table), go_left_button, 1, 2, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(go_left_button);
+  gtk_table_attach(GTK_TABLE(arrow_table), go_backward_button, 2, 3, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(go_backward_button);
+  gtk_table_attach(GTK_TABLE(arrow_table), go_right_button, 3, 4, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(go_right_button);
+
+  g_signal_connect(G_OBJECT(turn_left_button),
+                   "clicked",
+                   G_CALLBACK(on_turn_left_clicked),
+                   self);
+  g_signal_connect(G_OBJECT(go_forward_button),
+                   "clicked",
+                   G_CALLBACK(on_go_forward_clicked),
+                   self);
+  g_signal_connect(G_OBJECT(turn_right_button),
+                   "clicked",
+                   G_CALLBACK(on_turn_right_clicked),
+                   self);
+  g_signal_connect(G_OBJECT(go_left_button),
+                   "clicked",
+                   G_CALLBACK(on_go_left_clicked),
+                   self);
+  g_signal_connect(G_OBJECT(go_backward_button),
+                   "clicked",
+                   G_CALLBACK(on_go_backward_clicked),
+                   self);
+  g_signal_connect(G_OBJECT(go_right_button),
+                   "clicked",
+                   G_CALLBACK(on_go_right_clicked),
+                   self);
+
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(self->pw), FALSE, TRUE, 0);
+  gtk_widget_show(GTK_WIDGET(self->pw));
+
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_UPDATE, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "Crawling", BEHAVIOR_CRAWLING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, self->goal_type, "Bot center", GOAL_TYPE_CENTER, "Right foot", GOAL_TYPE_RIGHT_FOOT, "Left foot", GOAL_TYPE_LEFT_FOOT, NULL);
-  bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, 30);  
-  bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, 0);  
+  bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->max_num_steps);  
+  bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
   bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->nom_forward_step);
@@ -644,12 +648,18 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_set_bool(self->pw, PARAM_IGNORE_TERRAIN, self->ignore_terrain);
   
   bot_gtk_param_widget_add_enum(self->pw, WALKING_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->walking_settings, 
-                                "Typical", WALKING_TYPICAL, "Mud", WALKING_MUD,
-                                "Crawling", WALKING_CRAWLING, "Turn Crawl", WALKING_TURN_CRAWLING ,
-                                "BDI", WALKING_BDI , NULL);
+                                "BDI Walking", WALKING_BDI,
+                                "Typical, VRC", WALKING_TYPICAL,
+                                "Mud, VRC", WALKING_MUD,
+                                "Crawling", WALKING_CRAWLING,
+                                "Turn Crawl", WALKING_TURN_CRAWLING ,
+                                NULL);
+
+
+  // bot_gtk_param_widget_add_buttons(self->pw, PARAM_GO_FORWARD, NULL);
 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  self->renderer.widget = GTK_WIDGET(self->pw);
+  // self->renderer.widget = GTK_WIDGET(self->pw);
 
   self->active = false;
 
