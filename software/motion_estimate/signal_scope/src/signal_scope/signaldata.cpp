@@ -1,4 +1,6 @@
 #include "signaldata.h"
+#include "signaldescription.h"
+
 #include <qvector.h>
 #include <qmutex.h>
 #include <qreadwritelock.h>
@@ -13,49 +15,29 @@ public:
   PrivateData()
   {
     messageError = false;
-    //values.reserve(1000);
-  }
-
-  inline void append(const QPointF &sample)
-  {
-    values.append(sample);
-    fpsCounter.update();
-
-    // adjust the bounding rectangle
-    /*
-    if ( boundingRect.width() < 0 || boundingRect.height() < 0 )
-    {
-      boundingRect.setRect(sample.x(), sample.y(), 0.0, 0.0);
-    }
-    else
-    {
-      boundingRect.setRight(sample.x());
-
-      if ( sample.y() > boundingRect.bottom() )
-          boundingRect.setBottom(sample.y());
-
-      if ( sample.y() < boundingRect.top() )
-          boundingRect.setTop(sample.y());
-    }
-    */
   }
 
   bool messageError;
 
   QReadWriteLock lock;
 
-  QVector<QPointF> values;
   QRectF boundingRect;
 
-  QMutex mutex; // protecting pendingValues
-  QVector<QPointF> pendingValues;
+  QMutex mutex; // protecting pending values
+  QVector<double> xvalues;
+  QVector<double> yvalues;
+  QVector<double> pendingxvalues;
+  QVector<double> pendingyvalues;
 
   FPSCounter fpsCounter;
+
+  SignalDescription* signalDescription;
 };
 
-SignalData::SignalData()
+SignalData::SignalData(SignalDescription* signalDescription)
 {
   d_data = new PrivateData();
+  d_data->signalDescription = signalDescription;
 }
 
 SignalData::~SignalData()
@@ -65,12 +47,12 @@ SignalData::~SignalData()
 
 int SignalData::size() const
 {
-  return d_data->values.size();
+  return d_data->xvalues.size();
 }
 
 QPointF SignalData::value(int index) const
 {
-  return d_data->values[index];
+  return QPointF(d_data->xvalues[index], d_data->yvalues[index]);
 }
 
 QRectF SignalData::boundingRect() const
@@ -88,10 +70,11 @@ void SignalData::unlock()
   d_data->mutex.unlock();
 }
 
-void SignalData::append(const QPointF &sample)
+void SignalData::appendSample(double x, double y)
 {
   d_data->mutex.lock();
-  d_data->pendingValues += sample;
+  d_data->pendingxvalues.append(x);
+  d_data->pendingyvalues.append(y);
   d_data->fpsCounter.update();
   d_data->mutex.unlock();
 }
@@ -116,43 +99,51 @@ double SignalData::messageFrequency() const
 
 void SignalData::updateValues()
 {
+  QVector<double>& xvalues = d_data->xvalues;
+  QVector<double>& yvalues = d_data->yvalues;
+
   d_data->mutex.lock();
-  d_data->values += d_data->pendingValues;
-  d_data->pendingValues.clear();
+  xvalues += d_data->pendingxvalues;
+  yvalues += d_data->pendingyvalues;
+  d_data->pendingxvalues.clear();
+  d_data->pendingyvalues.clear();
   d_data->mutex.unlock();
 
-  if (!d_data->values.size())
+  if (!xvalues.size())
   {
     return;
   }
 
   // All values that are older than 60 seconds will expire
-  float expireTime = d_data->values.back().x() - 60;
+  float expireTime = xvalues.back() - 60;
 
-  QVector<QPointF>::iterator itr = d_data->values.begin();
-  while (itr != d_data->values.end() && itr->x() < expireTime)
+  int idx = 0;
+  while (idx < xvalues.size() && xvalues[idx] < expireTime)
   {
-    ++itr;
+    ++idx;
   }
 
   // if itr == begin(), then no values will be erased
-  d_data->values.erase(d_data->values.begin(), itr);
+  xvalues.erase(xvalues.begin(), xvalues.begin()+idx);
+  yvalues.erase(yvalues.begin(), yvalues.begin()+idx);
 
 
   // recompute bounding rect
-  if (d_data->values.size() > 1)
+  if (xvalues.size() > 1)
   {
-    d_data->boundingRect.setLeft(d_data->values.front().x());
-    d_data->boundingRect.setRight(d_data->values.back().x());
+    d_data->boundingRect.setLeft(xvalues.front());
+    d_data->boundingRect.setRight(xvalues.back());
 
-    double minY, maxY = d_data->values.front().y();
-    foreach (const QPointF& point, d_data->values)
+    double minY, maxY = yvalues.front();
+    for (int i = 0; i < yvalues.size(); ++i)
     {
-      if (point.y() < minY)
-        minY = point.y();
+      double sampleY = yvalues[idx];
 
-      if (point.y() > maxY)
-        maxY = point.y();
+      if (sampleY < minY)
+        minY = sampleY;
+
+      if (sampleY > maxY)
+        maxY = sampleY;
     }
 
     d_data->boundingRect.setTop(maxY);
@@ -162,4 +153,5 @@ void SignalData::updateValues()
   {
     d_data->boundingRect = QRectF();
   }
+
 }

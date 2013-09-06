@@ -350,7 +350,7 @@ SignalHandler::SignalHandler(SignalDescription* signalDescription)
 {
   assert(signalDescription != 0);
   mDescription = *signalDescription;
-  mSignalData = new SignalData;
+  mSignalData = new SignalData(signalDescription);
   mSubscription = 0;
 }
 
@@ -368,8 +368,7 @@ void SignalHandler::handleRobotStateMessage(const lcm::ReceiveBuffer* rbuf, cons
   bool valid = this->extractSignalData(rbuf, timeNow, signalValue);
   if (valid)
   {
-    const QPointF s(timeNow, signalValue);
-    mSignalData->append(s);
+    mSignalData->appendSample(timeNow, signalValue);
   }
   else
   {

@@ -28,7 +28,7 @@ class SignalHandler : public QObject
 public:
 
   SignalHandler(SignalDescription* signalDescription);
-  ~SignalHandler();
+  virtual ~SignalHandler();
 
   SignalData* signalData()
   {

@@ -21,6 +21,13 @@ public:
   QColor mColor;
   QList<QString> mArrayKeys;
 
+  QString descriptionString()
+  {
+    QStringList args;
+    args << mChannel << mMessageType << mFieldName << mArrayKeys;
+    return args.join(".");
+  }
+
  protected:
 
 };

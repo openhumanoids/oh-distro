@@ -3,14 +3,16 @@
 
 #include <qrect.h>
 
+class SignalDescription;
+
 class SignalData
 {
 public:
 
-    SignalData();
+    SignalData(SignalDescription* signalDescription);
     virtual ~SignalData();
 
-    void append(const QPointF &pos);
+    void appendSample(double x, double y);
     void updateValues();
 
     int size() const;
