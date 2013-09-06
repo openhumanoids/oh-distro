@@ -696,7 +696,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
                                                 1, 20, 0.5, 5);                                     
    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                0.5, 5, 0.5, 2);     
+                                                1,30, 1, 5);     
    /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
