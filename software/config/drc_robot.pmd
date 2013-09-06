@@ -101,6 +101,10 @@ group "a.1.core" {
         exec = "drc-lidar-passthrough -c 0.1";
         host = "extra";
     }
+    cmd "image-tx" {
+        exec = "drc-image-transmit";
+        host = "extra";
+    }
     cmd "data-request-server" {
         exec = "data-request-server";
         host = "extra";
@@ -121,6 +125,46 @@ group "a.2.manip" {
        host = "extra";
     }     
 }
+
+group "b.1.core" {
+    cmd "base_viewer" {
+        exec = "drc-viewer  -r base -c vrc_robot.cfg"; 
+        host = "base";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
+        host = "base";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "base";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base -g";
+        host = "base";
+    }
+    cmd "param_server" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        host = "base";
+    }
+    cmd "est_rsp_base" {
+        exec = "est_robot_state_publisher -g";
+        host = "base";
+    }
+    cmd "image-rx" {
+        exec = "drc-image-receive";
+        host = "base";
+    }
+    cmd "lcm-logger-base" {
+        exec = "lcm-logger  -f $DRC_BASE/data/latest_base_log.lcm";
+        host = "base";
+    }
+    cmd "drc-log-vrcscore"{
+        exec = "drc-log-vrcscore";
+        host = "base";
+    }
+}
+
 
 group "b.2.walking" {
     cmd "FootstepPlanner" {
