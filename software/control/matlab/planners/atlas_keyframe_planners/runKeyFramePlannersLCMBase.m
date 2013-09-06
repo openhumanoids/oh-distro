@@ -1,4 +1,4 @@
-function runKeyFramePlannersLCMBASE(hardware_mode) % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+function runKeyFramePlannersLCMBase(hardware_mode) % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 
 options.floating = true;
 options.dt = 0.001;
