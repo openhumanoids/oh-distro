@@ -12,7 +12,7 @@ using namespace std;
 /////////////////////////////////////
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, 
-                       bool bdi_motion_estimate_, bool simulation_mode):
+                       bool bdi_motion_estimate_, bool simulation_mode_):
    lcm_(lcm_), standalone_head_(standalone_head_),
    is_sandia_left_(false),is_sandia_right_(false),	
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_){
