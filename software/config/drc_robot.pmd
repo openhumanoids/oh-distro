@@ -15,36 +15,28 @@ group "0.development" {
 group "a.0.drivers" {
     cmd "sa-left" {
         exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270";
-        host = "robot";
+        host = "extra";
     }
     cmd "sa-right" {
         exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
-        host = "robot";
+        host = "extra";
     }
     cmd "rearcam" {
         exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
-        host = "robot";
+        host = "extra";
     }
     cmd "multisense" {
-        exec = "roslaunch multisense_bringup multisense.launch";
-        host = "localhost";
-    }
-    cmd "ms-subscribe" {
-        exec = "rosrun multisense_command multisense_subscribe -d";
-        host = "localhost";
-    }
-    cmd "ms-command" {
-        exec = "rosrun multisense_command multisense_command";
-        host = "localhost";
+        exec = "drc-multisense";
+        host = "extra";
     }
     cmd "atlas-off" {
         exec = "drc-atlas -p off";
-        host = "localhost";
+        host = "robot";
     }
     cmd "logger-robot" {
         exec = "drc-lcm-logger.sh";
         host = "robot";
-    }  
+    }
 }
 
 
@@ -170,11 +162,11 @@ group "m.control" {
 group "m.perception" {
     cmd "ms-reconfig" {
         exec = "rosrun dynamic_reconfigure reconfigure_gui";
-        host = "localhost";
+        host = "extra";
     }
     cmd "vicon" {
         exec = "vicon-client 192.168.10.1";
-        host = "localhost";
+        host = "extra";
     }
     cmd "ipwebcam" {
         exec = "ipwebcam -f 10 -q 90 -c IPWEBCAM -u http://admin:@192.168.0.20/video2.mjpg";
@@ -183,6 +175,19 @@ group "m.perception" {
     cmd "webcam" {
         exec = "camview -c webcam.camview";
         host = "robot";
+    }
+
+    cmd "multisense-ros" {
+        exec = "roslaunch multisense_bringup multisense.launch";
+        host = "extra";
+    }
+    cmd "ms-subscribe" {
+        exec = "rosrun multisense_command multisense_subscribe -d";
+        host = "extra";
+    }
+    cmd "ms-command" {
+        exec = "rosrun multisense_command multisense_command";
+        host = "extra";
     }
 
 }
@@ -195,7 +200,7 @@ group "m.hands" {
     cmd "irobot_hand_eigen_grasps" {
         exec = "rosrun handle_launch power_grasp_keyboard_teleop.py";
         host = "base";
-    }    
+    }
 }
 
 #################################################################
