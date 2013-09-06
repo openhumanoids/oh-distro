@@ -29,8 +29,7 @@ min_hold_time = 0.1; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 1; % rad/s
 
-unwrapped = unwrap([last_pos(6), next_pos(6)]);
-next_pos(6) = unwrapped(2);
+next_pos(6) = last_pos(6) + angleDiff(last_pos(6), next_pos(6));
 
 swing_angle = atan2(next_pos(2) - last_pos(2), next_pos(1) - last_pos(1));
 phi.last = last_pos(6) - swing_angle;
