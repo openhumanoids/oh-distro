@@ -257,21 +257,11 @@ script "prep_no_hands" {
     start cmd "atlas-off";
     start cmd "logger-robot";
     start cmd "multisense";
-    start cmd "ms-subscribe";
-    start cmd "ms-command";
 }
 
-script "prep_sandia_hands" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "b.2.walking";
-    start group "b.3.manip";
+script "prep_sandia_hands" {
+    run_script "prep_no_hands";
     start cmd "SandiaGraspController";
-    start cmd "atlas-off";
-    start cmd "logger-robot";
-    start cmd "multisense";
-    start cmd "ms-subscribe";
-    start cmd "ms-command";
     start cmd "aa-ros2lcm-hands";
     start cmd "sandia-left";
     start cmd "sandia-right";
