@@ -96,129 +96,26 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
 
-
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitStringCodec, google::protobuf::FieldDescriptor::TYPE_STRING>("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::int32> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::int64> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::uint32> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::uint64> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<float> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<double> >("presence_bit");
+    goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitEnumFieldCodec>("presence_bit");
+    
     // mfallon, sept 2013
     bool disable_custom_codecs = true;
     if (!disable_custom_codecs){    
-        custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
-        custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
-
-        //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
-
-        const std::string& ers_channel = "EST_ROBOT_STATE";
-        custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
-        custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
-
-    
-        const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
-        custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
-        custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
-
-        const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
-        custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
-        custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
-
-    
-        const std::string& grasp_channel = "COMMITTED_GRASP";
-        custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
-        custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
-
-
-        const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
-        custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
-        custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
+        load_custom_codecs();
     }
+
     
     dccl_->validate<drc::ShaperHeader>();
     
     goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << *dccl_ << std::endl;
 
-    // test pmd info diff
-    {
-        drc::PMDInfoDiff diff, diff_out;
-        diff.set_reference_time(243);
-        diff.set_utime(6000000);
-
-        drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
-        diff_cmd->set_name("FOO");
-        diff_cmd->set_group("BAR");
-        diff_cmd->set_pid(263);
-        diff_cmd->set_auto_respawn(false);
-
-
-        diff.set_ncmds(diff.cmds_size());
-        
-        std::string bytes;
-        dccl_->encode(&bytes, diff);
-
-        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
-        dccl_->decode(bytes, &diff_out);
-
-//        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
-        assert(diff.SerializeAsString() == diff_out.SerializeAsString());
-
-    }
-        
-
-    // test minimal robot state
-    {
-        drc::MinimalRobotPlan plan, plan_out;
-        plan.set_utime(6000000);
-
-        plan.mutable_goal()->set_utime(0);
-        drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
-        drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
-
-        translation->set_x(23);
-        translation->set_y(50);
-        translation->set_z(8.4);
-
-        rotation->set_x(0);
-        rotation->set_y(1);
-        rotation->set_z(0);
-        rotation->set_w(0);
-
-
-        plan.mutable_goal_diff()->add_utime_diff(100);
-        plan.mutable_goal_diff()->add_utime_diff(200);
-        plan.mutable_goal_diff()->add_utime_diff(300);
-        drc::TranslationVectorDiff* trans_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_translation_diff();
-        drc::RotationQuaternionDiff* rot_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_rotation_diff();
-        
-
-        trans_diff->add_dx(0.1);
-        trans_diff->add_dy(0.2);
-        trans_diff->add_dz(0.01);
-
-        rot_diff->add_dx(0);
-        rot_diff->add_dy(1);
-        rot_diff->add_dz(0);
-        rot_diff->add_dw(0);
-
-        
-        plan.set_num_grasp_transitions(0);
-        plan.set_left_arm_control_type(1);
-        plan.set_left_leg_control_type(2);
-        plan.set_right_arm_control_type(4);
-        plan.set_right_leg_control_type(0);
-
-        plan.set_aff_num_states(0);
-        
-//        std::cout << plan.DebugString() << std::endl;
-        
-        std::string bytes;
-        dccl_->encode(&bytes, plan);
-        
-        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotPlan>();
-        dccl_->decode(bytes, &plan_out);
-
-        while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
-            plan_out.mutable_grasp()->RemoveLast();
-        
-//        std::cout << plan_out.DebugString() << std::endl;
-        assert(plan.SerializeAsString() == plan_out.SerializeAsString());
-    }
-        
 
     
     
@@ -839,4 +736,121 @@ void DRCShaper::run()
 int64_t KMCLApp::get_current_utime()
 {
     return goby::common::goby_time<goby::uint64>();
+}
+
+void DRCShaper::load_custom_codecs()
+{
+    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node_))));
+    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node_))));
+
+    //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
+
+    const std::string& ers_channel = "EST_ROBOT_STATE";
+    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
+    custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
+
+    
+    const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
+    custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
+    custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
+
+    const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
+    custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
+
+    
+    const std::string& grasp_channel = "COMMITTED_GRASP";
+    custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
+
+
+    const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
+    custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
+
+    // test pmd info diff
+    {
+        drc::PMDInfoDiff diff, diff_out;
+        diff.set_reference_time(243);
+        diff.set_utime(6000000);
+            
+        drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
+        diff_cmd->set_name("FOO");
+        diff_cmd->set_group("BAR");
+        diff_cmd->set_pid(263);
+        diff_cmd->set_auto_respawn(false);
+            
+            
+        diff.set_ncmds(diff.cmds_size());
+            
+        std::string bytes;
+        dccl_->encode(&bytes, diff);
+            
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
+        dccl_->decode(bytes, &diff_out);
+            
+//        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
+        assert(diff.SerializeAsString() == diff_out.SerializeAsString());
+            
+    }
+        
+        
+        // test minimal robot state
+    {
+        drc::MinimalRobotPlan plan, plan_out;
+        plan.set_utime(6000000);
+            
+        plan.mutable_goal()->set_utime(0);
+        drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
+        drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
+
+        translation->set_x(23);
+        translation->set_y(50);
+        translation->set_z(8.4);
+
+        rotation->set_x(0);
+        rotation->set_y(1);
+        rotation->set_z(0);
+        rotation->set_w(0);
+
+
+        plan.mutable_goal_diff()->add_utime_diff(100);
+        plan.mutable_goal_diff()->add_utime_diff(200);
+        plan.mutable_goal_diff()->add_utime_diff(300);
+        drc::TranslationVectorDiff* trans_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_translation_diff();
+        drc::RotationQuaternionDiff* rot_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_rotation_diff();
+        
+
+        trans_diff->add_dx(0.1);
+        trans_diff->add_dy(0.2);
+        trans_diff->add_dz(0.01);
+
+        rot_diff->add_dx(0);
+        rot_diff->add_dy(1);
+        rot_diff->add_dz(0);
+        rot_diff->add_dw(0);
+
+        
+        plan.set_num_grasp_transitions(0);
+        plan.set_left_arm_control_type(1);
+        plan.set_left_leg_control_type(2);
+        plan.set_right_arm_control_type(4);
+        plan.set_right_leg_control_type(0);
+
+        plan.set_aff_num_states(0);
+        
+//        std::cout << plan.DebugString() << std::endl;
+        
+        std::string bytes;
+        dccl_->encode(&bytes, plan);
+        
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotPlan>();
+        dccl_->decode(bytes, &plan_out);
+
+        while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
+            plan_out.mutable_grasp()->RemoveLast();
+        
+//        std::cout << plan_out.DebugString() << std::endl;
+        assert(plan.SerializeAsString() == plan_out.SerializeAsString());
+    }
 }

@@ -134,6 +134,8 @@ class DRCShaper
 
     void post_bw_stats();
 
+    void load_custom_codecs();
+    
     friend void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
   private:
     KMCLApp& app_;
