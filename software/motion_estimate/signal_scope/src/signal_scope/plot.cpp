@@ -301,6 +301,8 @@ void Plot::timerEvent(QTimerEvent *event)
 {
   if ( event->timerId() == d_timerId )
   {
+    this->fpsCounter.update();
+    //printf("plot fps: %f\n", this->fpsCounter.averageFPS());
 
     if (!mSignals.size())
     {

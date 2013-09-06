@@ -1,6 +1,8 @@
 #ifndef _PLOT_H_
 #define _PLOT_H_
 
+#include "fpscounter.h"
+
 #include <qwt_plot.h>
 #include <qwt_interval.h>
 #include <qwt_system_clock.h>
@@ -47,6 +49,9 @@ private:
     int d_timerId;
 
     QMap<SignalData*, QwtPlotCurve*> mSignals;
+
+    FPSCounter fpsCounter;
+
 };
 
 #endif
