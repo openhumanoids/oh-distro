@@ -24,7 +24,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "aa-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -s";
         host = "robot";
     }
     cmd "drc-printf-cache" {
