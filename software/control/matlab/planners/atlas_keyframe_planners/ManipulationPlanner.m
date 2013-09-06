@@ -20,9 +20,9 @@ classdef ManipulationPlanner < KeyframePlanner
             
             obj.plan_cache.num_breaks = 4;
             if(obj.isSimMode())
-              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds
             else
-              obj.plan_cache.v_desired = 0.02; % 2cm/sec seconds, hard coded for now
+              obj.plan_cache.v_desired = 0.05; % 5cm/sec seconds
             end
             
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
@@ -597,8 +597,14 @@ classdef ManipulationPlanner < KeyframePlanner
                 s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
                 s_total = max(s_total,0.01);
                 
-                ts = s.*(s_total/obj.plan_cache.v_desired); % plan timesteps
-                obj.plan_cache.time_2_index_scale = (obj.plan_cache.v_desired/s_total);
+                
+                
+                dqtraj=fnder(obj.plan_cache.qtraj,1); 
+                sfine = linspace(s(1),s(end),50);
+                Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
+                Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+                ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+                obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
                 brkpts =logical(zeros(1,length(timeIndices))==1);
                 if(~isempty(postureconstraint))
                     timetags = [postureconstraint.utime];

@@ -64,7 +64,12 @@ classdef KeyframePlanner < handle
         
         function setVDesired(obj,val)
             obj.plan_cache.v_desired  = val;
+        end   
+
+        function setQdotDesired(obj,val)
+            obj.plan_cache.qdot_desired  = val;
         end       
+                    
         
         function setHardwareMode(obj,mode)
             obj.hardware_mode = mode;

@@ -1,11 +1,11 @@
-classdef DesiredArcSpeedListener
+classdef DesiredSpeedListener
     properties
         lc
         aggregator
     end
     
     methods
-        function obj = DesiredArcSpeedListener(channel)
+        function obj = DesiredSpeedListener(channel)
             obj.lc = lcm.lcm.LCM.getSingleton();
             obj.aggregator = lcm.lcm.MessageAggregator();
             obj.lc.subscribe(channel, obj.aggregator);
@@ -16,7 +16,7 @@ classdef DesiredArcSpeedListener
             if isempty(des_speed_msg)
                 X = [];
             else
-                [X] = DesiredArcSpeedListener.decode(drc.plan_execution_arc_speed_t(des_speed_msg.data));
+                [X] = DesiredSpeedListener.decode(drc.plan_execution_speed_t(des_speed_msg.data));
             end
         end
         

@@ -28,7 +28,8 @@ rfoot_pts = getContactPoints(getBody(r,rfoot));
 lfoot_pts = getContactPoints(getBody(r,lfoot));
 rf_ee = EndEffectorListener('R_FOOT_GOAL');
 lf_ee = EndEffectorListener('L_FOOT_GOAL');
-des_speed_listener =DesiredArcSpeedListener('DESIRED_EE_SPEED');
+des_arc_speed_listener =DesiredSpeedListener('DESIRED_EE_ARC_SPEED');
+des_joint_speed_listener =DesiredSpeedListener('DESIRED_JOINT_SPEED');
 
 h_ee = EndEffectorListener('HEAD_GOAL');
 h_ee_clear = EndEffectorListener('HEAD_GOAL_CLEAR');
@@ -558,8 +559,8 @@ while(1)
     disp('A stored plan was loaded, updating plan cache in keyframe adjustment engine.');
     keyframe_adjustment_engine.setCacheViaPlanMsg(X,T,G,L);
   end
-  
-  X = des_speed_listener.getNextMessage(msg_timeout);
+
+  X = des_arc_speed_listener.getNextMessage(msg_timeout);
   if (~isempty(X))
         send_status(3,0,0,'KeyframePlanners:  desired arc speed was set');
      reaching_planner.setVDesired(X.speed);
@@ -568,6 +569,16 @@ while(1)
      endpose_planner.setVDesired(X.speed);
      wholebody_planner.setVDesired(X.speed);
   end
+  
+  X = des_joint_speed_listener.getNextMessage(msg_timeout);
+  if (~isempty(X))
+        send_status(3,0,0,'KeyframePlanners:  desired joint speed was set');
+     reaching_planner.setQdotDesired(X.speed);
+     manip_planner.setQdotDesired(X.speed);
+     posture_planner.setQdotDesired(X.speed);
+     endpose_planner.setQdotDesired(X.speed);
+     wholebody_planner.setQdotDesired(X.speed);
+  end  
     
   p = getNextMessage (h_ee_clear, msg_timeout);
   if (~isempty(p))

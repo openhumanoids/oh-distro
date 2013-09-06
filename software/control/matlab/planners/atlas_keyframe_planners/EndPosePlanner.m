@@ -18,9 +18,9 @@ classdef EndPosePlanner < KeyframePlanner
             
             obj.plan_cache.num_breaks = 1;
             if(obj.isSimMode())
-              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds, hard coded for now
+              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds
             else
-              obj.plan_cache.v_desired = 0.02; % 2cm/sec seconds, hard coded for now
+              obj.plan_cache.v_desired = 0.05; % 5cm/sec seconds
             end
             % Caches a Redundant two element plan.
             % Flag indicates KeyframeAdjustmentEngine to

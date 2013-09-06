@@ -34,8 +34,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
             
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
-            obj.plan_cache.time_2_index_scale = 1;
-            obj.plan_cache.v_desired = 0.1;
             obj.plan_cache.ks = ActionSequence(); % Plan Boundary Conditions
             s_breaks = linspace(0,1,length(find(logictraj(1,:)==1)));%ts(find(logictraj(1,:)==1));
             obj.plan_cache.s_breaks = s_breaks;
@@ -87,8 +85,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
 %           s_total = max(max(s_total_lh,s_total_rh),s_total_head);
             s_total = max(s_total,0.01);
-            ts = s.*(s_total/obj.plan_cache.v_desired); % plan timesteps
-            obj.plan_cache.time_2_index_scale = (obj.plan_cache.v_desired/s_total);            
+            
+            dqtraj=fnder(obj.plan_cache.qtraj,1); 
+            sfine = linspace(s(1),s(end),50);
+            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
+            Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+            ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+            obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));          
         end
         
         
@@ -432,8 +435,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
             
             
-            ts = s.*(s_total/obj.plan_cache.v_desired); % plan timesteps
-            obj.plan_cache.time_2_index_scale = (obj.plan_cache.v_desired/s_total);
+            dqtraj=fnder(obj.plan_cache.qtraj,1); 
+            sfine = linspace(s(1),s(end),50);
+            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
+            Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+            ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+            obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
+            
             utime = now() * 24 * 60 * 60;
             if(~obj.plan_cache.isEndPose)
                 obj.plan_pub.publish(xtraj,ts,utime);
