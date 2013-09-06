@@ -33,8 +33,8 @@
 #define PARAM_SSE_KP_RIGHT "Kp_R"  
 #define PARAM_SSE_KD_RIGHT "Kd_R"
 #define PARAM_MANIP_PLAN_MODE "ManipPlnr Mode"
-#define PARAM_EXEC_SPEED "EE Speed (m/s)"
-
+#define PARAM_EXEC_SPEED "EE Speed Limit(cm/s)"
+#define PARAM_EXEC_ANG_SPEED "Joint Speed Limit(deg/s)"
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
@@ -584,10 +584,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
   }
   else if(!strcmp(name,  PARAM_EXEC_SPEED)){ 
-    drc::plan_execution_arc_speed_t msg;
+    drc::plan_execution_speed_t msg;
     msg.utime = bot_timestamp_now();
-    msg.speed = bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);
-    self->lcm->publish("DESIRED_EE_SPEED", &msg);
+    msg.speed = (0.01)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);//pub in m/s; converting from cm/s
+    self->lcm->publish("DESIRED_EE_ARC_SPEED", &msg);
+  }
+  else if(!strcmp(name,  PARAM_EXEC_ANG_SPEED)){ 
+    drc::plan_execution_speed_t msg;
+    msg.utime = bot_timestamp_now();
+    msg.speed = (M_PI/180)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_ANG_SPEED); //pub in rads/s; converting from deg/s
+    self->lcm->publish("DESIRED_JOINT_SPEED", &msg);
   }
   else if(!strcmp(name,PARAM_SSE_KP_LEFT)){
     double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
@@ -688,8 +694,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                         "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
                                         
    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                0.01, 0.2, 0.005, 0.02);                                     
-    
+                                                1, 20, 0.5, 5);                                     
+   bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                0.5, 5, 0.5, 2);     
    /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
     bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 

@@ -5,7 +5,7 @@ package drc;
 // drc_twist_t is not to be used on its own
 // instead use drc_twist_timed_t.lcm
 
-struct plan_execution_arc_speed_t
+struct plan_execution_speed_t
 {
    int64_t utime;
    double speed;
