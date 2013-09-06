@@ -115,6 +115,17 @@ classdef DRCPlanner < handle
     function runParallel(obj,num_jobs)
       % todo: implement this 
     end
+
+    function t = getLastTimestamp(obj, n)
+      if nargin < 2
+        t = -inf;
+        for j = 1:length(obj.monitors)
+          t = max([t, getLastTimestamp(obj.monitors{j})]);
+        end
+      else
+        t = getLastTimestamp(obj.monitors{n});
+      end
+    end
   end
   
   methods (Static=true)
