@@ -55,7 +55,9 @@ classdef AtlasManipController < DRCController
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
-          qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+          % smooth transition from end of previous trajectory
+          qprev_end = fasteval(obj.controller_data.data.qtraj,obj.controller_data.data.qtraj.tspan(end));
+          qtraj = PPTrajectory(spline([0 0.25+ts],[qprev_end xtraj(1:getNumDOF(obj.robot),:)]));
           obj.controller_data.setField('qtraj',qtraj);
         catch err
           r = obj.robot;
