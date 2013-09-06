@@ -54,6 +54,10 @@ using namespace boost::assign; // bring 'operator+()' into scope
 // set all unlikely returns to this range (same range is produced by real sensor)
 #define MAX_RANGE 60.0
 
+#define INTENSITY_FILTER_MIN_VALUE 2000
+#define INTENSITY_FILTER_MIN_RANGE 2 // meters
+#define EDGE_FILTER_MIN_RANGE 2 // meters
+
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
@@ -249,7 +253,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     // NB: These filters are not compatable with Gazebo Simulation output NBNBNB
     if (!simulated_data_){
       // heuristic filtering of the weak intensity lidar returns
-      if (( lidar_msgout_.intensities[j] < 2000 ) && ( original_ranges[j] < 2) ){
+      if (( lidar_msgout_.intensities[j] < INTENSITY_FILTER_MIN_VALUE ) && ( original_ranges[j] < INTENSITY_FILTER_MIN_RANGE) ){
         lidar_msgout_.ranges[j] = MAX_RANGE;
       }
       
@@ -259,7 +263,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
         float left_diff = fabs(original_ranges[j] - original_ranges[j+1]);
         if (( right_diff > delta_threshold_) || (left_diff > delta_threshold_ )){
           // cout << i<< ": " << right_diff << " and " << left_diff <<"\n";
-          if (original_ranges[j] < 2){
+          if (original_ranges[j] < EDGE_FILTER_MIN_RANGE){
             lidar_msgout_.ranges[j] = MAX_RANGE;
           }
         }
