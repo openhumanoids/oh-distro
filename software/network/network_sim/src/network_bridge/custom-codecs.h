@@ -216,20 +216,8 @@ class CustomChannelCodec
     CustomChannelCodec(const std::string loopback_channel = "")
         : loopback_channel_(loopback_channel)
     {
-        static bool loaded_codecs = false;
-        if(!loaded_codecs)
-        {
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitStringCodec, google::protobuf::FieldDescriptor::TYPE_STRING>("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::int32> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::int64> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::uint32> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::uint64> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<float> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<double> >("presence_bit");
-            goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitEnumFieldCodec>("presence_bit");
                 
-            loaded_codecs = true;
-        }
+
     }
     virtual ~CustomChannelCodec() { }
     
