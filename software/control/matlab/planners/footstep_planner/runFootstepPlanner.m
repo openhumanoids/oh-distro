@@ -10,6 +10,6 @@ r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'
 r = compile(r);
 
 p = FootstepPlanner(r);
-p.run()
+p.run(0.25)
 
 end

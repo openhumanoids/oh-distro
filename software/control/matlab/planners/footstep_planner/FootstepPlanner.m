@@ -120,7 +120,7 @@ classdef FootstepPlanner < DRCPlanner
           publish(Xout);
           % profile viewer
         else
-          pause(1)
+          pause(0.25)
         end
       end
 
