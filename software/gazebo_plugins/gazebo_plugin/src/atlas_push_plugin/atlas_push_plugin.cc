@@ -14,16 +14,18 @@ namespace gazebo
 		public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 		{
 			this->model = _parent;
+			this->world = _parent->GetWorld();
 
-			this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&AtlasPushPlugin::OnUpdate, this, _1));
+			this->updateConnection = event::Events::ConnectWorldUpdateStart(boost::bind(&AtlasPushPlugin::OnUpdate, this));
 			this->push_end = 0;
 			this->current_time = 0;
 			this->callback_queue_thread = boost::thread(boost::bind(&AtlasPushPlugin::QueueThread, this));
 		}
 
-		public: void OnUpdate(const common::UpdateInfo & _info)
+		public: void OnUpdate()
 		{
-			this->current_time = _info.simTime.Double();
+			this->current_time = this->world->GetSimTime().Double();
+			// this->current_time = _info.simTime.Double();
 			if (this->push_end > this->current_time) {
 				this->model->SetLinearVel(this->velocity);
 				// gzerr << "Trying to set linear vel" << std::endl;
@@ -57,6 +59,7 @@ namespace gazebo
 
 		private: 
 			physics::ModelPtr model;
+			physics::WorldPtr world;
 			math::Vector3 velocity;
 		    double push_end;
 		    double current_time;
