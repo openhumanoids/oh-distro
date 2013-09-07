@@ -1216,7 +1216,7 @@ namespace renderer_affordances_gui_utils
     //cout <<self->selection << endl; // otdf_type::geom_name
     GtkWidget * param_adjust_pane =  gtk_expander_new("Post-fitting adjust");
     gtk_container_add (GTK_CONTAINER (param_adjust_pane), GTK_WIDGET( pw));    
-    gtk_expander_set_expanded(GTK_EXPANDER(param_adjust_pane),(gboolean) TRUE);
+    gtk_expander_set_expanded(GTK_EXPANDER(param_adjust_pane),(gboolean) FALSE);
     
     GtkWidget * ee_seeds_pane =  gtk_expander_new("Seed Management");
     gtk_container_add (GTK_CONTAINER (ee_seeds_pane), GTK_WIDGET( ee_seeds_pw));
@@ -1228,7 +1228,7 @@ namespace renderer_affordances_gui_utils
     
     GtkWidget * get_plan_pane =  gtk_expander_new("Get Manip Plan/Map");
     gtk_container_add (GTK_CONTAINER (get_plan_pane), GTK_WIDGET( get_plan_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) TRUE);
+    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) FALSE);
     
     GtkWidget * mating_pane =  gtk_expander_new("Mating");
     gtk_container_add (GTK_CONTAINER (mating_pane), GTK_WIDGET( mating_pw));
