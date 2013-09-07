@@ -80,4 +80,11 @@
     <plan_seed name="2013-09-04-20-08::lhnd_chest_ht_60deg_new" />
     <plan_seed name="2013-09-04-20-15::lhnd_chest_ht_90deg_new" />
     <plan_seed name="2013-09-04-20-10::lhnd_chest_ht_100deg_new" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="2.677 -0.0630813 3.08602" xyz="-0.176896 -0.025568 0.101095" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0143096 1.53678 1.24015 -0.0133445 1.43154 1.11269 0.0138065 1.32104 1.06616 0.0547879 0.686075 -0.0117729 " />
+    </grasp_seed>
 </object>
