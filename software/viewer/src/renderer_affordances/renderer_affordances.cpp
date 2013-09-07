@@ -16,6 +16,7 @@
 #define GEOM_EPSILON 1e-9
 #define PARAM_COLOR_ALPHA "Alpha"
 #define PARAM_DEBUG_MODE "Local Aff Store (Debug Only)"
+#define PARAM_GRASP_OPT_MODE "GraspOpt Mode"
 
 using namespace std;
 using namespace boost;
@@ -958,6 +959,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         self->debugMode = bot_gtk_param_widget_get_bool(pw, PARAM_DEBUG_MODE);
         bot_viewer_request_redraw(self->viewer);  
     }
+   else if(! strcmp(name, PARAM_GRASP_OPT_MODE)){
+    drc::grasp_opt_mode_t msg;
+    msg.utime = self->last_state_msg_timestamp;
+    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_GRASP_OPT_MODE);
+    self->lcm->publish("GRASP_OPT_MODE_CONTROL", &msg);
+  }
    
 
 
@@ -1140,6 +1147,9 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
                                     self->num_urdfs,
                                     (const char **)  self->urdf_names,
                                     self->urdf_nums); 
+   bot_gtk_param_widget_add_enum(self->pw, PARAM_GRASP_OPT_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::grasp_opt_mode_t::OPT_ON, 
+                                   "OptOn", drc::grasp_opt_mode_t::OPT_ON,
+                                   "OptOff", drc::grasp_opt_mode_t::OPT_OFF, NULL);                                 
   
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);

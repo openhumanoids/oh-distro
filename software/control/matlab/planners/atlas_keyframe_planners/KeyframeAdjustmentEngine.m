@@ -31,6 +31,31 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
         
+        function adjustCachedPlanToCurrentPelvisPose(obj,x0)
+            rh_ee_constraint= [];
+            lh_ee_constraint= [];
+            rf_ee_constraint= [];
+            lf_ee_constraint= [];
+            h_ee_constraint = [];
+            goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+            goal_type_flags.rh = 0;
+            goal_type_flags.h  = 0;
+            goal_type_flags.lf = 0;
+            goal_type_flags.rf = 0;
+            
+            % delete all pelvis constraints
+            % Add the new pelvis constraint for all of time.
+            q0 = x0(1:getNumDOF(obj.r));
+            kinsol_tmp = doKinematics(obj.r,q0);
+            pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
+             % delete old and add new
+            if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
+                obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,'pelvis');
+            end
+            obj.cachePelvisPose([0 1],'pelvis',pelvis_pose);
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
+        end
+        
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
             
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
@@ -56,7 +81,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
                 lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
-                if((brk==1)||brk==length(s_breaks))
+                %if((brk==1)||brk==length(s_breaks))
                     Tag =    num2str(brk-1);
                     if(brk==length(s_breaks))
                         Tag ='T';
@@ -75,7 +100,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                             obj.cachePelvisPose([0 1],'pelvis',pelvis_pose);
                         end
                     end
-               end
+               %end
             end
             s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));

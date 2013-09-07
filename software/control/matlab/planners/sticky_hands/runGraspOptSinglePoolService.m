@@ -37,6 +37,9 @@ setDefaultChannel(grasp_opt_listener,channel);
 grasp_opt_listener.subscribe(channel);
 %defaultChannel(grasp_opt_listener)
 grasp_opt_status_publisher = drc.control.GraspOptStatusPublisher(no_of_workers,'GRASP_OPT_STATUS');
+
+opt_on=true;
+grasp_opt_mode_listener = ManipPlanModeListener('GRASP_OPT_MODE_CONTROL');
 %systime = datenum(clock)/1000;
 grasp_opt_status_publisher.publish(0,matlabpool_id,true); % No simtime available here.
 cnt=0;
@@ -46,6 +49,15 @@ while(1)
     usefingermask = false;
     reset_optimization = false;
     
+    modeset=grasp_opt_mode_listener .getNextMessage(1);
+    if(~isempty(modeset))
+     if(modeset.mode==drc.grasp_opt_mode_t.OPT_ON)
+       opt_on=true
+     elseif(modeset.mode==drc.grasp_opt_mode_t.OPT_OFF)
+       opt_on=false;
+     end
+    end
+  
     [x,ts] = getNextMessage(grasp_opt_listener,1);%getNextMessage(obj,timeout)
     if (~isempty(x))
         grasp_opt_status_publisher.publish(ts,matlabpool_id,false);
@@ -94,8 +106,9 @@ while(1)
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
-            
-            [xstar] = iterativeGraspSearch(r_ls,double(x0));
+            if(opt_on)
+              [xstar] = iterativeGraspSearch(r_ls,double(x0));
+            end
             %[xstar,zstar] = iterativeGraspSearch2(r_ls,double(xstar));
             
         elseif (msg.grasp_type ==msg.SANDIA_RIGHT)
@@ -122,7 +135,10 @@ while(1)
             %rpy(1:3) = quat2angle([qw q1 q2 q3],'XYZ')
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
-            [xstar] = iterativeGraspSearch(r_rs,double(x0));
+            
+            if(opt_on)
+              [xstar] = iterativeGraspSearch(r_rs,double(x0));
+            end
             %[xstar,zstar] = iterativeGraspSearch2(r_rs,double(xstar));
             
         elseif(msg.grasp_type ==msg.IROBOT_LEFT)
@@ -153,8 +169,9 @@ while(1)
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
-            
-            [xstar] = iterativeGraspSearch(r_li,double(x0));
+            if(opt_on)
+              [xstar] = iterativeGraspSearch(r_li,double(x0));
+            end
             %[xstar,zstar] = iterativeGraspSearch2(r_li,double(xstar));
             
         elseif (msg.grasp_type ==msg.IROBOT_RIGHT)
@@ -186,7 +203,9 @@ while(1)
             %rpy(1:3) = quat2angle([qw q1 q2 q3],'XYZ')
             %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
-            [xstar] = iterativeGraspSearch(r_ri,double(x0));
+            if(opt_on)
+              [xstar] = iterativeGraspSearch(r_ri,double(x0));
+            end
             %[xstar,zstar] = iterativeGraspSearch2(r_ri,double(xstar)); 
         end
         
@@ -286,7 +305,7 @@ end %end while
         %problem.lb = [max(q0-0.05,obj.manip.joint_limit_min+0.01)];
         %problem.ub = [min(q0+0.05,obj.manip.joint_limit_max-0.01)];
         [problem.lb,problem.ub] = getJointLimits(obj);
-        posbound=0.5;
+        posbound=0.1;
         problem.lb(1)=problem.x0(1)-0.5*posbound;
         problem.lb(2)=problem.x0(2)-0.5*posbound;
         problem.lb(3)=problem.x0(3)-0.5*posbound;
@@ -294,7 +313,7 @@ end %end while
         problem.ub(2)=problem.x0(2)+0.5*posbound;
         problem.ub(3)=problem.x0(3)+0.5*posbound;
         
-        orientationbound=20*(pi/180);%
+        orientationbound=5*(pi/180);%
         problem.lb(4)=problem.x0(4)-orientationbound;
         problem.lb(5)=problem.x0(5)-orientationbound;
         problem.lb(6)=problem.x0(6)-orientationbound;

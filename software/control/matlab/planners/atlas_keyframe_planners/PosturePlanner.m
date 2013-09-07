@@ -16,11 +16,6 @@ classdef PosturePlanner < KeyframePlanner
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);            
             obj.plan_cache.num_breaks = 4;
-            if(obj.isSimMode())
-              obj.plan_cache.v_desired = 0.1; % 10cm/sec seconds
-            else
-              obj.plan_cache.v_desired = 0.05; % 5cm/sec seconds
-            end
         end
         
         function generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)

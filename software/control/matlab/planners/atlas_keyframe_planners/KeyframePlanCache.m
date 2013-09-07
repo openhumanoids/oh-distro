@@ -16,7 +16,7 @@ classdef KeyframePlanCache
             obj.num_breaks = 0;
             obj.time_2_index_scale = 1;
             obj.v_desired = 0.1;%10cm/s
-            obj.qdot_desired = 2*pi/180; %2deg/s
+            obj.qdot_desired = 15*pi/180; %15deg/s
             obj.ks = ActionSequence(); % Plan Boundary Conditions
             obj.s_breaks = [];
             obj.qtraj = [];
