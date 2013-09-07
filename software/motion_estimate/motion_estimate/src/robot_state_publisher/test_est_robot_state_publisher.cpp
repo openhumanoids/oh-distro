@@ -5,10 +5,13 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <time.h>
+#include <algorithm>
 
 #include <urdf/model.h>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+
+using namespace std;
 
 namespace test_est_robot_state_publisher {
   
@@ -38,6 +41,17 @@ void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const
  }//end onMessage
 
 }//end namespace
+
+
+void setJointVal(string jointname,double val,std::vector<std::string> &names,std::vector<float> &values)
+{
+ std::vector<std::string>::const_iterator found;
+ found = std::find(names.begin(), names.end(), jointname);
+ if (found != names.end()) {
+     int index = found - names.begin();
+     values[index] = (float)val;
+  }
+}
 
 int main(int argc, char ** argv)
 {
@@ -77,7 +91,7 @@ int main(int argc, char ** argv)
     
     message.pose.translation.x = 0;
     message.pose.translation.y = 0;
-    message.pose.translation.z = 0;
+    message.pose.translation.z = 0.8875;
     message.pose.rotation.x = 0;
     message.pose.rotation.y = 0;
     message.pose.rotation.z = 0;
@@ -101,7 +115,33 @@ int main(int argc, char ** argv)
       message.joint_velocity.push_back(0);
       message.joint_effort.push_back(0);
     }
+    //atlas bdi fp
+    setJointVal("l_arm_usy",0.2433,message.joint_name,message.joint_position);
+    setJointVal("l_arm_shx",-1.3518,message.joint_name,message.joint_position);
+    setJointVal("l_arm_ely",1.999,message.joint_name,message.joint_position);
+    setJointVal("l_arm_elx",1.0032,message.joint_name,message.joint_position);
+    setJointVal("l_arm_uwy",0.0000,message.joint_name,message.joint_position);
+    setJointVal("l_leg_hpz",0.0004,message.joint_name,message.joint_position);
+    setJointVal("l_leg_hpx",0.0501,message.joint_name,message.joint_position);
+    setJointVal("l_leg_hpy",-0.3754,message.joint_name,message.joint_position);
+    setJointVal("l_leg_kny",0.7603,message.joint_name,message.joint_position);
+    setJointVal("l_leg_aky",-0.3844,message.joint_name,message.joint_position);
+    setJointVal("l_leg_akx",-0.0501,message.joint_name,message.joint_position);
+    setJointVal("l_arm_mwx",0.0006,message.joint_name,message.joint_position);
 
+    setJointVal("r_arm_usy",0.2433,message.joint_name,message.joint_position);
+    setJointVal("r_arm_shx",1.3518,message.joint_name,message.joint_position);
+    setJointVal("r_arm_ely",1.999,message.joint_name,message.joint_position);
+    setJointVal("r_arm_elx",-1.0032,message.joint_name,message.joint_position);
+    setJointVal("r_arm_uwy",0.0000,message.joint_name,message.joint_position);
+    setJointVal("r_leg_hpz",0.0002,message.joint_name,message.joint_position);
+    setJointVal("r_leg_hpx",-0.0502,message.joint_name,message.joint_position);
+    setJointVal("r_leg_hpy",-0.3754,message.joint_name,message.joint_position);
+    setJointVal("r_leg_kny",0.7602,message.joint_name,message.joint_position);
+    setJointVal("r_leg_aky",-0.3843,message.joint_name,message.joint_position);
+    setJointVal("r_leg_akx",0.0502,message.joint_name,message.joint_position);
+    setJointVal("r_arm_mwx",-0.0006,message.joint_name,message.joint_position);
+    
     // Publish
     lcm.publish("EST_ROBOT_STATE", &message);
     
