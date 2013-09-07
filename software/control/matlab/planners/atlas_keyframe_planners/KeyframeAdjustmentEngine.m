@@ -31,7 +31,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
         
-        function adjustCachedPlanToCurrentPelvisPose(obj,x0)
+        function adjustCachedPlanToCurrentPelvisPose(obj,x0,mode)
             rh_ee_constraint= [];
             lh_ee_constraint= [];
             rf_ee_constraint= [];
@@ -48,6 +48,33 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             q0 = x0(1:getNumDOF(obj.r));
             kinsol_tmp = doKinematics(obj.r,q0);
             pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
+            
+            if(mode==drc.plan_adjust_mode_t.LEFT_HAND)
+              obj.removeConstraintsContainingStr('lfoot');
+              obj.removeConstraintsContainingStr('rfoot');
+              obj.removeConstraintsContainingStr('rhand');
+            elseif(mode==drc.plan_adjust_mode_t.RIGHT_HAND)
+              obj.removeConstraintsContainingStr('lfoot');
+              obj.removeConstraintsContainingStr('rfoot');
+              obj.removeConstraintsContainingStr('lhand');
+            elseif(mode==drc.plan_adjust_mode_t.BOTH_HANDS)
+              obj.removeConstraintsContainingStr('lfoot');
+              obj.removeConstraintsContainingStr('rfoot');
+            elseif(mode==drc.plan_adjust_mode_t.LEFT_FOOT)
+              obj.removeConstraintsContainingStr('lhand');
+              obj.removeConstraintsContainingStr('rhand');
+              obj.removeConstraintsContainingStr('rfoot');
+            elseif(mode==drc.plan_adjust_mode_t.RIGHT_FOOT)
+              obj.removeConstraintsContainingStr('lhand');
+              obj.removeConstraintsContainingStr('rhand');
+              obj.removeConstraintsContainingStr('lfoot');
+            elseif(mode==drc.plan_adjust_mode_t.BOTH_FEET)
+              obj.removeConstraintsContainingStr('lhand');
+              obj.removeConstraintsContainingStr('rhand');
+            elseif(mode==drc.plan_adjust_mode_t.ALL)
+              % dont remove anything
+            end
+    
              % delete old and add new
             if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
                 obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,'pelvis');
@@ -62,10 +89,11 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.ks = ActionSequence(); % Plan Boundary Conditions
             s_breaks = linspace(0,1,length(find(logictraj(1,:)==1)));%ts(find(logictraj(1,:)==1));
             obj.plan_cache.s_breaks = s_breaks;
+     
             s = linspace(0,1,length(ts));
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             obj.plan_cache.quasiStaticFlag = false;
-            
+            s_breaks = s;
             nq = obj.r.getNumDOF();
             q_break = zeros(nq,length(s_breaks));
             rhand_breaks = zeros(7,length(s_breaks));
@@ -431,7 +459,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             res = 0.15; % 20cm res            
 
-            s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleastks
+            s= linspace(0,1,max(ceil(s_total/res)+1,15)); % Must have two points atleastks
             s = unique([s(:);s_breaks(:)]);
             % fine grained sampling of plan.
             for i=2:length(s)

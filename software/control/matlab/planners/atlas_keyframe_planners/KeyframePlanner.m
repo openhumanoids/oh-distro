@@ -197,6 +197,22 @@ classdef KeyframePlanner < handle
                 obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lfootT);
             end
         end
+        
+        function removeConstraintsContainingStr(obj,str)
+                j=1;
+               constraint_names= [];
+               for i=1:length(obj.plan_cache.ks.kincon_name)
+                   if(regexp(obj.plan_cache.ks.kincon_name{i},str)==1)
+                      constraint_names{j} = obj.plan_cache.ks.kincon_name{i}; %accumulate
+                      j=j+1;
+                  end
+               end
+               % remove now
+               for i=1:length(constraint_names)
+                    obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,constraint_names{i});
+               end
+              
+        end
     end
     
 end
