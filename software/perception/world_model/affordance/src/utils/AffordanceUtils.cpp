@@ -185,6 +185,23 @@ void AffordanceUtils::setXYZRPYFromPlane(double xyz[3], double rpy[3],
 */  
 }
 
+
+/// This function replicates one in pointcloud_math. But does a function exist in Eigen?
+Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
+  double sy = sin(yaw*0.5);
+  double cy = cos(yaw*0.5);
+  double sp = sin(pitch*0.5);
+  double cp = cos(pitch*0.5);
+  double sr = sin(roll*0.5);
+  double cr = cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return Eigen::Quaterniond(w,x,y,z);
+}
+
+
 /// This function replicates one in pointcloud_math. But does a function exist in Eigen?
 void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
   const double q0 = q.w();
@@ -197,11 +214,12 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
 }
 
 
+
 void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[3], double rpy[3], 
                    Eigen::Isometry3d &pose){
   Eigen::Quaterniond r(pose.rotation());
   double yaw, pitch, roll;
-  quat_to_euler(r, yaw, pitch, roll);  
+  quat_to_euler(r, roll, pitch, yaw);  
 
   xyz[0] = pose.translation().x();
   xyz[1] = pose.translation().y();

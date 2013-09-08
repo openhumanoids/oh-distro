@@ -12,6 +12,19 @@ model-client ${REQUIRED_PACKAGES} pointcloud_vis
 pods_install_executables(affordance_to_grasp_plan)
 
 
+# spoof an affordance near the shoulder
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
+add_executable (affordance_init_relative affordance_init_relative.cpp )
+target_link_libraries(affordance_init_relative boost_system)
+pods_use_pkg_config_packages(affordance_init_relative 
+model-client ${REQUIRED_PACKAGES} pointcloud_vis
+  bot2-param-client 
+  bot2-frames  bot2-frames_cpp
+   affordance-utils lcm)
+pods_install_executables(affordance_init_relative)
+
+
+
 # dump the affordance store to file:
 add_executable (affordance_to_xmlfile affordance_to_xmlfile.cpp )
 pods_use_pkg_config_packages(affordance_to_xmlfile otdf_dom lcm)
