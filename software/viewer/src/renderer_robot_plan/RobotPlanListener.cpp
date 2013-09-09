@@ -174,6 +174,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _received_plan.robot_name = msgcopy.robot_name;
     _received_plan.num_states = msgcopy.num_states;
     _received_plan.plan = msgcopy.plan;
+    _received_plan.plan_info = msgcopy.plan_info;
     _received_plan.num_bytes = msgcopy.num_bytes;
     _received_plan.matlab_data = msgcopy.matlab_data;
     _received_plan.num_grasp_transitions = msgcopy.num_grasp_transitions;
@@ -480,6 +481,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         {
           
           msg.plan.push_back(_received_plan.plan[i]);
+          msg.plan_info.push_back(_received_plan.plan_info[i]);
           msg.plan[num_states].utime =_received_plan.plan[i].utime - start_utime; 
           num_states++;
           //cout <<"i :" << i << endl;          
@@ -497,6 +499,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         {
 
           msg.plan.push_back(_received_plan.plan[i]);
+          msg.plan_info.push_back(_received_plan.plan_info[i]);
           msg.plan[num_states].utime =_received_plan.plan[i].utime - start_utime; 
           num_states++;
           //cout <<"i :" << i << endl;
@@ -506,6 +509,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         for (uint i = 0; i <=(uint)_breakpoint_indices[0]; i++)
         {
           msg.plan.push_back(_received_plan.plan[i]);
+          msg.plan_info.push_back(_received_plan.plan_info[i]);
           msg.plan[num_states].utime =_received_plan.plan[i].utime + cycle_delay_offset;
           num_states++;
           //cout <<"i :" << i << endl;
