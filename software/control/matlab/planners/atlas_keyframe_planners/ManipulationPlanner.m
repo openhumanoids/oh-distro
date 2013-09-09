@@ -420,6 +420,7 @@ classdef ManipulationPlanner < KeyframePlanner
                     
                 end % end if(~obj.isBDIManipMode())
                 
+                snopt_info_vector(i) = snopt_info;
                 q_guess =q(:,i);
                 toc;
                 if(snopt_info > 10)
@@ -673,9 +674,9 @@ classdef ManipulationPlanner < KeyframePlanner
                         end
                     end
                     %utime = 0;
-                    obj.plan_pub.publish(xtraj,ts,G,utime);
+                    obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
                 else
-                    obj.plan_pub.publish(xtraj,ts,utime);
+                    obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector);
                 end
                 
             end

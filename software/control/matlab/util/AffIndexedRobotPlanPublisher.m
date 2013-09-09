@@ -92,6 +92,8 @@ classdef AffIndexedRobotPlanPublisher
                     msg.plan(i).joint_name(j) = java.lang.String('hello');
                 end
                 
+                msg.plan_info = zeros(1, num_states);
+                
                 msg.plan(i).contacts = drc.contact_state_t();
                 msg.plan(i).contacts.num_contacts=0;
             end
@@ -103,7 +105,10 @@ classdef AffIndexedRobotPlanPublisher
         end
         
         
-        function msg = encodeAffIndexedRobotPlan(obj,X,I,t)
+        function msg = encodeAffIndexedRobotPlan(obj,X,I,t, snopt_info_vector)
+            if nargin < 4
+                snopt_info_vector = zeros(1,size(X,2));
+            end          
             if nargin < 3
                 t = now() * 24 * 60 * 60;
             end
@@ -192,6 +197,7 @@ classdef AffIndexedRobotPlanPublisher
             end
             msg.aff_index=aff_index;
             msg.plan = plan;
+            msg.plan_info = snopt_info_vector;
             msg.num_grasp_transitions = 0;
             msg.num_bytes = 0;
             msg.arms_control_type = 0;

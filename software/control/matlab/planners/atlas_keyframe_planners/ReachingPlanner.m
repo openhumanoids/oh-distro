@@ -505,6 +505,7 @@ classdef ReachingPlanner < KeyframePlanner
                 end
             else
                 q_final_guess =q_desired;
+                snopt_info = 0;
             end
             %============================
             
@@ -540,7 +541,7 @@ classdef ReachingPlanner < KeyframePlanner
                 [s_breaks,q_breaks,qdos_breaks,qddos_breaks,snopt_info] = inverseKinSequence(obj.r,q0,0*q0,ks,ikseq_options);
                 if(snopt_info > 10)
                     warning('The IK sequence fails');
-                    send_status(4,0,0,sprintf('snopt_info == %d. The IK sequence fails.',snopt_info));
+                    send_status(4,0,0,sprintf('snopt_info = %d. The IK sequence fails.',snopt_info));
                 end
                 %============================
                 xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
@@ -562,7 +563,6 @@ classdef ReachingPlanner < KeyframePlanner
             end
             
             q = q_breaks(:,1);
-            
             s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
             s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
@@ -608,6 +608,7 @@ classdef ReachingPlanner < KeyframePlanner
                 xtraj(1,ind) = 1.0;
             end
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
             
             dqtraj=fnder(obj.plan_cache.qtraj,1); 
             sfine = linspace(s(1),s(end),50);
@@ -619,7 +620,7 @@ classdef ReachingPlanner < KeyframePlanner
             % ignore the first state
             % ts = ts(2:end);
             % xtraj=xtraj(:,2:end);
-            obj.plan_pub.publish(xtraj,ts,utime);
+            obj.plan_pub.publish(xtraj,ts,utime, snopt_info_vector);
         end
         
         function cost = getCostVector(obj)

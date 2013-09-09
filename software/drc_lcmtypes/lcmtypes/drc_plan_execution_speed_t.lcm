@@ -1,10 +1,5 @@
 package drc;
 
-// This message contains no timestamp
-// otherwise it duplicates  the fields of drc_twist_timed_t.lcm
-// drc_twist_t is not to be used on its own
-// instead use drc_twist_timed_t.lcm
-
 struct plan_execution_speed_t
 {
    int64_t utime;

@@ -20,22 +20,31 @@ classdef RobotPlanPublisherWKeyFrames
         end
 
         function publish(obj,varargin)
-            if nargin < 3
-                utime = now() * 24 * 60 * 60;
-            end                  
+            if nargin < 4
+               utime = now() * 24 * 60 * 60;
+            end
             switch nargin
                 case 4
                     X = varargin{1};
                     T = varargin{2};
                     utime= varargin{3};
-                    msg = encodeRobotPlan(obj,X,T,utime);
+                    snopt_info_vector = zeros(1,size(X,2));
+                    msg = encodeRobotPlan(obj,X,T,utime,snopt_info_vector);
                     obj.lc.publish(obj.channel,msg);
                 case 5
                     X = varargin{1};
                     T = varargin{2};
-                    G = varargin{3};
-                    utime= varargin{4};
-                    msg = encodeRobotPlanWGraspTransitions(obj,X,T,G,utime);
+                    utime= varargin{3};
+                    snopt_info_vector = varargin{4};
+                    msg = encodeRobotPlan(obj,X,T,utime,snopt_info_vector);
+                    obj.lc.publish(obj.channel,msg);
+                case 6
+                    X = varargin{1};
+                    T = varargin{2};
+                    utime= varargin{3};
+                    snopt_info_vector = varargin{4};
+                    G = varargin{5};                    
+                    msg = encodeRobotPlanWGraspTransitions(obj,X,T,utime,snopt_info_vector,G);
                     obj.lc.publish(obj.channel, msg);
                 otherwise
                     error('Incorrect usage of publish in RobotPlanPublisherWKeyFrames. Undefined number of varargin.')
@@ -43,10 +52,15 @@ classdef RobotPlanPublisherWKeyFrames
         end
 
 
-        function msg = encodeRobotPlan(obj,X,T,t)
+        function msg = encodeRobotPlan(obj,X,T,t, snopt_info_vector)
+            if nargin < 5
+                snopt_info_vector = zeros(1,size(X,2));
+            end
             if nargin < 4
                 t = now() * 24 * 60 * 60;
             end
+            
+            
             
             msg = drc.robot_plan_w_keyframes_t();
             msg.utime = t * 1000000;
@@ -109,15 +123,14 @@ classdef RobotPlanPublisherWKeyFrames
             msg.is_keyframe = is_keyframe;
             msg.is_breakpoint = is_breakpoint;
             msg.plan = plan;
+            msg.plan_info = snopt_info_vector;
             msg.num_grasp_transitions = 0;
             msg.num_bytes = 0;
         end
         
-        function msg = encodeRobotPlanWGraspTransitions(obj,X,T,G,t) % G is grasp_transition_state structure
-            if nargin < 5
-                t = now() * 24 * 60 * 60;
-            end
-            msg = encodeRobotPlan(obj,X,T,t);
+        function msg = encodeRobotPlanWGraspTransitions(obj,X,T,t, snopt_info_vector,G) % G is grasp_transition_state structure
+
+            msg = encodeRobotPlan(obj,X,T,t, snopt_info_vector);
             
             % append grasp transition states to robot plan.
             msg.num_grasp_transitions = length([G.utime]);
