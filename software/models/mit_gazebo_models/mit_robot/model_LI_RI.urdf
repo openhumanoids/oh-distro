@@ -1302,6 +1302,7 @@
     </sensor>
   </gazebo>
   <!-- Hands -->
+  <!-- adding an offset in the urdf to account for the ft sensor and the coupling plate, chaning origin form 0.1 to 0.145 for sandia, and 0.05 to 0.095 for irobot-->
   <joint name="right_finger[0]/joint_flex" type="revolute">
     <parent link="right_finger[0]/proximal_link"/>
     <child link="right_finger[0]/distal_link"/>
@@ -1324,7 +1325,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="right_irobot_hand_joint" type="fixed">
-    <origin rpy="1.57079 0 0" xyz="0 -0.05 0"/>
+    <origin rpy="1.57079 0 0" xyz="0 -0.095 0"/>
     <parent link="r_hand"/>
     <child link="right_base_link"/>
   </joint>
@@ -1583,7 +1584,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="left_irobot_hand_joint" type="fixed">
-    <origin rpy="1.57079 0 3.14159" xyz="0 0.05 0"/>
+    <origin rpy="1.57079 0 3.14159" xyz="0 0.095 0"/>
     <parent link="l_hand"/>
     <child link="left_base_link"/>
   </joint>

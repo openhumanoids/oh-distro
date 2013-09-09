@@ -1302,8 +1302,9 @@
     </sensor>
   </gazebo>
   <!-- Hands -->
+  <!-- adding an offset in the urdf to account for the ft sensor and the coupling plate, chaning origin form 0.1 to 0.145 for sandia, and 0.05 to 0.095 for irobot-->
   <!--  <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="revolute" thumb_angle="0">-->
-  <!--    <origin xyz="0 -0.1 0" rpy="-1.57079 0 -1.57079"/>-->
+  <!--    <origin xyz="0 -0.145 0" rpy="-1.57079 0 -1.57079"/>-->
   <!--  </xacro:sandia_hand>-->
   <link name="left_palm">
     <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1445,7 +1446,7 @@
   <joint name="left_sandia_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="left_palm"/>
-    <origin rpy=" 1.57079 0  1.57079" xyz="0  0.1 0"/>
+    <origin rpy=" 1.57079 0  1.57079" xyz="0  0.145 0"/>
   </joint>
   <link name="left_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2899,7 +2900,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="right_irobot_hand_joint" type="fixed">
-    <origin rpy="1.57079 0 0" xyz="0 -0.05 0"/>
+    <origin rpy="1.57079 0 0" xyz="0 -0.095 0"/>
     <parent link="r_hand"/>
     <child link="right_base_link"/>
   </joint>
@@ -3137,7 +3138,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <!--  <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">-->
-  <!--    <origin rpy="1.57079 0 3.14159" xyz="0 0.05 0"/>-->
+  <!--    <origin rpy="1.57079 0 3.14159" xyz="0 0.095 0"/>-->
   <!--  </xacro:irobot_hand>-->
 </robot>
 
