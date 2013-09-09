@@ -233,6 +233,7 @@ inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
       }
       state_msg.force_torque = drc::force_torque_t();
       msg_out.plan.push_back(state_msg);
+      msg_out.plan_info.push_back(1); // snopt info
     }// end for stateframe_values.size() 
     
     
