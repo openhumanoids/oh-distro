@@ -23,13 +23,19 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics bot2-frames
 
 ################
 add_library(leg-odometry  SHARED  
-  src/BotTransforms.cpp  src/Filter.cpp 
-  src/HeavyLowPassFilter.cpp src/SignalTap.cpp
+  src/BotTransforms.cpp  
+  src/Filter.cpp 
+  src/HeavyLowPassFilter.cpp 
+  src/SignalTap.cpp
   src/QuaternionLib.cpp 
-#src/InertialOdometry_Types.hpp 
-  src/IMUCompensation.cpp src/OrientationComputer.cpp 
-  src/VP_Mechanization.cpp src/Odometry.cpp 
-  src/LegOdometry_LCM_Handler.cpp src/Footsteps.cpp src/TwoLegOdometry.cpp )
+  src/kalman_filter.cpp
+  src/IMUCompensation.cpp 
+  src/OrientationComputer.cpp 
+  src/VP_Mechanization.cpp 
+  src/Odometry.cpp 
+  src/LegOdometry_LCM_Handler.cpp 
+  src/Footsteps.cpp 
+  src/TwoLegOdometry.cpp )
   
 pods_use_pkg_config_packages(leg-odometry ${REQUIRED_PACKAGES}
   eigen3)
@@ -55,6 +61,8 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/TwoLegOdometry.h
   src/include/leg-odometry/TwoLegsEstimate_types.h
   src/include/leg-odometry/data_fusion_parameters.hpp
+  src/include/leg-odometry/kalman_filter.hpp
+  src/include/leg-odometry/KalmanFilter_Types.hpp
   DESTINATION leg-odometry)
 pods_install_pkg_config_file(leg-odometry
   LIBS -lleg-odometry 
@@ -68,12 +76,18 @@ add_executable(drc-foot-state src/foot_contact_classifier_main.cpp)
 pods_use_pkg_config_packages(drc-foot-state ${REQUIRED_PACKAGES} leg-odometry)
 pods_install_executables(drc-foot-state)
 
-add_executable(testing_imu src/test_imu.cpp)
-pods_use_pkg_config_packages(testing_imu ${REQUIRED_PACKAGES} leg-odometry)
+add_executable(drc-test-cppkf src/test_kalman_filter.cpp)
+pods_use_pkg_config_packages(drc-test-cppkf ${REQUIRED_PACKAGES} leg-odometry)
 
-add_executable(data-fusion-unittest ${SOURCE_FILES} src/unit_tests_imu.cpp)
-pods_use_pkg_config_packages(data-fusion-unittest ${REQUIRED_PACKAGES} leg-odometry)
+#add_executable(testing_imu src/test_imu.cpp)
+#pods_use_pkg_config_packages(testing_imu ${REQUIRED_PACKAGES} leg-odometry)
 
+#add_executable(data-fusion-unittest ${SOURCE_FILES} src/unit_tests_imu.cpp)
+#pods_use_pkg_config_packages(data-fusion-unittest ${REQUIRED_PACKAGES} leg-odometry)
+
+
+
+#### not part of the shared library build structure yet
 
 #add_executable(signaltap-test src/BlipFilterTest.cpp)
 #pods_use_pkg_config_packages(signaltap-test eigen3)
