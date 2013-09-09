@@ -44,6 +44,8 @@
 #define PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT "Set Des BodyPose"
 #define PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT "Set Des JointDofs"
 #define PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS "Adjust (via Sliders)"
+#define PARAM_SELECT_FLIP_DIM "Flip Dim"
+#define PARAM_FLIP_GEOMETRY "Flip Geometry"
 #define PARAM_GET_MANIP_PLAN "Get Manip Plan"
 #define PARAM_GET_RETRACTABLE_MANIP_PLAN "Get Retractable Manip Plan"
 #define PARAM_GET_MANIP_MAP "Get Manip Map"
@@ -687,6 +689,65 @@ namespace renderer_affordances_gui_utils
       self->stickyFootCollection->seed_foot(it->second,object_name,geometry_name,foot_type,contact_mask,self->ray_hit_drag,self->ray_hit,self->ray_hit_normal);
 
     }
+    else if (! strcmp(name, PARAM_FLIP_GEOMETRY)) {
+    
+      std::string object_name =self->object_selection;
+      std::string object_geometry_name = self->link_selection;
+      std::string object_name_token  = object_name + "_";
+      size_t found = object_geometry_name.find(object_name_token);  
+      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+      
+      std::cout << geometry_name << std::endl;
+      
+      if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
+          self->otdf_instance_hold.uid=it->second.uid;
+          self->otdf_instance_hold.otdf_type = it->second.otdf_type;
+          self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+          self->otdf_instance_hold._gl_object.reset();
+          self->otdf_instance_hold._collision_detector.reset();
+          self->otdf_instance_hold._collision_detector = boost::shared_ptr<Collision_Detector>(new Collision_Detector());     
+          self->otdf_instance_hold._gl_object = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+          self->otdf_instance_hold._otdf_instance->update();
+          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+          self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
+          self->otdf_instance_hold._gl_object->points = it->second._gl_object->points;
+          self->otdf_instance_hold._gl_object->isShowMeshSelected = it->second._gl_object->isShowMeshSelected;
+          self->selection_hold_on=true;
+        }
+      
+      
+      KDL::Frame T_world_body,T_world_geometry,T_world_body_new;
+      KDL::Frame T_body_geometry,T_body_geometry_new;
+      it->second._gl_object->get_link_frame(object_geometry_name,T_world_geometry);
+      T_world_body = it->second._gl_object->_T_world_body;
+      
+      T_body_geometry = (T_world_body.Inverse())*T_world_geometry;
+      double  roll,pitch,yaw;
+      //cout << "bodyframe rpy: " << roll << " " << pitch<< " " << yaw << endl;
+      T_body_geometry.M.GetRPY(roll,pitch,yaw);
+      T_body_geometry_new = T_body_geometry;
+      
+      if(bot_gtk_param_widget_get_enum(pw, PARAM_SELECT_FLIP_DIM)==2)
+        T_body_geometry_new.M = KDL::Rotation::RPY(roll,pitch,yaw+M_PI); 
+      else if(bot_gtk_param_widget_get_enum(pw, PARAM_SELECT_FLIP_DIM)==1)
+        T_body_geometry_new.M = KDL::Rotation::RPY(roll,pitch+M_PI,yaw);
+      else if(bot_gtk_param_widget_get_enum(pw, PARAM_SELECT_FLIP_DIM)==0)
+        T_body_geometry_new.M = KDL::Rotation::RPY(roll+M_PI,pitch,yaw); 
+             
+      T_world_body_new = (T_body_geometry_new*T_world_geometry.Inverse()).Inverse();
+      T_world_body_new.M.GetRPY(roll,pitch,yaw);
+      T_world_body_new.p = T_world_body.p; // dont change position
+
+      self->otdf_instance_hold._otdf_instance->setParam("roll", roll);
+      self->otdf_instance_hold._otdf_instance->setParam("pitch", pitch);
+      self->otdf_instance_hold._otdf_instance->setParam("yaw", yaw);
+       
+      self->otdf_instance_hold._otdf_instance->update();
+      self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+      self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
+      self->selection_hold_on=false;
+    
+    }
     else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
     
      self->stickyHandCollection->remove_seeds(self->object_selection,self->affCollection);
@@ -981,7 +1042,8 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE)&&strcmp(name,PARAM_PLAN_SEED_LIST))
+    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE)
+    &&strcmp(name,PARAM_PLAN_SEED_LIST)&&strcmp(name,PARAM_SELECT_FLIP_DIM))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -1061,6 +1123,12 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
+      bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_FLIP_DIM,
+                                     BOT_GTK_PARAM_WIDGET_MENU,2,
+                                     "X",0,
+                                     "Y",1,
+                                     "Z",2, NULL); 
+      bot_gtk_param_widget_add_buttons(pw,PARAM_FLIP_GEOMETRY, NULL); 
 
       bool val=false;
       bool val2=false;
