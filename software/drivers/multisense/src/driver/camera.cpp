@@ -117,12 +117,14 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     driver_->addIsolatedCallback(colorCB, Source_Luma_Left | Source_Chroma_Left, this);
     
 
-    int mode =1;
-    if (mode ==0){
+    if ( config_.output_mode_ ==0){
+      connectStream(Source_Disparity);
+      connectStream(Source_Luma_Left);
+      connectStream(Source_Chroma_Left);
+    } else if ( config_.output_mode_ ==1){
       connectStream(Source_Luma_Rectified_Left);
       connectStream(Source_Luma_Rectified_Right);
-    } else if (mode ==1){
-      connectStream(Source_Disparity);
+    } else if ( config_.output_mode_ ==2){
       connectStream(Source_Luma_Left);
       connectStream(Source_Chroma_Left);
     }
@@ -193,11 +195,13 @@ void Camera::applyConfig(CameraConfig& config){
 void Camera::rectCallback(const image::Header& header,
                           const void*          imageDataP)
 {    
+    /*
     if (Source_Luma_Rectified_Left  == header.source){
         printf("Got L\n");
     }else if (Source_Luma_Rectified_Right  == header.source){
         printf("Got R\n");
     }
+    */
 
     if (Source_Luma_Rectified_Left  != header.source &&
         Source_Luma_Rectified_Right != header.source) {
@@ -442,15 +446,26 @@ void Camera::colorImageCallback(const image::Header& header,
                     //printf("leftchromaframe id: %lld", header.frameId);
                     lcm_left_frame_id_ = header.frameId;
                     
-                    if ( lcm_left_frame_id_ == lcm_disp_frame_id_ ){
-                      multisense_msg_out_.utime = data_utime;
-                      multisense_msg_out_.n_images =2;
-                      multisense_msg_out_.images[0]= lcm_left_;
-                      multisense_msg_out_.images[1]= lcm_disp_;
-                      //printf("Syncd frames. publish pair [id %lld]", header.frameId);
-                      lcm_publish_.publish("CAMERA", &multisense_msg_out_);
-                    }else{
-                      printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, lcm_disp_frame_id_);
+                    if (config_.output_mode_ ==2){
+                      // publish left only
+                      lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
+                    }else if(config_.output_mode_ == 0){
+                      // publish left and disparity - disabled for now
+                      // Disabled for now. mfallon sept 2013
+                      // Problem: compression takes variable time, thus depth,luma,chroma
+                      // messages aren't properly paired.
+                      /*
+                      if ( lcm_left_frame_id_ == lcm_disp_frame_id_ ){
+                        multisense_msg_out_.utime = data_utime;
+                        multisense_msg_out_.n_images =2;
+                        multisense_msg_out_.images[0]= lcm_left_;
+                        multisense_msg_out_.images[1]= lcm_disp_;
+                        //printf("Syncd frames. publish pair [id %lld]", header.frameId);
+                        lcm_publish_.publish("CAMERA", &multisense_msg_out_);
+                      }else{
+                        printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, lcm_disp_frame_id_);
+                      }
+                      */
                     }
 
                     cvReleaseImageHeader(&sourceImageP);

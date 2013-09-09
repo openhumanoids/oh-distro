@@ -57,6 +57,7 @@ int main(int    argc, char** argv){
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config.do_jpeg_compress_, "j", "do_jpeg_compress","Do JPEG compression");
   opt.add(config.do_zlib_compress_, "z", "do_zlib_compress","Do Z compression");
+  opt.add(config.output_mode_, "o", "output mode","modes: 0leftcolor&depth, 1leftgrey&rightgrey, 2leftcolor");
   opt.parse();
   
   

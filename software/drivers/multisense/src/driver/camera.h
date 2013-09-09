@@ -47,12 +47,16 @@ struct CameraConfig{
   bool do_zlib_compress_;
   int jpeg_quality_;
   
+  // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor
+  int output_mode_;
+  
   CameraConfig () {
         fps_ = 1;
         spindle_rpm_ = 0;
         do_jpeg_compress_ = true;
         do_zlib_compress_ = true;
         jpeg_quality_ = 94;
+        output_mode_ = 0;
   }
 };
 
