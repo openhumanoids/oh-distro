@@ -74,8 +74,6 @@
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0143096 1.53678 1.24015 -0.0133445 1.43154 1.11269 0.0138065 1.32104 1.06616 0.0547879 0.686075 -0.0117729 " />
     </grasp_seed>
-    <plan_seed name="2013-09-06-21-55::lhnd_side_cw_60deg" />
-    <plan_seed name="2013-09-06-21-56::lhnd_side_cw_60deg_retractable" />
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0" />
@@ -83,8 +81,6 @@
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
     </grasp_seed>
-    <plan_seed name="2013-09-06-22-42::rhnd_side_ccw_60deg" />
-    <plan_seed name="2013-09-06-22-43::rhnd_side_ccw_60deg_retractable" />
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0" />
@@ -92,8 +88,12 @@
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0145227 1.45977 0.936657 -0.0187578 1.39433 0.885725 0.0136376 1.33428 0.843448 0.530046 0.658416 0.281503 " />
     </grasp_seed>
-    <plan_seed name="2013-09-06-22-46::lhnd_top_ccw_60deg" />
-    <plan_seed name="2013-09-06-22-46::lhnd_top_ccw_60deg_retractable" />
-    <plan_seed name="2013-09-09-10-53::twohnded_ccw_45deg_retractable" />
-    <plan_seed name="2013-09-09-10-54::twohanded_ccw_45deg" />
+    <plan_seed name="2013-09-09-11-48::lhnd_top_ccw_60deg" />
+    <plan_seed name="2013-09-09-11-49::lhnd_top_ccw_60deg_retractable" />
+    <plan_seed name="2013-09-09-11-50::lhnd_side_cw_60deg" />
+    <plan_seed name="2013-09-09-11-51::lhnd_side_cw_60deg_retractable" />
+    <plan_seed name="2013-09-09-11-52::rhnd_side_ccw_60deg" />
+    <plan_seed name="2013-09-09-11-53::rhnd_side_ccw_60deg_retractable" />
+    <plan_seed name="2013-09-09-11-53::rhnd_side_cw_50deg" />
+    <plan_seed name="2013-09-09-11-54::rhnd_side_ccw_50deg_retractable" />
 </object>
