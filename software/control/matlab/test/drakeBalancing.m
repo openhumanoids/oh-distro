@@ -58,7 +58,7 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 30.0;
-options.w = 0.01;
+options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.use_mex = true;
 qp = QPControlBlock(r,ctrl_data,options);

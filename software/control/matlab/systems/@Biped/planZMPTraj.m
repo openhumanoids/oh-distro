@@ -88,7 +88,7 @@ while 1
     end
   end
 
-  step_duration = (swing_ts(end) - swing_ts(1))
+  step_duration = (swing_ts(end) - swing_ts(1));
   zmp1 = steps.(st_foot)(istep.(st_foot)).center(1:2);
   zmp2 = feetCenter(steps.(sw_foot)(istep.(sw_foot)+1).pos,...
                     steps.(st_foot)(istep.(st_foot)).pos);

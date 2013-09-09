@@ -2,8 +2,9 @@ function drakeWalking(use_mex,use_bullet)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-plot_comtraj = false;
-navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
+plot_comtraj = true;
+navgoal = [1.0;0;0;0;0;0];
+%navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 
 % construct robot model
 options.floating = true;
@@ -43,7 +44,7 @@ q0 = x0(1:nq);
 step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
 step_options.step_height = 0.0;
-step_options.step_speed = 1.0;
+step_options.step_speed = 0.75;
 step_options.follow_spline = true;
 step_options.right_foot_lead = true;
 step_options.ignore_terrain = false;
@@ -65,20 +66,6 @@ end
 
 ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);
-
-if plot_comtraj
-  figure(2); 
-  clf; 
-  subplot(3,1,1); hold on;
-  fnplt(zmptraj(1));
-  fnplt(comtraj(1));
-  subplot(3,1,2); hold on;
-  fnplt(zmptraj(2));
-  fnplt(comtraj(2));
-  subplot(3,1,3); hold on;
-  fnplt(zmptraj);
-  fnplt(comtraj);
-end
 
 % compute s1,s2 derivatives for controller Vdot computation
 s1dot = fnder(V.s1,1);
@@ -110,7 +97,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.dt = 0.004;
 options.slack_limit = 30.0;
-options.w = 0.01;
+options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.debug = false;
 
@@ -158,18 +145,37 @@ for i=1:length(ts)
   opt=traj.eval(ts(i));
   q=opt(1:getNumDOF(r)); 
   com(:,i)=getCOM(r,q);
+  comdes(:,i)=comtraj.eval(ts(i));
+  zmpdes(:,i)=zmptraj.eval(ts(i));
+  
   err = err + sum(abs(comtraj.eval(ts(i)) - com(1:2,i)));
 end
 
 if plot_comtraj
-  figure(2);
+  figure(2); 
+  clf; 
   subplot(3,1,1);
+  plot(ts,zmpdes(1,:),'b');
+  hold on;  
+  plot(ts,comdes(1,:),'g');
   plot(ts,com(1,:),'r');
+  hold off;  
+  
   subplot(3,1,2);
+  plot(ts,zmpdes(2,:),'b');
+  hold on;  
+  plot(ts,comdes(2,:),'g');
   plot(ts,com(2,:),'r');
+  hold off;  
+
   subplot(3,1,3); hold on;
+  plot(zmpdes(1,:),zmpdes(2,:),'b');
+  hold on;  
+  plot(comdes(1,:),comdes(2,:),'g');
   plot(com(1,:),com(2,:),'r');
+  hold off;  
 end
+
 
 err
 if err > length(footsteps)*0.5

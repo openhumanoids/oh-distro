@@ -37,7 +37,7 @@ classdef StandingManipController < DRCController
       
       % instantiate QP controller
       options.slack_limit = 30.0;
-      options.w = 0.01;
+      options.w = 0.001;
       options.lcm_foot_contacts = true;
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end

@@ -701,6 +701,9 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.lcmgl.glColor3f(color(1), color(2), color(3));
       obj.lcmgl.sphere(zmp, 0.015, 20, 20);
 
+      obj.lcmgl.glColor3f(0, 0, 0);
+      obj.lcmgl.sphere([xcom(1:2)', mean(cpos(3,:))], 0.015, 20, 20);
+
       % plot Vdot indicator
       headpos = forwardKin(r,kinsol,findLinkInd(r,'head'),[0;0;0]);
       obj.lcmgl.glLineWidth(3);

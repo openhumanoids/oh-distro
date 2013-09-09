@@ -86,12 +86,12 @@ classdef WalkingPDBlock < MIMODrakeSystem
       cost.base_x = 0;
       cost.base_y = 0;
       cost.base_z = 0;
-      cost.base_roll = 1000;
-      cost.base_pitch = 1000;
+      cost.base_roll = 10;
+      cost.base_pitch = 10;
       cost.base_yaw = 0;
-      cost.back_bkz = 10;
-      cost.back_bky = 100;
-      cost.back_bkx = 100;
+      cost.back_bkz = 1;
+      cost.back_bky = 5;
+      cost.back_bkx = 5;
 
       cost = double(cost);
       
