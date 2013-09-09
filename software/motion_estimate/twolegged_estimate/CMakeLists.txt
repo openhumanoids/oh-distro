@@ -20,14 +20,6 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics bot2-frames
     bot2-frames_cpp visualization libfovis lcmtypes_fovis-bot2
 	model-client lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core path-util)
 
-#set(SOURCE_FILES  
-#    src/QuaternionLib.cpp src/InertialOdometry_Types.hpp 
-#    src/IMUCompensation.cpp src/OrientationComputer.cpp 
-#    src/VP_Mechanization.cpp src/Odometry.cpp  
-#    src/LegOdometry_LCM_Handler.cpp src/Footsteps.cpp src/TwoLegOdometry.cpp)
-
-
-
 
 ################
 add_library(leg-odometry  SHARED  
@@ -49,8 +41,8 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/BotTransforms.hpp
   src/include/leg-odometry/Filter.hpp
   src/include/leg-odometry/HeavyLowPassFilter.hpp
-  src/filter_coefficients/fdacoefs_1000_10_100_-20dB.h
-  src/filter_coefficients/fdacoefs_1000_5_30_-40dB.h
+  src/include/leg-odometry/fdacoefs_1000_10_100_-20dB.h
+  src/include/leg-odometry/fdacoefs_1000_5_30_-40dB.h
   src/include/leg-odometry/SignalTap.hpp
   src/include/leg-odometry/LegOdo_Parameters.hpp
   src/include/leg-odometry/Odometry.hpp  
