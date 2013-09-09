@@ -61,6 +61,7 @@ public class RobotPlanPublisher
         msg.plan[i].joint_effort = new float[msg.plan[i].num_joints];
         msg.plan[i].force_torque = new drc.force_torque_t();
       }
+      msg.plan_info = new int[num_states];
     }
     
     public LCMEncodable encode(double[] t, double[][] x)
