@@ -3,7 +3,7 @@
 
 
 //#include "TwoLegOdometry.h"
-#include "LegOdometry_LCM_Handler.hpp"
+#include <leg-odometry/LegOdometry_LCM_Handler.hpp>
 #include <csignal>
 #include <exception>
 #include <ConciseArgs>

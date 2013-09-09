@@ -17,7 +17,7 @@
 #include <model-client/model-client.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <Eigen/Dense>
-#include "QuaternionLib.h"
+#include <leg-odometry/QuaternionLib.h>
 
 #define PI  3.14159265358979323
 

@@ -12,9 +12,10 @@
 //#include <stdio.h>
 //#include <inttypes.h>
 
-#include "LegOdometry_LCM_Handler.hpp"
-#include "QuaternionLib.h"
-#include "data_fusion_parameters.hpp"
+
+#include <leg-odometry/LegOdometry_LCM_Handler.hpp>
+#include <leg-odometry/QuaternionLib.h>
+#include <leg-odometry/data_fusion_parameters.hpp>
 
 using namespace TwoLegs;
 using namespace std;

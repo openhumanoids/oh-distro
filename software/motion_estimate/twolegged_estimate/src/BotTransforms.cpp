@@ -5,8 +5,9 @@
  *      Author: drc
  */
 
-#include "BotTransforms.hpp"
-#include "QuaternionLib.h"
+//#include "BotTransforms.hpp"
+#include <leg-odometry/BotTransforms.hpp>
+#include <leg-odometry/QuaternionLib.h>
 #include <iostream>
 
 BotTransforms::BotTransforms() {

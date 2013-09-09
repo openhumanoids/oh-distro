@@ -9,9 +9,8 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-#include "LegOdometry_LCM_Handler.hpp"
-#include "Odometry.hpp"
-
+#include <leg-odometry/LegOdometry_LCM_Handler.hpp>
+#include <leg-odometry/Odometry.hpp>
 
 using  namespace std;
 

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <Eigen/Dense>
-#include "QuaternionLib.h"
-#include "SignalTap.hpp"
-#include "Filter.hpp"
+#include <leg-odometry/QuaternionLib.h>
+#include <leg-odometry/SignalTap.hpp>
+#include <leg-odometry/Filter.hpp>
 
 using namespace std;
 using namespace InertialOdometry;

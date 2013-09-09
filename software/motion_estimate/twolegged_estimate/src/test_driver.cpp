@@ -2,8 +2,8 @@
 #include <iostream>
 
 
-#include "TwoLegOdometry.h"
-#include "LegOdometry_LCM_Handler.hpp"
+#include <leg-odometry/TwoLegOdometry.h>
+#include <leg-odometry/LegOdometry_LCM_Handler.hpp>
 #include <csignal>
 #include <exception>
 #include <ConciseArgs>

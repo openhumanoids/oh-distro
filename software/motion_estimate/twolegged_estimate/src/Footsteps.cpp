@@ -1,6 +1,6 @@
 
-#include "Footsteps.h"
-#include "QuaternionLib.h"
+#include <leg-odometry/Footsteps.h>
+#include <leg-odometry/QuaternionLib.h>
 
 using namespace TwoLegs;
 

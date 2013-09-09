@@ -3,11 +3,11 @@
 #include <iostream>
 #include <cmath>
 
-#include "TwoLegOdometry.h"
+#include <leg-odometry/TwoLegOdometry.h>
 
-#include "TwoLegsEstimate_types.h"
+#include <leg-odometry/TwoLegsEstimate_types.h>
 
-#include "QuaternionLib.h"
+#include <leg-odometry/QuaternionLib.h>
 #include <sstream>
 
 

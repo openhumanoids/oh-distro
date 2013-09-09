@@ -1,4 +1,4 @@
-#include "Odometry.hpp"
+#include <leg-odometry/Odometry.hpp>
 #include <cmath>
 
 namespace InertialOdometry {
