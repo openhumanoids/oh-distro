@@ -23,6 +23,11 @@ classdef KeyframePlanner < handle
         
         joint_min
         joint_max
+                
+        T_palm_hand_l_sandia
+        T_palm_hand_r_sandia
+        T_hand_palm_l_sandia
+        T_hand_palm_r_sandia
     end
     
     methods
@@ -56,6 +61,17 @@ classdef KeyframePlanner < handle
             joint_max.l_leg_kny= joint_max.l_leg_kny-buffer;
             joint_max.r_leg_kny= joint_max.r_leg_kny-buffer;
             obj.joint_max = double(joint_max);
+            
+            
+            % Goals are presented in palm frame, must be transformed to hand coordinate frame
+            % Using notation similar to KDL.
+            % fixed transform between hand and palm as specified in the urdf
+            ft_sensor_offset = 0.045; % approx 1.8 inches
+            
+            obj.T_hand_palm_l_sandia = HT([0;0.1+ft_sensor_offset;0],0,0,1.57079);
+            obj.T_palm_hand_l_sandia = inv_HT(obj.T_hand_palm_l_sandia);
+            obj.T_hand_palm_r_sandia = HT([0;-(0.1+ft_sensor_offset);0],0,0,-1.57079);
+            obj.T_palm_hand_r_sandia = inv_HT(obj.T_hand_palm_r_sandia);
         end
         
         function [cache] = getPlanCache(obj)

@@ -54,16 +54,7 @@ classdef EndPosePlanner < KeyframePlanner
             utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
             r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
             l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
-            
-            
-            % Hand Goals are presented in palm frame, must be transformed to hand coordinate frame
-            % Using notation similar to KDL.
-            % fixed transform between hand and palm as specified in the urdf
-            T_hand_palm_l = HT([0;0.1;0],0,0,1.57079);
-            T_palm_hand_l = inv_HT(T_hand_palm_l);
-            T_hand_palm_r = HT([0;-0.1;0],0,0,-1.57079);
-            T_palm_hand_r = inv_HT(T_hand_palm_r);
-            
+   
             
             cost = getCostVector2(obj);
             ikoptions = struct();
@@ -155,7 +146,7 @@ classdef EndPosePlanner < KeyframePlanner
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
                     T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
-                    T_world_hand_l = T_world_palm_l*T_palm_hand_l;
+                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
                     lhandT(1:3) = T_world_hand_l(1:3,4);
                     lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                     l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -171,7 +162,7 @@ classdef EndPosePlanner < KeyframePlanner
                     r_ee_goal = ee_loci(:,ind(k));
                     rhandT = zeros(6,1);
                     T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
-                    T_world_hand_r = T_world_palm_r*T_palm_hand_r;
+                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
                     rhandT(1:3) = T_world_hand_r(1:3,4);
                     rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                     r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];

@@ -110,14 +110,7 @@ classdef ManipulationPlanner < KeyframePlanner
             utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-2*ones(4,1)];
             utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-2*ones(4,1)];
             % utorso_pose0 = utorso_pose0(1:3);
-            
-            % Hand Goals are presented in palm frame, must be transformed to hand coordinate frame
-            % Using notation similar to KDL.
-            % fixed transform between hand and palm as specified in the urdf
-            T_hand_palm_l = HT([0;0.1;0],0,0,1.57079);
-            T_palm_hand_l = inv_HT(T_hand_palm_l);
-            T_hand_palm_r = HT([0;-0.1;0],0,0,-1.57079);
-            T_palm_hand_r = inv_HT(T_hand_palm_r);
+
             T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
             T_grasp_palm = inv_HT(T_palm_grasp);
             
@@ -244,7 +237,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         l_ee_goal = ee_loci(:,ind(k));
                         lhandT = zeros(6,1);
                         T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
-                        T_world_hand_l = T_world_palm_l*T_palm_hand_l;
+                        T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -279,7 +272,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         r_ee_goal = ee_loci(:,ind(k));
                         rhandT = zeros(6,1);
                         T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
-                        T_world_hand_r = T_world_palm_r*T_palm_hand_r;
+                        T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
@@ -460,8 +453,8 @@ classdef ManipulationPlanner < KeyframePlanner
                         end;
                         rpy = quat2rpy(map_pose(4:7));
                         T_world_m_hand = HT(map_pose(1:3),rpy(1), rpy(2), rpy(3));
-                        %map_pose = T_palm_grasp * T_hand_palm_l * map_pose;
-                        T_world_m_grasp = T_world_m_hand * T_hand_palm_l * T_palm_grasp;
+                        %map_pose = T_palm_grasp * obj.T_hand_palm_l_sandia * map_pose;
+                        T_world_m_grasp = T_world_m_hand * obj.T_hand_palm_l_sandia * T_palm_grasp;
                         map_pose = [T_world_m_grasp(1:3,4); rpy2quat(rotmat2rpy(T_world_m_hand(1:3,1:3)))];
                         desired_pose = plan_Indices(i).dof_pose(:,j);
                         pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
