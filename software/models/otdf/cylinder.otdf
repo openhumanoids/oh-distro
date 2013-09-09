@@ -73,5 +73,4 @@
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0144491 1.12633 0.62465 -0.00496385 0.964135 0.554495 0.01353 0.787397 0.517136 0.28348 0.218039 0.237527 " />
     </grasp_seed>
-    <plan_seed name="2013-09-04-09-22::test1" />
 </object>

@@ -94,4 +94,6 @@
     </grasp_seed>
     <plan_seed name="2013-09-06-22-46::lhnd_top_ccw_60deg" />
     <plan_seed name="2013-09-06-22-46::lhnd_top_ccw_60deg_retractable" />
+    <plan_seed name="2013-09-09-10-53::twohnded_ccw_45deg_retractable" />
+    <plan_seed name="2013-09-09-10-54::twohanded_ccw_45deg" />
 </object>
