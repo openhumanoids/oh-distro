@@ -36,7 +36,7 @@ classdef AtlasManipController < DRCController
       obj.controller_data.setField('qtraj',q0);
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
-      obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_t(),'init'); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); % for standing/reaching tasks
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)
