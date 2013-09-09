@@ -36,7 +36,7 @@ private:
 
 App::App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_, bool verbose): _lcm(_lcm),mode_(mode_){
   
-  frequency_ = new Frequency(0.5, verbose, "LCM");  
+  frequency_ = new Frequency(1.0, verbose, "LCM");  
   frequency_->readChannels(_lcm);
 
   _lcm->subscribe("ROBOT_UTIME", &App::handleUtime, this); 
