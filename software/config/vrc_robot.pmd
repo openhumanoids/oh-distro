@@ -142,27 +142,12 @@ group "a.4.driving.utils" {
         host = "robot";
     }
 }
-group "a.3.manip" {
-    cmd "WalkingManipStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']);runWalkingStateMachine;\"";
-        host = "robot";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']) ; runGraspExecutionForSandiaHand;\"";
-        host = "extra";
-    } 
-    cmd "BotWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planner']); runWalkingPlanner('robot');\"";
-        host = "extra";
-}
-    }
 
 group "a.4.driving" {
     cmd "drc-driving-control" {
         exec = "drc-driving-control";
         host = "robot";
     }
-
     cmd "driving_interface" {
         exec = "rosrun driving_interface driving_interface";
         host = "robot";
@@ -171,7 +156,7 @@ group "a.4.driving" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
         host = "robot";
     }
-    cmd "GraspController" {
+    cmd "drivingGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
        host = "robot";
     } 
@@ -250,31 +235,12 @@ group "b.2.walking" {
     }
 }
 
-group "b.3.manip" {
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
-       host = "base";
-    }
-    cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(1);\"";
-       host = "base";
-    }
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
-       host = "base";
-    }
-    cmd "BaseWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
-       host = "base";
-    }
-}
-
 group "b.4.driving" {
-    cmd "sticky_hands" {
+    cmd "sticky_hands_driving" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
        host = "base";
     }
-    cmd "ReachingPlanner" {
+    cmd "ReachingPlannerDriving" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
     }
@@ -526,18 +492,6 @@ group "m.authoring" {
     }
 }
 
-####################################################
-# drc102 - gazebo
-# pal-02 - robot
-# drc005 - base
-############# drc102, pal-02, drc005 ######################
-script "competition" {
-    start group "a.1.core";
-    start group "b.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-}
-
 ######################################
 # testing on a single machine - with deputies:
 script "dev.quals_slope" { 
@@ -604,7 +558,7 @@ script "dev.vrc_manip" {
     start group "0.development";
     start group "a.1.core";
     start group "a.3.manip";
-    start group "b.3.manip";
+    start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_vrc_manip";
@@ -613,44 +567,18 @@ script "dev.vrc_manip" {
     start group "m.hose_task_utils";    
 }
 
-script "dev.vrc_flying_ingress" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.manip";
-    start group "b.3.manip";
-    stop cmd "BotWalkingPlanner";
-    start cmd "set-sim-rate";
-}
 
 script "dev.vrc_manip_mating_test" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.3.manip";
-    start group "b.3.manip";
+    start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_vrc_task_3_mating";
     start cmd "set-sim-rate";
     wait ms 10000;
     start group "m.hose_task_utils";    
-}
-
-script "dev.quals_manip" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.manip";
-    start group "b.3.manip";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_quals_2";
-    start cmd "set-sim-rate";
-}
-
-script "dev.russ.crawling" {
-    start group "0.development";
-    start group "a.1.core";
-    stop cmd "viewer-REMOVEFORCOMP";
-    start cmd "gz_mit_walking";
 }
 
 script "dev.greg.aa.ingress" {

@@ -113,6 +113,10 @@ group "a.1.core" {
         exec = "drc-utime-publisher -f 0";
         host = "extra";
     }
+    cmd "drc-frequency" {
+        exec = "drc-frequency";
+        host = "extra";
+    }
 }
 
 group "a.2.manip" {
@@ -128,7 +132,7 @@ group "a.2.manip" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer  -r base -c vrc_robot.cfg"; 
+        exec = "drc-viewer  -r base -c drc_robot_02.cfg"; 
         host = "base";
     }
     cmd "modelpub" {
@@ -157,10 +161,6 @@ group "b.1.core" {
     }
     cmd "lcm-logger-base" {
         exec = "lcm-logger  -f $DRC_BASE/data/latest_base_log.lcm";
-        host = "base";
-    }
-    cmd "drc-log-vrcscore"{
-        exec = "drc-log-vrcscore";
         host = "base";
     }
 }
