@@ -212,6 +212,10 @@ inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
       else
         return; 
         
+      // note: can lose quat normalization in storage. 
+	  // transformLCMToKDL makes sure that storepose quaternion is normalized 
+       
+        
       KDL::Frame T_aff_oldpose, T_world_newpose;
       drc::position_3d_t newpose;
       visualization_utils::transformLCMToKDL(storedpose,T_aff_oldpose);

@@ -140,11 +140,11 @@ static inline void transformLCMToKDL(const drc::position_3d_t &t,  KDL::Frame &k
     k.p[0] =t.translation.x;
     k.p[1] =t.translation.y;
     k.p[2] =t.translation.z;
-    //  Eigen::Quaterniond q(t.rotation.w,t.rotation.x,t.rotation.y,t.rotation.z);
-    // q.normalize();
+    Eigen::Quaterniond q(t.rotation.w,t.rotation.x,t.rotation.y,t.rotation.z);
+    q.normalize();
     KDL::Rotation M;
-    //M =  KDL::Rotation::Quaternion(q.x(),q.y(),q.z(),q.w());
-    M =  KDL::Rotation::Quaternion(t.rotation.x,t.rotation.y,t.rotation.z,t.rotation.w);
+    M =  KDL::Rotation::Quaternion(q.x(),q.y(),q.z(),q.w());
+    //M =  KDL::Rotation::Quaternion(t.rotation.x,t.rotation.y,t.rotation.z,t.rotation.w);
     k.M = M;
 };
 
