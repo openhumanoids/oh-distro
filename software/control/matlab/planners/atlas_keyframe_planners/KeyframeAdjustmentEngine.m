@@ -10,6 +10,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
     properties
         plan_pub
         pose_pub
+        cached_plan_s
     end
     
     methods
@@ -49,32 +50,81 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             kinsol_tmp = doKinematics(obj.r,q0);
             pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
             
+            for i =1:length(obj.cached_plan_s),
+                q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.cached_plan_s(i));
+            end
+
+            constraints = {};
+            kinsol_start = doKinematics(obj.r,q_samples(:,1));
             if(mode==drc.plan_adjust_mode_t.LEFT_HAND)
               obj.removeConstraintsContainingStr('lfoot');
               obj.removeConstraintsContainingStr('rfoot');
               obj.removeConstraintsContainingStr('rhand');
+              lhand_pose = forwardKin(obj.r,kinsol_start,obj.l_hand_body,[0;0;0],2);
+              constraints = {obj.l_hand_body,[0;0;0],lhand_pose};
             elseif(mode==drc.plan_adjust_mode_t.RIGHT_HAND)
               obj.removeConstraintsContainingStr('lfoot');
               obj.removeConstraintsContainingStr('rfoot');
               obj.removeConstraintsContainingStr('lhand');
+              rhand_pose = forwardKin(obj.r,kinsol_start,obj.r_hand_body,[0;0;0],2);
+              constraints = {obj.r_hand_body,[0;0;0],rhand_pose};
             elseif(mode==drc.plan_adjust_mode_t.BOTH_HANDS)
               obj.removeConstraintsContainingStr('lfoot');
               obj.removeConstraintsContainingStr('rfoot');
+              lhand_pose = forwardKin(obj.r,kinsol_start,obj.l_hand_body,[0;0;0],2);
+              rhand_pose = forwardKin(obj.r,kinsol_start,obj.r_hand_body,[0;0;0],2);
+              constraints = {obj.l_hand_body,[0;0;0],lhand_pose,obj.r_hand_body,[0;0;0],rhand_pose};
             elseif(mode==drc.plan_adjust_mode_t.LEFT_FOOT)
               obj.removeConstraintsContainingStr('lhand');
               obj.removeConstraintsContainingStr('rhand');
               obj.removeConstraintsContainingStr('rfoot');
+              lfoot_pose = forwardKin(obj.r,kinsol_start,obj.l_foot_body,[0;0;0],2);
+              constraints = {obj.l_foot_body,[0;0;0],lfoot_pose};
             elseif(mode==drc.plan_adjust_mode_t.RIGHT_FOOT)
               obj.removeConstraintsContainingStr('lhand');
               obj.removeConstraintsContainingStr('rhand');
               obj.removeConstraintsContainingStr('lfoot');
+              rfoot_pose = forwardKin(obj.r,kinsol_start,obj.r_foot_body,[0;0;0],2);
+              constraints = {obj.r_foot_body,[0;0;0],rfoot_pose};
             elseif(mode==drc.plan_adjust_mode_t.BOTH_FEET)
               obj.removeConstraintsContainingStr('lhand');
               obj.removeConstraintsContainingStr('rhand');
+              lfoot_pose = forwardKin(obj.r,kinsol_start,obj.l_foot_body,[0;0;0],2);
+              rfoot_pose = forwardKin(obj.r,kinsol_start,obj.r_foot_body,[0;0;0],2);
+              constraints = {obj.l_foot_body,[0;0;0],lfoot_pose,obj.r_foot_body,[0;0;0],rfoot_pose};
             elseif(mode==drc.plan_adjust_mode_t.ALL)
               % dont remove anything
+              lhand_pose = forwardKin(obj.r,kinsol_start,obj.l_hand_body,[0;0;0],2);
+              rhand_pose = forwardKin(obj.r,kinsol_start,obj.r_hand_body,[0;0;0],2);
+              lfoot_pose = forwardKin(obj.r,kinsol_start,obj.l_foot_body,[0;0;0],2);
+              rfoot_pose = forwardKin(obj.r,kinsol_start,obj.r_foot_body,[0;0;0],2);
+              constraints = {obj.l_hand_body,[0;0;0],lhand_pose,obj.r_hand_body,[0;0;0],rhand_pose,...
+                            obj.l_foot_body,[0;0;0],lfoot_pose,obj.r_foot_body,[0;0;0],rfoot_pose};
             end
-    
+            
+            %============================
+            cost = getCostVector(obj);
+            ikoptions = struct();
+            ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
+            ikoptions.q_nom = q0;
+            ikoptions.quasiStaticFlag = false;
+            ikoptions.shrinkFactor = 0.85;
+            ikoptions.MajorIterationsLimit = 500;
+            ikoptions.jointLimitMin = obj.joint_min(1:obj.r.getNumDOF());
+            ikoptions.jointLimitMax = obj.joint_max(1:obj.r.getNumDOF());
+            constraints = [{obj.pelvis_body,[0;0;0],pelvis_pose}, constraints];
+            [q_first,snopt_info] = inverseKin(obj.r,q0,constraints{:},ikoptions);
+            if(snopt_info > 10)
+                warning('The IK sequence fails');
+                send_status(4,0,0,sprintf('snopt_info == %d.  IK failed to adjust first pose.',snopt_info));
+            end
+            %============================
+            q_samples(:,1) =  q_first;
+                       
+            % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
+            % Ik Sequence by design does not modify the first posture at time zero.
+            obj.plan_cache.qtraj = PPTrajectory(spline(obj.cached_plan_s,q_samples));
+            
              % delete old and add new
             if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
                 obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,'pelvis');
@@ -85,15 +135,19 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
         
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
             
+            obj.plan_cache.isEndPose = false;
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
             obj.plan_cache.ks = ActionSequence(); % Plan Boundary Conditions
             s_breaks = linspace(0,1,length(find(logictraj(1,:)==1)));%ts(find(logictraj(1,:)==1));
             obj.plan_cache.s_breaks = s_breaks;
      
             s = linspace(0,1,length(ts));
+
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             obj.plan_cache.quasiStaticFlag = false;
             s_breaks = s;
+            obj.cached_plan_s = s;
+            
             nq = obj.r.getNumDOF();
             q_break = zeros(nq,length(s_breaks));
             rhand_breaks = zeros(7,length(s_breaks));
@@ -144,7 +198,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
             Tmax_ee  = (s_total/obj.plan_cache.v_desired);
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
-            obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));          
+            obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));  
+
+                    
         end
         
         
@@ -445,6 +501,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
                 lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
+                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
+                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2);  
             end
             
             q = q_breaks(:,1);
@@ -453,8 +511,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
             s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
             s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
+            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
+            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
             s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),s_total_head);
+            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
             s_total = max(s_total,0.01);
             
             res = 0.15; % 20cm res            
