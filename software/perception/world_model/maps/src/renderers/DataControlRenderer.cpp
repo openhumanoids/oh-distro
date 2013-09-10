@@ -573,8 +573,8 @@ public:
   void onSendRatesControlButton() {
     drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = -1; // mSpinRate;
-    msg.head_fps = -1; // mHeadCameraFrameRate;
+    msg.spindle_rpm = mSpinRate; // mSpinRate;
+    msg.head_fps = mHeadCameraFrameRate; // mHeadCameraFrameRate;
     msg.hand_fps = mHandCameraFrameRate;
     msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
