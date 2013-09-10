@@ -165,7 +165,7 @@ Plot::~Plot()
 void Plot::addSignal(SignalData* signalData, QColor color)
 {
   QwtPlotCurve* d_curve = new QwtPlotCurve();
-  d_curve->setStyle(QwtPlotCurve::Lines);
+  d_curve->setStyle(QwtPlotCurve::Dots);
   d_curve->setPen(QPen(color));
 #if 1
   d_curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);

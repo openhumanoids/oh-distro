@@ -22,7 +22,6 @@ void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out){
 }
 
 
-// Deprecated:
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
   double sy = sin(yaw*0.5);
   double cy = cos(yaw*0.5);

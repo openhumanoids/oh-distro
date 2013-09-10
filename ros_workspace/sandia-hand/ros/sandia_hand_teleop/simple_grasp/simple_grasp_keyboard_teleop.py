@@ -106,6 +106,11 @@ if __name__ == '__main__':
   font = pygame.font.Font(None, 18)
   draw_string(screen, font, 10, 10, "This window must have focus")
   draw_string(screen, font, 10, 30, "Press [escape] to quit.")
+  draw_string(screen, font, 10, 50, "")
+  draw_string(screen, font, 10, 70, "Numerial Input:")
+  draw_string(screen, font, 10, 90, "Open: 12345 closed - Left")
+  draw_string(screen, font, 10, 110, "Open: 67890 closed - Right")
+
   pygame.display.flip()
   print_usage()
   rospy.init_node("simple_grasp_keyboard_teleop")
