@@ -1,8 +1,6 @@
 #ifndef KALMAN_FILTER_HPP_
 #define KALMAN_FILTER_HPP_
 
-#include <Eigen/Dense>
-
 #include <leg-odometry/KalmanFilter_Types.hpp>
 
 
@@ -13,6 +11,7 @@ private:
 	KalmanFilter_Types::Priori priori;
 	KalmanFilter_Types::Posterior posterior;
 	
+	KalmanFilter_Types::Model getModel();
 	
 	
 public:
@@ -22,8 +21,13 @@ public:
 	
 	void Initialize();
 	
+	KalmanFilter_Types::Priori propagatePriori(const KalmanFilter_Types::Posterior &post, const unsigned long &ut);
 	
+	KalmanFilter_Types::Posterior propagatePosterior();
 	
+	void define_model(const KalmanFilter_Types::Model &model_def);
+	
+	//void define_model(/* callback for continuous f, */ /* callback for continuous h */);
 	
 };
 
