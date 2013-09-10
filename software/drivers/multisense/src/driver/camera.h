@@ -38,7 +38,24 @@
 #include <lcm/lcm-cpp.hpp>
 #include <zlib.h>
 
-//
+// example default settings from ROS driver
+// fps = 10
+// gain 3.0
+// auto_exposure true
+// auto exposure max time 0.43
+// auto exposure decay 7
+// auto exposure thres 0.75
+// exposure time 0.025
+// auto white balance true
+// auto whiel balance decay 3
+// auto white balance thresh 0.5
+// white balance red 1
+// white balance blue 1
+// lighting and flash off (not relevent)
+// led duty cycle 0.25 (not relevent)
+// motor_speed 0 (not relevent)
+
+
 struct CameraConfig{
   
   float spindle_rpm_;
@@ -50,13 +67,16 @@ struct CameraConfig{
   // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor
   int output_mode_;
   
+  float gain_;
+  
   CameraConfig () {
-        fps_ = 1;
+        fps_ = 10;
         spindle_rpm_ = 0;
         do_jpeg_compress_ = true;
         do_zlib_compress_ = true;
         jpeg_quality_ = 94;
         output_mode_ = 0;
+        gain_ = 3.0;
   }
 };
 

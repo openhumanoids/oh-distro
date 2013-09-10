@@ -450,11 +450,10 @@ void Camera::colorImageCallback(const image::Header& header,
                       // publish left only
                       lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
                     }else if(config_.output_mode_ == 0){
-                      // publish left and disparity - disabled for now
-                      // Disabled for now. mfallon sept 2013
+                      // publish left and disparity
+                      // Not currently working, mfallon sept 2013
                       // Problem: compression takes variable time, thus depth,luma,chroma
-                      // messages aren't properly paired.
-                      /*
+                      // messages aren't properly paired.                      
                       if ( lcm_left_frame_id_ == lcm_disp_frame_id_ ){
                         multisense_msg_out_.utime = data_utime;
                         multisense_msg_out_.n_images =2;
@@ -465,7 +464,6 @@ void Camera::colorImageCallback(const image::Header& header,
                       }else{
                         printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, lcm_disp_frame_id_);
                       }
-                      */
                     }
 
                     cvReleaseImageHeader(&sourceImageP);
