@@ -21,7 +21,7 @@ pods_install_libraries(renderer_data_control)
   
 pods_install_pkg_config_file(renderer_data_control
     LIBS -lrenderer_data_control
-    REQUIRES lcmtypes_drc_lcmtypes drc-utils gtkmm-renderer
+    REQUIRES lcmtypes_drc_lcmtypes drc-utils gtkmm-renderer lcmtypes_multisense
     VERSION 0.0.1)
 
 

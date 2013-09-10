@@ -31,22 +31,38 @@ class Pass{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void requestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                        const  drc::sensor_request_t* msg);   
+    //void requestHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+    //                    const  drc::sensor_request_t* msg);   
+    
+    void commandHandler(const lcm::ReceiveBuffer* rbuf, 
+                          const std::string& channel, const  multisense::command_t* msg);
 
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
-  lcm_->subscribe( "SENSOR_REQUEST" ,&Pass::requestHandler,this);
+  //lcm_->subscribe( "SENSOR_REQUEST" ,&Pass::requestHandler,this);
+  
+  lcm_->subscribe( "MULTISENSE_COMMAND" ,&Pass::commandHandler,this);  
 }
 
+/*
 void Pass::requestHandler(const lcm::ReceiveBuffer* rbuf, 
                           const std::string& channel, const  drc::sensor_request_t* msg){
-   std::cout << "Config Message Received\n";
+   std::cout << "Request Message Received\n";
    CameraConfig config;
    config.spindle_rpm_ = (float) msg->spindle_rpm;
    
    config.fps_ = (float) msg->head_fps;
+   camera->applyConfig(config);
+} */
+
+void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf, 
+                          const std::string& channel, const  multisense::command_t* msg){
+   std::cout << "Command Message Received\n";
+   CameraConfig config;
+   config.spindle_rpm_ = (float) msg->rpm;
+   config.fps_ = (float) msg->fps;
+   config.gain_ = (float) msg->gain;
    camera->applyConfig(config);
 }
 

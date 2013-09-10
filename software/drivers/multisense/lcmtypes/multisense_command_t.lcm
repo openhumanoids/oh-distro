@@ -1,0 +1,11 @@
+package multisense;
+
+struct command_t
+{
+   int64_t utime;
+   float fps;
+   float gain;
+   
+   float rpm;
+}
+

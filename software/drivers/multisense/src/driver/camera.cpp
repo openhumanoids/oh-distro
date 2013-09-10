@@ -162,6 +162,7 @@ void Camera::applyConfig(CameraConfig& config){
       return;
   }  
   cfg.setFps(config.fps_);
+  cfg.setGain(config.gain_);
     
   status = driver_->setImageConfig(cfg);
   if (Status_Ok != status)

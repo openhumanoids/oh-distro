@@ -22,6 +22,8 @@
 #include <lcmtypes/drc/simple_grasp_t.hpp>
 #include <lcmtypes/drc/motionest_request_t.hpp>
 
+#include <lcmtypes/multisense.hpp>
+
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
@@ -59,16 +61,19 @@ protected:
   Gtk::VBox* mRequestControlBox;
   Gtk::VBox* mPushControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
-  int mSpinRate;
-  int mHeadCameraFrameRate;
   int mHandCameraFrameRate;
   int mCameraCompression;
-  bool mVOIMU; 
   int mHeadPitchAngle;
   int mLeftGraspState;
   int mRightGraspState;
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
+
+  // Multisense Commands:
+  int mSpinRate;
+  int mHeadCameraFrameRate;
+  double mGain;
+  
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -278,11 +283,11 @@ public:
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
-    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
-    addControl(drc::data_request_t::TERRAIN_COST, "Terrain Cost",
-               "TERRAIN_DIST_MAP", ChannelTypeAnonymous);
-    addControl(drc::data_request_t::HEIGHT_MAP_DENSE, "*DENSE HEIGHT!!*",
-               "MAP_DEPTH", ChannelTypeDepthImage);
+    //mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    //addControl(drc::data_request_t::TERRAIN_COST, "Terrain Cost",
+    //           "TERRAIN_DIST_MAP", ChannelTypeAnonymous);
+    //addControl(drc::data_request_t::HEIGHT_MAP_DENSE, "*DENSE HEIGHT!!*",
+    //           "MAP_DEPTH", ChannelTypeDepthImage);
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
@@ -318,15 +323,7 @@ public:
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
 
-    // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
-    mSpinRate = 7;
-    addSpin("Spin Rate (rpm)", mSpinRate, -1, 25, 1, sensorControlBox); 
-
-    // For DRCSIM we maxed out at 10Hz. this is now disabled here.
-    mHeadCameraFrameRate = 5;
-    addSpin("Head Cam fps", mHeadCameraFrameRate, -1, 30, 1, sensorControlBox);
-
-    // maxing out at 10hz for safety
+    // maxing out at 5hz for safety
     mHandCameraFrameRate = 5;
     addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, sensorControlBox); 
     mCameraCompression = 0;
@@ -343,12 +340,6 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
     sensorControlBox->pack_start(*button, false, false);
 
-    mHeadPitchAngle = 45;
-    addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
-    button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
-    sensorControlBox->pack_start(*button, false, false);
 
     mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
     labels = {"Flat Ground", "Full Heights"};
@@ -408,17 +399,32 @@ public:
     hbox->add(*button);
     sensorControlBox->pack_start(*hbox, false, false);
     
-    notebook->append_page(*sensorControlBox, "Sensor");
+    notebook->append_page(*sensorControlBox, "Sensors");
     
-    Gtk::VBox* fusionControlBox = Gtk::manage(new Gtk::VBox());
-    mVOIMU = false;
-    addCheck("Enable VO-IMU", mVOIMU, fusionControlBox);   
-    button = Gtk::manage(new Gtk::Button("Submit Fusion Config"));
+    Gtk::VBox* headControlBox = Gtk::manage(new Gtk::VBox());
+    mHeadCameraFrameRate = 5;
+    addSpin("Head Cam fps", mHeadCameraFrameRate, 0, 30, 1, headControlBox);
+    mGain = 1.0;
+    addSpin("Gain", mGain, 1.0, 8.0, 0.1, headControlBox); 
+    
+    // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
+    mSpinRate = 7;
+    addSpin("Spin Rate (rpm)", mSpinRate, -25, 25, 1, headControlBox); 
+    
+    button = Gtk::manage(new Gtk::Button("Submit Head Config"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onSendFusionButton));
-    fusionControlBox->pack_start(*button, false, false);
+      (sigc::mem_fun(*this, &DataControlRenderer::onSendHeadButton));
+    headControlBox->pack_start(*button, false, false);
     
-    notebook->append_page(*fusionControlBox, "Fusion");
+    mHeadPitchAngle = 45;
+    addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, headControlBox);
+    button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
+    headControlBox->pack_start(*button, false, false);
+    
+    
+    notebook->append_page(*headControlBox, "Head");
 
     container->add(*notebook);
     container->show_all();
@@ -567,8 +573,8 @@ public:
   void onSendRatesControlButton() {
     drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = mSpinRate;
-    msg.head_fps = mHeadCameraFrameRate;
+    msg.spindle_rpm = -1; // mSpinRate;
+    msg.head_fps = -1; // mHeadCameraFrameRate;
     msg.hand_fps = mHandCameraFrameRate;
     msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
@@ -600,15 +606,16 @@ public:
     }
   }
 
-  void onSendFusionButton() {
-    drc::motionest_request_t msg;
+  void onSendHeadButton() {
+    multisense::command_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    if (mVOIMU){
-      msg.fusion_mode = (int8_t) drc::motionest_request_t::VO;
-    }else{
-      msg.fusion_mode = (int8_t) drc::motionest_request_t::DEFAULT;
-    }
-    getLcm()->publish("MOTIONEST_REQUEST", &msg);
+    msg.rpm = (float) mSpinRate;
+    msg.fps = (float) mHeadCameraFrameRate;
+    msg.gain = (float) mGain;
+    getLcm()->publish("MULTISENSE_COMMAND", &msg);
+    
+
+    
   }
   
   
