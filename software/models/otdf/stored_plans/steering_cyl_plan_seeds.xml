@@ -59,7 +59,7 @@
     <Frame num_values="38" values="1 1 5.51513e+07 -0.0525889 -0.383997 0.725024 0.602922 -0.602791 0.369656 0.369436 0.000492539 -7.24609e-05 0.0103576 -1.46235 0.737334 3.08654 1.82451 0.279472 0.0004 0.0501 -0.3754 0.7603 -0.3844 -0.0501 -0.47654 0.290266 1.3474 2.01581 -1.07756 0.0444153 0.0002 -0.0502 -0.3754 0.7602 -0.3843 0.0502 0.0350152 0 " />
     <GraspFrame_ids num_values="23" values="grasp_on grasp_type power_grasp utime hand_x hand_y hand_z hand_qw hand_qx hand_qy hand_qz left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " />
     <GraspFrame num_values="23" values="0 0 0 0 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 -0.0145227 1.45977 0.936657 -0.0187578 1.39433 0.885725 0.0136376 1.33428 0.843448 0.530046 0.658416 0.281503 " />
-    <GraspFrame num_values="23" values="0 0 0 1.94702e+06 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 0 0 0 0 0 0 0 0 0 0 0 0 " />
+    <GraspFrame num_values="23" values="0 0 0 2.8597e+07 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 0 0 0 0 0 0 0 0 0 0 0 0 " />
 </Plan>
 <Plan name="2013-09-09-11-50::lhnd_side_cw_60deg" type="manip">
     <Frame_ids num_values="38" values="is_keyframe is_breakpoint utime pelvis_x pelvis_y pelvis_z pelvis_qw pelvis_qx pelvis_qy pelvis_qz back_bkz back_bky back_bkx l_arm_usy l_arm_shx l_arm_ely l_arm_elx l_arm_uwy l_leg_hpz l_leg_hpx l_leg_hpy l_leg_kny l_leg_aky l_leg_akx l_arm_mwx r_arm_usy r_arm_shx r_arm_ely r_arm_elx r_arm_uwy r_leg_hpz r_leg_hpx r_leg_hpy r_leg_kny r_leg_aky r_leg_akx r_arm_mwx neck_ay " />
@@ -94,7 +94,7 @@
     <Frame num_values="38" values="1 1 4.13994e+07 -0.0525889 -0.383997 0.725024 0.602472 -0.603217 0.369453 0.369678 0.126059 -0.0466483 -0.0321416 -0.216385 -1.23877 1.50826 1.73252 1.62026 0.0004 0.0501 -0.3754 0.7603 -0.3844 -0.0501 -0.487773 0.405625 1.34504 1.9922 -0.987558 0.000996722 0.0002 -0.0502 -0.3754 0.7602 -0.3843 0.0502 -0.0504901 0 " />
     <GraspFrame_ids num_values="23" values="grasp_on grasp_type power_grasp utime hand_x hand_y hand_z hand_qw hand_qx hand_qy hand_qz left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " />
     <GraspFrame num_values="23" values="0 0 0 0 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 -0.0143096 1.53678 1.24015 -0.0133445 1.43154 1.11269 0.0138065 1.32104 1.06616 0.0547879 0.686075 -0.0117729 " />
-    <GraspFrame num_values="23" values="0 0 0 3.29816e+06 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 0 0 0 0 0 0 0 0 0 0 0 0 " />
+    <GraspFrame num_values="23" values="0 0 0 2.20797e+07 -0.0525889 -1.2715 0.725028 0.602825 -0.602827 0.369596 0.369595 0 0 0 0 0 0 0 0 0 0 0 0 " />
 </Plan>
 <Plan name="2013-09-09-11-52::rhnd_side_ccw_60deg" type="manip">
     <Frame_ids num_values="38" values="is_keyframe is_breakpoint utime pelvis_x pelvis_y pelvis_z pelvis_qw pelvis_qx pelvis_qy pelvis_qz back_bkz back_bky back_bkx l_arm_usy l_arm_shx l_arm_ely l_arm_elx l_arm_uwy l_leg_hpz l_leg_hpx l_leg_hpy l_leg_kny l_leg_aky l_leg_akx l_arm_mwx r_arm_usy r_arm_shx r_arm_ely r_arm_elx r_arm_uwy r_leg_hpz r_leg_hpx r_leg_hpy r_leg_kny r_leg_aky r_leg_akx r_arm_mwx neck_ay " />
@@ -147,7 +147,7 @@
     <Frame num_values="38" values="1 1 3.64936e+07 -0.000533539 -0.383998 0.670001 0.500204 -0.500172 0.499906 0.499718 0.0364459 -0.00560186 -0.0493341 0.247321 -1.32889 1.99739 1.08095 0.0501223 0.0004 0.0501 -0.3754 0.7603 -0.3844 -0.0501 -0.0787888 -0.449259 1.37277 1.22989 -1.71358 1.61352 0.0002 -0.0502 -0.3754 0.7602 -0.3843 0.0502 -0.118275 0 " />
     <GraspFrame_ids num_values="23" values="grasp_on grasp_type power_grasp utime hand_x hand_y hand_z hand_qw hand_qx hand_qy hand_qz right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " />
     <GraspFrame num_values="23" values="0 1 0 0 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 -0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
-    <GraspFrame num_values="23" values="0 1 0 2.86304e+06 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 0 0 0 0 0 0 0 0 0 0 0 0 " />
+    <GraspFrame num_values="23" values="0 1 0 1.89226e+07 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 0 0 0 0 0 0 0 0 0 0 0 0 " />
 </Plan>
 <Plan name="2013-09-09-11-53::rhnd_side_cw_50deg" type="manip">
     <Frame_ids num_values="38" values="is_keyframe is_breakpoint utime pelvis_x pelvis_y pelvis_z pelvis_qw pelvis_qx pelvis_qy pelvis_qz back_bkz back_bky back_bkx l_arm_usy l_arm_shx l_arm_ely l_arm_elx l_arm_uwy l_leg_hpz l_leg_hpx l_leg_hpy l_leg_kny l_leg_aky l_leg_akx l_arm_mwx r_arm_usy r_arm_shx r_arm_ely r_arm_elx r_arm_uwy r_leg_hpz r_leg_hpx r_leg_hpy r_leg_kny r_leg_aky r_leg_akx r_arm_mwx neck_ay " />
@@ -191,5 +191,5 @@
     <Frame num_values="38" values="1 1 2.39832e+07 -0.000533539 -0.383998 0.670001 0.500199 -0.500177 0.499919 0.499705 0.00903406 -0.00260767 -0.0114973 0.258103 -1.35894 2.00346 1.02591 0.0184444 0.0004 0.0501 -0.3754 0.7603 -0.3844 -0.0501 -0.00733388 -0.451464 1.06588 1.53455 -1.68578 1.37501 0.0002 -0.0502 -0.3754 0.7602 -0.3843 0.0502 0.18271 0 " />
     <GraspFrame_ids num_values="23" values="grasp_on grasp_type power_grasp utime hand_x hand_y hand_z hand_qw hand_qx hand_qy hand_qz right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " />
     <GraspFrame num_values="23" values="0 1 0 0 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 -0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
-    <GraspFrame num_values="23" values="0 1 0 2.60858e+06 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 0 0 0 0 0 0 0 0 0 0 0 0 " />
+    <GraspFrame num_values="23" values="0 1 0 1.25626e+07 -0.000533539 -1.2715 0.670004 0.500198 -0.5002 0.499802 0.4998 0 0 0 0 0 0 0 0 0 0 0 0 " />
 </Plan>
