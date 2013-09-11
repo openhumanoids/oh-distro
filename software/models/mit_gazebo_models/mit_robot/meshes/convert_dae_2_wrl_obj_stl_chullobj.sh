@@ -8,5 +8,6 @@ do
   meshlabserver -i $file -o $name'.stl' -om vn
   meshlabserver -i $file -o $name'.obj' -om vn
   meshlabserver -i $file -o $name'_chull.obj' -om vn -s chull.mlx
+  meshlabserver -i $file -o $name'_chull.wrl' -om vn -s chull.mlx
   #echo $name'.wrl' 
 done
