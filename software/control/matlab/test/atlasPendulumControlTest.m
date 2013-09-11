@@ -4,16 +4,10 @@ function atlasPendulumControlTest
 % simple script for trying inverse dynamics assuming treating the system
 % like a pendulum
 
-joint = 'l_arm_elx';% <---- 
-
-% GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.0;% <----
-k_f_p = 0.13;% <----
-ff_f_d = 0.0;% <----
-ff_qd = 0.0;% <----
+joint = 'l_arm_shx';% <---- 
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
-zero_crossing = true;
+zero_crossing = false;
 ts = linspace(0,35,400);% <----
 amp = 0.65;% <----  rad
 freq = linspace(0.35,0,400);% <----  cycles per second
@@ -23,6 +17,11 @@ T=ts(end);
 % load robot model
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+
+options.floating = false;
+r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+fixed_joint_idx = find(strcmp(r_fixed.getStateFrame.coordinates,joint));
+
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -41,7 +40,7 @@ for i=1:nu
   joint_sign_map.(input_frame.coordinates{i}) = 1;
 end
 
-joint_offset_map.l_arm_elx = 1.0;
+joint_offset_map.l_arm_elx = 1.57;
 
 % set nonzero offsets
 joint_offset_map.l_arm_shx = -1.45;
@@ -107,6 +106,7 @@ end
 qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 
 act_idx = getActuatedJoints(r);
+fixed_act_idx = find(~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,joint)));
 % move to desired pos
 movetime = 4.5;
 toffset = -1;
@@ -128,12 +128,16 @@ end
 disp('Ready to send input signal.');
 keyboard;
 
+
+
+gains = getAtlasGains(input_frame); 
+
 % set gains to user specified values
-gains.ff_const(joint_index_map.(joint)) = ff_const;
+% gains.ff_const(joint_index_map.(joint)) = ff_const;
 % set force gains
-gains.k_f_p(joint_index_map.(joint)) = k_f_p; 
-gains.ff_f_d(joint_index_map.(joint)) = ff_f_d;
-gains.ff_qd(joint_index_map.(joint)) = ff_qd;
+% gains.k_f_p(joint_index_map.(joint)) = k_f_p; 
+% gains.ff_f_d(joint_index_map.(joint)) = ff_f_d;
+% gains.ff_qd(joint_index_map.(joint)) = ff_qd;
 % set joint position gains to 0
 gains.k_q_p(joint_index_map.(joint)) = 0;
 gains.k_q_i(joint_index_map.(joint)) = 0;
@@ -186,19 +190,26 @@ while tt<T
     jest = jprior + K*meas_resid;
     P = (eye(2) - K*H)*Pprior;
     
-    thddot_des = ddtraj.eval(tt) + 30.0 *(input_traj.eval(tt)-x(joint_state_ind))
+    thddot_des = ddtraj.eval(tt) + 20.0 *(input_traj.eval(tt)-x(joint_state_ind));
 
     % compute additive torque value
-    f_offset = 10.4 *tanh(10.4*(jest(2)+0.25*thddot_des)) + 1.36*(jest(2)+0.25*thddot_des);
-    f_grav = 26.4*sin(jest(1));
+    f_offset = 12.5 *tanh(18*(jest(2)+0.1*thddot_des)) + 1*(jest(2)+0.1*thddot_des);
+%     f_grav = 26.4*sin(jest(1));
     
     % set qdes just for plotting (position control gains are zero)
     qdes(joint_index_map.(joint)) = input_traj.eval(tt);
-        
-
+    
+    % do inverse dynamics on fixed base model
+    nq = getNumDOF(r_fixed);
+    [Hd,C,B] = manipulatorDynamics(r_fixed,x(6+(1:nq)),0*x(nq+12+(1:nq)));
+    qddot_des = zeros(nq,1);
+    qddot_des(fixed_joint_idx) = thddot_des;
+    u = B\(Hd*qddot_des + C);
+    tau_des = u(fixed_act_idx) + f_offset;
+    
     % pendulum dynamics
     % m*l^2*thddot = -m*g*l*sin(th) + tau
-    tau_des = m*l*(l*thddot_des + g*sin(jest(1))) + f_offset;
+%     tau_des2 = m*l*(l*thddot_des + g*sin(jest(1))) + f_offset
     
     % send torque command
     udes(joint_index_map.(joint)) = tau_des;

@@ -24,16 +24,16 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_arm_mwx';% <---- 
+joint = 'l_arm_elx';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = -0.125;% <----
+ff_const = 0.1;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
-  k_f_p = 0.1;% <----
-  ff_f_d = 0.0;% <----
+  k_f_p = 0.125;% <----
+  ff_f_d = 0.009;% <----
   ff_qd = 0.0;% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
@@ -46,13 +46,13 @@ end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = true;
+  zero_crossing = false;
   ts = linspace(0,25,400);% <----
-  amp = 10;% <----  Nm or radians
+  amp = 25;% <----  Nm or radians
   freq = linspace(0.05,0.3,400);% <----  cycles per second
 else
-  ts = linspace(0,10,5);% <----
-  vals = [0 5 -5 10 0];% <----  Nm or radians
+  ts = linspace(0,20,7);% <----
+  vals = [0 0 20 0 -20 0 0];% <----  Nm or radians
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,11 +76,11 @@ if ~exist('vals','var')
   vals=amp;
 end
 if strcmp(control_mode,'force')
-  rangecheck(vals,-70,70);
-  if ~rangecheck(vals,-50,50)
-    disp('Warning: about to command relatively high torque. Shift+F5 to cancel.');
-    keyboard;
-  end
+%   rangecheck(vals,-70,70);
+%   if ~rangecheck(vals,-50,50)
+%     disp('Warning: about to command relatively high torque. Shift+F5 to cancel.');
+%     keyboard;
+%   end
 elseif strcmp(control_mode,'position')  
   rangecheck(vals,-pi,pi);
   if ~rangecheck(vals,-1,1)
@@ -115,6 +115,7 @@ joint_offset_map.l_arm_shx = -1.45;
 joint_offset_map.l_arm_ely = 1.57;
 joint_offset_map.r_arm_shx = 1.45;
 joint_offset_map.r_arm_ely = 1.57;
+joint_offset_map.l_leg_kny = 1.57;
 
 % set negative joints
 joint_sign_map.l_arm_ely = -1;
@@ -154,6 +155,9 @@ elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
   
   qdes(joint_index_map.r_arm_shx) = 1.3;
   qdes(joint_index_map.l_arm_shx) = -1.3;
+
+  qdes(joint_index_map.l_leg_hpy) = -pi/2;
+  qdes(joint_index_map.l_leg_kny) = pi/2;
   
 elseif strcmp(joint,'l_arm_ely')
   
