@@ -205,6 +205,7 @@ classdef PosturePlanner < KeyframePlanner
                 q(:,i) = qtraj_guess.eval(s(i));
             end
             
+            obj.plan_cache.s = s;    
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
             obj.plan_cache.quasiStaticFlag = false;

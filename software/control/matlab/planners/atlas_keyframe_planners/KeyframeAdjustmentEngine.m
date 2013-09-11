@@ -10,7 +10,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
     properties
         plan_pub
         pose_pub
-        cached_plan_s
     end
     
     methods
@@ -50,8 +49,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             kinsol_tmp = doKinematics(obj.r,q0);
             pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
             
-            for i =1:length(obj.cached_plan_s),
-                q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.cached_plan_s(i));
+            for i =1:length(obj.plan_cache.s),
+                q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.plan_cache.s(i));
             end
 
             constraints = {};
@@ -123,7 +122,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                        
             % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
             % Ik Sequence by design does not modify the first posture at time zero.
-            obj.plan_cache.qtraj = PPTrajectory(spline(obj.cached_plan_s,q_samples));
+            obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
             
              % delete old and add new
             if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
@@ -139,14 +138,21 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
             obj.plan_cache.ks = ActionSequence(); % Plan Boundary Conditions
             s_breaks = linspace(0,1,length(find(logictraj(1,:)==1)));%ts(find(logictraj(1,:)==1));
-            obj.plan_cache.s_breaks = s_breaks;
-     
             s = linspace(0,1,length(ts));
+            grasp_transition_breaks = s(find(logictraj(2,:)==1));
+            
+            obj.plan_cache.s_breaks = s_breaks;
+            obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
+            obj.plan_cache.num_grasp_transitions = sum(logictraj(2,:));
+            obj.plan_cache.grasp_transition_states = grasptransitions;
+            
+            
 
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             obj.plan_cache.quasiStaticFlag = false;
+            
             s_breaks = s;
-            obj.cached_plan_s = s;
+            obj.plan_cache.s = s;
             
             nq = obj.r.getNumDOF();
             q_break = zeros(nq,length(s_breaks));
@@ -217,8 +223,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
-
-            
             %======================================================================================================
             
             
@@ -468,7 +472,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             ikseq_options.jointLimitMin = obj.joint_min(1:obj.r.getNumDOF());
             ikseq_options.jointLimitMax = obj.joint_max(1:obj.r.getNumDOF());
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
             ikseq_options.qtraj0 = obj.plan_cache.qtraj; % use previous optimization output as seed
             q0 = obj.plan_cache.qtraj.eval(0); % use start of cached trajectory instead of current
             ikseq_options.q_traj_nom = ikseq_options.qtraj0; % Without this the cost function is never used
@@ -482,8 +485,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             xtraj = PPTrajectory(pchipDeriv(s_breaks,[q_breaks;qdos_breaks],[qdos_breaks;qddos_breaks]));
             xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
             
-            obj.plan_cache.s_breaks = s_breaks;
-            qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
             
             
             % calculate end effectors breaks via FK.
@@ -511,9 +512,15 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             s_total = max(s_total,0.01);
             
             res = 0.15; % 20cm res            
-
-            s= linspace(0,1,max(ceil(s_total/res)+1,15)); % Must have two points atleastks
-            s = unique([s(:);s_breaks(:)]);
+            
+            %s = linspace(0,1,max(ceil(s_total/res)+1,15)); % Must have two points atleast 
+            
+            grasp_transition_breaks = obj.plan_cache.grasp_transition_breaks;
+            s = obj.plan_cache.s;
+            s = unique([s(:);obj.plan_cache.s_breaks(:);grasp_transition_breaks(:)]);
+            obj.plan_cache.s = s;
+            obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
+            qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
             % fine grained sampling of plan.
             for i=2:length(s)
                 si = s(i);
@@ -528,29 +535,42 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             xtraj(2,:) = 0*s;
-            if(length(s_breaks)>obj.plan_cache.num_breaks)
-                keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.plan_cache.num_breaks)));
-            else
-                keyframe_inds =[1:length(s_breaks)];
-            end
             
-            for l = keyframe_inds,
-                ind = find(s == s_breaks(l));
+            for l = 1:length(obj.plan_cache.s_breaks),
+                ind = find(s == obj.plan_cache.s_breaks(l));
                 xtraj(1,ind) = 1.0;
             end
+            
+            % Set the breakpoints here if they exist.
+            for l = 1:length(grasp_transition_breaks),
+                ind = find(s == grasp_transition_breaks(l));
+                xtraj(2,ind) = 1.0;
+            end            
+            
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
-            
-            
             dqtraj=fnder(obj.plan_cache.qtraj,1); 
             sfine = linspace(s(1),s(end),50);
             Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
             Tmax_ee  = (s_total/obj.plan_cache.v_desired);
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+            old_time_2_index_scale =  obj.plan_cache.time_2_index_scale;
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             
+            snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
             utime = now() * 24 * 60 * 60;
             if(~obj.plan_cache.isEndPose)
-                obj.plan_pub.publish(xtraj,ts,utime);
+                if(obj.plan_cache.num_grasp_transitions>0)
+                  G = obj.plan_cache.grasp_transition_states;
+                  % must readjust G(i).utime according to grasp_transition_breaks
+                  for k=1:length([G.utime]),
+                    [~,ind]=min(abs(grasp_transition_breaks-G(k).utime*(old_time_2_index_scale)));
+                    G(k).utime = grasp_transition_breaks(ind).*(1/obj.plan_cache.time_2_index_scale); 
+                  end
+                  obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
+                else
+                  obj.plan_pub.publish(xtraj,ts,utime);
+                end
+                send_status(3,0,0,'Published Adjusted plan...');
             else
                 xtraj = zeros(getNumStates(obj.r),1);
                 xtraj(1:getNumDOF(obj.r),:) = obj.plan_cache.qtraj.eval(1); % only publish the last state as an EndPose

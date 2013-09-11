@@ -79,7 +79,7 @@ namespace renderer_affordances_gui_utils
 
     vbox = gtk_vbox_new (FALSE, 3);
     gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
     gtk_container_add (GTK_CONTAINER (window), vbox);
     gtk_widget_show_all(window); 
 

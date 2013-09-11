@@ -81,16 +81,16 @@ classdef RobotPlanListener
             
             G = [];
             for i=1:msg.num_grasp_transitions,
-                G(i).time = msg.grasps(i).utime;
+                G(i).utime = double(msg.grasps(i).utime)/1000000;
                 G(i).affordance_uid =msg.grasps(i).affordance_uid; %(Ignore for now.)
                 G(i).hand_pose = msg.grasps(i).hand_pose;
-                G(i).grasp_on=msg.grasps(i).grasp_on;
+                G(i).grasp_on=logical(msg.grasps(i).grasp_on);
                 G(i).grasp_type=msg.grasps(i).grasp_type;
-                G(i).power_grasp=msg.grasps(i).power_grasp;
+                G(i).power_grasp=logical(msg.grasps(i).power_grasp);
                 G(i).num_joints=msg.grasps(i).num_joints;
                 G(i).joint_name=javaArray('java.lang.String', G(i).num_joints);
                 for j=1:G(i).num_joints
-                    G(i).joint_names(j) = msg.grasps(i).joint_name(j) ;
+                    G(i).joint_name(j) = msg.grasps(i).joint_name(j) ;
                     G(i).joint_position(j)=msg.grasps(i).joint_position(j);
                 end
             end

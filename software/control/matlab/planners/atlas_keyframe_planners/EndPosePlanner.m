@@ -365,6 +365,7 @@ classdef EndPosePlanner < KeyframePlanner
             %TODO: Update Plan Cache
             s = [0 1];
             q = [q_out q_out];
+            obj.plan_cache.s = s;
             obj.plan_cache.s_breaks = s;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
             obj.plan_cache.quasiStaticFlag =  ikoptions.quasiStaticFlag;

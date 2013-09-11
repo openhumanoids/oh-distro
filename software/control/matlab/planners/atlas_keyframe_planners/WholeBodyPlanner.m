@@ -327,6 +327,7 @@ classdef WholeBodyPlanner < KeyframePlanner
             s_breaks = s_sorted(keyframe_inds);
             
             %Update Plan Cache
+            obj.plan_cache.s = s;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.quasiStaticFlag = false;

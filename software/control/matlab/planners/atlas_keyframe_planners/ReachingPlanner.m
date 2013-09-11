@@ -578,6 +578,7 @@ classdef ReachingPlanner < KeyframePlanner
             
             % update plan cache for keyframe adjustment engine
             obj.plan_cache.ks = ks; % Cache Boundary Constraints
+            obj.plan_cache.s = s;
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
             if(obj.planning_mode==1)

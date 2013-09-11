@@ -269,8 +269,6 @@ namespace renderer_robot_plan_gui_utils
     } else {
       gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     }
-      if(self->robotPlanListener->is_manip_plan())   
-      gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);  
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
     gtk_container_add (GTK_CONTAINER (toolitem), hbox);   

@@ -105,7 +105,7 @@ classdef ManipulationPlanner < KeyframePlanner
             l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
             
             pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
-            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);megaclear
+            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
             utorso_pose0_relaxed = utorso_pose0;
             utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-2*ones(4,1)];
             utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-2*ones(4,1)];
@@ -137,10 +137,13 @@ classdef ManipulationPlanner < KeyframePlanner
                 % headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
                 % kc_headT = ActionKinematicConstraint(obj.r, obj.head_body,[0;0;0],headT,[0,1],'headT');
                 % obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_headT);
-                obj.cacheLHandPose([0 0],'lhand0',l_hand_pose0);
-                obj.cacheRHandPose([0 0],'rhand0',r_hand_pose0);
-                obj.cacheLFootPoseAsContactConstraint([0 0],'lfoot0',l_foot_pose0);
-                obj.cacheRFootPoseAsContactConstraint([0 0],'rfoot0',r_foot_pose0);
+               obj.cacheLHandPose([0 0],'lhand0',l_hand_pose0);
+               obj.cacheRHandPose([0 0],'rhand0',r_hand_pose0);
+               if(~obj.isBDIManipMode())
+                  obj.cacheLFootPoseAsContactConstraint([0 0],'lfoot0',l_foot_pose0);
+                  obj.cacheRFootPoseAsContactConstraint([0 0],'rfoot0',r_foot_pose0);
+               end
+               obj.cachePelvisPose([0 1],'pelvis',pelvis_pose0);
             end
             
             % Solve IK for each element i n EE LOCII
@@ -159,8 +162,6 @@ classdef ManipulationPlanner < KeyframePlanner
             rhand_const_plan = [];
             rhand_const_plan = [];
             for i=1:length(timeIndices),
-                tic;
-                
                 %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
                 if(goal_type_flags.lh ~=2)
                     lhand_const.min = l_hand_pose0-1e-2*[ones(3,1);ones(4,1)];
@@ -205,7 +206,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 rfoot_const_static_contact.contact_state = ...
                     {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)};
                 
-                l_foot_pose = l_foot_pose0;k
+                l_foot_pose = l_foot_pose0;
                 T_world_l_foot = [quat2rotmat(l_foot_pose(4:7)) l_foot_pose(1:3);0 0 0 1];
                 l_foot_pts_pose = T_world_l_foot*[l_foot_pts;ones(1,num_l_foot_pts)];
                 l_foot_pts_pose = [l_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_l_foot_pts),l_foot_pose(4:7))];
@@ -231,6 +232,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 end
                 
                 % Find all active constraints at current index
+                
                 for k=1:length(ind),
                     
                     if(strcmp('left_palm',ee_names{ind(k)}))
@@ -262,7 +264,7 @@ classdef ManipulationPlanner < KeyframePlanner
                                 %obj.lhandT = l_ee_goal;                                
                                 obj.cacheLHandPose([1 1],'lhandT',l_hand_pose);
                             else
-                                N= length(ind);
+                                N= length(timeIndices);
                                 obj.cacheLHandPose([i/N i/N],['lhand' num2str(i-1)],l_hand_pose);
                             end
                         end
@@ -299,7 +301,7 @@ classdef ManipulationPlanner < KeyframePlanner
                                 %obj.rhandT = r_ee_goal;                               
                                obj.cacheRHandPose([1 1],'rhandT',r_hand_pose);
                             else
-                                N= length(ind);
+                                N= length(timeIndices);
                                 obj.cacheRHandPose([i/N i/N],['rhand' num2str(i-1)],r_hand_pose);
                             end
                         end
@@ -329,7 +331,7 @@ classdef ManipulationPlanner < KeyframePlanner
                                 % obj.lfootT = l_foot_pose;                                
                                 obj.cacheLFootPoseAsContactConstraint([1 1],'lfootT',l_foot_pose);
                             else
-                                N= length(ind);
+                                N= length(timeIndices);
                                 obj.cacheLFootPoseAsContactConstraint([i/N i/N],['lfoot' num2str(i-1)],l_foot_pose);
                             end
                         end
@@ -359,7 +361,7 @@ classdef ManipulationPlanner < KeyframePlanner
                                 % obj.rfootT = r_foot_pose;                               
                                 obj.cacheRFootPoseAsContactConstraint([1 1],'rfootT',r_foot_pose);
                             else
-                                N= length(ind);
+                                N= length(timeIndices);
                                 obj.cacheRFootPoseAsContactConstraint([i/N i/N],['rfoot' num2str(i-1)],r_foot_pose);
                             end
                         end
@@ -414,8 +416,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 end % end if(~obj.isBDIManipMode())
                 
                 snopt_info_vector(i) = snopt_info;
-                q_guess =q(:,i);
-                toc;
+                q_guess =q(:,i);              
                 if(snopt_info > 10)
                     warning(['The IK fails at ',num2str(i)]);
 		    send_status(4,0,0,sprintf('snopt_info = %d. Manip plan IK is not good at %d.',snopt_info,i));
@@ -426,15 +427,15 @@ classdef ManipulationPlanner < KeyframePlanner
             
             % publish robot map
             if(is_manip_map)
-                disp('Publishing manip map...');
+                disp('Generating manip map...');
             else
-                disp('Publishing manip plan...');
+                disp('Generating manip plan...');
             end
             
             utime = now() * 24 * 60 * 60;
             if(is_manip_map)
                 
-                % Keep the largest consecutive portion of the plan for each
+                % Keep the largest consecutive pAdjustedortion of the plan for each
                 % dof such that the end-effector is close to desired
                 ee_temp = [];
                 for i=1:numel(plan_Indices)
@@ -538,6 +539,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 % end-effector is sufficiently close to desired
                 
                 obj.map_pub.publish(xtraj,plan_Indices,utime);
+                send_status(3,0,0,'Published manip map...');
             else
                 xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
                 xtraj(1,:) = 0*timeIndices;
@@ -549,8 +551,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
                 
                 %timeIndices
-                
-                fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
+                %fprintf('Max : %f - Min : %f', max(timeIndices), min(timeIndices));
                 
                 
                 
@@ -558,6 +559,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 s_breaks = s_sorted(keyframe_inds);
                 
                 % update plan cache
+                obj.plan_cache.s = s;
                 obj.plan_cache.s_breaks = s_breaks;
                 obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
                 obj.cachePelvisPose([0 1],'pelvis',pelvis_pose0);
@@ -625,7 +627,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         end
                         
                         if(num_l_joints>0)
-                            G(cnt).utime =  s_transition.*(s_total/obj.plan_cache.v_desired);
+                            G(cnt).utime =  s_transition.*(1/obj.plan_cache.time_2_index_scale);
                             G(cnt).num_joints=round(num_l_joints);
                             G(cnt).joint_name=javaArray('java.lang.String', num_l_joints);
                             G(cnt).joint_position=zeros(1,num_l_joints);
@@ -646,7 +648,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         end
                         
                         if(num_r_joints>0)
-                            G(cnt).utime =  s_transition.*(s_total/obj.plan_cache.v_desired);
+                            G(cnt).utime =  s_transition.*(1/obj.plan_cache.time_2_index_scale);
                             G(cnt).num_joints=round(num_r_joints);
                             G(cnt).joint_name=javaArray('java.lang.String', num_r_joints);
                             G(cnt).joint_position=zeros(1,num_r_joints);
@@ -666,11 +668,16 @@ classdef ManipulationPlanner < KeyframePlanner
                             cnt = cnt+1;
                         end
                     end
-                    %utime = 0;
+                    % Also cache grasp transitions
+                    grasp_transition_breaks = obj.plan_cache.s(find(xtraj(2,:)==1));
+                    obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
+                    obj.plan_cache.num_grasp_transitions = sum(xtraj(2,:));
+                    obj.plan_cache.grasp_transition_states = G;
                     obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
                 else
                     obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector);
                 end
+                send_status(3,0,0,'Published manip plan...');
                 
             end
         end
