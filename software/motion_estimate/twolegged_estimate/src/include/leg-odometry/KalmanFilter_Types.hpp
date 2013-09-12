@@ -22,15 +22,10 @@ struct Posterior {
 	
 };
 
-struct Model {
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-	
-	
-	int a;
-	
-};
+
 
 }// namespace Kalmanfilter_Types
 
 #endif /*KALMANFILTER_TYPES_HPP_*/
+
+

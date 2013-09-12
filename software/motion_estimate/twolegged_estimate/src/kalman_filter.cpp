@@ -35,7 +35,7 @@ KalmanFilter_Types::Posterior KalmanFilter::propagatePosterior() {
 }
 
 
-void KalmanFilter::define_model(const KalmanFilter_Types::Model &model_def) {
+void KalmanFilter::define_model() {
 	
 	
 	return;

@@ -2,7 +2,7 @@
 #define KALMAN_FILTER_HPP_
 
 #include <leg-odometry/KalmanFilter_Types.hpp>
-
+#include <leg-odometry/KF_Models.hpp>
 
 class KalmanFilter {
 private:
@@ -11,7 +11,7 @@ private:
 	KalmanFilter_Types::Priori priori;
 	KalmanFilter_Types::Posterior posterior;
 	
-	KalmanFilter_Types::Model getModel();
+	KalmanFilter_Models::Joint_Model model;
 	
 	
 public:
@@ -25,7 +25,7 @@ public:
 	
 	KalmanFilter_Types::Posterior propagatePosterior();
 	
-	void define_model(const KalmanFilter_Types::Model &model_def);
+	void define_model();
 	
 	//void define_model(/* callback for continuous f, */ /* callback for continuous h */);
 	
