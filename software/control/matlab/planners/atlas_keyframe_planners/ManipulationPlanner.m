@@ -565,6 +565,11 @@ classdef ManipulationPlanner < KeyframePlanner
                 obj.cachePelvisPose([0 1],'pelvis',pelvis_pose0);
                 obj.plan_cache.quasiStaticFlag = false;
                 
+                nq = obj.r.getNumDOF();
+                q_breaks = zeros(nq,length(s_breaks));
+                for brk =1:length(s_breaks),
+                  q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
+                end
                 Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
                 Tmax_joints=obj.getTMaxForMaxJointSpeed();
                 ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps

@@ -164,7 +164,7 @@ classdef KeyframePlanner < handle
      %-----------------------------------------------------------------------------------------------------------------        
         function Tmax_joints=getTMaxForMaxJointSpeed(obj)
             dqtraj=fnder(obj.plan_cache.qtraj,1); 
-            sfine = linspace(s(1),s(end),50);
+            sfine = linspace(0,1,50);
             Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
          end
      %-----------------------------------------------------------------------------------------------------------------        
