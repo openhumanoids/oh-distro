@@ -34,7 +34,7 @@ classdef KeyframePlanCache
             obj.num_grasp_transitions = 0; % corresponds to grasp transitions.
             obj.grasp_transition_breaks = [];
             obj.grasp_transition_states = [];
-			obj.s = [];
+			      obj.s = [];
         end
     end
 end

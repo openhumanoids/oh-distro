@@ -219,7 +219,11 @@ classdef PosturePlanner < KeyframePlanner
             obj.plan_cache.ks = ActionSequence();
             for brk =1:length(s_breaks),
                 q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
-                
+                kinsol_tmp = doKinematics(obj.r,q_breaks(:,brk));
+                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
+                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
+                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
+                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 if((brk==1)||brk==length(s_breaks))
                     
                     Tag =    num2str(brk-1);
