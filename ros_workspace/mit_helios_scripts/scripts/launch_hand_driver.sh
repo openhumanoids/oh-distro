@@ -81,11 +81,11 @@ then
     if [ "$2" == "L" ]
     then
       echo "launching sandia-hand driver for left hand @ 10.66.171.22 ..."
-       rosrun sandia_hand_driver sandia_hand_node __ns:=sandia_hands/l_hand _ip:=10.66.171.22 _port:=12325     
+       rosrun sandia_hand_driver sandia_hand_node __ns:=sandia_hands/l_hand _ip:=10.66.171.22 _port:=12325 _use_cameras:=false     
     elif [ "$2" == "R" ]
     then
        echo "launching sandia-hand driver for right hand @ 10.66.171.23 ..."
-       rosrun sandia_hand_driver sandia_hand_node __ns:=sandia_hands/r_hand _ip:=10.66.171.23 _port:=12321
+       rosrun sandia_hand_driver sandia_hand_node __ns:=sandia_hands/r_hand _ip:=10.66.171.23 _port:=12321 _use_cameras:=false
     else
       echo " "
       echo "INPUT ERROR - unknown second argument..."
