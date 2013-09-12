@@ -17,7 +17,7 @@ classdef PosturePlanner < KeyframePlanner
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);            
             obj.plan_cache.num_breaks = 4;
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)
             %useIK_state -  {0,1,...,5};
             %0-NoIK;
@@ -35,7 +35,7 @@ classdef PosturePlanner < KeyframePlanner
             
             runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state);
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
             disp('Generating posture plan...');
             q0 = x0(1:getNumDOF(obj.r));
@@ -188,8 +188,7 @@ classdef PosturePlanner < KeyframePlanner
                 pelvis_height = q_desired(3)-rfoot_des(3,1);
                 kinsol_curr = doKinematics(obj.r,q0);
                 rfoot_curr = forwardKin(obj.r,kinsol_curr,obj.r_foot_body,rfoot_pts,0);%                         
-%                         KeyframePlanner.cacheLFootContactConstraint(obj,tspan,kc_name,lfoot_pose)
-
+                %KeyframePlanner.cacheLFootContactConstraint(obj,tspan,kc_name,lfoot_pose)
                 rfoot_curr_height = min(rfoot_curr(3,:));
                 pelvis_desired_height = pelvis_height+rfoot_curr_height;
                 q_desired(3) = pelvis_desired_height;
@@ -214,33 +213,12 @@ classdef PosturePlanner < KeyframePlanner
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             
-            
             % calculate end effectors breaks via FK.
-            q_break = zeros(nq,length(s_breaks));
-            rhand_breaks = zeros(7,length(s_breaks));
-            lhand_breaks = zeros(7,length(s_breaks));
-            head_breaks = zeros(7,length(s_breaks));
-            rfoot_breaks = zeros(7,length(s_breaks));
-            lfoot_breaks = zeros(7,length(s_breaks));
+            q_breaks = zeros(nq,length(s_breaks));
+
             obj.plan_cache.ks = ActionSequence();
             for brk =1:length(s_breaks),
-                q_break(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
-                kinsol_tmp = doKinematics(obj.r,q_break(:,brk));
-                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
-                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
-                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
-                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
-                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
-                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
-                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2); 
-
-                %                 if(brk>1)
-                %                   ikargs_break = {obj.r_hand_body,[0;0;0],rhand_breaks(:,brk),obj.l_hand_body,[0;0;0],lhand_breaks(:,brk),...
-                %                     obj.r_foot_body,[0;0;0],obj.rfootT,obj.l_foot_body,[0;0;0],obj.lfootT,obj.head_body,[0;0;0],head_breaks(:,brk)};
-                %                   cost = diag(obj.getCostVector());
-                %                   cost = cost(1:nq,1:nq);
-                %                   q_break(:,brk) = inverseKin(obj.r,q_break(:,brk-1),ikargs_break{:},struct('Q',cost));
-                %                 end
+                q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
                 
                 if((brk==1)||brk==length(s_breaks))
                     
@@ -263,43 +241,24 @@ classdef PosturePlanner < KeyframePlanner
                         end
                     end
                end
-                
             end
-            s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
-            s_total = max(s_total,0.01);
             
             for l =1:length(s_breaks),
                 ind = find(abs(s - s_breaks(l))<1e-3);
                 xtraj(1,ind) = 1.0;
                 xtraj(2,ind) = 0.0;
             end
-            xtraj(2+(1:nq),:) = q_break;
-            
-            
-            
-            dqtraj=fnder(obj.plan_cache.qtraj,1); 
-            sfine = linspace(s(1),s(end),50);
-            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
-            Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+            xtraj(2+(1:nq),:) = q_breaks;
+            Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+            Tmax_joints=obj.getTMaxForMaxJointSpeed();
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             utime = now() * 24 * 60 * 60;
-            
-            % ignore the first state
-            % ts = ts(2:end);
-            % xtraj=xtraj(:,2:end);
+
             obj.plan_pub.publish(xtraj,ts,utime);
         end
-
-                
-        
+    %-----------------------------------------------------------------------------------------------------------------      
+         
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -343,5 +302,6 @@ classdef PosturePlanner < KeyframePlanner
             cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
         end
+    %-----------------------------------------------------------------------------------------------------------------              
     end% end methods
 end% end classdef

@@ -24,11 +24,11 @@ classdef ManipulationPlanner < KeyframePlanner
             obj.restrict_feet=true;
             obj.planning_mode = 1;
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function setPlanningMode(obj,val)
             obj.planning_mode  = val;
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function generateAndPublishManipulationPlan(obj,varargin)
             
             switch nargin
@@ -53,12 +53,12 @@ classdef ManipulationPlanner < KeyframePlanner
             end
             
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------             
         function generateAndPublishManipulationMap(obj,x0,ee_names,ee_loci,affIndices)
             is_manip_map =true;
             runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,affIndices,[],is_manip_map);
         end
-        
+      %-----------------------------------------------------------------------------------------------------------------            
         function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,is_manip_map,goal_type_flags)
             if(is_manip_map)
                 disp('Generating manip map...');
@@ -239,7 +239,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         l_ee_goal = ee_loci(:,ind(k));
                         lhandT = zeros(6,1);
                         T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
-                        T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
+                        T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -274,7 +274,7 @@ classdef ManipulationPlanner < KeyframePlanner
                         r_ee_goal = ee_loci(:,ind(k));
                         rhandT = zeros(6,1);
                         T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
-                        T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
+                        T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
@@ -454,8 +454,8 @@ classdef ManipulationPlanner < KeyframePlanner
                         end;
                         rpy = quat2rpy(map_pose(4:7));
                         T_world_m_hand = HT(map_pose(1:3),rpy(1), rpy(2), rpy(3));
-                        %map_pose = T_palm_grasp * obj.T_hand_palm_l_sandia * map_pose;
-                        T_world_m_grasp = T_world_m_hand * obj.T_hand_palm_l_sandia * T_palm_grasp;
+                        %map_pose = T_palm_grasp * obj.T_hand_palm_l * map_pose;
+                        T_world_m_grasp = T_world_m_hand * obj.T_hand_palm_l * T_palm_grasp;
                         map_pose = [T_world_m_grasp(1:3,4); rpy2quat(rotmat2rpy(T_world_m_hand(1:3,1:3)))];
                         desired_pose = plan_Indices(i).dof_pose(:,j);
                         pos_dist = sqrt(sum((desired_pose(1:3)-map_pose(1:3)).^2));
@@ -565,34 +565,8 @@ classdef ManipulationPlanner < KeyframePlanner
                 obj.cachePelvisPose([0 1],'pelvis',pelvis_pose0);
                 obj.plan_cache.quasiStaticFlag = false;
                 
-                % calculate end effectors breaks via FK.
-                for brk =1:length(s_breaks),
-                    q_break = obj.plan_cache.qtraj.eval(s_breaks(brk));
-                    kinsol_tmp = doKinematics(obj.r,q_break);
-                    rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
-                    lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
-                    rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
-                    lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
-                    head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
-                    ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
-                    luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2); 
-                end
-                s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
-                s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
-                s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
-                s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
-                s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
-                s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
-                s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-                s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
-                s_total = max(s_total,0.01);
-                
-                
-                
-                dqtraj=fnder(obj.plan_cache.qtraj,1); 
-                sfine = linspace(s(1),s(end),50);
-                Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
-                Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+                Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+                Tmax_joints=obj.getTMaxForMaxJointSpeed();
                 ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
                 obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
                 brkpts =logical(zeros(1,length(timeIndices))==1);
@@ -681,7 +655,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 
             end
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -725,6 +699,6 @@ classdef ManipulationPlanner < KeyframePlanner
             cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
     end% end methods
 end% end classdef

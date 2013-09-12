@@ -24,11 +24,11 @@ classdef EndPosePlanner < KeyframePlanner
             % of a keyframe plan by resolving at time T.
             obj.plan_cache.isEndPose = true;
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
             runPoseOptimization(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags);
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function runPoseOptimization(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags)
             
             disp('Generating candidate endpose...');
@@ -146,7 +146,7 @@ classdef EndPosePlanner < KeyframePlanner
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
                     T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
-                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
+                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
                     lhandT(1:3) = T_world_hand_l(1:3,4);
                     lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                     l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -162,7 +162,7 @@ classdef EndPosePlanner < KeyframePlanner
                     r_ee_goal = ee_loci(:,ind(k));
                     rhandT = zeros(6,1);
                     T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
-                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
+                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                     rhandT(1:3) = T_world_hand_r(1:3,4);
                     rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                     r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
@@ -371,7 +371,7 @@ classdef EndPosePlanner < KeyframePlanner
             obj.plan_cache.quasiStaticFlag =  ikoptions.quasiStaticFlag;
             
         end  % end function
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function cost = getCostVector3(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 0;
@@ -416,7 +416,7 @@ classdef EndPosePlanner < KeyframePlanner
             cost = double(cost);
             
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function cost = getCostVector2(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;
@@ -460,5 +460,6 @@ classdef EndPosePlanner < KeyframePlanner
             cost.r_leg_akx = cost.l_leg_akx;
             cost = double(cost);
         end
+    %-----------------------------------------------------------------------------------------------------------------              
     end% end methods
 end% end classdef

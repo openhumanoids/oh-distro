@@ -1,5 +1,27 @@
-function runKeyFramePlannersLCMBase(hardware_mode) % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+function runKeyFramePlannersLCMBase(varargin)
+% Usage:
+% ===============================================================
+% runKeyFramePlannersLCMBase(hardware_mode,l_issandia,r_issandia)
+% or 
+% runKeyFramePlannersLCMBase(hardware_mode) assumes sandia hands by default
+% hardware_mode =  1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+% l_issandia = true if left hand is sandia, false for irobot
+% r_issandia = true if right hand is sandia, false for irobot
 
+  switch nargin
+      case 1
+          hardware_mode = varargin{1}; % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+          l_issandia = true;
+          r_issandia = true;
+      case 3
+          hardware_mode = varargin{1};% 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+          l_issandia = logical(varargin{2}); % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+          r_issandia = logical(varargin{3}); % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
+      otherwise
+          error('Incorrect usage of runKeyFramePlannersLCMBase. Undefined number of varargin. (hardware_mode,l_issandia,r_issandia)')
+  end
+            
+            
 options.floating = true;
 options.dt = 0.001;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
@@ -13,6 +35,13 @@ posture_planner = PosturePlanner(r,hardware_mode); %posture and posture preset p
 endpose_planner = EndPosePlanner(r,hardware_mode); %search for pose given ee constraints
 wholebody_planner = WholeBodyPlanner(r,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
 keyframe_adjustment_engine = KeyframeAdjustmentEngine(r,hardware_mode); % Common keyframe adjustment for all the above planners
+
+reaching_planner.setHandType(l_issandia,r_issandia);
+manip_planner.setHandType(l_issandia,r_issandia);
+posture_planner.setHandType(l_issandia,r_issandia);
+endpose_planner.setHandType(l_issandia,r_issandia);
+wholebody_planner.setHandType(l_issandia,r_issandia);
+keyframe_adjustment_engine.setHandType(l_issandia,r_issandia);
 
 % atlas state subscriber
 state_frame = r.getStateFrame();

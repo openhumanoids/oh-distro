@@ -1,0 +1,9 @@
+package drc;
+
+struct hand_tactile_state_t
+{
+  int64_t utime;
+
+  float signal;
+  boolean touched;
+}

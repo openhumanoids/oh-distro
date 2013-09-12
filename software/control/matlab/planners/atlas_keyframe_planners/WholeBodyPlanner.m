@@ -24,7 +24,7 @@ classdef WholeBodyPlanner < KeyframePlanner
             
             obj.plan_cache.num_breaks = 1;
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function generateAndPublishWholeBodyPlan(obj,varargin)
             switch nargin
                 case 7
@@ -45,7 +45,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                     error('Incorrect usage of generateAndPublishWholeBodyPlan in Manip Planner. Undefined number of vargin.')
             end
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,goal_type_flags)
             
             disp('Generating whole body plan...');
@@ -190,7 +190,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                         l_ee_goal = ee_loci(:,ind(k));
                         lhandT = zeros(6,1);
                         T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
-                        T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
+                        T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
                         lhandT(1:3) = T_world_hand_l(1:3,4);
                         lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                         l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
@@ -213,7 +213,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                         r_ee_goal = ee_loci(:,ind(k));
                         rhandT = zeros(6,1);
                         T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));
-                        T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
+                        T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                         rhandT(1:3) = T_world_hand_r(1:3,4);
                         rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                         r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
@@ -306,7 +306,6 @@ classdef WholeBodyPlanner < KeyframePlanner
             % publish robot map
             disp('Publishing manip plan...');
             
-            
             utime = now() * 24 * 60 * 60;
             xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
             xtraj(1,:) = 0*timeIndices;
@@ -322,7 +321,6 @@ classdef WholeBodyPlanner < KeyframePlanner
             %fprintf('Max : %f - Min : %f', max(timeIndlices), min(timeIndices));
             
             
-            
             s_sorted = sort(s);
             s_breaks = s_sorted(keyframe_inds);
             
@@ -332,34 +330,15 @@ classdef WholeBodyPlanner < KeyframePlanner
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.quasiStaticFlag = false;
             
+            nq = obj.r.getNumDOF();
+            q_breaks = zeros(nq,length(s_breaks));
             % calculate end effectors breaks via FK.
             for brk =1:length(s_breaks),
-                q_break = obj.plan_cache.qtraj.eval(s_breaks(brk));
-                kinsol_tmp = doKinematics(obj.r,q_break);
-                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
-                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
-                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
-                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
-                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
-                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
-                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2);  
-                %pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
-                %obj.cachePelvisPose([brk/length(s_breaks) brk/length(s_breaks)],'pelvis',pelvis_pose);
+               q_breaks = obj.plan_cache.qtraj.eval(s_breaks(brk));
             end
-            s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
-            s_total = max(s_total,0.01);
             
-            dqtraj=fnder(obj.plan_cache.qtraj,1); 
-            sfine = linspace(s(1),s(end),50);
-            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
-            Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+            Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+            Tmax_joints=obj.getTMaxForMaxJointSpeed();
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             brkpts =logical(zeros(1,length(timeIndices))==1);
@@ -394,7 +373,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                     end
                     
                     if(num_l_joints>0)
-                        G(cnt).utime =  s_transition.*(s_total/obj.plan_cache.v_desired);
+                        G(cnt).utime =  s_transition.*(1/obj.plan_cache.time_2_index_scale);
                         G(cnt).num_joints=round(num_l_joints);
                         G(cnt).joint_name=javaArray('java.lang.String', num_l_joints);
                         G(cnt).joint_position=zeros(1,num_l_joints);
@@ -415,7 +394,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                     end
                     
                     if(num_r_joints>0)
-                        G(cnt).utime =  s_transition.*(s_total/obj.plan_cache.v_desired);
+                        G(cnt).utime =  s_transition.*(1/obj.plan_cache.time_2_index_scale);
                         G(cnt).num_joints=round(num_r_joints);
                         G(cnt).joint_name=javaArray('java.lang.String', num_r_joints);
                         G(cnt).joint_position=zeros(1,num_r_joints);
@@ -441,7 +420,7 @@ classdef WholeBodyPlanner < KeyframePlanner
                 obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector);
             end
         end% end function
-        
+    %-----------------------------------------------------------------------------------------------------------------              
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -481,5 +460,6 @@ classdef WholeBodyPlanner < KeyframePlanner
             cost = double(cost);
             
         end% end function
+    %-----------------------------------------------------------------------------------------------------------------              
     end% end methods
 end% end classdef

@@ -25,7 +25,7 @@ classdef ReachingPlanner < KeyframePlanner
         function setPlanningMode(obj,val)
             obj.planning_mode  = val;
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function generateAndPublishReachingPlan(obj,varargin)
             
             switch nargin
@@ -52,7 +52,7 @@ classdef ReachingPlanner < KeyframePlanner
                     error('Incorrect usage of generateAndPublishReachingPlan in Reaching Planner. Undefined number of inputs.')
             end
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function runOptimization(obj,varargin)
             
             q_desired= [];
@@ -135,7 +135,7 @@ classdef ReachingPlanner < KeyframePlanner
                     rhandT = zeros(6,1);
                     % Desired position of palm in world frame
                     T_world_palm_r = HT(rh_ee_goal(1:3),rh_ee_goal(4),rh_ee_goal(5),rh_ee_goal(6));
-                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r_sandia;
+                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                     rhandT(1:3) = T_world_hand_r(1:3,4);
                     rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
                 else
@@ -152,7 +152,7 @@ classdef ReachingPlanner < KeyframePlanner
                     lhandT = zeros(6,1);
                     % Desired position of palm in world frame
                     T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
-                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l_sandia;
+                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
                     lhandT(1:3) = T_world_hand_l(1:3,4);
                     lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
                 else
@@ -543,34 +543,16 @@ classdef ReachingPlanner < KeyframePlanner
                 qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
             end
             
-            % calculate end effectors breaks via FK.
-            for brk =1:length(s_breaks),
-                kinsol_tmp = doKinematics(obj.r,q_breaks(:,brk));
-                rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
-                lhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_hand_body,[0;0;0],2);
-                rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
-                lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
-                head_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.head_body,[0;0;0],2);
-                ruarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_uarm_body,[0;0;0],2);
-                luarm_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_uarm_body,[0;0;0],2);  
-            end
             
-            q = q_breaks(:,1);
-            
-            s_total_lh =  sum(sqrt(sum(diff(lhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_rh =  sum(sqrt(sum(diff(rhand_breaks(1:3,:),1,2).^2,1)));
-            s_total_lf =  sum(sqrt(sum(diff(lfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_rf =  sum(sqrt(sum(diff(rfoot_breaks(1:3,:),1,2).^2,1)));
-            s_total_lel =  sum(sqrt(sum(diff(luarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_rel =  sum(sqrt(sum(diff(ruarm_breaks(1:3,:),1,2).^2,1)));
-            s_total_head =  sum(sqrt(sum(diff(head_breaks(1:3,:),1,2).^2,1)));
-            s_total = max(max(max(s_total_lh,s_total_rh),max(s_total_lf,s_total_rf)),max(s_total_head,max(s_total_lel,s_total_rel)));
-            s_total = max(s_total,0.01);
+            Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+            s_total = Tmax_ee*obj.plan_cache.v_desired;
             
             res = 0.15; % 20cm res
             s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
+            
             % fine grained verification of COM constraints of fixed resolution.
+            q = q_breaks(:,1);
             for i=2:length(s)
                 si = s(i);
                 q(:,i) =qtraj_guess.eval(si);
@@ -605,10 +587,7 @@ classdef ReachingPlanner < KeyframePlanner
             xtraj(3:getNumDOF(obj.r)+2,:) = q;
             snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
             
-            dqtraj=fnder(obj.plan_cache.qtraj,1); 
-            sfine = linspace(s(1),s(end),50);
-            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
-            Tmax_ee  = (s_total/obj.plan_cache.v_desired);
+            Tmax_joints=obj.getTMaxForMaxJointSpeed();
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             utime = now() * 24 * 60 * 60;
@@ -617,7 +596,7 @@ classdef ReachingPlanner < KeyframePlanner
             % xtraj=xtraj(:,2:end);
             obj.plan_pub.publish(xtraj,ts,utime, snopt_info_vector);
         end
-        
+     %-----------------------------------------------------------------------------------------------------------------             
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -662,6 +641,6 @@ classdef ReachingPlanner < KeyframePlanner
             cost = double(cost);
             
         end
-        
+    %-----------------------------------------------------------------------------------------------------------------              
     end% end methods
 end% end classdef
