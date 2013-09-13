@@ -4,7 +4,7 @@
 #include <iostream>
 
 KalmanFilter::KalmanFilter() {
-	int model_type;
+	int model_type=0;
 	
 	std::cout << "KalmanFilter::KalmanFilter() -- object created" << std::endl;
 	
@@ -56,10 +56,13 @@ void KalmanFilter::Initialize() {
 
 KalmanFilter_Types::Priori KalmanFilter::propagatePriori( const KalmanFilter_Types::Posterior &post, const unsigned long &ut) {
 	
-	KalmanFilter_Types::Priori temp;
+	KalmanFilter_Types::Priori priori;
+	
+	// We want to propagate a current state mean and covariance estimate according to the some defined system model
+	priori = _model->propagation_model(0,post);
 	
 	
-	return temp;
+	return priori;
 }
 
 

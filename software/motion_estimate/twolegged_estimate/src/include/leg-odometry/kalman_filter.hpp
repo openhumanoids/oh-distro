@@ -29,6 +29,8 @@ public:
 	
 	void define_model();
 	
+	
+	// we will add the callback method later
 	//void define_model(/* callback for continuous f, */ /* callback for continuous h */);
 	
 };

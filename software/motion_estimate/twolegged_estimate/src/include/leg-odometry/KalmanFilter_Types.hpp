@@ -9,16 +9,20 @@ namespace KalmanFilter_Types {
 struct Priori {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	VAR_MATRIXd M;
-	VAR_VECTORd x;
+	unsigned long utime;
+	
+	VAR_MATRIXd M;  // state covariances
+	VAR_VECTORd mu; // state mean
 	
 };
 
 struct Posterior {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	VAR_MATRIXd P;
-	VAR_VECTORd x;
+	unsigned long utime;
+	
+	VAR_MATRIXd P;  // state covariances
+	VAR_VECTORd mu; // state mean
 	
 };
 

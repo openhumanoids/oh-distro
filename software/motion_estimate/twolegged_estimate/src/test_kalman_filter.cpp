@@ -23,6 +23,7 @@ int main() {
 	
 	kf.Initialize();
 	
+	
 	// Something like here is the model
 	//kf.setModel(*prop, *meas); // for numerical derived jacobian
 	//kf.setModel(*prop, *meas, *trans_Jacobian, *meas_Jacobian); // This will use analytical derivatives
@@ -31,6 +32,14 @@ int main() {
 	
 	// we iterate through all the events
 	// publish the output from this process
+	
+
+	// propate the system, this could be done in several ways -- we need to handle all of them
+	// step in time with IMU measurements
+	// step in time with joint position measurements
+	// step in time with leg odometry position measurements
+	// step in time wiht joint measurements to resolve positions internally
+	//kf.step()
 	
 
 	
