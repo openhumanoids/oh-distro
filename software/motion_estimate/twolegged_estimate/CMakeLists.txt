@@ -35,7 +35,8 @@ add_library(leg-odometry  SHARED
   src/Odometry.cpp 
   src/LegOdometry_LCM_Handler.cpp 
   src/Footsteps.cpp 
-  src/TwoLegOdometry.cpp )
+  src/TwoLegOdometry.cpp
+  src/KF_Models.cpp )
   
 pods_use_pkg_config_packages(leg-odometry ${REQUIRED_PACKAGES}
   eigen3)

@@ -11,13 +11,15 @@ private:
 	KalmanFilter_Types::Priori priori;
 	KalmanFilter_Types::Posterior posterior;
 	
-	KalmanFilter_Models::Joint_Model model;
+	KalmanFilter_Models::BaseModel* _model;
 	
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
 	KalmanFilter();
+	KalmanFilter(KalmanFilter_Models::BaseModel &def_model);
+	~KalmanFilter();
 	
 	void Initialize();
 	
