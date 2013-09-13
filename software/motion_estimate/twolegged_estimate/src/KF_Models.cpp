@@ -4,27 +4,54 @@
 
 namespace KalmanFilter_Models {
 
-// Joint Model
+Continuous_Matrices::Continuous_Matrices() {
+	F.setZero();
+	G.setZero();
+	H.setZero();
+	Q.setZero();
+	R.setZero();
+	
+	std::cout << "Continuous_Matrices::Continuous_Matrices() -- happened" << std::endl;
+}
 
-KalmanFilter_Types::Priori Joint_Model::propagation_model(const unsigned long &utime, const KalmanFilter_Types::Posterior &post) { 
-	KalmanFilter_Types::Priori priori;
+
+
+
+// Joint Model=============================================================================================================
+
+
+
+Joint_Model::Joint_Model() {
+	settings.propagate_with_linearized = false;
+	settings.analytical_jacobian_available = true;
+	
+	// state = [pos, vel]
+	settings.state_size = 2;
+	
+	
+}
+
+VAR_MATRIXd Joint_Model::anaylitical_jacobian() {
+	
+	VAR_MATRIXd F;
+	F.setZero();
+	
+	return F;
+}
+
+
+VAR_VECTORd Joint_Model::propagation_model(const VAR_VECTORd &post) { 
+	VAR_VECTORd priori;
 	
 	// Now we need to do some stuff to change the current state estimate to the next one.
 	// This will generally involve integrations, therefore we will need the have timestamps of the various events
 	
-	double dt;
-	
-	dt = (1E-6)*(utime - post.utime);
-	
+	priori = post;	
 	
 	return priori;
 }
 
-KalmanFilter_Types::Priori Joint_Model::propagation_model(KalmanFilter_Types::Priori prev_priori) { 
-	KalmanFilter_Types::Priori temp;
-	
-	return temp;
-}
+
 
 VAR_VECTORd Joint_Model::measurement_model(VAR_VECTORd Param) { 
 	VAR_VECTORd temp;
@@ -32,7 +59,7 @@ VAR_VECTORd Joint_Model::measurement_model(VAR_VECTORd Param) {
 	return temp;
 }
 
-void Joint_Model::identify() { std::cout << "This is a Joint Model." << std::endl;}
+void Joint_Model::identify() { std::cout << "This is the Joint Model class." << std::endl;}
 
 
 
@@ -43,17 +70,35 @@ void Joint_Model::identify() { std::cout << "This is a Joint Model." << std::end
 
 // Data Fusion Model========================================================================================================
 
-KalmanFilter_Types::Priori DataFusion_Model::propagation_model(const unsigned long &utime, const KalmanFilter_Types::Posterior &post) { 
-	KalmanFilter_Types::Priori temp;
-	
-	return temp;
+
+
+DataFusion_Model::DataFusion_Model() {
+	settings.propagate_with_linearized = false;
+	settings.analytical_jacobian_available = true;
+	settings.state_size = 15;
+
 }
 
-KalmanFilter_Types::Priori DataFusion_Model::propagation_model(KalmanFilter_Types::Priori prev_priori) { 
-	KalmanFilter_Types::Priori temp;
+
+VAR_MATRIXd DataFusion_Model::anaylitical_jacobian() {
+
 	
-	return temp;
+	
+	return continuous_matrices.F;
 }
+
+VAR_VECTORd DataFusion_Model::propagation_model(const VAR_VECTORd &post) { 
+	VAR_VECTORd priori;
+		
+		// Now we need to do some stuff to change the current state estimate to the next one.
+		// This will generally involve integrations, therefore we will need the have timestamps of the various events
+		
+		std::cout << "DataFusion_Model::propagation_model -- step 1" << std::endl;
+		
+		
+		return priori;
+}
+
 
 VAR_VECTORd DataFusion_Model::measurement_model(VAR_VECTORd Param) { 
 	VAR_VECTORd temp;

@@ -4,29 +4,9 @@
 #include <iostream>
 
 KalmanFilter::KalmanFilter() {
-	int model_type=0;
-	
-	std::cout << "KalmanFilter::KalmanFilter() -- object created" << std::endl;
-	
-	state_size = 0;
-	
-	switch (model_type) {
-	case JOINT_MODEL:
-		
-		
-		
-		break;
-	case DATAFUSION_MODEL:
-		
-		
-		
-		break;
-	default:
-		std::cerr << "KalmanFilter::KalmanFilter -- Invalid model type defined" << std::endl;
-		
-		break;
-	}
+
 }
+
 
 KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
 	std::cout << "KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel -- saying hi." << std::endl;
@@ -54,12 +34,23 @@ void KalmanFilter::Initialize() {
 }
 
 
-KalmanFilter_Types::Priori KalmanFilter::propagatePriori( const KalmanFilter_Types::Posterior &post, const unsigned long &ut) {
+KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post) {
 	
 	KalmanFilter_Types::Priori priori;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
-	priori = _model->propagation_model(0,post);
+	
+	// propagate mu
+	priori.mu = _model->propagation_model(post.mu);
+	
+	
+	// Prepare process covariance matrix
+	// Compute dynamics matrix
+	// Compute state transition and discrete process covariance matrices
+	
+	// Compute priori covariance matrix
+	
+	// Compute Kalman Gain matrix
 	
 	
 	return priori;

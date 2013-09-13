@@ -12,11 +12,38 @@
 
 namespace KalmanFilter_Models {
 
+
+struct ModelSettings {
+	bool propagate_with_linearized;
+	bool analytical_jacobian_available;
+	
+	int state_size;
+};
+
+class Continuous_Matrices {
+	
+public:
+	VAR_MATRIXd F;
+	VAR_MATRIXd G;
+	VAR_MATRIXd H;
+	VAR_MATRIXd Q;
+	VAR_MATRIXd R;
+	
+	Continuous_Matrices();
+};
+
+
 // models should implement this base abstract class
 class BaseModel {
+protected:
+	ModelSettings settings;
+	Continuous_Matrices continuous_matrices;
+	
+	
 public:
-	virtual KalmanFilter_Types::Priori propagation_model(const unsigned long &utime, const KalmanFilter_Types::Posterior &post) = 0;
-	virtual KalmanFilter_Types::Priori propagation_model(KalmanFilter_Types::Priori prev_priori) = 0;
+
+	virtual VAR_MATRIXd anaylitical_jacobian() = 0;
+	virtual VAR_VECTORd propagation_model(const VAR_VECTORd &post) = 0;
 	virtual VAR_VECTORd measurement_model(VAR_VECTORd Param) = 0;
 	
 	virtual void identify() = 0;
@@ -30,8 +57,10 @@ class Joint_Model : public BaseModel {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	KalmanFilter_Types::Priori propagation_model(const unsigned long &utime, const KalmanFilter_Types::Posterior &post);
-	KalmanFilter_Types::Priori propagation_model(KalmanFilter_Types::Priori prev_priori);
+	Joint_Model();
+	
+	VAR_MATRIXd anaylitical_jacobian();
+	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
 		
 	VAR_VECTORd measurement_model(VAR_VECTORd Param);
 	
@@ -45,8 +74,10 @@ class DataFusion_Model : public BaseModel {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	KalmanFilter_Types::Priori propagation_model(const unsigned long &utime, const KalmanFilter_Types::Posterior &post);
-	KalmanFilter_Types::Priori propagation_model(KalmanFilter_Types::Priori prev_priori);
+	DataFusion_Model();
+	
+	VAR_MATRIXd anaylitical_jacobian();
+	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
 	VAR_VECTORd measurement_model(VAR_VECTORd Param);
 	
 	void identify();

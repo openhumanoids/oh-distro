@@ -18,11 +18,12 @@ int main() {
 	cout << "Starting tests..." << endl << endl;
 	
 	KalmanFilter_Models::Joint_Model joint_model;
+	KalmanFilter_Types::Posterior posterior_estimate;
 	
 	KalmanFilter kf(joint_model);
 	
 	kf.Initialize();
-	
+	kf.propagatePriori(0, posterior_estimate);
 	
 	// Something like here is the model
 	//kf.setModel(*prop, *meas); // for numerical derived jacobian
