@@ -13,6 +13,9 @@ private:
 	
 	KalmanFilter_Models::BaseModel* _model;
 	
+	KalmanFilter_Models::MatricesUnit lti_disc(const double &dt, const KalmanFilter_Models::MatricesUnit &cont);
+	
+	VAR_MATRIXd expm(const double &dt, const VAR_MATRIXd &F);
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -26,6 +29,7 @@ public:
 	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post);
 	
 	KalmanFilter_Types::Posterior propagatePosterior();
+	
 	
 	void define_model();
 	

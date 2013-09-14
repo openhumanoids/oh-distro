@@ -20,16 +20,17 @@ struct ModelSettings {
 	int state_size;
 };
 
-class Continuous_Matrices {
+class MatricesUnit {
 	
 public:
-	VAR_MATRIXd F;
-	VAR_MATRIXd G;
-	VAR_MATRIXd H;
+	VAR_MATRIXd A;
+	VAR_MATRIXd B;
+	VAR_MATRIXd C;
+	VAR_MATRIXd D;
 	VAR_MATRIXd Q;
 	VAR_MATRIXd R;
 	
-	Continuous_Matrices();
+	MatricesUnit();
 };
 
 
@@ -37,16 +38,18 @@ public:
 class BaseModel {
 protected:
 	ModelSettings settings;
-	Continuous_Matrices continuous_matrices;
-	
+	MatricesUnit continuous_matrices;
+	MatricesUnit discrete_matrices;
 	
 public:
 
-	virtual VAR_MATRIXd anaylitical_jacobian() = 0;
+	virtual VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state) = 0;
 	virtual VAR_VECTORd propagation_model(const VAR_VECTORd &post) = 0;
 	virtual VAR_VECTORd measurement_model(VAR_VECTORd Param) = 0;
 	
 	virtual void identify() = 0;
+	
+	const ModelSettings &getSettings() const {return settings;}
 	
 };
 
@@ -59,7 +62,7 @@ public:
 	
 	Joint_Model();
 	
-	VAR_MATRIXd anaylitical_jacobian();
+	VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state);
 	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
 		
 	VAR_VECTORd measurement_model(VAR_VECTORd Param);
@@ -76,7 +79,7 @@ public:
 	
 	DataFusion_Model();
 	
-	VAR_MATRIXd anaylitical_jacobian();
+	VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state);
 	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
 	VAR_VECTORd measurement_model(VAR_VECTORd Param);
 	

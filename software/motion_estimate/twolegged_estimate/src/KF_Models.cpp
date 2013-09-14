@@ -4,10 +4,11 @@
 
 namespace KalmanFilter_Models {
 
-Continuous_Matrices::Continuous_Matrices() {
-	F.setZero();
-	G.setZero();
-	H.setZero();
+MatricesUnit::MatricesUnit() {
+	A.setZero();
+	B.setZero();
+	C.setZero();
+	D.setZero();
 	Q.setZero();
 	R.setZero();
 	
@@ -27,16 +28,19 @@ Joint_Model::Joint_Model() {
 	
 	// state = [pos, vel]
 	settings.state_size = 2;
+	continuous_matrices.A.resize(2,2);
 	
 	
 }
 
-VAR_MATRIXd Joint_Model::anaylitical_jacobian() {
+VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	
-	VAR_MATRIXd F;
-	F.setZero();
+	//continuous_matrices.A.setZero(); //  -- Inefficient
 	
-	return F;
+	// joint velocity is the first derivative of joint position
+	continuous_matrices.A(1,1) = 1;
+	
+	return continuous_matrices.A;
 }
 
 
@@ -80,11 +84,11 @@ DataFusion_Model::DataFusion_Model() {
 }
 
 
-VAR_MATRIXd DataFusion_Model::anaylitical_jacobian() {
+VAR_MATRIXd DataFusion_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 
 	
 	
-	return continuous_matrices.F;
+	return continuous_matrices.A;
 }
 
 VAR_VECTORd DataFusion_Model::propagation_model(const VAR_VECTORd &post) { 
