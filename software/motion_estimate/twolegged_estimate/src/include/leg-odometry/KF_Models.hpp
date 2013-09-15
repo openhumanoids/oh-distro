@@ -49,8 +49,8 @@ public:
 	
 	virtual void identify() = 0;
 	
-	const ModelSettings &getSettings() {return settings;}
-	const MatricesUnit &getContinuousMatrices(const VAR_VECTORd &state);
+	ModelSettings getSettings() {return settings;}
+	MatricesUnit getContinuousMatrices(const VAR_VECTORd &state);
 	
 };
 

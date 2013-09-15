@@ -19,6 +19,8 @@ int main() {
 	
 	KalmanFilter_Models::Joint_Model joint_model;
 	KalmanFilter_Types::Posterior posterior_estimate;
+	posterior_estimate.mu.resize(2);
+	posterior_estimate.mu.setZero();
 	
 	KalmanFilter kf(joint_model);
 	

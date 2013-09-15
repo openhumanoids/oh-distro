@@ -1,6 +1,5 @@
 
 #include <leg-odometry/kalman_filter.hpp>
-
 #include <iostream>
 
 KalmanFilter::KalmanFilter() {
@@ -42,22 +41,23 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 	
 	dt = 1E-6*(ut_now - post.utime);
 	
-	std::cout <<"test " << _model->getSettings().propagate_with_linearized <<std::endl;
-	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
 	
 	// propagate mu
+	std::cout << " This should happen somewhere during the computation" << std::endl;
+	_model->getSettings().propagate_with_linearized;
+	std::cout <<"This is after" << std::endl;
 	
-	
-	if (_model->getSettings().propagate_with_linearized) {
+	if (_model->getSettings().propagate_with_linearized == true) {
 		// Propagate the state with transition matrix
 		
 		// Get continuous dynamics model -> convert to discrete -> propagate state mean and covariance
 		//VAR_MATRIXd F;
 		//VAR_MATRIXd Phi;
-				
-		KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices;
 		
+		
+		KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices;
+
 		
 		cont_matrices = _model->getContinuousMatrices(post.mu);
 		
@@ -65,18 +65,20 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 		
 		//lti_disc
 		disc_matrices = lti_disc(dt, cont_matrices);
-		
+
+		priori.mu.resize(post.mu.size());
+		std::cout << "post.mu.size() -- " << post.mu.size() << std::endl;
 		priori.mu = disc_matrices.A * post.mu;
 		
-		std::cout <<"test2" <<std::endl;
+		std::cout << "test2++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 		
 	} else {
-		
+		std::cout << "oops+++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 		// Propagate with non-linear model
 		// this should include an integration period and some good integration method
 		//priori.mu = _model->propagation_model(post.mu);
 	}
-	
+	std::cout << "This one is after" << std::endl;
 	
 	// Prepare process covariance matrix
 	// Compute dynamics matrix
@@ -112,7 +114,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	
 	// Compute discrete process noise covariance
 	KalmanFilter_Models::MatricesUnit disc;
-			
+
 	//n   = size(F,1);
 	//Phi = [F L*Q*L'; zeros(n,n) -F'];
 	//AB  = expm(Phi*dt)*[zeros(n,n);eye(n)];
@@ -127,9 +129,12 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	shaped_Q = cont.B * cont.Q * (cont.B.transpose());
 	
 	// Create and pack the Phi matrix
-	VAR_MATRIXd Phi(2*n, 2*n);
+	VAR_MATRIXd Phi;
+	Phi.resize(2*n, 2*n);
 	VAR_MATRIXd rhsAB(2*n,2);
 	rhsAB.setZero();
+
+	std::cout << n << " " << shaped_Q.rows() << " " << shaped_Q.cols() << std::endl;
 	
 	int i,j;
 	for (i=0;i<n;i++) {

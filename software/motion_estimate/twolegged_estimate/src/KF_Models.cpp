@@ -18,12 +18,21 @@ MatricesUnit::MatricesUnit() {
 
 // Base Model===============================================================================================================
 
-const MatricesUnit &BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
+MatricesUnit BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 	
 	// Compute the new jacobians
 	
-	std::cout << "BaseModel::getContinuousMatrices -- calling for new Jacobians" << std::endl;
+	//std::cout << "BaseModel::getContinuousMatrices -- calling for new Jacobians" << std::endl;
 	continuous_matrices.A = anaylitical_jacobian(state);
+	
+	
+	
+	// input shaping matrix
+	// set once in the constructor
+	
+	
+	// Continuous process noise
+	
 	
 	return continuous_matrices;
 }
@@ -34,12 +43,19 @@ const MatricesUnit &BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 
 
 Joint_Model::Joint_Model() {
-	settings.propagate_with_linearized = false;
+	settings.propagate_with_linearized = true;
 	settings.analytical_jacobian_available = true;
 	
 	// state = [pos, vel]
 	settings.state_size = 2;
 	continuous_matrices.A.resize(2,2);
+	continuous_matrices.B.resize(2,2);
+	continuous_matrices.B.setIdentity();
+	
+	// noise matrix
+	continuous_matrices.Q.resize(2,2);
+	continuous_matrices.Q(0,0) = 0.001;
+	continuous_matrices.Q(1,1) = 0.001;
 	
 	
 }
@@ -52,7 +68,6 @@ VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	
 	// joint velocity is the first derivative of joint position
 	F(1,1) = 1;
-	
 	std::cout << "Joint_Model::anaylitical_jacobian -- a new Jacobian was computed." << std::endl;
 	
 	return F;
@@ -93,7 +108,7 @@ void Joint_Model::identify() { std::cout << "This is the Joint Model class." << 
 
 
 DataFusion_Model::DataFusion_Model() {
-	settings.propagate_with_linearized = false;
+	settings.propagate_with_linearized = true;
 	settings.analytical_jacobian_available = true;
 	settings.state_size = 15;
 
@@ -114,7 +129,6 @@ VAR_VECTORd DataFusion_Model::propagation_model(const VAR_VECTORd &post) {
 		// This will generally involve integrations, therefore we will need the have timestamps of the various events
 		
 		std::cout << "DataFusion_Model::propagation_model -- step 1" << std::endl;
-		
 		
 		return priori;
 }
