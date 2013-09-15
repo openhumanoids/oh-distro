@@ -34,25 +34,41 @@ void KalmanFilter::Initialize() {
 }
 
 
-KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post) {
+KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post, const VAR_VECTORd &input) {
 	
 	KalmanFilter_Types::Priori priori;
+	
+	double dt;
+	
+	dt = 1E-6*(ut_now - post.utime);
+	
+	std::cout <<"test " << _model->getSettings().propagate_with_linearized <<std::endl;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
 	
 	// propagate mu
 	
+	
 	if (_model->getSettings().propagate_with_linearized) {
 		// Propagate the state with transition matrix
 		
 		// Get continuous dynamics model -> convert to discrete -> propagate state mean and covariance
+		//VAR_MATRIXd F;
+		//VAR_MATRIXd Phi;
+				
+		KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices;
 		
+		
+		cont_matrices = _model->getContinuousMatrices(post.mu);
 		
 		// s -> z
 		
 		//lti_disc
+		disc_matrices = lti_disc(dt, cont_matrices);
 		
+		priori.mu = disc_matrices.A * post.mu;
 		
+		std::cout <<"test2" <<std::endl;
 		
 	} else {
 		

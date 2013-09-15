@@ -16,6 +16,17 @@ MatricesUnit::MatricesUnit() {
 }
 
 
+// Base Model===============================================================================================================
+
+const MatricesUnit &BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
+	
+	// Compute the new jacobians
+	
+	std::cout << "BaseModel::getContinuousMatrices -- calling for new Jacobians" << std::endl;
+	continuous_matrices.A = anaylitical_jacobian(state);
+	
+	return continuous_matrices;
+}
 
 
 // Joint Model=============================================================================================================
@@ -35,12 +46,16 @@ Joint_Model::Joint_Model() {
 
 VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	
+	VAR_MATRIXd F(settings.state_size,settings.state_size);
+	F.setZero();
 	//continuous_matrices.A.setZero(); //  -- Inefficient
 	
 	// joint velocity is the first derivative of joint position
-	continuous_matrices.A(1,1) = 1;
+	F(1,1) = 1;
 	
-	return continuous_matrices.A;
+	std::cout << "Joint_Model::anaylitical_jacobian -- a new Jacobian was computed." << std::endl;
+	
+	return F;
 }
 
 
@@ -54,6 +69,7 @@ VAR_VECTORd Joint_Model::propagation_model(const VAR_VECTORd &post) {
 	
 	return priori;
 }
+
 
 
 

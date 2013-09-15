@@ -26,7 +26,7 @@ public:
 	
 	void Initialize();
 	
-	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post);
+	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post, const VAR_VECTORd &input);
 	
 	KalmanFilter_Types::Posterior propagatePosterior();
 	

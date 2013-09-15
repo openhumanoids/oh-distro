@@ -23,7 +23,13 @@ int main() {
 	KalmanFilter kf(joint_model);
 	
 	kf.Initialize();
-	kf.propagatePriori(0, posterior_estimate);
+	
+	Eigen::Vector2d u;
+	u.setZero();
+	
+	KalmanFilter_Types::Priori priori;
+	
+	priori = kf.propagatePriori(0, posterior_estimate,u);
 	
 	// Something like here is the model
 	//kf.setModel(*prop, *meas); // for numerical derived jacobian
