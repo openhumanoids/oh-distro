@@ -2,6 +2,8 @@
 
 #include <leg-odometry/KF_Models.hpp>
 
+#include <leg-odometry/KF_Tuning_Parameters.hpp>
+
 namespace KalmanFilter_Models {
 
 MatricesUnit::MatricesUnit() {
@@ -32,6 +34,8 @@ MatricesUnit BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 	
 	
 	// Continuous process noise
+	continuous_matrices.Q = continuous_process_noise(state);
+	
 	
 	
 	return continuous_matrices;
@@ -57,8 +61,21 @@ Joint_Model::Joint_Model() {
 	continuous_matrices.Q(0,0) = 0.001;
 	continuous_matrices.Q(1,1) = 0.001;
 	
-	
 }
+
+VAR_MATRIXd Joint_Model::continuous_process_noise(const VAR_MATRIXd &state) {
+	
+	VAR_MATRIXd temp;
+		
+	temp.resize(2,2);
+	temp.setZero();
+	
+	temp(0,0) = PROCESS_NOISE_JOINT_POSITIONS;
+	temp(1,1) = PROCESS_NOISE_JOINT_VELOCITIES;
+	
+	return temp;
+}
+
 
 VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	
@@ -68,7 +85,6 @@ VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	
 	// joint velocity is the first derivative of joint position
 	F(1,1) = 1;
-	std::cout << "Joint_Model::anaylitical_jacobian -- a new Jacobian was computed." << std::endl;
 	
 	return F;
 }
@@ -94,6 +110,7 @@ VAR_VECTORd Joint_Model::measurement_model(VAR_VECTORd Param) {
 	return temp;
 }
 
+
 void Joint_Model::identify() { std::cout << "This is the Joint Model class." << std::endl;}
 
 
@@ -114,6 +131,12 @@ DataFusion_Model::DataFusion_Model() {
 
 }
 
+VAR_MATRIXd DataFusion_Model::continuous_process_noise(const VAR_MATRIXd &state) {
+	
+	VAR_MATRIXd temp;
+	
+	return temp;
+}
 
 VAR_MATRIXd DataFusion_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 

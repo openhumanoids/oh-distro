@@ -67,6 +67,7 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/KalmanFilter_Types.hpp
   src/include/leg-odometry/kf_conversion_definitions.hpp
   src/include/leg-odometry/KF_Models.hpp
+  src/include/leg-odometry/KF_Tuning_Parameters.hpp
   DESTINATION leg-odometry)
 pods_install_pkg_config_file(leg-odometry
   LIBS -lleg-odometry 

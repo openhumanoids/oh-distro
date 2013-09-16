@@ -17,11 +17,12 @@ int main() {
 	
 	cout << "Starting tests..." << endl << endl;
 	
-	KalmanFilter_Models::Joint_Model joint_model;
+	
 	KalmanFilter_Types::Posterior posterior_estimate;
 	posterior_estimate.mu.resize(2);
 	posterior_estimate.mu.setZero();
 	
+	KalmanFilter_Models::Joint_Model joint_model;
 	KalmanFilter kf(joint_model);
 	
 	kf.Initialize();
@@ -31,7 +32,6 @@ int main() {
 	
 	KalmanFilter_Types::Priori priori;
 	
-	priori = kf.propagatePriori(0, posterior_estimate,u);
 	
 	// Something like here is the model
 	//kf.setModel(*prop, *meas); // for numerical derived jacobian
@@ -47,11 +47,12 @@ int main() {
 	// step in time with IMU measurements
 	// step in time with joint position measurements
 	// step in time with leg odometry position measurements
-	// step in time wiht joint measurements to resolve positions internally
-	//kf.step()
-	
+	// step in time with joint measurements to resolve positions internally
+	//kf.step(joint_positions)
 
-	
+	priori = kf.propagatePriori(0, posterior_estimate,u);
+
+	// IMU/LO/VO data fusion will have similar step function, using the different model
 	
 	cout << "Success" << endl;
 	return 0;

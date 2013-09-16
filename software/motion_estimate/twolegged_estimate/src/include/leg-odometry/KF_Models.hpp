@@ -43,7 +43,12 @@ protected:
 	
 public:
 
+	// definition and parameter functions
 	virtual VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state) = 0;
+	virtual VAR_MATRIXd continuous_process_noise(const VAR_MATRIXd &state) = 0;
+	
+	
+	// 
 	virtual VAR_VECTORd propagation_model(const VAR_VECTORd &post) = 0;
 	virtual VAR_VECTORd measurement_model(VAR_VECTORd Param) = 0;
 	
@@ -63,6 +68,7 @@ public:
 	
 	Joint_Model();
 	
+	VAR_MATRIXd continuous_process_noise(const VAR_MATRIXd &state);
 	VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state);
 	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
 		
@@ -80,8 +86,10 @@ public:
 	
 	DataFusion_Model();
 	
+	VAR_MATRIXd continuous_process_noise(const VAR_MATRIXd &state);
 	VAR_MATRIXd anaylitical_jacobian(const VAR_MATRIXd &state);
 	VAR_VECTORd propagation_model(const VAR_VECTORd &post);
+	
 	VAR_VECTORd measurement_model(VAR_VECTORd Param);
 	
 	void identify();
