@@ -334,7 +334,7 @@ classdef WholeBodyPlanner < KeyframePlanner
             q_breaks = zeros(nq,length(s_breaks));
             % calculate end effectors breaks via FK.
             for brk =1:length(s_breaks),
-               q_breaks = obj.plan_cache.qtraj.eval(s_breaks(brk));
+               q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
             end
             
             Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
