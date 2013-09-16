@@ -37,8 +37,8 @@ setenv('PATH_LICENSE_STRING','2069810742&Courtesy_License&&&USR&2013&14_12_2011&
 
 
 addpath_drake;
-addpath_eigen_utils;
-addpath_matlab_utils;
+%addpath_eigen_utils;
+%addpath_matlab_utils;
 
 addpath([pods_get_base_path,'/matlab']);
 
