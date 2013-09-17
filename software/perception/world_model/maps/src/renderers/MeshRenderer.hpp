@@ -42,6 +42,7 @@ public:
                      const BotParam* iParam, const BotFrames* iFrames);
   void addCameraChannel(const std::string& iChannel,
                         const bool iImagesWrapper=false);
+  void setActiveCameraChannel(const std::string& iChannel);
   void setColorMode(const ColorMode& iMode);
   void setMeshMode(const MeshMode& iMode);
 

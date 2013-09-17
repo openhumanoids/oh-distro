@@ -38,6 +38,8 @@ struct MeshRenderer::InternalState {
     GLuint mTextureId;
     InternalState* mState;
     bool mIdealPinhole;
+    int mImageWidth;
+    int mImageHeight;
 
     CameraSubscription(InternalState* iState) {
       mSubscription = NULL;
@@ -58,11 +60,28 @@ struct MeshRenderer::InternalState {
     }
   };
 
+  struct MultiTexture {
+    int mWidth;
+    int mHeight;
+    std::vector<int> mVerticalOffsets;
+    std::vector<uint8_t> mData;
+    GLuint mTextureId;
+    std::vector<float> mTexCoords;
+    bool mCoordsNeedUpdate;
+    bool mImagesNeedUpdate;
+
+    MultiTexture() {
+      mCoordsNeedUpdate = true;
+      mImagesNeedUpdate = true;
+    }
+  };
+
   BotWrapper::Ptr mBotWrapper;
 
   // camera data
   std::unordered_map<std::string, CameraSubscription::Ptr> mCameraSubscriptions;
   std::string mActiveCameraChannel;
+  MultiTexture mMultiTexture;
 
   // external texture map data
   bot_core::image_t mTextureImage;
@@ -128,42 +147,11 @@ struct MeshRenderer::InternalState {
       // TODO: this will break unless rgb3
     }
 
-    if (sub->mCamTrans == NULL) {
-      sub->mCamTrans = bot_param_get_new_camtrans
-        (mBotWrapper->getBotParam(), sub->mChannel.c_str());
-      if (sub->mCamTrans == NULL) {
-        std::cout << "Error: cannot get camtrans for " <<
-          sub->mChannel << std::endl;
-        return;
-      }
-      double K00 = bot_camtrans_get_focal_length_x(sub->mCamTrans);
-      double K11 = bot_camtrans_get_focal_length_y(sub->mCamTrans);
-      double K01 = bot_camtrans_get_skew(sub->mCamTrans);
-      double K02 = bot_camtrans_get_principal_x(sub->mCamTrans);
-      double K12 = bot_camtrans_get_principal_y(sub->mCamTrans);
-      sub->mProjectionMatrix = Eigen::Matrix4f::Zero();
-      sub->mProjectionMatrix(0,0) = K00;
-      sub->mProjectionMatrix(0,1) = K01;
-      sub->mProjectionMatrix(0,2) = K02;
-      sub->mProjectionMatrix(1,1) = K11;
-      sub->mProjectionMatrix(1,2) = K12;
-      sub->mProjectionMatrix(2,3) = 1;
-      sub->mProjectionMatrix(3,2) = 1;
-
-      std::string key("cameras.");
-      key += (sub->mChannel + ".coord_frame");
-      char* val = NULL;
-      if (bot_param_get_str(mBotWrapper->getBotParam(),
-                            key.c_str(), &val) == 0) {
-        sub->mCoordFrame = val;
-        free(val);
-      }
-    }
-
     mBotWrapper->getTransform("local", sub->mCoordFrame,
                               sub->mLocalToCamera, sub->mImage.utime);
 
     mNeedsUpdate = true;
+    mMultiTexture.mImagesNeedUpdate = true;
   }
 
   void remapPixelValues(const bot_core::image_t& iImage,
@@ -260,7 +248,71 @@ addCameraChannel(const std::string& iChannel, const bool iImagesWrapper) {
       mState->mBotWrapper->getLcm()->subscribe
       (sub->mChannel, &InternalState::onCameraImage, mState.get());
   }
+
+  BotParam* botParam = mState->mBotWrapper->getBotParam();
+  sub->mCamTrans = bot_param_get_new_camtrans(botParam, sub->mChannel.c_str());
+  if (sub->mCamTrans == NULL) {
+    std::cout << "Error: cannot get camtrans for " <<
+      sub->mChannel << std::endl;
+    return;
+  }
+  double K00 = bot_camtrans_get_focal_length_x(sub->mCamTrans);
+  double K11 = bot_camtrans_get_focal_length_y(sub->mCamTrans);
+  double K01 = bot_camtrans_get_skew(sub->mCamTrans);
+  double K02 = bot_camtrans_get_principal_x(sub->mCamTrans);
+  double K12 = bot_camtrans_get_principal_y(sub->mCamTrans);
+  sub->mProjectionMatrix = Eigen::Matrix4f::Zero();
+  sub->mProjectionMatrix(0,0) = K00;
+  sub->mProjectionMatrix(0,1) = K01;
+  sub->mProjectionMatrix(0,2) = K02;
+  sub->mProjectionMatrix(1,1) = K11;
+  sub->mProjectionMatrix(1,2) = K12;
+  sub->mProjectionMatrix(2,3) = 1;
+  sub->mProjectionMatrix(3,2) = 1;
+  sub->mImageWidth = bot_camtrans_get_width(sub->mCamTrans);
+  sub->mImageHeight = bot_camtrans_get_width(sub->mCamTrans);
+
+  std::string key("cameras.");
+  key += (sub->mChannel + ".coord_frame");
+  char* val = NULL;
+  if (bot_param_get_str(botParam, key.c_str(), &val) == 0) {
+    sub->mCoordFrame = val;
+    free(val);
+  }
+
+  // determine whether this is an ideal pinhole projection
+  key = std::string("cameras.");
+  key += (sub->mChannel + ".intrinsic_cal.distortion_model");
+  val = NULL;
+  if (bot_param_get_str(botParam, key.c_str(), &val) == 0) {
+    if (strcmp(val, "plumb_bob") != 0) {
+      sub->mIdealPinhole = false;
+    }
+    else {
+      // TODO: check whether the distortion params are zero
+    }
+    free(val);
+  }
+
   mState->mCameraSubscriptions[iChannel] = sub;
+
+  std::vector<InternalState::CameraSubscription::Ptr> subs;
+  subs.reserve(mState->mCameraSubscriptions.size());
+  for (auto it : mState->mCameraSubscriptions) subs.push_back(it.second);
+
+  // vertical offsets
+  InternalState::MultiTexture& multiTex = mState->mMultiTexture;
+  multiTex.mVerticalOffsets.resize(subs.size());
+  multiTex.mWidth = multiTex.mHeight = 0;
+  for (size_t i = 0; i < multiTex.mVerticalOffsets.size(); ++i) {
+    multiTex.mVerticalOffsets[i] = multiTex.mHeight;
+    multiTex.mHeight += subs[i]->mImageHeight;
+    multiTex.mWidth = std::max(multiTex.mWidth, subs[i]->mImageWidth);
+  }
+}
+
+void MeshRenderer::
+setActiveCameraChannel(const std::string& iChannel) {
   mState->mActiveCameraChannel = iChannel;
 }
 
@@ -399,6 +451,7 @@ setData(const std::vector<Eigen::Vector3f>& iVertices,
 
   mState->mTransform = iTransform;
   mState->mNeedsUpdate = true;
+  mState->mMultiTexture.mCoordsNeedUpdate = true;
 }
 
 void MeshRenderer::
@@ -445,6 +498,7 @@ draw() {
     glGenBuffers(1, &mState->mTexCoordBufferId);
     glGenBuffers(1, &mState->mFaceBufferId);
     glGenTextures(1, &mState->mGenericTextureId);
+    glGenTextures(1, &mState->mMultiTexture.mTextureId);
     mState->mFirstDraw = false;
   }
   for (auto item : mState->mCameraSubscriptions) {
@@ -577,6 +631,97 @@ draw() {
                  &mState->mVertexBuffer[0], GL_STATIC_DRAW);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(3, GL_FLOAT, 0, 0);
+  }
+
+  else if (mState->mColorMode == ColorModeCamera) {
+    // camera info vector
+    std::vector<InternalState::CameraSubscription::Ptr> subs;
+    subs.reserve(mState->mCameraSubscriptions.size());
+    for (auto it : mState->mCameraSubscriptions) subs.push_back(it.second);
+
+    // set up texture image
+    InternalState::MultiTexture& multiTex = mState->mMultiTexture;
+    if (multiTex.mImagesNeedUpdate) {
+      int strideBytes = multiTex.mWidth*3;
+      multiTex.mData.resize(strideBytes*multiTex.mHeight);
+      std::fill(multiTex.mData.begin(), multiTex.mData.end(), 0);
+      // TODO: fill with background color instead of black
+      int outOffset = 0;
+      for (size_t i = 0; i < subs.size(); ++i) {
+        bot_core::image_t& img = subs[i]->mImage;
+        if (img.size == 0) {
+          outOffset += strideBytes*subs[i]->mImageHeight;
+          continue;
+        }
+        int inOffset = 0;
+        for (int j = 0; j < img.height; ++j) {
+          memcpy(multiTex.mData.data()+outOffset, img.data.data()+inOffset,
+                 img.width*3);
+          outOffset += strideBytes;
+          inOffset += img.row_stride;
+        }
+      }
+      multiTex.mImagesNeedUpdate = false;
+    }
+
+    // project each point
+    // TODO: optimize inner loop
+    std::vector<float>& texCoords = mState->mMultiTexture.mTexCoords;
+    if (multiTex.mCoordsNeedUpdate) {
+      int n = mState->mVertexBuffer.size()/3;
+      texCoords.resize(2*n);
+      for (int i = 0; i < n; ++i) {
+        Eigen::Vector4f ptRaw(0,0,0,1);
+        for (int k = 0; k < 3; ++k) ptRaw[k] = mState->mVertexBuffer[3*i+k];
+        Eigen::Vector4f prod = mState->mTransform*ptRaw;
+        Eigen::Vector3f ptLocal = prod.head<3>()/prod[3];
+        double minDist = 1e10;
+        int bestIndex = -1;
+        Eigen::Vector2f bestCoord(-1,-1);
+        for (size_t j = 0; j < subs.size(); ++j) {
+          if (subs[j]->mImage.size == 0) continue;
+          Eigen::Vector3f pt = subs[j]->mLocalToCamera*ptLocal;
+          double in[] = {pt[0], pt[1], pt[2]};
+          double pix[3];
+          if (0 == bot_camtrans_project_point(subs[j]->mCamTrans, in, pix)) {
+            double dx = pix[0]-subs[j]->mImageWidth/2;
+            double dy = pix[1]-subs[j]->mImageHeight/2;
+            double dist = dx*dx + dy*dy;
+            if (dist < minDist) {
+              minDist = dist;
+              bestIndex = j;
+              bestCoord << pix[0],pix[1];
+            }
+          }
+        }
+        texCoords[2*i+0] = bestCoord[0]/multiTex.mWidth;
+        texCoords[2*i+1] = bestCoord[1];
+        if (bestIndex >= 0) {
+          texCoords[2*i+1] += multiTex.mVerticalOffsets[bestIndex];
+        }
+        texCoords[2*i+1] /= multiTex.mHeight;
+      }
+      multiTex.mCoordsNeedUpdate = false;
+    }
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    GLfloat color[] = {mState->mColor[0], mState->mColor[1], mState->mColor[2],
+                       mState->mColorAlpha};
+    glColor4ub(255,255,255,255*mState->mColorAlpha);
+    glBindTexture(GL_TEXTURE_2D, multiTex.mTextureId);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, multiTex.mWidth, multiTex.mHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, multiTex.mData.data());
+    glBindBuffer(GL_ARRAY_BUFFER, mState->mTexCoordBufferId);
+    glBufferData(GL_ARRAY_BUFFER, texCoords.size()*sizeof(float),
+                 texCoords.data(), GL_STATIC_DRAW);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, 0, 0);
   }
 
   else if ((mState->mColorMode == ColorModeTexture) &&
