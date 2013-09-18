@@ -529,8 +529,7 @@ classdef QPControlBlock < MIMODrakeSystem
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
       %
-      %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x_bar+D*(Jdot*qd + J*qdd),Qy) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd-u0)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
-      
+      %  min: quad(Jdot*qd + J*qdd,R_ls) + quad(C*x_bar+D*(Jdot*qd + J*qdd),Q) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
         Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);

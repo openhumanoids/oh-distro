@@ -29,15 +29,15 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         dt = 0.002;
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
-      defaults = struct('nom_forward_step', 0.25,... %m
-        'max_forward_step', 0.5,...%m
+      defaults = struct('nom_forward_step', 0.15,... %m
+        'max_forward_step', 0.3,...%m
         'max_backward_step', 0.1,...%m
         'max_step_width', 0.35,...%m
         'max_step_dz', 0.3,...%m
-        'min_step_width', 0.2,...%m
-        'nom_step_width', 0.26,...%m (nominal step width)
-        'nom_step_clearance', 0.05,...%m
-        'max_step_rot', pi/6,... % rad
+        'min_step_width', 0.26,...%m
+        'nom_step_width', 0.28,...%m (nominal step width)
+        'nom_step_clearance', 0.04,...%m
+        'max_step_rot', pi/10,... % rad
         'r_foot_name', 'r_foot',...
         'terrain_step_threshold', 0.03,...%m
         'l_foot_name', 'l_foot');

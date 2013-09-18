@@ -27,7 +27,7 @@ nom_z_clearance = options.step_height;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
 min_hold_time = 0.1; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
-foot_yaw_rate = 1; % rad/s
+foot_yaw_rate = 0.75; % rad/s
 
 next_pos(6) = last_pos(6) + angleDiff(last_pos(6), next_pos(6));
 

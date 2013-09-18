@@ -17,8 +17,8 @@ v.display_dt = 0.05;
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
-options.inertia_error = 0.1; % standard deviation for inertia noise (percentage of true inertia)
-options.damping_error = 0.1; % standard deviation for damping noise (percentage of true joint damping)
+options.inertia_error = 0.05; % standard deviation for inertia noise (percentage of true inertia)
+options.damping_error = 0.05; % standard deviation for damping noise (percentage of true joint damping)
 % ******************* END ADJUSTABLE **************************************
 
 rctrl = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
@@ -38,7 +38,7 @@ q0 = x0(1:nq);
 step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
 step_options.step_height = 0.0;
-step_options.step_speed = 1.0;
+step_options.step_speed = 0.75;
 step_options.follow_spline = true;
 step_options.right_foot_lead = true;
 step_options.ignore_terrain = false;
@@ -97,9 +97,9 @@ ctrl_data = SharedDataHandle(struct(...
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
-options.dt = 0.004;
+options.dt = 0.003;
 options.slack_limit = 30.0;
-options.w = 0.01;
+options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -110,7 +110,7 @@ qp = QPControlBlock(rctrl,ctrl_data,options);
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
-options.delay_steps = 2;
+options.delay_steps = 1;
 options.use_input_frame = true;
 % ******************* END ADJUSTABLE **************************************
 

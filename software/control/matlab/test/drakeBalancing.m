@@ -1,4 +1,4 @@
-function drakeBalancing
+function drakeBalancing(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -60,7 +60,6 @@ ctrl_data = SharedDataHandle(struct(...
 options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
-options.use_mex = true;
 qp = QPControlBlock(r,ctrl_data,options);
 clear options;
 
