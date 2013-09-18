@@ -10,12 +10,12 @@ end
 gains = struct();
 gains.k_q_i = zeros(nq,1);
 gains.ff_f_d = zeros(nq,1);
-gains.ff_qd = zeros(nq,1);
 gains.ff_qd_d = zeros(nq,1);
 
 k_f_p = Point(atlas_input_frame,0);
 k_q_p = Point(atlas_input_frame,0);
 k_qd_p = Point(atlas_input_frame,0);
+ff_qd = Point(atlas_input_frame,0);
 ff_f_d = Point(atlas_input_frame,0);
 ff_const = Point(atlas_input_frame,0);
 
@@ -27,12 +27,26 @@ ff_const.r_arm_shx = 0.055; % 9-17-13, fc
 ff_const.l_arm_ely = -0.045; % 9-17-13, fc
 ff_const.r_arm_ely = 0.05; % 9-17-13, fc
 ff_const.l_arm_elx = -0.01; % 9-17-13, fc 
-ff_const.r_arm_elx = 0.0; % 9-17-13, fc
+ff_const.r_arm_elx = -0.025; % 9-18-13, fc
 ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
 ff_const.r_arm_uwy = 0.035; % 9-17-13, fc
 ff_const.l_arm_mwx = 0.025; % 9-17-13, fc
-ff_const.r_arm_mwx = -0.16; % 9-17-13, fc
+ff_const.r_arm_mwx = -0.15; % 9-18-13, fc
 ff_const.neck_ay = 0.1;
+
+
+ff_qd.l_arm_usy = 0.0; 
+ff_qd.r_arm_usy = 0.0; 
+ff_qd.l_arm_shx = 0.0; 
+ff_qd.r_arm_shx = 0.0; 
+ff_qd.l_arm_ely = 0.0; 
+ff_qd.r_arm_ely = 0.0; 
+ff_qd.l_arm_elx = 0.0;  
+ff_qd.r_arm_elx = 0.0; % 9-18-13, fc
+ff_qd.l_arm_uwy = 0.0; 
+ff_qd.r_arm_uwy = 0.0; 
+ff_qd.l_arm_mwx = 0.0; 
+ff_qd.r_arm_mwx = 0.0; % 9-18-13, fc (should be higher, velocity noise)
 
 ff_f_d.l_arm_usy = 0.0; % 9-17-13
 ff_f_d.r_arm_usy = 0.0025; % 9-17-13
@@ -46,7 +60,7 @@ ff_f_d.l_arm_uwy = 0.005; % 9-17-13
 ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
 ff_f_d.l_arm_mwx = 0.0; % 9-17-13
 ff_f_d.r_arm_mwx = 0.01; % 9-17-13
- 
+
 k_f_p.back_bkz = 0.012;
 k_f_p.back_bky = 0.012;
 k_f_p.back_bkx = 0.012;
@@ -139,6 +153,7 @@ gains.k_q_p = double(k_q_p);
 gains.k_qd_p = double(k_qd_p);
 gains.ff_f_d = double(ff_f_d);
 gains.ff_const = double(ff_const);
+gains.ff_qd = double(ff_qd);
 
 end
 

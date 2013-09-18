@@ -53,7 +53,6 @@ set( CMAKE_JAVA_INCLUDE_PATH ${LCM_JAR_FILE}:${cmake_jar_dir}/drake.jar:${cmake_
 
 set(java_src_files
   LCMLogParser.java
-  RobotStateAndEffortCoder.java
   AtlasStateCommandLogParser.java
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java

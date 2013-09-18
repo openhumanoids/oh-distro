@@ -11,11 +11,18 @@ public class RobotStateCoder implements drake.util.LCMCoder
     java.util.TreeMap<String,Integer> m_joint_map;
     java.util.TreeMap<String,Integer> m_floating_joint_map;
     drc.robot_state_t msg;
-
-    public RobotStateCoder(String[] joint_name)
-    {
+   
+    boolean include_torques;
+    
+    public RobotStateCoder(String[] joint_name, boolean incl_torques) {
+      this(joint_name);
+      include_torques = incl_torques;
+    }
+    
+    public RobotStateCoder(String[] joint_name) {
       m_joint_map = new java.util.TreeMap<String,Integer>();
       m_floating_joint_map = new java.util.TreeMap<String,Integer>();
+      include_torques = false;
       
       m_num_joints = 0;
       m_num_floating_joints = 0;
@@ -58,7 +65,10 @@ public class RobotStateCoder implements drake.util.LCMCoder
     
     public int dim()
     {
-      return 2*(m_num_joints+m_num_floating_joints);
+      if (include_torques)
+        return 3*(m_num_joints+m_num_floating_joints);
+      else
+        return 2*(m_num_joints+m_num_floating_joints);
     }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
@@ -78,16 +88,16 @@ public class RobotStateCoder implements drake.util.LCMCoder
       int index;
 
       drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-      fdata.val = new double[2*(m_num_joints+m_num_floating_joints)];
+      fdata.val = new double[dim()];
       fdata.t = (double)msg.utime / 1000000.0;
       for (int i=0; i<msg.num_joints; i++) {
         j = m_joint_map.get(msg.joint_name[i]);
         if (j!=null) {
           index = j.intValue();
           fdata.val[index] = msg.joint_position[i];
-//             if (fdata.val[index] > Math.PI)
-//               fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = msg.joint_velocity[i];
+          if (include_torques) 
+            fdata.val[index+2*(m_num_joints+m_num_floating_joints)] = msg.joint_effort[i];
         }
       }
 
@@ -167,6 +177,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
           index = j.intValue();
           msg.joint_position[i] = (float) d.val[index];
           msg.joint_velocity[i] = (float) d.val[index+m_num_joints+m_num_floating_joints];
+          if (include_torques)
+            msg.joint_effort[i] = (float) d.val[index+2*(m_num_joints+m_num_floating_joints)];
         }
       }
 
