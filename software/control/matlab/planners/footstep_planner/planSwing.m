@@ -71,10 +71,8 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
   
   %% Expand terrain convex hull by the size of the foot
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
-  has_terrain = false;
   for j = 1:length(terrain_pts(1,:))
     if terrain_pts(2, j) > (j / length(terrain_pts(1,:))) * (next_pos(3) - last_pos(3)) + last_pos(3) + (options.step_height / 2)
-      has_terrain = true;
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; contact_height];
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; contact_height];
     end
@@ -91,7 +89,6 @@ if (step_dist_xy > 0.01 && ~options.ignore_terrain)
 else
   %% Just ignore the terrain and provide an apex pose
   step_dist_xy = 1;
-  has_terrain = false;
   traj_pts = [[0; last_pos(3)], [apex_fracs; apex_pos(3,:)], [1;next_pos(3) + pre_contact_height]];
 end
 traj_pts_xyz = [last_pos(1) + (next_pos(1) - last_pos(1)) * traj_pts(1,:) / step_dist_xy;
@@ -109,7 +106,7 @@ traj_ts = [0, cumsum(traj_dts)] ;
 %% Add time to shift weight
 if fixed_duration
   hold_time = 0.1;
-  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; 
   traj_ts = traj_ts * (fixed_duration / traj_ts(end));
 else
   hold_time = traj_ts(end) * hold_frac;
@@ -117,9 +114,6 @@ else
   traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
 end
 
-
-
-traj_pts = [traj_pts(:,1), traj_pts, traj_pts(:,end)];
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
 landing_time = traj_ts(end-1);
 takeoff_time = traj_ts(2);
@@ -129,9 +123,6 @@ rpy_pts = [last_pos(4:6), interp1(traj_ts([2,end-1]), [last_pos(4:6), next_pos(4
 
 swing_poses.center = [traj_pts_xyz; rpy_pts];
 
-if ~has_terrain
-  effective_height = 0.02;
-end
 swing_ts = traj_ts;
 
 
