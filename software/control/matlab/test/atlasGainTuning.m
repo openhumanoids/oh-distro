@@ -53,17 +53,17 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_uwy';% <---- 
+joint = 'r_arm_usy';% <---- 
 control_mode = 'force';% <----  force, position
-signal = 'zoh';% <----  zoh, foh, chirp
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.035+gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
+ff_const = gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
   k_f_p = gains.k_f_p(act_idx==joint_index_map.(joint));%0.125;% <----
   ff_f_d = gains.ff_f_d(act_idx==joint_index_map.(joint));%0.01;% <----
-  ff_qd = 0.265+gains.ff_qd(act_idx==joint_index_map.(joint));% <----
+  ff_qd = gains.ff_qd(act_idx==joint_index_map.(joint));% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
   k_q_p =  0.0;% <----
@@ -77,10 +77,10 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = true;
   ts = linspace(0,40,800);% <----
-  amp = 13;% <----  Nm or radians
-  freq = linspace(0.1,1,800);% <----  cycles per second
+  amp = 16;% <----  Nm or radians
+  freq = linspace(0.1,1.0,800);% <----  cycles per second
 else
-  vals =0.8*[0 10 -10 10 0 0];% <----  Nm or radians
+  vals = 0.8*[0 10 -10 10 0 0];% <----  Nm or radians
   ts = linspace(0,20,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,9 +193,8 @@ qdes = zeros(nq,1);
 
 
 if strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
-    strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
-    strcmp(joint,'l_arm_ely') || strcmp(joint,'r_arm_ely')
-
+    strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') 
+  
   qdes(joint_index_map.r_arm_shx) = 1.45;
   qdes(joint_index_map.l_arm_shx) = -1.45;
 
@@ -205,21 +204,35 @@ if strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
   qdes(joint_index_map.r_arm_ely) = joint_offset_map.r_arm_ely;
   qdes(joint_index_map.l_arm_ely) = joint_offset_map.l_arm_ely;
 
-elseif strcmp(joint,'l_arm_mwx') || strcmp(joint,'l_arm_uwy') || ...
-    strcmp(joint,'l_arm_elx')
+elseif strcmp(joint,'l_arm_ely') || strcmp(joint,'l_arm_mwx') || strcmp(joint,'l_arm_elx')
   
   qdes(joint_index_map.r_arm_shx) = 1.45;
   qdes(joint_index_map.l_arm_elx) = 1.57;
   qdes(joint_index_map.l_arm_ely) = 3.14;
 
-elseif strcmp(joint,'r_arm_mwx') || strcmp(joint,'r_arm_uwy') || ...
-    strcmp(joint,'r_arm_elx')
+elseif strcmp(joint,'r_arm_ely') || strcmp(joint,'r_arm_mwx') || strcmp(joint,'r_arm_elx')
   
   qdes(joint_index_map.l_arm_shx) = -1.45;
   qdes(joint_index_map.r_arm_elx) = -1.57;
   qdes(joint_index_map.r_arm_uwy) = 1.57;
   qdes(joint_index_map.r_arm_ely) = 3.14;
 
+elseif strcmp(joint,'r_arm_uwy')
+  
+  qdes(joint_index_map.l_arm_shx) = -1.45;
+  qdes(joint_index_map.r_arm_ely) = 1.57;
+  qdes(joint_index_map.r_arm_elx) = -1.57;
+  qdes(joint_index_map.r_arm_uwy) = 1.57;
+  qdes(joint_index_map.r_arm_mwx) = 1.15;
+  
+elseif strcmp(joint,'l_arm_uwy')
+  
+  qdes(joint_index_map.r_arm_shx) = 1.45;
+  qdes(joint_index_map.l_arm_ely) = 1.57;
+  qdes(joint_index_map.l_arm_elx) = 1.57;
+  qdes(joint_index_map.l_arm_uwy) = 1.57;
+  qdes(joint_index_map.l_arm_mwx) = -1.15;
+  
 else
   error ('that joint isnt supported yet');
 end

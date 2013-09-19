@@ -25,7 +25,7 @@ ff_const.r_arm_usy = -0.065; % 9-17-13, fc
 ff_const.l_arm_shx = -0.01; % 9-17-13, fc
 ff_const.r_arm_shx = 0.055; % 9-17-13, fc
 ff_const.l_arm_ely = -0.045; % 9-17-13, fc
-ff_const.r_arm_ely = 0.05; % 9-17-13, fc
+ff_const.r_arm_ely = 0.0; % 9-18-13, fc
 ff_const.l_arm_elx = -0.01; % 9-17-13, fc 
 ff_const.r_arm_elx = -0.025; % 9-18-13, fc
 ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
@@ -36,17 +36,17 @@ ff_const.neck_ay = 0.1;
 
 
 ff_qd.l_arm_usy = 0.0; 
-ff_qd.r_arm_usy = 0.0; 
+ff_qd.r_arm_usy = 0.25; 
 ff_qd.l_arm_shx = 0.0; 
-ff_qd.r_arm_shx = 0.0; 
+ff_qd.r_arm_shx = 0.275; 
 ff_qd.l_arm_ely = 0.0; 
-ff_qd.r_arm_ely = 0.0; 
+ff_qd.r_arm_ely = 0.25; 
 ff_qd.l_arm_elx = 0.0;  
-ff_qd.r_arm_elx = 0.0; % 9-18-13, fc
+ff_qd.r_arm_elx = 0.25; % 9-18-13, fc
 ff_qd.l_arm_uwy = 0.0; 
-ff_qd.r_arm_uwy = 0.0; 
+ff_qd.r_arm_uwy = 0.22; % 9-18-13, fc
 ff_qd.l_arm_mwx = 0.0; 
-ff_qd.r_arm_mwx = 0.0; % 9-18-13, fc (should be higher, velocity noise)
+ff_qd.r_arm_mwx = 0.2; % 9-18-13, fc
 
 ff_f_d.l_arm_usy = 0.0; % 9-17-13
 ff_f_d.r_arm_usy = 0.0025; % 9-17-13

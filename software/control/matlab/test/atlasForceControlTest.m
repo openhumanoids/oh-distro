@@ -4,18 +4,12 @@ function atlasForceControlTest
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_arm_elx';% <---- 
+joint = 'r_arm_usy';% <---- 
 signal = 'zoh';% <----  zoh, foh, chirp
-
-% GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = 0.0;% <----
-k_f_p = 0.13;% <----
-ff_f_d = 0.0;% <----
-ff_qd = 0.0;% <----
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = false;
+  zero_crossing = true;
   ts = linspace(0,25,400);% <----
   amp = 10;% <----  Nm
   freq = linspace(0.025,0.4,400);% <----  cycles per second
@@ -32,30 +26,42 @@ T=ts(end);
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
+options.floating = false;
+r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+fixed_joint_idx = find(strcmp(r_fixed.getStateFrame.coordinates,joint));
+
+
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
 ref_frame = AtlasPosTorqueRef(r);
 
+nq = getNumDOF(r);
 nu = getNumInputs(r);
 
 joint_index_map = struct(); % maps joint names to indices
 joint_offset_map = struct(); % maps joint names to nominal angle offsets
 joint_sign_map = struct(); % maps joint names to signs in the direction of desired motion
-for i=1:nu
-  joint_index_map.(input_frame.coordinates{i}) = i;
-  joint_offset_map.(input_frame.coordinates{i}) = 0;
-  joint_sign_map.(input_frame.coordinates{i}) = 1;
+for i=1:nq
+  joint_index_map.(state_frame.coordinates{i}) = i;
+  joint_offset_map.(state_frame.coordinates{i}) = 0;
+  joint_sign_map.(state_frame.coordinates{i}) = 1;
 end
 
 joint_offset_map.l_arm_elx = 1.0;
 
 % set nonzero offsets
-joint_offset_map.l_arm_shx = -1.45;
+joint_offset_map.l_arm_shx = 0;
 joint_offset_map.l_arm_ely = 1.57;
-joint_offset_map.r_arm_shx = 1.45;
+joint_offset_map.r_arm_shx = 0;
 joint_offset_map.r_arm_ely = 1.57;
+joint_offset_map.l_arm_elx = 1.57;
+joint_offset_map.r_arm_elx = -1.57;
+joint_offset_map.l_arm_uwy = 1.57;
+joint_offset_map.r_arm_uwy = 1.57;
+
+
 % set negative joints
 joint_sign_map.l_arm_ely = -1;
 joint_sign_map.r_arm_usy = -1;
@@ -77,37 +83,58 @@ gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
-qdes = zeros(nu,1);
-if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
-    strcmp(joint,'l_arm_elx') || strcmp(joint,'r_arm_elx') || ...
-    strcmp(joint,'l_leg_hpy') || strcmp(joint,'r_arm_hpy') || ... 
-    strcmp(joint,'l_leg_kny') || strcmp(joint,'r_arm_kny') || ...
-    strcmp(joint,'neck_ay')
+qdes = zeros(nq,1);
 
+if strcmp(joint,'l_arm_shx') 
+  
   qdes(joint_index_map.r_arm_shx) = 1.45;
+
+  
+elseif strcmp(joint,'r_arm_shx')
+  
   qdes(joint_index_map.l_arm_shx) = -1.45;
-  
-elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
-    strcmp(joint,'l_arm_uwy') || strcmp(joint,'r_arm_uwy') || ...
-    strcmp(joint,'l_arm_mwx') || strcmp(joint,'r_arm_mwx')
-  
-  qdes(joint_index_map.r_arm_shx) = 1.3;
-  qdes(joint_index_map.l_arm_shx) = -1.3;
-  
-elseif strcmp(joint,'l_arm_ely')
+
+
+elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy')
+
+  qdes(joint_index_map.r_arm_shx) = 1.35;
+  qdes(joint_index_map.l_arm_shx) = -1.35;
+
+  qdes(joint_index_map.l_arm_uwy) = 1.57;
+  qdes(joint_index_map.r_arm_uwy) = 1.57;
+
+  qdes(joint_index_map.r_arm_ely) = joint_offset_map.r_arm_ely;
+  qdes(joint_index_map.l_arm_ely) = joint_offset_map.l_arm_ely;
+
+elseif strcmp(joint,'l_arm_ely') || strcmp(joint,'l_arm_mwx') || strcmp(joint,'l_arm_elx')
   
   qdes(joint_index_map.r_arm_shx) = 1.45;
   qdes(joint_index_map.l_arm_elx) = 1.57;
-%   qdes(joint_index_map.l_arm_ely) = 3.14;
-  qdes(joint_index_map.l_arm_ely) = 1.57;
-  
-elseif strcmp(joint,'r_arm_ely')
+  qdes(joint_index_map.l_arm_ely) = 3.14;
+
+elseif strcmp(joint,'r_arm_ely') || strcmp(joint,'r_arm_mwx') || strcmp(joint,'r_arm_elx')
   
   qdes(joint_index_map.l_arm_shx) = -1.45;
   qdes(joint_index_map.r_arm_elx) = -1.57;
-%  qdes(joint_index_map.r_arm_ely) = 3.14;
-  qdes(joint_index_map.r_arm_ely) = 1.57;
+  qdes(joint_index_map.r_arm_uwy) = 1.57;
+  qdes(joint_index_map.r_arm_ely) = 3.14;
 
+elseif strcmp(joint,'r_arm_uwy')
+  
+  qdes(joint_index_map.l_arm_shx) = -1.45;
+  qdes(joint_index_map.r_arm_ely) = 1.57;
+  qdes(joint_index_map.r_arm_elx) = -1.57;
+  qdes(joint_index_map.r_arm_uwy) = 1.57;
+  qdes(joint_index_map.r_arm_mwx) = 1.15;
+  
+elseif strcmp(joint,'l_arm_uwy')
+  
+  qdes(joint_index_map.r_arm_shx) = 1.45;
+  qdes(joint_index_map.l_arm_ely) = 1.57;
+  qdes(joint_index_map.l_arm_elx) = 1.57;
+  qdes(joint_index_map.l_arm_uwy) = 1.57;
+  qdes(joint_index_map.l_arm_mwx) = -1.15;
+  
 else
   error ('that joint isnt supported yet');
 end
@@ -117,33 +144,34 @@ qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 act_idx = getActuatedJoints(r);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
 
-disp('Ready to send input signal.');
-keyboard;
-
-% set gains to user specified values
-gains.ff_const(joint_index_map.(joint)) = ff_const;
-% set force gains
-gains.k_f_p(joint_index_map.(joint)) = k_f_p; 
-gains.ff_f_d(joint_index_map.(joint)) = ff_f_d;
-gains.ff_qd(joint_index_map.(joint)) = ff_qd;
+gains2 = getAtlasGains(input_frame); 
+gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint));
+gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
+gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
+gains.ff_const(act_idx==joint_index_map.(joint)) = gains2.ff_const(act_idx==joint_index_map.(joint));
 % set joint position gains to 0
-gains.k_q_p(joint_index_map.(joint)) = 0;
-gains.k_q_i(joint_index_map.(joint)) = 0;
-gains.k_qd_p(joint_index_map.(joint)) = 0;
+gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
+gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
+gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
 
 ref_frame.updateGains(gains);
 udes = zeros(nu,1);
 
-vals = joint_offset_map.(joint) + joint_sign_map.(joint) * vals;
+if ~exist('vals','var')
+  vals=amp;
+end
+
+vals = joint_sign_map.(joint) * vals;
 if strcmp(signal,'zoh')
   input_traj = PPTrajectory(zoh(ts,vals));
 elseif strcmp(signal,'foh')
   input_traj = PPTrajectory(foh(ts,vals));
 elseif strcmp(signal,'chirp')
+  offset = 0;
   if zero_crossing
-  	input_traj = PPTrajectory(foh(ts,joint_offset_map.(joint) + amp*sin(ts.*freq*2*pi)));
+  	input_traj = PPTrajectory(foh(ts, offset + amp*sin(ts.*freq*2*pi)));
   else
-    input_traj = PPTrajectory(foh(ts, joint_offset_map.(joint) + joint_sign_map.(joint)*(0.5*amp - 0.5*amp*cos(ts.*freq*2*pi))));
+    input_traj = PPTrajectory(foh(ts, offset + joint_sign_map.(joint)*(0.5*amp - 0.5*amp*cos(ts.*freq*2*pi))));
   end
 else
   error('unknown signal');
@@ -151,7 +179,6 @@ end
 
 toffset = -1;
 tt=-1;
-%dt = 0.003;
 
 H = [1 0];
 R = 5e-4;
@@ -160,6 +187,9 @@ jest = zeros(2,1);
 P = eye(2);
 
 joint_state_ind = strcmp(joint,r.getStateFrame.coordinates);
+
+fixed_act_idx = ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,joint));
+
 
 while tt<T
   [x,t] = getNextMessage(state_frame,1);
@@ -183,13 +213,28 @@ while tt<T
     jest = jprior + K*meas_resid;
     P = (eye(2) - K*H)*Pprior;
     
-    % compute additive torque value
-    f_offset = 10.4 *tanh(10.4*jest(2)) + 1.36*jest(2);
-    f_grav = 26.4*sin(jest(1));
+    
+    if jest(2) < 0
+      Fc = 7;
+    else
+      Fc = 7.5;
+    end
+    Fv = 0.25;
+    Fc_window = 0.15;
+
+
+    tau_friction = max(-1,min(1,jest(2)/Fc_window)) * Fc + Fv*jest(2); 
+
+    % do inverse dynamics on fixed base model
+    nq = getNumDOF(r_fixed);
+    [Hd,C,B] = manipulatorDynamics(r_fixed,x(6+(1:nq)),x(nq+12+(1:nq)));
+    qddot_des = zeros(nq,1);
+    u = B\(Hd*qddot_des + C);
+    f_grav = u(fixed_act_idx);
     
     % send torque command
-    udes(joint_index_map.(joint)) = input_traj.eval(tt) + f_offset + f_grav;
-    ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
+    udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt) + tau_friction +f_grav;
+    ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end
 end
