@@ -190,6 +190,40 @@ classdef Biped < TimeSteppingRigidBodyManipulator
            options.max_step_rot;
            options.max_step_rot];
     end
+
+    function [A, b] = getXYFootstepLinearCons(obj, p0_is_right_foot, options)
+      % Like getFootstepLinearCons, but only considers x and y
+
+      if nargin < 3
+        options = struct();
+      end
+      A = [1 0;
+           -1 0;
+           0 1;
+           0 -1];
+      if ~p0_is_right_foot
+        A(:,2) = -A(:,2);
+      end
+      if ~isfield(options, 'forward_step')
+        options.forward_step = obj.max_forward_step;
+      end
+      if ~isfield(options, 'nom_step_width')
+        options.nom_step_width = obj.nom_step_width;
+      end
+      if ~isfield(options, 'max_step_width')
+        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.01]);
+      end
+      if ~isfield(options, 'min_step_width')
+        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
+      end
+      if ~isfield(options, 'backward_step')
+        options.backward_step = obj.max_backward_step;
+      end
+      b = [options.forward_step;
+           options.backward_step;
+           options.max_step_width;
+           -options.min_step_width];
+    end
   end
 
   methods (Static)
