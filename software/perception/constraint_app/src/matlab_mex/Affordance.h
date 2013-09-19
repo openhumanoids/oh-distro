@@ -37,7 +37,7 @@ class Affordance {
   typedef std::map<std::string, KDL::Twist> SegmentNoiseMap;
   
   Affordance(const std::string& filename, std::ostream& log = std::cout);
-  Affordance(std::ostream& log, const drc::affordance_t& msg);  
+  //Affordance(std::ostream& log, const drc::affordance_t& msg);  
   bool GetStateFromMsg(const drc::affordance_t& msg, StateVector& state);
   void PrintState(const StateVector& state);
   KDL::Tree& GetTree() { return m_tree; }
@@ -57,6 +57,8 @@ class Affordance {
 		     KDL::Tree& newTree, 
 		     KDL::SegmentMap::const_iterator root, 
 		     const std::string& hook_name);
+
+  void GetJointNames(std::vector<std::string>& names);
 
  private:
   void PrintKdlTree(const KDL::Tree& tree, 

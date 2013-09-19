@@ -7,11 +7,10 @@ typedef int SOCKET;
 //NB: use tail -f cam.log to view output from the ConstraintApp_RB_UKF::main thread
 ConstraintApp::ConstraintApp() : m_stopThreads(false), m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary) 
 {
-  //m_lcm = lcm_create(NULL);
   m_lcm = new lcm::LCM();
-  
-  m_lcm->subscribe("AFFORDANCE_TRACK_COLLECTION", &ConstraintApp::AffordanceTrackCollectionHandlerAux, this);
-  m_lcm->subscribe("AFFORDANCE_FIT", &ConstraintApp::AffordanceFitHandlerAux, this);
+
+  m_lcm->subscribe("AFFORDANCE_DETECTIONS", &ConstraintApp::AffordanceTrackCollectionHandlerAux, this);
+  m_lcm->subscribe("CAM_AFFORDANCE_FIT", &ConstraintApp::AffordanceFitHandlerAux, this);
   /*
   drc_affordance_track_collection_t_subscribe(m_lcm, "AFFORDANCE_TRACK_COLLECTION",
 					      AffordanceTrackCollectionHandlerAux, this);

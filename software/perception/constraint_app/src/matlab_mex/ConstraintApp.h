@@ -19,6 +19,7 @@
 #include <kdl/frames_io.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/optional.hpp>
+#include "Affordance.h"
 
 class ConstraintApp
 {
@@ -29,9 +30,9 @@ class ConstraintApp
 
   virtual bool WaitForObservations(unsigned int timeout_ms) = 0;
   virtual bool GetObservations(std::vector<double>& actualObservations,
-			       std::vector<int>& observationIds) = 0;
+			       std::vector<std::string>& observationIds) = 0;
   virtual bool GetExpectedObservations(const std::vector<double>& state,
-				       const std::vector<int>& observationIds,
+				       const std::vector<std::string>& observationIds,
 				       std::vector<double>& observations) = 0;
   virtual bool GetResetAndClear() = 0;
   virtual void GetCurrentStateEstimate(std::vector<double>& state) = 0;
@@ -44,10 +45,10 @@ class ConstraintApp
   virtual void AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *affordance) = 0;
 
   virtual void AffordanceFitHandlerAux(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-				       const drc::affordance_t *affordance) {
+				       const drc::affordance_plus_t *affordance) {
     AffordanceFitHandler(affordance);
   }
-  virtual void AffordanceFitHandler(const drc::affordance_t *affordance) = 0;
+  virtual void AffordanceFitHandler(const drc::affordance_plus_t *affordance) = 0;
 
   virtual int GetStateSize() = 0;
 
@@ -68,7 +69,6 @@ class ConstraintApp
   boost::mutex m_stopThreadsMutex;
 
   boost::mutex m_lcmMutex;
-  //lcm_t* m_lcm;
   lcm::LCM* m_lcm;
 
   std::ofstream m_log;

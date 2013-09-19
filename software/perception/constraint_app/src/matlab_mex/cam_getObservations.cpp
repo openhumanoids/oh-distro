@@ -14,16 +14,19 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   }
 
   std::vector<double> actualObservations;
-  std::vector<int> observationIds;
+  std::vector<std::string> observationIds;
   bool res = app->GetObservations(actualObservations, observationIds);
 
   plhs[0] = mxCreateLogicalScalar(res);
   plhs[1] = mxCreateDoubleMatrix(1, actualObservations.size(), mxREAL);
-  plhs[2] = mxCreateDoubleMatrix(1, observationIds.size(), mxREAL);
+  mwSize dims[1] = { observationIds.size() };
+  plhs[2] = mxCreateCellArray(1, dims);
+
+  for ( int i = 0; i < observationIds.size(); i++ ) {
+    mxArray* str = mxCreateString(observationIds[i].c_str());
+    mxSetCell(plhs[2], i, str);
+  }
 
   double* ao((double*)mxGetData(plhs[1]));
-  double* id((double*)mxGetData(plhs[2]));
-
   std::copy(actualObservations.begin(), actualObservations.end(), ao);
-  std::copy(observationIds.begin(), observationIds.end(), id);
 }

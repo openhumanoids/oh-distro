@@ -19,11 +19,19 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     mexErrMsgTxt("state must be SxN, where S is the size of the state");
   }
 
-  int idSize = mxGetN(prhs[2]) * mxGetM(prhs[2]);
+  int idSize = mxGetNumberOfElements(prhs[2]);
 
-  std::vector<int> ids(idSize);
-  double* is((double*)mxGetData(prhs[2]));
-  std::copy(is, is+idSize, ids.begin());
+  std::vector<std::string> ids(idSize);
+  const mxArray* idCellArray = prhs[2];
+  for ( int i = 0; i < idSize; i++ ) {
+    const mxArray* string_array = mxGetCell(idCellArray, i);
+    int buflen = mxGetNumberOfElements(string_array) + 1;
+    char* str = new char[buflen];
+    mxGetString(string_array, str, buflen);
+    //mexPrintf("str: [%s] %i\n", str, buflen);
+    ids[i] = std::string(str);
+    delete str;
+  }
 
   int numObs = ids.size()*3;
   plhs[0] = mxCreateDoubleMatrix(numObs, stateCount, mxREAL);

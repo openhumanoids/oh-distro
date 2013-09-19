@@ -79,17 +79,18 @@ Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::c
   m_originalTree = m_tree; //backup copy, handy if adding noise
 }
 
+/*
 Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(log)
 {
   m_log << "ERROR: you might need to alter this function to add the world-to-base transform, unless the OTDF's already contain such a joint" << std::endl;
   assert(false);
-  /*
+  #if 0
   std::string urdf_xml_string;
   if ( !otdf::AffordanceLcmMsgToUrdfString(msg, urdf_xml_string) ) {
     m_log << "ERROR: failed to process new affordance" << std::endl;
     return;
   }
-  */
+  #endif
 
   const std::string filename(msg.otdf_type);
   
@@ -140,6 +141,7 @@ Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(
 
   m_originalTree = m_tree; //backup copy, handy if adding noise
 }
+*/
 
 bool Affordance::noisyTreeCopy(const SegmentNoiseMap& noiseMap,
 			       KDL::Tree& newTree, 
@@ -255,40 +257,45 @@ void Affordance::GetState(std::vector<double>& state) const
 
 bool Affordance::GetStateFromMsg(const drc::affordance_t& msg, StateVector& state) 
 {
-  m_log << "ERROR: this function is broken, the xyzrpw are now themselves joints in teh tree" << std::endl;
-  assert(false);
-
-  //extract the x,y,z,r,p,w from the msg params
-  ConstraintApp::OptionalKDLFrame msgFrame(ConstraintApp::GetFrameFromParams(&msg));
-  if ( !msgFrame ) {
-    m_log << "ERROR: Affordance::UpdateStateFromMsg unable to recover frame from message" << std::endl;
-    return false;
-  }
-  state = ConstraintApp::FrameToVector(*msgFrame);
-
-  //convert the msg.state to a map
+  // move all joints into the map
   typedef std::map<std::string, double> ValueMap;
   ValueMap values;
   for ( int i=0; i<msg.nstates; i++ ) {
     values.insert(std::pair<std::string, double>(msg.state_names[i], msg.states[i]));
   }
+  values.insert(std::pair<std::string, double>("x", msg.origin_xyz[0]));
+  values.insert(std::pair<std::string, double>("y", msg.origin_xyz[1]));
+  values.insert(std::pair<std::string, double>("z", msg.origin_xyz[2]));
+  values.insert(std::pair<std::string, double>("roll",  msg.origin_rpy[0]));
+  values.insert(std::pair<std::string, double>("pitch", msg.origin_rpy[1]));
+  values.insert(std::pair<std::string, double>("yaw",   msg.origin_rpy[2]));
+
+  m_log << "Affordance::GetStateFromMsg" << std::endl;
+  state.clear();
+  state.reserve(m_joints.size());
 
   //iterate through the joints according to their q_nr number
   for ( JointMultiIndex::nth_index<0>::type::iterator iter = m_joints.begin();
 	iter != m_joints.end(); ++iter ) {
     ValueMap::iterator match = values.find(iter->name);
     if ( match == values.end() ) {
-      m_log << "ERROR: unable to find joint " << iter->name << " in the message state" << std::endl;
+      m_log << "ERROR: unable to find joint " << iter->name 
+	    << " in the message state" << std::endl;
       return false;
     }
+    m_log << "  found joint " << iter->num << ": " << iter->name << std::endl;
     state.push_back(match->second);
   }
 
   //perform sanity checks
-  if ( state.size() != 6 + m_joints.size() ) {
+  if ( state.size() != m_joints.size() ) {
     m_log << "ERROR: state has improper size" << std::endl;
     return false;
   }
+
+  double temp = state[3];
+  state[3] = state[5];
+  state[5] = temp;
 
   return true;
 }
@@ -424,4 +431,13 @@ KDL::Frame Affordance::GetFrameFromVector(const StateVector& state)
   ret.p[2] = state[2];
   ret.M = KDL::Rotation::RPY(state[3], state[4], state[5]);
   return ret;
+}
+
+void Affordance::GetJointNames(std::vector<std::string>& names)
+{
+  names.clear();
+  for ( JointMultiIndex::nth_index<0>::type::iterator iter = m_joints.begin();
+	iter != m_joints.end(); ++iter ) {
+    names.push_back(iter->name);
+  }
 }

@@ -3,6 +3,8 @@ add_definitions( -ggdb3 )
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(matlab_mex)
 
+set(CMAKE_BUILD_TYPE Release)
+
 #########################################################################
 # The Matlab.cmake is broken, so we'll just do it ourselves, by golly.
 #FIND_PACKAGE(Matlab)
@@ -52,10 +54,10 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined")
 set(CMAKE_CXX_COMPILER "g++-4.4")
 
 # search for the other files we need to compile
-set(otdf_filenames expression_parsing.cpp link.cpp joint.cpp otdf_parser.cpp otdf_to_urdf_converter.cpp)
+set(otdf_filenames expression_parsing.cpp link.cpp joint.cpp otdf_parser.cpp otdf_to_urdf_converter.cpp GraspSeed.cpp)
 set(kdl_parser_filenames kdl_parser.cpp)
 set(ext_filenames ${otdf_filenames} ${kdl_parser_filenames})
-set(other_files)
+set(other_files mytreefksolverpos_recursive.cpp MyTreeJntToJacSolver.cpp)
 foreach(filename ${ext_filenames})
   find_file(found${filename} ${filename} 
     ${CMAKE_CURRENT_LIST_DIR}/../../../../object_template_model/otdf_dom/otdf_parser/src
@@ -75,6 +77,7 @@ add_mex(cam_getResetAndClear mex_files)
 add_mex(cam_getCurrentStateEstimate mex_files)
 add_mex(cam_setCurrentStateEstimate mex_files)
 add_mex(cam_getExpectedObservations mex_files)
+add_mex(cam_getJacobian mex_files)
 
 #FIND_PACKAGE( Boost 1.44 COMPONENTS program_options REQUIRED )
 #INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )

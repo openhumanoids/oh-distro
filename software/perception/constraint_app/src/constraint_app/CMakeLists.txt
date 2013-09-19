@@ -1,6 +1,4 @@
-add_definitions(
-    -ggdb3 
-    )
+#add_definitions(-ggdb3 )
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(constraint_app)
