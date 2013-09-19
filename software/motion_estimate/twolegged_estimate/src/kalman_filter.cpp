@@ -10,7 +10,8 @@ KalmanFilter::KalmanFilter() {
 KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
 	std::cout << "KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel -- saying hi." << std::endl;
 	
-	// Dont want to do this
+	// Simpler, but no simpler
+	// This will have to be done for each new model we define :-/ but avoids difficulty in variation of parameters with callback approach
 	if (_model = dynamic_cast<KalmanFilter_Models::Joint_Model*>(&def_model) ) {
 		// we have a joint filter
 		std::cout << "KalmanFilter::KalmanFilter -- Copying pointer for Joint filter" << std::endl;
@@ -27,19 +28,51 @@ KalmanFilter::~KalmanFilter() {
 
 
 void KalmanFilter::Initialize() {
+	std::cout << "KalmanFilter::Initialize -- Initializing." << std::endl;
 	_model->identify();
+	
+	// we need to setup the different matrices to have the correct size
+	_model->setSizes(priori);
+	std::cout << "KalmanFilter::Initialize -- priori.mu resized to: " << priori.mu.rows() << std::endl;
 	
 	return;
 }
 
-
-KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post, const VAR_VECTORd &input) {
+void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variables) {
 	
-	KalmanFilter_Types::Priori priori;
+	std::cout << "KalmanFilter::step -- Time stepping the filter." << std::endl;
+	
+	//priori update
+	propagatePriori(ut_now, variables, priori.mu, priori.M);
+	
+	return; // return the results of the filtering process here
+}
+
+
+void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements) {
+	
+	step(ut_now, variables);
+	std::cout << "KalmanFilter::step -- Measurement stepping the filter." << std::endl;
+	//std::cout << "KalmanFilter::step -- measurements(0): " << measurements(0) << std::endl;
+	
+	//priori
+	//propagatePriori(ut_now);
+	
+	//posterior
+	
+	return; // return the results of the filtering process here
+}
+
+
+KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov) {
+	
+	std::cout << "KalmanFilter::propagatePriori -- Time update" << std::endl;
+	
 	
 	double dt;
 	
-	dt = 1E-6*(ut_now - post.utime);
+	dt = 1E-6*(ut_now - ut_last_priori_update);
+	ut_last_priori_update = ut_now;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
 	
@@ -55,20 +88,18 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 		//VAR_MATRIXd F;
 		//VAR_MATRIXd Phi;
 		
-		
 		KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices;
 
-		
-		cont_matrices = _model->getContinuousMatrices(post.mu);
+		cont_matrices = _model->getContinuousMatrices(mu);
 		
 		// s -> z
 		
 		//lti_disc
 		disc_matrices = lti_disc(dt, cont_matrices);
 
-		priori.mu.resize(post.mu.size());
-		std::cout << "post.mu.size() -- " << post.mu.size() << std::endl;
-		priori.mu = disc_matrices.A * post.mu;
+		priori.mu.resize(mu.size());
+		std::cout << "post.mu.size() -- " << mu.size() << std::endl;
+		priori.mu = disc_matrices.A * mu;
 		
 		std::cout << "test2++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 		
@@ -93,8 +124,9 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 }
 
 
-
 KalmanFilter_Types::Posterior KalmanFilter::propagatePosterior() {
+	
+	std::cout << "Measurement update" << std::endl;
 	
 	KalmanFilter_Types::Posterior temp;
 	
@@ -103,11 +135,6 @@ KalmanFilter_Types::Posterior KalmanFilter::propagatePosterior() {
 }
 
 
-void KalmanFilter::define_model() {
-	
-	
-	return;
-}
 
 KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const KalmanFilter_Models::MatricesUnit &cont) {
 	

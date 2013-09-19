@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <tr1/functional>
 #include <leg-odometry/KalmanFilter_Types.hpp>
+#include <cstdlib>
 
 using namespace std;
 
@@ -27,10 +28,13 @@ int main() {
 	
 	kf.Initialize();
 	
-	Eigen::Vector2d u;
-	u.setZero();
+	Eigen::VectorXd parameters;
+	Eigen::VectorXd joint_positions;
 	
-	KalmanFilter_Types::Priori priori;
+	parameters.resize(1);
+	joint_positions.resize(1);
+	
+	//KalmanFilter_Types::Priori priori;
 	
 	
 	// Something like here is the model
@@ -41,18 +45,35 @@ int main() {
 	
 	// we iterate through all the events
 	// publish the output from this process
+	unsigned long utime;
+	utime = 0;
+	for (int i=0; i<1;i++ ) {
+		utime += 1000;
+		
+		// Synthetic data
+		joint_positions.setZero();// 
+		
+		joint_positions(0) = (rand() % 1000 - 500)/1000. ;
+		
+		// propate the system, this could be done in several ways -- we need to handle all of them
+		// step in time with IMU measurements
+		// step in time with joint position measurements
+		// step in time with leg odometry position measurements
+		// step in time with joint measurements to resolve positions internally
+		//kf.step(joint_positions)
+		
+		if (false) {
+			kf.step(utime,parameters);// This is a time update
+		} else {
+			kf.step(utime,parameters,joint_positions);
+		}
+		
+		// IMU/LO/VO data fusion will have similar step function, using the different model
+		
+		// Fill in all other values
+		// Transmit ERS message
+	}
 	
-
-	// propate the system, this could be done in several ways -- we need to handle all of them
-	// step in time with IMU measurements
-	// step in time with joint position measurements
-	// step in time with leg odometry position measurements
-	// step in time with joint measurements to resolve positions internally
-	//kf.step(joint_positions)
-
-	priori = kf.propagatePriori(0, posterior_estimate,u);
-
-	// IMU/LO/VO data fusion will have similar step function, using the different model
 	
 	cout << "Success" << endl;
 	return 0;

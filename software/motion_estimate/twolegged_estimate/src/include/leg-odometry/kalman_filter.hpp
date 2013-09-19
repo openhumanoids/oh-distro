@@ -8,14 +8,21 @@ class KalmanFilter {
 private:
 	
 	int state_size;
+	
 	KalmanFilter_Types::Priori priori;
 	KalmanFilter_Types::Posterior posterior;
+	unsigned long ut_last_priori_update;
 	
 	KalmanFilter_Models::BaseModel* _model;
 	
 	KalmanFilter_Models::MatricesUnit lti_disc(const double &dt, const KalmanFilter_Models::MatricesUnit &cont);
 	
 	VAR_MATRIXd expm(const double &dt, const VAR_MATRIXd &F);
+	
+
+	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov);
+	KalmanFilter_Types::Posterior propagatePosterior();
+	
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -26,12 +33,9 @@ public:
 	
 	void Initialize();
 	
-	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const KalmanFilter_Types::Posterior &post, const VAR_VECTORd &input);
-	
-	KalmanFilter_Types::Posterior propagatePosterior();
-	
-	
-	void define_model();
+	// Various filter stepping functions
+	void step(const unsigned long &ut_now, const VAR_VECTORd &variables);
+	void step(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements);
 	
 	
 	// we will add the callback method later

@@ -56,6 +56,7 @@ public:
 	
 	ModelSettings getSettings() {return settings;}
 	MatricesUnit getContinuousMatrices(const VAR_VECTORd &state);
+	void setSizes(KalmanFilter_Types::Priori &priori);
 	
 };
 

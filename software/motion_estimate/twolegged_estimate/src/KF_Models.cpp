@@ -41,6 +41,13 @@ MatricesUnit BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 	return continuous_matrices;
 }
 
+void BaseModel::setSizes(KalmanFilter_Types::Priori &priori) {
+	std::cout << "BaseModel::setSizes -- setting sizes :" << continuous_matrices.A.cols() << std::endl;
+	priori.mu.resize(continuous_matrices.A.cols());
+	//priori.M.resize(continuous_matrices.A.cols(),continuous_matrices.A.cols());
+	
+}
+
 
 // Joint Model=============================================================================================================
 
@@ -52,7 +59,7 @@ Joint_Model::Joint_Model() {
 	
 	// state = [pos, vel]
 	settings.state_size = 2;
-	continuous_matrices.A.resize(2,2);
+	continuous_matrices.A.resize(2,2);// This is presently used to drive the size of the KalmanFilter priori and posterior variables
 	continuous_matrices.B.resize(2,2);
 	continuous_matrices.B.setIdentity();
 	
