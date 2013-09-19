@@ -1,4 +1,5 @@
 function track_pf()
+
     addpath('../pod-build/lib');
     addpath('../matlab/bailey');
 
@@ -45,13 +46,23 @@ function track_pf()
     pf.gen_x0                            = @intial_particles;
     pf.importance_sampling               = @importance_sampling_wOIS_wMissing;
     
+    k = 0;
+    test = true;
     count = 0;
-    tic;
+    tic;    
     while ( true )
         success = cam_waitForObservations(ptr, 5000);
         if ~success
             fprintf('timed out waiting for data\n');
-            continue;
+            if test
+                if k > 10
+                    exit(0);
+                else
+                    exit(-1);  % if we have not processed 10 packets, and we're testing, then fail
+                end
+            else
+                continue;
+            end
         end
         
         %determine if we have been reset with a new fit.  if so,
@@ -105,6 +116,7 @@ function track_pf()
             t = toc;
             fprintf('fps = %f\n', count / t);
         end
+        k = k + 1;
     end
     
 function x1 = intial_particles(xkm1, pointsDesired, task)   
