@@ -18,7 +18,7 @@ int main() {
 	
 	cout << "Starting tests..." << endl << endl;
 	
-	
+	// Create the structures and objects we will be using
 	KalmanFilter_Types::Posterior posterior_estimate;
 	posterior_estimate.mu.resize(2);
 	posterior_estimate.mu.setZero();
@@ -26,6 +26,9 @@ int main() {
 	KalmanFilter_Models::Joint_Model joint_model;
 	KalmanFilter kf(joint_model);
 	
+	KalmanFilter_Types::State kf_est;
+	
+	// Initialize all the internal parameters and get the estimator ready for action
 	kf.Initialize();
 	
 	Eigen::VectorXd parameters;
@@ -47,7 +50,8 @@ int main() {
 	// publish the output from this process
 	unsigned long utime;
 	utime = 0;
-	for (int i=0; i<1;i++ ) {
+	cout << endl;
+	for (int i=0; i<5;i++ ) {
 		utime += 1000;
 		
 		// Synthetic data
@@ -70,8 +74,17 @@ int main() {
 		
 		// IMU/LO/VO data fusion will have similar step function, using the different model
 		
+		//get the estimated state
+		kf_est = kf.getState();
+		
+		cout << "main -- kf_est.X = " << kf_est.X.transpose() << endl;
+		
+		// update the estimated state if required
+		
 		// Fill in all other values
 		// Transmit ERS message
+		
+		cout << endl;
 	}
 	
 	

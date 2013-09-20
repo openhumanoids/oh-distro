@@ -26,6 +26,15 @@ struct Posterior {
 	
 };
 
+struct State {
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	
+	unsigned long utime;
+	int last_update_type;
+	
+	VAR_MATRIXd Cov;
+	VAR_VECTORd X;
+};
 
 
 }// namespace Kalmanfilter_Types

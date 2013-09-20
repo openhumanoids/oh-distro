@@ -1,7 +1,8 @@
 // Define the functions for differnt Kalman Filter models
 
-#include <leg-odometry/KF_Models.hpp>
+#include <iostream>
 
+#include <leg-odometry/KF_Models.hpp>
 #include <leg-odometry/KF_Tuning_Parameters.hpp>
 
 namespace KalmanFilter_Models {
@@ -14,7 +15,8 @@ MatricesUnit::MatricesUnit() {
 	Q.setZero();
 	R.setZero();
 	
-	std::cout << "Continuous_Matrices::Continuous_Matrices() -- happened" << std::endl;
+	// TODO -- review all creation instances of this
+	//std::cout << "Continuous_Matrices::Continuous_Matrices() -- happened" << std::endl;
 }
 
 
@@ -25,8 +27,12 @@ MatricesUnit BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 	// Compute the new jacobians
 	
 	//std::cout << "BaseModel::getContinuousMatrices -- calling for new Jacobians" << std::endl;
-	continuous_matrices.A = anaylitical_jacobian(state);
-	
+	if (settings.analytical_jacobian_available == true) {
+		continuous_matrices.A = anaylitical_jacobian(state);
+	} else {
+		std::cerr << "BaseModel::getContinuousMatrices -- " << "\33[0;31m" << "oops, numerical Jacobian functions not implemented yet." << "\33[0m" << std::endl;
+		
+	}
 	
 	
 	// input shaping matrix
@@ -59,7 +65,7 @@ Joint_Model::Joint_Model() {
 	
 	// state = [pos, vel]
 	settings.state_size = 2;
-	continuous_matrices.A.resize(2,2);// This is presently used to drive the size of the KalmanFilter priori and posterior variables
+	continuous_matrices.A.resize(2,2);// This is used to drive the size of the KalmanFilter priori and posterior variables
 	continuous_matrices.B.resize(2,2);
 	continuous_matrices.B.setIdentity();
 	
@@ -72,15 +78,15 @@ Joint_Model::Joint_Model() {
 
 VAR_MATRIXd Joint_Model::continuous_process_noise(const VAR_MATRIXd &state) {
 	
-	VAR_MATRIXd temp;
+	VAR_MATRIXd Q;
 		
-	temp.resize(2,2);
-	temp.setZero();
+	Q.resize(2,2);
+	Q.setZero();
 	
-	temp(0,0) = PROCESS_NOISE_JOINT_POSITIONS;
-	temp(1,1) = PROCESS_NOISE_JOINT_VELOCITIES;
+	Q(0,0) = PROCESS_NOISE_JOINT_POSITIONS;
+	Q(1,1) = PROCESS_NOISE_JOINT_VELOCITIES;
 	
-	return temp;
+	return Q;
 }
 
 
@@ -103,6 +109,7 @@ VAR_VECTORd Joint_Model::propagation_model(const VAR_VECTORd &post) {
 	// Now we need to do some stuff to change the current state estimate to the next one.
 	// This will generally involve integrations, therefore we will need the have timestamps of the various events
 	
+	std::cerr << "Joint_Model::propagation_model -- not implemented yet!" << std::endl;
 	priori = post;	
 	
 	return priori;

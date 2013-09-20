@@ -9,7 +9,8 @@ KalmanFilter::KalmanFilter() {
 
 KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
 	std::cout << "KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel -- saying hi." << std::endl;
-	
+
+	// TODO -- Add more inheretance KF models here
 	// Simpler, but no simpler
 	// This will have to be done for each new model we define :-/ but avoids difficulty in variation of parameters with callback approach
 	if (_model = dynamic_cast<KalmanFilter_Models::Joint_Model*>(&def_model) ) {
@@ -24,6 +25,7 @@ KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
 KalmanFilter::~KalmanFilter() {
 	//free()
 	
+	
 }
 
 
@@ -31,6 +33,7 @@ void KalmanFilter::Initialize() {
 	std::cout << "KalmanFilter::Initialize -- Initializing." << std::endl;
 	_model->identify();
 	
+	ut_last_priori_update = 0;
 	// we need to setup the different matrices to have the correct size
 	_model->setSizes(priori);
 	std::cout << "KalmanFilter::Initialize -- priori.mu resized to: " << priori.mu.rows() << std::endl;
@@ -67,51 +70,45 @@ void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variable
 KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov) {
 	
 	std::cout << "KalmanFilter::propagatePriori -- Time update" << std::endl;
-	
+	last_update_type = PRIORI_UPDATE;
 	
 	double dt;
 	
 	dt = 1E-6*(ut_now - ut_last_priori_update);
 	ut_last_priori_update = ut_now;
+	std::cout << "KalmanFilter::propagatePriori -- dt = " << dt << std::endl;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
 	
-	// propagate mu
-	std::cout << " This should happen somewhere during the computation" << std::endl;
-	_model->getSettings().propagate_with_linearized;
-	std::cout <<"This is after" << std::endl;
 	
+	// Get continuous dynamics model -> convert to discrete -> propagate state mean and covariance
+	KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices; // why am I keeping a local copy here?
+	cont_matrices = _model->getContinuousMatrices(mu);
+
+	// s -> z, lti_disc
+	disc_matrices = lti_disc(dt, cont_matrices);
+	
+	// propagate mean (mu)
 	if (_model->getSettings().propagate_with_linearized == true) {
 		// Propagate the state with transition matrix
 		
-		// Get continuous dynamics model -> convert to discrete -> propagate state mean and covariance
-		//VAR_MATRIXd F;
-		//VAR_MATRIXd Phi;
-		
-		KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices;
-
-		cont_matrices = _model->getContinuousMatrices(mu);
-		
-		// s -> z
-		
-		//lti_disc
-		disc_matrices = lti_disc(dt, cont_matrices);
-
 		priori.mu.resize(mu.size());
-		std::cout << "post.mu.size() -- " << mu.size() << std::endl;
-		priori.mu = disc_matrices.A * mu;
-		
-		std::cout << "test2++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+//		std::cout << "KalmanFilter::propagatePriori -- mu.size() -- " << mu.size() << std::endl;
+		priori.mu = disc_matrices.A * mu;// TODO -- add B*u term, we going to assume this is noise for now
 		
 	} else {
-		std::cout << "oops+++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+		std::cerr << "KalmanFilter::propagatePriori -- oops, non-linear propagation not implemented!!" << std::endl;
+		std::cout << "KalmanFilter::propagatePriori -- oops, non-linear propagation not implemented!!" << std::endl;
+				
 		// Propagate with non-linear model
 		// this should include an integration period and some good integration method
 		//priori.mu = _model->propagation_model(post.mu);
 	}
-	std::cout << "This one is after" << std::endl;
 	
 	// Prepare process covariance matrix
+	
+	
+	
 	// Compute dynamics matrix
 	// Compute state transition and discrete process covariance matrices
 	
@@ -127,6 +124,8 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 KalmanFilter_Types::Posterior KalmanFilter::propagatePosterior() {
 	
 	std::cout << "Measurement update" << std::endl;
+	
+	last_update_type = POSTERIOR_UPDATE;
 	
 	KalmanFilter_Types::Posterior temp;
 	
@@ -161,7 +160,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	VAR_MATRIXd rhsAB(2*n,2);
 	rhsAB.setZero();
 
-	std::cout << n << " " << shaped_Q.rows() << " " << shaped_Q.cols() << std::endl;
+	std::cout << "KalmanFilter::lti_disc -- " << n << " " << shaped_Q.rows() << " " << shaped_Q.cols() << std::endl;
 	
 	int i,j;
 	for (i=0;i<n;i++) {
@@ -200,6 +199,27 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	
 }
 
+// Return a copy of the internal Kalman Filter state estimate and Covariance
+// Will return the structure with variables indicating whether the last was a priori of posterior update, including the utime of the last update
+KalmanFilter_Types::State KalmanFilter::getState() {
+	KalmanFilter_Types::State state;
+	
+	state.last_update_type = last_update_type;
+	
+	if (last_update_type == PRIORI_UPDATE) {
+		state.utime = priori.utime;
+		
+		state.X = priori.mu;
+		state.Cov = priori.M;
+	} else {
+		state.utime = posterior.utime;
+		
+		state.X = posterior.mu;
+		state.Cov = posterior.P;
+	}
+		
+	return state;
+}
 
 VAR_MATRIXd KalmanFilter::expm(const double &dt, const VAR_MATRIXd &F) {
 	

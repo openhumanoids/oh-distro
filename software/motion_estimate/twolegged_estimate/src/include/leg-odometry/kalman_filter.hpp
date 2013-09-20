@@ -4,6 +4,10 @@
 #include <leg-odometry/KalmanFilter_Types.hpp>
 #include <leg-odometry/KF_Models.hpp>
 
+#define PRIORI_UPDATE 0
+#define POSTERIOR_UPDATE 1
+
+
 class KalmanFilter {
 private:
 	
@@ -12,6 +16,7 @@ private:
 	KalmanFilter_Types::Priori priori;
 	KalmanFilter_Types::Posterior posterior;
 	unsigned long ut_last_priori_update;
+	int last_update_type;
 	
 	KalmanFilter_Models::BaseModel* _model;
 	
@@ -37,6 +42,7 @@ public:
 	void step(const unsigned long &ut_now, const VAR_VECTORd &variables);
 	void step(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements);
 	
+	KalmanFilter_Types::State getState();
 	
 	// we will add the callback method later
 	//void define_model(/* callback for continuous f, */ /* callback for continuous h */);
