@@ -29,19 +29,19 @@ end
 Fc_pos = Point(state_frame,0);
 Fc_neg = Point(state_frame,0);
 
-Fc_pos.r_arm_usy = 7.5;
+Fc_pos.r_arm_usy = 7.75;
 Fc_pos.r_arm_shx = 8.5;
-Fc_pos.r_arm_ely = 8.5;
-Fc_pos.r_arm_elx = 5.0;
+Fc_pos.r_arm_ely = 8.0;
+Fc_pos.r_arm_elx = 6.0;
 Fc_pos.r_arm_uwy = 8.0;
 Fc_pos.r_arm_mwx = 6.5;
 
-Fc_neg.r_arm_usy = 7.0;
+Fc_neg.r_arm_usy = 7.75;
 Fc_neg.r_arm_shx = 8.5;
-Fc_neg.r_arm_ely = 8.75;
+Fc_neg.r_arm_ely = 8.25;
 Fc_neg.r_arm_elx = 8.0;
 Fc_neg.r_arm_uwy = 8.0;
-Fc_neg.r_arm_mwx = 7.0;
+Fc_neg.r_arm_mwx = 6.25;
 
 Fc_pos = double(Fc_pos);
 Fc_neg = double(Fc_neg);
@@ -115,9 +115,9 @@ while tt<200
     for i=1:6
       j=r_arm_joints(i);
       if qd(j)> 0
-        tau_friction(j) = max(-1,min(1,qd(j)/Fc_window)) .* Fc_neg(j) + Fv*qd(j); 
-      else
         tau_friction(j) = max(-1,min(1,qd(j)/Fc_window)) .* Fc_pos(j) + Fv*qd(j); 
+      else
+        tau_friction(j) = max(-1,min(1,qd(j)/Fc_window)) .* Fc_neg(j) + Fv*qd(j); 
       end
     end
     
