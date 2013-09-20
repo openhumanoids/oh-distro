@@ -30,7 +30,6 @@ options.floating = false;
 r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 fixed_joint_idx = find(strcmp(r_fixed.getStateFrame.coordinates,joint));
 
-
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
@@ -48,8 +47,6 @@ for i=1:nq
   joint_offset_map.(state_frame.coordinates{i}) = 0;
   joint_sign_map.(state_frame.coordinates{i}) = 1;
 end
-
-joint_offset_map.l_arm_elx = 1.0;
 
 % set nonzero offsets
 joint_offset_map.l_arm_shx = 0;
@@ -97,8 +94,8 @@ elseif strcmp(joint,'r_arm_shx')
 
 elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy')
 
-  qdes(joint_index_map.r_arm_shx) = 1.35;
-  qdes(joint_index_map.l_arm_shx) = -1.35;
+  qdes(joint_index_map.r_arm_shx) = 1.0;
+  qdes(joint_index_map.l_arm_shx) = -1.0;
 
   qdes(joint_index_map.l_arm_uwy) = 1.57;
   qdes(joint_index_map.r_arm_uwy) = 1.57;
@@ -214,13 +211,13 @@ while tt<T
     P = (eye(2) - K*H)*Pprior;
     
     
-    if jest(2) < 0
-      Fc = 7;
+    if jest(2) > 0
+      Fc = 11.0;
     else
-      Fc = 7.5;
+      Fc = 11.0;
     end
-    Fv = 0.25;
-    Fc_window = 0.15;
+    Fv = 0.5;
+    Fc_window = 0.175;
 
 
     tau_friction = max(-1,min(1,jest(2)/Fc_window)) * Fc + Fv*jest(2); 
@@ -233,7 +230,7 @@ while tt<T
     f_grav = u(fixed_act_idx);
     
     % send torque command
-    udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt) + tau_friction +f_grav;
+    udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt) + tau_friction + f_grav;
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end

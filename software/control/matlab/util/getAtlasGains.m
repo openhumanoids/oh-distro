@@ -20,8 +20,8 @@ ff_f_d = Point(atlas_input_frame,0);
 ff_const = Point(atlas_input_frame,0);
 
 % set ff_const for subset of joints that need it
-ff_const.l_arm_usy = 0.05; % 9-17-13, fc
-ff_const.r_arm_usy = -0.065; % 9-17-13, fc
+ff_const.l_arm_usy = 0.1; % 9-19-13, fc
+ff_const.r_arm_usy = -0.06; % 9-19-13, fc
 ff_const.l_arm_shx = -0.01; % 9-17-13, fc
 ff_const.r_arm_shx = 0.055; % 9-17-13, fc
 ff_const.l_arm_ely = -0.045; % 9-17-13, fc
@@ -31,22 +31,22 @@ ff_const.r_arm_elx = -0.025; % 9-18-13, fc
 ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
 ff_const.r_arm_uwy = 0.035; % 9-17-13, fc
 ff_const.l_arm_mwx = 0.025; % 9-17-13, fc
-ff_const.r_arm_mwx = -0.15; % 9-18-13, fc
+ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
 ff_const.neck_ay = 0.1;
 
 
-ff_qd.l_arm_usy = 0.0; 
-ff_qd.r_arm_usy = 0.25; 
-ff_qd.l_arm_shx = 0.0; 
-ff_qd.r_arm_shx = 0.275; 
-ff_qd.l_arm_ely = 0.0; 
-ff_qd.r_arm_ely = 0.25; 
-ff_qd.l_arm_elx = 0.0;  
+ff_qd.l_arm_usy = 0.3; % 9-19-13, fc
+ff_qd.r_arm_usy = 0.3; % 9-19-13, fc
+ff_qd.l_arm_shx = 0.275; % 9-19-13, fc 
+ff_qd.r_arm_shx = 0.275; % 9-18-13, fc
+ff_qd.l_arm_ely = 0.25; % 9-19-13, fc
+ff_qd.r_arm_ely = 0.25; % 9-18-13, fc 
+ff_qd.l_arm_elx = 0.3; % 9-19-13, fc
 ff_qd.r_arm_elx = 0.25; % 9-18-13, fc
-ff_qd.l_arm_uwy = 0.0; 
+ff_qd.l_arm_uwy = 0.22; % 9-19-13, fc
 ff_qd.r_arm_uwy = 0.22; % 9-18-13, fc
-ff_qd.l_arm_mwx = 0.0; 
-ff_qd.r_arm_mwx = 0.2; % 9-18-13, fc
+ff_qd.l_arm_mwx = 0.225; % 9-19-13, fc 
+ff_qd.r_arm_mwx = 0.225; % 9-19-13, fc
 
 ff_f_d.l_arm_usy = 0.0; % 9-17-13
 ff_f_d.r_arm_usy = 0.0025; % 9-17-13
@@ -55,7 +55,7 @@ ff_f_d.r_arm_shx = 0.0; % 9-17-13
 ff_f_d.l_arm_elx = 0.0; % 9-17-13
 ff_f_d.r_arm_elx = 0.0025; % 9-17-13
 ff_f_d.l_arm_ely = 0.0; % 9-17-13
-ff_f_d.r_arm_ely = 0.0; % 9-17-13
+ff_f_d.r_arm_ely = 0.001; % 9-18-13
 ff_f_d.l_arm_uwy = 0.005; % 9-17-13
 ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
 ff_f_d.l_arm_mwx = 0.0; % 9-17-13

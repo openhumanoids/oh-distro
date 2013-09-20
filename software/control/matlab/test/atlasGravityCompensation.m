@@ -7,7 +7,7 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 
 options.floating = false;
 r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-r_arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,'r_arm'));
+arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,'arm'));
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -15,8 +15,8 @@ state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
 ref_frame = AtlasPosTorqueRef(r);
 
-r_arm_joints = find(~cellfun(@isempty,strfind(state_frame.coordinates,'r_arm')));
-r_arm_joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,'r_arm')));
+arm_joints = find(~cellfun(@isempty,strfind(state_frame.coordinates,'arm')));
+arm_joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,'arm')));
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);
@@ -29,19 +29,33 @@ end
 Fc_pos = Point(state_frame,0);
 Fc_neg = Point(state_frame,0);
 
-Fc_pos.r_arm_usy = 7.75;
-Fc_pos.r_arm_shx = 8.5;
-Fc_pos.r_arm_ely = 8.0;
-Fc_pos.r_arm_elx = 6.0;
+Fc_pos.r_arm_usy = 11;
+Fc_pos.r_arm_shx = 12;
+Fc_pos.r_arm_ely = 8.5;
+Fc_pos.r_arm_elx = 9.0;
 Fc_pos.r_arm_uwy = 8.0;
 Fc_pos.r_arm_mwx = 6.5;
 
-Fc_neg.r_arm_usy = 7.75;
-Fc_neg.r_arm_shx = 8.5;
-Fc_neg.r_arm_ely = 8.25;
-Fc_neg.r_arm_elx = 8.0;
+Fc_neg.r_arm_usy = 11;
+Fc_neg.r_arm_shx = 12;
+Fc_neg.r_arm_ely = 8.5;
+Fc_neg.r_arm_elx = 9.0;
 Fc_neg.r_arm_uwy = 8.0;
-Fc_neg.r_arm_mwx = 6.25;
+Fc_neg.r_arm_mwx = 5.5;
+
+Fc_pos.l_arm_usy = 11;
+Fc_pos.l_arm_shx = 13;
+Fc_pos.l_arm_ely = 9;
+Fc_pos.l_arm_elx = 9.5;
+Fc_pos.l_arm_uwy = 8.0;
+Fc_pos.l_arm_mwx = 6.5;
+
+Fc_neg.l_arm_usy = 11;
+Fc_neg.l_arm_shx = 13;
+Fc_neg.l_arm_ely = 9;
+Fc_neg.l_arm_elx = 9.5;
+Fc_neg.l_arm_uwy = 8.0;
+Fc_neg.l_arm_mwx = 5.5;
 
 Fc_pos = double(Fc_pos);
 Fc_neg = double(Fc_neg);
@@ -62,14 +76,14 @@ act_idx = getActuatedJoints(r);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
 
 gains2 = getAtlasGains(input_frame); 
-gains.k_f_p(r_arm_joints_act) = gains2.k_f_p(r_arm_joints_act);
-gains.ff_f_d(r_arm_joints_act) = gains2.ff_f_d(r_arm_joints_act);
-gains.ff_qd(r_arm_joints_act) = gains2.ff_qd(r_arm_joints_act);
-gains.ff_const(r_arm_joints_act) = gains2.ff_const(r_arm_joints_act);
+gains.k_f_p(arm_joints_act) = gains2.k_f_p(arm_joints_act);
+gains.ff_f_d(arm_joints_act) = gains2.ff_f_d(arm_joints_act);
+gains.ff_qd(arm_joints_act) = gains2.ff_qd(arm_joints_act);
+gains.ff_const(arm_joints_act) = gains2.ff_const(arm_joints_act);
 % set joint position gains to 0
-gains.k_q_p(r_arm_joints_act) = 0;
-gains.k_q_i(r_arm_joints_act) = 0;
-gains.k_qd_p(r_arm_joints_act) = 0;
+gains.k_q_p(arm_joints_act) = 0;
+gains.k_q_i(arm_joints_act) = 0;
+gains.k_qd_p(arm_joints_act) = 0;
 
 ref_frame.updateGains(gains);
 udes = zeros(nu,1);
@@ -112,8 +126,8 @@ while tt<200
     Fc_window = 0.175;
     
     tau_friction = zeros(34,1);
-    for i=1:6
-      j=r_arm_joints(i);
+    for i=1:12
+      j=arm_joints(i);
       if qd(j)> 0
         tau_friction(j) = max(-1,min(1,qd(j)/Fc_window)) .* Fc_pos(j) + Fv*qd(j); 
       else
@@ -128,11 +142,11 @@ while tt<200
     [~,C,B] = manipulatorDynamics(r_fixed,q(6+(1:nq_fixed)),qd(6+(1:nq_fixed)));
     
     u = B\C;
-    f_grav = u(r_arm_joints_act_fixed);
+    f_grav = u(arm_joints_act_fixed);
     
    
     % send torque command
-    udes(r_arm_joints_act) = tf_act(r_arm_joints_act) + f_grav;
+    udes(arm_joints_act) = tf_act(arm_joints_act) + f_grav;
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end
