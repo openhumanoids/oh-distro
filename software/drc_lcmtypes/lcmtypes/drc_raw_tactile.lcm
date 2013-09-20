@@ -20,5 +20,5 @@ struct raw_tactile_t
   int16_t f3[n_f3];
 
   int16_t n_palm;
-  int16_t palm[n_palm];
+  float palm[n_palm];
 }
