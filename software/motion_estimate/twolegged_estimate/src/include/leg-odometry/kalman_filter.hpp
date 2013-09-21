@@ -24,10 +24,10 @@ private:
 	
 	VAR_MATRIXd expm(const double &dt, const VAR_MATRIXd &F);
 	
-
-	KalmanFilter_Types::Priori propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov);
-	KalmanFilter_Types::Posterior propagatePosterior();
+	//Does this require mu and cov to be passed from outside?
+	KalmanFilter_Models::MatricesUnit propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov);
 	
+	void propagatePosterior(const unsigned long &utime_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements, const KalmanFilter_Models::MatricesUnit &cont_matrices);
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW

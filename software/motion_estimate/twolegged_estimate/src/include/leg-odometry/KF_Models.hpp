@@ -16,6 +16,7 @@ namespace KalmanFilter_Models {
 struct ModelSettings {
 	bool propagate_with_linearized;
 	bool analytical_jacobian_available;
+	bool use_linearized_measurement;
 	
 	int state_size;
 };

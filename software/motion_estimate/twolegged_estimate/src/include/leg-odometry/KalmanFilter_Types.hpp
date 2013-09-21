@@ -13,7 +13,6 @@ struct Priori {
 	
 	VAR_MATRIXd M;  // state covariances
 	VAR_VECTORd mu; // state mean
-	
 };
 
 struct Posterior {
@@ -23,7 +22,9 @@ struct Posterior {
 	
 	VAR_MATRIXd P;  // state covariances
 	VAR_VECTORd mu; // state mean
-	
+	VAR_MATRIXd S; // Innovation information matrix
+	VAR_MATRIXd K; // Kalman Gain, note that this is computed from M covariance from the priori (slight break of abstraction here -- but computational saving)
+	VAR_VECTORd innov;
 };
 
 struct State {

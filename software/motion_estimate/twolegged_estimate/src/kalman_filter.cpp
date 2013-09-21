@@ -41,6 +41,7 @@ void KalmanFilter::Initialize() {
 	return;
 }
 
+// Priori only update to the internal state variables
 void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variables) {
 	
 	std::cout << "KalmanFilter::step -- Time stepping the filter." << std::endl;
@@ -52,22 +53,20 @@ void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variable
 }
 
 
+// Does priori and posterior updates to the internal state variables
 void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements) {
-	
-	step(ut_now, variables);
-	std::cout << "KalmanFilter::step -- Measurement stepping the filter." << std::endl;
+	//std::cout << "KalmanFilter::step -- Measurement step on filter states." << std::endl;
 	//std::cout << "KalmanFilter::step -- measurements(0): " << measurements(0) << std::endl;
 	
-	//priori
-	//propagatePriori(ut_now);
+	//posterior ( and priori ) updates
+	propagatePosterior(ut_now, variables, measurements, propagatePriori(ut_now, variables, priori.mu, priori.M));
 	
-	//posterior
 	
 	return; // return the results of the filtering process here
 }
 
 
-KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov) {
+KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov) {
 	
 	std::cout << "KalmanFilter::propagatePriori -- Time update" << std::endl;
 	last_update_type = PRIORI_UPDATE;
@@ -106,31 +105,64 @@ KalmanFilter_Types::Priori KalmanFilter::propagatePriori(const unsigned long &ut
 	}
 	
 	// Prepare process covariance matrix
-	
-	
+	priori.M = disc_matrices.A * cov * disc_matrices.A.transpose() + disc_matrices.Q;
 	
 	// Compute dynamics matrix
 	// Compute state transition and discrete process covariance matrices
 	
-	// Compute priori covariance matrix
 	
 	// Compute Kalman Gain matrix
+	// We can change this if the need arises, but we shall pass the data required for computing the Kalman gain during the measurement update
+	// This is supposedly the more efficient way of doing this, although it does break the abstraction a bit.
 	
 	
-	return priori;
+	return cont_matrices;
 }
 
 
-KalmanFilter_Types::Posterior KalmanFilter::propagatePosterior() {
+void KalmanFilter::propagatePosterior(const unsigned long &utime_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements, const KalmanFilter_Models::MatricesUnit &cont_matrices) {
 	
-	std::cout << "Measurement update" << std::endl;
+	std::cout << "KalmanFilter::propagatePosterior -- Measurement update" << std::endl;
+	
+	// Ensure that the priori update did occur
+	// Excessive, but we don't want to make a mistake
+	if (utime_now != priori.utime) {
+		std::cerr << "KalmanFilter::propagatePosterior -- Error, priori update step time does not coincide with the attempted measurement update." << std::endl;
+	}
 	
 	last_update_type = POSTERIOR_UPDATE;
 	
-	KalmanFilter_Types::Posterior temp;
+//	KalmanFilter_Types::Posterior temp;
 	
+	//KalmanFilter_Models::MatricesUnit cont_matrices;
 	
-	return temp;
+	// For computation of the Kalman gain and covariance posterior update
+	// We need the linearized measurement matrix H
+	// This is still in the continuous domain.
+	
+	// TODO -- some efficiency improvements can be done here
+	// Compute the Kalman Gain using covariance from the priori data structure. We assume that this will be correct.
+	posterior.S = cont_matrices.C * priori.M * cont_matrices.C.transpose() + cont_matrices.R;
+	posterior.K = priori.M * cont_matrices.C.transpose() * posterior.S.inverse();
+
+
+	// We can use non-linear, or linearized measurement model for obtain the innovation
+	if (_model->getSettings().use_linearized_measurement == true) {
+		posterior.innov = measurements - cont_matrices.C * priori.mu;
+	} else {
+		std::cerr << "KalmanFilter::propagatePosterior -- oops, non-linear measurement process not implemented yet." << std::endl;
+	}
+	
+	// update the posterior mean state estimate
+	posterior.mu = priori.mu + posterior.K * posterior.innov;
+	
+	// update the posterior covariance state estimate
+	VAR_MATRIXd eye(priori.M.rows(),priori.M.cols());
+	eye.setIdentity();
+	
+	posterior.P = (eye - posterior.K*cont_matrices.C) * priori.M;
+	
+	return;
 }
 
 

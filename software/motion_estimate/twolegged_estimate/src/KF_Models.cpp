@@ -62,6 +62,7 @@ void BaseModel::setSizes(KalmanFilter_Types::Priori &priori) {
 Joint_Model::Joint_Model() {
 	settings.propagate_with_linearized = true;
 	settings.analytical_jacobian_available = true;
+	settings.use_linearized_measurement = true;
 	
 	// state = [pos, vel]
 	settings.state_size = 2;
@@ -141,6 +142,8 @@ void Joint_Model::identify() { std::cout << "This is the Joint Model class." << 
 DataFusion_Model::DataFusion_Model() {
 	settings.propagate_with_linearized = true;
 	settings.analytical_jacobian_available = true;
+	settings.use_linearized_measurement = true;
+	
 	settings.state_size = 15;
 
 }
