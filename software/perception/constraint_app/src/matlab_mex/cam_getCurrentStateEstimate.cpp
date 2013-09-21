@@ -1,6 +1,18 @@
 #include "mex.h"
 #include "ConstraintApp.h"
 
+/**
+ *  @defgroup cam_getCurrentStateEstimate cam_getCurrentStateEstimate
+ */
+
+/**
+ * @ingroup cam_getCurrentStateEstimate
+ * @param ptr handle returned by cam_initialize()
+ * @return the current state of the object as [x,y,z,roll,pitch,yaw] followed by the joint angles.
+ * @remark Matlab example: x = cam_getCurrentStateEstimate(ptr)
+ * @remark The C++ thread maintains an internal copy of the state. It can be read with this function and written with cam_setCurrentStateEstimate(ptr, x).
+*/
+
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
   if ( nrhs != 1 ) {

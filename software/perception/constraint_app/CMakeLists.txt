@@ -19,5 +19,20 @@ if ( matlab )
    add_test(NAME constraint_app_unit_tests
    		 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		 COMMAND ./testing/test_pf.sh ${matlab})
-  		 #COMMAND ${matlab} -nosplash -r "addpath('${CMAKE_INSTALL_PREFIX}/matlab'); addpath_drake; options.gui=false; options.autorun=true;options.logfile='unitTest.log';options.cdash='cdash.xml'; d=unitTest(options); exit(d.fail)")
+endif()
+
+#-- Add an Option to toggle the generation of the API documentation
+option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" ON)
+if(BUILD_DOCUMENTATION)
+  FIND_PACKAGE(Doxygen)
+  if (NOT DOXYGEN_FOUND)
+    message(FATAL_ERROR 
+      "Doxygen is needed to build the documentation. Please install it correctly")
+  endif()
+  #-- Configure the Template Doxyfile for our specific project
+#  configure_file(Doxyfile.in 
+#                 ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
+  #-- Add a custom target to run Doxygen when ever the project is built
+  add_custom_target (docs COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/../doc/Doxyfile
+			  SOURCES ${PROJECT_BINARY_DIR}/../doc/Doxyfile)
 endif()

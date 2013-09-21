@@ -1,6 +1,19 @@
 #include "mex.h"
 #include "ConstraintApp.h"
 
+/**
+ *  @defgroup cam_getExpectedObservations cam_getExpectedObservations
+ */
+
+/**
+ * @ingroup cam_getExpectedObservations
+ * @param ptr handle returned by cam_initialize()
+ * @param x matrix of NxM states where each of the N rows represents an M-element state.
+ * @param observationIds Px1 cell array of strings indicating which observations are to be returned.  This will often be the result returned from cam_getObservations().
+ * @return the Nx3P expected observations.  Note that each observation consist of [x,y,z] measurements (hence the 3P).
+ * @remark Matlab example: z = cam_getExpectedObservations(ptr, x, observationIds)
+*/
+
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
   if ( nrhs != 3 ) {

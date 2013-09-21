@@ -1,6 +1,19 @@
 #include "mex.h"
 #include "ConstraintApp_MB.h"
 
+/**
+ *  @defgroup cam_getJacobian cam_getJacobian
+ */
+
+/**
+ * @ingroup cam_getJacobian
+ * @param ptr handle returned by cam_initialize()
+ * @param x Mx1 row vector for state at which to calculate Jacobian
+ * @param observationIds Px1 cell array of strings indicating which observations to calculate the Jacobian.  This will often be the result returned from cam_getObservations().
+ * @return the 3PxM Jacobian.  Note that each observation consist of [x,y,z] measurements (hence the 3P).
+ * @remark Matlab example: z = cam_getJacobian(ptr, x, observationIds)
+*/
+
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
   if ( nrhs != 4 ) {
