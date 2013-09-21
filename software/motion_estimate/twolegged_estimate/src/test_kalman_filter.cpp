@@ -44,8 +44,6 @@ int main() {
 	//kf.setModel(*prop, *meas); // for numerical derived jacobian
 	//kf.setModel(*prop, *meas, *trans_Jacobian, *meas_Jacobian); // This will use analytical derivatives
 	
-	// then we need data
-	
 	// we iterate through all the events
 	// publish the output from this process
 	unsigned long utime;

@@ -22,7 +22,7 @@ private:
 	
 	KalmanFilter_Models::MatricesUnit lti_disc(const double &dt, const KalmanFilter_Models::MatricesUnit &cont);
 	
-	VAR_MATRIXd expm(const double &dt, const VAR_MATRIXd &F);
+	VAR_MATRIXd expm(const VAR_MATRIXd &Ft);
 	
 	//Does this require mu and cov to be passed from outside?
 	KalmanFilter_Models::MatricesUnit propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov);

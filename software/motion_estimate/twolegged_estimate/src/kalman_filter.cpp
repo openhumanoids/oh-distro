@@ -24,6 +24,7 @@ KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
 
 KalmanFilter::~KalmanFilter() {
 	//free()
+	//delete
 	
 	
 }
@@ -35,7 +36,7 @@ void KalmanFilter::Initialize() {
 	
 	ut_last_priori_update = 0;
 	// we need to setup the different matrices to have the correct size
-	_model->setSizes(priori);
+	_model->setup(priori, posterior);
 	std::cout << "KalmanFilter::Initialize -- priori.mu resized to: " << priori.mu.rows() << std::endl;
 	
 	return;
@@ -96,8 +97,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 		priori.mu = disc_matrices.A * mu;// TODO -- add B*u term, we going to assume this is noise for now
 		
 	} else {
-		std::cerr << "KalmanFilter::propagatePriori -- oops, non-linear propagation not implemented!!" << std::endl;
-		std::cout << "KalmanFilter::propagatePriori -- oops, non-linear propagation not implemented!!" << std::endl;
+		std::cerr << "KalmanFilter::propagatePriori -- oops, non-linear propagation not implemented" << std::endl;
 				
 		// Propagate with non-linear model
 		// this should include an integration period and some good integration method
@@ -105,10 +105,11 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 	}
 	
 	// Prepare process covariance matrix
-	priori.M = disc_matrices.A * cov * disc_matrices.A.transpose() + disc_matrices.Q;
+	std::cout << "KalmanFilter::propagatePriori -- Matrices are: A " << cov.rows() << std::endl << disc_matrices.A << std::endl << cov << std::endl;
 	
-	// Compute dynamics matrix
-	// Compute state transition and discrete process covariance matrices
+	std::cout << "KalmanFilter::propagatePriori -- Qd is" << std::endl << disc_matrices.Q << std::endl;
+	
+	priori.M = disc_matrices.A * cov * disc_matrices.A.transpose() + disc_matrices.Q;
 	
 	
 	// Compute Kalman Gain matrix
@@ -178,21 +179,23 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	//AB  = expm(Phi*dt)*[zeros(n,n);eye(n)];
 	//Qd   = AB(1:n,:)/AB((n+1):(2*n),:)
 	
-	disc.A = expm(dt, cont.A);
+	disc.A = expm(dt*cont.A);
 	
 	int n = cont.A.rows();
 	
 	VAR_MATRIXd shaped_Q;
 	
-	shaped_Q = cont.B * cont.Q * (cont.B.transpose());
+	shaped_Q = cont.V * cont.Q * (cont.V.transpose());
+	
+//	std::cout << "KalmanFilter::lti_disc -- cont.Q = " << cont.Q << std::endl;
+//	std::cout << "KalmanFilter::lti_disc -- cont.V = " << cont.V << std::endl;
+//	std::cout << "KalmanFilter::lti_disc -- shaped_Q = " << shaped_Q << std::endl;
 	
 	// Create and pack the Phi matrix
 	VAR_MATRIXd Phi;
 	Phi.resize(2*n, 2*n);
-	VAR_MATRIXd rhsAB(2*n,2);
+	VAR_MATRIXd rhsAB(2*n,n);
 	rhsAB.setZero();
-
-	std::cout << "KalmanFilter::lti_disc -- " << n << " " << shaped_Q.rows() << " " << shaped_Q.cols() << std::endl;
 	
 	int i,j;
 	for (i=0;i<n;i++) {
@@ -206,13 +209,15 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 			//South East
 			Phi(n+i,n+j) = -cont.A(j,i);
 		}
-		rhsAB(i,i) = 1;
+		rhsAB(n+i,i) = 1;
 	}
+	
+	
 	
 	// compute AB
 	VAR_MATRIXd AB;
-	AB = expm(dt,Phi) * rhsAB;
-	
+	AB = expm(dt*Phi) * rhsAB;
+	std::cout << "KalmanFilter::lti_disc -- AB = " << std::endl << AB << std::endl;
 	VAR_MATRIXd over(n,n);
 	VAR_MATRIXd under(n,n);
 	
@@ -221,15 +226,82 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 		for (j=0;j<n;j++) {
 			//Qd   = AB(1:n,:)/AB((n+1):(2*n),:)
 			over(i,j) = AB(i,j);
-			under(i,j) = AB(n+1,j);
+			under(i,j) = AB(n+i,j);
 		}
 	}
-	
 	disc.Q = over*(under.inverse());
+	
+	if (false) {
+		std::cout << "KalmanFilter::lti_disc -- " << n << " " << shaped_Q.rows() << " " << shaped_Q.cols() << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- cont.A = " << cont.A << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- Phi = " << std::endl << Phi << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- expm(dt*Phi) = " << std::endl << expm(dt*Phi) << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- rhsAB = " << std::endl << rhsAB << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- over = " << std::endl << over << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- under = " << std::endl << under << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- disc.Q = " << std::endl << disc.Q << std::endl;
+	}
 	
 	return disc;
 	
 }
+
+/* This is what you should be getting for the joint filter model. 
+ * KalmanFilter::lti_disc was debugged for n=2 Joint_Model, with Taylor version of expm
+ * n =
+
+     2
+
+
+Phi =
+
+         0    1.0000    0.0010         0
+         0         0         0    0.0050
+         0         0         0         0
+         0         0   -1.0000         0
+
+Phit =
+
+    1.0000e+000     3.3333e-003     3.3333e-006    27.7777e-009
+     0.0000e+000     1.0000e+000   -27.7777e-009    16.6667e-006
+     0.0000e+000     0.0000e+000     1.0000e+000     0.0000e+000
+     0.0000e+000     0.0000e+000    -3.3333e-003     1.0000e+000
+     
+     expm
+     1.0000e+000     3.3333e-003     3.3333e-006    27.7777e-009
+     0.0000e+000     1.0000e+000   -27.7777e-009    16.6667e-006
+     0.0000e+000     0.0000e+000     1.0000e+000     0.0000e+000
+     0.0000e+000     0.0000e+000    -3.3333e-003     1.0000e+000
+
+AB =
+
+    3.3333e-006    27.7777e-009
+   -27.7777e-009    16.6667e-006
+     1.0000e+000     0.0000e+000
+    -3.3333e-003     1.0000e+000
+
+over =
+
+     3.3333e-006    27.7777e-009
+   -27.7777e-009    16.6667e-006
+
+
+under =
+
+     1.0000e+000     0.0000e+000
+    -3.3333e-003     1.0000e+000
+
+Q =
+
+   1.0e-04 *
+
+    0.0333    0.0003
+    0.0003    0.1667
+ 
+ * */
+
+
+
 
 // Return a copy of the internal Kalman Filter state estimate and Covariance
 // Will return the structure with variables indicating whether the last was a priori of posterior update, including the utime of the last update
@@ -253,13 +325,15 @@ KalmanFilter_Types::State KalmanFilter::getState() {
 	return state;
 }
 
-VAR_MATRIXd KalmanFilter::expm(const double &dt, const VAR_MATRIXd &F) {
+
+// TODO - This function should be updated to include the Pade method, as suggested by Twan.
+VAR_MATRIXd KalmanFilter::expm(const VAR_MATRIXd &Ft) {
 	
 	VAR_MATRIXd Phi;
 	VAR_MATRIXd eye;
-	eye.setIdentity(F.rows(), F.cols());
+	eye.setIdentity(Ft.rows(), Ft.cols());
 	
-	return (eye + dt*F + 0.5*dt*dt*F*F);
+	return (eye + Ft + 0.5*Ft*Ft);
 }
 
 
