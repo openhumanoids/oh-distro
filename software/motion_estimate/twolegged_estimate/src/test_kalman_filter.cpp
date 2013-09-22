@@ -1,10 +1,11 @@
 #include <iostream>
-#include <leg-odometry/kalman_filter.hpp>
 #include <unistd.h>
 #include <tr1/functional>
-#include <leg-odometry/KalmanFilter_Types.hpp>
 #include <cstdlib>
 #include <leg-odometry/SignalTap.hpp>
+
+#include <kalman-filter/kalman_filter.hpp>
+#include <kalman-filter/KalmanFilter_Types.hpp>
 
 using namespace std;
 

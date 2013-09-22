@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include <leg-odometry/KF_Models.hpp>
-#include <leg-odometry/KF_Tuning_Parameters.hpp>
+#include <kalman-filter/KF_Models.hpp>
+#include <kalman-filter/KF_Tuning_Parameters.hpp>
 
 namespace KalmanFilter_Models {
 
