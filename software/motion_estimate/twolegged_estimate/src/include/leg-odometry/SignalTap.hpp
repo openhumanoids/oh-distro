@@ -10,8 +10,12 @@
 #include <boost/circular_buffer.hpp>
 #include <algorithm>
 #include <stdio.h>
+#include <cstdlib>
+#include <ctime>
 
 // objects and functions for generic operations on data
+
+#define PI 3.14159265358979323
 
 class DataFileLogger {
 private:
@@ -261,6 +265,26 @@ public:
 	bool processSample(const unsigned long long &uper);
 	bool getState();
 	unsigned long getRemainingTime_us();
+};
+
+
+// Class to generate Gaussian random noise.
+// INternal state for this noise process is self containte within the class
+class Gaussian {
+private:
+	//	double random;
+	//	
+	//	int q;
+	//	float c1;
+	//	float c2;
+	//	float c3;
+	
+	double R1;
+	double R2;
+public:
+	Gaussian();
+	
+	double randn();
 };
 
 

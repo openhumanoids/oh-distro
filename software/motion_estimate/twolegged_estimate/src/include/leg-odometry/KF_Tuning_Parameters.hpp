@@ -5,10 +5,10 @@
 
 // Q matrix parameters
 #define PROCESS_NOISE_JOINT_POSITIONS   0.001;
-#define PROCESS_NOISE_JOINT_VELOCITIES  0.005;
+#define PROCESS_NOISE_JOINT_VELOCITIES  0.05;
 
 // R Matrix parameters
-#define JOINT_POSITION_MEASUREMENT_NOISE 0.003;
+#define JOINT_POSITION_MEASUREMENT_NOISE 1;
 
 //=====================================================================
 

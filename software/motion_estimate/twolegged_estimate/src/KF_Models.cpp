@@ -104,6 +104,7 @@ Joint_Model::Joint_Model() {
 	// Only a single joint position measurement
 	continuous_matrices.C.resize(1,settings.state_size);
 	continuous_matrices.C.setZero();
+	continuous_matrices.C(0,0) = 1;
 	
 	// noise matrices
 	continuous_matrices.Q.resize(2,2);
@@ -114,9 +115,6 @@ Joint_Model::Joint_Model() {
 }
 
 VAR_MATRIXd Joint_Model::continuous_process_noise(const VAR_MATRIXd &state) {
-	
-//	VAR_MATRIXd Q;	
-//	Q.resize(2,2);
 	
 	continuous_matrices.Q.setZero();
 	
@@ -129,10 +127,7 @@ VAR_MATRIXd Joint_Model::continuous_process_noise(const VAR_MATRIXd &state) {
 // Return a 2x2 R matrix for Atlas joints
 VAR_MATRIXd Joint_Model::measurement_noise_cov(const VAR_VECTORd &state) {
 	
-	//VAR_MATRIXd R(1,1);
-//	R.setZero();
-	
-	std::cout << "Joint_Model::measurement_noise -- has been called upon from somewhere in the ecosystem." << std::endl;
+	//std::cout << "Joint_Model::measurement_noise -- has been called upon from somewhere in the ecosystem." << std::endl;
 	
 	continuous_matrices.R(0,0) = JOINT_POSITION_MEASUREMENT_NOISE;
 	
@@ -141,10 +136,6 @@ VAR_MATRIXd Joint_Model::measurement_noise_cov(const VAR_VECTORd &state) {
 
 
 VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
-	
-	//	VAR_MATRIXd F(settings.state_size,settings.state_size);
-	//	F.setZero();
-	//continuous_matrices.A.setZero(); //  -- Inefficient
 	
 	// joint velocity is the first derivative of joint position
 	continuous_matrices.A(0,1) = 1;

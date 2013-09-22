@@ -4,17 +4,17 @@
 #include <tr1/functional>
 #include <leg-odometry/KalmanFilter_Types.hpp>
 #include <cstdlib>
+#include <leg-odometry/SignalTap.hpp>
 
 using namespace std;
 
-
-
-	    
 	    
 
 int main() {
 	
 	cout << "This is a test application to stimulate and test some of the kalman_filter class functionality." << endl << endl;
+	
+	Gaussian noise;
 	
 	cout << "Starting tests..." << endl << endl;
 	
@@ -49,13 +49,14 @@ int main() {
 	unsigned long utime;
 	utime = 0;
 	cout << endl;
-	for (int i=0; i<5;i++ ) {
+	for (int i=0; i<10000;i++ ) {
 		utime += 3333;
 		
 		// Synthetic data
 		joint_positions.setZero();// 
 		
-		joint_positions(0) = (rand() % 1000 - 500)/1000. ;
+		joint_positions(0) = noise.randn() + 0.1*i;//(rand() % 1000 - 500)/1000. ;
+		cout << "main -- joint_positions(0) = " << joint_positions(0) << endl;
 		
 		// propate the system, this could be done in several ways -- we need to handle all of them
 		// step in time with IMU measurements
@@ -76,6 +77,7 @@ int main() {
 		kf_est = kf.getState();
 		
 		cout << "main -- kf_est.X = " << kf_est.X.transpose() << endl;
+		cout << "main -- kf_est.Cov,diag = " << kf_est.Cov(0,0) << ", " << kf_est.Cov(1,1) << endl;
 		
 		// update the estimated state if required
 		

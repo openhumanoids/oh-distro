@@ -76,6 +76,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 	
 	dt = 1E-6*(ut_now - ut_last_priori_update);
 	ut_last_priori_update = ut_now;
+	priori.utime = ut_now;
 	std::cout << "KalmanFilter::propagatePriori -- dt = " << dt << std::endl;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
@@ -105,9 +106,8 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 	}
 	
 	// Prepare process covariance matrix
-	std::cout << "KalmanFilter::propagatePriori -- Matrices are: A " << cov.rows() << std::endl << disc_matrices.A << std::endl << cov << std::endl;
-	
-	std::cout << "KalmanFilter::propagatePriori -- Qd is" << std::endl << disc_matrices.Q << std::endl;
+//	std::cout << "KalmanFilter::propagatePriori -- Matrices are: A " << std::endl << disc_matrices.A << std::endl << cov << std::endl;
+//	std::cout << "KalmanFilter::propagatePriori -- Qd is" << std::endl << disc_matrices.Q << std::endl;
 	
 	priori.M = disc_matrices.A * cov * disc_matrices.A.transpose() + disc_matrices.Q;
 	
@@ -217,7 +217,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 	// compute AB
 	VAR_MATRIXd AB;
 	AB = expm(dt*Phi) * rhsAB;
-	std::cout << "KalmanFilter::lti_disc -- AB = " << std::endl << AB << std::endl;
+	
 	VAR_MATRIXd over(n,n);
 	VAR_MATRIXd under(n,n);
 	
@@ -237,6 +237,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::lti_disc(const double &dt, const
 		std::cout << "KalmanFilter::lti_disc -- Phi = " << std::endl << Phi << std::endl;
 		std::cout << "KalmanFilter::lti_disc -- expm(dt*Phi) = " << std::endl << expm(dt*Phi) << std::endl;
 		std::cout << "KalmanFilter::lti_disc -- rhsAB = " << std::endl << rhsAB << std::endl;
+		std::cout << "KalmanFilter::lti_disc -- AB = " << std::endl << AB << std::endl;
 		std::cout << "KalmanFilter::lti_disc -- over = " << std::endl << over << std::endl;
 		std::cout << "KalmanFilter::lti_disc -- under = " << std::endl << under << std::endl;
 		std::cout << "KalmanFilter::lti_disc -- disc.Q = " << std::endl << disc.Q << std::endl;
