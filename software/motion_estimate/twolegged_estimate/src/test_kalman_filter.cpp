@@ -15,6 +15,8 @@ int main() {
 	cout << "This is a test application to stimulate and test some of the kalman_filter class functionality." << endl << endl;
 	
 	Gaussian noise;
+	NumericalDiff diff;
+	diff.setSize(1);
 	
 	cout << "Starting tests..." << endl << endl;
 	
@@ -55,7 +57,7 @@ int main() {
 		// Synthetic data
 		joint_positions.setZero();// 
 		
-		joint_positions(0) = noise.randn() + 0.1*i;//(rand() % 1000 - 500)/1000. ;
+		joint_positions(0) = 0.01*noise.randn() + 0.1*i;//(rand() % 1000 - 500)/1000. ;
 		cout << "main -- joint_positions(0) = " << joint_positions(0) << endl;
 		
 		// propate the system, this could be done in several ways -- we need to handle all of them
@@ -76,6 +78,7 @@ int main() {
 		//get the estimated state
 		kf_est = kf.getState();
 		
+		cout << "main -- diff = " << diff.diff(utime, joint_positions) << endl;
 		cout << "main -- kf_est.X = " << kf_est.X.transpose() << endl;
 		cout << "main -- kf_est.Cov,diag = " << kf_est.Cov(0,0) << ", " << kf_est.Cov(1,1) << endl;
 		

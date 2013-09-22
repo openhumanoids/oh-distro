@@ -8,7 +8,7 @@
 #define PROCESS_NOISE_JOINT_VELOCITIES  0.05;
 
 // R Matrix parameters
-#define JOINT_POSITION_MEASUREMENT_NOISE 1;
+#define JOINT_POSITION_MEASUREMENT_NOISE 0.01;
 
 //=====================================================================
 
