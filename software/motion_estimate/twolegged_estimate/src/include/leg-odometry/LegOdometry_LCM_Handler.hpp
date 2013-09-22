@@ -39,7 +39,7 @@
 #include <lcm/lcm.h>
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include <leg-odometry/TwoLegOdometry.h>
-#include <leg-odometry/Odometry.hpp>
+#include <inertial-odometry/Odometry.hpp>
 
 #include <lcmtypes/fovis_bot2.hpp>
 

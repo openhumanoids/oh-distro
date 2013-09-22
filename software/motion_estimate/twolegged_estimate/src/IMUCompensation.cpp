@@ -1,5 +1,5 @@
 
-#include <leg-odometry/IMUCompensation.hpp>
+#include <inertial-odometry/IMUCompensation.hpp>
 
 namespace InertialOdometry {
 

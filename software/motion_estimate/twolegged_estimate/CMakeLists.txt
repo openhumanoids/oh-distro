@@ -30,10 +30,6 @@ add_library(leg-odometry  SHARED
   src/HeavyLowPassFilter.cpp 
   src/SignalTap.cpp
   src/QuaternionLib.cpp 
-  src/IMUCompensation.cpp 
-  src/OrientationComputer.cpp 
-  src/VP_Mechanization.cpp 
-  src/Odometry.cpp 
   src/LegOdometry_LCM_Handler.cpp 
   src/Footsteps.cpp 
   src/TwoLegOdometry.cpp)
@@ -51,11 +47,6 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/fdacoefs_1000_5_30_-40dB.h
   src/include/leg-odometry/SignalTap.hpp
   src/include/leg-odometry/LegOdo_Parameters.hpp
-  src/include/leg-odometry/Odometry.hpp  
-  src/include/leg-odometry/InertialOdometry_Types.hpp
-  src/include/leg-odometry/OrientationComputer.hpp
-  src/include/leg-odometry/VP_Mechanization.hpp
-  src/include/leg-odometry/IMUCompensation.hpp
   src/include/leg-odometry/QuaternionLib.h
   src/include/leg-odometry/Footsteps.h
   src/include/leg-odometry/TwoLegOdometry.h
@@ -90,18 +81,43 @@ pods_install_pkg_config_file(kalman-filter
   VERSION 0.0.1) 
   
   
+###############   THIS IS THE inertial-odometry LIBRARY
+  
+add_library(inertial-odometry SHARED
+  src/IMUCompensation.cpp 
+  src/OrientationComputer.cpp 
+  src/VP_Mechanization.cpp 
+  src/Odometry.cpp )
+
+pods_use_pkg_config_packages(inertial-odometry ${REQUIRED_PACKAGES} eigen3)
+target_link_libraries (inertial-odometry boost_system ${REQUIRED_LIBS})
+set_target_properties(inertial-odometry PROPERTIES SOVERSION 1)
+pods_install_libraries(inertial-odometry)
+
+pods_install_headers( src/include/inertial-odometry/Odometry.hpp
+  src/include/inertial-odometry/InertialOdometry_Types.hpp
+  src/include/inertial-odometry/OrientationComputer.hpp
+  src/include/inertial-odometry/VP_Mechanization.hpp
+  src/include/inertial-odometry/IMUCompensation.hpp 
+  DESTINATION inertial-odometry)
+  
+pods_install_pkg_config_file(inertial-odometry
+  LIBS -linertial-odometry 
+  VERSION 0.0.1) 
+  
 ############## Define executables
 
 add_executable(drc-legged-odometry src/test_driver.cpp)
-pods_use_pkg_config_packages(drc-legged-odometry ${REQUIRED_PACKAGES} leg-odometry)
+pods_use_pkg_config_packages(drc-legged-odometry ${REQUIRED_PACKAGES} leg-odometry inertial-odometry)
 pods_install_executables(drc-legged-odometry)
 
 add_executable(drc-foot-state src/foot_contact_classifier_main.cpp)
-pods_use_pkg_config_packages(drc-foot-state ${REQUIRED_PACKAGES} leg-odometry)
+pods_use_pkg_config_packages(drc-foot-state ${REQUIRED_PACKAGES} leg-odometry inertial-odometry)
 pods_install_executables(drc-foot-state)
 
 add_executable(drc-test-cppkf src/test_kalman_filter.cpp)
-pods_use_pkg_config_packages(drc-test-cppkf ${REQUIRED_PACKAGES} leg-odometry kalman-filter)
+## Something is wrong here, we should not have to include the inertial-odoemtry pod for drc-test-cppkf ??
+pods_use_pkg_config_packages(drc-test-cppkf ${REQUIRED_PACKAGES} leg-odometry kalman-filter inertial-odometry)
 
 #add_executable(testing_imu src/test_imu.cpp)
 #pods_use_pkg_config_packages(testing_imu ${REQUIRED_PACKAGES} leg-odometry)

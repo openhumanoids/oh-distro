@@ -1,4 +1,4 @@
-#include <leg-odometry/VP_Mechanization.hpp>
+#include <inertial-odometry/VP_Mechanization.hpp>
 
 namespace InertialOdometry {
 

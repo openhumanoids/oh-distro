@@ -5,7 +5,7 @@
  *      Author: drc
  */
 
-#include <leg-odometry/OrientationComputer.hpp>
+#include <inertial-odometry/OrientationComputer.hpp>
 
 namespace InertialOdometry {
 
