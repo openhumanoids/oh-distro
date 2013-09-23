@@ -1,108 +1,102 @@
-<?xml version="1.0"?>
+<?xml version="1.0" ?>
 <object name="door_push_down_general">
-
-<!-- x,y,z,roll,pitch,yaw params must exist for all otdf objects-->
-<!-- World frame origin of the object -->
-<param name="x" default_value="0.0" inc="0.001" min="-100" max="100"/> 
-<param name="y" default_value="0.0" inc="0.001" min="-100" max="100"/>
-<param name="z" default_value="0.0" inc="0.001" min="-100" max="100"/>
-
-<!--roll,pitch,yaw are about Body Frame-->
-<param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/> 
-<param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
-<param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416"/>
-
-<!-- Rectangular Lever Parameters -->
-<param name="lever_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
-<param name="lever_length" default_value="0.15" inc="0.0025" min="0" max="100" />
-<param name="lever_width" default_value="0.015" inc="0.0025" min="0" max="100" />
-<param name="lever_thick" default_value="0.015" inc="0.0025" min="0" max="100" />
-
-<param name="lever_offset_from_door" default_value="0.002" inc="0.0025" min="-10" max="10" />
-<param name="lever_offset_x" default_value="0.000" inc="0.0025" min="-10" max="10" />
-<param name="lever_offset_z" default_value="0.020" inc="0.0025" min="-10" max="10" />
-
-
-<!-- Size of door -->
-<param name="door_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
-<param name="lX" default_value="1" inc="0.01" min="0" max="100"/> 
-<param name="lY" default_value="0.05" inc="0.01" min="0" max="100"/>
-<param name="lZ" default_value="1.9" inc="0.01" min="0" max="100"/> 
-
-<!-- Base Link Description -->
-<link name="base_link"/>
-<link name="door_base">
-    <visual>
-	<origin rpy="0 0 0" xyz="${lX/2} 0 0" />
-	<geometry>
-	    <box size="${lX} ${lY} ${lZ}" />
-	</geometry>
-    </visual>
-    <collision>
-        <origin rpy="0 0 0" xyz="0 0 0" />
-	<geometry>
-	    <box size="${lX} ${lY} ${lZ}" />
-	</geometry>
-    </collision>
-</link>  
-
-<!-- Lever Link Description -->
-<link name="r_lever">
-    <visual>
-	<origin rpy="0 0 0" xyz="${-lever_length*3/8} 0 0" />
-	<geometry>
-	    <box size="${lever_length} ${lever_width} ${lever_thick}" />
-	</geometry>
-    </visual>
-    <collision>
-        <origin rpy="0 0 0" xyz="0 0 0" />
-	<geometry>
-	    <box size="${lever_length} ${lever_width} ${lever_thick}" />
-	</geometry>
-    </collision>
-</link>  
-
-<!-- Lever Link Description -->
-<link name="l_lever">
-    <visual>
-	<origin rpy="0 0 0" xyz="${-lever_length*3/8} 0 0" />
-	<geometry>
-	    <box size="${lever_length} ${lever_width} ${lever_thick}" />
-	</geometry>
-    </visual>
-    <collision>
-        <origin rpy="0 0 0" xyz="0 0 0" />
-	<geometry>
-	    <box size="${lever_length} ${lever_width} ${lever_thick}" />
-	</geometry>
-    </collision>
-</link>  
-
-<!-- Join Descriptions -->
-<joint name="base_joint" type="revolute">
-	<parent link="base_link" type="link"/>
-	<child link="door_base" type="link"/>
-	<origin rpy="0 0 ${door_start_theta}" xyz="0 0 0"/>
-	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
-</joint>
-
-<joint name="r_lever_joint" type="revolute">
-	<parent link="door_base" type="link"/>
-	<child link="r_lever" type="link"/>
-	<origin rpy="0 ${lever_start_theta} 0" xyz="${lX*7/8+lever_offset_x} ${-(lever_thick/2+lY/2+lever_offset_from_door)} ${lever_offset_z}"/>
-	<axis xyz="0 -1 0"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
-</joint>
-
-<joint name="l_lever_joint" type="revolute">
-	<parent link="door_base" type="link"/>
-	<child link="l_lever" type="link"/>
-	<origin rpy="0 ${lever_start_theta} 0" xyz="${lX*7/8+lever_offset_x} ${(lever_thick/2+lY/2+lever_offset_from_door)} ${lever_offset_z}"/>
-	<axis xyz="0 1 0"/>
-	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
-</joint>
-
+    <!-- x,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.95" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="1.57" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Rectangular Lever Parameters -->
+    <param name="lever_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
+    <param name="lever_length" default_value="0.15" inc="0.0025" min="0" max="100" />
+    <param name="lever_width" default_value="0.015" inc="0.0025" min="0" max="100" />
+    <param name="lever_thick" default_value="0.015" inc="0.0025" min="0" max="100" />
+    <param name="lever_offset_from_door" default_value="0.05" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_x" default_value="0.000" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_z" default_value="0.020" inc="0.0025" min="-10" max="10" />
+    <!-- Size of door -->
+    <param name="door_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
+    <param name="lX" default_value="1" inc="0.01" min="0" max="100" />
+    <param name="lY" default_value="0.05" inc="0.01" min="0" max="100" />
+    <param name="lZ" default_value="1.9" inc="0.01" min="0" max="100" />
+    <!-- Base Link Description -->
+    <link name="plane::xy::base_link" />
+    <link name="door_base">
+        <visual>
+            <origin rpy="0 0 0" xyz="${lX/2} 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </collision>
+    </link>
+    <!-- Lever Link Description -->
+    <link name="r_lever">
+        <visual>
+            <origin rpy="0 0 0" xyz="${-lever_length*3/8} 0 0" />
+            <geometry>
+                <box size="${lever_length} ${lever_width} ${lever_thick}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lever_length} ${lever_width} ${lever_thick}" />
+            </geometry>
+        </collision>
+    </link>
+    <!-- Lever Link Description -->
+    <link name="l_lever">
+        <visual>
+            <origin rpy="0 0 0" xyz="${-lever_length*3/8} 0 0" />
+            <geometry>
+                <box size="${lever_length} ${lever_width} ${lever_thick}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lever_length} ${lever_width} ${lever_thick}" />
+            </geometry>
+        </collision>
+    </link>
+    <!-- Join Descriptions -->
+    <joint name="base_joint" type="revolute">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="door_base" type="link" />
+        <origin rpy="0 0 ${door_start_theta}" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
+    </joint>
+    <joint name="r_lever_joint" type="revolute">
+        <parent link="door_base" type="link" />
+        <child link="r_lever" type="link" />
+        <origin rpy="0 ${lever_start_theta} 0" xyz="${lX*7/8+lever_offset_x} ${-(lever_thick/2+lY/2+lever_offset_from_door)} ${lever_offset_z}" />
+        <axis xyz="0 -1 0" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
+    </joint>
+    <joint name="l_lever_joint" type="revolute">
+        <parent link="door_base" type="link" />
+        <child link="l_lever" type="link" />
+        <origin rpy="0 ${lever_start_theta} 0" xyz="${lX*7/8+lever_offset_x} ${(lever_thick/2+lY/2+lever_offset_from_door)} ${lever_offset_z}" />
+        <axis xyz="0 1 0" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="l_lever_0" />
+        <relative_pose rpy="1.77639 -1.5089 -0.37606" xyz="0.0373381 0.103223 0.0489736" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143115 1.56404 1.47275 0.00495685 1.45332 1.22975 0.0144998 0.818442 1.4256 0.366444 0.862058 1.25209 " />
+    </grasp_seed>
+    <plan_seed name="2013-09-20-22-56::rhnd_35deghandle_10degdoor" />
+    <plan_seed name="2013-09-20-23-01::rhnd_45handle_10door" />
 </object>
-
-
