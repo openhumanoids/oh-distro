@@ -1,7 +1,13 @@
 <launch>
 
-  <arg name="gzname" default="gazebo_paused"/>
+  <arg name="gzname" default="gazebo"/>
   <arg name="gzworld" default="vrc_task_1.world"/>
+
+
+  <param name="/use_sim_time" type="bool" value="true"/>
+  <param name="/atlas/startup_mode" value="pinned" />
+  <param name="/atlas/time_to_unpin" value="10" />
+
 
   <!-- start gazebo with the Atlas -->
   <include file="$(find atlas_utils)/launch/atlas_no_controllers.launch">
