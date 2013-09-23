@@ -42,7 +42,7 @@ classdef SeatedDrivingController < DRCController
       qp = QPControlBlock(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      pd = SimplePDBlock(r,ctrl_data);
+      pd = SimplePDBlock(r);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;

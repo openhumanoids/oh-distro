@@ -4,6 +4,7 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.namesuffix = '';
 options.floating = true;
+options.ignore_friction = true;
 
 if ~isfield(options,'backup_mode') options.backup_mode = false; end
 if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end

@@ -50,9 +50,7 @@ classdef PosVelFeedForwardBlock < MIMODrakeSystem
       % instantiate QP controller
       qp_options.slack_limit = 30.0;
       qp_options.w = 0.01;
-      qp_options.R = 1e-12*eye(nu);
       qp_options.lcm_foot_contacts = false;
-      qp_options.full_body_opt = true;
       qp_options.debug = false;
       qp_options.use_mex = options.use_mex;
       obj.robot = r;

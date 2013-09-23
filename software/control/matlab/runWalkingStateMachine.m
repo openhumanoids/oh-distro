@@ -4,6 +4,7 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.namesuffix = '';
 options.floating = true;
+options.ignore_friction = true;
 
 if ~isfield(options,'backup_mode') options.backup_mode = false; end
 if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end
@@ -26,6 +27,7 @@ if nargin > 1
   r.getStateFrame.setDefaultChannel(state_channel);
 end
 
+harness_controller = HarnessController('harnessed',r,10);
 standing_controller = StandingManipController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
@@ -33,7 +35,6 @@ bracing_controller = BracingController('bracing',r,options);
 % crawl_opts = options;
 % crawl_opts.bipedal = false;
 % crawl_opts.lcm_foot_contacts = false;
-% crawl_opts.full_body_opt = true;
 % crawl_opts.use_walking_pd = false;
 % crawl_opts.ignore_states = 1:getNumStates(r);%[1 2 3 getNumDOF(r)+(1:6)];
 % crawling_controller = WalkingController('crawling',r,crawl_opts);
@@ -41,13 +42,14 @@ bracing_controller = BracingController('bracing',r,options);
 crawling_controller = CrawlingController('crawling',r,options);
 dummy_controller = DummyController('dummy',r,options);
 
-controllers = struct(standing_controller.name,standing_controller,...
+controllers = struct(harness_controller.name,harness_controller,...
+                     standing_controller.name,standing_controller,...
                      walking_controller.name,walking_controller,...     
                      bracing_controller.name,bracing_controller,...
                      crawling_controller.name,crawling_controller,...
                      dummy_controller.name,dummy_controller);
 
-state_machine = DRCStateMachine(controllers,standing_controller.name);
+state_machine = DRCStateMachine(controllers,harness_controller.name);
 
 state_machine.run(options.backup_mode);
 

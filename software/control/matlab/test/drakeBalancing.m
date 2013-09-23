@@ -5,6 +5,9 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 % put robot in a random x,y,yaw position and balance for 3 seconds
 visualize = false;
 
+if (nargin>0) options.use_mex = use_mex;
+else options.use_mex = true; end
+
 options.floating = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
@@ -72,7 +75,7 @@ sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD trajectory controller 
-pd = SimplePDBlock(r,ctrl_data);
+pd = SimplePDBlock(r);
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
