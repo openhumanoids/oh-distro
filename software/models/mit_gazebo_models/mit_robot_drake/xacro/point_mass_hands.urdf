@@ -2,8 +2,8 @@
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
- 		<mass value="3.131"/> <!--NEW value-->
-    <!-- <mass value="2.312"/>--><!--OLD value-->
+    <mass value="2.25"/> <!--Hardware with BDI stumps-->
+ 		<!-- <mass value="3.131"/>--> <!--VRC value-->
       <origin xyz="0 0 0"/>
       <!--Changed inertias from 0.01 to 0.1. Temporary fix (Sisir)-->
       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
@@ -19,8 +19,8 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
- 		<mass value="3.131"/> <!--NEW value-->
-    <!-- <mass value="2.312"/>--><!--OLD value-->
+    <mass value="2.25"/> <!--Hardware with BDI stumps-->
+    <!-- <mass value="3.131"/>--> <!--VRC value-->
       <origin xyz="0 0 0"/>
       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
@@ -36,17 +36,16 @@
    <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-
-    <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/><!--NEW value-->
-   <!-- <origin rpy="0 0 0" xyz="0.0054 0.1905 -0.129"/>--><!--OLD value-->
+    <origin rpy="0 0 0" xyz="0.0 0.15 0.01"/> <!--Hardware with BDI stumps-->
+    <!-- <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/> --> <!--VRC value-->
   </joint>
 
 <!-- COM numbers are made up for now -->
   <joint name="r_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="r_hand_point_mass"/>
-	 <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/><!--NEW value-->
-   <!--   <origin rpy="0 0 0" xyz="0.0054 -0.1905 -0.129"/>--><!--OLD value-->
+    <origin rpy="0 0 0" xyz="0.0 -0.15 0.01"/> <!--Hardware with BDI stumps-->
+	 <!-- <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/> --> <!--VRC value-->
   </joint>
    
 </robot>
