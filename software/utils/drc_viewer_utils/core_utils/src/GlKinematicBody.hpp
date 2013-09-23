@@ -409,6 +409,17 @@ class GlKinematicBody
       return false;
     };
     
+    bool get_joint_index(std::string &joint_name, unsigned int &index)
+    {
+      std::vector<std::string>::const_iterator found;
+      found = std::find (_joint_names.begin(), _joint_names.end(), joint_name);
+      if (found != _joint_names.end()) 
+      {
+        index = found - _joint_names.begin();   
+        return true;
+      }
+      return false;
+    };
     void draw_whole_body_bbox(); 
     void blink(bool value){
       enable_blinking=value;

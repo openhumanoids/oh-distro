@@ -48,6 +48,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
    {
      THREE_D=0, TWO_D, TWO_HALF_D,THREE_D_TRANS, THREE_D_ROT, TWO_D_TRANS, TWO_D_ROT
    } bodypose_adjustment_type; 
+
      
   private:  
    Eigen::Vector3f _floatingbase_offset; // visual offset of the root link, if any 
@@ -214,6 +215,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
     init_floatingbase_marker_collision_objects(); 
     update_floatingbase_marker_collision_objects();  
    }
+
    
    bool is_bodypose_adjustment_enabled()   { 
     return _bodypose_adjustment_enabled;
@@ -261,7 +263,142 @@ class InteractableGlKinematicBody: public GlKinematicBody
     else
      _marker_dir_flip[2] = 1;
    };
+   
+   // support for plane markers for planar motion
+   public:
+   
+    bool modify_joint_axis_to_plane_normal(const std::string &joint_name,Eigen::Vector3f &joint_axis);
+    
 
+    bool is_planar_coupling_active(const std::string &jointorlink_name)
+    {
+        std::string token  = "plane::";
+        size_t found = jointorlink_name.find(token); 
+        return (found!=std::string::npos);
+    };
+    
+    bool extract_plane_name(const std::string &jointorlink_name,std::string &plane_name)
+    {
+        plane_name = " ";
+        std::string token  = "plane::";
+        std::string separator  = "::";
+        size_t found = jointorlink_name.find(token); 
+        if (found!=std::string::npos)
+        {
+          size_t found2 = jointorlink_name.find(separator,found+token.size()); 
+          plane_name = jointorlink_name.substr(found+token.size(),found2-(found+token.size()));
+          return true;
+        }
+        return false;
+    };
+    
+    bool is_first_axis_in_plane(const std::string &joint_name)
+    {
+      std::string plane_name,axis_name;
+      extract_plane_name(joint_name,plane_name);
+      std::string token  = "plane::" + plane_name;
+      std::string separator  = "::";
+      size_t found = joint_name.find(token); 
+      size_t found2 = joint_name.find(separator,found+token.size()); 
+      axis_name = joint_name.substr(found2+separator.size());
+      size_t found3 = plane_name.find(axis_name); 
+      if ((found3!=std::string::npos)&&(found3==0))
+      {
+       return true;
+      }
+      return false;
+    };
+
+    bool is_second_axis_in_plane(const std::string &joint_name)
+    {
+      std::string plane_name,axis_name;
+      extract_plane_name(joint_name,plane_name);
+      std::string token  = "plane::" + plane_name;
+      std::string separator  = "::";
+      size_t found = joint_name.find(token); 
+      size_t found2 = joint_name.find(separator,found+token.size()); 
+      axis_name = joint_name.substr(found2+separator.size());
+      size_t found3 = plane_name.find(axis_name); 
+      if ((found3!=std::string::npos)&&(found3==1))
+      {
+       return true;
+      }
+      return false;
+    };
+    
+    bool get_first_axis_name(const std::string &jointormarker_name,std::string &axis_name)
+    {
+    
+        std::string token  = "markers::";
+        size_t found = jointormarker_name.find(token);  
+        std::string joint_name(jointormarker_name);
+        if(found!=std::string::npos)
+          joint_name =jointormarker_name.substr(found+token.size());
+        std::string separator  = "::";
+        std::string plane_name;
+        extract_plane_name(joint_name,plane_name);
+        found = joint_name.find_last_of(separator);
+        if (found!=std::string::npos)
+        {
+         axis_name=joint_name.substr(0,found+1) +plane_name[0];
+         return true;
+        }
+        return false;
+    };
+    
+    bool get_second_axis_name(const std::string &jointormarker_name,std::string &axis_name)
+    {
+        std::string token  = "markers::";
+        size_t found = jointormarker_name.find(token);  
+        std::string joint_name(jointormarker_name);
+        if(found!=std::string::npos)
+          joint_name =jointormarker_name.substr(found+token.size());
+        std::string separator  = "::";
+        std::string plane_name;
+        extract_plane_name(joint_name,plane_name);
+        found = joint_name.find_last_of(separator);
+        if (found!=std::string::npos)
+        {
+         axis_name=joint_name.substr(0,found+1) +plane_name[1];
+         return true;
+        }
+        return false;
+    };
+    
+      
+    bool get_plane_axis(const std::string &plane_name,Eigen::Vector3f& plane_axis)
+    {
+      std::string first_axis_name,second_axis_name;
+      first_axis_name=plane_name[0];
+      second_axis_name=plane_name[1];
+
+      Eigen::Vector3f first_axis,second_axis;
+      if(first_axis_name=="x")
+        first_axis << 1,0,0;
+      else if(first_axis_name=="y")
+         first_axis << 0,1,0;
+      else if(first_axis_name=="z")
+         first_axis << 0,0,1; 
+      else {
+        std::cerr<<"ERROR: unknown axis name (must be x,y,or z) : " << first_axis_name << std::endl;
+        return false;   
+      }  
+      
+      if(second_axis_name=="x")
+        second_axis << 1,0,0;
+      else if(second_axis_name=="y")
+         second_axis << 0,1,0;
+      else if(second_axis_name=="z")
+         second_axis << 0,0,1; 
+      else {
+        std::cerr<<"ERROR: unknown axis name (must be x,y,or z) : " << second_axis_name << std::endl;
+        return false;   
+      }      
+         
+      plane_axis = first_axis.cross(second_axis);
+      return true;
+    };      
+    
 };
 
 } // end namespace 

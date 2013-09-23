@@ -1452,8 +1452,8 @@ bool GlKinematicBody::get_future_joint_pos(const std::string &joint_name, double
 {
     pos= 0;
     std::map<std::string, double >::const_iterator jointpos_map_it;
-    jointpos_map_it = _current_jointpos.find(joint_name); 
-    if(jointpos_map_it!=_current_jointpos.end()) 
+    jointpos_map_it = _future_jointpos.find(joint_name); 
+    if(jointpos_map_it!=_future_jointpos.end()) 
     { 
       pos = jointpos_map_it->second;
       return true;
@@ -2029,7 +2029,7 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
       else if  (type == urdf::Geometry::MESH)
       {
         //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-	std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
+	      std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
         mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
