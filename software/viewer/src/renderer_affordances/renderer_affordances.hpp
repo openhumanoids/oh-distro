@@ -180,6 +180,7 @@ struct RendererAffordances {
     
     ray_hit_t = 0;
     joint_marker_pos_on_press = 0;
+    coupled_joint_marker_pos_on_press=0;
     otdf_id = 0;
     num_otdfs = 0;
     alpha = 1.0;
@@ -295,6 +296,7 @@ struct RendererAffordances {
   Eigen::Vector3f ray_hit_normal;
   Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
   double joint_marker_pos_on_press;
+  double coupled_joint_marker_pos_on_press; // used for plane markers
   double ray_hit_t;
   
   
@@ -430,7 +432,34 @@ struct RendererAffordances {
       KDL::Frame DragRotation=KDL::Frame::Identity();       
       if(it->second._gl_object->is_bodypose_adjustment_enabled())
       {
-      
+
+        std::string token  = "plane::";
+        size_t found = self->marker_selection.find(token);  
+        if(found!=std::string::npos)  
+        {
+          string plane_name="";
+          string root_link_name=it->second._gl_object->get_root_link_name();
+          it->second._gl_object->extract_plane_name(root_link_name,plane_name);
+          size_t found2 = plane_name.find("x"); 
+          bool x_plane_active = (found2!=std::string::npos);
+          found2 = plane_name.find("y"); 
+          bool y_plane_active = (found2!=std::string::npos);       
+          found2 = plane_name.find("z"); 
+          bool z_plane_active = (found2!=std::string::npos);
+          if(x_plane_active){
+           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+           T_world_object_future.p[0] = dx;
+          }
+          if(y_plane_active){
+           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+            T_world_object_future.p[1] = dy;
+          }
+          if(z_plane_active){
+            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+            T_world_object_future.p[2] = dz;
+          }        
+        }  
+
         if(self->marker_selection=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
           T_world_object_future.p[0] = dx;
@@ -479,9 +508,7 @@ struct RendererAffordances {
       }
       else if(it->second._gl_object->is_jointdof_adjustment_enabled())
       {
-        //===========================================================================
         // set joint dof
-
         string object_name = self->object_selection; 
         string marker_name = self->marker_selection; 
         string token  = "markers::";
@@ -489,26 +516,58 @@ struct RendererAffordances {
         if (found==std::string::npos)
             return;
         string joint_name =marker_name.substr(found+token.size());
-        
         //std::cout <<"markername: "<< marker_name<< " mouse on joint marker: " << joint_name << std::endl;
 
-
-      // Get joint marker draw frame
-
-        
         visualization_utils::JointFrameStruct jointInfo;
-        it->second._gl_object->get_joint_info(joint_name,jointInfo);
         KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
         KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-        
         Eigen::Vector3f joint_axis;
-        if(it->second._gl_object->is_future_display_active())        
-          joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+        bool flip_criteria;
+        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
+
+        // handle planar markers differently from cartesian markers
+        if(it->second._gl_object->is_planar_coupling_active(joint_name))
+        {
+          std::string token  = "::translate";
+          size_t found = joint_name.find(token); 
+          if (found!=std::string::npos)
+          {
+             std::string second_axis_name;
+             it->second._gl_object->get_second_axis_name(marker_name,second_axis_name);
+             it->second._gl_object->get_joint_info(second_axis_name,jointInfo);
+			       if(it->second._gl_object->is_future_display_active())        
+            	 joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+          	 else
+             	 joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; 
+          	 
+          	 joint_axis.normalize();
+             if(!it->second._gl_object->modify_joint_axis_to_plane_normal(second_axis_name,joint_axis))
+               return;  
+             flip_criteria = it->second._gl_object->is_joint_axis_flipped(second_axis_name);  
+          }
+        }
         else
-          joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // in world frame
-        joint_axis.normalize();
-       
+        {
+
+          it->second._gl_object->get_joint_info(joint_name,jointInfo);
+		  if(it->second._gl_object->is_future_display_active())        
+            joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+          else
+            joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // in world frame
+          joint_axis.normalize();
+           
+          flip_criteria = it->second._gl_object->is_joint_axis_flipped(joint_name);
+          double arrow_length =0.2;
+          if(flip_criteria) {
+            T_jointaxis_marker.p[2] =-2*arrow_length/3; 
+           }
+          else{
+            T_jointaxis_marker.p[2] = 2*arrow_length/3;     
+          }
+
+        }
         
+    
         Eigen::Vector3f u_body_to_joint;
         KDL::Frame T_world_joint;
         T_world_joint = jointInfo.future_frame;
@@ -516,14 +575,9 @@ struct RendererAffordances {
         u_body_to_joint[1] = T_world_object_future.p[1]-T_world_joint.p[1];
         u_body_to_joint[2] = T_world_object_future.p[2]-T_world_joint.p[2];
         u_body_to_joint.normalize();
-
-        
         double normal = acos(u_body_to_joint.dot(joint_axis));
         double flipped = acos(u_body_to_joint.dot(-joint_axis));
         
-        KDL::Frame T_world_jointaxis;// Axis
-        T_world_jointaxis.p = jointInfo.future_frame.p;
-
         double theta;
         Eigen::Vector3f axis;      
         Eigen::Vector3f uz; 
@@ -531,20 +585,13 @@ struct RendererAffordances {
         axis = uz.cross(joint_axis);
         axis.normalize();
         theta = acos(uz.dot(joint_axis));
+        
+		    KDL::Frame T_world_marker = KDL::Frame::Identity();
+        KDL::Frame T_world_jointaxis;// Axis
+        T_world_jointaxis.p = jointInfo.future_frame.p;
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
         T_world_jointaxis.M = KDL::Rotation::Rot(axis_temp,theta); //T_axis_world
-        
-        KDL::Frame T_world_marker = KDL::Frame::Identity();
-        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
-        double arrow_length =0.2;
-        bool flip_criteria = it->second._gl_object->is_joint_axis_flipped(joint_name);
-        if(flip_criteria) {
-          T_jointaxis_marker.p[2] =-2*arrow_length/3;
-         }
-        else{
-          T_jointaxis_marker.p[2] = 2*arrow_length/3;
-        }
         T_world_marker = T_world_jointaxis*T_jointaxis_marker; // T_axismarker_world = T_axismarker_axis*T_axis_world
         
        // proper hit_drag point via marker plane ray intersection.
@@ -593,27 +640,80 @@ struct RendererAffordances {
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
-          string token  = "mate::";
-          size_t found = joint_name.find(token); 
-          self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
-                                start[1]+self->ray_hit_t*dir[1],
-                                start[2]+self->ray_hit_t*dir[2]; 
-          Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
-          Eigen::Vector3f dragpt_obj_frame;
-          dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object_future.p[0],
-                   self->ray_hit_drag[1]-T_world_object_future.p[1],
-                   self->ray_hit_drag[2]-T_world_object_future.p[2];
-          Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
-          double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
 
-           std::map<std::string, double> jointpos_in;
-           jointpos_in = it->second._gl_object->_future_jointpos;
-           jointpos_in.find(joint_name)->second = desired_pos;
-           it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
-           bot_viewer_request_redraw(self->viewer); 
-         }
+          // handle planar markers differently from cartesian markers
+          if(self->otdf_instance_hold._gl_object->is_planar_coupling_active(joint_name))
+          {
+            std::string token  = "::translate";
+            size_t found = joint_name.find(token); 
+            if (found!=std::string::npos)
+            {
+              self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+                    start[1]+self->ray_hit_t*dir[1],
+                    start[2]+self->ray_hit_t*dir[2]; 
+              Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+              Eigen::Vector3f dragpt_obj_frame;
+              dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object_future.p[0],
+		                 self->ray_hit_drag[1]-T_world_object_future.p[1],
+		                 self->ray_hit_drag[2]-T_world_object_future.p[2];
+              Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+              
+              std::string first_axis_name,second_axis_name;
+              it->second._gl_object->get_first_axis_name(marker_name,first_axis_name);
+              it->second._gl_object->get_second_axis_name(marker_name,second_axis_name);
+              double first_axis_pos, second_axis_pos;
+              first_axis_pos=it->second._gl_object->_future_jointpos.find(first_axis_name)->second;
+              second_axis_pos=it->second._gl_object->_future_jointpos.find(second_axis_name)->second;
+                
+              it->second._gl_object->get_joint_info(first_axis_name,jointInfo);
+              if(it->second._gl_object->is_future_display_active())        
+                joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+              else
+                joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; 
+              joint_axis.normalize();
+              first_axis_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);  
+              
+              it->second._gl_object->get_joint_info(second_axis_name,jointInfo);
+              if(it->second._gl_object->is_future_display_active())        
+                joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+              else
+                joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; 
+              joint_axis.normalize();  
+              second_axis_pos = self->coupled_joint_marker_pos_on_press + da.dot(joint_axis); 
+
+              std::map<std::string, double> jointpos_in;
+              jointpos_in = it->second._gl_object->_future_jointpos;
+              jointpos_in.find(first_axis_name)->second = first_axis_pos;
+              jointpos_in.find(second_axis_name)->second = second_axis_pos;
+              it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
+              bot_viewer_request_redraw(self->viewer); 
+            }
+            
+          }
+          else
+          {
+         
+		        self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+		                              start[1]+self->ray_hit_t*dir[1],
+		                              start[2]+self->ray_hit_t*dir[2]; 
+		        Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+		        Eigen::Vector3f dragpt_obj_frame;
+		        dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object_future.p[0],
+		                 self->ray_hit_drag[1]-T_world_object_future.p[1],
+		                 self->ray_hit_drag[2]-T_world_object_future.p[2];
+		        Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+		        double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
+
+		         std::map<std::string, double> jointpos_in;
+		         jointpos_in = it->second._gl_object->_future_jointpos;
+		         jointpos_in.find(joint_name)->second = desired_pos;
+		         it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
+		         bot_viewer_request_redraw(self->viewer); 
+ 		       }
+         }// end else PRISMATIC
       }// end else if(it->second._gl_object->is_jointdof_adjustment_enabled())
-      self->prev_ray_hit_drag = self->ray_hit_drag; 
+      self->prev_ray_hit_drag = self->ray_hit_drag;
+      
   }   // end set_object_desired_state_on_marker_motion()
   
 
@@ -633,6 +733,33 @@ struct RendererAffordances {
       KDL::Frame DragRotation=KDL::Frame::Identity();       
       if(self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())
       {
+        std::string token  = "plane::";
+        size_t found = self->marker_selection.find(token);  
+        if(found!=std::string::npos)  
+        {
+          string plane_name="";
+          string root_link_name=self->otdf_instance_hold._gl_object->get_root_link_name();
+          self->otdf_instance_hold._gl_object->extract_plane_name(root_link_name,plane_name);
+          size_t found2 = plane_name.find("x"); 
+          bool x_plane_active = (found2!=std::string::npos);
+          found2 = plane_name.find("y"); 
+          bool y_plane_active = (found2!=std::string::npos);       
+          found2 = plane_name.find("z"); 
+          bool z_plane_active = (found2!=std::string::npos);
+          if(x_plane_active){
+           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+           T_world_object.p[0] = dx;
+          }
+          if(y_plane_active){
+           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+            T_world_object.p[1] = dy;
+          }
+          if(z_plane_active){
+            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+            T_world_object.p[2] = dz;
+          }        
+        } 
+      
         if(self->marker_selection=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
           T_world_object.p[0] = dx;
@@ -686,7 +813,7 @@ struct RendererAffordances {
       }
      else if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
       {
-        //===========================================================================
+
         // set joint dof
         string object_name = self->object_selection; 
         string marker_name = self->marker_selection; 
@@ -694,20 +821,52 @@ struct RendererAffordances {
         size_t found = marker_name.find(token);  
         if (found==std::string::npos)
             return;
+            
         string joint_name =marker_name.substr(found+token.size());
-        
         //std::cout <<"markername: "<< marker_name<< " mouse on joint marker: " << joint_name << std::endl;
-
-      // Get joint marker draw frame
+ 
+        // Get joint marker draw frame
         visualization_utils::JointFrameStruct jointInfo;
-        self->otdf_instance_hold._gl_object->get_joint_info(joint_name,jointInfo);
-        
         KDL::Frame T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
-        
         Eigen::Vector3f joint_axis;
-        joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
-        joint_axis.normalize();
+        bool flip_criteria;
+        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
+        
 
+        // handle planar markers differently from cartesian markers
+        if(self->otdf_instance_hold._gl_object->is_planar_coupling_active(joint_name))
+        {
+          std::string token  = "::translate";
+          size_t found = joint_name.find(token); 
+          if (found!=std::string::npos)
+          {
+             std::string second_axis_name;
+             self->otdf_instance_hold._gl_object->get_second_axis_name(marker_name,second_axis_name);
+             self->otdf_instance_hold._gl_object->get_joint_info(second_axis_name,jointInfo);
+             joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
+             joint_axis.normalize();
+             if(!self->otdf_instance_hold._gl_object->modify_joint_axis_to_plane_normal(second_axis_name,joint_axis))
+               return;  
+              flip_criteria = self->otdf_instance_hold._gl_object->is_joint_axis_flipped(second_axis_name);  
+          }
+        }
+        else
+        {
+          self->otdf_instance_hold._gl_object->get_joint_info(joint_name,jointInfo);
+          joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
+          joint_axis.normalize();
+           
+          flip_criteria = self->otdf_instance_hold._gl_object->is_joint_axis_flipped(joint_name);
+          double arrow_length =0.2;
+          if(flip_criteria) {
+            T_jointaxis_marker.p[2] =-2*arrow_length/3; 
+           }
+          else{
+            T_jointaxis_marker.p[2] = 2*arrow_length/3;     
+          }
+        }
+        
+      
         Eigen::Vector3f u_body_to_joint;
         u_body_to_joint[0] = T_world_object.p[0]-jointInfo.frame.p[0];
         u_body_to_joint[1] = T_world_object.p[1]-jointInfo.frame.p[1];
@@ -729,21 +888,8 @@ struct RendererAffordances {
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
         T_world_jointaxis.M = KDL::Rotation::Rot(axis_temp,theta);
-        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
-        
-        double arrow_length =0.2;
-
-        
-        bool flip_criteria = self->otdf_instance_hold._gl_object->is_joint_axis_flipped(joint_name);
-        if(flip_criteria) {
-          T_jointaxis_marker.p[2] =-2*arrow_length/3; 
-         }
-        else{
-          T_jointaxis_marker.p[2] = 2*arrow_length/3;     
-        }
         T_world_marker = T_world_jointaxis*T_jointaxis_marker;
-        
-        
+
         // proper hit_drag point via marker plane ray intersection.
         Eigen::Vector3f plane_normal,plane_point;
           
@@ -788,32 +934,74 @@ struct RendererAffordances {
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
         }// end revolute joints
         else if(type==otdf::Joint::PRISMATIC)
-        {
-          string token  = "mate::";
-          size_t found = joint_name.find(token);  
-          KDL::Frame T_world_mate_endlink = KDL::Frame::Identity();
-          self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
-                                start[1]+self->ray_hit_t*dir[1],
-                                start[2]+self->ray_hit_t*dir[2]; 
-          Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
-          Eigen::Vector3f dragpt_obj_frame;
-          KDL::Frame T_world_object;
-            T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
-            dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object.p[0],
-                   self->ray_hit_drag[1]-T_world_object.p[1],
-                   self->ray_hit_drag[2]-T_world_object.p[2];
-          Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
-          double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
-          double current_pos, velocity;
-          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, desired_pos,0); 
-          self->otdf_instance_hold._otdf_instance->update(); 
-          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+        {          
+
+          // handle planar markers differently from cartesian markers
+          if(self->otdf_instance_hold._gl_object->is_planar_coupling_active(joint_name))
+          {
+
+            std::string token  = "::translate";
+            size_t found = joint_name.find(token); 
+            if (found!=std::string::npos)
+            {
+              self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+                    start[1]+self->ray_hit_t*dir[1],
+                    start[2]+self->ray_hit_t*dir[2]; 
+              Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+              Eigen::Vector3f dragpt_obj_frame;
+              KDL::Frame T_world_object;
+              T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+              dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object.p[0],
+              self->ray_hit_drag[1]-T_world_object.p[1],
+              self->ray_hit_drag[2]-T_world_object.p[2];
+              Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+              
+              std::string first_axis_name,second_axis_name;
+              self->otdf_instance_hold._gl_object->get_first_axis_name(marker_name,first_axis_name);
+              self->otdf_instance_hold._gl_object->get_second_axis_name(marker_name,second_axis_name);
+              double first_axis_pos, second_axis_pos,vel;
+              self->otdf_instance_hold._otdf_instance->getJointState(first_axis_name, first_axis_pos,vel);     
+              self->otdf_instance_hold._otdf_instance->getJointState(second_axis_name, second_axis_pos,vel);  
+                
+              self->otdf_instance_hold._gl_object->get_joint_info(first_axis_name,jointInfo);
+              joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
+              joint_axis.normalize();   
+              first_axis_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);  
+              
+              self->otdf_instance_hold._gl_object->get_joint_info(second_axis_name,jointInfo);
+              joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
+              joint_axis.normalize();   
+              second_axis_pos = self->coupled_joint_marker_pos_on_press + da.dot(joint_axis); 
+ 
+              self->otdf_instance_hold._otdf_instance->setJointState(first_axis_name, first_axis_pos,0); 
+              self->otdf_instance_hold._otdf_instance->setJointState(second_axis_name, second_axis_pos,0);
+            }
+            self->otdf_instance_hold._otdf_instance->update(); 
+            self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+          }
+          else
+          {
+            self->ray_hit_drag << start[0]+self->ray_hit_t*dir[0],
+                                  start[1]+self->ray_hit_t*dir[1],
+                                  start[2]+self->ray_hit_t*dir[2]; 
+            Eigen::Vector3f hitpt_obj_frame=self->marker_offset_on_press;
+            Eigen::Vector3f dragpt_obj_frame;
+            KDL::Frame T_world_object;
+              T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+              dragpt_obj_frame << self->ray_hit_drag[0]-T_world_object.p[0],
+                     self->ray_hit_drag[1]-T_world_object.p[1],
+                     self->ray_hit_drag[2]-T_world_object.p[2];
+            Eigen::Vector3f da= dragpt_obj_frame-hitpt_obj_frame;
+            double desired_pos = self->joint_marker_pos_on_press + da.dot(joint_axis);
+            self->otdf_instance_hold._otdf_instance->setJointState(joint_name, desired_pos,0); 
+            self->otdf_instance_hold._otdf_instance->update(); 
+            self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+          }
         }    
       }//end else if(it->second._gl_object->is_jointdof_adjustment_enabled())
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 
   }   // end set_object_current_state_on_marker_motion()
-  
 
 //-------------------------------------------------------------------------------
   inline static double get_shortest_distance_between_objects_markers_sticky_hands_and_feet(void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)

@@ -162,6 +162,10 @@ namespace renderer_affordances_lcm_utils
         map<string, vector<double> > joint_pos_map;
         map<string, vector<int64_t> > joint_pos_timestamps_map;    
         
+        
+        //TODO: Replace with get_motion_constraints_via_batch_fk(std::vector<string> dof_names,std::vector<double> dof_current, std::vector<double> dof_des,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map)
+        
+        
          // Publish time indexed ee motion constraints from associated sticky hands 
         self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
          // Publish time indexed ee motion constraints from associated sticky feet 

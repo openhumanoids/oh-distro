@@ -308,7 +308,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 hand_it->second._gl_hand->get_link_future_frame("right_palm",T_geometry_palm);      
                 KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
                 KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.1;
+                T_hand_palm_r.p[1] = -0.145;
                 T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
 
 
@@ -334,7 +334,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
       
                 KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.1;
+                T_hand_palm_l.p[1] = 0.145;
                 T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
 
                 KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
@@ -356,7 +356,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 hand_it->second._gl_hand->get_link_future_frame("right_base_link",T_geometry_palm);      
                 KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
                 KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.05;
+                T_hand_palm_r.p[1] = -0.095;
                 T_hand_palm_r.M=KDL::Rotation::RPY(1.57079, 0, 3.14159);
 
                 KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
@@ -380,7 +380,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
       
                 KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.05;
+                T_hand_palm_l.p[1] = 0.095;
                 T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
 
                 KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
@@ -750,21 +750,63 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         self->dragging = 1;
         if(!(self->selection_hold_on))
         {
+        
             // NOTE: cannot use self->object_selection affCollection if selection hold is on;
             object_instance_map_type_::iterator it = self->affCollection->_objects.find(self->object_selection);            
             KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
+        
+            //========================================================================================================
+            if(it->second._gl_object->is_planar_coupling_active(joint_name))
+            {
+              token  = "::translate";
+              found = joint_name.find(token); 
+              if (found!=std::string::npos)
+              {
+                std::string first_axis_name,second_axis_name;
+                it->second._gl_object->get_first_axis_name(joint_name,first_axis_name);
+                it->second._gl_object->get_second_axis_name(joint_name,second_axis_name);
+                self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(first_axis_name)->second;
+                self->coupled_joint_marker_pos_on_press= it->second._gl_object->_future_jointpos.find(second_axis_name)->second;
+              }  
+            }
+            else 
+            //========================================================================================================
+            {
+              self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
+            }
             self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2];
-            self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
         }
         else{
            KDL::Frame T_world_object_current = self->otdf_instance_hold._gl_object->_T_world_body;
-           
-           
           if( self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
           {
+
             double current_pos, current_vel; 
-            self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);         
-            self->joint_marker_pos_on_press = current_pos;
+            //========================================================================================================
+            if(self->otdf_instance_hold._gl_object->is_planar_coupling_active(joint_name))
+            {
+              token  = "::translate";
+              found = joint_name.find(token); 
+              if (found!=std::string::npos)
+              {
+                std::string first_axis_name,second_axis_name;
+                self->otdf_instance_hold._gl_object->get_first_axis_name(joint_name,first_axis_name);
+                self->otdf_instance_hold._gl_object->get_second_axis_name(joint_name,second_axis_name);
+                double vel;
+                double first_axis_pos, second_axis_pos;
+                self->otdf_instance_hold._otdf_instance->getJointState(first_axis_name, first_axis_pos,vel);     
+                self->otdf_instance_hold._otdf_instance->getJointState(second_axis_name, second_axis_pos,vel);  
+                self->joint_marker_pos_on_press = first_axis_pos;
+                self->coupled_joint_marker_pos_on_press=second_axis_pos;
+              }  
+            }
+            else 
+            //========================================================================================================
+            {
+              self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);
+              self->joint_marker_pos_on_press = current_pos;  
+            }      
+            
           }
           self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
         }
