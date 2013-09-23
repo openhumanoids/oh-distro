@@ -628,7 +628,7 @@
       <axis xyz="0 0 ${reflect}"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-${M_pi/2-M_pi/8}" upper="0" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2-M_pi/4}" upper="${M_pi/4}" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.2"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>

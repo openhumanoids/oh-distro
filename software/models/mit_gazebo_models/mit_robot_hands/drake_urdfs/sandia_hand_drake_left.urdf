@@ -1423,7 +1423,7 @@
     <axis xyz="0 0 -1"/>
     <parent link="left_f3_base"/>
     <child link="left_f3_0"/>
-    <limit effort="1" lower="-1.1780972451" upper="0" velocity="1"/>
+    <limit effort="1" lower="-0.785398163397" upper="0.785398163397" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.2"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
