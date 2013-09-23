@@ -92,7 +92,7 @@ private:
   static const float l_hand_tactile_offset[32];
   static const float r_hand_tactile_offset[32];
   static const int L_SANDIA_TACTILE_THRESHOLD = 2000;
-  static const int R_SANDIA_TACTILE_THRESHOLD = 2000;
+  static const int R_SANDIA_TACTILE_THRESHOLD = 10000;
   //////////////////////////////////////////////////////////////////////////
   
 };
