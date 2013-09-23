@@ -13,7 +13,6 @@ pods_install_executables(affordance_to_grasp_plan)
 
 
 # spoof an affordance near the shoulder
-set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 add_executable (affordance_init_relative affordance_init_relative.cpp )
 target_link_libraries(affordance_init_relative boost_system)
 pods_use_pkg_config_packages(affordance_init_relative 
@@ -23,12 +22,27 @@ model-client ${REQUIRED_PACKAGES} pointcloud_vis
    affordance-utils lcm)
 pods_install_executables(affordance_init_relative)
 
+# spoof ee goals near the shoulder
+add_executable (ee-test ee_test.cpp )
+target_link_libraries(ee-test boost_system)
+pods_use_pkg_config_packages(ee-test
+model-client ${REQUIRED_PACKAGES} pointcloud_vis
+  bot2-param-client 
+  bot2-frames  bot2-frames_cpp
+   affordance-utils lcm)
+pods_install_executables(ee-test)
 
 
-# dump the affordance store to file:
-add_executable (affordance_to_xmlfile affordance_to_xmlfile.cpp )
-pods_use_pkg_config_packages(affordance_to_xmlfile otdf_dom lcm)
-pods_install_executables(affordance_to_xmlfile)
+##############################################
+add_executable (ee-driver ee_driver.cpp)
+target_link_libraries (ee-driver curses    )
+pods_use_pkg_config_packages(ee-driver
+   eigen3  glib-2.0  lcm bot2-core lcmtypes_drc_lcmtypes
+    path-util )
+pods_install_executables(ee-driver)
+
+
+
 
 ############ Demo Apps: ###########################
 # send one poly:
