@@ -62,7 +62,6 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(sys,pd,conn,ins,outs);
         clear ins outs conn;
         
-
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -82,8 +81,8 @@ classdef AtlasManipController < DRCController
         ins(1).input = 1;
         ins(2).system = 1;
         ins(2).input = 2;      
-        ins(3).system = 2;
-        ins(3).input = 2;      
+        ins(3).system = 1;
+        ins(3).input = 3;      
         outs(1).system = 2;
         outs(1).output = 1;
         sys = mimoCascade(sys,q_tau_ref,[],ins,outs);

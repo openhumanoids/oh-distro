@@ -2,16 +2,13 @@ classdef SignalDuplicator < MIMODrakeSystem
 
   methods
   function obj = SignalDuplicator(frame,n_outputs)
-
     typecheck(frame,'CoordinateFrame');
     rangecheck(n_outputs,1,inf);
     
     input_frame = frame; 
-    outs = cell(n_outputs);
-    B=zeros(n_outputs*frame.dim,frame.dim);
+    outs = cell(n_outputs,1);
     for i=1:n_outputs
       outs{i} = frame;
-      B((i-1)*frame.dim+(1:frame.dim),:) = eye(frame.dim);
     end
     output_frame = MultiCoordinateFrame(outs);
     
@@ -19,15 +16,18 @@ classdef SignalDuplicator < MIMODrakeSystem
     obj = setInputFrame(obj,input_frame);
     obj = setOutputFrame(obj,output_frame);
   
-    obj.B = B;
+    obj.n_outputs = n_outputs;
   end
     
-  function y=mimoOutput(obj,~,~,input)
-    y = obj.B*input;
+  function varargout=mimoOutput(obj,~,~,input)
+    varargout = cell(obj.n_outputs,1);
+    for i=1:obj.n_outputs
+      varargout{i} = input;
+    end
   end
   end
 
   properties
-    B;
+    n_outputs;
   end
 end
