@@ -5,14 +5,12 @@ classdef SimplePDBlock < MIMODrakeSystem
     Kp;
     Kd;
     dt;
-    controller_data; % pointer to shared data handle containing qtraj
     robot;
   end
   
   methods
-    function obj = SimplePDBlock(r,controller_data,options)
+    function obj = SimplePDBlock(r,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'SharedDataHandle');
       
       coords = AtlasCoordinates(r);
       input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
@@ -20,10 +18,9 @@ classdef SimplePDBlock < MIMODrakeSystem
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,coords);
 
-      obj.controller_data = controller_data;
       obj.nq = getNumDOF(r);
 
-      if nargin<3
+      if nargin<2
         options = struct();
       end
       

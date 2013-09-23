@@ -10,21 +10,87 @@ classdef AtlasManipController < DRCController
       typecheck(r,'Atlas');
 
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));
-      
-      % instantiate position ref publisher
-      qref = PositionRefFeedthroughBlock(r);
 
-      % instantiate qtraj eval block
       qt = NeckControlBlock(r,ctrl_data);
       
-      ins(1).system = 1;
-      ins(1).input = 1;
-      ins(2).system = 1;
-      ins(2).input = 2;
-      outs(1).system = 2;
-      outs(1).output = 1;
-      sys = mimoCascade(qt,qref,[],ins,outs);
- 
+      if 1 % use PD control
+        
+        % instantiate position ref publisher
+        qref = PositionRefFeedthroughBlock(r);
+        
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(qt,qref,[],ins,outs);
+     
+      else % use inverse dynamics
+
+        dupl = SignalDuplicator(AtlasCoordinates(r),2);
+        pd = SimplePDBlock(r);
+        invdyn = InverseDynamicsBlock(r);
+        q_tau_ref = PosTorqueRefFeedthroughBlock(r);
+
+        % cascade eval block with signal duplicator
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        outs(2).system = 2;
+        outs(2).output = 2;
+        outs(3).system = 1;
+        outs(3).output = 2;
+        sys = mimoCascade(qt,dupl,[],ins,outs);
+        clear ins outs;
+        
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;      
+        outs(1).system = 1;
+        outs(1).output = 1;
+        outs(2).system = 2;
+        outs(2).output = 1;
+        conn(1).from_output = 2;
+        conn(1).to_input = 1;
+        conn(2).from_output = 3;
+        conn(2).to_input = 2;
+        sys = mimoCascade(sys,pd,conn,ins,outs);
+        clear ins outs conn;
+        
+
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;      
+        ins(3).system = 2;
+        ins(3).input = 2;      
+        outs(1).system = 1;
+        outs(1).output = 1;
+        outs(2).system = 2;
+        outs(2).output = 1;
+        conn(1).from_output = 2;
+        conn(1).to_input = 1;        
+        sys = mimoCascade(sys,invdyn,conn,ins,outs);
+        clear ins outs conn;
+        
+        ins(1).system = 1;
+        ins(1).input = 1;
+        ins(2).system = 1;
+        ins(2).input = 2;      
+        ins(3).system = 2;
+        ins(3).input = 2;      
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(sys,q_tau_ref,[],ins,outs);
+        clear ins outs;
+        
+      end
+      
       obj = obj@DRCController(name,sys,AtlasState(r));
  
       obj.robot = r;
