@@ -1,6 +1,3 @@
-// given pixel range of camera, getermine all x,y,z points
-// minimal module to convert lidar into world frame xyz points
-// mfallon august 2013
 
 #include <stdio.h>
 #include <inttypes.h>

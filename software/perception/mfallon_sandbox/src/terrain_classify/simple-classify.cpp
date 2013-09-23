@@ -133,7 +133,7 @@ void simple_classify::lidar_handler(const bot_core_planar_lidar_t *msg){
 
 
   Isometry3dTime lidar_to_bodyT = Isometry3dTime(pose_id, lidar_to_body);
-  Eigen::Isometry3f l2b_f = Isometry_d2f(lidar_to_body );
+  Eigen::Isometry3f l2b_f = lidar_to_body.cast<float>();
   Eigen::Quaternionf l2b_quat(l2b_f.rotation());
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud_l2b (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::transformPointCloud (*lidar_cloud, *lidar_cloud_l2b,
@@ -143,7 +143,7 @@ void simple_classify::lidar_handler(const bot_core_planar_lidar_t *msg){
   pc_vis_->ptcld_to_lcm_from_list(1201, *lidar_cloud_l2b, pose_id, pose_id);
   
   
-  Eigen::Isometry3f pose_f = Isometry_d2f(lidar_poseT.pose);
+  Eigen::Isometry3f pose_f = lidar_poseT.pose.cast<float>();
   Eigen::Quaternionf pose_quat(pose_f.rotation());
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud_l2local (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::transformPointCloud (*lidar_cloud, *lidar_cloud_l2local,
@@ -153,7 +153,7 @@ void simple_classify::lidar_handler(const bot_core_planar_lidar_t *msg){
   Isometry3dTime body_poseT = Isometry3dTime(pose_id, body_to_local);
   pc_vis_->pose_to_lcm_from_list(1000, null_poseT);  
   
-  Eigen::Isometry3f posey_f = Isometry_d2f(current_pose_body_yawT.pose.inverse());
+  Eigen::Isometry3f posey_f = current_pose_body_yawT.pose.inverse().cast<float>();
   Eigen::Quaternionf posey_quat(posey_f.rotation());
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_rel_bodyyaw (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::transformPointCloud (*lidar_cloud_l2local, *lidar_rel_bodyyaw,
