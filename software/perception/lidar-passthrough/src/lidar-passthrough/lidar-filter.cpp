@@ -19,7 +19,7 @@ using namespace std;
 // set all unlikely returns to this range (same produced by sensor)
 #define MAX_RANGE 60.0
 // all ranges shorter than this are assumed to be with the head
-#define ASSUMED_HEAD 0.85//0.3
+#define ASSUMED_HEAD 0.3//0.3
 // all ranges longer than this are assumed to be free
 #define ASSUMED_FAR 2.0// 2.0
 // set all collisions to this range
@@ -117,11 +117,13 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     }
     
 
+    /*
     // Box filter around the robot (temporary until urdf improves)
     if ((cloud_transformed->points[i].x < 0.65) &&
         ( fabs (cloud_transformed->points[i].y) < 0.75)){
       lidar_msgout_.ranges[i] = COLLISION_RANGE; 
     }
+    */
     
   }
 //  lidar_msgout_.ranges = ranges;

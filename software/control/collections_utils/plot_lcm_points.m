@@ -36,10 +36,10 @@ c = vs.point3d_list_collection_t();
 c.id = id+100000;
 c.name = name;
 c.type = type;
-c.reset = logical(1);
+c.reset = logical(reset);
 
 l = vs.point3d_list_t();
-l.id =0;
+l.id =now() * 24 * 60 * 60;
 l.collection = 100000;
 l.element_id = 1;
 l.ncolors =0;
