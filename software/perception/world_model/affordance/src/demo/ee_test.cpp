@@ -37,6 +37,7 @@ using namespace std;
 double x_offset = 0;
 double y_offset = 0;
 double z_offset = 0;
+bool rhand = false;
 
 class Pass{
   public:
@@ -175,10 +176,17 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   world_to_body_.rotate(quat);    
   */
   
+  double y_offcenter = 0.1;
+  double rpy_sign = 1;
+  if (rhand){
+    y_offcenter = -1.0*y_offcenter;
+    rpy_sign = -1;
+  }
+  
   Eigen::Isometry3d body_to_aff;
   body_to_aff.setIdentity();
-  body_to_aff.translation()  << 0.50 +x_offset, 0.1 +y_offset, 0.2 +z_offset; // away
-  Eigen::Quaterniond quat2 = Eigen::Quaterniond(  euler_to_quat( 90*M_PI/180 ,  0*M_PI/180 ,-50*M_PI/180  )  );
+  body_to_aff.translation()  << 0.50 +x_offset, y_offcenter +y_offset, 0.2 +z_offset; // away 
+  Eigen::Quaterniond quat2 = Eigen::Quaterniond(  euler_to_quat( rpy_sign* 90*M_PI/180 ,rpy_sign*  0*M_PI/180 ,rpy_sign*-50*M_PI/180  )  );
   body_to_aff.rotate(quat2);    
 
   Eigen::Isometry3d world_to_aff = world_to_body_*body_to_aff; 
@@ -195,10 +203,18 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   msg_out.ee_goal_pos.rotation.x = quat3.x();
   msg_out.ee_goal_pos.rotation.y = quat3.y();
   msg_out.ee_goal_pos.rotation.z = quat3.z();
-  
-
   msg_out.num_chain_joints = 0;
-  lcm_->publish("LEFT_PALM_GOAL", &msg_out);  
+  
+  if (rhand){
+    lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg_out);  
+    sleep(1);
+    lcm_->publish("RIGHT_PALM_GOAL", &msg_out);  
+    
+  }else{
+    lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg_out);  
+    sleep(1);
+    lcm_->publish("LEFT_PALM_GOAL", &msg_out);  
+  }
 
   exit(-1);
   
@@ -214,11 +230,15 @@ int main(int argc, char ** argv) {
   opt.add(x_offset, "x", "x","x");
   opt.add(y_offset, "y", "y","y");
   opt.add(z_offset, "z", "z","z");
+  opt.add(rhand, "r", "rhand","Use Right Hand (otherwise left)");
   opt.parse();
   std::cout << "x: " << x_offset << "\n";  
   std::cout << "y: " << y_offset << "\n";  
   std::cout << "z: " << z_offset << "\n";  
+  std::cout << "rhand: " << rhand       << "\n";  
 
+  
+  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
