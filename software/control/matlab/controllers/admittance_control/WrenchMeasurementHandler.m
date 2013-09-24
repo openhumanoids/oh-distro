@@ -39,8 +39,7 @@ classdef WrenchMeasurementHandler < handle
         gain_r
         hand_sensor_wrenchoffset_l
         hand_sensor_wrenchoffset_r
-        
-        compensate_for_hand_mass
+
     end
     
     methods
@@ -56,7 +55,7 @@ classdef WrenchMeasurementHandler < handle
             % Using notation similar to KDL.
             % fixed transform between hand and palm as specified in the urdf
             ft_sensor_offset = 0.045; % approx 1.8 inches
-          
+            
             obj.T_hand_palm_l_sandia = obj.HT([0;0.1+ft_sensor_offset;0],0,0,1.57079);
             obj.T_hand_palm_r_sandia = obj.HT([0;-(0.1+ft_sensor_offset);0],0,0,-1.57079);
             obj.T_hand_palm_l_irobot = obj.HT([0;0.05+ft_sensor_offset;0],1.57079,0,3.14159);
@@ -67,41 +66,47 @@ classdef WrenchMeasurementHandler < handle
             % offset = (0  0.1245 -0.0112) left hand
             obj.hand_sensor_offset_l = [0;0.1245;-0.0112];
             obj.hand_sensor_offset_r = [0;-0.1245;-0.0112];
-
+            
             % hand com on l/r_hand frame
             obj.hand_com_offset_l_sandia = [0.0087;0.2053;0.0471];
             obj.hand_com_offset_r_sandia  = [0.0087;-0.2053;0.0471];
             obj.hand_com_offset_l_irobot = [0.00;0.1651;0.1615];
             obj.hand_com_offset_r_irobot = [0.00;-0.1651;0.1615];
-
-            % also compensate for sensor offset here as a virtual mass?
-            obj.hand_mass_r_sandia = 3.131;
-            obj.hand_mass_l_sandia = obj.hand_mass_r_sandia;
-            obj.hand_mass_r_irobot = 0.9;
-            obj.hand_mass_l_irobot = obj.hand_mass_r_irobot;
-         
             
-            obj.gain_l=1;
-            obj.hand_sensor_wrenchoffset_l = zeros(6,1);  
-            obj.gain_r=1;           
-            obj.hand_sensor_wrenchoffset_r = zeros(6,1); 
-            %obj.gain_l=0.5;
-            % sensor reading without the hand
+            % also compensate for sensor offset here as a virtual mass?
+            hand_coupling_plate = 0.118;% 118g
+            obj.hand_mass_r_sandia = 3.131+hand_coupling_plate; 
+            obj.hand_mass_l_sandia = obj.hand_mass_r_sandia;
+            obj.hand_mass_r_irobot = 0.9+hand_coupling_plate;
+            obj.hand_mass_l_irobot = obj.hand_mass_r_irobot;            
+            
+
+            obj.hand_sensor_wrenchoffset_l = zeros(6,1);
+            obj.hand_sensor_wrenchoffset_r = zeros(6,1);
+            % nominal sensor reading without the hand
             %obj.hand_sensor_wrenchoffset_l = [6.4055;18.14;10.6916;0.45;-0.411;-0.90];
-            obj.gain_l=1;
-            % sensor reading with the hand (screw tensioning may affect the ft sensor output)
-            obj.hand_sensor_wrenchoffset_l = [6.2816;74.61;7.11;0.85;-0.644;-2.25];
-            obj.compensate_for_hand_mass = false;
+            
+            % nominal sensor reading with the hand (screw tensioning may affect the ft sensor output?)
+            %obj.hand_sensor_wrenchoffset_l = [6.2816;74.61;7.11;0.85;-0.644;-2.25];       
+            
+            
+            %------------- NOTE:-----------------------------------
+            % deviation in sensor measurements with the hand load.
+            % calculated by subtracting the expected wrench due to hand
+            % weight in the sensor frame from the measurement.
+            % This offset must be from dc factors? this offset maginitude
+            % should in theory match the magnitude of measurements
+            % when the hand is not connected and only the coupling plate 
+            % is connected.            
+            obj.hand_sensor_wrenchoffset_l = [4.3463; 42.9566; 10.8037; 3.0118; -0.8054; -2.3520]; 
+             
             if(hardware_mode==1)% sim mode
-                obj.compensate_for_hand_mass = true;
-                obj.gain_l=1;
-                obj.gain_r=1;
                 obj.hand_sensor_wrenchoffset_l = zeros(6,1);
                 obj.hand_sensor_wrenchoffset_r = zeros(6,1);
                 % in gazebo, ft sensor is defined in l/r_hand and includes the
                 % hand link weight as gazebo welds fixed joint links together.
                 obj.hand_sensor_offset_l = 0*[0;0.1245;-0.0112];
-                obj.hand_sensor_offset_r = 0*[0;-0.1245;-0.0112];   
+                obj.hand_sensor_offset_r = 0*[0;-0.1245;-0.0112];
                 % com is defined including l_hand mass in sim.
                 obj.hand_com_offset_l_sandia = [0.0048;0.1140;0.0021];
                 obj.hand_com_offset_r_sandia = [0.0048;-0.1140;0.0021];
@@ -161,12 +166,34 @@ classdef WrenchMeasurementHandler < handle
             val = (obj.hardware_mode == 3);
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function  w_hand_frame = compensate_hand_wrenches_for_hand_mass_and_sensor_offset(obj,x0,w_sensor_frame)
+        function calibrate(obj,x0,w_sensor_frame)
+        % assuming the ft sensor is loaded with the hand mass only.
+        % calculating the dc offset by assuming static conditions
+        % and updating the wrenchoffset in cache.
+            w_sensor_frame_offset = get_dc_wrench_offset_in_sensor_frame(obj,x0,w_sensor_frame);
+            obj.hand_sensor_wrenchoffset_l = w_sensor_frame_offset.lh(:);
+            obj.hand_sensor_wrenchoffset_r = w_sensor_frame_offset.rh(:);
+        end
+        
+        %----------------------------------------------------------------------------------------------------------------- 
+        function w_sensor_frame_offset = get_dc_wrench_offset_in_sensor_frame(obj,x0,w_sensor_frame)
+        % assuming the ft sensor is loaded with the hand mass only.
+        % calculating the dc offset by assuming static conditions
+            use_sensor_offset = false;
+            w_sensor_frame_offset = compensate_hand_wrenches(obj,x0,w_sensor_frame,use_sensor_offset);
+        end
+        %-----------------------------------------------------------------------------------------------------------------
+        function  w_sensor_frame_new = compensate_hand_wrenches_for_hand_mass_and_sensor_offset(obj,x0,w_sensor_frame)
+            use_sensor_offset = true;
+            w_sensor_frame_new = compensate_hand_wrenches(obj,x0,w_sensor_frame,use_sensor_offset);
+        end
+         %-----------------------------------------------------------------------------------------------------------------
+        function  w_sensor_frame_new = compensate_hand_wrenches(obj,x0,w_sensor_frame,use_sensor_offset)
             % performs three things in wrench space.
             % 1) convert sensor frame wrench measurements to world frame
             % 2) compensate for hand mass and calibration offsets defined
             % in world orientation.
-            % 3) convert wrench in world frame back to hand frame.
+            % 3) convert wrench in world frame back to sensor frame.
             
             q0 = x0(1:getNumDOF(obj.r));
             %T_world_body = obj.HT(x0(1:3),x0(4),x0(5),x0(6));
@@ -181,8 +208,10 @@ classdef WrenchMeasurementHandler < handle
             l_sensor_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,obj.hand_sensor_offset_l,1);
             WT_r = obj.wrench_transform(r_sensor_pose(1:3),r_sensor_pose(4),r_sensor_pose(5),r_sensor_pose(6));
             WT_l = obj.wrench_transform(l_sensor_pose(1:3),l_sensor_pose(4),l_sensor_pose(5),l_sensor_pose(6));
-            w_sensor_frame.lh=obj.gain_l.*(w_sensor_frame.lh(:)-obj.hand_sensor_wrenchoffset_l);
-            w_sensor_frame.rh=obj.gain_r.*(w_sensor_frame.rh(:)-obj.hand_sensor_wrenchoffset_r);
+            if(use_sensor_offset)
+                w_sensor_frame.lh=(w_sensor_frame.lh(:)-obj.hand_sensor_wrenchoffset_l);
+                w_sensor_frame.rh=(w_sensor_frame.rh(:)-obj.hand_sensor_wrenchoffset_r);
+            end
             w_world_frame.lh = WT_l*w_sensor_frame.lh(:);
             w_world_frame.rh = WT_r*w_sensor_frame.rh(:);
             
@@ -190,40 +219,45 @@ classdef WrenchMeasurementHandler < handle
             % ---------------------------------------------------------
             % 2)  compensate for hand mass and calibration offsets
             % ---------------------------------------------------------
-            if(obj.compensate_for_hand_mass)
-                % define gravity wrench due to hand mass to world frame
-                r_hand_com_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,obj.hand_com_offset_r,1);
-                l_hand_com_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,obj.hand_com_offset_l,1);
-                g= -9.81; %m/s2
-                w_world_handmass_r = zeros(6,1);
-                w_world_handmass_r(3)= obj.hand_mass_r*g;
-                w_world_handmass_l = zeros(6,1);
-                w_world_handmass_l(3)= obj.hand_mass_l*g;
-
-               % ignoring hand posture, assuming fixed joints.
-                r_hand_com_position = r_hand_com_pose(1:3);
-                l_hand_com_position = l_hand_com_pose(1:3);
-
-                % shift wrench to origin
-                WT_r = obj.wrench_transform(r_hand_com_position,0,0,0);
-                WT_l = obj.wrench_transform(l_hand_com_position,0,0,0);
-                w_world_frame.rh =  w_world_frame.rh - WT_r* w_world_handmass_r(:);
-                w_world_frame.lh =  w_world_frame.lh - WT_l* w_world_handmass_l(:);
-            end
+            % define gravity wrench due to hand mass to world frame
+            r_hand_com_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,obj.hand_com_offset_r,1);
+            l_hand_com_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,obj.hand_com_offset_l,1);
+            g= -9.81; %m/s2
+            w_world_handmass_r = zeros(6,1);
+            w_world_handmass_r(3)= obj.hand_mass_r*g;
+            w_world_handmass_l = zeros(6,1);
+            w_world_handmass_l(3)= obj.hand_mass_l*g;
+            
+            % ignoring hand posture, assuming fixed joints.
+            r_hand_com_position = r_hand_com_pose(1:3);
+            l_hand_com_position = l_hand_com_pose(1:3);
+            
+            % shift wrench to origin
+            WT_r = obj.wrench_transform(r_hand_com_position,0,0,0);
+            WT_l = obj.wrench_transform(l_hand_com_position,0,0,0);
+            w_world_frame.rh =  w_world_frame.rh - WT_r* w_world_handmass_r(:);
+            w_world_frame.lh =  w_world_frame.lh - WT_l* w_world_handmass_l(:);
+            
             
             % ---------------------------------------------------------
-            % 3) convert wrench in world frame back to hand frame.
+            % 3) convert wrench in world frame back to sensor frame.
             % ---------------------------------------------------------
-            r_hand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
-            l_hand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);                        
-            T_hand_world_r=obj.inv_HT(obj.HT(r_hand_pose(1:3),r_hand_pose(4),r_hand_pose(5),r_hand_pose(6)));
-            T_hand_world_l=obj.inv_HT(obj.HT(l_hand_pose(1:3),l_hand_pose(4),l_hand_pose(5),l_hand_pose(6)));
-            WT_r = obj.homogeneous_to_wrench_transform(T_hand_world_r);
-            WT_l = obj.homogeneous_to_wrench_transform(T_hand_world_l);
-            w_hand_frame.rh = WT_r*w_world_frame.rh(:);
-            w_hand_frame.lh = WT_l*w_world_frame.lh(:);
-            
+            % r_hand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
+            % l_hand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
+            % T_hand_world_r=obj.inv_HT(obj.HT(r_hand_pose(1:3),r_hand_pose(4),r_hand_pose(5),r_hand_pose(6)));
+            % T_hand_world_l=obj.inv_HT(obj.HT(l_hand_pose(1:3),l_hand_pose(4),l_hand_pose(5),l_hand_pose(6)));
+            % WT_r = obj.homogeneous_to_wrench_transform(T_hand_world_r);
+            % WT_l = obj.homogeneous_to_wrench_transform(T_hand_world_l);
+            % w_hand_frame.rh = WT_r*w_world_frame.rh(:);
+            % w_hand_frame.lh = WT_l*w_world_frame.lh(:);
+            T_sensor_world_r=obj.inv_HT(obj.HT(r_sensor_pose(1:3),r_sensor_pose(4),r_sensor_pose(5),r_sensor_pose(6)));
+            T_sensor_world_l=obj.inv_HT(obj.HT(l_sensor_pose(1:3),l_sensor_pose(4),l_sensor_pose(5),l_sensor_pose(6)));
+            WT_r = obj.homogeneous_to_wrench_transform(T_sensor_world_r);
+            WT_l = obj.homogeneous_to_wrench_transform(T_sensor_world_l);
+            w_sensor_frame_new.rh = WT_r*w_world_frame.rh(:);
+            w_sensor_frame_new.lh = WT_l*w_world_frame.lh(:);
         end
+     
     end
     methods(Static)
         %-----------------------------------------------------------------------------------------------------------------
