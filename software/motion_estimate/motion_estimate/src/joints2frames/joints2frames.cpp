@@ -213,9 +213,9 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
 }
 
 
+// Visualize the foot positions from BDI:
+// This can be turnned off if necessary - its not important
 void joints2frames::foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg){
-  std::cout << "got em\n";
-    
   Eigen::Isometry3d left_pos;
   left_pos.setIdentity();
   left_pos.translation()  << msg->left_position[0], msg->left_position[1], msg->left_position[2];
