@@ -33,7 +33,7 @@ if len(sys.argv)>1:
 
   print 'Sending Power Mode: ',mode
   lc = lcm.LCM()
-  lc.publish("POWER_HANDS", msg.encode())
+  lc.publish("ATLAS_POWER_HANDS", msg.encode())
   
 
 else:
