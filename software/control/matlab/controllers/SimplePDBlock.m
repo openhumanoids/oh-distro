@@ -60,7 +60,7 @@ classdef SimplePDBlock < MIMODrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.004;
+        obj.dt = 0.003;
       end
       
       obj.robot = r;
