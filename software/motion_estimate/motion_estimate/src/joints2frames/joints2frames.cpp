@@ -33,6 +33,9 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
+
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(6003,"BDI Feet",5,1) );
+  lcm_->subscribe("ATLAS_FOOT_POS_EST",&joints2frames::foot_pos_est_handler,this);  
   
   last_ground_publish_utime_ =0;
 }
@@ -207,6 +210,24 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
   
   }
+}
+
+
+void joints2frames::foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg){
+  std::cout << "got em\n";
+    
+  Eigen::Isometry3d left_pos;
+  left_pos.setIdentity();
+  left_pos.translation()  << msg->left_position[0], msg->left_position[1], msg->left_position[2];
+      
+  Eigen::Isometry3d right_pos;
+  right_pos.setIdentity();
+  right_pos.translation()  << msg->right_position[0], msg->right_position[1], msg->right_position[2];
+    
+  std::vector<Isometry3dTime> feet_posT;
+  feet_posT.push_back( Isometry3dTime(msg->utime , left_pos  )  );
+  feet_posT.push_back( Isometry3dTime(msg->utime+1 , right_pos  )  );
+  pc_vis_->pose_collection_to_lcm_from_list(6003, feet_posT); 
 }
 
 

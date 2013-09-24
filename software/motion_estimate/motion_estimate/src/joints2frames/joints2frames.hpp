@@ -46,6 +46,9 @@ class joints2frames{
 
     void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    void foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg);
+    
+    
     bool show_labels_, show_triads_, ground_height_;
 
     bool standalone_head_, bdi_motion_estimate_;
