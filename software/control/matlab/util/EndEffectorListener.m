@@ -1,26 +1,36 @@
 classdef EndEffectorListener
   properties
     lc
-    aggregator
+    monitor
   end
   
   methods
     function obj = EndEffectorListener(channel_name)
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.aggregator = lcm.lcm.MessageAggregator();
-      obj.lc.subscribe(channel_name,obj.aggregator);
+      %obj.aggregator = lcm.lcm.MessageAggregator();
+      obj.monitor = drake.util.MessageMonitor(drc.ee_goal_t,'utime');      
+      obj.lc.subscribe(channel_name,obj.monitor);
     end
     
   
 
     function x = getNextMessage(obj,t_ms)
-      msg_raw = obj.aggregator.getNextMessage(t_ms);
-      if(isempty(msg_raw))
-        x = [];
-      else
-        msg = drc.ee_goal_t(msg_raw.data);
+      %msg_raw = obj.aggregator.getNextMessage(t_ms);
+      data = obj.monitor.getNextMessage(t_ms);
+			if isempty(data)
+				x = [];       
+      else       
+        msg = drc.ee_goal_t(data);
         x = EndEffectorListener.decodeEEgoal(msg);
-      end
+      end      
+      
+%       msg_raw = obj.aggregator.getMessage();
+%       if(isempty(msg_raw))
+%         x = [];
+%       else
+%         msg = drc.ee_goal_t(msg_raw.data);
+%         x = EndEffectorListener.decodeEEgoal(msg);
+%       end
     end
   end
   methods(Static)    
