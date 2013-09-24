@@ -23,6 +23,8 @@ pods_install_python_script(drc-set-sim-rate scripts/send_a_rateset.py)
 pods_install_python_script(drc-set-hose scripts/send_a_poseset.py)
 pods_install_python_script(drc-init-laser scripts/init_laser.py)
 pods_install_python_script(drc-projectile-leap scripts/send_a_projectile_leap.py)
+pods_install_python_script(drc-power-hands scripts/power_hands.py)
+
 
 pods_install_python_script(drc-send-a-message scripts/send_a_status_msg.py)
 #
