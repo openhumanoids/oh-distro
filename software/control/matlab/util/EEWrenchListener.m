@@ -1,22 +1,24 @@
 classdef EEWrenchListener
   properties
     lc
-    aggregator
+    %aggregator
+    monitor
   end
   
   methods
     function obj = EEWrenchListener(channel_name)
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.aggregator = lcm.lcm.MessageAggregator();
-      obj.lc.subscribe(channel_name,obj.aggregator);
+      %obj.aggregator = lcm.lcm.MessageAggregator();
+      obj.monitor = drake.util.MessageMonitor(drc.robot_state_t,'utime');      
+      obj.lc.subscribe(channel_name,obj.monitor);
     end
     
     function x = getNextMessage(obj,t_ms)
-      msg_raw = obj.aggregator.getNextMessage(t_ms);
-      if(isempty(msg_raw))
+      data = obj.monitor.getNextMessage(t_ms);
+      if(isempty(data))
         x = [];
       else
-        msg = drc.robot_state_t(msg_raw.data);
+        msg = drc.robot_state_t(data);
         x = EEWrenchListener.decode(msg);
       end
     end
