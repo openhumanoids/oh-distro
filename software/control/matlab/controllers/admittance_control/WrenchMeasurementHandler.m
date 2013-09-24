@@ -98,8 +98,8 @@ classdef WrenchMeasurementHandler < handle
             % should in theory match the magnitude of measurements
             % when the hand is not connected and only the coupling plate 
             % is connected.            
-            obj.hand_sensor_wrenchoffset_l = [4.3463; 42.9566; 10.8037; 3.0118; -0.8054; -2.3520]; 
-             
+            %obj.hand_sensor_wrenchoffset_l = [4.3463; 42.9566; 10.8037; 3.0118; -0.8054; -2.3520]; 
+            obj.hand_sensor_wrenchoffset_l = [-2.9453; 18.3616; 12.6942; 2.9153;  -0.6939;  -2.2958];
             if(hardware_mode==1)% sim mode
                 obj.hand_sensor_wrenchoffset_l = zeros(6,1);
                 obj.hand_sensor_wrenchoffset_r = zeros(6,1);
