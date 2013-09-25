@@ -109,10 +109,10 @@ class BDIWalkTranslator:
         step_data.step_index = step_index
         step_data.foot_index = footstep.is_right_foot
         step_data.duration = duration
+        print "Footstep pos: ", footstep.pos
         pos = BDIWalkTranslator.to_atlas_frame(footstep.pos)
         #step_data.position = footstep.pos[:3]
         step_data.position = pos[:3]
-        print "Footstep pos: ", footstep.pos
         print "Transformed pos: ", step_data.position
         if use_relative_step_height:
             step_data.position[2] = 0
@@ -126,7 +126,7 @@ class BDIWalkTranslator:
         """
         Convert a foot position from our representation (foot orig) to what BDI's walker expects
         """
-        R = ut.rpy2rotmat(footpos[3:])
+        R = ut.rpy2rotmat(footpos[3:,0])
         offs = R * ATLAS_FRAME_OFFSET
         footpos[:3] += offs
         return footpos
