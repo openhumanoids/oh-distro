@@ -89,21 +89,33 @@ private:
   
   bool dumb_fingers_;
   
-  static const float sandia_l_hand_tactile_offset[32];
-  static const float sandia_r_hand_tactile_offset[32];
+  int init_sandia_l_cnt;
+  int init_sandia_r_cnt;
+  static const int SANDIA_CALIB_NUM = 200;
+  float sandia_l_hand_tactile_offset[32];
+  float sandia_r_hand_tactile_offset[32];
   static const int L_SANDIA_TACTILE_THRESHOLD = 10000;
   static const int R_SANDIA_TACTILE_THRESHOLD = 10000;
   //////////////////////////////////////////////////////////////////////////
   
 };
 
-const float App::sandia_l_hand_tactile_offset[32] = {18129.210000,41816.800714,36852.560714,28905.737857,34026.741429,32183.515000,19285.279286,46726.437857,23855.493571,20807.182143,17698.305000,14489.970714,12628.599286,17087.452143,34570.179286,27990.855000,65535.000000,28409.595000,14924.827857,24572.253571,26622.789286,41039.437857,34172.065714,21753.195000,20706.341429,44552.820714,22502.300714,25812.208571,28436.020714,20312.915714,29820.766429,35515.578571};
-const float App::sandia_r_hand_tactile_offset[32] = {27767.375572,38078.323971,25333.269758,46705.644677,46133.067929,23938.254082,30610.151535,30518.709340,33622.053560,35195.608099,34303.350098,39614.746571,34742.103854,33833.994121,15365.313521,33528.954931,44975.278250,27085.126061,26098.705421,33944.459830,50542.386675,24866.295885,65535.000000,32829.077074,29287.934683,35394.894840,36480.777270,39617.376878,31801.888961,45555.218158,34034.276290,41902.112345};
+//const float App::sandia_l_hand_tactile_offset[32] = {18129.210000,41816.800714,36852.560714,28905.737857,34026.741429,32183.515000,19285.279286,46726.437857,23855.493571,20807.182143,17698.305000,14489.970714,12628.599286,17087.452143,34570.179286,27990.855000,65535.000000,28409.595000,14924.827857,24572.253571,26622.789286,41039.437857,34172.065714,21753.195000,20706.341429,44552.820714,22502.300714,25812.208571,28436.020714,20312.915714,29820.766429,35515.578571};
+//const float App::sandia_r_hand_tactile_offset[32] = {27767.375572,38078.323971,25333.269758,46705.644677,46133.067929,23938.254082,30610.151535,30518.709340,33622.053560,35195.608099,34303.350098,39614.746571,34742.103854,33833.994121,15365.313521,33528.954931,44975.278250,27085.126061,26098.705421,33944.459830,50542.386675,24866.295885,65535.000000,32829.077074,29287.934683,35394.894840,36480.777270,39617.376878,31801.888961,45555.218158,34034.276290,41902.112345};
 
 
 App::App(ros::NodeHandle node_, bool dumb_fingers) :
     node_(node_),dumb_fingers_(dumb_fingers){
   ROS_INFO("Initializing Sandia/Irobot Hands Translator (Not for simulation)");
+
+  // initialize the calibration data
+  init_sandia_l_cnt = 0;
+  init_sandia_r_cnt = 0;
+  for(int i=0; i<32; i++){
+    sandia_l_hand_tactile_offset[i] = 0;
+    sandia_r_hand_tactile_offset[i] = 0;
+  }
+
   
   
  // Hand states
@@ -163,6 +175,7 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
 	init_recd_sandia_r_[4]=false;
   init_recd_irobot_l_ = false;
   init_recd_irobot_r_ = false;
+
 };
 
 App::~App()  {
@@ -188,20 +201,32 @@ void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
  }
  else
  {
-  for(size_t i=0;i<msg->palm_tactile.size();i++)
-  {
-    // take and store the deriv of the signal against the running average
-    double diff_val;
-    diff_val=msg->palm_tactile[i]-sandia_l_hand_palm_state_.palm_tactile[i];
-    sandia_l_hand_palm_diffstate_[i]=diff_val;
-    sandia_l_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_l_hand_tactile_offset[i];
-// low pass filter the raw signal
-    double old_val, alpha, new_val;
-     old_val = sandia_l_hand_palm_state_.palm_tactile[i]; 
-    alpha=0.1;
-    new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
-    sandia_l_hand_palm_state_.palm_tactile[i] = new_val;
-  }
+   if(init_sandia_l_cnt < SANDIA_CALIB_NUM){
+     for(size_t i=0;i<msg->palm_tactile.size();i++)
+       sandia_l_hand_tactile_offset[i] += msg->palm_tactile[i] / (float)SANDIA_CALIB_NUM;
+     if(init_sandia_l_cnt == SANDIA_CALIB_NUM-1)
+       ROS_INFO("Sandia Left Hand Palm Tactile Calibration done");
+
+     init_sandia_l_cnt++;
+   }
+   else
+   {
+     for(size_t i=0;i<msg->palm_tactile.size();i++)
+     {
+      // take and store the deriv of the signal against the running average
+      double diff_val;
+      diff_val=msg->palm_tactile[i]-sandia_l_hand_palm_state_.palm_tactile[i];
+      sandia_l_hand_palm_diffstate_[i]=diff_val;
+      sandia_l_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_l_hand_tactile_offset[i];
+      // low pass filter the raw signal
+      double old_val, alpha, new_val;
+      old_val = sandia_l_hand_palm_state_.palm_tactile[i]; 
+      alpha=0.1;
+      new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
+      sandia_l_hand_palm_state_.palm_tactile[i] = new_val;
+     }
+   }
+  
  }
 
   int64_t utime = _timestamp_now();
@@ -218,20 +243,32 @@ void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
  }
  else
  {
-  for(size_t i=0;i<msg->palm_tactile.size();i++)
-  {
+   if(init_sandia_r_cnt < SANDIA_CALIB_NUM){
+     for(size_t i=0;i<msg->palm_tactile.size();i++)
+       sandia_r_hand_tactile_offset[i] += msg->palm_tactile[i] / (float)SANDIA_CALIB_NUM;
+     if(init_sandia_r_cnt == SANDIA_CALIB_NUM-1)
+       ROS_INFO("Sandia Right Hand Palm Tactile Calibration done");
+
+     init_sandia_r_cnt++;
+   }
+   else
+   {
+
+     for(size_t i=0;i<msg->palm_tactile.size();i++)
+     {
       // take and store the deriv of the signal against the running average
-    double diff_val;
-    diff_val=msg->palm_tactile[i]-sandia_r_hand_palm_state_.palm_tactile[i];
-    sandia_r_hand_palm_diffstate_[i]=diff_val;
-    sandia_r_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_r_hand_tactile_offset[i];
+       double diff_val;
+       diff_val=msg->palm_tactile[i]-sandia_r_hand_palm_state_.palm_tactile[i];
+       sandia_r_hand_palm_diffstate_[i]=diff_val;
+       sandia_r_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_r_hand_tactile_offset[i];
       // low pass filter the raw signal
-    double old_val, alpha, new_val, new_val2;
-    old_val = sandia_r_hand_palm_state_.palm_tactile[i];
-    alpha=0.1;
-    new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
-    sandia_r_hand_palm_state_.palm_tactile[i] = new_val;  // lhs type?
-  }
+       double old_val, alpha, new_val, new_val2;
+       old_val = sandia_r_hand_palm_state_.palm_tactile[i];
+       alpha=0.1;
+       new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
+       sandia_r_hand_palm_state_.palm_tactile[i] = new_val;  // lhs type?
+     }
+   }
  }
 
   int64_t utime = _timestamp_now();
