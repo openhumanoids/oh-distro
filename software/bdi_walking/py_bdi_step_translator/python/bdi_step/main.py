@@ -7,6 +7,9 @@ import bdi_step.footsteps
 
 NUM_REQUIRED_WALK_STEPS = 4
 
+# Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot. It is the same to within 10^-4 for both feet.
+ATLAS_FRAME_OFFSET = np.matrix([[0.0600], [0.000], [-0.0850]]) 
+
 class Behavior:
     WALKING = 0
     CRAWLING = 1
@@ -106,13 +109,27 @@ class BDIWalkTranslator:
         step_data.step_index = step_index
         step_data.foot_index = footstep.is_right_foot
         step_data.duration = duration
-        step_data.position = footstep.pos[:3]
+        pos = BDIWalkTranslator.to_atlas_frame(footstep.pos)
+        #step_data.position = footstep.pos[:3]
+        step_data.position = pos[:3]
+        print "Footstep pos: ", footstep.pos
+        print "Transformed pos: ", step_data.position
         if use_relative_step_height:
             step_data.position[2] = 0
         step_data.yaw = footstep.pos[5]
         step_data.normal = ut.rpy2rotmat(footstep.pos[3:6,0]) * np.matrix([[0],[0],[1]])
         step_data.swing_height = footstep.step_height
         return step_data
+
+    @staticmethod
+    def to_atlas_frame(footpos):
+        """
+        Convert a foot position from our representation (foot orig) to what BDI's walker expects
+        """
+        R = ut.rpy2rotmat(footpos[3:])
+        offs = R * ATLAS_FRAME_OFFSET
+        footpos[:3] += offs
+        return footpos
 
 
 def main():
