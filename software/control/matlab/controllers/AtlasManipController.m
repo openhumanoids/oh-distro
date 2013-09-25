@@ -9,7 +9,8 @@ classdef AtlasManipController < DRCController
     function obj = AtlasManipController(name,r,options)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));
+      ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
+                            'qddtraj',zeros(getNumDOF(r),1)));
 
       qt = NeckControlBlock(r,ctrl_data);
       
@@ -28,12 +29,8 @@ classdef AtlasManipController < DRCController
      
       else % use inverse dynamics
 
-        dupl = SignalDuplicator(AtlasCoordinates(r),2);
-        pd = SimplePDBlock(r);
-        invdyn = InverseDynamicsBlock(r);
-        q_tau_ref = PosTorqueRefFeedthroughBlock(r);
-
         % cascade eval block with signal duplicator
+        dupl = SignalDuplicator(AtlasCoordinates(r),2);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -47,6 +44,11 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(qt,dupl,[],ins,outs);
         clear ins outs;
         
+        % cascade PD block
+        options.Kp = 30.0*eye(getNumDOF(r));
+        options.Kd =  0.0*eye(getNumDOF(r));
+        options.use_qddtraj = true;
+        pd = SimplePDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -62,6 +64,8 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(sys,pd,conn,ins,outs);
         clear ins outs conn;
         
+        % cascade inverse dynamics block
+        invdyn = InverseDynamicsBlock(r);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -77,6 +81,8 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(sys,invdyn,conn,ins,outs);
         clear ins outs conn;
         
+        % cascade pos/torque ref feedthrough block
+        q_tau_ref = PosTorqueRefFeedthroughBlock(r);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -99,6 +105,7 @@ classdef AtlasManipController < DRCController
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
       obj.controller_data.setField('qtraj',q0);
+      obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); % for standing/reaching tasks
@@ -121,21 +128,15 @@ classdef AtlasManipController < DRCController
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
-          qtraj_prev = obj.controller_data.data.qtraj;
-          if isa(qtraj_prev,'PPTrajectory')
-            % smooth transition from end of previous trajectory
-            qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
-            qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
-          else
-            % first plan
-            qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-          end
+          qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
           obj.controller_data.setField('qtraj',qtraj);
+          obj.controller_data.setField('qddtraj',fnder(qtraj,2));
         catch err
           r = obj.robot;
           x0 = data.AtlasState; % should have an atlas state
           q0 = x0(1:getNumDOF(r));
           obj.controller_data.setField('qtraj',q0);
+          obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
         end
       end
       obj = setDuration(obj,inf,false); % set the controller timeout

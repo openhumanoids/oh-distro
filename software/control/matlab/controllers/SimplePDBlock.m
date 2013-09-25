@@ -6,11 +6,16 @@ classdef SimplePDBlock < MIMODrakeSystem
     Kd;
     dt;
     robot;
+    use_qddtraj;
+    ctrl_data;
   end
   
   methods
-    function obj = SimplePDBlock(r,options)
+    function obj = SimplePDBlock(r,controller_data,options)
       typecheck(r,'Atlas');
+      if nargin > 1
+        typecheck(controller_data,'SharedDataHandle');
+      end
       
       coords = AtlasCoordinates(r);
       input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
@@ -20,7 +25,7 @@ classdef SimplePDBlock < MIMODrakeSystem
 
       obj.nq = getNumDOF(r);
 
-      if nargin<2
+      if nargin<3
         options = struct();
       end
       
@@ -55,6 +60,14 @@ classdef SimplePDBlock < MIMODrakeSystem
         end
       end
       
+      if isfield(options,'use_qddtraj')
+        typecheck(options.use_qddtraj,'logical');
+        if options.use_qddtraj && ~isfield(controller_data.data,'qddtraj')
+          error('SimplePDBlock: use_qddtraj set but qddtraj is not in shared data handle');
+        end
+        obj.use_qddtraj = options.use_qddtraj;
+      end
+      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -62,10 +75,12 @@ classdef SimplePDBlock < MIMODrakeSystem
       else
         obj.dt = 0.003;
       end
+      obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
       
       obj.robot = r;
-      
-      obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
+      if nargin > 1
+        obj.ctrl_data = controller_data;
+      end
     end
    
     function y=mimoOutput(obj,t,~,varargin)
@@ -76,6 +91,9 @@ classdef SimplePDBlock < MIMODrakeSystem
       
 			err_q = [q_des(1:3)-q(1:3);angleDiff(q(4:end),q_des(4:end))];
       y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
+      if obj.use_qddtraj
+        y = y+ fasteval(obj.ctrl_data.data.qddtraj,t);
+      end
     end
   end
   
