@@ -46,6 +46,11 @@ class BDIWalkTranslator:
             return
         self.behavior = behavior
         self.bdi_step_queue = [BDIWalkTranslator.footstep_to_step_data(f,j+1,duration=duration) for j,f in enumerate(footsteps)]
+
+        # lengthen the duration of the first step if we're walking
+        #if self.behavior == Behavior.BDI_WALKING:
+        #    self.bdi_step_queue[0].duration *= 1.5
+
         self.send_walk_params(1)
 
     def handle_atlas_status(self, channel, msg_data):
