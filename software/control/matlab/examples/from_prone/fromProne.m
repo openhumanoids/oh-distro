@@ -5,21 +5,21 @@ draw_frames=false;
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
+r = Atlas('../../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',struct('floating',true));
 warning(s);
 v = r.constructVisualizer();
 
-data = load('../data/aa_atlas_fp.mat');
+data = load('../../data/aa_atlas_fp.mat');
 q = data.xstar(1:getNumDOF(r));
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
-cost.pelvis_x = 0;
-cost.pelvis_y = 0;
-cost.pelvis_z = 0;
-cost.pelvis_roll = 1000;
-cost.pelvis_pitch = 1000;
-cost.pelvis_yaw = 0;
+cost.base_x = 0;
+cost.base_y = 0;
+cost.base_z = 0;
+cost.base_roll = 1000;
+cost.base_pitch = 1000;
+cost.base_yaw = 0;
 cost.back_bky = 100;
 cost.back_bkx = 100;
 cost = double(cost);
@@ -56,17 +56,20 @@ head_pos.min = [nan;nan;.35];
 head_pos.max = nan(3,1);
 
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos};%,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos};%,0,com_pos};%,head,zeros(3,1),head_pos};
-q=inverseKin(r,q,ikargs{:},options);
+[q_seed,q_nom,constraint,ikwrapoptions] = inverseKinWrapup(r,q,ikargs{:},options,true);
+q=inverseKin(r,q_seed,q_nom,constraint{:},ikwrapoptions);
 
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),repmat(r_toe_pos,1,2),l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
-q=inverseKin(r,q,ikargs{:},options);
+[q_seed,q_nom,constraint,ikwrapoptions] = inverseKinWrapup(r,q,ikargs{:},options,true);
+q=inverseKin(r,q_seed,q_nom,constraint{:},ikwrapoptions);
 ttape = [0,2];
 qtape = [q,q];
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end  
 
 com_pos.max = [nan;nan;.25];
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
-q=inverseKin(r,q,ikargs{:},options);
+[q_seed,q_nom,constraint,ikwrapoptions] = inverseKinWrapup(r,q,ikargs{:},options,true);
+q=inverseKin(r,q_seed,q_nom,constraint{:},ikwrapoptions);
 ttape(end+1) = ttape(end)+.5; %ttape(end) = 2.5
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 

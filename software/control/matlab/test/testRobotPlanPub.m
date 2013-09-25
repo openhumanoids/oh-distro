@@ -40,8 +40,8 @@ cost = Point(r.getStateFrame,1);
 cost.back_bky = 100;
 cost.back_bkx = 100;
 cost = double(cost);
-options = struct();
-options.Q = diag(cost(1:r.getNumDOF));
+ikoptions = IKoptions(r);
+ikoptions = ikoptions.setQ(diag(cost(1:r.getNumDOF)));
 
   
 rhand_body = r.findLinkInd('r_hand');
@@ -53,7 +53,6 @@ pelvis_body = r.findLinkINd('pelvis');
 pelvis_pos = forwardKin(r,kinsol,pelvis_body,[0;0;0],true);  
 
 q_nom(1:6) = pelvis_pos;
-options.q_nom = q_nom;
 
 rhand_goal = pelvis_pos(1:3) + [-0.4; -0.25; 0.35];
 lhand_goal = pelvis_pos(1:3) + [0.4; -0.25; 0.35];
@@ -70,17 +69,31 @@ ts = 0:0.1:T;
 rhand_traj = PPTrajectory(spline([0 T],[rhand_pos rhand_goal]));
 lhand_traj = PPTrajectory(spline([0 T],[lhand_pos lhand_goal]));
 
+kc_com = WorldCoMConstraint(r,[],[com(1:2);nan],[com(1:2);nan]);
+kc_rfoot1 = WorldPositionConstraint(r,[],rfoot_body,[0;0;0],rfoot_pos(1:3),rfoot_pos(1:3));
+kc_rfoot2 = WorldOrientConstraint(r,[],rfoot_body,rpy2quat(rfoot_pos(4:end)),0);
+kc_lfoot1 = WorldPositionConstraint(r,[],lfoot_body,[0;0;0],lfoot_pos(1:3),lfoot_pos(1:3));
+kc_lfoot2 = WorldOrientConstraint(r,[],lfoot_body,rpy2quat(lfoot_pos(4:end)),0);
+kc_pelvis1 = WorldPositionConstraint(r,[],pelvis_body,[0;0;0],pelvis_pos(1:3),pelvis_pos(1:3));
+kc_pelvis2 = WorldOrientConstraint(r,[],pelvis_body,rpy2quat(pelvis_pos(4:end)),0);
+
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
     if pinned
-      q(:,i) = inverseKin(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
-        lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...
-        lhand_body,[0;0;0],lhand_traj.eval(t),pelvis_body,[0;0;0],pelvis_pos,options);
+      kc_rhand = WorldPositionConstraint(r,[],rhand_body,[0;0;0],rhand_traj.eval(t));
+      kc_lhand = WorldPositionConstraint(r,[],lhand_body,[0;0;0],lhand_traj.eval(t));
+      q(:,i) = inverseKin(r,q_nom,q_nom,kc_com,kc_rfoot1,kc_rfoot2,kc_lfoot1,kc_lfoot2,...
+        kc_pelvis1,kc_pelvis2,kc_rhand,kc_lhand,ikoptions);
+%       q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
+%         lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...
+%         lhand_body,[0;0;0],lhand_traj.eval(t),pelvis_body,[0;0;0],pelvis_pos,options);
     else
-      [q(:,i),info] = approximateIK(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
-        lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...
-        lhand_body,[0;0;0],lhand_traj.eval(t),options);
+      [q(:,i),info] = approximateIK(r,q_nom,q_nom,kc_com,kc_rfoot1,kc_rfoot2,kc_lfoot1,kc_lfoot2,...
+        kc_pelvis1,kc_pelvis2,kc_rhand,kc_lhand,ikoptions);
+%       [q(:,i),info] = approximateIK(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
+%         lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...
+%         lhand_body,[0;0;0],lhand_traj.eval(t),options);
       if info, error('approximate IK reported an error'); end
 %     q(:,i) = inverseKin(r,q(:,i-1),0,[com(1:2);nan],rfoot_body,[0;0;0],rfoot_pos, ...
 %       lfoot_body,[0;0;0],lfoot_pos,rhand_body,[0;0;0],rhand_traj.eval(t), ...

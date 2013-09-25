@@ -12,6 +12,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
     contact_est_monitor;
     l_ank;
     r_ank;
+    ik_qnom;
   end
   
   methods
@@ -97,10 +98,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       
 %      arm_idx = find(~cellfun(@isempty,strfind(state_names,'arm')));
 %      cost(arm_idx) = 0.1*ones(length(arm_idx),1);
-      obj.ikoptions = struct();
-      obj.ikoptions.Q = diag(cost(1:obj.nq));
-      obj.ikoptions.q_nom = q_nom;
-
+      obj.ikoptions = IKoptions(r);
+      obj.ikoptions = obj.ikoptions.setQ(diag(cost(1:obj.nq)));
+      obj.ik_qnom = q_nom;
       % Prevent the knee from locking
       %[obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
       %joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
@@ -123,7 +123,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
 
-      obj.ikoptions.q_nom = varargin{1};
+      obj.ik_qnom = varargin{1};
       cdata = obj.controller_data.data;
       
       Kp = obj.Kp;
@@ -150,12 +150,14 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
       
       approx_args = {};
+%       approx_args_bk = {};
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
           pos = fasteval(cdata.link_constraints(j).traj,t);
 %           pos(3) = pos(3) - cdata.trans_drift(3);
           pos(1:3) = pos(1:3) - cdata.trans_drift;
-          approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
+%           approx_args_bk(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
+          approx_args = [approx_args,wrapDeprecatedConstraint(obj.robot,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,pos,struct('use_mex',true))];
         else
           pos_min = fasteval(cdata.link_constraints(j).min_traj,t);
 %           pos_min(3) = pos_min(3) - cdata.trans_drift(3);
@@ -163,7 +165,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
           pos_max = fasteval(cdata.link_constraints(j).max_traj,t);
 %           pos_max(3) = pos_max(3) - cdata.trans_drift(3);
           pos_max(1:3) = pos_max(1:3) - cdata.trans_drift;
-          approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
+%           approx_args_bk(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
+          approx_args = [approx_args,wrapDeprecatedConstraint(obj.robot,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,struct('min', pos_min, 'max', pos_max),struct('use_mex',true))];
         end
       end
       
@@ -175,11 +178,15 @@ classdef WalkingPDBlock < MIMODrakeSystem
       else
         compos = [com(1:2) - cdata.trans_drift(1:2);nan];
       end
-
-      [q_des,info] = approximateIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
+      kc_com = wrapDeprecatedConstraint(obj.robot,0,[],compos,struct('use_mex',true));
+      approx_args = [approx_args,kc_com];
+      [q_des,info] = approximateIKmex(obj.robot.getMexModelPtr,q,obj.ik_qnom,approx_args{:},obj.ikoptions);
+%       obj.ikoptions_bk.use_mex = false;
+%       [q_des,info] = approximateIK_bk(obj.robot,q,0,compos,approx_args_bk{:},obj.ikoptions_bk);
+%       max(abs((q_des-q_des_bk)))
       if info
         fprintf(1,'warning: approximate IK failed.  calling IK\n');
-        q_des = inverseKin(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
+        q_des = inverseKin(obj.robot,q,obj.ik_qnom,approx_args{:},obj.ikoptions);
       end
 
       err_q = q_des - q;

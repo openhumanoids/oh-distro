@@ -22,8 +22,7 @@ classdef KeyframePlanner < handle
         l_uarm_body 
         r_uarm_body 
         
-        joint_min
-        joint_max
+        joint_constraint
         
         
         l_issandia
@@ -41,7 +40,7 @@ classdef KeyframePlanner < handle
     methods
         function obj = KeyframePlanner(r)
             obj.r = r;
-            obj.plan_cache = KeyframePlanCache();
+            obj.plan_cache = KeyframePlanCache(r);
             obj.hardware_mode = 1;
             obj.r_hand_body = findLinkInd(obj.r,'r_hand');
             obj.l_hand_body = findLinkInd(obj.r,'l_hand');
@@ -53,24 +52,20 @@ classdef KeyframePlanner < handle
             obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
             obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
 
-            coords = obj.r.getStateFrame();
-            [joint_min,joint_max] = obj.r.getJointLimits();
-            joint_min = Point(coords,[joint_min;0*joint_min]);
-            joint_min.back_bky = -0.1;
-            joint_min.back_bkx = -0.1;
-            joint_min.l_leg_kny = 0.2;
-            joint_min.r_leg_kny = 0.2;
-            obj.joint_min = double(joint_min);
-          
-            joint_max = Point(coords,[joint_max;0*joint_max]);
-            joint_max.back_bky = 0.1;
-            joint_max.back_bkx = 0.1;
+           
+            obj.joint_constraint = PostureConstraint(obj.r);
+            [joint_min,joint_max] = obj.joint_constraint.bounds([]);
+            coords = obj.r.getStateFrame.coordinates;
+            back_bky_ind = find(strcmp(coords,'back_bky'));
+            back_bkx_ind = find(strcmp(coords,'back_bkx'));
+            l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
+            r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
             buffer=0.05;
-            joint_max.l_leg_kny= joint_max.l_leg_kny-buffer;
-            joint_max.r_leg_kny= joint_max.r_leg_kny-buffer;
-            obj.joint_max = double(joint_max);
-            
-            
+            obj.joint_constraint = obj.joint_constraint.setJointLimits(...
+              [back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+              [-0.1;-0.1;0.2;0.2],...
+              [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]);
+
             % Goals are presented in palm frame, must be transformed to hand coordinate frame
             % Using notation similar to KDL.
             % fixed transform between hand and palm as specified in the urdf
@@ -168,134 +163,98 @@ classdef KeyframePlanner < handle
             Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
          end
      %-----------------------------------------------------------------------------------------------------------------        
-
-        function cachePelvisPose(obj,tspan,kc_name,pose)
-            kc_pelvis = ActionKinematicConstraint(obj.r,obj.pelvis_body,[0;0;0],pose,tspan,kc_name);
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_pelvis);
+        function cachePelvisPose(obj,tspan,pose)
+            kc_pelvis = wrapDeprecatedConstraint(obj.r,obj.pelvis_body,[0;0;0],pose,struct('tspan',tspan,'use_mex',false));
+            obj.plan_cache.pelvis_constraint_cell = [obj.plan_cache.pelvis_constraint_cell kc_pelvis];
         end
+       
      %-----------------------------------------------------------------------------------------------------------------        
-        function cacheLHandPose(obj,tspan,kc_name,pose)
-            kc_lhand = ActionKinematicConstraint(obj.r,obj.l_hand_body,[0;0;0],pose,tspan,kc_name);
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lhand);
+        function cacheLHandPose(obj,tspan,pose)
+            kc_lhand = wrapDeprecatedConstraint(obj.r,obj.l_hand_body,[0;0;0],pose,struct('tspan',tspan,'use_mex',false));
+            obj.plan_cache.lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell kc_lhand];
         end
       %-----------------------------------------------------------------------------------------------------------------       
-        function cacheRHandPose(obj,tspan,kc_name,pose)
-            kc_rhand = ActionKinematicConstraint(obj.r,obj.r_hand_body,[0;0;0],pose,tspan,kc_name);
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_rhand);
+        function cacheRHandPose(obj,tspan,pose)
+            kc_rhand = wrapDeprecatedConstraint(obj.r,obj.r_hand_body,[0;0;0],pose,struct('tspan',tspan,'use_mex',false));
+            obj.plan_cache.rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell kc_rhand];
         end
      %-----------------------------------------------------------------------------------------------------------------        
-        function cacheLFootPose(obj,tspan,kc_name,l_foot_pose)
-            kc_lfoot = ActionKinematicConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose,tspan,kc_name);
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lfoot);
+        function cacheLFootPose(obj,tspan,l_foot_pose)
+            kc_lfoot = wrapDeprecatedConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose,struct('tspan',tspan,'use_mex',false));
+            obj.plan_cache.lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell kc_lfoot];
         end
      %-----------------------------------------------------------------------------------------------------------------        
-        function cacheRFootPose(obj,tspan,kc_name,r_foot_pose)
-            kc_rfoot = ActionKinematicConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose,tspan,kc_name);
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_rfoot);
+        function cacheRFootPose(obj,tspan,r_foot_pose)
+            kc_rfoot = wrapDeprecatedConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose,struct('tspan',tspan,'use_mex',false));
+            obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell kc_rfoot];
         end
       %-----------------------------------------------------------------------------------------------------------------       
-        function cacheLFootPoseAsContactConstraint(obj,tspan,kc_name,l_foot_pose)
-            l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
+        function cacheLFootPoseAsContactConstraint(obj,tspan,l_foot_pose)
+            l_foot_contact_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
+            l_foot_pts = [0;0;0]; 
             num_l_foot_pts = size(l_foot_pts,2);
             
-            T_world_l_foot = [quat2rotmat(l_foot_pose(4:7)) l_foot_pose(1:3);0 0 0 1];
-            l_foot_pts_pose = T_world_l_foot*[l_foot_pts;ones(1,num_l_foot_pts)];
-            l_foot_pts_pose = [l_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_l_foot_pts),l_foot_pose(4:7))];
-            lfoot_const.min = l_foot_pts_pose-1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
-            lfoot_const.max = l_foot_pts_pose+1e-6*[ones(3,num_l_foot_pts);ones(4,num_l_foot_pts)];
-            lfoot_const_static_contact = lfoot_const;
-            lfoot_const_static_contact.contact_state = ...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)};
-            
-            kc_lfoot = ActionKinematicConstraint(obj.r,obj.l_foot_body,l_foot_pts,lfoot_const_static_contact,tspan,kc_name,...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                {ContactAffordance()},...
-                {struct('max',zeros(1,num_l_foot_pts),'min',zeros(1,num_l_foot_pts))});
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lfoot);
+            lfoot_const1 = WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_pts,...
+              l_foot_pose(1:3)-1e-6*ones(3,num_l_foot_pts),l_foot_pose(1:3)+1e-6*ones(3,num_l_foot_pts),tspan);
+            lfoot_const2 = WorldQuatConstraint(obj.r,obj.l_foot_body,l_foot_pose(4:7,1),1e-6,tspan);
+            obj.plan_cache.lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell,{lfoot_const1,lfoot_const2}];
+            obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
         end
      %-----------------------------------------------------------------------------------------------------------------        
-        function cacheRFootPoseAsContactConstraint(obj,tspan,kc_name,r_foot_pose)
-            r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+        function cacheRFootPoseAsContactConstraint(obj,tspan,r_foot_pose)
+            r_foot_contact_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
+            r_foot_pts = [0;0;0]; 
             num_r_foot_pts = size(r_foot_pts,2);
             
-            T_world_r_foot = [quat2rotmat(r_foot_pose(4:7)) r_foot_pose(1:3);0 0 0 1];
-            r_foot_pts_pose = T_world_r_foot*[r_foot_pts;ones(1,num_r_foot_pts)];
-            r_foot_pts_pose = [r_foot_pts_pose(1:3,:); bsxfun(@times,ones(1,num_r_foot_pts),r_foot_pose(4:7))];
-            rfoot_const.min = r_foot_pts_pose-1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
-            rfoot_const.max = r_foot_pts_pose+1e-6*[ones(3,num_r_foot_pts);ones(4,num_r_foot_pts)];
-            rfoot_const_static_contact = rfoot_const;
-            rfoot_const_static_contact.contact_state = ...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)};
-            kc_rfoot = ActionKinematicConstraint(obj.r,obj.r_foot_body,r_foot_pts,rfoot_const_static_contact,tspan,kc_name,...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                {ContactAffordance()},...
-                {struct('max',zeros(1,num_r_foot_pts),'min',zeros(1,num_r_foot_pts))});
+            rfoot_const1 = WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,...
+              r_foot_pose(1:3)-1e-6*ones(3,num_r_foot_pts),r_foot_pose(1:3)+1e-6*ones(3,num_r_foot_pts),tspan);
+            rfoot_const2 = WorldQuatConstraint(obj.r,obj.r_foot_body,r_foot_pose(4:7,1),1e-6,tspan);
+            obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell,{rfoot_const1,rfoot_const2}];
+            obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,r_foot_contact_pts);
+        end
+     %-----------------------------------------------------------------------------------------------------------------        
+       
+        
+        function replaceCachedConstraint(obj,body_ind,tspan,new_pose)
+          new_pose_constraint = wrapDeprecatedConstraint(obj.r,body_ind,[0;0;0],new_pose,struct('use_mex',false,'tspan',tspan));
+          if(body_ind == obj.l_hand_body)
+            obj.plan_cache.lhand_constraint_cell = replaceConstraintCell(obj.plan_cache.lhand_constraint_cell,new_pose_constraint);
+          elseif(body_ind == obj.r_hand_body)
+            obj.plan_cache.rhand_constraint_cell = replaceConstraintCell(obj.plan_cache.rhand_constraint_cell,new_pose_constraint);
+          elseif(body_ind == obj.head_body)
+            obj.plan_cache.head_constraint_cell = replaceConstraintCell(obj.plan_cache.head_constraint_cell,new_pose_constraint);
+          elseif(body_ind == obj.pelvis_body)
+            obj.plan_cache.pelvis_constraint_cell = replaceConstraintCell(obj.plan_cache.pelvis_constraint_cell,new_pose_constraint);
+          elseif(body_ind == obj.l_foot_body)
+            obj.plan_cache.lfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.lfoot_constraint_cell,new_pose_constraint);
+            lfoot_contact_pts = obj.r.getBody(obj.l_foot_body).getContactPoints();
+            obj.qsc = obj.qsc.addContact(obj.l_foot_body,lfoot_contact_pts);
+          elseif(body_ind == obj.r_foot_body)
+            obj.plan_cache.rfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.rfoot_constraint_cell,new_pose_constraint);
+            rfoot_contact_pts = obj.r.getBody(obj.r_foot_body).getContactPoints();
+            obj.qsc = obj.qsc.addContact(obj.l_foot_body,rfoot_contact_pts);
+          end
             
-            obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_rfoot);
         end
      %-----------------------------------------------------------------------------------------------------------------        
-        function replaceCachedConstraint(obj,kc_name,new_pose)
-            if(sum(strcmp(obj.plan_cache.ks.kincon_name,kc_name))>0) %exists
-                % delete old and add new
-                obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,kc_name);
-            end
-            s = [0 1];
-            if(strcmp(kc_name,'lhandT'))
-                kc_lhandT = ActionKinematicConstraint(obj.r,obj.l_hand_body,[0;0;0],new_pose,[s(end),s(end)],'lhandT');
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lhandT);
-            elseif(strcmp(kc_name,'rhandT'))
-                kc_rhandT = ActionKinematicConstraint(obj.r,obj.r_hand_body,[0;0;0],new_pose,[s(end),s(end)],'rhandT');
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_rhandT);
-            elseif(strcmp(kc_name,'headT'))
-                kc_headT = ActionKinematicConstraint(obj.r, obj.head_body,[0;0;0],new_pose,[s(end),s(end)],'headT');
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_headT);
-            elseif(strcmp(kc_name,'pelvis'))
-                kc_pelvis = ActionKinematicConstraint(obj.r,obj.pelvis_body,[0;0;0],new_pose,[s(end),s(end)],'pelvis');
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_pelvis);
-            elseif(strcmp(kc_name,'rfootT'))
-                r_foot_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
-                num_r_foot_pts = size(r_foot_pts,2);
-                 
-                kc_rfootT = ActionKinematicConstraint(obj.r,obj.r_foot_body,r_foot_pts,new_pose,[s(end),s(end)],'rfootT',...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_r_foot_pts)},...
-                    {ContactAffordance()},...
-                    {struct('max',zeros(1,num_r_foot_pts),'min',zeros(1,num_r_foot_pts))});
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_rfootT);
-            elseif(strcmp(kc_name,'lfootT'))
-                l_foot_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
-                num_l_foot_pts = size(l_foot_pts,2);
-                 
-                kc_lfootT = ActionKinematicConstraint(obj.r,obj.l_foot_body,l_foot_pts,new_pose,[s(end),s(end)],'lfootT',...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                    {ActionKinematicConstraint.STATIC_PLANAR_CONTACT*ones(1,num_l_foot_pts)},...
-                    {ContactAffordance()},...
-                    {struct('max',zeros(1,num_l_foot_pts),'min',zeros(1,num_l_foot_pts))});
-                obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_lfootT);
-            end
+        
+        
+        function removeBodyConstraints(obj,body_ind,tspan)
+          
+          if(body_ind == obj.l_hand_body)
+            obj.plan_cache.lhand_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.lhand_constraint_cell);
+          elseif(body_ind == obj.r_hand_body)
+            obj.plan_cache.rhand_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.rhand_constraint_cell);
+          elseif(body_ind == obj.l_foot_body)
+            obj.plan_cache.lfoot_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.lfoot_constraint_cell);
+          elseif(body_ind == obj.r_foot_body)
+            obj.plan_cache.rfoot_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.rfoot_constraint_cell);
+          elseif(body_ind == obj.pelvis_body)
+            obj.plan_cache.pelvis_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.pelvis_constraint_cell);
+          elseif(body_ind == obj.head_body)
+            obj.plan_cache.head_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.head_constraint_cell);
+          end
         end
-     %-----------------------------------------------------------------------------------------------------------------        
-        function removeConstraintsContainingStr(obj,str)
-                j=1;
-               constraint_names= [];
-               for i=1:length(obj.plan_cache.ks.kincon_name)
-                   if(regexp(obj.plan_cache.ks.kincon_name{i},str)==1)
-                      constraint_names{j} = obj.plan_cache.ks.kincon_name{i}; %accumulate
-                      j=j+1;
-                  end
-               end
-               % remove now
-               for i=1:length(constraint_names)
-                    obj.plan_cache.ks = deleteKinematicConstraint(obj.plan_cache.ks,constraint_names{i});
-               end
-              
-        end
-     %-----------------------------------------------------------------------------------------------------------------
     end
+     %-----------------------------------------------------------------------------------------------------------------
 end
