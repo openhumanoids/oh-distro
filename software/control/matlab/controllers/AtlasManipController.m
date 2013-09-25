@@ -45,8 +45,8 @@ classdef AtlasManipController < DRCController
         clear ins outs;
         
         % cascade PD block
-        options.Kp = 30.0*eye(getNumDOF(r));
-        options.Kd =  0.0*eye(getNumDOF(r));
+        options.Kp = 20.0*eye(getNumDOF(r));
+        options.Kd =  0.5*eye(getNumDOF(r));
         options.use_qddtraj = true;
         pd = SimplePDBlock(r,ctrl_data,options);
         ins(1).system = 1;
@@ -104,7 +104,7 @@ classdef AtlasManipController < DRCController
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
-      obj.controller_data.setField('qtraj',q0);
+      obj.controller_data.setField('qtraj',q0(7:end));
       obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
@@ -127,7 +127,7 @@ classdef AtlasManipController < DRCController
         try
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,false,joint_names); 
           qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
           obj.controller_data.setField('qtraj',qtraj);
           obj.controller_data.setField('qddtraj',fnder(qtraj,2));
@@ -135,7 +135,7 @@ classdef AtlasManipController < DRCController
           r = obj.robot;
           x0 = data.AtlasState; % should have an atlas state
           q0 = x0(1:getNumDOF(r));
-          obj.controller_data.setField('qtraj',q0);
+          obj.controller_data.setField('qtraj',q0(7:end));
           obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
         end
       end

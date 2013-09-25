@@ -71,7 +71,7 @@ classdef InverseDynamicsBlock < MIMODrakeSystem
     [H,C,B] = manipulatorDynamics(r,q,qd);
 
     % add friction compensating force using desired accelerations
-    f_friction = computeFrictionForce(r,0.5*q_ddot_des);
+    f_friction = computeFrictionForce(r,qd + 0.1*q_ddot_des) - computeFrictionForce(r,qd);
 
     y=B\(H*q_ddot_des + C + f_friction);
   end

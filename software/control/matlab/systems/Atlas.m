@@ -26,9 +26,9 @@ classdef Atlas < Biped
         obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
       else
         % TEMP HACK to get by resolveConstraints
-        for i=1:length(obj.manip.body), obj.manip.body(i).contact_pts=[]; end
-        obj.manip = compile(obj.manip);
-        obj = obj.setInitialState(zeros(obj.getNumStates(),1));
+        %for i=1:length(obj.manip.body), obj.manip.body(i).contact_pts=[]; end
+        %obj.manip = compile(obj.manip);
+        %obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
       warning(S);
     end

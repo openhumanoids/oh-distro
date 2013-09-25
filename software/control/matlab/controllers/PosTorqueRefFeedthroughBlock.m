@@ -26,7 +26,7 @@ classdef PosTorqueRefFeedthroughBlock < MIMODrakeSystem
 
       % TEMP: only use force control for arms
       gains = getAtlasGains(robot_input_frame);
-      arm_joints = ~cellfun(@isempty,strfind(robot_input_frame.coordinates,'arm'));
+      arm_joints = ~cellfun(@isempty,strfind(robot_input_frame.coordinates,'r_arm'));
       gains.k_f_p(~arm_joints) = zeros(sum(~arm_joints),1);
       gains.ff_f_d(~arm_joints) = zeros(sum(~arm_joints),1);
       gains.ff_qd(~arm_joints) = zeros(sum(~arm_joints),1);

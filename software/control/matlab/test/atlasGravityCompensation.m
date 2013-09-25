@@ -135,7 +135,7 @@ while tt<200
       end
     end
     
-    tf_act = tau_friction(act_idx);
+    tf_act = 0*tau_friction(act_idx);
     
     % do inverse dynamics on fixed base model
     nq_fixed = getNumDOF(r_fixed);
