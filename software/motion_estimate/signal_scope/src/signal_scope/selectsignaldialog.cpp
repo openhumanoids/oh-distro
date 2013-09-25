@@ -22,7 +22,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   mInternal->setupUi(this);
 
   QStringList channels;
-  channels << "ATLAS_STATE" << "ATLAS_STATUS" << "ATLAS_COMMAND" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "VICON_ATLAS";
+  channels << "ATLAS_STATE" << "ATLAS_STATE_EXTRA" << "ATLAS_STATUS" << "ATLAS_COMMAND" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "VICON_ATLAS";
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
   QStringList messageFields;
