@@ -42,7 +42,9 @@ int main(const int iArgc, const char** iArgv) {
   FlyCapture2::PGRGuid cameraUid;
   bool foundCamera = false;
   if (desiredSerial >= 0) {
+    std::cout << "About to create FlyCapture2 Object\n";
     FlyCapture2::BusManager busManager;
+    std::cout << "... finished creating\n";
     unsigned int numCameras;
     error = busManager.GetNumOfCameras(&numCameras);
     if (error != FlyCapture2::PGRERROR_OK) {
