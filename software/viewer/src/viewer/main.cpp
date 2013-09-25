@@ -359,6 +359,18 @@ int main(int argc, char *argv[])
 
   BotFrames* bot_frames = bot_frames_new(lcm, bot_param);
   BotViewer* viewer = bot_viewer_new(viewer_title.c_str());
+  
+  // uncomment after sachi or matt commit new changes to libbot.
+  /*BotViewHandlerParams *viewparams = 
+        (BotViewHandlerParams*) calloc(1, sizeof(BotViewHandlerParams));
+  viewparams->eye_min_dist=0.1;
+  viewparams->eye_max_dist=150; 
+  viewparams->eye_zoom_inc=(150 - 0.1) / 100; 
+  viewparams->min_motion_mag=0.0001;
+  viewparams->max_motion_mag=2.0;
+  viewparams->pan_jacobian_det_threshold = 25;    
+  bot_viewer_set_default_view_handler_params(viewer,viewparams);*/
+  
 
   //die cleanly for control-c etc :-)
   bot_gtk_quit_on_interrupt();
