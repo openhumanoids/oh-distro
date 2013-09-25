@@ -6,10 +6,10 @@ options.namesuffix = '';
 options.floating = true;
 options.ignore_friction = true;
 
-if ~isfield(options,'backup_mode') options.backup_mode = false; end
-if(~isfield(options,'use_hand_ft')) options.use_hand_ft = false; end
-if(~isfield(options,'use_mex')) options.use_mex = true; end
-if(~isfield(options,'debug')) options.debug = false; end
+if ~isfield(options,'backup_mode'); options.backup_mode = false; end
+if(~isfield(options,'use_hand_ft')); options.use_hand_ft = false; end
+if(~isfield(options,'use_mex')); options.use_mex = true; end
+if(~isfield(options,'debug')); options.debug = false; end
 
 if (options.use_hand_ft)
   urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf');
