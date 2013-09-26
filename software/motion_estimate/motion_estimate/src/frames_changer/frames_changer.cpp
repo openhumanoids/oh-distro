@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
   state->subscribe_lcm = state->publish_lcm;
   
   double    translation[] = { 0.0350, -0.0777, -0.0033};
+  double rpy[] ={ -0.3002, -1.8998, 89.6263 };
   
   /*
   double    quat[] = { 0.714312, -0.000002, 0.000000, 0.699827 };
@@ -212,7 +213,6 @@ int main(int argc, char *argv[])
   rpy[2] = rpy[2]*180/M_PI;
   */
 
-  double rpy[] ={ -0.3002, -1.8998, 89.6263 };
 
 
   double zilch[] = {0,0,0}; 
