@@ -49,7 +49,9 @@ classdef EndPosePlanner < KeyframePlanner
         num_l_foot_pts = size(l_foot_pts,2);
 
         r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
+        r_foot_contact_pos = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_contact_pts,0);
         l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
+        l_foot_contact_pos = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_contact_pts,0);
         head_pose0 = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
         pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
         utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
@@ -98,22 +100,26 @@ classdef EndPosePlanner < KeyframePlanner
           lhand_constraint = {};
         end
         if(goal_type_flags.h == 2)
-          head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],pi/4)};
+          head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],pi/12)};
         else
           head_constraint = {};
         end
         l_foot_pose = l_foot_pose0;
         r_foot_pose = r_foot_pose0;
-        lfoot_constraint = {WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose(1:3,:)-1e-4,l_foot_pose(1:3,:)+1e-4)};
-        rfoot_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose(1:3,:)-1e-4,r_foot_pose(1:3,:)+1e-4)};
+        lfoot_constraint ={WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_contact_pts,...
+            [nan(2,size(l_foot_contact_pts,2));l_foot_contact_pos(3,:)],...
+            [nan(2,size(l_foot_contact_pts,2));l_foot_contact_pos(3,:)])};
+        rfoot_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_contact_pts,...
+            [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)],...
+            [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)])};
         qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
-        head_constraint = [head_constraint,{WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7),1e-4)}];
-        pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,1e-2,[-inf inf]);
-        utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
+        %head_constraint = [head_constraint,{WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7),1e-4)}];
+%         pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,1e-2,[-inf inf]);
+        pelvis_constraint = {};
+%         utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
 
 
         ind=find(Indices==timeIndices(1));
-        rhandT=[];
         for k=1:length(ind),
           if(strcmp('pelvis',ee_names{ind(k)}))
             pelvisT = ee_loci(:,ind(k));
@@ -150,14 +156,14 @@ classdef EndPosePlanner < KeyframePlanner
             %lfoot_const.max = l_foot_pose+1e-6*[ones(3,1);ones(4,1)];
             l_foot_pose = lfootT(1:3);
             % Ask Sisir why there is no orientation constraint
-            lfoot_constraint = {WorldPositionConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose(1:3)-1e-6,l_foot_pose(1:3)+1e-6)};
+            lfoot_constraint = parse2PosQuat(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose,1e-6,1e-6,[-inf,inf]);
           elseif(strcmp('r_foot',ee_names{ind(k)}))
             rfootT = ee_loci(:,ind(k));
             %r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];
             %rfoot_const.min = r_foot_pose-1e-6*[ones(3,1);ones(4,1)];
             %rfoot_const.max = r_foot_pose+1e-6*[ones(3,1);ones(4,1)];
             r_foot_pose = rfootT(1:3);
-            rfoot_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose(1:3)-1e-6,r_foot_pose(1:3)+1e-6)};
+            rfoot_constraint = parse2PosQuat(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose,1e-6,1e-6,[-inf,inf]);
           else
             disp('currently only feet/hands and pelvis are allowed');
           end
@@ -165,23 +171,14 @@ classdef EndPosePlanner < KeyframePlanner
         qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
 
 
-        % cache foot or pelvis constraints for end poses depending on Hardware Mode
-        if(obj.isBDIManipMode())
-          obj.plan_cache.pelvis_constraint_cell = [obj.plan_cache.pelvis_constraint_cell pelvis_constraint];
-        else
-          % TODO: VERIFY
-          lfoot_constraint_T = {WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose(1:3,:)-1e-4,l_foot_pose(1:3,:)+1e-4,[1,1])};
-          rfoot_constraint_T = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose(1:3,:)-1e-4,r_foot_pose(1:3,:)+1e-4,[1,2])};
-          obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell rfoot_constraint_T];
-          obj.plan_cache.lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell lfoot_constraint_T];
-          obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
-        end
+     
 
 
         ikoptions = ikoptions.setQ( diag(cost(1:getNumDOF(obj.r))));
 
         joint_constraint = PostureConstraint(obj.r);
-        nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+        %nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
+        nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         qstar = nomdata.xstar(1:obj.r.getNumDOF());
         ik_qnom = qstar;
         %  			ikoptions.q_nom = qstar;
@@ -196,7 +193,7 @@ classdef EndPosePlanner < KeyframePlanner
           if(all(~isnan(r_hand_pose(4:7))))
             rhand_constraint = [rhand_constraint,{WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose(4:7),1e-1)}];
           end
-          lhand_const = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose(1:3)-0.03,r_hand_pose(1:3)+0.03)};
+          lhand_const = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose(1:3)-0.03,l_hand_pose(1:3)+0.03)};
           if(all(~isnan(l_hand_pose(4:7))))
             lhand_const = [lhand_const,{WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose(4:7),1e-1)}];
           end
@@ -206,18 +203,18 @@ classdef EndPosePlanner < KeyframePlanner
           ikoptions = ikoptions.setQ(cost);
           coords = obj.r.getStateFrame.coordinates;
           coords = coords(1:obj.r.getNumDOF);
-          back_bky_ind = strcmp(coords,'back_bky');
-          r_arm_usy_ind = strcmp(coords,'r_arm_usy');
-          l_arm_usy_ind = strcmp(coords,'l_arm_usy');
-          r_leg_kny_ind = strcmp(coords,'r_leg_kny');
-          l_leg_kny_ind = strcmp(coords,'l_leg_kny');
+          back_bky_ind =  find(strcmp(coords,'back_bky'));
+          r_arm_usy_ind = find(strcmp(coords,'r_arm_usy'));
+          l_arm_usy_ind = find(strcmp(coords,'l_arm_usy'));
+          r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
+          l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
           joint_constraint = joint_constraint.setJointLimits([back_bky_ind;r_arm_usy_ind;l_arm_usy_ind;r_leg_kny_ind;l_leg_kny_ind],...
             [-0.3;-inf;-inf;0.2;0.2],[0.3;0;0;inf;inf]);
-          [joint_min,joint_max] = joint_constraint.getJointLimits([]);
+          [joint_min,joint_max] = joint_constraint.bounds([]);
           coords = obj.r.getStateFrame.coordinates();
           coords = coords(1:obj.r.getNumDOF());
-          arm_joint_ind = ~cellfun(@isempty,strfind(coords,'arm'));
-          joint_constraint = joint_constraint.setJointLimits(arm_joint_ind,0.9*joint_min,0.9*joint_max);
+          arm_joint_ind = find(~cellfun(@isempty,strfind(coords,'arm')));
+          joint_constraint = joint_constraint.setJointLimits(arm_joint_ind,0.9*joint_min(arm_joint_ind),0.9*joint_max(arm_joint_ind));
           NSamples = 20;
           yaw_samples_bnd = 60;
         end
@@ -232,7 +229,7 @@ classdef EndPosePlanner < KeyframePlanner
           else
             qsc = qsc.setActive(false);
           end
-          cost = diag(obj.getCostVector3());
+          cost = diag(obj.getCostVector2());
           cost = cost(1:obj.r.getNumDOF(),1:obj.r.getNumDOF());
           ikoptions = ikoptions.setQ(cost);
           coords = obj.r.getStateFrame.coordinates;
@@ -308,6 +305,17 @@ classdef EndPosePlanner < KeyframePlanner
         obj.plan_cache.s_breaks = s;
         obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
         obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(qsc.active);
+        
+           % cache foot or pelvis constraints for end poses depending on Hardware Mode
+        if(obj.isBDIManipMode())
+          obj.plan_cache.pelvis_constraint_cell = [obj.plan_cache.pelvis_constraint_cell pelvis_constraint];
+        else
+          % TODO: VERIFY
+          obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell rfoot_constraint];
+          obj.plan_cache.lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell lfoot_constraint];
+          obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
+        end
+        
 
       end  % end function
   %-----------------------------------------------------------------------------------------------------------------              
