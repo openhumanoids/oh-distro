@@ -1,4 +1,5 @@
 function testCrawling()
+  %NOTEST
   options.floating = true;
   options.dt = 0.001;
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
