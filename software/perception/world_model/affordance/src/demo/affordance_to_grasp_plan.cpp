@@ -33,7 +33,8 @@ using namespace std;
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, 
+         std::string mode_, bool use_irobot_);
     
     ~Pass(){
     }    
@@ -41,6 +42,7 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     pointcloud_vis* pc_vis_;        
     std::string mode_;
+    bool use_irobot_;
     bool aff_ready_;
     bool cartpos_ready_;
     
@@ -48,6 +50,8 @@ class Pass{
                     const std::string& channel, const  drc::affordance_plus_collection_t* msg);      
     void initGraspHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::grasp_opt_control_t* msg);
+    void planHandler(const lcm::ReceiveBuffer* rbuf, 
+                      const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 
     void sendCandidateGrasp(const  drc::grasp_opt_control_t* msg, 
@@ -70,10 +74,13 @@ class Pass{
     vector<string> r_joint_name_;
     vector<double> l_joint_position_;    
     vector<double> r_joint_position_;
+    
+    std::vector <Isometry3dTime> eeloci_poses_;
+    bool eeloci_plan_outstanding_;    
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_):
-    lcm_(lcm_), mode_(mode_){
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot_):
+    lcm_(lcm_), mode_(mode_), use_irobot_(use_irobot_){
   aff_ready_ = false;
   cartpos_ready_ = false;
       
@@ -86,6 +93,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_):
   fksolver_ = new KDL::TreeFkSolverPosFull_recursive(tree);
       
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);  
+  lcm_->subscribe("CANDIDATE_MANIP_PLAN",&Pass::planHandler,this);  
+  
   lcm_->subscribe( "AFFORDANCE_PLUS_COLLECTION" ,&Pass::affHandler,this);
   lcm_->subscribe( "INIT_GRASP_OPT_1" ,&Pass::initGraspHandler,this);
   lcm_->subscribe( "INIT_GRASP_OPT_2" ,&Pass::initGraspHandler,this);
@@ -95,6 +104,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_):
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60011,"Grasp Seed",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frames",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60012,"Grasp Pose Null",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60013,"Grasp Feasibility" ,1,1, 60012,0, { 0.0, 1.0, 0.0} ));
       
 
   l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",
@@ -111,8 +122,13 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_):
   "right_f3_j0","right_f3_j1","right_f3_j2" };
   
   // fore, middle, little, thumb | lower mid upper
-  r_joint_position_ = {0,0.7,0.7,  0,0.7,0.7,
-                       0,0.7,0.7,  -0.15,0.68,0.47};  
+  r_joint_position_ = {0,0,0,  0,0,0,
+                       0,0,0,  0,0,0};
+//  r_joint_position_ = {0,0.7,0.7,  0,0.7,0.7,
+                       //0,0.7,0.7,  -0.15,0.68,0.47};  
+                       
+  eeloci_plan_outstanding_ = false;
+                       
 }
 
 
@@ -159,6 +175,41 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
+void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
+  if (!eeloci_plan_outstanding_){
+    return;
+  }
+  std::cout << "got a plan\n";
+  
+  if (eeloci_poses_.size() != msg->num_states ){
+    std::cout << eeloci_poses_.size() <<" n. loci is not number of plan states ["<<msg->num_states<<"]. will need to solve FK\n"; 
+  }
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  cloud->width   = msg->num_states;
+  cloud->height   = 1;
+  cloud->points.resize (msg->num_states);
+  for (size_t i = 0; i < msg->num_states; i++) {
+    cloud->points[i].x = eeloci_poses_[i].pose.translation().x();
+    cloud->points[i].y = eeloci_poses_[i].pose.translation().y();
+    cloud->points[i].z = eeloci_poses_[i].pose.translation().z();
+    if (msg->plan_info[i] < 10){
+      cloud->points[i].r = 0; cloud->points[i].g = 255; cloud->points[i].b = 0;
+    }else{
+      cloud->points[i].r = 255; cloud->points[i].g = 0; cloud->points[i].b = 0;
+    }
+  }
+  
+  // Plot scan in local frame:
+  Isometry3dTime null_poseT = Isometry3dTime(msg->utime, Eigen::Isometry3d::Identity());
+  pc_vis_->pose_to_lcm_from_list(60012, null_poseT);  
+  pc_vis_->ptcld_to_lcm_from_list(60013, *cloud, null_poseT.utime, null_poseT.utime);  
+  
+  eeloci_plan_outstanding_ = false;
+  eeloci_poses_.clear();  
+}
+
+
 void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::grasp_opt_control_t* msg){
   if ( (!aff_ready_) || (!cartpos_ready_) ){
@@ -195,23 +246,45 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   
   // 2. Create a reasonable afforance to hand pose 
   Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
-  if (msg->grasp_type ==0){ // sandia left
-    aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.12;
-    aff_to_palmgeometry.rotate( euler_to_quat(-15 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
-  }else{ // sandia right
-    aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.12;
-    aff_to_palmgeometry.rotate( euler_to_quat(15 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
+  // translation: outwards, upwards, forwards  
+  if (use_irobot_){ // iRobot
+    if (msg->grasp_type ==0){ // iRobot left
+      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,-0.09;
+      aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
+    }else{ // iRobot right
+      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,-0.09;
+      aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
+    }
+  }else{ // Sandia
+    // was: 0.05 + radius ,0,-0.12;
+    if (msg->grasp_type ==0){ // sandia left
+      aff_to_palmgeometry.translation()  << 0.03 + radius ,0,-0.10;
+      aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    }else{ // sandia right
+      aff_to_palmgeometry.translation()  << 0.03 + radius ,0,-0.10;
+      aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    }
+    
+    
   }
   
 
   if (mode_ == "grasp" ){
     sendCandidateGrasp(msg,aff_to_palmgeometry, rel_angle);
   }else if (mode_ == "plan"){
-    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.2,rel_angle +0.4,rel_angle +0.6} );
-    //  sendPlanEELoci(msg,aff_to_palmgeometry, {0.2,0.4,0.6,0.8} );
+    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
   }else if (mode_ == "both"){
     sendCandidateGrasp(msg,aff_to_palmgeometry, rel_angle);
-    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.2,rel_angle +0.4,rel_angle +0.6} );
+    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
+
+    /*
+    std::vector <double> rel_angles;
+    for (double i= 0; i< M_PI*2 ; i=i+M_PI/10){
+      rel_angles.push_back(rel_angle + i);
+    }
+    sendPlanEELoci(msg,aff_to_palmgeometry, rel_angles );
+    */
+    
   }
   
   // This is required to spoof the aff server
@@ -309,7 +382,7 @@ void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3
   //Eigen::Isometry3d l_hand_to_left_palm = body_to_l_hand.inverse() * body_to_left_palm ;
     
   
-  std::vector<Isometry3dTime> world_to_poseT; // for visualization
+  eeloci_poses_.clear();
 
   for (size_t i=0;i < rel_angles.size(); i++){
     Eigen::Isometry3d pose =  world_to_aff_ * getRotPose(rel_angles[i])*aff_to_palmgeometry * palmgeometry_to_palm;// * l_hand_to_left_palm;
@@ -324,7 +397,7 @@ void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3
       traj.link_name.push_back("right_palm");
     }
     
-    world_to_poseT.push_back( Isometry3dTime(i, pose*palmgeometry_to_palm) );
+    eeloci_poses_.push_back( Isometry3dTime(i, pose));//*palmgeometry_to_palm) );
   }
   traj.num_links = rel_angles.size();
   
@@ -339,24 +412,28 @@ void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3
   traj.joint_timestamps.assign( traj.num_joints ,0);
   
   lcm_->publish("DESIRED_MANIP_PLAN_EE_LOCI", &traj);
-  pc_vis_->pose_collection_to_lcm_from_list(60001, world_to_poseT); 
+  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
+  eeloci_plan_outstanding_ = true;
 
 }
 
 
 int main(int argc, char ** argv) {
   string mode = "both";
+  bool use_irobot = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(mode, "m", "mode","mode: both, grasp, plan");
+  opt.add(use_irobot, "i", "use_irobot","iRobot hand (otherwise Sandia)");
   opt.parse();
   std::cout << "mode: " << mode << "\n";  
+  std::cout << "use_irobot: " << use_irobot << "\n";  
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm,mode);
+  Pass app(lcm,mode,use_irobot);
   cout << "Tool ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;

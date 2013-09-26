@@ -34,6 +34,8 @@ using namespace std;
 double    original_translation[] = { 0.2350, 0.2777, 0.2033};
 double original_rpy[] ={ 0,0,0 };
 
+//pointcloud_vis* pc_vis_;
+
 
 typedef struct  {
   WINDOW *w;
@@ -230,6 +232,10 @@ int main(int argc, char *argv[])
   state_t* state = new state_t();
   state->publish_lcm= lcm_create(NULL);
   state->subscribe_lcm = state->publish_lcm;
+  
+  //pc_vis_ = new pointcloud_vis( state->publish_lcm );
+  // obj: id name type reset
+//   //pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );  
   
   memcpy (state->trans, original_translation, 3*sizeof(double) );
   memcpy (state->rpy, original_rpy, 3*sizeof(double) );
