@@ -788,7 +788,7 @@
     <parent link="pelvis"/>
     <child link="r_uglut"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="260" lower="-1.22173" upper="0.174533" velocity="12"/>
+    <limit effort="110" lower="-1.22173" upper="0.174533" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2217" soft_upper_limit="10.1745"/>
   </joint>
   <joint name="r_leg_kny" type="revolute">
@@ -800,6 +800,58 @@
     <limit effort="220" lower="0" upper="2.38569" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857"/>
   </joint>
+  <link name="r_situational_awareness_camera_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_situational_awareness_camera_joint" type="fixed">
+    <parent link="utorso"/>
+    <child link="r_situational_awareness_camera_link"/>
+    <!-- if camera points x-forward, bottom towards front of robot, 15 degree yaw forwards from
+           lateral (+y) view -->
+    <origin rpy="1.57079633 0 -1.30899694" xyz="0.216409 -0.121799 0.406759"/>
+  </joint>
+  <joint name="r_situational_awareness_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
+    <parent link="r_situational_awareness_camera_link"/>
+    <child link="r_situational_awareness_camera_optical_frame"/>
+  </joint>
+  <link name="r_situational_awareness_camera_optical_frame"/>
+  <link name="l_situational_awareness_camera_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_situational_awareness_camera_joint" type="fixed">
+    <parent link="utorso"/>
+    <child link="l_situational_awareness_camera_link"/>
+    <!-- if camera points x-forward, bottom towards front of robot, 15 degree yaw forwards from
+           lateral (+y) view -->
+    <origin rpy="-1.57079633 0 1.30899694" xyz="0.216409 0.121799 0.406759"/>
+  </joint>
+  <joint name="l_situational_awareness_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
+    <parent link="l_situational_awareness_camera_link"/>
+    <child link="l_situational_awareness_camera_optical_frame"/>
+  </joint>
+  <link name="l_situational_awareness_camera_optical_frame"/>
   <transmission name="head_hokuyo_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="hokuyo_joint"/>
     <actuator name="hokuyo_motor"/>
