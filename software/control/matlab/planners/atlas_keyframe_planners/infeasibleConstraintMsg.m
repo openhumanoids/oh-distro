@@ -8,7 +8,7 @@ if(isempty(infeasible_constraint))
   infeasible_constraint_msg = '';
 else
   if(iscell(infeasible_constraint))
-    infeasible_constraint_msg = 'The infeasible constraints are:\n';
+    infeasible_constraint_msg = sprintf('The infeasible constraints are:\n');
     for i = 1:length(infeasible_constraint)
       infeasible_constraint_msg = sprintf('%s %s\n',infeasible_constraint_msg,infeasible_constraint{i});
     end

@@ -473,8 +473,9 @@ classdef ReachingPlanner < KeyframePlanner
 
           if(snopt_info >10)
               warning('The IK fails at the end');
-              send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.\n%s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
+              send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
               send_status(4,0,0,send_msg);
+              display(infeasibleConstraintMsg(infeasible_constraint));
           end
         else
           q_final_guess =q_desired;
@@ -518,8 +519,9 @@ classdef ReachingPlanner < KeyframePlanner
             iktraj_options);
           if(snopt_info > 10)
               warning('The IK traj fails');
-              send_msg = sprintf('snopt_info = %d. The IK sequence fails.\n%s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
+              send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
               send_status(4,0,0,send_msg);
+              display(infeasibleConstraintMsg(infeasible_constraint));
           end
           %============================
 

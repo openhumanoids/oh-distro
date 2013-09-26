@@ -482,9 +482,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               rfoot_constraint_cell{:},head_constraint_cell{:},...
               joint_constraint,qsc,iktraj_options);
             if(snopt_info > 10)
-                warning('The IK traj fails');
-                send_msg = sprintf('snopt_info == %d. The IKtraj fails.\n %s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
-                send_status(4,0,0,send_msg);
+              warning('The IK traj fails');
+              send_msg = sprintf('snopt_info == %d. The IKtraj fails.',snopt_info);
+              send_status(4,0,0,send_msg);
+              display(infeasibleConstraintMsg(infeasible_constraint));
             end
             %============================
             
