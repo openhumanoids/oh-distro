@@ -22,6 +22,7 @@ public:
   virtual void subscribe(boost::shared_ptr<lcm::LCM> lcmHandle)
   {
     lcmHandle->subscribe(this->mChannel, &IMUMessageProducer::messageHandler, this);
+    lcmHandle->subscribe("POSE_BDI", &IMUMessageProducer::poseMessageHandler, this);
   }
 
   IMUQueue& messageQueue()
@@ -39,7 +40,7 @@ protected:
     std::vector<drc::atlas_raw_imu_t> imuPackets;
     this->mBatchProcessor.handleIMUBatchMessage(msg, imuPackets);
 
-    this->mIMUFilter.handleIMUPackets(imuPackets, this->mLCM);
+    this->mIMUFilter.handleIMUPackets(imuPackets, this->mLCM, lastPose);
 
     for (size_t i = 0; i < imuPackets.size(); ++i)
     {
@@ -47,6 +48,15 @@ protected:
     }
 
   }
+  
+  void poseMessageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::pose_t* msg)
+    {
+      VarNotUsed(rbuf);
+      VarNotUsed(channel);
+
+      lastPose = *msg;
+
+    }
 
   std::string mChannel;
   boost::shared_ptr<lcm::LCM> mLCM;
@@ -54,6 +64,7 @@ protected:
 
   IMUBatchProcessor mBatchProcessor;
   IMUFilter mIMUFilter;
+  bot_core::pose_t lastPose;
 
 };
 

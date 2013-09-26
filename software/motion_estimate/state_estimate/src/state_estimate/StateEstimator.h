@@ -6,6 +6,10 @@
 
 #include <lcm/lcm-cpp.hpp>
 
+#include "lcmtypes/drc_lcmtypes.hpp"
+
+#include "JointFilters.h"
+
 namespace StateEstimate
 {
 
@@ -20,6 +24,10 @@ public:
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
     PoseQueue& viconQueue );
+  
+  StateEstimator(
+      boost::shared_ptr<lcm::LCM> lcmHandle,
+      messageQueues& msgQueue );
 
   ~StateEstimator();
 
@@ -33,6 +41,11 @@ protected:
   IMUQueue& mIMUQueue;
   PoseQueue& mBDIPoseQueue;
   PoseQueue& mViconQueue;
+  
+  messageQueues mMSGQueues;
+  
+  
+  JointFilters jFilters;
 };
 
 } // end namespace

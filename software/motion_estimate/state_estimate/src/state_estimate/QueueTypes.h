@@ -18,6 +18,33 @@ namespace StateEstimate
 
   typedef SynchronizedQueue<bot_core::pose_t> PoseQueue;
 
+  
+  class messageQueues {  
+  public:
+	
+	messageQueues() {
+		;
+	}
+	  
+	// note this is a reference copy constructor
+	messageQueues(messageQueues &param) {
+	  *this = param;
+	}
+	
+	messageQueues& operator=(const messageQueues &rhs) {
+	  //this->atlasStateQueue = 
+	  // TODO -- complete this operator
+	  
+	  return *this;
+	}
+	  
+    AtlasStateQueue atlasStateQueue;
+    IMUQueue imuQueue;
+    PoseQueue bdiPoseQueue;
+    PoseQueue viconQueue;
+  };
+  
+  
 } // end namespace
 
 #endif

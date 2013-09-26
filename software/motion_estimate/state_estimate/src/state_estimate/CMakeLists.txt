@@ -6,9 +6,10 @@ set(srcs
   IMUFilter.cpp
   StateEstimator.cpp
   StateEstimateApplication.cpp
+  JointFilters.cpp
   )
 
-set(required_packages eigen3 drc-lcmtypes)
+set(required_packages eigen3 drc-lcmtypes kalman-filter)
 
 add_library(StateEstimate  SHARED ${srcs})
 target_link_libraries(StateEstimate ${Boost_LIBRARIES})
@@ -32,6 +33,7 @@ pods_install_headers(
   StateEstimator.h
   SynchronizedQueue.h
   ThreadLoop.h
+  JointFilters.h
   DESTINATION state_estimate)
 
 

@@ -17,7 +17,7 @@ public:
   LCMThread()
   {
     this->UseSelect = true;
-    this->SelectTimeoutInSeconds = 0.01;
+    this->SelectTimeoutInSeconds = 0.1;
     this->initLCM();
   }
 
