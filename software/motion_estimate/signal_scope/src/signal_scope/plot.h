@@ -48,6 +48,8 @@ private:
     QwtInterval d_interval;
     int d_timerId;
 
+    int mColorMode;
+
     QMap<SignalData*, QwtPlotCurve*> mSignals;
 
     FPSCounter fpsCounter;

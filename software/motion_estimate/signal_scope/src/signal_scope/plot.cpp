@@ -75,7 +75,8 @@ protected:
 Plot::Plot(QWidget *parent):
   QwtPlot(parent),
   d_interval(0.0, 10.0),
-  d_timerId(-1)
+  d_timerId(-1),
+  mColorMode(0)
 {
   setAutoReplot(false);
 
@@ -121,7 +122,14 @@ Plot::Plot(QWidget *parent):
 
 
   QwtPlotGrid *grid = new QwtPlotGrid();
-  grid->setPen(QPen(Qt::gray, 0.0, Qt::DotLine));
+
+  QColor gridColor = Qt::gray;
+  if (mColorMode == 1)
+  {
+    gridColor = QColor(100, 100, 100);
+  }
+
+  grid->setPen(QPen(gridColor, 0.0, Qt::DotLine));
   grid->enableX(false);
   grid->enableXMin(false);
   grid->enableY(true);
@@ -131,7 +139,7 @@ Plot::Plot(QWidget *parent):
   d_origin = new QwtPlotMarker();
   d_origin->setLineStyle(QwtPlotMarker::HLine);
   d_origin->setValue(d_interval.minValue() + d_interval.width() / 2.0, 0.0);
-  d_origin->setLinePen(QPen(Qt::gray, 0.0, Qt::DashLine));
+  d_origin->setLinePen(QPen(gridColor, 0.0, Qt::DashLine));
   d_origin->attach(this);
 
 
@@ -166,7 +174,12 @@ void Plot::addSignal(SignalData* signalData, QColor color)
 {
   QwtPlotCurve* d_curve = new QwtPlotCurve();
   d_curve->setStyle(QwtPlotCurve::Dots);
-  d_curve->setPen(QPen(color));
+
+  QPen curvePen(color);
+  curvePen.setWidth(0);
+
+  d_curve->setPen(curvePen);
+
 #if 1
   d_curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 #endif
@@ -231,20 +244,21 @@ void Plot::initGradient()
 {
   QPalette pal = canvas()->palette();
 
-#if QT_VERSION >= 0x040400
+  QColor backgroundColor = Qt::white;
+  if (mColorMode == 1)
+  {
+    backgroundColor = Qt::black;
+  }
+
+  /*
   QLinearGradient gradient( 0.0, 0.0, 1.0, 0.0 );
   gradient.setCoordinateMode( QGradient::StretchToDeviceMode );
-  //gradient.setColorAt(0.0, QColor( 0, 49, 110 ) );
-  //gradient.setColorAt(1.0, QColor( 0, 87, 174 ) );
-
-  gradient.setColorAt(0.0, QColor( 255, 255, 255 ) );
-  gradient.setColorAt(1.0, QColor( 255, 255, 255 ) );
-
+  gradient.setColorAt(0.0, QColor( 0, 0, 0 ) );
+  gradient.setColorAt(1.0, QColor( 0, 0, 0 ) );
   pal.setBrush(QPalette::Window, QBrush(gradient));
-#else
-  pal.setBrush(QPalette::Window, QBrush( color ));
-#endif
+  */
 
+  pal.setBrush(QPalette::Window, QBrush(backgroundColor));
   canvas()->setPalette(pal);
 }
 
