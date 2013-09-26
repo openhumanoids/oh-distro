@@ -387,7 +387,7 @@ classdef ReachingPlanner < KeyframePlanner
         if(~rhand_poseT_isnan)
           rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT,1e-3,1e-4,[-inf inf]);
         else
-          rahnd_constraint = {};
+          rhand_constraint = {};
         end
         
         if(~lhand_poseT_isnan)
