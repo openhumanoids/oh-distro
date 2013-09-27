@@ -48,6 +48,7 @@ classdef AtlasManipController < DRCController
         options.Kp = 20.0*eye(getNumDOF(r));
         options.Kd =  5.0*eye(getNumDOF(r));
         options.use_qddtraj = true;
+        options.use_kalman_est = true;
         pd = SimplePDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
