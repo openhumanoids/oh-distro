@@ -16,7 +16,7 @@ StateEstimate::StateEstimator::StateEstimator(
 {
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
-  jFilters.setSize(56);
+  mJointFilters.setSize(56);
   std::cout << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
   std::cerr << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
   
@@ -62,9 +62,10 @@ void StateEstimate::StateEstimator::run()
 
       // do something with new atlas state...
       
-      // extract joint angles
-      atlasState.joint_position[0]; //num_joints
-      // filter_bank_joints()
+      // Here we compute the joint velocities with num_joints Kalman Filters in parallel
+      // TODO -- dehann, make this dependent on local state and not the message number
+      float joint_velocities[atlasState.num_joints];
+      mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, joint_velocities);
       
       // pass to joint_velocity_handler
       

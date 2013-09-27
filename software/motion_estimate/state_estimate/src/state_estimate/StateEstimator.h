@@ -42,10 +42,12 @@ protected:
   PoseQueue& mBDIPoseQueue;
   PoseQueue& mViconQueue;
   
+  // This class is not up and running yet
   messageQueues mMSGQueues;
   
   
-  JointFilters jFilters;
+  JointFilters mJointFilters;
+  
 };
 
 } // end namespace
