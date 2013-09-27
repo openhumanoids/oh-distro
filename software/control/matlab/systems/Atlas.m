@@ -3,7 +3,13 @@ classdef Atlas < Biped
   methods
     
     function obj=Atlas(urdf,options)
-      typecheck(urdf,'char');
+
+      if nargin < 1
+        urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
+      else
+        typecheck(urdf,'char');
+      end
+      
 
       if nargin < 2
         options = struct();

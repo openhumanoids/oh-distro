@@ -141,6 +141,7 @@ joint_sign_map.r_arm_ely = -1;
 joint_sign_map.r_arm_elx = -1;
 joint_sign_map.r_arm_mwx = -1;
 
+joint_sign_map.l_leg_hpy = -1;
 joint_sign_map.r_leg_hpy = -1;
 
 if ~isfield(joint_index_map,joint)
@@ -192,11 +193,39 @@ qdes = zeros(nq,1);
 %   error ('that joint isnt supported yet');
 % end
 
-if strcmp(joint,'r_leg_hpy') 
+if strcmp(joint,'l_leg_hpy') 
+  
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+  qdes(joint_index_map.r_leg_hpx) = -0.25;
 
+elseif strcmp(joint,'r_leg_hpy') 
+
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
   qdes(joint_index_map.l_leg_hpx) = 0.25;
+
+elseif strcmp(joint,'l_leg_hpz') 
+
+  qdes(joint_index_map.r_arm_shx) = 1.0;
+  qdes(joint_index_map.l_arm_shx) = -1.0;
+  qdes(joint_index_map.r_leg_hpx) = -0.4;
+  qdes(joint_index_map.r_leg_kny) = 1.57;
+
+elseif strcmp(joint,'r_leg_hpz') 
+
+  qdes(joint_index_map.r_arm_shx) = 1.0;
+  qdes(joint_index_map.l_arm_shx) = -1.0;
+  qdes(joint_index_map.l_leg_hpx) = 0.4;
+  qdes(joint_index_map.l_leg_kny) = 1.57;
+
+elseif strcmp(joint,'l_leg_hpx') 
+
+  qdes(joint_index_map.r_leg_hpx) = -0.5;
+
+elseif strcmp(joint,'r_leg_hpx') 
+
+  qdes(joint_index_map.l_leg_hpx) = 0.5;
 
 elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
     strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') 
