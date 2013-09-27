@@ -14,7 +14,7 @@ classdef AtlasManipController < DRCController
 
       qt = NeckControlBlock(r,ctrl_data);
       
-      if 1 % use PD control
+      if 0 % use PD control
         
         % instantiate position ref publisher
         qref = PositionRefFeedthroughBlock(r);
