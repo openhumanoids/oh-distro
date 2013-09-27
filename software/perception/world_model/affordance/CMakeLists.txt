@@ -51,8 +51,8 @@ add_library(affordance SHARED
   src/Collision_Object_Manipulator.cpp
   src/affordance_store/AffordanceServer.cpp	
   src/affordance_store/AffordanceUpWrapper.cpp)
-			  				  	  	
-pods_install_libraries(affordance)			  	
+
+pods_install_libraries(affordance)
 
 target_link_libraries(affordance ${Boost_LIBRARIES})			  	
 
@@ -88,3 +88,4 @@ add_executable(lcm_io_test src/test/lcm_io_test.cpp )
 target_link_libraries(lcm_io_test affordance ${REQUIRED_PACKAGES})
 
 
+pods_install_python_script(drc-fake-grasp-pool scripts/fake_grasp_pool.py)

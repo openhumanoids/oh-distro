@@ -183,9 +183,13 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     rpy_sign = -1;
   }
   
+  //place the hand at a position relative to the torso, relative to:
+  //xyz: 0.6, 0.1, 0.2
+  //rpy: 90,0,-50
+  
   Eigen::Isometry3d body_to_aff;
   body_to_aff.setIdentity();
-  body_to_aff.translation()  << 0.50 +x_offset, y_offcenter +y_offset, 0.2 +z_offset; // away 
+  body_to_aff.translation()  << 0.60 +x_offset, y_offcenter +y_offset, 0.2 +z_offset; // away 
   Eigen::Quaterniond quat2 = Eigen::Quaterniond(  euler_to_quat( rpy_sign* 90*M_PI/180 ,rpy_sign*  0*M_PI/180 ,rpy_sign*-50*M_PI/180  )  );
   body_to_aff.rotate(quat2);    
 
