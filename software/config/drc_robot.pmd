@@ -247,6 +247,18 @@ group "m.hands" {
     }
 }
 
+group "m.simple_grasping" {
+    cmd "affordance_to_grasp_plan" {
+        exec = "affordance_to_grasp_plan";
+        host = "base";
+    }
+    cmd "fake-grasp-pool" {
+        exec = "drc-fake-grasp-pool";
+        host = "base";
+    }
+}
+
+
 #################################################################
 
 script "prep_no_hands" { 
@@ -274,6 +286,12 @@ script "prep_LI_RS" {
     start cmd "irobot-left";
     start cmd "sandia-right";
 }
+
+script "simple_grasp" {
+    stop cmd "sticky_hands";
+    start group "m.simple_grasping";
+}
+
 
 script "robot_start" { 
     stop cmd "atlas-off";
