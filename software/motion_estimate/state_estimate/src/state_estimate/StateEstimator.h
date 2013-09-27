@@ -8,6 +8,7 @@
 
 #include "lcmtypes/drc_lcmtypes.hpp"
 
+#include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
 
 namespace StateEstimate
@@ -47,6 +48,10 @@ protected:
   
   
   JointFilters mJointFilters;
+  //  vector<float> mJointVelocities;
+  
+  drc::robot_state_t mERSMsg;
+  
   
 };
 

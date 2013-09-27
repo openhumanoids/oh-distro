@@ -27,7 +27,7 @@ void StateEstimate::JointFilters::setSize(const int &num_joints) {
 }
 
 
-void StateEstimate::JointFilters::updateStates(ulong utime, vector<float> _pos, float* _vel) {
+void StateEstimate::JointFilters::updateStates(ulong utime, const vector<float> &_pos, vector<float> &_vel) {
   
 	Eigen::VectorXd parameters;
 	parameters.setZero();

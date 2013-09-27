@@ -7,6 +7,7 @@ set(srcs
   StateEstimator.cpp
   StateEstimateApplication.cpp
   JointFilters.cpp
+  StateEstimatorUtilities.cpp
   )
 
 set(required_packages eigen3 drc-lcmtypes kalman-filter)
@@ -34,6 +35,7 @@ pods_install_headers(
   SynchronizedQueue.h
   ThreadLoop.h
   JointFilters.h
+  StateEstimatorUtilities.h
   DESTINATION state_estimate)
 
 

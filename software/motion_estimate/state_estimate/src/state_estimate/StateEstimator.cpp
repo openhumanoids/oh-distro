@@ -16,7 +16,10 @@ StateEstimate::StateEstimator::StateEstimator(
 {
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
-  mJointFilters.setSize(56);
+  int num_joints = 56;
+    	
+  mJointFilters.setSize(num_joints);
+  //  mJointVelocities.resize(num_joints);
   std::cout << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
   std::cerr << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
   
@@ -64,15 +67,12 @@ void StateEstimate::StateEstimator::run()
       
       // Here we compute the joint velocities with num_joints Kalman Filters in parallel
       // TODO -- dehann, make this dependent on local state and not the message number
-      float joint_velocities[atlasState.num_joints];
-      mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, joint_velocities);
-      
-      // pass to joint_velocity_handler
-      
-      // publish result in ERS message
-      
+      //float joint_velocities[atlasState.num_joints];
+      mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
+      insertAtlasState_ERS(atlasState, mERSMsg);
     }
 
+    // This is the special case which will also publish the message
     int nIMU = mIMUQueue.size();
     printf("have %d new imu\n", nIMU);
     for (int i = 0; i < nIMU; ++i)
@@ -81,16 +81,21 @@ void StateEstimate::StateEstimator::run()
 
       // do something with new imu...
       
-      
+      // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
+      // For now we are going to publish on the last element of this queue
+      if (i==(nIMU-1)) { 
+	      //publish ERS message
+	      mLCM->publish("EST_ROBOT_STATE_EXPERIMENTAL", &mERSMsg); 
+      }
     }
-
 
     const int nPoses = mBDIPoseQueue.size();
     for (int i = 0; i < nPoses; ++i)
     {
       mBDIPoseQueue.dequeue(bdiPose);
-
-      // do something with new bdi pose...
+      
+      // push bdiPose info into ERS
+      convertBDIPose_ERS(&bdiPose, mERSMsg);
     }
 
     const int nViconPoses = mViconQueue.size();
@@ -99,6 +104,8 @@ void StateEstimate::StateEstimator::run()
       mViconQueue.dequeue(viconPose);
 
       // do something with new vicon pose...
+      
+      
     }
 
     // add artificial delay

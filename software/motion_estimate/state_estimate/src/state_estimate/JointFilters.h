@@ -22,10 +22,9 @@ public:
   
   void setSize(const int &num_joints);
   
-  void updateStates(ulong utime, vector<float> _pos, float* _vel);
+  void updateStates(ulong utime, const vector<float> &_pos, vector<float> &_vel);
   
 private:
-  
   
   int mNumJoints;
   vector<KalmanFilter_Models::Joint_Model> mJointModel;
