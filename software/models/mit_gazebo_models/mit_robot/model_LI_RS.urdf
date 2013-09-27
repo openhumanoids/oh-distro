@@ -1577,7 +1577,7 @@
     </sensor>
   </gazebo>
   <xacro:irobot_hand parent="l_hand" reflect="-1" side="left">
-    <origin rpy="1.57079 0 3.14159" xyz="0 0.095 0"/>
+    <origin rpy="1.57079 0 3.14159" xyz="0 0.08516 0"/>
   </xacro:irobot_hand>
   <link name="l_clav">
     <inertial>

@@ -4,14 +4,23 @@
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
   <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
 
-  <!-- Hands -->
-  <!-- adding an offset in the urdf to account for the ft sensor and the coupling plate, chaning origin form 0.1 to 0.145 for sandia, and 0.05 to 0.095 for irobot-->
+<!-- 
+05 sept: Sisir added an offset of 0.045 in the urdf to account 
+for the force sensor and the coupling plate, changing 
+origin from 0.1 to 0.145 for sandia, and 0.05 to 0.095 for irobot
+
+26 sept: instead OSRF added an offset of 0.03516.
+mfallon made this adjustment: 
+0.05 + 0.03516 = 0.08516 
+0.1  + 0.03516 = 0.13516
+-->
+
   <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
   <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="1.57079 0 0" xyz="0 -0.095 0"/>
+    <origin rpy="1.57079 0 0" xyz="0 -0.08516 0"/>
   </xacro:irobot_hand>
   <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
-    <origin rpy="1.57079 0 3.14159" xyz="0 0.095 0"/>
+    <origin rpy="1.57079 0 3.14159" xyz="0 0.08516 0"/>
   </xacro:irobot_hand>
 
 </robot>
