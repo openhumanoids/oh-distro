@@ -46,7 +46,7 @@ classdef AtlasManipController < DRCController
         
         % cascade PD block
         options.Kp = 20.0*eye(getNumDOF(r));
-        options.Kd =  0.5*eye(getNumDOF(r));
+        options.Kd =  5.0*eye(getNumDOF(r));
         options.use_qddtraj = true;
         pd = SimplePDBlock(r,ctrl_data,options);
         ins(1).system = 1;

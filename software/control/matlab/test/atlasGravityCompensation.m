@@ -1,13 +1,17 @@
 function atlasGravityCompensation
 %NOTEST
 
+armstr = 'r_arm';
+
 % load robot model
 options.floating = true;
+options.ignore_friction = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
-options.floating = false;
+options.floating = true;
+options.ignore_friction = true;
 r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,'arm'));
+arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,armstr));
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -15,10 +19,10 @@ state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
 ref_frame = AtlasPosTorqueRef(r);
 
-arm_joints = find(~cellfun(@isempty,strfind(state_frame.coordinates,'arm')));
-arm_joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,'arm')));
-
 nq = getNumDOF(r);
+arm_joints = find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),armstr)));
+arm_joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,armstr)));
+
 nu = getNumInputs(r);
 
 joint_index_map = struct(); % maps joint names to indices
@@ -97,7 +101,7 @@ x_est = zeros(2*nq,1);
 toffset = -1;
 tt=-1;
 
-while tt<200
+while 1
     [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
     if toffset==-1
@@ -126,7 +130,7 @@ while tt<200
     Fc_window = 0.175;
     
     tau_friction = zeros(34,1);
-    for i=1:12
+    for i=1:length(arm_joints)
       j=arm_joints(i);
       if qd(j)> 0
         tau_friction(j) = max(-1,min(1,qd(j)/Fc_window)) .* Fc_pos(j) + Fv*qd(j); 
@@ -135,7 +139,7 @@ while tt<200
       end
     end
     
-    tf_act = 0*tau_friction(act_idx);
+    tf_act = tau_friction(act_idx);
     
     % do inverse dynamics on fixed base model
     nq_fixed = getNumDOF(r_fixed);

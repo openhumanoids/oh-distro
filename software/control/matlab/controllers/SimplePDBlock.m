@@ -89,6 +89,41 @@ classdef SimplePDBlock < MIMODrakeSystem
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
       
+      
+      
+     persistent P x_est tlast;
+
+     if isempty(P)
+      P = eye(2*obj.nq);
+      x_est=zeros(2*obj.nq,1);
+      tlast=t-0.003;
+     end
+    
+    H = [eye(obj.nq) zeros(obj.nq)];
+    R = 5e-4*eye(obj.nq);
+
+    dt = t-tlast;
+    F = [eye(obj.nq) dt*eye(obj.nq); zeros(obj.nq) eye(obj.nq)];
+    Q = 0.3*[dt*eye(obj.nq) zeros(obj.nq); zeros(obj.nq) eye(obj.nq)];
+    
+    % compute filtered velocity
+    jprior = F*x_est;
+    Pprior = F*P*F' + Q;
+    meas_resid = x(1:obj.nq) - H*jprior;
+    S = H*Pprior*H' + R;
+    K = (P*H')/S;
+    x_est = jprior + K*meas_resid;
+    P = (eye(2*obj.nq) - K*H)*Pprior;
+    tlast=t;
+    
+    q = x_est(1:obj.nq);
+    qd = x_est(obj.nq+(1:obj.nq));
+      
+      
+      
+      
+      
+      
 			err_q = [q_des(1:3)-q(1:3);angleDiff(q(4:end),q_des(4:end))];
       y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
       if obj.use_qddtraj

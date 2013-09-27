@@ -53,7 +53,7 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_usy';% <---- 
+joint = 'r_leg_hpy';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
@@ -75,13 +75,13 @@ end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = true;
+  zero_crossing = false;
   ts = linspace(0,40,800);% <----
-  amp = 16;% <----  Nm or radians
-  freq = linspace(0.1,1.0,800);% <----  cycles per second
+  amp = 5;% <----  Nm or radians
+  freq = linspace(0.025,0.6,800);% <----  cycles per second
 else
-  vals = 0.8*[0 10 -10 10 0 0];% <----  Nm or radians
-  ts = linspace(0,20,length(vals));% <----
+  vals = 60*[0 1 0];% <----  Nm or radians
+  ts = linspace(0,60,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,7 +93,7 @@ rangecheck(ff_const,-10,10);
 if strcmp(control_mode,'force')
   rangecheck(k_f_p,0,1);
   rangecheck(ff_f_d,0,1);
-  rangecheck(ff_qd,0,1);
+  rangecheck(ff_qd,0,1.5);
 elseif strcmp(control_mode,'position')  
   rangecheck(k_q_p,0,50);
   rangecheck(k_q_i,0,0.5);
@@ -140,6 +140,8 @@ joint_sign_map.r_arm_shx = -1;
 joint_sign_map.r_arm_ely = -1;
 joint_sign_map.r_arm_elx = -1;
 joint_sign_map.r_arm_mwx = -1;
+
+joint_sign_map.r_leg_hpy = -1;
 
 if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
@@ -190,9 +192,13 @@ qdes = zeros(nq,1);
 %   error ('that joint isnt supported yet');
 % end
 
+if strcmp(joint,'r_leg_hpy') 
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
 
+  qdes(joint_index_map.l_leg_hpx) = 0.25;
 
-if strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
+elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
     strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') 
   
   qdes(joint_index_map.r_arm_shx) = 1.45;
