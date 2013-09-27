@@ -25,11 +25,14 @@
 #include <iostream>
 #include <vector>
 
+#include <ConciseArgs>
 
 #include <ncurses.h>
 #include <wchar.h>
 
 using namespace std;
+
+bool left_hand = false;
 
 double    original_translation[] = { 0.2350, 0.2777, 0.2033};
 double original_rpy[] ={ 0,0,0 };
@@ -84,7 +87,13 @@ static int publish_hand_wheel(void *user_data){
 
   msg.num_chain_joints = 0;
 
-  drc_ee_goal_t_publish(s->publish_lcm, "LEFT_PALM_GOAL", &msg);
+  if (!left_hand){
+    drc_ee_goal_t_publish(s->publish_lcm, "LEFT_PALM_GOAL_CLEAR", &msg);
+    drc_ee_goal_t_publish(s->publish_lcm, "RIGHT_PALM_GOAL", &msg);
+  }else {
+    drc_ee_goal_t_publish(s->publish_lcm, "LEFT_PALM_GOAL", &msg);
+    drc_ee_goal_t_publish(s->publish_lcm, "RIGHT_PALM_GOAL_CLEAR", &msg);
+  }
 
  return 0; 
 }
@@ -229,6 +238,12 @@ on_timer (void * user)
 
 int main(int argc, char *argv[])
 {
+
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(left_hand, "l", "left_hand","Use Light Hand");
+  opt.parse();
+  
+
   state_t* state = new state_t();
   state->publish_lcm= lcm_create(NULL);
   state->subscribe_lcm = state->publish_lcm;
@@ -237,6 +252,10 @@ int main(int argc, char *argv[])
   // obj: id name type reset
 //   //pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );  
   
+  if (!left_hand){
+    original_translation[2] = -original_translation[2];
+  }
+
   memcpy (state->trans, original_translation, 3*sizeof(double) );
   memcpy (state->rpy, original_rpy, 3*sizeof(double) );
 
