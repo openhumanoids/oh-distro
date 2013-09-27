@@ -11,7 +11,10 @@ execute_process(COMMAND rosrun xacro xacro.py atlas_full_contact.urdf.xacro
 execute_process(COMMAND rosrun xacro xacro.py atlas_fixedjoint_hands.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_fixedjoint_hands.urdf)
     
-execute_process(COMMAND rosrun xacro xacro.py atlas_point_hands.urdf.xacro
+execute_process(COMMAND rosrun xacro xacro.py atlas_sandia_point_hands.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_point_hands.urdf)    
+
+execute_process(COMMAND rosrun xacro xacro.py atlas_point_stumps.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_point_stumps.urdf)    
    
-message(STATUS "Generated \n model_minimal_contact.urdf \n model.urdf \n model_minimal_contact_fixedjoint_hands.urdf")
+message(STATUS "Generated \n model_minimal_contact.urdf \n model.urdf \n model_minimal_contact_fixedjoint_hands.urdf \n model_minimal_contact_point_hands.urdf \n model_minimal_contact_point_stumps.urdf")

@@ -1,0 +1,47 @@
+<robot name="drc_skeleton">  
+  <link name="l_hand_point_mass">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="3.131"/> <!--VRC value-->
+      <origin xyz="0 0 0"/>
+      <!--Changed inertias from 0.01 to 0.1. Temporary fix (Sisir)-->
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="r_hand_point_mass">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="3.131"/> <!--VRC value-->
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </visual>
+  </link>
+
+<!-- COM numbers are made up for now -->
+   <joint name="l_hand_joint" type="fixed">
+    <parent link="l_hand"/>
+    <child link="l_hand_point_mass"/>
+     <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/>  <!--VRC value-->
+  </joint>
+
+<!-- COM numbers are made up for now -->
+  <joint name="r_hand_joint" type="fixed">
+    <parent link="r_hand"/>
+    <child link="r_hand_point_mass"/>
+	  <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/>  <!--VRC value-->
+  </joint>
+   
+</robot>
