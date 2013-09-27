@@ -26,7 +26,7 @@ group "a.0.drivers" {
         host = "extra";
     }
     cmd "multisense" {
-        exec = "drc-multisense";
+        exec = "drc-multisense -o 2";
         host = "extra";
     }
     cmd "atlas-off" {
@@ -82,7 +82,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -136,7 +136,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -259,11 +259,19 @@ script "prep_no_hands" {
     start cmd "multisense";
 }
 
-script "prep_sandia_hands" {
+script "prep_LS_RS" {
     run_script "prep_no_hands";
     start cmd "SandiaGraspController";
     start cmd "aa-ros2lcm-hands";
     start cmd "sandia-left";
+    start cmd "sandia-right";
+}
+
+script "prep_LI_RS" {
+    run_script "prep_no_hands";
+    start cmd "SandiaGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-left";
     start cmd "sandia-right";
 }
 
