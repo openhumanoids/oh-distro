@@ -774,6 +774,23 @@ classdef QPControlBlock < MIMODrakeSystem
         obj.lcmgl.glPopMatrix();
       end
       
+      if 0 % plot individual body COMs
+        for jj=1:getNumBodies(r)
+          b = getBody(r,jj);
+          if ~isempty(b.com)
+            bpos = forwardKin(r,kinsol,jj,[0;0;0],1);
+            obj.lcmgl.glColor3f(1, 0, 0);
+            obj.lcmgl.glPushMatrix();
+            obj.lcmgl.glTranslated(bpos(1),bpos(2),bpos(3));
+            ax = rpy2axis(bpos(4:6));
+            obj.lcmgl.glRotated(ax(4)*180/pi, ax(1), ax(2), ax(3));
+            obj.lcmgl.sphere(b.com, b.mass*0.005, 20, 20);
+            obj.lcmgl.glPopMatrix();
+          end
+       end
+        
+      end
+      
       if obj.include_angular_momentum
         % plot momentum vectors
         h = Ag*qd;
