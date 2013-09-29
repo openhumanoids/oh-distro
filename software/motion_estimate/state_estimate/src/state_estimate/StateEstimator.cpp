@@ -68,6 +68,7 @@ void StateEstimate::StateEstimator::run()
       // Here we compute the joint velocities with num_joints Kalman Filters in parallel
       // TODO -- dehann, make this dependent on local state and not the message number
       //float joint_velocities[atlasState.num_joints];
+      // Joint velocity states in the atlasState message are overwriten by this process
       mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
       insertAtlasState_ERS(atlasState, mERSMsg);
     }
@@ -80,6 +81,11 @@ void StateEstimate::StateEstimator::run()
       this->mIMUQueue.dequeue(imu);
 
       // do something with new imu...
+      // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
+      double dt;
+      dt = (imu.utime - previous_imu_utime)*1.E-6;
+      previous_imu_utime = imu.utime;
+      handle_inertial_data_temp_name(dt, imu, bdiPose, inert_odo, mERSMsg);
       
       // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
       // For now we are going to publish on the last element of this queue

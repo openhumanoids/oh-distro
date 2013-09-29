@@ -10,7 +10,7 @@ set(srcs
   StateEstimatorUtilities.cpp
   )
 
-set(required_packages eigen3 drc-lcmtypes kalman-filter)
+set(required_packages eigen3 drc-lcmtypes kalman-filter inertial-odometry leg-odometry)
 
 add_library(StateEstimate  SHARED ${srcs})
 target_link_libraries(StateEstimate ${Boost_LIBRARIES})

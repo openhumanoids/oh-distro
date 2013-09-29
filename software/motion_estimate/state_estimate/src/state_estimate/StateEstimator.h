@@ -8,6 +8,8 @@
 
 #include "lcmtypes/drc_lcmtypes.hpp"
 
+#include <inertial-odometry/Odometry.hpp>
+
 #include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
 
@@ -52,6 +54,10 @@ protected:
   
   drc::robot_state_t mERSMsg;
   
+  
+private:
+	InertialOdometry::Odometry inert_odo;
+	unsigned long previous_imu_utime;
   
 };
 
