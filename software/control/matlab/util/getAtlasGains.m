@@ -20,6 +20,7 @@ ff_f_d = Point(atlas_input_frame,0);
 ff_const = Point(atlas_input_frame,0);
 
 % set ff_const for subset of joints that need it
+ff_const.neck_ay = 0.0;
 ff_const.l_arm_usy = 0.1; % 9-19-13, fc
 ff_const.r_arm_usy = -0.06; % 9-19-13, fc
 ff_const.l_arm_shx = -0.01; % 9-17-13, fc
@@ -32,10 +33,10 @@ ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
 ff_const.r_arm_uwy = 0.035; % 9-17-13, fc
 ff_const.l_arm_mwx = 0.025; % 9-17-13, fc
 ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
-ff_const.r_leg_hpy = -0.165; % 9-27-13, fc
-
-ff_const.neck_ay = 0.0;
-
+ff_const.r_leg_hpz = 0.0145; % 9-30-13, fc 
+ff_const.r_leg_hpy = -0.21; % 9-30-13, fc
+ff_const.r_leg_hpx = 0.315; % 9-30-13, fc 
+ff_const.r_leg_kny = 0.0625; % 9-30-13, fc 
 
 ff_qd.l_arm_usy = 0.3; % 9-19-13, fc
 ff_qd.r_arm_usy = 0.3; % 9-19-13, fc
@@ -49,7 +50,10 @@ ff_qd.l_arm_uwy = 0.22; % 9-19-13, fc
 ff_qd.r_arm_uwy = 0.22; % 9-18-13, fc
 ff_qd.l_arm_mwx = 0.225; % 9-19-13, fc 
 ff_qd.r_arm_mwx = 0.225; % 9-19-13, fc
-ff_qd.r_leg_hpy = 1.15; % 9-27-13, fc
+ff_qd.r_leg_hpz = 0.45; % 9-30-13, fc 
+ff_qd.r_leg_hpy = 1.0; % 9-30-13, fc
+ff_qd.r_leg_hpx = 1.1; % 9-30-13, fc 
+ff_qd.r_leg_kny = 1.0; % 9-30-13, fc 
 
 ff_f_d.l_arm_usy = 0.0; % 9-17-13
 ff_f_d.r_arm_usy = 0.0025; % 9-17-13
@@ -63,36 +67,56 @@ ff_f_d.l_arm_uwy = 0.005; % 9-17-13
 ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
 ff_f_d.l_arm_mwx = 0.0; % 9-17-13
 ff_f_d.r_arm_mwx = 0.01; % 9-17-13
+ff_f_d.r_leg_hpz = 0.007; % 9-30-13
+ff_f_d.r_leg_hpy = 0.005; % 9-30-13
+ff_f_d.r_leg_hpx = 0.0015; % 9-30-13
+ff_f_d.r_leg_kny = 0.007; % 9-30-13
 
-k_f_p.back_bkz = 0.012;
-k_f_p.back_bky = 0.012;
-k_f_p.back_bkx = 0.012;
-k_f_p.neck_ay = 0.012;
-k_f_p.l_leg_hpz = 0.012;
-k_f_p.l_leg_hpx = 0.012;
-k_f_p.l_leg_hpy = 0.012;
-k_f_p.l_leg_kny = 0.012;
-k_f_p.l_leg_aky = 1.4;
-k_f_p.l_leg_akx = 1.4;
-k_f_p.l_arm_usy = 0.08; % 9-17-13
+k_f_p.back_bkz  = 0.012;
+k_f_p.back_bky  = 0.012;
+k_f_p.back_bkx  = 0.012;
+k_f_p.neck_ay   = 0.012;
+k_f_p.l_arm_usy = 0.080; % 9-17-13
 k_f_p.l_arm_shx = 0.125; % 9-17-13
 k_f_p.l_arm_ely = 0.115; % 9-17-13
 k_f_p.l_arm_elx = 0.135; % 9-17-13
 k_f_p.l_arm_uwy = 0.085; % 9-17-13
 k_f_p.l_arm_mwx = 0.125; % 9-17-13
-k_f_p.r_leg_hpz = k_f_p.l_leg_hpz;
-k_f_p.r_leg_hpx = k_f_p.l_leg_hpx;
-k_f_p.r_leg_hpy = 0.075; % 9-27-13
-k_f_p.r_leg_kny = k_f_p.l_leg_kny;
-k_f_p.r_leg_aky = k_f_p.l_leg_aky;
-k_f_p.r_leg_akx = k_f_p.l_leg_akx;
 k_f_p.r_arm_usy = 0.100; % 9-17-13
 k_f_p.r_arm_shx = 0.125; % 9-17-13
 k_f_p.r_arm_ely = 0.125; % 9-17-13
 k_f_p.r_arm_elx = 0.125; % 9-17-13
 k_f_p.r_arm_uwy = 0.085; % 9-17-13
 k_f_p.r_arm_mwx = 0.125; % 9-17-13
+k_f_p.l_leg_hpz = 0.012;
+k_f_p.l_leg_hpx = 0.012;
+k_f_p.l_leg_hpy = 0.012;
+k_f_p.l_leg_kny = 0.012;
+k_f_p.l_leg_aky = 0.050;
+k_f_p.l_leg_akx = 0.050;
+k_f_p.r_leg_hpz = 0.065; % 9-30-13
+k_f_p.r_leg_hpy = 0.0575; % 9-30-13
+k_f_p.r_leg_hpx = 0.0275; % 9-30-13
+k_f_p.r_leg_kny = 0.0275; % 9-30-13
+
+k_f_p.r_leg_aky = k_f_p.l_leg_aky;
+k_f_p.r_leg_akx = k_f_p.l_leg_akx;
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 k_q_p.back_bkz = 15.0;
 k_q_p.back_bky = 60.0;
 k_q_p.back_bkx = 60.0;

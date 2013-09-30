@@ -53,7 +53,7 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpy';% <---- 
+joint = 'r_leg_kny';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
@@ -75,12 +75,12 @@ end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = false;
+  zero_crossing = true;
   ts = linspace(0,40,800);% <----
-  amp = 5;% <----  Nm or radians
-  freq = linspace(0.025,0.6,800);% <----  cycles per second
+  amp = 15.0;% <----  Nm or radians
+  freq = linspace(0.025,0.4,800);% <----  cycles per second
 else
-  vals = 60*[0 1 0];% <----  Nm or radians
+  vals = 10*[0 0 1 0 0];% <----  Nm or radians
   ts = linspace(0,60,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,9 +91,9 @@ T=ts(end);
 % check gain ranges --- TODO: make this more conservative
 rangecheck(ff_const,-10,10);
 if strcmp(control_mode,'force')
-  rangecheck(k_f_p,0,1);
-  rangecheck(ff_f_d,0,1);
-  rangecheck(ff_qd,0,1.5);
+%   rangecheck(k_f_p,0,1);
+%   rangecheck(ff_f_d,0,1);
+%   rangecheck(ff_qd,0,1.5);
 elseif strcmp(control_mode,'position')  
   rangecheck(k_q_p,0,50);
   rangecheck(k_q_i,0,0.5);
@@ -126,6 +126,7 @@ joint_offset_map.l_arm_shx = -1.45;
 joint_offset_map.l_arm_ely = 1.57;
 joint_offset_map.r_arm_ely = 1.57;
 joint_offset_map.l_leg_kny = 1.57;
+joint_offset_map.r_leg_kny = 1.57;
 
 
 joint_offset_map.r_arm_uwy = 1.57;
@@ -143,6 +144,9 @@ joint_sign_map.r_arm_mwx = -1;
 
 joint_sign_map.l_leg_hpy = -1;
 joint_sign_map.r_leg_hpy = -1;
+
+joint_sign_map.r_leg_hpx = -1;
+joint_sign_map.r_leg_hpz = -1;
 
 if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
@@ -210,14 +214,14 @@ elseif strcmp(joint,'l_leg_hpz')
   qdes(joint_index_map.r_arm_shx) = 1.0;
   qdes(joint_index_map.l_arm_shx) = -1.0;
   qdes(joint_index_map.r_leg_hpx) = -0.4;
-  qdes(joint_index_map.r_leg_kny) = 1.57;
+  qdes(joint_index_map.l_leg_kny) = 1.57;
 
 elseif strcmp(joint,'r_leg_hpz') 
 
   qdes(joint_index_map.r_arm_shx) = 1.0;
   qdes(joint_index_map.l_arm_shx) = -1.0;
   qdes(joint_index_map.l_leg_hpx) = 0.4;
-  qdes(joint_index_map.l_leg_kny) = 1.57;
+  qdes(joint_index_map.r_leg_kny) = 1.57;
 
 elseif strcmp(joint,'l_leg_hpx') 
 
@@ -226,6 +230,13 @@ elseif strcmp(joint,'l_leg_hpx')
 elseif strcmp(joint,'r_leg_hpx') 
 
   qdes(joint_index_map.l_leg_hpx) = 0.5;
+
+elseif strcmp(joint,'r_leg_kny') 
+
+  qdes(joint_index_map.r_arm_shx) = 1.0;
+  qdes(joint_index_map.l_arm_shx) = -1.0;
+  qdes(joint_index_map.r_leg_hpy) = -pi/2;
+  qdes(joint_index_map.r_leg_kny) = pi/2;  
 
 elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
     strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') 
