@@ -48,8 +48,8 @@ class BDIWalkTranslator:
         self.behavior = behavior
         self.bdi_step_queue = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
         
-        # Relative step heights: subtract the prior step's z pos from each step's z pos
-        for i in reversed(range(len(self.bdi_step_queue)-1)):
+        # Relative step heights
+        for i in reversed(range(len(self.bdi_step_queue))):
             self.bdi_step_queue[i].position[2] -= footsteps[i+1].position[2]
 
         # lengthen the duration of the first step if we're walking
