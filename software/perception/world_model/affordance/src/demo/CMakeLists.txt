@@ -35,10 +35,11 @@ pods_install_executables(ee-test)
 
 ##############################################
 add_executable (ee-driver ee_driver.cpp)
-target_link_libraries (ee-driver curses    )
-pods_use_pkg_config_packages(ee-driver
-   eigen3  glib-2.0  lcm bot2-core lcmtypes_drc_lcmtypes
-    path-util )
+target_link_libraries (ee-driver curses boost_system   lcm)
+pods_use_pkg_config_packages(ee-driver lcm model-client
+   lcmtypes_drc_lcmtypes  bot2-core glib-2.0
+   pointcloud_math
+   eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(ee-driver)
 
 

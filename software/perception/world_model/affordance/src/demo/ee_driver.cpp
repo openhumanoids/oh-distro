@@ -15,109 +15,265 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include <glib.h>
-#include <glib-object.h>
-
-#include <bot_core/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.h>
-
 #include <cstdio> 
 #include <iostream>
 #include <vector>
-
-#include <ConciseArgs>
-
+#include <glib.h>
+#include <glib-object.h>
 #include <ncurses.h>
 #include <wchar.h>
-
-using namespace std;
-
-bool left_hand = false;
-
-double    original_translation[] = { 0.2350, 0.2777, 0.2033};
-double original_rpy[] ={ 0,0,0 };
-
-//pointcloud_vis* pc_vis_;
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+#include <map>
 
 
-typedef struct  {
-  WINDOW *w;
-  int width, height;
-  int ix, iy;
+#include <boost/shared_ptr.hpp>
+#include <lcm/lcm-cpp.hpp>
 
-  lcm_t* publish_lcm;
-  lcm_t* subscribe_lcm;
+#include "lcmtypes/drc_lcmtypes.hpp"
 
-  GMainLoop * mainloop;
-  guint timer_id;
+#include <bot_core/bot_core.h>
+//#include <lcmtypes/drc_lcmtypes.h>
 
-  double trans[3];
-  double rpy[3]; // in degrees
+#include "urdf/model.h"
+#include "kdl/tree.hpp"
+#include "kdl_parser/kdl_parser.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
+#include <model-client/model-client.hpp>
+#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
-  int last_input;
 
-} state_t;
+#include <ConciseArgs>
 
 #define COLOR_PLAIN 1
 #define COLOR_TITLE 2
 #define COLOR_ERROR 3
 #define COLOR_WARN  4
 
-static int publish_hand_wheel(void *user_data){
-  state_t* s = static_cast<state_t*>(user_data);
+using namespace std;
 
-  drc_ee_goal_t msg;
+bool left_hand = false;
+vector<double>  original_translation = { 0.2350, 0.2777, 0.2033};
+vector <double> original_rpy ={ 0,0,0 };
+
+//pointcloud_vis* pc_vis_;
+
+
+class App{
+  public:
+    App(boost::shared_ptr<lcm::LCM> &lcm_);
+    
+    ~App(){
+    }
+    
+    void publish_hand_wheel();
+    void publish_reset();
+
+    
+     bool on_input();
+     bool on_timer();
+//    gboolean on_input (GIOChannel * source, GIOCondition cond, gpointer data);
+    //gboolean on_timer ();
+    int repaint (int64_t now);
+    
+    boost::shared_ptr<lcm::LCM> lcm_;
+  guint timer_id;
+    WINDOW *w;
+    GMainLoop * mainloop;
+    
+  private:
+
+    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::robot_state_t* msg);    
+    void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
+    
+    void solveFK(drc::robot_state_t state);
+    
+    vector<double> trans_;
+    vector<double> rpy_; // in degrees
+    
+    
+    bool init_;
+      int last_input_;
+
+    int counter_;
+    int64_t state_utime_;
+  int width, height;    
+    Eigen::Isometry3d world_to_body_;
+    
+    boost::shared_ptr<ModelClient> model_;
+    KDL::TreeFkSolverPosFull_recursive* fksolver_;
+    map<string, KDL::Frame > cartpos_;
+
+   drc::robot_state_t rstate_;
+   drc::robot_state_t planstate_;
+
+   bool cartpos_ready_;
+   bool plan_from_robot_state_;
+   bool planstate_init_;
+   bool rstate_init_;
+};   
+
+App::App(boost::shared_ptr<lcm::LCM> &lcm_):
+   lcm_(lcm_){
+     
+     planstate_init_ =false;
+rstate_init_ = false;
+  cartpos_ready_ = false;
+      
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  KDL::Tree tree;
+  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
+    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
+    exit(-1);
+  }
+  fksolver_ = new KDL::TreeFkSolverPosFull_recursive(tree);     
+  
+    mainloop = g_main_loop_new (NULL, FALSE);
+     
+  lcm_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);
+  lcm_->subscribe("CANDIDATE_MANIP_PLAN",&App::manipPlanHandler,this);
+    
+    
+   trans_ = original_translation;//{0.0, 0.0, 0.0};    
+   rpy_ =  original_rpy;//{0,0,0};
+     
+  init_ = false;
+  counter_=0;
+  
+  plan_from_robot_state_ = true;
+}
+
+
+void App::manipPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
+  planstate_= msg->plan[ msg->num_states-1];
+  planstate_init_ = true;
+}
+
+
+void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+  rstate_= *msg;
+  rstate_init_ = true;
+}
+  
+ 
+void App::solveFK(drc::robot_state_t state){
+  // 0. Extract World Pose of body:
+  world_to_body_.setIdentity();
+  world_to_body_.translation()  << state.pose.translation.x, state.pose.translation.y, state.pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(state.pose.rotation.w, state.pose.rotation.x, 
+                                               state.pose.rotation.y, state.pose.rotation.z);
+  world_to_body_.rotate(quat);    
+    
+  // 1. Solve for Forward Kinematics:
+  // call a routine that calculates the transforms the joint_state_t* msg.
+  map<string, double> jointpos_in;
+  cartpos_.clear();
+  for (uint i=0; i< (uint) state.num_joints; i++) //cast to uint to suppress compiler warning
+    jointpos_in.insert(make_pair(state.joint_name[i], state.joint_position[i]));
+  
+  // Calculate forward position kinematics
+  bool kinematics_status;
+  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_,flatten_tree);
+  if(kinematics_status>=0){
+    // cout << "Success!" <<endl;
+  }else{
+    cerr << "Error: could not calculate forward kinematics!" <<endl;
+    return;
+  }
+  
+  cartpos_ready_=true;  
+  
+}
+
+
+
+
+void App::publish_hand_wheel(){//void *user_data){
+
+  drc::ee_goal_t msg;
   msg.utime = bot_timestamp_now();
 
-  drc_position_3d_t pos;
-  pos.translation.x = s->trans[0];
-  pos.translation.y = s->trans[1];
-  pos.translation.z = s->trans[2];
-  double rpy[] = {s->rpy[0]*M_PI/180, s->rpy[1]*M_PI/180, s->rpy[2]*M_PI/180 };
-  double q[4];
-  bot_roll_pitch_yaw_to_quat (rpy, q);
-  pos.rotation.w = q[0];
-  pos.rotation.x = q[1];
-  pos.rotation.y = q[2];
-  pos.rotation.z = q[3];
-  msg.ee_goal_pos = pos;
+  msg.ee_goal_pos.translation.x = trans_[0];
+  msg.ee_goal_pos.translation.y = trans_[1];
+  msg.ee_goal_pos.translation.z = trans_[2];
+  
+  Eigen::Quaterniond q = euler_to_quat( rpy_[0], rpy_[1], rpy_[2] );
+  msg.ee_goal_pos.rotation.w = q.w();
+  msg.ee_goal_pos.rotation.x = q.x();
+  msg.ee_goal_pos.rotation.y = q.y();
+  msg.ee_goal_pos.rotation.z = q.z();
 
-  drc_twist_t twist;
-  msg.ee_goal_twist =twist;	
+  //drc_twist_t twist;
+  //msg.ee_goal_twist =twist;	
 
   msg.num_chain_joints = 0;
 
   if (!left_hand){
-    drc_ee_goal_t_publish(s->publish_lcm, "LEFT_PALM_GOAL_CLEAR", &msg);
-    drc_ee_goal_t_publish(s->publish_lcm, "RIGHT_PALM_GOAL", &msg);
+    lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
+    lcm_->publish("RIGHT_PALM_GOAL", &msg);
   }else {
-    drc_ee_goal_t_publish(s->publish_lcm, "LEFT_PALM_GOAL", &msg);
-    drc_ee_goal_t_publish(s->publish_lcm, "RIGHT_PALM_GOAL_CLEAR", &msg);
+    lcm_->publish("LEFT_PALM_GOAL", &msg);
+    lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
   }
 
- return 0; 
 }
 
-static int publish_reset(void *user_data){
-  state_t* s = static_cast<state_t*>(user_data);
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
+  Eigen::Quaterniond q;
+  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
+  tf_out.rotate(q);    
+  return tf_out;
+}
 
-  memcpy (s->trans, original_translation, 3*sizeof(double) );
-  memcpy (s->rpy, original_rpy, 3*sizeof(double) );
-  publish_hand_wheel(s);
 
- return 0; 
+void App::publish_reset(){//void *user_data){
+  
+  if (plan_from_robot_state_){
+    if(rstate_init_){
+      solveFK(rstate_);
+    }
+  }else{
+    if (planstate_init_){
+      solveFK(planstate_);
+    }
+  }
+    
+  if (!cartpos_ready_){
+   return; 
+  }
+  
+  std::string palm_link = "right_palm";
+  if (left_hand){
+    palm_link = "left_palm";
+  }
+  Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( palm_link )->second);
+  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
+  
+  trans_[0] = world_to_palm.translation().x();
+  trans_[1] = world_to_palm.translation().y();
+  trans_[2] = world_to_palm.translation().z();
+  
+  quat_to_euler(  Eigen::Quaterniond(world_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
+  
+  publish_hand_wheel();
+
+
 }
 
 
 
-static int
-repaint (state_t * s, int64_t now)
-{
-  WINDOW * w = s->w;
+
+int App::repaint (int64_t now){
 
   clear();
   
-  getmaxyx(w, s->height, s->width);
+  getmaxyx(w, height, width);
   color_set(COLOR_PLAIN, NULL);
   
   //update:
@@ -131,13 +287,18 @@ repaint (state_t * s, int64_t now)
   wmove(w, 3, 0);
   wprintw(w, "spacebar: reset");
 
-  wmove(w, 6, 0);
-  wprintw(w, "trans: %.4f %.4f %.4f",s->trans[0] ,s->trans[1] ,s->trans[2]);
-  wmove(w, 7, 0);
-  wprintw(w, "  rpy: %.4f %.4f %.4f",s->rpy[0] ,s->rpy[1] ,s->rpy[2]);
-  wmove(w, 8, 0);
-  wprintw(w, "last %d",s->last_input);
   
+  wmove(w, 6, 0);
+  wprintw(w, "trans: %.4f %.4f %.4f",trans_[0] ,trans_[1] ,trans_[2]);
+  wmove(w, 7, 0);
+  wprintw(w, "  rpy: %.4f %.4f %.4f",180*rpy_[0]/M_PI ,180*rpy_[1]/M_PI ,180*rpy_[2]/M_PI );
+  wmove(w, 8, 0);
+  wprintw(w, "last %d", last_input_);
+  
+  wmove(w, 10, 0);
+  wprintw(w, "state utime %lld", state_utime_);
+  wmove(w, 11, 0);
+  wprintw(w, "Plan from Robot State: %d",  (int)plan_from_robot_state_);
 
   color_set(COLOR_TITLE, NULL);
   
@@ -146,11 +307,14 @@ repaint (state_t * s, int64_t now)
 }
 
 
-static gboolean
-on_input (GIOChannel * source, GIOCondition cond, gpointer data)
+gboolean on_input (GIOChannel * source, GIOCondition cond, gpointer data)
 {
-  state_t* s = static_cast<state_t*>(data);
-  WINDOW * w = s->w;
+  App* s = (App*) (data);
+  
+  return s->on_input();
+}
+  
+bool App::on_input(){
   int64_t now = bot_timestamp_now ();
 
   int c = getch();
@@ -161,79 +325,86 @@ on_input (GIOChannel * source, GIOCondition cond, gpointer data)
   wmove(w, 5, 0);
   wprintw(w,"%i  ",c);
 
-  s->last_input = c;
+  
+  
+  last_input_ = c;
 
   // 65 up, 66 down,
   switch (c)
   {
     case 32: // space bar:
-      publish_reset(s);
+      publish_reset();
       break;
     case 65: // up arrow:
-      s->trans[0] += delta_trans[0] ;
-      publish_hand_wheel(s);
+      trans_[0] += delta_trans[0] ;
+      publish_hand_wheel();
       break;
     case 66: // down arrow:
-      s->trans[0] -= delta_trans[0] ;
-      publish_hand_wheel(s);
+      trans_[0] -= delta_trans[0] ;
+      publish_hand_wheel();
       break;
     case 68: // left arrow:
-      s->trans[1] += delta_trans[1] ;
-      publish_hand_wheel(s);
+      trans_[1] += delta_trans[1] ;
+      publish_hand_wheel();
       break;
     case 67: // right arrow:
-      s->trans[1] -= delta_trans[1] ;
-      publish_hand_wheel(s);
+      trans_[1] -= delta_trans[1] ;
+      publish_hand_wheel();
       break;
     case 'a': // a
-      s->trans[2] -= delta_trans[2] ;
-      publish_hand_wheel(s);
+      trans_[2] -= delta_trans[2] ;
+      publish_hand_wheel();
       break;
     case 'q': // q
-      s->trans[2] += delta_trans[2] ;
-      publish_hand_wheel(s);
+      trans_[2] += delta_trans[2] ;
+      publish_hand_wheel();
       break;
     ////////////////////////////
     case 'r': // roll
-      s->rpy[0] += delta_rpy[0] ;
-      publish_hand_wheel(s);
+      rpy_[0] += delta_rpy[0]*M_PI/180 ;
+      publish_hand_wheel();
       break;
     case 'f': // roll
-      s->rpy[0] -= delta_rpy[0] ;
-      publish_hand_wheel(s);
+      rpy_[0] -= delta_rpy[0]*M_PI/180 ;
+      publish_hand_wheel();
       break;
     case 'p': // pitch
-      s->rpy[1] += delta_rpy[1] ;
-      publish_hand_wheel(s);
+      rpy_[1] += delta_rpy[1]*M_PI/180 ;
+      publish_hand_wheel();
       break;
     case 59: // pitch
-      s->rpy[1] -= delta_rpy[1] ;
-      publish_hand_wheel(s);
+      rpy_[1] -= delta_rpy[1]*M_PI/180 ;
+      publish_hand_wheel();
       break;
     case 'y': // yaw
-      s->rpy[2] += delta_rpy[2] ;
-      publish_hand_wheel(s);
+      rpy_[2] += delta_rpy[2]*M_PI/180 ;
+      publish_hand_wheel();
       break;
     case 'h': // roll
-      s->rpy[2] -= delta_rpy[2] ;
-      publish_hand_wheel(s);
+      rpy_[2] -= delta_rpy[2]*M_PI/180 ;
+      publish_hand_wheel();
+      break;
+    case 'm': // switch modes: hand and end of plan
+      plan_from_robot_state_= !plan_from_robot_state_;
       break;
   }
+
     
-    
-    repaint (s, now);	
+    repaint ( now);	
     return TRUE;
 }
 
-static gboolean
-on_timer (void * user)
+gboolean on_timer (void * data)
 {
-  state_t* s = static_cast<state_t*>(user);
-    int64_t now =0;// bot_timestamp_now ();
-    repaint (s, now);
-    return TRUE;
+  App* s = (App*) (data);
+  return s->on_timer(); 
 }
-
+bool App::on_timer(){  
+  int64_t now =0;// bot_timestamp_now ();
+    
+  repaint (now);
+  return TRUE;
+}
 
 
 int main(int argc, char *argv[])
@@ -243,12 +414,19 @@ int main(int argc, char *argv[])
   opt.add(left_hand, "l", "left_hand","Use Light Hand");
   opt.parse();
   
-
-  state_t* state = new state_t();
-  state->publish_lcm= lcm_create(NULL);
-  state->subscribe_lcm = state->publish_lcm;
   
-  //pc_vis_ = new pointcloud_vis( state->publish_lcm );
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
+  if(!lcm->good())
+    return 1;  
+  
+  App app(lcm);  
+  
+  
+
+//  state_t* state = new state_t();
+ // state->lcm= lcm_create(NULL);
+  
+  //pc_vis_ = new pointcloud_vis( state->lcm );
   // obj: id name type reset
 //   //pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );  
   
@@ -256,20 +434,26 @@ int main(int argc, char *argv[])
     original_translation[2] = -original_translation[2];
   }
 
-  memcpy (state->trans, original_translation, 3*sizeof(double) );
-  memcpy (state->rpy, original_rpy, 3*sizeof(double) );
+ // memcpy (state->trans, original_translation, 3*sizeof(double) );
+ // memcpy (state->rpy, original_rpy, 3*sizeof(double) );
 
-  state->mainloop = g_main_loop_new (NULL, FALSE);
-  bot_glib_mainloop_attach_lcm (state->publish_lcm);
-  bot_signal_pipe_glib_quit_on_kill (state->mainloop);
+ // state->mainloop = g_main_loop_new (NULL, FALSE);
+  
+  
+//  drc_robot_state_t_subscription_t * sub =  drc_robot_state_t_subscribe(state->lcm, "EST_ROBOT_STATE", 
+  //                                                                           on_robot_state, state);
+  
+  
+  bot_glib_mainloop_attach_lcm (app .lcm_->getUnderlyingLCM() );
+  bot_signal_pipe_glib_quit_on_kill (app.mainloop);
 
-  /* Watch stdin */
+  // Watch stdin 
   GIOChannel * channel = g_io_channel_unix_new (0);
-  g_io_add_watch (channel, G_IO_IN, on_input, state);
+  g_io_add_watch (channel, G_IO_IN, on_input,&app);
 
-  state->timer_id = g_timeout_add (25, on_timer, state);
+  app.timer_id = g_timeout_add (25, on_timer, &app);
 
-  state->w = initscr();
+  app.w = initscr();
   start_color();
   cbreak();
   noecho();
@@ -279,13 +463,16 @@ int main(int argc, char *argv[])
   init_pair(COLOR_WARN, COLOR_BLACK, COLOR_YELLOW);
   init_pair(COLOR_ERROR, COLOR_BLACK, COLOR_RED);
 
-  g_main_loop_run (state->mainloop);
+  g_main_loop_run (app.mainloop);
 
   endwin ();
-  g_source_remove (state->timer_id);
-  bot_glib_mainloop_detach_lcm (state->publish_lcm);
-  g_main_loop_unref (state->mainloop);
-  state->mainloop = NULL;
+  g_source_remove (app.timer_id);
+  bot_glib_mainloop_detach_lcm (app.lcm_->getUnderlyingLCM());
+  g_main_loop_unref (app.mainloop);
+  app.mainloop = NULL;
   //globals_release_lcm (s->lc);
-  free (state);
+  
+//  free (state);
+  
+
 }

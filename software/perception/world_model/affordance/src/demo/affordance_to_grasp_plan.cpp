@@ -13,6 +13,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/bot_core.hpp>
 
 #include "urdf/model.h"
 #include "kdl/tree.hpp"
@@ -52,13 +53,18 @@ class Pass{
                         const std::string& channel, const  drc::grasp_opt_control_t* msg);
     void planHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::robot_state_t* msg);
+    void poseGroundHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  bot_core::pose_t* msg);
+
 
     void sendCandidateGrasp(const  drc::grasp_opt_control_t* msg, 
                             Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
     void sendPlanEELoci(const  drc::grasp_opt_control_t* msg, 
                         Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles);
 
+    void sendStandingPosition();
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
@@ -68,6 +74,8 @@ class Pass{
     drc::affordance_t aff_;
     Eigen::Isometry3d world_to_aff_ ;
     Eigen::Isometry3d world_to_body_;
+    double ground_height_;
+    
     AffordanceUtils affutils_;
     
     vector<string> l_joint_name_;
@@ -98,6 +106,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
   lcm_->subscribe( "AFFORDANCE_PLUS_COLLECTION" ,&Pass::affHandler,this);
   lcm_->subscribe( "INIT_GRASP_OPT_1" ,&Pass::initGraspHandler,this);
   lcm_->subscribe( "INIT_GRASP_OPT_2" ,&Pass::initGraspHandler,this);
+
+  lcm_->subscribe( "POSE_GROUND" ,&Pass::poseGroundHandler,this);
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
@@ -106,6 +116,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frames",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60012,"Grasp Pose Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60013,"Grasp Feasibility" ,1,1, 60012,0, { 0.0, 1.0, 0.0} ));
+  //
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60014,"Standing Position",4,1) ); // 4 is pose3d
       
 
   l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",
@@ -131,6 +143,10 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
                        
 }
 
+void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  
+  ground_height_ = msg->pos[2];
+}
 
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
@@ -163,12 +179,63 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 }
 
 
+void Pass::sendStandingPosition(){ 
+      int counter = 0;
+
+
+      std::vector<Isometry3dTime>  feet_positionsT;
+
+      for (int front_side=0; front_side < 2; front_side++){
+      
+      Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
+      valve_pose.translation()  << aff_.origin_xyz[0], aff_.origin_xyz[1], ground_height_;
+      if (front_side){
+        valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  aff_.origin_rpy[2] - 90*M_PI/180 )  ) );
+      }else{
+        valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  aff_.origin_rpy[2] + 90*M_PI/180 )  ) );
+      }
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose) );
+
+
+      for (int left_reach =0 ; left_reach<2 ; left_reach++){
+
+      Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
+      if (left_reach){
+        valve2com.translation()  << -0.45, 0.28, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-20*M_PI/180))  );   
+      }else{
+        valve2com.translation()  << -0.45, -0.28, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,20*M_PI/180))  );   
+      }
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
+
+      Eigen::Isometry3d com2left(Eigen::Isometry3d::Identity());
+      com2left.translation()  << 0.0, 0.13, 0;
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2left) );
+      Eigen::Isometry3d com2right(Eigen::Isometry3d::Identity());
+      com2right.translation()  << 0.0, -0.13, 0;
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2right) );
+
+
+      }
+      }
+
+      pc_vis_->pose_collection_to_lcm_from_list(60014, feet_positionsT); 
+}
+
+
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   std::cout << "got "<< msg->naffs << " affs\n";
   if (msg->naffs > 0){
     aff_ = msg->affs_plus[0].aff;
     aff_ready_ = true;
+
+    bool send_standing_position_ =true;
+    if (send_standing_position_){
+      sendStandingPosition();
+
+    }
   }else{
     aff_ready_ = false; 
   }
@@ -257,11 +324,12 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     }
   }else{ // Sandia
     // was: 0.05 + radius ,0,-0.12;
+    // 0.03 was too little
     if (msg->grasp_type ==0){ // sandia left
-      aff_to_palmgeometry.translation()  << 0.03 + radius ,0,-0.10;
+      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }else{ // sandia right
-      aff_to_palmgeometry.translation()  << 0.03 + radius ,0,-0.10;
+      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }
     
