@@ -28,13 +28,13 @@ class BDIWalkTranslator:
         print "Starting new footstep plan"
         msg = drc.footstep_plan_t.decode(msg_data)
         footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
-        footsteps = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
+
         behavior = opts['behavior']
         if behavior == Behavior.BDI_STEPPING:
             duration = 2.0
         elif behavior == Behavior.BDI_WALKING:
             duration = 0.6
-            if len(footsteps) < NUM_REQUIRED_WALK_STEPS:
+            if len(footsteps) < NUM_REQUIRED_WALK_STEPS+2:
                 msg = 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
                 print msg
                 ut.send_status(6,0,0,msg)
@@ -44,8 +44,13 @@ class BDIWalkTranslator:
             print m
             ut.send_status(6,0,0,m)
             return
+        footsteps = [BDIWalkTranslator.footstep_to_step_data(f,j-1,duration=duration) for j,f in enumerate(footsteps)]
         self.behavior = behavior
-        self.bdi_step_queue = [BDIWalkTranslator.footstep_to_step_data(f,j+1,duration=duration) for j,f in enumerate(footsteps)]
+        self.bdi_step_queue = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
+        
+        # Relative step heights: subtract the prior step's z pos from each step's z pos
+        for i in reversed(range(len(self.bdi_step_queue)-1)):
+            self.bdi_step_queue[i].position[2] -= footsteps[i+1].position[2]
 
         # lengthen the duration of the first step if we're walking
         #if self.behavior == Behavior.BDI_WALKING:
@@ -119,8 +124,8 @@ class BDIWalkTranslator:
         #step_data.position = footstep.pos[:3]
         step_data.position = pos[:3]
         print "Transformed pos: ", step_data.position
-        if use_relative_step_height:
-            step_data.position[2] = 0
+#        if use_relative_step_height:
+#            step_data.position[2] = 0
         step_data.yaw = footstep.pos[5]
         step_data.normal = ut.rpy2rotmat(footstep.pos[3:6,0]) * np.matrix([[0],[0],[1]])
         step_data.swing_height = footstep.step_height
