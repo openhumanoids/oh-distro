@@ -23,7 +23,8 @@ classdef KeyframePlanner < handle
         r_uarm_body 
         
         joint_constraint
-        
+        joint_constraint_args
+        plan_arc_res
         
         l_issandia
         r_issandia         
@@ -65,6 +66,14 @@ classdef KeyframePlanner < handle
               [back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
               [-0.1;-0.1;0.2;0.2],...
               [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]);
+          
+            obj.joint_constraint_args ={[back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+                                          [-0.1;-0.1;0.2;0.2],...
+                                          [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
+                                      
+            % used to determine the length of posture and reaching plans as 
+            % a function of arclength.                           
+            obj.plan_arc_res = 0.05; % 5cm res                         
 
             % Goals are presented in palm frame, must be transformed to hand coordinate frame
             % Using notation similar to KDL.

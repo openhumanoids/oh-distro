@@ -251,8 +251,6 @@ classdef ReachingPlanner < KeyframePlanner
         qsc = qsc.setActive(true);
         qsc = qsc.setShrinkFactor(0.85);
         ikoptions = ikoptions.setMajorIterationsLimit(500);
-        joint_constraint = PostureConstraint(obj.r);
-
 
         comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
         comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
@@ -264,44 +262,28 @@ classdef ReachingPlanner < KeyframePlanner
         %       utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-1*ones(4,1)];
         %       utorso_pose0 = utorso_pose0(1:3);
 
+
+
         s = [0 1]; % normalized arc length index
 
-        % kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
-        % ks = ks.addKinematicConstraint(kc_com);
-        function [pos_min,pos_max,pose_quat,pose_tol] = parsePoseT(pose,tol,pose_isnan)
-          % A utility function to pase the pose and tol
-          if(size(pose,1)~=7)
-            error('pose must have 7 rows');
-          end
-          pos_min = pose(1:3,:)-tol;
-          pos_max = pose(1:3,:)+tol;
-          if(~pose_isnan)
-            pose_quat = pose(4:7,1);
-            pose_tol = 0.1*tol;
-          else
-            pose_quat = [];
-            pose_tol = [];
-          end
-        end
-        
         if(isempty(q_desired))
-          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parsePoseT(r_hand_poseT,1e-3,rhand_poseT_isnan);
-          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parsePoseT(l_hand_poseT,1e-3,lhand_poseT_isnan);
-          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parsePoseT(r_foot_poseT,1e-3,false);
-          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parsePoseT(l_foot_poseT,1e-3,false);
-          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parsePoseT(head_poseT,1e-3,head_poseT_isnan);
+          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parsePoseT(obj,r_hand_poseT,1e-3,rhand_poseT_isnan);
+          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parsePoseT(obj,l_hand_poseT,1e-3,lhand_poseT_isnan);
+          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parsePoseT(obj,r_foot_poseT,1e-3,false);
+          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parsePoseT(obj,l_foot_poseT,1e-3,false);
+          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parsePoseT(obj,head_poseT,1e-3,head_poseT_isnan);
           
         else
-          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parseTposeT(r_hand_poseT,0);
-          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parseTposeT(l_hand_poseT,0);
-          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parseTposeT(r_foot_poseT,0);
-          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parseTposeT(l_foot_poseT,0);
-          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parseTposeT(head_poseT,0);
+          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parseTposeT(obj,r_hand_poseT,0);
+          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parseTposeT(obj,l_hand_poseT,0);
+          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parseTposeT(obj,r_foot_poseT,0);
+          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parseTposeT(obj,l_foot_poseT,0);
+          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parseTposeT(obj,head_poseT,0);
         end
 
-
-        % End State Constraints
-        % Constraints for feet
+            % End State Constraints
+            % Constraints for feet
+            
         iktraj_lhand_constraint = {};
         iktraj_rhand_constraint = {};
         iktraj_lfoot_constraint = {};
@@ -333,7 +315,7 @@ classdef ReachingPlanner < KeyframePlanner
         end % end if(~obj.isBDIManipMode())
 
 
-        % Constraints for hands
+            % Constraints for hands
         rhand_constraint0 = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3,:),r_hand_pose0(1:3,:),[s(1),s(1)]),...
           WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7,1),0,[s(1) s(1)])};
         lhand_constraint0 = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0(1:3,:),l_hand_pose0(1:3,:),[s(1),s(1)]),...
@@ -354,23 +336,18 @@ classdef ReachingPlanner < KeyframePlanner
         % Constraints for head
         head_constraint0 = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_pose0(1:3,:),head_pose0(1:3,:),[s(1),s(1)]),...
           WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7,1),0,[s(1) s(1)])};
-        %                 ks = ks.addKinematicConstraint(kc_head0);
         if(~head_poseT_isnan)
           head_constraintT = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_poseT_min,head_poseT_max,[s(end),s(end)]),...
             WorldQuatConstraint(obj.r,obj.head_body,head_poseT_quat,head_poseT_tol,[s(end),s(end)])};
         end
-        
-        %                 ks = ks.addKinematicConstraint(kc_headT);
+
 
         if(obj.restrict_feet)
           pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0(1:3,:),pelvis_pose0(1:3,:),[s(1),s(end)]),...
             WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),0,[s(1) s(end)])};
           iktraj_pelvis_constraint = [iktraj_pelvis_constraint,pelvis_constraint];
         end
-        % kc_torso = ActionKinematicConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0_relaxed,[s(1),s(end)],'utorso');
-        % ks = ks.addKinematicConstraint(kc_torso);
-
-
+       
         % Solve IK at final pose and pass as input to sequence search
         pert = [1e-3*ones(3,1); 1e-2*ones(4,1)];
 
@@ -404,7 +381,6 @@ classdef ReachingPlanner < KeyframePlanner
         rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_poseT,1e-3,1e-4,[-inf inf]);
         lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_poseT,1e-3,1e-4,[-inf inf]);
         
-        
 
         if(~isempty(head_gaze_target))
           head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],head_gaze_target,[0;0;0],pi/12)}];
@@ -415,6 +391,7 @@ classdef ReachingPlanner < KeyframePlanner
         if(~isempty(lhand_gaze_target))
           lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lhand_gaze_target,[0;0;0],pi/18)}];
         end
+
         %============================
         %       0,comgoal,...
         q_final_quess= q0;
@@ -426,7 +403,8 @@ classdef ReachingPlanner < KeyframePlanner
           lfoot_pose0_constraint = {WorldPositionConstraint(obj.r,obj.l_foot_body,r_foot_pts,l_foot_pose0(1:3,:),l_foot_pose0(1:3,:)),...
             WorldQuatConstraint(obj.r,obj.l_foot_body,l_foot_pose0(4:7,1),0)};
           qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
-          if(obj.planning_mode == 3)% teleop mode
+          
+		  if(obj.planning_mode == 3)% teleop mode
             kinsol = doKinematics(obj.r,q0);
             rhand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
             lhand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
@@ -454,21 +432,21 @@ classdef ReachingPlanner < KeyframePlanner
               [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
                 rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                 rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             else
                 % if feet are not restricted then you need to add back pelvis constraint
               [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
                 pelvis_constraint{:},...
                 rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                 rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             end
           else
             [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
                 pelvis_constraint{:},...
                 rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                 rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                joint_constraint,ikoptions);
+                obj.joint_constraint,ikoptions);
           end % end if(~obj.isBDIManipMode())
 
           if(snopt_info >10)
@@ -504,7 +482,6 @@ classdef ReachingPlanner < KeyframePlanner
             qsc = qsc.setActive(false);
           end
           qsc = qsc.setShrinkFactor(0.9);
-          joint_constraint = PostureConstraint(obj.r);
           iktraj_options = iktraj_options.setMajorIterationsLimit(300);
           iktraj_qseed = qtraj_guess.eval(iktraj_tbreaks);
           iktraj_qseed = iktraj_qseed(:,2:end);
@@ -515,7 +492,7 @@ classdef ReachingPlanner < KeyframePlanner
             q0,0*q0,iktraj_tbreaks,iktraj_qseed,iktraj_qnom,...
             iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
             iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
-            iktraj_pelvis_constraint{:},joint_constraint,qsc,...
+            iktraj_pelvis_constraint{:},obj.joint_constraint,qsc,...
             iktraj_options);
           if(snopt_info > 10)
               warning('The IK traj fails');
@@ -537,8 +514,7 @@ classdef ReachingPlanner < KeyframePlanner
         Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
         s_total = Tmax_ee*obj.plan_cache.v_desired;
 
-        res = 0.15; % 20cm res
-        s= linspace(0,1,ceil(s_total/res)+1); % Must have two points atleast
+        s = linspace(0,1,ceil(s_total/obj.plan_arc_res)+1); % Must have two points atleast
         s = unique([s(:);s_breaks(:)]);
 
         % fine grained verification of COM constraints of fixed resolution.
@@ -562,6 +538,10 @@ classdef ReachingPlanner < KeyframePlanner
         else
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
         end
+        obj.plan_cache.qsc = obj.plan_cache.qsc.setShrinkFactor(0.9);
+        if(~obj.isBDIManipMode())
+          obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.l_foot_body,l_foot_contact_pts,obj.r_foot_body,r_foot_contact_pts);
+        end % end if(~obj.isBDIManipMode())
 
         % publish robot plan
         disp('Publishing plan...');
@@ -584,9 +564,7 @@ classdef ReachingPlanner < KeyframePlanner
         ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
         obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
         utime = now() * 24 * 60 * 60;
-        % ignore the first state
-        % ts = ts(2:end);
-        % xtraj=xtraj(:,2:end);
+
         obj.plan_pub.publish(xtraj,ts,utime, snopt_info_vector);
     end
    %-----------------------------------------------------------------------------------------------------------------             
@@ -634,6 +612,22 @@ classdef ReachingPlanner < KeyframePlanner
         cost = double(cost);
 
     end
-  %-----------------------------------------------------------------------------------------------------------------              
+  %----------------------------------------------------------------------------------------------------------------- 
+    function [pos_min,pos_max,pose_quat,pose_tol] = parsePoseT(obj,pose,tol,pose_isnan)
+      % A utility function to pase the pose and tol
+      if(size(pose,1)~=7)
+        error('pose must have 7 rows');
+      end
+      pos_min = pose(1:3,:)-tol;
+      pos_max = pose(1:3,:)+tol;
+      if(~pose_isnan)
+        pose_quat = pose(4:7,1);
+        pose_tol = 0.1*tol;
+      else
+        pose_quat = [];
+        pose_tol = [];
+      end
+    end  
+  
   end% end methods
 end% end classdef

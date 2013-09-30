@@ -75,7 +75,6 @@ classdef WholeBodyPlanner < KeyframePlanner
           qsc = QuasiStaticConstraint(obj.r);
           ikoptions = ikoptions.setMajorIterationsLimit(200);
           qsc = qsc.setShrinkFactor(0.8);
-          joint_constraint = PostureConstraint(obj.r);
 
           % Solve IK for each element i n EE LOCII
           timeIndices=[];
@@ -247,7 +246,6 @@ classdef WholeBodyPlanner < KeyframePlanner
              obj.cacheLFootPoseAsContactConstraint([i/N i/N],l_foot_pose); 
             end
 
-            joint_constraint = PostureConstraint(obj.r);
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setDebug(true);
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
@@ -256,8 +254,9 @@ classdef WholeBodyPlanner < KeyframePlanner
               
               [q(:,i),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                   rfoot_constraint{:},lfoot_constraint{:},rhand_constraint{:},lhand_constraint{:},...
-                  qsc,joint_constraint,...
+                  qsc,obj.joint_constraint,...
                   ikoptions);
+              % note: obj.joint_constraint is defined globally across all planners in the base class.    
 
               q_guess =q(:,i);
               toc;

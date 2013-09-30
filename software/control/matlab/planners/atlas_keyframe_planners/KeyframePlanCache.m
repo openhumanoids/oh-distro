@@ -1,4 +1,4 @@
-classdef KeyframePlanCache
+classdef KeyframePlanCache < handle
     properties
         num_breaks
         time_2_index_scale

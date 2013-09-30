@@ -128,10 +128,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             qsc = qsc.setActive(false);
             qsc = qsc.setShrinkFactor(0.85);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
-            joint_constraint = PostureConstraint(obj.r);
+            %joint_constraint = PostureConstraint(obj.r);
             constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],rfoot_pose(1:3),pelvis_pose(1:3)),...
                 WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}];
-            [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},joint_constraint,qsc,ikoptions);
+            [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,qsc,ikoptions);
             if(snopt_info > 10)
                 warning('The IK sequence fails');
                 send_msg = sprintf('snopt_info == %d.  IK failed to adjust first pose.\n %s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
@@ -467,7 +467,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             end
             qsc = qsc.setShrinkFactor(0.9);
             iktraj_options = iktraj_options.setMajorIterationsLimit(400);
-            joint_constraint = PostureConstraint(obj.r);
+            
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
             q_seed = q_seed(:,2:end);
@@ -480,7 +480,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
               lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
               rfoot_constraint_cell{:},head_constraint_cell{:},...
-              joint_constraint,qsc,iktraj_options);
+              obj.joint_constraint,qsc,iktraj_options);
             if(snopt_info > 10)
               warning('The IK traj fails');
               send_msg = sprintf('snopt_info == %d. The IKtraj fails.',snopt_info);
@@ -494,9 +494,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             x_breaks = xtraj.eval(iktraj_tbreaks);
             q_breaks = x_breaks(1:obj.r.getNumDOF,:);
             
-            res = 0.15; % 20cm res            
+                     
             %s_total = Tmax_ee*obj.plan_cache.v_desired;
-            %s = linspace(0,1,max(ceil(s_total/res)+1,15)); % Must have two points atleast 
+            %s = linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,15)); % Must have two points atleast 
             
             grasp_transition_breaks = obj.plan_cache.grasp_transition_breaks;
             s = obj.plan_cache.s;

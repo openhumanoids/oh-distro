@@ -111,12 +111,19 @@ classdef EndPosePlanner < KeyframePlanner
             [nan(2,size(l_foot_contact_pts,2));l_foot_contact_pos(3,:)])};
         rfoot_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_contact_pts,...
             [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)],...
-            [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)])};
+            [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)])};        
+        
+%         foot_origins =[[0;0;0] [0;0;0]]
+%         rel_feet_constraint ={RelativePositionConstraint(obj.r,foot_origins,...
+%             [repmat([-0.25;-0.25],1,size(foot_origins,2));zeros(1,size(foot_origins,2))],...
+%             [repmat([0.25;0.25],1,size(foot_origins,2));zeros(1,size(foot_origins,2))],...
+%             obj.l_foot_body, obj.r_foot_body)};
+
         qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
         %head_constraint = [head_constraint,{WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7),1e-4)}];
-%         pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,1e-2,[-inf inf]);
+%       pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,1e-2,[-inf inf]);
         pelvis_constraint = {};
-%         utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
+%        utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
 
 
         ind=find(Indices==timeIndices(1));
@@ -132,11 +139,9 @@ classdef EndPosePlanner < KeyframePlanner
             lhandT(1:3) = T_world_hand_l(1:3,4);
             lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
             l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-            lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-4,1e-4,[k/N,k/N]);
-
+            tspan = [Indices(ind(k)) Indices(ind(k))];
+            lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-4,1e-4,tspan);
             obj.plan_cache.lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell lhand_constraint];
-
-              %q_guess(1:3) = l_hand_pose(1:3);
           elseif(strcmp('right_palm',ee_names{ind(k)}))
             r_ee_goal = ee_loci(:,ind(k));
             rhandT = zeros(6,1);
@@ -145,25 +150,19 @@ classdef EndPosePlanner < KeyframePlanner
             rhandT(1:3) = T_world_hand_r(1:3,4);
             rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
             r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
-            rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,1e-4,[k/N,k/N]);
-
+            tspan = [Indices(ind(k)) Indices(ind(k))];
+            rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,1e-4,tspan);
             obj.plan_cache.rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell rhand_constraint];
-
           elseif (strcmp('l_foot',ee_names{ind(k)}))
             lfootT = ee_loci(:,ind(k));
-            %l_foot_pose = [lfootT(1:3); rpy2quat(lfootT(4:6))];
-            %lfoot_const.min = l_foot_pose-1e-6*[ones(3,1);ones(4,1)];
-            %lfoot_const.max = l_foot_pose+1e-6*[ones(3,1);ones(4,1)];
-            l_foot_pose = lfootT(1:3);
-            % Ask Sisir why there is no orientation constraint
-            lfoot_constraint = parse2PosQuat(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose,1e-6,1e-6,[-inf,inf]);
+            l_foot_pose = [lfootT(1:3); rpy2quat(lfootT(4:6))];            
+            tspan = [Indices(ind(k)) Indices(ind(k))];
+            lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_pose,1e-6,1e-6,tspan);
           elseif(strcmp('r_foot',ee_names{ind(k)}))
             rfootT = ee_loci(:,ind(k));
-            %r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];
-            %rfoot_const.min = r_foot_pose-1e-6*[ones(3,1);ones(4,1)];
-            %rfoot_const.max = r_foot_pose+1e-6*[ones(3,1);ones(4,1)];
-            r_foot_pose = rfootT(1:3);
-            rfoot_constraint = parse2PosQuat(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose,1e-6,1e-6,[-inf,inf]);
+            r_foot_pose = [rfootT(1:3); rpy2quat(rfootT(4:6))];   
+            tspan = [Indices(ind(k)) Indices(ind(k))];
+            rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_pose,1e-6,1e-6,tspan);
           else
             disp('currently only feet/hands and pelvis are allowed');
           end
@@ -176,8 +175,6 @@ classdef EndPosePlanner < KeyframePlanner
 
         ikoptions = ikoptions.setQ( diag(cost(1:getNumDOF(obj.r))));
 
-        joint_constraint = PostureConstraint(obj.r);
-        %nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_comfortable_right_arm_manip.mat'));
         nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         qstar = nomdata.xstar(1:obj.r.getNumDOF());
         ik_qnom = qstar;
@@ -189,32 +186,23 @@ classdef EndPosePlanner < KeyframePlanner
           nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_two_hands_reaching.mat'));
           qstar = nomdata.xstar(1:obj.r.getNumDOF());
           ik_qnom = qstar;
-          rhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose(1:3)-0.03,r_hand_pose(1:3)+0.03)};
-          if(all(~isnan(r_hand_pose(4:7))))
-            rhand_constraint = [rhand_constraint,{WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose(4:7),1e-1)}];
-          end
-          lhand_const = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose(1:3)-0.03,l_hand_pose(1:3)+0.03)};
-          if(all(~isnan(l_hand_pose(4:7))))
-            lhand_const = [lhand_const,{WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose(4:7),1e-1)}];
-          end
+          tspan = [Indices(ind(k)) Indices(ind(k))];
+          rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,sind(2).^2,tspan);
+          %rhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose(1:3)-0.01,r_hand_pose(1:3)+0.01)};
+          %if(all(~isnan(r_hand_pose(4:7))))
+          %  rhand_constraint = [rhand_constraint,{WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose(4:7),1e-2)}];
+          %end
+          lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-4,sind(2).^2,tspan);
+          %lhand_constraint = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose(1:3)-0.01,l_hand_pose(1:3)+0.01)};
+          %if(all(~isnan(l_hand_pose(4:7))))
+          %  lhand_constraint = [lhand_constraint,{WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose(4:7),1e-2)}];
+          %end
           qsc = qsc.setShrinkFactor(0.95);
           cost = diag(obj.getCostVector3());
           cost = cost(1:obj.r.getNumDOF(),1:obj.r.getNumDOF());
           ikoptions = ikoptions.setQ(cost);
           coords = obj.r.getStateFrame.coordinates;
           coords = coords(1:obj.r.getNumDOF);
-          back_bky_ind =  find(strcmp(coords,'back_bky'));
-          r_arm_usy_ind = find(strcmp(coords,'r_arm_usy'));
-          l_arm_usy_ind = find(strcmp(coords,'l_arm_usy'));
-          r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
-          l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
-          joint_constraint = joint_constraint.setJointLimits([back_bky_ind;r_arm_usy_ind;l_arm_usy_ind;r_leg_kny_ind;l_leg_kny_ind],...
-            [-0.3;-inf;-inf;0.2;0.2],[0.3;0;0;inf;inf]);
-          [joint_min,joint_max] = joint_constraint.bounds([]);
-          coords = obj.r.getStateFrame.coordinates();
-          coords = coords(1:obj.r.getNumDOF());
-          arm_joint_ind = find(~cellfun(@isempty,strfind(coords,'arm')));
-          joint_constraint = joint_constraint.setJointLimits(arm_joint_ind,0.9*joint_min(arm_joint_ind),0.9*joint_max(arm_joint_ind));
           NSamples = 20;
           yaw_samples_bnd = 60;
         end
@@ -232,38 +220,27 @@ classdef EndPosePlanner < KeyframePlanner
           cost = diag(obj.getCostVector2());
           cost = cost(1:obj.r.getNumDOF(),1:obj.r.getNumDOF());
           ikoptions = ikoptions.setQ(cost);
-          coords = obj.r.getStateFrame.coordinates;
-          coords = coords(1:obj.r.getNumDOF);
-          joint_ind = (1:obj.r.getNumDOF)';
-          back_bky_ind = joint_ind(strcmp(coords,'back_bky'));
-          r_leg_kny_ind = joint_ind(strcmp(coords,'r_leg_kny'));
-          l_leg_kny_ind = joint_ind(strcmp(coords,'l_leg_kny'));
-          joint_constraint = joint_constraint.setJointLimits([back_bky_ind;r_leg_kny_ind;l_leg_kny_ind],...
-            [-0.3;0.2;0.2],[0.3;inf;inf]);
-          %obj.pelvis_body,[0;0;0],pelvis_const,...
-          %   obj.head_body,[0;0;0],head_pose0_relaxed,...
-          %   obj.utorso_body,[0;0;0],utorso_pose0_relaxed,...
 
           if(obj.isBDIManipMode()) % replace feet with pelvis in BDI Manip Mode                   
 
             if(~isempty(head_constraint))
               [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                 pelvis_constraint{:},rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             else
               [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                 pelvis_constraint{:},rhand_constraint{:},lhand_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             end                   
           else
             if(~isempty(head_constraint))
               [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                 rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             else
               [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                 rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},...
-                joint_constraint,qsc,ikoptions);
+                obj.joint_constraint,qsc,ikoptions);
             end
           end
 
