@@ -298,7 +298,7 @@ int App::repaint (int64_t now){
   wmove(w, 10, 0);
   wprintw(w, "state utime %lld", state_utime_);
   wmove(w, 11, 0);
-  wprintw(w, "Plan from Robot State: %d",  (int)plan_from_robot_state_);
+  wprintw(w, "[m]ode: %d (use EST_ROBOT_STATE or last plan)",  (int)plan_from_robot_state_);
 
   color_set(COLOR_TITLE, NULL);
   
