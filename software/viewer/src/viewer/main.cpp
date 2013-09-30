@@ -176,6 +176,11 @@ static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
   start_spy_counter++;
 }
 
+
+
+
+
+
 int current_active_posture_preset=0;
 static void on_posture_presets_combo_box_changed(GtkWidget* cb, void *user_data)
 {
@@ -212,53 +217,53 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
         drc_robot_posture_preset_t_publish(lcm, "COMMITTED_POSTURE_PRESET", &msg);
         break;
       case 4:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_DWN;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;   
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_DWN;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;   
       case 5:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_UP;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break; 
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_HNDS_UP;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;
       case 6:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LFTHND_DWN;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;
+      case 7:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_DWN;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;
+      case 8:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LFTHND_INHEADVIEW;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;
+      case 9:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_INHEADVIEW;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
+        break;       
+   /* case 10:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_DWN;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break; 
-      case 7:
+      case 11:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_UP;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                          
-      case 8:
+      case 12:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_PROJECTILE;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                          
-      case 9:
+      case 13:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_CROUCHING_HNDS_DWN;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;      
-      case 10:
+      case 14:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_RGTHND_REACH;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;
-      case 11:
+      case 15:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_STANDING_BDI_FP;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
        break;                               
-      case 12:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LFTHND_DWN;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;
-      case 13:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_DWN;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;
-      case 14:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LFTHND_INHEADVIEW;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;
-      case 15:
-       msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_INHEADVIEW;
-       drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;
       case 16:
         msg.preset = DRC_ROBOT_POSTURE_PRESET_T_PRE_INGRESS;
         drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
@@ -266,7 +271,7 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
       case 17:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_LEFT_HAND_EXTENDED;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
-       break;
+       break; */
       default:
        std::cout << "Unknown preset. Not found in lcmtype";
        break;
@@ -359,18 +364,6 @@ int main(int argc, char *argv[])
 
   BotFrames* bot_frames = bot_frames_new(lcm, bot_param);
   BotViewer* viewer = bot_viewer_new(viewer_title.c_str());
-  
-  // uncomment after sachi or matt commit new changes to libbot.
-  /*BotViewHandlerParams *viewparams = 
-        (BotViewHandlerParams*) calloc(1, sizeof(BotViewHandlerParams));
-  viewparams->eye_min_dist=0.1;
-  viewparams->eye_max_dist=150; 
-  viewparams->eye_zoom_inc=(150 - 0.1) / 100; 
-  viewparams->min_motion_mag=0.0001;
-  viewparams->max_motion_mag=2.0;
-  viewparams->pan_jacobian_det_threshold = 25;    
-  bot_viewer_set_default_view_handler_params(viewer,viewparams);*/
-  
 
   //die cleanly for control-c etc :-)
   bot_gtk_quit_on_interrupt();
@@ -483,24 +476,26 @@ int main(int argc, char *argv[])
   GtkWidget * hbox = gtk_hbox_new (FALSE, 5);
   GtkWidget* vseparator = gtk_vseparator_new ();
   GtkWidget* posture_presets_combo_box=gtk_combo_box_new_text();
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_LHndFix" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_RHndFix" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current_BothHndFix" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsDn" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndHndsUp" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsDn" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsUp" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Projectile" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "CrouchHndsDn" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndRHndReach" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndBDIFP" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "LHnd_Dwn" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "RHnd_Dwn" );
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "LHnd_InHeadView");
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "RHnd_InHeadView");
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Pre_Ingress");
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Left_arm_extended");
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Current" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Left" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Right" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Both" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Both Down" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Both Up" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Left Down" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Right Down" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Left In Camera");
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Right In Camera");
+  /* Disabled, not safe on real robot
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsDn" );//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsUp" );//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Projectile" );//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "CrouchHndsDn" ); //
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndRHndReach" );//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "StndBDIFP" );//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Pre_Ingress");//
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Left_arm_extended");//
+  */
   gtk_combo_box_set_active(GTK_COMBO_BOX( posture_presets_combo_box ),(gint) 0);
   gtk_combo_box_set_wrap_width( GTK_COMBO_BOX(posture_presets_combo_box), (gint) 1) ;
   g_signal_connect( G_OBJECT( posture_presets_combo_box ), "changed", G_CALLBACK(on_posture_presets_combo_box_changed ), viewer);
