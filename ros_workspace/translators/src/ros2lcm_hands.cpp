@@ -283,7 +283,7 @@ void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
   publishSandiaCalibTactile(utime,false);
 
   // Publish Raw Palm Signals
-  publishSandiaRawPalm(utime, true, msg);
+  publishSandiaRawPalm(utime, false, msg);
 }
 
 //----------------------------------------------------------------------------
@@ -474,7 +474,7 @@ void App::publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, c
 
 
   char pubname[256];
-  sprintf(pubname, "SANDIA_%s_RAW_FINGER%d_STATE", is_left?"LEFT":"RIGHT", finger_id);
+  sprintf(pubname, "SANDIA_%s_RAW_FINGER%d_STATE", (is_left?"LEFT":"RIGHT"), finger_id);
   lcm_publish_.publish(pubname, &msg_out);
 }
 
