@@ -118,7 +118,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60013,"Grasp Feasibility" ,1,1, 60012,0, { 0.0, 1.0, 0.0} ));
   //
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60014,"Standing Position",4,1) ); // 4 is pose3d
-      
 
   l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",
   "left_f1_j0","left_f1_j1","left_f1_j2",
@@ -140,7 +139,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
                        //0,0.7,0.7,  -0.15,0.68,0.47};  
                        
   eeloci_plan_outstanding_ = false;
-                       
 }
 
 void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
@@ -179,26 +177,30 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 }
 
 
+// Draw the standing position for the valve task:
 void Pass::sendStandingPosition(){ 
-      int counter = 0;
+  // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
+  Eigen::Quaterniond q1=  euler_to_quat( aff_.origin_rpy[0] ,  aff_.origin_rpy[1] , aff_.origin_rpy[2]  ); 
+  Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
+  q1= q1*q2;  
+  double look_rpy[3];
+  quat_to_euler ( q1, look_rpy[0], look_rpy[1], look_rpy[2] );
+  ///////////////////////////////////////
 
+  int counter = 0;
+  std::vector<Isometry3dTime>  feet_positionsT;
 
-      std::vector<Isometry3dTime>  feet_positionsT;
+  for (int front_side=0; front_side < 2; front_side++){ // was zero
+    Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
+    valve_pose.translation()  << aff_.origin_xyz[0], aff_.origin_xyz[1], ground_height_;
+    if (front_side){
+      valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] )  ) );
+    }else{
+      valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] + M_PI )  ) );
+    }
+    feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose) );
 
-      for (int front_side=0; front_side < 2; front_side++){
-      
-      Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
-      valve_pose.translation()  << aff_.origin_xyz[0], aff_.origin_xyz[1], ground_height_;
-      if (front_side){
-        valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  aff_.origin_rpy[2] - 90*M_PI/180 )  ) );
-      }else{
-        valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  aff_.origin_rpy[2] + 90*M_PI/180 )  ) );
-      }
-      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose) );
-
-
-      for (int left_reach =0 ; left_reach<2 ; left_reach++){
-
+    for (int left_reach =0 ; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
       if (left_reach){
         valve2com.translation()  << -0.45, 0.28, 0;
@@ -216,11 +218,10 @@ void Pass::sendStandingPosition(){
       com2right.translation()  << 0.0, -0.13, 0;
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2right) );
 
+    }
+  }
 
-      }
-      }
-
-      pc_vis_->pose_collection_to_lcm_from_list(60014, feet_positionsT); 
+  pc_vis_->pose_collection_to_lcm_from_list(60014, feet_positionsT); 
 }
 
 
@@ -230,6 +231,8 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
   if (msg->naffs > 0){
     aff_ = msg->affs_plus[0].aff;
     aff_ready_ = true;
+
+
 
     bool send_standing_position_ =true;
     if (send_standing_position_){

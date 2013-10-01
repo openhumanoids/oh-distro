@@ -31,9 +31,7 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc_lcmtypes.hpp"
-
 #include <bot_core/bot_core.h>
-//#include <lcmtypes/drc_lcmtypes.h>
 
 #include "urdf/model.h"
 #include "kdl/tree.hpp"
@@ -52,13 +50,6 @@
 
 using namespace std;
 
-bool left_hand = false;
-vector<double>  original_translation = { 0.2350, 0.2777, 0.2033};
-vector <double> original_rpy ={ 0,0,0 };
-
-//pointcloud_vis* pc_vis_;
-
-
 class App{
   public:
     App(boost::shared_ptr<lcm::LCM> &lcm_);
@@ -66,23 +57,19 @@ class App{
     ~App(){
     }
     
-    void publish_hand_wheel();
+    void publish_palm_goal();
     void publish_reset();
 
-    
-     bool on_input();
-     bool on_timer();
-//    gboolean on_input (GIOChannel * source, GIOCondition cond, gpointer data);
-    //gboolean on_timer ();
+    bool on_input();
+    bool on_timer();
     int repaint (int64_t now);
     
     boost::shared_ptr<lcm::LCM> lcm_;
-  guint timer_id;
+    guint timer_id;
     WINDOW *w;
     GMainLoop * mainloop;
     
   private:
-
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_state_t* msg);    
     void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -91,37 +78,35 @@ class App{
     void solveFK(drc::robot_state_t state);
     
     vector<double> trans_;
-    vector<double> rpy_; // in degrees
+    vector<double> rpy_;
     
-    
-    bool init_;
-      int last_input_;
+    int last_input_;
 
-    int counter_;
-    int64_t state_utime_;
-  int width, height;    
     Eigen::Isometry3d world_to_body_;
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
     map<string, KDL::Frame > cartpos_;
 
-   drc::robot_state_t rstate_;
-   drc::robot_state_t planstate_;
+    drc::robot_state_t rstate_;
+    drc::robot_state_t planstate_;
 
-   bool cartpos_ready_;
-   bool plan_from_robot_state_;
-   bool planstate_init_;
-   bool rstate_init_;
+    bool planstate_init_;
+    bool rstate_init_;
+    bool cartpos_ready_;
+    bool plan_from_robot_state_;
+    bool use_left_hand_;
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
    lcm_(lcm_){
      
-     planstate_init_ =false;
-rstate_init_ = false;
+  planstate_init_ =false;
+  rstate_init_ = false;
   cartpos_ready_ = false;
-      
+  plan_from_robot_state_ = true;
+  use_left_hand_ = true;
+  
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
@@ -130,19 +115,13 @@ rstate_init_ = false;
   }
   fksolver_ = new KDL::TreeFkSolverPosFull_recursive(tree);     
   
-    mainloop = g_main_loop_new (NULL, FALSE);
+  mainloop = g_main_loop_new (NULL, FALSE);
      
   lcm_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);
   lcm_->subscribe("CANDIDATE_MANIP_PLAN",&App::manipPlanHandler,this);
     
-    
-   trans_ = original_translation;//{0.0, 0.0, 0.0};    
-   rpy_ =  original_rpy;//{0,0,0};
-     
-  init_ = false;
-  counter_=0;
-  
-  plan_from_robot_state_ = true;
+  trans_ = {0.0, 0.0, 0.0};    
+  rpy_ =  {0,0,0};
 }
 
 
@@ -185,13 +164,12 @@ void App::solveFK(drc::robot_state_t state){
   }
   
   cartpos_ready_=true;  
-  
 }
 
 
 
 
-void App::publish_hand_wheel(){//void *user_data){
+void App::publish_palm_goal(){
 
   drc::ee_goal_t msg;
   msg.utime = bot_timestamp_now();
@@ -205,20 +183,15 @@ void App::publish_hand_wheel(){//void *user_data){
   msg.ee_goal_pos.rotation.x = q.x();
   msg.ee_goal_pos.rotation.y = q.y();
   msg.ee_goal_pos.rotation.z = q.z();
-
-  //drc_twist_t twist;
-  //msg.ee_goal_twist =twist;	
-
   msg.num_chain_joints = 0;
 
-  if (!left_hand){
+  if (!use_left_hand_){
     lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
     lcm_->publish("RIGHT_PALM_GOAL", &msg);
   }else {
     lcm_->publish("LEFT_PALM_GOAL", &msg);
     lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
   }
-
 }
 
 Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
@@ -232,8 +205,7 @@ Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
 }
 
 
-void App::publish_reset(){//void *user_data){
-  
+void App::publish_reset(){
   if (plan_from_robot_state_){
     if(rstate_init_){
       solveFK(rstate_);
@@ -249,31 +221,23 @@ void App::publish_reset(){//void *user_data){
   }
   
   std::string palm_link = "right_palm";
-  if (left_hand){
+  if (use_left_hand_){
     palm_link = "left_palm";
   }
   Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( palm_link )->second);
   Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
-  
   trans_[0] = world_to_palm.translation().x();
   trans_[1] = world_to_palm.translation().y();
   trans_[2] = world_to_palm.translation().z();
-  
   quat_to_euler(  Eigen::Quaterniond(world_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
-  
-  publish_hand_wheel();
-
-
+  publish_palm_goal();
 }
 
 
 
 
 int App::repaint (int64_t now){
-
   clear();
-  
-  getmaxyx(w, height, width);
   color_set(COLOR_PLAIN, NULL);
   
   //update:
@@ -285,9 +249,8 @@ int App::repaint (int64_t now){
   wmove(w, 2, 0);
   wprintw(w, "q      a: move ud | p;  pitch");
   wmove(w, 3, 0);
-  wprintw(w, "spacebar: reset");
+  wprintw(w, "spacebar: reset pose");
 
-  
   wmove(w, 6, 0);
   wprintw(w, "trans: %.4f %.4f %.4f",trans_[0] ,trans_[1] ,trans_[2]);
   wmove(w, 7, 0);
@@ -295,10 +258,10 @@ int App::repaint (int64_t now){
   wmove(w, 8, 0);
   wprintw(w, "last %d", last_input_);
   
-  wmove(w, 10, 0);
-  wprintw(w, "state utime %lld", state_utime_);
   wmove(w, 11, 0);
-  wprintw(w, "[m]ode: %d (use EST_ROBOT_STATE or last plan)",  (int)plan_from_robot_state_);
+  wprintw(w, "[m] Operation mode: %d (use EST_ROBOT_STATE, else last plan)",  (int)plan_from_robot_state_);
+  wmove(w, 12, 0);
+  wprintw(w, "[n]  Use left hand: %d (otherwise right hand)",  (int) use_left_hand_);
 
   color_set(COLOR_TITLE, NULL);
   
@@ -307,10 +270,8 @@ int App::repaint (int64_t now){
 }
 
 
-gboolean on_input (GIOChannel * source, GIOCondition cond, gpointer data)
-{
-  App* s = (App*) (data);
-  
+gboolean on_input (GIOChannel * source, GIOCondition cond, gpointer data){
+  App* s = (App*) (data);  
   return s->on_input();
 }
   
@@ -325,8 +286,6 @@ bool App::on_input(){
   wmove(w, 5, 0);
   wprintw(w,"%i  ",c);
 
-  
-  
   last_input_ = c;
 
   // 65 up, 66 down,
@@ -337,61 +296,64 @@ bool App::on_input(){
       break;
     case 65: // up arrow:
       trans_[0] += delta_trans[0] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 66: // down arrow:
       trans_[0] -= delta_trans[0] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 68: // left arrow:
       trans_[1] += delta_trans[1] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 67: // right arrow:
       trans_[1] -= delta_trans[1] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'a': // a
       trans_[2] -= delta_trans[2] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'q': // q
       trans_[2] += delta_trans[2] ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     ////////////////////////////
     case 'r': // roll
       rpy_[0] += delta_rpy[0]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'f': // roll
       rpy_[0] -= delta_rpy[0]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'p': // pitch
       rpy_[1] += delta_rpy[1]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 59: // pitch
       rpy_[1] -= delta_rpy[1]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'y': // yaw
       rpy_[2] += delta_rpy[2]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'h': // roll
       rpy_[2] -= delta_rpy[2]*M_PI/180 ;
-      publish_hand_wheel();
+      publish_palm_goal();
       break;
     case 'm': // switch modes: hand and end of plan
       plan_from_robot_state_= !plan_from_robot_state_;
       break;
+    case 'n': // switch modes: hand and end of plan
+      use_left_hand_= !use_left_hand_;
+      publish_reset();
+      break;
   }
 
-    
-    repaint ( now);	
-    return TRUE;
+  repaint ( now);	
+  return TRUE;
 }
 
 gboolean on_timer (void * data)
@@ -407,42 +369,13 @@ bool App::on_timer(){
 }
 
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
 
-  ConciseArgs opt(argc, (char**)argv);
-  opt.add(left_hand, "l", "left_hand","Use Light Hand");
-  opt.parse();
-  
-  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
     return 1;  
-  
+
   App app(lcm);  
-  
-  
-
-//  state_t* state = new state_t();
- // state->lcm= lcm_create(NULL);
-  
-  //pc_vis_ = new pointcloud_vis( state->lcm );
-  // obj: id name type reset
-//   //pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );  
-  
-  if (!left_hand){
-    original_translation[2] = -original_translation[2];
-  }
-
- // memcpy (state->trans, original_translation, 3*sizeof(double) );
- // memcpy (state->rpy, original_rpy, 3*sizeof(double) );
-
- // state->mainloop = g_main_loop_new (NULL, FALSE);
-  
-  
-//  drc_robot_state_t_subscription_t * sub =  drc_robot_state_t_subscribe(state->lcm, "EST_ROBOT_STATE", 
-  //                                                                           on_robot_state, state);
-  
   
   bot_glib_mainloop_attach_lcm (app .lcm_->getUnderlyingLCM() );
   bot_signal_pipe_glib_quit_on_kill (app.mainloop);
@@ -450,7 +383,6 @@ int main(int argc, char *argv[])
   // Watch stdin 
   GIOChannel * channel = g_io_channel_unix_new (0);
   g_io_add_watch (channel, G_IO_IN, on_input,&app);
-
   app.timer_id = g_timeout_add (25, on_timer, &app);
 
   app.w = initscr();
@@ -470,9 +402,4 @@ int main(int argc, char *argv[])
   bot_glib_mainloop_detach_lcm (app.lcm_->getUnderlyingLCM());
   g_main_loop_unref (app.mainloop);
   app.mainloop = NULL;
-  //globals_release_lcm (s->lc);
-  
-//  free (state);
-  
-
 }
