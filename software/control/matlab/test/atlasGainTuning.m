@@ -53,7 +53,7 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_kny';% <---- 
+joint = 'r_leg_hpz';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
@@ -81,7 +81,7 @@ if strcmp( signal, 'chirp' )
   freq = linspace(0.025,0.4,800);% <----  cycles per second
 else
   vals = 10*[0 0 1 0 0];% <----  Nm or radians
-  ts = linspace(0,60,length(vals));% <----
+  ts = linspace(0,30,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,35 +201,43 @@ if strcmp(joint,'l_leg_hpy')
   
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
-  qdes(joint_index_map.r_leg_hpx) = -0.25;
+%   qdes(joint_index_map.r_leg_hpx) = -0.25;
 
 elseif strcmp(joint,'r_leg_hpy') 
 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
-  qdes(joint_index_map.l_leg_hpx) = 0.25;
+%   qdes(joint_index_map.l_leg_hpx) = 0.25;
 
 elseif strcmp(joint,'l_leg_hpz') 
 
-  qdes(joint_index_map.r_arm_shx) = 1.0;
-  qdes(joint_index_map.l_arm_shx) = -1.0;
-  qdes(joint_index_map.r_leg_hpx) = -0.4;
-  qdes(joint_index_map.l_leg_kny) = 1.57;
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
+%   qdes(joint_index_map.r_arm_shx) = 1.0;
+%   qdes(joint_index_map.l_arm_shx) = -1.0;
+%   qdes(joint_index_map.r_leg_hpx) = -0.4;
+%   qdes(joint_index_map.l_leg_kny) = 1.57;
 
 elseif strcmp(joint,'r_leg_hpz') 
 
-  qdes(joint_index_map.r_arm_shx) = 1.0;
-  qdes(joint_index_map.l_arm_shx) = -1.0;
-  qdes(joint_index_map.l_leg_hpx) = 0.4;
-  qdes(joint_index_map.r_leg_kny) = 1.57;
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
+%   qdes(joint_index_map.r_arm_shx) = 1.0;
+%   qdes(joint_index_map.l_arm_shx) = -1.0;
+%   qdes(joint_index_map.l_leg_hpx) = 0.4;
+%   qdes(joint_index_map.r_leg_kny) = 1.57;
 
 elseif strcmp(joint,'l_leg_hpx') 
 
-  qdes(joint_index_map.r_leg_hpx) = -0.5;
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
+%   qdes(joint_index_map.r_leg_hpx) = -0.5;
 
 elseif strcmp(joint,'r_leg_hpx') 
 
-  qdes(joint_index_map.l_leg_hpx) = 0.5;
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
+%   qdes(joint_index_map.l_leg_hpx) = 0.5;
 
 elseif strcmp(joint,'r_leg_kny') 
 
@@ -289,7 +297,7 @@ qdes(joint_index_map.(joint)) = joint_offset_map.(joint);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
 disp('Ready to send input signal.');
-% keyboard;
+%keyboard;
 
 % set gains to user specified values
 gains.ff_const(act_idx==joint_index_map.(joint)) = ff_const;
