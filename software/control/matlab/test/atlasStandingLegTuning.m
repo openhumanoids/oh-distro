@@ -25,17 +25,17 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpy';% <---- 
+joint = 'l_leg_hpx';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
-  zero_crossing = false;
+  zero_crossing = true;
   ts = linspace(0,40,500);% <----
-  amp = -0.1;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.1,500);% <----  cycles per second
+  amp = 0.05;% <---- meters, COM DELTA
+  freq = linspace(0.025,0.125,500);% <----  cycles per second
 else
   vals = 0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
@@ -199,6 +199,16 @@ qp_active_set = [];
 float_idx = 1:6;
 act_idx = 7:nq;
 
+nc=8; nd=4;
+nf = nc*nd; % number of contact force variables
+nparams = nq+nf;
+Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
+Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
+
+lb = [-1e3*ones(nq,1); zeros(nf,1)]; % qddot/contact forces
+ub = [ 1e3*ones(nq,1); 500*ones(nf,1)];
+
+xy_offset = [0;0];
 udes = zeros(nu,1);
 toffset = -1;
 tt=-1;
@@ -208,6 +218,7 @@ while tt<T
     if toffset==-1
       toffset=t;
       tlast=0;
+      xy_offset = x(1:2); % because state estimate will not be 0,0 to start
     end
     tt=t-toffset;
     dt = tt-tlast;
@@ -226,14 +237,17 @@ while tt<T
     P = (eye(2*nq) - K*Hk)*Pprior;
     
     q = x_est(1:nq);
+    q(1:2) = q(1:2)-xy_offset;
     qd = x_est(nq+(1:nq));
     
     % get desired configuration
     qt = qtraj.eval(tt);
     qdes = qt(act_idx_map);
 
+    qt(6) = q(6); % ignore yaw
+    
     % get desired acceleration
-    qdddes = qddtraj.eval(tt) + 20.0*(qt-q);
+    qdddes = qddtraj.eval(tt) + 20.0*(qt-q) - 0.5*qd;
     
     % solve QP to compute inputs 
     kinsol = doKinematics(r,q);
@@ -246,20 +260,11 @@ while tt<T
     C_act = C(act_idx);
     B_act = B(act_idx,:);
     
-    [phi,~,JB] = contactConstraintsBV(r,kinsol);
+    [~,~,JB] = contactConstraintsBV(r,kinsol);
     Dbar = [JB{:}];
     Dbar_float = Dbar(float_idx,:);
     Dbar_act = Dbar(act_idx,:);
-
-    nc=8; nd=4;
-    nf = nc*nd; % number of contact force variables
-    nparams = nq+nf;
-    Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-    Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
-
-    lb = [-1e3*ones(nq,1); zeros(nf,1)]; % qddot/contact forces
-    ub = [ 1e3*ones(nq,1); 500*ones(nf,1)];
-      
+     
     % constrained dynamics
     Aeq = H_float*Iqdd - Dbar_float*Ibeta;
     beq = -C_float;
@@ -276,7 +281,16 @@ while tt<T
     Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq)+ eye(nq);
     fqp = -qdddes'*Iqdd;
     
-    if 0
+    IR = eye(nparams);  
+    lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+    Ain_fqp = full([-IR(lbind,:); IR(ubind,:)]);
+    bin_fqp = [-lb(lbind); ub(ubind)];
+    QblkDiag = Hqp;
+    Aeq_fqp = full(Aeq);
+    % NOTE: model.obj is 2* f for fastQP!!!
+    [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,qp_active_set);
+
+    if info_fqp < 0
       model.Q = sparse(Hqp);
       model.obj = 2*fqp;
       model.A = sparse(Aeq);
@@ -286,22 +300,13 @@ while tt<T
       model.ub = ub;
       result = gurobi(model,solver_options);
       alpha = result.x;
-    else  
-      IR = eye(nparams);  
-      lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
-      Ain_fqp = full([-IR(lbind,:); IR(ubind,:)]);
-      bin_fqp = [-lb(lbind); ub(ubind)];
-      QblkDiag = Hqp;
-      Aeq_fqp = full(Aeq);
-      % NOTE: model.obj is 2* f for fastQP!!!
-      [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,qp_active_set);
-      qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-    end     
+    end
     
+    qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
     qdd = alpha(1:nq);
     beta = alpha(nq+(1:nf));
-    u = B_act'*(H_act*qdd + C_act - Dbar_act*beta)
-    
+    u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
+    u(joint_input_index)
     udes(joint_input_index) = u(joint_input_index);
     
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');

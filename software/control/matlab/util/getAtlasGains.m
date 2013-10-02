@@ -35,8 +35,12 @@ ff_const.l_arm_mwx =  0.025; % 9-17-13, fc
 ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
 ff_const.r_leg_hpz =  0.0145; % 9-30-13, fc 
 ff_const.r_leg_hpy = -0.15; % 10-01-13, fc
-ff_const.r_leg_hpx =  0.0325; % 10-01-13, fc 
-ff_const.r_leg_kny =  0.0625; % 9-30-13, fc 
+ff_const.r_leg_hpx =  0.26; % 10-01-13, fc 
+ff_const.r_leg_kny =  0.055; % 10-02-13, fc 
+ff_const.r_leg_kny =  0.055; % 10-02-13, fc 
+ff_const.r_leg_akx =  0.0; % 10-02-13, fc 
+
+ff_const.l_leg_hpx = -0.15; % 10-01-13, fc 
 
 ff_qd.l_arm_usy = 0.3; % 9-19-13, fc
 ff_qd.r_arm_usy = 0.3; % 9-19-13, fc
@@ -50,10 +54,12 @@ ff_qd.l_arm_uwy = 0.22; % 9-19-13, fc
 ff_qd.r_arm_uwy = 0.22; % 9-18-13, fc
 ff_qd.l_arm_mwx = 0.225; % 9-19-13, fc 
 ff_qd.r_arm_mwx = 0.225; % 9-19-13, fc
-ff_qd.r_leg_hpz = 0.45; % 9-30-13, fc 
-ff_qd.r_leg_hpy = 1.0; % 9-30-13, fc
-ff_qd.r_leg_hpx = 1.1; % 9-30-13, fc 
-ff_qd.r_leg_kny = 1.0; % 9-30-13, fc 
+ff_qd.l_leg_hpx = 1.0;  
+ff_qd.r_leg_hpz = 0.4; 
+ff_qd.r_leg_hpy = 0.4; 
+ff_qd.r_leg_hpx = 1.0;  
+ff_qd.r_leg_kny = 0.4;  
+ff_qd.r_leg_akx = 1.0; % 10-02-13, fc  
 
 ff_f_d.l_arm_usy = 0.0; % 9-17-13
 ff_f_d.r_arm_usy = 0.0025; % 9-17-13
@@ -67,10 +73,11 @@ ff_f_d.l_arm_uwy = 0.005; % 9-17-13
 ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
 ff_f_d.l_arm_mwx = 0.0; % 9-17-13
 ff_f_d.r_arm_mwx = 0.01; % 9-17-13
-ff_f_d.r_leg_hpz = 0.0; % 10-02-13
-ff_f_d.r_leg_hpy = 0.0; % 10-02-13
-ff_f_d.r_leg_hpx = 0.0; % 10-02-13
-ff_f_d.r_leg_kny = 0.007; % 9-30-13
+ff_f_d.r_leg_hpz = 0.0;
+ff_f_d.r_leg_hpy = 0.0;
+ff_f_d.r_leg_hpx = 0.0;
+ff_f_d.r_leg_kny = 0.0;
+ff_f_d.r_leg_akx = 0.0;  
 
 k_f_p.back_bkz  = 0.012;
 k_f_p.back_bky  = 0.012;
@@ -88,18 +95,18 @@ k_f_p.r_arm_ely = 0.125; % 9-17-13
 k_f_p.r_arm_elx = 0.125; % 9-17-13
 k_f_p.r_arm_uwy = 0.085; % 9-17-13
 k_f_p.r_arm_mwx = 0.125; % 9-17-13
-k_f_p.l_leg_hpz = 0.012;
-k_f_p.l_leg_hpx = 0.012;
-k_f_p.l_leg_hpy = 0.012;
-k_f_p.l_leg_kny = 0.012;
+k_f_p.l_leg_hpz = 0.05; 
+k_f_p.l_leg_hpx = 0.0275; % 10-02-13
+k_f_p.l_leg_hpy = 0.025; 
+k_f_p.l_leg_kny = 0.025; 
 k_f_p.l_leg_aky = 0.05;
 k_f_p.l_leg_akx = 0.05;
-k_f_p.r_leg_hpz = 0.115; % 10-02-13
+k_f_p.r_leg_hpz = 0.05; % 10-02-13
 k_f_p.r_leg_hpy = 0.025; % 10-02-13
 k_f_p.r_leg_hpx = 0.025; % 10-02-13
-k_f_p.r_leg_kny = 0.025; % 9-30-13
+k_f_p.r_leg_kny = 0.025; % 10-02-13
 k_f_p.r_leg_aky = 0.05;
-k_f_p.r_leg_akx = 0.05;
+k_f_p.r_leg_akx = 1.75;
   
 
 
