@@ -202,7 +202,6 @@ classdef KeyframePlanner < handle
             l_foot_contact_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             l_foot_pts = [0;0;0]; 
             num_l_foot_pts = size(l_foot_pts,2);
-            
             lfoot_const1 = WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_pts,...
               l_foot_pose(1:3)-1e-6*ones(3,num_l_foot_pts),l_foot_pose(1:3)+1e-6*ones(3,num_l_foot_pts),tspan);
             lfoot_const2 = WorldQuatConstraint(obj.r,obj.l_foot_body,l_foot_pose(4:7,1),1e-6,tspan);
@@ -214,7 +213,6 @@ classdef KeyframePlanner < handle
             r_foot_contact_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
             r_foot_pts = [0;0;0]; 
             num_r_foot_pts = size(r_foot_pts,2);
-            
             rfoot_const1 = WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,...
               r_foot_pose(1:3)-1e-6*ones(3,num_r_foot_pts),r_foot_pose(1:3)+1e-6*ones(3,num_r_foot_pts),tspan);
             rfoot_const2 = WorldQuatConstraint(obj.r,obj.r_foot_body,r_foot_pose(4:7,1),1e-6,tspan);

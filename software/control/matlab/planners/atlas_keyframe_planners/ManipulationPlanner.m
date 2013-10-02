@@ -233,7 +233,7 @@ obj.plan_cache.isPointWiseIK= true;
                 lgraspT = zeros(6,1);
                 lgraspT(1:3) = T_world_grasp_l(1:3,4);
                 lgraspT(4:6) =rotmat2rpy(T_world_grasp_l(1:3,1:3));
-                l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];obj.cacheRHandPose([0 0],r_hand_pose0);
+                l_grasp_pose = [lgraspT(1:3); rpy2quat(lgraspT(4:6))];
                 lhand_constraint = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose(1:3),l_hand_pose(1:3)),...
                   WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose(4:7),0)};
                 if(is_manip_map)
@@ -241,7 +241,7 @@ obj.plan_cache.isPointWiseIK= true;
                   plan_Indices(i).aff_uid=Indices(ind(k)).aff_uid;
                   plan_Indices(i).num_ees=plan_Indices(i).num_ees+1;
                   plan_Indices(i).ee_name=[plan_Indices(i).ee_name;java.lang.String('l_hand')];
-                  plan_Indices(i).dof_name=[plan_Indices(i).dof_namr_ee_goale;Indices(ind(k)).dof_name(1)];
+                  plan_Indices(i).dof_name=[plan_Indices(i).dof_name;Indices(ind(k)).dof_name(1)];
                   plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
                   %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_hand_pose];
                   plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_grasp_pose];

@@ -49,5 +49,20 @@ classdef KeyframePlanCache < handle
             obj.grasp_transition_states = [];
 			      obj.s = [];
         end
+        
+        function clearCache(obj)
+            obj.lhand_constraint_cell = {}; % Plan Boundary Conditions
+            obj.rhand_constraint_cell = {};
+            obj.lfoot_constraint_cell = {};
+            obj.rfoot_constraint_cell = {};
+            obj.pelvis_constraint_cell = {};
+            obj.head_constraint_cell = {};
+            obj.s_breaks = [];
+            obj.qtraj = [];
+            obj.num_grasp_transitions = 0; % corresponds to grasp transitions.
+            obj.grasp_transition_breaks = [];
+            obj.grasp_transition_states = [];
+			obj.s = [];
+        end
     end
 end
