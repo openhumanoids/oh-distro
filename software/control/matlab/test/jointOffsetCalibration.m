@@ -47,8 +47,6 @@ body2_params = X(n_joints+body1_num_params+1:n_joints+body1_num_params+body2_num
 floating_states = reshape(X(n_joints+body1_num_params+body2_num_params+1:end),6,[]);
 residuals = FVAL;
 info = EXITFLAG;
-
-% [x,y] = f(randn(6+6*9+2*3,1));
 end
 
 function [f]=point_resids(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, body1_scale, body2_scale, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, q_offset, body1_params, body2_params, floating_states, body1_data, body2_data)
@@ -57,11 +55,6 @@ q(1:6,:) = floating_states;
 
 x_body1 = zeros(3,m1,N);
 x_body2 = zeros(3,m2,N);
-
-% J_body1 = zeros(3*m1,n,N);
-% J_body2 = zeros(3*m2,n,N);
-% T_body1 = zeros(3,3,N);
-% T_body2 = zeros(3,3,N);
 
 [pts_body1] = body1_marker_fun(body1_params);
 [pts_body2] = body2_marker_fun(body2_params);
@@ -72,44 +65,17 @@ for i=1:N,
   kinsol=p.doKinematics(q(:,i));
   [x_body1(:,:,i)] = p.forwardKin(kinsol,body1,pts_body1);
   [x_body2(:,:,i)] = p.forwardKin(kinsol,body2,pts_body2);
-  
-  % awkward hack to get out the T term
-%   T_body1(:,:,i) = p.forwardKin(kinsol,body1,eye(3)) - p.forwardKin(kinsol,body1,zeros(3));
-%   T_body2(:,:,i) = p.forwardKin(kinsol,body2,eye(3)) - p.forwardKin(kinsol,body2,zeros(3));
 end
 
 body1_err = sum(sum(sum((x_body1 - body1_data).*(x_body1 - body1_data))));
 body2_err = sum(sum(sum((x_body2 - body2_data).*(x_body2 - body2_data))));
 
 f = body1_scale*body1_err + body2_scale*body2_err;
-
-% variables: q_offset, body1_params, body2_params, floating_states
-
-% dfdqoffset = zeros(n_joints,1);
-% dfdbody1_params = zeros(body1_num_params, 1);
-% dfdbody2_params = zeros(body2_num_params, 1);
-% dfdfloating_states = zeros(6,N);
-% 
-% for i=1:N,
-%   for j=1:m1,
-%     dfdqoffset = dfdqoffset + 2*body1_scale*J_body1((1:3) + (j-1)*3,joint_indices,i)'*(x_body1(:,j,i) - body1_data(:,j,i));    
-%     dfdbody1_params = dfdbody1_params + 2*body1_scale*dpts_body1((1:3) + (j-1)*3,:)*T_body1(:,:,i)'*(x_body1(:,j,i) - body1_data(:,j,i));
-%   end
-%   
-%   for j=1:m2,
-%     dfdqoffset = dfdqoffset + 2*body2_scale*J_body2((1:3) + (j-1)*3,joint_indices,i)'*(x_body2(:,j,i) - body2_data(:,j,i));
-%     dfdbody2_params = dfdbody2_params + 2*body2_scale*(dpts_body2((1:3) + (j-1)*3,:)*T_body2(:,:,i))'*(x_body2(:,j,i) - body2_data(:,j,i));
-%   end
-% end
-% 
-% g = [dfdqoffset;dfdbody1_params;dfdbody2_params;dfdfloating_states(:)]';
-
-% g = scale * 
-
-% keyboard
 end
 
-function [f, g]=point_resids_with_grad(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, body1_scale, body2_scale, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, q_offset, body1_params, body2_params, floating_states, body1_data, body2_data)
+function [f, g]=point_resids_with_grad(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, ...
+    body1_scale, body2_scale, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, ...
+    q_offset, body1_params, body2_params, floating_states, body1_data, body2_data)
 q(joint_indices,:) = q(joint_indices,:) + repmat(q_offset,1,N);
 q(1:6,:) = floating_states;
 
@@ -124,8 +90,6 @@ T_body2 = zeros(3,3,N);
 [pts_body1, dpts_body1] = body1_marker_fun(body1_params);
 [pts_body2, dpts_body2] = body2_marker_fun(body2_params);
 
-
-
 for i=1:N,
   kinsol=p.doKinematics(q(:,i));
   [x_body1(:,:,i), J_body1(:,:,i)] = p.forwardKin(kinsol,body1,pts_body1);
@@ -135,6 +99,12 @@ for i=1:N,
   T_body1(:,:,i) = p.forwardKin(kinsol,body1,eye(3)) - p.forwardKin(kinsol,body1,zeros(3));
   T_body2(:,:,i) = p.forwardKin(kinsol,body2,eye(3)) - p.forwardKin(kinsol,body2,zeros(3));
 end
+
+% remove obscured markers from calculation (nan)
+% this will also zero out any gradient effects, since cost is purely quadratic
+% df/dy * (x_body - body_data);
+body1_data(isnan(body1_data)) = x_body1(isnan(body1_data));
+body2_data(isnan(body2_data)) = x_body2(isnan(body2_data));
 
 body1_err = sum(sum(sum((x_body1 - body1_data).*(x_body1 - body1_data))));
 body2_err = sum(sum(sum((x_body2 - body2_data).*(x_body2 - body2_data))));
@@ -165,18 +135,4 @@ for i=1:N,
 end
 
 g = [dfdqoffset;dfdbody1_params;dfdbody2_params;dfdfloating_states(:)]';
-
-% g = scale * 
-
-% keyboard
 end
-
-% function [x, dx]=body1_test_fun(params)
-%   x = [.1 0 -.1; 0 .15 0; -.1 .1 .2] + repmat(params,1,3);
-%   dx = repmat(eye(3),3,1);
-% end
-% 
-% function [x, dx]=body2_test_fun(params)
-%   x = -[.1 0 -.1 .2; 0 .15 0 .5; -.1 .1 .2 -.1] + repmat(params,1,4);
-%   dx = repmat(eye(3),4,1);
-% end
