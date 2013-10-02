@@ -15,5 +15,5 @@ struct raw_sandia_hand_t
   int32_t num_fingers;
   raw_sandia_hand_finger_t fingers[num_fingers];
   raw_sandia_hand_palm_t palm;
-  raw_sandia_mobo_t mobo;
+  raw_sandia_hand_mobo_t mobo;
 }
