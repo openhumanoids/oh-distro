@@ -74,6 +74,11 @@ onCommand(const lcm::ReceiveBuffer* iBuf,
   mBotWrapper->getLcm()->publish("SYSTEM_STATUS", &msg);
 }
 
+int FillMethods::
+getMapMode() const {
+  return mMapMode;
+}
+
 float FillMethods::
 computeMedian(const Eigen::VectorXf& iData) {
   int n = iData.size();
@@ -272,15 +277,19 @@ extractComponentsAndOutlines(const cv::Mat& iLabels, const int iNumLabels,
 
 void FillMethods::
 doFill(maps::DepthImageView::Ptr& iView) {
-  if (mMapMode == drc::map_controller_command_t::FULL_HEIGHTMAP) {
+  switch (mMapMode) {
+  case drc::map_controller_command_t::FULL_HEIGHTMAP:
+  case drc::map_controller_command_t::Z_NORMALS:
     fillUnderRobot(iView, FillMethods::MethodRansac);
     fillIterative(iView);
     //fillConnected(iView);
     //fprintf(stderr, "using full heightmap\n");
-  }
-  else {
+    break;
+  case drc::map_controller_command_t::FLAT_GROUND:
+  default:
     fillLevelPlaneFromFeet(iView);
     //fprintf(stderr, "using flat ground\n");
+    break;
   }
   if (mDebug) {
     drc::map_image_t msg;

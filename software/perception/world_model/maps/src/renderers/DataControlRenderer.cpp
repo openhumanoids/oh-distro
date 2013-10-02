@@ -342,9 +342,10 @@ public:
 
 
     mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
-    labels = {"Flat Ground", "Full Heights"};
+    labels = {"Flat Ground", "Full Heights", "Z Normals"};
     ids = {drc::map_controller_command_t::FLAT_GROUND,
-           drc::map_controller_command_t::FULL_HEIGHTMAP};
+           drc::map_controller_command_t::FULL_HEIGHTMAP,
+           drc::map_controller_command_t::Z_NORMALS};
     addCombo("Controller Height Mode", mControllerHeightMapMode,
              labels, ids, sensorControlBox);
     button = Gtk::manage(new Gtk::Button("Submit Height Mode"));

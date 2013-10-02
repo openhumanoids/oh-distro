@@ -34,6 +34,8 @@ public:
 public:
   FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper);
 
+  int getMapMode() const;
+
   float computeMedian(const Eigen::VectorXf& iData);
 
   Eigen::Vector3f fitHorizontalPlaneRobust

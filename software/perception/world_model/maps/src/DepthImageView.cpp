@@ -292,6 +292,10 @@ getClosest(const Eigen::Vector3f& iPoint,
     case NormalMethodSampleConsensus:
       if (!fitPlaneSac(matx, plane)) return false;
       break;
+    case NormalMethodZ:
+      plane.head<3>() = Eigen::Vector3f::UnitZ();
+      plane[3] = 0;  // TODO: use ground level
+      break;
     default:
       std::cout << "Invalid normal method specified!" << std::endl;
       return false;

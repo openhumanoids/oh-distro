@@ -14,7 +14,8 @@ public:
   enum NormalMethod {
     NormalMethodLeastSquares,
     NormalMethodRobustKernel,
-    NormalMethodSampleConsensus
+    NormalMethodSampleConsensus,
+    NormalMethodZ
   };
 
 public:

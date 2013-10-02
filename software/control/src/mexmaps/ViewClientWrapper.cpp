@@ -25,7 +25,19 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
     if (view != NULL) {
       mWrapper->mLastReceiptTime = drc::Clock::instance()->getCurrentWallTime();
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
-      view->setNormalRadius(mWrapper->mNormalRadius);
+      view->setNormalRadius(0);
+      switch (mWrapper->mFillMethods->getMapMode()) {
+      case drc::map_controller_command_t::FULL_HEIGHTMAP:
+        view->setNormalRadius(mWrapper->mNormalRadius);
+        break;
+      case drc::map_controller_command_t::Z_NORMALS:
+        view->setNormalMethod(maps::DepthImageView::NormalMethodZ);
+        break;
+      case drc::map_controller_command_t::FLAT_GROUND:
+      default:
+        break;
+      }
+
       if (mWrapper->mShouldFill) {
         auto startTime = std::chrono::high_resolution_clock::now();
         mWrapper->mFillMethods->doFill(view);
