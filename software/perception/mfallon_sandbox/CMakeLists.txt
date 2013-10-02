@@ -9,6 +9,8 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/renderer_sandia_palm)
+
 #add_subdirectory(src/point-head)
 
 

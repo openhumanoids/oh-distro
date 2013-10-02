@@ -44,7 +44,6 @@ class Pass{
     pointcloud_vis* pc_vis_;        
     std::string mode_;
     bool use_irobot_;
-    bool aff_ready_;
     bool cartpos_ready_;
     
     void affHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -70,6 +69,9 @@ class Pass{
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
     map<string, KDL::Frame > cartpos_;
     
+    // Affordances stored using the object_name that Sisir seems to be sending with INIT_GRASP_OPT_* messages
+    // [otdf_type]_[uid]
+    map<string, drc::affordance_t > affs_;
     
     drc::affordance_t aff_;
     Eigen::Isometry3d world_to_aff_ ;
@@ -92,7 +94,6 @@ class Pass{
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot_):
     lcm_(lcm_), mode_(mode_), use_irobot_(use_irobot_){
-  aff_ready_ = false;
   cartpos_ready_ = false;
       
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
@@ -230,17 +231,24 @@ void Pass::sendStandingPosition(){
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   //std::cout << "got "<< msg->naffs << " affs\n";
-  if (msg->naffs > 0){
-    aff_ = msg->affs_plus[0].aff;
-    aff_ready_ = true;
-    
-    bool send_standing_position_ =false;
-    if (send_standing_position_){
-      sendStandingPosition();
-    }
-  }else{
-    aff_ready_ = false; 
+  
+  
+  
+  affs_.clear();
+  for (size_t i=0 ; i < msg->naffs ; i++){
+    drc::affordance_t aff = msg->affs_plus[i].aff;
+    std::stringstream ss;
+    ss << aff.otdf_type << '_' << aff.uid;    
+    std::cout << ss.str() << "\n";
+
+    affs_[ ss.str() ]=  aff;
+  }    
+  
+  bool send_standing_position_ =false;
+  if (send_standing_position_){
+    sendStandingPosition();
   }
+
 }
 
 void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
@@ -282,8 +290,8 @@ void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
 /// Below is all thats reactive
 void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::grasp_opt_control_t* msg){
-  if ( (!aff_ready_) || (!cartpos_ready_) ){
-    std::cout << "Affordances or State Not received\n";
+  if ( !cartpos_ready_ ){
+    std::cout << "State Not received yet\n";
     return; 
   }
   
@@ -295,10 +303,24 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   
   grasp_opt_msg_ = *msg; // need this to creat output
   
-
-  planGraspBox(init_grasp_pose);  
   
-  // planGraspSteeringCylinder(init_grasp_pose);
+  
+  map< string , drc::affordance_t >::iterator it = affs_.find( grasp_opt_msg_.object_name );
+  if (it == affs_.end() ){
+    std::cout << "couldn't find affordance of name ["<< grasp_opt_msg_.object_name << "]\n";
+    return;
+  }else{
+    aff_ = it->second;
+  }
+    
+  std::cout << aff_.otdf_type << "\n";
+  if ( aff_.otdf_type == "box" ){
+    planGraspBox(init_grasp_pose);  
+  }else if( aff_.otdf_type == "steering_cyl"  ){
+    planGraspSteeringCylinder(init_grasp_pose);
+  }else {
+    std::cout << "no grasping method for a ["<<  aff_.otdf_type << "\n";
+  }
   
   // This is required to spoof the aff server
   drc::grasp_opt_status_t msg_g;
@@ -314,8 +336,11 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 
+
+// Computer pre-calculated grasp for hand around 2x4, where 
+// the long axis is the Y axis
 void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){  
-  std::cout << "Box\n";
+  std::cout << "\nFind Box Grasp\n";
 
   std::map<string,double> am;
   for (size_t j=0; j< aff_.nparams; j++){
@@ -336,41 +361,89 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
   std::cout << "aff_len: " << aff_len.transpose() << "\n";
   
   double segment_pitch=0;
+  double direction_yaw=0;
+  double direction_roll=0;
   double xoffset = - aff_len(0)/2;
   double zoffset = - aff_len(2)/2;
   Eigen::Vector3d aff_size_offset(0,0,0);
+
+  double distance_to_x_face = fabs( fabs (grasp_point(0)) - aff_len(0)/2 );
+  double distance_to_z_face = fabs( fabs (grasp_point(2)) - aff_len(2)/2 );
   
-  if ( fabs( fabs (grasp_point(0)) - aff_len(0)/2 ) < 0.005){
+  bool verbose =false;
+  
+  if (distance_to_x_face  < distance_to_z_face){
+  // if ( fabs( fabs (grasp_point(0)) - aff_len(0)/2 ) < 0.005){
     if( grasp_point(0) > 0){
-      std::cout << "x far\n";
-      segment_pitch=90;
-      aff_size_offset(0) = aff_len(0)/2; 
-      aff_size_offset(2) = aff_len(2)/2; 
+      if (verbose) std::cout << "x far\n";
+      if( grasp_point(2) < 0){
+        if (verbose) std::cout << "front\n";
+        segment_pitch=90;
+        aff_size_offset(0) = aff_len(0)/2; 
+        aff_size_offset(2) = -aff_len(2)/2;         
+        direction_yaw=180;
+      }else{
+        if (verbose) std::cout << "back\n";
+        segment_pitch=90;
+        aff_size_offset(0) = aff_len(0)/2; 
+        aff_size_offset(2) = aff_len(2)/2;         
+        direction_roll=0;
+      }      
     }else{
-      std::cout << "x near\n";
-      segment_pitch=-90;
-      aff_size_offset(0) = -aff_len(0)/2; 
-      aff_size_offset(2) = -aff_len(2)/2; 
+      if (verbose) std::cout << "x near\n";
+      if( grasp_point(2) < 0){
+        if (verbose) std::cout << "back\n";
+        segment_pitch=-90;
+        aff_size_offset(0) = -aff_len(0)/2; 
+        aff_size_offset(2) = -aff_len(2)/2; 
+        direction_roll=0;
+      }else{
+        if (verbose) std::cout << "front\n";
+        segment_pitch=-90;
+        aff_size_offset(0) = -aff_len(0)/2; 
+        aff_size_offset(2) = aff_len(2)/2; 
+        direction_yaw=180;
+      }         
     }
-  }
-  
-  if ( fabs( fabs (grasp_point(2)) - aff_len(2)/2 ) < 0.005){
+  }else{
+  //if( fabs( fabs (grasp_point(2)) - aff_len(2)/2 ) < 0.005){
     if( grasp_point(2) > 0){
-      std::cout << "z top\n";
-      segment_pitch=0;
-      aff_size_offset(0) = -aff_len(0)/2; 
-      aff_size_offset(2) =  aff_len(2)/2; 
+      if (verbose) std::cout << "z top\n";
+      if( grasp_point(0) > 0){
+        if (verbose) std::cout << "front\n";
+        segment_pitch=0;
+        aff_size_offset(0) = aff_len(0)/2; 
+        aff_size_offset(2) =  aff_len(2)/2;
+        direction_yaw=180;
+      }else{
+        if (verbose) std::cout << "back\n";
+        segment_pitch=0;
+        aff_size_offset(0) = -aff_len(0)/2; 
+        aff_size_offset(2) =  aff_len(2)/2;
+        direction_yaw=0;
+      }
     }else{
-      std::cout << "z bottom\n";
-      segment_pitch=180;
-      aff_size_offset(0) = aff_len(0)/2; 
-      aff_size_offset(2) = -aff_len(2)/2; 
+      if (verbose) std::cout << "z bottom\n";
+      if( grasp_point(0) < 0){
+        if (verbose) std::cout << "back\n";
+        segment_pitch=180;
+        aff_size_offset(0) = -aff_len(0)/2; 
+        aff_size_offset(2) = -aff_len(2)/2; 
+        direction_yaw=180;
+      }else{
+        if (verbose) std::cout << "back\n";
+        segment_pitch=180;
+        aff_size_offset(0) = aff_len(0)/2; 
+        aff_size_offset(2) = -aff_len(2)/2; 
+        direction_yaw=0;
+      }
     }
   }
   
   
   Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
-  aff_to_actualpalm.rotate( euler_to_quat( 0, segment_pitch*M_PI/180, 0 ) );   
+  aff_to_actualpalm.rotate( euler_to_quat( direction_roll*M_PI/180 , segment_pitch*M_PI/180, 0 ) );   
+  aff_to_actualpalm.rotate( euler_to_quat( 0 , 0, direction_yaw*M_PI/180 ) );   
   aff_to_actualpalm.translation()  << 0 , grasp_point(1) ,0.0 ;   // + x + y + z
   // TODO support different params here
   
@@ -384,7 +457,7 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
   
   Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
   actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
-  actualplam_to_palmgeometry.rotate( euler_to_quat( 85*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   
+  actualplam_to_palmgeometry.rotate( euler_to_quat( 80*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
   
   Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
   // 

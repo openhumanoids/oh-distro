@@ -38,6 +38,7 @@ struct CommandLineConfig
 {
     int batch_size;
     std::string lidar_channel;
+    bool mono;
 };
 
 
@@ -100,7 +101,11 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   
   lcm_->subscribe( "CAMERACHEST_LEFT" ,&Pass::imageHandler,this);
   lcm_->subscribe( "CAMERACHEST_RIGHT" ,&Pass::imageHandler,this);
-  lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
+  if (cl_cfg_.mono){
+    lcm_->subscribe( "CAMERA_LEFT" ,&Pass::imageHandler,this);
+  }else{
+    lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
+  }
 
   cams_.push_back( new CamData( "CAMERACHEST_LEFT", botparam_  ) );
   cams_.push_back( new CamData( "CAMERACHEST_RIGHT", botparam_  ) );
@@ -113,6 +118,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60001,"Cloud - Laser"         ,1,reset, 60000,0, {0.0, 0.0, 1.0} ));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60010,"Pose - Null",5,reset) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60011,"Cloud - Height"         ,1,reset, 60010,0, {0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose - Camera",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud - Camera"           ,1,reset, 2000,1, { 1.0, 1.0, 0.0} ));  
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud - Camera Color"           ,1,reset, 2000,0, { 1.0, 1.0, 0.0} ));  
@@ -133,7 +140,12 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }else if (channel == "CAMERACHEST_RIGHT"){
     imgutils_->decodeImageToRGB( msg,  cams_[1]->img_buf_ );
     cams_[1]->img_received_ = true;
+  }else if (channel == "CAMERA_LEFT"){
+    imgutils_->decodeImageToRGB( msg,  cams_[2]->img_buf_ );
+    cams_[2]->img_received_ = true;
   }
+  
+  
 }
 void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  multisense::images_t* msg){
@@ -221,6 +233,27 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   pc_vis_->pose_to_lcm_from_list(60000, scan_to_local_T);
   pc_vis_->ptcld_to_lcm_from_list(60001, *scan_laser, printf_counter_, printf_counter_);  
   
+  
+  /////////////////
+  // 2. Project the scan into local frame:
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_local (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  Eigen::Isometry3f scan_to_local_f= scan_to_local.cast<float>();
+  pcl::transformPointCloud (*scan_laser, *scan_local,
+      scan_to_local_f.translation(), Eigen::Quaternionf(scan_to_local_f.rotation())  );    
+  Isometry3dTime null_T = Isometry3dTime(printf_counter_, Eigen::Isometry3d::Identity()  );
+  pc_vis_->pose_to_lcm_from_list(60010, null_T);
+  
+  for (int i = 0; i < scan_local->points.size() ; i++) {
+    float z = scan_local->points[i].z*10;
+    float rgb[3];
+    jet_rgb(z,rgb);
+    scan_local->points[i].r = rgb[0]*255;
+    scan_local->points[i].g = rgb[1]*255;
+    scan_local->points[i].b = rgb[2]*255;
+  }  
+  
+  pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, printf_counter_, printf_counter_);    
+  
   if (printf_counter_% cl_cfg_.batch_size ==0){
     cout << "Filtering: " <<  " "  << msg->utime << "\n";
     //  vs::reset_collections_t reset;
@@ -235,13 +268,16 @@ int main( int argc, char** argv ){
   CommandLineConfig cl_cfg;
   cl_cfg.batch_size =200;
   cl_cfg.lidar_channel = "SCAN";
+  cl_cfg.mono = false;
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg.lidar_channel, "l", "lidar_channel","lidar_channel");
   opt.add( cl_cfg.batch_size, "s", "size","Batch Size");
+  opt.add( cl_cfg.mono, "m", "mono","Use the Left Monocular Camera Channel");
   opt.parse();
   std::cout << "lidar_channel: " << cl_cfg.lidar_channel << "\n"; 
   std::cout << "size: " << cl_cfg.batch_size<< "\n"; 
+  std::cout << "mono: " << cl_cfg.mono<< " (ie CAMERA_LEFT)\n"; 
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
