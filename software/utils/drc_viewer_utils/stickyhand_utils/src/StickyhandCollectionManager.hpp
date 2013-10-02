@@ -31,13 +31,20 @@ namespace visualization_utils
       void add_or_update_sticky_hand(int uid, std::string& unique_hand_name, KDL::Frame &T_world_hand, drc::joint_angles_t &posture_msg);		
       bool is_urdf_found(){return _urdf_found;};
       
+      
+      // motion constraints requires equal number of samples for multiple seeds.    
+      // used to get the motion history bounds of different seeds (history size can differ for left hand and right hand)
+      // Will be used later in get_motion_constraints to remove unassociated constraints.
+      void get_motion_history_bnds_of_seeds(string object_name, int &max_motion_history_size,int &min_motion_history_size);
+      
       // Used to generate desired ee constraints for manip plans. 
       // Generates and returns ee constraints for all associated seeds  of a given parent object
       void get_motion_constraints(string object_name, OtdfInstanceStruc& obj, bool is_retractable,
                                 map<string, vector<KDL::Frame> > &ee_frames_map, 
                                 map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                 map<string, vector<double> > &joint_pos_map,
-                                map<string, vector<int64_t> > &joint_pos_timestamps_map);     
+                                map<string, vector<int64_t> > &joint_pos_timestamps_map,
+                                int max_num_frames);     
                                 
       // Used to generate desired ee constraints for pose goals. 
       // Generates and returns ee constraints for all associated seeds of a given parent object                             

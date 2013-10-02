@@ -386,15 +386,16 @@ namespace visualization_utils
      return msg;
 
   }  // end get_partial_grasp_state   
-//----------------------------------------------------------------------------------------------------------   
 
-inline static void get_pose_constraint_to_sticky_hand(StickyHandStruc &handstruc,OtdfInstanceStruc& obj, KDL::Frame& T_world_body_desired, bool to_future_state,
+//-------------------------------------------------------------------------------------------
+
+inline static void get_endpose_search_constraints_from_sticky_hand(StickyHandStruc &handstruc,OtdfInstanceStruc& obj, KDL::Frame& T_world_body_desired, bool to_future_state,
+                                                  bool end_state_only,
                                                   map<string, vector<KDL::Frame> > &ee_frames_map, 
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
                                                   map<string, vector<int64_t> > &joint_pos_timestamps_map)
 {
-
       string ee_name;
       if(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
           ee_name ="left_palm";    
@@ -438,13 +439,26 @@ inline static void get_pose_constraint_to_sticky_hand(StickyHandStruc &handstruc
       }
 
       int num_frames = 1;
+      if((to_future_state)&&(!end_state_only))
+        num_frames = handstruc._gl_hand->_desired_body_motion_history.size();
+      
       vector<KDL::Frame> T_world_ee_frames;
       vector<int64_t> frame_timestamps;
       for(uint i = 0; i < (uint) num_frames; i++) {
-          KDL::Frame  T_world_ee = T_world_graspgeometry*T_geometry_palm;   
+      
+         KDL::Frame T_world_ee;      
+          if((to_future_state)&&(!end_state_only)){
+             KDL::Frame T_object_hand = handstruc._gl_hand->_desired_body_motion_history[i];
+            //obj._gl_object->_T_world_body is the frame in which desired body is accumulated.
+             KDL::Frame T_world_hand = obj._gl_object->_T_world_body*T_object_hand;
+             T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame     
+          }
+          else
+            T_world_ee = T_world_graspgeometry*T_geometry_palm;
+              
           KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
           KDL::Vector handframe_offset;
-          handframe_offset[0]=0.01;handframe_offset[1]=0;handframe_offset[2]=0;
+          handframe_offset[0]=0.0;handframe_offset[1]=0;handframe_offset[2]=0;
           KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
           KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
           T_world_ee.p += worldframe_offset;                    
@@ -459,7 +473,8 @@ inline static void get_pose_constraint_to_sticky_hand(StickyHandStruc &handstruc
       ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));   
       // handstruc.joint_name;  
       // handstruc.joint_position; 
-
+      // posture constraints for transitions only
+      
         for(uint k = 0; k< (uint) handstruc.joint_name.size(); k++) 
         {
           std::string joint_name = handstruc.joint_name[k];
@@ -476,14 +491,16 @@ inline static void get_pose_constraint_to_sticky_hand(StickyHandStruc &handstruc
       //body pose constraint  (only orientation will be considered during pose optimization)
       vector<KDL::Frame> T_world_ee_frames_root;
       vector<int64_t> frame_timestamps_root;
-      T_world_ee_frames_root.push_back(T_world_body_desired);
-      frame_timestamps_root.push_back(0);               
+      for(uint i = 0; i < (uint) num_frames; i++) {
+        T_world_ee_frames_root.push_back(T_world_body_desired);
+        int64_t timestamp=(int64_t)i*1000000;
+        frame_timestamps_root.push_back(timestamp);
+      }
       ee_frames_map.insert(make_pair("pelvis", T_world_ee_frames_root));
       ee_frame_timestamps_map.insert(make_pair("pelvis", frame_timestamps_root)); 
            
-} // end get_pose_constraint_to_sticky_hand   
-//----------------------------------------------------------------------------------------------------------   
-
+} // end get_endpose_search_constraints_from_sticky_hand  
+//----------------------------------------------------------------------------------------------------------    
            
 }// end namespace
 

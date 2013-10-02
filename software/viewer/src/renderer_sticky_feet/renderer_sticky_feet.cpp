@@ -274,8 +274,8 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
      (event->type==GDK_2BUTTON_PRESS)
     )
   {
-  
-    if((*self->marker_selection)  == " ")// dbl clk on link then toogle
+    std::cout << "dbl clk on  marker:" << (*self->marker_selection) <<  std::endl;
+    //if((*self->marker_selection)  == " ")// dbl clk on link then toogle
     {     
        bool toggle=true;
        if (self->footStepPlanListener->is_motion_copy(self->selected_planned_footstep_index))

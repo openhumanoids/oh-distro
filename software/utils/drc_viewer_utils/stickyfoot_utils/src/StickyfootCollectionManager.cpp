@@ -286,12 +286,29 @@ void StickyfootCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 
 }// end method
 
+//-------------------------------------------------------------------------------------------
+void StickyfootCollectionManager:: get_motion_history_bnds_of_seeds(string object_name, int &max_motion_history_size,int &min_motion_history_size)
+{
+  // Publish time indexed ee motion constraints from associated sticky feet 
+  for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
+  {
+    string host_name = foot_it->second.object_name;
+    if (host_name == (object_name))
+    {
+      int num_frames =  foot_it->second._gl_foot->_desired_body_motion_history.size();
+      max_motion_history_size = std::max(max_motion_history_size,num_frames);
+      min_motion_history_size = std::min(min_motion_history_size,num_frames);
+    }    
+  }
+}
+
 //-------------------------------------------------------------------------------------------  
 void StickyfootCollectionManager::get_motion_constraints(string object_name, OtdfInstanceStruc& obj, bool is_retractable,
                                                   map<string, vector<KDL::Frame> > &ee_frames_map, 
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
-                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map)
+                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map,
+                                                  int max_num_frames)
                                                   
 {
 
@@ -324,7 +341,7 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
 
           KDL::Frame T_world_object = obj._gl_object->_T_world_body;
 
-          int num_frames =  foot_it->second._gl_foot->_desired_body_motion_history.size();
+          int num_frames =  std::min(max_num_frames,(int)foot_it->second._gl_foot->_desired_body_motion_history.size());
           vector<KDL::Frame> T_world_ee_frames;
           vector<int64_t> frame_timestamps;
           for(uint i = 0; i < (uint) num_frames; i++)

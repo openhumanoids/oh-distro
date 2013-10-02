@@ -509,28 +509,67 @@ namespace renderer_robot_plan
 
       double gain = 1;      
       // set desired state
+      string root_link_name;
       KDL::Frame T_world_ee;
+      std::string token  = "plane::";
+      size_t found = (*self->marker_selection).find(token);  
+      string plane_name="";
+   
       if(self->is_hand_in_motion){
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_hand->_T_world_body;
+          root_link_name=self->robotPlanListener->_gl_left_hand->get_root_link_name();
+          if(found!=std::string::npos) 
+              self->robotPlanListener->_gl_left_hand->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_hand->_T_world_body;
+          root_link_name=self->robotPlanListener->_gl_right_hand->get_root_link_name();
+          if(found!=std::string::npos) 
+              self->robotPlanListener->_gl_right_hand->extract_plane_name(root_link_name,plane_name);
         }
+        
       }
       else{
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_foot->_T_world_body;
+          root_link_name=self->robotPlanListener->_gl_left_foot->get_root_link_name();
+          if(found!=std::string::npos) 
+              self->robotPlanListener->_gl_left_foot->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_foot->_T_world_body;
+          root_link_name=self->robotPlanListener->_gl_right_foot->get_root_link_name();
+          if(found!=std::string::npos) 
+              self->robotPlanListener->_gl_right_foot->extract_plane_name(root_link_name,plane_name);
         }
-      
       
       }
 
        double currentAngle, angleTo,dtheta;       
        KDL::Frame DragRotation=KDL::Frame::Identity();
+
+        if(found!=std::string::npos)  
+        {
+          size_t found2 = plane_name.find("x"); 
+          bool x_plane_active = (found2!=std::string::npos);
+          found2 = plane_name.find("y"); 
+          bool y_plane_active = (found2!=std::string::npos);       
+          found2 = plane_name.find("z"); 
+          bool z_plane_active = (found2!=std::string::npos);
+          if(x_plane_active){
+           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+           T_world_ee.p[0] = dx;
+          }
+          if(y_plane_active){
+           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+            T_world_ee.p[1] = dy;
+          }
+          if(z_plane_active){
+            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+            T_world_ee.p[2] = dz;
+          }        
+        }  
 
            //cout << (*self->marker_selection) << endl;
         if((*self->marker_selection)=="markers::base_x"){

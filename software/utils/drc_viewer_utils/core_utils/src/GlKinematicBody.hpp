@@ -242,7 +242,6 @@ class GlKinematicBody
             KDL::Frame prev_T_accumulationFrame_body = _desired_body_motion_history.back();
             KDL::Vector diff = prev_T_accumulationFrame_body.p -  T_accumulationFrame_body.p;
             double distance = sqrt( diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
-
             if(distance > 0.01)//>1cm
             {
              _desired_body_motion_history.push_back(T_accumulationFrame_body);

@@ -166,10 +166,20 @@ namespace renderer_affordances_lcm_utils
         //TODO: Replace with get_motion_constraints_via_batch_fk(std::vector<string> dof_names,std::vector<double> dof_current, std::vector<double> dof_des,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map)
         
         
+        // The number of accumulated motion constraints for each seed may change slighlty due to distance threshold in accumulation, 
+        // we can only use the associated ones.
+        int max_motion_history_size = 0;
+        int min_motion_history_size = 1000;
+        self->stickyHandCollection->get_motion_history_bnds_of_seeds(it->first,max_motion_history_size,min_motion_history_size);
+        self->stickyFootCollection->get_motion_history_bnds_of_seeds(it->first,max_motion_history_size,min_motion_history_size);
+        
+        int max_num_frames = min_motion_history_size;
          // Publish time indexed ee motion constraints from associated sticky hands 
-        self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
+        self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
          // Publish time indexed ee motion constraints from associated sticky feet 
-        self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
+        self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
+
+        
         
         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
      bool unique_ee_occurances=true;
@@ -194,12 +204,12 @@ namespace renderer_affordances_lcm_utils
       map<string, vector<int64_t> > joint_pos_timestamps_map;    
   
   
-     // Publish time indexed ee motion constraints from associated sticky hands 
+     // Publish time indexed ee endpose constraints from associated sticky hands 
      self->stickyHandCollection->get_pose_constraints(it->first,it->second,to_future_state,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
-     // Publish time indexed ee motion constraints from associated sticky feet 
+     // Publish time indexed ee endpose constraints from associated sticky feet 
      self->stickyFootCollection->get_pose_constraints(it->first,it->second,to_future_state,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
   
-      //body pose constraint  (only orientation will be considered during pose optimization)
+      //body pose constraint  (current pelvis orientation may be considered during pose optimization as a loose constraint)
       vector<KDL::Frame> T_world_ee_frames;
       vector<int64_t> frame_timestamps;
       T_world_ee_frames.push_back(T_world_body_desired);
@@ -212,6 +222,48 @@ namespace renderer_affordances_lcm_utils
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);
   } 
+   //----------------------------------------------------------------------------------------------------   
+  static void publish_pose_goal_4_aff_motion (void *user, string channel,KDL::Frame& T_world_body_desired)
+  {
+      
+      RendererAffordances *self = (RendererAffordances*) user;
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it = self->affCollection->_objects.find(self->object_selection);
+  
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+  
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map; 
+  
+      bool is_retractable = false;
+      // The number of accumulated motion constraints for each seed may change slighlty due to hand frame distance threshold in accumulation, 
+      // we can only use the associated ones.
+      int max_motion_history_size = 0;
+      int min_motion_history_size = 1000;
+      self->stickyHandCollection->get_motion_history_bnds_of_seeds(it->first,max_motion_history_size,min_motion_history_size);
+      self->stickyFootCollection->get_motion_history_bnds_of_seeds(it->first,max_motion_history_size,min_motion_history_size);
+      
+      int max_num_frames = min_motion_history_size;
+       // Publish time indexed ee motion constraints from associated sticky hands 
+      self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
+       // Publish time indexed ee motion constraints from associated sticky feet 
+      self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);    
+  
+      //body pose constraint  (current pelvis orientation may be considered during pose optimization as a loose constraint)
+     /* vector<KDL::Frame> T_world_ee_frames;
+      vector<int64_t> frame_timestamps;
+      T_world_ee_frames.push_back(T_world_body_desired);
+      frame_timestamps.push_back(0);               
+      ee_frames_map.insert(make_pair("pelvis", T_world_ee_frames));
+      ee_frame_timestamps_map.insert(make_pair("pelvis", frame_timestamps));   */   
+
+     bool unique_ee_occurances=true;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);  
+  }
   //----------------------------------------------------------------------------------------------------   
   
   static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state)
@@ -235,7 +287,10 @@ namespace renderer_affordances_lcm_utils
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
                                                                    joint_pos_map,joint_pos_timestamps_map);
-     bool unique_ee_occurances=false;
+                                                                   
+     // shift selection append a selection order id to ee names in get_time_ordered_pose_constraints                                                               
+     // setting unique_ee_occurances to false, accounts for that          
+     bool unique_ee_occurances=false; 
      publish_traj_opt_constraint(channel,unique_ee_occurances,
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);
@@ -244,7 +299,7 @@ namespace renderer_affordances_lcm_utils
   
   //----------------------------------------------------------------------------------------------------   
    // Publish time indexed ee motion constraints from the selected sticky hand
-  static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired, bool to_future_state)
+  static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired, bool to_future_state,bool end_state_only)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -258,13 +313,14 @@ namespace renderer_affordances_lcm_utils
       object_instance_map_type_::iterator it = self->affCollection->_objects.find(host_name);  
       
       // populate message cache
-      get_pose_constraint_to_sticky_hand(handstruc,it->second,T_world_body_desired,to_future_state,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
+      get_endpose_search_constraints_from_sticky_hand(handstruc,it->second,T_world_body_desired,to_future_state,end_state_only,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
       // Publish the message 
      bool unique_ee_occurances=true;
      publish_traj_opt_constraint(channel,unique_ee_occurances,
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);
   }  
+    
  
   //----------------------------------------------------------------------------------------------------   
   static void publish_ee_transform_to_engage_ee_teleop(const string& channel,int ee_selection,KDL::Vector worldframe_mateaxis,KDL::Frame &T_aff_ee,void* user)

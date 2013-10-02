@@ -316,7 +316,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }
   else if(! strcmp(name, PARAM_RESET_POSTURE)) {
    if(self->robotStateListener->_gl_robot->is_future_state_changing())
-      self->robotStateListener->_gl_robot->set_future_state_changing(false);
+   self->robotStateListener->_gl_robot->set_future_state_changing(false);
    self->robotStateListener->_gl_robot->set_future_state( self->robotStateListener->_gl_robot->_T_world_body, self->robotStateListener->_gl_robot->_current_jointpos);   
    self->robotStateListener->_gl_robot->disable_future_display();      
    bot_viewer_request_redraw(self->viewer);

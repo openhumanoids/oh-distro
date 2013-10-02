@@ -304,6 +304,35 @@ namespace renderer_sticky_feet{
       KDL::Frame DragRotation=KDL::Frame::Identity();       
 
       //cout << (*self->marker_selection) << endl;
+      
+      
+      std::string token  = "plane::";
+      size_t found = (*self->marker_selection).find(token);  
+      if(found!=std::string::npos)  
+      {
+        string plane_name="";
+        string root_link_name=self->footStepPlanListener->_gl_in_motion_copy->get_root_link_name();
+        self->footStepPlanListener->_gl_in_motion_copy->extract_plane_name(root_link_name,plane_name);
+        size_t found2 = plane_name.find("x"); 
+        bool x_plane_active = (found2!=std::string::npos);
+        found2 = plane_name.find("y"); 
+        bool y_plane_active = (found2!=std::string::npos);       
+        found2 = plane_name.find("z"); 
+        bool z_plane_active = (found2!=std::string::npos);
+        if(x_plane_active){
+         double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+         T_world_object.p[0] = dx;
+        }
+        if(y_plane_active){
+         double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+          T_world_object.p[1] = dy;
+        }
+        if(z_plane_active){
+          double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+          T_world_object.p[2] = dz;
+        }        
+      }  
+      
       if((*self->marker_selection)=="markers::base_x"){
         double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
         T_world_object.p[0] = dx;

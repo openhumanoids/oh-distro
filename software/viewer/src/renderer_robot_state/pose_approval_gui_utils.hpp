@@ -29,8 +29,8 @@ namespace renderer_robot_state_gui_utils
     string channel = "WALKING_GOAL";
     publish_walking_goal(self,channel); 
  
-    gtk_widget_destroy (self->pose_approval_dock);
-    self->pose_approval_dock= NULL;
+    //gtk_widget_destroy (self->pose_approval_dock);
+    //self->pose_approval_dock= NULL;
     bot_viewer_request_redraw(self->viewer);
     return TRUE;
   }

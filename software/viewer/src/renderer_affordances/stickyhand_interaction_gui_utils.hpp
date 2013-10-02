@@ -119,21 +119,31 @@ namespace renderer_affordances_gui_utils
       }
       
     }
-    else if(!strcmp(name,PARAM_SEND_POSE_GOAL3)){
-      string channel = "POSE_GOAL";
-      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
-      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
-      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,false);  
-    }
-
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
       string channel = "POSE_GOAL";
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
-      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,true);  
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,false,false);  
     }
+
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL5)){
+      string channel = "POSE_GOAL";
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      bool end_state_only = true;
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,true,end_state_only);  
+    }
+    
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL6)){
+      string channel = "POSE_GOAL";
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      bool end_state_only = false;
+      publish_pose_goal_to_sticky_hand(self,channel,hand_it->second,T_world_body_desired,true,end_state_only);  
+    }    
 
     else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
     
@@ -312,11 +322,12 @@ namespace renderer_affordances_gui_utils
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
   
-    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL3, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
     
     //if(obj_it->second._gl_object->is_future_display_active())
-    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
-
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL5, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL6, NULL);
+    
     val  = hand_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
     

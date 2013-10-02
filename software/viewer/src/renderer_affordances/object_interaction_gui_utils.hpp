@@ -20,8 +20,12 @@
 #define PARAM_POWER_GRASP     "PowerGrasp"
 #define PARAM_SEND_POSE_GOAL   "Get Robot Pose @CurAffState"
 #define PARAM_SEND_POSE_GOAL2  "Get Robot Pose @DesAffState"
-#define PARAM_SEND_POSE_GOAL3  "Get Robot Pose @CurState"
-#define PARAM_SEND_POSE_GOAL4  "Get Robot Pose @DesState"
+#define PARAM_SEND_POSE_GOAL3  "Get Robot Pose 4DesAffMotion"
+
+#define PARAM_SEND_POSE_GOAL4  "Get Robot Pose @CurState"
+#define PARAM_SEND_POSE_GOAL5  "Get Robot Pose @DesState"
+#define PARAM_SEND_POSE_GOAL6  "Get Robot Pose 4DesEEMotion"
+
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
@@ -888,15 +892,18 @@ namespace renderer_affordances_gui_utils
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL)){
       string channel = "POSE_GOAL";
-       // only orientation is considered as seed in pose optimization
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal(self,channel,T_world_body_desired,false);  
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL2)){
       string channel = "POSE_GOAL";
-       // only orientation is considered as seed in pose optimization
       KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
       publish_pose_goal(self,channel,T_world_body_desired,true);  
+    }    
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL3)){
+      string channel = "POSE_GOAL";
+      KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+      publish_pose_goal_4_aff_motion(self,channel,T_world_body_desired);  
     }
     else if(!strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP))
     {
@@ -1211,6 +1218,7 @@ namespace renderer_affordances_gui_utils
             bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_SEND_POSE_GOAL,NULL);
             //if(it->second._gl_object->is_future_display_active())
             bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_SEND_POSE_GOAL2,NULL);
+            bot_gtk_param_widget_add_buttons(get_plan_pw,PARAM_SEND_POSE_GOAL3,NULL);
          }
       
           bot_gtk_param_widget_add_buttons(mating_pw,PARAM_MATE, NULL);
