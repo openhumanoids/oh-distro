@@ -21,7 +21,7 @@ classdef WholeBodyPlanner < KeyframePlanner
 
           obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
           obj.restrict_feet=true;
-
+          obj.plan_cache.isPointWiseIK= true;
           obj.plan_cache.num_breaks = 1;
       end
      %-----------------------------------------------------------------------------------------------------------------             

@@ -17,7 +17,7 @@ classdef ManipulationPlanner < KeyframePlanner
         obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-
+        obj.plan_cache.isPointWiseIK= true;
         obj.plan_cache.num_breaks = 4;
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
         obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
@@ -112,7 +112,7 @@ classdef ManipulationPlanner < KeyframePlanner
         utorso_constraint = {WorldPositionConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0(1:3),utorso_pose0(1:3)),...
           WorldQuatConstraint(obj.r,obj.utorso_body,utorso_pose0(4:7),1e-4)};
         % utorso_pose0 = utorso_pose0(1:3);
-
+obj.plan_cache.isPointWiseIK= true;
         T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
         T_grasp_palm = inv_HT(T_palm_grasp);
 

@@ -13,6 +13,7 @@ classdef KeyframePlanCache < handle
         s_breaks
         qtraj
         isEndPose
+        isPointWiseIK
         qsc
         num_grasp_transitions
         grasp_transition_breaks
@@ -38,6 +39,7 @@ classdef KeyframePlanCache < handle
             % Flag indicates KeyframeAdjustmentEngine to
             % publish an single keyframe endpose instead
             % of a keyframe plan by resolving at time T.
+            obj.isPointWiseIK= false;
             obj.isEndPose =false;
             obj.qsc = QuasiStaticConstraint(r);
             obj.qsc = obj.qsc.setActive(false);

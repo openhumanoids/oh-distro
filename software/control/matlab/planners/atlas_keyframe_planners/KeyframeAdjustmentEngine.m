@@ -129,7 +129,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             qsc = qsc.setShrinkFactor(0.85);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
             %joint_constraint = PostureConstraint(obj.r);
-            constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],rfoot_pose(1:3),pelvis_pose(1:3)),...
+            constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
                 WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}];
             [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,qsc,ikoptions);
             if(snopt_info > 10)
@@ -145,10 +145,12 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
             
              % delete old and add new
-            if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
-                obj.plan_cache = ojb.plan_cache.removeBodyConstraints(obj.pelvis_body,[-inf inf]);
-            end
-            obj.cachePelvisPose([0 1],pelvis_pose);
+            %if(sum(strcmp(obj.plan_cache.ks.kincon_name,'pelvis'))>0) %exists
+            % obj.plan_cache = obj.plan_cache.removeBodyConstraints(obj.pelvis_body,[-inf inf]);
+            %end
+           
+            obj.plan_cache.pelvis_constraint_cell = {};
+             obj.cachePelvisPose([0 1],pelvis_pose);
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
      %-----------------------------------------------------------------------------------------------------------------             
@@ -159,6 +161,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             grasp_transition_breaks = s((logictraj(2,:)==1));
             
             obj.plan_cache.s = s;
+            obj.plan_cache.isPointWiseIK= true;
             obj.plan_cache.isEndPose = false;
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
             obj.plan_cache.s_breaks = s_breaks;
@@ -168,6 +171,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
             
+
             s_breaks = s;
             nq = obj.r.getNumDOF();
             q_breaks = zeros(nq,length(s_breaks));
@@ -175,6 +179,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             lhand_breaks = zeros(7,length(s_breaks));
             rfoot_breaks = zeros(7,length(s_breaks));
             lfoot_breaks = zeros(7,length(s_breaks));
+            
+            tol = [1e-2*ones(3,1);1e-4*ones(4,1)];
             for brk =1:length(s_breaks),
               q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
               kinsol_tmp = doKinematics(obj.r,q_breaks(:,brk));
@@ -183,13 +189,22 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               rfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
               lfoot_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
               %if((brk==1)||brk==length(s_breaks))
-                s_val = s_breaks(brk);                    
-                obj.cacheLHandPose([s_val s_val],lhand_breaks(:,brk));                 
-                obj.cacheRHandPose([s_val s_val],rhand_breaks(:,brk));
+                s_val = s_breaks(brk);     
+                lhand_pose.max = lhand_breaks(:,brk)+tol(:);
+                lhand_pose.min = lhand_breaks(:,brk)-tol(:);
+                obj.cacheLHandPose([s_val s_val],lhand_pose); 
+                
+                rhand_pose.max = rhand_breaks(:,brk)+tol(:);
+                rhand_pose.min = rhand_breaks(:,brk)-tol(:);
+                obj.cacheRHandPose([s_val s_val],rhand_pose);
                 if(brk==1)
                   if(~obj.isBDIManipMode()) % Ignore Foot Constraints in BDIManipMode
-                    obj.cacheLFootPoseAsContactConstraint([0 1],lfoot_breaks(:,brk));
-                    obj.cacheRFootPoseAsContactConstraint([0 1],rfoot_breaks(:,brk));
+                    lfoot_pose.max = lfoot_breaks(:,brk)+tol(:);
+                    lfoot_pose.min = lfoot_breaks(:,brk)-tol(:);
+                    obj.cacheLFootPoseAsContactConstraint([0 1],lfoot_pose);
+                    rfoot_pose.max = rfoot_breaks(:,brk)+tol(:);
+                    rfoot_pose.min = rfoot_breaks(:,brk)-tol(:);
+                    obj.cacheRFootPoseAsContactConstraint([0 1],rfoot_pose);
                     pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
                     obj.cachePelvisPose([0 1],pelvis_pose);
                   else
@@ -203,6 +218,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             Tmax_joints=obj.getTMaxForMaxJointSpeed(); 
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee)); 
+            send_status(3,0,0,'Cached loaded plan...');
         end
         
         
@@ -232,7 +248,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             rhand_int_constraint = zeros(6,1);
             s_int_rh = rh_ee_constraint.time*obj.plan_cache.time_2_index_scale;
             % Desired position of palm in world frame
-            rpy = quat2rpy(rh_ee_constraint.desired_pose(4:7));
+            rpy = quat2rpy(rh_ee_constraiobj.plan_cache.num_breaksnt.desired_pose(4:7));
             T_world_palm_r = HT(rh_ee_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
             T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
             rhand_int_constraint(1:3) = T_world_hand_r(1:3,4);
@@ -257,7 +273,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               s_int_lh = lh_ee_constraint.time*obj.plan_cache.time_2_index_scale;
               % Desired position of palm in world frame
               rpy = quat2rpy(lh_ee_constraint.desired_pose(4:7));
-              T_world_palm_l = HT(lh_ee_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
+              T_world_palm_l = HT(lh_eeobj.plan_cache.num_breaks_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
               T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
               lhand_int_constraint(1:3) = T_world_hand_l(1:3,4);
               lhand_int_constraint(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
@@ -311,7 +327,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 % Desired position of left foot in world frame
                 rpy = quat2rpy(lf_ee_constraint.desired_pose(4:7,1));
                 for k = 1:num_l_foot_pts
-                  T_world_foot_l = HT(lf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
+                  T_world_foot_l = HT(lobj.plan_cache.num_breaksf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
                   lfoot_int_constraint(1:3,k) = T_world_foot_l(1:3,4);
                   lfoot_int_constraint(4:6,k) =rotmat2rpy(T_world_foot_l(1:3,1:3));
                 end
@@ -323,7 +339,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     %obj.lfootT(:,k) = lfoot_int_constraint(:,k); // Must replace Boundary Constraint In Cache
                   end
                   obj.replaceCachedConstraint(obj.l_foot_body,[1 1],l_foot_poseT);
-                  lfoot_int_constraint = nan(6,num_l_foot_pts);
+                  lfoot_int_constraint = nan(6,num_l_foot_pts);obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks)
                   lf_ee_constraint=[];
                 end
               end
@@ -338,7 +354,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 s_int_head = h_ee_constraint.time*obj.plan_cache.time_2_index_scale;
                 % Desired position of palm in world frame
                 rpy = quat2rpy(h_ee_constraint.desired_pose(4:7));
-                T_world_head = HT(h_ee_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
+                T_world_head = HT(h_eobj.plan_cache.num_breakse_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
                 head_int_constraint(1:3) = T_world_head(1:3,4);
                 head_int_constraint(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
                 
@@ -379,16 +395,16 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             if(~isempty(rh_ee_constraint))
               [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rh)); % snap to closest break point (avoiding very close double constraints)
               s_int_rh=obj.plan_cache.s_breaks(ind);
-              rhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose_int,0,0,[s_int_rh,s_int_rh]);
+              rhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose_int,1e-2,sind(5).^2,[s_int_rh,s_int_rh]);
               rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell,rhand_intermediate_constraint];
             else
               rhand_constraint_cell = obj.plan_cache.rhand_constraint_cell;
             end
-            %if((~isempty(lh_ee_constraint))&&(abs(1-s_int_lh)>1e-3))
+            %if((~isempty(lh_ee_consobj.plan_cache.isPointWiseIKtraint))&&(abs(1-s_int_lh)>1e-3))
             if(~isempty(lh_ee_constraint))
               [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lh));
               s_int_lh=obj.plan_cache.s_breaks(ind);
-              lhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose_int,0,0,[s_int_lh,s_int_lh]);
+              lhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose_int,1e-2,sind(5).^2,[s_int_lh,s_int_lh]);
               lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell,lhand_intermediate_constraint];
             else
               lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
@@ -400,7 +416,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               if(~isempty(rf_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rf)); % snap to closest break point (avoiding very close double constraints)
                 s_int_rf=obj.plan_cache.s_breaks(ind);
-                rfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose_int,0,0,[s_int_rf,s_int_rf]);
+                rfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose_int,1e-4,sind(1).^2,[s_int_rf,s_int_rf]);
                 rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell,rfoot_intermediate_constraint];
                 
               else
@@ -412,7 +428,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               if(~isempty(lf_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lf));
                 s_int_lf=obj.plan_cache.s_breaks(ind);
-                lfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose_int,0,0,[s_int_lf,s_int_lf]);
+                lfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose_int,1e-4,sind(1).^2,[s_int_lf,s_int_lf]);
                 lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell,lfoot_intermediate_constraint];
                 
               else
@@ -428,7 +444,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             if(~isempty(h_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_head));
                 s_int_head=obj.plan_cache.s_breaks(ind);
-                head_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose_int,0,0,[s_int_head,s_int_head]);
+                head_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose_int,1e-4,sind(1).^2,[s_int_head,s_int_head]);
                 head_constraint_cell = [obj.plan_cache.head_constraint_cell,head_intermediate_constraint];
             else
               head_constraint_cell = obj.plan_cache.head_constraint_cell;
@@ -467,28 +483,54 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
-            q_seed = q_seed(:,2:end);
+           
             q0 = obj.plan_cache.qtraj.eval(0); % use start of cached trajectory instead of current
             qd0 = zeros(obj.r.getNumDOF,1);
             q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
-            q_nom = q_nom(:,2:end);
+           
             %============================
-            [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-              q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
-              lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
-              rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
-              obj.joint_constraint,qsc,iktraj_options);
-            if(snopt_info > 10)
-              warning('The IK traj fails');
-              send_msg = sprintf('snopt_info == %d. The IKtraj fails.',snopt_info);
-              send_status(4,0,0,send_msg);
-              display(infeasibleConstraintMsg(infeasible_constraint));
+            %if(length(iktraj_tbreaks)<=5)
+            if(~obj.plan_cache.isPointWiseIK) 
+                q_seed = q_seed(:,2:end);
+                q_nom = q_nom(:,2:end);
+                [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+                  q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
+                  lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
+                  rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
+                  obj.joint_constraint,qsc,iktraj_options);
+               xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
+               x_breaks = xtraj.eval(iktraj_tbreaks);
+               
+               if(snopt_info > 10)
+                   warning('The IK traj fails');
+                   send_msg = sprintf('snopt_info == %d. The IKtraj fails.',snopt_info);
+                   send_status(4,0,0,send_msg);
+                   display(infeasibleConstraintMsg(infeasible_constraint));
+               end
+            
+            else
+              iktraj_options.setSequentialSeedFlag(true); % does not seem to be working
+              [xtraj,snopt_info,infeasible_constraint] = inverseKinPointwise(obj.r,...
+                  iktraj_tbreaks,q_seed,q_nom,...
+                  lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
+                  rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
+                  obj.joint_constraint,qsc,iktraj_options);
+              %iktraj_options
+              x_breaks = xtraj;
+              for k=1:length(snopt_info),
+                  if(snopt_info(k) > 10)
+                       warning('The IK fails');
+                       send_msg = sprintf('snopt_info == %d. The IKtraj fails at %d.',snopt_info(k),k);
+                       send_status(4,0,0,send_msg);
+                       %display(infeasibleConstraintMsg(infeasible_constraint));
+                  end
+              end
             end
+
+          
             %============================
             
-            xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
             s_breaks = iktraj_tbreaks;
-            x_breaks = xtraj.eval(iktraj_tbreaks);
             q_breaks = x_breaks(1:obj.r.getNumDOF,:);
             
                      
@@ -497,9 +539,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             grasp_transition_breaks = obj.plan_cache.grasp_transition_breaks;
             s = obj.plan_cache.s;
+            obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
             s = unique([s(:);obj.plan_cache.s_breaks(:);grasp_transition_breaks(:)]);
             obj.plan_cache.s = s;
-            obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
             qtraj_guess = PPTrajectory(spline(iktraj_tbreaks,q_breaks));
             % fine grained sampling of plan.
             q = zeros(obj.r.getNumDOF,length(s));
@@ -535,7 +577,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             old_time_2_index_scale =  obj.plan_cache.time_2_index_scale;
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             
-            snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
+            snopt_info_vector = max(snopt_info)*ones(1, size(xtraj,2));
             utime = now() * 24 * 60 * 60;
             if(~obj.plan_cache.isEndPose)
                 if(obj.plan_cache.num_grasp_transitions>0)
