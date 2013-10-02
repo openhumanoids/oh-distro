@@ -30,9 +30,5 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
 ###
 add_executable(drc-viewer main.cpp udp_util.c RendererGroupUtil.cpp)
 pods_use_pkg_config_packages(drc-viewer ${RENDERERS})
+# depreciated for now: renderer_annotated_camera
 pods_install_executables(drc-viewer)
-
-##
-add_executable(drc-annotation-viewer AnnotationViewer.cpp udp_util.c RendererGroupUtil.cpp)
-pods_use_pkg_config_packages(drc-annotation-viewer ${RENDERERS} renderer_annotated_camera )
-pods_install_executables(drc-annotation-viewer)
