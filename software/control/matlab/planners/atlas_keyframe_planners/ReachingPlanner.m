@@ -471,14 +471,12 @@ classdef ReachingPlanner < KeyframePlanner
           iktraj_options = IKoptions(obj.r);
           iktraj_options = iktraj_options.setDebug(true);
           iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-          iktraj_options = iktraj_options.setQa(eye(getNumDOF(obj.r)));
-          iktraj_options = iktraj_options.setQv(eye(getNumDOF(obj.r)));
-          iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
+          iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
+          iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
+          iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
           if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
             qsc = qsc.setActive(true);
           else
-            iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-            iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
             qsc = qsc.setActive(false);
           end
           qsc = qsc.setShrinkFactor(0.9);

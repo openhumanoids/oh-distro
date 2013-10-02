@@ -147,6 +147,11 @@ classdef ManipulationPlanner < KeyframePlanner
            obj.cachePelvisPose([0 1],pelvis_pose0);
         end
 
+        %lh_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'left_palm')),ee_names));
+        %rh_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'right_palm')),ee_names));
+        %lf_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'l_foot')),ee_names));
+        %rf_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'r_foot')),ee_names));
+        
         % Solve IK for each element i n EE LOCII
         timeIndices=[];
         if(is_manip_map)

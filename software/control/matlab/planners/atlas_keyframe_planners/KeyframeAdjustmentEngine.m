@@ -394,7 +394,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
               lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
             end
             
-            
+            pelvis_constraint_cell = {};
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
               %if((~isempty(rf_ee_constraint))&&(abs(1-s_int_rf)>1e-3))
               if(~isempty(rf_ee_constraint))
@@ -422,6 +422,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             else
               lfoot_constraint_cell = {};
               rfoot_constraint_cell = {};
+              pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
             end %end if(~obj.isBDIManipMode())
             
             if(~isempty(h_ee_constraint))
@@ -458,13 +459,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             iktraj_options = IKoptions(obj.r);
             iktraj_options = iktraj_options.setDebug(true);
             iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-            iktraj_options = iktraj_options.setQa(eye(getNumDOF(obj.r)));
-            iktraj_options = iktraj_options.setQv(eye(getNumDOF(obj.r)));
-            iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
-            if(obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode     
-              iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-              iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));       
-            end
+            iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
+            iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));   
+            iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));           
             qsc = qsc.setShrinkFactor(0.9);
             iktraj_options = iktraj_options.setMajorIterationsLimit(400);
             
@@ -479,7 +476,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
               q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
               lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
-              rfoot_constraint_cell{:},head_constraint_cell{:},...
+              rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
               obj.joint_constraint,qsc,iktraj_options);
             if(snopt_info > 10)
               warning('The IK traj fails');
