@@ -227,7 +227,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
   //cout << lidar_msgout_.ranges.size() << " and " << points.size() << " and " << scan_cloud_s2l_->points.size() << " " <<  (_timestamp_now() - tic)*1e-6 << " dt\n";;
   
   
-  // 3. Extract the incidices and modify the outgoing ranges as a result:
+  // 3. Extract the indices of the points in collision and modify the outgoing ranges as a result:
   std::vector<float> original_ranges =  lidar_msgout_.ranges;
   
   
@@ -250,7 +250,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     }  
     
     // For Real Data: apply an addition set of filters
-    // NB: These filters are not compatable with Gazebo Simulation output NBNBNB
+    // NB: These filters are not compatiable with Gazebo Simulation output NBNBNB
     if (!simulated_data_){
       // heuristic filtering of the weak intensity lidar returns
       if (( lidar_msgout_.intensities[j] < INTENSITY_FILTER_MIN_VALUE ) && ( original_ranges[j] < INTENSITY_FILTER_MIN_RANGE) ){
@@ -316,7 +316,9 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     tic_toc.push_back(_timestamp_now());
     double dt =  ((tic_toc[1] - tic_toc[0])*1E-6);
     
-    std::cout << dt << " | " << 1/dt << "\n";
+    std::cout << dt << " | " << 1/dt  << " | "
+              << current_utime << " | total returns "<< scan_cloud_s2l_->points.size()  
+              << " | collisions " << collisions.size() << " | indices " << filtered_point_indices.size() << endl;    
   #endif    
   
 }
