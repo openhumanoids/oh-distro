@@ -58,12 +58,12 @@ class Pass{
     void poseGroundHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
 
-
-    void sendCandidateGrasp(const  drc::grasp_opt_control_t* msg, 
-                            Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
-    void sendPlanEELoci(const  drc::grasp_opt_control_t* msg, 
-                        Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles);
-
+    void planGraspBox(Eigen::Isometry3d init_grasp_pose);
+    void planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose);
+    
+    
+    void sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
+    void sendPlanEELoci(Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles);
     void sendStandingPosition();
     
     boost::shared_ptr<ModelClient> model_;
@@ -85,6 +85,9 @@ class Pass{
     
     std::vector <Isometry3dTime> eeloci_poses_;
     bool eeloci_plan_outstanding_;    
+    
+    drc::grasp_opt_control_t grasp_opt_msg_;
+
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot_):
@@ -142,7 +145,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
 }
 
 void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  
   ground_height_ = msg->pos[2];
 }
 
@@ -227,23 +229,19 @@ void Pass::sendStandingPosition(){
 
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
-  std::cout << "got "<< msg->naffs << " affs\n";
+  //std::cout << "got "<< msg->naffs << " affs\n";
   if (msg->naffs > 0){
     aff_ = msg->affs_plus[0].aff;
     aff_ready_ = true;
-
-
-
-    bool send_standing_position_ =true;
+    
+    bool send_standing_position_ =false;
     if (send_standing_position_){
       sendStandingPosition();
-
     }
   }else{
     aff_ready_ = false; 
   }
 }
-
 
 void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
   if (!eeloci_plan_outstanding_){
@@ -280,6 +278,8 @@ void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
 }
 
 
+/// Above sets the process state.
+/// Below is all thats reactive
 void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::grasp_opt_control_t* msg){
   if ( (!aff_ready_) || (!cartpos_ready_) ){
@@ -287,20 +287,134 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     return; 
   }
   
-  std::vector<Isometry3dTime> grasp_poseT;
-  Eigen::Isometry3d grasp_pose = Eigen::Isometry3d::Identity();
-  grasp_pose.translation() << msg->l_hand_init_pose.translation.x, msg->l_hand_init_pose.translation.y, msg->l_hand_init_pose.translation.z;
-  grasp_poseT.push_back( Isometry3dTime(msg->utime, grasp_pose) );
-  pc_vis_->pose_collection_to_lcm_from_list(60011, grasp_poseT); 
+  std::vector<Isometry3dTime> init_grasp_poseT;
+  Eigen::Isometry3d init_grasp_pose = Eigen::Isometry3d::Identity();
+  init_grasp_pose.translation() << msg->l_hand_init_pose.translation.x, msg->l_hand_init_pose.translation.y, msg->l_hand_init_pose.translation.z;
+  init_grasp_poseT.push_back( Isometry3dTime(msg->utime, init_grasp_pose) );
+  pc_vis_->pose_collection_to_lcm_from_list(60011, init_grasp_poseT); 
   
+  grasp_opt_msg_ = *msg; // need this to creat output
+  
+
+  planGraspBox(init_grasp_pose);  
+  
+  // planGraspSteeringCylinder(init_grasp_pose);
+  
+  // This is required to spoof the aff server
+  drc::grasp_opt_status_t msg_g;
+  msg_g.utime = 0;
+  msg_g.matlab_pool_ready=1;
+  msg_g.num_matlab_workers=2;
+  msg_g.worker_available=0  ;
+  msg_g.worker_id = 1;
+  lcm_->publish("GRASP_OPT_STATUS",&msg_g );
+  msg_g.worker_id = 2;
+  lcm_->publish("GRASP_OPT_STATUS",&msg_g );  
+}
+
+
+
+void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){  
+  std::cout << "Box\n";
+
+  std::map<string,double> am;
+  for (size_t j=0; j< aff_.nparams; j++){
+    am[ aff_.param_names[j] ] = aff_.params[j];
+  }
+  Eigen::Vector3d aff_len( am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second );
+  
+  
+  // 1. Determine the Parameters:
+  world_to_aff_ = affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy);
+  Eigen::Affine3d Aff = Eigen::Affine3d(world_to_aff_.inverse() );
+  Eigen::Vector3d grasp_point = Eigen::Vector3d(init_grasp_pose.translation().x(), 
+                                       init_grasp_pose.translation().y(),
+                                       init_grasp_pose.translation().z());
+  grasp_point = Aff * grasp_point; // relative grasp point
+  
+  std::cout << "grasp_point: " << grasp_point.transpose() << "\n";
+  std::cout << "aff_len: " << aff_len.transpose() << "\n";
+  
+  double segment_pitch=0;
+  double xoffset = - aff_len(0)/2;
+  double zoffset = - aff_len(2)/2;
+  Eigen::Vector3d aff_size_offset(0,0,0);
+  
+  if ( fabs( fabs (grasp_point(0)) - aff_len(0)/2 ) < 0.005){
+    if( grasp_point(0) > 0){
+      std::cout << "x far\n";
+      segment_pitch=90;
+      aff_size_offset(0) = aff_len(0)/2; 
+      aff_size_offset(2) = aff_len(2)/2; 
+    }else{
+      std::cout << "x near\n";
+      segment_pitch=-90;
+      aff_size_offset(0) = -aff_len(0)/2; 
+      aff_size_offset(2) = -aff_len(2)/2; 
+    }
+  }
+  
+  if ( fabs( fabs (grasp_point(2)) - aff_len(2)/2 ) < 0.005){
+    if( grasp_point(2) > 0){
+      std::cout << "z top\n";
+      segment_pitch=0;
+      aff_size_offset(0) = -aff_len(0)/2; 
+      aff_size_offset(2) =  aff_len(2)/2; 
+    }else{
+      std::cout << "z bottom\n";
+      segment_pitch=180;
+      aff_size_offset(0) = aff_len(0)/2; 
+      aff_size_offset(2) = -aff_len(2)/2; 
+    }
+  }
+  
+  
+  Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
+  aff_to_actualpalm.rotate( euler_to_quat( 0, segment_pitch*M_PI/180, 0 ) );   
+  aff_to_actualpalm.translation()  << 0 , grasp_point(1) ,0.0 ;   // + x + y + z
+  // TODO support different params here
+  
+  aff_to_actualpalm.translation() += aff_size_offset   ;   // + x + y + z
+  // .... now contains where I want the actual palm to be ...
+  
+  eeloci_poses_.clear();
+  eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
+
+  // Add on the transform from the "actual palm" to the palm link
+  
+  Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
+  actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
+  actualplam_to_palmgeometry.rotate( euler_to_quat( 85*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   
+  
+  Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
+  // 
+  
+  
+  
+  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
+  
+  
+  
+//  aff_to_palmgeometry.translation()  << -0.06 + xoffset,-0.055 + yoffset,0.0 + grasp_point(2);   // + x + y + z
+//  aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 180*M_PI/180, 90*M_PI/180  ) );
+  
+  
+  
+  sendCandidateGrasp(aff_to_palmgeometry, 0);
+
+  
+}
+
+  
+void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){  
   
   // 1. Determine the Parameters of the Cylinder we need:
   // Radius and Relative Angle  
   world_to_aff_ = affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy);
   Eigen::Affine3d Aff = Eigen::Affine3d(world_to_aff_.inverse() );
-  Eigen::Vector3d pt = Eigen::Vector3d(msg->l_hand_init_pose.translation.x, 
-                                       msg->l_hand_init_pose.translation.y,
-                                       msg->l_hand_init_pose.translation.z);
+  Eigen::Vector3d pt = Eigen::Vector3d(init_grasp_pose.translation().x(), 
+                                       init_grasp_pose.translation().y(),
+                                       init_grasp_pose.translation().z());
   pt = Aff * pt;
   double rel_angle = atan2(pt(1), pt(0)  );
   
@@ -318,7 +432,7 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
   // translation: outwards, upwards, forwards  
   if (use_irobot_){ // iRobot
-    if (msg->grasp_type ==0){ // iRobot left
+    if (grasp_opt_msg_.grasp_type ==0){ // iRobot left
       aff_to_palmgeometry.translation()  << 0.01 + radius ,0,-0.09;
       aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
     }else{ // iRobot right
@@ -328,26 +442,23 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   }else{ // Sandia
     // was: 0.05 + radius ,0,-0.12;
     // 0.03 was too little
-    if (msg->grasp_type ==0){ // sandia left
+    if (grasp_opt_msg_.grasp_type ==0){ // sandia left
       aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }else{ // sandia right
       aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }
-    
-    
   }
   
 
   if (mode_ == "grasp" ){
-    sendCandidateGrasp(msg,aff_to_palmgeometry, rel_angle);
+    sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
   }else if (mode_ == "plan"){
-    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
+    sendPlanEELoci(aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
   }else if (mode_ == "both"){
-    sendCandidateGrasp(msg,aff_to_palmgeometry, rel_angle);
-    sendPlanEELoci(msg,aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
-
+    sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
+    sendPlanEELoci(aff_to_palmgeometry, {rel_angle,rel_angle +0.1,rel_angle +0.2,rel_angle +0.3,rel_angle +0.4,rel_angle +0.5,rel_angle +0.6,rel_angle +0.7,rel_angle +0.8,rel_angle +0.9,rel_angle +1.0} );
     /*
     std::vector <double> rel_angles;
     for (double i= 0; i< M_PI*2 ; i=i+M_PI/10){
@@ -355,19 +466,12 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     }
     sendPlanEELoci(msg,aff_to_palmgeometry, rel_angles );
     */
-    
   }
   
-  // This is required to spoof the aff server
-  drc::grasp_opt_status_t msg_g;
-  msg_g.utime = 0;
-  msg_g.matlab_pool_ready=1;
-  msg_g.num_matlab_workers=2;
-  msg_g.worker_available=0  ;
-  msg_g.worker_id = 1;
-  lcm_->publish("GRASP_OPT_STATUS",&msg_g );
-  msg_g.worker_id = 2;
-  lcm_->publish("GRASP_OPT_STATUS",&msg_g );
+  
+  
+  
+
 }
 
 
@@ -404,19 +508,19 @@ Eigen::Isometry3d getRotPose(double rel_angle){
 
 
 // hand_pose is in the affordance's frame
-void Pass::sendCandidateGrasp(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3d aff_to_palmgeometry, double rel_angle){
+void Pass::sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle){
   Eigen::Isometry3d pose = getRotPose(rel_angle)*aff_to_palmgeometry;
   drc::position_3d_t hand_pose = EigenToDRC(pose);
   
   drc::desired_grasp_state_t cg;
-  cg.utime = msg->utime;
-  cg.robot_name =msg->robot_name;
-  cg.object_name =msg->object_name;
-  cg.geometry_name = msg->geometry_name;
-  cg.unique_id = msg->unique_id;
-  cg.grasp_type = msg->grasp_type;
+  cg.utime = grasp_opt_msg_.utime;
+  cg.robot_name =grasp_opt_msg_.robot_name;
+  cg.object_name =grasp_opt_msg_.object_name;
+  cg.geometry_name = grasp_opt_msg_.geometry_name;
+  cg.unique_id = grasp_opt_msg_.unique_id;
+  cg.grasp_type = grasp_opt_msg_.grasp_type;
   cg.power_grasp = false;
-  if (msg->grasp_type ==0){
+  if (grasp_opt_msg_.grasp_type ==0){
     cg.l_hand_pose = hand_pose;
   }else {
     cg.r_hand_pose = hand_pose;
@@ -435,7 +539,7 @@ void Pass::sendCandidateGrasp(const  drc::grasp_opt_control_t* msg, Eigen::Isome
 
 
 
-void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles){
+void Pass::sendPlanEELoci(Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles){
   drc::traj_opt_constraint_t traj;
   traj.utime =0;
   traj.robot_name ="atlas";
@@ -462,7 +566,7 @@ void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3
     traj.link_origin_position.push_back(hand_pose);
     traj.link_timestamps.push_back( i*1E6);
     
-    if (msg->grasp_type ==0){
+    if ( grasp_opt_msg_.grasp_type ==0){
       traj.link_name.push_back("left_palm");
     }else {
       traj.link_name.push_back("right_palm");
@@ -472,7 +576,7 @@ void Pass::sendPlanEELoci(const  drc::grasp_opt_control_t* msg, Eigen::Isometry3
   }
   traj.num_links = rel_angles.size();
   
-  if (msg->grasp_type ==0){
+  if ( grasp_opt_msg_.grasp_type ==0){
     traj.joint_name = l_joint_name_;
     traj.joint_position = l_joint_position_;
   }else{
