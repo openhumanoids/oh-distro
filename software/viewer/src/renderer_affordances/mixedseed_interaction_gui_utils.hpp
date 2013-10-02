@@ -39,6 +39,12 @@ namespace renderer_affordances_gui_utils
       cout << "publishing EE goal sequence on " << channel << endl;
       publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false);  
     }
+    else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER)){
+      string channel = "DESIRED_FOOT_STEP_SEQUENCE";
+      cout << "publishing EE goal sequence on " << channel << endl;
+      //TODO: Make a better function specific to footsteps
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false);  
+    }
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
     
@@ -67,8 +73,10 @@ namespace renderer_affordances_gui_utils
 
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_EE_GOAL_SEQUENCE, NULL); 
+    bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT_TO_FOOTSTEP_PLANNER, NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL); 
+   
 
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_mixed_seed_dblclk_popup_param_widget_changed), self);
     self->dblclk_popup  = window;

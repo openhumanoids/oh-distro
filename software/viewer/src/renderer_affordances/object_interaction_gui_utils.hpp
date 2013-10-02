@@ -78,6 +78,7 @@
 #define PARAM_CLEAR_CURRENT_GOAL "Clear EE goal"
 
 #define PARAM_SEND_EE_GOAL_SEQUENCE "Get Whole Body Plan"
+#define PARAM_COMMIT_TO_FOOTSTEP_PLANNER "Commit to Footstep Planner"
 
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
