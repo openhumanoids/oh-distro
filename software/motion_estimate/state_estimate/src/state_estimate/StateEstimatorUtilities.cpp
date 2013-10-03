@@ -139,6 +139,28 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   return;
 }
 
-
+//int StateEstimate::getIMUBodyAlignment(const unsigned long &utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
+//
+//	// TODO -- these may be repeated at the leg-odometry code, to solve for the leg kinematics.
+//	// for this however we are only concerned
+//	BotParam* _botparam;
+//	BotFrames* _botframes;
+//	
+//	_botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+//	_botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
+//	
+//	IMU_to_body.setIdentity();
+//	
+//    int status;
+//    double matx[16];
+//    status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", utime, matx);
+//    for (int i = 0; i < 4; ++i) {
+//      for (int j = 0; j < 4; ++j) {
+//        IMU_to_body(i,j) = matx[i*4+j];
+//      }
+//    }
+//    
+//    return status;
+//}
 
 

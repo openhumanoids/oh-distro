@@ -1,6 +1,10 @@
 #ifndef __StateEstimator_h
 #define __StateEstimator_h
 
+#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+
 #include "ThreadLoop.h"
 #include "QueueTypes.h"
 
@@ -56,8 +60,13 @@ protected:
   
   
 private:
-	InertialOdometry::Odometry inert_odo;
-	unsigned long previous_imu_utime;
+  InertialOdometry::Odometry inert_odo;
+  unsigned long previous_imu_utime;
+	
+  BotParam* _botparam;
+  BotFrames* _botframes;
+  
+  Eigen::Isometry3d IMU_to_body;
   
 };
 

@@ -5,8 +5,12 @@
 
 #include <Eigen/Dense>
 
+#include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/drc_lcmtypes.hpp"
+
+#include <bot_frames/bot_frames.h>
+#include <leg-odometry/BotTransforms.hpp>
 
 #include <inertial-odometry/InertialOdometry_Types.hpp>
 #include <inertial-odometry/Odometry.hpp>
@@ -49,6 +53,8 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer);
 
 // IMU DATA============================================================================
 void handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg);
+
+//int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
 
 //void handle_inertial_data_temp_name(const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg) {
 

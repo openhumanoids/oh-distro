@@ -16,13 +16,28 @@ StateEstimate::StateEstimator::StateEstimator(
 {
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
-  int num_joints = 56;
+  int num_joints = 28;
     	
   mJointFilters.setSize(num_joints);
   //  mJointVelocities.resize(num_joints);
-  std::cout << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
-  std::cerr << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to 56" << std::endl;
+  std::cout << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to " << num_joints << std::endl;
+  std::cerr << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to " << num_joints << std::endl;
   
+  // get the imu to body transform
+  _botparam = bot_param_new_from_server(mLCM->getUnderlyingLCM(), 0);
+  _botframes= bot_frames_get_global(mLCM->getUnderlyingLCM(), _botparam);
+
+  IMU_to_body.setIdentity();
+
+  int status;
+  double matx[16];
+  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", 0 /*utime*/, matx);
+  for (int i = 0; i < 4; ++i) {
+	  for (int j = 0; j < 4; ++j) {
+		  IMU_to_body(i,j) = matx[i*4+j];
+	  }
+  }
+
 }
 
 // TODO -- fix this constructor
@@ -71,6 +86,7 @@ void StateEstimate::StateEstimator::run()
       // Joint velocity states in the atlasState message are overwriten by this process
       mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
       insertAtlasState_ERS(atlasState, mERSMsg);
+      // std::cout << "Handled Atlas state" << std::endl;
     }
 
     // This is the special case which will also publish the message
@@ -87,10 +103,12 @@ void StateEstimate::StateEstimator::run()
       previous_imu_utime = imu.utime;
       handle_inertial_data_temp_name(dt, imu, bdiPose, inert_odo, mERSMsg);
       
+      std::cout << "Going to publish ERS" << std::endl;
       // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
       // For now we are going to publish on the last element of this queue
       if (i==(nIMU-1)) { 
 	      //publish ERS message
+    	  mERSMsg.utime = imu.utime;
 	      mLCM->publish("EST_ROBOT_STATE_EXPERIMENTAL", &mERSMsg); 
       }
     }
