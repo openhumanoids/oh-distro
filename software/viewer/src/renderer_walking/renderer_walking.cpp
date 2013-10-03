@@ -39,14 +39,14 @@
 #define PARAM_BEHAVIOR "Behavior"
 #define PARAM_GOAL_TYPE "Goal sets pose of: "
 #define PARAM_LEADING_FOOT "Leading foot"
-#define PARAM_STEP_SPEED "Foot speed (1.5 m/s)"
-#define PARAM_STEP_HEIGHT "Step clearance (0.1 m)"
-#define PARAM_MU "Coeff. of friction (1.00)"
+#define PARAM_STEP_SPEED "Foot speed (m/s)"
+#define PARAM_STEP_HEIGHT "Step clearance (m)"
+#define PARAM_MU "Coeff. of friction"
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
-#define PARAM_NOM_FORWARD_STEP "Nominal forward step (0.25 m)"
-#define PARAM_MAX_FORWARD_STEP "Max forward step (0.5 m)"
-#define PARAM_NOM_STEP_WIDTH "Nominal step width (0.26 m)"
+#define PARAM_NOM_FORWARD_STEP "Nominal forward step (m)"
+#define PARAM_MAX_FORWARD_STEP "Max forward step (m)"
+#define PARAM_NOM_STEP_WIDTH "Nominal step width (m)"
 
 #define WALKING_MODE "Preset"
 
@@ -306,72 +306,74 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
   return 0;
 }
 
-static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
-{
-  RendererWalking *self = (RendererWalking*) user;
-  
+void set_default_params(RendererWalking* self, int mode) {
+  if (mode == WALKING_TYPICAL){
+    std::cout << "Using preset mode: Walking\n";
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.2);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
+  }else if (mode == WALKING_MUD){
+    std::cout << "Using preset mode: Mud\n";
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 6);  
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.05);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.15);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
+  }else if (mode == WALKING_CRAWLING){
+    std::cout << "Using preset mode: Crawling\n";      
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.3);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
+  }else if (mode == WALKING_TURN_CRAWLING){
+    std::cout << "Using preset mode: Turn Crawling\n";            
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
+    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
+  }else if (mode == WALKING_BDI){
+    std::cout << "Using preset mode: BDI Walking\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.1);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_WALKING);
+  } else if (mode == STEPPING_BDI) {
+    std::cout << "Using preset mode: BDI Stepping\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.10);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.25);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
+  }
+  get_params_from_widget(self);
+}
 
-  if(!strcmp(name, WALKING_MODE)) {
-    int mode = (walking_mode_t) bot_gtk_param_widget_get_enum(self->pw, WALKING_MODE);
-    if (mode == WALKING_TYPICAL){
-      std::cout << "Using preset mode: Walking\n";
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.2);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-      bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
-    }else if (mode == WALKING_MUD){
-      std::cout << "Using preset mode: Mud\n";
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 6);  
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.05);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.15);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-      bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
-    }else if (mode == WALKING_CRAWLING){
-      std::cout << "Using preset mode: Crawling\n";      
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.3);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
-      bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
-    }else if (mode == WALKING_TURN_CRAWLING){
-      std::cout << "Using preset mode: Turn Crawling\n";            
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
-      bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
-    }else if (mode == WALKING_BDI){
-      std::cout << "Using preset mode: BDI\n";            
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10);  
-      bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.1);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-      bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-      bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_WALKING);
-    }
-  }  
-  
-  
+void get_params_from_widget(RendererWalking* self) {
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
@@ -385,6 +387,28 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   self->behavior = (behavior_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_BEHAVIOR);
   self->goal_type = (walking_goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
+}
+
+
+static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
+{
+  RendererWalking *self = (RendererWalking*) user;
+  
+  if (self->nom_forward_step > bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP)) {
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP));
+  }
+  if (self->max_forward_step < bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP)) {
+    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP));
+  }
+
+  get_params_from_widget(self);
+
+  if(!strcmp(name, WALKING_MODE)) {
+    int mode = (walking_mode_t) bot_gtk_param_widget_get_enum(self->pw, WALKING_MODE);
+    set_default_params(self, mode);
+  }  
+  
+  
 
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
@@ -461,7 +485,7 @@ static gboolean on_turn_left_clicked(GtkButton* button, void *user) {
 static gboolean on_go_forward_clicked(GtkButton* button, void *user) {
   std::cout << "go forward" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
-  publish_simple_nav(self, self->max_forward_step * self->max_num_steps, 0, 0);
+  publish_simple_nav(self, 1.25 * self->max_forward_step * self->max_num_steps, 0, 0);
 }
 static gboolean on_turn_right_clicked(GtkButton* button, void *user) {
   std::cout << "turn right" << std::endl;
@@ -471,17 +495,17 @@ static gboolean on_turn_right_clicked(GtkButton* button, void *user) {
 static gboolean on_go_left_clicked(GtkButton* button, void *user) {
   std::cout << "go left" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
-  publish_simple_nav(self, 0, self->max_forward_step * self->max_num_steps, 0);
+  publish_simple_nav(self, 0, 1.25 * self->max_forward_step * self->max_num_steps, 0);
 }
 static gboolean on_go_backward_clicked(GtkButton* button, void *user) {
   std::cout << "go backward" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
-  publish_simple_nav(self, -self->max_forward_step * self->max_num_steps, 0, 0);
+  publish_simple_nav(self, -1.25 * self->max_forward_step * self->max_num_steps, 0, 0);
 }
 static gboolean on_go_right_clicked(GtkButton* button, void *user) {
   std::cout << "go right" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
-  publish_simple_nav(self, 0, -self->max_forward_step * self->max_num_steps, 0);
+  publish_simple_nav(self, 0, -1.25 * self->max_forward_step * self->max_num_steps, 0);
 }
 
 static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel, 
@@ -543,8 +567,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->nom_forward_step = 0.10; // m
   self->max_forward_step = 0.5; // m
   self->nom_step_width = 0.26; // m
-  self->behavior = BEHAVIOR_BDI_WALKING;
-  self->walking_settings = WALKING_BDI;
+  self->behavior = BEHAVIOR_BDI_STEPPING;
+  self->walking_settings = STEPPING_BDI;
   self->follow_spline = true;
   self->ignore_terrain = false;
   self->goal_type = GOAL_TYPE_CENTER;
@@ -638,7 +662,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->nom_forward_step);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.05, self->nom_forward_step);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
   bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
@@ -649,6 +673,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   
   bot_gtk_param_widget_add_enum(self->pw, WALKING_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->walking_settings, 
                                 "BDI Walking", WALKING_BDI,
+                                "BDI Stepping", STEPPING_BDI,
                                 "Typical, VRC", WALKING_TYPICAL,
                                 "Mud, VRC", WALKING_MUD,
                                 "Crawling", WALKING_CRAWLING,
@@ -656,6 +681,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
                                 NULL);
 
 
+  set_default_params(self, self->walking_settings);
   // bot_gtk_param_widget_add_buttons(self->pw, PARAM_GO_FORWARD, NULL);
 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);

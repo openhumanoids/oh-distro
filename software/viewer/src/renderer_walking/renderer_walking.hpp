@@ -32,7 +32,7 @@ typedef enum _leading_foot_t {
 } leading_foot_t;
 
 typedef enum _walking_mode_t {
-  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI
+  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI
 } walking_mode_t;
 
 typedef enum _behavior_t {
@@ -114,6 +114,8 @@ void setup_renderer_walking(BotViewer *viewer, int render_priority, lcm_t* lcm, 
     BotFrames * frames);
 
 void publish_simple_nav(RendererWalking* self, double x, double y, double yaw);
+void set_default_params(RendererWalking* self, int mode);
+void get_params_from_widget(RendererWalking* self);
 void publish_walking_goal(RendererWalking* self, bool is_new);
 
 /**
