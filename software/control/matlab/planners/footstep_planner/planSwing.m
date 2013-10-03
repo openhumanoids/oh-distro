@@ -32,20 +32,6 @@ foot_yaw_rate = 0.75; % rad/s
 next_pos(6) = last_pos(6) + angleDiff(last_pos(6), next_pos(6));
 
 swing_angle = atan2(next_pos(2) - last_pos(2), next_pos(1) - last_pos(1));
-phi.last = last_pos(6) - swing_angle;
-phi.next = next_pos(6) - swing_angle;
-contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * biped.foot_bodies.right.contact_pts;
-contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * biped.foot_bodies.right.contact_pts; 
-effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
-                       max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
-effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
-                        max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
-
-% % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
-contact_length = effective_length / 2 + planar_clearance;
-contact_width = effective_width / 2 + planar_clearance;
-contact_height = effective_height + nom_z_clearance;
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
@@ -54,12 +40,29 @@ if fixed_duration
 else
   apex_fracs = [0.15, 0.85];
 end
+
+
 next_pos = last_pos + angleDiff(last_pos, next_pos);
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
 apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)
+  phi.last = last_pos(6) - swing_angle;
+  phi.next = next_pos(6) - swing_angle;
+  contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * biped.foot_bodies.right.contact_pts;
+  contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * biped.foot_bodies.right.contact_pts; 
+  effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
+                         max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
+  effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
+                          max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
+  effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
+
+  % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
+  contact_length = effective_length / 2 + planar_clearance;
+  contact_width = effective_width / 2 + planar_clearance;
+  contact_height = effective_height + nom_z_clearance;
+
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos
   terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, max([ceil(step_dist_xy / 0.02),3]), 10);
   terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
@@ -105,9 +108,9 @@ traj_ts = [0, cumsum(traj_dts)] ;
 
 %% Add time to shift weight
 if fixed_duration
-  hold_time = 0.1;
-  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; 
-  traj_ts = traj_ts * (fixed_duration / traj_ts(end));
+  hold_time = 0.01;
+  traj_ts = traj_ts * ((fixed_duration - hold_time) / traj_ts(end));
+  traj_ts = [0, traj_ts+hold_time, traj_ts(end) + 0.01 + hold_time];
 else
   hold_time = traj_ts(end) * hold_frac;
   hold_time = max([hold_time, min_hold_time]);
