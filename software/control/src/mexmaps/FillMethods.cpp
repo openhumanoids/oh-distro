@@ -65,6 +65,10 @@ onCommand(const lcm::ReceiveBuffer* iBuf,
     fprintf(stderr,"maps: switched to using flat ground\n");
     msg.value = "controller: switched to using flat ground";
     break;
+  case drc::map_controller_command_t::Z_NORMALS:
+    fprintf(stderr,"maps: switched to using full heights and z normals\n");
+    msg.value = "controller: switched to using full heights and z normals";
+    break;
   default:
     fprintf(stderr,"maps: warning: received invalid heightmap mode\n");
     msg.value = "controller: received invalid heightmap mode";
