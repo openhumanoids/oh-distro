@@ -62,7 +62,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   
 stall = struct('right', 0, 'left', 0);
 aborted = false;
-min_progress = [0.05;0.05;1;0.4;0.4;0.4];
+min_progress = [0.05;0.05;1;0.2;0.2;0.2];
 % n = 0;
   
   while (1)
@@ -107,6 +107,7 @@ min_progress = [0.05;0.05;1;0.4;0.4;0.4];
       valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + last_ndx.(m_foot) - 1;
       if isempty(valid_pose_ndx)
         novalid = true;
+        next_ndx = last_ndx.(m_foot);
       else
         if novalid
           next_ndx = valid_pose_ndx(1);
