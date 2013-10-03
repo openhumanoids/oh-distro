@@ -140,6 +140,12 @@ VAR_MATRIXd Joint_Model::anaylitical_jacobian(const VAR_MATRIXd &state) {
 	// joint velocity is the first derivative of joint position
 	continuous_matrices.A(0,1) = 1;
 	
+	// d/dt x = Fx
+	// x = [joint_pos; joint_vel]
+	// F = [0 1;0 0]
+	
+	//F = [0 1 0;0 0 1;0 0 0]
+	
 	return continuous_matrices.A;
 }
 

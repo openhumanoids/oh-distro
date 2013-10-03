@@ -20,7 +20,7 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics bot2-frames
     bot2-frames_cpp visualization libfovis lcmtypes_fovis-bot2
 	model-client lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core path-util)
 
-SET(CMAKE_BUILD_TYPE debug)
+SET(CMAKE_BUILD_TYPE release)
 
 ################  THIS IS THE LEG-ODOMETRY LIBRARY
 

@@ -45,7 +45,7 @@ void KalmanFilter::Initialize() {
 // Priori only update to the internal state variables
 void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variables) {
 	
-	std::cout << "KalmanFilter::step -- Time stepping the filter." << std::endl;
+	//std::cout << "KalmanFilter::step -- Time stepping the filter." << std::endl;
 	
 	//priori update
 	propagatePriori(ut_now, variables, priori.mu, priori.M);
@@ -69,7 +69,7 @@ void KalmanFilter::step(const unsigned long &ut_now, const VAR_VECTORd &variable
 
 KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned long &ut_now, const VAR_VECTORd &variables, const VAR_VECTORd &mu, const VAR_MATRIXd &cov) {
 	
-	std::cout << "KalmanFilter::propagatePriori -- Time update" << std::endl;
+	//std::cout << "KalmanFilter::propagatePriori -- Time update" << std::endl;
 	last_update_type = PRIORI_UPDATE;
 	
 	double dt;
@@ -77,13 +77,14 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 	dt = 1E-6*(ut_now - ut_last_priori_update);
 	ut_last_priori_update = ut_now;
 	priori.utime = ut_now;
-	std::cout << "KalmanFilter::propagatePriori -- dt = " << dt << std::endl;
+	//std::cout << "KalmanFilter::propagatePriori -- dt = " << dt << std::endl;
 	
 	// We want to propagate a current state mean and covariance estimate according to the some defined system model
 	
 	
 	// Get continuous dynamics model -> convert to discrete -> propagate state mean and covariance
 	KalmanFilter_Models::MatricesUnit cont_matrices, disc_matrices; // why am I keeping a local copy here?
+	
 	cont_matrices = _model->getContinuousMatrices(mu);
 
 	// s -> z, lti_disc
@@ -94,7 +95,10 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 		// Propagate the state with transition matrix
 		
 		priori.mu.resize(mu.size());
-//		std::cout << "KalmanFilter::propagatePriori -- mu.size() -- " << mu.size() << std::endl;
+		//std::cout << "KalmanFilter::propagatePriori -- mu.size() -- " << mu.size() << "; rows in disc.A -- " << disc_matrices.A.rows() << std::endl;
+		//std::cout << disc_matrices.A << std::endl;
+		//std::cout << "mu -- " << mu.transpose() << std::endl;
+		
 		priori.mu = disc_matrices.A * mu;// TODO -- add B*u term, we going to assume this is noise for now
 		
 	} else {
@@ -123,7 +127,7 @@ KalmanFilter_Models::MatricesUnit KalmanFilter::propagatePriori(const unsigned l
 
 void KalmanFilter::propagatePosterior(const unsigned long &utime_now, const VAR_VECTORd &variables, const VAR_VECTORd &measurements, const KalmanFilter_Models::MatricesUnit &cont_matrices) {
 	
-	std::cout << "KalmanFilter::propagatePosterior -- Measurement update" << std::endl;
+	//std::cout << "KalmanFilter::propagatePosterior -- Measurement update" << std::endl;
 	
 	// Ensure that the priori update did occur
 	// Excessive, but we don't want to make a mistake

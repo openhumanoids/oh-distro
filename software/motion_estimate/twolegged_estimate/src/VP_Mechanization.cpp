@@ -20,7 +20,11 @@ namespace InertialOdometry {
 
   void VP_Mechanization::PropagateTranslation(IMU_dataframe* _imu)
   {
+	  
+	  std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu->accel_.transpose() << std::endl;
 	  SubtractGravity(_imu);
+	  std::cout << "VP_Mechanization::PropagateTranslation -- after subtracting gravity " << _imu->force_.transpose() << std::endl;
+	  	  
 
 	  Eigen::Vector3d test;
 
