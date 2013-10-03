@@ -247,7 +247,7 @@ getClosest(const Eigen::Vector3f& iPoint,
   if (!interpolate(proj[0], proj[1], proj[2])) return false;
 
   // do triangle-based interpolated point and normal
-  if (mNormalRadius == 0) {
+  if ((mNormalRadius == 0) && (mNormalMethod != NormalMethodZ)) {
     return unproject(proj, oPoint, oNormal);
   }
 
