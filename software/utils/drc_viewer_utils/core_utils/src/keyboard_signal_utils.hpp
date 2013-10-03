@@ -19,6 +19,7 @@ namespace visualization_utils {
   #define CNTRL_R 65508
   #define ALT_L   65513
   #define ALT_R   65514
+  #define BKSPACE 65288
 
   // A global keyboard signal with the keyval integer and a boolean 
   // indicating if it's a key-press or a key-release.
