@@ -25,17 +25,17 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_hpx';% <---- 
+joint = 'l_leg_hpz';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
-  zero_crossing = true;
+  zero_crossing = false;
   ts = linspace(0,40,500);% <----
-  amp = 0.05;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.125,500);% <----  cycles per second
+  amp = -0.085;% <---- meters, COM DELTA
+  freq = linspace(0.025,0.1,500);% <----  cycles per second
 else
   vals = 0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
@@ -247,7 +247,7 @@ while tt<T
     qt(6) = q(6); % ignore yaw
     
     % get desired acceleration
-    qdddes = qddtraj.eval(tt) + 20.0*(qt-q) - 0.5*qd;
+    qdddes = qddtraj.eval(tt) + 17.0*(qt-q) - 0.55*qd;
     
     % solve QP to compute inputs 
     kinsol = doKinematics(r,q);
