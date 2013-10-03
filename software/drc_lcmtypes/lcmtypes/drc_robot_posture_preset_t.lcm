@@ -17,6 +17,7 @@ struct robot_posture_preset_t
   const int16_t STANDING_HNDS_UP=5;
   const int16_t SITTING_HNDS_DWN=6;
   const int16_t SITTING_HNDS_UP=7; 
+  const int16_t PROJECTILE=8; 
   const int16_t CROUCHING_HNDS_DWN=9;
   const int16_t STANDING_RGTHND_REACH=10;
   const int16_t STANDING_BDI_FP=11;
