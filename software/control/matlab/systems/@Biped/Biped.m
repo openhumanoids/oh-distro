@@ -2,7 +2,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
   properties
     max_forward_step
     nom_forward_step
-    max_backward_step
     max_step_dz
     max_step_width
     min_step_width
@@ -31,7 +30,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       defaults = struct('nom_forward_step', 0.15,... %m
         'max_forward_step', 0.3,...%m
-        'max_backward_step', 0.1,...%m
         'max_step_width', 0.35,...%m
         'max_step_dz', 0.3,...%m
         'min_step_width', 0.26,...%m
@@ -63,33 +61,27 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     end
 
     function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot, nom_step_width)
-      if nargin < 4
-        nom_step_width = obj.nom_step_width;
-      end
-      if is_right_foot
-        offs = [0; nom_step_width/2; 0];
-      else
-        offs = [0; -nom_step_width/2; 0];
-      end
-      for j = 1:length(Xc(1,:))
-        M = rpy2rotmat(Xc(4:6,j));
-        d = M * offs;
-        Xo(:,j) = [Xc(1:3,j) - d(1:3); Xc(4:end,j)];
-      end
+      Xo = footCenter2StepCenter(obj, Xc, is_right_foot, -nom_step_width);
     end
 
     function Xc = footCenter2StepCenter(obj, Xo, is_right_foot, nom_step_width)
+      % Convert a position of the center of one of the biped's feet to the
+      % corresponding point half the step width toward the bot's center.
+      % nom_step_width should be scalar or vector of size(1, size(Xo,2))
       if nargin < 4
         nom_step_width = obj.nom_step_width;
       end
+      if length(nom_step_width) == 1
+        nom_step_width = repmat(nom_step_width, 1, size(Xo, 2));
+      end
       if is_right_foot
-        offs = [0; -nom_step_width/2; 0];
+        offs = [zeros(1,length(nom_step_width)); -nom_step_width/2; zeros(1,length(nom_step_width))];
       else
-        offs = [0; nom_step_width/2; 0];
+        offs = [zeros(1,length(nom_step_width)); nom_step_width/2; zeros(1,length(nom_step_width))];
       end
       for j = 1:length(Xo(1,:))
         M = rpy2rotmat(Xo(4:6,j));
-        d = M * offs;
+        d = M * offs(:,j);
         Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end,j)];
       end
     end
@@ -173,7 +165,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
       end
       if ~isfield(options, 'backward_step')
-        options.backward_step = obj.max_backward_step;
+        options.backward_step = options.forward_step;
       end
       if ~isfield(options, 'max_step_rot')
         options.max_step_rot = obj.max_step_rot;
@@ -217,7 +209,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
       end
       if ~isfield(options, 'backward_step')
-        options.backward_step = obj.max_backward_step;
+        options.backward_step = options.forward_step;
       end
       b = [options.forward_step;
            options.backward_step;
