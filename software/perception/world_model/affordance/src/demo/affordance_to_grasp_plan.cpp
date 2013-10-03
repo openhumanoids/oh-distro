@@ -59,6 +59,7 @@ class Pass{
 
     void planGraspBox(Eigen::Isometry3d init_grasp_pose);
     void planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose);
+    void planGraspCylinder(Eigen::Isometry3d init_grasp_pose);
     
     
     void sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
@@ -318,9 +319,12 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     planGraspBox(init_grasp_pose);  
   }else if( aff_.otdf_type == "steering_cyl"  ){
     planGraspSteeringCylinder(init_grasp_pose);
-  }else {
+  }else if( aff_.otdf_type == "cylinder"  ){
+    planGraspCylinder(init_grasp_pose);
+  }else{
     std::cout << "no grasping method for a ["<<  aff_.otdf_type << "\n";
   }
+
   
   // This is required to spoof the aff server
   drc::grasp_opt_status_t msg_g;
@@ -332,6 +336,56 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   lcm_->publish("GRASP_OPT_STATUS",&msg_g );
   msg_g.worker_id = 2;
   lcm_->publish("GRASP_OPT_STATUS",&msg_g );  
+}
+
+
+
+
+void Pass::planGraspCylinder(Eigen::Isometry3d init_grasp_pose){  
+  
+  // 1. Determine the Parameters of the Cylinder we need:
+  // Radius and Relative Angle  
+  world_to_aff_ = affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy);
+  Eigen::Affine3d Aff = Eigen::Affine3d(world_to_aff_.inverse() );
+  Eigen::Vector3d pt = Eigen::Vector3d(init_grasp_pose.translation().x(), 
+                                       init_grasp_pose.translation().y(),
+                                       init_grasp_pose.translation().z());
+  pt = Aff * pt;
+  double rel_angle = atan2(pt(1), pt(0)  );
+  
+  std::map<string,double> am;
+  for (size_t j=0; j< aff_.nparams; j++){
+    am[ aff_.param_names[j] ] = aff_.params[j];
+  }
+  double radius = am.find("radius")->second;
+  
+  std::cout << rel_angle*180/M_PI << " Relative Angle around Cylinder\n";
+  std::cout <<  radius << " Radius\n";
+  
+  
+  // 2. Create a reasonable afforance to hand pose 
+  Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
+  // translation on cylinder:
+  // outwards, backward, updown 
+
+  // Sandia
+  // was: 0.05 + radius ,0,-0.12;
+  // 0.03 was too little
+  if (grasp_opt_msg_.grasp_type ==0){ // sandia left
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,0.06 + 0.4*radius,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    
+//    aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    
+  }else{ // sandia right
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,-(0.06 + 0.4*radius),0.0;
+    aff_to_palmgeometry.rotate( euler_to_quat( -75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }
+  
+  // Offset up and down the cylinder:
+  aff_to_palmgeometry.translation() += Eigen::Vector3d(0,0, pt(2) );
+  
+  sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
 }
 
 
@@ -454,28 +508,18 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
   eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
 
   // Add on the transform from the "actual palm" to the palm link
-  
   Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
   actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
   actualplam_to_palmgeometry.rotate( euler_to_quat( 80*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
   
   Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
-  // 
-  
-  
   
   pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
-  
-  
   
 //  aff_to_palmgeometry.translation()  << -0.06 + xoffset,-0.055 + yoffset,0.0 + grasp_point(2);   // + x + y + z
 //  aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 180*M_PI/180, 90*M_PI/180  ) );
   
-  
-  
   sendCandidateGrasp(aff_to_palmgeometry, 0);
-
-  
 }
 
   
@@ -540,11 +584,6 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
     sendPlanEELoci(msg,aff_to_palmgeometry, rel_angles );
     */
   }
-  
-  
-  
-  
-
 }
 
 

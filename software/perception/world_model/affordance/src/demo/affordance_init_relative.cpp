@@ -62,6 +62,7 @@ class Pass{
 
     
     drc::affordance_plus_t getSteeringCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
+    drc::affordance_plus_t getCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getBoxAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     
     BotParam* botparam_;
@@ -145,6 +146,44 @@ drc::affordance_plus_t Pass::getSteeringCylinderAffordancePlus(std::string filen
 }
 
 
+drc::affordance_plus_t Pass::getCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid){ 
+  Eigen::Isometry3d world_to_aff = world_to_utorso_*utorso_to_aff; 
+  std::vector<double> xyzrpy = {.0 , .0 , .0, 0. , 0 , 0};
+  xyzrpy[0] = world_to_aff.translation().x();
+  xyzrpy[1] = world_to_aff.translation().y();
+  xyzrpy[2] = world_to_aff.translation().z();
+  quat_to_euler ( Eigen::Quaterniond(world_to_aff.rotation() ), xyzrpy[3], xyzrpy[4], xyzrpy[5] );  
+  
+  drc::affordance_plus_t p;
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="cylinder";
+  a.aff_store_control = drc::affordance_t::NEW;
+  
+  a.params.push_back(0.5  ); a.param_names.push_back("length");
+  a.params.push_back(0.03  ); a.param_names.push_back("radius");
+  a.params.push_back(1.0  ); a.param_names.push_back("mass");
+  a.nparams =a.params.size();
+  a.nstates =0;
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+ 
+  p.aff = a;
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+  p.npoints=0; 
+  p.ntriangles =0;
+  
+  p.aff.bounding_lwh[0]=0.36;       p.aff.bounding_lwh[1]=0.33;      p.aff.bounding_lwh[2]=0.3;   
+  return p;
+}
+
+
 drc::affordance_plus_t Pass::getBoxAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid){ 
   Eigen::Isometry3d world_to_aff = world_to_utorso_*utorso_to_aff; 
   std::vector<double> xyzrpy = {.0 , .0 , .0, 0. , 0 , 0};
@@ -184,9 +223,6 @@ drc::affordance_plus_t Pass::getBoxAffordancePlus(std::string filename, Eigen::I
 
 
 
-
-
-
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
   frames_cpp_->get_trans_with_utime( "utorso" , "local", msg->utime, world_to_utorso_);
@@ -217,7 +253,15 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     utorso_to_aff.translation()  << 0.55, 0.0, 0.0;
     utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(90*M_PI/180,0*M_PI/180,0*M_PI/180)) );    
     aff = getBoxAffordancePlus("notused", utorso_to_aff, 1);
-  }  
+  }else if (which_affordance_ ==3){
+    Eigen::Isometry3d utorso_to_aff(Eigen::Isometry3d::Identity());
+    utorso_to_aff.translation()  << 0.55, 0.0, 0.0;
+    utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0*M_PI/180,0*M_PI/180,0*M_PI/180)) );
+    aff = getCylinderAffordancePlus("notused", utorso_to_aff, 1);
+  }else{
+    std::cout << "Affordance not recognised\n";
+    exit(-1); 
+  }
   
   lcm_->publish("AFFORDANCE_FIT",&aff);
   
@@ -227,9 +271,10 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 
 int main(int argc, char ** argv) {
-  std::cout << "0 - cylinder at left shoulder\n";
-  std::cout << "1 - cylinder at right shoulder\n";
+  std::cout << "0 - Steering Cylinder at left shoulder\n";
+  std::cout << "1 - Steering Cylinder at right shoulder\n";
   std::cout << "2 - 2x4 low\n";
+  std::cout << "3 - cylinder pipe\n";
   
   
   string mode = "both";
