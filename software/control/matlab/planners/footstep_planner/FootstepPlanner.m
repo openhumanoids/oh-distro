@@ -103,7 +103,6 @@ classdef FootstepPlanner < DRCPlanner
           else
             modified = true;
           end
-          X_old = X;
         else
           modified = false;
         end
@@ -118,6 +117,7 @@ classdef FootstepPlanner < DRCPlanner
             Xout(j).pos(3) = Xout(j).pos(3) + obj.z_adjust;
           end
           publish(Xout);
+          X_old = X;
           % profile viewer
         else
           pause(0.25)
