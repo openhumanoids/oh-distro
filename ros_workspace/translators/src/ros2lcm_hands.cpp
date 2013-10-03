@@ -3,7 +3,7 @@
 // respective channels: SANDIA_LEFT_STATE/SANDIA_RIGHT_STATE/IROBOT_LEFT_STATE/IROBOT_RIGHT_STATE
 
 // the sandia hand driver publishes ros messages at a finger level. They are appended here to form the hand sate message.
-
+ 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -44,11 +44,12 @@ private:
   // msg cache begin
   sandia_hand_msgs::RawFingerState  sandia_l_hand_finger_0_state_,sandia_l_hand_finger_1_state_,sandia_l_hand_finger_2_state_,sandia_l_hand_finger_3_state_;
   sandia_hand_msgs::RawFingerState  sandia_r_hand_finger_0_state_,sandia_r_hand_finger_1_state_,sandia_r_hand_finger_2_state_,sandia_r_hand_finger_3_state_; 
+  sandia_hand_msgs::RawFingerState  *sandia_l_hand_finger_state_[4], *sandia_r_hand_finger_state_[4];
   
   sandia_hand_msgs::RawPalmState sandia_l_hand_palm_state_,sandia_r_hand_palm_state_;
   sandia_hand_msgs::RawPalmState sandia_l_hand_palm_state_filtered_,sandia_r_hand_palm_state_filtered_;
 
-  sandia_hand_msgs::RawMoboState sandia_l_hand_mobo_state_,sandia_r_hand_mobo_state;
+  sandia_hand_msgs::RawMoboState sandia_l_hand_mobo_state_,sandia_r_hand_mobo_state_;
   // msg cache end
 
   double sandia_l_hand_palm_diffstate_[32], sandia_l_hand_palm_origstate_[32];
@@ -87,15 +88,19 @@ private:
   void publishSandiaRawTactile(int64_t utime_in,bool is_left);
   void publishSandiaCalibTactile(int64_t utime_in,bool is_left);
 
+
+  void publishSandiaRaw(int64_t utime_in,bool is_left);
+  // Deprecated: not publishing separate channels
   void publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, const sandia_hand_msgs::RawFingerStatePtr& msg);
   void publishSandiaRawPalm(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawPalmStatePtr& msg);
   void publishSandiaRawMobo(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawMoboStatePtr& msg);
+  //
   void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   
   // logic params
-  bool init_recd_sandia_l_[5];
-  bool init_recd_sandia_r_[5];
+  bool init_recd_sandia_l_[6]; // 0-3:fingers, 4: palm, 5: mobo 
+  bool init_recd_sandia_r_[6]; 
   bool init_recd_irobot_l_;
   bool init_recd_irobot_r_;
   
@@ -172,7 +177,7 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
   irobotJointNames.push_back("finger[2]/joint_base");
   irobotJointNames.push_back("finger[2]/joint_flex");
 
-  for(int i=0; i<5; i++)
+  for(int i=0; i<6; i++)
   {
     init_recd_sandia_l_[i]=false;
     init_recd_sandia_r_[i]=false;
@@ -180,9 +185,17 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
   init_recd_irobot_l_ = false;
   init_recd_irobot_r_ = false;
 
+  sandia_l_hand_finger_state_[0]=&sandia_l_hand_finger_0_state_;
+  sandia_l_hand_finger_state_[1]=&sandia_l_hand_finger_1_state_;
+  sandia_l_hand_finger_state_[2]=&sandia_l_hand_finger_2_state_;
+  sandia_l_hand_finger_state_[3]=&sandia_l_hand_finger_3_state_;
+  sandia_r_hand_finger_state_[0]=&sandia_r_hand_finger_0_state_;
+  sandia_r_hand_finger_state_[1]=&sandia_r_hand_finger_1_state_;
+  sandia_r_hand_finger_state_[2]=&sandia_r_hand_finger_2_state_;
+  sandia_r_hand_finger_state_[3]=&sandia_r_hand_finger_3_state_;
 };
 
-App::~App()  {
+App::~App() {
 }
 
 // same as bot_timestamp_now():
@@ -237,8 +250,8 @@ void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
   publishSandiaRawTactile(utime,true); 
   publishSandiaCalibTactile(utime,true);
 
-  // Publish Raw Signals
-  publishSandiaRawPalm(utime, true, msg);
+  // Publish Raw Hand Signals
+  publishSandiaRaw(utime, true);
 }
 
 //----------------------------------------------------------------------------
@@ -269,7 +282,7 @@ void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
        sandia_r_hand_palm_diffstate_[i]=diff_val;
        sandia_r_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_r_hand_tactile_offset[i];
       // low pass filter the raw signal
-       double old_val, alpha, new_val, new_val2;
+       double old_val, alpha, new_val;
        old_val = sandia_r_hand_palm_state_.palm_tactile[i];
        alpha=0.1;
        new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
@@ -282,8 +295,8 @@ void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
   publishSandiaRawTactile(utime,false);
   publishSandiaCalibTactile(utime,false);
 
-  // Publish Raw Palm Signals
-  publishSandiaRawPalm(utime, false, msg);
+  // Publish Raw Hand Signals
+  publishSandiaRaw(utime, false);
 }
 
 //----------------------------------------------------------------------------
@@ -293,6 +306,65 @@ template<typename T, typename D>
 void copyvalue(T* a, D b, int n){
   for(int i=0; i<n; i++)
     a[i] = b[i];
+}
+
+void App::publishSandiaRaw(int64_t utime_in,bool is_left){
+  drc:: raw_sandia_hand_t msg_out;
+  msg_out.utime = utime_in;
+
+  {
+    sandia_hand_msgs::RawPalmState* msg = 
+      (is_left ? &sandia_l_hand_palm_state_: &sandia_r_hand_palm_state_);
+    msg_out.palm.palm_time = msg->palm_time;
+    copyvalue(msg_out.palm.palm_accel, msg->palm_accel,3);
+    copyvalue(msg_out.palm.palm_gyro,  msg->palm_gyro, 3);
+    copyvalue(msg_out.palm.palm_mag,   msg->palm_mag,  3);
+    copyvalue(msg_out.palm.palm_temps, msg->palm_temps,7);
+    copyvalue(msg_out.palm.palm_tactile, msg->palm_tactile, 32);
+  }
+
+  {
+    sandia_hand_msgs::RawMoboState* msg = 
+      (is_left ? &(this->sandia_l_hand_mobo_state_): &(this->sandia_r_hand_mobo_state_));
+    msg_out.mobo.mobo_time = msg->mobo_time;
+    copyvalue(msg_out.mobo.finger_currents, msg->finger_currents,4);
+    copyvalue(msg_out.mobo.logic_currents,  msg->logic_currents, 3);
+    copyvalue(msg_out.mobo.mobo_temp,   msg->mobo_temp,  3);
+  }
+  
+  const int N_FINGER = 4;
+  msg_out.num_fingers = N_FINGER;
+  msg_out.fingers.resize(N_FINGER);
+  for(int i=0; i<N_FINGER; i++){
+    sandia_hand_msgs::RawFingerState* msg = 
+      (is_left ? sandia_l_hand_finger_state_[i]: sandia_r_hand_finger_state_[i]);
+    
+    msg_out.fingers[i].fmcb_time = msg->fmcb_time;
+    msg_out.fingers[i].pp_time =   msg->pp_time;
+    msg_out.fingers[i].dp_time =   msg->dp_time;
+    copyvalue(msg_out.fingers[i].pp_tactile, msg->pp_tactile, 6);
+    copyvalue(msg_out.fingers[i].dp_tactile, msg->dp_tactile, 12);
+    msg_out.fingers[i].pp_strain = msg->pp_strain;
+    copyvalue(msg_out.fingers[i].mm_accel, msg->mm_accel, 3);
+    copyvalue(msg_out.fingers[i].pp_accel, msg->pp_accel, 3);
+    copyvalue(msg_out.fingers[i].dp_accel, msg->dp_accel, 3);
+    copyvalue(msg_out.fingers[i].mm_mag, msg->mm_mag, 3);
+    copyvalue(msg_out.fingers[i].pp_mag, msg->pp_mag, 3);
+    copyvalue(msg_out.fingers[i].dp_mag, msg->dp_mag, 3);
+    copyvalue(msg_out.fingers[i].pp_temp, msg->pp_temp, 4);
+    copyvalue(msg_out.fingers[i].dp_temp, msg->dp_temp, 4);
+    copyvalue(msg_out.fingers[i].fmcb_temp, msg->fmcb_temp, 3);
+    msg_out.fingers[i].fmcb_voltage = msg->fmcb_voltage;
+    msg_out.fingers[i].fmcb_pb_current = msg->fmcb_pb_current;
+    copyvalue(msg_out.fingers[i].hall_tgt, msg->hall_tgt, 3);
+    copyvalue(msg_out.fingers[i].hall_pos, msg->hall_pos, 3);
+    copyvalue(msg_out.fingers[i].fmcb_effort, msg->fmcb_effort, 3);
+  }
+  
+  
+  lcm_publish_.publish(
+    is_left ? "SANDIA_LEFT_RAW":"SANDIA_RIGHT_RAW", &msg_out);    
+
 }
 
 void App::publishSandiaRawPalm(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawPalmStatePtr& msg){
@@ -305,22 +377,26 @@ void App::publishSandiaRawPalm(int64_t utime_in,bool is_left, const sandia_hand_
   copyvalue(msg_out.palm_temps, msg->palm_temps,7);
   copyvalue(msg_out.palm_tactile, msg->palm_tactile, 32);
 
+
+
   lcm_publish_.publish(
     is_left ? "SANDIA_LEFT_RAW_PALM_STATE":"SANDIA_RIGHT_RAW_PALM_STATE", &msg_out);    
 
 }
 
 void App::sandia_l_hand_mobo_state_cb(const sandia_hand_msgs::RawMoboStatePtr& msg)
-{
-  int64_t utime = _timestamp_now();
-  publishSandiaRawMobo(utime, true, msg);
+{ 
+  if(!init_recd_sandia_l_[5]) 
+    init_recd_sandia_l_[5]=true;
+  sandia_l_hand_mobo_state_= *msg;
 }
 
 void App::sandia_r_hand_mobo_state_cb(const sandia_hand_msgs::RawMoboStatePtr& msg)
 {
-  int64_t utime = _timestamp_now();
-  publishSandiaRawMobo(utime, false, msg); 
-}
+  if(!init_recd_sandia_r_[5]) 
+    init_recd_sandia_r_[5]=true;
+  sandia_r_hand_mobo_state_= *msg;
+} 
 
 void App::publishSandiaRawMobo(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawMoboStatePtr& msg){
   drc:: raw_sandia_hand_mobo_t msg_out;
@@ -332,7 +408,6 @@ void App::publishSandiaRawMobo(int64_t utime_in,bool is_left, const sandia_hand_
 
   lcm_publish_.publish(
     is_left ? "SANDIA_LEFT_RAW_MOBO_STATE":"SANDIA_RIGHT_RAW_MOBO_STATE", &msg_out);
-
 }
 
 
@@ -413,24 +488,18 @@ void App::sandia_l_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerState
  if(!init_recd_sandia_l_[0])
    init_recd_sandia_l_[0]=true;
  sandia_l_hand_finger_0_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, true, 0, msg);;
 }
 void App::sandia_l_hand_finger_1_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
  if(!init_recd_sandia_l_[1])
    init_recd_sandia_l_[1]=true;
  sandia_l_hand_finger_1_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, true, 1, msg);;
-}
+} 
 void App::sandia_l_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
  if(!init_recd_sandia_l_[2])
    init_recd_sandia_l_[2]=true;
  sandia_l_hand_finger_2_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, true, 2, msg);
 }
 void App::sandia_l_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
@@ -443,8 +512,8 @@ void App::sandia_l_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
  int64_t utime = _timestamp_now();//has no header::(int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
  bool is_left = true;
  publishSandiaHandState(utime,is_left);
- publishSandiaRawFinger(utime, true, 3, msg);
 }
+
 
 void App::publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, const sandia_hand_msgs::RawFingerStatePtr& msg){
   drc::raw_sandia_hand_finger_t msg_out;
@@ -485,26 +554,19 @@ void App::sandia_r_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerState
  if(!init_recd_sandia_r_[0])
    init_recd_sandia_r_[0]=true;
  sandia_r_hand_finger_0_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, false, 0, msg);
-
-}
+} 
 void App::sandia_r_hand_finger_1_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
  if(!init_recd_sandia_r_[1])
    init_recd_sandia_r_[1]=true;
  sandia_r_hand_finger_1_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, false, 1, msg);
 
 }
 void App::sandia_r_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
-{
-  if(!init_recd_sandia_r_[2])
-    init_recd_sandia_r_[2]=true;
-  sandia_r_hand_finger_2_state_= *msg;
-  int64_t utime = _timestamp_now();
-  publishSandiaRawFinger(utime, false, 2, msg);
+{ 
+ if(!init_recd_sandia_r_[2])
+   init_recd_sandia_r_[2]=true;
+ sandia_r_hand_finger_2_state_= *msg;
 }
 void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
@@ -518,13 +580,11 @@ void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
  int64_t utime = _timestamp_now();// has no header::(int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
  bool is_left = false;
  publishSandiaHandState(utime,is_left);
- publishSandiaRawFinger(utime, false, 3, msg);
-}
+} 
 
 //----------------------------------------------------------------------------
 void App::publishSandiaHandState(int64_t utime_in,bool is_left)
 {
-  
   // If haven't got all four sandia finger states, exit:
   if((!init_recd_sandia_l_[0])&&(is_left))
     return;
