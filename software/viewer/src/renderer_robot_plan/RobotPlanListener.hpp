@@ -79,6 +79,10 @@ namespace renderer_robot_plan
     
     drc::robot_plan_t _received_plan;
     drc::robot_plan_w_keyframes_t _received_keyframe_plan;
+    
+    // previous plan (used for undo button.)
+    drc::robot_plan_w_keyframes_t _previous_keyframe_plan; 
+    
     drc::aff_indexed_robot_plan_t _received_map;
     drc::footstep_plan_t _received_footstep_plan;
     
@@ -448,7 +452,7 @@ namespace renderer_robot_plan
     if(type == "manip")
     {
       handleManipPlanMsg(NULL," ",&msg);
-     std::string channel = "STORED_ROBOT_PLAN";
+      std::string channel = "STORED_ROBOT_PLAN";
       _lcm->publish(channel, &msg);  // Msg used to update plan cache in KEYFRAME ADJUSTMENT ENGINE. 
     }
     else if(type == "walking")
@@ -475,6 +479,28 @@ namespace renderer_robot_plan
     }
     else
      cout <<"Unknown Plan type in RobotPlanListener::setPlanFromStorage\n";
+  };
+  
+  void setManipPlanFromBackUp()
+  {
+    if(!is_manip_plan())
+      return;
+  
+    drc::robot_plan_w_keyframes_t msg;  
+    msg = _previous_keyframe_plan;
+    if(msg.num_states>0)
+    {
+     _received_keyframe_plan = _previous_keyframe_plan;
+     handleManipPlanMsg(NULL," ",&msg);
+     std::string channel = "STORED_ROBOT_PLAN";
+     _lcm->publish(channel, &msg);  // Msg used to update plan cache in KEYFRAME ADJUSTMENT ENGINE. 
+     
+     drc::system_status_t stat_msg;
+     stat_msg.utime = bot_timestamp_now();
+     stat_msg.system = 0x03;
+     stat_msg.value = "Undoing replan or plan adjustment." ;
+     _lcm->publish("SYSTEM_STATUS", &stat_msg);
+    }
   };
     
  

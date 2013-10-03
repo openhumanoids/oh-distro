@@ -169,6 +169,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
     // 0. Make Local copy as drc::robot_plan_t to later output
     drc::robot_plan_w_keyframes_t msgcopy =*msg;
+    _previous_keyframe_plan=_received_keyframe_plan;
     _received_keyframe_plan=*msg;
     _received_plan.utime = msgcopy.utime;
     _received_plan.robot_name = msgcopy.robot_name;
@@ -189,7 +190,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
      else
       deactivate_multi_approval();
      
-    int max_num_states = 30;
+    int max_num_states = 100;
     int num_states = 0;
     int inc = 1;
     if (msg->num_states > max_num_states) {
@@ -288,7 +289,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
    // 0. Make Local copy to later output
     _received_map = *msg;
 
-  	int max_num_states = 30;
+  	int max_num_states = 100;
   	int num_states = 0;
    	int inc = 1;
    	

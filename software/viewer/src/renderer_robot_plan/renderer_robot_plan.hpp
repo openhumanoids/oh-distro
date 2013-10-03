@@ -85,6 +85,17 @@ namespace renderer_robot_plan
     double vicon_sample_period;
     int8_t vicon_type;
     
+    void keyboardSignalCallback(int keyval, bool is_pressed)
+    {
+
+      if((!is_pressed)&&(keyval ==  BKSPACE ))
+      {
+        cout << "RendererRobotPlan:: back-space pressed. If cache available, will undo replan or plan adjustment." << endl;
+        this->robotPlanListener-> setManipPlanFromBackUp();
+      }
+      
+    }
+  
     void affTriggerSignalsCallback(aff_trigger_type type,string otdf_id,KDL::Frame T_world_aff,string plan_id)
     {
       if(type==PLAN_STORE){

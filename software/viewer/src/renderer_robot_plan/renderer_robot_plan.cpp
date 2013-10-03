@@ -544,16 +544,16 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   return 1;
 }
 
-static void keyboardSignalCallback(int keyval, bool is_pressed)
+/*static void keyboardSignalCallback(int keyval, bool is_pressed)
 {
-  /*if(is_pressed) 
+  if(is_pressed) 
   {
     cout << "RendererRobotPlan::KeyPress Signal Received:  Keyval: " << keyval << endl;
   }
   else {
     cout << "RendererRobotPlan::KeyRelease Signal Received: Keyval: " << keyval << endl;
-  }*/
-}
+  }
+}*/
 
 // ------------------------END Event Handling-------------------------------------------
 
@@ -647,7 +647,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
     
     self->robotPlanListener = boost::shared_ptr<RobotPlanListener>(new RobotPlanListener(self->lcm, viewer, operation_mode));
-    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
+    //self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
+    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererRobotPlan::keyboardSignalCallback,self,_1,_2)));
     self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RendererRobotPlan::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
 
     
