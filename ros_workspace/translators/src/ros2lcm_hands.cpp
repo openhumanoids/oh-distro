@@ -500,11 +500,11 @@ void App::sandia_r_hand_finger_1_state_cb(const sandia_hand_msgs::RawFingerState
 }
 void App::sandia_r_hand_finger_2_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
- if(!init_recd_sandia_r_[2])
-   init_recd_sandia_r_[2]=true;
- sandia_r_hand_finger_2_state_= *msg;
- int64_t utime = _timestamp_now();
- publishSandiaRawFinger(utime, false, 2, msg);
+  if(!init_recd_sandia_r_[2])
+    init_recd_sandia_r_[2]=true;
+  sandia_r_hand_finger_2_state_= *msg;
+  int64_t utime = _timestamp_now();
+  publishSandiaRawFinger(utime, false, 2, msg);
 }
 void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
@@ -516,7 +516,7 @@ void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
 
  sandia_r_hand_finger_3_state_= *msg;
  int64_t utime = _timestamp_now();// has no header::(int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
- bool is_left = true;
+ bool is_left = false;
  publishSandiaHandState(utime,is_left);
  publishSandiaRawFinger(utime, false, 3, msg);
 }
@@ -524,6 +524,7 @@ void App::sandia_r_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
 //----------------------------------------------------------------------------
 void App::publishSandiaHandState(int64_t utime_in,bool is_left)
 {
+  
   // If haven't got all four sandia finger states, exit:
   if((!init_recd_sandia_l_[0])&&(is_left))
     return;
