@@ -47,6 +47,9 @@ classdef WholeBodyPlanner < KeyframePlanner
       end
      %-----------------------------------------------------------------------------------------------------------------             
       function runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,goal_type_flags)
+      
+          obj.plan_cache.clearCache();
+          obj.plan_cache.isPointWiseIK= true;
 
           disp('Generating whole body plan...');
           send_status(3,0,0,'Generating whole body plan...');
@@ -232,18 +235,18 @@ classdef WholeBodyPlanner < KeyframePlanner
             
             if(i==length(timeIndices))
              obj.cacheLHandPose([0 0],l_hand_pose0);                      
-             obj.cacheLHandPose([i/N i/N],l_hand_pose);
+             obj.cacheLHandPose([(i-1)/(N-1) (i-1)/(N-1)],l_hand_pose);
              obj.cacheRHandPose([0 0],r_hand_pose0);       
-             obj.cacheRHandPose([i/N i/N],r_hand_pose);
+             obj.cacheRHandPose([(i-1)/(N-1) (i-1)/(N-1)],r_hand_pose);
              obj.cacheRFootPoseAsContactConstraint([0 0],r_foot_pose0);   
-             obj.cacheRFootPoseAsContactConstraint([i/N i/N],r_foot_pose);  
+             obj.cacheRFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],r_foot_pose);  
              obj.cacheLFootPoseAsContactConstraint([0 0],l_foot_pose0);    
-             obj.cacheLFootPoseAsContactConstraint([i/N i/N],l_foot_pose);    
+             obj.cacheLFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],l_foot_pose);    
             else
-             obj.cacheLHandPose([i/N i/N],lhand_pose_cache);  
-             obj.cacheRHandPose([i/N i/N],rhand_pose_cache);  
-             obj.cacheRFootPoseAsContactConstraint([i/N i/N],r_foot_pose); 
-             obj.cacheLFootPoseAsContactConstraint([i/N i/N],l_foot_pose); 
+             obj.cacheLHandPose([(i-1)/(N-1) (i-1)/(N-1)],lhand_pose_cache);  
+             obj.cacheRHandPose([(i-1)/(N-1) (i-1)/(N-1)],rhand_pose_cache);  
+             obj.cacheRFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],r_foot_pose); 
+             obj.cacheLFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],l_foot_pose); 
             end
 
             ikoptions = IKoptions(obj.r);

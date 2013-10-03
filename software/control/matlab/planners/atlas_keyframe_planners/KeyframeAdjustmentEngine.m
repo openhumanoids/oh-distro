@@ -74,15 +74,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             elseif(mode==drc.plan_adjust_mode_t.ALL)
                 % dont remove anything
             end
-            
-            % remove old pelvis constraint and add new
-            obj.plan_cache.pelvis_constraint_cell = {};
+
             tol = [1e-6*ones(3,1);1e-6*ones(4,1)];
-            pose.max= pelvis_pose+tol;
-            pose.min= pelvis_pose-tol;
-            obj.cachePelvisPose([0 1],pose);
-            
             if(~obj.isBDIManipMode())
+                 % remove old feet constraints and add new
                 obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
                 obj.removeBodyConstraints(obj.r_foot_body,[-inf,inf]);
                 
@@ -95,6 +90,12 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 rfoot_pose.max = rfoot_pose0+tol(:);
                 rfoot_pose.min = rfoot_pose0-tol(:);
                 obj.cacheRFootPose([0 1],rfoot_pose);
+            else
+                % remove old pelvis constraint and add new
+                obj.plan_cache.pelvis_constraint_cell = {};            
+                pose.max= pelvis_pose+tol;
+                pose.min= pelvis_pose-tol;
+                obj.cachePelvisPose([0 1],pose);    
             end
             
             % run optimization
@@ -217,11 +218,30 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
             
             % delete old and add new
-            obj.plan_cache.pelvis_constraint_cell = {};
+
             tol = [1e-6*ones(3,1);1e-6*ones(4,1)];
-            pose.max= pelvis_pose+tol;
-            pose.min= pelvis_pose-tol;
-            obj.cachePelvisPose([0 1],pose);
+            if(~obj.isBDIManipMode())
+                 % remove old feet constraints and add new
+                obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
+                obj.removeBodyConstraints(obj.r_foot_body,[-inf,inf]);
+                
+                lfoot_pose0 = forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
+                lfoot_pose.max = lfoot_pose0+tol(:);
+                lfoot_pose.min = lfoot_pose0-tol(:);
+                obj.cacheLFootPose([0 1],lfoot_pose);
+                
+                rfoot_pose0 = forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
+                rfoot_pose.max = rfoot_pose0+tol(:);
+                rfoot_pose.min = rfoot_pose0-tol(:);
+                obj.cacheRFootPose([0 1],rfoot_pose);
+            else
+                % remove old pelvis constraint and add new
+                obj.plan_cache.pelvis_constraint_cell = {};            
+                pose.max= pelvis_pose+tol;
+                pose.min= pelvis_pose-tol;
+                obj.cachePelvisPose([0 1],pose);    
+            end
+            
             obj.plan_cache.isPointWiseIK= false;
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
@@ -325,7 +345,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 rhand_int_constraint = zeros(6,1);
                 s_int_rh = rh_ee_constraint.time*obj.plan_cache.time_2_index_scale;
                 % Desired position of palm in world frame
-                rpy = quat2rpy(rh_ee_constraiobj.plan_cache.num_breaksnt.desired_pose(4:7));
+                rpy = quat2rpy(rh_ee_constraint.desired_pose(4:7));
                 T_world_palm_r = HT(rh_ee_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
                 T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                 rhand_int_constraint(1:3) = T_world_hand_r(1:3,4);
@@ -335,8 +355,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     disp('rh end state is modified')
                     r_hand_poseT(1:3) = rhand_int_constraint(1:3);
                     r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
+                    %  replace Boundary Constraint In Cache
                     obj.replaceCachedConstraint(obj.r_hand_body,[1 1],r_hand_poseT(:));
-                    %obj.rhandT = rhand_int_constraint; // Must replace Boundary Constraint In Cache
                     rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                     rh_ee_constraint=[];
                 end
@@ -359,8 +379,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     disp('lh end state is modified')
                     l_hand_poseT(1:3) = lhand_int_constraint(1:3);
                     l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
+                    %  replace Boundary Constraint In Cache
                     obj.replaceCachedConstraint(obj.l_hand_body,[1 1],l_hand_poseT(:));
-                    %obj.lhandT = lhand_int_constraint; // Must replace Boundary Constraint In Cache
                     lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                     lh_ee_constraint=[];
                 end
@@ -473,7 +493,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rh)); % snap to closest break point (avoiding very close double constraints)
                 s_int_rh=obj.plan_cache.s_breaks(ind);
                 rhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose_int,1e-2,sind(5).^2,[s_int_rh,s_int_rh]);
-                rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell,rhand_intermediate_constraint];
+                rhand_constraint_cell = obj.plan_cache.rhand_constraint_cell;
+                rhand_constraint_cell = removeBodyConstraintUtil([s_int_rh,s_int_rh],rhand_constraint_cell);
+                rhand_constraint_cell = [rhand_constraint_cell,rhand_intermediate_constraint];
             else
                 rhand_constraint_cell = obj.plan_cache.rhand_constraint_cell;
             end
@@ -482,7 +504,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lh));
                 s_int_lh=obj.plan_cache.s_breaks(ind);
                 lhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose_int,1e-2,sind(5).^2,[s_int_lh,s_int_lh]);
-                lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell,lhand_intermediate_constraint];
+                lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
+                lhand_constraint_cell = removeBodyConstraintUtil([s_int_lh,s_int_lh],lhand_constraint_cell);
+                lhand_constraint_cell = [lhand_constraint_cell,lhand_intermediate_constraint];
             else
                 lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
             end
@@ -494,8 +518,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rf)); % snap to closest break point (avoiding very close double constraints)
                     s_int_rf=obj.plan_cache.s_breaks(ind);
                     rfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose_int,1e-4,sind(1).^2,[s_int_rf,s_int_rf]);
-                    rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell,rfoot_intermediate_constraint];
-                    
+                    rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
+                    rfoot_constraint_cell = removeBodyConstraintUtil([s_int_rf,s_int_rf],rfoot_constraint_cell);
+                    rfoot_constraint_cell = [rfoot_constraint_cell,rfoot_intermediate_constraint];
                 else
                     rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
                     
@@ -506,12 +531,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lf));
                     s_int_lf=obj.plan_cache.s_breaks(ind);
                     lfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose_int,1e-4,sind(1).^2,[s_int_lf,s_int_lf]);
-                    lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell,lfoot_intermediate_constraint];
-                    
+                    lfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
+                    lfoot_constraint_cell = removeBodyConstraintUtil([s_int_lf,s_int_lf],lfoot_constraint_cell);
+                    lfoot_constraint_cell = [lfoot_constraint_cell,lfoot_intermediate_constraint];
                 else
                     lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
                 end
-                %pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
+                pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
                 qsc = qsc.setShrinkFactor(0.3);
                 qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
             else
@@ -524,7 +550,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_head));
                 s_int_head=obj.plan_cache.s_breaks(ind);
                 head_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose_int,1e-4,sind(1).^2,[s_int_head,s_int_head]);
-                head_constraint_cell = [obj.plan_cache.head_constraint_cell,head_intermediate_constraint];
+                head_constraint_cell = obj.plan_cache.head_constraint_cell;
+                head_constraint_cell = removeBodyConstraintUtil([s_int_head,s_int_head],head_constraint_cell);
+                head_constraint_cell = [head_constraint_cell,head_intermediate_constraint];
             else
                 head_constraint_cell = obj.plan_cache.head_constraint_cell;
             end
@@ -632,6 +660,12 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             % update cache (will be overwritten when setPlanCache is called)
             obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+            obj.plan_cache.lhand_constraint_cell = lhand_constraint_cell;
+            obj.plan_cache.rhand_constraint_cell = rhand_constraint_cell;
+            obj.plan_cache.lfoot_constraint_cell = lfoot_constraint_cell;
+            obj.plan_cache.rfoot_constraint_cell = rfoot_constraint_cell;
+            obj.plan_cache.pelvis_constraint_cell = pelvis_constraint_cell;
+            obj.plan_cache.head_constraint_cell = head_constraint_cell;
             
             % publish plan
             disp('Publishing plan...');

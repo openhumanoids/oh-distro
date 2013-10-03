@@ -54,7 +54,7 @@ classdef ReachingPlanner < KeyframePlanner
       end
    %-----------------------------------------------------------------------------------------------------------------             
     function runOptimization(obj,varargin)
-
+        obj.plan_cache.clearCache();
         q_desired= [];
         rh_ee_goal= [];
         lh_ee_goal= [];

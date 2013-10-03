@@ -18,7 +18,7 @@ classdef ManipulationPlanner < KeyframePlanner
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
         obj.plan_cache.isPointWiseIK= true;
-        obj.plan_cache.num_breaks = 4;
+        obj.plan_cache.num_breaks = 0; % keyframe adjustment doesn't make any sense.
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
         obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
         obj.restrict_feet=true;
@@ -60,6 +60,10 @@ classdef ManipulationPlanner < KeyframePlanner
       end
     %-----------------------------------------------------------------------------------------------------------------            
       function runOptimizationForManipMotionMapOrPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,is_manip_map,goal_type_flags)
+
+        obj.plan_cache.clearCache();
+        obj.plan_cache.isPointWiseIK= true;
+        
         if(is_manip_map)
             disp('Generating manip map...');
             send_status(3,0,0,'Generating manip map...');
@@ -112,7 +116,7 @@ classdef ManipulationPlanner < KeyframePlanner
         utorso_constraint = {WorldPositionConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0(1:3),utorso_pose0(1:3)),...
           WorldQuatConstraint(obj.r,obj.utorso_body,utorso_pose0(4:7),1e-4)};
         % utorso_pose0 = utorso_pose0(1:3);
-obj.plan_cache.isPointWiseIK= true;
+        
         T_palm_grasp = HT([0.05;0;0],0,0,0); % We evaluate the achievement of hand grasps based upon a notional grasp point
         T_grasp_palm = inv_HT(T_palm_grasp);
 
@@ -127,25 +131,6 @@ obj.plan_cache.isPointWiseIK= true;
         qsc = QuasiStaticConstraint(obj.r);
         qsc = qsc.setShrinkFactor(0.8);
 
-        % Might be worth preventing leaning forward too much also
-
-        if(~is_manip_map)
-            %obj.rfootT = forwardKin(obj.r,kinsol,obj.r_foot_body,[0;0;0],1);
-            %obj.lfootT = forwardKin(obj.r,kinsol,obj.l_foot_body,[0;0;0],1);
-            %obj.rhandT = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
-            %obj.lhandT = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
-            % Dont move head during keyframe modification?
-            % headT  = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
-            % kc_headT = ActionKinematicConstraint(obj.r, obj.head_body,[0;0;0],headT,[0,1],'headT');
-            % obj.plan_cache.ks = obj.plan_cache.ks.addKinematicConstraint(kc_headT);
-           obj.cacheLHandPose([0 0],l_hand_pose0);
-           obj.cacheRHandPose([0 0],r_hand_pose0);
-           if(~obj.isBDIManipMode())
-              obj.cacheLFootPoseAsContactConstraint([0 0],l_foot_pose0);
-              obj.cacheRFootPoseAsContactConstraint([0 0],r_foot_pose0);
-           end
-           obj.cachePelvisPose([0 1],pelvis_pose0);
-        end
 
         %lh_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'left_palm')),ee_names));
         %rh_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'right_palm')),ee_names));
@@ -246,13 +231,8 @@ obj.plan_cache.isPointWiseIK= true;
                   %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_hand_pose];
                   plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_grasp_pose];
                 else
-                  if(i==length(timeIndices))
-                      %obj.lhandT = l_ee_goal;                                
-                      obj.cacheLHandPose([1 1],l_hand_pose);
-                  else
-                      N= length(timeIndices);
-                      obj.cacheLHandPose([i/N i/N],l_hand_pose);
-                  end
+                  N= length(timeIndices);
+                  obj.cacheLHandPose([(i-1)/(N-1) (i-1)/(N-1)],l_hand_pose);         
                 end
               end
 
@@ -283,13 +263,8 @@ obj.plan_cache.isPointWiseIK= true;
                   %plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_hand_pose];
                   plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_grasp_pose];
                 else
-                  if(i==length(timeIndices))
-                      %obj.rhandT = r_ee_goal;                               
-                     obj.cacheRHandPose([1 1],r_hand_pose);
-                  else
-                      N= length(timeIndices);
-                      obj.cacheRHandPose([i/N i/N],r_hand_pose);
-                  end
+                  N= length(timeIndices);
+                  obj.cacheRHandPose([(i-1)/(N-1) (i-1)/(N-1)],r_hand_pose);
                 end
               end
 
@@ -308,13 +283,8 @@ obj.plan_cache.isPointWiseIK= true;
                   plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
                   plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose l_foot_pose];
                 else
-                  if(i==length(timeIndices))
-                    % obj.lfootT = l_foot_pose;                                
-                    obj.cacheLFootPoseAsContactConstraint([1 1],l_foot_pose);
-                  else
-                    N= length(timeIndices);
-                    obj.cacheLFootPoseAsContactConstraint([i/N i/N],l_foot_pose);
-                  end
+                  N= length(timeIndices);
+                  obj.cacheLFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],l_foot_pose);
                 end
               end
 
@@ -333,13 +303,8 @@ obj.plan_cache.isPointWiseIK= true;
                   plan_Indices(i).dof_value=[plan_Indices(i).dof_value;Indices(ind(k)).dof_value(1)];
                   plan_Indices(i).dof_pose=[plan_Indices(i).dof_pose r_foot_pose];
                 else
-                  if(i==length(timeIndices))
-                      % obj.rfootT = r_foot_pose;                               
-                    obj.cacheRFootPoseAsContactConstraint([1 1],r_foot_pose);
-                  else
-                      N= length(timeIndices);
-                    obj.cacheRFootPoseAsContactConstraint([i/N i/N],r_foot_pose);
-                  end
+                  N= length(timeIndices);
+                  obj.cacheRFootPoseAsContactConstraint([(i-1)/(N-1) (i-1)/(N-1)],r_foot_pose);
                 end
               end
             end
@@ -403,13 +368,6 @@ obj.plan_cache.isPointWiseIK= true;
             end
 
             %q_d(:,i) = q(ind,i);
-        end
-
-        % publish robot map
-        if(is_manip_map)
-            disp('Generating manip map...');
-        else
-            disp('Generating manip plan...');
         end
 
         utime = now() * 24 * 60 * 60;
@@ -523,6 +481,7 @@ obj.plan_cache.isPointWiseIK= true;
         else
           xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
           xtraj(1,:) = 0*timeIndices;
+          obj.plan_cache.num_breaks = 0;
           keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.plan_cache.num_breaks))); % no more than ${obj.num_breaks} keyframes
           xtraj(1,keyframe_inds) = 1.0;
           xtraj(2,:) = 0*timeIndices;
@@ -546,6 +505,7 @@ obj.plan_cache.isPointWiseIK= true;
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
 
           nq = obj.r.getNumDOF();
+          s_breaks=linspace(0,1,10); % just to evaluate arc length
           q_breaks = zeros(nq,length(s_breaks));
           for brk =1:length(s_breaks),
             q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
@@ -630,15 +590,15 @@ obj.plan_cache.isPointWiseIK= true;
             % Also cache grasp transitions
             grasp_transition_breaks = obj.plan_cache.s(xtraj(2,:)==1);
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
-            obj.plan_cache.num_grasp_transitions = sum(xtraj(2,:));
+            obj.plan_cache.num_grasp_transitions = size(G,2);%sum(xtraj(2,:));
             obj.plan_cache.grasp_transition_states = G;
             obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
           else
             obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector);
           end
           send_status(3,0,0,'Published manip plan...');
-
         end
+
       end
   %-----------------------------------------------------------------------------------------------------------------              
       function cost = getCostVector(obj)

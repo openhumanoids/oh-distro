@@ -37,6 +37,7 @@ classdef PosturePlanner < KeyframePlanner
         end
      %-----------------------------------------------------------------------------------------------------------------             
         function runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
+          obj.plan_cache.clearCache();
           disp('Generating posture plan...');
           q0 = x0(1:getNumDOF(obj.r));
           s = [0 1];

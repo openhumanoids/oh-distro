@@ -143,6 +143,8 @@ classdef KeyframePlanner < handle
             head_breaks = zeros(7,length(s_breaks));
             rfoot_breaks = zeros(7,length(s_breaks));
             lfoot_breaks = zeros(7,length(s_breaks));
+            ruarm_breaks = zeros(7,length(s_breaks));
+            luarm_breaks = zeros(7,length(s_breaks));
             for brk =1:length(s_breaks),
                 kinsol_tmp = doKinematics(obj.r,q_breaks(:,brk));
                 rhand_breaks(:,brk)= forwardKin(obj.r,kinsol_tmp,obj.r_hand_body,[0;0;0],2);
