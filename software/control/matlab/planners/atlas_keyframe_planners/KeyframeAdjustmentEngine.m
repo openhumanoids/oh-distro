@@ -49,77 +49,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             kinsol_tmp = doKinematics(obj.r,q0);
             pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
             
-            if(mode==drc.plan_adjust_mode_t.LEFT_HAND)
-                obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
-                obj.removeBodyConstraints(obj.r_foot_body,[-inf,inf]);
-                obj.removeBodyConstraints(obj.r_hand_body,[-inf,inf]);
-            elseif(mode==drc.plan_adjust_mode_t.RIGHT_HAND)
-                obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
-                obj.removeBodyConstraints(obj.r_foot_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.l_hand_body,[-inf inf]);
-            elseif(mode==drc.plan_adjust_mode_t.BOTH_HANDS)
-                obj.removeBodyConstraints(obj.l_foot_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.r_foot_body,[-inf inf]);
-            elseif(mode==drc.plan_adjust_mode_t.LEFT_FOOT)
-                obj.removeBodyConstraints(obj.l_hand_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.r_hand_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.r_foot_body,[-inf inf]);
-            elseif(mode==drc.plan_adjust_mode_t.RIGHT_FOOT)
-                obj.removeBodyConstraints(obj.l_hand_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.r_hand_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.l_foot_body,[-inf inf]);
-            elseif(mode==drc.plan_adjust_mode_t.BOTH_FEET)
-                obj.removeBodyConstraints(obj.l_hand_body,[-inf inf]);
-                obj.removeBodyConstraints(obj.r_hand_body,[-inf inf]);
-            elseif(mode==drc.plan_adjust_mode_t.ALL)
-                % dont remove anything
-            end
-
-            tol = [1e-6*ones(3,1);1e-6*ones(4,1)];
-            if(~obj.isBDIManipMode())
-                 % remove old feet constraints and add new
-                obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
-                obj.removeBodyConstraints(obj.r_foot_body,[-inf,inf]);
-                
-                lfoot_pose0 = forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
-                lfoot_pose.max = lfoot_pose0+tol(:);
-                lfoot_pose.min = lfoot_pose0-tol(:);
-                obj.cacheLFootPose([0 1],lfoot_pose);
-                
-                rfoot_pose0 = forwardKin(obj.r,kinsol_tmp,obj.r_foot_body,[0;0;0],2);
-                rfoot_pose.max = rfoot_pose0+tol(:);
-                rfoot_pose.min = rfoot_pose0-tol(:);
-                obj.cacheRFootPose([0 1],rfoot_pose);
-            else
-                % remove old pelvis constraint and add new
-                obj.plan_cache.pelvis_constraint_cell = {};            
-                pose.max= pelvis_pose+tol;
-                pose.min= pelvis_pose-tol;
-                obj.cachePelvisPose([0 1],pose);    
-            end
-            
-            % run optimization
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
-        end
-        %-----------------------------------------------------------------------------------------------------------------
-        function adjustCachedPlanToCurrentPelvisPoseViaIKTraj(obj,x0,mode)
-            rh_ee_constraint= [];
-            lh_ee_constraint= [];
-            rf_ee_constraint= [];
-            lf_ee_constraint= [];
-            h_ee_constraint = [];
-            goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-            goal_type_flags.rh = 0;
-            goal_type_flags.h  = 0;
-            goal_type_flags.lf = 0;
-            goal_type_flags.rf = 0;
-            
-            % delete all pelvis constraints
-            % Add the new pelvis constraint for all of time.
-            q0 = x0(1:getNumDOF(obj.r));
-            kinsol_tmp = doKinematics(obj.r,q0);
-            pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
-            
             q_samples = zeros(obj.r.getNumDOF(),length(obj.plan_cache.s));
             for i =1:length(obj.plan_cache.s)
                 q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.plan_cache.s(i));
@@ -191,40 +120,40 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     WorldQuatConstraint(obj.r,obj.r_foot_body,rfoot_pose(4:7),quat_tol)};
             end
             
-            %============================
-            cost = getCostVector(obj);
-            ikoptions = IKoptions(obj.r);
-            ikoptions = ikoptions.setDebug(true);
-            ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
-            ik_qnom = q0;
-            qsc = QuasiStaticConstraint(obj.r);
-            qsc = qsc.setActive(false);
-            qsc = qsc.setShrinkFactor(0.85);
-            ikoptions = ikoptions.setMajorIterationsLimit(500);
-            %joint_constraint = PostureConstraint(obj.r);
-            constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
-                WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}];
-            [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,qsc,ikoptions);
-            if(snopt_info > 10)
-                warning('The IK sequence fails');
-                send_msg = sprintf('snopt_info == %d.  IK failed to adjust first pose.\n %s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
-                send_status(4,0,0,send_msg);
+            if(obj.plan_cache.isPointWiseIK== false)
+                %============================
+                cost = getCostVector(obj);
+                ikoptions = IKoptions(obj.r);
+                ikoptions = ikoptions.setDebug(true);
+                ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+                ik_qnom = q0;
+                qsc = QuasiStaticConstraint(obj.r);
+                qsc = qsc.setActive(false);
+                qsc = qsc.setShrinkFactor(0.85);
+                ikoptions = ikoptions.setMajorIterationsLimit(500);
+                %joint_constraint = PostureConstraint(obj.r);
+                constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
+                    WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}];
+                [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,qsc,ikoptions);
+                if(snopt_info > 10)
+                    warning('The IK sequence fails');
+                    send_msg = sprintf('snopt_info == %d.  IK failed to adjust first pose.\n %s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
+                    send_status(4,0,0,send_msg);
+                end
+                q_samples(:,1) =  q_first;
+                %============================
+                % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
+                % Ik Sequence by design does not modify the first posture at time zero.
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
             end
-            %============================
-            q_samples(:,1) =  q_first;
-            
-            % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
-            % Ik Sequence by design does not modify the first posture at time zero.
-            obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
             
             % delete old and add new
-
             tol = [1e-6*ones(3,1);1e-6*ones(4,1)];
             if(~obj.isBDIManipMode())
                  % remove old feet constraints and add new
                 obj.removeBodyConstraints(obj.l_foot_body,[-inf,inf]);
                 obj.removeBodyConstraints(obj.r_foot_body,[-inf,inf]);
-                
+                kinsol_tmp = doKinematics(obj.r,q0);
                 lfoot_pose0 = forwardKin(obj.r,kinsol_tmp,obj.l_foot_body,[0;0;0],2);
                 lfoot_pose.max = lfoot_pose0+tol(:);
                 lfoot_pose.min = lfoot_pose0-tol(:);
@@ -242,7 +171,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 obj.cachePelvisPose([0 1],pose);    
             end
             
-            obj.plan_cache.isPointWiseIK= false;
+            
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
         end
         %-----------------------------------------------------------------------------------------------------------------
@@ -251,10 +180,15 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
 
             s = linspace(0,1,length(ts));
             s_breaks = s((logictraj(1,:)==1));
+            if(~(isempty(s_breaks)))
+                obj.plan_cache.isPointWiseIK= false;
+            else
+                obj.plan_cache.isPointWiseIK= true;
+            end
             grasp_transition_breaks = s((logictraj(2,:)==1));
             
             obj.plan_cache.s = s;            
-            obj.plan_cache.isPointWiseIK= true;
+            
             obj.plan_cache.isEndPose = false;
             obj.plan_cache.num_breaks = sum(logictraj(1,:));
             obj.plan_cache.s_breaks = s_breaks;
@@ -269,7 +203,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             end
             
             % s = linspace(0,1,2*length(ts));
-            s_breaks = s;
+            if(obj.plan_cache.isPointWiseIK==true)
+                s_breaks = s;
+            end
             nq = obj.r.getNumDOF();
             q_breaks = zeros(nq,length(s_breaks));
             rhand_breaks = zeros(7,length(s_breaks));
@@ -301,9 +237,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                         obj.cacheLFootPose([0 1],lfoot_pose);
                         rfoot_pose.max = rfoot_breaks(:,brk)+tol(:);
                         rfoot_pose.min = rfoot_breaks(:,brk)-tol(:);
-                        obj.cacheRFootPose([0 1],rfoot_pose);
-                        pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
-                        obj.cachePelvisPose([0 1],pelvis_pose);
+                        obj.cacheRFootPose([0 1],rfoot_pose);                  
                     else
                         pelvis_pose= forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
                         obj.cachePelvisPose([0 1],pelvis_pose);
