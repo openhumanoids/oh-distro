@@ -544,26 +544,40 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
   std::cout << rel_angle*180/M_PI << " Relative Angle around Cylinder\n";
   std::cout <<  radius << " Radius\n";
   
+  double direction_yaw =0;
+  double direction_offset=1;
+  if (pt(2) < 0){
+    std::cout << "back side (typical)\n"; // fingers pointing in +z axis
+    direction_yaw =0;
+    direction_offset = 1;
+  }else{
+    std::cout << "front side\n"; // fingers pointing in -z axis
+    direction_yaw = 180;
+    direction_offset = -1;
+  }
+  
   
   // 2. Create a reasonable afforance to hand pose 
   Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
   // translation: outwards, upwards, forwards  
   if (use_irobot_){ // iRobot
     if (grasp_opt_msg_.grasp_type ==0){ // iRobot left
-      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,-0.09;
+      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,direction_offset*-0.09;
       aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
     }else{ // iRobot right
-      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,-0.09;
+      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,direction_offset*-0.09;
       aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
     }
   }else{ // Sandia
     // was: 0.05 + radius ,0,-0.12;
     // 0.03 was too little
     if (grasp_opt_msg_.grasp_type ==0){ // sandia left
-      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
+      aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }else{ // sandia right
-      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,-0.10;
+      aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
       aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     }
   }
