@@ -27,9 +27,12 @@ namespace renderer_robot_plan
     
    public:
     std::string _robot_name;
-    
+    std::string _lhand_ee_name;
+    std::string _rhand_ee_name;
+   
    private:      
     std::string _urdf_xml_string;   
+    
    
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
 
@@ -75,6 +78,12 @@ namespace renderer_robot_plan
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_right_hand;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_left_foot;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_right_foot;
+    //Pelvis, COM and JointDOF Markers
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_pelvis;
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_com;
+    //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_phantom_robot;
+    
+    
     //-------------message callback
     
     drc::robot_plan_t _received_plan;
@@ -104,16 +113,14 @@ namespace renderer_robot_plan
      
       T_base_palm = KDL::Frame::Identity();
       T_base_palm.M = KDL::Rotation::RPY(0,-M_PI/2,0);
-      _gl_robot_keyframe_list[index]->get_link_frame("left_palm",T_world_palm_l);
-      _gl_robot_keyframe_list[index]->get_link_frame("right_palm",T_world_palm_r);
+      
+      _gl_robot_keyframe_list[index]->get_link_frame(_lhand_ee_name,T_world_palm_l);
+      _gl_robot_keyframe_list[index]->get_link_frame(_rhand_ee_name,T_world_palm_r);
 
       T_world_base_l = T_world_palm_l*(T_base_palm.Inverse());
       T_world_base_r = T_world_palm_r*(T_base_palm.Inverse());
       
-
-      
       // Flip marker direction to always point away from the body center.
-
       double normal, flipped;
       Eigen::Vector3f u_x(1,0,0);
       Eigen::Vector3f u_y(0,1,0);
@@ -254,6 +261,117 @@ namespace renderer_robot_plan
     
     };    
     
+    void set_in_motion_pelvis_state(int index)
+    {
+ 
+      KDL::Frame T_world_pelvis;     
+      _gl_robot_keyframe_list[index]->get_link_frame("pelvis",T_world_pelvis);
+
+      // Flip marker direction to always point away from the body center.
+      double normal, flipped;
+      Eigen::Vector3f u_x(1,0,0);
+      Eigen::Vector3f u_y(0,1,0);
+      Eigen::Vector3f u_pelvis_to_body;
+      u_pelvis_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_pelvis.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_pelvis.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_pelvis.p[2]; 
+      u_pelvis_to_body.normalize();
+      
+      if(u_pelvis_to_body.norm()>0)
+      {
+        normal = acos(u_pelvis_to_body.dot(u_x));
+        flipped = acos(u_pelvis_to_body.dot(-u_x));
+        if(flipped>normal+1e-1) 
+        {
+          _gl_pelvis->flip_trans_marker_xdir(true);
+        }
+        else
+        {
+          _gl_pelvis->flip_trans_marker_xdir(false);
+        }
+         
+        normal = acos(u_pelvis_to_body.dot(u_y));
+        flipped = acos(u_pelvis_to_body.dot(-u_y));
+        if(flipped>normal+1e-1)
+        {
+          _gl_pelvis->flip_trans_marker_ydir(true);
+        }
+        else
+        {
+          _gl_pelvis->flip_trans_marker_ydir(false); 
+        }
+      }
+      else
+      {
+        _gl_pelvis->flip_trans_marker_xdir(false); 
+        _gl_pelvis->flip_trans_marker_ydir(false); 
+      }
+      _gl_pelvis->flip_trans_marker_zdir(true);
+      std::map<std::string, double> jointpos;
+      jointpos=_gl_pelvis->_current_jointpos;
+      _gl_pelvis->set_state(T_world_pelvis,jointpos);
+      _gl_pelvis->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
+    
+      _in_motion_keyframe_index = index;
+    };        
+    
+    void set_in_motion_com_state(int index)
+    {
+ 
+      KDL::Frame T_world_com; 
+      _gl_robot_keyframe_list[index]->get_com_frame(T_world_com);
+      
+      // Flip marker direction to always point away from the body center.
+      double normal, flipped;
+      Eigen::Vector3f u_x(1,0,0);
+      Eigen::Vector3f u_y(0,1,0);
+      Eigen::Vector3f u_com_to_body;
+      u_com_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_com.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_com.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_com.p[2]; 
+      u_com_to_body.normalize();
+      
+      if(u_com_to_body.norm()>0)
+      {
+        normal = acos(u_com_to_body.dot(u_x));
+        flipped = acos(u_com_to_body.dot(-u_x));
+        if(flipped>normal+1e-1) 
+        {
+          _gl_com->flip_trans_marker_xdir(true);
+        }
+        else
+        {
+          _gl_com->flip_trans_marker_xdir(false);
+        }
+         
+        normal = acos(u_com_to_body.dot(u_y));
+        flipped = acos(u_com_to_body.dot(-u_y));
+        if(flipped>normal+1e-1)
+        {
+          _gl_com->flip_trans_marker_ydir(true);
+        }
+        else
+        {
+          _gl_com->flip_trans_marker_ydir(false); 
+        }
+      }
+      else
+      {
+        _gl_com->flip_trans_marker_xdir(false); 
+        _gl_com->flip_trans_marker_ydir(false); 
+      }
+      _gl_com->flip_trans_marker_zdir(true);
+      std::map<std::string, double> jointpos;
+      jointpos=_gl_com->_current_jointpos;
+      _gl_com->set_state(T_world_com,jointpos);
+      _gl_com->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
+    
+      _in_motion_keyframe_index = index;
+    };           
+              
+    
+    
+    
     bool is_in_motion(int index) {  
         return (index==_in_motion_keyframe_index);
     };
@@ -291,6 +409,8 @@ namespace renderer_robot_plan
         _gl_right_hand->enable_bodypose_adjustment(false);
         _gl_left_foot->enable_bodypose_adjustment(false); 
         _gl_right_foot->enable_bodypose_adjustment(false);
+        _gl_pelvis->enable_bodypose_adjustment(false); 
+        _gl_com->enable_bodypose_adjustment(false);
         _is_manip_plan = false;
         }
         _is_manip_map = false;
@@ -399,9 +519,10 @@ namespace renderer_robot_plan
     }// end if	 
   };
 			      
-  bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
+  bool load_hand_urdfs(bool _is_left_sandia, bool _is_right_sandia, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
   bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
-
+  bool load_misc_marker_urdfs(std::string &_pelvis_urdf_xml_string,std::string &_com_urdf_xml_string);
+  
   public:
   //-------------------------------
   void prepareActivePlanForStorage(KDL::Frame &T_world_aff, 

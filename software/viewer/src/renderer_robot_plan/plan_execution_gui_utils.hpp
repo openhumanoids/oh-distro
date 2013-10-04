@@ -119,7 +119,7 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     self->robotPlanListener->purge_current_plan();
-    
+    //self->marker_choice_state = HANDS; // if you want to reset markers
     if(self->robotPlanListener->is_multi_approval_plan()){
       gtk_widget_destroy(self->multiapprove_plan_execution_dock);
       self->multiapprove_plan_execution_dock= NULL;    

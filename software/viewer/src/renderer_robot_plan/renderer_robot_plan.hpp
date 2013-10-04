@@ -34,6 +34,11 @@ namespace renderer_robot_plan_gui_utils{
 namespace renderer_robot_plan 
 {
 
+  enum marker_group_type
+  {
+    HANDS=0,PELVIS,COM,FEET
+  };
+
   typedef struct _RendererRobotPlan
   {
     BotRenderer renderer;
@@ -61,12 +66,12 @@ namespace renderer_robot_plan
     Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
     double ray_hit_t;
     
-    
-    
     std::string* selection;
     std::string* marker_selection;
+    
+    int  marker_choice_state;
     bool is_left_in_motion;
-    bool is_hand_in_motion;
+    int  in_motion_state;
     int selected_plan_index;
     int selected_keyframe_index;
     int displayed_plan_index;
@@ -87,13 +92,48 @@ namespace renderer_robot_plan
     
     void keyboardSignalCallback(int keyval, bool is_pressed)
     {
-
+    
+      int last_marker_choice = FEET; 
       if((!is_pressed)&&(keyval ==  BKSPACE ))
       {
         cout << "RendererRobotPlan:: back-space pressed. If cache available, will undo replan or plan adjustment." << endl;
         this->robotPlanListener-> setManipPlanFromBackUp();
       }
-      
+      if(this->robotPlanListener->is_manip_plan())
+      {
+        if((!is_pressed)&&(keyval ==  LFTARRW))
+        {
+          if(this->marker_choice_state>0)
+            this->marker_choice_state--;
+          else
+            this->marker_choice_state = last_marker_choice;
+          //cout << "Left Arrow " << this->marker_choice_state << endl;
+        }
+        else if((!is_pressed)&&(keyval ==  RGTARRW))
+        {
+          if(this->marker_choice_state<last_marker_choice)
+            this->marker_choice_state++;
+          else
+            this->marker_choice_state = 0;
+          //cout << "Right Arrow " << this->marker_choice_state << endl;
+        }
+        else if((!is_pressed)&&(keyval ==  UPARRW))
+        {
+          if(this->marker_choice_state<last_marker_choice)
+            this->marker_choice_state++;
+          else
+            this->marker_choice_state = 0;
+          //cout << "Up Arrow " << this->marker_choice_state << endl;
+        }
+        else if((!is_pressed)&&(keyval ==  DWNARRW))
+        {
+          if(this->marker_choice_state>0)
+            this->marker_choice_state--;
+          else
+            this->marker_choice_state = last_marker_choice;
+         //cout << "Down Arrow " << this->marker_choice_state << endl;
+        }  
+      }    
     }
   
     void affTriggerSignalsCallback(aff_trigger_type type,string otdf_id,KDL::Frame T_world_aff,string plan_id)
@@ -132,6 +172,56 @@ namespace renderer_robot_plan
 // ===================================================================
 // Distance queries
 // ===================================================================
+
+  inline static bool get_shortest_distance_from_marker_object(void *user,Eigen::Vector3f &from,Eigen::Vector3f &to,Eigen::Vector3f &hit_pt, boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_marker, collision::Collision_Object * intersected_object,double& shortest_distance)
+  {
+    bool value = false;
+     RendererRobotPlan *self = (RendererRobotPlan*) user;
+     if(_gl_marker->is_bodypose_adjustment_enabled())
+      {
+          _gl_marker->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+          
+          if(intersected_object != NULL )
+          {
+              self->ray_hit = hit_pt;
+              self->ray_hit_t = (hit_pt - self->ray_start).norm();
+              Eigen::Vector3f diff = (from-hit_pt);
+              double distance = diff.norm();
+              if(shortest_distance>0) {
+                if (distance < shortest_distance)
+                {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  //(*self->selection)  =  ;
+                  (*self->marker_selection)  = string(intersected_object->id().c_str());
+                   value =  true;
+                }
+              }
+              else {
+                shortest_distance = distance;
+                self->ray_hit = hit_pt;
+                self->ray_hit_drag = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                //(*self->selection)  =  ;
+                (*self->marker_selection)  = string(intersected_object->id().c_str());
+                 value =  true;
+               }
+          }
+          else 
+          {
+            // clear previous selections
+            string no_selection = " ";
+            _gl_marker->highlight_link(no_selection); 
+          }  // end if-else intersected_object !=NULL;
+                     
+      }// end if(_gl_marker->is_bodypose_adjustment_enabled())
+      
+      return value;
+  } // end get get_shortest_distance_from_marker_object
+
+
   inline static double get_shortest_distance_between_keyframes_and_markers (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -141,189 +231,60 @@ namespace renderer_robot_plan
    // self->selected_keyframe_index=-1; Do not clear this on marker selection, selected markers need to know which keyframe index they are associated with
   
        if((self->robotPlanListener->_gl_left_hand)&&(self->robotPlanListener->_gl_right_hand)
-        &&(self->robotPlanListener->_gl_left_foot)&&(self->robotPlanListener->_gl_right_foot)) // exists
+        &&(self->robotPlanListener->_gl_left_foot)&&(self->robotPlanListener->_gl_right_foot)
+        &&(self->robotPlanListener->_gl_pelvis)&&(self->robotPlanListener->_gl_com)) // exists
       {
-        if(self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
+        //  Marker Foviation Logic 
+        if(self->marker_choice_state == HANDS)
         {
-        
-            self->robotPlanListener->_gl_left_hand->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
-            
-            if(intersected_object != NULL )
-            {
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                Eigen::Vector3f diff = (from-hit_pt);
-                double distance = diff.norm();
-                if(shortest_distance>0) {
-                  if (distance < shortest_distance)
-                  {
-                    shortest_distance = distance;
-                    self->ray_hit = hit_pt;
-                    self->ray_hit_drag = hit_pt;
-                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                    //(*self->selection)  =  ;
-                    (*self->marker_selection)  = string(intersected_object->id().c_str());
-                     self->is_left_in_motion =  true;
-                     self->is_hand_in_motion =  true;
-                  }
-                }
-                else {
-                  shortest_distance = distance;
-                  self->ray_hit = hit_pt;
-                  self->ray_hit_drag = hit_pt;
-                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  //(*self->selection)  =  ;
-                  (*self->marker_selection)  = string(intersected_object->id().c_str());
-                   self->is_left_in_motion =  true;
-                   self->is_hand_in_motion =  true;
-                 }
-            }
-            else 
-            {
-              // clear previous selections
-              string no_selection = " ";
-              self->robotPlanListener->_gl_left_hand->highlight_link(no_selection); 
-            }  // end if-else intersected_object !=NULL;
-                       
-        }// end if(self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
-        
-        if(self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled())
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_left_hand,intersected_object,shortest_distance))
+          {
+            self->is_left_in_motion = true;
+            self->in_motion_state = HANDS;
+          }
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_right_hand,intersected_object,shortest_distance))
+          {
+            self->is_left_in_motion = false;
+            self->in_motion_state = HANDS;
+          }
+        }
+        else if(self->marker_choice_state == FEET)
         {
-      
-            self->robotPlanListener->_gl_right_hand->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
-          
-            if(intersected_object != NULL )
-            {
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                Eigen::Vector3f diff = (from-hit_pt);
-                double distance = diff.norm();
-                if(shortest_distance>0) {
-                  if (distance < shortest_distance)
-                  {
-                    shortest_distance = distance;
-                    self->ray_hit = hit_pt;
-                    self->ray_hit_drag = hit_pt;
-                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                    //(*self->selection)  =  ;
-                    (*self->marker_selection)  = string(intersected_object->id().c_str());
-                    self->is_left_in_motion =  false;
-                    self->is_hand_in_motion =  true;
-                  }
-                }
-                else {
-                  shortest_distance = distance;
-                  self->ray_hit = hit_pt;
-                  self->ray_hit_drag = hit_pt;
-                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  //(*self->selection)  =  ;
-                  (*self->marker_selection)  = string(intersected_object->id().c_str());
-                  self->is_left_in_motion =  false;
-                  self->is_hand_in_motion =  true;
-                 }
-            }
-            else 
-            {
-              // clear previous selections
-              string no_selection = " ";
-              self->robotPlanListener->_gl_right_hand->highlight_link(no_selection); 
-            }  // end if-else intersected_object !=NULL;
-                       
-        }// end if(self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled())
- 
-       if(self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled())
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_left_foot,intersected_object,shortest_distance))
+          {
+            self->is_left_in_motion = true;
+            self->in_motion_state = FEET;
+          }
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_right_foot,intersected_object,shortest_distance))
+          {
+            self->is_left_in_motion = false;
+            self->in_motion_state = FEET;
+          } 
+        }  
+        else if(self->marker_choice_state == PELVIS)
         {
-        
-            self->robotPlanListener->_gl_left_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
-            
-            if(intersected_object != NULL )
-            {
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                Eigen::Vector3f diff = (from-hit_pt);
-                double distance = diff.norm();
-                if(shortest_distance>0) {
-                  if (distance < shortest_distance)
-                  {
-                    shortest_distance = distance;
-                    self->ray_hit = hit_pt;
-                    self->ray_hit_drag = hit_pt;
-                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                    //(*self->selection)  =  ;
-                    (*self->marker_selection)  = string(intersected_object->id().c_str());
-                     self->is_left_in_motion =  true;
-                     self->is_hand_in_motion =  false;
-                  }
-                }
-                else {
-                  shortest_distance = distance;
-                  self->ray_hit = hit_pt;
-                  self->ray_hit_drag = hit_pt;
-                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  //(*self->selection)  =  ;
-                  (*self->marker_selection)  = string(intersected_object->id().c_str());
-                   self->is_left_in_motion =  true;
-                   self->is_hand_in_motion =  false;
-                 }
-            }
-            else 
-            {
-              // clear previous selections
-              string no_selection = " ";
-              self->robotPlanListener->_gl_left_foot->highlight_link(no_selection); 
-            }  // end if-else intersected_object !=NULL;
-                       
-        }// end if(self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled())       
-        if(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_pelvis,intersected_object,shortest_distance))
+          {
+            self->in_motion_state = PELVIS;
+          } 
+        }
+        else if(self->marker_choice_state == COM)
         {
-      
-            self->robotPlanListener->_gl_right_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
-          
-            if(intersected_object != NULL )
-            {
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                Eigen::Vector3f diff = (from-hit_pt);
-                double distance = diff.norm();
-                if(shortest_distance>0) {
-                  if (distance < shortest_distance)
-                  {
-                    shortest_distance = distance;
-                    self->ray_hit = hit_pt;
-                    self->ray_hit_drag = hit_pt;
-                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                    //(*self->selection)  =  ;
-                    (*self->marker_selection)  = string(intersected_object->id().c_str());
-                    self->is_left_in_motion =  false;
-                    self->is_hand_in_motion =  false;
-                  }
-                }
-                else {
-                  shortest_distance = distance;
-                  self->ray_hit = hit_pt;
-                  self->ray_hit_drag = hit_pt;
-                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  //(*self->selection)  =  ;
-                  (*self->marker_selection)  = string(intersected_object->id().c_str());
-                  self->is_left_in_motion =  false;
-                  self->is_hand_in_motion =  false;
-                 }
-            }
-            else 
-            {
-              // clear previous selections
-              string no_selection = " ";
-              self->robotPlanListener->_gl_right_foot->highlight_link(no_selection); 
-            }  // end if-else intersected_object !=NULL;
-                       
-        }// end if(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())        
-      } //end ((..._left_hand)&&(..._right_hand)&&(..._left_foot)&&(..._right_foot)) 
+          if(get_shortest_distance_from_marker_object(self,from,to,hit_pt,self->robotPlanListener->_gl_com,intersected_object,shortest_distance))
+          {
+            self->in_motion_state = COM;
+          }      
+        }  
+         
+      } //end ((..._left_hand)&&(..._right_hand)&&(..._left_foot)&&(..._right_foot)&&(..._pelvis)&&(..._com)) 
 
      if((self->robotPlanListener->_gl_robot_keyframe_list.size()>1)
       &&(!self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
       &&(!self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled())
       &&(!self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled())
-      &&(!self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())) // knot points other than end points exist
+      &&(!self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())
+      &&(!self->robotPlanListener->_gl_pelvis->is_bodypose_adjustment_enabled())
+      &&(!self->robotPlanListener->_gl_com->is_bodypose_adjustment_enabled())) // knot points other than end points exist
      {
         //for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size()-1; i++) // ignore current state and end state, only intermediate stuff
         if(self->adjust_endstate)
@@ -449,11 +410,16 @@ namespace renderer_robot_plan
     
     
      //Publish in palm frame; Handle hand to palm transform in the planner.
-    KDL::Frame T_worldframe_palm_l,T_worldframe_palm_r,T_worldframe_foot_l,T_worldframe_foot_r;         
-    self->robotPlanListener->_gl_left_hand->get_link_frame("left_palm",T_worldframe_palm_l);
-    self->robotPlanListener->_gl_right_hand->get_link_frame("right_palm",T_worldframe_palm_r);
+    KDL::Frame T_worldframe_palm_l,T_worldframe_palm_r,T_worldframe_foot_l,T_worldframe_foot_r;  
+     
+    self->robotPlanListener->_gl_left_hand->get_link_frame(self->robotPlanListener->_lhand_ee_name,T_worldframe_palm_l);
+    self->robotPlanListener->_gl_right_hand->get_link_frame(self->robotPlanListener->_rhand_ee_name,T_worldframe_palm_r);
     self->robotPlanListener->_gl_left_foot->get_link_frame("l_foot",T_worldframe_foot_l);
-    self->robotPlanListener->_gl_right_foot->get_link_frame("r_foot",T_worldframe_foot_r);       
+    self->robotPlanListener->_gl_right_foot->get_link_frame("r_foot",T_worldframe_foot_r);     
+
+    KDL::Frame T_worldframe_pelvis,T_worldframe_com;      
+    self->robotPlanListener->_gl_pelvis->get_link_frame("pelvis",T_worldframe_pelvis);
+    self->robotPlanListener->_gl_com->get_link_frame("com_link",T_worldframe_com);  
     /*
     //Publish in hand frame; 
     KDL::Frame T_hand_palm_l = KDL::Frame::Identity();
@@ -472,21 +438,21 @@ namespace renderer_robot_plan
     int64_t keyframe_timestamp = self->robotPlanListener->get_keyframe_timestamp(self->selected_keyframe_index);
     //cout<<"keyframe_index:" << self->selected_keyframe_index <<" keyframe_timestamp: " <<keyframe_timestamp << endl;
     msg.num_links = 1;
-    if(self->is_hand_in_motion){
-      if(self->is_left_in_motion) {  
-        msg.link_name.push_back("left_palm");  
+    if(self->in_motion_state == HANDS) {
+      if(self->is_left_in_motion) { 
+        msg.link_name.push_back(self->robotPlanListener->_lhand_ee_name);  
         transformKDLToLCM(T_worldframe_palm_l,pose); 
         msg.link_origin_position.push_back(pose);
         msg.link_timestamps.push_back(keyframe_timestamp);
       }
       else {
-        msg.link_name.push_back("right_palm");
+        msg.link_name.push_back(self->robotPlanListener->_rhand_ee_name);
         transformKDLToLCM(T_worldframe_palm_r,pose); 
         msg.link_origin_position.push_back(pose);
         msg.link_timestamps.push_back(keyframe_timestamp);
       }
     }
-    else{
+    else if(self->in_motion_state == FEET) {
       if(self->is_left_in_motion) {  
         msg.link_name.push_back("l_foot");  
         transformKDLToLCM(T_worldframe_foot_l,pose); 
@@ -499,9 +465,19 @@ namespace renderer_robot_plan
         msg.link_origin_position.push_back(pose);
         msg.link_timestamps.push_back(keyframe_timestamp);
       }
-    
     }
-    
+    else if(self->in_motion_state == PELVIS) {
+        msg.link_name.push_back("pelvis");  
+        transformKDLToLCM(T_worldframe_pelvis,pose); 
+        msg.link_origin_position.push_back(pose);
+        msg.link_timestamps.push_back(keyframe_timestamp);
+    }
+    else if(self->in_motion_state == COM) {
+        msg.link_name.push_back("com::");  
+        transformKDLToLCM(T_worldframe_com,pose); 
+        msg.link_origin_position.push_back(pose);
+        msg.link_timestamps.push_back(keyframe_timestamp);
+    }    
     msg.num_joints = 0;
     self->lcm->publish(channel, &msg);
 
@@ -525,8 +501,9 @@ namespace renderer_robot_plan
       std::string token  = "plane::";
       size_t found = (*self->marker_selection).find(token);  
       string plane_name="";
-   
-      if(self->is_hand_in_motion){
+      
+      // Marker Foviation Logic
+      if(self->in_motion_state == HANDS) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_hand->_T_world_body;
           root_link_name=self->robotPlanListener->_gl_left_hand->get_root_link_name();
@@ -541,7 +518,7 @@ namespace renderer_robot_plan
         }
         
       }
-      else{
+      else if(self->in_motion_state == FEET) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_foot->_T_world_body;
           root_link_name=self->robotPlanListener->_gl_left_foot->get_root_link_name();
@@ -556,7 +533,19 @@ namespace renderer_robot_plan
         }
       
       }
-
+      else if(self->in_motion_state == PELVIS) {
+        T_world_ee = self->robotPlanListener->_gl_pelvis->_T_world_body;
+        root_link_name=self->robotPlanListener->_gl_pelvis->get_root_link_name();
+        if(found!=std::string::npos) 
+            self->robotPlanListener->_gl_pelvis->extract_plane_name(root_link_name,plane_name);
+      }
+      else if(self->in_motion_state == COM) {
+        T_world_ee = self->robotPlanListener->_gl_com->_T_world_body;
+        root_link_name=self->robotPlanListener->_gl_com->get_root_link_name();
+        if(found!=std::string::npos) 
+            self->robotPlanListener->_gl_com->extract_plane_name(root_link_name,plane_name);
+      }      
+      
        double currentAngle, angleTo,dtheta;       
        KDL::Frame DragRotation=KDL::Frame::Identity();
 
@@ -682,7 +671,7 @@ namespace renderer_robot_plan
         T_world_ee.M  = DragRotation.M*T_world_ee.M;  
         
         std::map<std::string, double> jointpos_in;
-        if(self->is_hand_in_motion){
+        if(self->in_motion_state == HANDS) {
           if(self->is_left_in_motion) {
             jointpos_in = self->robotPlanListener->_gl_left_hand->_current_jointpos;
             self->robotPlanListener->_gl_left_hand->set_state(T_world_ee,jointpos_in); 
@@ -692,7 +681,7 @@ namespace renderer_robot_plan
             self->robotPlanListener->_gl_right_hand->set_state(T_world_ee,jointpos_in); 
           }
         }
-        else{
+        else if(self->in_motion_state == FEET) {
           if(self->is_left_in_motion) {
             jointpos_in = self->robotPlanListener->_gl_left_foot->_current_jointpos;
             self->robotPlanListener->_gl_left_foot->set_state(T_world_ee,jointpos_in); 
@@ -702,6 +691,14 @@ namespace renderer_robot_plan
             self->robotPlanListener->_gl_right_foot->set_state(T_world_ee,jointpos_in); 
           }
         }
+        else if(self->in_motion_state == PELVIS) {
+         jointpos_in = self->robotPlanListener->_gl_pelvis->_current_jointpos;
+         self->robotPlanListener->_gl_pelvis->set_state(T_world_ee,jointpos_in); 
+        }
+        else if(self->in_motion_state == COM) {
+         jointpos_in = self->robotPlanListener->_gl_com->_current_jointpos;
+         self->robotPlanListener->_gl_com->set_state(T_world_ee,jointpos_in); 
+        }        
        
         self->prev_ray_hit_drag = self->ray_hit_drag;
 //        string channel = "MANIP_PLAN_CONSTRAINT";
