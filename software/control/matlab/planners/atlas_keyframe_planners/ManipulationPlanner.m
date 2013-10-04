@@ -9,6 +9,7 @@ classdef ManipulationPlanner < KeyframePlanner
         map_pub        
         restrict_feet
         planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
+        num_breaks
     end
     
     methods
@@ -17,8 +18,7 @@ classdef ManipulationPlanner < KeyframePlanner
         obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-        obj.plan_cache.isPointWiseIK= true;
-        obj.plan_cache.num_breaks = 0; % keyframe adjustment doesn't make any sense.
+        obj.num_breaks = 0; % keyframe adjustment doesn't make any sense.
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
         obj.map_pub = AffIndexedRobotPlanPublisher('CANDIDATE_MANIP_MAP',true,joint_names);
         obj.restrict_feet=true;
@@ -63,6 +63,7 @@ classdef ManipulationPlanner < KeyframePlanner
 
         obj.plan_cache.clearCache();
         obj.plan_cache.isPointWiseIK= true;
+        obj.plan_cache.num_breaks = obj.num_breaks;
         
         if(is_manip_map)
             disp('Generating manip map...');
@@ -512,7 +513,11 @@ classdef ManipulationPlanner < KeyframePlanner
           end
           Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
+          obj.plan_cache.qdot_desired
+          Tmax_joints
+          Tmax_ee
           ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+          ts
           obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
           brkpts =logical(zeros(1,length(timeIndices))==1);
           if(~isempty(postureconstraint))

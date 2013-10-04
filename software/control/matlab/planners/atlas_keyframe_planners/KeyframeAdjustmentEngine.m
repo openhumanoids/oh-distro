@@ -177,8 +177,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
         end
         %-----------------------------------------------------------------------------------------------------------------
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
+ 
             obj.plan_cache.clearCache();
-
+  
             s = linspace(0,1,length(ts));
             s_breaks = s((logictraj(1,:)==1));
             if(~(isempty(s_breaks)))

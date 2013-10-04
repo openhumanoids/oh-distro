@@ -21,8 +21,6 @@ classdef WholeBodyPlanner < KeyframePlanner
 
           obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
           obj.restrict_feet=true;
-          obj.plan_cache.isPointWiseIK= true;
-          obj.plan_cache.num_breaks = 1;
       end
      %-----------------------------------------------------------------------------------------------------------------             
       function generateAndPublishWholeBodyPlan(obj,varargin)
@@ -50,6 +48,7 @@ classdef WholeBodyPlanner < KeyframePlanner
       
           obj.plan_cache.clearCache();
           obj.plan_cache.isPointWiseIK= true;
+          obj.plan_cache.num_breaks = 0;
 
           disp('Generating whole body plan...');
           send_status(3,0,0,'Generating whole body plan...');

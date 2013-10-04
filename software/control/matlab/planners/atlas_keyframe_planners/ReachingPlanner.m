@@ -8,6 +8,7 @@ classdef ReachingPlanner < KeyframePlanner
       plan_pub
       restrict_feet
       planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
+      num_breaks
     end
     
     methods
@@ -16,7 +17,7 @@ classdef ReachingPlanner < KeyframePlanner
         obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-        obj.plan_cache.num_breaks = 4;
+        obj.num_breaks = 4;
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
         obj.restrict_feet=true;
         obj.planning_mode = 1;
@@ -54,7 +55,10 @@ classdef ReachingPlanner < KeyframePlanner
       end
    %-----------------------------------------------------------------------------------------------------------------             
     function runOptimization(obj,varargin)
+     
         obj.plan_cache.clearCache();
+        obj.plan_cache.num_breaks = obj.num_breaks; 
+        
         q_desired= [];
         rh_ee_goal= [];
         lh_ee_goal= [];
@@ -266,20 +270,13 @@ classdef ReachingPlanner < KeyframePlanner
 
         s = [0 1]; % normalized arc length index
 
-        if(isempty(q_desired))
-          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parsePoseT(obj,r_hand_poseT,1e-3,rhand_poseT_isnan);
-          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parsePoseT(obj,l_hand_poseT,1e-3,lhand_poseT_isnan);
-          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parsePoseT(obj,r_foot_poseT,1e-3,false);
-          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parsePoseT(obj,l_foot_poseT,1e-3,false);
-          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parsePoseT(obj,head_poseT,1e-3,head_poseT_isnan);
-          
-        else
-          [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parseTposeT(obj,r_hand_poseT,0);
-          [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parseTposeT(obj,l_hand_poseT,0);
-          [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parseTposeT(obj,r_foot_poseT,0);
-          [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parseTposeT(obj,l_foot_poseT,0);
-          [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parseTposeT(obj,head_poseT,0);
-        end
+        tol=1e-3;
+        [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parsePoseT(obj,r_hand_poseT,tol,rhand_poseT_isnan);
+        [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parsePoseT(obj,l_hand_poseT,tol,lhand_poseT_isnan);
+        [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parsePoseT(obj,r_foot_poseT,tol,false);
+        [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parsePoseT(obj,l_foot_poseT,tol,false);
+        [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parsePoseT(obj,head_poseT,tol,head_poseT_isnan);
+   
 
             % End State Constraints
             % Constraints for feet
@@ -316,26 +313,27 @@ classdef ReachingPlanner < KeyframePlanner
 
 
             % Constraints for hands
+        quat_Tol=sind(5).^2;
         rhand_constraint0 = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3,:),r_hand_pose0(1:3,:),[s(1),s(1)]),...
-          WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7,1),0,[s(1) s(1)])};
+          WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
         lhand_constraint0 = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0(1:3,:),l_hand_pose0(1:3,:),[s(1),s(1)]),...
-          WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7,1),0,[s(1) s(1)])};
+          WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
         iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint0];
         iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint0];
         if(~rhand_poseT_isnan)
           rhand_constraintT = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],rhand_poseT_min,rhand_poseT_max,[s(end),s(end)]),...
-            WorldQuatConstraint(obj.r,obj.r_hand_body,rhand_poseT_quat,rhand_poseT_tol,[s(end),s(end)])};
+            WorldQuatConstraint(obj.r,obj.r_hand_body,rhand_poseT_quat,quat_Tol,[s(end),s(end)])};
           iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraintT];
         end
         if(~lhand_poseT_isnan)        
           lhand_constraintT = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],lhand_poseT_min,lhand_poseT_max,[s(end),s(end)]),...
-            WorldQuatConstraint(obj.r,obj.l_hand_body,lhand_poseT_quat,lhand_poseT_tol,[s(end),s(end)])};
+            WorldQuatConstraint(obj.r,obj.l_hand_body,lhand_poseT_quat,quat_Tol,[s(end),s(end)])};
           iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraintT];
         end
 
         % Constraints for head
         head_constraint0 = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_pose0(1:3,:),head_pose0(1:3,:),[s(1),s(1)]),...
-          WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7,1),0,[s(1) s(1)])};
+          WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
         if(~head_poseT_isnan)
           head_constraintT = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_poseT_min,head_poseT_max,[s(end),s(end)]),...
             WorldQuatConstraint(obj.r,obj.head_body,head_poseT_quat,head_poseT_tol,[s(end),s(end)])};
@@ -344,7 +342,7 @@ classdef ReachingPlanner < KeyframePlanner
 
         if(obj.restrict_feet)
           pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0(1:3,:),pelvis_pose0(1:3,:),[s(1),s(end)]),...
-            WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),0,[s(1) s(end)])};
+            WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),quat_Tol,[s(1) s(end)])};
           iktraj_pelvis_constraint = [iktraj_pelvis_constraint,pelvis_constraint];
         end
        
@@ -559,7 +557,11 @@ classdef ReachingPlanner < KeyframePlanner
         snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
 
         Tmax_joints=obj.getTMaxForMaxJointSpeed();
+        obj.plan_cache.qdot_desired
+        Tmax_joints
+        Tmax_ee
         ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
+        ts
         obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
         utime = now() * 24 * 60 * 60;
 
@@ -620,7 +622,7 @@ classdef ReachingPlanner < KeyframePlanner
       pos_max = pose(1:3,:)+tol;
       if(~pose_isnan)
         pose_quat = pose(4:7,1);
-        pose_tol = 0.1*tol;
+        pose_tol = tol;
       else
         pose_quat = [];
         pose_tol = [];

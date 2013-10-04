@@ -6,6 +6,7 @@ classdef PosturePlanner < KeyframePlanner
     %
     properties
         plan_pub
+        num_breaks
     end
     
     methods
@@ -15,7 +16,7 @@ classdef PosturePlanner < KeyframePlanner
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);            
-            obj.plan_cache.num_breaks = 4;
+            obj.num_breaks = 4;
         end
     %-----------------------------------------------------------------------------------------------------------------              
         function generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)
@@ -38,6 +39,8 @@ classdef PosturePlanner < KeyframePlanner
      %-----------------------------------------------------------------------------------------------------------------             
         function runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
           obj.plan_cache.clearCache();
+          obj.plan_cache.num_breaks = obj.num_breaks;
+                      
           disp('Generating posture plan...');
           q0 = x0(1:getNumDOF(obj.r));
           s = [0 1];
