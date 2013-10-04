@@ -14,7 +14,7 @@
 using namespace TwoLegs;
 using namespace std;
 
-TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
+TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack, const float atlasWeight)
 {
 	cout << "A new TwoLegOdometry object was created" << endl;
 	
@@ -34,7 +34,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack)
 	standingintermediate = true;
 	
 	// TODO - expected weight must be updated from live vehicle data and not be hard coded like this
-	expectedweight = 900.f;
+	expectedweight = atlasWeight;
 	
 	local_velocities.setZero();
 	accel.setSize(3);

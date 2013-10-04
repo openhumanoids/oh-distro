@@ -32,7 +32,8 @@ add_library(leg-odometry  SHARED
   src/QuaternionLib.cpp 
   src/LegOdometry_LCM_Handler.cpp 
   src/Footsteps.cpp 
-  src/TwoLegOdometry.cpp)
+  src/TwoLegOdometry.cpp
+  src/sharedUtilities.cpp)
   
 pods_use_pkg_config_packages(leg-odometry ${REQUIRED_PACKAGES} eigen3)
 target_link_libraries (leg-odometry boost_system ${REQUIRED_LIBS})
@@ -52,6 +53,7 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/TwoLegOdometry.h
   src/include/leg-odometry/TwoLegsEstimate_types.h
   src/include/leg-odometry/data_fusion_parameters.hpp
+  src/include/leg-odometry/sharedUtilities.hpp
   DESTINATION leg-odometry)
   
 pods_install_pkg_config_file(leg-odometry

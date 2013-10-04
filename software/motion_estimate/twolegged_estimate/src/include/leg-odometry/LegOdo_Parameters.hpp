@@ -18,5 +18,7 @@
 
 #define VEL_SPIKE_ISOLATION_DELAY      6000
 
+//#define ATLAS_WEIGHT				   1400.f
+
 
 #endif /*LEGODO_PARAMETERS_HPP_*/

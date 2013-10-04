@@ -33,12 +33,13 @@
 //#include <lcmtypes/bot_core.hpp>
 #include <lcm/lcm-cpp.hpp>
 //#include <boost/shared_ptr.hpp>
-#include <model-client/model-client.hpp>
+//#include <model-client/model-client.hpp>
 #include <lcmtypes/bot_core.hpp>
 
 #include <lcm/lcm.h>
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include <leg-odometry/TwoLegOdometry.h>
+#include <leg-odometry/sharedUtilities.hpp>
 #include <inertial-odometry/Odometry.hpp>
 
 #include <lcmtypes/fovis_bot2.hpp>
@@ -52,7 +53,7 @@
 
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
-#include <leg-odometry/BotTransforms.hpp>
+//#include <leg-odometry/BotTransforms.hpp>
 
 #include <leg-odometry/Filter.hpp>
 #include <leg-odometry/HeavyLowPassFilter.hpp>
@@ -104,7 +105,7 @@ private:
   InertialOdometry::DynamicState InerOdoEst, FovisEst;
   InertialOdometry::DynamicState LeggO;
 
-  BotTransforms bottransforms;
+//  BotTransforms bottransforms;
 
   double df_feedback_gain; // not presently in use
   double df_pos_feedback_gain;
@@ -130,10 +131,11 @@ private:
   const char* robot_pose_channel;
   bool _finish;
   
-  boost::shared_ptr<ModelClient> model_;
-  KDL::Tree tree;
-  boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-  std::vector<drc::link_transform_t> _link_tfs;
+  //boost::shared_ptr<ModelClient> model_;
+//  KDL::Tree tree;
+  //  boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+  //std::vector<drc::link_transform_t> _link_tfs;
+  TwoLegs::FK_Data fk_data;
   
   std::vector<double> filtered_joints;
   

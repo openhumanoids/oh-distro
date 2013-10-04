@@ -118,7 +118,7 @@ class TwoLegOdometry {
 	    Eigen::Isometry3d right_to_pelvis;
 	    Eigen::Isometry3d local_to_pelvis;
 		
-		TwoLegOdometry(bool _log_data_files, bool dont_init_hack);
+		TwoLegOdometry(bool _log_data_files, bool dont_init_hack, const float atlasWeight);
 		~TwoLegOdometry();
 		
 		Eigen::Isometry3d getPrimaryFootToPelvis();
