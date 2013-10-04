@@ -346,8 +346,44 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
 
     cout << "Sending WALKING_GOAL\n";
     self->lcm->publish(channel, &msg);
- }   
-  
+ } 
+ 
+  inline static void publish_desired_footstep_sequence(void *user, const string& channel)
+  {
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    
+    drc::traj_opt_constraint_t msg;    
+    msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp; //bot_timestamp_now();
+    msg.robot_name = self->robotStateListener->_robot_name;
+    
+    KDL::Frame T_world_ee;
+    std::vector<std::string> ee_names;
+    ee_names.push_back("l_foot");
+    ee_names.push_back("r_foot");
+    for (size_t i=0; i<ee_names.size(); i++)
+    {
+      self->robotStateListener->_gl_robot->get_link_future_frame(ee_names[i],T_world_ee);
+      double x,y,z,w;
+      T_world_ee.M.GetQuaternion(x,y,z,w);
+      drc::position_3d_t pose;
+      pose.translation.x = T_world_ee.p[0];
+      pose.translation.y = T_world_ee.p[1];
+      pose.translation.z = T_world_ee.p[2];
+      pose.rotation.x = x;
+      pose.rotation.y = y;
+      pose.rotation.z = z;
+      pose.rotation.w = w; 
+      msg.link_name.push_back(ee_names[i]);
+      msg.link_origin_position.push_back(pose);  
+      int64_t time_stamp = (int64_t)i*1000000;
+      msg.link_timestamps.push_back(time_stamp);  
+    }
+    msg.num_links =  ee_names.size();
+    msg.num_joints = 0;
+
+    cout << "Sending Desired Foot Step Sequence\n";
+    self->lcm->publish(channel, &msg);
+ } 
 } // end namespace
   
   

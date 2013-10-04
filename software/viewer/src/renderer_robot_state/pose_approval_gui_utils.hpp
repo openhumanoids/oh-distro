@@ -28,7 +28,8 @@ namespace renderer_robot_state_gui_utils
     cout <<"Publishing a WALKING_GOAL to desired end pose" << endl;
     string channel = "WALKING_GOAL";
     publish_walking_goal(self,channel); 
- 
+    channel = "DESIRED_FOOT_STEP_SEQUENCE";
+    publish_desired_footstep_sequence(self,channel); 
     //gtk_widget_destroy (self->pose_approval_dock);
     //self->pose_approval_dock= NULL;
     bot_viewer_request_redraw(self->viewer);
