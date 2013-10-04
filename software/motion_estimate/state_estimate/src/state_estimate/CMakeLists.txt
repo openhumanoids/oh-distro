@@ -1,3 +1,5 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable -std=c++0x")
+
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system thread)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -10,7 +12,8 @@ set(srcs
   StateEstimatorUtilities.cpp
   )
 
-set(required_packages eigen3 drc-lcmtypes kalman-filter inertial-odometry leg-odometry bot2-frames_cpp bot2-frames)
+set(required_packages eigen3 drc-lcmtypes kalman-filter inertial-odometry leg-odometry bot2-frames_cpp bot2-frames
+                      urdf orocos-kdl kdl-parser forward-kinematics model-client )
 
 #SET(CMAKE_BUILD_TYPE Debug)
 

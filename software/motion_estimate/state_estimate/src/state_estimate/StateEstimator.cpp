@@ -40,6 +40,10 @@ StateEstimate::StateEstimator::StateEstimator(
 
   std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
   
+  std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
+  // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
+  _leg_odo = new TwoLegs::TwoLegOdometry(false, false);
+  
   unsigned long fusion_period;
   fusion_period = 20000-500;
   fusion_rate.setDesiredPeriod_us(0,fusion_period);
@@ -64,7 +68,7 @@ StateEstimate::StateEstimator::StateEstimator(
 //-----------------------------------------------------------------------------
 StateEstimate::StateEstimator::~StateEstimator()
 {
-
+  delete _leg_odo;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,6 +121,7 @@ void StateEstimate::StateEstimator::run()
     	  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
     	  
     	  mDFRequestMsg.utime = imu.utime;
+    	  mDFRequestMsg.updateType = mDFRequestMsg.POSITION_LOCAL;
     	  
     	  // populate the INS state information and the measurement aiding information
     	  

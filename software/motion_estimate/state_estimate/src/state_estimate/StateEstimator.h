@@ -11,8 +11,10 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc_lcmtypes.hpp"
+#include <model-client/model-client.hpp>
 
 #include <inertial-odometry/Odometry.hpp>
+#include <leg-odometry/TwoLegOdometry.h>
 
 #include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
@@ -73,7 +75,8 @@ private:
   RateChange fusion_rate;
   Eigen::VectorXd fusion_rate_dummy;
   
-
+  // LegOdometry Object
+  TwoLegs::TwoLegOdometry *_leg_odo;
   
 };
 
