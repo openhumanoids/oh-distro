@@ -83,7 +83,7 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 
 
 
-void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg) {
+void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, const Eigen::Isometry3d &IMU_to_body, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg, drc::nav_state_t& _DFRequest) {
   
   // We want to take body fram einerial data an put it in the imu_data structure
   // For now we are going to use the orientation quaternion from BDI
@@ -98,8 +98,14 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   Eigen::Quaterniond q(bdiPose.orientation[0],bdiPose.orientation[1],bdiPose.orientation[2],bdiPose.orientation[3]);
 	
   imu_data.uts = imu.utime;
-  imu_data.gyr_b = Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.acc_b = Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
+  
+  
+  
+  // TODO -- The translation of this lever arm offset hsa not yet been compensated! This must be corrected.
+  imu_data.gyr_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
+  
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
   
   InerOdoEst = inert_odo.PropagatePrediction(&imu_data, q);
   
@@ -107,16 +113,31 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   // TODO -- check that we want to keep doing with fusion from a MATLAB process. 
   // Think it should be good, but this is a breadcrum for the future to make sure that we do this correctly
   
-  // we need to add thefeedback measurement process here in the future.
+  _DFRequest.pose.rotation.w = InerOdoEst.q.w();
+  _DFRequest.pose.rotation.x = InerOdoEst.q.x();
+  _DFRequest.pose.rotation.y = InerOdoEst.q.y();
+  _DFRequest.pose.rotation.z = InerOdoEst.q.z();
+  
+  _DFRequest.local_linear_acceleration.x = InerOdoEst.f_l(0);
+  _DFRequest.local_linear_acceleration.y = InerOdoEst.f_l(1);
+  _DFRequest.local_linear_acceleration.z = InerOdoEst.f_l(2);
   
   // remember that this will have to publish a LCM message 
   _ERSmsg.pose.translation.x = InerOdoEst.P(0);
   _ERSmsg.pose.translation.y = InerOdoEst.P(1);
   _ERSmsg.pose.translation.z = InerOdoEst.P(2);
   
+  _DFRequest.pose.translation.x = InerOdoEst.P(0);
+  _DFRequest.pose.translation.y = InerOdoEst.P(1);
+  _DFRequest.pose.translation.z = InerOdoEst.P(2);
+  
   _ERSmsg.twist.linear_velocity.x = InerOdoEst.V(0);
   _ERSmsg.twist.linear_velocity.y = InerOdoEst.V(1);
   _ERSmsg.twist.linear_velocity.z = InerOdoEst.V(2);
+  
+  _DFRequest.twist.linear_velocity.x = InerOdoEst.V(0);
+  _DFRequest.twist.linear_velocity.y = InerOdoEst.V(1);
+  _DFRequest.twist.linear_velocity.z = InerOdoEst.V(2);
   
   // Rotate the body measured rotation rates with the current best known quaternion -- for now we use the BDIPOose orientation estimate
   

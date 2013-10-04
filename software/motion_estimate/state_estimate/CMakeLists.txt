@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME state_estimate)
 include(cmake/pods.cmake)
 
+SET(CMAKE_BUILD_TYPE Debug)
+
 # automatically build LCM types.  This also defines a number of CMake
 # variables, see cmake/lcmtypes.cmake for details
 include(cmake/lcmtypes.cmake)

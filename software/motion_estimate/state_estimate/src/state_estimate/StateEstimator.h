@@ -57,16 +57,23 @@ protected:
   //  vector<float> mJointVelocities;
   
   drc::robot_state_t mERSMsg;
+  drc::robot_state_t testing;
+  drc::nav_state_t mDFRequestMsg;
   
   
 private:
   InertialOdometry::Odometry inert_odo;
-  unsigned long previous_imu_utime;
+  unsigned long long previous_imu_utime;
 	
   BotParam* _botparam;
   BotFrames* _botframes;
   
   Eigen::Isometry3d IMU_to_body;
+  
+  RateChange fusion_rate;
+  Eigen::VectorXd fusion_rate_dummy;
+  
+
   
 };
 

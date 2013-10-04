@@ -38,6 +38,16 @@ StateEstimate::StateEstimator::StateEstimator(
 	  }
   }
 
+  std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
+  
+  unsigned long fusion_period;
+  fusion_period = 20000-500;
+  fusion_rate.setDesiredPeriod_us(0,fusion_period);
+  fusion_rate.setSize(1);
+  fusion_rate_dummy.resize(1);
+  fusion_rate_dummy << 0;
+  std::cout << "StateEstimator::StateEstimator -- Setting data fusion period trigger is set to " << fusion_period << std::endl;
+  
 }
 
 // TODO -- fix this constructor
@@ -101,15 +111,26 @@ void StateEstimate::StateEstimator::run()
       double dt;
       dt = (imu.utime - previous_imu_utime)*1.E-6;
       previous_imu_utime = imu.utime;
-      handle_inertial_data_temp_name(dt, imu, bdiPose, inert_odo, mERSMsg);
+      handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
       
-      std::cout << "Going to publish ERS" << std::endl;
+      if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
+    	  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
+    	  
+    	  mDFRequestMsg.utime = imu.utime;
+    	  
+    	  // populate the INS state information and the measurement aiding information
+    	  
+    	  mLCM->publish("STATE_ESTIMATOR_MATLAB_DF_REQUEST", &mDFRequestMsg);
+      }
+      
       // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
       // For now we are going to publish on the last element of this queue
+      //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
       if (i==(nIMU-1)) { 
 	      //publish ERS message
+    	  std::cout << "Going to publish ERS" << std::endl;
     	  mERSMsg.utime = imu.utime;
-	      mLCM->publish("EST_ROBOT_STATE_EXPERIMENTAL", &mERSMsg); 
+//	      mLCM->publish("EST_ROBOT_STATE_EXP", &mERSMsg); // There is some silly problem here
       }
     }
 

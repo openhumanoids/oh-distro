@@ -12,7 +12,7 @@ set(srcs
 
 set(required_packages eigen3 drc-lcmtypes kalman-filter inertial-odometry leg-odometry bot2-frames_cpp bot2-frames)
 
-SET(CMAKE_BUILD_TYPE release)
+#SET(CMAKE_BUILD_TYPE Debug)
 
 add_library(StateEstimate  SHARED ${srcs})
 target_link_libraries(StateEstimate ${Boost_LIBRARIES})

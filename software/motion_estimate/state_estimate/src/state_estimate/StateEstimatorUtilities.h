@@ -52,11 +52,9 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer);
 
 
 // IMU DATA============================================================================
-void handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg);
+void handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, const Eigen::Isometry3d &IMU_to_body, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg, drc::nav_state_t& _DFRequest);
 
 //int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
-
-//void handle_inertial_data_temp_name(const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg) {
 
 
 
