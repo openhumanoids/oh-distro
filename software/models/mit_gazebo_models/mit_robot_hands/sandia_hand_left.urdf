@@ -7,7 +7,7 @@
   <!-- derived from /usr/share/sandia-hand-5.1/ros/sandia_hand_description/robots/sandia_hand_left_on_box.urdf.xacro-->
   <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
   <!--<include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />-->
-  <link name="base">
+  <link name="plane::xy::base">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0.25"/>
@@ -164,7 +164,7 @@
       <!-   end visual mesh of f2 -->
   </link>
   <joint name="left_sandia_hand_joint" type="fixed">
-    <parent link="base"/>
+    <parent link="plane::xy::base"/>
     <child link="left_palm"/>
     <origin rpy="0 -1.57079 0" xyz="0 0 0.0"/>
   </joint>
@@ -1575,7 +1575,7 @@
       </contact>
     </plugin>
   </gazebo>
-  <gazebo reference="base">
+  <gazebo reference="plane::xy::base">
     <sensor name="imu_sensor" type="imu">
       <always_on>1</always_on>
       <update_rate>1000.0</update_rate>

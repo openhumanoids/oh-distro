@@ -6,14 +6,14 @@
 
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/xacro/irobot_hand_simple.urdf.xacro" />
 
-  <link name="base">
+  <link name="plane::xy::base">
     <inertial>
         <mass value="0.1" />
         <origin xyz="0 0 0.25" rpy="0 0 0" />
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
     </inertial>
   </link>
-  <xacro:irobot_hand side="left" parent="base" reflect="-1">
+  <xacro:irobot_hand side="left" parent="plane::xy::base" reflect="-1">
 <!--    <origin rpy="0 0 3.14159" xyz="0 0.05 0"/>-->
     <origin rpy="1.57 0 -1.57" xyz="0 0 0"/>
   </xacro:irobot_hand>
