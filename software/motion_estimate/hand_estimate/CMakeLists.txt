@@ -10,8 +10,4 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 # build two LCM test programs
-add_executable(sandia_hand_tactile_processor src/sandia_hand_tactile_processor.cpp)
-pods_use_pkg_config_packages(sandia_hand_tactile_processor lcm lcmtypes_${POD_NAME})
-
-# make exeutables public
-pods_install_executables(sandia_hand_tactile_processor)
+add_subdirectory(src/hand_estimate)
