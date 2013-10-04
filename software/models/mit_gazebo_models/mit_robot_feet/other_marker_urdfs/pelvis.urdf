@@ -1,0 +1,37 @@
+
+<robot name="pelvis">
+  <link name="plane::xy::base">
+    <inertial>
+      <mass value="0.1"/>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+  
+  <link name="pelvis">
+    <inertial>
+      <mass value="17.882"/>
+      <origin rpy="0 -0 0" xyz="0.0111 0 0.0271"/>
+      <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+  
+  <joint name="base_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <parent link="plane::xy::base" />
+      <child link="pelvis" />
+  </joint>  
+</robot>
