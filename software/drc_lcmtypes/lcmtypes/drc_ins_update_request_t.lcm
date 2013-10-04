@@ -3,7 +3,7 @@ package drc;
 // Navigation State
 // Used by the state estimator to pass INS data to another process, which can then handle the KF
 // based data fusion. This message is intended for use by a MATLAB process during development
-struct nav_state_t
+struct ins_update_request_t
 {
   int64_t utime;
   position_3d_t pose;
