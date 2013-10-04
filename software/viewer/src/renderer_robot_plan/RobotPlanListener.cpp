@@ -57,7 +57,7 @@ namespace renderer_robot_plan
     lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
 
     lcm->subscribe("CONTROLLER_STATUS", &renderer_robot_plan::RobotPlanListener::handleControllerStatusMsg, this);  
-
+    lcm->subscribe("EST_ROBOT_STATE", &renderer_robot_plan::RobotPlanListener::handleRobotStateMsg, this); 
 
     //load foot pelvis and com marker URDFS
     //hands and _gl_phantom_robot are set in urdf handler.
@@ -210,7 +210,16 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _gl_robot_keyframe_list.clear();
     _keyframe_timestamps.clear();
     _breakpoint_indices.clear();
-
+    
+    for (uint i = 0; i <(uint)msg->num_states; i++)
+    {
+        if(msg->is_breakpoint[i]) 
+        {
+            _breakpoint_indices.push_back(i);
+        }
+    }
+    bool append_currenthandstate = (_breakpoint_indices.size()==0);
+    cout << "append_currenthandstate: "<< append_currenthandstate << " " << _breakpoint_indices.size() << endl;
     int count=0; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)msg->num_states; i++)
     {
@@ -218,7 +227,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         {
             drc::robot_state_t state_msg  = msg->plan[i];
             // Merge in grasp state transitions into the plan states.
-            appendHandStatesToStateMsg(msg,&state_msg);
+            appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
             std::stringstream oss;
             oss << _robot_name << "_" << "keyframe"<< "_"<< count; 
             shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
@@ -228,11 +237,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
             _keyframe_timestamps.push_back(state_msg.utime);
             count++;
         }
-   
-        if(msg->is_breakpoint[i]) 
-        {
-            _breakpoint_indices.push_back(i);
-        }
+       
     }//end for num of states in robot_plan msg;
 
     count=msg->num_states-1; 	   	// always display the last state in the plan
@@ -241,7 +246,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     {
         drc::robot_state_t state_msg  = msg->plan[count];
         // Merge in grasp state transitions into the plan states.
-        appendHandStatesToStateMsg(msg,&state_msg);
+        appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
         std::stringstream oss;
         oss << _robot_name << "_"<< count; 
         shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
@@ -256,7 +261,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       count = 0;
       drc::robot_state_t state_msg  = msg->plan[count];
       // Merge in grasp state transitions into the plan states.
-      appendHandStatesToStateMsg(msg,&state_msg);
+      appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
     	std::stringstream oss;
     	oss << _robot_name << "_"<< count; 
     	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
@@ -438,6 +443,23 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
      _controller_utime = msg->controller_utime;
      _controller_status = msg->state;
   }  
+  
+ void RobotPlanListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::robot_state_t* msg)						 
+  { 
+	  if (!_urdf_parsed)
+    {
+      return;
+    }
+    if(_urdf_subscription_on)
+    {			
+      cout << "\n handleRobotStateMsg: unsubscribing from _urdf_subscription" << endl;
+      _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
+      _urdf_subscription_on =  false; 	
+    }
+     _last_robotstate_msg = (*msg);
+  } // end handleMessage 
   
     //-------------------------------------------------------------------
 

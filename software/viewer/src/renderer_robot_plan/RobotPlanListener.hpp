@@ -85,7 +85,7 @@ namespace renderer_robot_plan
     
     
     //-------------message callback
-    
+    drc::robot_state_t _last_robotstate_msg;
     drc::robot_plan_t _received_plan;
     drc::robot_plan_w_keyframes_t _received_keyframe_plan;
     
@@ -476,13 +476,14 @@ namespace renderer_robot_plan
 						 const drc::footstep_plan_t* msg);    
 	 void handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
 						 const drc::footstep_plan_t* msg);  				 
-						 
-   
+   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
+			      const std::string& chan, 
+			      const drc::robot_state_t* msg);	
    void handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
                                                  const string& chan, 
                                                  const drc::controller_status_t* msg);
 						 
-  void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg)	 
+  void appendHandStatesToStateMsg(const drc::robot_plan_w_keyframes_t* msg,drc::robot_state_t *state_msg,bool append_currenthandstate)	 
   {
     // Merge in grasp state transitions into the plan states.
     if(msg->num_grasp_transitions>0)
@@ -509,14 +510,48 @@ namespace renderer_robot_plan
         for(size_t i=0;i< msg->grasps[k_max].num_joints;i++)
         {
            state_msg->num_joints++;
-           state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);      
+           state_msg->joint_name.push_back(msg->grasps[k_max].joint_name[i]);  
            state_msg->joint_position.push_back(msg->grasps[k_max].joint_position[i]);  
            state_msg->joint_velocity.push_back(0);
            state_msg->joint_effort.push_back(0);
          }// end for  
        }     
        
-    }// end if	 
+    }// end if	
+    else if(append_currenthandstate) 
+    {
+        std::vector<std::string> joint_names = _gl_left_hand->get_joint_names();
+        for(size_t i=0;i< joint_names.size();i++)
+        {
+            std::vector<std::string>::const_iterator found;
+            found = std::find(_last_robotstate_msg.joint_name.begin(), _last_robotstate_msg.joint_name.end(), joint_names[i]);
+            if (found != _last_robotstate_msg.joint_name.end()) {
+              unsigned int index = found - _last_robotstate_msg.joint_name.begin();
+              state_msg->num_joints++;
+              state_msg->joint_name.push_back(joint_names[i]);   
+              state_msg->joint_position.push_back(_last_robotstate_msg.joint_position[index]); 
+              state_msg->joint_velocity.push_back(0);
+              state_msg->joint_effort.push_back(0);
+            }
+ 
+         }// end for  
+         
+        joint_names = _gl_right_hand->get_joint_names();
+        for(size_t i=0;i< joint_names.size();i++)
+        {
+
+            std::vector<std::string>::const_iterator found;
+            found = std::find(_last_robotstate_msg.joint_name.begin(), _last_robotstate_msg.joint_name.end(), joint_names[i]);
+            if (found != _last_robotstate_msg.joint_name.end()) {
+              unsigned int index = found - _last_robotstate_msg.joint_name.begin();
+              state_msg->num_joints++;
+              state_msg->joint_name.push_back(joint_names[i]);   
+              state_msg->joint_position.push_back(_last_robotstate_msg.joint_position[index]); 
+              state_msg->joint_velocity.push_back(0);
+              state_msg->joint_effort.push_back(0);
+            }
+         }// end for 
+    }
   };
 			      
   bool load_hand_urdfs(bool _is_left_sandia, bool _is_right_sandia, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
