@@ -266,7 +266,7 @@ namespace renderer_affordances_lcm_utils
   }
   //----------------------------------------------------------------------------------------------------   
   
-  static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state)
+  static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state, bool supress_hands)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -277,11 +277,15 @@ namespace renderer_affordances_lcm_utils
       map<string, vector<double> > joint_pos_map;
       map<string, vector<int64_t> > joint_pos_timestamps_map;   
   
-     // get time indexed ee goal constraints from selected sticky hands 
-     self->stickyHandCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
+      if(!supress_hands)
+      {
+        // get time indexed ee goal constraints from selected sticky hands 
+        self->stickyHandCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
                                                                    joint_pos_map,joint_pos_timestamps_map);
+      }
+      
      // Publish time indexed ee goal constraints from selected sticky feet 
      self->stickyFootCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
                                                                    self->seedSelectionManager,

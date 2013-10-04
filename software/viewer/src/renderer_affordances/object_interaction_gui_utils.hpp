@@ -1060,7 +1060,6 @@ namespace renderer_affordances_gui_utils
   static void on_dblclk_popup_close (BotGtkParamWidget *pw, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    // TODO: Send publish affordance command msg
     self->dblclk_popup = NULL;
   }
   

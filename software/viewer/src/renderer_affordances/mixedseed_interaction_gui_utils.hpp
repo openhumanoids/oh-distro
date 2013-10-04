@@ -37,13 +37,12 @@ namespace renderer_affordances_gui_utils
     else if(!strcmp(name,PARAM_SEND_EE_GOAL_SEQUENCE)){
       string channel = "DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
-      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false);  
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,false);  
     }
     else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER)){
       string channel = "DESIRED_FOOT_STEP_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
-      //TODO: Make a better function specific to footsteps
-      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false);  
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true);  
     }
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
