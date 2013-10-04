@@ -17,6 +17,8 @@ namespace InertialOdometry {
 
     _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
 
+    ret.first_pose_rel_acc = _imu->accel_;
+    
     avp.PropagateTranslation(_imu);
 
     // update output structure
@@ -38,6 +40,7 @@ namespace InertialOdometry {
     //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
     DynamicState ret;
+    ret.f_l = out.first_pose_rel_acc;
     ret.P = out.first_pose_rel_pos;
     ret.V = out.first_pose_rel_vel;
     ret.E.setZero();

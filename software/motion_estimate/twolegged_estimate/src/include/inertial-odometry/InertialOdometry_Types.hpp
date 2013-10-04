@@ -38,6 +38,7 @@ namespace InertialOdometry {
 
 	  Eigen::Vector3d P;
 	  Eigen::Vector3d V;
+	  Eigen::Vector3d f_l;
 	  Eigen::Vector3d E;
 	  Eigen::Vector3d b_a;
 	  Eigen::Vector3d b_g;
@@ -65,6 +66,8 @@ namespace InertialOdometry {
 	// Quaternion relative to the initial orientation conditions given
 	Eigen::Quaterniond quat;
 
+	Eigen::Vector3d first_pose_rel_acc;
+	  
     //Accumulating Velocity Value, relative to provided global frame
     Eigen::Vector3d global_velocity;
     Eigen::Vector3d first_pose_rel_vel;
