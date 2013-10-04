@@ -29,7 +29,6 @@ namespace TwoLegs {
 // Structure to collect all bits of data need for TwoLegs::getFKTransforms
 struct FK_Data {
 	unsigned long long utime;
-	
 	boost::shared_ptr<ModelClient> model_;
 	KDL::Tree tree;
 	boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
@@ -38,6 +37,7 @@ struct FK_Data {
 	BotTransforms bottransforms;
 };
 
+// updates left, right and body_to_head Isometry3d tranforms
 void getFKTransforms(TwoLegs::FK_Data &_fk_data, Eigen::Isometry3d &left, Eigen::Isometry3d &right, Eigen::Isometry3d &body_to_head);
   
 } // namespace TwoLegs

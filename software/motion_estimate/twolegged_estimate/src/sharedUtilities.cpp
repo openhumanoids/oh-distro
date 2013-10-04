@@ -2,6 +2,8 @@
 
 using namespace std;
 
+
+// updates left, right and body_to_head Isometry3d tranforms
 void TwoLegs::getFKTransforms(TwoLegs::FK_Data &_fk_data, Eigen::Isometry3d &left, Eigen::Isometry3d &right, Eigen::Isometry3d &body_to_head) {
 
 	  bool kinematics_status;
