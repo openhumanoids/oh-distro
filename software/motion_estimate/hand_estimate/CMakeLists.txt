@@ -9,5 +9,9 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-# build two LCM test programs
+# 
 add_subdirectory(src/hand_estimate)
+
+
+# Keyboard Teleop - LCM version
+pods_install_python_script(sandia-simple-grasp-keyboard scripts/simple_grasp_keyboard_teleop.py)

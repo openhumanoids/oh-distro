@@ -31,8 +31,12 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
 
 
 void App::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::raw_sandia_hand_t* msg){
-  std::cout << "got em\n";
-  
+ /* std::cout << msg->utime 
+            << ", " << msg->mobo.finger_currents[0]
+            << ", " << msg->mobo.finger_currents[1]
+            << ", " << msg->mobo.finger_currents[2]            
+            << ", " << msg->mobo.finger_currents[3] << "\n";
+ */
   
 }
   
