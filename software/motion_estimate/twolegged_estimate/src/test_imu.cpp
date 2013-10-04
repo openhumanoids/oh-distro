@@ -19,7 +19,7 @@
 #include <Eigen/Dense>
 #include <leg-odometry/QuaternionLib.h>
 
-#define PI  3.14159265358979323
+#define PI__  3.14159265358979323
 
 
 using namespace std;
@@ -151,7 +151,7 @@ public:
     // fall detector
 
     if (false) {
-      if (E(1) > 20*PI/180. || E(0) > 20*PI/180.) {
+      if (E(1) > 20*PI__/180. || E(0) > 20*PI__/180.) {
         //std::cout << "Falling\n";
         if ((msg->utime - fall_utime) > 1200000) {
           std::cout << "Timeout.\n";

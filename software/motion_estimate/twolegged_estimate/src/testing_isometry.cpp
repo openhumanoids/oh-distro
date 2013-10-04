@@ -7,14 +7,14 @@
 using namespace std;
 using namespace InertialOdometry;
 
-#define PI  3.14159265358
+#define PI__  3.14159265358
 
 int main() {
 	cout << "Testing Isometries\n";
 	
 	Eigen::Vector3d E;
 	
-	E << 0., 0., PI/3.;
+	E << 0., 0., PI__/3.;
 	
 	cout << "The reference Euler angles are: " << E.transpose() << endl;
 	
@@ -23,7 +23,7 @@ int main() {
 	Eigen::Isometry3d iso_2(QuaternionLib::e2q(E));
 	Eigen::Isometry3d iso_3(QuaternionLib::e2q(E));
 	Eigen::Isometry3d iso_4(QuaternionLib::e2q(Eigen::Vector3d::Zero()));
-	Eigen::Isometry3d iso_5(QuaternionLib::e2q(Eigen::Vector3d(0.,0.,PI)));
+	Eigen::Isometry3d iso_5(QuaternionLib::e2q(Eigen::Vector3d(0.,0.,PI__)));
 	
 	iso_1.translation() << 1., 0., 0.;
 	iso_2.translation() << 1., 0., 0.;

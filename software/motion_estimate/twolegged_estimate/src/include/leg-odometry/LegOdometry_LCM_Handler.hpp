@@ -65,7 +65,7 @@
 #define DISPLAY_FOOTSTEP_POSES
 
 #define NUMBER_JOINTS             28
-#define PI               3.14159265358979323
+#define PI__               3.14159265358979323
 
 #define LOG_LEG_TRANSFORMS
 #define DO_FOOT_SLIP_FEEDBACK

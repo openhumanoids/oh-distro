@@ -865,7 +865,7 @@ double Gaussian::randn() {
 	R1 = (double) rand() / (double) RAND_MAX;
 	R2 = (double) rand() / (double) RAND_MAX;
 
-	return (double) sqrt( -2.0 * log( R1 )) * cos( 2.0 * PI * R2 );
+	return (double) sqrt( -2.0 * log( R1 )) * cos( 2.0 * PI__ * R2 );
 	
 }
 

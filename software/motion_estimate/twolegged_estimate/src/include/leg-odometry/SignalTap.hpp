@@ -15,7 +15,7 @@
 
 // objects and functions for generic operations on data
 
-#define PI 3.14159265358979323
+#define PI__ 3.14159265358979323
 
 class DataFileLogger {
 private:
