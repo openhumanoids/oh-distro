@@ -60,7 +60,7 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer);
 
 // Use forward kinematics to estimate the pelvis position as update to the KF
 // Store result as StateEstimator:: state
-void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo);
+void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass);
 
 
 // IMU DATA============================================================================

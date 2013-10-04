@@ -60,6 +60,9 @@ StateEstimate::StateEstimator::StateEstimator(
 	return;
   }
   fk_data.fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(fk_data.tree));
+  
+  // This is used to initialize the states of the robot -- note we should use ONLY this variable
+  firstpass = 1;
 }
 
 // TODO -- fix this constructor
@@ -112,7 +115,12 @@ void StateEstimate::StateEstimator::run()
       
       // here we compute the leg odometry position solution
       // TODO -- we are using the BDI orientation estimate to 
-      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo);
+      
+      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass);
+      
+      // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
+      if (firstpass>0)
+        firstpass--;
     }
 
     // This is the special case which will also publish the message

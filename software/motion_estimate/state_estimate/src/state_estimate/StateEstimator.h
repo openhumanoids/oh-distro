@@ -82,6 +82,7 @@ private:
   TwoLegs::TwoLegOdometry *_leg_odo;
   TwoLegs::FK_Data fk_data;
   
+  int firstpass;
 };
 
 } // end namespace
