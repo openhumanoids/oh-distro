@@ -237,11 +237,11 @@ classdef KeyframePlanner < handle
           elseif(body_ind == obj.l_foot_body)
             obj.plan_cache.lfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.lfoot_constraint_cell,new_pose_constraint);
             lfoot_contact_pts = obj.r.getBody(obj.l_foot_body).getContactPoints();
-            obj.qsc = obj.qsc.addContact(obj.l_foot_body,lfoot_contact_pts);
+            obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.l_foot_body,lfoot_contact_pts);
           elseif(body_ind == obj.r_foot_body)
             obj.plan_cache.rfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.rfoot_constraint_cell,new_pose_constraint);
             rfoot_contact_pts = obj.r.getBody(obj.r_foot_body).getContactPoints();
-            obj.qsc = obj.qsc.addContact(obj.l_foot_body,rfoot_contact_pts);
+            obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,rfoot_contact_pts);
           end
             
         end

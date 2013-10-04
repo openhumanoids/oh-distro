@@ -9,6 +9,7 @@ classdef KeyframePlanCache < handle
         rfoot_constraint_cell
         pelvis_constraint_cell
         head_constraint_cell
+        com_constraint_cell
         qdot_desired
         s_breaks
         qtraj
@@ -33,6 +34,7 @@ classdef KeyframePlanCache < handle
             obj.rfoot_constraint_cell = {};
             obj.pelvis_constraint_cell = {};
             obj.head_constraint_cell = {};
+            obj.com_constraint_cell = {};
             obj.s_breaks = [];
             obj.qtraj = [];
             
@@ -57,6 +59,7 @@ classdef KeyframePlanCache < handle
             obj.rfoot_constraint_cell = {};
             obj.pelvis_constraint_cell = {};
             obj.head_constraint_cell = {};
+            obj.com_constraint_cell = {};
             obj.s_breaks = [];
             obj.qtraj = [];
             obj.num_grasp_transitions = 0; % corresponds to grasp transitions.

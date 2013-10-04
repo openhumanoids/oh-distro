@@ -27,8 +27,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache  = cache;
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function adjustAndPublishCachedPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,goal_type_flags)
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
+        function adjustAndPublishCachedPlan(obj,x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags)
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
         end
         %-----------------------------------------------------------------------------------------------------------------
         function adjustCachedPlanToCurrentPelvisPose(obj,x0,mode)
@@ -171,8 +171,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 obj.cachePelvisPose([0 1],pose);    
             end
             
-            
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags);
+            pelvis_constraint = [];
+            com_constraint = [];
+            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
         end
         %-----------------------------------------------------------------------------------------------------------------
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
@@ -251,10 +252,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             send_status(3,0,0,'Cached loaded plan...');
         end
-        
-        
         %-----------------------------------------------------------------------------------------------------------------
-        function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,goal_type_flags)
+        function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags)
             
             disp('Adjusting plan...');
             send_status(3,0,0,'Adjusting plan...');
@@ -321,6 +320,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             end
             
             
+            
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                 
                 if(isempty(rf_ee_constraint))
@@ -331,7 +331,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     s_int_rf = rf_ee_constraint.time*obj.plan_cache.time_2_index_scale;
                     % Desired position of palm in world frame
                     rpy = quat2rpy(rf_ee_constraint.desired_pose(4:7,1));
-                    for k = 1:num_r_foot_ptsobj.plan_cache.s_breaks
+                    for k = 1:num_r_foot_pts
                         T_world_foot_r = HT(rf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
                         rfoot_int_constraint(1:3,k) = T_world_foot_r(1:3,4);
                         rfoot_int_constraint(4:6,k) =rotmat2rpy(T_world_foot_r(1:3,1:3));
@@ -358,7 +358,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     % Desired position of left foot in world frame
                     rpy = quat2rpy(lf_ee_constraint.desired_pose(4:7,1));
                     for k = 1:num_l_foot_pts
-                        T_world_foot_l = HT(lobj.plan_cache.num_breaksf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
+                        T_world_foot_l = HT(lf_ee_constraint.desired_pose(1:3,k),rpy(1),rpy(2),rpy(3));
                         lfoot_int_constraint(1:3,k) = T_world_foot_l(1:3,4);
                         lfoot_int_constraint(4:6,k) =rotmat2rpy(T_world_foot_l(1:3,1:3));
                     end
@@ -370,7 +370,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                             %obj.lfootT(:,k) = lfoot_int_constraint(:,k); // Must replace Boundary Constraint In Cache
                         end
                         obj.replaceCachedConstraint(obj.l_foot_body,[1 1],l_foot_poseT);
-                        lfoot_int_constraint = nan(6,num_l_foot_pts);obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks)
+                        lfoot_int_constraint = nan(6,num_l_foot_pts);
                         lf_ee_constraint=[];
                     end
                 end
@@ -385,7 +385,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 s_int_head = h_ee_constraint.time*obj.plan_cache.time_2_index_scale;
                 % Desired position of palm in world frame
                 rpy = quat2rpy(h_ee_constraint.desired_pose(4:7));
-                T_world_head = HT(h_eobj.plan_cache.num_breakse_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
+                T_world_head = HT(h_ee_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
                 head_int_constraint(1:3) = T_world_head(1:3,4);
                 head_int_constraint(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
                 
@@ -409,6 +409,56 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     h_ee_constraint=[];
                 end
             end
+            pelvis_pos_tol= 1e-4;
+            pelvis_quat_tol=sind(1).^2;
+            com_pos_tol= 1e-2;
+            if(isempty(pelvis_constraint))
+                s_int_pelvis= nan;
+                pelvis_int_constraint = [nan;nan;nan;nan;nan;nan];
+            else
+                pelvis_int_constraint = zeros(6,1);
+                s_int_pelvis = pelvis_constraint.time*obj.plan_cache.time_2_index_scale;
+                % Desired position of left foot in world frame
+                rpy = quat2rpy(pelvis_constraint.desired_pose(4:7));
+                T_world_pelvis = HT(pelvis_constraint.desired_pose(1:3),rpy(1),rpy(2),rpy(3));
+                pelvis_int_constraint(1:3) = T_world_pelvis(1:3,4);
+                pelvis_int_constraint(4:6) =rotmat2rpy(T_world_pelvis(1:3,1:3));
+                if(abs(1-s_int_pelvis)<1e-3)
+                    disp('pelvis end state is modified')
+                    pelvis_poseT(1:3) = pelvis_int_constraint(1:3);
+                    pelvis_poseT(4:7) = rpy2quat(pelvis_int_constraint(4:6));
+                    if(~obj.isBDIManipMode())
+                        constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_poseT,pelvis_pos_tol,pelvis_quat_tol,[1 1]);
+                        obj.plan_cache.pelvis_constraint_cell = replaceConstraintCell(obj.plan_cache.pelvis_constraint_cell,constraint);
+                    else
+                        obj.plan_cache.pelvis_constraint_cell = {}; 
+                        obj.plan_cache.pelvis_constraint_cell = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],pelvis_poseT,pelvis_pos_tol,pelvis_quat_tol,[0 1]);
+                    end
+                    pelvis_int_constraint = [nan;nan;nan;nan;nan;nan];
+                    pelvis_constraint=[];
+                end
+            end    
+            
+            if(isempty(com_constraint))
+                s_int_com= nan;
+                com_int_constraint = [nan;nan;nan];
+            else
+                s_int_com = com_constraint.time*obj.plan_cache.time_2_index_scale;
+                % Desired position of com in world frame
+                com_int_constraint = com_constraint.desired_pose(1:3);
+                %com0 = getCOM(obj.r,q0)
+                
+                if(abs(1-s_int_com)<1e-3)
+                    disp('com end state is modified')
+                    pos_min = com_int_constraint-com_pos_tol;
+                    pos_max = com_int_constraint+com_pos_tol;
+                    constraint = {WorldCoMConstraint(obj.r,pos_min,pos_max,[1 1])};
+                    obj.plan_cache.com_constraint_cell = replaceConstraintCell(obj.plan_cache.com_constraint_cell,constraint);
+                    obj.plan_cache.pelvis_constraint_cell = removeBodyConstraintUtil([1 1],obj.plan_cache.pelvis_constraint_cell); % pelvis constraint can conflict with com constraint
+                    com_int_constraint = [nan;nan;nan];
+                    com_constraint=[];
+                end
+            end             
             
             r_hand_pose_int = [rhand_int_constraint(1:3); rpy2quat(rhand_int_constraint(4:6))];
             l_hand_pose_int = [lhand_int_constraint(1:3); rpy2quat(lhand_int_constraint(4:6))];
@@ -417,8 +467,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 l_foot_pose_int = [lfoot_int_constraint(1:3,:); repmat(rpy2quat(lfoot_int_constraint(4:6,1)),1,num_l_foot_pts)];
             end
             head_pose_int   = [head_int_constraint(1:3); rpy2quat(head_int_constraint(4:6))];
-            
-            
+            pelvis_pose_int = [pelvis_int_constraint(1:3); rpy2quat(pelvis_int_constraint(4:6))];
+            com_pose_int = [com_int_constraint(1:3)];
             %======================================================================================================
             
             
@@ -444,40 +494,38 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             else
                 lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
             end
-            
-            pelvis_constraint_cell = {};
+
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                 %if((~isempty(rf_ee_constraint))&&(abs(1-s_int_rf)>1e-3))
                 if(~isempty(rf_ee_constraint))
                     [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rf)); % snap to closest break point (avoiding very close double constraints)
                     s_int_rf=obj.plan_cache.s_breaks(ind);
-                    rfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose_int,1e-4,sind(1).^2,[s_int_rf,s_int_rf]);
+                    tspan = [s_int_rf,s_int_rf];
+                    rfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose_int,1e-4,sind(1).^2,tspan);
                     rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
-                    rfoot_constraint_cell = removeBodyConstraintUtil([s_int_rf,s_int_rf],rfoot_constraint_cell);
+                    rfoot_constraint_cell = removeBodyConstraintUtil(tspan,rfoot_constraint_cell);
                     rfoot_constraint_cell = [rfoot_constraint_cell,rfoot_intermediate_constraint];
                 else
                     rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
-                    
                 end
                 qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts);
                 
                 if(~isempty(lf_ee_constraint))
                     [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lf));
                     s_int_lf=obj.plan_cache.s_breaks(ind);
-                    lfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose_int,1e-4,sind(1).^2,[s_int_lf,s_int_lf]);
-                    lfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
-                    lfoot_constraint_cell = removeBodyConstraintUtil([s_int_lf,s_int_lf],lfoot_constraint_cell);
+                    tspan = [s_int_lf,s_int_lf];
+                    lfoot_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose_int,1e-4,sind(1).^2,tspan);
+                    lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
+                    lfoot_constraint_cell = removeBodyConstraintUtil(tspan,lfoot_constraint_cell);
                     lfoot_constraint_cell = [lfoot_constraint_cell,lfoot_intermediate_constraint];
                 else
                     lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
                 end
-                pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
-                qsc = qsc.setShrinkFactor(0.3);
                 qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
             else
                 lfoot_constraint_cell = {};
                 rfoot_constraint_cell = {};
-                pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
+                %pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
             end %end if(~obj.isBDIManipMode())
             
             if(~isempty(h_ee_constraint))
@@ -490,19 +538,39 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             else
                 head_constraint_cell = obj.plan_cache.head_constraint_cell;
             end
-            
-            % TODO: CoM Keyframe Adjustment
-            % compute fixed COM goal
-            %  gc = contactPositions(obj.r,q0);
-            %  k = convhull(gc(1:2,:)');
-            %  com0 = getCOM(obj.r,q0);
-            %  comgoal = [mean(gc(1:2,k),2);com0(3)];
-            %  comgoal = com0; % DOnt move com for now as this is pinned manipulation
-            %  comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
-            %  comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
-            % kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
-            % ks = ks.addKinematicConstraint(kc_com);
-            
+
+            if(~isempty(pelvis_constraint))
+                if(~obj.isBDIManipMode())
+                    [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_pelvis));
+                    s_int_pelvis=obj.plan_cache.s_breaks(ind);
+                    pelvis_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose_int,pelvis_pos_tol,pelvis_quat_tol,[s_int_pelvis,s_int_pelvis]);
+                    pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
+                    pelvis_constraint_cell = removeBodyConstraintUtil([s_int_pelvis,s_int_pelvis],pelvis_constraint_cell);
+                    pelvis_constraint_cell = [pelvis_constraint_cell,pelvis_intermediate_constraint];
+                else
+                   lfoot_constraint_cell = {};
+                   rfoot_constraint_cell = {}; 
+                   obj.plan_cache.pelvis_constraint_cell = {};
+                   % NOTE: IkTraj does not adjust starting pose                   
+                   obj.plan_cache.pelvis_constraint_cell = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose_int,pelvis_pos_tol,pelvis_quat_tol,[0 1]);
+                   pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
+                end
+            else
+                pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
+            end 
+            if(~isempty(com_constraint))
+                [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_com));
+                s_int_com=obj.plan_cache.s_breaks(ind);
+                tspan = [s_int_com,s_int_com];
+                com_intermediate_constraint = {WorldCoMConstraint(obj.r,com_pose_int-com_pos_tol,com_pose_int+com_pos_tol,tspan)};
+                pelvis_constraint_cell = removeBodyConstraintUtil(tspan,pelvis_constraint_cell); % pelvis constraint can conflict with com constraint
+                com_constraint_cell = obj.plan_cache.com_constraint_cell;
+                com_constraint_cell = removeBodyConstraintUtil([s_int_com,s_int_com],com_constraint_cell);
+                com_constraint_cell = [com_constraint_cell,com_intermediate_constraint];
+            else
+                com_constraint_cell = obj.plan_cache.com_constraint_cell;
+            end               
+           
             
             
             %iktraj_tbreaks = linspace(0,1,obj.plan_cache.num_breaks);
@@ -512,6 +580,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,lfoot_constraint_cell);
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,rfoot_constraint_cell);
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,head_constraint_cell);
+            iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,pelvis_constraint_cell);
+            iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,com_constraint_cell);
             % PERFORM IKSEQUENCE OPT
             cost = getCostVector(obj);
             iktraj_options = IKoptions(obj.r);
@@ -526,6 +596,12 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
             
             q0 = obj.plan_cache.qtraj.eval(0); % use start of cached trajectory instead of current
+            
+            %if((~isempty(pelvis_constraint))&&(obj.isBDIManipMode()))
+            %   q0(1:3) =  pelvis_pose_int(1:3);
+            %   q0(4:6) =  quat2rpy(pelvis_pose_int(4:7));
+            %end
+            
             qd0 = zeros(obj.r.getNumDOF,1);
             q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
             
@@ -535,10 +611,12 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 qsc = qsc.setShrinkFactor(0.85);
                 q_seed = q_seed(:,2:end);
                 q_nom = q_nom(:,2:end);
+
                 [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
                     q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
-                    lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
-                    rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
+                    lhand_constraint_cell{:},rhand_constraint_cell{:},...
+                    lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
+                    pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
                     obj.joint_constraint,qsc,iktraj_options);
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
                 x_breaks = xtraj.eval(iktraj_tbreaks);
@@ -554,8 +632,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 iktraj_options = iktraj_options.setSequentialSeedFlag(true);
                 [xtraj,snopt_info,infeasible_constraint] = inverseKinPointwise(obj.r,...
                     iktraj_tbreaks,q_seed,q_nom,...
-                    lhand_constraint_cell{:},rhand_constraint_cell{:},lfoot_constraint_cell{:},...
-                    rfoot_constraint_cell{:},head_constraint_cell{:},pelvis_constraint_cell{:},...
+                    lhand_constraint_cell{:},rhand_constraint_cell{:},...
+                    lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
+                    pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
                     obj.joint_constraint,qsc,iktraj_options);
                 x_breaks = xtraj;
                 %snopt_info
@@ -647,10 +726,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 obj.pose_pub.publish(xtraj,utime);
             end
         end
-        %-----------------------------------------------------------------------------------------------------------------
-        
-        
-        
+        %-----------------------------------------------------------------------------------------------------------------  
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -696,7 +772,5 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
         end
         %-----------------------------------------------------------------------------------------------------------------
-        
-        
     end% end methods
 end% end classdef
