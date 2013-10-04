@@ -20,6 +20,10 @@ namespace visualization_utils {
   #define ALT_L   65513
   #define ALT_R   65514
   #define BKSPACE 65288
+  #define LFTARRW 65361
+  #define UPARRW  65362
+  #define RGTARRW 65363
+  #define DWNARRW 65364
 
   // A global keyboard signal with the keyval integer and a boolean 
   // indicating if it's a key-press or a key-release.

@@ -53,7 +53,11 @@ using namespace visualization_utils;
 } */
 
 //constructor
-GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false),isShowMeshSelected(false),isMateable(false)
+GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),
+_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()),
+_T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
+ future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),
+ future_state_changing(false),isShowMeshSelected(false),isMateable(false)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -125,6 +129,8 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   typedef map<string, shared_ptr<urdf::Link> > links_mapType;
   for(links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
   { 
+  
+    _link_names.push_back(it->first);
     if(it->second->visual) // atleast one default visual tag exists
     {
       //cout << it->first << endl;
@@ -230,7 +236,12 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
 }
 
-GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false), isShowMeshSelected(false),isMateable(false)
+GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),
+visualize_bbox(false),is_otdf_instance(true),
+_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), 
+_T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
+future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),
+future_state_changing(false), isShowMeshSelected(false),isMateable(false)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -731,7 +742,9 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
       return;
     }
 
-
+    // update inertial states
+    update_com_state(cartpos_out,update_future_frame);
+    
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;      
     for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
     {  		
@@ -1021,6 +1034,8 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
       cerr << "Error: could not calculate forward kinematics!" <<endl;
       return;
     }
+    // update inertial states
+    update_com_state(cartpos_out,update_future_frame);
 
     typedef map<string, shared_ptr<otdf::Link> > links_mapType;      
     for( links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
@@ -1268,6 +1283,128 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
 }// end run_fk_and_update_otdf_link_shapes_and_tfs
 
+
+//==============================
+
+void GlKinematicBody::update_com_state(std::map<std::string, KDL::Frame > &cartpos_out, bool update_future_frame)
+{
+  double total_mass=0;
+  KDL::Frame T_world_com = KDL::Frame::Identity();
+
+  if(!is_otdf_instance)
+  {
+    typedef map<string, shared_ptr<urdf::Link> > links_mapType;      
+    for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
+    { 
+      if(it->second->inertial)
+      {
+        double link_mass = it->second->inertial->mass;
+        if (link_mass>0)
+        {
+          urdf::Pose inertial_origin =  it->second->inertial->origin;
+          map<string, KDL::Frame>::const_iterator transform_it;
+          transform_it=cartpos_out.find(it->first);
+
+          KDL::Frame T_link_com,T_body_link,T_world_linkcom;
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+           T_body_link= transform_it->second;
+           T_link_com.p[0]=inertial_origin.position.x;
+           T_link_com.p[1]=inertial_origin.position.y;
+           T_link_com.p[2]=inertial_origin.position.z;
+           T_link_com.M =  KDL::Rotation::Quaternion(inertial_origin.rotation.x, inertial_origin.rotation.y, inertial_origin.rotation.z, inertial_origin.rotation.w);  
+           if(!update_future_frame)
+            T_world_linkcom = _T_world_body*T_body_link*T_link_com;
+           else
+            T_world_linkcom = _T_world_body_future*T_body_link*T_link_com;
+           T_world_com.p[0] = (total_mass/(total_mass+link_mass))*T_world_com.p[0] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[0];
+           T_world_com.p[1] = (total_mass/(total_mass+link_mass))*T_world_com.p[1] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[1];
+           T_world_com.p[2] = (total_mass/(total_mass+link_mass))*T_world_com.p[2] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[2];
+           total_mass +=link_mass;
+          }
+          else if(it->first ==_root_name){ // Kdl based FK ignores the root link which must be set to body pose manually.
+           T_body_link= KDL::Frame::Identity();
+           T_link_com.p[0]=inertial_origin.position.x;
+           T_link_com.p[1]=inertial_origin.position.y;
+           T_link_com.p[2]=inertial_origin.position.z;
+           T_link_com.M =  KDL::Rotation::Quaternion(inertial_origin.rotation.x, inertial_origin.rotation.y, inertial_origin.rotation.z, inertial_origin.rotation.w);  
+           if(!update_future_frame)
+            T_world_linkcom = _T_world_body*T_body_link*T_link_com;
+           else
+            T_world_linkcom = _T_world_body_future*T_body_link*T_link_com;
+           T_world_com.p[0] = (total_mass/(total_mass+link_mass))*T_world_com.p[0] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[0];
+           T_world_com.p[1] = (total_mass/(total_mass+link_mass))*T_world_com.p[1] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[1];
+           T_world_com.p[2] = (total_mass/(total_mass+link_mass))*T_world_com.p[2] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[2];
+           total_mass +=link_mass;
+          }  
+
+        }// end if (link_mass>0)
+      }// end if(it->second->inertial)
+    }//end for 
+  }
+  else
+  {
+    typedef map<string, shared_ptr<otdf::Link> > links_mapType;      
+    for( links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
+    {
+      if(it->second->inertial)
+      {
+        double link_mass = it->second->inertial->mass;
+        if (link_mass>0)
+        {
+          otdf::Pose inertial_origin =  it->second->inertial->origin;
+          map<string, KDL::Frame>::const_iterator transform_it;
+          transform_it=cartpos_out.find(it->first);
+
+          KDL::Frame T_link_com,T_body_link,T_world_linkcom;
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+            T_body_link= transform_it->second;
+            T_link_com.p[0]=inertial_origin.position.x;
+            T_link_com.p[1]=inertial_origin.position.y;
+            T_link_com.p[2]=inertial_origin.position.z;
+            T_link_com.M =  KDL::Rotation::Quaternion(inertial_origin.rotation.x, inertial_origin.rotation.y, inertial_origin.rotation.z, inertial_origin.rotation.w);  
+            if(!update_future_frame)
+              T_world_linkcom = _T_world_body*T_body_link*T_link_com;
+            else
+              T_world_linkcom = _T_world_body_future*T_body_link*T_link_com;
+            T_world_com.p[0] = (total_mass/(total_mass+link_mass))*T_world_com.p[0] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[0];
+            T_world_com.p[1] = (total_mass/(total_mass+link_mass))*T_world_com.p[1] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[1];
+            T_world_com.p[2] = (total_mass/(total_mass+link_mass))*T_world_com.p[2] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[2];
+            total_mass +=link_mass;
+          }
+          else if(it->first ==_root_name)
+          { 
+            // Kdl based FK ignores the root link which must be set to body pose manually.
+            T_body_link= KDL::Frame::Identity();
+            T_link_com.p[0]=inertial_origin.position.x;
+            T_link_com.p[1]=inertial_origin.position.y;
+            T_link_com.p[2]=inertial_origin.position.z;
+            T_link_com.M =  KDL::Rotation::Quaternion(inertial_origin.rotation.x, inertial_origin.rotation.y, inertial_origin.rotation.z, inertial_origin.rotation.w);  
+            if(!update_future_frame)
+              T_world_linkcom = _T_world_body*T_body_link*T_link_com;
+            else
+              T_world_linkcom = _T_world_body_future*T_body_link*T_link_com;
+            T_world_com.p[0] = (total_mass/(total_mass+link_mass))*T_world_com.p[0] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[0];
+            T_world_com.p[1] = (total_mass/(total_mass+link_mass))*T_world_com.p[1] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[1];
+            T_world_com.p[2] = (total_mass/(total_mass+link_mass))*T_world_com.p[2] + (link_mass/(total_mass+link_mass))*T_world_linkcom.p[2];
+            total_mass +=link_mass;
+          }  
+        }// end if (link_mass>0)
+      }// end if(it->second->inertial
+
+    }//end for
+
+  }// end if(!is_otdf_instance)
+  
+  if(update_future_frame)
+    _T_world_com_future = T_world_com;
+  else
+    _T_world_com = T_world_com;
+  _body_mass = total_mass;
+  
+}// end update_com_state
+
 //===============================================================================================
 // ACCESS METHODS
 //
@@ -1339,6 +1476,16 @@ bool GlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T
        return false;
       }
 }  
+
+void GlKinematicBody::get_com_frame(KDL::Frame &T_world_com)
+{
+  T_world_com=_T_world_com;
+}
+
+void GlKinematicBody::get_com_future_frame(KDL::Frame &T_world_com_future)
+{
+  T_world_com_future= _T_world_com_future;
+}
 
 
 bool GlKinematicBody::get_link_future_frame(const std::string &link_name, KDL::Frame &T_world_link)

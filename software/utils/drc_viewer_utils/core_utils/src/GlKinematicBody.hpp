@@ -121,6 +121,10 @@ class GlKinematicBody
     //object state
     KDL::Frame _T_world_body; //store position in the world
     KDL::Frame _T_world_body_future; //store position in the world
+    
+    double _body_mass;
+    KDL::Frame _T_world_com;
+    KDL::Frame _T_world_com_future;
          
     std::string _mate_start_link;
     std::string _mate_end_link;
@@ -152,6 +156,9 @@ class GlKinematicBody
     void re_init(boost::shared_ptr<otdf::ModelInterface> otdf_instance);
     void set_state(boost::shared_ptr<otdf::ModelInterface> _otdf_instance); 
     void run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::string, double> &jointpos_in,const KDL::Frame &T_world_body, bool update_future_frame);
+    
+    // updates inertial states
+    void update_com_state(std::map<std::string, KDL::Frame > &cartpos_out, bool update_future_frame);
     
     void set_future_state(const drc::robot_state_t &msg);
     void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);// ability to visualize in space and time, should work for both otdf and urdf.
@@ -384,6 +391,10 @@ class GlKinematicBody
     };
     
     std::string get_root_link_name(void) { return _root_name; };
+    
+    void get_body_mass(double &mass);
+    void get_com_frame(KDL::Frame &T_world_com);
+    void get_com_future_frame(KDL::Frame &T_world_com);
     bool get_link_frame(const std::string &link_name, KDL::Frame &T_world_link);
     bool get_link_future_frame(const std::string &link_name, KDL::Frame &T_world_link);// if not future display not active return false    
     bool get_link_geometry_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link);
