@@ -58,7 +58,7 @@ protected:
   
   drc::robot_state_t mERSMsg;
   drc::robot_state_t testing;
-  drc::nav_state_t mDFRequestMsg;
+  drc::ins_update_request_t mDFRequestMsg;
   
   
 private:

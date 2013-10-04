@@ -83,7 +83,7 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 
 
 
-void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, const Eigen::Isometry3d &IMU_to_body, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg, drc::nav_state_t& _DFRequest) {
+void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, const Eigen::Isometry3d &IMU_to_body, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg, drc::ins_update_request_t& _DFRequest) {
   
   // We want to take body fram einerial data an put it in the imu_data structure
   // For now we are going to use the orientation quaternion from BDI
