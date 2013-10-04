@@ -96,7 +96,9 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
 	
   // Using the BDI quaternion estimate for now
   Eigen::Quaterniond q(bdiPose.orientation[0],bdiPose.orientation[1],bdiPose.orientation[2],bdiPose.orientation[3]);
-	
+  
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
+  
   imu_data.uts = imu.utime;
   
   
@@ -159,6 +161,62 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   
   return;
 }
+
+
+void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo) {
+	
+  // Keep joint positions in local memory -- prepare data structure for use with FK
+  std::map<std::string, double> jointpos_in;
+  for (uint i=0; i< (uint) atlasState.num_joints; i++) {
+	jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
+  }
+  
+  Eigen::Isometry3d current_pelvis;
+  Eigen::VectorXd pelvis_velocity(3);
+
+  Eigen::Isometry3d left;
+  left.setIdentity();
+  Eigen::Isometry3d right;
+  right.setIdentity();
+  
+  // TODO -- Delete head_to_body transform requirement here. This is legacy from VRC -- 
+  Eigen::Isometry3d body_to_head;
+  body_to_head.setIdentity();
+  
+  
+  _fk_data.utime = atlasState.utime;
+  _fk_data.jointpos_in = jointpos_in;
+  
+  TwoLegs::getFKTransforms(_fk_data, left, right, body_to_head);// FK, translations in body frame with no rotation (I)
+}
+//  // TODO -- Initialization before the VRC..
+//  if (firstpass>0)
+//  {
+//	  firstpass--;// = false;
+//
+//	  if (_switches->grab_true_init) {
+//		  _leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
+//
+//
+//	  } else {
+//
+//		  Eigen::Isometry3d init_state;
+//		  init_state.setIdentity();
+//
+//		  _leg_odo->ResetWithLeftFootStates(left,right,init_state);
+//
+//	  }
+//  }
+//
+//  // This must be broken into separate position and velocity states
+//  legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+//  if (legchangeflag) {
+//	  persistlegchangeflag = true; // this is to bridge the rate change gap
+//  }
+//
+//  current_pelvis = _leg_odo->getPelvisState();	
+//}
+
 
 //int StateEstimate::getIMUBodyAlignment(const unsigned long &utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
 //

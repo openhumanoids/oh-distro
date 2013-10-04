@@ -2,6 +2,10 @@
 #define STATEESTIMATORUTILITIES_H_
 
 #include <iostream>
+#include <vector>
+#include <map>
+#include <string>
+
 
 #include <Eigen/Dense>
 
@@ -11,6 +15,9 @@
 
 #include <bot_frames/bot_frames.h>
 #include <leg-odometry/BotTransforms.hpp>
+
+#include <leg-odometry/TwoLegOdometry.h>
+#include <leg-odometry/sharedUtilities.hpp>
 
 #include <inertial-odometry/InertialOdometry_Types.hpp>
 #include <inertial-odometry/Odometry.hpp>
@@ -49,6 +56,11 @@ bool insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state
 
 void appendJoints(drc::robot_state_t& msg_out, const Joints &joints);
 void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer);
+
+
+// Use forward kinematics to estimate the pelvis position as update to the KF
+// Store result as StateEstimator:: state
+void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo);
 
 
 // IMU DATA============================================================================

@@ -42,7 +42,7 @@ StateEstimate::StateEstimator::StateEstimator(
   
   std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
   // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
-  _leg_odo = new TwoLegs::TwoLegOdometry(false, false);
+  _leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
   
   unsigned long fusion_period;
   fusion_period = 20000-500;
@@ -51,7 +51,15 @@ StateEstimate::StateEstimator::StateEstimator(
   fusion_rate_dummy.resize(1);
   fusion_rate_dummy << 0;
   std::cout << "StateEstimator::StateEstimator -- Setting data fusion period trigger is set to " << fusion_period << std::endl;
-  
+ 
+  // This is for forward kinematics -- maybe not the best way to do this, but we are a little short on time. Code evolution will fix this in the long run
+  fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
+  // Parse KDL tree
+  if (!kdl_parser::treeFromString(  fk_data.model_->getURDFString() , fk_data.tree)){
+	std::cerr << "StateEstimator::StateEstimator -- ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
+	return;
+  }
+  fk_data.fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(fk_data.tree));
 }
 
 // TODO -- fix this constructor
@@ -101,6 +109,10 @@ void StateEstimate::StateEstimator::run()
       mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
       insertAtlasState_ERS(atlasState, mERSMsg);
       // std::cout << "Handled Atlas state" << std::endl;
+      
+      // here we compute the leg odometry position solution
+      // TODO -- we are using the BDI orientation estimate to 
+      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo);
     }
 
     // This is the special case which will also publish the message
@@ -135,7 +147,7 @@ void StateEstimate::StateEstimator::run()
 	      //publish ERS message
     	  std::cout << "Going to publish ERS" << std::endl;
     	  mERSMsg.utime = imu.utime;
-//	      mLCM->publish("EST_ROBOT_STATE_EXP", &mERSMsg); // There is some silly problem here
+	      mLCM->publish("EST_ROBOT_STATE_EXP", &mERSMsg); // There is some silly problem here
       }
     }
 

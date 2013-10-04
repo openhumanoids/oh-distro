@@ -1,6 +1,8 @@
 #ifndef __StateEstimator_h
 #define __StateEstimator_h
 
+#include <vector>
+
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -11,10 +13,11 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc_lcmtypes.hpp"
-#include <model-client/model-client.hpp>
+//#include <model-client/model-client.hpp>
 
 #include <inertial-odometry/Odometry.hpp>
 #include <leg-odometry/TwoLegOdometry.h>
+#include <leg-odometry/sharedUtilities.hpp>
 
 #include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
@@ -77,6 +80,7 @@ private:
   
   // LegOdometry Object
   TwoLegs::TwoLegOdometry *_leg_odo;
+  TwoLegs::FK_Data fk_data;
   
 };
 
