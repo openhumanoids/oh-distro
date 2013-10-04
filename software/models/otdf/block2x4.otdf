@@ -1,0 +1,77 @@
+<?xml version="1.0" ?>
+<object name="block2x4">
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="1.57" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Size of the outer most bounding volume -->
+    <param name="lX" default_value="0.08" inc="0.01" min="0" max="100" />
+    <param name="lY" default_value="0.04" inc="0.01" min="0" max="100" />
+    <param name="lZ" default_value="1" inc="0.01" min="0" max="100" />
+    <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="base_link" />
+    <!--<link name="cylinder">-->
+    <!--<inertial>-->
+    <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
+    <!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
+    <!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
+    <!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
+    <!--</inertial>-->
+    <!--	<visual>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</visual>-->
+    <!--	<collision>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</collision>-->
+    <!--</link>-->
+    <link name="box">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="${(mass/12)*(lY^2+lZ^2)}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(lX^2+lZ^2)}" iyz="0.0" izz="${(mass/2)*(lY^2+lX^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="base_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="box" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="2.08764 0.189469 1.54352" xyz="-0.112275 0.0711928 0.10175" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0144119 0.791712 1.30288 -0.0166752 0.83136 1.01891 0.0136723 0.721895 1.07125 -0.211377 1.04792 -0.298966 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="2.08764 0.189469 -1.54352" xyz="0.112275 -0.0711928 0.10175" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0144119 0.791712 1.30288 -0.0166752 0.83136 1.01891 0.0136723 0.721895 1.07125 -0.211377 1.04792 -0.298966 " />
+    </grasp_seed>
+</object>
