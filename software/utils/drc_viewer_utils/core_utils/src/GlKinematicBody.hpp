@@ -370,6 +370,11 @@ class GlKinematicBody
     {
       return _link_names;
     };
+    std::vector<std::string > get_joint_names()
+    {
+      return _joint_names_;
+    };
+        
     
     std::map<std::string, boost::shared_ptr<urdf::Link> > get_links_map()
     {
