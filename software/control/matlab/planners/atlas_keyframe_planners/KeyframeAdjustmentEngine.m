@@ -426,6 +426,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 pelvis_int_constraint(4:6) =rotmat2rpy(T_world_pelvis(1:3,1:3));
                 if(abs(1-s_int_pelvis)<1e-3)
                     disp('pelvis end state is modified')
+                    pelvis_poseT = zeros(7,1);
                     pelvis_poseT(1:3) = pelvis_int_constraint(1:3);
                     pelvis_poseT(4:7) = rpy2quat(pelvis_int_constraint(4:6));
                     if(~obj.isBDIManipMode())
