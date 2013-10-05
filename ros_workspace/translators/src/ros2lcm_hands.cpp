@@ -85,16 +85,11 @@ private:
   void appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::RawFingerState& msg_in,int finger_id);
   void publishSandiaHandState(int64_t utime_in,bool is_left);
   void publishHandStateOnSystemStatus(bool is_sandia, bool is_left);
-  void publishSandiaRawTactile(int64_t utime_in,bool is_left);
-  void publishSandiaCalibTactile(int64_t utime_in,bool is_left);
+  //void publishSandiaRawTactile(int64_t utime_in,bool is_left);
+  //void publishSandiaCalibTactile(int64_t utime_in,bool is_left);
 
 
   void publishSandiaRaw(int64_t utime_in,bool is_left);
-  // Deprecated: not publishing separate channels
-  void publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, const sandia_hand_msgs::RawFingerStatePtr& msg);
-  void publishSandiaRawPalm(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawPalmStatePtr& msg);
-  void publishSandiaRawMobo(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawMoboStatePtr& msg);
-  //
   void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   
@@ -106,29 +101,11 @@ private:
   
   bool dumb_fingers_;
   
-  int init_sandia_l_cnt;
-  int init_sandia_r_cnt;
-  static const int SANDIA_CALIB_NUM = 200;
-  float sandia_l_hand_tactile_offset[32];
-  float sandia_r_hand_tactile_offset[32];
-  static const int L_SANDIA_TACTILE_THRESHOLD = 10000;
-  static const int R_SANDIA_TACTILE_THRESHOLD = 10000;
-  //////////////////////////////////////////////////////////////////////////
-  
 };
 
 App::App(ros::NodeHandle node_, bool dumb_fingers) :
     node_(node_),dumb_fingers_(dumb_fingers){
   ROS_INFO("Initializing Sandia/Irobot Hands Translator (Not for simulation)");
-
-  // initialize the calibration data
-  init_sandia_l_cnt = 0;
-  init_sandia_r_cnt = 0;
-  for(int i=0; i<32; i++){
-    sandia_l_hand_tactile_offset[i] = 0;
-    sandia_r_hand_tactile_offset[i] = 0;
-  }
-
   
   
  // Sandia subscribers
@@ -182,8 +159,6 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
     init_recd_sandia_l_[i]=false;
     init_recd_sandia_r_[i]=false;
   }
-  init_recd_irobot_l_ = false;
-  init_recd_irobot_r_ = false;
 
   sandia_l_hand_finger_state_[0]=&sandia_l_hand_finger_0_state_;
   sandia_l_hand_finger_state_[1]=&sandia_l_hand_finger_1_state_;
@@ -212,43 +187,7 @@ int64_t _timestamp_now(){
 
 void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
 {
- if(!init_recd_sandia_l_[4]){
-   init_recd_sandia_l_[4]=true;
-   sandia_l_hand_palm_state_= *msg;
- }
- else
- {
-   if(init_sandia_l_cnt < SANDIA_CALIB_NUM){
-     for(size_t i=0;i<msg->palm_tactile.size();i++)
-       sandia_l_hand_tactile_offset[i] += msg->palm_tactile[i] / (float)SANDIA_CALIB_NUM;
-     if(init_sandia_l_cnt == SANDIA_CALIB_NUM-1)
-       ROS_INFO("Sandia Left Hand Palm Tactile Calibration done");
-
-     init_sandia_l_cnt++;
-   }
-   else
-   {
-     for(size_t i=0;i<msg->palm_tactile.size();i++)
-     {
-      // take and store the deriv of the signal against the running average
-      double diff_val;
-      diff_val=msg->palm_tactile[i]-sandia_l_hand_palm_state_.palm_tactile[i];
-      sandia_l_hand_palm_diffstate_[i]=diff_val;
-      sandia_l_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_l_hand_tactile_offset[i];
-      // low pass filter the raw signal
-      double old_val, alpha, new_val;
-      old_val = sandia_l_hand_palm_state_.palm_tactile[i]; 
-      alpha=0.1;
-      new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
-      sandia_l_hand_palm_state_.palm_tactile[i] = new_val;
-     }
-   }
-  
- }
-
   int64_t utime = _timestamp_now();
-  publishSandiaRawTactile(utime,true); 
-  publishSandiaCalibTactile(utime,true);
 
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, true);
@@ -257,43 +196,9 @@ void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
 //----------------------------------------------------------------------------
 void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
 {
- if(!init_recd_sandia_r_[4]){
-   init_recd_sandia_r_[4]=true;
-   sandia_r_hand_palm_state_= *msg;
- }
- else
- {
-   if(init_sandia_r_cnt < SANDIA_CALIB_NUM){
-     for(size_t i=0;i<msg->palm_tactile.size();i++)
-       sandia_r_hand_tactile_offset[i] += msg->palm_tactile[i] / (float)SANDIA_CALIB_NUM;
-     if(init_sandia_r_cnt == SANDIA_CALIB_NUM-1)
-       ROS_INFO("Sandia Right Hand Palm Tactile Calibration done");
 
-     init_sandia_r_cnt++;
-   }
-   else
-   {
-
-     for(size_t i=0;i<msg->palm_tactile.size();i++)
-     {
-      // take and store the deriv of the signal against the running average
-       double diff_val;
-       diff_val=msg->palm_tactile[i]-sandia_r_hand_palm_state_.palm_tactile[i];
-       sandia_r_hand_palm_diffstate_[i]=diff_val;
-       sandia_r_hand_palm_origstate_[i]=msg->palm_tactile[i]-sandia_r_hand_tactile_offset[i];
-      // low pass filter the raw signal
-       double old_val, alpha, new_val;
-       old_val = sandia_r_hand_palm_state_.palm_tactile[i];
-       alpha=0.1;
-       new_val = alpha*msg->palm_tactile[i]+(1-alpha)*old_val;
-       sandia_r_hand_palm_state_.palm_tactile[i] = new_val;  // lhs type?
-     }
-   }
- }
 
   int64_t utime = _timestamp_now();
-  publishSandiaRawTactile(utime,false);
-  publishSandiaCalibTactile(utime,false);
 
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, false);
@@ -367,23 +272,6 @@ void App::publishSandiaRaw(int64_t utime_in,bool is_left){
 
 }
 
-void App::publishSandiaRawPalm(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawPalmStatePtr& msg){
-  drc:: raw_sandia_hand_palm_t msg_out;
-  msg_out.utime = utime_in;
-  msg_out.palm_time = msg->palm_time;
-  copyvalue(msg_out.palm_accel, msg->palm_accel,3);
-  copyvalue(msg_out.palm_gyro,  msg->palm_gyro, 3);
-  copyvalue(msg_out.palm_mag,   msg->palm_mag,  3);
-  copyvalue(msg_out.palm_temps, msg->palm_temps,7);
-  copyvalue(msg_out.palm_tactile, msg->palm_tactile, 32);
-
-
-
-  lcm_publish_.publish(
-    is_left ? "SANDIA_LEFT_RAW_PALM_STATE":"SANDIA_RIGHT_RAW_PALM_STATE", &msg_out);    
-
-}
-
 void App::sandia_l_hand_mobo_state_cb(const sandia_hand_msgs::RawMoboStatePtr& msg)
 { 
   if(!init_recd_sandia_l_[5]) 
@@ -398,90 +286,6 @@ void App::sandia_r_hand_mobo_state_cb(const sandia_hand_msgs::RawMoboStatePtr& m
   sandia_r_hand_mobo_state_= *msg;
 } 
 
-void App::publishSandiaRawMobo(int64_t utime_in,bool is_left, const sandia_hand_msgs::RawMoboStatePtr& msg){
-  drc:: raw_sandia_hand_mobo_t msg_out;
-  msg_out.utime = utime_in;
-  msg_out.mobo_time = msg->mobo_time;
-  copyvalue(msg_out.finger_currents, msg->finger_currents,4);
-  copyvalue(msg_out.logic_currents,  msg->logic_currents, 3);
-  copyvalue(msg_out.mobo_temp,   msg->mobo_temp,  3);
-
-  lcm_publish_.publish(
-    is_left ? "SANDIA_LEFT_RAW_MOBO_STATE":"SANDIA_RIGHT_RAW_MOBO_STATE", &msg_out);
-}
-
-
-void App::publishSandiaRawTactile(int64_t utime_in,bool is_left)
-{
-
-drc:: raw_tactile_t msg_out;
-msg_out.utime = utime_in; // from nsec to usec
-
-msg_out.n_f0 = 0;
-msg_out.n_f1 = 0;
-msg_out.n_f2 = 0;
-msg_out.n_f3 = 0;
-
-if(is_left)
-{
-   msg_out.n_palm=sandia_l_hand_palm_state_.palm_tactile.size();
-   for (std::vector<int>::size_type i = 0; i < msg_out.n_palm; i++)  
-   {  
-      float val;
-      val = (float) sandia_l_hand_palm_origstate_[i];   // use float, if using short it will overflow, source signal from ROS is u16int but LCM does not have unsigned short type
-      msg_out.palm.push_back(val); // msg_out stores short
-   }
-   lcm_publish_.publish("SANDIA_LEFT_RAW_TACTILE_STATE", &msg_out); 
-} 
-else
-  {
-     msg_out.n_palm=sandia_r_hand_palm_state_.palm_tactile.size();
-     for (std::vector<int>::size_type i = 0; i < msg_out.n_palm; i++)  
-     {
-        float val;
-        val = (float)sandia_r_hand_palm_origstate_[i];
-        msg_out.palm.push_back(val); // msg_out stores short
-     }
-     lcm_publish_.publish("SANDIA_RIGHT_RAW_TACTILE_STATE", &msg_out); 
-  }
-  
-}
-//----------------------------------------------------------------------------
-void App::publishSandiaCalibTactile(int64_t utime_in,bool is_left)
-{
-
-  drc:: hand_tactile_state_t msg_out;
-  msg_out.utime = utime_in; // from nsec to usec
-
-
-  double vmax=0; double vmin=0;
-  if(is_left)
-  {
-    
-    for (std::vector<int>::size_type i = 0; i < 32; i++){
-	     double v = (double) sandia_l_hand_palm_origstate_[i]; 
-       vmax = std::max(vmax,v);
-       vmin = std::min(vmin,v);
-    }
-    // take the max - min instead of sum to avoid value run off issues. (discuss with peter)
-     msg_out.signal = (float)fabs(vmax-vmin);
-     msg_out.touched =  msg_out.signal > L_SANDIA_TACTILE_THRESHOLD;
-     lcm_publish_.publish("SANDIA_LEFT_TACTILE_STATE", &msg_out); 
-  } 
-  else
-  {
-    for (std::vector<int>::size_type i = 0; i < 32; i++){
-	     double v = (double) sandia_r_hand_palm_origstate_[i];
-        vmax = std::max(vmax,v);
-        vmin = std::min(vmin,v);
-    }
-    // take the max-min instead of sum to avoid value run off issues. (discuss with peter)
-    msg_out.signal = (float)fabs(vmax-vmin); 
-    msg_out.touched =  msg_out.signal > R_SANDIA_TACTILE_THRESHOLD;
-    lcm_publish_.publish("SANDIA_RIGHT_TACTILE_STATE", &msg_out); 
-  }
-  
-}
 //----------------------------------------------------------------------------
 void App::sandia_l_hand_finger_0_state_cb(const sandia_hand_msgs::RawFingerStatePtr& msg)
 {
@@ -515,7 +319,7 @@ void App::sandia_l_hand_finger_3_state_cb(const sandia_hand_msgs::RawFingerState
 }
 
 
-void App::publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, const sandia_hand_msgs::RawFingerStatePtr& msg){
+/*void App::publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, const sandia_hand_msgs::RawFingerStatePtr& msg){
   drc::raw_sandia_hand_finger_t msg_out;
   msg_out.utime = utime_in;
   
@@ -545,7 +349,7 @@ void App::publishSandiaRawFinger(int64_t utime_in,bool is_left, int finger_id, c
   char pubname[256];
   sprintf(pubname, "SANDIA_%s_RAW_FINGER%d_STATE", (is_left?"LEFT":"RIGHT"), finger_id);
   lcm_publish_.publish(pubname, &msg_out);
-}
+}*/
 
 
 //----------------------------------------------------------------------------
