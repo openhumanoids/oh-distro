@@ -15,8 +15,10 @@ struct ins_update_request_t
   vector_3d_t referenceVel_body;
   vector_3d_t referenceQ_local;
 
+  int8_t updateType;
+
   const int8_t POSITION_LOCAL=0;
   const int8_t VELOCITY_BODY=1;
   const int8_t VELOCITY_LOCAL=2;
-  const int8_t QUATERNIO_LOCAL=3;
+  const int8_t QUATERNION_LOCAL=3;
 }
