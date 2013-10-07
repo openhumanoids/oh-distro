@@ -41,7 +41,12 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     glEnable(GL_BLEND);
     // glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glEnable (GL_RESCALE_NORMAL);
+    glEnable(GL_NORMALIZE); // this is required to renderer cubes/boxes, otherwise certain faces will be blank 
+
   
+
+
     if((self->ehandler.picking)&&(self->selection_enabled)&&(self->clicked)){
         glLineWidth (3.0);
         glPushMatrix();
