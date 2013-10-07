@@ -25,7 +25,7 @@ classdef FootstepPlanner < DRCPlanner
       % obj.hmap_ptr = HeightMapHandle();
       % mapAPIwrapper(obj.hmap_ptr);
       obj.goal_pos = [];
-      obj.adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
+      obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
     end
 
     function X = updatePlan(obj, X, data, changed, changelist)
@@ -47,7 +47,7 @@ classdef FootstepPlanner < DRCPlanner
         obj.adjusted_footsteps = adj;
         needs_plan = true;
       elseif (data.goal.is_new_goal && (changelist.goal || isempty(X)))
-        obj.adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
+        obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
         msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
         obj.goal_pos = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
         if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
@@ -61,46 +61,56 @@ classdef FootstepPlanner < DRCPlanner
         [X, ~] = obj.biped.createInitialSteps(data.x0, obj.goal_pos, obj.options);
       end
 
+      function ndx = n2p(ndx)
+        % convert negative footstep index (from end) to positive (from start)
+        ndx(ndx < 0) = length(X) + ndx(ndx < 0) + 1;
+      end
+      function ndx = p2n(ndx)
+        % convert positive (from start) to negative (from end)
+        ndx(ndx > 0) = ndx(ndx > 0) - length(X) - 1;
+      end
+
+
       if changelist.plan_con
         % apply changes from user adjustment of footsteps in viewer
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
         matching_ndx = find([X.id] == new_X.id);
         if ~isempty(matching_ndx)
-          obj.adjusted_footsteps(end+1) = struct('pos', new_X.pos, 'ndx', matching_ndx,'is_right_foot',new_X.is_right_foot);
+          obj.adjusted_footsteps(matching_ndx) = struct('pos', new_X.pos,'is_right_foot',new_X.is_right_foot);
         end
-      end
-
-      function ndx = n2p(ndx)
-        % convert negative footstep index (from end) to positive (from start)
-        ndx(ndx < 0) = length(X) + ndx(ndx < 0) + 1;
       end
 
       if ~isempty(obj.adjusted_footsteps)
-        for j = 1:length(obj.adjusted_footsteps)
-          if n2p(obj.adjusted_footsteps(j).ndx) == length(X)
+        for j = obj.adjusted_footsteps.keys()
+          ndx = j{1};
+          if n2p(ndx) == length(X)
             % Handle the edge case when the desired foot step sequence gives
             % the wrong step order for the final two steps
-            if obj.adjusted_footsteps(j).is_right_foot ~= X(end).is_right_foot
-              alt = find(n2p([obj.adjusted_footsteps.ndx]) == length(X)-1);
-              n = obj.adjusted_footsteps(j).ndx;
-              obj.adjusted_footsteps(j).ndx = obj.adjusted_footsteps(alt).ndx;
-              obj.adjusted_footsteps(alt).ndx = n;
+            if obj.adjusted_footsteps(ndx).is_right_foot ~= X(end).is_right_foot
+              for k = [p2n(length(X)-1), length(X)-1]
+                if obj.adjusted_footsteps.isKey(k)
+                  swap = obj.adjusted_footsteps(ndx);
+                  obj.adjusted_footsteps(ndx) = obj.adjusted_footsteps(k);
+                  obj.adjusted_footsteps(k) = swap;
+                  break;
+                end
+              end
             end
           end
         end
-        for j = 1:length(obj.adjusted_footsteps)
-          ndx = n2p(obj.adjusted_footsteps(j).ndx);
+        for j = obj.adjusted_footsteps.keys()
+          ndx = j{1};
           if ndx <= length(X)
-            if X(ndx).is_right_foot ~= obj.adjusted_footsteps(j).is_right_foot
+            if X(n2p(ndx)).is_right_foot ~= obj.adjusted_footsteps(ndx).is_right_foot
               msg ='Foot Plan : Error: Mismatched foot'; disp(msg); send_status(6,0,0,msg);
               break;
             end
-            old_X = X(ndx);
-            new_pos = obj.biped.footOrig2Contact(obj.adjusted_footsteps(j).pos, 'center', old_X.is_right_foot);
-            X(ndx).pos = new_pos;
+            old_X = X(n2p(ndx));
+            new_pos = obj.biped.footOrig2Contact(obj.adjusted_footsteps(ndx).pos, 'center', old_X.is_right_foot);
+            X(n2p(ndx)).pos = new_pos;
             if ~obj.options.ignore_terrain
-              X(ndx).pos = fitStepToTerrain(obj.biped, X(ndx).pos, 'center');
+              X(n2p(ndx)).pos = fitStepToTerrain(obj.biped, X(n2p(ndx)).pos, 'center');
             end
           end
         end
@@ -169,14 +179,14 @@ classdef FootstepPlanner < DRCPlanner
   methods (Static=true)
     function [goal_pos, adjusted_footsteps] = stepSeq2GoalPos(step_seq)
       [~, sort_ndx] = sort(step_seq.link_timestamps);
-      adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
+      adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
       for j = 1:step_seq.num_links
-        adjusted_footsteps(end+1) = struct('pos', FootstepPlanner.decodePosition3d(step_seq.link_origin_position(sort_ndx(j))), 'ndx', -step_seq.num_links+j-1, 'is_right_foot', strcmp(step_seq.link_name(sort_ndx(j)), 'r_foot'));
+        ndx = -step_seq.num_links+j-1;
+        adjusted_footsteps(ndx) = struct('pos', FootstepPlanner.decodePosition3d(step_seq.link_origin_position(sort_ndx(j))), 'is_right_foot', strcmp(step_seq.link_name(sort_ndx(j)), 'r_foot'));
       end
       goal_pos = zeros(6,1);
-      goal_pos(1:3) = mean([adjusted_footsteps(end-1).pos(1:3), adjusted_footsteps(end).pos(1:3)], 2);
-      goal_pos(4:6) = adjusted_footsteps(end-1).pos(4:6) + 0.5 * angleDiff(adjusted_footsteps(end-1).pos(4:6), adjusted_footsteps(end).pos(4:6));
-
+      goal_pos(1:3) = mean([adjusted_footsteps(-2).pos(1:3), adjusted_footsteps(-1).pos(1:3)], 2);
+      goal_pos(4:6) = adjusted_footsteps(-2).pos(4:6) + 0.5 * angleDiff(adjusted_footsteps(-2).pos(4:6), adjusted_footsteps(-1).pos(4:6));
     end
 
     function pose = decodePosition3d(position_3d)
