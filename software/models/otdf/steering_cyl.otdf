@@ -14,7 +14,7 @@
     <param name="length" default_value="0.03" inc="0.0025" min="0" max="100" />
     <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
-    <link name="base_link" />
+    <link name="plane::xy::base_link" />
     <!--<link name="cylinder">-->
     <!--<inertial>-->
     <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
@@ -54,14 +54,14 @@
         </collision>
     </link>
     <joint name="base_joint" type="revolute">
-        <parent link="base_link" type="link" />
+        <parent link="plane::xy::base_link" type="link" />
         <child link="cylinder" type="link" />
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
         <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
     <!--<joint name="base_joint" type="prismatic">-->
-    <!--	<parent link="base_link" type="link"/>-->
+    <!--	<parent link="plane::xy::base_link" type="link"/>-->
     <!--	<child link="cylinder" type="link"/>-->
     <!--	<origin rpy="0 0 0" xyz="0 0 0"/>-->
     <!--	<axis xyz="0 0 1"/>-->
