@@ -36,7 +36,10 @@
 #define PARAM_EXEC_SPEED "EE Speed Limit(cm/s)"
 #define PARAM_EXEC_ANG_SPEED "Joint Speed Limit(deg/s)"
 #define PARAM_PLAN_ADJUST_MODE "Plan Adjustment Filter"
+
 #define PARAM_ADJUST_PLAN_TO_CURRENT_POSE "Adjust Plan To Current Pose"
+#define PARAM_COMPENSATE_LAST_FRAME_FOR_SSE "Compensate for SSE"
+
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
@@ -702,6 +705,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
     self->lcm->publish("ADJUST_PLAN_TO_CURRENT_PELVIS_POSE", &msg);
   }
+
+  else if(! strcmp(name, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE)){
+    drc::plan_adjust_mode_t msg;
+    msg.utime = self->robot_utime;
+    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
+    self->lcm->publish("MOVE_TO_COMPENSATE_SSE", &msg);
+  }  
   bot_viewer_request_redraw(self->viewer);
   
 }
@@ -772,6 +782,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        "All", drc::plan_adjust_mode_t::ALL, NULL);
                                        
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_TO_CURRENT_POSE, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE, NULL);
     
     bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
                                        "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
