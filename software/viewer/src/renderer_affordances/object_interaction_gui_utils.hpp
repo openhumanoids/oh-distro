@@ -17,6 +17,11 @@
 #define PARAM_TOUCH "Touch"   // publishes pre-grasp pose as ee_goal for reaching controller
 
 #define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
+#define PARAM_GRASP   "Grasp" 
+#define PARAM_SQUEEZE    "Squeeze"
+#define PARAM_UNGRASP   "Ungrasp" 
+
+
 #define PARAM_POWER_GRASP     "PowerGrasp"
 #define PARAM_SEND_POSE_GOAL   "Get Robot Pose @CurAffState"
 #define PARAM_SEND_POSE_GOAL2  "Get Robot Pose @DesAffState"

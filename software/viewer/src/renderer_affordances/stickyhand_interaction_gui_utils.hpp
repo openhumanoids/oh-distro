@@ -71,22 +71,105 @@ namespace renderer_affordances_gui_utils
         bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
         if(power_flag)
          val=true;
-  
+        
+        bool squeeze_flag = false;
+        int squeeze_amount = 1.0;
 
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
         else if(grasp_type== msg.IROBOT_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
         else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,self);            
+          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
      
     }
+     else if ((!strcmp(name, PARAM_SQUEEZE))) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      
+      bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+      else { 
+        drc::desired_grasp_state_t msg; // just to access types
+        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        
+
+        val=true;
+        bool power_flag = false;
+        bool squeeze_flag = true;
+        double squeeze_amount = bot_gtk_param_widget_get_double(pw,PARAM_SQUEEZE);
+        
+        //cout << "squeezing by: " << squeeze_amount << endl;
+
+        //publish desired_grasp_state_t on COMMITED_GRASP msg.
+            //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.IROBOT_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.IROBOT_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
+        hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+      }
+     
+    }   
+    
+    
+    else if ((!strcmp(name, PARAM_GRASP))||(!strcmp(name, PARAM_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      
+      //bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
+      bool  val  = (!strcmp(name, PARAM_GRASP));
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+      else { 
+        drc::desired_grasp_state_t msg; // just to access types
+        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        
+        bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
+        bool squeeze_flag = false;
+        int squeeze_amount = 1.0;
+        
+        if(power_flag)
+         val=true;
+        
+
+        //publish desired_grasp_state_t on COMMITED_GRASP msg.
+            //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.IROBOT_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
+        else if(grasp_type== msg.IROBOT_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
+        //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+        hand_it->second.grasp_status = val;
+      }
+     
+    }    
+    
     else if (!strcmp(name, PARAM_PARTIAL_GRASP_UNGRASP)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
@@ -270,7 +353,12 @@ namespace renderer_affordances_gui_utils
     }
   
     bot_viewer_request_redraw(self->viewer);
-    gtk_widget_destroy(self->dblclk_popup);
+    if(   strcmp(name,PARAM_SQUEEZE)
+       && strcmp(name, PARAM_POWER_GRASP)
+       && strcmp(name, PARAM_GRASP_UNGRASP)
+       && strcmp(name, PARAM_GRASP)
+       && strcmp(name, PARAM_UNGRASP))
+      gtk_widget_destroy(self->dblclk_popup);
     
    }
   //--------------------------------------------------------------------------
@@ -307,8 +395,13 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_GRASP_UNGRASP, NULL);
     bool val = (hand_it->second.grasp_status==0);
-    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
+    //bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
+    
+    bot_gtk_param_widget_add_buttons(pw, PARAM_GRASP, NULL);
+    bot_gtk_param_widget_add_buttons(pw, PARAM_UNGRASP, NULL);
+    
+    bot_gtk_param_widget_add_double(pw,PARAM_SQUEEZE,BOT_GTK_PARAM_WIDGET_SLIDER,0.0, 2.0, 0.1, 1);
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
     int p_val = (hand_it->second.partial_grasp_status);
     
 

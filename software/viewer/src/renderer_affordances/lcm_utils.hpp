@@ -118,11 +118,11 @@ namespace renderer_affordances_lcm_utils
     }
   
     //----------------------------------------------------------------------------------------------------
-    static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name,string robot_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag, void *user)
+    static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,string ee_name,string robot_name, string channel,KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag,bool squeeze_flag, double squeeze_amount, void *user)
     {
         RendererAffordances *self = (RendererAffordances*) user;
         drc::desired_grasp_state_t msg;
-        msg=get_grasp_state(self->last_state_msg_timestamp,robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_flag,power_flag);
+        msg=get_grasp_state(self->last_state_msg_timestamp,robot_name,sticky_hand_struc,ee_name,T_world_geometry,grasp_flag,power_flag,squeeze_flag,squeeze_amount);
         // Publish the message 
         self->lcm->publish(channel, &msg);
     }
