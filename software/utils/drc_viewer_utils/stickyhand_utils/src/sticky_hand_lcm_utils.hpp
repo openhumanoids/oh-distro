@@ -140,7 +140,7 @@ namespace visualization_utils
   //----------------------------------------------------------------------------------------------------------          
   inline static drc::desired_grasp_state_t get_grasp_state(int64_t last_state_msg_timestamp, string robot_name,
                                               StickyHandStruc &sticky_hand_struc,string ee_name,
-                                              KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag)
+                                              KDL::Frame &T_world_geometry,  bool grasp_flag,bool power_flag,bool squeeze_flag, double squeeze_amount)
   {
     drc::desired_grasp_state_t msg;
     msg.utime = last_state_msg_timestamp;
@@ -215,7 +215,10 @@ namespace visualization_utils
         msg.l_joint_position.resize(msg.num_l_joints);
         for(int i = 0; i < msg.num_l_joints; i++){
             if(grasp_flag){
-                msg.l_joint_position[i]=sticky_hand_struc.joint_position[i];
+              double gain = 1.0;
+              if(squeeze_flag)
+               gain= squeeze_amount;
+              msg.l_joint_position[i]=gain*sticky_hand_struc.joint_position[i];
             }
             else{
                 msg.l_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
@@ -231,7 +234,10 @@ namespace visualization_utils
         msg.r_joint_position.resize(msg.num_r_joints);
         for(int i = 0; i < msg.num_r_joints; i++){
             if(grasp_flag){
-                msg.r_joint_position[i]=sticky_hand_struc.joint_position[i];
+            double gain = 1.0;
+            if(squeeze_flag)
+              gain= squeeze_amount;
+                msg.r_joint_position[i]=gain*sticky_hand_struc.joint_position[i];
             }
             else{
                 msg.r_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
@@ -239,6 +245,8 @@ namespace visualization_utils
             msg.r_joint_name[i]= sticky_hand_struc.joint_name[i];
         }
     }
+    
+    msg.optimization_status = 0;
     
     return msg;
   } 
