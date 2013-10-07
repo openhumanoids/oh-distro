@@ -1,0 +1,267 @@
+{
+  "plots": [
+    {
+      "signals": [
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_position", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "position", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPX"
+          ]
+        } 
+      ], 
+      "timeWindow": 30, 
+      "ymin": -2.5, 
+      "ymax": 2.5
+    }, 
+    {
+      "signals": [
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_effort", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "L_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::atlas_command_t", 
+          "fieldName": "effort", 
+          "channel": "ATLAS_COMMAND", 
+          "arrayKeys": [
+            "R_LEG_HPX"
+          ]
+        }
+      ], 
+      "timeWindow": 30, 
+      "ymin": -40, 
+      "ymax": 40
+    }, 
+    {
+      "signals": [
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPZ"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPY"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "L_LEG_HPX"
+          ]
+        }, 
+        {
+          "messageType": "drc::robot_state_t", 
+          "fieldName": "joint_velocity", 
+          "channel": "EST_ROBOT_STATE", 
+          "arrayKeys": [
+            "R_LEG_HPX"
+          ]
+        } 
+      ], 
+      "timeWindow": 30, 
+      "ymin": -2.5, 
+      "ymax": 2.5
+    }
+  ], 
+  "windowWidth": 2495, 
+  "windowHeight": 1416
+}
