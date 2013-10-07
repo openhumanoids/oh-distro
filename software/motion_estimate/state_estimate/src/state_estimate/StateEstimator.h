@@ -61,12 +61,13 @@ protected:
   JointFilters mJointFilters;
   //  vector<float> mJointVelocities;
   
-  drc::robot_state_t mERSMsg;
-  drc::robot_state_t testing;
-  drc::ins_update_request_t mDFRequestMsg;
   
   
 private:
+  drc::robot_state_t mERSMsg;
+  drc::robot_state_t testing;
+  drc::ins_update_request_t mDFRequestMsg;
+	
   InertialOdometry::Odometry inert_odo;
   unsigned long long previous_imu_utime;
 	

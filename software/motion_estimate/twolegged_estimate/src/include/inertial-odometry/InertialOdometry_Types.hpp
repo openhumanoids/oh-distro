@@ -36,9 +36,12 @@ namespace InertialOdometry {
   {
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+	  IMU_dataframe imu;
+	  
 	  Eigen::Vector3d P;
 	  Eigen::Vector3d V;
 	  Eigen::Vector3d f_l;
+	  Eigen::Vector3d w_l;
 	  Eigen::Vector3d E;
 	  Eigen::Vector3d b_a;
 	  Eigen::Vector3d b_g;

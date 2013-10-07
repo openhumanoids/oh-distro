@@ -18,6 +18,9 @@ namespace InertialOdometry {
 		Parameters param;
 		//InertialOdomOutput output_state; // State memory should only exist in the attitude and vp objects -- this should not be here
 
+		// Store state memory
+		DynamicState state;
+		
 		void UpdateStructState(InertialOdomOutput &output_data);// ??
 
 
@@ -35,6 +38,8 @@ namespace InertialOdometry {
 		Odometry();
 		// Propagate the internal state registers with new IMU data
 		DynamicState PropagatePrediction(IMU_dataframe* _imu, const Eigen::Quaterniond &orient);
+		
+		DynamicState getDynamicState();
 
 		void setPositionState(const Eigen::Vector3d &P_set);
 

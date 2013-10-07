@@ -14,10 +14,9 @@ StateEstimate::StateEstimator::StateEstimator(
   mBDIPoseQueue(bdiPoseQueue),
   mViconQueue(viconPoseQueue)
 {
-
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
   int num_joints = 28;
-    	
+  
   mJointFilters.setSize(num_joints);
   //  mJointVelocities.resize(num_joints);
   std::cout << "StateEstimator::StateEstimator -- hardcoded the number of joint Kalman Filters to " << num_joints << std::endl;
@@ -117,6 +116,13 @@ void StateEstimate::StateEstimator::run()
       // TODO -- we are using the BDI orientation estimate to 
       
       doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass);
+
+      // TODO -- remove this, only a temporary display object
+      // Tihs is where leg odometry thinks the pelvis is at
+      Eigen::Isometry3d LegOdoPelvis;
+      LegOdoPelvis.setIdentity();
+      LegOdoPelvis = _leg_odo->getPelvisState();
+      std::cout << "StateEstimator::run -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
       
       // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
       if (firstpass>0)
@@ -140,11 +146,8 @@ void StateEstimate::StateEstimator::run()
       if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
     	  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
     	  
-    	  mDFRequestMsg.utime = imu.utime;
-    	  mDFRequestMsg.updateType = mDFRequestMsg.POSITION_LOCAL;
-    	  
     	  // populate the INS state information and the measurement aiding information
-    	  
+    	  packDFUpdateRequestMsg(inert_odo, *_leg_odo, mDFRequestMsg);
     	  mLCM->publish("STATE_ESTIMATOR_MATLAB_DF_REQUEST", &mDFRequestMsg);
       }
       

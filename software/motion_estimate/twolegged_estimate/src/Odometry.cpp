@@ -39,19 +39,27 @@ namespace InertialOdometry {
 
     //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
-    DynamicState ret;
-    ret.f_l = out.first_pose_rel_acc;
-    ret.P = out.first_pose_rel_pos;
-    ret.V = out.first_pose_rel_vel;
-    ret.E.setZero();
-    ret.b_a.setZero();
-    ret.b_g.setZero();
-    ret.q = out.quat;
+    //    DynamicState ret;
+    state.imu = *_imu;
+    state.uts = _imu->uts;
+    state.f_l = out.first_pose_rel_acc;
+    state.w_l = C_bw()*_imu->gyro_; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
+    state.P = out.first_pose_rel_pos;
+    state.V = out.first_pose_rel_vel;
+    state.E.setZero();
+    state.b_a.setZero();
+    state.b_g.setZero();
+    state.q = out.quat;
     
-    return ret;
+    return state;
+  }
+  
+  DynamicState Odometry::getDynamicState() {
+	  return state;
   }
   
   // This should be moved to the QuaternionLib library
+  // TODO -- should be updated with trigonometric and near zero power expansion cases.
   Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
   {
 	  Eigen::Matrix3d R;

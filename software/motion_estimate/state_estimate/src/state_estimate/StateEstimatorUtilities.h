@@ -69,6 +69,10 @@ void handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t 
 //int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
 
 
+// DATA FUSION UTILITIES ==============================================================
+
+void packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
+
 
 
 } // namespace StateEstimate

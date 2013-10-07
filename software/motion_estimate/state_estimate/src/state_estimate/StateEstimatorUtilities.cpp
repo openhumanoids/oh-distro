@@ -196,16 +196,66 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
     init_state.setIdentity();
     _leg_odo.ResetWithLeftFootStates(left,right,init_state);
   }
+
+
+  // This must be broken into separate position and velocity states
+  //  legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+  _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+  
 }
 
-//  // This must be broken into separate position and velocity states
-//  legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
-//  if (legchangeflag) {
-//	  persistlegchangeflag = true; // this is to bridge the rate change gap
-//  }
-//
-//  current_pelvis = _leg_odo->getPelvisState();	
-//}
+
+void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {
+  
+  // For ease of reading we collect local copies of variables
+  Eigen::Isometry3d LegOdoPelvis;
+  LegOdoPelvis.setIdentity();
+  LegOdoPelvis = _leg_odo.getPelvisState();
+  //std::cout << "StateEstimate::packDFUpdateRequestMsg -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  
+  InertialOdometry::DynamicState _insState;
+  _insState = inert_odo.getDynamicState();
+  
+  msg.utime = _insState.uts;
+  msg.pose.translation.x = _insState.P(0);
+  msg.pose.translation.y = _insState.P(1);
+  msg.pose.translation.z = _insState.P(2);
+  
+  msg.pose.rotation.w = _insState.q.w();
+  msg.pose.rotation.x = _insState.q.x();
+  msg.pose.rotation.y = _insState.q.y();
+  msg.pose.rotation.z = _insState.q.z();
+  
+  msg.twist.linear_velocity.x = _insState.V(0);
+  msg.twist.linear_velocity.y = _insState.V(1);
+  msg.twist.linear_velocity.z = _insState.V(2);
+  
+  msg.twist.angular_velocity.x = _insState.w_l(0);
+  msg.twist.angular_velocity.y = _insState.w_l(1);
+  msg.twist.angular_velocity.z = _insState.w_l(2);
+  
+  msg.updateType = msg.POSITION_LOCAL;
+  
+  msg.referencePos_local.x = LegOdoPelvis.translation().x();
+  msg.referencePos_local.y = LegOdoPelvis.translation().y();
+  msg.referencePos_local.z = LegOdoPelvis.translation().z();
+  
+  // These are unused, but initialized as a precaution
+  msg.referenceVel_local.x = 0.;
+  msg.referenceVel_local.y = 0.;
+  msg.referenceVel_local.z = 0.;
+  
+  msg.referenceVel_body.x = 0.;
+  msg.referenceVel_body.y = 0.;
+  msg.referenceVel_body.z = 0.;
+  
+  msg.referenceQ_local.x = 1.;
+  msg.referenceQ_local.x = 0.;
+  msg.referenceQ_local.x = 0.;
+  msg.referenceQ_local.x = 0.;
+  
+  return;
+}
 
 
 //int StateEstimate::getIMUBodyAlignment(const unsigned long &utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
