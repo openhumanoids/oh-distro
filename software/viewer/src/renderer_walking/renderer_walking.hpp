@@ -70,7 +70,6 @@ typedef struct _RendererWalking {
   
   PerceptionData *perceptionData;
 
-  bool has_walking_msg;
   bool follow_spline;
   bool ignore_terrain;
   behavior_t behavior;
@@ -117,6 +116,7 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw);
 void set_default_params(RendererWalking* self, int mode);
 void get_params_from_widget(RendererWalking* self);
 void publish_walking_goal(RendererWalking* self, bool is_new);
+void publish_walking_opts(RendererWalking* self);
 
 /**
  * @}

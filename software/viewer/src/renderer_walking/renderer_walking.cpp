@@ -33,7 +33,7 @@
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "Place New Walking Goal"
 #define PARAM_GO_FORWARD "Go Forward"
-#define PARAM_GOAL_UPDATE "Update Current Goal"
+#define PARAM_GOAL_UPDATE "Update Params"
 #define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
 #define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
 #define PARAM_BEHAVIOR "Behavior"
@@ -255,7 +255,6 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 
     fprintf(stderr,"Walking Button Released => Activate Value : %d\n", self->active);
 
-    self->has_walking_msg = true;
     self->goal_pos.x = self->click_pos.x;
     self->goal_pos.y = self->click_pos.y;
 
@@ -412,9 +411,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
-    if (self->has_walking_msg) {
-      publish_walking_goal(self, FALSE);
-    }
+    publish_walking_goal(self, FALSE);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked WALKING_GOAL\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
@@ -439,21 +436,31 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
 
 void publish_walking_goal(RendererWalking* self, bool is_new) {
   drc_walking_goal_t walking_goal_msg;
-  self->has_walking_msg = TRUE;
   double rpy[] = {0,0,self->goal_yaw};
   double quat_out[4];
   bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
   walking_goal_msg.utime = self->robot_utime; //bot_timestamp_now();
   walking_goal_msg.max_num_steps = (int32_t) self->max_num_steps;
   walking_goal_msg.min_num_steps = (int32_t) self->min_num_steps;
-  walking_goal_msg.goal_pos.translation.x = self->goal_pos.x;
-  walking_goal_msg.goal_pos.translation.y = self->goal_pos.y;
-  walking_goal_msg.goal_pos.translation.z = 0;
-  walking_goal_msg.goal_pos.rotation.w = quat_out[0];
-  walking_goal_msg.goal_pos.rotation.x = quat_out[1];
-  walking_goal_msg.goal_pos.rotation.y = quat_out[2];
-  walking_goal_msg.goal_pos.rotation.z = quat_out[3];
+  if (is_new) {
+    walking_goal_msg.goal_pos.translation.x = self->goal_pos.x;
+    walking_goal_msg.goal_pos.translation.y = self->goal_pos.y;
+    walking_goal_msg.goal_pos.translation.z = 0;
+    walking_goal_msg.goal_pos.rotation.w = quat_out[0];
+    walking_goal_msg.goal_pos.rotation.x = quat_out[1];
+    walking_goal_msg.goal_pos.rotation.y = quat_out[2];
+    walking_goal_msg.goal_pos.rotation.z = quat_out[3];
+  } else {
+    walking_goal_msg.goal_pos.translation.x = NAN;
+    walking_goal_msg.goal_pos.translation.y = NAN;
+    walking_goal_msg.goal_pos.translation.z = NAN;
+    walking_goal_msg.goal_pos.rotation.w = NAN;
+    walking_goal_msg.goal_pos.rotation.x = NAN;
+    walking_goal_msg.goal_pos.rotation.y = NAN;
+    walking_goal_msg.goal_pos.rotation.z = NAN;
+  }
   walking_goal_msg.is_new_goal = is_new;
+  walking_goal_msg.utime = self->robot_utime; //bot_timestamp_now();
   walking_goal_msg.allow_optimization = self->allow_optimization;
   walking_goal_msg.step_speed = self->step_speed;
   walking_goal_msg.nom_step_width = self->nom_step_width;
@@ -559,7 +566,6 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   
   
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
-  self->has_walking_msg = false;
   self->max_num_steps = 10;
   self->min_num_steps = 0;
   self->step_speed = 1.0; // m/s
