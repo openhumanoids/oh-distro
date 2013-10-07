@@ -15,11 +15,6 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, options)
   end
  
   p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, options.nom_step_width);
-  if options.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
-    goal_pos = footCenter2StepCenter(biped, goal_pos, true, options.nom_step_width);
-  elseif options.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
-    goal_pos = footCenter2StepCenter(biped, goal_pos, false, options.nom_step_width);
-  end
   goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
   goal_pos(3,:) = p0(3);
   if ~options.ignore_terrain

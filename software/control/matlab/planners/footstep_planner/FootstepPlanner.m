@@ -4,7 +4,8 @@ classdef FootstepPlanner < DRCPlanner
     monitors
     hmap_ptr
     options
-    z_adjust
+    goal_pos
+    adjusted_footsteps
   end
   
   methods
@@ -15,54 +16,92 @@ classdef FootstepPlanner < DRCPlanner
       % obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(drc.control.NavGoalCoder(robot_name)));
       obj.biped = biped;
 
-      obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', 1, 1, 1);
-      obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame().lcmcoder,true,true);
-      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
-      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
-      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
+      obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', true, true, true);
+      obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame().lcmcoder,true,true,false);
+      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'step_seq', 'DESIRED_FOOT_STEP_SEQUENCE', drc.traj_opt_constraint_t(), false, true,true);
       % obj.hmap_ptr = HeightMapHandle();
       % mapAPIwrapper(obj.hmap_ptr);
-      obj.z_adjust = -0.003; % amount to adjust each foot position to compensate for heightmap and gazebo weirdness
+      obj.goal_pos = [];
+      obj.adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
     end
 
     function X = updatePlan(obj, X, data, changed, changelist)
-      if changelist.goal || isempty(X)
-        msg ='Foot Plan : Received Goal Info'; disp(msg); send_status(6,0,0,msg);
-        info = struct(data.goal);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'goal_type'}
-          if isfield(info, x{1})
+      needs_plan = false;
+      info = struct(data.goal);
+      for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior'}
+        if isfield(info, x{1})
+          if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
             obj.options.(x{1}) = info.(x{1});
-          elseif isfield(obj.biped, x{1})
-            obj.options.(x{1}) = obj.biped.(x{1});
+            needs_plan = true;
           end
+        elseif isfield(obj.biped, x{1})
+          obj.options.(x{1}) = obj.biped.(x{1});
         end
       end
-      if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X)
+
+      if (changelist.step_seq) 
+        [obj.goal_pos, adj] = FootstepPlanner.stepSeq2GoalPos(data.step_seq);
+        obj.adjusted_footsteps = adj;
+        needs_plan = true;
+      elseif (data.goal.is_new_goal && (changelist.goal || isempty(X)))
+        obj.adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
         msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
-        goal_pos = [data.goal.goal_pos.translation.x;
-                    data.goal.goal_pos.translation.y;
-                    data.goal.goal_pos.translation.z];
-        [goal_pos(4), goal_pos(5), goal_pos(6)] = quat2angle([data.goal.goal_pos.rotation.w,...
-                                          data.goal.goal_pos.rotation.x,...
-                                          data.goal.goal_pos.rotation.y,...
-                                          data.goal.goal_pos.rotation.z], 'XYZ');
-        [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, obj.options);
+        obj.goal_pos = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
+        if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
+          obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, true, obj.options.nom_step_width);
+        elseif data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
+          obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, false, obj.options.nom_step_width);
+        end
+        needs_plan = true;
       end
+      if ~isempty(obj.goal_pos) && needs_plan
+        [X, ~] = obj.biped.createInitialSteps(data.x0, obj.goal_pos, obj.options);
+      end
+
       if changelist.plan_con
         % apply changes from user adjustment of footsteps in viewer
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
-        new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
-        new_X.pos(3) = new_X.pos(3) - obj.z_adjust; % add back the 3mm we subtracted before publishing
         matching_ndx = find([X.id] == new_X.id);
         if ~isempty(matching_ndx)
-          old_x = X(matching_ndx);
-          X(matching_ndx) = new_X;
-          X(matching_ndx).is_in_contact = old_x.is_in_contact;
-          if obj.options.ignore_terrain
-            X(matching_ndx).pos(3) = old_x.pos(3);
-          else
-            X(matching_ndx).pos = fitStepToTerrain(obj.biped, X(matching_ndx).pos);
+          obj.adjusted_footsteps(end+1) = struct('pos', new_X.pos, 'ndx', matching_ndx,'is_right_foot',new_X.is_right_foot);
+        end
+      end
+
+      function ndx = n2p(ndx)
+        % convert negative footstep index (from end) to positive (from start)
+        ndx(ndx < 0) = length(X) + ndx(ndx < 0) + 1;
+      end
+
+      if ~isempty(obj.adjusted_footsteps)
+        for j = 1:length(obj.adjusted_footsteps)
+          if n2p(obj.adjusted_footsteps(j).ndx) == length(X)
+            % Handle the edge case when the desired foot step sequence gives
+            % the wrong step order for the final two steps
+            if obj.adjusted_footsteps(j).is_right_foot ~= X(end).is_right_foot
+              alt = find(n2p([obj.adjusted_footsteps.ndx]) == length(X)-1);
+              n = obj.adjusted_footsteps(j).ndx;
+              obj.adjusted_footsteps(j).ndx = obj.adjusted_footsteps(alt).ndx;
+              obj.adjusted_footsteps(alt).ndx = n;
+            end
+          end
+        end
+        for j = 1:length(obj.adjusted_footsteps)
+          ndx = n2p(obj.adjusted_footsteps(j).ndx);
+          if ndx <= length(X)
+            if X(ndx).is_right_foot ~= obj.adjusted_footsteps(j).is_right_foot
+              msg ='Foot Plan : Error: Mismatched foot'; disp(msg); send_status(6,0,0,msg);
+              break;
+            end
+            old_X = X(ndx);
+            new_pos = obj.biped.footOrig2Contact(obj.adjusted_footsteps(j).pos, 'center', old_X.is_right_foot);
+            X(ndx).pos = new_pos;
+            if ~obj.options.ignore_terrain
+              X(ndx).pos = fitStepToTerrain(obj.biped, X(ndx).pos, 'center');
+            end
           end
         end
       end
@@ -71,10 +110,7 @@ classdef FootstepPlanner < DRCPlanner
     
     function X = plan(obj,data)
       X_old = [];
-      goal_pos = [];
       obj.options = struct();
-      % last_publish_time = now();
-      isnew = true;
       planning = true;
 
       while 1
@@ -82,11 +118,11 @@ classdef FootstepPlanner < DRCPlanner
         if changed
           planning = true;
         end
-        isnew = changelist.goal || isempty(X_old);
+        isnew = changelist.goal || changelist.step_seq || isempty(X_old);
         if changelist.plan_reject 
           planning = false;
           msg ='Foot Plan : Rejected'; disp(msg); send_status(6,0,0,msg);
-          break;
+%           break;
         end
         if changelist.plan_commit
           planning = false;
@@ -98,7 +134,9 @@ classdef FootstepPlanner < DRCPlanner
         if planning
           % profile on
           X = obj.updatePlan(X_old, data, changed, changelist);
-          if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
+          if isempty(X)
+            modified = false;
+          elseif isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
             modified = false;
           else
             modified = true;
@@ -108,29 +146,46 @@ classdef FootstepPlanner < DRCPlanner
         end
 
         % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
-        if (modified || changelist.goal) && ~(data.goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING)
-          Xout = X;
-          % Convert from foot center to foot origin
-          for j = 1:length(X)
-            Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
-            % move the planned steps down by 3mm (helps with force classification and compensates for gazebo issues)
-            Xout(j).pos(3) = Xout(j).pos(3) + obj.z_adjust;
-          end
-          publish(Xout);
+        if (modified || changelist.goal || changelist.step_seq) && ~(data.goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING)
+          publishFoosteps(obj, X, data.utime, isnew);
           X_old = X;
-          % profile viewer
         else
           pause(0.25)
         end
       end
-
-
-      function publish(X)
-        obj.biped.publish_footstep_plan(X, data.utime, isnew, obj.options);
-        msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
+    end
+    function publishFoosteps(obj, X, utime, isnew)
+      Xout = X;
+      % Convert from foot center to foot origin
+      for j = 1:length(X)
+        Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
       end
+      obj.biped.publish_footstep_plan(Xout, utime, isnew, obj.options);
+      msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
+    end
 
+  end
 
+  methods (Static=true)
+    function [goal_pos, adjusted_footsteps] = stepSeq2GoalPos(step_seq)
+      [~, sort_ndx] = sort(step_seq.link_timestamps);
+      adjusted_footsteps = struct('pos',{},'ndx',{},'is_right_foot',{});
+      for j = 1:step_seq.num_links
+        adjusted_footsteps(end+1) = struct('pos', FootstepPlanner.decodePosition3d(step_seq.link_origin_position(sort_ndx(j))), 'ndx', -step_seq.num_links+j-1, 'is_right_foot', strcmp(step_seq.link_name(sort_ndx(j)), 'r_foot'));
+      end
+      goal_pos = zeros(6,1);
+      goal_pos(1:3) = mean([adjusted_footsteps(end-1).pos(1:3), adjusted_footsteps(end).pos(1:3)], 2);
+      goal_pos(4:6) = adjusted_footsteps(end-1).pos(4:6) + 0.5 * angleDiff(adjusted_footsteps(end-1).pos(4:6), adjusted_footsteps(end).pos(4:6));
+
+    end
+
+    function pose = decodePosition3d(position_3d)
+      pose = zeros(6,1);
+      pose(1:3) = [position_3d.translation.x; position_3d.translation.y; position_3d.translation.z];
+      [pose(4), pose(5), pose(6)] = quat2angle([position_3d.rotation.w,...
+                                          position_3d.rotation.x,...
+                                          position_3d.rotation.y,...
+                                          position_3d.rotation.z], 'XYZ');
     end
   end
 end
