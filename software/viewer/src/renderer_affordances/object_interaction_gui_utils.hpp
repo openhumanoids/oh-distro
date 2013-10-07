@@ -652,6 +652,13 @@ namespace renderer_affordances_gui_utils
         }
       }
       
+      /*
+      // NBNBNB mfallon modification to publish xyz location of visual intersection instead of grasp hand pose
+      T_geom_lhandpose.p[0] = self->ray_hit(0);
+      T_geom_lhandpose.p[1] = self->ray_hit(1);
+      T_geom_lhandpose.p[2] = self->ray_hit(2);      
+      */
+      
       int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);  
       int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
       self->stickyHandCollection->free_running_sticky_hand_cnt++;
