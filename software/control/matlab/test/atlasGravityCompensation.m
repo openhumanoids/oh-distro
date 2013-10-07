@@ -8,8 +8,7 @@ options.floating = true;
 options.ignore_friction = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
 
-options.floating = true;
-options.ignore_friction = true;
+options.floating = false;
 r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
 arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,armstr));
 

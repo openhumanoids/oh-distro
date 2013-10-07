@@ -25,8 +25,7 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_hpz';% <---- 
-control_mode = 'force';% <----  force, position
+joint_str = {'leg_aky'};% <---- 
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
@@ -34,10 +33,10 @@ dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,40,500);% <----
-  amp = -0.085;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.1,500);% <----  cycles per second
+  amp = -0.05;% <---- meters, COM DELTA
+  freq = linspace(0.025,0.08,500);% <----  cycles per second
 else
-  vals = 0.02*[0 0 1 0 0];% <---- meters, COM DELTA
+  vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,8 +69,12 @@ end
 act_idx_map = getActuatedJoints(r);
 gains = getAtlasGains(input_frame); % change gains in this file
 
-joint_index = joint_index_map.(joint);
-joint_input_index = find(act_idx_map==joint_index_map.(joint));
+joint_ind = [];
+joint_act_ind = [];
+for i=1:length(joint_str)
+  joint_ind = union(joint_ind,find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),joint_str{i}))));
+  joint_act_ind = union(joint_act_ind,find(~cellfun(@isempty,strfind(input_frame.coordinates,joint_str{i}))));
+end
 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
@@ -85,13 +88,13 @@ atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,3);
 
 gains2 = getAtlasGains(input_frame); 
 % reset force gains for joint being tuned
-gains.k_f_p(joint_input_index) = gains2.k_f_p(joint_input_index); 
-gains.ff_f_d(joint_input_index) = gains2.ff_f_d(joint_input_index);
-gains.ff_qd(joint_input_index) = gains2.ff_qd(joint_input_index);
+gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
+gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
+gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_input_index) = 0;
-gains.k_q_i(joint_input_index) = 0;
-gains.k_qd_p(joint_input_index) = 0;
+gains.k_q_p(joint_act_ind) = 0;
+gains.k_q_i(joint_act_ind) = 0;
+gains.k_qd_p(joint_act_ind) = 0;
 
 ref_frame.updateGains(gains);
 
@@ -107,9 +110,6 @@ elseif strcmp(signal,'foh')
   input_traj = PPTrajectory(foh(ts,vals));
 elseif strcmp(signal,'chirp')
   offset = 0;
-  if strcmp(control_mode,'position')
-    offset=joint_offset_map.(joint);
-  end
   if zero_crossing
   	input_traj = PPTrajectory(foh(ts, offset + amp*sin(ts.*freq*2*pi)));
   else
@@ -212,7 +212,7 @@ xy_offset = [0;0];
 udes = zeros(nu,1);
 toffset = -1;
 tt=-1;
-while tt<T
+while tt<T+2
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
     if toffset==-1
@@ -247,7 +247,7 @@ while tt<T
     qt(6) = q(6); % ignore yaw
     
     % get desired acceleration
-    qdddes = qddtraj.eval(tt) + 17.0*(qt-q) - 0.55*qd;
+    qdddes = qddtraj.eval(tt) + 21.0*(qt-q) - 0.55*qd;
     
     % solve QP to compute inputs 
     kinsol = doKinematics(r,q);
@@ -306,11 +306,39 @@ while tt<T
     qdd = alpha(1:nq);
     beta = alpha(nq+(1:nf));
     u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
-    u(joint_input_index)
-    udes(joint_input_index) = u(joint_input_index);
+    udes(joint_act_ind) = u(joint_act_ind);
+    
+%     Fc = 10;
+%     Fv = 0.5;
+%     Fc_window = 0.175;
+%     tau_friction = zeros(34,1);
+%     for i=1:length(joint_ind)
+%       j=joint_ind(i);
+%       v = qd(j) + 0.3*qdd(j);
+%       tau_friction(j) = max(-1,min(1,v/Fc_window)) .* Fc + Fv*v; 
+%     end
+%     
+%     tf_act = tau_friction(act_idx_map);
+
+    f_friction = computeFrictionForce(r,qd + 0.3*qdd) - computeFrictionForce(r,qd);
+    f_friction_act = f_friction(act_idx_map);
+
+    udes(joint_act_ind) = udes(joint_act_ind) + f_friction_act(joint_act_ind);
     
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
   end
 end
+
+disp('moving back to fixed point using position control.');
+gains = getAtlasGains(input_frame); % change gains in this file
+gains.k_f_p = zeros(nu,1);
+gains.ff_f_d = zeros(nu,1);
+gains.ff_qd = zeros(nu,1);
+ref_frame.updateGains(gains);
+
+% move to fixed point configuration 
+qdes = xstar(1:nq);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,4);
+
 
 end

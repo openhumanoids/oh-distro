@@ -53,9 +53,9 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpz';% <---- 
+joint = 'l_leg_hpx';% <---- 
 control_mode = 'force';% <----  force, position
-signal = 'chirp';% <----  zoh, foh, chirp
+signal = 'foh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
 ff_const = gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
@@ -75,10 +75,10 @@ end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = true;
+  zero_crossing = false;
   ts = linspace(0,40,800);% <----
-  amp = 15.0;% <----  Nm or radians
-  freq = linspace(0.025,0.4,800);% <----  cycles per second
+  amp = 30.0;% <----  Nm or radians
+  freq = linspace(0.1,0.5,800);% <----  cycles per second
 else
   vals = 10*[0 0 1 0 0];% <----  Nm or radians
   ts = linspace(0,30,length(vals));% <----
@@ -229,15 +229,15 @@ elseif strcmp(joint,'r_leg_hpz')
 
 elseif strcmp(joint,'l_leg_hpx') 
 
-  qdes(joint_index_map.r_arm_shx) = 1.25;
-  qdes(joint_index_map.l_arm_shx) = -1.25;
-%   qdes(joint_index_map.r_leg_hpx) = -0.5;
+  qdes(joint_index_map.r_arm_shx) = 0.7;
+  qdes(joint_index_map.l_arm_shx) = -0.7;
+  qdes(joint_index_map.r_leg_hpx) = -0.5;
 
 elseif strcmp(joint,'r_leg_hpx') 
 
-  qdes(joint_index_map.r_arm_shx) = 1.25;
-  qdes(joint_index_map.l_arm_shx) = -1.25;
-%   qdes(joint_index_map.l_leg_hpx) = 0.5;
+  qdes(joint_index_map.r_arm_shx) = 0.7;
+  qdes(joint_index_map.l_arm_shx) = -0.7;
+  qdes(joint_index_map.l_leg_hpx) = 0.5;
 
 elseif strcmp(joint,'r_leg_kny') 
 
