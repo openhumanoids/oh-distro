@@ -15,6 +15,7 @@ classdef KeyframePlanCache < handle
         qtraj
         isEndPose
         isPointWiseIK
+        inTeleopMode
         qsc
         num_grasp_transitions
         grasp_transition_breaks
@@ -43,6 +44,7 @@ classdef KeyframePlanCache < handle
             % of a keyframe plan by resolving at time T.
             obj.isPointWiseIK= false;
             obj.isEndPose =false;
+            obj.inTeleopMode = false;
             obj.qsc = QuasiStaticConstraint(r);
             obj.qsc = obj.qsc.setActive(false);
             
@@ -53,6 +55,9 @@ classdef KeyframePlanCache < handle
         end
         
         function clearCache(obj)
+            obj.isPointWiseIK= false;
+            obj.isEndPose =false;
+            obj.inTeleopMode = false;        
             obj.lhand_constraint_cell = {}; % Plan Boundary Conditions
             obj.rhand_constraint_cell = {};
             obj.lfoot_constraint_cell = {};

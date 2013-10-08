@@ -254,11 +254,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             send_status(3,0,0,'Cached loaded plan...');
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags)
+        function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,...
+                                        h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags)
             
             disp('Adjusting plan...');
             send_status(3,0,0,'Adjusting plan...');
             
+
             q0 = x0(1:getNumDOF(obj.r));
             
             % get foot positions
@@ -270,6 +272,17 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
             %======================================================================================================
+            if(obj.plan_cache.inTeleopMode)
+                q_samples = zeros(obj.r.getNumDOF(),length(obj.plan_cache.s));
+                for i =1:length(obj.plan_cache.s)
+                    q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.plan_cache.s(i));
+                end           
+                q_samples(:,1) =  q0; % use current pose
+                %============================
+                % have to adjust the q at time 0 IK manually
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));            
+            end
+            
             
             
             if(isempty(rh_ee_constraint))
@@ -485,7 +498,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             else
                 rhand_constraint_cell = obj.plan_cache.rhand_constraint_cell;
             end
-            %if((~isempty(lh_ee_consobj.plan_cache.isPointWiseIKtraint))&&(abs(1-s_int_lh)>1e-3))
+            %if((~isempty(lh_ee_constraint))&&(abs(1-s_int_lh)>1e-3))
             if(~isempty(lh_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lh));
                 s_int_lh=obj.plan_cache.s_breaks(ind);
@@ -525,8 +538,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 end
                 qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
             else
-                lfoot_constraint_cell = {};
-                rfoot_constraint_cell = {};
+                if(obj.plan_cache.inTeleopMode)
+                    lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
+                    rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
+                else
+                    lfoot_constraint_cell = {};
+                    rfoot_constraint_cell = {};
+                end
                 %pelvis_constraint_cell = obj.plan_cache.pelvis_constraint_cell;
             end %end if(~obj.isBDIManipMode())
             

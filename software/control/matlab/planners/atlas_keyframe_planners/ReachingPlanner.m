@@ -25,6 +25,11 @@ classdef ReachingPlanner < KeyframePlanner
         
         function setPlanningMode(obj,val)
             obj.planning_mode  = val;
+            if(val==3)
+                obj.plan_cache.inTeleopMode = true; 
+            else
+                obj.plan_cache.inTeleopMode = false; 
+            end
         end
         %-----------------------------------------------------------------------------------------------------------------
         function generateAndPublishReachingPlan(obj,varargin)
@@ -627,7 +632,7 @@ classdef ReachingPlanner < KeyframePlanner
             Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
             s_total = Tmax_ee*obj.plan_cache.v_desired;
             
-            s = linspace(0,1,ceil(s_total/obj.plan_arc_res)+1); % Must have two points atleast
+            s = linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,5)); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
             
             % fine grained verification of COM constraints of fixed resolution.
@@ -651,6 +656,9 @@ classdef ReachingPlanner < KeyframePlanner
                 obj.plan_cache.lhand_constraint_cell = lhand_constraint;
                 obj.plan_cache.rhand_constraint_cell = rhand_constraint;
                 obj.plan_cache.pelvis_constraint_cell = pelvis_constraint;
+                if(obj.planning_mode==3)
+                  obj.plan_cache.inTeleopMode = true; % make sure this is set.
+                end
             end
             obj.plan_cache.s = s;
             obj.plan_cache.s_breaks = s_breaks;
