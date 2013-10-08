@@ -13,7 +13,6 @@ classdef FootstepPlanner < DRCPlanner
       typecheck(biped, 'Biped');
       
       obj = obj@DRCPlanner();
-      % obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(drc.control.NavGoalCoder(robot_name)));
       obj.biped = biped;
 
       obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', true, true, true);
@@ -22,8 +21,6 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
       obj = addInput(obj, 'step_seq', 'DESIRED_FOOT_STEP_SEQUENCE', drc.traj_opt_constraint_t(), false, true,true);
-      % obj.hmap_ptr = HeightMapHandle();
-      % mapAPIwrapper(obj.hmap_ptr);
       obj.goal_pos = [];
       obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
     end
@@ -155,7 +152,6 @@ classdef FootstepPlanner < DRCPlanner
           modified = false;
         end
 
-        % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
         if (modified || changelist.goal || changelist.step_seq) && ~(data.goal.behavior == drc.walking_goal_t.BEHAVIOR_CRAWLING)
           publishFoosteps(obj, X, data.utime, isnew);
           X_old = X;
