@@ -129,7 +129,26 @@ classdef AtlasManipController < DRCController
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,false,joint_names); 
-          qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+          % TODO: REMOVE THIS ********************************************
+          % try using the desired position of the last plan as the first
+          % point in the plan as using the current position causes a "jump"
+          % in robot position due to steady state error of the controller.
+          % this really shouldn't happen here, the planner should be
+          % sending exactly what we want to be executed.
+          qtraj_prev = obj.controller_data.data.qtraj;
+          q0=xtraj(1:getNumDOF(obj.robot),1);
+          if isa(qtraj_prev,'PPTrajectory') 
+            % smooth transition from end of previous trajectory
+            qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
+            if max(abs(q0-qprev_end)) < 0.1
+              qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
+            else
+              qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+            end
+          else
+            % first plan
+            qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+          end          
           obj.controller_data.setField('qtraj',qtraj);
           obj.controller_data.setField('qddtraj',fnder(qtraj,2));
         catch err
