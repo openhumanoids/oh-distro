@@ -110,7 +110,8 @@ namespace renderer_affordances_gui_utils
         bool power_flag = false;
         bool squeeze_flag = true;
         double squeeze_amount = bot_gtk_param_widget_get_double(pw,PARAM_SQUEEZE);
-        
+        hand_it->second.squeeze_factor=squeeze_amount;
+       
         //cout << "squeezing by: " << squeeze_amount << endl;
 
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
@@ -399,8 +400,8 @@ namespace renderer_affordances_gui_utils
     
     bot_gtk_param_widget_add_buttons(pw, PARAM_GRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw, PARAM_UNGRASP, NULL);
-    
-    bot_gtk_param_widget_add_double(pw,PARAM_SQUEEZE,BOT_GTK_PARAM_WIDGET_SLIDER,0.0, 2.0, 0.1, 1);
+    double squeeze_factor = hand_it->second.squeeze_factor;
+    bot_gtk_param_widget_add_double(pw,PARAM_SQUEEZE,BOT_GTK_PARAM_WIDGET_SLIDER,0.0, 2.0, 0.1, squeeze_factor);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_POWER_GRASP, NULL);
     int p_val = (hand_it->second.partial_grasp_status);
     
