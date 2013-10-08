@@ -31,7 +31,26 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function adjustCachedPlanToCurrentPelvisPose(obj,x0,mode)
+        
+        function q_start = getFirstPostureOfCachedPlan(obj)
+            q_start = obj.plan_cache.qtraj.eval(0);
+        end
+        %-----------------------------------------------------------------------------------------------------------------
+        
+        function q_start = adjustCachedPlanToCurrentStateAndGetFirstPosture(obj,x0,mode)
+          if(obj.plan_cache.num_grasp_transitions>0)
+              [xtraj,ts,snopt_info_vector,G] = adjustCachedPlanToCurrentPelvisPose(obj,x0,mode);
+          else
+              [xtraj,ts] = adjustCachedPlanToCurrentPelvisPose(obj,x0,mode);
+          end    
+          
+          % Decide if a posture plan needs to prepended if the current robot state is not the same as the first frame in the cached plan.
+          q0 = x0(1:getNumDOF(obj.r));
+          q_start = obj.plan_cache.qtraj.eval(0);
+        end
+       
+        %-----------------------------------------------------------------------------------------------------------------
+        function [varargout]=adjustCachedPlanToCurrentPelvisPose(obj,x0,mode)
             rh_ee_constraint= [];
             lh_ee_constraint= [];
             rf_ee_constraint= [];
@@ -173,7 +192,18 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             pelvis_constraint = [];
             com_constraint = [];
-            runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
+            
+            if(nargout==0)
+                runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
+            elseif (nargout==4)
+                [xtraj,ts,snopt_info_vector,G]=runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
+                varargout{1}=xtraj;  varargout{2}=ts;
+                varargout{3}=snopt_info_vector;
+                varargout{4}= G;
+            elseif (nargout==2)
+                [xtraj,ts]=runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags);
+                varargout{1}=xtraj;  varargout{2}=ts;
+            end
         end
         %-----------------------------------------------------------------------------------------------------------------
         function setCacheViaPlanMsg(obj,xtraj,ts,grasptransitions,logictraj)
@@ -254,7 +284,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             send_status(3,0,0,'Cached loaded plan...');
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,...
+        function [varargout]=runOptimization(obj,x0,rh_ee_constraint,lh_ee_constraint,rf_ee_constraint,lf_ee_constraint,...
                                         h_ee_constraint,pelvis_constraint,com_constraint,goal_type_flags)
             
             disp('Adjusting plan...');
@@ -701,7 +731,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.head_constraint_cell = head_constraint_cell;
             
             % publish plan
-            disp('Publishing plan...');
+            if nargout==0,
+             disp('Publishing plan...');
+            end
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             xtraj(2,:) = 0*s;
@@ -735,11 +767,23 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                             G(k).utime = grasp_transition_breaks(ind).*(1/obj.plan_cache.time_2_index_scale);
                         end
                     end
-                    obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
+                    if(nargout==0)
+                      send_status(3,0,0,'Published Adjusted plan...');
+                      obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
+                    else
+                      varargout{1}=xtraj;  varargout{2}=ts;  
+                      varargout{3}=snopt_info_vector;
+                      varargout{4}= G;
+                    end
                 else
-                    obj.plan_pub.publish(xtraj,ts,utime);
+                   if(nargout==0)
+                      send_status(3,0,0,'Published Adjusted plan...');
+                      obj.plan_pub.publish(xtraj,ts,utime);
+                   else
+                      varargout{1}=xtraj;  varargout{2}=ts;  
+                   end
                 end
-                send_status(3,0,0,'Published Adjusted plan...');
+               
             else
                 xtraj = zeros(getNumStates(obj.r),1);
                 xtraj(1:getNumDOF(obj.r),:) = obj.plan_cache.qtraj.eval(1); % only publish the last state as an EndPose
@@ -794,3 +838,79 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
         %-----------------------------------------------------------------------------------------------------------------
     end% end methods
 end% end classdef
+
+
+% -------------------- GRAVEYARD -------------
+%-----------------------------------------------------------------------------------------------------------------
+%function adjustCachedPlanToCurrentRobotState(obj,x0,mode)
+%   % append posture plan to the cached plan;
+%  if(obj.plan_cache.num_grasp_transitions>0)
+%      [xtraj,ts,snopt_info_vector,G] = adjustCachedPlanToCurrentPelvisPose(obj,x0,mode);
+%  else
+%      [xtraj,ts] = adjustCachedPlanToCurrentPelvisPose(obj,x0,mode);
+%  end        
+
+%  % Decide if a posture plan needs to prepended if the current robot state is not the same as the first frame in the cached plan.
+%  q0 = x0(1:getNumDOF(obj.r));
+%  s = [0 1];
+%  nq = obj.r.getNumDOF();
+%  q_start = obj.plan_cache.qtraj.eval(0);
+%  
+%  s_breaks = linspace(0,1,4);
+%  cost = getCostVector(obj);
+%  Q = diag(cost(1:getNumDOF(obj.r)));
+%  cost = (q0-q_start)'* Q*(q0-q_start); 
+%  cost_TOL = 1e-4;
+%  if(cost>cost_TOL)
+%    q_breaks = zeros(nq,length(s_breaks));
+%    qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_start]));  
+%    for brk =1:length(s_breaks),
+%      q_breaks(:,brk) = qtraj_guess.eval(s_breaks(brk));
+%    end 
+%    Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+%    s_total = Tmax_ee*obj.plan_cache.v_desired;
+%    s= linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,5)); % Must have two points atleast
+%    s = unique([s(:);s_breaks(:)]);
+%    q = zeros(length(q0),length(s));
+%    for i=1:length(s),
+%        q(:,i) = qtraj_guess.eval(s(i));
+%    end            
+%    xtraj_prepend = zeros(getNumStates(obj.r)+2,length(s));
+%    xtraj_prepend(1,:) = 0*s;
+%    for l =1:length(s_breaks),
+%        ind = find(abs(s - s_breaks(l))<1e-3);
+%        xtraj_prepend(1,ind) = 1.0;
+%        xtraj_prepend(2,ind) = 0.0;
+%    end
+%    xtraj_prepend(2+(1:nq),:) = q;          
+%    Tmax_joints=obj.getTMaxForMaxJointSpeed();
+%    ts_prepend = s.*max(Tmax_joints,Tmax_ee); % plan timesteps   
+%    
+%    % for debug
+%    utime = now() * 24 * 60 * 60;              
+%    obj.plan_pub.publish(xtraj_prepend,ts_prepend,utime);
+%  end
+%  
+% 
+%  
+%  
+% % prepend
+% % this will be difficult for retractable plans
+%      xtraj=[xtraj_prepend xtraj];
+%      dt=ts_prepend(2)-ts_prepend(1);
+%      t_offset = ts_prepend(end) +dt;
+%      ts=[ts_prepend;ts+ts_prepend(end)+dt];
+%      if(obj.plan_cache.num_grasp_transitions>0)
+%         % must readjust G(i).utime according to grasp_transition_breaks
+%         if(length([G.utime])>1)
+%             for k=1:length([G.utime]),
+%                 G(k).utime = G(k).utime + t_offset;
+%              end
+%          end
+%      end
+%      % update cache and publish
+%      pause(0.1);
+%      utime = now() * 24 * 60 * 60; 
+%      obj.plan_pub.publish(xtraj,ts,utime);
+
+%end    

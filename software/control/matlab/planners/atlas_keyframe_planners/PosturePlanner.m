@@ -264,7 +264,7 @@ classdef PosturePlanner < KeyframePlanner
           Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           s_total = Tmax_ee*obj.plan_cache.v_desired;
           
-          s= linspace(0,1,ceil(s_total/obj.plan_arc_res)+1); % Must have two points atleast
+          s= linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,5)); % Must have two points atleast
           s = unique([s(:);s_breaks(:)]);
           q = zeros(length(q0),length(s));
           for i=1:length(s),

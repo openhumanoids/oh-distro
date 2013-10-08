@@ -90,6 +90,8 @@ lf_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_L_FOOT_MOTION
 constraint_listener = TrajOptConstraintListener('MANIP_PLAN_CONSTRAINT');
 plan_pelvis_adjust_listener = PlanAdjustModeListener('ADJUST_PLAN_TO_CURRENT_PELVIS_POSE');
 sse_compensation_listener = PlanAdjustModeListener('MOVE_TO_COMPENSATE_SSE');
+plan_adjust_and_reach_listener= PlanAdjustModeListener('ADJUST_PLAN_AND_REACH'); 
+
 % The following support multiple ee's at the same time
 trajoptconstraint_listener = TrajOptConstraintListener('DESIRED_MANIP_PLAN_EE_LOCI');
 indexed_trajoptconstraint_listener = AffIndexedTrajOptConstraintListener('DESIRED_MANIP_MAP_EE_LOCI');
@@ -336,9 +338,20 @@ while(1)
         com_constraint = [];
     end
     
+    x= plan_adjust_and_reach_listener.getNextMessage(msg_timeout); % not a frame
+    if(~isempty(x))
+        q_start = keyframe_adjustment_engine.adjustCachedPlanToCurrentStateAndGetFirstPosture(x0,x.mode);
+        %q_start = keyframe_adjustment_engine.getFirstPostureOfCachedPlan();
+        useIK_state = 0;
+        posture_planner.generateAndPublishPosturePlan(x0,q_start,useIK_state);
+        cache = posture_planner.getPlanCache();
+        keyframe_adjustment_engine.setPlanCache(cache);
+    end
+       
     x= plan_pelvis_adjust_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))
         keyframe_adjustment_engine.adjustCachedPlanToCurrentPelvisPose(x0,x.mode);
+        %keyframe_adjustment_engine.adjustCachedPlanToCurrentRobotState(x0,x.mode);
     end
     
     x= sse_compensation_listener.getNextMessage(msg_timeout); % not a frame

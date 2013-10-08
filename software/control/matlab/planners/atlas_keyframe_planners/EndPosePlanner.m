@@ -502,6 +502,9 @@ classdef EndPosePlanner < KeyframePlanner
             % cache foot or pelvis constraints for end poses depending on Hardware Mode
             if(obj.isBDIManipMode())
                 obj.plan_cache.pelvis_constraint_cell = [obj.plan_cache.pelvis_constraint_cell pelvis_constraint];
+                obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell rfoot_constraint];
+                obj.plan_cache.lfoot_constraint_cell = [obj.plan_cache.lfoot_constraint_cell lfoot_constraint];
+                obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
             else
                 % TODO: VERIFY
                 obj.plan_cache.rfoot_constraint_cell = [obj.plan_cache.rfoot_constraint_cell rfoot_constraint];
