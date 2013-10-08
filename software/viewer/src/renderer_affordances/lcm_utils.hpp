@@ -277,21 +277,61 @@ namespace renderer_affordances_lcm_utils
       map<string, vector<double> > joint_pos_map;
       map<string, vector<int64_t> > joint_pos_timestamps_map;   
   
+    bool is_time_ordered = true;
       if(!supress_hands)
       {
         // get time indexed ee goal constraints from selected sticky hands 
-        self->stickyHandCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
+        self->stickyHandCollection->get_selected_pose_constraints(self->affCollection,to_future_state,
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
-                                                                   joint_pos_map,joint_pos_timestamps_map);
+                                                                   joint_pos_map,joint_pos_timestamps_map,
+                                                                   is_time_ordered);
       }
       
      // Publish time indexed ee goal constraints from selected sticky feet 
-     self->stickyFootCollection->get_time_ordered_pose_constraints(self->affCollection,to_future_state,
+     self->stickyFootCollection->get_selected_pose_constraints(self->affCollection,to_future_state,
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
-                                                                   joint_pos_map,joint_pos_timestamps_map);
+                                                                   joint_pos_map,joint_pos_timestamps_map,
+                                                                   is_time_ordered);
                                                                    
+     // shift selection append a selection order id to ee names in get_time_ordered_pose_constraints                                                               
+     // setting unique_ee_occurances to false, accounts for that          
+     bool unique_ee_occurances=false; 
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
+  } 
+  
+  //----------------------------------------------------------------------------------------------------   
+  static void publish_EE_goal_sequence_as_poal_goal (void *user, string channel, bool to_future_state, bool supress_hands)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+
+  
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+  
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map;   
+  
+      bool is_time_ordered = false;
+      if(!supress_hands)
+      {
+       // get time indexed ee goal constraints from selected sticky hands 
+       self->stickyHandCollection->get_selected_pose_constraints(self->affCollection,to_future_state,
+                                                                   self->seedSelectionManager,
+                                                                   ee_frames_map,ee_frame_timestamps_map,
+                                                                   joint_pos_map,joint_pos_timestamps_map,
+                                                                   is_time_ordered);
+      }
+      
+     // Publish time indexed ee goal constraints from selected sticky feet 
+     self->stickyFootCollection->get_selected_pose_constraints(self->affCollection,to_future_state,
+                                                                   self->seedSelectionManager,
+                                                                   ee_frames_map,ee_frame_timestamps_map,
+                                                                   joint_pos_map,joint_pos_timestamps_map,
+                                                                   is_time_ordered);
      // shift selection append a selection order id to ee names in get_time_ordered_pose_constraints                                                               
      // setting unique_ee_occurances to false, accounts for that          
      bool unique_ee_occurances=false; 
@@ -324,6 +364,30 @@ namespace renderer_affordances_lcm_utils
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);
   }  
+  
+  //----------------------------------------------------------------------------------------------------   
+   // Publish time indexed ee motion constraints from the selected sticky hand
+  static void publish_pose_goal_to_sticky_foot (void *user,string channel, StickyFootStruc &footstruc, KDL::Frame& T_world_body_desired, bool to_future_state,bool end_state_only)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map;  
+     
+      string host_name = footstruc.object_name;
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it = self->affCollection->_objects.find(host_name);  
+      
+      // populate message cache
+      get_endpose_search_constraints_from_sticky_foot(footstruc,it->second,T_world_body_desired,to_future_state,end_state_only,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map);
+      // Publish the message 
+     bool unique_ee_occurances=true;
+     publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
+  }   
     
  
   //----------------------------------------------------------------------------------------------------   

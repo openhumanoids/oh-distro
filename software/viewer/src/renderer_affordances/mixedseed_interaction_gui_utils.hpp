@@ -44,6 +44,14 @@ namespace renderer_affordances_gui_utils
       cout << "publishing EE goal sequence on " << channel << endl;
       publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true);  
     }
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
+      string channel = "POSE_GOAL";    
+      publish_EE_goal_sequence_as_poal_goal(self,channel,false,false);
+    }
+    else if(!strcmp(name,PARAM_SEND_POSE_GOAL5)){
+      string channel = "POSE_GOAL";
+      publish_EE_goal_sequence_as_poal_goal(self,channel,true,false);
+    }
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
     
@@ -73,6 +81,11 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_EE_GOAL_SEQUENCE, NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT_TO_FOOTSTEP_PLANNER, NULL); 
+    
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL5, NULL);
+
+        
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL); 
    

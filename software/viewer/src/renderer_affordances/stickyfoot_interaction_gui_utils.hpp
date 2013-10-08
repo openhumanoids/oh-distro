@@ -63,6 +63,31 @@ namespace renderer_affordances_gui_utils
                   publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"r_foot","R_FOOT_GOAL",T_world_graspgeometry,reach_flag);
           }
       }
+      else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
+        string channel = "POSE_GOAL";
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+        KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+        publish_pose_goal_to_sticky_foot(self,channel,foot_it->second,T_world_body_desired,false,false);  
+      }
+
+      else if(!strcmp(name,PARAM_SEND_POSE_GOAL5)){
+        string channel = "POSE_GOAL";
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+        KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+        bool end_state_only = true;
+        publish_pose_goal_to_sticky_foot(self,channel,foot_it->second,T_world_body_desired,true,end_state_only);  
+      }
+      
+      else if(!strcmp(name,PARAM_SEND_POSE_GOAL6)){
+        string channel = "POSE_GOAL";
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+        KDL::Frame T_world_body_desired = self->robotStateListener->T_body_world.Inverse();
+        bool end_state_only = false;
+        publish_pose_goal_to_sticky_foot(self,channel,foot_it->second,T_world_body_desired,true,end_state_only);  
+      } 
       else if (!strcmp(name, PARAM_MELD_FOOT_TO_CURRENT))
       {
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
@@ -172,6 +197,13 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_REACH,NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL); 
+    
+    
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL5, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL6, NULL);
+       
+    
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL); 
     
