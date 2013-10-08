@@ -25,16 +25,16 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'leg_aky'};% <---- 
+joint_str = {'leg'};% <---- 
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
-  ts = linspace(0,40,500);% <----
-  amp = -0.05;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.08,500);% <----  cycles per second
+  ts = linspace(0,50,500);% <----
+  amp = -0.0;% <---- meters, COM DELTA
+  freq = linspace(0.025,0.3,500);% <----  cycles per second
 else
   vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
@@ -84,7 +84,7 @@ ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,3);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,5);
 
 gains2 = getAtlasGains(input_frame); 
 % reset force gains for joint being tuned

@@ -17,10 +17,10 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrameWCoder & Singleton
       input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
       
       if nargin<3 % controlling robot
-        warning('AtlasPosTorqueRef: USING ATLAS GAINS')
+%         warning('AtlasPosTorqueRef: USING ATLAS GAINS')
         gains = getAtlasGains(input_frame);
       else
-        warning('AtlasPosTorqueRef: USING SIMULATION GAINS')
+%         warning('AtlasPosTorqueRef: USING SIMULATION GAINS')
         typecheck(gains_id,'char');
         gains = struct();
         gains.k_qd_p = zeros(obj.nu,1);
