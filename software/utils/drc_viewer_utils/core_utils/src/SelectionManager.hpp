@@ -39,8 +39,8 @@ namespace visualization_utils
           _is_key_pressed = is_pressed;
           _latest_keyval = keyval;
           
-          if((_is_key_pressed)&&(_latest_keyval == SHIFT_L||_latest_keyval == SHIFT_R ))
-            _selection_history.clear();
+          //if((_is_key_pressed)&&(_latest_keyval == SHIFT_L||_latest_keyval == SHIFT_R ))
+            //_selection_history.clear();
         };
         
         //core methods

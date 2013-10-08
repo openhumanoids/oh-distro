@@ -59,12 +59,13 @@ namespace visualization_utils
                               map<string, vector<int64_t> > &joint_pos_timestamps_map);
                               
    // Ordered constraints via shift+select mechanism.
-   void get_time_ordered_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
-                            boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
-                            map<string, vector<KDL::Frame> > &ee_frames_map, 
-                            map<string, vector<int64_t> > &ee_frame_timestamps_map,
-                            map<string, vector<double> > &joint_pos_map,
-                            map<string, vector<int64_t> > &joint_pos_timestamps_map);                                
+   void get_selected_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
+                          boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
+                          map<string, vector<KDL::Frame> > &ee_frames_map, 
+                          map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                          map<string, vector<double> > &joint_pos_map,
+                          map<string, vector<int64_t> > &joint_pos_timestamps_map,
+                          bool is_time_ordered);                                
                               
     // Used to generate desired ee constraints for manip maps. 
     // Generates and returns ee constraints for all associated seeds of a given parent object that are indexed with

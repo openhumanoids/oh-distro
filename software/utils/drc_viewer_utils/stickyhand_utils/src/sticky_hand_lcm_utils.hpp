@@ -414,7 +414,7 @@ inline static void get_endpose_search_constraints_from_sticky_hand(StickyHandStr
       else if(handstruc.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
           ee_name ="right_base_link";        
       else
-          cout << "unknown hand_type in publish_pose_goal_to_sticky_hand\n";   
+          cout << "unknown hand_type in get_endpose_search_constraints_from_sticky_hand\n";   
 
       // if ee_name already exists in ee_frames_map, redundant ee_frames
       // e.g two right sticky hands on the same object.

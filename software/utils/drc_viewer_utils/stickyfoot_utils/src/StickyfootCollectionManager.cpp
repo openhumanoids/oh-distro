@@ -437,12 +437,13 @@ void StickyfootCollectionManager::get_pose_constraints(string object_name, OtdfI
       
  }
 //-------------------------------------------------------------------------------------------  
-void StickyfootCollectionManager::get_time_ordered_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
+void StickyfootCollectionManager::get_selected_pose_constraints(boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager, bool to_future_state,
                                                   boost::shared_ptr<visualization_utils::SelectionManager>  &selectionManager,
                                                   map<string, vector<KDL::Frame> > &ee_frames_map, 
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
-                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map)
+                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map,
+                                                  bool is_time_ordered)
                                                   
 {
 
@@ -494,7 +495,11 @@ void StickyfootCollectionManager::get_time_ordered_pose_constraints(boost::share
               T_world_ee_frames.push_back(T_world_ee);
               double nmr = (selectionManager->get_selection_order(id)-1);
               double dmr = (selectionManager->get_selection_cnt()-1);
-              int64_t timestamp = (int64_t)((nmr/dmr)*1000000);
+              int64_t timestamp;
+              if(is_time_ordered)
+                timestamp = (int64_t)((nmr/dmr)*1000000);
+              else
+                timestamp=(int64_t)i*1000000;
               frame_timestamps.push_back(timestamp);   
           }
           //=================== 
