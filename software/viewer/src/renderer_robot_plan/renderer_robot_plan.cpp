@@ -697,6 +697,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     drc::manip_plan_control_t msg;
     msg.utime = self->robot_utime;
     msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_MANIP_PLAN_MODE);
+    if(msg.mode!=1)
+    {
+      self->adjust_endstate = true;
+      bot_gtk_param_widget_set_bool(pw, PARAM_ADJUST_ENDSTATE,self->adjust_endstate);
+    }
     self->lcm->publish("MANIP_PLANNER_MODE_CONTROL", &msg);
   }
   else if(! strcmp(name, PARAM_ADJUST_PLAN_TO_CURRENT_POSE)){
@@ -765,7 +770,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     self->adjust_endstate = false;
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 1, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_KEYFRAMES, 1, NULL);
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
