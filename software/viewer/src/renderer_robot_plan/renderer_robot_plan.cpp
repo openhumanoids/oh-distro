@@ -38,6 +38,7 @@
 #define PARAM_PLAN_ADJUST_MODE "Plan Adjustment Filter"
 
 #define PARAM_ADJUST_PLAN_TO_CURRENT_POSE "Adjust Plan To Current Pose"
+#define PARAM_ADJUST_PLAN_AND_REACH "Achieve First Posture"
 #define PARAM_COMPENSATE_LAST_FRAME_FOR_SSE "Compensate for SSE"
 
 using namespace std;
@@ -710,7 +711,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
     self->lcm->publish("ADJUST_PLAN_TO_CURRENT_PELVIS_POSE", &msg);
   }
-
+  else if(! strcmp(name, PARAM_ADJUST_PLAN_AND_REACH)){
+    drc::plan_adjust_mode_t msg;
+    msg.utime = self->robot_utime;
+    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
+    self->lcm->publish("ADJUST_PLAN_AND_REACH", &msg);
+  }
   else if(! strcmp(name, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE)){
     drc::plan_adjust_mode_t msg;
     msg.utime = self->robot_utime;
@@ -776,7 +782,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
-    
+                                                    
+    bot_gtk_param_widget_add_separator (self->pw,"Replanning");
     bot_gtk_param_widget_add_enum(self->pw, PARAM_PLAN_ADJUST_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::plan_adjust_mode_t::LEFT_HAND, 
                                        "LHnd", drc::plan_adjust_mode_t::LEFT_HAND,
                                        "RHnd", drc::plan_adjust_mode_t::RIGHT_HAND,
@@ -785,29 +792,22 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        "RFoot", drc::plan_adjust_mode_t::RIGHT_FOOT,
                                        "BothFeet", drc::plan_adjust_mode_t::BOTH_FEET,
                                        "All", drc::plan_adjust_mode_t::ALL, NULL);
-                                       
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_TO_CURRENT_POSE, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE, NULL);
     
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_TO_CURRENT_POSE, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_AND_REACH, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE, NULL);
+                                       
+    bot_gtk_param_widget_add_separator (self->pw,"Planner Params"); 
+    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                1, 20, 0.5, 10);                                     
+    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                1,50, 1, 15);         
     bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
                                        "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
                                        "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
                                         "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
-                                        
-   bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1, 20, 0.5, 10);                                     
-   bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1,50, 1, 15);     
-   /*bot_gtk_param_widget_add_separator (self->pw,"Steady-State Error Compensation");
-    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_LEFT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
-    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_LEFT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); 
-    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KP_RIGHT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KP_MAX, PARAM_KP_INC, PARAM_KP_DEFAULT); 
-    bot_gtk_param_widget_add_double (self->pw, PARAM_SSE_KD_RIGHT,
-                                   BOT_GTK_PARAM_WIDGET_SLIDER, PARAM_KP_MIN, PARAM_KD_MAX, PARAM_KD_INC, PARAM_KD_DEFAULT); */
-  	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+    
+   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
   	self->use_colormap = 1;

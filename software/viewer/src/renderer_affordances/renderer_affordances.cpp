@@ -850,7 +850,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
 
     
     bot_viewer_request_redraw(self->viewer);
-    return 1;
+    return 0;
 }
 
 // ----------------------------------------------------------------------------
