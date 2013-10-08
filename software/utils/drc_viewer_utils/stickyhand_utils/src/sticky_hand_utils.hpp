@@ -31,6 +31,7 @@ namespace visualization_utils
        grasp_status = 0;
        motion_trail_log_enabled = true;
        is_melded= false;
+       squeeze_factor = 1.0;
       };
       
        ~StickyHandStruc()
@@ -46,6 +47,7 @@ namespace visualization_utils
       KDL::Frame T_geometry_hand; // this is stored in obj frame
       std::vector<std::string> joint_name;
       std::vector<double> joint_position;
+      double squeeze_factor;
       bool is_melded;
       KDL::Frame optimized_T_geometry_hand; // store as backup when melded. Retains the ability to unmeld.
       std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.

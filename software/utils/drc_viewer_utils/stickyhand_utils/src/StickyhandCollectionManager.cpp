@@ -477,7 +477,8 @@ void StickyhandCollectionManager::get_motion_constraints(string object_name, Otd
               uint i=0;
               //for(uint i = 0; i < (uint) num_frames; i++)
               //{ 
-              joint_pos.push_back(hand_it->second.joint_position[k]);
+              double squeeze_factor = hand_it->second.squeeze_factor;
+              joint_pos.push_back(squeeze_factor*hand_it->second.joint_position[k]);
               int64_t timestamp=(int64_t)i*1000000;
               joint_pos_timestamps.push_back(timestamp);
               //}
@@ -586,7 +587,8 @@ void StickyhandCollectionManager::get_pose_constraints(string object_name, OtdfI
                       vector<double> joint_pos;
                       vector<int64_t> joint_pos_timestamps;
                       uint i=0;
-                      joint_pos.push_back(hand_it->second.joint_position[k]);
+                      double squeeze_factor = hand_it->second.squeeze_factor;
+                      joint_pos.push_back(squeeze_factor*hand_it->second.joint_position[k]);
                       int64_t timestamp=(int64_t)i*1000000;
                       joint_pos_timestamps.push_back(timestamp);
                       joint_pos_map.insert(make_pair(joint_name,joint_pos));
@@ -686,7 +688,8 @@ void StickyhandCollectionManager::get_time_ordered_pose_constraints(boost::share
                   std::string unique_joint_name = oss2.str();
                   vector<double> joint_pos;
                   vector<int64_t> joint_pos_timestamps;
-                  joint_pos.push_back(hand_it->second.joint_position[k]);
+                   double squeeze_factor = hand_it->second.squeeze_factor;
+                  joint_pos.push_back(squeeze_factor*hand_it->second.joint_position[k]);                  
                   double nmr = (selectionManager->get_selection_order(id)-1);
                   double dmr = (selectionManager->get_selection_cnt()-1);
                   int64_t timestamp = (int64_t)((nmr/dmr)*1000000);
