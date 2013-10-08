@@ -82,7 +82,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -136,7 +136,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -289,6 +289,7 @@ script "prep_LI_RS" {
 
 script "simple_grasp" {
     stop cmd "sticky_hands";
+    stop cmd "SandiaGraspController";
     start group "m.simple_grasping";
 }
 
