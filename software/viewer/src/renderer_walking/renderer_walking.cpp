@@ -407,14 +407,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     set_default_params(self, mode);
   }  
   
+  publish_walking_goal(self, FALSE);
   
 
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
-    publish_walking_goal(self, FALSE);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked WALKING_GOAL\n");
-    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self);
   }
 }
