@@ -188,6 +188,7 @@ int64_t _timestamp_now(){
 void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
 {
   int64_t utime = _timestamp_now();
+  sandia_l_hand_palm_state_ = *msg;
 
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, true);
@@ -196,9 +197,8 @@ void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
 //----------------------------------------------------------------------------
 void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& msg)
 {
-
-
   int64_t utime = _timestamp_now();
+  sandia_r_hand_palm_state_ = *msg;
 
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, false);
@@ -449,6 +449,7 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
     // calculate joint angles based on hall sensor offsets
    double H2R, R0_INV,R1_INV,R2_INV,CAPSTAN_RATIO;
     H2R = 3.14159 * 2.0 / 36.0;// hall state to radians: 18 pole pairs
+    
     R0_INV = 1.0 / 231.0;
     R1_INV = 1.0 / 196.7;
     R2_INV = 1.0 / 170.0;
@@ -456,6 +457,16 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
     msg_out.joint_position[0+finger_id*3] = -H2R * R0_INV * ( msg_in.hall_pos[0] );
     msg_out.joint_position[1+finger_id*3] =  H2R * R1_INV * ( msg_in.hall_pos[1] + CAPSTAN_RATIO*msg_in.hall_pos[0] );
     msg_out.joint_position[2+finger_id*3] =  H2R * R2_INV * ( msg_in.hall_pos[2] - msg_in.hall_pos[1] - CAPSTAN_RATIO*2*msg_in.hall_pos[0] );
+    
+    //R2_INV = 1.0 / 231.0;
+    //R1_INV = 1.0 / 196.7;
+    //R0_INV = 1.0 / 173.4;
+    //CAPSTAN_RATIO = 0.89;
+    
+    //msg_out.joint_position[0+finger_id*3] =  H2R * R0_INV * ( msg_in.hall_pos[0] - msg_in.hall_pos[1] - CAPSTAN_RATIO*2*msg_in.hall_pos[2] );
+    //msg_out.joint_position[1+finger_id*3] =  H2R * R1_INV * ( msg_in.hall_pos[1] + CAPSTAN_RATIO*msg_in.hall_pos[2] );
+    //msg_out.joint_position[2+finger_id*3] =  H2R * R2_INV * ( msg_in.hall_pos[2] );
+    
     msg_out.joint_velocity[0+finger_id*3] = 0;
     msg_out.joint_velocity[1+finger_id*3] = 0;
     msg_out.joint_velocity[2+finger_id*3] = 0;
