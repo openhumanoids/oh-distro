@@ -31,9 +31,13 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   mColors << Qt::green
           << Qt::red
           << Qt::blue
-          << Qt::yellow
           << Qt::cyan
+          << Qt::magenta
+          << Qt::darkYellow
+          << QColor(139, 69, 19) // brown
           << Qt::darkCyan
+          << Qt::darkGreen
+          << Qt::darkMagenta
           << Qt::black;
 
   QDoubleSpinBox* timeWindowSpin = new QDoubleSpinBox;
@@ -77,6 +81,10 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   this->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
       SLOT(onShowContextMenu(const QPoint&)));
+
+  mSignalListWidget->setDragDropMode(QAbstractItemView::DragDrop);
+  mSignalListWidget->setDragEnabled(true);
+  mSignalListWidget->setDefaultDropAction(Qt::MoveAction);
 
   mSignalListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(mSignalListWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -142,6 +150,17 @@ void PlotWidget::onShowContextMenu(const QPoint& pos)
   }
 }
 
+QList<SignalHandler*> PlotWidget::signalHandlers()
+{
+  QList<SignalHandler*> handlers;
+  for (int i = 0; i < mSignalListWidget->count(); ++i)
+  {
+    handlers.append(mSignals[mSignalListWidget->item(i)]);
+  }
+
+  return handlers;
+}
+
 void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
 {
 
@@ -187,12 +206,11 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   else if (selectedAction == "Remove signal")
   {
     QListWidgetItem* signalItem = mSignalListWidget->currentItem();
-
-    SignalHandler* signalHandler = signalItem->data(Qt::UserRole).value<SignalHandler*>();
+    SignalHandler* signalHandler = this->signalForItem(signalItem);
 
     mLCMThread->removeSignalHandler(signalHandler);
     d_plot->removeSignal(signalHandler->signalData());
-    mSignals.removeAll(signalHandler);
+    mSignals.remove(signalItem);
 
     delete signalItem;
     delete signalHandler;
@@ -240,25 +258,12 @@ void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)
 
 QListWidgetItem* PlotWidget::itemForSignal(SignalHandler* signalHandler)
 {
-  for (int row = 0; row < mSignalListWidget->count(); ++row)
-  {
-    QListWidgetItem* item = mSignalListWidget->item(row);
-    if (signalHandler == item->data(Qt::UserRole).value<SignalHandler*>())
-    {
-      return item;
-    }
-  }
-  return 0;
+  return mSignals.key(signalHandler);
 }
 
 SignalHandler* PlotWidget::signalForItem(QListWidgetItem* item)
 {
-  if (!item)
-  {
-    return 0;
-  }
-
-  return item->data(Qt::UserRole).value<SignalHandler*>();
+  return mSignals.value(item);
 }
 
 bool PlotWidget::signalIsVisible(SignalHandler* signalHandler)
@@ -338,13 +343,14 @@ void PlotWidget::addSignal(SignalHandler* signalHandler)
     signalHandler->signalDescription()->mColor = color;
   }
 
-
-  mLCMThread->addSignalHandler(signalHandler);
-  mSignals.append(signalHandler);
-  d_plot->addSignal(signalHandler->signalData(), color);
-
   QString signalDescription = QString("%2 [%1]").arg(signalHandler->channel()).arg(signalHandler->description().split(".").back());
   QListWidgetItem* signalItem = new QListWidgetItem(signalDescription);
+  mSignalListWidget->addItem(signalItem);
+  mSignals[signalItem] = signalHandler;
+
+  mLCMThread->addSignalHandler(signalHandler);
+  d_plot->addSignal(signalHandler->signalData(), color);
+
 
   QPixmap pixmap(24, 24);
   pixmap.fill(color);
@@ -352,8 +358,6 @@ void PlotWidget::addSignal(SignalHandler* signalHandler)
 
   signalItem->setData(Qt::UserRole, qVariantFromValue(signalHandler));
   signalItem->setData(Qt::CheckStateRole, Qt::Checked);
-
-  mSignalListWidget->addItem(signalItem);
 }
 
 
@@ -381,7 +385,7 @@ QMap<QString, QVariant> PlotWidget::saveSettings()
   settings["timeWindow"] = d_plot->timeWindow();
 
   QList<QVariant> signalSettings;
-  foreach (SignalHandler* signalHandler, mSignals)
+  foreach (SignalHandler* signalHandler, this->signalHandlers())
   {
     signalSettings.append(this->saveSignalSettings(signalHandler)); 
   }

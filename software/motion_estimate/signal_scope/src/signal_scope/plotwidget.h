@@ -2,6 +2,7 @@
 #define _PLOTWIDGET_H_
 
 #include <qwidget.h>
+#include <qmap.h>
 
 class Plot;
 class Knob;
@@ -36,6 +37,8 @@ public:
   QListWidgetItem* itemForSignal(SignalHandler* signalHandler);
   SignalHandler* signalForItem(QListWidgetItem* item);
 
+  QList<SignalHandler*> signalHandlers();
+
 public slots:
 
   void onShowContextMenu(const QPoint&);
@@ -53,7 +56,7 @@ signals:
 private:
 
   Plot *d_plot;
-  QList<SignalHandler*> mSignals;
+  QMap<QListWidgetItem*, SignalHandler*> mSignals;
   QList<QColor> mColors;
   LCMThread* mLCMThread;
 
