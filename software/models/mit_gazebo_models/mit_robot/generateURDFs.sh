@@ -4,9 +4,9 @@
 echo "Generating: 1/9 stumps"
 rosrun xacro xacro.py xacro/atlas_stumps.urdf.xacro > model_stumps.urdf
 echo "Generating: 2/9 Left Sandia Right Stump"
-rosrun xacro xacro.py xacro/atlas_sandia_hands.urdf.xacro > model_LS_RN.urdf
+rosrun xacro xacro.py xacro/atlas_sandia_left_stump_right.urdf.xacro > model_LS_RN.urdf
 echo "Generating: 3/9 Left Stump  Right Sandia"
-rosrun xacro xacro.py xacro/atlas_irobot_hands.urdf.xacro > model_LN_RS.urdf
+rosrun xacro xacro.py xacro/atlas_stump_left_sandia_right.urdf.xacro > model_LN_RS.urdf
 
 echo "Generating: 4/9 Left Sandia Right Sandia"
 rosrun xacro xacro.py xacro/atlas_sandia_hands.urdf.xacro > model_LS_RS.urdf
