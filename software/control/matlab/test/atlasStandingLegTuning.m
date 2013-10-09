@@ -33,8 +33,8 @@ dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,50,500);% <----
-  amp = -0.0;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.3,500);% <----  cycles per second
+  amp = -0.05;% <---- meters, COM DELTA
+  freq = linspace(0.025,0.095,500);% <----  cycles per second
 else
   vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
@@ -187,26 +187,35 @@ R = 5e-4*eye(nq);
 P = eye(2*nq);
 x_est = zeros(2*nq,1);
 
-solver_options.outputflag = 0; % not verbose
-solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
-solver_options.presolve = 0;
-solver_options.bariterlimit = 20; % iteration limit
-solver_options.barhomogeneous = 0; % 0 off, 1 on
-solver_options.barconvtol = 5e-4;
+foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+    
+ctrl_data = SharedDataHandle(struct(...
+  'A',[zeros(2),eye(2); zeros(2,4)],...
+  'B',[zeros(2); eye(2)],...
+  'C',[eye(2),zeros(2)],...
+  'D',-com0(3)/9.81*eye(2),...
+  'Qy',zeros(2),...
+  'R',zeros(2),...
+  'S',zeros(4),...
+  's1',zeros(4,1),...
+  's2',0,...
+  'x0',[com0(1:2);0;0],...
+  'u0',zeros(2,1),...
+  'y0',com0(1:2),...
+  'qtraj',q0,...
+  'mu',1,...
+  'ignore_terrain',false,...
+  'is_time_varying',false,...
+  'trans_drift',[0;0;0],...
+  'support_times',0,...
+  'supports',foot_support));  
 
-qp_active_set = [];
-
-float_idx = 1:6;
-act_idx = 7:nq;
-
-nc=8; nd=4;
-nf = nc*nd; % number of contact force variables
-nparams = nq+nf;
-Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
-
-lb = [-1e3*ones(nq,1); zeros(nf,1)]; % qddot/contact forces
-ub = [ 1e3*ones(nq,1); 500*ones(nf,1)];
+% instantiate QP controller
+options.slack_limit = 30.0;
+options.w = 0.001;
+options.lcm_foot_contacts = false;
+options.use_mex = true;
+qp = QPControlBlock(r,ctrl_data,options);
 
 xy_offset = [0;0];
 udes = zeros(nu,1);
@@ -247,65 +256,9 @@ while tt<T+2
     qt(6) = q(6); % ignore yaw
     
     % get desired acceleration
-    qdddes = qddtraj.eval(tt) + 21.0*(qt-q) - 0.55*qd;
+    qdddes = qddtraj.eval(tt) + 23.0*(qt-q) - 0.55*qd;
     
-    % solve QP to compute inputs 
-    kinsol = doKinematics(r,q);
-    [H,C,B] = manipulatorDynamics(r,q,qd);
-
-    H_float = H(float_idx,:);
-    C_float = C(float_idx);
-
-    H_act = H(act_idx,:);
-    C_act = C(act_idx);
-    B_act = B(act_idx,:);
-    
-    [~,~,JB] = contactConstraintsBV(r,kinsol);
-    Dbar = [JB{:}];
-    Dbar_float = Dbar(float_idx,:);
-    Dbar_act = Dbar(act_idx,:);
-     
-    % constrained dynamics
-    Aeq = H_float*Iqdd - Dbar_float*Ibeta;
-    beq = -C_float;
-
-%    Ain_{1} = B_act'*(H_act*Iqdd1e-8 - Dbar_act*Ibeta);
-%    bin_{1} = -B_act'*C_act + r.umax;
-%    Ain_{2} = -Ain_{1};
-%    bin_{2} = B_act'*C_act - r.umin;
-% 
-%    Ain = sparse(vertcat(Ain_{:}));
-%    bin = vertcat(bin_{:});
-    
-    Hqp = 1e-6*eye(nparams);
-    Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq)+ eye(nq);
-    fqp = -qdddes'*Iqdd;
-    
-    IR = eye(nparams);  
-    lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
-    Ain_fqp = full([-IR(lbind,:); IR(ubind,:)]);
-    bin_fqp = [-lb(lbind); ub(ubind)];
-    QblkDiag = Hqp;
-    Aeq_fqp = full(Aeq);
-    % NOTE: model.obj is 2* f for fastQP!!!
-    [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,qp_active_set);
-
-    if info_fqp < 0
-      model.Q = sparse(Hqp);
-      model.obj = 2*fqp;
-      model.A = sparse(Aeq);
-      model.rhs = beq;
-      model.sense = repmat('=',length(beq),1);
-      model.lb = lb;
-      model.ub = ub;
-      result = gurobi(model,solver_options);
-      alpha = result.x;
-    end
-    
-    qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-    qdd = alpha(1:nq);
-    beta = alpha(nq+(1:nf));
-    u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
+    u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
     
 %     Fc = 10;
@@ -320,7 +273,8 @@ while tt<T+2
 %     
 %     tf_act = tau_friction(act_idx_map);
 
-    f_friction = computeFrictionForce(r,qd + 0.3*qdd) - computeFrictionForce(r,qd);
+	% should really be using qdd from QP solution...
+    f_friction = computeFrictionForce(r,qd + 0.3*qdddes) - computeFrictionForce(r,qd);
     f_friction_act = f_friction(act_idx_map);
 
     udes(joint_act_ind) = udes(joint_act_ind) + f_friction_act(joint_act_ind);
