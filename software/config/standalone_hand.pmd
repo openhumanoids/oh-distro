@@ -4,13 +4,13 @@ group "drivers" {
         host = "localhost";
     }
     cmd "sandia-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driverh SANDIA L";
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA L";
         host = "localhost";
     }
 }
 group "model-pubs" {
     cmd "sandia-left-model-pub" {
-        exec = "robot_model_publisher -u model_LS_standalone.urdf";
+        exec = "robot_model_publisher  -u $DRC_BASE/software/models/mit_gazebo_models/sandia_hand/model_LS_standalone.urdf";
         host = "localhost";
     }
 }
@@ -20,11 +20,15 @@ group "processes" {
         host = "localhost";
     }
     cmd "hand-analysis" {
-        exec = "sandia_hand_analysis -l";
+        exec = "sandia-analysis -l";
+        host = "localhost";
+    }
+    cmd "hand-process" {
+        exec = "sandia-process -l";
         host = "localhost";
     }
     cmd "simple-grasp" {
-        exec = "python simple_grasp.py ";
+        exec = "sandia-simple-grasp";
         host = "localhost";
     }
     cmd "simple-grasp-keyboard" {
