@@ -48,6 +48,7 @@ struct MeshRenderer::InternalState {
       mImagesWrapper = false;
       mTextureId = 0;
       mIdealPinhole = true;
+      mState = iState;
     }
 
     ~CameraSubscription() {
