@@ -263,12 +263,14 @@ group "m.simple_grasping" {
 
 script "prep_no_hands" { 
     start group "0.development";
+    start cmd "logger-robot";
     start group "a.1.core";
     start group "b.2.walking";
     start group "b.3.manip";
     start cmd "atlas-off";
-    start cmd "logger-robot";
     start cmd "multisense";
+    start cmd "sa-right";
+    start cmd "sa-left";
 }
 
 script "prep_LS_RS" {
