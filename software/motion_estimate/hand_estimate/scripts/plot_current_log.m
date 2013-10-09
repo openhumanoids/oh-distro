@@ -1,7 +1,9 @@
-ros-string -> ros-py -> ros-joint-command   (all individual commands)
-lcm-string -> lcm-py -> lcm-joint-command   (all individual commands)
+%ros-string -> ros-py -> ros-joint-command   (all individual commands)
+%lcm-string -> lcm-py -> lcm-joint-command   (all individual commands)
 
 
+
+% issue: currents are at finger level
 
 give commanded joint angles
 

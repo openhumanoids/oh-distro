@@ -86,6 +86,8 @@ def grasp_cb(msg):
   jc.position = [0] * 12
   for i in xrange(0, 12):
     jc.position[i] = origin[i] + g0[i] * x
+  
+  #jc.position[9] = 0.8
   print "joint state: %s" % (str(jc.position))
 
 def on_simple_grasp_left(channel, data):

@@ -11,7 +11,9 @@ lcmtypes_build()
 
 # 
 add_subdirectory(src/hand_estimate)
+add_subdirectory(src/hand_tactile_viz)
 
 
 # Keyboard Teleop - LCM version
+pods_install_python_script(sandia-simple-grasp scripts/simple_grasp.py)
 pods_install_python_script(sandia-simple-grasp-keyboard scripts/simple_grasp_keyboard_teleop.py)

@@ -11,7 +11,7 @@ using namespace std;
 
 class App{
   public:
-    App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left);
+    App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_);
     
     ~App(){
     }
@@ -21,6 +21,7 @@ class App{
     boost::shared_ptr<lcm::LCM> lcm_;
     bool is_left;
     string handtext;  // Put RIGHT / LEFT
+    bool use_gnuplot_;
     
     // For calibration of tactile sensor
     unsigned int init_sandia_cnt;
@@ -36,8 +37,8 @@ class App{
     void publishSandiaTactile(int64_t utime, float palm_tactile[]);
 };   
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
-   lcm_(lcm_), is_left(is_left){
+App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_):
+   lcm_(lcm_), is_left(is_left), use_gnuplot_(use_gnuplot_){
   
   init_sandia_cnt = 0;
   handtext = is_left? "LEFT": "RIGHT";
@@ -70,7 +71,6 @@ void App::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf,
   }
   ///////////////////////
   
-  
 }
  
 void App::publishSandiaTactile(int64_t utime, float palm_tactile[]){
@@ -101,24 +101,27 @@ void App::publishSandiaTactile(int64_t utime, float palm_tactile[]){
   msg_out.touched =  msg_out.signal > TACTILE_THRESHOLD;
   lcm_->publish("SANDIA_"+handtext+"_TACTILE_STATE", &msg_out); 
   
-  // for gnuplot
-  static deque<float> dq;
-  dq.push_back(msg_out.signal);
-  if(dq.size()>500)
-    dq.pop_front();
-  printf("plot \"-\" with lines\n");
-  for(int i=0;i<dq.size();i++)
-    printf("%f\n", dq[i]);
-  printf("e\n");
-  printf("set yrange [0:60000]\n");
-  printf("set xrange [0:600]\n");
-  /////////////////////////////
+  if (use_gnuplot_){// for gnuplot
+    static deque<float> dq;
+    dq.push_back(msg_out.signal);
+    if(dq.size()>500)
+      dq.pop_front();
+    printf("plot \"-\" with lines\n");
+    for(int i=0;i<dq.size();i++)
+      printf("%f\n", dq[i]);
+    printf("e\n");
+    printf("set yrange [0:60000]\n");
+    printf("set xrange [0:600]\n");
+    /////////////////////////////
+  }
 }
 int main(int argc, char *argv[]){
-  bool lhand=false, rhand=false;
+  bool lhand=false, rhand=false, use_gnuplot;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(rhand, "r", "right","Process right hand message");
   opt.add(lhand, "l", "left","Process left hand message");
+  opt.add(use_gnuplot, "g", "use_gnuplot","Verbose printf, to pipe to gnuplot append '| gnuplot'");
+ 
   
   opt.parse();
   if(rhand && lhand){
@@ -134,7 +137,7 @@ int main(int argc, char *argv[]){
   if(!lcm->good())
     return 1;  
   
-  App app(lcm, lhand);
+  App app(lcm, lhand, use_gnuplot);
   while(0 == lcm->handle());
   return 0;
 }
