@@ -37,7 +37,7 @@ q0 = x0(1:nq);
 % create footstep and ZMP trajectories
 step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
-step_options.step_height = 0.0;
+step_options.step_height = 0.05;
 step_options.step_speed = 0.75;
 step_options.follow_spline = true;
 step_options.right_foot_lead = true;
@@ -49,6 +49,9 @@ step_options.goal_type = drc.walking_goal_t.GOAL_TYPE_CENTER;
 step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
 
 footsteps = rctrl.createInitialSteps(x0, navgoal, step_options);
+for j = 1:length(footsteps)
+  footsteps(j).pos = r.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+end
 [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(rctrl, x0, footsteps,step_options);
 link_constraints = buildLinkConstraints(rctrl, q0, foottraj);
 
