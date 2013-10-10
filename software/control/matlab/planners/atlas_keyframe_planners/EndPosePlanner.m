@@ -6,6 +6,8 @@ classdef EndPosePlanner < KeyframePlanner
     
     properties
         pose_pub
+        hand_gaze_tol
+        head_gaze_tol
     end
     
     methods
@@ -24,6 +26,8 @@ classdef EndPosePlanner < KeyframePlanner
             % publish an single keyframe endpose instead
             % of a keyframe plan by resolving at time T.
             obj.plan_cache.isEndPose = true;
+            obj.hand_gaze_tol = pi/18;
+            obj.head_gaze_tol = pi/6;
         end
         %-----------------------------------------------------------------------------------------------------------------
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
@@ -85,17 +89,17 @@ classdef EndPosePlanner < KeyframePlanner
             
             % gaze constraints
             if(goal_type_flags.rh == 2)
-                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],pi/18)};
+                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
             else
                 iktraj_head_constraint = {};
             end
             if(goal_type_flags.lh == 2)
-                iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lh_ee_goal(1:3),[0;0;0],pi/18)};
+                iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
             else
                 iktraj_lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
-                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],pi/12)};
+                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol)};
             else
                 iktraj_head_constraint = {};
             end
@@ -317,17 +321,17 @@ classdef EndPosePlanner < KeyframePlanner
             r_hand_pose = nan(7,1);
             l_hand_pose = nan(7,1);
             if(goal_type_flags.rh == 2)
-                rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],pi/18)};
+                rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
             else
                 rhand_constraint = {};
             end
             if(goal_type_flags.lh == 2)
-                lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lh_ee_goal(1:3),[0;0;0],pi/18)};
+                lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
             else
                 lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
-                head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],pi/12)};
+                head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol)};
             else
                 head_constraint = {};
             end
