@@ -26,8 +26,8 @@ namespace renderer_robot_state_gui_utils
   {
     RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
     cout <<"Publishing a WALKING_GOAL to desired end pose" << endl;
-    string channel = "WALKING_GOAL";
-    publish_walking_goal(self,channel); 
+    //string channel = "WALKING_GOAL";
+    //publish_walking_goal(self,channel); 
     channel = "DESIRED_FOOT_STEP_SEQUENCE";
     publish_desired_footstep_sequence(self,channel); 
     //gtk_widget_destroy (self->pose_approval_dock);
