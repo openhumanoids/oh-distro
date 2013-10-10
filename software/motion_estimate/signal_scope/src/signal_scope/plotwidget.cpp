@@ -50,19 +50,22 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   QVBoxLayout* vLayout1 = new QVBoxLayout();
 
 
-  QPushButton* resetYScaleButton = new QPushButton("Reset Y scale");
-  vLayout1->addWidget(resetYScaleButton);
+  //QPushButton* resetYScaleButton = new QPushButton("Reset Y scale");
+  //vLayout1->addWidget(resetYScaleButton);
 
+  QWidget* frameWidget = new QWidget;
+  QHBoxLayout* frameLayout = new QHBoxLayout(frameWidget);
+  frameWidget->setContentsMargins(0, 0, 0, 0);
+  frameLayout->addWidget(new QLabel("Time Window [s]:"));
+  frameLayout->addWidget(timeWindowSpin);
+  vLayout1->addWidget(frameWidget);
 
-  vLayout1->addWidget(timeWindowSpin);
-  vLayout1->addWidget(new QLabel("Time Window [s]"));
 
   mSignalListWidget = new QListWidget(this);
   vLayout1->addWidget(mSignalListWidget);
 
   mSignalInfoLabel = new QLabel(this);
   vLayout1->addWidget(mSignalInfoLabel);
-  
   vLayout1->addStretch(10);
 
 
@@ -72,6 +75,10 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
 
   connect(timeWindowSpin, SIGNAL(valueChanged(double)),
           d_plot, SLOT(setTimeWindow(double)));
+
+  connect(d_plot, SIGNAL(syncXAxisScale(double, double)),
+          this, SIGNAL(syncXAxisScale(double, double)));
+
   timeWindowSpin->setValue(10.0);
 
   //connect(yScaleSpin, SIGNAL(valueChanged(double)),
@@ -95,8 +102,6 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   QTimer* labelUpdateTimer = new QTimer(this);
   this->connect(labelUpdateTimer, SIGNAL(timeout()), SLOT(updateSignalInfoLabel()));
   labelUpdateTimer->start(100);
-
-  this->start();
 }
 
 void PlotWidget::onShowContextMenu(const QPoint& pos)
@@ -244,6 +249,21 @@ void PlotWidget::updateSignalInfoLabel()
   mSignalInfoLabel->setText(signalInfoText);
 }
 
+void PlotWidget::setEndTime(double endTime)
+{
+  d_plot->setEndTime(endTime);
+}
+
+void PlotWidget::setXAxisScale(double x0, double x1)
+{
+  d_plot->setAxisScale(QwtPlot::xBottom, x0, x1);
+}
+
+void PlotWidget::replot()
+{
+  d_plot->replot();
+}
+
 void PlotWidget::onResetYAxisScale()
 {
 
@@ -295,6 +315,26 @@ void PlotWidget::stop()
   d_plot->stop();
 }
 
+void PlotWidget::clearHistory()
+{
+  foreach (SignalHandler* handler, this->signalHandlers())
+  {
+    handler->signalData()->clear();
+  }
+
+  d_plot->replot();
+}
+
+void PlotWidget::setBackgroundColor(QString color)
+{
+  d_plot->setBackgroundColor(color);
+}
+
+void PlotWidget::setPointSize(double pointSize)
+{
+  d_plot->setPointSize(pointSize);
+}
+
 void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
 {
   SignalDescription desc;
@@ -315,7 +355,7 @@ void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
 
   if (signalHandler)
   {
-    printf("adding signal: %s\n", qPrintable(signalHandler->description()));
+    //printf("adding signal: %s\n", qPrintable(signalHandler->description()));
   }
   else
   {

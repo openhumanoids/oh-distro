@@ -24,6 +24,7 @@ qt4_wrap_cpp(moc_srcs
   )
 
 qt4_wrap_ui(ui_srcs
+  mainwindow.ui
   setscaledialog.ui
   selectsignaldialog.ui
   )

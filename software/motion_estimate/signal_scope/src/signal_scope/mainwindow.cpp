@@ -1,50 +1,46 @@
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include "plotwidget.h"
+#include "signalhandler.h"
+#include "signaldata.h"
 #include "selectsignaldialog.h"
 #include "signaldescription.h"
 #include "lcmthread.h"
 
-#include <qlabel.h>
-#include <qlayout.h>
+#include <QLabel>
+#include <QLayout>
 #include <QApplication>
 #include <QDebug>
 #include <QScrollArea>
 #include <QPushButton>
 #include <QShortcut>
 #include <QFileDialog>
+#include <QInputDialog>
+#include <QTimer>
 
 #include "qjson.h"
 
 #include <cstdio>
+#include <limits>
 
-MainWindow::MainWindow(QWidget* parent): QWidget(parent)
+
+class MainWindow::Internal : public Ui::MainWindow
 {
+public:
+
+};
+
+
+MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
+{
+  mInternal = new Internal;
+  mInternal->setupUi(this);
+
+  mPlaying = false;
   this->setWindowTitle("Signal Scope");
 
   mLCMThread = new LCMThread;
   mLCMThread->start();
-
-  QVBoxLayout* vLayout = new QVBoxLayout(this);
-
-  QWidget* toolbar = new QWidget;
-  QHBoxLayout* hlayout = new QHBoxLayout(toolbar);
-
-  QPushButton* newPlotButton = new QPushButton("Add plot");
-  hlayout->addWidget(newPlotButton);
-
-  QPushButton* pauseButton = new QPushButton("Pause");
-  pauseButton->setCheckable(true);
-  hlayout->addWidget(pauseButton);
-
-  QPushButton* saveSettingsButton = new QPushButton("Save settings");
-  hlayout->addWidget(saveSettingsButton);
-
-  hlayout->addStretch();
-
-
-  this->connect(newPlotButton, SIGNAL(clicked()), SLOT(onNewPlotClicked()));
-  this->connect(pauseButton, SIGNAL(clicked()), SLOT(onTogglePause()));
-  this->connect(saveSettingsButton, SIGNAL(clicked()), SLOT(onSaveSettings()));
 
   mScrollArea = new QScrollArea;
   mPlotArea = new QWidget;
@@ -54,16 +50,34 @@ MainWindow::MainWindow(QWidget* parent): QWidget(parent)
   mScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   mScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   mScrollArea->setWidgetResizable(true);
+  this->setCentralWidget(mScrollArea);
 
-  vLayout->addWidget(toolbar);
-  vLayout->addWidget(mScrollArea);
+  mInternal->ActionQuit->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
+  mInternal->ActionOpen->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton));
+  mInternal->ActionSave->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+  mInternal->ActionPause->setIcon(qApp->style()->standardIcon(QStyle::SP_MediaPlay));
+  mInternal->ActionClearHistory->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
+  mInternal->ActionAddPlot->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
+  //QStyle::SP_DialogDiscardButton
 
- QShortcut* quit = new QShortcut(QKeySequence(tr("Ctrl+Q", "Quit")), this);
-  this->connect(quit, SIGNAL(activated()), SLOT(close()));
+  this->connect(mInternal->ActionQuit, SIGNAL(activated()), SLOT(close()));
+  this->connect(mInternal->ActionOpen, SIGNAL(activated()), SLOT(onOpenSettings()));
+  this->connect(mInternal->ActionSave, SIGNAL(activated()), SLOT(onSaveSettings()));
+  this->connect(mInternal->ActionPause, SIGNAL(activated()), SLOT(onTogglePause()));
+  this->connect(mInternal->ActionAddPlot, SIGNAL(activated()), SLOT(onNewPlotClicked()));
+  this->connect(mInternal->ActionClearHistory, SIGNAL(activated()), SLOT(onClearHistory()));
 
+  this->connect(mInternal->ActionBackgroundColor, SIGNAL(activated()), SLOT(onChooseBackgroundColor()));
+  this->connect(mInternal->ActionPointSize, SIGNAL(activated()), SLOT(onChoosePointSize()));
+
+  mRedrawTimer = new QTimer(this);
+  //mRedrawTimer->setSingleShot(true);
+  this->connect(mRedrawTimer, SIGNAL(timeout()), this, SLOT(onRedrawPlots()));
 
   this->resize(1024,800);
   this->handleCommandLineArgs();
+
+  this->onTogglePause();
 }
 
 MainWindow::~MainWindow()
@@ -75,6 +89,8 @@ MainWindow::~MainWindow()
   mLCMThread->stop();
   mLCMThread->wait(250);
   delete mLCMThread;
+
+  delete mInternal;
 }
 
 void MainWindow::handleCommandLineArgs()
@@ -96,9 +112,141 @@ void MainWindow::handleCommandLineArgs()
   }
 }
 
+void MainWindow::onClearHistory()
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->clearHistory();
+  }
+}
+
+QString MainWindow::defaultSettingsDir()
+{
+  QString configDir = qgetenv("DRC_BASE") + "/software/config/signal_scope_configs";
+  if (QDir(configDir).exists())
+  {
+    return QDir(configDir).canonicalPath();
+  }
+  else
+  {
+    return QDir::currentPath();
+  }
+}
+
+void MainWindow::onChooseBackgroundColor()
+{
+  QStringList colors;
+  colors << "Black" << "White";
+
+  bool ok;
+  QString color = QInputDialog::getItem(this, "Choose background color", "Color", colors, 0, false, &ok);
+  if (ok)
+  {
+    this->setPlotBackgroundColor(color);
+  }
+}
+
+void MainWindow::onChoosePointSize()
+{
+  bool ok;
+  int pointSize = QInputDialog::getInt(this, "Choose point size", "Point size", 1, 1, 20, 1, &ok);
+  if (ok)
+  {
+    foreach (PlotWidget* plot, mPlots)
+    {
+      plot->setPointSize(pointSize - 1);
+    }
+  }
+}
+
+void MainWindow::setPlotBackgroundColor(QString color)
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setBackgroundColor(color);
+  }
+}
+
+void MainWindow::onSyncXAxis(double x0, double x1)
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    if (plot == this->sender())
+      continue;
+
+    plot->setXAxisScale(x0, x1);
+    plot->replot();
+  }
+}
+
+void MainWindow::onRedrawPlots()
+{
+  mFPSCounter.update();
+  //printf("redraw fps: %f\n", this->mFPSCounter.averageFPS());
+
+  if (mPlots.isEmpty())
+  {
+    return;
+  }
+
+
+  QList<SignalData*> signalDataList;
+  foreach (PlotWidget* plot, mPlots)
+  {
+    foreach (SignalHandler* signalHandler, plot->signalHandlers())
+    {
+      signalDataList.append(signalHandler->signalData());
+    }
+  }
+
+  if (signalDataList.isEmpty())
+  {
+    return;
+  }
+
+  float maxTime = std::numeric_limits<float>::min();
+
+  foreach (SignalData* signalData, signalDataList)
+  {
+    signalData->updateValues();
+    if (signalData->size())
+    {
+      float signalMaxTime = signalData->value(signalData->size() - 1).x();
+      if (signalMaxTime > maxTime)
+      {
+        maxTime = signalMaxTime;
+      }
+    }
+  }
+
+  if (maxTime == std::numeric_limits<float>::min())
+  {
+    return;
+  }
+
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setEndTime(maxTime);
+    plot->replot();
+  }
+}
+
+void MainWindow::onOpenSettings()
+{
+  QString filter = "JSON (*.json)";
+  QString filename = QFileDialog::getOpenFileName(this, "Open Settings", this->defaultSettingsDir(), filter);
+  if (filename.length())
+  {
+    this->onRemoveAllPlots();
+    this->loadSettings(filename);
+  }
+}
+
 void MainWindow::onSaveSettings()
 {
-  QString filename = QFileDialog::getSaveFileName(this, "Save Settings", ".json");
+  QString defaultFile = mLastOpenFile.isEmpty() ? this->defaultSettingsDir() : mLastOpenFile;
+  QString filter = "JSON (*.json)";
+  QString filename = QFileDialog::getSaveFileName(this, "Save Settings", defaultFile, filter);
   if (filename.length())
   {
     this->saveSettings(filename);
@@ -145,20 +293,27 @@ void MainWindow::loadSettings(const QMap<QString, QVariant>& settings)
 
 void MainWindow::onTogglePause()
 {
-  QPushButton* button = qobject_cast<QPushButton*>(this->sender());
-  if (button->isChecked())
+  mPlaying = !mPlaying;
+  mInternal->ActionPause->setChecked(mPlaying);
+  mInternal->ActionPause->setIcon(qApp->style()->standardIcon(mPlaying ? QStyle::SP_MediaPause : QStyle::SP_MediaPlay));
+  mInternal->ActionPause->setText(mPlaying ? "Pause" : "Play");
+
+
+  foreach (PlotWidget* plot, mPlots)
   {
-    foreach (PlotWidget* plot, mPlots)
-    {
+    if (mPlaying)
+      plot->start();
+    else
       plot->stop();
-    }
+  }
+
+  if (mPlaying)
+  {
+    mRedrawTimer->start(33);
   }
   else
   {
-    foreach (PlotWidget* plot, mPlots)
-    {
-      plot->start();
-    }
+    mRedrawTimer->stop();
   }
 }
 
@@ -192,6 +347,7 @@ PlotWidget* MainWindow::addPlot()
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
   this->connect(plot, SIGNAL(addSignalRequested(PlotWidget*)), SLOT(onAddSignalToPlot(PlotWidget*)));
+  this->connect(plot, SIGNAL(syncXAxisScale(double, double)), SLOT(onSyncXAxis(double, double)));
   mPlots.append(plot);
   return plot;
 }
@@ -210,6 +366,15 @@ void MainWindow::onAddSignalToPlot(PlotWidget* plot)
   }
 
   plot->addSignal(signalHandler);
+}
+
+void MainWindow::onRemoveAllPlots()
+{
+  QList<PlotWidget*> plots = mPlots;
+  foreach(PlotWidget* plot, plots)
+  {
+    this->onRemovePlot(plot);
+  }
 }
 
 void MainWindow::onRemovePlot(PlotWidget* plot)

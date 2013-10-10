@@ -24,6 +24,15 @@ public:
   void stop();
   void stopThreads();
 
+  void replot();
+
+  void setEndTime(double endTime);
+  void setXAxisScale(double x0, double x1);
+
+  void clearHistory();
+  void setBackgroundColor(QString color);
+  void setPointSize(double pointSize);
+
   void loadSettings(const QMap<QString, QVariant>& plotSettings);
   void addSignal(const QMap<QString, QVariant>& signalSettings);
   void addSignal(SignalHandler* signalHandler);
@@ -52,6 +61,7 @@ signals:
 
   void addSignalRequested(PlotWidget* plot);
   void removePlotRequested(PlotWidget* plot);
+  void syncXAxisScale(double x0, double x1);
 
 private:
 

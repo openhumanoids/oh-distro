@@ -18,9 +18,121 @@
 
 #include <qevent.h>
 
-#include <limits>
 #include <cassert>
 
+
+class MyPanner : public QObject
+{
+public:
+
+  QPoint mInitialPos;
+  bool mEnabled;
+  int mMouseButton;
+  int mKeyboardButton;
+  Plot* mPlot;
+
+  MyPanner(Plot* plot) : QObject(plot)
+  {
+    mEnabled = false;
+    mMouseButton = Qt::LeftButton;
+    mKeyboardButton = Qt::NoButton;
+    mPlot = plot;
+    mPlot->canvas()->installEventFilter(this);
+  }
+
+  bool eventFilter( QObject *object, QEvent *event )
+  {
+    switch ( event->type() )
+    {
+      case QEvent::MouseButtonPress:
+      {
+        widgetMousePressEvent( ( QMouseEvent * )event );
+        break;
+      }
+      case QEvent::MouseMove:
+      {
+        widgetMouseMoveEvent( ( QMouseEvent * )event );
+        break;
+      }
+      case QEvent::MouseButtonRelease:
+      {
+        widgetMouseReleaseEvent( ( QMouseEvent * )event );
+        break;
+      }
+    }
+
+    return false;
+  }
+
+  void moveCanvas( int dx, int dy )
+  {
+    if ( dx == 0 && dy == 0 )
+        return;
+
+    if (!mPlot->isStopped())
+      dx = 0;
+
+    for ( int axis = 0; axis < QwtPlot::axisCnt; axis++ )
+    {
+      const QwtScaleMap map = mPlot->canvasMap( axis );
+      const double p1 = map.transform( mPlot->axisScaleDiv( axis )->lowerBound() );
+      const double p2 = map.transform( mPlot->axisScaleDiv( axis )->upperBound() );
+
+      double d1, d2;
+      if ( axis == QwtPlot::xBottom || axis == QwtPlot::xTop )
+      {
+        d1 = map.invTransform( p1 - dx );
+        d2 = map.invTransform( p2 - dx );
+      }
+      else
+      {
+        d1 = map.invTransform( p1 - dy );
+        d2 = map.invTransform( p2 - dy );
+      }
+      mPlot->setAxisScale( axis, d1, d2 );
+    }
+
+    mPlot->flagAxisSyncRequired();
+    mPlot->replot();
+  }
+
+
+  void widgetMousePressEvent( QMouseEvent *mouseEvent )
+  {
+    if (mouseEvent->button() != mMouseButton)
+    {
+      return;
+    }
+
+    if ((mouseEvent->modifiers() & Qt::KeyboardModifierMask) != (mKeyboardButton & Qt::KeyboardModifierMask))
+    {
+      return;
+    }
+
+
+    mInitialPos = mouseEvent->pos();
+    mEnabled = true;
+  }
+
+  void widgetMouseMoveEvent( QMouseEvent *mouseEvent )
+  {
+    if (!mEnabled)
+      return;
+
+    QPoint pos = mouseEvent->pos();
+    if (pos != mInitialPos)
+    {
+      moveCanvas(pos.x() - mInitialPos.x(), pos.y() - mInitialPos.y());
+      mInitialPos = mouseEvent->pos();
+    }
+  }
+
+  void widgetMouseReleaseEvent( QMouseEvent *mouseEvent )
+  {
+    mEnabled = false;
+  }
+
+};
 
 class MyScaleDraw : public QwtScaleDraw
 {
@@ -33,30 +145,43 @@ class MyScaleDraw : public QwtScaleDraw
 class MyZoomer: public QwtPlotZoomer
 {
 public:
-    MyZoomer(QwtPlotCanvas *canvas):
-        QwtPlotZoomer(canvas)
+
+    Plot* mPlot;
+
+    MyZoomer(Plot *plot) : QwtPlotZoomer(plot->canvas())
     {
-        setTrackerMode(AlwaysOn);
+      mPlot = plot;
+      setTrackerMode(AlwaysOn);
     }
 
     virtual QwtText trackerTextF(const QPointF &pos) const
     {
-        QColor bg(Qt::white);
-        bg.setAlpha(200);
+      QColor bg(Qt::white);
+      bg.setAlpha(200);
 
-        QwtText text = QwtPlotZoomer::trackerTextF(pos);
-        text.setBackgroundBrush( QBrush( bg ));
-        return text;
+      QwtText text = QwtPlotZoomer::trackerTextF(pos);
+      text.setBackgroundBrush( QBrush( bg ));
+      return text;
     }
+
+protected:
+
+    virtual void rescale()
+    {
+      mPlot->flagAxisSyncRequired();
+      QwtPlotZoomer::rescale();
+    }
+
 };
 
 class MyMagnifier: public QwtPlotMagnifier
 {
 public:
-    MyMagnifier(QwtPlotCanvas *canvas):
-        QwtPlotMagnifier(canvas)
-    {
+    Plot* mPlot;
 
+    MyMagnifier(Plot* plot) : QwtPlotMagnifier(plot->canvas())
+    {
+      mPlot = plot;
     }
 
 protected:
@@ -67,6 +192,8 @@ protected:
     {
       factor = qAbs( factor );
       factor = (1-factor) + 1;
+
+      mPlot->flagAxisSyncRequired();
       this->QwtPlotMagnifier::rescale(factor);
     }
 
@@ -74,9 +201,12 @@ protected:
 
 Plot::Plot(QWidget *parent):
   QwtPlot(parent),
-  d_interval(0.0, 10.0),
-  d_timerId(-1),
-  mColorMode(0)
+  d_origin(0),
+  d_grid(0),
+  mStopped(true),
+  mAxisSyncRequired(false),
+  mColorMode(0),
+  mTimeWindow(10.0)
 {
   setAutoReplot(false);
 
@@ -110,57 +240,36 @@ Plot::Plot(QWidget *parent):
 
 #endif
 
-  initGradient();
+
 
   plotLayout()->setAlignCanvasToScales(true);
 
+  setAxisAutoScale(QwtPlot::xBottom, false);
+  setAxisAutoScale(QwtPlot::yLeft, false);
+
   setAxisTitle(QwtPlot::xBottom, "Time [s]");
-  setAxisScale(QwtPlot::xBottom, d_interval.minValue(), d_interval.maxValue());
+  setAxisScale(QwtPlot::xBottom, 0, 10);
   setAxisScale(QwtPlot::yLeft, -4.0, 4.0);
 
   setAxisScaleDraw(QwtPlot::xBottom, new MyScaleDraw);
 
+  initBackground();
 
-  QwtPlotGrid *grid = new QwtPlotGrid();
+  QwtPlotZoomer* zoomer = new MyZoomer(this);
+  zoomer->setMousePattern(QwtEventPattern::QwtEventPattern::MouseSelect1,
+      Qt::LeftButton, Qt::ShiftModifier);
+  // zoomer->setMousePattern(QwtEventPattern::MouseSelect3,
+  //     Qt::RightButton);
 
-  QColor gridColor = Qt::gray;
-  if (mColorMode == 1)
-  {
-    gridColor = QColor(100, 100, 100);
-  }
+  MyPanner *panner = new MyPanner(this);
 
-  grid->setPen(QPen(gridColor, 0.0, Qt::DotLine));
-  grid->enableX(false);
-  grid->enableXMin(false);
-  grid->enableY(true);
-  grid->enableYMin(false);
-  grid->attach(this);
+  // zoom in/out with the wheel
+  mMagnifier = new MyMagnifier(this);
+  mMagnifier->setMouseButton(Qt::MiddleButton);
 
-  d_origin = new QwtPlotMarker();
-  d_origin->setLineStyle(QwtPlotMarker::HLine);
-  d_origin->setValue(d_interval.minValue() + d_interval.width() / 2.0, 0.0);
-  d_origin->setLinePen(QPen(gridColor, 0.0, Qt::DashLine));
-  d_origin->attach(this);
-
-
-  QwtPlotZoomer* zoomer = new MyZoomer(canvas());
-    zoomer->setMousePattern(QwtEventPattern::QwtEventPattern::MouseSelect1,
-        Qt::LeftButton, Qt::ShiftModifier);
-   // zoomer->setMousePattern(QwtEventPattern::MouseSelect3,
-   //     Qt::RightButton);
-
-    QwtPlotPanner *panner = new QwtPlotPanner(canvas());
-    //panner->setAxisEnabled(QwtPlot::yRight, false);
-    panner->setMouseButton(Qt::LeftButton);
-
-
-    // zoom in/out with the wheel
-    QwtPlotMagnifier* magnifier = new MyMagnifier(canvas());
-    magnifier->setMouseButton(Qt::MiddleButton);
-
-    const QColor c(Qt::darkBlue);
-    zoomer->setRubberBandPen(c);
-    zoomer->setTrackerPen(c);
+  const QColor c(Qt::darkBlue);
+  zoomer->setRubberBandPen(c);
+  zoomer->setTrackerPen(c);
 
   this->setMinimumHeight(200);
 }
@@ -240,40 +349,88 @@ void Plot::setSignalColor(SignalData* signalData, QColor color)
   curve->setPen(QPen(color));
 }
 
-void Plot::initGradient()
+void Plot::setPointSize(double pointSize)
 {
-  QPalette pal = canvas()->palette();
+  foreach (QwtPlotCurve* curve, mSignals.values())
+  {
+    curve->setStyle(QwtPlotCurve::Dots);
+    QPen curvePen = curve->pen();
+    curvePen.setWidth(pointSize);
+    curve->setPen(curvePen);
+  }
+}
+
+void Plot::setBackgroundColor(QString color)
+{
+  if (color == "White")
+  {
+    mColorMode = 0;
+  }
+  else if (color == "Black")
+  {
+    mColorMode = 1;
+  }
+
+  this->initBackground();
+}
+
+void Plot::initBackground()
+{
+  if (!d_grid)
+  {
+    d_grid = new QwtPlotGrid();
+    d_grid->enableX(false);
+    d_grid->enableXMin(false);
+    d_grid->enableY(true);
+    d_grid->enableYMin(false);
+    d_grid->attach(this);
+  }
+
+  if (!d_origin)
+  {
+    d_origin = new QwtPlotMarker();
+    d_origin->setLineStyle(QwtPlotMarker::HLine);
+    d_origin->setValue(0.0, 0.0);
+    d_origin->attach(this);
+  }
 
   QColor backgroundColor = Qt::white;
+  QColor gridColor = Qt::gray;
   if (mColorMode == 1)
   {
     backgroundColor = Qt::black;
+    gridColor = QColor(100, 100, 100);
   }
 
-  /*
-  QLinearGradient gradient( 0.0, 0.0, 1.0, 0.0 );
-  gradient.setCoordinateMode( QGradient::StretchToDeviceMode );
-  gradient.setColorAt(0.0, QColor( 0, 0, 0 ) );
-  gradient.setColorAt(1.0, QColor( 0, 0, 0 ) );
-  pal.setBrush(QPalette::Window, QBrush(gradient));
-  */
-
+  QPalette pal = canvas()->palette();
   pal.setBrush(QPalette::Window, QBrush(backgroundColor));
   canvas()->setPalette(pal);
+
+  d_grid->setPen(QPen(gridColor, 0.0, Qt::DotLine));
+  d_origin->setLinePen(QPen(gridColor, 0.0, Qt::DashLine));
 }
 
 void Plot::start()
 {
-  d_timerId = startTimer(33);
+  mStopped = false;
+  mMagnifier->setAxisEnabled(QwtPlot::xBottom, mStopped);
 }
 
 void Plot::stop()
 {
-  killTimer(d_timerId);
+  mStopped = true;
+  mMagnifier->setAxisEnabled(QwtPlot::xBottom, mStopped);
+}
+
+bool Plot::isStopped()
+{
+  return mStopped;
 }
 
 void Plot::replot()
 {
+  this->updateTicks();
+
   // Lock the signal data objects, then plot the data and unlock.
   QList<SignalData*> signalDataList = mSignals.keys();
   foreach (SignalData* signalData, signalDataList)
@@ -289,18 +446,27 @@ void Plot::replot()
   }
 }
 
+void Plot::flagAxisSyncRequired()
+{
+  mAxisSyncRequired = true;
+}
+
 
 double Plot::timeWindow()
 {
-  return d_interval.width();
+  return mTimeWindow;
 }
 
 
 void Plot::setTimeWindow(double interval)
 {
-  if ( interval > 0.0 && interval != d_interval.width() )
+  if ( interval > 0.0 && interval != mTimeWindow)
   {
-    d_interval.setMinValue(d_interval.maxValue() - interval);
+    mTimeWindow = interval;
+    QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
+    xinterval.setMinValue(xinterval.maxValue() - interval);
+    this->setAxisScale(QwtPlot::xBottom, xinterval.minValue(), xinterval.maxValue());
+    this->replot();
   }
 }
 
@@ -308,92 +474,62 @@ void Plot::setTimeWindow(double interval)
 void Plot::setYScale(double scale)
 {
   setAxisScale(QwtPlot::yLeft, -scale, scale);
+  this->replot();
 }
 
 
-void Plot::timerEvent(QTimerEvent *event)
+void Plot::setEndTime(double endTime)
 {
-  if ( event->timerId() == d_timerId )
+  QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
+  if (xinterval.maxValue() == endTime)
   {
-    this->fpsCounter.update();
-    //printf("plot fps: %f\n", this->fpsCounter.averageFPS());
-
-    if (!mSignals.size())
-    {
-      return;
-    }
-
-    float maxTime = std::numeric_limits<float>::min();
-
-    QList<SignalData*> signalDataList = mSignals.keys();
-    foreach (SignalData* signalData, signalDataList)
-    {
-      signalData->updateValues();
-      if (signalData->size())
-      {
-        float signalMaxTime = signalData->value(signalData->size() - 1).x();
-        if (signalMaxTime > maxTime)
-          {
-          maxTime = signalMaxTime;
-          }
-      }
-    }
-
-    if (maxTime != std::numeric_limits<float>::min())
-    {
-      d_interval = QwtInterval(maxTime - d_interval.width(), maxTime);
-
-      setAxisScale(QwtPlot::xBottom, d_interval.minValue(), d_interval.maxValue());
-
-
-      QwtScaleEngine* engine = axisScaleEngine(QwtPlot::xBottom);
-      //engine->setAttribute(QwtScaleEngine::Floating, true);
-      //engine->setMargins(0,50.0);
-
-      QwtScaleDiv scaleDiv = engine->divideScale(d_interval.minValue(), d_interval.maxValue(), 0, 0);
-
-      QList<double> majorTicks;
-      double majorStep = scaleDiv.range() / 5.0;
-      for (int i = 0; i <= 5; ++i)
-      {
-        majorTicks << scaleDiv.lowerBound() + i*majorStep;
-      }
-      majorTicks.back() = scaleDiv.upperBound();
-
-
-      QList<double> minorTicks;
-      double minorStep = scaleDiv.range() / 25.0;
-      for (int i = 0; i <= 25; ++i)
-      {
-        minorTicks << scaleDiv.lowerBound() + i*minorStep;
-      }
-      minorTicks.back() = scaleDiv.upperBound();
-
-
-      scaleDiv.setTicks(QwtScaleDiv::MajorTick, majorTicks);
-      scaleDiv.setTicks(QwtScaleDiv::MinorTick, minorTicks);
-      setAxisScaleDiv(QwtPlot::xBottom, scaleDiv);
-
-/*
-      QwtScaleDiv scaleDiv;// = *axisScaleDiv(QwtPlot::xBottom);
-      scaleDiv.setInterval(d_interval);
-
-      QList<double> majorTicks;
-      majorTicks << d_interval.minValue() << d_interval.maxValue();
-      scaleDiv.setTicks(QwtScaleDiv::MajorTick, majorTicks);
-      setAxisScaleDiv(QwtPlot::xBottom, scaleDiv);
-*/
-
-      //printf("update x axis interval: [%f,  %f]\n", d_interval.minValue(), d_interval.maxValue());
-    }
-
-
-
-
-
-
-    this->replot();
+    return;
   }
 
-  QwtPlot::timerEvent(event);
+  xinterval = QwtInterval(endTime - xinterval.width(), endTime);
+  this->setAxisScale(QwtPlot::xBottom, xinterval.minValue(), xinterval.maxValue());
+}
+
+void Plot::updateTicks()
+{
+  this->updateAxes();
+  QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
+
+  // when playing, always use the requested time window
+  // when paused, the user may zoom in/out, changing the time window
+  if (!this->isStopped())
+  {
+    xinterval.setMinValue(xinterval.maxValue() - mTimeWindow);
+  }
+
+  QwtScaleEngine* engine = axisScaleEngine(QwtPlot::xBottom);
+  QwtScaleDiv scaleDiv = engine->divideScale(xinterval.minValue(), xinterval.maxValue(), 0, 0);
+
+  QList<double> majorTicks;
+  double majorStep = scaleDiv.range() / 5.0;
+  for (int i = 0; i <= 5; ++i)
+  {
+    majorTicks << scaleDiv.lowerBound() + i*majorStep;
+  }
+  majorTicks.back() = scaleDiv.upperBound();
+
+
+  QList<double> minorTicks;
+  double minorStep = scaleDiv.range() / 25.0;
+  for (int i = 0; i <= 25; ++i)
+  {
+    minorTicks << scaleDiv.lowerBound() + i*minorStep;
+  }
+  minorTicks.back() = scaleDiv.upperBound();
+
+
+  scaleDiv.setTicks(QwtScaleDiv::MajorTick, majorTicks);
+  scaleDiv.setTicks(QwtScaleDiv::MinorTick, minorTicks);
+  setAxisScaleDiv(QwtPlot::xBottom, scaleDiv);
+
+  if (mAxisSyncRequired)
+  {
+    emit this->syncXAxisScale(xinterval.minValue(), xinterval.maxValue());
+    mAxisSyncRequired = false;
+  }
 }

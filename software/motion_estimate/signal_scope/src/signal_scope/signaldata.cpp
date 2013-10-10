@@ -79,6 +79,17 @@ void SignalData::appendSample(double x, double y)
   d_data->mutex.unlock();
 }
 
+void SignalData::clear()
+{
+  d_data->mutex.lock();
+  d_data->xvalues.clear();
+  d_data->yvalues.clear();
+  d_data->pendingxvalues.clear();
+  d_data->pendingyvalues.clear();
+  d_data->boundingRect = QRectF();
+  d_data->mutex.unlock();
+}
+
 void SignalData::flagMessageError()
 {
   d_data->messageError = true;

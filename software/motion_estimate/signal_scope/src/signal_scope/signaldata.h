@@ -26,6 +26,8 @@ public:
     bool hasMessageError() const;
     void flagMessageError();
 
+    void clear();
+
     // New signal data points per second are calculated using
     // an exponential moving average with a 1 second time window.
     double messageFrequency() const;

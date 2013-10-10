@@ -1,17 +1,17 @@
 #ifndef _PLOT_H_
 #define _PLOT_H_
 
-#include "fpscounter.h"
-
 #include <qwt_plot.h>
 #include <qwt_interval.h>
 #include <qwt_system_clock.h>
 
 class QwtPlotCurve;
 class QwtPlotMarker;
+class QwtPlotGrid;
 class QwtPlotDirectPainter;
 
 class SignalData;
+class MyMagnifier;
 
 class Plot: public QwtPlot
 {
@@ -33,27 +33,42 @@ public:
 
     double timeWindow();
 
+    void setEndTime(double endTime);
+    void moveCanvas(int dx, int dy);
+
+    void setBackgroundColor(QString color);
+
+    bool isStopped();
+
+    void flagAxisSyncRequired();
+
+    void setPointSize(double pointSize);
+
+signals:
+
+    void syncXAxisScale(double x0, double x1);
+
 public Q_SLOTS:
     void setTimeWindow(double);
     void setYScale(double);
 
 protected:
-    virtual void timerEvent(QTimerEvent *);
+
+    void updateTicks();
 
 private:
-    void initGradient();
+    void initBackground();
 
     QwtPlotMarker *d_origin;
+    QwtPlotGrid *d_grid;
+    MyMagnifier *mMagnifier;
 
-    QwtInterval d_interval;
-    int d_timerId;
-
+    bool mStopped;
+    bool mAxisSyncRequired;
     int mColorMode;
+    double mTimeWindow;
 
     QMap<SignalData*, QwtPlotCurve*> mSignals;
-
-    FPSCounter fpsCounter;
-
 };
 
 #endif
