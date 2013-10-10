@@ -271,7 +271,7 @@ addCameraChannel(const std::string& iChannel, const bool iImagesWrapper) {
   sub->mProjectionMatrix(2,3) = 1;
   sub->mProjectionMatrix(3,2) = 1;
   sub->mImageWidth = bot_camtrans_get_width(sub->mCamTrans);
-  sub->mImageHeight = bot_camtrans_get_width(sub->mCamTrans);
+  sub->mImageHeight = bot_camtrans_get_height(sub->mCamTrans);
 
   std::string key("cameras.");
   key += (sub->mChannel + ".coord_frame");
@@ -695,12 +695,13 @@ draw() {
             }
           }
         }
-        texCoords[2*i+0] = bestCoord[0]/multiTex.mWidth;
+        texCoords[2*i+0] = bestCoord[0];
         texCoords[2*i+1] = bestCoord[1];
         if (bestIndex >= 0) {
           texCoords[2*i+1] += multiTex.mVerticalOffsets[bestIndex];
+          texCoords[2*i+0] /= multiTex.mWidth;
+          texCoords[2*i+1] /= multiTex.mHeight;
         }
-        texCoords[2*i+1] /= multiTex.mHeight;
       }
       multiTex.mCoordsNeedUpdate = false;
     }
