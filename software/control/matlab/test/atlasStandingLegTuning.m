@@ -215,6 +215,7 @@ options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.use_mex = true;
+options.contact_threshold = 0.05;
 qp = QPControlBlock(r,ctrl_data,options);
 
 xy_offset = [0;0];

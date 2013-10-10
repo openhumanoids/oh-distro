@@ -61,7 +61,16 @@ classdef QPControlBlock < MIMODrakeSystem
     else
       obj.multi_robot = 0;
     end
-   
+    
+    if isfield(options,'contact_threshold')
+      % minimum height above terrain for points to be in contact
+      typecheck(options.contact_threshold,'double');
+      sizecheck(options.contact_threshold,[1 1]);
+      obj.contact_threshold = options.contact_threshold;
+    else
+      obj.contact_threshold = 0.001;
+    end
+    
     % weight for desired qddot objective term
     if isfield(options,'w')
       typecheck(options.w,'double');
@@ -332,7 +341,6 @@ classdef QPControlBlock < MIMODrakeSystem
       end
     end
     
-    contact_threshold = 0.001; % a point is considered to be in contact if within this distance
     if (obj.use_mex==0 || obj.use_mex==2)
 
       % Change in logic here due to recent tests with heightmap noise
@@ -366,7 +374,7 @@ classdef QPControlBlock < MIMODrakeSystem
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
           end
-          contact_state_kin = any(phi<=contact_threshold);
+          contact_state_kin = any(phi<=obj.contact_threshold);
           
           if (~contact_state_kin && contact_sensor(i)<1) 
             % no contact from kin, no contact (or no info) from sensor
@@ -640,7 +648,9 @@ classdef QPControlBlock < MIMODrakeSystem
   
     if (obj.use_mex==1)
       if ctrl_data.ignore_terrain
-        contact_threshold =-1;       
+        contact_thresh =-1;       
+      else
+        contact_thresh = obj.contact_threshold;
       end
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
@@ -649,7 +659,7 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
           supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
-          contact_sensor,contact_threshold,height,obj.include_angular_momentum);
+          contact_sensor,contact_thresh,height,obj.include_angular_momentum);
     end
 
     if ~isempty(active_supports)
@@ -661,7 +671,9 @@ classdef QPControlBlock < MIMODrakeSystem
     if (obj.use_mex==2)
       % note: this only works when using gurobi
       if ctrl_data.ignore_terrain
-        contact_threshold =-1;       
+        contact_thresh=-1;       
+      else
+        contact_thresh = obj.contact_threshold;
       end
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
@@ -670,7 +682,7 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data, ...
         0,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
-        x0,u0,y0,mu,contact_sensor,contact_threshold,height,obj.include_angular_momentum);
+        x0,u0,y0,mu,contact_sensor,contact_thresh,height,obj.include_angular_momentum);
       if (nc>0)
         valuecheck(active_supports_mex,active_supports);
         valuecheck(Vdotmex,Vdot,1e-3);
@@ -864,5 +876,6 @@ classdef QPControlBlock < MIMODrakeSystem
     include_angular_momentum; % tmp flag for testing out angular momentum control
     jlmin;
     jlmax;
+    contact_threshold; % min height above terrain to be considered in contact
     end
 end
