@@ -348,6 +348,12 @@ PlotWidget* MainWindow::addPlot()
   this->connect(plot, SIGNAL(addSignalRequested(PlotWidget*)), SLOT(onAddSignalToPlot(PlotWidget*)));
   this->connect(plot, SIGNAL(syncXAxisScale(double, double)), SLOT(onSyncXAxis(double, double)));
   mPlots.append(plot);
+
+  if (mPlaying)
+    plot->start();
+  else
+    plot->stop();
+
   return plot;
 }
 
