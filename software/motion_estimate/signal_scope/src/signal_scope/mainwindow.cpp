@@ -52,7 +52,6 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   mScrollArea->setWidgetResizable(true);
   this->setCentralWidget(mScrollArea);
 
-  mInternal->ActionQuit->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
   mInternal->ActionOpen->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton));
   mInternal->ActionSave->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
   mInternal->ActionPause->setIcon(qApp->style()->standardIcon(QStyle::SP_MediaPlay));
@@ -60,15 +59,15 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   mInternal->ActionAddPlot->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
   //QStyle::SP_DialogDiscardButton
 
-  this->connect(mInternal->ActionQuit, SIGNAL(activated()), SLOT(close()));
-  this->connect(mInternal->ActionOpen, SIGNAL(activated()), SLOT(onOpenSettings()));
-  this->connect(mInternal->ActionSave, SIGNAL(activated()), SLOT(onSaveSettings()));
-  this->connect(mInternal->ActionPause, SIGNAL(activated()), SLOT(onTogglePause()));
-  this->connect(mInternal->ActionAddPlot, SIGNAL(activated()), SLOT(onNewPlotClicked()));
-  this->connect(mInternal->ActionClearHistory, SIGNAL(activated()), SLOT(onClearHistory()));
+  this->connect(mInternal->ActionQuit, SIGNAL(triggered()), SLOT(close()));
+  this->connect(mInternal->ActionOpen, SIGNAL(triggered()), SLOT(onOpenSettings()));
+  this->connect(mInternal->ActionSave, SIGNAL(triggered()), SLOT(onSaveSettings()));
+  this->connect(mInternal->ActionPause, SIGNAL(triggered()), SLOT(onTogglePause()));
+  this->connect(mInternal->ActionAddPlot, SIGNAL(triggered()), SLOT(onNewPlotClicked()));
+  this->connect(mInternal->ActionClearHistory, SIGNAL(triggered()), SLOT(onClearHistory()));
 
-  this->connect(mInternal->ActionBackgroundColor, SIGNAL(activated()), SLOT(onChooseBackgroundColor()));
-  this->connect(mInternal->ActionPointSize, SIGNAL(activated()), SLOT(onChoosePointSize()));
+  this->connect(mInternal->ActionBackgroundColor, SIGNAL(triggered()), SLOT(onChooseBackgroundColor()));
+  this->connect(mInternal->ActionPointSize, SIGNAL(triggered()), SLOT(onChoosePointSize()));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
