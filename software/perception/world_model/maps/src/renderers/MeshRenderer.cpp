@@ -476,9 +476,9 @@ draw() {
   glDepthFunc(GL_LESS);
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
-  glEnable(GL_TEXTURE_2D);
-  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
   glEnable (GL_RESCALE_NORMAL);
+  glEnable(GL_TEXTURE_2D);
   if ((mState->mMeshMode == MeshModeFilled) ||
       (mState->mMeshMode == MeshModeShaded)) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
