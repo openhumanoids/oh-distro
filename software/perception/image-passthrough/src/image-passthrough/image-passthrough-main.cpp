@@ -12,7 +12,7 @@ using namespace std;
 class Main{
   public:
     Main(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
-         std::string camera_channel_, int output_color_mode_, 
+         std::string camera_channel, int output_color_mode_, 
          bool use_convex_hulls, string camera_frame,
          bool verbose, bool use_mono);
     
@@ -92,20 +92,20 @@ int main( int argc, char** argv ){
   bool use_convex_hulls=false;
   string camera_frame = "left_camera_optical_frame";
   bool verbose = false;
-  bool mono = false;
+  bool use_mono = false;
   parser.add(camera_channel, "c", "camera_channel", "Camera channel");
   parser.add(camera_frame, "f", "camera_frame", "Camera frame");
   parser.add(output_color_mode, "o", "output_color_mode", "0rgb |1grayscale |2b/w");
   parser.add(use_convex_hulls, "u", "use_convex_hulls", "Use convex hull models");
   parser.add(verbose, "v", "verbose", "Verbose");
-  parser.add(mono, "m", "mono", "Key off of the left monocularimage");  
+  parser.add(use_mono, "m", "use_mono", "Key off of the left monocularimage");  
   parser.parse();
   cout << camera_channel << " is camera_channel\n"; 
   cout << camera_frame << " is camera_frame\n"; 
   cout << output_color_mode << " is output_color_mode\n"; 
   cout << use_convex_hulls << " is use_convex_hulls\n"; 
   cout << verbose << " is verbose\n";
-  cout << mono << " is mono\n";
+  cout << use_mono << " is use_mono\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -115,7 +115,7 @@ int main( int argc, char** argv ){
   Main main(argc,argv, lcm, 
             camera_channel,output_color_mode, 
             use_convex_hulls, camera_frame, verbose,
-           mono);
+           use_mono);
   cout << "image-passthrough ready" << endl << endl;
   while(0 == lcm->handle());
   return 0;

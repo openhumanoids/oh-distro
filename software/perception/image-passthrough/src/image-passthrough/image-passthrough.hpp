@@ -61,6 +61,7 @@ class SimExample
     
     bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
     
+    void resetScene();
     // Create a scene using a robot's joint positions
     // NOTE: generalised to allow rendering of any set of objects. link = object
     void createScene (std::vector<std::string> object_names,

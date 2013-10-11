@@ -87,16 +87,28 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
            bool use_convex_hulls_, string camera_frame_,
            CameraParams camera_params_, bool verbose_):          
            lcm_(lcm_), output_color_mode_(output_color_mode_), 
-           use_convex_hulls_(use_convex_hulls_), urdf_parsed_(false), 
+           use_convex_hulls_(use_convex_hulls_),
            init_rstate_(false), camera_channel_(camera_channel_), 
            camera_frame_(camera_frame_), camera_params_(camera_params_),
+           update_robot_state_(true), renderer_robot_(true),
            verbose_(verbose_){
 
+  // Construct the simulation method:
+  std::string path_to_shaders = string(getBasePath()) + "/bin/";
+  simexample = SimExample::Ptr (new SimExample (argc, argv, 
+                                                camera_params_.height, camera_params_.width , 
+                                                lcm_, output_color_mode_, path_to_shaders));
+  simexample->setCameraIntrinsicsParameters (camera_params_.width, camera_params_.height, 
+                                             camera_params_.fx, camera_params_.fy, 
+                                             camera_params_.cx, camera_params_.cy);             
+             
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  urdf_xml_string_ = model_->getURDFString();
+  prepareModel();
+             
   // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
-  urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
-  urdf_subscription_on_ = true;
 
   // Visual I-O:
   float colors_b[] ={0.0,0.0,0.0};
@@ -115,14 +127,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
                                   camera_params_.width, 
                                   camera_params_.height ); // Actually outputs the Mask Image:
 
-  // Construct the simulation method:
-  std::string path_to_shaders = string(getBasePath()) + "/bin/";
-  simexample = SimExample::Ptr (new SimExample (argc, argv, 
-                                                camera_params_.height, camera_params_.width , 
-                                                lcm_, output_color_mode_, path_to_shaders));
-  simexample->setCameraIntrinsicsParameters (camera_params_.width, camera_params_.height, 
-                                             camera_params_.fx, camera_params_.fy, 
-                                             camera_params_.cx, camera_params_.cy);
+
   // Keep a mesh for the affordances:
   pcl::PolygonMesh::Ptr combined_aff_mesh_ptr_temp(new pcl::PolygonMesh());
   combined_aff_mesh_ = combined_aff_mesh_ptr_temp;   
@@ -144,6 +149,127 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   //state->model = mesh_ptr;  
   return mesh_ptr;
 }
+
+Eigen::Isometry3d URDFPoseToEigen(urdf::Pose& pose_in){
+  Eigen::Isometry3d pose_out = Eigen::Isometry3d::Identity();
+  
+  pose_out.translation()  << pose_in.position.x,
+                          pose_in.position.y,
+                          pose_in.position.z;
+  pose_out.rotate( Eigen::Quaterniond(pose_in.rotation.w, 
+                                    pose_in.rotation.x,
+                                    pose_in.rotation.y,
+                                    pose_in.rotation.z) );   
+  return pose_out;
+}
+
+KDL::Frame EigenToKDL(Eigen::Isometry3d tf){
+  KDL::Frame tf_out;
+  tf_out.p[0] = tf.translation().x();
+  tf_out.p[1] = tf.translation().y();
+  tf_out.p[2] = tf.translation().z();
+  Eigen::Quaterniond  r( tf.rotation() );
+  tf_out.M =  KDL::Rotation::Quaternion( r.x(), r.y(), r.z(), r.w() );
+  return tf_out;
+}
+
+//////////////////////////////////////////////////////////////////////
+void Pass::prepareModel(){
+  cout<< "URDF handler"<< endl;
+  // Received robot urdf string. Store it internally and get all available joints.
+  gl_robot_ = shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(urdf_xml_string_));
+  cout<< "Number of Joints: " << gl_robot_->get_num_joints() <<endl;
+  links_map_ = gl_robot_->get_links_map();
+  cout<< "Size of Links Map: " << links_map_.size() <<endl;
+  
+  typedef map<string, shared_ptr<urdf::Link> > links_mapType;
+  
+  int i =0;
+  for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
+    cout << it->first << endl;
+    if(it->second->visual){
+      std::cout << it->first<< " link" << it->second->visual->geometry->type << " type\n"; // visual type
+        
+      Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();
+      pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
+      
+      // For each visual element within the link geometry:
+      typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+      visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+      for (size_t iv = 0;iv < v_grp_it->second->size();iv++){  // 
+        vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+        shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
+        Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
+        
+        if  (geom->type == urdf::Geometry::MESH){
+          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
+          // TODO: Verify the existance of the file:
+          std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
+
+          // Read the Mesh, transform by the visual component origin:
+          pcl::PolygonMesh::Ptr this_mesh = getPolygonMesh(file_path);
+          pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
+          pcl::fromROSMsg(this_mesh->cloud, mesh_cloud_1st);
+          Eigen::Isometry3f visual_origin_f= visual_origin.cast<float>();
+          Eigen::Quaternionf visual_origin_quat(visual_origin_f.rotation());
+          pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, visual_origin_f.translation(), visual_origin_quat);  
+          pcl::toROSMsg (mesh_cloud_1st, this_mesh->cloud);  
+          simexample->mergePolygonMesh(mesh_ptr, this_mesh );
+          
+        }else if(geom->type == urdf::Geometry::BOX){
+          shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
+          simexample->mergePolygonMesh(mesh_ptr, 
+                                      prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
+        }else if(geom->type == urdf::Geometry::CYLINDER){
+          shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
+          simexample->mergePolygonMesh(mesh_ptr, 
+                                      prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
+        }else if(geom->type == urdf::Geometry::SPHERE){
+          shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
+          simexample->mergePolygonMesh(mesh_ptr, 
+                                      prim_->getSphereWithTransform(visual_origin, sphere->radius) );
+        }else{
+          std::cout << "Pass::urdfHandler() Unrecognised urdf object\n";
+          exit(-1);
+        }
+      }
+
+      // Apply Some Coloring:
+      if(output_color_mode_==0){ // Set the mesh to a false color:
+        int j =i%(simexample->colors_.size()/3);
+        simexample->setPolygonMeshColor(mesh_ptr, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
+      }else if(output_color_mode_==1){ // set link mesh in link range
+        simexample->setPolygonMeshColor(mesh_ptr, LINK_OFFSET + (int) i, 0, 0 );
+      }else{ // black or white
+        simexample->setPolygonMeshColor(mesh_ptr, 255,0,0 ); // last two are not used
+      }          
+      
+
+      PolygonMeshStruct mesh_struct;
+      mesh_struct.origin = origin;          
+      mesh_struct.link_name = it->first ;
+      mesh_struct.polygon_mesh = mesh_ptr;
+      simexample->polymesh_map_.insert(make_pair( it->first , mesh_struct));
+      
+      i++;
+    }
+  }
+  
+  //////////////////////////////////////////////////////////////////
+  // Get a urdf Model from the xml string and get all the joint names.
+  urdf::Model robot_model; 
+  if (!robot_model.initString( urdf_xml_string_)){
+    cerr << "ERROR: Could not generate robot model" << endl;
+  }
+  // Parse KDL tree
+  KDL::Tree tree;
+  if (!kdl_parser::treeFromString(urdf_xml_string_,tree)){
+    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
+    return;
+  }
+  fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+}
+
 
 bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
     std::map<string,double> am;
@@ -219,147 +345,28 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 }
 
 
-
-Eigen::Isometry3d URDFPoseToEigen(urdf::Pose& pose_in){
-  Eigen::Isometry3d pose_out = Eigen::Isometry3d::Identity();
-  
-  pose_out.translation()  << pose_in.position.x,
-                          pose_in.position.y,
-                          pose_in.position.z;
-  pose_out.rotate( Eigen::Quaterniond(pose_in.rotation.w, 
-                                    pose_in.rotation.x,
-                                    pose_in.rotation.y,
-                                    pose_in.rotation.z) );   
-  return pose_out;
-}
-
-
-void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
-  if(urdf_parsed_ ==false){
-    cout<< "URDF handler"<< endl;
-    // Received robot urdf string. Store it internally and get all available joints.
-    robot_name_      = msg->robot_name;
-    urdf_xml_string_ = msg->urdf_xml_string;
-    cout<< "Received urdf_xml_string of robot [" << msg->robot_name << "], storing it internally as a param" << endl;
-    gl_robot_ = shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(urdf_xml_string_));
-    cout<< "Number of Joints: " << gl_robot_->get_num_joints() <<endl;
-    links_map_ = gl_robot_->get_links_map();
-    cout<< "Size of Links Map: " << links_map_.size() <<endl;
-    
-    typedef map<string, shared_ptr<urdf::Link> > links_mapType;
-    
-    int i =0;
-    for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
-      cout << it->first << endl;
-      if(it->second->visual){
-        std::cout << it->first<< " link" << it->second->visual->geometry->type << " type\n"; // visual type
-          
-        Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();
-        pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
-        
-        // For each visual element within the link geometry:
-        typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
-        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
-        for (size_t iv = 0;iv < v_grp_it->second->size();iv++){  // 
-          vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
-          shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
-          Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
-          
-          if  (geom->type == urdf::Geometry::MESH){
-            shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
-            // TODO: Verify the existance of the file:
-            std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
-
-            // Read the Mesh, transform by the visual component origin:
-            pcl::PolygonMesh::Ptr this_mesh = getPolygonMesh(file_path);
-            pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
-            pcl::fromROSMsg(this_mesh->cloud, mesh_cloud_1st);
-            Eigen::Isometry3f visual_origin_f= visual_origin.cast<float>();
-            Eigen::Quaternionf visual_origin_quat(visual_origin_f.rotation());
-            pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, visual_origin_f.translation(), visual_origin_quat);  
-            pcl::toROSMsg (mesh_cloud_1st, this_mesh->cloud);  
-            simexample->mergePolygonMesh(mesh_ptr, this_mesh );
-            
-          }else if(geom->type == urdf::Geometry::BOX){
-            shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
-            simexample->mergePolygonMesh(mesh_ptr, 
-                                        prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
-          }else if(geom->type == urdf::Geometry::CYLINDER){
-            shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
-            simexample->mergePolygonMesh(mesh_ptr, 
-                                        prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
-          }else if(geom->type == urdf::Geometry::SPHERE){
-            shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
-            simexample->mergePolygonMesh(mesh_ptr, 
-                                        prim_->getSphereWithTransform(visual_origin, sphere->radius) );
-          }else{
-            std::cout << "Pass::urdfHandler() Unrecognised urdf object\n";
-            exit(-1);
-          }
-        }
-
-        // Apply Some Coloring:
-        if(output_color_mode_==0){ // Set the mesh to a false color:
-          int j =i%(simexample->colors_.size()/3);
-          simexample->setPolygonMeshColor(mesh_ptr, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
-        }else if(output_color_mode_==1){ // set link mesh in link range
-          simexample->setPolygonMeshColor(mesh_ptr, LINK_OFFSET + (int) i, 0, 0 );
-        }else{ // black or white
-          simexample->setPolygonMeshColor(mesh_ptr, 255,0,0 ); // last two are not used
-        }          
-        
-
-        PolygonMeshStruct mesh_struct;
-        mesh_struct.origin = origin;          
-        mesh_struct.link_name = it->first ;
-        mesh_struct.polygon_mesh = mesh_ptr;
-        simexample->polymesh_map_.insert(make_pair( it->first , mesh_struct));
-        
-        i++;
-      }
-    }
-    
-    //////////////////////////////////////////////////////////////////
-    // Get a urdf Model from the xml string and get all the joint names.
-    urdf::Model robot_model; 
-    if (!robot_model.initString( msg->urdf_xml_string)){
-      cerr << "ERROR: Could not generate robot model" << endl;
-    }
-
-    // Parse KDL tree
-    KDL::Tree tree;
-    if (!kdl_parser::treeFromString(urdf_xml_string_,tree))
-    {
-      cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
-      return;
-    }
-
-    fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
-
-    //unsubscribe from urdf messages
-    lcm_->unsubscribe(urdf_subscription_); 
-    urdf_parsed_ = true;
-  }
-}
-
-
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  if (!urdf_parsed_){      return;    }
-  if(urdf_subscription_on_){
-    cout << "robotStateHandler: unsubscribing from urdf" << endl;
-    lcm_->unsubscribe(urdf_subscription_); //unsubscribe from urdf messages
-    urdf_subscription_on_ =  false;   
-  }  
+  if (!update_robot_state_){
+    // TODO: unsubscribe and resubscribe is better than this...
+    std::cout << "skipping robot state update\n";
+    return;
+  }
   
-  last_rstate_= *msg;  
-  init_rstate_=true; // both urdf parsed and robot state handled... ready to handle data
+  // Extract World to Body TF:  
+  world_to_body_.setIdentity();
+  world_to_body_.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+                                               msg->pose.rotation.y, msg->pose.rotation.z);
+  world_to_body_.rotate(quat);   
+
+  jointpos_.clear();
+  for (int i=0; i< msg->num_joints; i++) //cast to uint to suppress compiler warning
+    jointpos_.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));  
+  
+  init_rstate_=true; // first robot state handled... ready to handle data
 }  
   
 bool Pass::createMask(int64_t msg_time){
-  if (!urdf_parsed_){
-    std::cout << "URDF not parsed, ignoring image\n";
-    return false;
-  }
   if (!init_rstate_){
     std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
     return false;
@@ -370,25 +377,13 @@ bool Pass::createMask(int64_t msg_time){
     tic_toc.push_back(_timestamp_now());
   #endif
   
-  // 0. Extract World to Body TF:  
-  Eigen::Isometry3d world_to_body;
-  world_to_body.setIdentity();
-  world_to_body.translation()  << last_rstate_.pose.translation.x, last_rstate_.pose.translation.y, last_rstate_.pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(last_rstate_.pose.rotation.w, last_rstate_.pose.rotation.x, 
-                                               last_rstate_.pose.rotation.y, last_rstate_.pose.rotation.z);
-  world_to_body.rotate(quat);    
 
   // 1. Determine the Camera in World Frame:
   // 1a. Solve for Forward Kinematics
   // TODO: use gl_robot routine instead of replicating this here:
-  map<string, double> jointpos_in;
-  for (uint i=0; i< (uint) last_rstate_.num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(last_rstate_.joint_name[i], last_rstate_.joint_position[i]));
-
-  // Calculate forward position kinematics
   map<string, drc::transform_t > cartpos_out;
   bool flatten_tree=true;
-  bool kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
+  bool kinematics_status = fksolver_->JntToCart(jointpos_,cartpos_out,flatten_tree);
   if(kinematics_status>=0){
     // cout << "Success!" <<endl;
   }else{
@@ -407,11 +402,11 @@ bool Pass::createMask(int64_t msg_time){
     Eigen::Quaterniond quat = Eigen::Quaterniond( transform_it->second.rotation.w, transform_it->second.rotation.x,
                               transform_it->second.rotation.y, transform_it->second.rotation.z );
     body_to_camera.rotate(quat);    
-    world_to_camera = world_to_body*body_to_camera;
+    world_to_camera = world_to_body_*body_to_camera;
   }
   
   // 2. Determine all Body-to-Link transforms for Visual elements:
-  gl_robot_->set_state( last_rstate_);
+  gl_robot_->set_state( EigenToKDL(world_to_body_), jointpos_);
   std::vector<visualization_utils::LinkFrameStruct> link_tfs= gl_robot_->get_link_tfs();
   
   
@@ -489,9 +484,10 @@ bool Pass::createMask(int64_t msg_time){
     tic_toc.push_back(_timestamp_now());
   #endif
   
-  // Pull the trigger and render scene:
-  simexample->createScene(link_names, link_tfs_e);
-  
+  simexample->resetScene();
+  if(renderer_robot_){ // Pull the trigger and render scene:
+    simexample->createScene(link_names, link_tfs_e);
+  }
   if(aff_mesh_filled_){
     simexample->mergePolygonMeshToCombinedMesh( combined_aff_mesh_);
   }
@@ -549,13 +545,24 @@ void Pass::sendOutput(int64_t utime){
 // Blend the simulated output with the input image:
 void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){ 
 
-  float blend =0.7;
-  uint8_t* mask_buf = simexample->getColorBuffer(1);
-  
-  for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
-    img_buf[i*3] = int( blend*img_buf[i*3] + (1.0-blend)*mask_buf[i] );
-    img_buf[i*3+1] =int( blend*img_buf[i*3+1] + (1.0-blend)*mask_buf[i] );
-    img_buf[i*3+2] =int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i] );
+  float blend = 0.7;
+  if (1==0){
+    uint8_t* mask_buf = simexample->getColorBuffer(1);
+    for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
+      img_buf[i*3] = int( blend*img_buf[i*3] + (1.0-blend)*mask_buf[i] );
+      img_buf[i*3+1] =int( blend*img_buf[i*3+1] + (1.0-blend)*mask_buf[i] );
+      img_buf[i*3+2] =int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i] );
+    }
+  }else{
+    
+    
+    
+    uint8_t* mask_buf = simexample->getColorBuffer(3);
+    for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
+      img_buf[i*3]   = int( blend*img_buf[i*3]   + (1.0-blend)*mask_buf[i*3]   );
+      img_buf[i*3+1] = int( blend*img_buf[i*3+1] + (1.0-blend)*mask_buf[i*3+1] );
+      img_buf[i*3+2] = int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i*3+2] );
+    }    
   }
   
   

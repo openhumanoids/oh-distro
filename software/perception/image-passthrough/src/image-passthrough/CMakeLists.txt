@@ -31,8 +31,8 @@ pods_install_pkg_config_file(image-passthrough
 add_library(image-passthrough-app  SHARED image-passthrough-app.cpp)
 pods_use_pkg_config_packages(image-passthrough-app ${PCL_LIBRARIES}
   ${PKG_CONFIG_DEPS}  opencv collision_object_gfe visualization-utils
-  lcmtypes_bot2-core pointcloud_vis image-passthrough bot2-param-client
-  image_io_utils   rgbd_primitives  affordance-utils camera_params
+  lcmtypes_bot2-core pointcloud_vis image-passthrough bot2-param-client model-client
+  image_io_utils   rgbd_primitives  affordance-utils camera_params 
   eigen3)
 target_link_libraries (image-passthrough-app boost_system 
            ${REQUIRED_LIBS})
@@ -44,6 +44,7 @@ pods_install_pkg_config_file(image-passthrough-app
   VERSION 0.0.1)
 
 
+###################### Applications ####################3
 add_executable(drc-image-passthrough image-passthrough-main.cpp)
 target_link_libraries(drc-image-passthrough boost_system   
            image_io_utils camera_params
@@ -51,3 +52,13 @@ target_link_libraries(drc-image-passthrough boost_system
 pods_use_pkg_config_packages(drc-image-passthrough  bot2-param-client
        image-passthrough-app lcm)
 pods_install_executables(drc-image-passthrough)
+
+
+add_executable(drc-image-passthrough-ncurses image-passthrough-ncurses.cpp)
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
+target_link_libraries(drc-image-passthrough-ncurses boost_system   
+           image_io_utils camera_params model-client pointcloud_math ncurses
+           ${REQUIRED_LIBS})
+pods_use_pkg_config_packages(drc-image-passthrough-ncurses  bot2-param-client
+       image-passthrough-app lcm ${REQUIRED_PACKAGES} pcl_io-1.6)
+pods_install_executables(drc-image-passthrough-ncurses)

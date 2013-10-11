@@ -14,6 +14,7 @@
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <camera_params/camera_params.hpp>     // Camera Parameters
+#include <model-client/model-client.hpp> // Receive the robot model
 
 #include <path_util/path_util.h>
 #include <affordance/AffordanceUtils.hpp>
@@ -64,15 +65,37 @@ class Pass{
       return simexample->getColorBuffer();
     }    
     
+    void setUpdateRobotState(bool update_robot_state_in){
+      update_robot_state_ = update_robot_state_in; 
+    };
+    void setRobotState(Eigen::Isometry3d & world_to_body_in, map<string, double> & jointpos_in){
+      world_to_body_ = world_to_body_in;
+      jointpos_ = jointpos_in;
+      init_rstate_ = true;
+    }
+    void setAffordanceMesh(pcl::PolygonMesh::Ptr &aff_mesh_in){ 
+      combined_aff_mesh_ = aff_mesh_in;
+      aff_mesh_filled_ = true;
+    }
+    void setRendererRobot(bool renderer_robot_in){
+      renderer_robot_ = renderer_robot_in;
+    }
+    
+    
   private:
+    boost::shared_ptr<ModelClient> model_;
+    
+    // settings:
+    bool update_robot_state_; // update the robot state using EST_ROBOT_STATE continously?
+    bool verbose_;
+    int output_color_mode_;
+    bool use_convex_hulls_;
+    bool renderer_robot_;
+    
     // LCM:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
-    bool urdf_parsed_;
-    bool urdf_subscription_on_;
-    lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
     
     // External Objects:
     BotParam* botparam_;
@@ -88,21 +111,23 @@ class Pass{
     std::string camera_channel_, camera_frame_; // what channel and what frame
     
     // State:
-    pcl::PolygonMesh::Ptr combined_aff_mesh_ ;
-    bool aff_mesh_filled_;
-    drc::robot_state_t last_rstate_; // Last robot state: this is used to extract link positions:
-    bool init_rstate_;    
+    std::string urdf_xml_string_; 
+    bool init_rstate_; // have we received a robot state?    
+    Eigen::Isometry3d world_to_body_; // Current Position of the Robot:
+    map<string, double> jointpos_;
+    
+    
     std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-    std::string robot_name_;
-    std::string urdf_xml_string_; 
-    
-    // Settings:
-    bool verbose_;
-    int output_color_mode_;
-    bool use_convex_hulls_;
+    pcl::PolygonMesh::Ptr combined_aff_mesh_ ;
+    bool aff_mesh_filled_;
     
     AffordanceUtils affutils;
+    
+    void prepareModel();
+    
     bool affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
+    
+    
 };
 

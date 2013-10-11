@@ -295,6 +295,17 @@ int64_t _timestamp_now(){
 
 
 void
+SimExample::resetScene (){
+  scene_->clear();
+  //pcl::PolygonMesh combined_mesh;
+  //pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh(combined_mesh));
+  
+  pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh());
+  combined_mesh_ptr_ = combined_mesh_ptr_temp;  
+}
+
+
+void
 SimExample::createScene (std::vector<std::string> object_names, 
                          std::vector<Eigen::Isometry3d> object_tfs){
   #if DO_TIMING_PROFILE
@@ -302,15 +313,12 @@ SimExample::createScene (std::vector<std::string> object_names,
     tic_toc.push_back(_timestamp_now());
   #endif
 
-  scene_->clear();
+
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
     
-  pcl::PolygonMesh combined_mesh;
-  pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh(combined_mesh));
-  combined_mesh_ptr_ = combined_mesh_ptr_temp;
   for (size_t i=0; i < object_names.size() ; i++ ) { 
     // skip the head and hokuyo_link (which cannot be seen and are large meshes
     if ( object_names[i].compare("head") == 0){ 
