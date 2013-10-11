@@ -394,6 +394,8 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->affCollection->_objects.find(instance_name);
     self->motion_trail_log_enabled =true;
+    if(!it->second._gl_object->is_future_state_changing()) 
+       it->second._gl_object->set_future_state_changing(true); 
     
     KDL::Frame T_world_object = it->second._gl_object->_T_world_body_future;
     double current_roll,current_pitch, current_yaw;
@@ -415,7 +417,7 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
     for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
     {     
-      double current_dof_position = 0;// TODO: dof pos tracking
+      double current_dof_position = it->second._gl_object->_future_jointpos.find(joint->first)->second;
       if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
         if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
           bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
