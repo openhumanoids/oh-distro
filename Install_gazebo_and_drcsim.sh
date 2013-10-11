@@ -23,7 +23,8 @@ build_sandia_hand()
   echo "Installing sandia-hand from src ===================="
 
   source /opt/ros/fuerte/setup.bash
-  export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$drc_dir/ros_workspace:/usr/share/osrf-common-1.0/ros
+  export ROS_PACKAGE_PATH=$drc_dir/ros_workspace:$ROS_PACKAGE_PATH
+  rosmake osrf_msgs --pre-clean
   rosmake sandia_hand_driver --pre-clean
 
   cd $drc_dir/ros_workspace/sandia-hand

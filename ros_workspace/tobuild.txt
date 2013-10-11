@@ -1,3 +1,4 @@
+osrf_msgs
 atlas_gazebo_msgs
 translators
 keyboard_teleop
