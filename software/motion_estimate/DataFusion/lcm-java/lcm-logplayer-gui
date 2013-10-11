@@ -1,0 +1,2 @@
+#!/bin/sh
+exec java -server -Xincgc -Xmx64m -Xms32m -ea -cp /usr/local/share/java/lcm.jar lcm.logging.LogPlayer $*
