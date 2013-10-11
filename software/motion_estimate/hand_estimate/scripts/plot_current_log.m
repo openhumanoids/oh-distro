@@ -5,7 +5,7 @@
 
 % issue: currents are at finger level
 
-give commanded joint angles
+% give commanded joint angles
 
 
 

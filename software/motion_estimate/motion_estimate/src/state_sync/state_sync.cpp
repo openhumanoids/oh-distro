@@ -11,36 +11,53 @@ using namespace std;
 
 /////////////////////////////////////
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, bool standalone_head_, 
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
+                       bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
                        bool use_transmission_joint_sensors_):
-   lcm_(lcm_), standalone_head_(standalone_head_),
-   is_sandia_left_(false),is_sandia_right_(false),	
+   lcm_(lcm_), 
+   standalone_head_(standalone_head_), standalone_hand_(standalone_hand_),
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_),
    use_transmission_joint_sensors_(use_transmission_joint_sensors_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
-  lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::sandiaLeftHandler,this);  
-  lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::sandiaRightHandler,this);  
-  lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::irobotLeftHandler,this);  
-  lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::irobotRightHandler,this);  
+  lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::leftHandHandler,this);  
+  lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
+  lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::rightHandHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::rightHandHandler,this);  
   lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
 
   lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
-  lcm_->subscribe("ATLAS_OFFSETS",&state_sync::offsetHandler,this);  
+  lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
   
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
   
-  manual_joint_offsets_.assign(28,0.0);
+  pot_joint_offsets_.assign(28,0.0);
+
+  // If applying
+  encoder_joint_offsets_.assign(28,0.0);
+  encoder_joint_offsets_[22] =   0.008;
+  encoder_joint_offsets_[23] = 0.005;
+  encoder_joint_offsets_[24] = 3.1152;// -3.168 + 2*M_PI;
+  encoder_joint_offsets_[25] = -0.011;
+  encoder_joint_offsets_[26] = -1.085;
+  encoder_joint_offsets_[27] = 0.151;
+  
+  // shy    1.1
+  // shx    3.3
+  // ely   -1.0
+  // elx    0.8
+  // uwy    0.9
+  // mwx    9.6  
 }
 
 
-void state_sync::offsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  std::cout << "got offsetHandler\n";
-  manual_joint_offsets_ = msg->joint_position;
+void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
+  std::cout << "got potOffsetHandler\n";
+  pot_joint_offsets_ = msg->joint_position;
   
-  for (size_t i=0; i < manual_joint_offsets_.size(); i++){
-    std::cout << manual_joint_offsets_[i] << ", ";
+  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
+    std::cout << pot_joint_offsets_[i] << ", ";
   }
   std::cout << "\n";
 }
@@ -60,39 +77,32 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
 }
 
-void state_sync::sandiaLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
-  is_sandia_left_ = true;
-  //std::cout << "got sandiaLeftHandler\n";
-  sandia_left_joints_.name = msg->joint_name;
-  sandia_left_joints_.position = msg->joint_position;
-  sandia_left_joints_.velocity = msg->joint_velocity;
-  sandia_left_joints_.effort = msg->joint_effort;
+void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  //std::cout << "got "<< channel <<"\n";
+  left_hand_joints_.name = msg->joint_name;
+  left_hand_joints_.position = msg->joint_position;
+  left_hand_joints_.velocity = msg->joint_velocity;
+  left_hand_joints_.effort = msg->joint_effort;
+  
+  if (standalone_hand_){ // assumes only one hand is actively publishing state
+    drc::force_torque_t force_torque_msg;
+    publishRobotState(msg->utime, force_torque_msg);
+  }  
 }
 
-void state_sync::sandiaRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
-  is_sandia_right_ = true;
-  //std::cout << "got sandiaRightHandler\n";
-  sandia_right_joints_.name = msg->joint_name;
-  sandia_right_joints_.position = msg->joint_position;
-  sandia_right_joints_.velocity = msg->joint_velocity;
-  sandia_right_joints_.effort = msg->joint_effort;
+void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  //std::cout << "got "<< channel <<"\n";
+  right_hand_joints_.name = msg->joint_name;
+  right_hand_joints_.position = msg->joint_position;
+  right_hand_joints_.velocity = msg->joint_velocity;
+  right_hand_joints_.effort = msg->joint_effort;
+  
+  if (standalone_hand_){ // assumes only one hand is actively publishing state
+    drc::force_torque_t force_torque_msg;
+    publishRobotState(msg->utime, force_torque_msg);
+  }    
 }
 
-void state_sync::irobotLeftHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
-  //std::cout << "got sandiaLeftHandler\n";
-  irobot_left_joints_.name = msg->joint_name;
-  irobot_left_joints_.position = msg->joint_position;
-  irobot_left_joints_.velocity = msg->joint_velocity;
-  irobot_left_joints_.effort = msg->joint_effort;
-}
-
-void state_sync::irobotRightHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
-  //std::cout << "got sandiaRightHandler\n";
-  irobot_right_joints_.name = msg->joint_name;
-  irobot_right_joints_.position = msg->joint_position;
-  irobot_right_joints_.velocity = msg->joint_velocity;
-  irobot_right_joints_.effort = msg->joint_effort;
-}
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   //std::cout << "got atlasHandler\n";
@@ -100,14 +110,14 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   
   std::vector <float> mod_positions;
   mod_positions.assign(28,0.0);
-  for (size_t i=0; i < manual_joint_offsets_.size(); i++){
-    mod_positions[i] = msg->joint_position[i] + manual_joint_offsets_[i]; 
-    ///std::cout << manual_joint_offsets_[i] << ", ";
+  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
+    mod_positions[i] = msg->joint_position[i] + pot_joint_offsets_[i]; 
+    ///std::cout << pot_joint_offsets_[i] << ", ";
   }  
-  
   atlas_joints_.position = mod_positions;
   atlas_joints_.velocity = msg->joint_velocity;
   atlas_joints_.effort = msg->joint_effort;
+  
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
@@ -116,8 +126,8 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
       if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
         // TOOD: determine the joint range of interest:
-        for (int i=16; i < atlas_joints_out_.position.size() ; i++ ) {
-          atlas_joints_.position[i] = atlas_joints_out_.position[i];
+        for (int i=22; i < atlas_joints_out_.position.size() ; i++ ) { // apply the right arm only
+          atlas_joints_.position[i] = atlas_joints_out_.position[i] + encoder_joint_offsets_[i];
           atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
         }
       }
@@ -195,15 +205,8 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   appendJoints(robot_state_msg, atlas_joints_);  
   appendJoints(robot_state_msg, head_joints_);
   
-  if(is_sandia_left_)
-    appendJoints(robot_state_msg, sandia_left_joints_);
-  else
-    appendJoints(robot_state_msg, irobot_left_joints_);
-  
-  if(is_sandia_right_)
-    appendJoints(robot_state_msg, sandia_right_joints_);
-  else
-    appendJoints(robot_state_msg, irobot_right_joints_);  
+  appendJoints(robot_state_msg, left_hand_joints_);
+  appendJoints(robot_state_msg, right_hand_joints_);
 
   //std::cout << robot_state_msg.joint_name.size() << " Number of Joints\n";
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
@@ -219,7 +222,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
     if ( insertPoseBDI(robot_state_msg) ){
       lcm_->publish("EST_ROBOT_STATE", &robot_state_msg); 
     }
-  }else if(standalone_head_){
+  }else if(standalone_head_ || standalone_hand_ ){
     lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);
   }
 }
@@ -238,11 +241,13 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
 int
 main(int argc, char ** argv){
   bool standalone_head = false;
+  bool standalone_hand = false;
   bool bdi_motion_estimate = false;
   bool simulation_mode = false;
   bool use_transmission_joint_sensors = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
+  opt.add(standalone_hand, "f", "standalone_hand","Standalone Hand");
   opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
   opt.add(simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.add(use_transmission_joint_sensors, "t", "transmission","Use the transmission joint sensors (in the arms)");
@@ -255,7 +260,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  state_sync app(lcm, standalone_head,bdi_motion_estimate, 
+  state_sync app(lcm, standalone_head,standalone_hand,bdi_motion_estimate, 
                  simulation_mode, use_transmission_joint_sensors);
   while(0 == lcm->handle());
   return 0;

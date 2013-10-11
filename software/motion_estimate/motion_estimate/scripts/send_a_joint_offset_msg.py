@@ -29,13 +29,26 @@ msg.joint_effort = [0]*msg.num_joints
 ft_msg = force_torque_t()
 msg.force_torque = ft_msg
 
+# Neck Angle Offset Function:
+# at          add
+# 0.36512     0.012
+# 0.53969     0.012
+# 0.71423     0.012
+# 0.88868     0.006
+# 1.06337     0.000
+# 1.15035     -0.0075
 
-j_body = [0, 0, 0, 0]
+j_body = [0, 0, 0, 0.0]
 j_l_leg = [0, 0, 0, 0, 0, 0]
 j_r_leg = [0, 0, 0, 0, 0, 0]
-
 j_l_arm = [0, 0, 0, 0, 0, 0]
-j_r_arm = [-0.005, 0.09, 0.00, -0.02, 0, 0]
+j_r_arm = [0, 0, 0, 0, 0, 0]
+
+#j_body = [0, 0, 0, 0]
+#j_l_leg = [0, 0, 0, 0, 0, 0]
+#j_r_leg = [0, 0, 0, 0, 0, 0]
+#j_l_arm = [0, 0, 0, 0, 0, 0]
+#j_r_arm = [-0.005, 0.09, 0.00, -0.02, 0, 0]
 #s + backwards rotation
 #s + downward (lift axis)
 #uarm + thumb inwards rotate
@@ -63,5 +76,5 @@ print msg.joint_position
 lc = lcm.LCM()
 
 msg.utime = msg.utime +1
-lc.publish("ATLAS_OFFSETS", msg.encode())
-print "ATLAS_OFFSET sent"
+lc.publish("ATLAS_POT_OFFSETS", msg.encode())
+print "ATLAS_POT_OFFSETS sent"
