@@ -1,0 +1,10 @@
+package drc;
+
+// Navigation State
+struct nav_state_t
+{
+  int64_t utime;
+  position_3d_t pose;
+  twist_t twist;
+  vector_3d_t local_linear_acceleration;
+}
