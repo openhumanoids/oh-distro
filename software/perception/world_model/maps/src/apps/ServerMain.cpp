@@ -12,7 +12,6 @@
 #include <lcmtypes/drc/map_params_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
-#include <lcmtypes/drc/twist_timed_t.hpp>
 #include <lcmtypes/multisense/images_t.hpp>
 
 #include <maps/MapManager.hpp>

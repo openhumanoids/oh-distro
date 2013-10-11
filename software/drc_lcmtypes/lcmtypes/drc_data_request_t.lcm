@@ -27,5 +27,7 @@ struct data_request_t {
   const int8_t STEREO_MAP_HEAD        = 30;
   const int8_t STEREO_MAP_LHAND       = 31;
   const int8_t STEREO_MAP_RHAND       = 32;
-  const int8_t TERRAIN_COST           = 40;
+  const int8_t DENSE_CLOUD_LHAND      = 40;
+  const int8_t DENSE_CLOUD_RHAND      = 41;
+  const int8_t TERRAIN_COST           = 90;
 }

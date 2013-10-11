@@ -947,6 +947,14 @@ public:
         data->mLabel = "Dense Cloud Box";
         data->mColor = Eigen::Vector3f(1,0,1);
         break;
+      case drc::data_request_t::DENSE_CLOUD_LHAND:
+        data->mLabel = "Dense Cloud L.Hand";
+        data->mColor = Eigen::Vector3f(1.0,0.5,0.3);
+        break;
+      case drc::data_request_t::DENSE_CLOUD_RHAND:
+        data->mLabel = "Dense Cloud R.Hand";
+        data->mColor = Eigen::Vector3f(1.0,0.5,0.3);
+        break;
       case 1000:
         data->mLabel = "Heightmap Controller";
         data->mColor = Eigen::Vector3f(0.5,0,0);

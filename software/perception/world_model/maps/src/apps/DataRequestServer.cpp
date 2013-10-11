@@ -14,8 +14,9 @@
 
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/BotWrapper.hpp>
+#include <drc_utils/RobotState.hpp>
 #include <affordance/AffordanceUpWrapper.h>
-#include <maps/BotWrapper.hpp>
 
 using namespace std;
 
@@ -25,7 +26,8 @@ struct Worker {
   bool mActive;
   drc::data_request_t mRequest;
   std::shared_ptr<lcm::LCM> mLcm;
-  std::shared_ptr<maps::BotWrapper> mBotWrapper;
+  std::shared_ptr<drc::BotWrapper> mBotWrapper;
+  std::shared_ptr<drc::RobotState> mRobotState;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
   std::thread mThread;
 
@@ -55,44 +57,35 @@ struct Worker {
       case drc::data_request_t::CAMERA_IMAGE_RHAND:
       case drc::data_request_t::CAMERA_IMAGE_LCHEST:
       case drc::data_request_t::CAMERA_IMAGE_RCHEST:
-        sendCameraImageRequest();
-        break;
+        sendCameraImageRequest(); break;
       case drc::data_request_t::MINIMAL_ROBOT_STATE:
-        sendMinimalRobotStateRequest();
-        break;
+        sendMinimalRobotStateRequest(); break;
       case drc::data_request_t::AFFORDANCE_LIST:
-        sendAffordanceListRequest();
-        break;
+        sendAffordanceListRequest(); break;
       case drc::data_request_t::MAP_CATALOG:
-        sendMapViewCatalogRequest();
-        break;
+        sendMapViewCatalogRequest(); break;
       case drc::data_request_t::OCTREE_SCENE:
-        sendOctreeSceneRequest();
-        break;
+        sendOctreeSceneRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_SCENE:
-        sendHeightMapSceneRequest();
-        break;
+        sendHeightMapSceneRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
-        sendHeightMapCorridorRequest();
-        break;
+        sendHeightMapCorridorRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_COARSE:
-        sendHeightMapCoarseRequest();
-        break;
+        sendHeightMapCoarseRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_DENSE:
-        sendHeightMapDenseRequest();
-        break;
+        sendHeightMapDenseRequest(); break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
-        sendDepthMapSceneRequest();
-        break;
+        sendDepthMapSceneRequest(); break;
       case drc::data_request_t::DEPTH_MAP_WORKSPACE:
-        sendDepthMapWorkspaceRequest();
-        break;
+        sendDepthMapWorkspaceRequest(); break;
+      case drc::data_request_t::DENSE_CLOUD_LHAND:
+        sendDenseCloudLeftHandRequest(); break;
+      case drc::data_request_t::DENSE_CLOUD_RHAND:
+        sendDenseCloudRightHandRequest(); break;
       case drc::data_request_t::TERRAIN_COST:
-        sendTerrainCostRequest();
-        break;
+        sendTerrainCostRequest(); break;
       default:
-        cout << "Unknown request type" << endl;
-        break;
+        cout << "Unknown request type" << endl; break;
       }
 
       // see if this is just a one-shot request
@@ -236,6 +229,58 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
+  void sendDenseCloudLeftHandRequest() {
+    Eigen::Vector3f handPos(0,0,0);
+    Eigen::Quaternionf dummy;
+    if (!mRobotState->getPose("l_hand", dummy, handPos)) return;
+    drc::map_request_t msg = getDenseCloudBoxRequest(handPos, 0.25, 10);
+    msg.map_id = 2;
+    msg.view_id = drc::data_request_t::DENSE_CLOUD_LHAND;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendDenseCloudRightHandRequest() {
+    Eigen::Vector3f handPos(0,0,0);
+    Eigen::Quaternionf dummy;
+    std::cout << "ABOUT TO TRY RIGHT HAND POS" << std::endl;
+    if (!mRobotState->getPose("r_hand", dummy, handPos)) return;
+    std::cout << "RIGHT HAND POS " << handPos.transpose() << std::endl;
+    drc::map_request_t msg = getDenseCloudBoxRequest(handPos, 0.25, 10);
+    msg.map_id = 2;
+    msg.view_id = drc::data_request_t::DENSE_CLOUD_RHAND;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  drc::map_request_t getDenseCloudBoxRequest(const Eigen::Vector3f& iPos,
+                                             const float iSize,
+                                             const float iTimeWindow) {
+    Eigen::Vector3f boxMin = iPos-Eigen::Vector3f(1,1,1)*iSize;
+    Eigen::Vector3f boxMax = iPos+Eigen::Vector3f(1,1,1)*iSize;
+    drc::map_request_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.map_id = 1;
+    msg.view_id = 1;
+    msg.type = drc::map_request_t::POINT_CLOUD;
+    msg.resolution = 0.01;
+    msg.frequency = 0;
+    msg.quantization_max = 0.01;
+    msg.time_min = -iTimeWindow*1e6;
+    msg.time_max = 0;
+    msg.relative_time = true;
+    msg.relative_location = false;
+    msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, -boxMin[0]}));
+    msg.clip_planes.push_back(std::vector<float>({-1, 0, 0,  boxMax[0]}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, -boxMin[1]}));
+    msg.clip_planes.push_back(std::vector<float>({ 0,-1, 0,  boxMax[1]}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 0, 1, -boxMin[2]}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 0,-1,  boxMax[2]}));
+    msg.num_clip_planes = msg.clip_planes.size();
+    msg.active = true;
+    msg.width = msg.height = 0;
+    setTransform(Eigen::Projective3f::Identity(), msg);
+    return msg;
+  }
+
   void sendTerrainCostRequest() {
     drc::shaper_data_request_t msg;
     msg.channel = "TERRAIN_DIST_MAP";
@@ -333,14 +378,16 @@ struct Worker {
 
 struct State {
   std::shared_ptr<lcm::LCM> mLcm; 
-  std::shared_ptr<maps::BotWrapper> mBotWrapper;
+  std::shared_ptr<drc::BotWrapper> mBotWrapper;
+  std::shared_ptr<drc::RobotState> mRobotState;
   typedef std::unordered_map<int,Worker::Ptr> WorkerMap;
   WorkerMap mWorkers;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
 
   State() {
     mLcm.reset(new lcm::LCM());
-    mBotWrapper.reset(new maps::BotWrapper(mLcm));
+    mBotWrapper.reset(new drc::BotWrapper(mLcm));
+    mRobotState.reset(new drc::RobotState(mLcm));
     drc::Clock::instance()->setLcm(mLcm->getUnderlyingLCM());
     drc::Clock::instance()->setVerbose(false);
 
@@ -364,6 +411,7 @@ struct State {
         worker->mActive = false;
         worker->mLcm = mLcm;
         worker->mBotWrapper = mBotWrapper;
+        worker->mRobotState = mRobotState;
         worker->mAffordanceWrapper = mAffordanceWrapper;
         mWorkers[req.type] = worker;
         item = mWorkers.find(req.type);

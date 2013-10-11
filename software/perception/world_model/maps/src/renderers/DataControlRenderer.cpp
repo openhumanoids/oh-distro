@@ -288,6 +288,12 @@ public:
     //           "TERRAIN_DIST_MAP", ChannelTypeAnonymous);
     //addControl(drc::data_request_t::HEIGHT_MAP_DENSE, "*DENSE HEIGHT!!*",
     //           "MAP_DEPTH", ChannelTypeDepthImage);
+
+    addControl(drc::data_request_t::DENSE_CLOUD_LHAND, "Dense Box L.Hand",
+               "MAP_CLOUD", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::DENSE_CLOUD_RHAND, "Dense Box R.Hand",
+               "MAP_CLOUD", ChannelTypeDepthImage);
+
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
