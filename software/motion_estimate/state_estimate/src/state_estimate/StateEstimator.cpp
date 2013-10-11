@@ -94,7 +94,7 @@ void StateEstimate::StateEstimator::run()
 
     // wait for at least one new atlas_state message
 	  // TODO -- Pat please make this pass on any event
-    this->mAtlasStateQueue.waitWhileEmpty();
+    //this->mAtlasStateQueue.waitWhileEmpty();
 
 
     int nAtlasStates = mAtlasStateQueue.size();
