@@ -48,7 +48,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
 
   std::string cfg_path = std::string(getConfigPath()) +"/subsystems/sandia_hands/";
   string path_img, path_cfg;
-  string filename = "sandia_hand_r";
+  string filename = is_left ? "sandia_hand_l" : "sandia_hand_r";
   path_img = cfg_path + filename + ".jpg";
   path_cfg = cfg_path + filename + ".cfg";
   
@@ -63,8 +63,6 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
 }
 
 void App::readCfg(const std::string& path_cfg){
-  //649 1194         # hand origin on img
-  //8.17647058824    # 556/68 px over real metric
   int hand_orig_x, hand_orig_y;
   float pixel_over_real;
   string garbage;
