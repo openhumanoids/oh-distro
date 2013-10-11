@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  annotated_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+//  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
 
