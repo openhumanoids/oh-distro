@@ -65,13 +65,15 @@ App::App(ros::NodeHandle node_) :it_(node_), node_(node_){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  // Mono-Cameras:
-  left_image_sub_ = it_.subscribe("/multisense_sl/camera/left/image_rect_color", 1, &App::left_image_cb,this);
-  //left_image_sub_ = node_.subscribe( "/multisense_sl/camera/left/image_raw", 10, &App::left_image_cb,this);
- 
-  l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/camera/left/image_raw", 1, &App::l_hand_l_image_cb,this);
-  r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/camera/left/image_raw", 1, &App::r_hand_l_image_cb,this);
   
+  // Simulation - disabled:
+  left_image_sub_ = it_.subscribe("/multisense_sl/camera/left/image_rect_color", 1, &App::left_image_cb,this);
+  // l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/camera/left/image_raw", 1, &App::l_hand_l_image_cb,this);
+  // r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/camera/left/image_raw", 1, &App::r_hand_l_image_cb,this);
+  
+  // Real Cameras:  
+  l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/left/image_raw", 1, &App::l_hand_l_image_cb,this);
+  r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/left/image_raw", 1, &App::r_hand_l_image_cb,this);
   
     
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
