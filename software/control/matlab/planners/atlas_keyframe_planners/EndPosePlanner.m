@@ -27,7 +27,7 @@ classdef EndPosePlanner < KeyframePlanner
             % of a keyframe plan by resolving at time T.
             obj.plan_cache.isEndPose = true;
             obj.hand_gaze_tol = pi/18;
-            obj.head_gaze_tol = pi/6;
+            obj.head_gaze_tol = pi/12;
         end
         %-----------------------------------------------------------------------------------------------------------------
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
