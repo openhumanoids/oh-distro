@@ -34,7 +34,8 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     RendererAffordances *self = (RendererAffordances*) renderer;
 
     glEnable(GL_DEPTH_TEST);
-
+    glDepthFunc(GL_LESS);
+    
     //-draw 
     glEnable(GL_LIGHTING);
     glEnable(GL_COLOR_MATERIAL);

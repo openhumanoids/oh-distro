@@ -189,6 +189,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
   
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   //-draw 
   //glPointSize(5.0f);

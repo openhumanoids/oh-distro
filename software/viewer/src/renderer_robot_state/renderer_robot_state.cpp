@@ -211,6 +211,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   RobotStateRendererStruc *self = (RobotStateRendererStruc*) super->user;
 
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   //-draw 
   glEnable(GL_LIGHTING);
