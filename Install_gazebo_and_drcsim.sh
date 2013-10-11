@@ -69,6 +69,8 @@ build_drcsim()
 {
   source /opt/ros/fuerte/setup.bash
   source /usr/local/share/gazebo-$GAZEBO_VERSION/setup.sh
+  export ROS_PACKAGE_PATH=$drc_dir/ros_workspace:$ROS_PACKAGE_PATH
+
 
   echo "CHECKING OUT DRCSIM ======================="
   hg clone https://bitbucket.org/osrf/drcsim $work_dir/drcsim
