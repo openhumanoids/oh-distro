@@ -203,6 +203,21 @@ group "m.control" {
     }
 }
 
+group "m.state_est" {
+    cmd "StateEstimate" {
+        exec = "state-estimate";
+        host = "robot";
+    }
+    cmd "DataFusion_MATLAB" {
+        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; receiveimu;\"";
+        host = "robot";
+    }
+    cmd "MotionSimulator_MATLAB" {
+        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; publish_IMU_data;\"";
+        host = "extra";
+    }
+}
+
 group "m.perception" {
     cmd "ms-reconfig" {
         exec = "rosrun dynamic_reconfigure reconfigure_gui";
