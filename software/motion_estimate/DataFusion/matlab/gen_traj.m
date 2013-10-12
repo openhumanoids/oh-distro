@@ -6,6 +6,8 @@ if (nargin<3)
     showplots=0;
 end
 
+d = fdesign.lowpass('Fp,Fst,Ap,Ast',3,5,0.5,40,100);
+Hd = design(d,'equiripple');
 
 dt = param.dt;
 
@@ -17,14 +19,14 @@ knobs_hori.beta = 0.8;
 knobs_hori.eta = 1E-2;
 knobs_hori.step = 1500;
 
-V_l(:,1) = basic_traj(iterations+1, knobs_hori, param.Hd);
-V_l(:,2) = basic_traj(iterations+1, knobs_hori, param.Hd);
+V_l(:,1) = basic_traj(iterations+1, knobs_hori, Hd);
+V_l(:,2) = basic_traj(iterations+1, knobs_hori, Hd);
 
 knobs_vert = knobs_hori;
 knobs_hori.beta = 0.2;
 knobs_vert.eta = 1E-3;
 
-V_l(:,3) = basic_traj(iterations+1, knobs_vert, param.Hd) + filter(param.Hd,0.015*randn(size(V_l,1),1));
+V_l(:,3) = basic_traj(iterations+1, knobs_vert, Hd) + filter(Hd,0.015*randn(size(V_l,1),1));
 
 
 P_l = cumsum(V_l*dt);
@@ -36,14 +38,14 @@ knobs_ori.eta = 1E-3;
 knobs_ori.step = 1500;
 
 
-E_interm(:,1) = basic_traj(iterations+1, knobs_ori, param.Hd);
-E_interm(:,2) = basic_traj(iterations+1, knobs_ori, param.Hd);
+E_interm(:,1) = basic_traj(iterations+1, knobs_ori, Hd);
+E_interm(:,2) = basic_traj(iterations+1, knobs_ori, Hd);
 
 knobs_ori.alpha = 0;
 knobs_ori.beta = 0.9;
 knobs_ori.eta = 5E-3;
 
-E_interm(:,3) = basic_traj(iterations+1, knobs_ori, param.Hd);
+E_interm(:,3) = basic_traj(iterations+1, knobs_ori, Hd);
 
 E = mod(E_interm + pi , 2*pi) - pi;
 
@@ -81,8 +83,8 @@ w_l((iterations+1):end,:) = [];
 w_b((iterations+1):end,:) = [];
 
 
-
-traj.T = t;
+traj.iterations = iterations;
+traj.utime = 1E6*t;
 traj.dt = dt;
 traj.parameters.gravity = param.gravity;
 traj.true.P_l = P_l;

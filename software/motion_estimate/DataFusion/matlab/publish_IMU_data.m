@@ -9,38 +9,41 @@ lc.subscribe('INS_ESTIMATE', aggregator);
 %% Prepare IMU data
 
 
-iterations = 10000;
+iterations = 5000;
 
 
-data{iterations} = [];
+param.gravity = 9.81; % this is in the forward left up coordinate frame
+param.dt = 1E-3;
+    
+traj = gen_traj(iterations, param);
 
-clear acc_csum
-clear gyr_csum
-
-% generate a random trajectory
-acc_csum(:,1:2) = cumsum(randn(iterations,2)*5E-5);
-acc_csum(:,3) = cumsum(randn(iterations,1)*5E-6);
-gyr_csum = cumsum(randn(iterations,3)*0.001)
-
-% create a random trajectory from accelerations and rates
-GM_accels = cumsum(acc_csum - 0.5 * detrend(acc_csum));
-GM_rates = gyr_csum - 0.5 * detrend(gyr_csum);
-
-
-plot3(GM_accels(:,1),GM_accels(:,2),GM_accels(:,3))
-grid on
-axis equal
+% This is what we have in the traj structure
+%
+% traj.iterations
+% traj.utime
+% traj.dt
+% traj.parameters.gravity
+% traj.true.P_l
+% traj.true.V_l
+% traj.true.f_l
+% traj.true.f_b
+% traj.true.a_l
+% traj.true.a_b
+% traj.true.E
+% traj.true.q
 
 %%
 
-for n = 1:iterations
-    data{n}.true.utime = 1000 * n;
-    data{n}.true.inertial.ddp = GM_accels(n,:)';
-    data{n}.true.inertial.da = GM_rates(n,:)';
-    data{n}.true.environment.gravity = [0;0;9.81];% using forward-left-up/xyz body frame
+data{iterations} = [];
+
+% for n = 1:iterations
+%     data{n}.true.utime = traj.utime(n);
+%     data{n}.true.inertial.ddp = GM_accels(n,:)';
+%     data{n}.true.inertial.da = GM_rates(n,:)';
+%     data{n}.true.environment.gravity = [0;0;9.81];% using forward-left-up/xyz body frame
     % add earth rate here
     % add magnetics here
-end
+% end
     
 
 %% Send and IMU messages
@@ -58,21 +61,38 @@ posterior.P = 1*eye(15);
 for n = 1:iterations
 %     disp(['imu.msg.utime= ' num2str(data{n}.true.utime)])
     
+    data{n}.true.utime = traj.utime(n);
+    
+    data{n}.true.pose.utime = traj.utime(n);
+    data{n}.true.pose.P = traj.true.P_l(n,:)';
+    data{n}.true.pose.V = traj.true.V_l(n,:)';
+    data{n}.true.pose.f_l = traj.true.f_l(n,:)';
+    data{n}.true.pose.R = q2R(traj.true.q(n,:)');
+    
+
+    % Start without rotation information -- build up to rotations and
+    % gravity components
+    data{n}.true.inertial.utime = traj.utime(n);
+    data{n}.true.inertial.ddp = traj.true.f_l(n,:)';
+    data{n}.true.inertial.da = zeros(3,1)';
+    data{n}.true.environment.gravity = [0;0;traj.parameters.gravity];% using forward-left-up/xyz body frame
+   
+
     % Compute the truth trajectory
     if (n==1)
         % start with the correct initial conditions (first iteration)
-        [data{n}.true.pose] = ground_truth(data{n}.true.utime, pose, data{n}.true.inertial);
+        data{n}.trueINS.pose = ground_truth(traj.utime(n), pose, data{n}.true.inertial);
        
     else
         % normal operation
-        [data{n}.true.pose] = ground_truth(data{n}.true.utime, data{n-1}.true.pose, data{n}.true.inertial);
+        data{n}.trueINS.pose = ground_truth(traj.utime(n), data{n-1}.trueINS.pose, data{n}.true.inertial);
        
     end
     
     % add earth bound effects, including gravity
     data{n}.measured.imu.utime = data{n}.true.utime;
     data{n}.measured.imu.gyr = data{n}.true.inertial.da;
-    data{n}.measured.imu.acc = data{n}.true.inertial.ddp + data{n}.true.pose.R'*data{n}.true.environment.gravity;
+    data{n}.measured.imu.acc = data{n}.true.inertial.ddp + data{n}.trueINS.pose.R'*data{n}.true.environment.gravity;
     
     % Add sensor errors
 %     data{n}.measured.imu.gyr = data{n}.measured.imu.gyr + [0;10/3600*pi/180;0];
@@ -89,7 +109,7 @@ for n = 1:iterations
     
     Measurement.INS.Pose = data{n}.INS.pose;
     Measurement.LegOdo.Pose = data{n}.true.pose;
-    
+%     
     Sys.T = 0.001;% this should be taken from the utime stamps when ported to real data
     Sys.posterior = posterior;
     
@@ -99,7 +119,9 @@ for n = 1:iterations
     
 end
 
+disp('Out of loop')
 
+% return
 
 
 %% plot some stuff

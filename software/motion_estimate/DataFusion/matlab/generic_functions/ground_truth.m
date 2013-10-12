@@ -1,11 +1,11 @@
 function [pose] = ground_truth(utime, pose__, imudata)
 
 % time first
-if (utime<pose__.utime)
+if (imudata.utime<pose__.utime)
     disp('ground_truth.m: ERROR, you cannot integrate backwards in time here.');
 end
 
-pose.utime = utime;
+pose.utime = imudata.utime;
 dt = (pose.utime - pose__.utime)*1e-6;
 
 % Newton 2 mechanisation
