@@ -9,14 +9,29 @@ lc.subscribe('INS_ESTIMATE', aggregator);
 %% Prepare IMU data
 
 
-iterations = 5000;
+iterations = 10000;
 
 
 data{iterations} = [];
 
+clear acc_csum
+clear gyr_csum
+
+% generate a random trajectory
+acc_csum(:,1:2) = cumsum(randn(iterations,2)*5E-5);
+acc_csum(:,3) = cumsum(randn(iterations,1)*5E-6);
+gyr_csum = cumsum(randn(iterations,3)*0.001)
+
 % create a random trajectory from accelerations and rates
-GM_accels = (detrend(cumsum(50*randn(iterations,3)*0.001)));
-GM_rates = (detrend(cumsum(12*randn(iterations,3)*0.001)));
+GM_accels = cumsum(acc_csum - 0.5 * detrend(acc_csum));
+GM_rates = gyr_csum - 0.5 * detrend(gyr_csum);
+
+
+plot3(GM_accels(:,1),GM_accels(:,2),GM_accels(:,3))
+grid on
+axis equal
+
+%%
 
 for n = 1:iterations
     data{n}.true.utime = 1000 * n;

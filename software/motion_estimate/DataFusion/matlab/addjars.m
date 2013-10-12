@@ -1,10 +1,8 @@
-addpath 'generic_functions'
-addpath 'generic_functions/kf'
+% addpath 'generic_functions'
+% addpath 'generic_functions/kf'
 
-% javaaddpath 'my_types.jar'
-javaaddpath '../../../build/share/java/lcmtypes_drc_lcmtypes.jar'
-% javaaddpath ../lcm-java/lcm.jar
-
+% javaaddpath '../../../build/share/java/lcmtypes_drc_lcmtypes.jar'
+javaaddpath([getenv('DRC_BASE'),'/software/build/share/java/lcmtypes_drc_lcmtypes.jar'])
 
 % lcm_java_classpath = getCMakeParam('lcm_java_classpath');
 %   if ~isempty(lcm_java_classpath)
