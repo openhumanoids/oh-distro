@@ -1,5 +1,8 @@
+function setup_datafusion()
 
-addjars
-%%
-addpath('~/drc/software/motion_estimate/DataFusion/matlab/generic_functions');
-addpath('~/drc/software/motion_estimate/DataFusion/matlab/generic_functions/kf');
+cd([getenv('DRC_BASE'),'/software/motion_estimate/DataFusion/matlab']);
+
+addjars;
+addpath('generic_functions');
+addpath('generic_functions/kf');
+
