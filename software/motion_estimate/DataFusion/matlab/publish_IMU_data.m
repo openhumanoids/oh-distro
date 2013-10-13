@@ -9,7 +9,7 @@ lc.subscribe('INS_ESTIMATE', aggregator);
 %% Prepare IMU data
 
 
-iterations = 5000;
+iterations = 10000;
 
 
 param.gravity = 9.81; % this is in the forward left up coordinate frame
@@ -29,6 +29,8 @@ traj = gen_traj(iterations, param);
 % traj.true.f_b
 % traj.true.a_l
 % traj.true.a_b
+% traj.true.w_l = w_l;
+% traj.true.w_b = w_b;
 % traj.true.E
 % traj.true.q
 
@@ -73,9 +75,9 @@ for n = 1:iterations
     % Start without rotation information -- build up to rotations and
     % gravity components
     data{n}.true.inertial.utime = traj.utime(n);
-    data{n}.true.inertial.ddp = traj.true.f_l(n,:)';
-    data{n}.true.inertial.da = zeros(3,1)';
-    data{n}.true.environment.gravity = [0;0;traj.parameters.gravity];% using forward-left-up/xyz body frame
+    data{n}.true.inertial.ddp = traj.true.f_b(n,:)';
+    data{n}.true.inertial.da = traj.true.w_b(n,:)';
+    data{n}.true.environment.gravity = 0.*[0;0;traj.parameters.gravity];% using forward-left-up/xyz body frame
    
 
     % Compute the truth trajectory
@@ -85,7 +87,9 @@ for n = 1:iterations
        
     else
         % normal operation
-        data{n}.trueINS.pose = ground_truth(traj.utime(n), data{n-1}.trueINS.pose, data{n}.true.inertial);
+%         data{n-1}.trueINS.pose.R = data{n-1}.true.pose.R';
+%         data{n}.trueINS.pose = ground_truth(traj.utime(n), data{n-1}.trueINS.pose, data{n}.true.inertial);
+       data{n}.trueINS.pose = INS_Mechanisation(data{n-1}.trueINS.pose, data{n}.true.inertial);
        
     end
     
@@ -99,7 +103,7 @@ for n = 1:iterations
     
     % send the simulated IMU measurements via LCM
     sendimu(data{n}.measured,lc);
-    pause(0.001);
+%     pause(0.001);
      
     data{n}.INS.pose = receivepose(aggregator);
     
@@ -167,3 +171,12 @@ plot(t, estPx, t, estPy, t, estPz);
 title('Est P error')
 grid on
 xlabel('Time [s]')
+
+%%
+figure(4), clf
+errPx = (lookatvector(data,start,stop,'true.pose.P(1)')-lookatvector(data,start,stop,'trueINS.pose.P(1)'));
+errPy = (lookatvector(data,start,stop,'true.pose.P(2)')-lookatvector(data,start,stop,'trueINS.pose.P(2)'));
+errPz = (lookatvector(data,start,stop,'true.pose.P(3)')-lookatvector(data,start,stop,'trueINS.pose.P(3)'));
+
+plot(t, errPx, t, errPy, t, errPz);
+title('Local true INS P residual')

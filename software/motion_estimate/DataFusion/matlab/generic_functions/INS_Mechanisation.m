@@ -1,4 +1,4 @@
-function [pose] = ground_truth(utime, pose__, imudata)
+function [pose] = INS_Mechanisation(pose__, imudata)
 
 % time first
 if (imudata.utime<pose__.utime)

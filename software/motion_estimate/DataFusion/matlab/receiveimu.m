@@ -48,7 +48,7 @@ while true
     sendpose_lcm(lc, posemsg, pose);
     
 
-    if (m.utime==5000000)
+    if (m.utime==10000000)
         break
     end
 end

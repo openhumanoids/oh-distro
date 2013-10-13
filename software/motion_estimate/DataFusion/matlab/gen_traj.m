@@ -93,6 +93,8 @@ traj.true.f_l = f_l;
 traj.true.f_b = f_b;
 traj.true.a_l = a_l;
 traj.true.a_b = a_b;
+traj.true.w_l = w_l;
+traj.true.w_b = w_b;
 traj.true.E = E;
 traj.true.q = q;
 

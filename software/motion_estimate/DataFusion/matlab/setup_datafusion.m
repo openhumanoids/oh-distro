@@ -16,4 +16,4 @@ end
 % Fusion process
 addpath('generic_functions');
 addpath('generic_functions/kf');
-
+addpath('motion_simulator');
