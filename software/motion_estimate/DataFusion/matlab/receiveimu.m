@@ -17,11 +17,7 @@ posemsg.twist.angular_velocity = drc.vector_3d_t();
 posemsg.local_linear_acceleration = drc.vector_3d_t();
 
 % the initial conditions for the system
-pose.utime = 0;
-pose.P = zeros(3,1);
-pose.V = zeros(3,1);
-pose.R = eye(3);
-pose.f_l = zeros(3,1);
+pose = init_pose();
 
 while true
     while true
@@ -48,7 +44,7 @@ while true
     sendpose_lcm(lc, posemsg, pose);
     
 
-    if (m.utime==10000000)
+    if (m.utime==(10000*1000))
         break
     end
 end

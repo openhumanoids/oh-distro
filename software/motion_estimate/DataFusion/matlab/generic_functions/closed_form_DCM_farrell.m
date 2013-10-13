@@ -1,4 +1,4 @@
-function [R_a__b_k0] = closed_form_DCM_farrell(w_k0,R_a__b_k1,dt)
+function [R_a__b_k0] = closed_form_DCM_farrell(w_k0,R_a__b_k1)
 % Function to propagate DCM differential equation from (k-1) to (k-0) 
 % through closed form solution (Taylor Expansion). Assuming rotation 
 % rate vector w (at time (k-0)) is constant over integration interval dt.
@@ -10,7 +10,7 @@ function [R_a__b_k0] = closed_form_DCM_farrell(w_k0,R_a__b_k1,dt)
 % d Fourie
 
 
-v = w_k0*dt; % can this not at least be trapezoidal integration -- devil is in the details
+v = w_k0;
 Gam = vec2skew(v);
 v_norm = norm(v);
 

@@ -34,7 +34,7 @@ P_l = cumsum(V_l*dt);
  % generate true orientation from random data
 knobs_ori.alpha = 1;
 knobs_ori.beta = 0.7;
-knobs_ori.eta = 1E-3;
+knobs_ori.eta = 5E-3;
 knobs_ori.step = 1500;
 
 
@@ -81,6 +81,8 @@ P_l((iterations+1):end,:) = [];
 V_l((iterations+1):end,:) = [];
 w_l((iterations+1):end,:) = [];
 w_b((iterations+1):end,:) = [];
+E((iterations+1):end,:) = [];
+
 
 
 traj.iterations = iterations;
@@ -116,49 +118,76 @@ axis([-dist dist -dist dist -3 3])
 figure(2), clf
 
 % Plot the positions
-subplot(421)
+subplot(431)
 plot(t,P_l)
 grid on
 title('Local postions')
 
-subplot(423)
+subplot(434)
 plot(t,V_l)
 grid on
 title('Local velocities')
 
-subplot(425)
+subplot(437)
 plot(t,a_l)
 grid on
 title(['Local accels, stdevs ' num2str(std(a_l)) ' m/s^2 @ 1kHz'])
 
-subplot(427)
+subplot(4,3,10)
 plot(t,f_b)
 grid on
 title('Body accelerations')
 
 
-subplot(428)
+subplot(4,3,11)
 plot(t,a_b)
 grid on
 title('Body accelerations + g')
 
 % plot the orientations
-subplot(422)
+subplot(432)
 plot(E)
 grid on
 title('Local to body orientation')
 
 
-subplot(424)
+subplot(435)
 plot(w_l)
 grid on
 title('Local frame rates')
 
-subplot(426)
+subplot(438)
 plot(w_b)
 grid on
 title('Body frame rates')
 
 
+%% test the generated trajectory with our standard NII INS Mechanization
+
+% initialize at identity
+pose = init_pose();
+
+resE = zeros(iterations,3);
+
+
+% iterate through all the the data
+for n = 1:iterations
+    imudata.utime = traj.utime(n);
+    imudata.ddp = traj.true.f_b(n,:)';
+    imudata.da = -traj.true.w_b(n,:)';
+    
+    resE(n,:) = q2e(R2q(pose.R));
+    [pose] = INS_Mechanisation(pose, imudata);
+    
+    
+end
+
+subplot(433)
+plot(resE)
+grid on
+
+subplot(436)
+stem(traj.true.E - resE)
+grid on
 
 

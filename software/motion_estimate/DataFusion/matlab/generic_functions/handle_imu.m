@@ -12,12 +12,12 @@ dt = (pose.utime - pose__.utime)*1e-6;
 imudata.utime = imu.utime;
 imudata.ddp = imu.linear_acceleration;
 imudata.da = imu.angular_velocity;
- 
+imudata.q = imu.orientation;
 
 pose = INS_Mechanisation(pose__, imudata);
 
 % platform rates in the estimated reference frame
-pose.w_l = pose__.R*imudata.da;
+pose.w_l = pose.R*imudata.da;
 
 % convert R to q -- quaternion attitude computer to be used as primary in
 % the future
