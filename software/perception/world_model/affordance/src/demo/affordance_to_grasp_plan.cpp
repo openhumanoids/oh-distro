@@ -64,7 +64,7 @@ class Pass{
     
     void sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
     void sendPlanEELoci(Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles);
-    void sendStandingPosition();
+    void sendStandingPosition(drc::affordance_t steering_cyl);
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
@@ -122,7 +122,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, bool use_irobot
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60012,"Grasp Pose Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60013,"Grasp Feasibility" ,1,1, 60012,0, { 0.0, 1.0, 0.0} ));
   //
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(60014,"Standing Position",4,1) ); // 4 is pose3d
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60014,"Standing Position",5,1) ); // 4 is pose3d
 
   l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",
   "left_f1_j0","left_f1_j1","left_f1_j2",
@@ -182,9 +182,11 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 
 // Draw the standing position for the valve task:
-void Pass::sendStandingPosition(){ 
+void Pass::sendStandingPosition(drc::affordance_t steering_cyl){ 
+  
+  
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
-  Eigen::Quaterniond q1=  euler_to_quat( aff_.origin_rpy[0] ,  aff_.origin_rpy[1] , aff_.origin_rpy[2]  ); 
+  Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 
   Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
   q1= q1*q2;  
   double look_rpy[3];
@@ -196,7 +198,7 @@ void Pass::sendStandingPosition(){
 
   for (int front_side=0; front_side < 2; front_side++){ // was zero
     Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
-    valve_pose.translation()  << aff_.origin_xyz[0], aff_.origin_xyz[1], ground_height_;
+    valve_pose.translation()  << steering_cyl.origin_xyz[0], steering_cyl.origin_xyz[1], ground_height_;
     if (front_side){
       valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] )  ) );
     }else{
@@ -236,20 +238,18 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
   
   
   affs_.clear();
-  for (size_t i=0 ; i < msg->naffs ; i++){
+  for (int i=0 ; i < msg->naffs ; i++){
     drc::affordance_t aff = msg->affs_plus[i].aff;
     std::stringstream ss;
     ss << aff.otdf_type << '_' << aff.uid;    
     std::cout << ss.str() << "\n";
 
     affs_[ ss.str() ]=  aff;
+    
+    if (aff.otdf_type == "steering_cyl"){
+      sendStandingPosition( aff );
+    }
   }    
-  
-  bool send_standing_position_ =false;
-  if (send_standing_position_){
-    sendStandingPosition();
-  }
-
 }
 
 void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
