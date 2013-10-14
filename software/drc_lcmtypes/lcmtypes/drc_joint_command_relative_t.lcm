@@ -1,0 +1,13 @@
+package drc;
+
+// modeled after the sandia_hand_msgs/RelativeJointCommands
+//
+
+struct joint_command_relative_t 
+{
+    int64_t utime;
+    int32_t num_joints;
+    
+    float position [num_joints];
+    int8_t max_effort [num_joints];
+}
