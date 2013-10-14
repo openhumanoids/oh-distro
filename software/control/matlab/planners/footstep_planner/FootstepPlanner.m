@@ -29,7 +29,7 @@ classdef FootstepPlanner < DRCPlanner
       needs_plan = false;
       info = struct(data.goal);
       for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior'}
-        if isfield(info, x{1}) && ~isnan(info.x{1})
+        if isfield(info, x{1}) && ~isnan(info.(x{1}))
           if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
             obj.options.(x{1}) = info.(x{1});
             needs_plan = true;

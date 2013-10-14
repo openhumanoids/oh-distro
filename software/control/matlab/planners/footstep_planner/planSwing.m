@@ -36,7 +36,7 @@ swing_angle = atan2(next_pos(2) - last_pos(2), next_pos(1) - last_pos(1));
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
 if fixed_duration
-  apex_fracs = [0.5];
+  apex_fracs = [0.15,0.16, 0.84,0.85];
 else
   apex_fracs = [0.15, 0.85];
 end
@@ -108,9 +108,9 @@ traj_ts = [0, cumsum(traj_dts)] ;
 
 %% Add time to shift weight
 if fixed_duration
-  hold_time = 0.01;
-  traj_ts = traj_ts * ((fixed_duration - hold_time) / traj_ts(end));
-  traj_ts = [0, traj_ts+hold_time, traj_ts(end) + 0.01 + hold_time];
+  hold_time = 0.1;
+  traj_ts = traj_ts * ((fixed_duration - 2*hold_time) / traj_ts(end));
+  traj_ts = [0, traj_ts+hold_time, traj_ts(end) + 2*hold_time];
 else
   hold_time = traj_ts(end) * hold_frac;
   hold_time = max([hold_time, min_hold_time]);
