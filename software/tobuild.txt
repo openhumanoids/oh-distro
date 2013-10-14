@@ -2,8 +2,9 @@
 # and lines starting with '#' are ignored
 #externals
 
-# to test build:
 drc_lcmtypes
+# retired types from drc_lcmtypes
+retired_lcmtypes
 
 
 models
