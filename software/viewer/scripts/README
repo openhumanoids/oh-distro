@@ -4,10 +4,17 @@ Making LCM Viewer Movies
 The record button dumps stills of the viewer screen into an archive of ppm stills (e.g. 2010-05-18-viewer.ppms.gz).
 
 Make sure to create the viewer window with the correct resolution (shown at the bottom-left of the window):
+16:9:
    * HD: 1920x1080
    * 3/4 res: 1440x810
    * 1280x720
    * 1/2 res: 960x540
+4:3:
+   * 1440x1080
+   * 1080x810
+   * 960x720
+   * 720x540
+   * 640x480 
 
 Set the Record FPS and resolution to something your system can achieve. More resolution means lower ACHIEVED FPS.
 
