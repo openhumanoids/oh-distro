@@ -29,29 +29,15 @@ base_dir =os.getenv("DRC_BASE")
 sys.path.append(base_dir + "/software/build/lib/python2.7/dist-packages")
 sys.path.append(base_dir + "/software/build/lib/python2.7/site-packages")
 from drc.sandia_simple_grasp_t import sandia_simple_grasp_t
-from drc.joint_command_t import joint_command_t
+from drc.joint_command_relative_t import joint_command_relative_t
 
 g_jc_pub = None
 g_jc = JointCommands()
 
-jc = joint_command_t()
-jc.robot_name = "sandia"
+jc = joint_command_relative_t()
 jc.num_joints = 12
-jc.name = ["f0_j0", "f0_j1", "f0_j2",
-           "f1_j0", "f1_j1", "f1_j2",
-           "f2_j0", "f2_j1", "f2_j2",
-           "f3_j0", "f3_j1", "f3_j2"]
 jc.position = [0] * 12
-jc.velocity = [0] * 12
-jc.effort = [0] * 12
-
-jc.kp_position = [0] * 12
-jc.ki_position = [0] * 12
-jc.kd_position = [0] * 12
-jc.kp_velocity = [0] * 12
-
-jc.i_effort_min = [0] * 12
-jc.i_effort_max = [0] * 12
+jc.max_effort = [1] * 12
 
 
 
@@ -93,10 +79,12 @@ def grasp_cb(msg):
       return
   else:
     return None # bogus
-  jc.position = [0] * 12
-  for i in xrange(0, 12):
-    jc.position[i] = origin[i] + g0[i] * x
+  #jc.position = [0] * 12
+  #for i in xrange(0, 12):
+  #  jc.position[i] = origin[i] + g0[i] * x
   
+
+  jc.position = [0,0,0,  0.1,0.1,0.1,  0,0,0, 0,0,0 ]
   # joint: lateral, lower, upper
   # index 0-2
   # midle 3-5
@@ -108,14 +96,14 @@ def on_simple_grasp_left(channel, data):
   m = sandia_simple_grasp_t.decode(data)
   print "L"
   grasp_cb(m)
-  lc.publish("L_HAND_JOINT_COMMANDS", jc.encode())
+  lc.publish("L_HAND_JOINT_COMMANDS_RELATIVE", jc.encode())
   
 
 def on_simple_grasp_right(channel, data):
   m = sandia_simple_grasp_t.decode(data)
   print "R"
   grasp_cb(m)
-  lc.publish("R_HAND_JOINT_COMMANDS", jc.encode())
+  lc.publish("R_HAND_JOINT_COMMANDS_RELATIVE", jc.encode())
 
 lc = lcm.LCM()
 print "started"

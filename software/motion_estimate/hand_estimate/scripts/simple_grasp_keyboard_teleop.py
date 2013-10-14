@@ -59,6 +59,12 @@ g_key_map = { '1': [ 'L', 'cylindrical', 0.00],
               'k': [ 'R', 'prismatic'  , 0.50],
               'l': [ 'R', 'prismatic'  , 0.75],
               ';': [ 'R', 'prismatic'  , 0.95],
+              'z': [ 'L', 'safety'  , 0.00], # all back (can to go stright to zero)
+              'x': [ 'L', 'safety'  , 0.25], # all finger back but thumb rotated to side
+              'c': [ 'L', 'safety'  , 0.5],  # all finger back but thumb tucked
+              'n': [ 'R', 'safety'  , 0.0],
+              'm': [ 'R', 'safety'  , 0.25],
+              ',': [ 'R', 'safety'  , 0.5],
             }
 
 def keypress(c):
@@ -118,6 +124,9 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 130, "Q--T Spherical Y--P")
   draw_string(screen, font, 10, 150, "A--G Prismatic H--;")
   draw_string(screen, font, 10, 170,  "Open <------> Closed")
+  draw_string(screen, font, 10, 210,  "z & n all fingers back")
+  draw_string(screen, font, 10, 230,  "x & m all fingers back, thumb rotated")
+  draw_string(screen, font, 10, 250,  "c & < all fingers back, thumb rotated")
 
   pygame.display.flip()
   print_usage()
