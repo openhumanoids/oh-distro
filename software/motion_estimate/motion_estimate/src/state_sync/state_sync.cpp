@@ -32,23 +32,32 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
   
+
+  // pot offsets if pots are used, currently uncalibrated
   pot_joint_offsets_.assign(28,0.0);
 
-  // If applying
+  // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
-  encoder_joint_offsets_[22] =   0.008;
-  encoder_joint_offsets_[23] = 0.005;
-  encoder_joint_offsets_[24] = 3.1152;// -3.168 + 2*M_PI;
-  encoder_joint_offsets_[25] = -0.011;
-  encoder_joint_offsets_[26] = -1.085;
-  encoder_joint_offsets_[27] = 0.151;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.008;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.005;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 3.1152;// -3.168 + 2*M_PI;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = -0.011;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.085;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.151;
   
-  // shy    1.1
-  // shx    3.3
-  // ely   -1.0
-  // elx    0.8
-  // uwy    0.9
-  // mwx    9.6  
+  //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
+  max_encoder_wrap_angle_.assign(28,0.0);
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_ELY] = 2;
+  max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 2;
+
+  use_encoder_.assign(28,false);
+  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
+ 
 }
 
 
@@ -126,9 +135,16 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
       if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
         // TOOD: determine the joint range of interest:
-        for (int i=22; i < atlas_joints_out_.position.size() ; i++ ) { // apply the right arm only
-          atlas_joints_.position[i] = atlas_joints_out_.position[i] + encoder_joint_offsets_[i];
-          atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+        for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { // apply the right arm only
+
+          if (use_encoder_[i]) {
+            atlas_joints_.position[i] = atlas_joints_out_.position[i];
+            if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
+              atlas_joints_.position[i] -= 2*M_PI;
+
+            atlas_joints_.position[i] += encoder_joint_offsets_[i];
+            atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+          }
         }
       }
     }

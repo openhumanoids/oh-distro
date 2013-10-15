@@ -12,6 +12,7 @@
 #include "lcmtypes/multisense.hpp"
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
+#include "atlas/AtlasControlTypes.h"
 
 struct Joints { 
   std::vector<float> position;
@@ -69,6 +70,8 @@ class state_sync{
     // Keep two different offset vectors, for clarity:
     std::vector<float> pot_joint_offsets_;
     std::vector<float> encoder_joint_offsets_;
+    std::vector<float> max_encoder_wrap_angle_;
+    std::vector<bool> use_encoder_;
 
     // Returns false if Pose BDI is old or hasn't appeared yet
     bool insertPoseBDI( drc::robot_state_t& msg);    
