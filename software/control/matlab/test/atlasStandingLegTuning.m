@@ -32,9 +32,9 @@ signal = 'chirp';% <----  zoh, foh, chirp
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
-  ts = linspace(0,50,500);% <----
-  amp = -0.05;% <---- meters, COM DELTA
-  freq = linspace(0.025,0.095,500);% <----  cycles per second
+  ts = linspace(0,40,500);% <----
+  amp = -0.13;% <---- meters, COM DELTA
+  freq = linspace(0.02,0.05,500);% <----  cycles per second
 else
   vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
@@ -257,7 +257,7 @@ while tt<T+2
     qt(6) = q(6); % ignore yaw
     
     % get desired acceleration
-    qdddes = qddtraj.eval(tt) + 23.0*(qt-q) - 0.55*qd;
+    qdddes = qddtraj.eval(tt) + 19.0*(qt-q) - 0.8*qd;
     
     u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
@@ -274,7 +274,7 @@ while tt<T+2
 %     
 %     tf_act = tau_friction(act_idx_map);
 
-	% should really be using qdd from QP solution...
+    % should really be using qdd from QP solution
     f_friction = computeFrictionForce(r,qd + 0.3*qdddes) - computeFrictionForce(r,qd);
     f_friction_act = f_friction(act_idx_map);
 
