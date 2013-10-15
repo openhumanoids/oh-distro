@@ -501,17 +501,20 @@ namespace renderer_robot_plan
       std::string token  = "plane::";
       size_t found = (*self->marker_selection).find(token);  
       string plane_name="";
+       KDL::Frame T_marker_world;
       
       // Marker Foviation Logic
       if(self->in_motion_state == HANDS) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_hand->_T_world_body;
+          T_marker_world  =  (self->robotPlanListener->_gl_left_hand->get_marker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_left_hand->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_left_hand->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_hand->_T_world_body;
+          T_marker_world  =  (self->robotPlanListener->_gl_right_hand->get_marker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_right_hand->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_right_hand->extract_plane_name(root_link_name,plane_name);
@@ -521,12 +524,14 @@ namespace renderer_robot_plan
       else if(self->in_motion_state == FEET) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_foot->_T_world_body;
+          T_marker_world  =  (self->robotPlanListener->_gl_left_foot->get_marker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_left_foot->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_left_foot->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_foot->_T_world_body;
+          T_marker_world  =  (self->robotPlanListener->_gl_right_foot->get_marker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_right_foot->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_right_foot->extract_plane_name(root_link_name,plane_name);
@@ -535,12 +540,14 @@ namespace renderer_robot_plan
       }
       else if(self->in_motion_state == PELVIS) {
         T_world_ee = self->robotPlanListener->_gl_pelvis->_T_world_body;
+        T_marker_world  =  (self->robotPlanListener->_gl_pelvis->get_marker_frame()).Inverse(); 
         root_link_name=self->robotPlanListener->_gl_pelvis->get_root_link_name();
         if(found!=std::string::npos) 
             self->robotPlanListener->_gl_pelvis->extract_plane_name(root_link_name,plane_name);
       }
       else if(self->in_motion_state == COM) {
         T_world_ee = self->robotPlanListener->_gl_com->_T_world_body;
+        T_marker_world  =  (self->robotPlanListener->_gl_com->get_marker_frame()).Inverse(); 
         root_link_name=self->robotPlanListener->_gl_com->get_root_link_name();
         if(found!=std::string::npos) 
             self->robotPlanListener->_gl_com->extract_plane_name(root_link_name,plane_name);
@@ -548,6 +555,13 @@ namespace renderer_robot_plan
       
        double currentAngle, angleTo,dtheta;       
        KDL::Frame DragRotation=KDL::Frame::Identity();
+       
+ 
+     
+      KDL::Frame T_marker_ee = T_marker_world*T_world_ee;
+      Eigen::Vector3f worldframe_delta,markerframe_delta;
+      worldframe_delta  = self->ray_hit_drag-self->marker_offset_on_press;
+      rotate_eigen_vector_given_kdl_frame(worldframe_delta,T_marker_world,markerframe_delta);          
 
         if(found!=std::string::npos)  
         {
@@ -558,35 +572,32 @@ namespace renderer_robot_plan
           found2 = plane_name.find("z"); 
           bool z_plane_active = (found2!=std::string::npos);
           if(x_plane_active){
-           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
-           T_world_ee.p[0] = dx;
+           T_marker_ee.p[0] = markerframe_delta[0];
           }
           if(y_plane_active){
-           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-            T_world_ee.p[1] = dy;
+            T_marker_ee.p[1] =markerframe_delta[1];
           }
           if(z_plane_active){
-            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-            T_world_ee.p[2] = dz;
+            T_marker_ee.p[2] =markerframe_delta[2];
           }        
         }  
 
            //cout << (*self->marker_selection) << endl;
         if((*self->marker_selection)=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0]; // marker_offset_on_press is {hit_location - hand_position} offset @ on mouse press.
-          T_world_ee.p[0] = dx;
+          T_marker_ee.p[0] = markerframe_delta[0];
         }
         else if((*self->marker_selection)=="markers::base_y"){
           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-          T_world_ee.p[1] = dy;
+          T_marker_ee.p[1] = markerframe_delta[1];
         }
         else if((*self->marker_selection)=="markers::base_z"){
           double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-          T_world_ee.p[2] = dz;
+          T_marker_ee.p[2] = markerframe_delta[2];
         }
         else if((*self->marker_selection)=="markers::base_roll"){
             
-          // proper hit_drag point via marker plane ray intersection.
+          // proper hit_drag point via marker plane ray intersection. (Does not work when viewing the plane from below)
           Eigen::Vector3f plane_normal,plane_point;
           plane_normal<< 1,0,0;
           plane_point[0]=T_world_ee.p[0];
@@ -595,7 +606,7 @@ namespace renderer_robot_plan
           double lambda1 = dir.dot(plane_normal);
           double lambda2 = (plane_point - start).dot(plane_normal);
           double t;
-         // check for degenerate case where ray is (more or less) parallel to plane
+         // check for degenerate case where ray is (more or less) parallel to plane 
          if (fabs (lambda1) >= 1e-9) {
            t = lambda2 / lambda1;
             self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
@@ -605,8 +616,13 @@ namespace renderer_robot_plan
           if(diff.norm() > 0.05){
             self->prev_ray_hit_drag = self->ray_hit_drag; 
           }     
-          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_ee.p[2],self->prev_ray_hit_drag[1]-T_world_ee.p[1]);
-          angleTo = atan2(self->ray_hit_drag[2]-T_world_ee.p[2],self->ray_hit_drag[1]-T_world_ee.p[1]);
+          Eigen::Vector3f markerframe_prev_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+          Eigen::Vector3f markerframe_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag);
+      
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[2]-T_marker_ee.p[2],markerframe_prev_ray_hit_drag[1]-T_marker_ee.p[1]);
+          angleTo = atan2(markerframe_ray_hit_drag[2]-T_marker_ee.p[2],markerframe_ray_hit_drag[1]-T_marker_ee.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
@@ -614,7 +630,7 @@ namespace renderer_robot_plan
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if((*self->marker_selection)=="markers::base_pitch"){ 
-          // proper hit_drag point via marker plane ray intersection.
+          // proper hit_drag point via marker plane ray intersection. (Does not work when viewing the plane from below)
           Eigen::Vector3f plane_normal,plane_point;
           plane_normal<< 0,1,0;
           plane_point[0]=T_world_ee.p[0];
@@ -633,8 +649,14 @@ namespace renderer_robot_plan
           if(diff.norm() > 0.05){
             self->prev_ray_hit_drag = self->ray_hit_drag; 
           } 
-          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_ee.p[0],self->prev_ray_hit_drag[2]-T_world_ee.p[2]);
-          angleTo = atan2(self->ray_hit_drag[0]-T_world_ee.p[0],self->ray_hit_drag[2]-T_world_ee.p[2]);
+          
+          Eigen::Vector3f markerframe_prev_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+          Eigen::Vector3f markerframe_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag);
+          
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[0]-T_marker_ee.p[0],markerframe_prev_ray_hit_drag[2]-T_marker_ee.p[2]);
+          angleTo = atan2(markerframe_ray_hit_drag[0]-T_marker_ee.p[0],markerframe_ray_hit_drag[2]-T_marker_ee.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
@@ -642,12 +664,12 @@ namespace renderer_robot_plan
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         } 
         else if((*self->marker_selection)=="markers::base_yaw"){
-         // proper hit_drag point via marker plane ray intersection.
+         // proper hit_drag point via marker plane ray intersection. (Does not work when viewing the plane from below)
           Eigen::Vector3f plane_normal,plane_point;
           plane_normal<< 0,0,1;
-          plane_point[0]=T_world_ee.p[0];
-          plane_point[1]=T_world_ee.p[1];
-          plane_point[2]=T_world_ee.p[2];       
+          plane_point[0]=T_marker_ee.p[0];
+          plane_point[1]=T_marker_ee.p[1];
+          plane_point[2]=T_marker_ee.p[2];       
           double lambda1 = dir.dot(plane_normal);
           double lambda2 = (plane_point - start).dot(plane_normal);
           double t;
@@ -661,14 +683,20 @@ namespace renderer_robot_plan
           if(diff.norm() > 0.05){
             self->prev_ray_hit_drag = self->ray_hit_drag; 
           } 
-          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_ee.p[1],self->prev_ray_hit_drag[0]-T_world_ee.p[0]);
-          angleTo = atan2(self->ray_hit_drag[1]-T_world_ee.p[1],self->ray_hit_drag[0]-T_world_ee.p[0]);
+           Eigen::Vector3f markerframe_prev_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+          Eigen::Vector3f markerframe_ray_hit_drag;
+          rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag);
+          
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[1]-T_marker_ee.p[1],markerframe_prev_ray_hit_drag[0]-T_marker_ee.p[0]);
+          angleTo = atan2(markerframe_ray_hit_drag[1]-T_marker_ee.p[1],markerframe_ray_hit_drag[0]-T_marker_ee.p[0]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 0; axis[2]=1;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
-        T_world_ee.M  = DragRotation.M*T_world_ee.M;  
+        T_marker_ee.M  = DragRotation.M*T_marker_ee.M;  
+        T_world_ee = (T_marker_world.Inverse())*T_marker_ee;
         
         std::map<std::string, double> jointpos_in;
         if(self->in_motion_state == HANDS) {

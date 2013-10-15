@@ -502,6 +502,7 @@ namespace renderer_affordances_gui_utils
         
       if(it!=self->affCollection->_objects.end()){
         it->second._gl_object->enable_bodypose_adjustment(val);
+        it->second._gl_object->enable_bodyorparent_frame_rendering_of_floatingbase_markers(val);
         it->second._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         it->second._gl_object->enable_jointdof_adjustment(false);    
       }
@@ -556,6 +557,7 @@ namespace renderer_affordances_gui_utils
       }  
       if(it!=self->affCollection->_objects.end()){
         self->otdf_instance_hold._gl_object->enable_bodypose_adjustment(val);
+        self->otdf_instance_hold._gl_object->enable_bodyorparent_frame_rendering_of_floatingbase_markers(val);
         self->otdf_instance_hold._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         self->otdf_instance_hold._gl_object->enable_jointdof_adjustment(false);    
       }
