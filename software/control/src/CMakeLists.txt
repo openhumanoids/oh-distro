@@ -70,6 +70,7 @@ set(java_src_files
   RobotNavGoalListener.java
   RobotPlanPublisher.java
   RobotStateCoder.java
+  AtlasStateExtraCoder.java
   IrobotJointCommandCoder.java
   SandiaJointCommandCoder.java
   ViconBodyPointCoder.java
