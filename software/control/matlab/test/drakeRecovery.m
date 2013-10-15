@@ -15,11 +15,13 @@ if (nargin<2)
 end
 
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+nq = getNumDOF(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0*randn();
 xstar(2) = 0*randn();
+xstar(nq+2) = 0.2;
 r = r.setInitialState(xstar);
 
 if use_bullet
@@ -34,7 +36,6 @@ end
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
-nq = getNumDOF(r);
 
 x0 = xstar;
 q0 = x0(1:nq);
