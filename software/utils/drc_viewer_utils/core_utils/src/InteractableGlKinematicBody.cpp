@@ -18,6 +18,8 @@ void InteractableGlKinematicBody::init_vars(){
   _floatingbase_markers_boxsize = 0;
   bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
   _marker_dir_flip << 1,1,1;
+  _floatingbase_marker_offset_enabled = false;   
+  _T_floatingbase_marker_world = KDL::Frame::Identity();
 }
 
 
@@ -146,10 +148,10 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
             shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(visuals[iv]->geometry));
             double radius = cyl->radius;
             double length = cyl->length;
-    //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
             Eigen::Vector3f dims;
             dims<< 2*radius,2*radius,length;
-            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
+            //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
             _collision_object_map.insert(make_pair(oss.str(), object_ptr));  
             // add a collision object to the collision detector class
             _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
@@ -161,7 +163,7 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
             shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
 
             //typedef std::map<std::string, MeshStruct > mesh_map_type_;
-	    typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
+	          typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
             mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
      
             Eigen::Vector3f dims;
@@ -249,11 +251,11 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
             shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(visuals[iv]->geometry));
             double radius = cyl->radius;
             double length = cyl->length;
-            //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
             
             Eigen::Vector3f dims;
             dims<< 2*radius,2*radius,length;
-            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));        
+            //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));        
             
             
             _collision_object_map.insert(make_pair(oss.str(), object_ptr));
@@ -431,8 +433,8 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
             }
             else if  (type == CYLINDER)
             {
-              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              //shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
 
             }
@@ -488,7 +490,7 @@ void InteractableGlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterfa
     update_otdf_collision_objects();
     if(_root_name!="world"){
       if(_floatingbase_markers_boxsize==0)
-        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.     
       update_floatingbase_marker_collision_objects();  
     }
     
@@ -565,8 +567,8 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
             }
             else if  (type == CYLINDER)
             {
-              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              //shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
 
             }
@@ -670,8 +672,6 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 {
    //_collision_detector_floatingbase_markers.reset();
   _collision_detector_floatingbase_markers = shared_ptr<Collision_Detector>(new Collision_Detector()); 
-  
-  
   
 
   Eigen::Vector3f whole_body_span_dims,offset;
@@ -801,11 +801,23 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
 {
 
+  KDL::Frame T_world_marker = (get_marker_frame());
+  KDL::Frame T_marker_world = T_world_marker.Inverse();
+ 
+
   Eigen::Vector3f p0,p;
   p0 << _T_world_body_future.p[0] + _floatingbase_offset[0], _T_world_body_future.p[1] + _floatingbase_offset[1], _T_world_body_future.p[2] + _floatingbase_offset[2];
   //p0 << _T_world_body.p[0] + _floatingbase_offset[0], _T_world_body.p[1] + _floatingbase_offset[1], _T_world_body.p[2] + _floatingbase_offset[2];
   Eigen::Vector4f q0,q;
   q0 << 0,0,0,1;
+  
+  Eigen::Vector3f p0_markerframe,p_markerframe;
+  Eigen::Vector4f q0_markerframe,q_markerframe;
+ 
+  rotate_eigen_vector_given_kdl_frame(p0,T_marker_world,p0_markerframe);
+  q0_markerframe << 0,0,0,1;
+  rotate_eigen_quat_given_kdl_rotation(q0_markerframe,T_world_marker.M,q0); 
+        
   float rot_marker_outer_radius = _floatingbase_markers_torusdims[0]+_floatingbase_markers_torusdims[1];
   double trans_marker_length;
   if (_floatingbase_markers_boxsize > 0.1)
@@ -845,12 +857,14 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   {   
     if(!x_plane_active){
       shared_ptr<Collision_Object_Box> downcasted_object1(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
-      p=p0; p[0]+=_marker_dir_flip[0]*trans_marker_length;
+      p_markerframe=p0_markerframe; p_markerframe[0]+=_marker_dir_flip[0]*trans_marker_length;
+      rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object1->set_transform(p,q0);
     } 
     if(!y_plane_active){
       shared_ptr<Collision_Object_Box> downcasted_object2(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
-      p=p0; p[1]+=_marker_dir_flip[1]*trans_marker_length;
+      p_markerframe=p0_markerframe; p_markerframe[1]+=_marker_dir_flip[1]*trans_marker_length;
+      rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object2->set_transform(p,q0);
     }
   }  
@@ -860,7 +874,8 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   {  
     if(!z_plane_active)  {      
       shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
-      p=p0;p[2]+=_marker_dir_flip[2]*trans_marker_length;
+      p_markerframe=p0_markerframe; p_markerframe[2]+=_marker_dir_flip[2]*trans_marker_length;
+      rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object3->set_transform(p,q0);
     }
   }
@@ -870,7 +885,20 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     std::stringstream oss;
     oss << "markers::" <<"plane::base_" << plane_name;
     shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find(oss.str())->second));
-    downcasted_object3->set_transform(p0,q0);
+    Eigen::Vector3f plane_axis,axis,uz;
+    double theta;
+    uz<<0,0,1;
+    get_plane_axis(plane_name,plane_axis);
+    axis = uz.cross(plane_axis);
+    theta = acos(uz.dot(plane_axis));
+    KDL::Vector axis_temp;
+    axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
+    KDL::Rotation temp; double x,y,z,w;
+    temp = KDL::Rotation::Rot(axis_temp,theta);     
+    temp.GetQuaternion(x,y,z,w);
+    q_markerframe << x,y,z,w;
+    rotate_eigen_quat_given_kdl_rotation(q_markerframe,T_world_marker.M,q);
+    downcasted_object3->set_transform(p0,q);
   } 
   //======================================================================
     
@@ -882,14 +910,17 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     shared_ptr<Collision_Object_Torus> downcasted_object4(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_roll")->second));
     axis[0] = 0; axis[1] = 1; axis[2] = 0;
     bot_angle_axis_to_quat(M_PI/2, axis,q_temp);
-    q << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
-    downcasted_object4->set_transform(p0,q);
+    q_markerframe << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
+    rotate_eigen_quat_given_kdl_rotation(q_markerframe,T_world_marker.M,q); 
+    downcasted_object4->set_transform(p0,q); 
+    
     
     shared_ptr<Collision_Object_Torus> downcasted_object5(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_pitch")->second));
     axis[0] = 1; axis[1] = 0; axis[2] = 0;
     bot_angle_axis_to_quat (M_PI/2, axis,q_temp);
-    q << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
-    downcasted_object5->set_transform(p0,q);
+    q_markerframe   << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
+    rotate_eigen_quat_given_kdl_rotation(q_markerframe,T_world_marker.M,q); 
+    downcasted_object5->set_transform(p0,q); 
   }
   
   if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
@@ -1391,7 +1422,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
                 theta = acos(uz.dot(joint_axis));
                 glPushMatrix();
                 glTranslatef(pos[0],pos[1],pos[2]);
-                glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+                glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
                 double size = plane_dims[0];
                 double thickness = plane_dims[2];
                 glScalef(size,size,thickness);
@@ -1406,7 +1437,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
                 theta = acos(uz.dot(joint_axis));
                 glPushMatrix();
                 glTranslatef(pos[0],pos[1],pos[2]);
-                glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+                glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
                 double size = plane_dims[0];
                 double thickness = plane_dims[2];
                 glScalef(size,size,thickness);
@@ -1422,7 +1453,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
               glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
               glPushMatrix();
               glTranslatef(pos[0],pos[1],pos[2]);
-              glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
+              glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
               glTranslatef(-length/2, 0,0); 
               bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
               glPopMatrix();
@@ -1434,7 +1465,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
               theta = acos(uz.dot(joint_axis));
               glPushMatrix();
               glTranslatef(pos[0],pos[1],pos[2]);
-              glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+              glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
               glTranslatef(0,0,-2*length/3);
               glScalef(trans_markersize,trans_markersize,trans_markersize);
               bot_gl_draw_cube();
@@ -1444,7 +1475,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
               glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
               glPushMatrix();
               glTranslatef(pos[0],pos[1],pos[2]);
-              glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+              glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
               glTranslatef(length/2, 0,0);
               bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
               glPopMatrix();
@@ -1456,7 +1487,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
               theta = acos(uz.dot(joint_axis));
               glPushMatrix();
               glTranslatef(pos[0],pos[1],pos[2]);
-              glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+              glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
               glTranslatef(0,0,2*length/3);
               glScalef(trans_markersize,trans_markersize,trans_markersize);
               bot_gl_draw_cube();
@@ -1501,7 +1532,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
-            glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
+            glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
             glTranslatef(-length/2, 0,0); 
             bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
             glPopMatrix();
@@ -1513,7 +1544,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             theta = acos(uz.dot(joint_axis));
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
-            glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+            glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
             glTranslatef(0,0,-2*length/3);
             gluDisk(quadric,dof_marker_inner_radius,dof_marker_outer_radius,36,1);
             glPopMatrix();
@@ -1522,7 +1553,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
-            glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+            glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
             glTranslatef(length/2, 0,0);
             bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
             glPopMatrix();
@@ -1534,7 +1565,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
             theta = acos(uz.dot(joint_axis));
             glPushMatrix();
             glTranslatef(pos[0],pos[1],pos[2]);
-            glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+            glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
             glTranslatef(0,0,2*length/3);
             gluDisk(quadric,dof_marker_inner_radius,dof_marker_outer_radius,36,1);
             glPopMatrix();
@@ -1680,47 +1711,64 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ur
 //----------------------------------------------------------------------------------------------------------------
 void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_marker_boxsize, float rot_marker_inner_radius,float rot_marker_outer_radius)
 {
-  glEnable(GL_LINE_SMOOTH); 
-  GLUquadricObj* quadric = gluNewQuadric();
-  gluQuadricDrawStyle(quadric, GLU_FILL);
-  gluQuadricNormals(quadric, GLU_SMOOTH);
-  gluQuadricOrientation(quadric, GLU_OUTSIDE);
-  
-  double trans_marker_length;
-  if (trans_marker_boxsize > 0.1)
-   trans_marker_length = 1.2*rot_marker_outer_radius;
-  else
-   trans_marker_length = 1.4*rot_marker_outer_radius;  // for small objects
+    glEnable(GL_LINE_SMOOTH); 
+    GLUquadricObj* quadric = gluNewQuadric();
+    gluQuadricDrawStyle(quadric, GLU_FILL);
+    gluQuadricNormals(quadric, GLU_SMOOTH);
+    gluQuadricOrientation(quadric, GLU_OUTSIDE);
+    
+    
+    
+    double trans_marker_length;
+    if (trans_marker_boxsize > 0.1)
+     trans_marker_length = 1.2*rot_marker_outer_radius;
+    else
+     trans_marker_length = 1.4*rot_marker_outer_radius;  // for small objects
    
-  float ORG[3] = {0.0, 0.0, 0.0};
-  float XP[3] = {_marker_dir_flip[0]*trans_marker_length, 0.0, 0.0};
-  float YP[3] = {0.0, _marker_dir_flip[1]*trans_marker_length, 0.0};
-  float ZP[3] = {0.0, 0.0, _marker_dir_flip[2]*trans_marker_length};     
-     
-  //======================================================================   
-  Eigen::Vector3f plane_dims;
-  double torus_radius =0.5*(rot_marker_outer_radius+rot_marker_inner_radius);
-  plane_dims<<  PLANAR_MARKER_GAIN2*torus_radius,PLANAR_MARKER_GAIN2*torus_radius,0.01;
-  
-  string root_link_name=GlKinematicBody::get_root_link_name();
-  string plane_name="";
-  if(is_planar_coupling_active(root_link_name)) 
-    extract_plane_name(root_link_name,plane_name);   
-  
-  bool plane_active = is_planar_coupling_active(root_link_name); 
-  size_t found = plane_name.find("x"); 
-  bool x_plane_active = (plane_active)&&(found!=std::string::npos);
-  found = plane_name.find("y"); 
-  bool y_plane_active = (plane_active)&&(found!=std::string::npos);       
-  found = plane_name.find("z"); 
-  bool z_plane_active = (plane_active)&&(found!=std::string::npos); 
-  //plane marker is only valid if z plane is inactive in when adjustment type is two D
-  bool supress_plane_marker = (  (z_plane_active)
-                               &&(  (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)
-                                  ||(bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS) )); 
+    float ORG[3] = {0.0, 0.0, 0.0};
+    float XP[3] = {_marker_dir_flip[0]*trans_marker_length, 0.0, 0.0};
+    float YP[3] = {0.0, _marker_dir_flip[1]*trans_marker_length, 0.0};
+    float ZP[3] = {0.0, 0.0, _marker_dir_flip[2]*trans_marker_length};     
 
+       
+    //======================================================================   
+    Eigen::Vector3f plane_dims;
+    double torus_radius =0.5*(rot_marker_outer_radius+rot_marker_inner_radius);
+    plane_dims<<  PLANAR_MARKER_GAIN2*torus_radius,PLANAR_MARKER_GAIN2*torus_radius,0.01;
+
+    string root_link_name=GlKinematicBody::get_root_link_name();
+    string plane_name="";
+    if(is_planar_coupling_active(root_link_name)) 
+      extract_plane_name(root_link_name,plane_name);   
+
+    bool plane_active = is_planar_coupling_active(root_link_name); 
+    size_t found = plane_name.find("x"); 
+    bool x_plane_active = (plane_active)&&(found!=std::string::npos);
+    found = plane_name.find("y"); 
+    bool y_plane_active = (plane_active)&&(found!=std::string::npos);       
+    found = plane_name.find("z"); 
+    bool z_plane_active = (plane_active)&&(found!=std::string::npos); 
+    //plane marker is only valid if z plane is inactive in when adjustment type is two D
+    bool supress_plane_marker = (  (z_plane_active)
+                                 &&(  (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)
+                                    ||(bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS) )); 
+                                    
+ 
+    KDL::Frame T_world_marker =(get_marker_frame());         
+    Eigen::Vector3f p0,p0_markerframe;
+    p0 << pos[0],pos[1],pos[2];
+    rotate_eigen_vector_given_kdl_frame(p0,T_world_marker.Inverse(),p0_markerframe);                        
+    double marker_rot_theta;
+    Eigen::Vector3f marker_rot_axis;
+    KDL::Vector kdl_axis = T_world_marker.M.GetRot(); // returns unnormalized axis, with the norm being the angle.
+    marker_rot_theta = kdl_axis.Norm();
+    marker_rot_axis << kdl_axis[0], kdl_axis[1], kdl_axis[2];
+    marker_rot_axis.normalize(); 
+     
+         
     glPushMatrix();
     glTranslatef(pos[0],pos[1],pos[2]);
+    glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
     glLineWidth (3.0);
     glBegin (GL_LINES);
     glColor3f (1,0,0); // X axis is red.
@@ -1745,8 +1793,13 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
     {
       if(!x_plane_active)
       { 
+        Eigen::Vector3f p,p_markerframe;
+        p_markerframe = p0_markerframe;
+        p_markerframe[0]+=_marker_dir_flip[0]*trans_marker_length;
+        rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
         glPushMatrix();
-        glTranslatef(pos[0]+_marker_dir_flip[0]*trans_marker_length,pos[1],pos[2]);
+        glTranslatef(p[0],p[1],p[2]);
+        glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
         glScalef(trans_marker_boxsize,trans_marker_boxsize,trans_marker_boxsize);
         glColor4f(1.0, 0.0, 0.0,alpha);
         if(selected_marker=="markers::base_x")
@@ -1756,9 +1809,14 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       }
 
       if(!y_plane_active)
-      {  
+      {
+        Eigen::Vector3f p,p_markerframe;
+        p_markerframe = p0_markerframe;
+        p_markerframe[1]+=_marker_dir_flip[1]*trans_marker_length;
+        rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);  
         glPushMatrix();
-        glTranslatef(pos[0],pos[1]+_marker_dir_flip[1]*trans_marker_length,pos[2]);
+        glTranslatef(p[0],p[1],p[2]);
+        glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
         glColor4f(0.0, 1.0, 0.0,alpha);
         if(selected_marker=="markers::base_y")
           glColor4f(0.7,0.1,0.1,1.0);
@@ -1773,9 +1831,14 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
     { 
       if(!z_plane_active)
-      {          
+      {
+        Eigen::Vector3f p,p_markerframe;
+        p_markerframe = p0_markerframe;
+        p_markerframe[2]+=_marker_dir_flip[2]*trans_marker_length;
+        rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);            
         glPushMatrix();
-        glTranslatef(pos[0],pos[1],pos[2]+_marker_dir_flip[2]*trans_marker_length);
+        glTranslatef(p[0],p[1],p[2]);
+        glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
         glColor4f(0.0, 0.0, 1.0,alpha);
         if(selected_marker=="markers::base_z")
           glColor4f(0.7,0.1,0.1,1.0);
@@ -1801,7 +1864,8 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       theta = acos(uz.dot(plane_axis));
       glPushMatrix();
       glTranslatef(pos[0],pos[1],pos[2]);
-      glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+      glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
+      glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]);
       double size = plane_dims[0];
       double thickness = plane_dims[2];
       glScalef(size,size,thickness);
@@ -1821,6 +1885,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       if(selected_marker=="markers::base_yaw")
         glColor4f(0.7,0.1,0.1,1.0);
       glTranslatef(pos[0],pos[1],pos[2]);
+      glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);  
       gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
       glPopMatrix(); 
     }
@@ -1833,7 +1898,8 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       if(selected_marker=="markers::base_roll")
         glColor4f(0.7,0.1,0.1,1.0);
       glTranslatef(pos[0],pos[1],pos[2]);
-      glRotatef(90,0,1,0);   
+      glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);  
+      glRotatef(90,0,1,0);
       gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
       glPopMatrix();
       
@@ -1842,6 +1908,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       if(selected_marker=="markers::base_pitch")
         glColor4f(0.7,0.1,0.1,1.0);
       glTranslatef(pos[0],pos[1],pos[2]);
+      glRotatef(marker_rot_theta * 180/M_PI, marker_rot_axis[0], marker_rot_axis[1], marker_rot_axis[2]);
       glRotatef(90,1,0,0);
       gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
       //glutSolidTorus(rot_marker_inner_radius,rot_marker_outer_radius,36,36);
@@ -1874,8 +1941,7 @@ bool InteractableGlKinematicBody::draw_mesh(int linkType){
   bool drawMesh=false;
   if(isShowMeshSelected && pts.size()>0) drawMesh = true;
   if(linkType == otdf::Geometry::DYNAMIC_MESH) drawMesh = true;
-
-
+  
   //cout << link->type << " " << isShowMeshSelected << " " << drawMesh << " " << pts.size() << " " << triangles.size() << endl;
 
   // draw triangles if available
@@ -1937,12 +2003,8 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
     LinkFrameStruct nextTf=_link_geometry_tfs[i];
     std::stringstream oss;
     oss << _unique_name << "_"<< _link_geometry_tfs[i].name; 
-    if((_link_selection_enabled)&&(selected_link == oss.str())) {
-//          if((_bodypose_adjustment_enabled)&&(is_otdf_instance))
-//            draw_interactable_markers(_otdf_link_shapes[i],_link_geometry_tfs[i]); // draws shapes and adds them to _collision_detector 
-//          else if((_bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
-//            draw_interactable_markers(_link_shapes[i],_link_geometry_tfs[i]);   
-        
+    if((_link_selection_enabled)&&(selected_link == oss.str())) 
+    {
       glColor4f(0.7,0.1,0.1,alpha);         
     }
     else
@@ -1951,12 +2013,14 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
     if((_whole_body_selection_enabled)&&(selected_link == _unique_name)){
       glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
     } 
-    //int64_t tic = bot_timestamp_now();
-    GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);  
-    //int64_t toc = bot_timestamp_now();
-    //std::cout << _link_geometry_tfs[i].name << " usec: " << bot_timestamp_useconds(toc-tic) << std::endl;
     
+    GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);  
   }
+  
+  // update floatingbase markers to be in sync with body frame.
+  KDL::Frame T_drawFrame_currentWorldFrame= KDL::Frame::Identity();
+  T_drawFrame_currentWorldFrame.M=_T_world_body.M.Inverse();
+  set_floatingbase_marker_offsetframe(T_drawFrame_currentWorldFrame);
   
   //draw_whole_body_bbox();
    if((_root_name!="world")&&(_bodypose_adjustment_enabled)){
@@ -1968,10 +2032,68 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
      draw_jointdof_markers();
    }
    
+}
 
-};
+//----------------------------------------------------------------------------------------------------------------                                       
 
 
+void InteractableGlKinematicBody::draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_drawFrame_currentWorldFrame)
+ {
+   
+    glColor4f(c[0],c[1],c[2],alpha);
+    double t;
+    if(enable_blinking){
+      int64_t now=bot_timestamp_now();
+      t=bot_timestamp_useconds(now)*1e-6;//in sec
+      alpha=std::min(fabs(sin(M_PI*t)),1.0);
+      c[0]=0.7; c[1]=0.1; c[2]=0.1;
+    }
+    
+    bool drawMesh = false;
+    if(!_otdf_link_shapes.empty()) {
+      drawMesh = draw_mesh(_otdf_link_shapes[0]->type);
+    }
+      
+    for(uint i = 0; i < _link_geometry_tfs.size(); i++)
+    {
+      KDL::Frame T_currentWorldFrame_link,T_drawFrame_link;
+      LinkFrameStruct nextTf=_link_geometry_tfs[i];
+      
+      T_currentWorldFrame_link = nextTf.frame;
+      T_drawFrame_link = T_drawFrame_currentWorldFrame*T_currentWorldFrame_link;
+      nextTf.frame = T_drawFrame_link;
+
+      
+      std::stringstream oss;
+      oss << _unique_name << "_"<< nextTf.name; 
+      if((_link_selection_enabled)&&(selected_link == oss.str())) {
+        glColor4f(0.7,0.1,0.1,alpha);         
+      }
+      else
+         glColor4f(c[0],c[1],c[2],alpha);
+
+      if((_whole_body_selection_enabled)&&(selected_link == _unique_name)) {
+        glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
+      }
+      
+      GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);    
+    
+    }
+    KDL::Frame temp=KDL::Frame::Identity();
+    temp.M =  T_drawFrame_currentWorldFrame.M;
+    set_floatingbase_marker_offsetframe(temp);//zero position, only use orientation
+    
+    //draw_whole_body_bbox();
+     if((_root_name!="world")&&(_bodypose_adjustment_enabled)){
+      if(_floatingbase_markers_boxsize!=0){
+        draw_floatingbase_markers();
+      }
+     }
+     if(_jointdof_adjustment_enabled){
+       draw_jointdof_markers();
+     }  
+     
+ }
 //----------------------------------------------------------------------------------------------------------------                                       
  
 

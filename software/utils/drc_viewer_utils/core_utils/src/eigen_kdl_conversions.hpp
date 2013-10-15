@@ -70,6 +70,24 @@ static inline void rotate_eigen_vector_given_kdl_frame(const Eigen::Vector3f &in
    temp =  T_out_in*temp;
    out[0] =  (float) temp[0]; out[1] =  (float) temp[1]; out[2] = (float) temp[2];
 }
+
+static inline void rotate_eigen_vector_given_kdl_rotation(const Eigen::Vector3f &in,const KDL::Rotation &R_out_in,Eigen::Vector3f &out)
+{
+   KDL::Vector temp;
+   temp[0] =  in[0]; temp[1] =  in[1]; temp[2] = in[2];
+   temp =  R_out_in*temp;
+   out[0] =  (float) temp[0]; out[1] =  (float) temp[1]; out[2] = (float) temp[2];
+}
+
+static inline void rotate_eigen_quat_given_kdl_rotation(const Eigen::Vector4f &qin,const KDL::Rotation &R_out_in,Eigen::Vector4f &qout)
+{
+  //assuming qin is x,y,z,w
+    double x,y,z,w;
+    KDL::Rotation temp = KDL::Rotation::Quaternion(qin[0],qin[1],qin[2],qin[3]);
+    KDL::Rotation temp2 = R_out_in*temp;
+    temp2.GetQuaternion(x,y,z,w);
+    qout << x,y,z,w; 
+}
   
 /// Converts a KDL twist into an Eigen matrix
 static inline void transformKDLtwistToEigen(const KDL::Twist &k, Eigen::Matrix<double, 6, 1> &e)

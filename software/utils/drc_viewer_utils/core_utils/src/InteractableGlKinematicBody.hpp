@@ -35,6 +35,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
    
    std::string selected_marker;
    bool _bodypose_adjustment_enabled;
+   bool  _floatingbase_marker_offset_enabled; // enabled if we want body pose markers in a frame other than world frame.
+   KDL::Frame _T_floatingbase_marker_world;
    bool _jointdof_adjustment_enabled;
    bool _jointdof_markers_initialized;
    std::vector<std::string> _jointdof_marker_filter;
@@ -97,49 +99,9 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
 
    bool draw_mesh(int linkType);
-
-   void draw_body (float (&c)[3], float alpha);   
+   void draw_body (float (&c)[3], float alpha);  
+   void draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_drawFrame_currentWorldFrame);
    
-   void draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_drawFrame_currentWorldFrame)
-   {
-     
-      glColor4f(c[0],c[1],c[2],alpha);
-      for(uint i = 0; i < _link_geometry_tfs.size(); i++)
-      {
-        KDL::Frame T_currentWorldFrame_link,T_drawFrame_link;
-        LinkFrameStruct nextTf=_link_geometry_tfs[i];
-        
-        T_currentWorldFrame_link = nextTf.frame;
-        T_drawFrame_link = T_drawFrame_currentWorldFrame*T_currentWorldFrame_link;
-        nextTf.frame = T_drawFrame_link;
-
-        
-        std::stringstream oss;
-        oss << _unique_name << "_"<< nextTf.name; 
-        if((_link_selection_enabled)&&(selected_link == oss.str())) {
-//          if((_bodypose_adjustment_enabled)&&(is_otdf_instance))
-//            draw_interactable_markers(_otdf_link_shapes[i],nextTf); 
-//          else if((_bodypose_adjustment_enabled)&&(!is_otdf_instance)) 
-//            draw_interactable_markers(_link_shapes[i],nextTf);   
-            
-          glColor4f(0.7,0.1,0.1,alpha);         
-        }
-        else
-           glColor4f(c[0],c[1],c[2],alpha);
-
-        if((_whole_body_selection_enabled)&&(selected_link == _unique_name)) {
-          glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
-        }
-        
-        GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);    
-      
-      }
-
-   };
-
-
-
-  
   // Interactive markers
    void init_floatingbase_marker_collision_objects(); // requires  as FK needs to be solved atleast once to derive. Called inside setstate.
    void update_floatingbase_marker_collision_objects();
@@ -153,6 +115,19 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf);
    void draw_markers(float (&pos)[3], float markersize, float inner_radius, float outer_radius); 
 
+   void set_floatingbase_marker_offsetframe(KDL::Frame &T_markerframe_currentWorldFrame){
+      if(!_floatingbase_marker_offset_enabled){
+        _floatingbase_marker_offset_enabled = true; 
+      }        
+      _T_floatingbase_marker_world = T_markerframe_currentWorldFrame;
+      update_floatingbase_marker_collision_objects(); 
+   };
+   
+   KDL::Frame get_marker_frame(){
+      if(!_floatingbase_marker_offset_enabled)
+       return KDL::Frame::Identity();
+     return _T_floatingbase_marker_world.Inverse(); // returns T_world_marker
+   }
    
    void enable_link_selection(bool value)   {
        _link_selection_enabled = value; 
@@ -183,8 +158,6 @@ class InteractableGlKinematicBody: public GlKinematicBody
     _jointdof_adjustment_enabled = value;
     if(value){
       _bodypose_adjustment_enabled = false; // mutually exclusive
-//      if(_collision_detector_jointdof_markers==NULL)
-//        _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
     }
    };
    

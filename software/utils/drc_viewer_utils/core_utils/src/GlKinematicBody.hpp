@@ -30,6 +30,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include "gl_draw_utils.hpp"
+#include "eigen_kdl_conversions.hpp"
 
 namespace visualization_utils {
 
