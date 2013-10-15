@@ -4,7 +4,6 @@ classdef RecoveryPlanningBlock < DrakeSystem
     controller_data; % pointer to shared data handle containing foot trajectories
     robot;
     nq;
-    contact_state;
     lcmgl
   end
   
@@ -39,51 +38,83 @@ classdef RecoveryPlanningBlock < DrakeSystem
     
     function y=output(obj,t,~,x)
       t
-      period = 0.5;
-      persistent has_run
+      persistent last_plan_t
+      persistent contact_state
       persistent footsteps
-      if isempty(has_run) || (mod(t, period) > 0.1 && mod(t, period) < 0.2 && ~has_run)
-      % if isempty(has_run)
-        has_run = true;
-        q = x(1:obj.nq);
-        contact_threshold = 0.001; % a point is considered to be in contact if within this distance
-        kinsol = doKinematics(obj.robot,q,false,true);
-        ctrl_data = obj.controller_data.data;
-        obj.controller_data.setField('trans_drift',[0;0;0]);
-        
-        supp_idx = find(ctrl_data.support_times<=t,1,'last');
-        supp = ctrl_data.supports(supp_idx);
-        i=1;
-        if isempty(footsteps)
-          obj.contact_state.right_contact = false;
-          obj.contact_state.left_contact = false;
-          while i<=length(supp.bodies)
-            % check kinematic contact
-            phi = contactConstraints(obj.robot,kinsol,supp.bodies(i),supp.contact_pts{i});
-            contact_state_kin = any(phi<=contact_threshold);
-            if supp.bodies(i) == obj.robot.foot_bodies_idx(1)
-              obj.contact_state.right_contact = contact_state_kin;
-            elseif supp.bodies(i) == obj.robot.foot_bodies_idx(2)
-              obj.contact_state.left_contact = contact_state_kin;
-            else
-              error('bad supp body')
-            end
-            i=i+1;
-          end
+      if isempty(last_plan_t); last_plan_t = -inf; end
+      if isempty(contact_state)
+        contact_state = struct('right_contact', false, 'left_contact', false);
+      end
+      contact_threshold = 0.001; % a point is considered to be in contact if within this distance
+      % obj.controller_data.setField('trans_drift',[0;0;0]);
+      period = 0.5;
+      ctrl_data = obj.controller_data.data;
+      q = x(1:obj.nq);
+      kinsol = doKinematics(obj.robot,q,false,true);
+      supp_idx = find(ctrl_data.support_times<=t,1,'last');
+      supp = ctrl_data.supports(supp_idx);
+      i=1;
+      cstate.right_contact = false;
+      cstate.left_contact = false;
+      while i<=length(supp.bodies)
+        % check kinematic contact
+        phi = contactConstraints(obj.robot,kinsol,supp.bodies(i),supp.contact_pts{i});
+        contact_state_kin = any(phi<=contact_threshold);
+        if supp.bodies(i) == obj.robot.foot_bodies_idx(1)
+          cstate.right_contact = contact_state_kin;
+        elseif supp.bodies(i) == obj.robot.foot_bodies_idx(2)
+          cstate.left_contact = contact_state_kin;
         else
+          error('bad supp body')
+        end
+        i=i+1;
+      end
+      
+      halfway = t - last_plan_t > period / 2;
+      if isempty(footsteps) ||...
+         (halfway && ((footsteps(1).is_right_foot && cstate.right_contact > contact_state.right_contact) ||...
+                      (~footsteps(1).is_right_foot && cstate.left_contact > contact_state.left_contact)))
+%       if (cstate.right_contact > contact_state.right_contact || cstate.left_contact > contact_state.left_contact) && halfway
+        
+        contact_state = cstate;
+        last_plan_t = t;
+
+      % persistent has_run
+      % persistent footsteps
+      % if isempty(has_run) || (mod(t, period) > 0.1 && mod(t, period) < 0.2 && ~has_run)
+      % if isempty(has_run)
+        % has_run = true;
+       
+%         recovery_opts = struct('dts', [period-mod(t, period), period]);
+        recovery_opts = struct('dts', [period, period]);
+        if ~isempty(footsteps)
           if footsteps(1).is_right_foot
-            obj.contact_state.right_contact = true;
-            obj.contact_state.left_contact = false;
+            cstate.right_contact = true;
+            cstate.left_contact = false;
           else
-            obj.contact_state.right_contact = false;
-            obj.contact_state.left_contact = true;
+            cstate.right_contact = false;
+            cstate.left_contact = true;
           end
         end
-        recovery_opts = struct('dts', [period-mod(t, period), period]);
-        % recovery_opts = struct('dts', [period, period]);
-        [footsteps,result] = recoverySteps(obj.robot, x, obj.contact_state, recovery_opts);
+        [footsteps,result] = recoverySteps(obj.robot, x, cstate, recovery_opts);
         if isfield(result, 'x')
+          for j = 1:size(result.footxy,2)
+            obj.lcmgl.glColor3f(0.7,0.7,0.7);
+            obj.lcmgl.sphere([result.footxy(:,j)',0],0.02,20,20);
+            obj.lcmgl.glColor3f(1,0.6,0.6);
+            obj.lcmgl.sphere([result.COP(:,j)',0],0.02,20,20);
+          end
+          obj.lcmgl.glColor3f(1.0,0.2,0.2);
+          obj.lcmgl.glLineWidth(1);
+          obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+          for j = 1:size(result.IC,2)-1
+            obj.lcmgl.glVertex3f(result.IC(1,j), result.IC(2,j), 0);
+            obj.lcmgl.glVertex3f(result.IC(1,j+1), result.IC(2,j+1), 0);
+          end
+          obj.lcmgl.glEnd();
+
           for j = 1:length(footsteps)
+            % footsteps(j).step_speed = 1.5;
             if footsteps(j).is_right_foot
               obj.lcmgl.glColor3f(0,1,0);
             else
@@ -100,6 +131,13 @@ classdef RecoveryPlanningBlock < DrakeSystem
           obj.lcmgl.switchBuffers();
           footstep_opts = struct('ignore_terrain', 1, 'mu', 1, 'behavior', drc.footstep_opts_t.BEHAVIOR_WALKING,'t0',t);
           [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(obj.robot, x, footsteps, footstep_opts);
+          support_times
+          supports
+          disp(comtraj.tspan)
+          disp(foottraj.right.orig.tspan)
+          disp(foottraj.left.orig.tspan)
+          disp(zmptraj.tspan)
+          
           s1dot = fnder(V.s1,1);
           s2dot = fnder(V.s2,1);
           ts = 0:0.1:zmptraj.tspan(end);
@@ -117,8 +155,9 @@ classdef RecoveryPlanningBlock < DrakeSystem
           obj.controller_data.setField('supports', [supports{:}]);
           obj.controller_data.setField('y0', zmptraj);
         end
-      elseif mod(t, period) > 0.2
-        has_run = false;
+      else
+        % last_plan_t = t;
+        contact_state = cstate;
       end
       y=x;
     end
