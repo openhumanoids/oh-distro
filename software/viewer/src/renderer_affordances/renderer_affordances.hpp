@@ -428,6 +428,16 @@ struct RendererAffordances {
       
       // set desired state
       KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
+      KDL::Frame T_marker_world =  (it->second._gl_object->get_marker_frame()).Inverse(); 
+      KDL::Frame T_marker_object = T_marker_world*T_world_object_future;
+      Eigen::Vector3f markerframe_prev_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+      Eigen::Vector3f markerframe_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag); 
+      Eigen::Vector3f worldframe_delta,markerframe_delta;
+      worldframe_delta  = self->ray_hit_drag-self->marker_offset_on_press;
+      rotate_eigen_vector_given_kdl_frame(worldframe_delta,T_marker_world,markerframe_delta);          
+      
       double currentAngle, angleTo,dtheta;       
       KDL::Frame DragRotation=KDL::Frame::Identity();       
       if(it->second._gl_object->is_bodypose_adjustment_enabled())
@@ -447,60 +457,53 @@ struct RendererAffordances {
           found2 = plane_name.find("z"); 
           bool z_plane_active = (found2!=std::string::npos);
           if(x_plane_active){
-           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
-           T_world_object_future.p[0] = dx;
+           T_marker_object.p[0] = markerframe_delta[0];
           }
           if(y_plane_active){
-           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-            T_world_object_future.p[1] = dy;
+            T_marker_object.p[1] = markerframe_delta[1];
           }
           if(z_plane_active){
-            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-            T_world_object_future.p[2] = dz;
-          }        
-        }  
-
+            T_marker_object.p[2] = markerframe_delta[2];
+          }               
+        }
+        
         if(self->marker_selection=="markers::base_x"){
-          double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
-          T_world_object_future.p[0] = dx;
+          T_marker_object.p[0] = markerframe_delta[0];
         }
         else if(self->marker_selection=="markers::base_y"){
-          double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-          T_world_object_future.p[1] = dy;
+          T_marker_object.p[1] = markerframe_delta[1];
         }      
         else if(self->marker_selection=="markers::base_z"){
-          double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-          T_world_object_future.p[2] = dz;
+          T_marker_object.p[2] = markerframe_delta[2];
         }    
         else if(self->marker_selection=="markers::base_roll"){
-          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object_future.p[2],self->prev_ray_hit_drag[1]-T_world_object_future.p[1]);
-          angleTo = atan2(self->ray_hit_drag[2]-T_world_object_future.p[2],self->ray_hit_drag[1]-T_world_object_future.p[1]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[2]-T_marker_object.p[2],markerframe_prev_ray_hit_drag[1]-T_marker_object.p[1]);
+          angleTo = atan2(markerframe_ray_hit_drag[2]-T_marker_object.p[2],markerframe_ray_hit_drag[1]-T_marker_object.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if(self->marker_selection=="markers::base_pitch"){ 
-          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object_future.p[0],self->prev_ray_hit_drag[2]-T_world_object_future.p[2]);
-          angleTo = atan2(self->ray_hit_drag[0]-T_world_object_future.p[0],self->ray_hit_drag[2]-T_world_object_future.p[2]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[0]-T_marker_object.p[0],markerframe_prev_ray_hit_drag[2]-T_marker_object.p[2]);
+          angleTo = atan2(markerframe_ray_hit_drag[0]-T_marker_object.p[0],markerframe_ray_hit_drag[2]-T_marker_object.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }    
         else if(self->marker_selection=="markers::base_yaw"){
-          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object_future.p[1],self->prev_ray_hit_drag[0]-T_world_object_future.p[0]);
-          angleTo = atan2(self->ray_hit_drag[1]-T_world_object_future.p[1],self->ray_hit_drag[0]-T_world_object_future.p[0]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[1]-T_marker_object.p[1],markerframe_prev_ray_hit_drag[0]-T_marker_object.p[0]);
+          angleTo = atan2(markerframe_ray_hit_drag[1]-T_marker_object.p[1],markerframe_ray_hit_drag[0]-T_marker_object.p[0]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 0; axis[2]=1;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         
-        T_world_object_future.M  = DragRotation.M*T_world_object_future.M;  
-        
+        T_marker_object.M  = DragRotation.M*T_marker_object.M; 
+        T_world_object_future = (T_marker_world.Inverse())*T_marker_object;
+ 
         std::map<std::string, double> jointpos_in;
         jointpos_in = it->second._gl_object->_future_jointpos;
         it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
@@ -727,7 +730,16 @@ struct RendererAffordances {
       std::string instance_name=  self->object_selection;
 
       // set current state
-      KDL::Frame T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+      KDL::Frame T_world_object =  self->otdf_instance_hold._gl_object->_T_world_body;
+      KDL::Frame T_marker_world =  (self->otdf_instance_hold._gl_object->get_marker_frame()).Inverse(); 
+      KDL::Frame T_marker_object = T_marker_world*T_world_object;
+      Eigen::Vector3f markerframe_prev_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+      Eigen::Vector3f markerframe_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag); 
+      Eigen::Vector3f worldframe_delta,markerframe_delta;
+      worldframe_delta  = self->ray_hit_drag-self->marker_offset_on_press;
+      rotate_eigen_vector_given_kdl_frame(worldframe_delta,T_marker_world,markerframe_delta);       
       
       double currentAngle, angleTo,dtheta;       
       KDL::Frame DragRotation=KDL::Frame::Identity();       
@@ -746,59 +758,54 @@ struct RendererAffordances {
           bool y_plane_active = (found2!=std::string::npos);       
           found2 = plane_name.find("z"); 
           bool z_plane_active = (found2!=std::string::npos);
+          
           if(x_plane_active){
-           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
-           T_world_object.p[0] = dx;
+           T_marker_object.p[0] = markerframe_delta[0];
           }
           if(y_plane_active){
-           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-            T_world_object.p[1] = dy;
+            T_marker_object.p[1] = markerframe_delta[1];
           }
           if(z_plane_active){
-            double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-            T_world_object.p[2] = dz;
+            T_marker_object.p[2] = markerframe_delta[2];
           }        
         } 
       
         if(self->marker_selection=="markers::base_x"){
-          double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
-          T_world_object.p[0] = dx;
+          T_marker_object.p[0] = markerframe_delta[0];
         }
         else if(self->marker_selection=="markers::base_y"){
-          double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
-          T_world_object.p[1] = dy;
+          T_marker_object.p[1] = markerframe_delta[1];
         }      
         else if(self->marker_selection=="markers::base_z"){
-          double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
-          T_world_object.p[2] = dz;
+          T_marker_object.p[2] = markerframe_delta[2];
         }    
         else if(self->marker_selection=="markers::base_roll"){
-          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object.p[2],self->prev_ray_hit_drag[1]-T_world_object.p[1]);
-          angleTo = atan2(self->ray_hit_drag[2]-T_world_object.p[2],self->ray_hit_drag[1]-T_world_object.p[1]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[2]-T_marker_object.p[2],markerframe_prev_ray_hit_drag[1]-T_marker_object.p[1]);
+          angleTo = atan2(markerframe_ray_hit_drag[2]-T_marker_object.p[2],markerframe_ray_hit_drag[1]-T_marker_object.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if(self->marker_selection=="markers::base_pitch"){ 
-          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object.p[0],self->prev_ray_hit_drag[2]-T_world_object.p[2]);
-          angleTo = atan2(self->ray_hit_drag[0]-T_world_object.p[0],self->ray_hit_drag[2]-T_world_object.p[2]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[0]-T_marker_object.p[0],markerframe_prev_ray_hit_drag[2]-T_marker_object.p[2]);
+          angleTo = atan2(markerframe_ray_hit_drag[0]-T_marker_object.p[0],markerframe_ray_hit_drag[2]-T_marker_object.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }    
         else if(self->marker_selection=="markers::base_yaw"){
-          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object.p[1],self->prev_ray_hit_drag[0]-T_world_object.p[0]);
-          angleTo = atan2(self->ray_hit_drag[1]-T_world_object.p[1],self->ray_hit_drag[0]-T_world_object.p[0]);
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[1]-T_marker_object.p[1],markerframe_prev_ray_hit_drag[0]-T_marker_object.p[0]);
+          angleTo = atan2(markerframe_ray_hit_drag[1]-T_marker_object.p[1],markerframe_ray_hit_drag[0]-T_marker_object.p[0]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 0; axis[2]=1;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         
-        T_world_object.M  = DragRotation.M*T_world_object.M; 
-        
+        T_marker_object.M  = DragRotation.M*T_marker_object.M; 
+        T_world_object = (T_marker_world.Inverse())*T_marker_object;
         double roll,pitch,yaw;
         T_world_object.M.GetRPY(roll,pitch,yaw);
         self->otdf_instance_hold._otdf_instance->setParam("x",T_world_object.p[0]);
