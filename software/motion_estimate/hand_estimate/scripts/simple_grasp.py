@@ -20,9 +20,9 @@
 import roslib; roslib.load_manifest('sandia_hand_teleop')
 import rospy
 import sys,os
-from sandia_hand_msgs.srv import SimpleGraspSrv, SimpleGraspSrvResponse
-from sandia_hand_msgs.msg import SimpleGrasp
-from osrf_msgs.msg import JointCommands
+#from sandia_hand_msgs.srv import SimpleGraspSrv, SimpleGraspSrvResponse
+#from sandia_hand_msgs.msg import SimpleGrasp
+#from osrf_msgs.msg import JointCommands
 
 import lcm
 base_dir =os.getenv("DRC_BASE")
@@ -32,7 +32,7 @@ from drc.sandia_simple_grasp_t import sandia_simple_grasp_t
 from drc.joint_command_t import joint_command_t
 
 g_jc_pub = None
-g_jc = JointCommands()
+#g_jc = JointCommands()
 
 jc = joint_command_t()
 jc.robot_name = "sandia"
@@ -126,16 +126,16 @@ while True:
   ## Handle LCM if new messages have arrived.
   lc.handle()
 
-def grasp_srv(req):
-  return grasp_cb(req.grasp)
+#def grasp_srv(req):
+#  return grasp_cb(req.grasp)
 
 
 if __name__ == '__main__':
-  rospy.init_node('simple_grasp')
+  #rospy.init_node('simple_grasp')
 
   g_jc.position = [0] * 12
-  g_jc_pub = rospy.Publisher('joint_commands', JointCommands) # same namespace
-  g_jc_srv = rospy.Service('simple_grasp', SimpleGraspSrv, grasp_srv)
-  g_jc_sub = rospy.Subscriber('simple_grasp', SimpleGrasp, grasp_cb)
+  #g_jc_pub = rospy.Publisher('joint_commands', JointCommands) # same namespace
+  #g_jc_srv = rospy.Service('simple_grasp', SimpleGraspSrv, grasp_srv)
+  #g_jc_sub = rospy.Subscriber('simple_grasp', SimpleGrasp, grasp_cb)
   print "simple grasp service is now running."
-  rospy.spin()
+  #rospy.spin()

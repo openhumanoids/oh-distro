@@ -17,8 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import roslib; roslib.load_manifest('sandia_hand_teleop')
-import rospy, sys, os, time
+#import roslib; roslib.load_manifest('sandia_hand_teleop')
+#import rospy,
+import sys, os, time
 import pygame
 from pygame.locals import *
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
   lc = lcm.LCM()
   done = False
-  while not done and not rospy.is_shutdown():
+  while (1):#not done and not rospy.is_shutdown():
     for event in pygame.event.get():
       if (event.type == KEYDOWN):
         if event.key == K_ESCAPE:
