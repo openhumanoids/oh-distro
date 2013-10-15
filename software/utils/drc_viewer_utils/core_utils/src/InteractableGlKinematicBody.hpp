@@ -114,6 +114,16 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape, const LinkFrameStruct &link_tf);
    void draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf);
    void draw_markers(float (&pos)[3], float markersize, float inner_radius, float outer_radius); 
+   
+   void enable_bodyorparent_frame_rendering_of_floatingbase_markers(bool value)   {
+    // body frame is used in draw_body usage
+    // parent frame is used in draw_body_in_frame usage
+       _floatingbase_marker_offset_enabled = value; 
+   };
+   
+   bool is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled()   {
+       return _floatingbase_marker_offset_enabled; 
+   };   
 
    void set_floatingbase_marker_offsetframe(KDL::Frame &T_markerframe_currentWorldFrame){
       if(!_floatingbase_marker_offset_enabled){

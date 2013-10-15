@@ -2018,9 +2018,12 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
   }
   
   // update floatingbase markers to be in sync with body frame.
-  KDL::Frame T_drawFrame_currentWorldFrame= KDL::Frame::Identity();
-  T_drawFrame_currentWorldFrame.M=_T_world_body.M.Inverse();
-  set_floatingbase_marker_offsetframe(T_drawFrame_currentWorldFrame);
+  if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled())
+  {
+    KDL::Frame T_drawFrame_currentWorldFrame= KDL::Frame::Identity();
+    T_drawFrame_currentWorldFrame.M=_T_world_body.M.Inverse();
+    set_floatingbase_marker_offsetframe(T_drawFrame_currentWorldFrame);
+  }
   
   //draw_whole_body_bbox();
    if((_root_name!="world")&&(_bodypose_adjustment_enabled)){
@@ -2079,9 +2082,13 @@ void InteractableGlKinematicBody::draw_body_in_frame (float (&c)[3], float alpha
       GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);    
     
     }
-    KDL::Frame temp=KDL::Frame::Identity();
-    temp.M =  T_drawFrame_currentWorldFrame.M;
-    set_floatingbase_marker_offsetframe(temp);//zero position, only use orientation
+    
+    if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled())
+    {
+      KDL::Frame temp=KDL::Frame::Identity();
+      temp.M =  T_drawFrame_currentWorldFrame.M;
+      set_floatingbase_marker_offsetframe(temp);//zero position, only use orientation
+    }
     
     //draw_whole_body_bbox();
      if((_root_name!="world")&&(_bodypose_adjustment_enabled)){
