@@ -1,4 +1,4 @@
-function [t_x,x_data,t_u,u_data,t_vicon,vicon_data,state_frame,input_frame] = parseAtlasViconLog(plant,logfile, nviconpoints)
+function [t_x,x_data,t_u,u_data,t_vicon,vicon_data,state_frame,input_frame,t_extra,extra_data] = parseAtlasViconLog(plant,logfile, nviconpoints)
 % function [t_x,x_data,t_u,u_data] = parseAtlasLog(plant,logfile)
 %  Read a LCM log file and parse the robot state and commands for
 %  an Atlas robot. The channels parsed are EST_ROBOT_STATE and
@@ -30,6 +30,10 @@ if use_java
     parser.addChannel('EST_ROBOT_STATE',state_frame.lcmcoder.jcoder);
     parser.addChannel('ATLAS_COMMAND',input_frame.lcmcoder.jcoder);
     parser.addChannel('drc_vicon',drc.control.ViconBodyPointCoder(nviconpoints*10));
+    
+    if nargout > 8
+      parser.addChannel('ATLAS_STATE_EXTRA',drc.control.AtlasStateExtraCoder(34));
+    end
     parser.parseLog(logfile);  
     t_x = parser.getT('EST_ROBOT_STATE');
     t_u = parser.getT('ATLAS_COMMAND');
@@ -37,6 +41,10 @@ if use_java
     x_data = reshape(parser.getData('EST_ROBOT_STATE'), [], length(t_x));
     u_data = reshape(parser.getData('ATLAS_COMMAND'), [], length(t_u));
     vicon_data = reshape(parser.getData('drc_vicon'), [], length(t_vicon));
+    if nargout > 8
+      t_extra = parser.getT('ATLAS_STATE_EXTRA');
+      extra_data = reshape(parser.getData('ATLAS_STATE_EXTRA'), [], length(t_extra));
+    end
 else
   warning('Deprecated, and not being updated');
   lcm_log = lcm.logging.Log(logfile,'r');

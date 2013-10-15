@@ -1,6 +1,6 @@
-function [dq, body1_params, body2_params, floating_states, residuals, info, J] = jointOffsetCalibration(p, q_data, joint_indices,...
+function [dq, body1_params, body2_params, floating_states, residuals, info, J, body1_resids, body2_resids] = jointOffsetCalibration(p, q_data, joint_indices,...
     body1, body1_marker_fun, body1_num_params, body1_data, ...
-    body2, body2_marker_fun, body2_num_params, body2_data)
+    body2, body2_marker_fun, body2_num_params, body2_data, options)
 % NOTEST
 % Perform joint offset calibration, given vicon and joint data.
 % Given (x,y,z) position data of some set of markers on two different
@@ -34,10 +34,17 @@ function [dq, body1_params, body2_params, floating_states, residuals, info, J] =
 % @return info As returned by fminunc
 % @return J A jacobian
 
+if nargin < 12
+  options = struct();
+end
+if ~isfield(options,'search_floating')
+  options.search_floating = true;
+end
+
 n = p.getNumStates/2;
 
 % zero out all other joints
-q_data(setdiff(1:n,joint_indices),:) = 0*q_data(setdiff(1:n,joint_indices),:);
+% q_data(setdiff(1:n,joint_indices),:) = 0*q_data(setdiff(1:n,joint_indices),:);
 
 n_joints = length(joint_indices);
 N = size(q_data,2);
@@ -47,14 +54,20 @@ m2 = size(body2_data,2);
 % f = @(params) point_resids(p, body1, body2, q_data, joint_indices, N, n, m1, m2, n_joints, 10, 1, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, params(1:n_joints), params(n_joints+1:n_joints+body1_num_params), params(n_joints+body1_num_params+1:n_joints+body1_num_params+body2_num_params), reshape(params(n_joints+body1_num_params+body2_num_params+1:end),6,[]), body1_data, body2_data);
 % fg = @(x) geval(f,x,struct('grad_method','numerical'));
 
-f = @(params) point_resids_with_grad(p, body1, body2, q_data, joint_indices, N, n, m1, m2, n_joints, 10, 1, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, params(1:n_joints), params(n_joints+1:n_joints+body1_num_params), params(n_joints+body1_num_params+1:n_joints+body1_num_params+body2_num_params), reshape(params(n_joints+body1_num_params+body2_num_params+1:end),6,[]), body1_data, body2_data);
-options = optimset('Display','iter-detailed','GradObj','on');
+if options.search_floating
+  f = @(params) point_resids_with_grad(p, body1, body2, q_data, joint_indices, N, n, m1, m2, n_joints, 1e2, 1, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, params(1:n_joints), params(n_joints+1:n_joints+body1_num_params), params(n_joints+body1_num_params+1:n_joints+body1_num_params+body2_num_params), reshape(params(n_joints+body1_num_params+body2_num_params+1:end),6,[]), body1_data, body2_data);
+  x0 = zeros(n_joints+6*N+body1_num_params + body2_num_params,1);
+else
+  f = @(params) point_resids_with_grad(p, body1, body2, q_data, joint_indices, N, n, m1, m2, n_joints, 1e2, 1, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, params(1:n_joints), params(n_joints+1:n_joints+body1_num_params), params(n_joints+body1_num_params+1:n_joints+body1_num_params+body2_num_params), [], body1_data, body2_data);
+  x0 = zeros(n_joints+body1_num_params + body2_num_params,1);
+end
+fmin_options = optimset('Display','iter-detailed','GradObj','on');
 
 % p0 = randn(n_joints+6*N+body1_num_params + body2_num_params,1);
 % [x,dx] = f2(p0);
 % [x2,dx2] = fg(p0);
 % keyboard
-[X,FVAL,EXITFLAG] = fminunc(f,zeros(n_joints+6*N+body1_num_params + body2_num_params,1),options);
+[X,FVAL,EXITFLAG] = fminunc(f,x0,fmin_options);
 
 dq = X(1:n_joints);
 body1_params = X(n_joints+1:n_joints+body1_num_params);
@@ -63,38 +76,17 @@ floating_states = reshape(X(n_joints+body1_num_params+body2_num_params+1:end),6,
 residuals = FVAL;
 info = EXITFLAG;
 
-[~,~,J] = f(X);
+[~,~,J,body1_resids,body2_resids] = f(X);
 end
 
-function [f]=point_resids(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, body1_scale, body2_scale, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, q_offset, body1_params, body2_params, floating_states, body1_data, body2_data)
-q(joint_indices,:) = q(joint_indices,:) + repmat(q_offset,1,N);
-q(1:6,:) = floating_states;
-
-x_body1 = zeros(3,m1,N);
-x_body2 = zeros(3,m2,N);
-
-[pts_body1] = body1_marker_fun(body1_params);
-[pts_body2] = body2_marker_fun(body2_params);
-
-
-
-for i=1:N,
-  kinsol=p.doKinematics(q(:,i));
-  [x_body1(:,:,i)] = p.forwardKin(kinsol,body1,pts_body1);
-  [x_body2(:,:,i)] = p.forwardKin(kinsol,body2,pts_body2);
-end
-
-body1_err = sum(sum(sum((x_body1 - body1_data).*(x_body1 - body1_data))));
-body2_err = sum(sum(sum((x_body2 - body2_data).*(x_body2 - body2_data))));
-
-f = body1_scale*body1_err + body2_scale*body2_err;
-end
-
-function [f, g, J]=point_resids_with_grad(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, ...
+function [f, g, J, body1_resids, body2_resids]=point_resids_with_grad(p, body1, body2, q, joint_indices, N, n, m1, m2, n_joints, ...
     body1_scale, body2_scale, body1_num_params, body2_num_params, body1_marker_fun, body2_marker_fun, ...
     q_offset, body1_params, body2_params, floating_states, body1_data, body2_data)
 q(joint_indices,:) = q(joint_indices,:) + repmat(q_offset,1,N);
-q(1:6,:) = floating_states;
+
+if ~isempty(floating_states)
+  q(1:6,:) = floating_states;
+end
 
 x_body1 = zeros(3,m1,N);
 x_body2 = zeros(3,m2,N);
@@ -150,8 +142,11 @@ for i=1:N,
     dfdfloating_states(:,i) = dfdfloating_states(:,i) + 2*body2_scale*J_body2((1:3) + (j-1)*3,1:6,i)'*(x_body2(:,j,i) - body2_data(:,j,i));
   end
 end
-
-g = [dfdqoffset;dfdbody1_params;dfdbody2_params;dfdfloating_states(:)]';
+if ~isempty(floating_states)
+  g = [dfdqoffset;dfdbody1_params;dfdbody2_params;dfdfloating_states(:)]';
+else
+  g = [dfdqoffset;dfdbody1_params;dfdbody2_params]';
+end
 
 if nargout > 2
   J_qoffset = zeros(n_joints,(m1+m2)*N*3);
@@ -172,6 +167,15 @@ if nargout > 2
       J_floating_states(:,i,N*m1*3 + (i-1)*m2*3 + (j-1)*3 + (1:3)) = J_body2((1:3) + (j-1)*3,1:6,i)';
     end
   end
-  J = [J_qoffset; J_body1_params; J_body2_params; reshape(J_floating_states,[],(m1+m2)*N*3)];
+  if ~isempty(floating_states)
+    J = [J_qoffset; J_body1_params; J_body2_params; reshape(J_floating_states,[],(m1+m2)*N*3)];
+  else
+    J = [J_qoffset; J_body1_params; J_body2_params];
+  end
+end
+
+if nargout > 3
+  body1_resids = x_body1 - body1_data;
+  body2_resids = x_body2 - body2_data;
 end
 end
