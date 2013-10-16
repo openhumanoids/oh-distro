@@ -17,6 +17,10 @@ classdef AffordanceManager < handle
   %                               aff2robotFrameMap{i}(j) = -1 for all j
   % @param atlas2robotFrameMap -- atlas2robotFrameMap(i) is the index of atlas state(i) in
   %                               robot state frame.
+  % @param lhand2robotFrameMap -- lhand2robotFrameMap(i) is the index of
+  %                               left_hand_frame{i} in the robot state frame
+  % @param rhand2robotFrameMap -- rhand2robotFrameMap(i) is the index of
+  %                               right_hand_frame{i} in the robot state frame
   properties
     aff_state_listener
     num_affs;
@@ -27,10 +31,12 @@ classdef AffordanceManager < handle
     isCollision
     aff2robotFrameMap
     atlas2robotFrameMap
+    lhand2robotFrameMap
+    rhand2robotFrameMap
   end
   
   methods
-    function obj = AffordanceManager(atlas,channel)
+    function obj = AffordanceManager(atlas,robot,lhand_frame,rhand_frame,channel)
       obj.aff_state_listener = AffordanceStateListener(channel);
       obj.num_affs = 0;
       obj.aff_uid = [];
@@ -39,7 +45,15 @@ classdef AffordanceManager < handle
       obj.aff_rpy = [];
       obj.isCollision = [];
       obj.aff2robotFrameMap = {};
-      obj.atlas2robotFrameMap = (1:atlas.getNumStates)';
+      for i = 1:atlas.getNumStates
+        obj.atlas2robotFrameMap(i) = find(strcmp(atlas.getStateFrame.coordinates{i},robot.getStateFrame.coordinates));
+      end
+      for i = 1:length(lhand_frame.coordinates)
+        obj.lhand2robotFrameMap(i) = find(strcmp(lhand_frame.coordinates{i},robot.getStateFrame.coordinates));
+      end
+      for i = 1:length(rhand_frame.coordinates)
+        obj.rhand2robotFrameMap(i) = find(strcmp(rhand_frame.coordinates{i},robot.getStateFrame.coordinates));
+      end
     end
     
     function updateWmessage(obj,t_ms)
@@ -58,7 +72,7 @@ classdef AffordanceManager < handle
       end
     end
     
-    function updateWcollisionObject(obj,robot_frame,aff_uid,atlas_frame)
+    function updateWcollisionObject(obj,robot_frame,aff_uid,atlas_frame,lhand_frame,rhand_frame)
       % @param robot_frame     -- CoordinateFrame of robot, including both atlas and
       %                           collision affordance
       % @param aff_uid         -- An array of the affordance uid that are newly added as
@@ -67,6 +81,12 @@ classdef AffordanceManager < handle
       obj.atlas2robotFrameMap = zeros(length(atlas_frame.coordinates),1);
       for i = 1:length(atlas_frame.coordinates)
         obj.atlas2robotFrameMap(i) = find(cellfun(@(x) strcmp(atlas_frame.coordinates{i},x),robot_frame.coordinates));
+      end
+      for i = 1:length(lhand_frame.coordinates)
+        obj.lhand2robotFrameMap(i) = find(strcmp(lhand_frame.coordinates{i},robot_frame.coordinates));
+      end
+      for i = 1:length(rhand_frame.coordinates)
+        obj.rhand2robotFrameMap(i) = find(strcmp(rhand_frame.coordinates{i},robot_frame.coordinates));
       end
       for i = 1:length(obj.aff_uid)
         aff_frame_i = obj.aff_state{i}.frame;

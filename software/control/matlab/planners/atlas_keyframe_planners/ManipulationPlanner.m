@@ -13,10 +13,10 @@ classdef ManipulationPlanner < KeyframePlanner
     end
     
     methods
-      function obj = ManipulationPlanner(r,hardware_mode)
-        obj = obj@KeyframePlanner(r); % initialize the base class 
+      function obj = ManipulationPlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
+        obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class 
         obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-        joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+        joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
         obj.num_breaks = 0; % keyframe adjustment doesn't make any sense.
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
@@ -470,23 +470,25 @@ classdef ManipulationPlanner < KeyframePlanner
 
           plan_Indices = plan_Indices(min_dof_idx:max_dof_idx);
           q = q(:,min_dof_idx:max_dof_idx);
+          nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
 
-          xtraj = zeros(getNumStates(obj.r),length(timeIndices));
-          xtraj(1:getNumDOF(obj.r),:) = q;
+          xtraj_atlas = zeros(2*nq_atlas,length(timeIndices));
+          xtraj_atlas(1:nq_atlas,:) = q(obj.atlas2robotFrameIndMap,:);
 
           % Keep the largest consequtive portion such that the
           % end-effector is sufficiently close to desired
 
-          obj.map_pub.publish(xtraj,plan_Indices,utime);
+          obj.map_pub.publish(xtraj_atlas,plan_Indices,utime);
           send_status(3,0,0,'Published manip map...');
         else
-          xtraj = zeros(getNumStates(obj.r)+2,length(timeIndices));
-          xtraj(1,:) = 0*timeIndices;
+          nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+          xtraj_atlas = zeros(2*nq_atlas+2,length(timeIndices));
+          xtraj_atlas(1,:) = 0*timeIndices;
           obj.plan_cache.num_breaks = 0;
           keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.plan_cache.num_breaks))); % no more than ${obj.num_breaks} keyframes
-          xtraj(1,keyframe_inds) = 1.0;
-          xtraj(2,:) = 0*timeIndices;
-          xtraj(3:getNumDOF(obj.r)+2,:) = q;
+          xtraj_atlas(1,keyframe_inds) = 1.0;
+          xtraj_atlas(2,:) = 0*timeIndices;
+          xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap,:);
 
           s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
 
@@ -511,13 +513,10 @@ classdef ManipulationPlanner < KeyframePlanner
           for brk =1:length(s_breaks),
             q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
           end
-          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
+          q_breaks_atlas = q_breaks(obj.atlas2robotFrameIndMap,:);
+          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks_atlas);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
-          obj.plan_cache.qdot_desired
-          Tmax_joints
-          Tmax_ee
           ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
-          ts
           obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
           brkpts =logical(zeros(1,length(timeIndices))==1);
           if(~isempty(postureconstraint))
@@ -528,7 +527,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 end
             end
             brkpts_shiftright=circshift(brkpts,[ 0 -1]);
-            xtraj(2,:) = brkpts|brkpts_shiftright;
+            xtraj_atlas(2,:) = brkpts|brkpts_shiftright;
 
             unique_transitions = unique(timetags);%get all values for a given time index
             cnt = 1;
@@ -593,13 +592,13 @@ classdef ManipulationPlanner < KeyframePlanner
               end
             end
             % Also cache grasp transitions
-            grasp_transition_breaks = obj.plan_cache.s(xtraj(2,:)==1);
+            grasp_transition_breaks = obj.plan_cache.s(xtraj_atlas(2,:)==1);
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
             obj.plan_cache.num_grasp_transitions = size(G,2);%sum(xtraj(2,:));
             obj.plan_cache.grasp_transition_states = G;
             obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
           else
-            obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector);
+            obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
           end
           send_status(3,0,0,'Published manip plan...');
         end

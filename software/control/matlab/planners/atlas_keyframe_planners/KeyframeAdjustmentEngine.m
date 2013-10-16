@@ -13,10 +13,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
     end
     
     methods
-        function obj = KeyframeAdjustmentEngine(r,hardware_mode)
-            obj = obj@KeyframePlanner(r); % initialize the base class
+        function obj = KeyframeAdjustmentEngine(r,atlas,lhand_frame,rhand_frame,hardware_mode)
+            obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names); % if endpose flag is set
@@ -729,20 +729,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.head_constraint_cell = head_constraint_cell;
             
             % publish plan
-<<<<<<< e8f2f781bcb672c8df9f0c59899bd7dcc2ac1cd9
-            if nargout==0,
-             disp('Publishing plan...');
+            if nargout == 0
+              disp('Publishing plan...');
             end
-            xtraj = zeros(getNumStates(obj.r)+2,length(s));
-            xtraj(1,:) = 0*s;
-            xtraj(2,:) = 0*s;
-=======
-            disp('Publishing plan...');
             nx_atlas = length(obj.atlas2robotFrameIndMap);
             xtraj_atlas = zeros(nx_atlas+2,length(s));
             xtraj_atlas(1,:) = 0*s;
             xtraj_atlas(2,:) = 0*s;
->>>>>>> 0b679a01429af5a18dff7c3731b9907dae748fca
             
             for l = 1:length(obj.plan_cache.s_breaks),
                 xtraj_atlas(1,s == obj.plan_cache.s_breaks(l)) = 1.0;

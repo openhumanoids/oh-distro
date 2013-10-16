@@ -24,18 +24,44 @@ end
 
 options.floating = true;
 options.dt = 0.001;
-robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-
+right_hand_links = [robot.findLinkInd('r_hand'),robot.findLinkInd('right_f0_0'),robot.findLinkInd('right_f0_1'),...
+  robot.findLinkInd('right_f0_2'),robot.findLinkInd('right_f1_0'),robot.findLinkInd('right_f1_1'),...
+  robot.findLinkInd('right_f1_2'),robot.findLinkInd('right_f2_0'),robot.findLinkInd('right_f2_1'),...
+  robot.findLinkInd('right_f2_2'),robot.findLinkInd('right_f3_0'),robot.findLinkInd('right_f3_1'),robot.findLinkInd('right_f3_2')];
+left_hand_links = [robot.findLinkInd('l_hand'),robot.findLinkInd('left_f0_0'),robot.findLinkInd('left_f0_1'),robot.findLinkInd('left_f0_2'),...
+  robot.findLinkInd('left_f1_0'),robot.findLinkInd('left_f1_1'),robot.findLinkInd('left_f1_2'),...
+  robot.findLinkInd('left_f2_0'),robot.findLinkInd('left_f2_1'),robot.findLinkInd('left_f2_2'),...
+  robot.findLinkInd('left_f3_0'),robot.findLinkInd('left_f3_1'),robot.findLinkInd('left_f3_2')];
+robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
+robot.collision_filter_groups('left_hand') = CollisionFilterGroup();
+robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
+robot = compile(robot);
+robot = robot.addLinksToCollisionFilterGroup(left_hand_links,'left_hand',1);
+robot = compile(robot);
+robot = robot.addToIgnoredListOfCollisionFilterGroup({'left_hand'},'left_hand');
+robot = compile(robot);
+robot = robot.addToIgnoredListOfCollisionFilterGroup({'right_hand'},'right_hand');
+robot = compile(robot);
 if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
-reaching_planner = ReachingPlanner(robot,hardware_mode); % single or multiple/successively specified ee constraints
-manip_planner = ManipulationPlanner(robot,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
-posture_planner = PosturePlanner(robot,hardware_mode); %posture and posture preset plans
-endpose_planner = EndPosePlanner(robot,hardware_mode); %search for pose given ee constraints
-wholebody_planner = WholeBodyPlanner(robot,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
-keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,hardware_mode); % Common keyframe adjustment for all the above planners
+% sandia hands subscriber
+sandia_hands_listener = SandiaHandsListener('EST_ROBOT_STATE');
+
+reaching_planner = ReachingPlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode); % single or multiple/successively specified ee constraints
+manip_planner = ManipulationPlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
+posture_planner = PosturePlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode); %posture and posture preset plans
+endpose_planner = EndPosePlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode); %search for pose given ee constraints
+wholebody_planner = WholeBodyPlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
+keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
 
 reaching_planner.setHandType(l_issandia,r_issandia);
 manip_planner.setHandType(l_issandia,r_issandia);
@@ -84,7 +110,8 @@ manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 % WorkspaceURDF subscriber
 workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
 urdf_names = {};
-aff_manager = AffordanceManager(atlas,'AFFORDANCE_COLLECTION');
+aff_manager = AffordanceManager(atlas,robot,sandia_hands_listener.left_hand_frame,...
+  sandia_hands_listener.right_hand_frame,'AFFORDANCE_COLLECTION');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -145,15 +172,17 @@ while(1)
   urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
   if(~isempty(urdf_msg))
     aff_idx = find(aff_manager.aff_uid == urdf_msg.uid);
-    robot = robot.addRobotFromURDF(urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
+    robot = addAffordance2robot(robot,urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),...
+      aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
     
-    aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame);
-    reaching_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
-    manip_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
-    posture_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
-    endpose_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
-    wholebody_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
-    keyframe_adjustment_engine.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame,...
+      sandia_hands_listener.left_hand_frame,sandia_hands_listener.right_hand_frame);
+    reaching_planner.updateRobot(robot);
+    manip_planner.updateRobot(robot);
+    posture_planner.updateRobot(robot);
+    endpose_planner.updateRobot(robot);
+    wholebody_planner.updateRobot(robot);
+    keyframe_adjustment_engine.updateRobot(robot);
     
     urdf_names = [urdf_names,{urdf_msg.urdf_file}];
   end
@@ -299,6 +328,12 @@ while(1)
           end
         end
         x0 = x;
+    end
+    
+    data = getNextMessage(sandia_hands_listener,msg_timeout);
+    if(~isempty(data))
+      x0(aff_manager.lhand2robotFrameMap) = data.leftHand;
+      x0(aff_manager.rhand2robotFrameMap) = data.rightHand;
     end
     
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
@@ -544,7 +579,7 @@ while(1)
             d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_arms_extended.mat'));
             useIK_state = 1;
         end
-        q_desired = d.xstar(1:getNumDOF(r));
+        q_desired = d.xstar(1:getNumDOF(robot));
         if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis
             q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
         elseif(useIK_state == 5)

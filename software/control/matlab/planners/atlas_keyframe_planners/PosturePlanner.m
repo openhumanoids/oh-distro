@@ -10,10 +10,10 @@ classdef PosturePlanner < KeyframePlanner
     end
     
     methods
-        function obj = PosturePlanner(r,hardware_mode)
-            obj = obj@KeyframePlanner(r); % initialize the base class 
+        function obj = PosturePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
+            obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class 
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);            
             obj.num_breaks = 4;
@@ -276,20 +276,21 @@ classdef PosturePlanner < KeyframePlanner
           obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
           disp('Publishing posture plan...');
-          xtraj = zeros(getNumStates(obj.r)+2,length(s));
-          xtraj(1,:) = 0*s;
+          nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+          xtraj_atlas = zeros(2*nq_atlas+2,length(s));
+          xtraj_atlas(1,:) = 0*s;
           for l =1:length(s_breaks),
               ind = find(abs(s - s_breaks(l))<1e-3);
-              xtraj(1,ind) = 1.0;
-              xtraj(2,ind) = 0.0;
+              xtraj_atlas(1,ind) = 1.0;
+              xtraj_atlas(2,ind) = 0.0;
           end
-          xtraj(2+(1:nq),:) = q;          
+          xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);          
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
           ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps          
           obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
           utime = now() * 24 * 60 * 60;
 
-          obj.plan_pub.publish(xtraj,ts,utime);
+          obj.plan_pub.publish(xtraj_atlas,ts,utime);
         end
     %-----------------------------------------------------------------------------------------------------------------      
          

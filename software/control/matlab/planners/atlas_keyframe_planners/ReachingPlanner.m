@@ -12,11 +12,12 @@ classdef ReachingPlanner < KeyframePlanner
     end
     
     methods
-        function obj = ReachingPlanner(r,hardware_mode)
-            obj = obj@KeyframePlanner(r); % initialize the base class
+        function obj = ReachingPlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
+            obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
+            
             obj.num_breaks = 4;
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.restrict_feet=true;
@@ -546,6 +547,12 @@ classdef ReachingPlanner < KeyframePlanner
                     end
                 end
                 
+                
+                hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
+                  obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
+                obj.joint_constraint = obj.joint_constraint.setJointLimits(hand_joint_idx,...
+                  q0(hand_joint_idx),...
+                  q0(hand_joint_idx));
                 if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                     if(obj.restrict_feet)
                         %obj.pelvis_body,[0;0;0],pelvis_pose0,...
@@ -584,7 +591,7 @@ classdef ReachingPlanner < KeyframePlanner
             s_breaks=[s(1) s(end)];
             q_breaks=[q0 q_final_guess];
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
-            collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.03,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
+            collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
                 % PERFORM IKSEQUENCE OPT

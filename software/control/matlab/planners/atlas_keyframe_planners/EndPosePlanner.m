@@ -11,9 +11,9 @@ classdef EndPosePlanner < KeyframePlanner
     end
     
     methods
-        function obj = EndPosePlanner(r,hardware_mode)
+        function obj = EndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
             addpath spherical_interp/;
-            obj = obj@KeyframePlanner(r); % initialize the base class
+            obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
@@ -256,15 +256,17 @@ classdef EndPosePlanner < KeyframePlanner
           qtraj = PPTrajectory(spline(s_breaks,q_breaks));
 
           s = linspace(0,1,10);
-          xtraj = zeros(getNumStates(obj.r),1);
+          nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+          xtraj_atlas = zeros(2*nq_atlas,1);
           disp('Publishing candidate endpose for ee_loci ...');
           send_status(3,0,0,'Publishing candidate endpose for ee_loci...');
             
           for j = 1:length(s),
             
             utime = now() * 24 * 60 * 60;
-            xtraj(1:getNumDOF(obj.r),:) = qtraj.eval(s(j));
-            obj.pose_pub.publish(xtraj,utime);
+            q_tmp = qtraj.eval(s(j));
+            xtraj_atlas(1:nq_atlas) = q_tmp(obj.atlas2robotFrameIndMap);
+            obj.pose_pub.publish(xtraj_atlas,utime);
             pause(0.1);
           end
           
@@ -492,9 +494,10 @@ classdef EndPosePlanner < KeyframePlanner
             %            fprintf('The condition number of Jacobian matrix of the right hand is %10.4f\n',cond(J_rh));
             send_status(3,0,0,'Publishing candidate endpose...');
             utime = now() * 24 * 60 * 60;
-            xtraj = zeros(getNumStates(obj.r),1);
-            xtraj(1:getNumDOF(obj.r),:) = q_out;
-            obj.pose_pub.publish(xtraj,utime);
+            nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+            xtraj_atlas = zeros(2*nq_atlas,1);
+            xtraj_atlas(1:nq_atlas,:) = q_out(obj.atlas2robotFrameIndMap,:);
+            obj.pose_pub.publish(xtraj_atlas,utime);
             
             %TODO: Update Plan Cache
             s = [0 1];
