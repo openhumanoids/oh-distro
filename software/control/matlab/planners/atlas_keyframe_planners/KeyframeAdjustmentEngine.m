@@ -496,7 +496,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     disp('com end state is modified')
                     pos_min = com_int_constraint-com_pos_tol;
                     pos_max = com_int_constraint+com_pos_tol;
-                    constraint = {WorldCoMConstraint(obj.r,pos_min,pos_max,[1 1])};
+                    constraint = {WorldCoMConstraint(obj.r,1,pos_min,pos_max,[1 1])};
                     obj.plan_cache.com_constraint_cell = replaceConstraintCell(obj.plan_cache.com_constraint_cell,constraint);
                     obj.plan_cache.pelvis_constraint_cell = removeBodyConstraintUtil([1 1],obj.plan_cache.pelvis_constraint_cell); % pelvis constraint can conflict with com constraint
                     com_int_constraint = [nan;nan;nan];
@@ -610,7 +610,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_com));
                 s_int_com=obj.plan_cache.s_breaks(ind);
                 tspan = [s_int_com,s_int_com];
-                com_intermediate_constraint = {WorldCoMConstraint(obj.r,com_pose_int-com_pos_tol,com_pose_int+com_pos_tol,tspan)};
+                com_intermediate_constraint = {WorldCoMConstraint(obj.r,1,com_pose_int-com_pos_tol,com_pose_int+com_pos_tol,tspan)};
                 pelvis_constraint_cell = removeBodyConstraintUtil(tspan,pelvis_constraint_cell); % pelvis constraint can conflict with com constraint
                 com_constraint_cell = obj.plan_cache.com_constraint_cell;
                 com_constraint_cell = removeBodyConstraintUtil([s_int_com,s_int_com],com_constraint_cell);

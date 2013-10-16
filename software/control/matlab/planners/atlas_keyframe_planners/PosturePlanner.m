@@ -98,7 +98,7 @@ classdef PosturePlanner < KeyframePlanner
             q_desired = min([q_desired joint_ub],[],2);
             q_desired = max([q_desired joint_lb],[],2);
             joint_constraint = joint_constraint.setJointLimits((7:obj.r.getNumDOF)',q_desired(7:end),q_desired(7:end));
-            qsc = QuasiStaticConstraint(obj.r);
+            qsc = QuasiStaticConstraint(obj.r,1);
             qsc = qsc.setShrinkFactor(0.9);
             qsc = qsc.addContact(obj.r_foot_body,obj.r.getBody(obj.r_foot_body).getContactPoints,...
               obj.l_foot_body,obj.r.getBody(obj.l_foot_body).getContactPoints);

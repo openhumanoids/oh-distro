@@ -74,7 +74,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           ikoptions = IKoptions(obj.r);
           ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
           ik_qnom = q0;
-          qsc = QuasiStaticConstraint(obj.r);
+          qsc = QuasiStaticConstraint(obj.r,1);
           ikoptions = ikoptions.setMajorIterationsLimit(200);
           qsc = qsc.setShrinkFactor(0.8);
 
@@ -113,7 +113,7 @@ classdef WholeBodyPlanner < KeyframePlanner
             com0 = getCOM(obj.r,q_guess);
             %   comgoal = [mean(gc(1:2,k(1:end-1)),2);com0(3)];
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
-            com_constraint = {WorldCoMConstraint(obj.r,[com0(1)-.1;com0(2)-.1;com0(3)-.5],[com0(1)+.1;com0(2)+.1;com0(3)+0.5],[0 0])};
+            com_constraint = {WorldCoMConstraint(obj.r,1,[com0(1)-.1;com0(2)-.1;com0(3)-.5],[com0(1)+.1;com0(2)+.1;com0(3)+0.5],[0 0])};
 
             % compute EE trajectories
             r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
