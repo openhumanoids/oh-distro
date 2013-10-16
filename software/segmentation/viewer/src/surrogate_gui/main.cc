@@ -27,6 +27,7 @@
 //#include <otdf_renderer/renderer_otdf.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/foviation_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
 #include <ConciseArgs>
 
@@ -44,6 +45,63 @@ typedef struct {
 // to keyboard signals will receive the signal ref as an argument in their setup function.
 KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
 AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTriggerSignals()); 
+RendererFoviationSignalRef _rendererFoviationSignalRef  = RendererFoviationSignalRef(new RendererFoviationSignal()); 
+boost::shared_ptr<RendererFoviationSignalHandler> foviationSignalHndlr;
+
+static void foviationSpecificRenderer(void *user_data, string renderer_name)
+{
+  BotViewer *viewer = (BotViewer*) user_data;
+  for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+    BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+    string name(renderer->name);
+    bool always_enabled_renderers = ((name=="Advanced Grid")||(name=="BOT_FRAMES")||(name=="LCM GL")||(name=="System Status"));
+    if((name==renderer_name)||always_enabled_renderers){
+      renderer->enabled = 1;
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+      if(name==renderer_name) {
+        renderer->expanded = TRUE;
+        gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+                                   renderer->expanded);
+      }  
+    }
+    else{
+      renderer->enabled = 0;
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+      renderer->expanded = FALSE;
+      if (renderer->expander) {
+        gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+                                   renderer->expanded);
+      }            
+    }
+   }  
+}
+
+static void unFoviateRenderers(void *user_data)
+{
+  BotViewer *viewer = (BotViewer*) user_data;
+  for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+    BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+    renderer->enabled = 1;
+   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+   }   
+}
+
+static void foviationSignalCallback(void *user_data, string renderer_name, bool toggle)
+{
+
+  BotViewer *viewer = (BotViewer*) user_data;
+  if(toggle) 
+  {
+    cout << "Foviation Requested From: " <<  renderer_name << endl;
+    foviationSpecificRenderer(viewer,renderer_name);
+  }
+  else {
+    cout << "UnFoviation Requested From: " << renderer_name << endl;
+    unFoviateRenderers(viewer);
+  }
+             
+}
+
 
 static int
 on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
@@ -179,8 +237,9 @@ int main(int argc, char *argv[])
   ehandler->key_release = on_key_release;
   bot_viewer_add_event_handler(viewer, ehandler, 0);
 
- 
-  setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef,_affTriggerSignalsRef);
+ foviationSignalHndlr = boost::shared_ptr<RendererFoviationSignalHandler>(new RendererFoviationSignalHandler(_rendererFoviationSignalRef,foviationSignalCallback));
+  
+  setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM(), bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
 
     // setup renderers
     drcgrid_add_renderer_to_viewer(viewer, 1, lcmCpp->getUnderlyingLCM(), _keyboardSignalRef);
