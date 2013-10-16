@@ -40,15 +40,15 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_.assign(28,0.0);
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.008;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.005;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 3.1152;// -3.168 + 2*M_PI;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 3.1152 - M_PI;// -3.168 + 2*M_PI;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = -0.011;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.085;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.151;
-  
+
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
-  max_encoder_wrap_angle_.assign(28,0.0);
-  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_ELY] = 2;
-  max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 2;
+  max_encoder_wrap_angle_.assign(28,100000000);
+  // max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_ELY] = 3;
+  // max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3;
 
   use_encoder_.assign(28,false);
   use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
@@ -144,6 +144,9 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+
+            atlas_joints_out_.position[i] = mod_positions[i];
+            atlas_joints_out_.position[i] = msg->joint_velocity[i];
           }
         }
       }
@@ -174,6 +177,11 @@ void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
 
 bool state_sync::insertPoseBDI(drc::robot_state_t& msg){
   // TODO: add comparison of msg->utime and pose_BDI_'s utime  
+  if (pose_BDI_.utime ==0){
+    std::cout << "haven't received POSE_BDI, refusing to publish ERS\n";
+    return false;
+  }
+    
   
   msg.pose.translation.x = pose_BDI_.pos[0];
   msg.pose.translation.y = pose_BDI_.pos[1];
@@ -251,8 +259,6 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
     msg_out.joint_effort.push_back( joints.effort[i] );
   }
 }
-
-
 
 int
 main(int argc, char ** argv){
