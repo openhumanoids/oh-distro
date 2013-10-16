@@ -24,7 +24,20 @@ namespace visualization_utils {
   #define UPARRW  65362
   #define RGTARRW 65363
   #define DWNARRW 65364
-
+  #define F1 65470
+  #define F2 65471
+  #define F3 65472
+  #define F4 65473
+  #define F5 65474
+  #define F6 65475
+  #define F7 65476
+  #define F8 65477
+  #define F9 65478
+  #define F10 65479
+  #define F11 65480
+  #define F12 65481
+  #define ESC 65307
+  
   // A global keyboard signal with the keyval integer and a boolean 
   // indicating if it's a key-press or a key-release.
   typedef boost::signals2::signal<void(int,bool)> KeyboardSignal; 
