@@ -2,16 +2,16 @@ function [] = sendpose_lcm(lc, msg, pose)
 
 
 msg.utime = pose.utime;
-msg.pose.translation.x = pose.P(1);
-msg.pose.translation.y = pose.P(2);
-msg.pose.translation.z = pose.P(3);
+msg.pose.translation.x = pose.P_l(1);
+msg.pose.translation.y = pose.P_l(2);
+msg.pose.translation.z = pose.P_l(3);
 msg.pose.rotation.w = pose.q(1);
 msg.pose.rotation.x = pose.q(2);
 msg.pose.rotation.y = pose.q(3);
 msg.pose.rotation.z = pose.q(4);
-msg.twist.linear_velocity.x = pose.V(1);
-msg.twist.linear_velocity.y = pose.V(2);
-msg.twist.linear_velocity.z = pose.V(3);
+msg.twist.linear_velocity.x = pose.V_l(1);
+msg.twist.linear_velocity.y = pose.V_l(2);
+msg.twist.linear_velocity.z = pose.V_l(3);
 
 msg.twist.angular_velocity.x = pose.w_l(1);
 msg.twist.angular_velocity.y = pose.w_l(2);

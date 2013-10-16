@@ -16,16 +16,15 @@ end
 pose.utime = imudata.utime;
 dt = (pose.utime - pose__.utime)*1e-6;
 
+% Newton 2 mechanisation
+pose.P_l = pose__.P_l + (pose__.V_l) * dt; 
 
 pose.R = closed_form_DCM_farrell( 0.5*(pose__.da+imudata.da)*dt , pose__.R); % trapezoidal integration, before application through the exponential map
-
-% Newton 2 mechanisation
-pose.P = pose__.P + (pose__.V) * dt; 
+pose.f_l = pose.R' * (imudata.ddp) - imudata.gravity;
 
 % pose.f_l = q2R(imudata.q)' * (imudata.ddp);
-pose.f_l = pose.R * (imudata.ddp);
 
-pose.V = pose__.V + 0.5*(pose.f_l + pose__.f_l) * dt;
+pose.V_l = pose__.V_l + 0.5*(pose.f_l + pose__.f_l) * dt;
 
 pose.da = imudata.da;
 

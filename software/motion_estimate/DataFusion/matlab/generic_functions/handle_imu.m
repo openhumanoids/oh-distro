@@ -13,6 +13,7 @@ imudata.utime = imu.utime;
 imudata.ddp = imu.linear_acceleration;
 imudata.da = imu.angular_velocity;
 imudata.q = imu.orientation;
+imudata.gravity = [0;0;9.81];
 
 pose = INS_Mechanisation(pose__, imudata);
 

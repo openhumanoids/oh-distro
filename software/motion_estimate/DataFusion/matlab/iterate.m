@@ -46,7 +46,7 @@ Sys.priori = KF_timeupdate(Sys.posterior, 0, Sys.Disc, Sys.covariances);
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
 
-Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, Measurement.LegOdo.Pose.P);
+Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, Measurement.LegOdo.Pose.P_l);
 
 % Some results to look at later=====================================================================
 

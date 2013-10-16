@@ -33,21 +33,21 @@ P_l = cumsum(V_l*dt);
 
  % generate true orientation from random data
 knobs_ori.alpha = 1;
-knobs_ori.beta = 0.7;
+knobs_ori.beta = 1;
+knobs_ori.eta = 1E-3;
+knobs_ori.step = 200;
+
+w_l(:,1) = basic_traj(iterations+1, knobs_ori, Hd);
+w_l(:,2) = basic_traj(iterations+1, knobs_ori, Hd);
+
+knobs_ori.alpha = 1;
+knobs_ori.beta = 0.1;
 knobs_ori.eta = 5E-3;
-knobs_ori.step = 1500;
+knobs_ori.step = 1000;
+
+w_l(:,3) = basic_traj(iterations+1, knobs_ori, Hd);
 
 
-E_interm(:,1) = basic_traj(iterations+1, knobs_ori, Hd);
-E_interm(:,2) = basic_traj(iterations+1, knobs_ori, Hd);
-
-knobs_ori.alpha = 0;
-knobs_ori.beta = 0.9;
-knobs_ori.eta = 5E-3;
-
-E_interm(:,3) = basic_traj(iterations+1, knobs_ori, Hd);
-
-E = mod(E_interm + pi , 2*pi) - pi;
 
 %% Compute velocities, accelerations, rotation rates and orientation quaternion
 
@@ -57,8 +57,16 @@ f_l = diff(V_l)./dt;
 % here we add gravity
 a_l = f_l + [zeros(size(f_l,1),2) param.gravity*ones(size(f_l,1),1)];
 
-% local rotation rates
-w_l = diff(E_interm)./dt;
+% local rotation angles
+R = eye(3);
+w_l_ = zeros(1,3);
+for n = 1:size(w_l,1)
+    R = closed_form_DCM_farrell( -0.5*(w_l_ + w_l(n,:))'*dt , R);
+    w_l_ = w_l(n,:);
+    E_interm(n,:) = q2e(R2q(R))';
+end
+
+E = mod(E_interm + pi , 2*pi) - pi;
 
 % Body frame accels and rates
 w_b = zeros(size(w_l));
@@ -69,7 +77,7 @@ q = zeros(size(E,1),4);
 for n = 1:length(a_l)
     q(n,:) = e2q(E(n,:)')';
     lRb = q2R(q(n,:)' );
-    w_b(n,:) = ( lRb * w_l(n,:)' )';
+    w_b(n,:) = (  w_l(n,:) );
     f_b(n,:) = ( lRb * f_l(n,:)' )';
     a_b(n,:) = ( lRb * a_l(n,:)' )';
 end
@@ -167,27 +175,41 @@ title('Body frame rates')
 % initialize at identity
 pose = init_pose();
 
-resE = zeros(iterations,3);
+insE = zeros(iterations,3);
+insV = zeros(iterations,3);
+insP = zeros(iterations,3);
 
+imudata.gravity = [0;0;9.81];
 
 % iterate through all the the data
 for n = 1:iterations
     imudata.utime = traj.utime(n);
-    imudata.ddp = traj.true.f_b(n,:)';
+    imudata.ddp = traj.true.a_b(n,:)';
     imudata.da = -traj.true.w_b(n,:)';
+    imudata.q = traj.true.q(n,:)';
     
-    resE(n,:) = q2e(R2q(pose.R));
+    
+    insE(n,:) = q2e(R2q(pose.R))';
+    insV(n,:) = pose.V_l';
+    insP(n,:) = pose.P_l';
+    
     [pose] = INS_Mechanisation(pose, imudata);
-    
-    
 end
 
 subplot(433)
-plot(resE)
+plot(insE)
 grid on
 
 subplot(436)
-stem(traj.true.E - resE)
+plot(traj.true.E - insE)
+grid on
+
+subplot(439)
+plot(traj.true.V_l - insV)
+grid on
+
+subplot(4,3,12)
+plot(traj.true.P_l - insP)
 grid on
 
 
