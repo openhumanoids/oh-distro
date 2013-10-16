@@ -74,10 +74,10 @@ public class AffordanceFullStateCoder implements drake.util.LCMCoder
           Integer k;
           int index;
           for (int j=0; j<m_num_states; j++) {
-            k = m_state_map.get(msg.affs[j].state_names[j]);
+            k = m_state_map.get(msg.affs[i].state_names[j]);
             if (k!=null) {
               index = k.intValue();
-              fdata.val[index+m_num_floating_joints] = msg.affs[j].states[j];
+              fdata.val[index+m_num_floating_joints] = msg.affs[i].states[j];
               fdata.val[index+m_num_states+2*m_num_floating_joints] = 0.0;
             }
           }
