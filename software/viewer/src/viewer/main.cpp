@@ -112,6 +112,10 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
     int keyval = event->keyval;
     // emit global keyboard signal, second argument indicates that it is a keyrelease (if false)
     (*_keyboardSignalRef)(keyval,false); // emit global keyboard signal
+    //cout << keyval << endl;
+    
+    // TODO: Do this more elegantly via mouse right double click to signal broadcast to automatic renderer foviation
+    string foviate_renderer = " "; // Focus view on renderers based on function keys
     
     switch (keyval)
     {
@@ -119,10 +123,81 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       case SHIFT_R:
           //std::cout << "shift released\n";
           break;
+      case ESC: 
+        for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+          BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+          renderer->enabled = 1;
+         gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+         }   
+         break;  
+      case F1:
+       foviate_renderer = "Affordances & StickyHands/Feet";
+       break;
+      case F2:
+       foviate_renderer = "Robot Plan Display";
+       break;
+      case F3:
+       foviate_renderer = "Robot State Display"; 
+       break;
+      case F4:
+       foviate_renderer = "Walking";
+       break; 
+      case F5:
+       foviate_renderer = "FootStep Plans & Sticky Feet";
+       break; 
+      case F6:
+       foviate_renderer = "Maps";
+       break;
+      case F7:
+       foviate_renderer = "Laser";
+       break;
+      case F8:
+       foviate_renderer = "Data Control";
+       break;
+    
       default:
           return 0;
     }
-
+    
+    if((keyval>=F1)&&(keyval<=F12))
+    {
+      cout << "\n\nRenderer Foviation Via Function Keys: \n";
+      cout << "------------------------------------------\n";
+      cout << "ESC-All\n";
+      cout << "F1-Affordances & StickyHands/Feet\n";
+      cout << "F2-Robot Plan Display\n";
+      cout << "F3-Robot State Display\n";  
+      cout << "F4-Walking\n";
+      cout << "F5-FootStep Plans & Sticky Feet\n";
+      cout << "F6-Maps\n";  
+      cout << "F7-Laser\n";
+      cout << "F8-DataControl\n";
+    
+        
+        for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+          BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+          string name(renderer->name);
+          bool always_enabled_renderers = ((name=="Advanced Grid")||(name=="BOT_FRAMES")||(name=="LCM GL")||(name=="System Status"));
+          if((name==foviate_renderer)||always_enabled_renderers){
+            renderer->enabled = 1;
+            gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+            if(name==foviate_renderer) {
+              renderer->expanded = TRUE;
+              gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+                                         renderer->expanded);
+            }  
+          }
+          else{
+            renderer->enabled = 0;
+            gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+            renderer->expanded = FALSE;
+            if (renderer->expander) {
+              gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+                                         renderer->expanded);
+            }            
+          }
+         }               
+    }
 
     return 1;
 }
