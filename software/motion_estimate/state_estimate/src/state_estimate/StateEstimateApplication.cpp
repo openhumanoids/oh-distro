@@ -1,3 +1,4 @@
+
 #include "StateEstimateApplication.h"
 #include "StateEstimator.h"
 #include "LCMThread.h"
@@ -6,9 +7,15 @@
 
 
 //-----------------------------------------------------------------------------
-StateEstimate::StateEstimateApplication::StateEstimateApplication()
+StateEstimate::StateEstimateApplication::StateEstimateApplication(const command_switches &switches)
 {
+  _switches = &switches;
 
+  mMotionSimulatorSuffix = "";
+
+  if (_switches->MATLAB_MotionSimulator) {
+    mMotionSimulatorSuffix = "_MS";
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -32,7 +39,7 @@ int StateEstimate::StateEstimateApplication::exec()
 
   // create message producers
   AtlasStateMessageProducer atlasStateProducer("ATLAS_STATE");
-  IMUMessageProducer imuProducer("ATLAS_IMU_BATCH");
+  IMUMessageProducer imuProducer("ATLAS_IMU_BATCH" + mMotionSimulatorSuffix);
   PoseMessageProducer bdiPoseProducer("POSE_BDI");
   PoseMessageProducer viconPoseProducer("ATLAS_VICON");
 

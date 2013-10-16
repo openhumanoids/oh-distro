@@ -49,7 +49,7 @@ if (mod(imumsg.utime,3000)==0)
     msg.num_packets = 15;
     msg.raw_imu = imuMsgBatch;
 
-     lc.publish('ATLAS_IMU_RAW', msg);
+     lc.publish('ATLAS_IMU_BATCH_MS', msg);
      sentMsg = 1;
 end
 

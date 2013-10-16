@@ -10,7 +10,7 @@ function [pose] = INS_Mechanisation(pose__, imudata)
 
 % time first
 if (imudata.utime<pose__.utime)
-    disp('ground_truth.m: ERROR, you cannot integrate backwards in time here.');
+    disp('INS_Mechanisation.m: ERROR, you cannot integrate backwards in time here.');
 end
 
 pose.utime = imudata.utime;
