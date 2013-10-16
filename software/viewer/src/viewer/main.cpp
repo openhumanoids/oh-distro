@@ -171,10 +171,8 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
     // emit global keyboard signal, second argument indicates that it is a keyrelease (if false)
     (*_keyboardSignalRef)(keyval,false); // emit global keyboard signal
     //cout << keyval << endl;
-    
-    // TODO: Do this more elegantly via mouse right double click to signal broadcast to automatic renderer foviation
+
     string foviate_renderer = " "; // Focus view on renderers based on function keys
-    
     switch (keyval)
     {
       case SHIFT_L:
