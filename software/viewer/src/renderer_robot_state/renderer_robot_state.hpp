@@ -4,6 +4,7 @@
 #include <lcm/lcm.h>
 #include <bot_vis/bot_vis.h>
 #include <bot_frames/bot_frames.h>
+#include <math.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -241,9 +242,8 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
          }
         // else  no solution        
         
-        
         Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
-        if(diff.norm() > 0.05){
+        if(diff.norm() > 0.05){ // to avoid run off into horizon ? (Why did I add this? - Sisir)
           self->prev_ray_hit_drag = self->ray_hit_drag; 
         }
         Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
@@ -368,7 +368,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
       drc::position_3d_t pose;
       pose.translation.x = T_world_ee.p[0];
       pose.translation.y = T_world_ee.p[1];
-      pose.translation.z = T_world_ee.p[2];
+      pose.translation.z = NAN;//T_world_ee.p[2];
       pose.rotation.x = x;
       pose.rotation.y = y;
       pose.rotation.z = z;
