@@ -28,5 +28,6 @@ pods_install_pkg_config_file(rgbd_primitives
 add_executable(test-rgbd-primatives test_rgbd_primatives.cpp)
 target_link_libraries(test-rgbd-primatives  boost_system  boost_random)
 pods_use_pkg_config_packages(test-rgbd-primatives lcm rgbd_primitives pointcloud_vis
+    pointcloud_math lcmtypes_visualization
     )
 pods_install_executables(test-rgbd-primatives)
