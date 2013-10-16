@@ -358,6 +358,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	
 	  //bot_gtk_gl_drawing_area_set_context(this->_viewer->gl_area); // Prevents conflict with cam renderer which messes with the gl context    
     _base_gl_robot = shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string));
+    _base_gl_robot->disable_joint_limit_enforcement();
     cout<< "Number of Joints: " << _base_gl_robot->get_num_joints() <<endl;
     
     bool _is_left_sandia,_is_right_sandia; // determine sandia hands or irobot hands by inspecting robot urdf.
