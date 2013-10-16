@@ -57,7 +57,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 _T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()),
 _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
  future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),
- future_state_changing(false),isShowMeshSelected(false),isMateable(false)
+ future_state_changing(false),isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -241,7 +241,7 @@ visualize_bbox(false),is_otdf_instance(true),
 _T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), 
 _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
 future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),
-future_state_changing(false), isShowMeshSelected(false),isMateable(false)
+future_state_changing(false), isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -712,17 +712,20 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     _joint_tfs.clear();
     }
     
-    // enforce joint limits
-    typedef map<string, double > jointpos_mapType;      
-    for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
-    { 
-       map<string,double>::const_iterator joint_it;
-       joint_it=_jointlimit_min.find(it->first);
-       if(joint_it!=_jointlimit_min.end())
-        it->second = std::max(joint_it->second,it->second);
-       joint_it=_jointlimit_max.find(it->first);
-       if(joint_it!=_jointlimit_max.end())
-        it->second = std::min(joint_it->second,it->second); 
+    // enforce joint limits    
+    if(enforce_joint_limits)
+    {
+      typedef map<string, double > jointpos_mapType;      
+      for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
+      { 
+         map<string,double>::const_iterator joint_it;
+         joint_it=_jointlimit_min.find(it->first);
+         if(joint_it!=_jointlimit_min.end())
+          it->second = std::max(joint_it->second,it->second);
+         joint_it=_jointlimit_max.find(it->first);
+         if(joint_it!=_jointlimit_max.end())
+          it->second = std::min(joint_it->second,it->second); 
+      }
     }
     
     std::map<std::string, KDL::Frame > cartpos_out;
@@ -1007,17 +1010,20 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     
     
     // enforce joint limits
-    typedef map<string, double > jointpos_mapType;      
-    for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
-    { 
-       map<string,double>::const_iterator joint_it;
-       joint_it=_jointlimit_min.find(it->first);
-       if(joint_it!=_jointlimit_min.end())
-        it->second = std::max(joint_it->second,it->second);
-       joint_it=_jointlimit_max.find(it->first);
-       if(joint_it!=_jointlimit_max.end())
-        it->second = std::min(joint_it->second,it->second); 
-    }    
+    if(enforce_joint_limits)
+    {
+      typedef map<string, double > jointpos_mapType;      
+      for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
+      { 
+         map<string,double>::const_iterator joint_it;
+         joint_it=_jointlimit_min.find(it->first);
+         if(joint_it!=_jointlimit_min.end())
+          it->second = std::max(joint_it->second,it->second);
+         joint_it=_jointlimit_max.find(it->first);
+         if(joint_it!=_jointlimit_max.end())
+          it->second = std::min(joint_it->second,it->second); 
+      }
+    }
 
     std::map<std::string, KDL::Frame > cartpos_out;
 

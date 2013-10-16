@@ -133,8 +133,16 @@ class GlKinematicBody
     //Also store current jointangles map.
     std::map<std::string, double> _current_jointpos;
     std::map<std::string, double> _future_jointpos;
+    
+    bool enforce_joint_limits;
     std::map<std::string, double> _jointlimit_min;
     std::map<std::string, double> _jointlimit_max;
+    
+    void disable_joint_limit_enforcement()
+    {
+      enforce_joint_limits = false;
+    };
+    
     std::vector<KDL::Frame> _desired_body_motion_history;
     
     // mesh for drawing

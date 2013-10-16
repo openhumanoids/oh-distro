@@ -730,28 +730,27 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
     {
     
-      if(!x_plane_active){
+      //if(!x_plane_active){
          shared_ptr<Collision_Object> base_x_object_ptr(new Collision_Object_Box("markers::base_x", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
          _markers_collision_object_map.insert(make_pair("markers::base_x", base_x_object_ptr));
          _collision_detector_floatingbase_markers->add_collision_object(&*base_x_object_ptr);
-      }
-      if(!y_plane_active)
-      { 
+      //}
+      //if(!y_plane_active){ 
         shared_ptr<Collision_Object> base_y_object_ptr(new Collision_Object_Box("markers::base_y", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
         _markers_collision_object_map.insert(make_pair("markers::base_y", base_y_object_ptr));
         _collision_detector_floatingbase_markers->add_collision_object(&*base_y_object_ptr);
-      }
+      //}
     }
     
     if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
     {  
-       if(!z_plane_active)  {   
+       //if(!z_plane_active)  {   
           shared_ptr<Collision_Object> base_z_object_ptr(new Collision_Object_Box("markers::base_z", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
           _markers_collision_object_map.insert(make_pair("markers::base_z", base_z_object_ptr));
           _collision_detector_floatingbase_markers->add_collision_object(&*base_z_object_ptr);
-        }
+        //}
     }
    
     if(plane_active&&(!supress_plane_marker))  
@@ -855,29 +854,29 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
   {   
-    if(!x_plane_active){
+    //if(!x_plane_active){
       shared_ptr<Collision_Object_Box> downcasted_object1(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
       p_markerframe=p0_markerframe; p_markerframe[0]+=_marker_dir_flip[0]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object1->set_transform(p,q0);
-    } 
-    if(!y_plane_active){
+    //} 
+    //if(!y_plane_active){
       shared_ptr<Collision_Object_Box> downcasted_object2(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
       p_markerframe=p0_markerframe; p_markerframe[1]+=_marker_dir_flip[1]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object2->set_transform(p,q0);
-    }
+    //}
   }  
   if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
   {  
-    if(!z_plane_active)  {      
+    //if(!z_plane_active)  {      
       shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
       p_markerframe=p0_markerframe; p_markerframe[2]+=_marker_dir_flip[2]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object3->set_transform(p,q0);
-    }
+    //}
   }
 
  if(plane_active&&(!supress_plane_marker))  
@@ -1791,7 +1790,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
     {
-      if(!x_plane_active)
+      //if(!x_plane_active)
       { 
         Eigen::Vector3f p,p_markerframe;
         p_markerframe = p0_markerframe;
@@ -1808,7 +1807,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
         glPopMatrix();
       }
 
-      if(!y_plane_active)
+      //if(!y_plane_active)
       {
         Eigen::Vector3f p,p_markerframe;
         p_markerframe = p0_markerframe;
@@ -1830,7 +1829,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||    
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
     { 
-      if(!z_plane_active)
+      //if(!z_plane_active)
       {
         Eigen::Vector3f p,p_markerframe;
         p_markerframe = p0_markerframe;
