@@ -141,6 +141,31 @@ int main(int argc, char ** argv)
     setJointVal("r_leg_aky",-0.3843,message.joint_name,message.joint_position);
     setJointVal("r_leg_akx",0.0502,message.joint_name,message.joint_position);
     setJointVal("r_arm_mwx",-0.0006,message.joint_name,message.joint_position);
+    setJointVal("left_f0_j0",0.000,message.joint_name,message.joint_position);
+    setJointVal("left_f0_j1",0.001,message.joint_name,message.joint_position);
+    setJointVal("left_f0_j2",0.002,message.joint_name,message.joint_position);
+    setJointVal("left_f1_j0",0.000,message.joint_name,message.joint_position);
+    setJointVal("left_f1_j1",0.001,message.joint_name,message.joint_position);
+    setJointVal("left_f1_j2",0.002,message.joint_name,message.joint_position);
+    setJointVal("left_f2_j0",0.000,message.joint_name,message.joint_position);
+    setJointVal("left_f2_j1",0.001,message.joint_name,message.joint_position);
+    setJointVal("left_f2_j2",0.002,message.joint_name,message.joint_position);
+    setJointVal("left_f3_j0",0.000,message.joint_name,message.joint_position);
+    setJointVal("left_f3_j1",0.001,message.joint_name,message.joint_position);
+    setJointVal("left_f3_j2",0.002,message.joint_name,message.joint_position);
+    setJointVal("right_f0_j0",0.003,message.joint_name,message.joint_position);
+    setJointVal("right_f0_j1",0.004,message.joint_name,message.joint_position);
+    setJointVal("right_f0_j2",0.005,message.joint_name,message.joint_position);
+    setJointVal("right_f1_j0",0.003,message.joint_name,message.joint_position);
+    setJointVal("right_f1_j1",0.004,message.joint_name,message.joint_position);
+    setJointVal("right_f1_j2",0.005,message.joint_name,message.joint_position);
+    setJointVal("right_f2_j0",0.003,message.joint_name,message.joint_position);
+    setJointVal("right_f2_j1",0.004,message.joint_name,message.joint_position);
+    setJointVal("right_f2_j2",0.005,message.joint_name,message.joint_position);
+    setJointVal("right_f3_j0",0.003,message.joint_name,message.joint_position);
+    setJointVal("right_f3_j1",0.004,message.joint_name,message.joint_position);
+    setJointVal("right_f3_j2",0.005,message.joint_name,message.joint_position);
+
     
     // Publish
     lcm.publish("EST_ROBOT_STATE", &message);
