@@ -53,8 +53,8 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_hpx';% <---- 
-control_mode = 'force';% <----  force, position
+joint = 'r_arm_elx';% <---- 
+control_mode = 'position';% <----  force, position
 signal = 'foh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
@@ -66,9 +66,9 @@ if strcmp(control_mode,'force')
   ff_qd = gains.ff_qd(act_idx==joint_index_map.(joint));% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
-  k_q_p =  0.0;% <----
-  k_q_i = 0.0;% <----
-  k_qd_p = 0.0;% <----
+  k_q_p = gains.k_q_p(act_idx==joint_index_map.(joint));%0.125;% <----
+  k_q_i = gains.k_q_i(act_idx==joint_index_map.(joint));%0.01;% <----
+  k_qd_p = gains.k_qd_p(act_idx==joint_index_map.(joint));% <----
 else
   error('unknown control mode');
 end
@@ -77,10 +77,10 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = false;
   ts = linspace(0,40,800);% <----
-  amp = 30.0;% <----  Nm or radians
+  amp = 0.0;% <----  Nm or radians
   freq = linspace(0.1,0.5,800);% <----  cycles per second
 else
-  vals = 10*[0 0 1 0 0];% <----  Nm or radians
+  vals = [0 0 -0.9 0 0];% <----  Nm or radians
   ts = linspace(0,30,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

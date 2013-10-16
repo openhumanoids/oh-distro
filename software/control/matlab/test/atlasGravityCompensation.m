@@ -1,7 +1,7 @@
 function atlasGravityCompensation
 %NOTEST
 
-armstr = 'r_arm';
+armstr = 'arm';
 
 % load robot model
 options.floating = true;
@@ -71,9 +71,11 @@ gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-qdes = zeros(nq,1);
-qdes(joint_index_map.r_arm_shx) = 1.45; 
-qdes(joint_index_map.l_arm_shx) = -1.45; 
+% qdes = zeros(nq,1);
+% qdes(joint_index_map.r_arm_shx) = 1.45; 
+% qdes(joint_index_map.l_arm_shx) = -1.45; 
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+qdes = xstar(1:nq);
 
 act_idx = getActuatedJoints(r);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
@@ -148,7 +150,7 @@ while 1
     f_grav = u(arm_joints_act_fixed);
        
     % send torque command
-    udes(arm_joints_act) = tf_act(arm_joints_act) + f_grav;
+    udes(arm_joints_act) = 0.5*tf_act(arm_joints_act) + f_grav;
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end

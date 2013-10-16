@@ -19,35 +19,36 @@ ff_qd = Point(atlas_input_frame,0);
 ff_f_d = Point(atlas_input_frame,0);
 ff_const = Point(atlas_input_frame,0);
 
-% set ff_const for subset of joints that need it
-ff_const.neck_ay   =  0.0;
-ff_const.l_arm_usy =  0.1; % 9-19-13, fc
-ff_const.r_arm_usy = -0.075; % 10-09-13, fc
-ff_const.l_arm_shx = -0.01; % 9-17-13, fc
-ff_const.r_arm_shx =  0.055; % 9-17-13, fc
-ff_const.l_arm_ely = -0.045; % 9-17-13, fc
-ff_const.r_arm_ely =  -0.2; % 10-09-13, fc
-ff_const.l_arm_elx = -0.01; % 9-17-13, fc 
-ff_const.r_arm_elx = -0.025; % 9-18-13, fc
-ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
-ff_const.r_arm_uwy =  0.035; % 9-17-13, fc
-ff_const.l_arm_mwx =  0.025; % 9-17-13, fc
-ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
-ff_const.l_leg_hpz =  0.27; % 10-03-13, fc 
-ff_const.l_leg_hpx = -0.0; % 10-07-13, fc 
-% ff_const.l_leg_hpx = -0.125; % 10-07-13, fc 
-% ff_const.l_leg_kny =  0.0; % 10-03-13, fc 
-ff_const.l_leg_kny =  0.05; % 10-09-13, fc 
-ff_const.l_leg_aky =  0.05; % 10-09-13, fc 
-ff_const.l_leg_akx =  0.135; % 10-03-13, fc 
-ff_const.r_leg_hpz =  0.0145; % 9-30-13, fc 
-ff_const.r_leg_hpy = -0.15; % 10-01-13, fc
-ff_const.r_leg_hpx =  0.05; % 10-03-13, fc 
-%ff_const.r_leg_hpx =  0.32; % 10-03-13, fc 
-ff_const.r_leg_kny =  0.025; % 10-08-13, fc 
-%ff_const.r_leg_kny =  0.055; % 10-03-13, fc 
-ff_const.r_leg_aky =  0.0; % 10-09-13, fc 
-ff_const.r_leg_akx =  -0.17; % 10-03-13, fc 
+% ff_const can always be zero now that we have a calibration routine 
+
+% ff_const.neck_ay   =  0.0;
+% ff_const.l_arm_usy =  0.1; % 9-19-13, fc
+% ff_const.r_arm_usy = -0.075; % 10-09-13, fc
+% ff_const.l_arm_shx = -0.01; % 9-17-13, fc
+% ff_const.r_arm_shx =  0.055; % 9-17-13, fc
+% ff_const.l_arm_ely = -0.045; % 9-17-13, fc
+% ff_const.r_arm_ely =  -0.2; % 10-09-13, fc
+% ff_const.l_arm_elx = -0.01; % 9-17-13, fc 
+% ff_const.r_arm_elx = -0.025; % 9-18-13, fc
+% ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
+% ff_const.r_arm_uwy =  0.035; % 9-17-13, fc
+% ff_const.l_arm_mwx =  0.025; % 9-17-13, fc
+% ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
+% ff_const.l_leg_hpz =  0.27; % 10-03-13, fc 
+% ff_const.l_leg_hpx = -0.0; % 10-07-13, fc 
+% % ff_const.l_leg_hpx = -0.125; % 10-07-13, fc 
+% % ff_const.l_leg_kny =  0.0; % 10-03-13, fc 
+% ff_const.l_leg_kny =  0.05; % 10-09-13, fc 
+% ff_const.l_leg_aky =  0.05; % 10-09-13, fc 
+% ff_const.l_leg_akx =  0.135; % 10-03-13, fc 
+% ff_const.r_leg_hpz =  0.0145; % 9-30-13, fc 
+% ff_const.r_leg_hpy = -0.15; % 10-01-13, fc
+% ff_const.r_leg_hpx =  0.05; % 10-03-13, fc 
+% %ff_const.r_leg_hpx =  0.32; % 10-03-13, fc 
+% ff_const.r_leg_kny =  0.025; % 10-08-13, fc 
+% %ff_const.r_leg_kny =  0.055; % 10-03-13, fc 
+% ff_const.r_leg_aky =  0.0; % 10-09-13, fc 
+% ff_const.r_leg_akx =  -0.17; % 10-03-13, fc 
 
 ff_qd.l_arm_usy = 0.3; % 9-19-13, fc
 ff_qd.r_arm_usy = 0.3; % 9-19-13, fc
@@ -180,7 +181,7 @@ gains.k_f_p = double(k_f_p);
 gains.k_q_p = double(k_q_p);
 gains.k_qd_p = double(k_qd_p);
 gains.ff_f_d = double(ff_f_d);
-gains.ff_const = 0*double(ff_const);
+gains.ff_const = double(ff_const);
 gains.ff_qd = double(ff_qd);
 
 end
