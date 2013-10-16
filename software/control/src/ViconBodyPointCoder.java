@@ -7,9 +7,11 @@ import viconstructs.*;
 
 public class ViconBodyPointCoder implements drake.util.LCMCoder 
 {
-  private int m_dim;
-  public ViconBodyPointCoder(int dim) {
-    m_dim = dim;
+  private int m_dim = -1;
+  private int m_nummodels = -1;
+  private int[] m_modelDim;
+  private String[] m_modelNames;
+  public ViconBodyPointCoder() {
   }
 
   public drake.util.CoordinateFrameData decode(byte[] data) {
@@ -27,6 +29,28 @@ public class ViconBodyPointCoder implements drake.util.LCMCoder
     int message_size = 0;
     for (int i=0; i<msg.nummodels; i++) {
       message_size += msg.models[i].nummarkers*4; //[x,y,z,o] just capturing the markers, for now
+    }
+
+    if (m_dim == -1) {
+      m_dim = message_size;
+    } else {
+      if (m_dim != message_size) {
+        throw new IllegalStateException("Message changed in length, expected " + m_dim + " and got " + message_size);
+      }
+    }
+
+    if (m_nummodels == -1) {
+      m_nummodels = msg.nummodels;
+      m_modelDim = new int[m_nummodels];
+      m_modelNames = new String[m_nummodels];
+      for (int i=0; i<m_nummodels; i++) {
+        m_modelDim[i] = msg.models[i].nummarkers;
+        m_modelNames[i] = msg.models[i].name;
+      }
+    } else {
+      if (m_nummodels != msg.nummodels) {
+        throw new IllegalStateException("Number of models changed, expected " + m_nummodels + " and got " + msg.nummodels);
+      }
     }
 
     fdata.val = new double[message_size];
@@ -55,5 +79,16 @@ public class ViconBodyPointCoder implements drake.util.LCMCoder
 
   public int dim() {
     return m_dim;
+  }
+
+  public int getNumModels() {
+    return m_nummodels;
+  }
+
+  public int[] getModelDim() {
+    return m_modelDim;
+  }
+  public String getModelName(int index) {
+    return m_modelNames[index];
   }
 }
