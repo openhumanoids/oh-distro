@@ -82,11 +82,11 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     else{
       renderer->enabled = 0;
       gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
-      renderer->expanded = FALSE;
-      if (renderer->expander) {
-        gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
-                                   renderer->expanded);
-      }            
+//      renderer->expanded = FALSE;
+//      if (renderer->expander) {
+//        gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+//                                   renderer->expanded);
+//      }            
     }
    }  
 }
