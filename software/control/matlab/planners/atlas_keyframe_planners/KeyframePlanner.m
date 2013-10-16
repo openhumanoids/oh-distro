@@ -277,7 +277,7 @@ classdef KeyframePlanner < handle
         
         function updateRobot(obj,r)
           obj.r = r;
-          obj.plan_cache = obj.plan_cache.updateRobot(r);
+          obj.plan_cache.updateRobot(r);
           obj.hardware_mode = 1;
           obj.r_hand_body = findLinkInd(obj.r,'r_hand');
           obj.l_hand_body = findLinkInd(obj.r,'l_hand');

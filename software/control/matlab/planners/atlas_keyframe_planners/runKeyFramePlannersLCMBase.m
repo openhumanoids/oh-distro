@@ -45,9 +45,9 @@ wholebody_planner.setHandType(l_issandia,r_issandia);
 keyframe_adjustment_engine.setHandType(l_issandia,r_issandia);
 
 % atlas state subscriber
-state_frame = atlas.getStateFrame();
+atlas_state_frame = atlas.getStateFrame();
 %state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
-state_frame.subscribe('EST_ROBOT_STATE');
+atlas_state_frame.subscribe('EST_ROBOT_STATE');
 
 % individual end effector goal subscribers
 rh_ee = EndEffectorListener('RIGHT_PALM_GOAL');
@@ -83,13 +83,8 @@ manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 
 % WorkspaceURDF subscriber
 workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
-num_urdf = 0;
 urdf_names = {};
-aff_data = struct();
-aff_data.uid = [];
-aff_data.xyz = [];
-aff_data.rpy = [];
-affordance_pose_listener = AffordancePoseListener('AFFORDANCE_COLLECTION');
+aff_manager = AffordanceManager(atlas,'AFFORDANCE_COLLECTION');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -116,22 +111,6 @@ committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_na
 rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_names);
 stored_plan_listener = RobotKeyframePlanListener('STORED_ROBOT_PLAN',true,joint_names);
 
-% Listens to teleop commands
-lc = lcm.lcm.LCM.getSingleton();
-teleop_mon = drake.util.MessageMonitor(drc.ee_cartesian_adjust_t,'utime');
-lc.subscribe('CANDIDATE_EE_ADJUSTMENT',teleop_mon);
-
-lc = lcm.lcm.LCM.getSingleton();
-teleop_transform_mon = drake.util.MessageMonitor(drc.ee_teleop_transform_t,'utime');
-lc.subscribe('PALM_TELEOP_TRANSFORM',teleop_transform_mon);
-T_hand_palm_l = HT([0;0.1;0],pi/2,0,pi/2);
-T_hand_palm_r = HT([0;-0.1;0],-pi/2,0,-pi/2);
-%
-x0 = getInitialState(atlas);
-q0 = x0(1:getNumDOF(atlas));
-
-kinsol = doKinematics(r,q0);
-%
 
 
 rh_ee_goal = [];
@@ -161,23 +140,14 @@ ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
  
 while(1)
-  aff_msg = affordance_pose_listener.getNextMessage(msg_timeout);
+  aff_manager.updateWmessage(msg_timeout);
   % update the aff_data
-  if(~isempty(aff_msg))
-    [existing_uid,old_idx,new_idx] = intersect(aff_data.uid,aff_msg.uid,'stable');
-    aff_data.xyz(:,old_idx) = aff_msg.xyz(:,new_idx);
-    aff_data.rpy(:,old_idx) = aff_msg.rpy(:,new_idx);
-    [new_uid,new_uid_idx] = setdiff(aff_msg.uid,aff_data.uid,'stable');
-    aff_data.uid = [aff_data.uid aff_msg.uid(new_uid_idx)];
-    aff_data.xyz = [aff_data.xyz aff_msg.xyz(:,new_uid_idx)];
-    aff_data.rpy = [aff_data.xyz aff_msg.rpy(:,new_uid_idx)];
-  end
   urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
   if(~isempty(urdf_msg))
-    num_urdf = num_urdf+1;
-    aff_idx = find(aff_data.uid == urdf_msg.uid);
-    robot = robot.addRobotFromURDF(urdf_msg.urdf_file,aff_data.xyz(:,aff_idx),aff_data.rpy(:,aff_idx),struct('floating',false));
+    aff_idx = find(aff_manager.aff_uid == urdf_msg.uid);
+    robot = robot.addRobotFromURDF(urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
     
+    aff_manager.updateWcollisionObject(robot.getStateFrame,aff_manager.aff_uid,atlas_state_frame);
     reaching_planner.updateRobot(robot);
     manip_planner.updateRobot(robot);
     posture_planner.updateRobot(robot);
@@ -315,12 +285,19 @@ while(1)
         ee_goal_type_flags.rh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
     end
     
-    [x,ts] = getNextMessage(state_frame,msg_timeout);
+    [x,ts] = getNextMessage(atlas_state_frame,msg_timeout);
     if (~isempty(x))
         %  fprintf('received state at time %f\n',ts);
         % disp('Robot state received.');
         % note: setting the desired to actual at
         % the start of the plan might cause an impulse from gravity sag
+        x0 = zeros(robot.getNumStates,1);
+        x0(aff_manager.atlas2robotFrameMap) = x;
+        for i = 1:aff_manager.num_affs
+          if(aff_manager.isCollision(i))
+            x0(aff_manager.aff2robotFrameMap{i}) = aff_manager.aff_state{i};
+          end
+        end
         x0 = x;
     end
     
