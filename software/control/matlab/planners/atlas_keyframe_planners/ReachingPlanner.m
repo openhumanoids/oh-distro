@@ -373,7 +373,7 @@ classdef ReachingPlanner < KeyframePlanner
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
             ik_qnom = q0;
-            qsc = QuasiStaticConstraint(obj.r);
+            qsc = QuasiStaticConstraint(obj.r,1);
             qsc = qsc.setActive(true);
             qsc = qsc.setShrinkFactor(0.85);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
@@ -545,24 +545,24 @@ classdef ReachingPlanner < KeyframePlanner
                         head_constraint = [head_constraint,parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose,0,0,tspan)];
                     end
                 end
-                collision_status = 1;
+                
                 if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                     if(obj.restrict_feet)
                         %obj.pelvis_body,[0;0;0],pelvis_pose0,...
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,collision_status,q_start,ik_qnom,...
+                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
                             rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                             rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
                             obj.joint_constraint,qsc,ikoptions);
                     else
                         % if feet are not restricted then you need to add back pelvis constraint
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,collision_status,q_start,ik_qnom,...
+                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
                             pelvis_constraint{:},...
                             rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                             rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
                             obj.joint_constraint,qsc,ikoptions);
                     end
                 else
-                    [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,collision_status,q_start,ik_qnom,...
+                    [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
                         pelvis_constraint{:},...
                         rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                         rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
@@ -584,7 +584,7 @@ classdef ReachingPlanner < KeyframePlanner
             s_breaks=[s(1) s(end)];
             q_breaks=[q0 q_final_guess];
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
-            
+            collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.03,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
                 % PERFORM IKSEQUENCE OPT
@@ -603,11 +603,12 @@ classdef ReachingPlanner < KeyframePlanner
                 iktraj_options = iktraj_options.setMajorIterationsLimit(300);
                 
                 %============================
-                [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+                [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,...
                     iktraj_tbreaks,qtraj_guess,qtraj_guess,...
                     iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
                     iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
                     iktraj_pelvis_constraint{:},obj.joint_constraint,qsc,...
+                    collision_constraint,...
                     iktraj_options);
                 if(snopt_info > 10)
                     warning('The IK traj fails');
@@ -672,9 +673,11 @@ classdef ReachingPlanner < KeyframePlanner
             
             % publish robot plan
             disp('Publishing plan...');
-            xtraj = zeros(getNumStates(obj.r)+2,length(s));
-            xtraj(1,:) = 0*s;
-            xtraj(2,:) = 0*s;
+            nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+            xtraj_atlas = zeros(2+2*nq_atlas,length(s));
+            
+            xtraj_atlas(1,:) = 0*s;
+            xtraj_atlas(2,:) = 0*s;
             if(length(s_breaks)>obj.plan_cache.num_breaks)
                 keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.plan_cache.num_breaks)));
             else
@@ -682,10 +685,10 @@ classdef ReachingPlanner < KeyframePlanner
             end
             
             for l = keyframe_inds,
-                xtraj(1,s == s_breaks(l)) = 1.0;
+                xtraj_atlas(1,s == s_breaks(l)) = 1.0;
             end
-            xtraj(3:getNumDOF(obj.r)+2,:) = q;
-            snopt_info_vector = snopt_info*ones(1, size(xtraj,2));
+            xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+            snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
             
             Tmax_joints=obj.getTMaxForMaxJointSpeed();
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
@@ -693,7 +696,7 @@ classdef ReachingPlanner < KeyframePlanner
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             utime = now() * 24 * 60 * 60;
             
-            obj.plan_pub.publish(xtraj,ts,utime, snopt_info_vector);
+            obj.plan_pub.publish(xtraj_atlas,ts,utime, snopt_info_vector);
         end
         %-----------------------------------------------------------------------------------------------------------------
         function cost = getCostVector(obj)

@@ -146,14 +146,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 ikoptions = ikoptions.setDebug(true);
                 ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
                 ik_qnom = q0;
-                qsc = QuasiStaticConstraint(obj.r);
-                qsc = qsc.setActive(false);
-                qsc = qsc.setShrinkFactor(0.85);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.setShrinkFactor(0.85);
                 ikoptions = ikoptions.setMajorIterationsLimit(500);
                 %joint_constraint = PostureConstraint(obj.r);
                 constraints = [constraints,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
                     WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}];
-                [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,qsc,ikoptions);
+                [q_first,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,constraints{:},obj.joint_constraint,obj.plan_cache.qsc,ikoptions);
                 if(snopt_info > 10)
                     warning('The IK sequence fails');
                     send_msg = sprintf('snopt_info == %d.  IK failed to adjust first pose.\n %s',snopt_info,infeasibleConstraintMsg(infeasible_constraint));
@@ -229,9 +228,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.grasp_transition_states = grasptransitions;
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             if(~obj.isBDIManipMode()) 
-                obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(true);
+                obj.plan_cache.obj.plan_cache.qsc = obj.plan_cache.setActive(true);
             else
-                obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
+                obj.plan_cache.obj.plan_cache.qsc = obj.plan_cache.setActive(false);
             end
             
             % s = linspace(0,1,2*length(ts));
@@ -517,7 +516,6 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             %======================================================================================================
             
             
-            qsc = obj.plan_cache.qsc;
             if(~isempty(rh_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rh)); % snap to closest break point (avoiding very close double constraints)
                 s_int_rh=obj.plan_cache.s_breaks(ind);
@@ -553,7 +551,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 else
                     rfoot_constraint_cell = obj.plan_cache.rfoot_constraint_cell;
                 end
-                qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,r_foot_contact_pts);
                 
                 if(~isempty(lf_ee_constraint))
                     [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lf));
@@ -566,7 +564,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 else
                     lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
                 end
-                qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.l_foot_body,l_foot_contact_pts);
             else
                 if(obj.plan_cache.inTeleopMode)
                     lfoot_constraint_cell = obj.plan_cache.lfoot_constraint_cell;
@@ -643,8 +641,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             iktraj_options = iktraj_options.setMajorIterationsLimit(400);
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
-            
+            q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks(2:end));
+            q_seed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 q_seed]));
             q0 = obj.plan_cache.qtraj.eval(0); % use start of cached trajectory instead of current
             
             %if((~isempty(pelvis_constraint))&&(obj.isBDIManipMode()))
@@ -652,22 +650,22 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             %   q0(4:6) =  quat2rpy(pelvis_pose_int(4:7));
             %end
             
-            qd0 = zeros(obj.r.getNumDOF,1);
-            q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
+            
+            q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks(2:end));
+            q_nom_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 q_nom]));
             
             %============================
             %if(length(iktraj_tbreaks)<=5)
             if(~obj.plan_cache.isPointWiseIK)
-                qsc = qsc.setShrinkFactor(0.85);
-                q_seed = q_seed(:,2:end);
-                q_nom = q_nom(:,2:end);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.setShrinkFactor(0.85);
+                
 
-                [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-                    q0,qd0,iktraj_tbreaks,q_seed,q_nom,...
+                [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,...
+                    iktraj_tbreaks,q_seed_traj,q_nom_traj,...
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
                     pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
-                    obj.joint_constraint,qsc,iktraj_options);
+                    obj.joint_constraint,obj.plan_cache.qsc,iktraj_options);
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
                 x_breaks = xtraj.eval(iktraj_tbreaks);
                 
@@ -685,7 +683,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
                     pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
-                    obj.joint_constraint,qsc,iktraj_options);
+                    obj.joint_constraint,obj.plan_cache.qsc,iktraj_options);
                 x_breaks = xtraj;
                 %snopt_info
                 display(infeasibleConstraintMsg(infeasible_constraint));
@@ -731,23 +729,31 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.head_constraint_cell = head_constraint_cell;
             
             % publish plan
+<<<<<<< e8f2f781bcb672c8df9f0c59899bd7dcc2ac1cd9
             if nargout==0,
              disp('Publishing plan...');
             end
             xtraj = zeros(getNumStates(obj.r)+2,length(s));
             xtraj(1,:) = 0*s;
             xtraj(2,:) = 0*s;
+=======
+            disp('Publishing plan...');
+            nx_atlas = length(obj.atlas2robotFrameIndMap);
+            xtraj_atlas = zeros(nx_atlas+2,length(s));
+            xtraj_atlas(1,:) = 0*s;
+            xtraj_atlas(2,:) = 0*s;
+>>>>>>> 0b679a01429af5a18dff7c3731b9907dae748fca
             
             for l = 1:length(obj.plan_cache.s_breaks),
-                xtraj(1,s == obj.plan_cache.s_breaks(l)) = 1.0;
+                xtraj_atlas(1,s == obj.plan_cache.s_breaks(l)) = 1.0;
             end
             
             % Set the breakpoints here if they exist.
             for l = 1:length(grasp_transition_breaks),
-                xtraj(2,s == grasp_transition_breaks(l)) = 1.0;
+                xtraj_atlas(2,s == grasp_transition_breaks(l)) = 1.0;
             end
             
-            xtraj(3:getNumDOF(obj.r)+2,:) = q;
+            xtraj_atlas(2+(1:nx_atlas/2),:) = q(obj.atlas2robotFrameIndMap(1:nx_atlas/2),:);
             
             Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
             Tmax_joints=obj.getTMaxForMaxJointSpeed();
@@ -755,7 +761,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             old_time_2_index_scale =  obj.plan_cache.time_2_index_scale;
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             
-            snopt_info_vector = max(snopt_info)*ones(1, size(xtraj,2));
+            snopt_info_vector = max(snopt_info)*ones(1, size(xtraj_atlas,2));
             utime = now() * 24 * 60 * 60;
             if(~obj.plan_cache.isEndPose)
                 if(obj.plan_cache.num_grasp_transitions>0)
@@ -769,25 +775,27 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     end
                     if(nargout==0)
                       send_status(3,0,0,'Published Adjusted plan...');
-                      obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
+                      obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector,G);
                     else
-                      varargout{1}=xtraj;  varargout{2}=ts;  
+                      varargout{1}=xtraj_atlas;  varargout{2}=ts;  
                       varargout{3}=snopt_info_vector;
                       varargout{4}= G;
                     end
                 else
                    if(nargout==0)
                       send_status(3,0,0,'Published Adjusted plan...');
-                      obj.plan_pub.publish(xtraj,ts,utime);
+                      obj.plan_pub.publish(xtraj_atlas,ts,utime);
                    else
-                      varargout{1}=xtraj;  varargout{2}=ts;  
+                      varargout{1}=xtraj_atlas;  varargout{2}=ts;  
                    end
+
                 end
                
             else
-                xtraj = zeros(getNumStates(obj.r),1);
-                xtraj(1:getNumDOF(obj.r),:) = obj.plan_cache.qtraj.eval(1); % only publish the last state as an EndPose
-                obj.pose_pub.publish(xtraj,utime);
+                xtraj_atlas = zeros(nx_atlas,1);
+                q1 = obj.plan_cache.qtraj.eval(1);
+                xtraj_atlas(1:nx_atlas/2) = q1(obj.atlas2robotFrameIndMap); % only publish the last state as an EndPose
+                obj.pose_pub.publish(xtraj_atlas,utime);
             end
         end
         %-----------------------------------------------------------------------------------------------------------------  

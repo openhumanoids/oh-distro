@@ -147,13 +147,13 @@ while(1)
     aff_idx = find(aff_manager.aff_uid == urdf_msg.uid);
     robot = robot.addRobotFromURDF(urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
     
-    aff_manager.updateWcollisionObject(robot.getStateFrame,aff_manager.aff_uid,atlas_state_frame);
-    reaching_planner.updateRobot(robot);
-    manip_planner.updateRobot(robot);
-    posture_planner.updateRobot(robot);
-    endpose_planner.updateRobot(robot);
-    wholebody_planner.updateRobot(robot);
-    keyframe_adjustment_engine.updateRobot(robot);
+    aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame);
+    reaching_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    manip_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    posture_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    endpose_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    wholebody_planner.updateRobot(robot,aff_manager.atlas2robotFrameMap);
+    keyframe_adjustment_engine.updateRobot(robot,aff_manager.atlas2robotFrameMap);
     
     urdf_names = [urdf_names,{urdf_msg.urdf_file}];
   end

@@ -45,7 +45,7 @@ classdef KeyframePlanCache < handle
             obj.isPointWiseIK= false;
             obj.isEndPose =false;
             obj.inTeleopMode = false;
-            obj.qsc = QuasiStaticConstraint(r);
+            obj.qsc = QuasiStaticConstraint(r,1);
             obj.qsc = obj.qsc.setActive(false);
             
             obj.num_grasp_transitions = 0; % corresponds to grasp transitions.
@@ -92,6 +92,7 @@ classdef KeyframePlanCache < handle
           for i = 1:length(obj.head_constraint_cell)
             obj.head_constraint_cell{i}.updateRobot(robot);
           end
+          obj.qsc = obj.qsc.updateRobot(robot);
         end
     end
 end

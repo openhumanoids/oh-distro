@@ -73,11 +73,11 @@ classdef AffordanceManager < handle
         obj.aff2robotFrameMap{i} = zeros(length(aff_frame_i.coordinates),1);
         for j = 1:length(aff_frame_i.coordinates)
           aff2robotFrameMapIdx = find(cellfun(@(x) strcmp(aff_frame_i.coordinates{j},x),robot_frame.coordinates));
-        if(isempty(aff2robotFrameMapIdx))
-          obj.aff2robotFrameMap{i}(j) = -1;
-        else
-          obj.aff2robotFrameMap{i}(j) = aff2robotFrameMapIdx;
-        end
+          if(isempty(aff2robotFrameMapIdx))
+            obj.aff2robotFrameMap{i}(j) = -1;
+          else
+            obj.aff2robotFrameMap{i}(j) = aff2robotFrameMapIdx;
+          end
         end
       end
       % update isCollisionFlag

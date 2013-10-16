@@ -36,7 +36,9 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        
         collision_check
+        atlas2robotFrameIndMap % atlas2robotFrameMap(i) is the index of atlas.frame.coordinate{i} in the robot frame
     end
     
     methods
@@ -97,6 +99,7 @@ classdef KeyframePlanner < handle
 
             obj.setHandType(true,true); % set sandia hands as default
             obj.collision_check = 1;
+            obj.atlas2robotFrameIndMap = (1:obj.r.getNumStates)';
         end
      %-----------------------------------------------------------------------------------------------------------------        
         function [cache] = getPlanCache(obj)
@@ -275,7 +278,7 @@ classdef KeyframePlanner < handle
           end
         end
         
-        function updateRobot(obj,r)
+        function updateRobot(obj,r,atlas2robotFrameIndMap)
           obj.r = r;
           obj.plan_cache.updateRobot(r);
           obj.hardware_mode = 1;
@@ -306,6 +309,7 @@ classdef KeyframePlanner < handle
           obj.joint_constraint_args ={[back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
                                         [-0.1;-0.1;0.2;0.2],...
                                         [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
+          obj.atlas2robotFrameIndMap = atlas2robotFrameIndMap;
         end
     end
      %-----------------------------------------------------------------------------------------------------------------

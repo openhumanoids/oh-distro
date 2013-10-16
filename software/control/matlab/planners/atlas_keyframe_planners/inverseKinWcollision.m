@@ -4,8 +4,8 @@ function [q,info,infeasible_constraint] = inverseKinWcollision(obj,collision_sta
 %                            - 1, validation only, no optimization
 %                            - 2, optimization with collision constraint
 if(isa(varargin{end},'IKoptions'))
-  varargin = varargin(1:end-1);
   ikoptions = varargin{end};
+  varargin = varargin(1:end-1);
 else
   ikoptions = IKoptions(obj);
 end
@@ -28,16 +28,25 @@ end
 if(collision_status == 1)
   for i = 1:length(collision_constraint_cell)
     [collisionFlag, dist,ptsA,ptsB,idxA,idxB] = collision_constraint_cell{i}.checkConstraint(q);
-    if(collisionFlag)
+    if(~collisionFlag)
       for j = 1:length(dist)
-        send_status(4,0,0,sprintf('Dist from %s point [%4.2f %4.2f %4.2f] to %s point [%4.2f %4.2f %4.2f] is %f\n',...
-          collision_avoid_constraint.robot.getBody(idxA(j)).linkname, ptsA(1,j),ptsA(2,j),ptsA(3,j),...
-          collision_avoid_constraint.robot.getBody(idxB(j)).linkname, ptsB(1,j),ptsB(2,j),ptsB(3,j),...
+        send_status(4,0,0,sprintf('Dist from %s to %s is %f\n',...
+          sendNameString(collision_constraint_cell{i},idxA),...
+          sendNameString(collision_constraint_cell{i},idxB),...
           dist(j)));
       end
     end
   end
 elseif(collision_status == 2)
   [q,info,infeasible_constraint] = inverseKin(obj,q_seed,q_nom,collision_constraint_cell{:},other_constraint_cell{:},ikoptions);
+end
+end
+
+function name_str = sendNameString(collision_constraint,body_ind)
+robotnum = collision_constraint.robot.getBody(body_ind).robotnum;
+if(robotnum == 1) % atlas
+  name_str = collision_constraint.robot.getBody(body_ind).linkname;
+else % affordance
+  name_str = collision_constraint.robot.name{robotnum};
 end
 end
