@@ -80,6 +80,15 @@ posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
 pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
 manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 
+% WorkspaceURDF subscriber
+workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
+num_urdf = 0;
+urdf_names = {};
+aff_data = struct();
+aff_data.uid = [];
+aff_data.xyz = [];
+aff_data.rpy = [];
+affordance_pose_listener = AffordancePoseListener('AFFORDANCE_COLLECTION');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -152,7 +161,25 @@ ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
 
 while(1)
-    
+    aff_msg = affordance_pose_listener.getNextMessage(msg_timeout);
+    % update the aff_data
+    if(~isempty(aff_msg))
+      [existing_uid,old_idx,new_idx] = intersect(aff_data.uid,aff_msg.uid,'stable');
+      aff_data.xyz(:,old_idx) = aff_msg.xyz(:,new_idx);
+      aff_data.rpy(:,old_idx) = aff_msg.rpy(:,new_idx);
+      [new_uid,new_uid_idx] = setdiff(aff_msg.uid,aff_data.uid,'stable');
+      aff_data.uid = [aff_data.uid aff_msg.uid(new_uid_idx)];
+      aff_data.xyz = [aff_data.xyz aff_msg.xyz(:,new_uid_idx)];
+      aff_data.rpy = [aff_data.xyz aff_msg.rpy(:,new_uid_idx)];
+    end
+    urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
+    if(~isempty(urdf_msg))
+      num_urdf = num_urdf+1;
+      aff_idx = find(aff_data.uid == urdf_msg.uid);
+      r = r.addRobotFromURDF(urdf_msg.urdf_file,aff_data.xyz(:,aff_idx),aff_data.rpy(:,aff_idx),struct('floating',false));
+      urdf_names = [urdf_names,{urdf_msg.urdf_file}];
+    end
+  
     modeset=manip_plan_mode_listener.getNextMessage(msg_timeout);
     if(~isempty(modeset))
         disp('Manip Planner mode control msg received .');
@@ -428,7 +455,7 @@ while(1)
         timestamps =[trajoptconstraint.time];
         ee_names = {trajoptconstraint.name};
         ee_loci = zeros(6,length(ee_names));
-        
+
         % joint_timestamps=[postureconstraint.time];
         % joint_names = {postureconstraint.name};
         % joint_positions = [postureconstraint.joint_position];
@@ -682,7 +709,9 @@ while(1)
     
 end
 
-
+for i = 1:num_urdf
+  delete(urdf_names{i});
+end
 end
 
 

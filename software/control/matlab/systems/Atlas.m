@@ -44,12 +44,23 @@ classdef Atlas < Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
       
-      state_frame = AtlasState(obj);
-      obj = obj.setStateFrame(state_frame);
-      obj = obj.setOutputFrame(state_frame);
-    
-      input_frame = AtlasInput(obj);
-      obj = obj.setInputFrame(input_frame);
+      if(length(obj.manip.name)>1)
+        state_frame = obj.manip.getStateFrame();
+        obj = obj.setStateFrame(state_frame);
+        obj = obj.setOutputFrame(state_frame);
+        
+        input_frame = obj.manip.getInputFrame();
+        obj = obj.setInputFrame(input_frame);
+        init_state = obj.manip.getInitialState();
+        obj = obj.setInitialState(init_state);
+      else
+        state_frame = AtlasState(obj);
+        obj = obj.setStateFrame(state_frame);
+        obj = obj.setOutputFrame(state_frame);
+
+        input_frame = AtlasInput(obj);
+        obj = obj.setInputFrame(input_frame);
+      end
     end
 
     function obj = setInitialState(obj,x0)
@@ -179,7 +190,8 @@ classdef Atlas < Biped
       
       u = obj.inverse_dyn_qp_controller.mimoOutput(0,[],qddot_des,zeros(12,1),[q;qdot]);
     end
-      
+
+    
   end
   
   properties (SetAccess = protected, GetAccess = public)
