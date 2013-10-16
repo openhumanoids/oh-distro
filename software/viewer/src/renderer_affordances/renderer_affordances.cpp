@@ -720,6 +720,13 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
     //(event->button==3) -- Right Click
     //cout << "current selection:" << self->link_selection  <<  endl;
+    if((event->button==3) &&(event->type==GDK_2BUTTON_PRESS)) // right dbl clk
+    {
+      string name(self->renderer.name);
+      self->_renderer_foviate=!self->_renderer_foviate;
+      (*self->_rendererFoviationSignalRef)((void*)self->viewer,name,self->_renderer_foviate); 
+    }
+    
     if(((self->link_selection  != " ") || (self->marker_selection  != " ")) &&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
     {
         //spawn_object_geometry_dblclk_popup(self);
@@ -1044,7 +1051,7 @@ _free (BotRenderer *renderer)
     //free (renderer);
 }
 
-BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
+BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
 
     //RendererAffordances *self = (RendererAffordances*) calloc (1, sizeof (RendererAffordances)); // Calloc is bad as it prevents having string as members as strings can change size
@@ -1103,6 +1110,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     self->affTriggerSignalsRef = affTriggerSignalsRef;        
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererAffordances::keyboardSignalCallback,self,_1,_2)));
     self->seedSelectionManager = boost::shared_ptr<SelectionManager>(new SelectionManager(signalRef));
+    self->_rendererFoviationSignalRef = rendererFoviationSignalRef;
     
     self->T_graspgeometry_lhandinitpos_sandia= KDL::Frame::Identity(); 
     self->T_graspgeometry_rhandinitpos_sandia= KDL::Frame::Identity(); 
@@ -1211,12 +1219,12 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
    return &self->renderer;
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames,signalRef,affTriggerSignalsRef), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, frames,signalRef,affTriggerSignalsRef,rendererFoviationSignalRef), render_priority, 0); // 0= add on left hand side
 }
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
-    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef,affTriggerSignalsRef), render_priority, 0); // 0= add on left hand side
+    bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef,affTriggerSignalsRef,rendererFoviationSignalRef), render_priority, 0); // 0= add on left hand side
 }

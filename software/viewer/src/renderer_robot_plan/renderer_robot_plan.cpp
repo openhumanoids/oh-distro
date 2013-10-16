@@ -478,6 +478,14 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
      }// end if
    }
 
+
+    if((event->button==3) &&(event->type==GDK_2BUTTON_PRESS)) // right dbl clk
+    {
+      string name(self->renderer.name);
+      self->_renderer_foviate=!self->_renderer_foviate;
+      (*self->_rendererFoviationSignalRef)((void*)self->viewer,name,self->_renderer_foviate); 
+    }
+
   if((self->robotPlanListener->_is_manip_plan) && 
      (((*self->selection)  != " ")||((*self->marker_selection)  != " ")) &&
      (event->button==1) &&
@@ -729,7 +737,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef)
+setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
     RendererRobotPlan *self = (RendererRobotPlan*) calloc (1, sizeof (RendererRobotPlan));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
@@ -738,7 +746,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     //self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,keyboardSignalCallback));
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RendererRobotPlan::keyboardSignalCallback,self,_1,_2)));
     self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RendererRobotPlan::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
-
+    self->_rendererFoviationSignalRef = rendererFoviationSignalRef;
     
     BotRenderer *renderer = &self->renderer;
 
@@ -827,6 +835,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->afftriggered_popup = NULL;
     self->selected_plan_index= -1;
     self->selected_keyframe_index = -1;
+    self->_renderer_foviate = false;
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
     self->show_keyframes = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_KEYFRAMES);

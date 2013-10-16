@@ -21,6 +21,7 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/keyboard_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
+#include <visualization_utils/foviation_signal_utils.hpp>
 #include "RobotPlanListener.hpp"
 
 using namespace std;
@@ -47,6 +48,8 @@ namespace renderer_robot_plan
     boost::shared_ptr<RobotPlanListener> robotPlanListener;
     boost::shared_ptr<KeyboardSignalHandler> keyboardSignalHndlr;
     boost::shared_ptr<AffTriggerSignalsHandler> affTriggerSignalsHndlr;
+    RendererFoviationSignalRef _rendererFoviationSignalRef;
+    bool _renderer_foviate;
     boost::shared_ptr<lcm::LCM> lcm;
     int64_t max_draw_utime;
     BotEventHandler ehandler;
@@ -666,5 +669,5 @@ namespace renderer_robot_plan
 
 
 // 0 = typical mode, 1 = robot_plan 2 = robot_plan_compressed
-void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
+void setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef);
 #endif //RENDERER_ROBOTPLAN_HPP

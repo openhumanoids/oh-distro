@@ -65,7 +65,7 @@
 #include <visualization_utils/stickyhand_utils/StickyhandCollectionManager.hpp>
 #include <visualization_utils/stickyfoot_utils/sticky_foot_utils.hpp>
 #include <visualization_utils/stickyfoot_utils/StickyfootCollectionManager.hpp>
-
+#include <visualization_utils/foviation_signal_utils.hpp>
 
 #define RENDERER_NAME "Affordances & StickyHands/Feet"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
@@ -190,6 +190,8 @@ struct RendererAffordances {
     
     active_mate_axis = 2; //MATE_X=0,MATE_Y=1,MATE_Z=2;
     active_ee= drc::ee_teleop_transform_t::RIGHT_HAND; //RIGHT by default
+    
+    _renderer_foviate = false;
   }
   
   ~RendererAffordances(){   
@@ -232,8 +234,8 @@ struct RendererAffordances {
   boost::shared_ptr<BatchFKQueryHandler>  dofRangeFkQueryHandler;
   boost::shared_ptr<KeyboardSignalHandler> keyboardSignalHndlr;
   boost::shared_ptr<SelectionManager> seedSelectionManager;
-
-
+  RendererFoviationSignalRef _rendererFoviationSignalRef;
+  bool _renderer_foviate;
   
   OtdfInstanceStruc otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance.
   KDL::Frame otdf_T_world_body_hold; //store position in the world
@@ -1271,8 +1273,8 @@ struct RendererAffordances {
   
 }//end_namespace
 
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
-void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, BotFrames *frames, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef);
+void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t* lcm, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef);
 
 
 #endif //RENDERER_AFFORDANCES_HPP
