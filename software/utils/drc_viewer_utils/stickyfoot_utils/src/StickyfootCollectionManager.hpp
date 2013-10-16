@@ -2,6 +2,7 @@
 #define STICKY_FOOT_COLLECTION_MANAGER_HPP
 
 
+#include <math.h>
 #include "sticky_foot_utils.hpp"
 #include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
