@@ -70,7 +70,28 @@ classdef KeyframePlanCache < handle
             obj.num_grasp_transitions = 0; % corresponds to grasp transitions.
             obj.grasp_transition_breaks = [];
             obj.grasp_transition_states = [];
-			obj.s = [];
+            obj.s = [];
+        end
+        
+        function updateRobot(obj,robot)
+          for i = 1:length(obj.lhand_constraint_cell)
+            obj.lhand_constraint_cell{i}.updateRobot(robot);
+          end
+          for i = 1:length(obj.rhand_constraint_cell)
+            obj.rhand_constraint_cell{i}.updateRobot(robot);
+          end
+          for i = 1:length(obj.lfoot_constraint_cell)
+            obj.lfoot_constraint_cell{i}.updateRobot(robot);
+          end
+          for i = 1:length(obj.rfoot_constraint_cell)
+            obj.rfoot_constraint_cell{i}.updateRobot(robot);
+          end
+          for i = 1:length(obj.pelvis_constraint_cell)
+            obj.pelvis_constraint_cell{i}.updateRobot(robot);
+          end
+          for i = 1:length(obj.head_constraint_cell)
+            obj.head_constraint_cell{i}.updateRobot(robot);
+          end
         end
     end
 end

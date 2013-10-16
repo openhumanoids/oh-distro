@@ -44,23 +44,12 @@ classdef Atlas < Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
       
-      if(length(obj.manip.name)>1)
-        state_frame = obj.manip.getStateFrame();
-        obj = obj.setStateFrame(state_frame);
-        obj = obj.setOutputFrame(state_frame);
-        
-        input_frame = obj.manip.getInputFrame();
-        obj = obj.setInputFrame(input_frame);
-        init_state = obj.manip.getInitialState();
-        obj = obj.setInitialState(init_state);
-      else
-        state_frame = AtlasState(obj);
-        obj = obj.setStateFrame(state_frame);
-        obj = obj.setOutputFrame(state_frame);
+      state_frame = AtlasState(obj);
+      obj = obj.setStateFrame(state_frame);
+      obj = obj.setOutputFrame(state_frame);
 
-        input_frame = AtlasInput(obj);
-        obj = obj.setInputFrame(input_frame);
-      end
+      input_frame = AtlasInput(obj);
+      obj = obj.setInputFrame(input_frame);
     end
 
     function obj = setInitialState(obj,x0)

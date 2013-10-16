@@ -36,6 +36,7 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        collision_check
     end
     
     methods
@@ -95,6 +96,7 @@ classdef KeyframePlanner < handle
 
 
             obj.setHandType(true,true); % set sandia hands as default
+            obj.collision_check = 1;
         end
      %-----------------------------------------------------------------------------------------------------------------        
         function [cache] = getPlanCache(obj)
@@ -271,6 +273,39 @@ classdef KeyframePlanner < handle
           elseif(body_ind == obj.head_body)
             obj.plan_cache.head_constraint_cell = removeBodyConstraintUtil(tspan,obj.plan_cache.head_constraint_cell);
           end
+        end
+        
+        function updateRobot(obj,r)
+          obj.r = r;
+          obj.plan_cache = obj.plan_cache.updateRobot(r);
+          obj.hardware_mode = 1;
+          obj.r_hand_body = findLinkInd(obj.r,'r_hand');
+          obj.l_hand_body = findLinkInd(obj.r,'l_hand');
+          obj.r_foot_body = obj.r.findLinkInd('r_foot');
+          obj.l_foot_body = obj.r.findLinkInd('l_foot');
+          obj.head_body = obj.r.findLinkInd('head');
+          obj.pelvis_body = findLinkInd(obj.r,'pelvis');
+          obj.utorso_body = findLinkInd(obj.r,'utorso');
+          obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
+          obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
+
+
+          obj.joint_constraint = PostureConstraint(obj.r);
+          [joint_min,joint_max] = obj.joint_constraint.bounds([]);
+          coords = obj.r.getStateFrame.coordinates;
+          back_bky_ind = find(strcmp(coords,'back_bky'));
+          back_bkx_ind = find(strcmp(coords,'back_bkx'));
+          l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
+          r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
+          buffer=0.05;
+          obj.joint_constraint = obj.joint_constraint.setJointLimits(...
+            [back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+            [-0.1;-0.1;0.2;0.2],...
+            [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]);
+
+          obj.joint_constraint_args ={[back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+                                        [-0.1;-0.1;0.2;0.2],...
+                                        [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
         end
     end
      %-----------------------------------------------------------------------------------------------------------------

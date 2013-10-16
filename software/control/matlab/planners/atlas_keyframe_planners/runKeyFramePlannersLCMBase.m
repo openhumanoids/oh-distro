@@ -24,17 +24,18 @@ end
 
 options.floating = true;
 options.dt = 0.001;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
-reaching_planner = ReachingPlanner(r,hardware_mode); % single or multiple/successively specified ee constraints
-manip_planner = ManipulationPlanner(r,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
-posture_planner = PosturePlanner(r,hardware_mode); %posture and posture preset plans
-endpose_planner = EndPosePlanner(r,hardware_mode); %search for pose given ee constraints
-wholebody_planner = WholeBodyPlanner(r,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
-keyframe_adjustment_engine = KeyframeAdjustmentEngine(r,hardware_mode); % Common keyframe adjustment for all the above planners
+reaching_planner = ReachingPlanner(robot,hardware_mode); % single or multiple/successively specified ee constraints
+manip_planner = ManipulationPlanner(robot,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
+posture_planner = PosturePlanner(robot,hardware_mode); %posture and posture preset plans
+endpose_planner = EndPosePlanner(robot,hardware_mode); %search for pose given ee constraints
+wholebody_planner = WholeBodyPlanner(robot,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
+keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,hardware_mode); % Common keyframe adjustment for all the above planners
 
 reaching_planner.setHandType(l_issandia,r_issandia);
 manip_planner.setHandType(l_issandia,r_issandia);
@@ -44,17 +45,17 @@ wholebody_planner.setHandType(l_issandia,r_issandia);
 keyframe_adjustment_engine.setHandType(l_issandia,r_issandia);
 
 % atlas state subscriber
-state_frame = r.getStateFrame();
+state_frame = atlas.getStateFrame();
 %state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
 state_frame.subscribe('EST_ROBOT_STATE');
 
 % individual end effector goal subscribers
 rh_ee = EndEffectorListener('RIGHT_PALM_GOAL');
 lh_ee = EndEffectorListener('LEFT_PALM_GOAL');
-rfoot = r.findLinkInd('r_foot');
-lfoot = r.findLinkInd('l_foot');
-rfoot_pts = getContactPoints(getBody(r,rfoot));
-lfoot_pts = getContactPoints(getBody(r,lfoot));
+rfoot = atlas.findLinkInd('r_foot');
+lfoot = atlas.findLinkInd('l_foot');
+rfoot_pts = getContactPoints(getBody(atlas,rfoot));
+lfoot_pts = getContactPoints(getBody(atlas,lfoot));
 rf_ee = EndEffectorListener('R_FOOT_GOAL');
 lf_ee = EndEffectorListener('L_FOOT_GOAL');
 des_arc_speed_listener =DesiredSpeedListener('DESIRED_EE_ARC_SPEED');
@@ -106,7 +107,7 @@ trajoptconstraint_listener = TrajOptConstraintListener('DESIRED_MANIP_PLAN_EE_LO
 indexed_trajoptconstraint_listener = AffIndexedTrajOptConstraintListener('DESIRED_MANIP_MAP_EE_LOCI');
 wholebodytrajoptconstraint_listener = TrajOptConstraintListener('DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE');
 
-joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
 % committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
@@ -123,15 +124,14 @@ lc.subscribe('CANDIDATE_EE_ADJUSTMENT',teleop_mon);
 lc = lcm.lcm.LCM.getSingleton();
 teleop_transform_mon = drake.util.MessageMonitor(drc.ee_teleop_transform_t,'utime');
 lc.subscribe('PALM_TELEOP_TRANSFORM',teleop_transform_mon);
-aff2hand_offset = [];
-mate_axis = [];
 T_hand_palm_l = HT([0;0.1;0],pi/2,0,pi/2);
 T_hand_palm_r = HT([0;-0.1;0],-pi/2,0,-pi/2);
 %
-x0 = getInitialState(r);
-q0 = x0(1:getNumDOF(r));
+x0 = getInitialState(atlas);
+q0 = x0(1:getNumDOF(atlas));
 
 kinsol = doKinematics(r,q0);
+%
 
 
 rh_ee_goal = [];
@@ -159,26 +159,34 @@ ee_goal_type_flags.rh = 0;
 ee_goal_type_flags.h  = 0;
 ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
-
+ 
 while(1)
-    aff_msg = affordance_pose_listener.getNextMessage(msg_timeout);
-    % update the aff_data
-    if(~isempty(aff_msg))
-      [existing_uid,old_idx,new_idx] = intersect(aff_data.uid,aff_msg.uid,'stable');
-      aff_data.xyz(:,old_idx) = aff_msg.xyz(:,new_idx);
-      aff_data.rpy(:,old_idx) = aff_msg.rpy(:,new_idx);
-      [new_uid,new_uid_idx] = setdiff(aff_msg.uid,aff_data.uid,'stable');
-      aff_data.uid = [aff_data.uid aff_msg.uid(new_uid_idx)];
-      aff_data.xyz = [aff_data.xyz aff_msg.xyz(:,new_uid_idx)];
-      aff_data.rpy = [aff_data.xyz aff_msg.rpy(:,new_uid_idx)];
-    end
-    urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
-    if(~isempty(urdf_msg))
-      num_urdf = num_urdf+1;
-      aff_idx = find(aff_data.uid == urdf_msg.uid);
-      r = r.addRobotFromURDF(urdf_msg.urdf_file,aff_data.xyz(:,aff_idx),aff_data.rpy(:,aff_idx),struct('floating',false));
-      urdf_names = [urdf_names,{urdf_msg.urdf_file}];
-    end
+  aff_msg = affordance_pose_listener.getNextMessage(msg_timeout);
+  % update the aff_data
+  if(~isempty(aff_msg))
+    [existing_uid,old_idx,new_idx] = intersect(aff_data.uid,aff_msg.uid,'stable');
+    aff_data.xyz(:,old_idx) = aff_msg.xyz(:,new_idx);
+    aff_data.rpy(:,old_idx) = aff_msg.rpy(:,new_idx);
+    [new_uid,new_uid_idx] = setdiff(aff_msg.uid,aff_data.uid,'stable');
+    aff_data.uid = [aff_data.uid aff_msg.uid(new_uid_idx)];
+    aff_data.xyz = [aff_data.xyz aff_msg.xyz(:,new_uid_idx)];
+    aff_data.rpy = [aff_data.xyz aff_msg.rpy(:,new_uid_idx)];
+  end
+  urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
+  if(~isempty(urdf_msg))
+    num_urdf = num_urdf+1;
+    aff_idx = find(aff_data.uid == urdf_msg.uid);
+    robot = robot.addRobotFromURDF(urdf_msg.urdf_file,aff_data.xyz(:,aff_idx),aff_data.rpy(:,aff_idx),struct('floating',false));
+    
+    reaching_planner.updateRobot(robot);
+    manip_planner.updateRobot(robot);
+    posture_planner.updateRobot(robot);
+    endpose_planner.updateRobot(robot);
+    wholebody_planner.updateRobot(robot);
+    keyframe_adjustment_engine.updateRobot(robot);
+    
+    urdf_names = [urdf_names,{urdf_msg.urdf_file}];
+  end
   
     modeset=manip_plan_mode_listener.getNextMessage(msg_timeout);
     if(~isempty(modeset))
@@ -713,6 +721,7 @@ for i = 1:num_urdf
   delete(urdf_names{i});
 end
 end
+
 
 
 % ==============================GRAVE YARD
