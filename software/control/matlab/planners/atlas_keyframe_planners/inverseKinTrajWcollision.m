@@ -25,15 +25,15 @@ for i = 1:length(varargin)
 end
 [xtraj,info,infeasible_constraint] = inverseKinTraj(obj,t,q_seed_traj,q_nom_traj,other_constraint_cell{:},ikoptions);
 nq = obj.getNumDOF();
-collisionAvoidFlag = false(1,length(collision_constraint_cell));
+collisionAvoidFlag = false(length(t),length(collision_constraint_cell));
 if(collision_status == 1 || collision_status == 2)
   for i = 1:length(t)
     xi = xtraj.eval(t(i));
     qi = xi(1:nq);
     for j = 1:length(collision_constraint_cell)
       if(collision_constraint_cell{j}.isTimeValid(t(i)))
-        [collisionAvoidFlag(j), dist,ptsA,ptsB,idxA,idxB] = collision_constraint_cell{j}.checkConstraint(qi);
-        if(~collisionAvoidFlag(j))
+        [collisionAvoidFlag(i,j), dist,ptsA,ptsB,idxA,idxB] = collision_constraint_cell{j}.checkConstraint(qi);
+        if(~collisionAvoidFlag(i,j))
           for k = 1:length(dist)
             send_status(4,0,0,sprintf('t=%4.2f,Dist from %s to %s is %f\n',...
               t(i),...
