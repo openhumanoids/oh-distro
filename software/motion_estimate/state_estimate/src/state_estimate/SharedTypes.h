@@ -14,6 +14,7 @@ namespace StateEstimate
 
 struct command_switches {
   bool MATLAB_MotionSimulator;
+  bool ExperimentalMsgs;
 };
 
 }

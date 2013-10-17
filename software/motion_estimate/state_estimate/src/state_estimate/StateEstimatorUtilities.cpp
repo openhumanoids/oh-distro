@@ -83,7 +83,14 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 
 
 
-void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::atlas_raw_imu_t &imu, const bot_core::pose_t &bdiPose, const Eigen::Isometry3d &IMU_to_body, InertialOdometry::Odometry &inert_odo, drc::robot_state_t& _ERSmsg, drc::ins_update_request_t& _DFRequest) {
+void StateEstimate::handle_inertial_data_temp_name(
+		const double dt,
+		const drc::atlas_raw_imu_t &imu,
+		const bot_core::pose_t &bdiPose,
+		const Eigen::Isometry3d &IMU_to_body,
+		InertialOdometry::Odometry &inert_odo,
+		drc::robot_state_t& _ERSmsg,
+		drc::ins_update_request_t& _DFRequest) {
   
   // We want to take body fram einerial data an put it in the imu_data structure
   // For now we are going to use the orientation quaternion from BDI
@@ -101,8 +108,6 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   
   imu_data.uts = imu.utime;
   
-  
-  
   // TODO -- The translation of this lever arm offset hsa not yet been compensated! This must be corrected.
   imu_data.gyr_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
@@ -111,6 +116,10 @@ void StateEstimate::handle_inertial_data_temp_name(const double dt, const drc::a
   
   InerOdoEst = inert_odo.PropagatePrediction(&imu_data, q);
   
+
+  // This is the unit test block for the INS POSE state estimate -- used in conjunction with ground truth
+
+
   // For now we just patch this data directly through to the ERS message
   // TODO -- check that we want to keep doing with fusion from a MATLAB process. 
   // Think it should be good, but this is a breadcrum for the future to make sure that we do this correctly

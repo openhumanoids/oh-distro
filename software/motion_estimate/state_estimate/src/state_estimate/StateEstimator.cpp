@@ -18,6 +18,11 @@ StateEstimate::StateEstimator::StateEstimator(
 
   _mSwitches = _switches;
 
+  ERSMsgSuffix = "";
+  if (_switches->ExperimentalMsgs) {
+	  ERSMsgSuffix = "_EXP";
+  }
+
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
   int num_joints = 28;
   
@@ -150,14 +155,8 @@ void StateEstimate::StateEstimator::run()
       previous_imu_utime = imu.utime;
       handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
       
-      if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
-    	  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
-    	  
-    	  // populate the INS state information and the measurement aiding information
-    	  packDFUpdateRequestMsg(inert_odo, *_leg_odo, mDFRequestMsg);
-    	  mLCM->publish("STATE_ESTIMATOR_MATLAB_DF_REQUEST", &mDFRequestMsg);
-      }
       
+
       // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
       // For now we are going to publish on the last element of this queue
       //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
@@ -165,8 +164,21 @@ void StateEstimate::StateEstimator::run()
 	      //publish ERS message
     	  std::cout << "Going to publish ERS" << std::endl;
     	  mERSMsg.utime = imu.utime;
-	      mLCM->publish("EST_ROBOT_STATE_EXP", &mERSMsg); // There is some silly problem here
+	      mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
+
+
+	      mDFRequestMsg.updateType = mDFRequestMsg.INS_POSE_ONLY;
+	      mLCM->publish("SE_INS_POSE_STATE", &mDFRequestMsg);
       }
+
+      if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
+	    std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
+
+	    // populate the INS state information and the measurement aiding information
+	    packDFUpdateRequestMsg(inert_odo, *_leg_odo, mDFRequestMsg);
+	    mLCM->publish("STATE_ESTIMATOR_MATLAB_DF_REQUEST", &mDFRequestMsg);
+	  }
+
     }
 
     const int nPoses = mBDIPoseQueue.size();

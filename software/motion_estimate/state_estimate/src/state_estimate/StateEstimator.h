@@ -2,6 +2,8 @@
 #define __StateEstimator_h
 
 #include <vector>
+#include <iostream>
+#include <string>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -68,6 +70,7 @@ protected:
   
 private:
   const StateEstimate::command_switches* _mSwitches;
+  std::string ERSMsgSuffix;
 
   drc::robot_state_t mERSMsg;
   drc::robot_state_t testing;
