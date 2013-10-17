@@ -3,7 +3,7 @@
 
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
-lc.subscribe('INS_ESTIMATE', aggregator);
+lc.subscribe('SE_INS_POSE_STATE', aggregator);
 
 
 %% Prepare IMU data
@@ -112,24 +112,27 @@ for n = 1:iterations
     
     % send the simulated IMU measurements via LCM to separate MATLAB
     % receiveimu instance
-    sendimu(data{n}.measured,lc);
-    data{n}.INS.pose = receivepose(aggregator);
+    % sendimu(data{n}.measured,lc);
     
-    % stimulus to a separate state-estimate process
+     % stimulus to a separate state-estimate process
     [imuMsgBatch,sentIMUBatch] = sendDrcAtlasRawIMU(param.dt,n,data{n}.measured,imuMsgBatch,lc);
     % here we listen back for an INS state message from the state estimate
     % processThis is the new way of working.
     
+    % data{n}.INS.pose = receivepose(aggregator);
+    if (sentIMUBatch)
+        [data{n}.INS, dummy] = receiveInertialStatePos(aggregator);  
+    end
     
     % here we will start looking at the data fusion task.
     % this can also live in a separate MATLAB instance via LCM to aid
     % the development cycle
     
-    Measurement.INS.Pose = data{n}.INS.pose;
-    Measurement.LegOdo.Pose = data{n}.true.pose;
-%   
-    Sys.T = 0.001;% this should be taken from the utime stamps when ported to real data
-    Sys.posterior = posterior;
+%     Measurement.INS.Pose = data{n}.INS.pose;
+%     Measurement.LegOdo.Pose = data{n}.true.pose;
+% %   
+%     Sys.T = 0.001;% this should be taken from the utime stamps when ported to real data
+%     Sys.posterior = posterior;
     
 %     [Result, data{n}.df] = iterate([], Sys, Measurement);
     

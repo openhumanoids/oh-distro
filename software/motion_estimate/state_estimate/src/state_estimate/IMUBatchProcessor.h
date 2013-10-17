@@ -25,12 +25,13 @@ public:
     // fill the imuPackets vector with only the new imu packets
     // ...
 
-	std::cout << "handleIMUBatchMessage -- is happening " << (msg->raw_imu[0].utime > last_utime) << std::endl;
+	//std::cout << "handleIMUBatchMessage -- is happening " << (msg->raw_imu[0].utime > last_utime) << std::endl;
 	  
     // for now, just copy the first 3 packets...
     // for (int i = 0; i < 3; ++i)
 	for (int i = 0; msg->raw_imu[i].utime > last_utime; i++) 
     {
+	  std::cout << "handleIMUBatchMessage -- new IMU message at utime " << msg->raw_imu[i].utime << std::endl;
       last_utime = msg->raw_imu[i].utime;
       imuPackets.push_back(msg->raw_imu[i]);
     }

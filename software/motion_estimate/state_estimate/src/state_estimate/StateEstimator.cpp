@@ -143,7 +143,7 @@ void StateEstimate::StateEstimator::run()
 
     // This is the special case which will also publish the message
     int nIMU = mIMUQueue.size();
-    printf("have %d new imu\n", nIMU);
+    // printf("have %d new imu\n", nIMU);
     for (int i = 0; i < nIMU; ++i)
     {
       this->mIMUQueue.dequeue(imu);
@@ -176,7 +176,7 @@ void StateEstimate::StateEstimator::run()
 
 	    // populate the INS state information and the measurement aiding information
 	    packDFUpdateRequestMsg(inert_odo, *_leg_odo, mDFRequestMsg);
-	    mLCM->publish("STATE_ESTIMATOR_MATLAB_DF_REQUEST", &mDFRequestMsg);
+	    mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
 	  }
 
     }

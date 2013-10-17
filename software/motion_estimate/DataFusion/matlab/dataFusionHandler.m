@@ -9,7 +9,7 @@ computationTime = 0;
 
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
-lc.subscribe('INS_ESTIMATE', aggregator);
+lc.subscribe('SE_MATLAB_DATAFUSION_REQ', aggregator);
 
 % initialize the Kalman Filter
 
