@@ -9,3 +9,4 @@ vo_estimate
 motion_estimate
 
 signal_scope
+hand_estimate
