@@ -67,11 +67,12 @@ data.true.pose.f_l = traj.true.f_l;
 % data.true.pose.R(n,:,:) = q2R(traj.true.q(n,:)');
 % end
     
-% Start without rotation information -- build up to rotations and
-% gravity components
-
+% Assume constant gravity for the test
 data.true.inertial.gravity = [0;0;traj.parameters.gravity];% using forward-left-up/xyz body frame
-   
+
+% Setup the results data structure
+RESUTLS = setupUnitTest1Results(iterations);
+
 for n = 1:iterations
     
     true.inertial.utime =  traj.utime(n);
@@ -82,14 +83,14 @@ for n = 1:iterations
     % Compute the truth trajectory
     if (n==1)
        % start with the correct initial conditions (first iteration -- init conditions are kept in pose)
-       results{n}.trueINS.pose = INS_Mechanisation(pose, true.inertial);
+       results.trueINS.pose = INS_Mechanisation(pose, true.inertial);
        
         
     else
         % normal operation
 %         data{n-1}.trueINS.pose.R = data{n-1}.true.pose.R';
 %         data{n}.trueINS.pose = ground_truth(traj.utime(n), data{n-1}.trueINS.pose, data{n}.true.inertial);
-       results{n}.trueINS.pose = INS_Mechanisation(data{n-1}.trueINS.pose, data{n}.true.inertial);
+       results.trueINS.pose = INS_Mechanisation(data{n-1}.trueINS.pose, data{n}.true.inertial);
        
     end
     
@@ -111,15 +112,22 @@ for n = 1:iterations
     
     % data{n}.INS.pose = receivepose(aggregator);
     if (sentIMUBatch)
-        [results{n}.INS, dummy] = receiveInertialStatePos(aggregator);  
+        [results.cppINS, dummy] = receiveInertialStatePos(aggregator);  
     end
+    
+    % Here we evaluate the results of the data
+    RESULTS.cppPoseResiduals.P_l(n,:) = traj.true.P_l(n,:) - results.cppINS.pose.P_l';
+    RESULTS.cppPoseResiduals.V_l(n,:) = traj.true.V_l(n,:) - results.cppINS.pose.V_l';
+    RESULTS.cppPoseResiduals.f_l(n,:) = traj.true.f_l(n,:) - results.cppINS.pose.f_l';
+    
+    RESULTS.cppPoseResiduals.q(n,:) = quaternionResidual(traj.true.q(n,:), results.cppINS.pose.q')';
     
     
 end
 
 disp('Out of loop')
 
-% return
+return
 
 
 %% plot some stuff
