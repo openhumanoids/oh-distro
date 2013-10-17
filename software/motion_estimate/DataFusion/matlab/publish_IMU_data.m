@@ -121,7 +121,7 @@ for n = 1:iterations
     % processThis is the new way of working.
     
     
-    % here we will start looking at the data fusion task. 
+    % here we will start looking at the data fusion task.
     % this can also live in a separate MATLAB instance via LCM to aid
     % the development cycle
     

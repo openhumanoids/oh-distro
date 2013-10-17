@@ -30,7 +30,7 @@ Sys.Cont.F = zeros(15);
 % Sys.Cont.F(4:6,13:15) = -q2R(Measurement.INS.Pose.q);
 % Sys.Cont.F(7:9,10:12) = q2R(Measurement.INS.Pose.q);
 
-Sys.Cont.Q = diag([0.01*ones(1,6), 0.005*ones(1,3), 0.001*ones(1,3), 0.001*ones(1,3)]);
+Sys.Cont.Q = diag([0*ones(1,15)]);
 
 [Sys.Disc.A,Sys.covariances.Qd] = lti_disc(Sys.Cont.F, [], Sys.Cont.Q, T);
 
@@ -46,7 +46,7 @@ Sys.priori = KF_timeupdate(Sys.posterior, 0, Sys.Disc, Sys.covariances);
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
 
-Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, Measurement.LegOdo.Pose.P_l);
+Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, Measurement.positionResidual);
 
 % Some results to look at later=====================================================================
 
