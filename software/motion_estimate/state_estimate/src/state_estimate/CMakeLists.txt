@@ -41,6 +41,7 @@ pods_install_headers(
   ThreadLoop.h
   JointFilters.h
   StateEstimatorUtilities.h
+  SharedTypes.h
   DESTINATION state_estimate)
 
 

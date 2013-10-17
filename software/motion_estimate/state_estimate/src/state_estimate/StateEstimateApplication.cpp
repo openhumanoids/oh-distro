@@ -50,6 +50,7 @@ int StateEstimate::StateEstimateApplication::exec()
   viconPoseProducer.subscribe(lcmThread.lcmHandle());
 
   StateEstimator estimator(
+    _switches,
     lcmThread.lcmHandle(),
     atlasStateProducer.messageQueue(),
     imuProducer.messageQueue(),

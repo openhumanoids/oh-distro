@@ -3,6 +3,8 @@
 
 #include "StateEstimateApplication.h"
 
+#include "SharedTypes.h"
+
 int main(int argc, char* argv[])
 {
   // Concise arguments are being handled here and passed down to app object to maintain ConciseArgs command line help menu interface

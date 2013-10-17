@@ -2,6 +2,7 @@
 
 //-----------------------------------------------------------------------------
 StateEstimate::StateEstimator::StateEstimator(
+	const command_switches* _switches,
     boost::shared_ptr<lcm::LCM> lcmHandle,
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
@@ -14,6 +15,9 @@ StateEstimate::StateEstimator::StateEstimator(
   mBDIPoseQueue(bdiPoseQueue),
   mViconQueue(viconPoseQueue)
 {
+
+  _mSwitches = _switches;
+
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
   int num_joints = 28;
   
@@ -26,17 +30,20 @@ StateEstimate::StateEstimator::StateEstimator(
   _botparam = bot_param_new_from_server(mLCM->getUnderlyingLCM(), 0);
   _botframes= bot_frames_get_global(mLCM->getUnderlyingLCM(), _botparam);
 
+
+  // Define the transform between the pelvis and IMU -- considering that we purposefull skip this transform during development
   IMU_to_body.setIdentity();
-
-  int status;
-  double matx[16];
-  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", 0 /*utime*/, matx);
-  for (int i = 0; i < 4; ++i) {
+  if (_mSwitches->MATLAB_MotionSimulator == false) {
+	// This for running on the real robot
+	int status;
+	double matx[16];
+	status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", 0 /*utime*/, matx);
+	for (int i = 0; i < 4; ++i) {
 	  for (int j = 0; j < 4; ++j) {
-		  IMU_to_body(i,j) = matx[i*4+j];
+		IMU_to_body(i,j) = matx[i*4+j];
 	  }
+	}
   }
-
   std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
   
   std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;

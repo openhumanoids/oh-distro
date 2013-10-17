@@ -5,12 +5,10 @@
 #include <stdlib.h>
 #include <string>
 
+#include "SharedTypes.h"
+
 namespace StateEstimate
 {
-
-struct command_switches {
-  bool MATLAB_MotionSimulator;
-};
 
 class StateEstimateApplication
 {

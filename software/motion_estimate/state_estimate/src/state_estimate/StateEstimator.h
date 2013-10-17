@@ -22,6 +22,8 @@
 #include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
 
+#include "SharedTypes.h"
+
 namespace StateEstimate
 {
 
@@ -31,6 +33,7 @@ public:
 
 
   StateEstimator(
+    const StateEstimate::command_switches* _switches,
     boost::shared_ptr<lcm::LCM> lcmHandle,
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
@@ -64,6 +67,8 @@ protected:
   
   
 private:
+  const StateEstimate::command_switches* _mSwitches;
+
   drc::robot_state_t mERSMsg;
   drc::robot_state_t testing;
   drc::ins_update_request_t mDFRequestMsg;
