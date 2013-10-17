@@ -18,15 +18,15 @@ t_vicon = t_vicon - t_x(1) + t_offset;  %%OFFSET TIME OF THE DATA! THIS MAY CHAN
 t_extra = t_extra - t_x(1);
 t_x = t_x - t_x(1);
 
-joint_indices = [22:26 33];
-
+joint_indices = [10:14 21];
+% joint_indices = [];
+x0_offset = -extra_data(16+(1:6),1)+x_data(joint_indices((1:6)),1);
 % hack to use encoder data
 x_data_bkp = x_data;
 for i=1:6,
-  x_data(joint_indices(i),:) = unwrap(extra_data(22+i,:))-extra_data(22+i,1)+x_data(joint_indices(i),1);
+  x_data(joint_indices(i),:) = unwrap(extra_data(16+i,:))+x0_offset(i);
 end
 
-% joint_indices = [];
 % joint_indices = [33];
 
 % Sample times
@@ -45,12 +45,12 @@ end
 % t_sample = [2.5 9.8 22.5 38.5 47.5 71.5 83.4 93.4];
 
 % for 10-16 data
-t_sample = [47 85 121.9 161.7 188 214.9 247.6 281.2 327.7 367.1 402.6 435.4];
+t_sample = [421.8 449.7 474 502 548.8 574 609 650.1 683.9 725 741.9 772 797.4 823.6];
 
 % torso_markers = reshape(vicon_data(21:40,:),4,5,length(t_vicon));
 % hand_markers = reshape(vicon_data(1:20,:),4,5,length(t_vicon));
 torso_markers = vicon_data_struct{6}.data;
-hand_markers = vicon_data_struct{1}.data;
+hand_markers = vicon_data_struct{2}.data;
 
 torso_markers(1:3,:,:) = torso_markers(1:3,:,:)/1e3;
 hand_markers(1:3,:,:) = hand_markers(1:3,:,:)/1e3;
@@ -73,7 +73,7 @@ torso_markers = torso_markers - reshape(repmat([mean(mean(torso_markers(1:3,:,:)
 
 
 torso_body = 5;
-hand_body = 29;
+hand_body = 17;
 
 clear q_data torso_data hand_data
 % filter_len = 11;
@@ -99,49 +99,46 @@ for i=1:length(t_sample),
   hand_data(:,hand_obsc,i) = NaN*hand_data(:,hand_obsc,i);
 end
 
+
 %%
 [dq, body1_params, body2_params, floating_states, residuals, info, J, body1_resids, body2_resids] = ...
-  jointOffsetCalibration(r, q_data, joint_indices,torso_body,@torsoMarkerPos, 8, torso_data, hand_body, @handMarkerPos_standoffs, 7, hand_data);
+  jointOffsetCalibration(r, q_data, joint_indices,torso_body,@(params) torsoMarkerPos_newmarkers(params,true), 0, torso_data, hand_body, @leftHandMarkerPos_newmarkers, 12, hand_data);
 dq = unwrap([0;dq]);
 dq = dq(2:end);
 dq*180/pi
-%%
-% I_unobs_hand = find(~any(hand_markers(4:4:end,:,:)));
-% 
-% for i=1:5,
-%   for j=1:5,
-%     dvec = hand_markers(1:3,i,I_unobs_hand) - hand_markers(1:3,j,I_unobs_hand);
-%     d(i,j) = sqrt(mean(sum(dvec.*dvec)));
-%   end
-% end
-
 
 %%
 v = r.constructVisualizer;
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'bullet_collision_closest_points_test');
-j = 8;
+j = 1;
 q = q_data(:,j);
 % q(setdiff(1:34,joint_indices),:) = 0*q(setdiff(1:34,joint_indices),:);
-
+% q = q*0;
 q(1:6) = floating_states(:,j);
 
 % b2 = [-.1 -.15 -.2 .1 -.1 .15]';
-b2 = body2_params;
+% b2 = body2_params;
 
 % b2(2) = -.095 - .104;
-
 q(joint_indices,1) = q(joint_indices,1) + dq;
+% q(3) = q(3) + 1;
+% q = q*0;
 v.draw(0,q);
 kinsol = r.doKinematics(q);
-handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_standoffs(b2));
-torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos(body1_params,true));
-
-for i=1:5,
+handpts = r.forwardKin(kinsol,hand_body,leftHandMarkerPos_newmarkers(body2_params));
+torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_newmarkers(body1_params,true));
+% 
+for i=1:size(torso_markers,2),
   lcmgl.glColor3f(1,0,0); % red
   lcmgl.sphere(torsopts(:,i),.01,20,20);
-  lcmgl.sphere(handpts(:,i),.01,20,20);
   lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(torso_data(:,i,j),.01,20,20);
+end
+
+for i=1:size(hand_markers,2),
+  lcmgl.glColor3f(1,0,0); % red
+  lcmgl.sphere(handpts(:,i),.01,20,20);
+  lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(hand_data(:,i,j),.01,20,20);
 end
 lcmgl.switchBuffers();
@@ -186,7 +183,7 @@ q_check;
 end
 
 [~, ~, ~, floating_states_check, residual_check, info_check, J_check, body1_resids_check, body2_resids_check] = ...
-  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos(params,true), 0, torso_check, hand_body, @(params) handMarkerPos_standoffs(body2_params,true), 0, hand_check);
+  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos_newmarkers(params,true), 0, torso_check, hand_body, @(params) leftHandMarkerPos_newmarkers(body2_params,true), 0, hand_check);
 
 
 if length(t_check > 0)
@@ -205,28 +202,23 @@ b2 = body2_params;
 q(joint_indices,1) = q(joint_indices,1);
 v.draw(0,q);
 kinsol = r.doKinematics(q);
-handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_standoffs(b2));
-torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos(body1_params,true));
+handpts = r.forwardKin(kinsol,hand_body,leftHandMarkerPos_newmarkers(b2));
+torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_newmarkers(body1_params,true));
 
-for i=1:5,
+for i=1:size(torso_markers,2),
   lcmgl.glColor3f(1,0,0); % red
   lcmgl.sphere(torsopts(:,i),.01,20,20);
-  lcmgl.sphere(handpts(:,i),.01,20,20);
   lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(torso_check(:,i,j),.01,20,20);
+end
+
+for i=1:size(hand_markers,2),
+  lcmgl.glColor3f(1,0,0); % red
+  lcmgl.sphere(handpts(:,i),.01,20,20);
+  lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(hand_check(:,i,j),.01,20,20);
 end
 lcmgl.switchBuffers();
 end
-mean(sqrt(sum(body2_resids_check.*body2_resids_check)))*1000
-end
-
-%% planar checking of pts [1 2 3 5]
-for i=1:length(t_sample)
-  v1 = hand_data(:,2,i) - hand_data(:,1,i);
-  v2 = hand_data(:,3,i) - hand_data(:,1,i);
-  n = cross(v1,v2);
-  n = n/norm(n);
-  d = hand_data(:,1,i)'*n;
-  plane_err(i) = hand_data(:,5,i)'*n - d;
+sprintf('mean err (mm): %d',mean(sqrt(sum(body2_resids_check.*body2_resids_check)))*1000)
 end

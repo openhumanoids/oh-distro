@@ -19,14 +19,14 @@ t_extra = t_extra - t_x(1);
 t_x = t_x - t_x(1);
 
 joint_indices = [22:26 33];
-
+% joint_indices = [];
+x0_offset = -extra_data(22+(1:6),1)+x_data(joint_indices((1:6)),1);
 % hack to use encoder data
 x_data_bkp = x_data;
 for i=1:6,
   x_data(joint_indices(i),:) = unwrap(extra_data(22+i,:))-extra_data(22+i,1)+x_data(joint_indices(i),1);
 end
 
-% joint_indices = [];
 % joint_indices = [33];
 
 % Sample times
@@ -100,8 +100,12 @@ for i=1:length(t_sample),
 end
 
 %%
+% [dq, body1_params, body2_params, floating_states, residuals, info, J, body1_resids, body2_resids] = ...
+%   jointOffsetCalibration(r, q_data, joint_indices,torso_body,@torsoMarkerPos_newmarkers, 6, torso_data, hand_body, @noPointsFun, 0, zeros(3,0,12));
+
+%%
 [dq, body1_params, body2_params, floating_states, residuals, info, J, body1_resids, body2_resids] = ...
-  jointOffsetCalibration(r, q_data, joint_indices,torso_body,@torsoMarkerPos, 8, torso_data, hand_body, @handMarkerPos_standoffs, 7, hand_data);
+  jointOffsetCalibration(r, q_data, joint_indices,torso_body,@torsoMarkerPos_newmarkers, 6, torso_data, hand_body, @handMarkerPos_newmarkers, 12, hand_data);
 dq = unwrap([0;dq]);
 dq = dq(2:end);
 dq*180/pi
@@ -119,29 +123,35 @@ dq*180/pi
 %%
 v = r.constructVisualizer;
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'bullet_collision_closest_points_test');
-j = 8;
+j = 1;
 q = q_data(:,j);
 % q(setdiff(1:34,joint_indices),:) = 0*q(setdiff(1:34,joint_indices),:);
 
 q(1:6) = floating_states(:,j);
 
 % b2 = [-.1 -.15 -.2 .1 -.1 .15]';
-b2 = body2_params;
+% b2 = body2_params;
 
 % b2(2) = -.095 - .104;
-
 q(joint_indices,1) = q(joint_indices,1) + dq;
+% q(3) = q(3) + 1;
+% q = q*0;
 v.draw(0,q);
 kinsol = r.doKinematics(q);
-handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_standoffs(b2));
-torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos(body1_params,true));
-
-for i=1:5,
+handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_newmarkers(body2_params));
+torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_newmarkers(body1_params));
+% 
+for i=1:size(torso_markers,2),
   lcmgl.glColor3f(1,0,0); % red
   lcmgl.sphere(torsopts(:,i),.01,20,20);
-  lcmgl.sphere(handpts(:,i),.01,20,20);
   lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(torso_data(:,i,j),.01,20,20);
+end
+
+for i=1:size(hand_markers,2),
+  lcmgl.glColor3f(1,0,0); % red
+  lcmgl.sphere(handpts(:,i),.01,20,20);
+  lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(hand_data(:,i,j),.01,20,20);
 end
 lcmgl.switchBuffers();
@@ -186,7 +196,7 @@ q_check;
 end
 
 [~, ~, ~, floating_states_check, residual_check, info_check, J_check, body1_resids_check, body2_resids_check] = ...
-  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos(params,true), 0, torso_check, hand_body, @(params) handMarkerPos_standoffs(body2_params,true), 0, hand_check);
+  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos_newmarkers(params,true), 0, torso_check, hand_body, @(params) handMarkerPos_newmarkers(body2_params,true), 0, hand_check);
 
 
 if length(t_check > 0)
@@ -205,20 +215,25 @@ b2 = body2_params;
 q(joint_indices,1) = q(joint_indices,1);
 v.draw(0,q);
 kinsol = r.doKinematics(q);
-handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_standoffs(b2));
-torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos(body1_params,true));
+handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_newmarkers(b2));
+torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_newmarkers(body1_params,true));
 
-for i=1:5,
+for i=1:size(torso_markers,2),
   lcmgl.glColor3f(1,0,0); % red
   lcmgl.sphere(torsopts(:,i),.01,20,20);
-  lcmgl.sphere(handpts(:,i),.01,20,20);
   lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(torso_check(:,i,j),.01,20,20);
+end
+
+for i=1:size(hand_markers,2),
+  lcmgl.glColor3f(1,0,0); % red
+  lcmgl.sphere(handpts(:,i),.01,20,20);
+  lcmgl.glColor3f(0,0,1); % blue
   lcmgl.sphere(hand_check(:,i,j),.01,20,20);
 end
 lcmgl.switchBuffers();
 end
-mean(sqrt(sum(body2_resids_check.*body2_resids_check)))*1000
+sprintf('mean err (mm): %d',mean(sqrt(sum(body2_resids_check.*body2_resids_check)))*1000)
 end
 
 %% planar checking of pts [1 2 3 5]
