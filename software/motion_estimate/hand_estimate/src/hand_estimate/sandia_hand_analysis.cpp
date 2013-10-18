@@ -52,7 +52,10 @@ void App::commandHandler(const lcm::ReceiveBuffer* rbuf,
 
   
 }
-
+// logistic function F(x)=1/(1+e^{-b_1 (x-b_0)})
+float logit(float x, float b0=0, float b1=1){
+  return 1.0/(1.0+exp(-(b1*(x-b0))));
+}
 
 void App::stateHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  drc::hand_state_t* msg){
@@ -85,6 +88,10 @@ void App::stateHandler(const lcm::ReceiveBuffer* rbuf,
     std::cout << finger_diffs[3] << "SMALL\n"; 
   }
   
+  std::cout << "logit(finger_diffs[0])=" << logit(finger_diffs[0],0.1,60) << endl;
+  std::cout << "logit(finger_diffs[1])=" << logit(finger_diffs[1],0.1,60) << endl;
+  std::cout << "logit(finger_diffs[2])=" << logit(finger_diffs[2],0.1,60) << endl;
+  std::cout << "logit(finger_diffs[3])=" << logit(finger_diffs[3],0.1,60) << endl;
   
 }
 
