@@ -28,7 +28,9 @@ class App{
     void commandHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::joint_command_t* msg);    
     void stateHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::hand_state_t* msg);      
+                             const std::string& channel, const  drc::hand_state_t* msg); 
+                             
+    float logit(float x, float b0=0, float b1=1);
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
@@ -50,10 +52,10 @@ void App::commandHandler(const lcm::ReceiveBuffer* rbuf,
   std::vector<float> v_float( msg->position.begin(),  msg->position.end());  
   command_pos_ = v_float;  
 
-  
 }
+
 // logistic function F(x)=1/(1+e^{-b_1 (x-b_0)})
-float logit(float x, float b0=0, float b1=1){
+float App::logit(float x, float b0, float b1){
   return 1.0/(1.0+exp(-(b1*(x-b0))));
 }
 
