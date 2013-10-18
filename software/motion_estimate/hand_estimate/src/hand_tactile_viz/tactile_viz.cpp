@@ -56,6 +56,14 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
   
   orig_img.load(path_img.c_str());
   
+  // draw signal index
+  char buff[5];
+  unsigned char gray[3]={200,200,200};
+  for(size_t i=0;i<NTACTILE;i++){
+    sprintf(buff, "%lu", i);
+    orig_img.draw_text(img_x[i]+5, img_y[i]+5, buff, gray, NULL, /*opacity*/ 1,/*font height*/57);
+  }
+  
   disp_img = orig_img;
   main_disp.display(disp_img);
   main_disp.resize(orig_img.width()/2, orig_img.height()/2);
@@ -106,7 +114,7 @@ void App::sandiaTactileStateHandler(const lcm::ReceiveBuffer* rbuf,
   
   disp_img = orig_img;
   for(size_t i=0;i<NTACTILE;i++){
-    float v = (float)msg->palm[i] / 65536.0 * 2.5;
+    float v = (float)msg->palm[i]; // 65536.0 * 4;
     if(v<0) v = 0;
     else if(v>=1) v=1-1e-8;
     getHeatColor(v, color);
