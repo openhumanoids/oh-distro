@@ -13,7 +13,7 @@ while 1
   try
     p.run(0.25)
   catch exception
-    disp(exception)
+    disp(exception.getReport())
     save(['footstep-planner-crash-',datestr(now(),'YYYY-mm-DDTHH-MM'),'.mat'], 'exception');
     msg ='Foot Plan : Crashed, restarting...'; disp(msg); send_status(6,0,0,msg);
   end
