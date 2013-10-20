@@ -19,6 +19,7 @@ class App{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    bool verbose_;
     bool is_left;
     
     std::vector < float > command_pos_;
@@ -27,19 +28,26 @@ class App{
     //////////////////////////////////////
     void commandHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::joint_command_t* msg);    
+    
+    void rawHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::raw_sandia_hand_t* msg);      
+    
     void stateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::hand_state_t* msg); 
-                             
+   
     float logit(float x, float b0=0, float b1=1);
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
    lcm_(lcm_), is_left(is_left){
-  
+  verbose_=false;
   
   lcm_->subscribe(is_left ? "L_HAND_JOINT_COMMANDS":"R_HAND_JOINT_COMMANDS", 
                                         &App::commandHandler, this);  
 
+  lcm_->subscribe(is_left ? "SANDIA_LEFT_RAW":"SANDIA_RIGHT_RAW", 
+                                        &App::rawHandler, this);  
+  
   lcm_->subscribe(is_left ? "SANDIA_LEFT_STATE":"SANDIA_RIGHT_STATE", 
                                         &App::stateHandler, this);  
   
@@ -51,7 +59,11 @@ void App::commandHandler(const lcm::ReceiveBuffer* rbuf,
   std::cout << "got command\n";
   std::vector<float> v_float( msg->position.begin(),  msg->position.end());  
   command_pos_ = v_float;  
+}
 
+void App::rawHandler(const lcm::ReceiveBuffer* rbuf, 
+     const std::string& channel, const  drc::raw_sandia_hand_t* msg){
+  lcm_->publish("SANDIA_LEFT_RAW_MOBO", &msg->mobo);
 }
 
 // logistic function F(x)=1/(1+e^{-b_1 (x-b_0)})
@@ -63,7 +75,7 @@ void App::stateHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  drc::hand_state_t* msg){
   
   sensed_pos_ = msg->joint_position;
-  std::cout << "got state\n";
+  // std::cout << "got state\n";
   
   
   if (command_pos_.size() != sensed_pos_.size()){
