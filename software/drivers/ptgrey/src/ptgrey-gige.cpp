@@ -123,7 +123,15 @@ int main(const int iArgc, const char** iArgv) {
       triggerMode.source = 7;
       error = camera.SetTriggerMode(&triggerMode);
       if (error == FlyCapture2::PGRERROR_OK) {
-        usingTrigger = true;
+        FlyCapture2::FC2Config config;
+        error = camera.GetConfiguration(&config);
+        if (error == FlyCapture2::PGRERROR_OK) {
+          config.grabTimeout = 2000;
+          error = camera.SetConfiguration(&config);
+          if (error == FlyCapture2::PGRERROR_OK) {
+            usingTrigger = true;
+          }
+        }
       }
     }
   }
