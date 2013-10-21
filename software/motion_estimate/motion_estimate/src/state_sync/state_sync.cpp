@@ -38,12 +38,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.008;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.005;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 3.1152 - M_PI;// -3.168 + 2*M_PI;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = -0.011;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.085;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.151;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.0182;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.0052;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.0130;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.0361;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.1244;
+
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.9736; // this encoder is broken
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -3.1918;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290;
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
@@ -134,17 +141,17 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   if (use_transmission_joint_sensors_ ){
     if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
       if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
-        // TOOD: determine the joint range of interest:
-        for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { // apply the right arm only
+        for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
 
           if (use_encoder_[i]) {
             atlas_joints_.position[i] = atlas_joints_out_.position[i];
-            if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
-              atlas_joints_.position[i] -= 2*M_PI;
+            // if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
+            //   atlas_joints_.position[i] -= 2*M_PI;
 
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
+            // copy pot positions back into _out so we have them in the lcm log
             atlas_joints_out_.position[i] = mod_positions[i];
             atlas_joints_out_.position[i] = msg->joint_velocity[i];
           }
