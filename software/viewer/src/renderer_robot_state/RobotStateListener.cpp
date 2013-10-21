@@ -176,6 +176,7 @@ namespace renderer_robot_state
       cout<< "Number of Joints: " << _gl_robot->get_num_joints() <<endl;
       _gl_robot->set_jointdof_marker_filter(_jointdof_filter_list);
       _gl_robot->disable_joint_limit_enforcement();
+      _gl_robot->enable_joint_limit_enforcement_for_future_state(); // so that posture markers work within limits.
       
       //remember that we've parsed the urdf already
       _urdf_parsed = true;
