@@ -108,7 +108,30 @@ int main(const int iArgc, const char** iArgv) {
             << camInfo.vendorName << " "
             << camInfo.modelName << " " 
             << camInfo.serialNumber << std::endl;
-	
+
+  // set trigger mode
+  bool usingTrigger = false;
+  FlyCapture2::TriggerModeInfo triggerModeInfo;
+  error = camera.GetTriggerModeInfo(&triggerModeInfo);
+  if (error == FlyCapture2::PGRERROR_OK) {
+    FlyCapture2::TriggerMode triggerMode;
+    error = camera.GetTriggerMode(&triggerMode);
+    if (error == FlyCapture2::PGRERROR_OK) {
+      triggerMode.onOff = true;
+      triggerMode.mode = 0;
+      triggerMode.parameter = 0;
+      triggerMode.source = 7;
+      error = camera.SetTriggerMode(&triggerMode);
+      if (error == FlyCapture2::PGRERROR_OK) {
+        usingTrigger = true;
+      }
+    }
+  }
+  if (!usingTrigger) {
+    std::cout << "warning: cannot use trigger mode; " <<
+      "cpu utilization may be high" << std::endl;
+  }
+
   error = camera.StartCapture();
   if (error == FlyCapture2::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) {
     std::cout << "Bandwidth exceeded" << std::endl;     
@@ -117,7 +140,7 @@ int main(const int iArgc, const char** iArgv) {
   else if (error != FlyCapture2::PGRERROR_OK) {
     std::cout << "Failed to start image capture" << std::endl;     
     return -1;
-  } 
+  }
 
   int64_t imageCount = 0;
   int64_t totalBytes = 0;
@@ -125,6 +148,14 @@ int main(const int iArgc, const char** iArgv) {
 
   while (true) {
     int64_t checkpointStart = bot_timestamp_now();
+
+    // fire trigger
+    if (usingTrigger) {
+      error = camera.FireSoftwareTrigger();
+      if (error != FlyCapture2::PGRERROR_OK) {
+        std::cout << "error firing trigger" << std::endl;
+      }
+    }
 
     // grab image
     FlyCapture2::Image rawImage;
@@ -221,12 +252,24 @@ int main(const int iArgc, const char** iArgv) {
       std::this_thread::sleep_for
         (std::chrono::milliseconds(periodMs - elapsedMs));
     }
+    std::cout << bot_timestamp_now() << " tic\n";
   }
 
   // clean up
+  if (usingTrigger) {
+    FlyCapture2::TriggerMode triggerMode;
+    error = camera.GetTriggerMode(&triggerMode);
+    if (error == FlyCapture2::PGRERROR_OK) {
+      triggerMode.onOff = false;
+      error = camera.SetTriggerMode(&triggerMode);
+    }
+    if (error != FlyCapture2::PGRERROR_OK) {
+      std::cout << "warning: cannot unset trigger mode" << std::endl;
+    }
+  }
   error = camera.StopCapture();
   if (error != FlyCapture2::PGRERROR_OK) {}
   camera.Disconnect();
-	
+        
   return 0;
 }
