@@ -228,9 +228,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.grasp_transition_states = grasptransitions;
             obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
             if(~obj.isBDIManipMode()) 
-                obj.plan_cache.obj.plan_cache.qsc = obj.plan_cache.setActive(true);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(true);
             else
-                obj.plan_cache.obj.plan_cache.qsc = obj.plan_cache.setActive(false);
+                obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
             end
             
             % s = linspace(0,1,2*length(ts));
@@ -476,7 +476,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                         obj.plan_cache.pelvis_constraint_cell = replaceConstraintCell(obj.plan_cache.pelvis_constraint_cell,constraint);
                     else
                         obj.plan_cache.pelvis_constraint_cell = {}; 
-                        obj.plan_cache.pelvis_constraint_cell = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],pelvis_poseT,pelvis_pos_tol,pelvis_quat_tol,[0 1]);
+                        obj.plan_cache.pelvis_constraint_cell = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_poseT,pelvis_pos_tol,pelvis_quat_tol,[0 1]);
                     end
                     pelvis_int_constraint = [nan;nan;nan;nan;nan;nan];
                     pelvis_constraint=[];
