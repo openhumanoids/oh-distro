@@ -1,15 +1,15 @@
 function atlasGravityCompensation
 %NOTEST
 
-armstr = 'arm';
+armstr = 'r_arm';
 
 % load robot model
 options.floating = true;
 options.ignore_friction = true;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 options.floating = false;
-r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
+r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 arm_joints_act_fixed= ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,armstr));
 
 % setup frames
@@ -150,7 +150,7 @@ while 1
     f_grav = u(arm_joints_act_fixed);
        
     % send torque command
-    udes(arm_joints_act) = 0.5*tf_act(arm_joints_act) + f_grav;
+    udes(arm_joints_act) = tf_act(arm_joints_act) + f_grav;
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end

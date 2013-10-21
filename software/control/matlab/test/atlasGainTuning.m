@@ -53,8 +53,8 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_elx';% <---- 
-control_mode = 'position';% <----  force, position
+joint = 'r_arm_mwx';% <---- 
+control_mode = 'force';% <----  force, position
 signal = 'foh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
@@ -80,8 +80,8 @@ if strcmp( signal, 'chirp' )
   amp = 0.0;% <----  Nm or radians
   freq = linspace(0.1,0.5,800);% <----  cycles per second
 else
-  vals = [0 0 -0.9 0 0];% <----  Nm or radians
-  ts = linspace(0,30,length(vals));% <----
+  vals = [0 0 10 0 0];% <----  Nm or radians
+  ts = linspace(0,15,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

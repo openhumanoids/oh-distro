@@ -9,25 +9,55 @@ classdef AtlasManipController < DRCController
     function obj = AtlasManipController(name,r,options)
       typecheck(r,'Atlas');
 
+      if nargin < 3
+        options = struct();
+      end
+      
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
                             'qddtraj',zeros(getNumDOF(r),1)));
 
-      qt = NeckControlBlock(r,ctrl_data);
+      qt = QTrajEvalBlock(r,ctrl_data);
       
-      if 1 % use PD control
+      if ~isfield(options,'controller_type')
+        options.controller_type = 1;
+      end
+      
+      if options.controller_type == 1 % use PD control
         
         % instantiate position ref publisher
         qref = PositionRefFeedthroughBlock(r);
         
         ins(1).system = 1;
         ins(1).input = 1;
-        ins(2).system = 1;
-        ins(2).input = 2;
         outs(1).system = 2;
         outs(1).output = 1;
         sys = mimoCascade(qt,qref,[],ins,outs);
      
-      else % use inverse dynamics
+      elseif options.controller_type == 2 % use PD + gravity compensation
+
+        % cascade gravity compensation block
+        gc = GravityCompensationBlock(r);
+        ins(1).system = 1;
+        ins(1).input = 1;
+        outs(1).system = 1;
+        outs(1).output = 1;
+        outs(2).system = 2;
+        outs(2).output = 1;
+        conn(1).from_output = 2;
+        conn(1).to_input = 1;        
+        sys = mimoCascade(qt,gc,conn,ins,outs);
+        clear ins outs conn;
+        
+        % cascade pos/torque ref feedthrough block
+        q_tau_ref = PosTorqueRefFeedthroughBlock(r);
+        ins(1).system = 1;
+        ins(1).input = 1;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(sys,q_tau_ref,[],ins,outs);
+        clear ins outs;
+        
+      elseif options.controller_type == 3 % use inverse dynamics
 
         % cascade eval block with signal duplicator
         dupl = SignalDuplicator(AtlasCoordinates(r),2);
