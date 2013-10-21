@@ -233,13 +233,22 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
           iktraj_qnom_traj = PPTrajectory(foh(iktraj_tbreaks,repmat(qstar,1,NBreaks)));           
           
+          joint_constraint = PostureConstraint(obj.r);
+          joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.joint_limit_min,obj.joint_constraint.joint_limit_max);
+          coords = obj.r.getStateFrame.coordinates;
+          % urf limits are lower="-0.523599" upper="0.523599" 
+          t = 0.3;
+          l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
+          joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[0;-t],[t;0]);
+
+
           %============================
           [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
             iktraj_tbreaks,iktraj_qseed_traj,iktraj_qnom_traj,...
             iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
             iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
             iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
-            obj.joint_constraint,qsc,...
+            joint_constraint,qsc,...
             iktraj_options);
           if(snopt_info > 10)
               warning('The IK traj fails');
@@ -455,14 +464,24 @@ classdef EndPosePlanner < KeyframePlanner
                 %             obj.joint_constraint,qsc,ikoptions);
                 %     end
                 %  else
+                
+                joint_constraint = PostureConstraint(obj.r);
+                joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.joint_limit_min,obj.joint_constraint.joint_limit_max);
+                coords = obj.r.getStateFrame.coordinates;
+                % urf limits are lower="-0.523599" upper="0.523599" 
+                t = 0.3;
+                l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
+                joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[0;-t],[t;0]);
+                
+                
                 if(~isempty(head_constraint))
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                         rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},...
-                        obj.joint_constraint,qsc,ikoptions);
+                        joint_constraint,qsc,ikoptions);
                 else
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
                         rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},...
-                        obj.joint_constraint,qsc,ikoptions);
+                        joint_constraint,qsc,ikoptions);
                 end
                 % end
                 
@@ -544,7 +563,7 @@ classdef EndPosePlanner < KeyframePlanner
             cost.l_leg_hpz = 1;
             cost.l_leg_hpx = 1;
             cost.l_leg_hpy = 1;
-            cost.l_leg_kny = 0;
+            cost.l_leg_kny = 1;
             cost.l_leg_aky = 1;
             cost.l_leg_akx = 1;
             cost.r_arm_usy = cost.l_arm_usy;
