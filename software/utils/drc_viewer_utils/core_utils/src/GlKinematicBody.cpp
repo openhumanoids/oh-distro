@@ -57,7 +57,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 _T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()),
 _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
  future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),
- future_state_changing(false),isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true)
+ future_state_changing(false),isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true),enforce_joint_limits_future_state(true)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -241,7 +241,7 @@ visualize_bbox(false),is_otdf_instance(true),
 _T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), 
 _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity()),_body_mass(0),
 future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),
-future_state_changing(false), isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true)
+future_state_changing(false), isShowMeshSelected(false),isMateable(false),enforce_joint_limits(true),enforce_joint_limits_future_state(true)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -713,7 +713,7 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     }
     
     // enforce joint limits    
-    if(enforce_joint_limits)
+    if((enforce_joint_limits&&!update_future_frame)||(enforce_joint_limits_future_state&&update_future_frame))
     {
       typedef map<string, double > jointpos_mapType;      
       for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
@@ -1010,7 +1010,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     
     
     // enforce joint limits
-    if(enforce_joint_limits)
+    if((enforce_joint_limits&&!update_future_frame)||(enforce_joint_limits_future_state&&update_future_frame))
     {
       typedef map<string, double > jointpos_mapType;      
       for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)

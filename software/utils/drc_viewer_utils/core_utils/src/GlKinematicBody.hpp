@@ -135,6 +135,7 @@ class GlKinematicBody
     std::map<std::string, double> _future_jointpos;
     
     bool enforce_joint_limits;
+    bool enforce_joint_limits_future_state;
     std::map<std::string, double> _jointlimit_min;
     std::map<std::string, double> _jointlimit_max;
     
@@ -142,6 +143,18 @@ class GlKinematicBody
     {
       enforce_joint_limits = false;
     };
+    void enable_joint_limit_enforcement()
+    {
+      enforce_joint_limits = true;
+    };   
+    void disable_joint_limit_enforcement_for_future_state()
+    {
+      enforce_joint_limits_future_state = false;
+    };
+    void enable_joint_limit_enforcement_for_future_state()
+    {
+      enforce_joint_limits_future_state = true;
+    };  
     
     std::vector<KDL::Frame> _desired_body_motion_history;
     
