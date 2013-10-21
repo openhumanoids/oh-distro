@@ -509,8 +509,13 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
 
   // Add on the transform from the "actual palm" to the palm link
   Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
-  actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
-  actualplam_to_palmgeometry.rotate( euler_to_quat( 80*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
+  if (grasp_opt_msg_.grasp_type ==0){ // sandia left
+    actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
+    actualplam_to_palmgeometry.rotate( euler_to_quat( 80*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
+  }else if (grasp_opt_msg_.grasp_type ==1){ // sandia right
+    actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
+    actualplam_to_palmgeometry.rotate( euler_to_quat( 100*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
+  }
   
   Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
   
