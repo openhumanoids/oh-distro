@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="trials_task_3">
+    <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>50</iters>
+          <sor>1.4</sor>
+        </solver>
+        <constraints>
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.0</contact_surface_layer>
+        </constraints>
+      </ode>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <max_step_size>0.001</max_step_size>
+    </physics>
+
+    <!--A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <name>ladder</name>
+      <uri>model://drc_practice_ladder</uri>
+    </include>
+
+    <plugin filename="libVRCPlugin.so" name="vrc_plugin">
+      <atlas>
+        <model_name>atlas</model_name>
+        <pin_link>utorso</pin_link>
+      </atlas>
+      <drc_vehicle>
+        <model_name>drc_vehicle</model_name>
+        <seat_link>polaris_ranger_ev::chassis</seat_link>
+      </drc_vehicle>
+      <drc_fire_hose>
+        <fire_hose_model>fire_hose</fire_hose_model>
+        <coupling_link>coupling</coupling_link>
+        <standpipe_model>standpipe</standpipe_model>
+        <spout_link>standpipe</spout_link>
+        <thread_pitch>-1000</thread_pitch>
+        <coupling_relative_pose>1.17038e-05 -0.125623 0.35 -0.0412152 -1.57078 1.61199</coupling_relative_pose>
+      </drc_fire_hose>
+    </plugin>
+
+  </world>
+</sdf>
+<!--
+This world shows a representative configuration for the Ladder challenge.
+An industrial ladder will be placed against an ISO container and must be
+ascended to reach the top platform. 
+
+NOTES:
+  - material/collision properties have been left at their default values 
+  - The stock ladder model has been modified to extend the hand-rails to
+    contact the ground.  DARPA is still deciding whether to include this
+    modification to mitigate cable-management concerns.
+
+  - Ladder:
+      * collision and visual geometries use the same mesh data
+          - it is possible for other parts to become “embedded” within this
+            model, which is incorrect.
+ 
+DISCLAIMER:
+The models are intended to represent the type of obstacles to be encountered
+during the DRC trials, but may not match the exact configurations used in
+the trial events.  DARPA reserves the right to change any elements of these
+tasks without updating these model files.
+-->
