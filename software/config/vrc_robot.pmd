@@ -288,6 +288,10 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/aas_flat.world";
         host = "robot";
     }
+    cmd "gz_drc_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/drc_practice_task_2.world";
+        host = "robot";
+    }
 }
 
 group "m.simple-control" {
@@ -513,6 +517,17 @@ script "dev.vrc_walking" {
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_vrc_walking"; 
+    wait ms 5000;
+}
+
+script "dev.drc_walking" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    stop cmd "BotWalkingPlanner";
+    wait ms 5000;
+    start cmd "gz_drc_walking"; 
     wait ms 5000;
 }
 
