@@ -66,7 +66,7 @@ group "a.0.hand_drivers" {
 
 group "a.1.core" {
     cmd "aa-sync" {
-        exec = "drc-state-sync -b";
+        exec = "drc-state-sync -b -t";
         host = "robot";
     }
     cmd "viewer" {
@@ -253,7 +253,11 @@ group "m.perception" {
 
 group "m.hands" {
     cmd "sandia_hand_eigen_grasps" {
-        exec = "roslaunch sandia_hand_teleop keyboard_simple_grasp.launch";
+        exec = "sandia-simple-grasp";
+        host = "base";
+    }
+    cmd "sandia_keyboard" {
+        exec = "sandia-simple-grasp-keyboard";
         host = "base";
     }
     cmd "irobot_hand_eigen_grasps" {
