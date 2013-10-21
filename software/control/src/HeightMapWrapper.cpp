@@ -273,6 +273,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         outPtr[j*h+i] = *inPtr;
       }
     }
+
+    if (nlhs > 1) {
+      plhs[1] = mxCreateDoubleMatrix(4,4,mxREAL);
+      outPtr = mxGetPr(plhs[1]);
+      Eigen::Projective3f transform = view->getTransform();
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          outPtr[j*4+i] = transform(i,j);
+        }
+      }
+    }
   }
 
   else if (command == "setrawdepth") {

@@ -45,5 +45,15 @@ classdef HeightMapHandle < handle
         function ptr = getPointerForMex(this)
             ptr = this.mMexFunc('wrapper',this.mHandle);
         end
+        
+        function [heights,xform] = getRawHeights(this)
+            [heights,xform] = this.mMexFunc('getrawdepth',this.mHandle);
+            xform = inv(xform);
+            [x,y] = meshgrid(1:size(heights,2),1:size(heights,1));
+            pts = [x(:),y(:),heights(:)];
+            pts = [pts,ones(size(pts,1),1)]*xform(3:4,:)';
+            heights = reshape(pts(:,1)./pts(:,2),size(x));
+            xform(3,:) = [0,0,1,0];
+        end
     end
 end
