@@ -1126,6 +1126,10 @@ namespace renderer_affordances_gui_utils
         && strcmp(name, PARAM_RESET_DESIRED_STATE)
         && strcmp(name, PARAM_FLIP_GEOMETRY)
         && strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)
+        && strcmp(name, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT)
+        && strcmp(name, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT)     
+        && strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)
+        && strcmp(name, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT)    
         && strcmp(name,PARAM_OTDF_ADJUST_PARAM)
         && strcmp(name,PARAM_OTDF_ADJUST_DOF)
         && strcmp(name,PARAM_SET_EE_CONSTRAINT)
@@ -1376,7 +1380,7 @@ namespace renderer_affordances_gui_utils
     
     GtkWidget * ee_seeds_pane =  gtk_expander_new("Seed Management");
     gtk_container_add (GTK_CONTAINER (ee_seeds_pane), GTK_WIDGET( ee_seeds_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(ee_seeds_pane),(gboolean) TRUE);
+    gtk_expander_set_expanded(GTK_EXPANDER(ee_seeds_pane),(gboolean) FALSE);
     
     GtkWidget * set_des_state_pane =  gtk_expander_new("Set Desired State");
     gtk_container_add (GTK_CONTAINER (set_des_state_pane), GTK_WIDGET( set_des_state_pw));   
@@ -1384,17 +1388,18 @@ namespace renderer_affordances_gui_utils
     
     GtkWidget * get_plan_pane =  gtk_expander_new("Get Manip Plan/Map");
     gtk_container_add (GTK_CONTAINER (get_plan_pane), GTK_WIDGET( get_plan_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) FALSE);
+    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) TRUE);
     
     GtkWidget * mating_pane =  gtk_expander_new("Mating");
     gtk_container_add (GTK_CONTAINER (mating_pane), GTK_WIDGET( mating_pw));
     GtkWidget * planseed_pane =  gtk_expander_new("Plan Seed Management");
     gtk_container_add (GTK_CONTAINER (planseed_pane), GTK_WIDGET( planseed_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(planseed_pane),(gboolean) TRUE);
+    gtk_expander_set_expanded(GTK_EXPANDER(planseed_pane),(gboolean) FALSE);
     
     GtkWidget *col_server_pane =  gtk_expander_new("collision_server_comms");
     gtk_container_add (GTK_CONTAINER (col_server_pane), GTK_WIDGET(col_server_pw));
-
+    gtk_expander_set_expanded(GTK_EXPANDER(col_server_pane),(gboolean) FALSE);
+    
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(ee_seeds_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(set_des_state_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
