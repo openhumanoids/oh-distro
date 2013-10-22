@@ -35,8 +35,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
    
    std::string selected_marker;
    bool _bodypose_adjustment_enabled;
-   bool  _floatingbase_marker_offset_enabled; // enabled if we want body pose markers in a frame other than world frame.
-   KDL::Frame _T_floatingbase_marker_world;
+   bool  _floatingbase_marker_drawoffset_enabled; // enabled if we want body pose markers in a frame other than world frame.
+   KDL::Frame _T_world_floatingbase_marker;
    bool _jointdof_adjustment_enabled;
    bool _jointdof_markers_initialized;
    std::vector<std::string> _jointdof_marker_filter;
@@ -118,25 +118,25 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void enable_bodyorparent_frame_rendering_of_floatingbase_markers(bool value)   {
     // body frame is used in draw_body usage
     // parent frame is used in draw_body_in_frame usage
-       _floatingbase_marker_offset_enabled = value; 
+       _floatingbase_marker_drawoffset_enabled = value; 
    };
    
    bool is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled()   {
-       return _floatingbase_marker_offset_enabled; 
+       return _floatingbase_marker_drawoffset_enabled; 
    };   
 
-   void set_floatingbase_marker_offsetframe(KDL::Frame &T_markerframe_currentWorldFrame){
-      if(!_floatingbase_marker_offset_enabled){
-        _floatingbase_marker_offset_enabled = true; 
+   void set_floatingbasemarker_frame(KDL::Frame &T_currentWorldFrame_markerframe){
+      if(!_floatingbase_marker_drawoffset_enabled){
+        _floatingbase_marker_drawoffset_enabled = true; 
       }        
-      _T_floatingbase_marker_world = T_markerframe_currentWorldFrame;
+      _T_world_floatingbase_marker = T_currentWorldFrame_markerframe;
       update_floatingbase_marker_collision_objects(); 
    };
    
-   KDL::Frame get_marker_frame(){
-      if(!_floatingbase_marker_offset_enabled)
+   KDL::Frame get_floatingbasemarker_frame(){
+      if(!_floatingbase_marker_drawoffset_enabled)
        return KDL::Frame::Identity();
-     return _T_floatingbase_marker_world.Inverse(); // returns T_world_marker
+     return _T_world_floatingbase_marker; // returns T_world_marker
    }
    
    void enable_link_selection(bool value)   {

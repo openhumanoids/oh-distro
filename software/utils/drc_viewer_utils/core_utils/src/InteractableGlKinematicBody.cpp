@@ -18,8 +18,8 @@ void InteractableGlKinematicBody::init_vars(){
   _floatingbase_markers_boxsize = 0;
   bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
   _marker_dir_flip << 1,1,1;
-  _floatingbase_marker_offset_enabled = false;   
-  _T_floatingbase_marker_world = KDL::Frame::Identity();
+  _floatingbase_marker_drawoffset_enabled = false;   
+  _T_world_floatingbase_marker = KDL::Frame::Identity();
 }
 
 
@@ -790,8 +790,8 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
   }
 
  
-  // Store marker dims. Will be used later for drawing.  
-  _floatingbase_offset = offset;
+  // Store marker dims. Will be used later for drawing. 
+  _floatingbase_offset = 0*offset;
   _floatingbase_markers_boxsize=markersize;
   _floatingbase_markers_torusdims<<  torus_radius,torus_tube_radius;
 
@@ -800,13 +800,27 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
 {
 
-  KDL::Frame T_world_marker = (get_marker_frame());
+  KDL::Frame T_world_marker = get_floatingbasemarker_frame();
   KDL::Frame T_marker_world = T_world_marker.Inverse();
  
 
   Eigen::Vector3f p0,p;
-  p0 << _T_world_body_future.p[0] + _floatingbase_offset[0]+T_world_marker.p[0], _T_world_body_future.p[1] + _floatingbase_offset[1]+T_world_marker.p[1], _T_world_body_future.p[2] + _floatingbase_offset[2]+T_world_marker.p[2];
+//  Eigen::Vector3f whole_body_span_dims,offset;
+//  GlKinematicBody::get_whole_body_span_dims(whole_body_span_dims,_floatingbase_offset); 
+  
+  p0 << _T_world_body_future.p[0] + _floatingbase_offset[0], _T_world_body_future.p[1] + _floatingbase_offset[1], _T_world_body_future.p[2] + _floatingbase_offset[2];
   //p0 << _T_world_body.p[0] + _floatingbase_offset[0], _T_world_body.p[1] + _floatingbase_offset[1], _T_world_body.p[2] + _floatingbase_offset[2];
+  if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled()){
+    
+      KDL::Frame T_world_marker = get_floatingbasemarker_frame(); 
+     // _floatingbase_offset is in worldframe corresponding to _T_world_body_future
+     // we want offset in world frame corresponding to T_world_marker
+     // _floatingbase_offset   T_world_marker*T_world_body.Inverse()
+    Eigen::Vector3f offset;
+    rotate_eigen_vector_given_kdl_rotation(_floatingbase_offset,T_world_marker.M*_T_world_body_future.M.Inverse(),offset);
+    p0 <<  offset[0]+T_world_marker.p[0], offset[1]+T_world_marker.p[1],offset[2]+T_world_marker.p[2];  
+  }
+  
   Eigen::Vector4f q0,q;
   q0 << 0,0,0,1;
   
@@ -936,9 +950,16 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
 void InteractableGlKinematicBody::draw_floatingbase_markers()
 {
 
-   KDL::Frame T_world_marker = (get_marker_frame());
-   //float pos[3] = {_T_world_body.p[0] + _floatingbase_offset[0], _T_world_body.p[1] + _floatingbase_offset[1], _T_world_body.p[2] + _floatingbase_offset[2]};
-   float pos[3] = {_T_world_body_future.p[0]+_floatingbase_offset[0]+T_world_marker.p[0], _T_world_body_future.p[1]+_floatingbase_offset[1]+T_world_marker.p[1], _T_world_body_future.p[2]+_floatingbase_offset[2]+T_world_marker.p[2]};
+   KDL::Frame T_world_marker = get_floatingbasemarker_frame();
+   float pos[3] = {_T_world_body_future.p[0] + _floatingbase_offset[0], _T_world_body_future.p[1] + _floatingbase_offset[1], _T_world_body_future.p[2] + _floatingbase_offset[2]};
+   if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled()){
+    Eigen::Vector3f offset;
+    rotate_eigen_vector_given_kdl_rotation(_floatingbase_offset,T_world_marker.M*_T_world_body_future.M.Inverse(),offset);
+    pos[0] = offset[0]+T_world_marker.p[0];
+    pos[1] = offset[1]+T_world_marker.p[1];
+    pos[2] = offset[2]+T_world_marker.p[2];
+   }
+   
    
    float rot_marker_inner_radius = _floatingbase_markers_torusdims[0]-_floatingbase_markers_torusdims[1];
    float rot_marker_outer_radius = _floatingbase_markers_torusdims[0]+_floatingbase_markers_torusdims[1];
@@ -1755,7 +1776,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
                                     ||(bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS) )); 
                                     
  
-    KDL::Frame T_world_marker =(get_marker_frame());         
+    KDL::Frame T_world_marker =(get_floatingbasemarker_frame());         
     Eigen::Vector3f p0,p0_markerframe;
     p0 << pos[0],pos[1],pos[2];
     rotate_eigen_vector_given_kdl_frame(p0,T_world_marker.Inverse(),p0_markerframe);                        
@@ -2021,9 +2042,20 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
   // update floatingbase markers to be in sync with body frame.
   if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled())
   {
-    KDL::Frame T_markerdrawFrame_currentWorldFrame= KDL::Frame::Identity();
-    T_markerdrawFrame_currentWorldFrame.M=_T_world_body.M.Inverse(); //  sets T_marker_world = T_body_world
-    set_floatingbase_marker_offsetframe(T_markerdrawFrame_currentWorldFrame); // Drawing markers in bodyframe orientation
+    KDL::Frame T_world_marker= KDL::Frame::Identity();
+    //T_world_marker = _T_world_body_future; // has to be future state for markers to move with future state.
+    
+    T_world_marker.p = _T_world_body_future.p;
+    double x,y,z,w;
+    _T_world_body_future.M.GetQuaternion(x,y,z,w);
+    Eigen::Vector4f q;
+    q<< x,y,z,w;
+    q.normalize(); // makes it more numerically stable than T_world_marker = _T_world_body_future for setting future state
+    T_world_marker.M= KDL::Rotation::Quaternion(q[0],q[1],q[2],q[3]);
+    
+    //T_world_marker.M=_T_world_body.M; //  sets T_world_marker = T_world_body
+    //zero position, only use orientation
+    set_floatingbasemarker_frame(T_world_marker); // Drawing markers in bodyframe orientation
   }
   
   //draw_whole_body_bbox();
@@ -2086,23 +2118,14 @@ void InteractableGlKinematicBody::draw_body_in_frame (float (&c)[3], float alpha
     
     if(is_bodyorparent_frame_rendering_of_floatingbase_markers_enabled())
     {
-      KDL::Frame T_parentFrame_body= KDL::Frame::Identity();
-      T_parentFrame_body=T_drawFrame_currentWorldFrame*_T_world_body;
+      KDL::Frame T_drawFrame_body= KDL::Frame::Identity();
+      T_drawFrame_body=T_drawFrame_currentWorldFrame*_T_world_body_future;
     
-      KDL::Frame T_markerdrawFrame_currentWorldFrame= KDL::Frame::Identity();
-      T_markerdrawFrame_currentWorldFrame.p = T_parentFrame_body.p -_T_world_body.p;
-      T_markerdrawFrame_currentWorldFrame.M=T_parentFrame_body.M.Inverse(); //  sets T_marker_world = T_body_world
-      set_floatingbase_marker_offsetframe(T_markerdrawFrame_currentWorldFrame); // Drawing markers in parentFrame orientation
-    
-      //markers should be in drawframe of the host object
-      //KDL::Frame temp=KDL::Frame::Identity();
-      // you are setting _T_floatingbase_marker_world
-      //temp =  T_markerdrawFrame_body.Inverse(); // this makes marker drawframe the same as bodyframe
-      //temp.M =  T_drawFrame_currentWorldFrame.M.Inverse(); // use parent object orientation
-      //temp.p[0] = 0; temp.p[1] = 0;temp.p[2] = 0;
-      //temp.M =KDL::Rotation::Identity();
-      // set T_markerdrawframe_world
-      //set_floatingbase_marker_offsetframe(temp);//zero position, only use orientation
+      KDL::Frame T_drawFrame_marker= KDL::Frame::Identity();
+      T_drawFrame_marker.p = T_drawFrame_body.p; // world position used for drawing
+      T_drawFrame_marker.M = T_drawFrame_currentWorldFrame.M; // parentFrame orientation
+      set_floatingbasemarker_frame(T_drawFrame_marker); // Drawing markers in parentFrame orientation
+
     }
     
     //draw_whole_body_bbox();
