@@ -49,6 +49,7 @@ classdef AtlasManipController < DRCController
         clear ins outs conn;
         
         % cascade pos/torque ref feedthrough block
+        options.open_loop_torque = true;
         q_tau_ref = PosTorqueRefFeedthroughBlock(r);
         ins(1).system = 1;
         ins(1).input = 1;
