@@ -25,11 +25,9 @@
 #define HAND_NAME "armH-palm-1"
 #define HAND_PORT "3490"
 
-// global publisther
+// globals
 ros::Publisher pub;
-
-// 7200 ticks = 2pi radians
-//#define SPINDLE_RADIANS_TO_ENCODER_TICKS 1145.91559026 // 7200 / 2pi
+Dexter hand;
 
 void h_callback(const HandPacket& msg)
 {
@@ -117,7 +115,7 @@ void calibrate_callback(const std_msgs::EmptyConstPtr& msg)
 {
     HandleCommand cmd;
     cmd.calibrate = true;
-    handle_send(cmd);
+    hand.send(cmd);
 };
 
 void control_callback(const handle_msgs::HandleControlConstPtr& msg)
@@ -145,7 +143,7 @@ void control_callback(const handle_msgs::HandleControlConstPtr& msg)
                     printf("WARNING: UNKNOWN CONTROL TYPE: %d\n", msg->type[i]);
                     //return;
             }
-            cmd.motorCommand[i].value = msg->value[i]; // * SPINDLE_RADIANS_TO_ENCODER_TICKS;
+            cmd.motorCommand[i].value = msg->value[i];
             cmd.motorCommand[i].valid = true;
         }
         else
@@ -153,7 +151,7 @@ void control_callback(const handle_msgs::HandleControlConstPtr& msg)
     }
     
     if (cmd.anyValid())
-        handle_send(cmd);
+        hand.send(cmd);
 };
 
 int main(int argc, char *argv[])
@@ -178,24 +176,27 @@ int main(int argc, char *argv[])
              udp ? "udp": "tcp",
              hand_port.c_str());
     
-    if (handle_connect(hand_name.c_str(), hand_port.c_str(), udp) < 0)
+    if (hand.connect(hand_name.c_str(), hand_port.c_str(), udp) < 0)
     {
-        printf("ERROR: cannot open handle device\n");
+        printf("ERROR: cannot connect to hand '%s' on %s port %s\n", 
+               hand_name.c_str(), 
+               udp ? "UDP" : "TCP",
+               hand_port.c_str());
         return -1;
     }
     
-    if (handle_start(h_callback) < 0)
+    if (hand.start(h_callback) < 0)
     {
-        printf("ERROR: cannot start handle device\n");
+        printf("ERROR: cannot start handler thread\n");
         return -1;  
     }
     
     printf("Press CTRL-C to exit\n");
     ros::spin();
     
-    if (handle_stop() < 0)
+    if (hand.stop() < 0)
     {
-        printf("WARNING: cannot stop handle thread\n");
+        printf("WARNING: cannot stop handler thread\n");
     };
     
     return 0;

@@ -43,6 +43,7 @@ Revision    Date        Engineer    Description
 #include "adc.h"
 #include "accel.h"
 #include "encoder.h"
+#include "../common/nvm.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -51,7 +52,7 @@ Revision    Date        Engineer    Description
 #include <avr/wdt.h>
 #include <avr/eeprom.h>
 
-#define FIRMWARE_VERSION 301
+#define FIRMWARE_VERSION 302
 
 //int isProximal;
 uint8_t numPressureSensors;
@@ -148,8 +149,16 @@ static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer
     
     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
     {
-        memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,2);
-        responseSize += 2;
+        // memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,2);
+        // responseSize += 2;
+
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+0] = nvm_fuses_read(FUSEBYTE0);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+1] = nvm_fuses_read(FUSEBYTE1);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+2] = nvm_fuses_read(FUSEBYTE2);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+3] = nvm_fuses_read(FUSEBYTE4);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+4] = nvm_fuses_read(FUSEBYTE5);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+5] = NVM_LOCKBITS;
+        responseSize += 6;
     }
     
     if(collectionBitfield & DATA_COLLECTION_TACTILE_TEMP_BITMASK)
@@ -365,6 +374,9 @@ int main(void)
     initTactileModule(); // initialize variables of the tactile buffer
 
     PMIC.CTRL |= PMIC_LOLVLEN_bm;            //tell event system to pay attention to low-priority interrupts
+
+    nvm_blbb_lock_bits_write(NVM_BLBB_WLOCK_gc); // lock bootloader from being written
+    
     sei();
 
     configureSPIModulesPressure();

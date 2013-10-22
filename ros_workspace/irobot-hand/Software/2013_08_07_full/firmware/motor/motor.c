@@ -88,7 +88,10 @@ Revision    Date        Engineer    Description
 #include <util/delay.h>
 #include <avr/wdt.h>
 
-#define FIRMWARE_VERSION 300
+#include "../common/nvm.h"
+//#include <avr/fuse.h>
+
+#define FIRMWARE_VERSION 302
 
 //Global variables
 //int isThumb;
@@ -103,6 +106,27 @@ static void WriteIntToEEPROM(uint8_t address, uint8_t* value);
 static void ReadIntFromEEPROM(uint8_t address, uint8_t* destination);
 static void verifyVersion(void);
 static void initStateFromEEPROM(void);
+
+// FUSES = 
+//     {
+//         .low = LFUSE_DEFAULT,
+//         .high = (FUSE_BOOTSZ0 & FUSE_BOOTSZ1 & FUSE_EESAVE & FUSE_SPIEN & FUSE_JTAGEN),
+//         .extended = EFUSE_DEFAULT,
+//     };
+
+// __fuse_t __fuse __attribute__((section (".fuse"))) = 
+// {
+//     .low = LFUSE_DEFAULT,
+//     .high = (FUSE_BOOTSZ0 & FUSE_BOOTSZ1 & FUSE_EESAVE & FUSE_SPIEN & FUSE_JTAGEN),
+//     .extended = EFUSE_DEFAULT,
+// };
+
+// FUSES = 
+//     {
+//         LFUSE_DEFAULT, // .low
+//         (FUSE_BOOTSZ0 & FUSE_BOOTSZ1 & FUSE_EESAVE & FUSE_SPIEN & FUSE_JTAGEN), // .high
+//         EFUSE_DEFAULT, // .extended
+//     };
 
 //Private variables
 // #ifdef USE_FAULT_PIN
@@ -390,8 +414,16 @@ static int handleCollectionCommand(uint8_t *commandPacket, uint8_t *outputBuffer
 
     if(collectionBitfield & DATA_COLLECTION_DEBUG_BITMASK)
     {
-        memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,4);
-        responseSize += 4;
+        //memcpy(&outputBuffer[RESPONSE_PAYLOAD_OFFSET+responseSize],&RxCheckSumErrCnt,4);
+        // responseSize += 4;
+        
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+0] = nvm_fuses_read(FUSEBYTE0);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+1] = nvm_fuses_read(FUSEBYTE1);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+2] = nvm_fuses_read(FUSEBYTE2);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+3] = nvm_fuses_read(FUSEBYTE4);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+4] = nvm_fuses_read(FUSEBYTE5);
+        outputBuffer[RESPONSE_PAYLOAD_OFFSET+5] = NVM_LOCKBITS;
+        responseSize += 6;
     }
 
     outputBuffer[RESPONSE_PACKETSIZE_OFFSET] = 3+responseSize;
@@ -931,6 +963,9 @@ int main(void)
     configurePIDController();
 
     PMIC.CTRL |= PMIC_LOLVLEN_bm;            //tell event system to pay attention to low-priority interrupts
+    
+    nvm_blbb_lock_bits_write(NVM_BLBB_WLOCK_gc); // lock bootloader from being written
+    
     sei();
 
     updateMotor(); //forceMotorUpdate();

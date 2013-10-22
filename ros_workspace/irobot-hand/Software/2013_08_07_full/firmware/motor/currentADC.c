@@ -34,7 +34,7 @@ static void calibrateCurrentADC(void);
 static uint8_t ReadCalibrationByte(uint8_t index);
 static float compensateCurrent(float inCurrent);
 
-static int16_t ADCCurrentCalibration;
+static int16_t ADCCurrentCalibration = 0;
 
 //Global variable to hold the motor current and temperature itself.
 float motorCurrent = 0.0;
@@ -80,7 +80,7 @@ static void calibrateCurrentADC(void)
         if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
         {
             CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
-            calibrationAccumulator += CURRENT_ADC.CH1RES;
+            calibrationAccumulator += (int16_t)CURRENT_ADC.CH1RES;
             i++;
         }
     }
@@ -203,7 +203,7 @@ void readCurrentSignals()
     if(CURRENT_ADC.INTFLAGS & ADC_CH1IF_bm)
     {
         CURRENT_ADC.INTFLAGS = ADC_CH1IF_bm;
-        rawMotorCurrent = CURRENT_ADC.CH1RES;
+        rawMotorCurrent = (int16_t)CURRENT_ADC.CH1RES;
         rawMotorCurrent = rawMotorCurrent - ADCCurrentCalibration;
         tempMotorCurrent = compensateCurrent(ADC_CODES_TO_AMPERES((float)rawMotorCurrent));
         

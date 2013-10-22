@@ -11,6 +11,9 @@
  * \copyright Copyright iRobot Corporation, 2012
  **/
 
+#ifndef HANDLE_TCP
+#define HANDLE_TCP
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,74 +31,13 @@
 #include "packetParser.hpp"
 #include "handleControl.hpp"
 
-//#define HANDLE_PORT "3490" // the tcp port
-
-
 /// The callback signature to receive sensor data.
 typedef void (*handle_cb_t)(const HandPacket& data);
 
-/// The tcp socket file descriptor
-int _socketfd = -1;
-sockaddr _addr;
-socklen_t _addrlen;
-bool _udp = false;
+// forward declarations
+void* handle_thread(void* context);
 
-/// The function pointer for the sensor data callback
-handle_cb_t hthread_cb = NULL;
 
-/// The tcp listener thread
-pthread_t hthread;
-
-bool run_handle = true;
-
-/// Connect to the server on the hand and store the socket file descriptor
-// in the global variable.
-// Return -1 on fail.
-int handle_connect(const char* const server, const char* const port, bool udp)
-{
-    int sockfd;
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
-    
-    _udp = udp;
-    
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    if (udp)
-        hints.ai_socktype = SOCK_DGRAM;
-    else
-        hints.ai_socktype = SOCK_STREAM;
-    
-    if ((rv = getaddrinfo(server, port, &hints, &servinfo)) != 0) {
-        return -1;
-    }
-
-    // loop through all the results and connect to the first we can
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            continue;
-        }
-        
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            continue;
-        }
-        
-        _addr = *(p->ai_addr);
-        _addrlen = p->ai_addrlen;
-        
-        break;
-    }
-
-    freeaddrinfo(servinfo);
-    
-    if (p == NULL) {
-        return -1;
-    }
-
-    _socketfd = sockfd;
-    return 0;
-};
 
 /// Just like regular tcp send(), but retrys until entire message is sent.
 // Return -1 on failure, num bytes sent on success.
@@ -180,136 +122,276 @@ int recvalludp(int sockfd, void* buff, int n, struct sockaddr* addr, socklen_t* 
     return rd;
 };
 
+
+/// Low-level C++ library for connecting to Dexter hand
+//
+class Dexter
+{
+public:
+    
+    /// Constructor
+    Dexter()
+    {
+        _socketfd = -1;
+        _udp = false;
+        _hthread_cb = NULL;
+        _run = false; 
+    };
+    
+    /// Destructor
+    ~Dexter()
+    {
+    };
+    
+    /// Connect to the server on the hand and store the socket file descriptor
+    // in the global variable.
+    // Return -1 on fail.
+    int connect(const char* const server, const char* const port, bool udp)
+    {
+        int sockfd;
+        struct addrinfo hints, *servinfo, *p;
+        int rv;
+    
+        _udp = udp;
+    
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_UNSPEC;
+        if (udp)
+            hints.ai_socktype = SOCK_DGRAM;
+        else
+            hints.ai_socktype = SOCK_STREAM;
+    
+        if ((rv = getaddrinfo(server, port, &hints, &servinfo)) != 0) {
+            return -1;
+        }
+
+        // loop through all the results and connect to the first we can
+        for(p = servinfo; p != NULL; p = p->ai_next) {
+            if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+                continue;
+            }
+            
+            // ::connect() uses the global, builtin function instead of member function
+            if (::connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+                close(sockfd);
+                continue;
+            }
+        
+            _addr = *(p->ai_addr);
+            _addrlen = p->ai_addrlen;
+        
+            break;
+        }
+
+        freeaddrinfo(servinfo);
+    
+        if (p == NULL) {
+            return -1;
+        }
+
+        _socketfd = sockfd;
+        return 0;
+    };
+
+    
+
+    /// Start the listening thread spinning.
+    // Pass in a callback function you want called when new data arrives.
+    // Returns -1 on fail.
+    int start(handle_cb_t callback)
+    {
+        _hthread_cb = callback;
+        _run = true;
+
+        pthread_attr_init(&_attr);
+        pthread_attr_setdetachstate(&_attr, PTHREAD_CREATE_JOINABLE);
+        
+        return pthread_create(&_hthread, &_attr, handle_thread, (void *)this);
+    };
+
+    /// Stop the tcp listening thread.  Block until thread completes.
+    // Returns -1 on fail.
+    int stop()
+    {
+        if (_run)
+        {
+            _run = false;
+            if (_socketfd >= 0)
+            {
+                close(_socketfd);
+                _socketfd = -1;
+            }
+            pthread_attr_destroy(&_attr);
+            return pthread_join(_hthread, NULL);
+        }
+    
+        return 0;
+    };
+
+    /// Send command to palm.
+    // Returns -1 on fail.
+    int send(HandleCommand cmd)
+    {
+        unsigned char buff[100];
+        int len = cmd.pack(buff);
+        if (_udp)
+            return sendalludp(_socketfd, buff, len, &_addr, _addrlen);
+        else
+            return sendall(_socketfd, buff, len, 0);
+    };
+    
+    bool isRunning() const
+    {
+        return _run;
+    };
+    
+    int getSocket() const
+    {
+        return _socketfd;
+    };
+    
+    bool hasCallback() const
+    { 
+        return (_hthread_cb != NULL);
+    };
+    
+    void callback(HandPacket msg) const
+    { 
+        return _hthread_cb(msg);
+    };
+    
+    
+private:
+
+    /// The tcp socket file descriptor
+    int _socketfd;
+    
+    /// socket address info
+    sockaddr _addr;
+    
+    /// socket address info length
+    socklen_t _addrlen;
+    
+    /// true to use UDP instead of TCP socket
+    bool _udp;
+    
+    /// The function pointer for the sensor data callback
+    handle_cb_t _hthread_cb;
+    
+    /// The tcp/udp listener thread
+    pthread_t _hthread;
+    
+    /// pthread attributes
+    pthread_attr_t _attr;
+    
+    /// true when running
+    bool _run; 
+};
+
+
 /// The code for the tcp listener thread.
 // Pass in the tcp socket file descriptor.
-void* handle_thread(void* socketfd)
+void* handle_thread(void* context)
 {
-    int fd = (int)socketfd;
+    Dexter* dexter = (Dexter*)context;
     int ret = 0;
     
-    unsigned char buffer[500];
+    unsigned char buffer[sizeof(HandPacket)+5];
     HandPacket msg;
     int len = msg.pack(buffer); // dummy pack to get serialization length.
     
-    while (ret != -1 && run_handle)
+    while (ret != -1 && dexter->isRunning())
     {
-        ret = recvall(fd, buffer, len);
-        if (ret > 0)
+        ret = recvall(dexter->getSocket(), buffer, len);
+        if (ret > 0 && dexter->isRunning())
         {
             msg.unpack(buffer);
-            if (hthread_cb)
-                hthread_cb(msg);
+            if (dexter->hasCallback())
+                dexter->callback(msg);
         }
     }
     
-    close(fd);
+    //close(fd);
     pthread_exit(NULL);
-};
-
-/// Start the listening thread spinning.
-// Pass in a callback function you want called when new data arrives.
-// Returns -1 on fail.
-int handle_start(handle_cb_t callback)
-{
-    hthread_cb = callback;
-    run_handle = true;
-    return pthread_create(&hthread, NULL, handle_thread, (void *)_socketfd);
-};
-
-/// Stop the tcp listening thread.  Block until thread completes.
-// Returns -1 on fail.
-int handle_stop()
-{
-    run_handle = false;
-    if (_socketfd >= 0)
-        close(_socketfd);
-    return pthread_join(hthread, NULL);
-};
-
-/// Send command to palm.
-// Returns -1 on fail.
-int handle_send(HandleCommand cmd)
-{
-    unsigned char buff[100];
-    int len = cmd.pack(buff);
-    if (_udp)
-        return sendalludp(_socketfd, buff, len, &_addr, _addrlen);
-    else
-        return sendall(_socketfd, buff, len, 0);
 };
 
 //////////////////////////////////////////
 
-// void my_callback(const HandSensors& data)
-// {
-//     printf("my callback:\n");
-    
-//     printf("Voltage: %f %f %f\n", 
-//            data.voltage.volts33, 
-//            data.voltage.volts12, 
-//            data.voltage.volts48);
-//     printf("Hall Encoders: %d %d %d %d\n", 
-//            data.motorHallEncoder[0], 
-//            data.motorHallEncoder[1], 
-//            data.motorHallEncoder[2], 
-//            data.motorHallEncoder[3]);
-// };
 
-// int main(int argc, char *argv[])
-// {
-//     if (handle_connect("armH-palm-1", "3490") < 0)
-//     {
-//         printf("connect error\n");
-//         exit(1);
-//     }
+//
+// Example program: test.cpp
+//
+// to compile and run:
+//   cp ../../handle_lib/include/handle_lib/*.hpp .
+//   cp ../../handle_lib/lib/libhandle_lib.so .
+//   g++ test.cpp -L. -lhandle_lib -pthread -o test
+//   ./test
+//
+
+/*
+
+#include "handleTcp.hpp"
+#include "handleControl.hpp"
+#include "handleTypes.hpp"
+//#include "packetParser.hpp"
+
+
+void my_callback(const HandPacket& msg)
+{
+    printf("%f ", msg.data.airTemp);
+    for (int i=0; i<5; i++)
+    {
+        printf("%d ", msg.data.motorHallEncoder[i]);
+    }
+    printf("\n");
+};
+
+int main(int argc, char *argv[])
+{
+    Dexter hand;
     
-//     handle_start(my_callback);
+    if (hand.connect("192.168.40.31", "3490", false) != 0)
+    {
+        printf("ERROR: hand 1 connection error\n");
+    }
     
-//     bool run = true;
-//     while (run)
-//     {
-//         char read_buff[10];
-//         memset(read_buff, 0, 6);
-//         int motor = 0;
-//         int type = 0;
-//         int val = 0;
+    if (hand.start(my_callback) != 0)
+    {
+        printf("ERROR: cannot start hand 1 handler thread\n");
+    }
+
+    while (true)
+    {
+        printf("Press ENTER to exit\n");
+        printf("Close fingers to value:");
+        char read_buff[10];
+        memset(read_buff, 0, 10);
+        fgets(read_buff, 10, stdin);
         
-//         printf("\n\n");
-//         printf("Motor [0-4]:");
-//         fgets(read_buff, 10, stdin);
+        if (read_buff[0] == '\n')
+            break;
         
-//         if (read_buff[0] == '\n')
-//             break;
+        int val = atoi(read_buff);
         
-//         motor = atoi(read_buff);
+        HandleCommand cmd;
+        for (int i=0; i<3; i++)
+        {
+            cmd.motorCommand[i].valid = true;
+            cmd.motorCommand[i].type = MOTOR_POSITION;
+            cmd.motorCommand[i].value = val;
+        }
         
-//         printf("\n");
-//         printf("0 : Velocity\n");
-//         printf("1 : Position\n");
-//         printf("Type [0-1]:");
-//         fgets(read_buff, 10, stdin);
-//         type = atoi(read_buff);
-        
-//         printf("\n");
-//         printf("Amount [-65535 to 65535]:");
-//         fgets(read_buff, 6, stdin);
-//         val = atoi(read_buff);
-        
-//         if (motor >= 0 && motor < 5)
-//         {
-//             HandleCommand cmd;
-//             cmd.motorValid[motor] = true;
-//             cmd.motorCommand[motor].type = (CommandType)type;
-//             cmd.motorCommand[motor].value = val;
-        
-//             sendall(_socketfd, (char*)&cmd, sizeof(HandleCommand), 0);
-//         }
-//     }
+        hand.send(cmd);
+    }
     
-//     //handle_stop();
+    if (hand.stop() != 0)
+    {
+        printf("WARNING: cannot stop hand 1 handler thread\n");
+    };
     
-//     // closing the socket stops the thread
-//     handle_close();
-    
-//     return 0;
-// }
+    return 0;
+}
+*/
+
+
+#endif

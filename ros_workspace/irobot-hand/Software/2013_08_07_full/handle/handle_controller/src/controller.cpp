@@ -1205,7 +1205,7 @@ void* serial_thread(void*)
                         {
                             if (debug_errors)
                             {
-                                printf("\ncode error: %02X while waiting for motor response\n", code);
+                                printf("\ncode error: %02X while waiting for motor FM%d (device %d) response\n", code, motorChain_to_fingerNumber[command_index]+1, 7+command_index);
                             }
                             if (sensorMsg)
                             {

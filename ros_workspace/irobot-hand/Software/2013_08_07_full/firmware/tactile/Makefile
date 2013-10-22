@@ -59,6 +59,7 @@ SRC = \
 	daisycomm.c \
 	portio.c \
 	tactile.c \
+	../common/nvm.c \
 	tactsense.c
 
 # List Assembler source files here.
@@ -68,7 +69,7 @@ SRC = \
 #     Even though the DOS/Win* filesystem matches both .s and .S the same,
 #     it will preserve the spelling of the filenames, and gcc itself does
 #     care about how the name is spelled on its command-line.
-ASRC =
+ASRC = ../common/ccp.S
 
 
 

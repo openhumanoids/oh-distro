@@ -35,6 +35,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_executable(handle_ros src/main.cpp)
 
 rosbuild_add_compile_flags(handle_ros -fpermissive)
-rosbuild_add_compile_flags(handle_ros -Wint-to-pointer-cast)
+#rosbuild_add_compile_flags(handle_ros -Wint-to-pointer-cast)
 
 #target_link_libraries(handle_ros handle_lib)

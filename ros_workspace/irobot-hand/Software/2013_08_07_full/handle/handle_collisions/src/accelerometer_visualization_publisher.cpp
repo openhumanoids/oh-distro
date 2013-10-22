@@ -35,6 +35,7 @@ void callback(const handle_msgs::HandleSensorsConstPtr& data)
         // distal accel
         //
         visualization_msgs::Marker dmarker;
+        dmarker.header.stamp = ros::Time::now();
         
         dmarker.color.r = 0.0;
         dmarker.color.g = 0.0;
@@ -67,14 +68,15 @@ void callback(const handle_msgs::HandleSensorsConstPtr& data)
         // proximal accel
         //
         visualization_msgs::Marker pmarker;
-        
+        pmarker.header.stamp = ros::Time::now();
+ 
         pmarker.color.r = 0.0;
         pmarker.color.g = 0.0;
         pmarker.color.b = 1.0;
         pmarker.color.a = 1.0;
         
         pmarker.ns = "accelerometer_display";
-        pmarker.id = 10*i;
+        pmarker.id = 10+i;
         
         std::stringstream pss;
         pss << "/finger[" << i << "]/proximal_accelerometer";

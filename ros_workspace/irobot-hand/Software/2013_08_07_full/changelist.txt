@@ -1,4 +1,171 @@
 
+2013_09_18
+-------------------
+ * Make the bootloader section of memory read-only in the finger, tactile palm,
+   and motor firmware
+ * Read the fuse and lock bits with the "debug" sensor in finger, tactile palm,
+   and motor firmware
+
+Changed files:
+ M  firmware/distal/distal.c
+ M  firmware/distal/distal.hex
+ M  firmware/distal/Makefile
+ M  firmware/tactile/tactile.c
+ M  firmware/tactile/tactile.hex
+ M  firmware/tactile/Makefile
+ A  firmware/common/gas.h
+ A  firmware/common/nvm.c
+ A  firmware/common/assembler.h
+ A  firmware/common/ccp.S
+ A  firmware/common/nvm.h
+ A  firmware/common/ccp.h
+ M  firmware/proximal/proximal.c
+ M  firmware/proximal/Makefile
+ M  firmware/proximal/proximal.hex
+ D  firmware/motor/nvm.c
+ M  firmware/motor/motor.c
+ M  firmware/motor/motor.hex
+ D  firmware/motor/nvm.h
+ D  firmware/motor/ccp.h
+ D  firmware/motor/gas.h
+ D  firmware/motor/assembler.h
+ D  firmware/motor/ccp.S
+ M  firmware/motor/Makefile
+
+This update only includes changes to the microcontroller firmware.  To update:
+
+Loginto the hand:
+    ./killhandle.sh
+    ./stopall
+    makerw
+
+On the PC:
+    cd handle/firmware
+    ./scpfirmware.sh <hand#>
+
+Back on the hand:
+    ./iflash f m t
+    (if there are failures, reflash)
+    makero
+    exit
+
+Then you should power-cycle the hand.
+
+
+
+2013_09_13
+-------------------
+ * Change handle library to be object-oriented to allow 2 hands to be
+   controlled from single process.
+
+Changed files:
+ * handle_lib/include/handle_lib/handleTcp.hpp
+ * handle_controller/src/handle_controller
+ * handle_ros/src/main.cpp
+ * handle_ros/CMakeLists.txt
+
+To use update, simply copy the files over, then:
+  rosmake --pre-clean -s -k --profile handle
+
+No code needs to be changed on the hand.
+
+Details:
+Previously, the handle library used a C-style interface with global variables
+and functions.  Now, a C++ style object oriented interface is used.  
+
+The old style:
+  handle_connect("192.168.40.31", "3490", false);
+  handle_start(my_callback);
+  handle_send(cmd);
+  handle_stop();
+
+The new style:
+  Dexter hand;
+  hand.connect("192.168.40.31", "3490", false);
+  hand.start(my_callback);
+  hand.send(cmd);
+  hand.stop();
+
+
+
+2013_08_26
+-------------------
+ * fix bug in motor firmware that caused incorrectly high current reads
+ * fix bug in handle TCP transport library that used too small of a buffer
+ * fix bug in handle TCP transport library that could cause segfaults on 
+   disconnect
+ * add fuse byte reading in motor micros
+
+Changed files:
+ * Software/handle/handle_lib/include/handle_lib/handleTcp.hpp
+ * Software/handle/handle_controller/utils/raw_spin
+ * Software/handle/handle_controller/utils/chainmask
+ * Software/handle/handle_controller/utils/test_motor
+ * Software/handle/handle_controller/utils/motortest
+ * Software/handle/handle_controller/utils/bootload
+ * Software/handle/handle_controller/utils/get_sensor
+ * Software/handle/handle_controller/utils/calibrate_opcode
+ * Software/handle/handle_controller/utils/parametertest
+ * Software/handle/handle_controller/utils/ledflash
+ * Software/handle/handle_controller/utils/test_palm_tactile
+ * Software/handle/handle_controller/utils/sensor_poll
+ * Software/handle/handle_controller/utils/sensor_spin
+ * Software/handle/handle_controller/utils/parametertest2
+ * Software/handle/handle_controller/utils/debug_poll
+ * Software/handle/handle_controller/utils/stopall
+ * Software/handle/handle_controller/src/controller.cpp
+ * Software/handle/handle_controller/src/handle_controller
+ * firmware/motor/nvm.c
+ * firmware/motor/motor.c
+ * firmware/motor/motor.hex
+ * firmware/motor/nvm.h
+ * firmware/motor/ccp.h
+ * firmware/motor/gas.h
+ * firmware/motor/assembler.h
+ * firmware/motor/ccp.S
+ * firmware/motor/currentADC.c
+ * firmware/motor/Makefile
+
+This update includes changes to the firmware, Overo code, and ROS nodes.  
+Binaries for the firmware and Overo code are provided, but you will need to 
+recompile the ROS nodes.
+
+Loginto the hand:
+    ./killhandle.sh
+    ./stopall
+    makerw
+
+On the PC:
+    cd handle
+    rosmake --pre-clean -k -s --profile
+    cd handle_controller
+    ./scpall.sh <hand#>
+    cd ../../firmware
+    ./scpfirmware.sh <hand#>
+
+Back on the hand:
+    ./iflash m
+    (if there are failures, reflash)
+    makero
+    exit
+
+Then you should power cycle the hand.
+
+
+
+2013_08_20
+-------------------
+ * Fix bug in distal accelerometer visualization
+
+Changed files:
+ * handle/handle_collisions/src/accelerometer_visualization_publisher.cpp
+
+This update only involves changes to the ros nodes.  To update, simply 
+extract the files on your machine, then:
+  rosmake handle_collisions
+
+
+
 2013_08_07
 -------------------
  * overhaul GUI (requires qt4, qt_build, and qt-ros)
