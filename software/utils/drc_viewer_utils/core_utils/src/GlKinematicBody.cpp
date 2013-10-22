@@ -1867,21 +1867,22 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
-  //todo
+    //todo
     glPushMatrix();
-        //size cuboid
+    //size cuboid
     
-        // move base up so that bottom face is at origin
-     // glTranslatef(0,0.5,0.0); 
-     glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+    // move base up so that bottom face is at origin
+    // glTranslatef(0,0.5,0.0); 
+    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
 
-     glRotatef(theta * 180/3.141592654, 
+    glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
-     glScalef(xDim,yDim,zDim);
-         bot_gl_draw_cube();
-        //cube();
+    glScalef(xDim,yDim,zDim);
+    bot_gl_draw_cube();
+
+    bot_gl_draw_cube_frame();
+    //cube();
     glPopMatrix();
-  
 
   }else if  (type == otdf::Geometry::CYLINDER){
     shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link));
