@@ -678,27 +678,54 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
 
     self->clicked = 1;
-
+ 
     if(self->stickyhand_selection!=" "){
         typedef map<string, StickyHandStruc > sticky_hands_map_type_;
         sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+        
+//============================================================================================================         
+// Under Test
+//============================================================================================================      
+      if(self->marker_selection!=" ") {
+          hand_it->second._gl_hand->highlight_marker(self->marker_selection);
+          cout << "intersected an sticky hands's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
+      } 
+      else 
+//============================================================================================================         
+// Under Test
+//============================================================================================================  
+      {  
         //hand_it->second._gl_hand->enable_whole_body_selection(true); 
         //hand_it->second._gl_hand->highlight_link(self->stickyhand_selection);
-        cout << "intersected stickyhand:" << (self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
+        cout << "intersected stickyhand: " << (self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyhand_selection);
         self->stickyHandCollection->highlight_selected(self->seedSelectionManager);
         self->stickyFootCollection->highlight_selected(self->seedSelectionManager);
+      }
     }
     else if(self->stickyfoot_selection!=" "){
         
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
         sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+//============================================================================================================         
+// Under Test
+//============================================================================================================      
+      if(self->marker_selection!=" ") {
+          foot_it->second._gl_foot->highlight_marker(self->marker_selection);
+          cout << "intersected an sticky hands's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
+      } 
+      else 
+//============================================================================================================         
+// Under Test
+//============================================================================================================  
+      {
         //foot_it->second._gl_foot->enable_whole_body_selection(true); 
         //foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
-        cout << "intersected stickyfoot:" << self->stickyfoot_selection << " at: "<< self->ray_hit.transpose() << endl;
+        cout << "intersected stickyfoot: " << self->stickyfoot_selection << " at: "<< self->ray_hit.transpose() << endl;
         self->seedSelectionManager->add(self->stickyfoot_selection);
         self->stickyHandCollection->highlight_selected(self->seedSelectionManager);
         self->stickyFootCollection->highlight_selected(self->seedSelectionManager);
+      }
     }
     else if(self->object_selection!=" "){
       self->seedSelectionManager->clear();
@@ -715,9 +742,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       else {
           obj_it->second._gl_object->highlight_link(self->link_selection); 
           cout << "intersected an object's link: " << self->link_selection<< " at: " << self->ray_hit.transpose() << endl;
-      }
-    }
+      }        
 
+    }
+   
     //(event->button==3) -- Right Click
     //cout << "current selection:" << self->link_selection  <<  endl;
     if((event->button==3) &&(event->type==GDK_2BUTTON_PRESS)) // right dbl clk
@@ -726,19 +754,34 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       self->_renderer_foviate=!self->_renderer_foviate;
       (*self->_rendererFoviationSignalRef)((void*)self->viewer,name,self->_renderer_foviate); 
     }
+
     
     if(((self->link_selection  != " ") || (self->marker_selection  != " ")) &&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
     {
+
         //spawn_object_geometry_dblclk_popup(self);
         // draw circle for angle specification around the axis.
         self->dragging = 1;
-        self->show_popup_onrelease = 1;
+//============================================================================================================         
+// Under Test
+//============================================================================================================   
+        if((self->marker_selection  != " ")&&(self->stickyhand_selection != " "))
+          spawn_sticky_hand_dblclk_popup(self);
+        else if((self->marker_selection  != " ")&&(self->stickyfoot_selection != " "))
+          spawn_sticky_foot_dblclk_popup(self);
+        else
+//============================================================================================================         
+// Under Test
+//============================================================================================================             
+        {
+          self->show_popup_onrelease = 1;
+        }
         bot_viewer_request_redraw(self->viewer);
         std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
 
         return 1;// consumed if pop up comes up.
     }
-    else if((self->stickyhand_selection != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){
+    else if((self->stickyhand_selection != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){       
         spawn_sticky_hand_dblclk_popup(self);
         std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
         return 1;// consumed if pop up comes up.
@@ -748,8 +791,50 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
         return 1;// consumed if pop up comes up.
     }
-    else if((self->marker_selection  != " "))
-    {
+//============================================================================================================         
+// Under Test
+//============================================================================================================     
+    else if((self->marker_selection  != " ")&&(self->stickyhand_selection != " "))
+    {   
+        self->dragging = 1;
+          
+        typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+        sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);                
+        if(hand_it!=self->stickyHandCollection->_hands.end())  
+        {  
+         KDL::Frame T_geometry_hand =  hand_it->second._gl_hand->_T_world_body;  // hand in aff frame
+         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+         object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+         KDL::Frame T_world_geometry;
+         obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry);
+         KDL::Frame T_world_hand_current = T_world_geometry*T_geometry_hand;
+         self->marker_offset_on_press << self->ray_hit[0]-T_world_hand_current.p[0],self->ray_hit[1]-T_world_hand_current.p[1],self->ray_hit[2]-T_world_hand_current.p[2];    
+        }
+        return 1;// consumed
+     } 
+    else if((self->marker_selection  != " ")&&(self->stickyfoot_selection != " "))
+    {   
+        self->dragging = 1;
+          
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);                
+        if(foot_it!=self->stickyFootCollection->_feet.end())  
+        { 
+          KDL::Frame T_geometry_foot =  foot_it->second._gl_foot->_T_world_body;  // hand in aff frame
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
+          KDL::Frame T_world_geometry;
+          obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry);
+          KDL::Frame T_world_foot_current = T_world_geometry*T_geometry_foot;  
+          self->marker_offset_on_press << self->ray_hit[0]-T_world_foot_current.p[0],self->ray_hit[1]-T_world_foot_current.p[1],self->ray_hit[2]-T_world_foot_current.p[2];    
+        }
+        return 1;// consumed
+     }      
+//============================================================================================================         
+// Under Test
+//============================================================================================================    
+    else if((self->marker_selection  != " ")&&(self->stickyhand_selection == " ")&&(self->stickyfoot_selection == " "))
+    {   
         string token  = "markers::";
         size_t found = self->marker_selection.find(token);
         string joint_name= " ";  
@@ -763,12 +848,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         self->dragging = 1;
         if(!(self->selection_hold_on))
         {
-        
             // NOTE: cannot use self->object_selection affCollection if selection hold is on;
             object_instance_map_type_::iterator it = self->affCollection->_objects.find(self->object_selection);            
-            KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-        
-            //========================================================================================================
+            KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;        
+
             if(it->second._gl_object->is_planar_coupling_active(joint_name))
             {
               token  = "::translate";
@@ -782,8 +865,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
                 self->coupled_joint_marker_pos_on_press= it->second._gl_object->_future_jointpos.find(second_axis_name)->second;
               }  
             }
-            else 
-            //========================================================================================================
+            else
             {
               self->joint_marker_pos_on_press = it->second._gl_object->_future_jointpos.find(joint_name)->second;      
             }
@@ -794,8 +876,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
           if( self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
           {
 
-            double current_pos, current_vel; 
-            //========================================================================================================
+            double current_pos, current_vel;           
             if(self->otdf_instance_hold._gl_object->is_planar_coupling_active(joint_name))
             {
               token  = "::translate";
@@ -813,8 +894,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
                 self->coupled_joint_marker_pos_on_press=second_axis_pos;
               }  
             }
-            else 
-            //========================================================================================================
+            else
             {
               self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,current_vel);
               self->joint_marker_pos_on_press = current_pos;  
@@ -823,7 +903,6 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
           }
           self->marker_offset_on_press << self->ray_hit[0]-T_world_object_current.p[0],self->ray_hit[1]-T_world_object_current.p[1],self->ray_hit[2]-T_world_object_current.p[2];
         }
-
         return 1;// consumed
      }
 
@@ -836,12 +915,14 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 // ----------------------------------------------------------------------------
 static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3],  const GdkEventButton *event)
 {
+
     RendererAffordances *self = (RendererAffordances*) ehandler->user;
     self->clicked = 0;
 
     if((ehandler->picking==0)||(self->selection_enabled==0)){
         return 0;
     }  
+    //std::cout << "release\n" << std::endl;
     if(self->show_popup_onrelease){
         spawn_object_geometry_dblclk_popup(self); // DblClk POPUP!
         self->show_popup_onrelease = 0;
@@ -864,11 +945,13 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
 // ----------------------------------------------------------------------------
 static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const double ray_start[3], const double ray_dir[3],   const GdkEventMotion *event)
 {
+
     RendererAffordances *self = (RendererAffordances*) ehandler->user;
   
     if((!self->dragging)||(ehandler->picking==0)||(self->selection_enabled==0)){
         return 0;
     }
+    
     int64_t now = bot_timestamp_now();
     double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
     if((dt>0.05))
@@ -884,17 +967,32 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
         Eigen::Vector3f start,dir;
         dir<< ray_dir[0], ray_dir[1], ray_dir[2];
         start<< ray_start[0], ray_start[1], ray_start[2];
-    
-        //std::cout << "motion\n" << std::endl;
-        if(!(self->selection_hold_on)) 
+ 	
+        if((self->object_selection != " ")&&(!self->selection_hold_on)) 
         {
             set_object_desired_state_on_marker_motion(self,start,dir);
         }
-        else 
+        else if ((self->object_selection != " "))
         {
             set_object_current_state_on_marker_motion(self,start,dir);
         }
-      
+//============================================================================================================         
+// Under Test
+//============================================================================================================         
+      else if ((self->stickyhand_selection != " "))
+        {
+            //cout << "calls  set_stickyhand_current_state_on_marker_motion \n";
+            set_stickyhand_current_state_on_marker_motion(self,start,dir);
+        }        
+        else if ((self->stickyfoot_selection != " "))
+        {
+            //cout << "calls  set_stickyfoot_current_state_on_marker_motion \n";
+            set_stickyfoot_current_state_on_marker_motion(self,start,dir);
+        }  
+
+//============================================================================================================         
+// Under Test
+//============================================================================================================               
     }
     bot_viewer_request_redraw(self->viewer);
     return 1;

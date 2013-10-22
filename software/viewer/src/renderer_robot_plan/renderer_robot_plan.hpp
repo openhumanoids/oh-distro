@@ -510,14 +510,14 @@ namespace renderer_robot_plan
       if(self->in_motion_state == HANDS) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_hand->_T_world_body;
-          T_marker_world  =  (self->robotPlanListener->_gl_left_hand->get_marker_frame()).Inverse(); 
+          T_marker_world  =  (self->robotPlanListener->_gl_left_hand->get_floatingbasemarker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_left_hand->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_left_hand->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_hand->_T_world_body;
-          T_marker_world  =  (self->robotPlanListener->_gl_right_hand->get_marker_frame()).Inverse(); 
+          T_marker_world  =  (self->robotPlanListener->_gl_right_hand->get_floatingbasemarker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_right_hand->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_right_hand->extract_plane_name(root_link_name,plane_name);
@@ -527,14 +527,14 @@ namespace renderer_robot_plan
       else if(self->in_motion_state == FEET) {
         if(self->is_left_in_motion) {
           T_world_ee = self->robotPlanListener->_gl_left_foot->_T_world_body;
-          T_marker_world  =  (self->robotPlanListener->_gl_left_foot->get_marker_frame()).Inverse(); 
+          T_marker_world  =  (self->robotPlanListener->_gl_left_foot->get_floatingbasemarker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_left_foot->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_left_foot->extract_plane_name(root_link_name,plane_name);
         }
         else{
           T_world_ee = self->robotPlanListener->_gl_right_foot->_T_world_body;
-          T_marker_world  =  (self->robotPlanListener->_gl_right_foot->get_marker_frame()).Inverse(); 
+          T_marker_world  =  (self->robotPlanListener->_gl_right_foot->get_floatingbasemarker_frame()).Inverse(); 
           root_link_name=self->robotPlanListener->_gl_right_foot->get_root_link_name();
           if(found!=std::string::npos) 
               self->robotPlanListener->_gl_right_foot->extract_plane_name(root_link_name,plane_name);
@@ -543,14 +543,14 @@ namespace renderer_robot_plan
       }
       else if(self->in_motion_state == PELVIS) {
         T_world_ee = self->robotPlanListener->_gl_pelvis->_T_world_body;
-        T_marker_world  =  (self->robotPlanListener->_gl_pelvis->get_marker_frame()).Inverse(); 
+        T_marker_world  =  (self->robotPlanListener->_gl_pelvis->get_floatingbasemarker_frame()).Inverse(); 
         root_link_name=self->robotPlanListener->_gl_pelvis->get_root_link_name();
         if(found!=std::string::npos) 
             self->robotPlanListener->_gl_pelvis->extract_plane_name(root_link_name,plane_name);
       }
       else if(self->in_motion_state == COM) {
         T_world_ee = self->robotPlanListener->_gl_com->_T_world_body;
-        T_marker_world  =  (self->robotPlanListener->_gl_com->get_marker_frame()).Inverse(); 
+        T_marker_world  =  (self->robotPlanListener->_gl_com->get_floatingbasemarker_frame()).Inverse(); 
         root_link_name=self->robotPlanListener->_gl_com->get_root_link_name();
         if(found!=std::string::npos) 
             self->robotPlanListener->_gl_com->extract_plane_name(root_link_name,plane_name);

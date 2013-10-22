@@ -482,8 +482,57 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it= self->affCollection->_objects.find(self->object_selection);
 
-  
-    if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
+    if(!strcmp(name,PARAM_OTDF_DELETE)) {
+      fprintf(stderr,"\nClearing Selected Affordance\n");
+      if(it!=self->affCollection->_objects.end())
+      {
+        string instance_name = self->object_selection;
+        self->affCollection->delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid);
+
+        self->affCollection->_objects.erase(it);
+        if(self->object_selection==string(instance_name))
+        {
+            self->link_selection = " ";
+            self->object_selection = " ";
+        }  
+
+        typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+        sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+        while (hand_it!=self->stickyHandCollection->_hands.end()) {
+          string hand_name = string(hand_it->second.object_name);
+          if (hand_name == string(instance_name))
+          {
+            if(self->stickyhand_selection==hand_it->first){
+              self->seedSelectionManager->remove(self->stickyhand_selection);
+              self->stickyhand_selection = " ";
+            }
+            self->stickyHandCollection->_hands.erase(hand_it++);
+          }
+          else
+            hand_it++;
+        } // end while
+
+      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+      while (foot_it!=self->stickyFootCollection->_feet.end()) {
+        string foot_name = string(foot_it->second.object_name);
+        if (foot_name == string(instance_name))
+        {
+          if(self->stickyfoot_selection==foot_it->first)
+          {
+            self->seedSelectionManager->remove(self->stickyfoot_selection);                            
+            self->stickyfoot_selection = " ";
+          }
+          self->stickyFootCollection->_feet.erase(foot_it++);
+        }
+        else
+          foot_it++;
+      } // end while
+
+      bot_viewer_request_redraw(self->viewer);
+      }// end if
+    }
+    else if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
       bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT);
       if(val){
         bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT,false); 
@@ -502,7 +551,7 @@ namespace renderer_affordances_gui_utils
         
       if(it!=self->affCollection->_objects.end()){
         it->second._gl_object->enable_bodypose_adjustment(val);
-        it->second._gl_object->enable_bodyorparent_frame_rendering_of_floatingbase_markers(val);
+        it->second._gl_object->enable_bodyorparent_frame_rendering_of_floatingbase_markers(val); 
         it->second._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         it->second._gl_object->enable_jointdof_adjustment(false);    
       }
@@ -1066,8 +1115,21 @@ namespace renderer_affordances_gui_utils
     }
     
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)&&strcmp(name,PARAM_DIL_FACTOR)&&strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)&&strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)&&strcmp(name,PARAM_SELECT_EE_TYPE)
-    &&strcmp(name,PARAM_PLAN_SEED_LIST)&&strcmp(name,PARAM_SELECT_FLIP_DIM))
+    if(    strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)
+        && strcmp(name,PARAM_DIL_FACTOR)
+        && strcmp(name, PARAM_HAND_CONTACT_MASK_SELECT)
+        && strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)
+        && strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)
+        && strcmp(name,PARAM_SELECT_EE_TYPE)
+        && strcmp(name,PARAM_PLAN_SEED_LIST)
+        && strcmp(name,PARAM_SELECT_FLIP_DIM)
+        && strcmp(name, PARAM_RESET_DESIRED_STATE)
+        && strcmp(name, PARAM_FLIP_GEOMETRY)
+        && strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)
+        && strcmp(name,PARAM_OTDF_ADJUST_PARAM)
+        && strcmp(name,PARAM_OTDF_ADJUST_DOF)
+        && strcmp(name,PARAM_SET_EE_CONSTRAINT)
+        )
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -1134,11 +1196,13 @@ namespace renderer_affordances_gui_utils
     //if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
     
    
-    
+
     
     BotGtkParamWidget *pw;
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     
+    bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_DELETE, NULL);
+        
     if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       //bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");

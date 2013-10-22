@@ -80,6 +80,7 @@
 #define PARAM_OTDF_ADJUST_DOF "Adjust DoFs"
 #define PARAM_OTDF_FLIP_PITCH "Flip pitch"
 #define PARAM_OTDF_INSTANCE_CLEAR "Clear Instance"
+#define PARAM_OTDF_DELETE "Delete"
 #define PARAM_OTDF_INSTANCE_CLEAR_ALL "Clear All"
 #define PARAM_INSTANTIATE "Instantiate/Fit"
 #define PARAM_CLEAR "Clear All Instances"
@@ -430,8 +431,10 @@ struct RendererAffordances {
       
       // set desired state
       KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
-      KDL::Frame T_marker_world =  (it->second._gl_object->get_marker_frame()).Inverse(); 
+      KDL::Frame T_world_marker =  (it->second._gl_object->get_floatingbasemarker_frame()); 
+      KDL::Frame T_marker_world =  T_world_marker.Inverse();
       KDL::Frame T_marker_object = T_marker_world*T_world_object_future;
+
       Eigen::Vector3f markerframe_prev_ray_hit_drag;
       rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
       Eigen::Vector3f markerframe_ray_hit_drag;
@@ -733,7 +736,7 @@ struct RendererAffordances {
 
       // set current state
       KDL::Frame T_world_object =  self->otdf_instance_hold._gl_object->_T_world_body;
-      KDL::Frame T_marker_world =  (self->otdf_instance_hold._gl_object->get_marker_frame()).Inverse(); 
+      KDL::Frame T_marker_world =  (self->otdf_instance_hold._gl_object->get_floatingbasemarker_frame()).Inverse(); 
       KDL::Frame T_marker_object = T_marker_world*T_world_object;
       Eigen::Vector3f markerframe_prev_ray_hit_drag;
       rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
@@ -1011,8 +1014,219 @@ struct RendererAffordances {
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 
   }   // end set_object_current_state_on_marker_motion()
-
+  
 //-------------------------------------------------------------------------------
+ inline static void set_stickyhand_current_state_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+      double gain = 1;
+      
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+
+      // set current state
+      KDL::Frame T_geometry_hand =  hand_it->second._gl_hand->_T_world_body;  // hand in aff frame
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+      KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+      KDL::Frame T_world_geometry;
+       obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry);
+      KDL::Frame T_marker_world =  (hand_it->second._gl_hand->get_floatingbasemarker_frame()).Inverse(); // marker in world frame
+      cout <<"T_world_object: "<< T_world_object.p[0] << " " << T_world_object.p[1] << " " << T_world_object.p[2] << " " << endl;
+      cout <<"T_world_geometry: "<< T_world_geometry.p[0] << " " << T_world_geometry.p[1] << " " << T_world_geometry.p[2] << " " << endl;
+      
+      KDL::Frame T_marker_hand = T_marker_world*T_world_geometry*T_geometry_hand;
+      
+      Eigen::Vector3f markerframe_prev_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+      Eigen::Vector3f markerframe_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag); 
+      Eigen::Vector3f worldframe_delta,markerframe_delta;
+      worldframe_delta  = self->ray_hit_drag-self->marker_offset_on_press;
+      rotate_eigen_vector_given_kdl_frame(worldframe_delta,T_marker_world,markerframe_delta);       
+      
+      double currentAngle, angleTo,dtheta;       
+      KDL::Frame DragRotation=KDL::Frame::Identity();       
+      if(hand_it->second._gl_hand->is_bodypose_adjustment_enabled())
+      {
+        std::string token  = "plane::";
+        size_t found = self->marker_selection.find(token);  
+        if(found!=std::string::npos)  
+        {
+          string plane_name="";
+          string root_link_name=hand_it->second._gl_hand->get_root_link_name();
+          hand_it->second._gl_hand->extract_plane_name(root_link_name,plane_name);
+          size_t found2 = plane_name.find("x"); 
+          bool x_plane_active = (found2!=std::string::npos);
+          found2 = plane_name.find("y"); 
+          bool y_plane_active = (found2!=std::string::npos);       
+          found2 = plane_name.find("z"); 
+          bool z_plane_active = (found2!=std::string::npos);
+          
+          if(x_plane_active){
+           T_marker_hand.p[0] = markerframe_delta[0];
+          }
+          if(y_plane_active){
+            T_marker_hand.p[1] = markerframe_delta[1];
+          }
+          if(z_plane_active){
+            T_marker_hand.p[2] = markerframe_delta[2];
+          }        
+        } 
+      
+        if(self->marker_selection=="markers::base_x"){
+          T_marker_hand.p[0] = markerframe_delta[0];
+        }
+        else if(self->marker_selection=="markers::base_y"){
+          T_marker_hand.p[1] = markerframe_delta[1];
+        }      
+        else if(self->marker_selection=="markers::base_z"){
+          T_marker_hand.p[2] = markerframe_delta[2];
+        }    
+        else if(self->marker_selection=="markers::base_roll"){
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[2]-T_marker_hand.p[2],markerframe_prev_ray_hit_drag[1]-T_marker_hand.p[1]);
+          angleTo = atan2(markerframe_ray_hit_drag[2]-T_marker_hand.p[2],markerframe_ray_hit_drag[1]-T_marker_hand.p[1]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 1; axis[1] = 0; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        else if(self->marker_selection=="markers::base_pitch"){ 
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[0]-T_marker_hand.p[0],markerframe_prev_ray_hit_drag[2]-T_marker_hand.p[2]);
+          angleTo = atan2(markerframe_ray_hit_drag[0]-T_marker_hand.p[0],markerframe_ray_hit_drag[2]-T_marker_hand.p[2]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 1; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }    
+        else if(self->marker_selection=="markers::base_yaw"){
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[1]-T_marker_hand.p[1],markerframe_prev_ray_hit_drag[0]-T_marker_hand.p[0]);
+          angleTo = atan2(markerframe_ray_hit_drag[1]-T_marker_hand.p[1],markerframe_ray_hit_drag[0]-T_marker_hand.p[0]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 0; axis[2]=1;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        
+        T_marker_hand.M  = DragRotation.M*T_marker_hand.M; 
+        T_geometry_hand = (T_marker_world*T_world_geometry).Inverse()*T_marker_hand;
+       drc::joint_angles_t posture_msg;
+       posture_msg.num_joints = hand_it->second.joint_position.size();
+       posture_msg.joint_name = hand_it->second.joint_name;
+       posture_msg.joint_position = hand_it->second.joint_position;
+       string unique_name = hand_it->first;
+       self->stickyHandCollection->add_or_update_sticky_hand(hand_it->second.uid,unique_name,T_geometry_hand, posture_msg);
+      }
+              
+      self->prev_ray_hit_drag = self->ray_hit_drag; 
+  }   // end set_stickyhand_current_state_on_marker_motion()
+  
+//-------------------------------------------------------------------------------
+ inline static void set_stickyfoot_current_state_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+      double gain = 1;
+      
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+
+      // set current state
+      KDL::Frame T_geometry_foot =  foot_it->second._gl_foot->_T_world_body;  // foot in aff frame
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
+      //KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+      KDL::Frame T_world_geometry;
+      obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry);
+      KDL::Frame T_marker_world =  (foot_it->second._gl_foot->get_floatingbasemarker_frame()).Inverse(); // marker in world frame
+      KDL::Frame T_marker_foot = T_marker_world*T_world_geometry*T_geometry_foot;
+      
+      Eigen::Vector3f markerframe_prev_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_marker_world,markerframe_prev_ray_hit_drag);
+      Eigen::Vector3f markerframe_ray_hit_drag;
+      rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_marker_world,markerframe_ray_hit_drag); 
+      Eigen::Vector3f worldframe_delta,markerframe_delta;
+      worldframe_delta  = self->ray_hit_drag-self->marker_offset_on_press;
+      rotate_eigen_vector_given_kdl_frame(worldframe_delta,T_marker_world,markerframe_delta);       
+      
+      double currentAngle, angleTo,dtheta;       
+      KDL::Frame DragRotation=KDL::Frame::Identity();       
+      if(foot_it->second._gl_foot->is_bodypose_adjustment_enabled())
+      {
+        std::string token  = "plane::";
+        size_t found = self->marker_selection.find(token);  
+        if(found!=std::string::npos)  
+        {
+          string plane_name="";
+          string root_link_name=foot_it->second._gl_foot->get_root_link_name();
+          foot_it->second._gl_foot->extract_plane_name(root_link_name,plane_name);
+          size_t found2 = plane_name.find("x"); 
+          bool x_plane_active = (found2!=std::string::npos);
+          found2 = plane_name.find("y"); 
+          bool y_plane_active = (found2!=std::string::npos);       
+          found2 = plane_name.find("z"); 
+          bool z_plane_active = (found2!=std::string::npos);
+          
+          if(x_plane_active){
+           T_marker_foot.p[0] = markerframe_delta[0];
+          }
+          if(y_plane_active){
+            T_marker_foot.p[1] = markerframe_delta[1];
+          }
+          if(z_plane_active){
+            T_marker_foot.p[2] = markerframe_delta[2];
+          }        
+        } 
+      
+        if(self->marker_selection=="markers::base_x"){
+          T_marker_foot.p[0] = markerframe_delta[0];
+        }
+        else if(self->marker_selection=="markers::base_y"){
+          T_marker_foot.p[1] = markerframe_delta[1];
+        }      
+        else if(self->marker_selection=="markers::base_z"){
+          T_marker_foot.p[2] = markerframe_delta[2];
+        }    
+        else if(self->marker_selection=="markers::base_roll"){
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[2]-T_marker_foot.p[2],markerframe_prev_ray_hit_drag[1]-T_marker_foot.p[1]);
+          angleTo = atan2(markerframe_ray_hit_drag[2]-T_marker_foot.p[2],markerframe_ray_hit_drag[1]-T_marker_foot.p[1]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 1; axis[1] = 0; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        else if(self->marker_selection=="markers::base_pitch"){ 
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[0]-T_marker_foot.p[0],markerframe_prev_ray_hit_drag[2]-T_marker_foot.p[2]);
+          angleTo = atan2(markerframe_ray_hit_drag[0]-T_marker_foot.p[0],markerframe_ray_hit_drag[2]-T_marker_foot.p[2]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 1; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }    
+        else if(self->marker_selection=="markers::base_yaw"){
+          currentAngle = atan2(markerframe_prev_ray_hit_drag[1]-T_marker_foot.p[1],markerframe_prev_ray_hit_drag[0]-T_marker_foot.p[0]);
+          angleTo = atan2(markerframe_ray_hit_drag[1]-T_marker_foot.p[1],markerframe_ray_hit_drag[0]-T_marker_foot.p[0]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 0; axis[2]=1;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        
+        T_marker_foot.M  = DragRotation.M*T_marker_foot.M; 
+        T_geometry_foot = (T_marker_world*T_world_geometry).Inverse()*T_marker_foot;
+        
+        self->stickyFootCollection->add_or_update_sticky_foot(foot_it->second.uid,
+                                                             foot_it->second.foot_type,
+                                                             foot_it->second.object_name,
+                                                             foot_it->second.geometry_name,
+                                                             T_geometry_foot,
+                                                             foot_it->second.joint_name,
+                                                             foot_it->second.joint_position);
+      }
+              
+      self->prev_ray_hit_drag = self->ray_hit_drag; 
+  }   // end set_stickyfoot_current_state_on_marker_motion()
+//-------------------------------------------------------------------------------
+
   inline static double get_shortest_distance_between_objects_markers_sticky_hands_and_feet(void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -1067,6 +1281,8 @@ struct RendererAffordances {
                 self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
                 self->marker_selection  = string(intersected_object->id().c_str());
                }
+               
+               //intersected_object = NULL; 
           }
                              
         }// end if(...is_bodypose_adjustment_enabled)||...->is_jointdof_adjustment_enabled))
@@ -1116,6 +1332,8 @@ struct RendererAffordances {
                   self->object_selection  =  it->first;
                   self->marker_selection  = string(intersected_object->id().c_str());
                  }
+                 
+                 //intersected_object = NULL; 
             }
                           
           }
@@ -1168,6 +1386,45 @@ struct RendererAffordances {
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
     for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
     {
+//============================================================================================================         
+// Under Test
+//============================================================================================================   
+          if(it->second._gl_foot->is_bodypose_adjustment_enabled())
+          {
+            it->second._gl_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+            if(intersected_object != NULL ){
+                self->ray_hit = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    self->object_selection  =  " ";
+                    self->link_selection  =  " ";
+                    self->marker_selection  = string(intersected_object->id().c_str());
+                    self->stickyhand_selection  = " ";
+                    self->stickyfoot_selection  = it->first;
+                  }
+                }
+                else {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  self->object_selection  =  " ";
+                  self->link_selection  =  " ";
+                  self->marker_selection  = string(intersected_object->id().c_str());
+                  self->stickyhand_selection  = " ";
+                  self->stickyfoot_selection  = it->first;
+                 }
+            }                
+          }// end if(...is_bodypose_adjustment_enabled))
+//============================================================================================================    
     
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
@@ -1221,7 +1478,46 @@ struct RendererAffordances {
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
     for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
     {
-    
+          
+//============================================================================================================         
+// Under Test
+//============================================================================================================   
+          if(it->second._gl_hand->is_bodypose_adjustment_enabled())
+          {
+            it->second._gl_hand->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+            if(intersected_object != NULL ){
+                self->ray_hit = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    self->object_selection  =  " ";
+                    self->link_selection  =  " ";
+                    self->marker_selection  = string(intersected_object->id().c_str());
+                    self->stickyhand_selection  = it->first;
+                    self->stickyfoot_selection  = " ";
+                  }
+                }
+                else {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  self->object_selection  =  " ";
+                  self->link_selection  =  " ";
+                  self->marker_selection  = string(intersected_object->id().c_str());
+                  self->stickyhand_selection  = it->first;
+                  self->stickyfoot_selection  = " ";
+                 }
+            }                
+          }// end if(...is_bodypose_adjustment_enabled))
+//============================================================================================================                
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
           object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(it->second.object_name);

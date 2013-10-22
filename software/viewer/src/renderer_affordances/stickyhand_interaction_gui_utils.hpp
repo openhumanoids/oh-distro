@@ -352,6 +352,21 @@ namespace renderer_affordances_gui_utils
         obj_it->second.is_melded = !obj_it->second.is_melded; 
       }
     }
+    else if (! strcmp(name, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT)) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT);
+      if(val){
+        std::cout << "enabling bodypose adjustment for sticky hand " << self->stickyhand_selection << std::endl;
+      }
+   
+      if(hand_it!=self->stickyHandCollection->_hands.end()){
+        hand_it->second._gl_hand->enable_bodypose_adjustment(val);
+        hand_it->second._gl_hand->enable_bodyorparent_frame_rendering_of_floatingbase_markers(val);
+        hand_it->second._gl_hand->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
+        hand_it->second._gl_hand->enable_jointdof_adjustment(false);    
+      }
+    }
   
     bot_viewer_request_redraw(self->viewer);
     if(   strcmp(name,PARAM_SQUEEZE)
@@ -425,10 +440,14 @@ namespace renderer_affordances_gui_utils
     val  = hand_it->second.is_melded;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_MELD_HAND_TO_CURRENT, val, NULL);
     
-
     val  = ((hand_it->second.is_melded)&&(obj_it->second.is_melded));
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE, val, NULL);
     
+    val=false;
+    val =  hand_it->second._gl_hand->is_bodypose_adjustment_enabled();
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
+
+ 
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);
 
